@@ -1,0 +1,567 @@
+{
+  "assessment-results": {
+    "uuid": "4415373f-143e-4290-b651-a12c5a0a44f2",
+    "metadata": {
+      "title": "Reference Platform (Boundary 1) — SAR",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-03-27T12:00:00Z",
+      "roles": [
+        {
+          "id": "assessor",
+          "title": "Security Controls Assessor"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "8012a907-650a-45a8-aaf8-36be01af40ba",
+          "type": "organization",
+          "name": "SPARC Export"
+        }
+      ]
+    },
+    "import-ap": {
+      "href": "uuid:9ad02daf-38ed-4055-9d03-c2ec48f7b968"
+    },
+    "results": [
+      {
+        "uuid": "1cd92e0a-c2a3-49a6-9707-0e040f986b3f",
+        "title": "Assessment Results for Reference Platform (Boundary 1) — SAR",
+        "description": "Assessment results generated from SSP Reference Platform (Boundary 1) — SSP.",
+        "start": "2026-01-05T00:00:00Z",
+        "risks": [
+          {
+            "uuid": "713e65cd-2011-4962-9ccf-ca34990df516",
+            "title": "Risk for ac-17",
+            "description": "Control ac-17 was assessed not-satisfied.",
+            "statement": "ac-17 is assessed not-satisfied. The control requires:   a. Establish and document usage restrictions, configuration/connection requirements, and implementation guidance for each type of remote access allowed; and\n  b. Authorize each type of remote access to the system prior to allowing such connections.",
+            "status": "open",
+            "deadline": "2030-01-01T00:00:00Z"
+          },
+          {
+            "uuid": "1ef91410-b07e-49b5-ba0f-8a02380d2797",
+            "title": "Risk for ia-2",
+            "description": "Control ia-2 was assessed not-satisfied.",
+            "statement": "ia-2 is assessed not-satisfied. The control requires: Uniquely identify and authenticate organizational users and associate that unique identification with processes acting on behalf of those users.",
+            "status": "open",
+            "deadline": "2030-01-01T00:00:00Z"
+          }
+        ],
+        "findings": [
+          {
+            "uuid": "1620c077-63b8-4611-97f4-d90eea4faf8c",
+            "title": "Finding for ac-1",
+            "description": "Assessment finding for control ac-1",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-1"
+            }
+          },
+          {
+            "uuid": "8fc14f66-ea13-4d18-9b0e-95680e58dd92",
+            "title": "Finding for ac-17",
+            "description": "Assessment finding for control ac-17",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "ac-17"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "713e65cd-2011-4962-9ccf-ca34990df516"
+              }
+            ]
+          },
+          {
+            "uuid": "a5d8b664-409a-4dab-a8f0-36cf32551028",
+            "title": "Finding for ac-2",
+            "description": "Assessment finding for control ac-2",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-2"
+            }
+          },
+          {
+            "uuid": "e05ea0fc-17af-4f2e-b423-5a95a1266273",
+            "title": "Finding for ac-20",
+            "description": "Assessment finding for control ac-20",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-20"
+            }
+          },
+          {
+            "uuid": "ab608ddc-37c0-4a01-86d2-eb49026396e4",
+            "title": "Finding for ac-3",
+            "description": "Assessment finding for control ac-3",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-3"
+            }
+          },
+          {
+            "uuid": "a135ac27-3568-49d8-b488-5697eaebd233",
+            "title": "Finding for ac-6",
+            "description": "Assessment finding for control ac-6",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-6"
+            }
+          },
+          {
+            "uuid": "8095c49e-c9c1-45a4-a306-c637d1c79598",
+            "title": "Finding for at-2",
+            "description": "Assessment finding for control at-2",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "at-2"
+            }
+          },
+          {
+            "uuid": "f4af000c-966b-4780-bc1f-43a78deeccfc",
+            "title": "Finding for au-1",
+            "description": "Assessment finding for control au-1",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-1"
+            }
+          },
+          {
+            "uuid": "94c44242-ba2c-4e91-b79a-06e92dad7602",
+            "title": "Finding for au-2",
+            "description": "Assessment finding for control au-2",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-2"
+            }
+          },
+          {
+            "uuid": "84350122-f5c1-4a0c-9386-535e58d777b5",
+            "title": "Finding for au-6",
+            "description": "Assessment finding for control au-6",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-6"
+            }
+          },
+          {
+            "uuid": "60b401ef-a552-46b8-8c8d-f244926e84dc",
+            "title": "Finding for au-9",
+            "description": "Assessment finding for control au-9",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-9"
+            }
+          },
+          {
+            "uuid": "d39321b1-2e14-46eb-be7c-dc4cdf1d63fa",
+            "title": "Finding for ca-1",
+            "description": "Assessment finding for control ca-1",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ca-1"
+            }
+          },
+          {
+            "uuid": "c88b527a-79cf-42f8-9fce-473e8adf743e",
+            "title": "Finding for ca-2",
+            "description": "Assessment finding for control ca-2",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ca-2"
+            }
+          },
+          {
+            "uuid": "a622543e-6bcc-4a2d-bf1e-09fa34fbbb1e",
+            "title": "Finding for ca-5",
+            "description": "Assessment finding for control ca-5",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ca-5"
+            }
+          },
+          {
+            "uuid": "568f1338-2bac-4ec4-93e5-81b31e5a9fe6",
+            "title": "Finding for ca-7",
+            "description": "Assessment finding for control ca-7",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ca-7"
+            }
+          },
+          {
+            "uuid": "c0dab48c-0e14-454b-99ea-dd2c4243691b",
+            "title": "Finding for cm-1",
+            "description": "Assessment finding for control cm-1",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-1"
+            }
+          },
+          {
+            "uuid": "6f1a425e-8b45-4d10-b8ef-151e076431ad",
+            "title": "Finding for cm-2",
+            "description": "Assessment finding for control cm-2",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-2"
+            }
+          },
+          {
+            "uuid": "ad2fa82c-bbd8-4de8-bf25-ab84652a0c75",
+            "title": "Finding for cm-6",
+            "description": "Assessment finding for control cm-6",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-6"
+            }
+          },
+          {
+            "uuid": "6ae85974-33d8-4dd7-ae7e-6a884b2edf66",
+            "title": "Finding for cp-9",
+            "description": "Assessment finding for control cp-9",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-9"
+            }
+          },
+          {
+            "uuid": "36663de2-7d22-4e72-ba91-1cc4a3272165",
+            "title": "Finding for ia-2",
+            "description": "Assessment finding for control ia-2",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "ia-2"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "1ef91410-b07e-49b5-ba0f-8a02380d2797"
+              }
+            ]
+          },
+          {
+            "uuid": "9478852b-fa68-45c7-a6f2-7f9919c8b38e",
+            "title": "Finding for ia-5",
+            "description": "Assessment finding for control ia-5",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-5"
+            }
+          },
+          {
+            "uuid": "f1b04619-cc28-4123-8225-4b1904b7184c",
+            "title": "Finding for ir-1",
+            "description": "Assessment finding for control ir-1",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-1"
+            }
+          },
+          {
+            "uuid": "b6a2ee15-4e5d-48ca-9653-e3766799e748",
+            "title": "Finding for ir-4",
+            "description": "Assessment finding for control ir-4",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-4"
+            }
+          },
+          {
+            "uuid": "58542b80-643b-4157-a7fe-5202d0370118",
+            "title": "Finding for ma-2",
+            "description": "Assessment finding for control ma-2",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ma-2"
+            }
+          },
+          {
+            "uuid": "f79b8828-638a-48dc-a9d3-338068cf70d1",
+            "title": "Finding for mp-2",
+            "description": "Assessment finding for control mp-2",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "mp-2"
+            }
+          },
+          {
+            "uuid": "99fe8068-c617-4fd9-853d-a327c804c1c8",
+            "title": "Finding for pe-3",
+            "description": "Assessment finding for control pe-3",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-3"
+            }
+          },
+          {
+            "uuid": "c142d605-ff60-4329-a60d-5ed300d926fc",
+            "title": "Finding for pl-2",
+            "description": "Assessment finding for control pl-2",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pl-2"
+            }
+          },
+          {
+            "uuid": "c39b6746-20bd-4b5c-a088-b2e1b5dd8c0b",
+            "title": "Finding for pm-1",
+            "description": "Assessment finding for control pm-1",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pm-1"
+            }
+          },
+          {
+            "uuid": "f2978a14-9496-4f87-83a9-ee4fd35f5d09",
+            "title": "Finding for ps-3",
+            "description": "Assessment finding for control ps-3",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ps-3"
+            }
+          },
+          {
+            "uuid": "09b8ac39-a4bd-458c-8866-c5e2b4dabb08",
+            "title": "Finding for pt-2",
+            "description": "Assessment finding for control pt-2",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pt-2"
+            }
+          },
+          {
+            "uuid": "e1ccbafa-08d5-4412-9d41-839cc0ed2198",
+            "title": "Finding for ra-1",
+            "description": "Assessment finding for control ra-1",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ra-1"
+            }
+          },
+          {
+            "uuid": "d27d7dcc-ade9-4bbc-8e40-6f90c99221f8",
+            "title": "Finding for ra-5",
+            "description": "Assessment finding for control ra-5",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ra-5"
+            }
+          },
+          {
+            "uuid": "d0122845-fad4-41d3-8b22-d608fb4c0db3",
+            "title": "Finding for sa-4",
+            "description": "Assessment finding for control sa-4",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-4"
+            }
+          },
+          {
+            "uuid": "638c19c4-4266-4b6f-bd4f-77951bb01e32",
+            "title": "Finding for sa-9",
+            "description": "Assessment finding for control sa-9",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-9"
+            }
+          },
+          {
+            "uuid": "d8f9a300-a2db-4ab6-bfd2-d21698794699",
+            "title": "Finding for sc-13",
+            "description": "Assessment finding for control sc-13",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-13"
+            }
+          },
+          {
+            "uuid": "f6d82bdd-4cbf-4388-96c5-6f268483f41d",
+            "title": "Finding for sc-7",
+            "description": "Assessment finding for control sc-7",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-7"
+            }
+          },
+          {
+            "uuid": "ab31365b-1dd1-4e76-9df6-1ec87a9e7088",
+            "title": "Finding for si-1",
+            "description": "Assessment finding for control si-1",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-1"
+            }
+          },
+          {
+            "uuid": "9d49ba94-96c6-4230-8fa5-f0f101c604c7",
+            "title": "Finding for si-2",
+            "description": "Assessment finding for control si-2",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-2"
+            }
+          },
+          {
+            "uuid": "85bdc336-a15d-4320-82f1-653427e9a2a5",
+            "title": "Finding for si-4",
+            "description": "Assessment finding for control si-4",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-4"
+            }
+          },
+          {
+            "uuid": "0c2debd4-bb5b-428c-9634-fa7a11cfa9eb",
+            "title": "Finding for sr-3",
+            "description": "Assessment finding for control sr-3",
+            "target": {
+              "type": "objective-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-3"
+            }
+          }
+        ],
+        "reviewed-controls": {
+          "control-selections": [
+            {
+              "include-all": {}
+            }
+          ]
+        }
+      }
+    ],
+    "back-matter": {
+      "resources": [
+        {
+          "uuid": "787da430-2526-4317-a451-5ec566c1b04d",
+          "title": "SPARC Document Source",
+          "description": "Managed by SPARC",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000",
+              "media-type": "text/html"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

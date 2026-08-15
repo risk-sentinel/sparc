@@ -125,6 +125,44 @@ authoritative back-matter is embedded in every export regardless of relevance
 the artifacts — 96 leftover ui-smoke resources, the first time this ran.
 `regenerate!` now refuses and names them rather than committing them.
 
+### The scratch-database recipe
+
+You do not have to sacrifice your development database to satisfy that. Point
+`DATABASE_URL` at a throwaway one — nothing else changes, and your dev data is
+untouched:
+
+```bash
+REGEN="postgresql://postgres:password@db:5432/sparc_reference_regen"
+X() { docker compose exec -T -e RAILS_ENV=development -e DATABASE_URL="$REGEN" "$@"; }
+
+X web bin/rails db:create db:schema:load
+X web bin/rails db:seed                       # ~4 min; the Rev 5 catalog import dominates
+X -e SPARC_SEED_REFERENCE=lean web bin/rails runner 'load Rails.root.join("db/seeds/reference_estate.rb")'
+X web bin/rails 'db:seed:reference:regenerate[lean]'
+X web bin/rails 'db:seed:reference:check[lean]'   # must report no drift
+```
+
+`sparc_reference_regen` is left in place deliberately — re-seeding it costs
+several minutes and it holds nothing but the estate. Drop it with
+`X web bin/rails db:drop` (with `DATABASE_URL` still pointed at it) if you want
+it gone.
+
+Verified 2026-08-14: purging and rebuilding the estate inside that database
+regenerates all 12 artifacts **byte-identically**, and all 12 validate against
+the NIST OSCAL schemas.
+
+### What the suite checks, and what it cannot
+
+`spec/samples/reference_estate_oscal_spec.rb` reads the committed files and
+asserts they are valid OSCAL and still reference each other — SAR → SAP → SSP by
+UUID, the provider's `provided`/`responsibilities` counts, POA&M items present.
+It needs no database and runs in under a second.
+
+It deliberately does **not** rebuild the estate, so it cannot detect that a
+generator changed. Only `db:seed:reference:check` does that, and it needs a
+loaded estate in a clean database. Run it from the scratch database above after
+touching any exporter.
+
 ## Using it in specs
 
 ```ruby
