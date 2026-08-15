@@ -387,6 +387,29 @@ Runtime ingestion of OSCAL Component Definitions from [`awslabs/oscal-content-fo
 | `SOLID_QUEUE_IN_PUMA` | (unset) | Run Solid Queue in-process with Puma (single-server deploys) |
 | `JOB_CONCURRENCY` | `1` | Number of Solid Queue worker processes |
 
+## Seed Data
+
+Neither variable is set by default, so a seeded instance carries catalogs,
+roles and converters and nothing else.
+
+| Variable | Values | What it seeds |
+|---|---|---|
+| `SPARC_SEED_DEMO` | `true` | Illustrative records — organizations, boundaries, a couple of SSPs and SARs, evidence, sample artifacts. Enough that screens are not empty |
+| `SPARC_SEED_REFERENCE` | `lean`, `full` | The **reference leveraged authorization estate**: two organizations in a real leveraging relationship, each with a complete chain from profile to POA&M |
+
+They are gated separately on purpose. Demo data is a scattering of records; the
+reference estate is one coherent authorization and costs meaningfully more to
+build, so wanting the first does not get you the second.
+
+`lean` curates 40 controls spanning all 20 families; `full` uses the real NIST
+MODERATE and LOW baselines. Loading one tier replaces the other — there is one
+reference estate, not one per tier. **Neither loads in production**, because a
+reference estate is indistinguishable from real authorization data once it is in
+a database.
+
+See [Getting Started §5](Getting-Started#5-optional--load-a-realistic-authorization-to-look-at)
+for what it contains and how to remove it.
+
 ## Docker Compose Defaults
 
 Development `docker-compose.yaml` uses offset host ports to avoid conflicts with local services:

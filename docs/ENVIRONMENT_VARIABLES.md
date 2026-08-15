@@ -819,10 +819,41 @@ The `ServiceAccountMaintenanceJob` runs daily (3 AM, production) and auto-disabl
 |----------|-------------|---------|---------|----------|
 | SPARC_RUN_SEEDS | Explicitly run `db:seed` on container start (for non-web containers) | false | `true` | No |
 | SPARC_SEED_MODE | Controls which sample data is seeded | full | `traditional`, `20x`, `full` | No |
+| SPARC_SEED_DEMO | Seed illustrative demo records (organizations, boundaries, SSPs, SARs, evidence, sample artifacts) | false | `true` | No |
+| SPARC_SEED_REFERENCE | Seed the reference leveraged authorization estate at this tier (#845). Unset means do not seed it | (unset) | `lean`, `full` | No |
 
 The web container automatically runs `db:prepare` (which includes seeding) on startup. Use `SPARC_RUN_SEEDS=true` for Sidekiq or one-shot ECS tasks that need seed data without running the Rails server.
 
 Converter mappings (DISA CCI, CIS, SCAP/OVAL) are seeded from `lib/data_mappings/*.json` fixtures.
+
+### Demo data vs. the reference estate
+
+They are different things and are gated separately on purpose.
+
+`SPARC_SEED_DEMO` seeds a scattering of illustrative records so screens are not
+empty. `SPARC_SEED_REFERENCE` seeds **one complete authorization chain for two
+boundaries in a real leveraging relationship** — catalog, profile, SSP, SAP, SAR,
+POA&Ms and evidence for each side, with Boundary 2 inheriting from Boundary 1.
+It costs meaningfully more to build, so an operator who wants demo data does not
+automatically get it.
+
+Two tiers, one code path:
+
+| Tier | Controls per boundary | Use |
+| --- | --- | --- |
+| `lean` | 40 curated, spanning all 20 families | The default. Fast enough for a suite fixture |
+| `full` | Real NIST baselines — MODERATE for the provider, LOW for the consumer | Demos and scale checks |
+
+The provider gets the **higher** baseline deliberately: MODERATE is a strict
+superset of LOW, so a consumer control always has a provider counterpart to
+inherit from. Reversed, 138 controls would have had nowhere to inherit from.
+
+Neither tier will load in production — a reference estate is indistinguishable
+from real authorization data once it is in a database.
+
+Loading a different tier **replaces** the current estate rather than sitting
+alongside it. See `docs/dev/reference_estate.md` for the rake tasks, the
+committed OSCAL artifacts and the drift gate.
 
 ---
 

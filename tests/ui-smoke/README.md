@@ -81,6 +81,30 @@ not a failure:
 - `non-draft / read-only — expand-only check` — intentional; a read-only doc
   has no editable control to exercise. These stay skipped by design.
 
+### Converting the data-thinness skips: load the reference estate (#845)
+
+Most of the skips above are the same complaint — the instance has no document of
+that type to open. The reference estate exists partly to answer that. It seeds
+two organizations in a real leveraged authorization, each with a profile, SSP,
+SAP, SAR, three POA&Ms and evidence, so the show-page, a11y, inline-handler and
+Turbo-navigation sweeps have something to sweep:
+
+```bash
+docker compose exec -e SPARC_SEED_REFERENCE=lean web bin/rails db:seed
+```
+
+`lean` is the tier to use here — 40 controls spanning all 20 families, which is
+enough breadth for the sweeps without the build cost of the real baselines. It
+also seeds documents in **different lifecycle states** (a published POA&M, one
+in progress, one overdue), so the read-only-vs-editable branches are both
+exercised rather than one of them skipping.
+
+What it will *not* convert: the skips that are about **configuration** rather
+than data — OIDC not configured, no consent banner, `SPARC_REQUIRE_DOCUMENT_APPROVAL`
+off, missing tokens. Those need the instance configured, not seeded.
+
+See `docs/dev/reference_estate.md` for tiers, purge and the committed OSCAL.
+
 A wall of `502/503/504` **failures** across every route is not a code problem —
 it means the deployed instance is unhealthy (e.g. an ECS task recycle). The
 suite is correctly reporting an outage; check the deployment, not the tests.
