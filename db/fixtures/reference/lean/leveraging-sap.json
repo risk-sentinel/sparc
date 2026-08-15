@@ -1,0 +1,667 @@
+{
+  "assessment-plan": {
+    "uuid": "28e0457b-1fd0-4308-9232-c452ec08cc13",
+    "metadata": {
+      "title": "Reference Mission System (Boundary 2) — SAP",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-03-27T12:00:00Z",
+      "roles": [
+        {
+          "id": "assessor",
+          "title": "Assessor"
+        },
+        {
+          "id": "assessment-lead",
+          "title": "Assessment Lead"
+        },
+        {
+          "id": "system-owner",
+          "title": "System Owner"
+        },
+        {
+          "id": "csp-operations",
+          "title": "CSP Operations"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "08ee4106-1594-40dd-ba1e-9f62a4ad6bc5",
+          "type": "organization",
+          "name": "Assessment Organization (SPARC Export)"
+        }
+      ],
+      "props": [
+        {
+          "name": "assessment-type",
+          "ns": "https://sparc.local/ns",
+          "value": "initial"
+        }
+      ]
+    },
+    "import-ssp": {
+      "href": "uuid:d06d11fb-9524-4d96-b77c-efa879d4e1e8"
+    },
+    "local-definitions": {
+      "activities": [
+        {
+          "uuid": "d9bd72b0-7575-49ee-a0d6-72802088152b",
+          "title": "Test Assessment Activities",
+          "description": "Assessment activities using the test method.",
+          "props": [
+            {
+              "name": "method",
+              "value": "TEST"
+            }
+          ],
+          "steps": [
+            {
+              "uuid": "b69c0bcc-26ef-4247-ae14-1e1a3b714ec6",
+              "title": "Assess ac-1",
+              "description": "AC-01a.[01]: an access control policy is developed and documented;\nAC-01a.[02]: the access control policy is disseminated to {{ insert: param, ac-01_odp.01 }};\nAC-01a.[03]: access control procedures to facilitate the implementation of the access control policy and associated controls are developed and documented;\nAC-01a.[04]: the access control procedures are disseminated to {{ insert: param, ac-01_odp.02 }};\nAC-01a.01(a)[01]: the {{ insert: param, ac-01_odp.03 }} access control policy addresses purpose;\nAC-01a.01(a)[02]: the {{ insert: param, ac-01_odp.03 }} access control policy addresses scope;\nAC-01a.01(a)[03]: the {{ insert: param, ac-01_odp.03 }} access control policy addresses roles;\nAC-01a.01(a)[04]: the {{ insert: param, ac-01_odp.03 }} access control policy addresses responsibilities;\nAC-01a.01(a)[05]: the {{ insert: param, ac-01_odp.03 }} access control policy addresses management commitment;\nAC-01a.01(a)[06]: the {{ insert: param, ac-01_odp.03 }} access control policy addresses coordination among organizational entities;\nAC-01a.01(a)[07]: the {{ insert: param, ac-01_odp.03 }} access control policy addresses compliance;\nAC-01a.01(b): the {{ insert: param, ac-01_odp.03 }} access control policy is consistent with applicable laws, Executive Orders, directives, regulations, policies, standards, and guidelines;\nAC-01b.: the {{ insert: param, ac-01_odp.04 }} is designated to manage the development, documentation, and dissemination of the access control policy and procedures;\nAC-01c.01[01]: the current access control policy is reviewed and updated {{ insert: param, ac-01_odp.05 }};\nAC-01c.01[02]: the current access control policy is reviewed and updated following {{ insert: param, ac-01_odp.06 }};\nAC-01c.02[01]: the current access control procedures are reviewed and updated {{ insert: param, ac-01_odp.07 }};\nAC-01c.02[02]: the current access control procedures are reviewed and updated following {{ insert: param, ac-01_odp.08 }}."
+            },
+            {
+              "uuid": "ebfb63bb-3bc8-4de2-8113-3fa487e45349",
+              "title": "Assess ac-17",
+              "description": "Assess ac-17 using test method."
+            },
+            {
+              "uuid": "46717331-982a-414a-bf39-c3255d6e4cdd",
+              "title": "Assess ac-2",
+              "description": "Assess ac-2 using test method."
+            },
+            {
+              "uuid": "17a00a7f-9404-4e4c-a51c-fbe7e8037b9a",
+              "title": "Assess ac-20",
+              "description": "AC-20a.01: {{ insert: param, ac-20_odp.01 }} is/are consistent with the trust relationships established with other organizations owning, operating, and/or maintaining external systems, allowing authorized individuals to access the system from external systems (if applicable);\nAC-20a.02: {{ insert: param, ac-20_odp.01 }} is/are consistent with the trust relationships established with other organizations owning, operating, and/or maintaining external systems, allowing authorized individuals to process, store, or transmit organization-controlled information using external systems (if applicable);\nAC-20b.: the use of {{ insert: param, ac-20_odp.04 }} is prohibited (if applicable)."
+            },
+            {
+              "uuid": "cf1f0c13-857a-4586-9c09-953436517080",
+              "title": "Assess ac-3",
+              "description": "Assess ac-3 using test method."
+            },
+            {
+              "uuid": "94ef4513-c127-4d83-8fcf-ef83a7c8b8a6",
+              "title": "Assess ac-6",
+              "description": "AC-06: the principle of least privilege is employed, allowing only authorized accesses for users (or processes acting on behalf of users) that are necessary to accomplish assigned organizational tasks."
+            },
+            {
+              "uuid": "18ddf40d-88f5-4e43-9d36-84ef1561a18a",
+              "title": "Assess au-1",
+              "description": "Assess au-1 using test method."
+            },
+            {
+              "uuid": "089238c7-09c5-4fc7-969b-cdc8566e9afb",
+              "title": "Assess au-2",
+              "description": "AU-02a.: {{ insert: param, au-02_odp.01 }} that the system is capable of logging are identified in support of the audit logging function;\nAU-02b.: the event logging function is coordinated with other organizational entities requiring audit-related information to guide and inform the selection criteria for events to be logged;\nAU-02c.[01]: {{ insert: param, au-02_odp.02 }} are specified for logging within the system;\nAU-02c.[02]: the specified event types are logged within the system {{ insert: param, au-02_odp.03 }};\nAU-02d.: a rationale is provided for why the event types selected for logging are deemed to be adequate to support after-the-fact investigations of incidents;\nAU-02e.: the event types selected for logging are reviewed and updated {{ insert: param, au-02_odp.04 }}."
+            },
+            {
+              "uuid": "38d54841-3e8d-4b16-b475-70458e39a11e",
+              "title": "Assess au-6",
+              "description": "Assess au-6 using test method."
+            },
+            {
+              "uuid": "5b863b21-b64a-4665-b63f-b450e8183639",
+              "title": "Assess au-9",
+              "description": "Assess au-9 using test method."
+            },
+            {
+              "uuid": "6a29f931-1c3a-4c59-b288-7dfc30fd4b7d",
+              "title": "Assess cm-1",
+              "description": "Assess cm-1 using test method."
+            },
+            {
+              "uuid": "39dd344b-ca45-4429-bce3-57a4e5d67fd5",
+              "title": "Assess cm-2",
+              "description": "CM-02a.[01]: a current baseline configuration of the system is developed and documented;\nCM-02a.[02]: a current baseline configuration of the system is maintained under configuration control;\nCM-02b.01: the baseline configuration of the system is reviewed and updated {{ insert: param, cm-02_odp.01 }};\nCM-02b.02: the baseline configuration of the system is reviewed and updated when required due to {{ insert: param, cm-02_odp.02 }};\nCM-02b.03: the baseline configuration of the system is reviewed and updated when system components are installed or upgraded."
+            },
+            {
+              "uuid": "4ebeb5c2-ef17-47f5-9009-d482892bf686",
+              "title": "Assess cm-6",
+              "description": "Assess cm-6 using test method."
+            },
+            {
+              "uuid": "055e7339-11de-4f8a-8ccc-ebbe7c0079a5",
+              "title": "Assess ia-2",
+              "description": "IA-02[01]: organizational users are uniquely identified and authenticated;\nIA-02[02]: the unique identification of authenticated organizational users is associated with processes acting on behalf of those users."
+            },
+            {
+              "uuid": "790e8e45-e626-45a2-941e-a1cc6bbaffa2",
+              "title": "Assess ia-5",
+              "description": "IA-05a.: system authenticators are managed through the verification of the identity of the individual, group, role, service, or device receiving the authenticator as part of the initial authenticator distribution;\nIA-05b.: system authenticators are managed through the establishment of initial authenticator content for any authenticators issued by the organization;\nIA-05c.: system authenticators are managed to ensure that authenticators have sufficient strength of mechanism for their intended use;\nIA-05d.: system authenticators are managed through the establishment and implementation of administrative procedures for initial authenticator distribution; lost, compromised, or damaged authenticators; and the revocation of authenticators;\nIA-05e.: system authenticators are managed through the change of default authenticators prior to first use;\nIA-05f.: system authenticators are managed through the change or refreshment of authenticators {{ insert: param, ia-05_odp.01 }} or when {{ insert: param, ia-05_odp.02 }} occur;\nIA-05g.: system authenticators are managed through the protection of authenticator content from unauthorized disclosure and modification;\nIA-05h.[01]: system authenticators are managed through the requirement for individuals to take specific controls to protect authenticators;\nIA-05h.[02]: system authenticators are managed through the requirement for devices to implement specific controls to protect authenticators;\nIA-05i.: system authenticators are managed through the change of authenticators for group or role accounts when membership to those accounts changes."
+            },
+            {
+              "uuid": "69da6dae-247e-4e8e-a1e1-33b8424955be",
+              "title": "Assess sc-13",
+              "description": "Assess sc-13 using test method."
+            },
+            {
+              "uuid": "ece77b3f-8ede-465d-8c76-14870c048728",
+              "title": "Assess sc-7",
+              "description": "SC-07a.[01]: communications at external managed interfaces to the system are monitored;\nSC-07a.[02]: communications at external managed interfaces to the system are controlled;\nSC-07a.[03]: communications at key internal managed interfaces within the system are monitored;\nSC-07a.[04]: communications at key internal managed interfaces within the system are controlled;\nSC-07b.: subnetworks for publicly accessible system components are {{ insert: param, sc-07_odp }} separated from internal organizational networks;\nSC-07c.: external networks or systems are only connected to through managed interfaces consisting of boundary protection devices arranged in accordance with an organizational security and privacy architecture."
+            },
+            {
+              "uuid": "44812459-ddc6-45f5-a6d0-f2ff907eb88c",
+              "title": "Assess si-1",
+              "description": "Assess si-1 using test method."
+            },
+            {
+              "uuid": "29cb624e-c396-41e4-9725-af394ba8835c",
+              "title": "Assess si-2",
+              "description": "Assess si-2 using test method."
+            },
+            {
+              "uuid": "ea047aac-cf90-473d-90cb-4887ab5278e8",
+              "title": "Assess si-4",
+              "description": "Assess si-4 using test method."
+            }
+          ],
+          "related-controls": {
+            "control-selections": [
+              {
+                "include-controls": [
+                  {
+                    "control-id": "ac-1"
+                  },
+                  {
+                    "control-id": "ac-17"
+                  },
+                  {
+                    "control-id": "ac-2"
+                  },
+                  {
+                    "control-id": "ac-20"
+                  },
+                  {
+                    "control-id": "ac-3"
+                  },
+                  {
+                    "control-id": "ac-6"
+                  },
+                  {
+                    "control-id": "au-1"
+                  },
+                  {
+                    "control-id": "au-2"
+                  },
+                  {
+                    "control-id": "au-6"
+                  },
+                  {
+                    "control-id": "au-9"
+                  },
+                  {
+                    "control-id": "cm-1"
+                  },
+                  {
+                    "control-id": "cm-2"
+                  },
+                  {
+                    "control-id": "cm-6"
+                  },
+                  {
+                    "control-id": "ia-2"
+                  },
+                  {
+                    "control-id": "ia-5"
+                  },
+                  {
+                    "control-id": "sc-13"
+                  },
+                  {
+                    "control-id": "sc-7"
+                  },
+                  {
+                    "control-id": "si-1"
+                  },
+                  {
+                    "control-id": "si-2"
+                  },
+                  {
+                    "control-id": "si-4"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "uuid": "76abb1b9-7506-47e0-a8d3-a7dfca9fb9f2",
+          "title": "Interview Assessment Activities",
+          "description": "Assessment activities using the interview method.",
+          "props": [
+            {
+              "name": "method",
+              "value": "INTERVIEW"
+            }
+          ],
+          "steps": [
+            {
+              "uuid": "e81e96ab-e0cf-473d-bd4c-42a91fb41400",
+              "title": "Assess at-2",
+              "description": "AT-02a.01[01]: security literacy training is provided to system users (including managers, senior executives, and contractors) as part of initial training for new users;\nAT-02a.01[02]: privacy literacy training is provided to system users (including managers, senior executives, and contractors) as part of initial training for new users;\nAT-02a.01[03]: security literacy training is provided to system users (including managers, senior executives, and contractors) {{ insert: param, at-02_odp.01 }} thereafter;\nAT-02a.01[04]: privacy literacy training is provided to system users (including managers, senior executives, and contractors) {{ insert: param, at-02_odp.02 }} thereafter;\nAT-02a.02[01]: security literacy training is provided to system users (including managers, senior executives, and contractors) when required by system changes or following {{ insert: param, at-02_odp.03 }};\nAT-02a.02[02]: privacy literacy training is provided to system users (including managers, senior executives, and contractors) when required by system changes or following {{ insert: param, at-02_odp.04 }};\nAT-02b.: {{ insert: param, at-02_odp.05 }} are employed to increase the security and privacy awareness of system users;\nAT-02c.[01]: literacy training and awareness content is updated {{ insert: param, at-02_odp.06 }};\nAT-02c.[02]: literacy training and awareness content is updated following {{ insert: param, at-02_odp.07 }};\nAT-02d.: lessons learned from internal or external security incidents or breaches are incorporated into literacy training and awareness techniques."
+            },
+            {
+              "uuid": "e282d5c1-7d27-4fbd-99e1-8d4052b565be",
+              "title": "Assess pe-3",
+              "description": "PE-03a.01: physical access authorizations are enforced at {{ insert: param, pe-03_odp.01 }} by verifying individual access authorizations before granting access to the facility;\nPE-03a.02: physical access authorizations are enforced at {{ insert: param, pe-03_odp.01 }} by controlling ingress and egress to the facility using {{ insert: param, pe-03_odp.02 }};\nPE-03b.: physical access audit logs are maintained for {{ insert: param, pe-03_odp.04 }};\nPE-03c.: access to areas within the facility designated as publicly accessible are maintained by implementing {{ insert: param, pe-03_odp.05 }};\nPE-03d.[01]: visitors are escorted;\nPE-03d.[02]: visitor activity is controlled {{ insert: param, pe-03_odp.06 }};\nPE-03e.[01]: keys are secured;\nPE-03e.[02]: combinations are secured;\nPE-03e.[03]: other physical access devices are secured;\nPE-03f.: {{ insert: param, pe-03_odp.07 }} are inventoried {{ insert: param, pe-03_odp.08 }};\nPE-03g.[01]: combinations are changed {{ insert: param, pe-03_odp.09 }} , when combinations are compromised, or when individuals possessing the combinations are transferred or terminated;\nPE-03g.[02]: keys are changed {{ insert: param, pe-03_odp.10 }} , when keys are lost, or when individuals possessing the keys are transferred or terminated."
+            },
+            {
+              "uuid": "06de4348-b86d-4966-a76b-682ab5190768",
+              "title": "Assess ps-3",
+              "description": "PS-03a.: individuals are screened prior to authorizing access to the system;\nPS-03b.[01]: individuals are rescreened in accordance with {{ insert: param, ps-03_odp.01 }};\nPS-03b.[02]: where rescreening is so indicated, individuals are rescreened {{ insert: param, ps-03_odp.02 }}."
+            }
+          ],
+          "related-controls": {
+            "control-selections": [
+              {
+                "include-controls": [
+                  {
+                    "control-id": "at-2"
+                  },
+                  {
+                    "control-id": "pe-3"
+                  },
+                  {
+                    "control-id": "ps-3"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "uuid": "096f44ab-a3ce-4839-a5e3-6ff2d0d439cc",
+          "title": "Examine Assessment Activities",
+          "description": "Assessment activities using the examine method.",
+          "props": [
+            {
+              "name": "method",
+              "value": "EXAMINE"
+            }
+          ],
+          "steps": [
+            {
+              "uuid": "284f263a-c360-450b-a092-4a1bb8193df6",
+              "title": "Assess ca-1",
+              "description": "Assess ca-1 using examine method."
+            },
+            {
+              "uuid": "07e1bba5-0929-4271-a8a6-9512ce1067af",
+              "title": "Assess ca-2",
+              "description": "Assess ca-2 using examine method."
+            },
+            {
+              "uuid": "83f72fef-f8b3-4954-bf19-941ec76cd821",
+              "title": "Assess ca-5",
+              "description": "CA-05a.: a plan of action and milestones for the system is developed to document the planned remediation actions of the organization to correct weaknesses or deficiencies noted during the assessment of the controls and to reduce or eliminate known vulnerabilities in the system;\nCA-05b.: existing plan of action and milestones are updated {{ insert: param, ca-05_odp }} based on the findings from control assessments, independent audits or reviews, and continuous monitoring activities."
+            },
+            {
+              "uuid": "2ad500cc-5393-45b9-87e4-6867eefe637d",
+              "title": "Assess ca-7",
+              "description": "CA-07[01]: a system-level continuous monitoring strategy is developed;\nCA-07[02]: system-level continuous monitoring is implemented in accordance with the organization-level continuous monitoring strategy;\nCA-07a.: system-level continuous monitoring includes establishment of the following system-level metrics to be monitored: {{ insert: param, ca-07_odp.01 }};\nCA-07b.[01]: system-level continuous monitoring includes established {{ insert: param, ca-07_odp.02 }} for monitoring;\nCA-07b.[02]: system-level continuous monitoring includes established {{ insert: param, ca-07_odp.03 }} for assessment of control effectiveness;\nCA-07c.: system-level continuous monitoring includes ongoing control assessments in accordance with the continuous monitoring strategy;\nCA-07d.: system-level continuous monitoring includes ongoing monitoring of system and organization-defined metrics in accordance with the continuous monitoring strategy;\nCA-07e.: system-level continuous monitoring includes correlation and analysis of information generated by control assessments and monitoring;\nCA-07f.: system-level continuous monitoring includes response actions to address the results of the analysis of control assessment and monitoring information;\nCA-07g.[01]: system-level continuous monitoring includes reporting the security status of the system to {{ insert: param, ca-07_odp.04 }} {{ insert: param, ca-07_odp.05 }};\nCA-07g.[02]: system-level continuous monitoring includes reporting the privacy status of the system to {{ insert: param, ca-07_odp.06 }} {{ insert: param, ca-07_odp.07 }}."
+            },
+            {
+              "uuid": "42da35ec-a17f-463f-9e5d-ca1389354a6f",
+              "title": "Assess cp-9",
+              "description": "Assess cp-9 using examine method."
+            },
+            {
+              "uuid": "8cc45bc7-5ed3-4c40-b66f-0c7559ec8fb6",
+              "title": "Assess ir-1",
+              "description": "IR-01a.[01]: an incident response policy is developed and documented;\nIR-01a.[02]: the incident response policy is disseminated to {{ insert: param, ir-01_odp.01 }};\nIR-01a.[03]: incident response procedures to facilitate the implementation of the incident response policy and associated incident response controls are developed and documented;\nIR-01a.[04]: the incident response procedures are disseminated to {{ insert: param, ir-01_odp.02 }};\nIR-01a.01(a)[01]: the {{ insert: param, ir-01_odp.03 }} incident response policy addresses purpose;\nIR-01a.01(a)[02]: the {{ insert: param, ir-01_odp.03 }} incident response policy addresses scope;\nIR-01a.01(a)[03]: the {{ insert: param, ir-01_odp.03 }} incident response policy addresses roles;\nIR-01a.01(a)[04]: the {{ insert: param, ir-01_odp.03 }} incident response policy addresses responsibilities;\nIR-01a.01(a)[05]: the {{ insert: param, ir-01_odp.03 }} incident response policy addresses management commitment;\nIR-01a.01(a)[06]: the {{ insert: param, ir-01_odp.03 }} incident response policy addresses coordination among organizational entities;\nIR-01a.01(a)[07]: the {{ insert: param, ir-01_odp.03 }} incident response policy addresses compliance;\nIR-01a.01(b): the {{ insert: param, ir-01_odp.03 }} incident response policy is consistent with applicable laws, Executive Orders, directives, regulations, policies, standards, and guidelines;\nIR-01b.: the {{ insert: param, ir-01_odp.04 }} is designated to manage the development, documentation, and dissemination of the incident response policy and procedures;\nIR-01c.01[01]: the current incident response policy is reviewed and updated {{ insert: param, ir-01_odp.05 }};\nIR-01c.01[02]: the current incident response policy is reviewed and updated following {{ insert: param, ir-01_odp.06 }};\nIR-01c.02[01]: the current incident response procedures are reviewed and updated {{ insert: param, ir-01_odp.07 }};\nIR-01c.02[02]: the current incident response procedures are reviewed and updated following {{ insert: param, ir-01_odp.08 }}."
+            },
+            {
+              "uuid": "128e47c6-65e2-445a-82f1-5a50f0a7062b",
+              "title": "Assess ir-4",
+              "description": "Assess ir-4 using examine method."
+            },
+            {
+              "uuid": "c7740ebb-222f-4a8f-90b9-18ed29fa88c1",
+              "title": "Assess ma-2",
+              "description": "MA-02a.[01]: maintenance, repair, and replacement of system components are scheduled in accordance with manufacturer or vendor specifications and/or organizational requirements;\nMA-02a.[02]: maintenance, repair, and replacement of system components are documented in accordance with manufacturer or vendor specifications and/or organizational requirements;\nMA-02a.[03]: records of maintenance, repair, and replacement of system components are reviewed in accordance with manufacturer or vendor specifications and/or organizational requirements;\nMA-02b.[01]: all maintenance activities, whether performed on site or remotely and whether the system or system components are serviced on site or removed to another location, are approved;\nMA-02b.[02]: all maintenance activities, whether performed on site or remotely and whether the system or system components are serviced on site or removed to another location, are monitored;\nMA-02c.: {{ insert: param, ma-02_odp.01 }} is/are required to explicitly approve the removal of the system or system components from organizational facilities for off-site maintenance, repair, or replacement;\nMA-02d.: equipment is sanitized to remove {{ insert: param, ma-02_odp.02 }} from associated media prior to removal from organizational facilities for off-site maintenance, repair, or replacement;\nMA-02e.: all potentially impacted controls are checked to verify that the controls are still functioning properly following maintenance, repair, or replacement actions;\nMA-02f.: {{ insert: param, ma-02_odp.03 }} is included in organizational maintenance records."
+            },
+            {
+              "uuid": "5c341a2e-3653-4b7c-b088-c0f652013a1f",
+              "title": "Assess mp-2",
+              "description": "Assess mp-2 using examine method."
+            },
+            {
+              "uuid": "16dfe9c3-46de-4495-a38a-90d22aed9586",
+              "title": "Assess pl-2",
+              "description": "PL-02a.01[01]: a security plan for the system is developed that is consistent with the organization’s enterprise architecture;\nPL-02a.01[02]: a privacy plan for the system is developed that is consistent with the organization’s enterprise architecture;\nPL-02a.02[01]: a security plan for the system is developed that explicitly defines the constituent system components;\nPL-02a.02[02]: a privacy plan for the system is developed that explicitly defines the constituent system components;\nPL-02a.03[01]: a security plan for the system is developed that describes the operational context of the system in terms of mission and business processes;\nPL-02a.03[02]: a privacy plan for the system is developed that describes the operational context of the system in terms of mission and business processes;\nPL-02a.04[01]: a security plan for the system is developed that identifies the individuals that fulfill system roles and responsibilities;\nPL-02a.04[02]: a privacy plan for the system is developed that identifies the individuals that fulfill system roles and responsibilities;\nPL-02a.05[01]: a security plan for the system is developed that identifies the information types processed, stored, and transmitted by the system;\nPL-02a.05[02]: a privacy plan for the system is developed that identifies the information types processed, stored, and transmitted by the system;\nPL-02a.06[01]: a security plan for the system is developed that provides the security categorization of the system, including supporting rationale;\nPL-02a.06[02]: a privacy plan for the system is developed that provides the security categorization of the system, including supporting rationale;\nPL-02a.07[01]: a security plan for the system is developed that describes any specific threats to the system that are of concern to the organization;\nPL-02a.07[02]: a privacy plan for the system is developed that describes any specific threats to the system that are of concern to the organization;\nPL-02a.08[01]: a security plan for the system is developed that provides the results of a privacy risk assessment for systems processing personally identifiable information;\nPL-02a.08[02]: a privacy plan for the system is developed that provides the results of a privacy risk assessment for systems processing personally identifiable information;\nPL-02a.09[01]: a security plan for the system is developed that describes the operational environment for the system and any dependencies on or connections to other systems or system components;\nPL-02a.09[02]: a privacy plan for the system is developed that describes the operational environment for the system and any dependencies on or connections to other systems or system components;\nPL-02a.10[01]: a security plan for the system is developed that provides an overview of the security requirements for the system;\nPL-02a.10[02]: a privacy plan for the system is developed that provides an overview of the privacy requirements for the system;\nPL-02a.11[01]: a security plan for the system is developed that identifies any relevant control baselines or overlays, if applicable;\nPL-02a.11[02]: a privacy plan for the system is developed that identifies any relevant control baselines or overlays, if applicable;\nPL-02a.12[01]: a security plan for the system is developed that describes the controls in place or planned for meeting the security requirements, including rationale for any tailoring decisions;\nPL-02a.12[02]: a privacy plan for the system is developed that describes the controls in place or planned for meeting the privacy requirements, including rationale for any tailoring decisions;\nPL-02a.13[01]: a security plan for the system is developed that includes risk determinations for security architecture and design decisions;\nPL-02a.13[02]: a privacy plan for the system is developed that includes risk determinations for privacy architecture and design decisions;\nPL-02a.14[01]: a security plan for the system is developed that includes security-related activities affecting the system that require planning and coordination with {{ insert: param, pl-02_odp.01 }};\nPL-02a.14[02]: a privacy plan for the system is developed that includes privacy-related activities affecting the system that require planning and coordination with {{ insert: param, pl-02_odp.01 }};\nPL-02a.15[01]: a security plan for the system is developed that is reviewed and approved by the authorizing official or designated representative prior to plan implementation;\nPL-02a.15[02]: a privacy plan for the system is developed that is reviewed and approved by the authorizing official or designated representative prior to plan implementation.\nPL-02b.[01]: copies of the plans are distributed to {{ insert: param, pl-02_odp.02 }};\nPL-02b.[02]: subsequent changes to the plans are communicated to {{ insert: param, pl-02_odp.02 }};\nPL-02c.: plans are reviewed {{ insert: param, pl-02_odp.03 }};\nPL-02d.[01]: plans are updated to address changes to the system and environment of operations;\nPL-02d.[02]: plans are updated to address problems identified during the plan implementation;\nPL-02d.[03]: plans are updated to address problems identified during control assessments;\nPL-02e.[01]: plans are protected from unauthorized disclosure;\nPL-02e.[02]: plans are protected from unauthorized modification."
+            },
+            {
+              "uuid": "bced3f9f-93ee-449c-a5ef-0bfb2f63d78a",
+              "title": "Assess pm-1",
+              "description": "PM-01a.[01]: an organization-wide information security program plan is developed;\nPM-01a.[02]: the information security program plan is disseminated;\nPM-01a.01[01]: the information security program plan provides an overview of the requirements for the security program;\nPM-01a.01[02]: the information security program plan provides a description of the security program management controls in place or planned for meeting those requirements;\nPM-01a.01[03]: the information security program plan provides a description of the common controls in place or planned for meeting those requirements;\nPM-01a.02[01]: the information security program plan includes the identification and assignment of roles;\nPM-01a.02[02]: the information security program plan includes the identification and assignment of responsibilities;\nPM-01a.02[03]: the information security program plan addresses management commitment;\nPM-01a.02[04]: the information security program plan addresses coordination among organizational entities;\nPM-01a.02[05]: the information security program plan addresses compliance;\nPM-01a.03: the information security program plan reflects the coordination among the organizational entities responsible for information security;\nPM-01a.04: the information security program plan is approved by a senior official with responsibility and accountability for the risk being incurred to organizational operations (including mission, functions, image, and reputation), organizational assets, individuals, other organizations, and the Nation;\nPM-01b.[01]: the information security program plan is reviewed and updated {{ insert: param, pm-01_odp.01 }};\nPM-01b.[02]: the information security program plan is reviewed and updated following {{ insert: param, pm-01_odp.02 }};\nPM-01c.[01]: the information security program plan is protected from unauthorized disclosure;\nPM-01c.[02]: the information security program plan is protected from unauthorized modification."
+            },
+            {
+              "uuid": "4adb2c09-7469-4dd9-81dd-2427092e0010",
+              "title": "Assess pt-2",
+              "description": "PT-02a.: the {{ insert: param, pt-02_odp.01 }} that permits the {{ insert: param, pt-02_odp.02 }} of personally identifiable information is determined and documented;\nPT-02b.: the {{ insert: param, pt-02_odp.03 }} of personally identifiable information is restricted to only that which is authorized."
+            },
+            {
+              "uuid": "22121903-1da9-439f-a04d-dcb05c75e3f9",
+              "title": "Assess ra-1",
+              "description": "RA-01a.[01]: a risk assessment policy is developed and documented;\nRA-01a.[02]: the risk assessment policy is disseminated to {{ insert: param, ra-01_odp.01 }};\nRA-01a.[03]: risk assessment procedures to facilitate the implementation of the risk assessment policy and associated risk assessment controls are developed and documented;\nRA-01a.[04]: the risk assessment procedures are disseminated to {{ insert: param, ra-01_odp.02 }};\nRA-01a.01(a)[01]: the {{ insert: param, ra-01_odp.03 }} risk assessment policy addresses purpose;\nRA-01a.01(a)[02]: the {{ insert: param, ra-01_odp.03 }} risk assessment policy addresses scope;\nRA-01a.01(a)[03]: the {{ insert: param, ra-01_odp.03 }} risk assessment policy addresses roles;\nRA-01a.01(a)[04]: the {{ insert: param, ra-01_odp.03 }} risk assessment policy addresses responsibilities;\nRA-01a.01(a)[05]: the {{ insert: param, ra-01_odp.03 }} risk assessment policy addresses management commitment;\nRA-01a.01(a)[06]: the {{ insert: param, ra-01_odp.03 }} risk assessment policy addresses coordination among organizational entities;\nRA-01a.01(a)[07]: the {{ insert: param, ra-01_odp.03 }} risk assessment policy addresses compliance;\nRA-01a.01(b): the {{ insert: param, ra-01_odp.03 }} risk assessment policy is consistent with applicable laws, executive orders, directives, regulations, policies, standards, and guidelines;\nRA-01b.: the {{ insert: param, ra-01_odp.04 }} is designated to manage the development, documentation, and dissemination of the risk assessment policy and procedures;\nRA-01c.01[01]: the current risk assessment policy is reviewed and updated {{ insert: param, ra-01_odp.05 }};\nRA-01c.01[02]: the current risk assessment policy is reviewed and updated following {{ insert: param, ra-01_odp.06 }};\nRA-01c.02[01]: the current risk assessment procedures are reviewed and updated {{ insert: param, ra-01_odp.07 }};\nRA-01c.02[02]: the current risk assessment procedures are reviewed and updated following {{ insert: param, ra-01_odp.08 }}."
+            },
+            {
+              "uuid": "fdba49a8-9c69-4102-8146-aa0a5a54329f",
+              "title": "Assess ra-5",
+              "description": "Assess ra-5 using examine method."
+            },
+            {
+              "uuid": "3bdd2a65-6677-44e1-b5c6-c2c4777cff5a",
+              "title": "Assess sa-4",
+              "description": "Assess sa-4 using examine method."
+            },
+            {
+              "uuid": "b4cbb9e2-70d7-434e-8a6a-92709c99a6e3",
+              "title": "Assess sa-9",
+              "description": "Assess sa-9 using examine method."
+            },
+            {
+              "uuid": "f987d8f7-ee93-41a9-a918-4d92e0126cd5",
+              "title": "Assess sr-3",
+              "description": "SR-03a.[01]: a process or processes is/are established to identify and address weaknesses or deficiencies in the supply chain elements and processes of {{ insert: param, sr-03_odp.01 }};\nSR-03a.[02]: the process or processes to identify and address weaknesses or deficiencies in the supply chain elements and processes of {{ insert: param, sr-03_odp.01 }} is/are coordinated with {{ insert: param, sr-03_odp.02 }};\nSR-03b.: {{ insert: param, sr-03_odp.03 }} are employed to protect against supply chain risks to the system, system component, or system service and to limit the harm or consequences from supply chain-related events;\nSR-03c.: the selected and implemented supply chain processes and controls are documented in {{ insert: param, sr-03_odp.04 }}."
+            }
+          ],
+          "related-controls": {
+            "control-selections": [
+              {
+                "include-controls": [
+                  {
+                    "control-id": "ca-1"
+                  },
+                  {
+                    "control-id": "ca-2"
+                  },
+                  {
+                    "control-id": "ca-5"
+                  },
+                  {
+                    "control-id": "ca-7"
+                  },
+                  {
+                    "control-id": "cp-9"
+                  },
+                  {
+                    "control-id": "ir-1"
+                  },
+                  {
+                    "control-id": "ir-4"
+                  },
+                  {
+                    "control-id": "ma-2"
+                  },
+                  {
+                    "control-id": "mp-2"
+                  },
+                  {
+                    "control-id": "pl-2"
+                  },
+                  {
+                    "control-id": "pm-1"
+                  },
+                  {
+                    "control-id": "pt-2"
+                  },
+                  {
+                    "control-id": "ra-1"
+                  },
+                  {
+                    "control-id": "ra-5"
+                  },
+                  {
+                    "control-id": "sa-4"
+                  },
+                  {
+                    "control-id": "sa-9"
+                  },
+                  {
+                    "control-id": "sr-3"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "terms-and-conditions": {
+      "parts": [
+        {
+          "name": "assessment-schedule",
+          "title": "Assessment Schedule",
+          "prose": "Start: 2026-01-05 | End: 2026-03-27"
+        }
+      ]
+    },
+    "reviewed-controls": {
+      "control-selections": [
+        {
+          "include-controls": [
+            {
+              "control-id": "ac-1",
+              "statement-ids": [
+                "ac-1_obj"
+              ]
+            },
+            {
+              "control-id": "ac-17"
+            },
+            {
+              "control-id": "ac-2"
+            },
+            {
+              "control-id": "ac-20",
+              "statement-ids": [
+                "ac-20_obj"
+              ]
+            },
+            {
+              "control-id": "ac-3"
+            },
+            {
+              "control-id": "ac-6",
+              "statement-ids": [
+                "ac-6_obj"
+              ]
+            },
+            {
+              "control-id": "at-2",
+              "statement-ids": [
+                "at-2_obj"
+              ]
+            },
+            {
+              "control-id": "au-1"
+            },
+            {
+              "control-id": "au-2",
+              "statement-ids": [
+                "au-2_obj"
+              ]
+            },
+            {
+              "control-id": "au-6"
+            },
+            {
+              "control-id": "au-9"
+            },
+            {
+              "control-id": "ca-1"
+            },
+            {
+              "control-id": "ca-2"
+            },
+            {
+              "control-id": "ca-5",
+              "statement-ids": [
+                "ca-5_obj"
+              ]
+            },
+            {
+              "control-id": "ca-7",
+              "statement-ids": [
+                "ca-7_obj"
+              ]
+            },
+            {
+              "control-id": "cm-1"
+            },
+            {
+              "control-id": "cm-2",
+              "statement-ids": [
+                "cm-2_obj"
+              ]
+            },
+            {
+              "control-id": "cm-6"
+            },
+            {
+              "control-id": "cp-9"
+            },
+            {
+              "control-id": "ia-2",
+              "statement-ids": [
+                "ia-2_obj"
+              ]
+            },
+            {
+              "control-id": "ia-5",
+              "statement-ids": [
+                "ia-5_obj"
+              ]
+            },
+            {
+              "control-id": "ir-1",
+              "statement-ids": [
+                "ir-1_obj"
+              ]
+            },
+            {
+              "control-id": "ir-4"
+            },
+            {
+              "control-id": "ma-2",
+              "statement-ids": [
+                "ma-2_obj"
+              ]
+            },
+            {
+              "control-id": "mp-2"
+            },
+            {
+              "control-id": "pe-3",
+              "statement-ids": [
+                "pe-3_obj"
+              ]
+            },
+            {
+              "control-id": "pl-2",
+              "statement-ids": [
+                "pl-2_obj"
+              ]
+            },
+            {
+              "control-id": "pm-1",
+              "statement-ids": [
+                "pm-1_obj"
+              ]
+            },
+            {
+              "control-id": "ps-3",
+              "statement-ids": [
+                "ps-3_obj"
+              ]
+            },
+            {
+              "control-id": "pt-2",
+              "statement-ids": [
+                "pt-2_obj"
+              ]
+            },
+            {
+              "control-id": "ra-1",
+              "statement-ids": [
+                "ra-1_obj"
+              ]
+            },
+            {
+              "control-id": "ra-5"
+            },
+            {
+              "control-id": "sa-4"
+            },
+            {
+              "control-id": "sa-9"
+            },
+            {
+              "control-id": "sc-13"
+            },
+            {
+              "control-id": "sc-7",
+              "statement-ids": [
+                "sc-7_obj"
+              ]
+            },
+            {
+              "control-id": "si-1"
+            },
+            {
+              "control-id": "si-2"
+            },
+            {
+              "control-id": "si-4"
+            },
+            {
+              "control-id": "sr-3",
+              "statement-ids": [
+                "sr-3_obj"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "assessment-subjects": [
+      {
+        "type": "component",
+        "description": "System components included in this assessment.",
+        "include-all": {}
+      }
+    ],
+    "assessment-assets": {
+      "assessment-platforms": [
+        {
+          "uuid": "2c89f86f-e650-4f23-b695-4d41a36e78d6",
+          "title": "Assessment Platform",
+          "props": [
+            {
+              "name": "type",
+              "ns": "https://sparc.local/ns",
+              "value": "manual"
+            }
+          ]
+        }
+      ]
+    },
+    "back-matter": {
+      "resources": [
+        {
+          "uuid": "b31db17d-c8d0-4e8e-b2ea-271110f74d99",
+          "title": "SPARC Document Source",
+          "description": "Managed by SPARC",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000",
+              "media-type": "text/html"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

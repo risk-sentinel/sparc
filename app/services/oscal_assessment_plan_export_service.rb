@@ -141,10 +141,17 @@ class OscalAssessmentPlanExportService
     # Bucket controls by individual method. Multi-method controls
     # (assessment_method like "examine,interview") appear in each
     # method's bucket so the OSCAL output reflects all methods.
+    # ORDER BY is load-bearing, not tidiness: without it Postgres returns rows
+    # in whatever order it likes, so the bucket insertion order — and hence
+    # the order of the emitted activities — varies between exports of the same
+    # document. Two exports then differ despite being semantically identical,
+    # which breaks diffing, hashing and signing of artifacts. Line ~230
+    # already orders the same association this way.
     method_buckets = Hash.new { |h, k| h[k] = [] }
     @document.sap_controls
              .includes(:sap_control_objectives)
-             .where.not(assessment_method: [ nil, "" ]).each do |ctrl|
+             .where.not(assessment_method: [ nil, "" ])
+             .order(:row_order, :id).each do |ctrl|
       ctrl.assessment_methods.each { |m| method_buckets[m] << ctrl }
     end
 

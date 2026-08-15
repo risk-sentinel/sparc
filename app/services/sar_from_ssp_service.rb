@@ -3,17 +3,43 @@
 # (stated_requirement, description, ssp_status) and editable assessment
 # placeholder fields (result, working_status, notes_weakness, etc.).
 #
-# A default SarResult and SarFinding per control are scaffolded so the
-# SAR is enrichment-ready.
+# A default SarResult and a SarFinding per control are scaffolded so the SAR
+# is enrichment-ready. Each NOT-satisfied finding also gets a SarRisk, which
+# is what PoamGeneratorService sources from; a satisfied one does not, because
+# a control that passed is not a risk to the authorization.
 #
 # Usage:
 #   service = SarFromSspService.new(ssp_document, name: "My SAR")
 #   sar = service.create
 #
+#   # when the caller already knows an outcome — a passing scan, a published
+#   # policy — those controls are assessed satisfied and produce no risk:
+#   SarFromSspService.new(ssp, satisfied_control_ids: %w[ac-1 sc-7]).create
+#
 class SarFromSspService
-  def initialize(ssp_document, name: nil)
-    @ssp  = ssp_document
-    @name = name.presence || "SAR from #{ssp_document.name}"
+  # A control is assessed not-satisfied until something says otherwise — that
+  # is what makes it a risk to the authorization.
+  NOT_SATISFIED = "not-satisfied"
+  SATISFIED     = "satisfied"
+
+  # `deadline` is normally nil: PoamGeneratorService then resolves one from the
+  # organisation's RemediationTimeline SLA, which is a policy lookup rather
+  # than a date this service made up. A caller pins it only when the generated
+  # OSCAL must be byte-reproducible — the #845 reference estate does, because
+  # an SLA-derived deadline is Time.current-relative and would put a fresh diff
+  # in every regeneration.
+  #
+  # `satisfied_control_ids` carries an assessment outcome the caller already
+  # knows — a control covered by a passing scan, or by a policy the team has
+  # published. Those get a `satisfied` finding and NO risk, because a satisfied
+  # control is not a risk to the authorization and must never reach the POA&M.
+  # Empty by default, so a plain scaffold still means "nothing assessed yet"
+  # and every existing caller is unchanged.
+  def initialize(ssp_document, name: nil, deadline: nil, satisfied_control_ids: [])
+    @ssp       = ssp_document
+    @name      = name.presence || "SAR from #{ssp_document.name}"
+    @deadline  = deadline
+    @satisfied = Array(satisfied_control_ids).map { |id| ControlId.canonical(id) }.to_set
   end
 
   def create
@@ -112,24 +138,75 @@ class SarFromSspService
     )
   end
 
-  # ── Default findings per control ────────────────────────────────
+  # ── Default findings and risks per control ──────────────────────
 
+  # #954 — this used to write findings ONLY, and the result was an empty POA&M
+  # that reported success. PoamGeneratorService sources exclusively from
+  # SarRisk (`SarRisk.where(sar_result_id: ...)`), never from SarFinding, so a
+  # SAR generated from an SSP handed it nothing to convert: items=0 with
+  # skipped=0, because there was no input to reject. SarJsonParserService and
+  # manual authoring both create risks, which is why only this one path — the
+  # path of building an authorization inside SPARC rather than importing one —
+  # produced a hollow document.
+  #
+  # A control assessed not-satisfied IS a risk to the authorization, so the
+  # risk is created here beside its finding and linked to it. A SATISFIED
+  # control gets its finding and no risk — it is not a risk, and a POA&M
+  # carrying an item for a control that passed is not a credible artifact.
   def create_default_findings
-    @document.sar_controls.each do |sar_ctrl|
+    # order(:row_order) so findings are created in control order. Without it
+    # Postgres decides, and the SAR export emits them in a different order
+    # every rebuild despite being semantically identical.
+    @document.sar_controls.includes(:sar_control_fields).order(:row_order, :id).each do |sar_ctrl|
       next if sar_ctrl.control_id.blank?
 
       control_id = normalize_control_id(sar_ctrl.control_id)
+      state      = @satisfied.include?(control_id) ? SATISFIED : NOT_SATISFIED
 
-      @result.sar_findings.create!(
+      finding = @result.sar_findings.create!(
         uuid:        SecureRandom.uuid,
         title:       "Finding for #{sar_ctrl.control_id}",
         description: "Assessment finding for control #{sar_ctrl.control_id}",
         target_data: {
           "type"      => "objective-id",
           "target-id" => control_id,
-          "status"    => { "state" => "not-satisfied" }
+          "status"    => { "state" => state }
         }
       )
+
+      link_risk_to(finding, sar_ctrl) if state == NOT_SATISFIED
+    end
+  end
+
+  # PoamRisk::OSCAL_REQUIRED_FIELDS is title/description/statement/status, and
+  # the generator SKIPS a source risk missing any of them rather than filling
+  # it in. So all four are set — but `statement`, the one an assessor and an AO
+  # actually read, is the control's own requirement carried over from the SSP,
+  # not prose composed here. Where the SSP records no requirement, the
+  # statement says exactly that instead of implying an assessment nobody made.
+  def link_risk_to(finding, sar_ctrl)
+    risk = @result.sar_risks.create!(
+      uuid:        SecureRandom.uuid,
+      title:       "Risk for #{sar_ctrl.control_id}",
+      description: "Control #{sar_ctrl.control_id} was assessed #{NOT_SATISFIED}.",
+      statement:   risk_statement_for(sar_ctrl),
+      status:      "open",
+      deadline:    @deadline
+    )
+
+    SarFindingRisk.create!(sar_finding: finding, sar_risk: risk)
+  end
+
+  def risk_statement_for(sar_ctrl)
+    requirement = sar_ctrl.sar_control_fields
+                          .find { |field| field.field_name == "stated_requirement" }
+                          &.field_value
+
+    if requirement.present?
+      "#{sar_ctrl.control_id} is assessed #{NOT_SATISFIED}. The control requires: #{requirement}"
+    else
+      "#{sar_ctrl.control_id} is assessed #{NOT_SATISFIED}. " \
+        "The SSP records no stated requirement for this control."
     end
   end
 

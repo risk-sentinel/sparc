@@ -360,13 +360,31 @@ class SspJsonParserService
   # #396: tag set-parameters with provided/responsibility markers when the
   # statement's by-components carry satisfied[]/responsibilities[]. Extracted
   # from #parse_statements_as_fields to bound its cognitive complexity.
+  # #958 — OSCAL models both `provided` and `responsibilities` under
+  # `by-component.export`, which is where SPARC's own exporter now writes
+  # them. The older shapes (`satisfied` / `responsibilities` directly on the
+  # by-component) are still read so documents imported before that fix, and
+  # any producer using them, keep working — but `export` is the conformant
+  # one, and without it a SPARC export could not be re-imported as what it
+  # was.
   def statement_set_parameters(stmt)
     set_params = Array(stmt["set-parameters"]).dup
+
     (stmt[BY_COMPONENTS] || []).each do |bc|
-      set_params << { "tag" => "provided" } if Array(bc["satisfied"]).any? && set_params.none? { |p| p.is_a?(Hash) && p["tag"] == "provided" }
-      set_params << { "tag" => "responsibility" } if Array(bc["responsibilities"]).any? && set_params.none? { |p| p.is_a?(Hash) && p["tag"] == "responsibility" }
+      exported = bc["export"].is_a?(Hash) ? bc["export"] : {}
+
+      provided = Array(exported["provided"]).any? || Array(bc["satisfied"]).any?
+      responsibility = Array(exported["responsibilities"]).any? || Array(bc["responsibilities"]).any?
+
+      set_params << { "tag" => "provided" } if provided && no_marker?(set_params, "provided")
+      set_params << { "tag" => "responsibility" } if responsibility && no_marker?(set_params, "responsibility")
     end
+
     set_params
+  end
+
+  def no_marker?(set_params, tag)
+    set_params.none? { |p| p.is_a?(Hash) && p["tag"] == tag }
   end
 
   # #396 + #398: queue inheritance links from statements[].links[] for the

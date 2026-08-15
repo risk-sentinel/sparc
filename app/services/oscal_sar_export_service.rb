@@ -166,9 +166,12 @@ class OscalSarExportService
       REVIEWED_CONTROLS => result.reviewed_controls_data.presence,
       "assessment-log"    => build_assessment_log(result.assessment_log_data),
       "attestations"      => result.attestations_data.presence,
-      "observations"      => build_observations(result.sar_observations),
-      "risks"             => build_risks(result.sar_risks),
-      "findings"          => build_findings(result.sar_findings),
+      # Explicit order: an unordered association is emitted in whatever
+      # order Postgres returns, so two exports of one unchanged document
+      # differ. That breaks diffing, hashing and signing of artifacts.
+      "observations"      => build_observations(result.sar_observations.order(:id)),
+      "risks"             => build_risks(result.sar_risks.order(:id)),
+      "findings"          => build_findings(result.sar_findings.order(:id)),
       "props"             => result.props_data.presence,
       "links"             => result.links_data.presence,
       "remarks"           => result.remarks

@@ -36,6 +36,22 @@ class SspControlStatement < ApplicationRecord
   EDITABLE_ATTRIBUTES = %i[implementation_prose remarks
                            responsible_roles_data set_parameters_data].freeze
 
+  # #396 leveraging markers, parked in set_parameters_data by the OSCAL
+  # importer and by an author declaring a customer responsibility matrix.
+  # `provided` = this system implements it for its customers. `responsibility`
+  # = the customer must implement it themselves. They are opposites, and
+  # #956 came from treating them alike.
+  PROVIDED_TAG       = "provided"
+  RESPONSIBILITY_TAG = "responsibility"
+
+  def tagged?(tag)
+    Array(set_parameters_data).any? { |param| param.is_a?(Hash) && param["tag"] == tag }
+  end
+
+  def provided? = tagged?(PROVIDED_TAG)
+
+  def customer_responsibility? = tagged?(RESPONSIBILITY_TAG)
+
   # Classify where this statement's prose came from. Drives the UI badges
   # on `_statements_table.html.erb` and determines whether the "Reset to
   # source" action is available.
@@ -43,12 +59,27 @@ class SspControlStatement < ApplicationRecord
   # :authored           — no inheritance link; user wrote this themselves
   # :cdef               — populated from a CDEF component
   # :leveraged          — inherited via a leveraged authorization
+  # :responsibility     — a leveraged system has handed this BACK to us and we
+  #                       have not implemented it yet (#956)
   # :overridden_cdef    — started as CDEF but the user has edited
   # :overridden_leveraged — started as leveraged but the user has edited
+  # :overridden_responsibility — a responsibility we have now implemented
   def source_kind
     link = inheritance_links.first
     return :authored unless link
-    base = link.source_type == "CdefControlStatement" ? :cdef : :leveraged
+
+    base =
+      if link.source_type == "CdefControlStatement"
+        :cdef
+      elsif link.source.respond_to?(:customer_responsibility?) && link.source&.customer_responsibility?
+        # An inherited implementation and an outstanding customer
+        # responsibility are opposites; showing both as "Leveraged" hid the
+        # one the reader has to act on.
+        :responsibility
+      else
+        :leveraged
+      end
+
     link.overridden? ? :"overridden_#{base}" : base
   end
 

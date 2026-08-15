@@ -31,7 +31,10 @@ class BackMatterBuilder
   # Instance-level authoritative resources (provider-published, highest priority).
   # Included in all document exports. Cannot be overridden by managed resources.
   def authoritative_resources
+    # order(:id) so repeated exports of an unchanged document are identical;
+    # an unordered relation is returned in whatever order Postgres chooses.
     @authoritative_resources ||= BackMatterResource.active.where(source: "authoritative")
+                                                    .order(:id)
                                                     .map(&:to_oscal_resource)
   end
 
@@ -43,6 +46,7 @@ class BackMatterBuilder
   def managed_resources
     doc_resources = @document.back_matter_resources.active
                              .where.not(source: "authoritative")
+                             .order(:id)
                              .map(&:to_oscal_resource)
     ctrl_resources = control_linked_resources.map(&:to_oscal_resource)
     # Exclude UUIDs already claimed by authoritative resources

@@ -81,6 +81,65 @@ not a failure:
 - `non-draft / read-only — expand-only check` — intentional; a read-only doc
   has no editable control to exercise. These stay skipped by design.
 
+### Converting the data-thinness skips: load the reference estate (#845)
+
+Most of the skips above are the same complaint — the instance has no document of
+that type to open. The reference estate exists partly to answer that. It seeds
+two organizations in a real leveraged authorization, each with a profile, SSP,
+SAP, SAR, three POA&Ms and evidence, so the show-page, a11y, inline-handler and
+Turbo-navigation sweeps have something to sweep:
+
+```bash
+docker compose exec -e SPARC_SEED_REFERENCE=lean web bin/rails db:seed
+```
+
+`lean` is the tier to use here — 40 controls spanning all 20 families, which is
+enough breadth for the sweeps without the build cost of the real baselines. It
+also seeds documents in **different lifecycle states** (a published POA&M, one
+in progress, one overdue) plus one profile awaiting review and one back-matter
+resource awaiting promotion, so the read-only-vs-editable and empty-queue
+branches are exercised rather than skipped.
+
+Measured A/B on the same instance (the 13 data-thinness files, chromium):
+
+| | Passed | Skipped |
+|---|---|---|
+| Without the estate | 186 | 19 |
+| With the estate | 189 | 15 |
+
+Closed: `leveraged_poams` ×3 and the `poam`/`profile` index-filter corpora ×4.
+
+Measured again on the **UBI9 production image** over TLS, across the two files
+that carry the collection-view and index-filter skips:
+
+| `test_collection_views.py` + `test_index_filters_908.py` | Passed | Skipped |
+|---|---|---|
+| Demo seed only | 45 | 16 |
+| Reference estate loaded | 58 | **3** |
+
+The 3 remaining are all `federation_peers` — a different subsystem (#372), and
+deliberately not covered. `review_queue`, `promotion_queue`, `leveraged_poams`
+and both index-filter corpora all close.
+
+**This is the target that matters.** `ui-smoke.yml` is `workflow_dispatch` only
+and defaults to a deployed instance, which runs in production mode — so these
+skips only close there if the estate is allowed to load:
+
+```bash
+SPARC_ALLOW_REFERENCE_ESTATE=true SPARC_SEED_REFERENCE=lean bin/rails db:seed
+```
+
+It still refuses if the instance holds authorization data that is not its own,
+so this works on a disposable scan target and not on a live deployment.
+
+What it will *not* convert: the skips that are about **configuration** rather
+than data — OIDC not configured, no consent banner, `SPARC_REQUIRE_DOCUMENT_APPROVAL`
+off, PIV mTLS proxy absent, FIDO2 off, missing tokens. Those need the instance
+configured, not seeded, and no amount of fixture data will close them.
+
+See `docs/dev/reference_estate.md` for tiers, purge, the production posture and
+the committed OSCAL.
+
 A wall of `502/503/504` **failures** across every route is not a code problem —
 it means the deployed instance is unhealthy (e.g. an ECS task recycle). The
 suite is correctly reporting an outage; check the deployment, not the tests.

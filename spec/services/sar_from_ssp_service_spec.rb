@@ -167,6 +167,140 @@ RSpec.describe SarFromSspService do
       expect(finding.target_data["status"]["state"]).to eq("not-satisfied")
     end
 
+    # #954 — findings alone left PoamGeneratorService with nothing to source,
+    # so a SAR built from an SSP generated an EMPTY POA&M and reported success.
+    describe "risks (#954)" do
+      it "creates a SarRisk for each control" do
+        sar = described_class.new(ssp).create
+
+        expect(sar.sar_results.first.sar_risks.count).to eq(2)
+      end
+
+      it "links every risk to the finding it came from" do
+        sar    = described_class.new(ssp).create
+        result = sar.sar_results.first
+
+        finding = result.sar_findings.find_by(title: "Finding for ac-1")
+        risk    = result.sar_risks.find_by(title: "Risk for ac-1")
+
+        expect(SarFindingRisk.where(sar_finding: finding, sar_risk: risk)).to exist
+        expect(finding.sar_risks).to contain_exactly(risk)
+      end
+
+      # Asserted against the generator's own constant rather than a copied
+      # list, so a new required field fails here instead of silently making
+      # every generated risk skippable again.
+      it "sets every field PoamGeneratorService requires to convert a risk" do
+        sar = described_class.new(ssp).create
+
+        sar.sar_results.first.sar_risks.each do |risk|
+          PoamRisk::OSCAL_REQUIRED_FIELDS.each do |field|
+            expect(risk.public_send(field)).to be_present,
+              "expected risk #{risk.title.inspect} to set #{field}, which the POA&M generator requires"
+          end
+        end
+      end
+
+      it "carries the control's stated requirement into the risk statement" do
+        sar  = described_class.new(ssp).create
+        risk = sar.sar_results.first.sar_risks.find_by(title: "Risk for ac-1")
+
+        expect(risk.statement).to include("Develop access control policy.")
+        expect(risk.status).to eq("open")
+      end
+
+      it "says so when the SSP records no stated requirement" do
+        ssp.ssp_controls.create!(control_id: "au-2", title: "Event Logging", row_order: 2)
+
+        sar  = described_class.new(ssp).create
+        risk = sar.sar_results.first.sar_risks.find_by(title: "Risk for au-2")
+
+        expect(risk.statement).to include("no stated requirement")
+        expect(risk.statement).to include("au-2")
+      end
+
+      # Left nil so the organisation's RemediationTimeline SLA resolves it —
+      # a pinned date here would override configured policy for every user.
+      it "leaves the deadline unset so the SLA decides" do
+        sar = described_class.new(ssp).create
+
+        expect(sar.sar_results.first.sar_risks.pluck(:deadline)).to all(be_nil)
+      end
+
+      # #845 needs this: an SLA-derived deadline is Time.current-relative, so
+      # committed reference OSCAL would carry a fresh diff on every regen.
+      it "pins the deadline when a caller supplies one" do
+        pinned = Time.utc(2030, 1, 1)
+
+        sar = described_class.new(ssp, deadline: pinned).create
+
+        expect(sar.sar_results.first.sar_risks.pluck(:deadline)).to all(eq(pinned))
+      end
+
+      # #954's acceptance criteria required this outright: "a satisfied finding
+      # does not produce a risk". Without it every control reaches the POA&M,
+      # which is why the full reference estate produced 287 items per POA&M —
+      # an entry for literally every control, which no real assessment yields.
+      context "when the caller already knows some controls are satisfied" do
+        it "assesses those controls satisfied" do
+          sar = described_class.new(ssp, satisfied_control_ids: %w[ac-1]).create
+
+          states = sar.sar_results.first.sar_findings.to_h do |f|
+            [ f.target_data["target-id"], f.target_data["status"]["state"] ]
+          end
+
+          expect(states["ac-1"]).to eq("satisfied")
+          expect(states["sc-7"]).to eq("not-satisfied")
+        end
+
+        it "creates no risk for a satisfied control" do
+          sar = described_class.new(ssp, satisfied_control_ids: %w[ac-1]).create
+
+          expect(sar.sar_results.first.sar_risks.pluck(:title)).to contain_exactly("Risk for sc-7")
+        end
+
+        it "keeps a satisfied control out of the POA&M entirely" do
+          sar      = described_class.new(ssp, satisfied_control_ids: %w[ac-1]).create
+          boundary = create(:authorization_boundary)
+
+          generated = PoamGeneratorService.new(name: "POA&M", sar_document: sar,
+                                               authorization_boundary: boundary).generate
+
+          expect(generated.poam_document.poam_items.count).to eq(1)
+          expect(generated.skipped).to be_empty
+        end
+
+        # The caller passes what a human writes; controls are stored
+        # canonically. A literal match would silently satisfy nothing.
+        it "matches control ids canonically, not literally" do
+          sar = described_class.new(ssp, satisfied_control_ids: %w[AC-01]).create
+
+          satisfied = sar.sar_results.first.sar_findings.select do |f|
+            f.target_data["status"]["state"] == "satisfied"
+          end
+
+          expect(satisfied.map { |f| f.target_data["target-id"] }).to contain_exactly("ac-1")
+        end
+
+        it "still assesses everything not-satisfied when given none" do
+          sar = described_class.new(ssp).create
+
+          expect(sar.sar_results.first.sar_risks.count).to eq(2)
+        end
+      end
+
+      it "produces a POA&M with real items instead of an empty one" do
+        sar      = described_class.new(ssp).create
+        boundary = create(:authorization_boundary)
+
+        generated = PoamGeneratorService.new(name: "POA&M", sar_document: sar,
+                                             authorization_boundary: boundary).generate
+
+        expect(generated.poam_document.poam_items.count).to eq(2)
+        expect(generated.skipped).to be_empty
+      end
+    end
+
     it "stores import_metadata with SSP source info" do
       sar = described_class.new(ssp).create
 

@@ -1,0 +1,156 @@
+{
+  "plan-of-action-and-milestones": {
+    "uuid": "fb4b445f-65b1-472f-96bc-64299b162748",
+    "metadata": {
+      "title": "Reference Mission System (Boundary 2) — POA&M (Initial)",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-03-27T12:00:00Z",
+      "roles": [
+        {
+          "id": "prepared-by",
+          "title": "Prepared By"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "08ee4106-1594-40dd-ba1e-9f62a4ad6bc5",
+          "type": "organization",
+          "name": "SPARC Export"
+        }
+      ]
+    },
+    "import-ssp": {
+      "href": "uuid:d06d11fb-9524-4d96-b77c-efa879d4e1e8"
+    },
+    "risks": [
+      {
+        "uuid": "04005ea1-cab9-4371-928c-135318c8de68",
+        "title": "Risk for ac-17",
+        "description": "Control ac-17 was assessed not-satisfied.",
+        "statement": "ac-17 is assessed not-satisfied. The control requires:   a. Establish and document usage restrictions, configuration/connection requirements, and implementation guidance for each type of remote access allowed; and\n  b. Authorize each type of remote access to the system prior to allowing such connections.",
+        "status": "open",
+        "deadline": "2026-06-30T00:00:00Z"
+      },
+      {
+        "uuid": "6795f5b9-262a-4300-bafc-7b94f2e60b3d",
+        "title": "Risk for ia-2",
+        "description": "Control ia-2 was assessed not-satisfied.",
+        "statement": "ia-2 is assessed not-satisfied. The control requires: Uniquely identify and authenticate organizational users and associate that unique identification with processes acting on behalf of those users.",
+        "status": "open",
+        "deadline": "2026-06-30T00:00:00Z"
+      }
+    ],
+    "findings": [
+      {
+        "uuid": "b09ef0e3-cbad-4633-bf7c-80e6d7fd0154",
+        "title": "Finding for ac-17",
+        "description": "Assessment finding for control ac-17",
+        "target": {
+          "type": "objective-id",
+          "status": {
+            "state": "not-satisfied"
+          },
+          "target-id": "ac-17"
+        },
+        "related-risks": [
+          {
+            "risk-uuid": "04005ea1-cab9-4371-928c-135318c8de68"
+          }
+        ]
+      },
+      {
+        "uuid": "ad6bbbbe-8970-4f9a-a7fb-184186c6db34",
+        "title": "Finding for ia-2",
+        "description": "Assessment finding for control ia-2",
+        "target": {
+          "type": "objective-id",
+          "status": {
+            "state": "not-satisfied"
+          },
+          "target-id": "ia-2"
+        },
+        "related-risks": [
+          {
+            "risk-uuid": "6795f5b9-262a-4300-bafc-7b94f2e60b3d"
+          }
+        ]
+      },
+      {
+        "uuid": "72b52d2e-c534-4d08-b619-dc123f1e4f52",
+        "title": "HDF: ac-17",
+        "description": "aws-config failed; severity=MEDIUM; lifecycle=new",
+        "target": {
+          "type": "statement-id",
+          "title": "Assessment objective for AC-17",
+          "status": {
+            "state": "not-satisfied"
+          },
+          "target-id": "ac-17_smt",
+          "description": "aws-config failed; severity=MEDIUM; lifecycle=new"
+        }
+      },
+      {
+        "uuid": "0c94cf45-d3f8-4dc7-b52a-d0e0c8be8cc3",
+        "title": "HDF: ia-2",
+        "description": "inspec failed; severity=MEDIUM; lifecycle=new",
+        "target": {
+          "type": "statement-id",
+          "title": "Assessment objective for IA-2",
+          "status": {
+            "state": "not-satisfied"
+          },
+          "target-id": "ia-2_smt",
+          "description": "inspec failed; severity=MEDIUM; lifecycle=new"
+        }
+      }
+    ],
+    "poam-items": [
+      {
+        "uuid": "e60f810a-3e6e-432e-baf5-27e00e7cfa24",
+        "title": "Risk for ac-17",
+        "description": "Control ac-17 was assessed not-satisfied.",
+        "related-risks": [
+          {
+            "risk-uuid": "04005ea1-cab9-4371-928c-135318c8de68"
+          }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "b09ef0e3-cbad-4633-bf7c-80e6d7fd0154"
+          }
+        ]
+      },
+      {
+        "uuid": "162a1380-89f0-4a6a-997f-239fafbda360",
+        "title": "Risk for ia-2",
+        "description": "Control ia-2 was assessed not-satisfied.",
+        "related-risks": [
+          {
+            "risk-uuid": "6795f5b9-262a-4300-bafc-7b94f2e60b3d"
+          }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "ad6bbbbe-8970-4f9a-a7fb-184186c6db34"
+          }
+        ]
+      }
+    ],
+    "back-matter": {
+      "resources": [
+        {
+          "uuid": "0d591226-d29e-4760-b209-ae768e0b05ce",
+          "title": "SPARC Document Source",
+          "description": "Managed by SPARC",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000",
+              "media-type": "text/html"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

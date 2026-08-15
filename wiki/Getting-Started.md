@@ -60,7 +60,54 @@ For SSO, see [Integrations](Integrations) and
 For local HTTPS, see
 [docs/development-https.md](https://github.com/risk-sentinel/sparc/blob/main/docs/development-https.md).
 
-## 5. Where to go next
+## 5. Optional — load a realistic authorization to look at
+
+A freshly seeded instance has catalogs and roles but no authorizations, so most
+screens are empty. If you are evaluating SPARC, or you want something real to
+click through, load the **reference estate**:
+
+```bash
+docker compose exec -e SPARC_SEED_REFERENCE=lean web bin/rails db:seed
+```
+
+That builds two organizations in a genuine **leveraged authorization**
+relationship — a platform provider and a mission system that runs on it — with
+the whole chain on each side:
+
+| | Boundary 1 — provider | Boundary 2 — consumer |
+|---|---|---|
+| Organization | Reference Platform Provider (Org A) | Reference Mission System Owner (Org B) |
+| Documents | Profile → SSP → SAP → SAR → 3 POA&Ms | Profile → SSP → SAP → SAR → 3 POA&Ms |
+| Evidence | Scanner findings + policy documents | Scanner findings + policy documents |
+
+Boundary 1 declares which controls it **provides** to its customers and which it
+hands **back** to them; Boundary 2 inherits implementations for the first set
+and is shown an outstanding responsibility for the second. That is the
+relationship the [leveraged authorization](Core-Functions#21-leveraged-authorizations)
+feature exists to model, and it is hard to understand from an empty screen.
+
+Control satisfaction is derived from the evidence rather than assigned, so the
+~5% of controls that are open are open *because* a simulated scanner failed
+them — and they flow through to SAR risks and POA&M items you can follow.
+
+```bash
+bin/rails db:seed:reference:status   # what is loaded
+bin/rails db:seed:reference:purge    # remove it again
+```
+
+Two tiers are available: `lean` (40 curated controls spanning all 20 families)
+and `full` (real NIST MODERATE and LOW baselines). Loading one replaces the
+other. **Neither loads in production by default** — a reference estate is
+indistinguishable from real authorization data once it is in a database. A
+disposable production-mode target (a security scan, a release-verification
+stack) can opt in with `SPARC_ALLOW_REFERENCE_ESTATE=true`, and even then it
+refuses if the instance already holds authorization data of its own. See
+[Configuration](Configuration#seed-data).
+
+For the separate, lighter `SPARC_SEED_DEMO` sample records, see
+[Configuration](Configuration).
+
+## 6. Where to go next
 
 | Goal | Start here |
 |------|-----------|

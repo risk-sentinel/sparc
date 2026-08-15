@@ -1,0 +1,1382 @@
+{
+  "system-security-plan": {
+    "uuid": "d06d11fb-9524-4d96-b77c-efa879d4e1e8",
+    "metadata": {
+      "title": "Reference Mission System (Boundary 2) — SSP",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-03-27T12:00:00Z",
+      "roles": [
+        {
+          "id": "prepared-by",
+          "title": "Prepared By"
+        },
+        {
+          "id": "system-owner",
+          "title": "System Owner"
+        },
+        {
+          "id": "authorizing-official",
+          "title": "Authorizing Official"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "08ee4106-1594-40dd-ba1e-9f62a4ad6bc5",
+          "type": "organization",
+          "name": "SPARC Export"
+        },
+        {
+          "uuid": "8012a907-650a-45a8-aaf8-36be01af40ba",
+          "type": "organization",
+          "name": "Reference Platform Provider (Org A)"
+        }
+      ]
+    },
+    "import-profile": {
+      "href": "uuid:35467e64-dfa8-4ee0-96fb-439f63087342"
+    },
+    "system-characteristics": {
+      "system-ids": [
+        {
+          "id": "REF-REFERENCE-MISSION-SYSTEM-BOUNDARY-2"
+        }
+      ],
+      "system-name": "Reference Mission System (Boundary 2) — SSP",
+      "description": "Reference Mission System (Boundary 2) — Profile",
+      "system-information": {
+        "information-types": [
+          {
+            "uuid": "e1465716-38cd-4dda-a215-d33869cf513e",
+            "title": "General Information",
+            "description": "Default information type — update via enrichment."
+          }
+        ]
+      },
+      "status": {
+        "state": "operational"
+      },
+      "authorization-boundary": {
+        "description": "Authorization boundary for Reference Mission System (Boundary 2) — SSP. Update this description to reflect the actual boundary."
+      }
+    },
+    "system-implementation": {
+      "users": [
+        {
+          "uuid": "2a2a2b67-faa9-4442-8f02-7913ed839b6a",
+          "title": "System Administrator",
+          "description": "Default administrative user — update via enrichment."
+        }
+      ],
+      "components": [
+        {
+          "uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+          "type": "this-system",
+          "title": "Reference Mission System (Boundary 2) — SSP",
+          "description": "This system — Reference Mission System (Boundary 2) — SSP",
+          "status": {
+            "state": "under-development"
+          }
+        }
+      ],
+      "leveraged-authorizations": [
+        {
+          "uuid": "fb77e54a-fcec-4d40-9eda-39bc7a7165af",
+          "title": "Reference Mission System (Boundary 2) leverages Reference Platform (Boundary 1)",
+          "party-uuid": "8012a907-650a-45a8-aaf8-36be01af40ba",
+          "date-authorized": "2026-01-05",
+          "remarks": "Reference estate leveraged authorization (#845), scenario 1.",
+          "links": [
+            {
+              "href": "uuid:672092e7-69f4-4e94-9aad-1d1573763ccc",
+              "rel": "leveraged-system"
+            }
+          ]
+        }
+      ]
+    },
+    "control-implementation": {
+      "description": "Control implementation for Reference Mission System (Boundary 2) — SSP",
+      "implemented-requirements": [
+        {
+          "uuid": "f4829b33-02af-4c14-ac61-af0b72e2aae7",
+          "control-id": "ac-1",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "643d7912-234d-4457-94a0-95304715a397",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-1_smt",
+              "uuid": "6e8ca9aa-e1bc-46f1-b2b2-4099829c3bc4"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Develop, document, and disseminate to {{ insert: param, ac-1_prm_1 }}:\n    1. {{ insert: param, ac-01_odp.03 }} access control policy that:\n      (a) Addresses purpose, scope, roles, responsibilities, management commitment, coordination among organizational entities, and compliance; and\n      (b) Is consistent with applicable laws, executive orders, directives, regulations, policies, standards, and guidelines; and\n    2. Procedures to facilitate the implementation of the access control policy and the associated access controls;\n  b. Designate an {{ insert: param, ac-01_odp.04 }} to manage the development, documentation, and dissemination of the access control policy and procedures; and\n  c. Review and update the current access control:\n    1. Policy {{ insert: param, ac-01_odp.05 }} and following {{ insert: param, ac-01_odp.06 }} ; and\n    2. Procedures {{ insert: param, ac-01_odp.07 }} and following {{ insert: param, ac-01_odp.08 }}."
+        },
+        {
+          "uuid": "cf766c6d-74a6-4ebb-9c39-1f7ff6693c1e",
+          "control-id": "ac-17",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "e742d737-e75f-468f-80c6-4f349960ac5a",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-17_smt",
+              "uuid": "a925dee1-bfff-40f3-bf9e-f368673046d6"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Establish and document usage restrictions, configuration/connection requirements, and implementation guidance for each type of remote access allowed; and\n  b. Authorize each type of remote access to the system prior to allowing such connections."
+        },
+        {
+          "uuid": "3badad6a-0505-4461-9752-c7745dc8f9aa",
+          "control-id": "ac-2",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "25b62c03-13b1-42ba-a402-f35d99c7a3c3",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-2_smt",
+              "uuid": "879f4c11-e471-4d5f-871e-bcbd74f94c75"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Define and document the types of accounts allowed and specifically prohibited for use within the system;\n  b. Assign account managers;\n  c. Require {{ insert: param, ac-02_odp.01 }} for group and role membership;\n  d. Specify:\n    1. Authorized users of the system;\n    2. Group and role membership; and\n    3. Access authorizations (i.e., privileges) and {{ insert: param, ac-02_odp.02 }} for each account;\n  e. Require approvals by {{ insert: param, ac-02_odp.03 }} for requests to create accounts;\n  f. Create, enable, modify, disable, and remove accounts in accordance with {{ insert: param, ac-02_odp.04 }};\n  g. Monitor the use of accounts;\n  h. Notify account managers and {{ insert: param, ac-02_odp.05 }} within:\n    1. {{ insert: param, ac-02_odp.06 }} when accounts are no longer required;\n    2. {{ insert: param, ac-02_odp.07 }} when users are terminated or transferred; and\n    3. {{ insert: param, ac-02_odp.08 }} when system usage or need-to-know changes for an individual;\n  i. Authorize access to the system based on:\n    1. A valid access authorization;\n    2. Intended system usage; and\n    3. {{ insert: param, ac-02_odp.09 }};\n  j. Review accounts for compliance with account management requirements {{ insert: param, ac-02_odp.10 }};\n  k. Establish and implement a process for changing shared or group account authenticators (if deployed) when individuals are removed from the group; and\n  l. Align account management processes with personnel termination and transfer processes."
+        },
+        {
+          "uuid": "1bad3337-3985-4d35-b08c-32c4f1e8e945",
+          "control-id": "ac-20",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "9239693d-fea1-4bda-931b-1d4698f5dbfe",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-20_smt",
+              "uuid": "abd98bc8-fc60-4e07-9ed6-d5c822b2d431",
+              "links": [
+                {
+                  "href": "uuid:5956d74b-5b27-4ce6-b1b2-725c08fbab6d",
+                  "rel": "inherited"
+                }
+              ]
+            }
+          ],
+          "remarks": "Stated Requirement:   a. {{ insert: param, ac-20_odp.01 }} , consistent with the trust relationships established with other organizations owning, operating, and/or maintaining external systems, allowing authorized individuals to:\n    1. Access the system from external systems; and\n    2. Process, store, or transmit organization-controlled information using external systems; or\n  b. Prohibit the use of {{ insert: param, ac-20_odp.04 }}."
+        },
+        {
+          "uuid": "4de06101-d0e9-4498-8ecf-d099b1efd17a",
+          "control-id": "ac-3",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "14ae4acc-1625-4108-8d2e-460d7c2ea9ec",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-3_smt",
+              "uuid": "40ca73e5-d586-4722-ad1e-e89cd04879c5"
+            }
+          ],
+          "remarks": "Stated Requirement: Enforce approved authorizations for logical access to information and system resources in accordance with applicable access control policies."
+        },
+        {
+          "uuid": "4a7b8688-f816-49c3-b585-f1661881ae2b",
+          "control-id": "ac-6",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "0944247a-da28-4e3c-923f-b6c919dc4611",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-6_smt",
+              "uuid": "0c1e0546-c2c9-4fe9-ab0b-b2dd67aa8834"
+            }
+          ],
+          "remarks": "Stated Requirement: Employ the principle of least privilege, allowing only authorized accesses for users (or processes acting on behalf of users) that are necessary to accomplish assigned organizational tasks."
+        },
+        {
+          "uuid": "488e904b-54b6-4269-b7ce-7e4b0e23f48a",
+          "control-id": "at-2",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "a343cb38-6527-47d3-bd7a-a92dd25a689e",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "at-2_smt",
+              "uuid": "e0614af7-feab-44bc-ac57-00cdc5e28aa8"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Provide security and privacy literacy training to system users (including managers, senior executives, and contractors):\n    1. As part of initial training for new users and {{ insert: param, at-2_prm_1 }} thereafter; and\n    2. When required by system changes or following {{ insert: param, at-2_prm_2 }};\n  b. Employ the following techniques to increase the security and privacy awareness of system users {{ insert: param, at-02_odp.05 }};\n  c. Update literacy training and awareness content {{ insert: param, at-02_odp.06 }} and following {{ insert: param, at-02_odp.07 }} ; and\n  d. Incorporate lessons learned from internal or external security incidents or breaches into literacy training and awareness techniques."
+        },
+        {
+          "uuid": "eb414c98-cbf7-4e5b-83c8-25c0646512cd",
+          "control-id": "au-1",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "45fd4353-10cb-4e9c-9a3a-4a659c3cb6f8",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-1_smt",
+              "uuid": "0c7d1a25-cb29-4961-87bd-a36c5502dbb8"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Develop, document, and disseminate to {{ insert: param, au-1_prm_1 }}:\n    1. {{ insert: param, au-01_odp.03 }} audit and accountability policy that:\n      (a) Addresses purpose, scope, roles, responsibilities, management commitment, coordination among organizational entities, and compliance; and\n      (b) Is consistent with applicable laws, executive orders, directives, regulations, policies, standards, and guidelines; and\n    2. Procedures to facilitate the implementation of the audit and accountability policy and the associated audit and accountability controls;\n  b. Designate an {{ insert: param, au-01_odp.04 }} to manage the development, documentation, and dissemination of the audit and accountability policy and procedures; and\n  c. Review and update the current audit and accountability:\n    1. Policy {{ insert: param, au-01_odp.05 }} and following {{ insert: param, au-01_odp.06 }} ; and\n    2. Procedures {{ insert: param, au-01_odp.07 }} and following {{ insert: param, au-01_odp.08 }}."
+        },
+        {
+          "uuid": "bd1144bb-e404-4218-8c57-aeca707fe806",
+          "control-id": "au-2",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "552853b4-b0d6-4ff6-a6dc-355033e96715",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-2_smt",
+              "uuid": "c9fe5a27-c11b-4f81-a1bb-65b60c921ec5"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Identify the types of events that the system is capable of logging in support of the audit function: {{ insert: param, au-02_odp.01 }};\n  b. Coordinate the event logging function with other organizational entities requiring audit-related information to guide and inform the selection criteria for events to be logged;\n  c. Specify the following event types for logging within the system: {{ insert: param, au-2_prm_2 }};\n  d. Provide a rationale for why the event types selected for logging are deemed to be adequate to support after-the-fact investigations of incidents; and\n  e. Review and update the event types selected for logging {{ insert: param, au-02_odp.04 }}."
+        },
+        {
+          "uuid": "1feb53de-f8e7-407a-969a-7db4b0a05e54",
+          "control-id": "au-6",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "fce06a6a-4e3e-4093-ac02-93ea38178b43",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-6_smt",
+              "uuid": "f0e356a9-ba27-4b7b-a77e-ed1dee3d342a"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Review and analyze system audit records {{ insert: param, au-06_odp.01 }} for indications of {{ insert: param, au-06_odp.02 }} and the potential impact of the inappropriate or unusual activity;\n  b. Report findings to {{ insert: param, au-06_odp.03 }} ; and\n  c. Adjust the level of audit record review, analysis, and reporting within the system when there is a change in risk based on law enforcement information, intelligence information, or other credible sources of information."
+        },
+        {
+          "uuid": "54c66d2a-b8f4-48bd-99f4-232dad25bd8b",
+          "control-id": "au-9",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "9f5aa2e0-92af-48f3-96dd-31e5f59e4ecf",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-9_smt",
+              "uuid": "a5a0c882-a372-4b64-89c5-e91c467e80e3",
+              "remarks": "AU-9 is implemented centrally by the reference platform and inherited by every leveraging system.",
+              "links": [
+                {
+                  "href": "uuid:259701c9-c09f-4c61-addb-3a2c8a3516f0",
+                  "rel": "inherited"
+                }
+              ]
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Protect audit information and audit logging tools from unauthorized access, modification, and deletion; and\n  b. Alert {{ insert: param, au-09_odp }} upon detection of unauthorized access, modification, or deletion of audit information."
+        },
+        {
+          "uuid": "653068d5-2506-445b-a3bf-ab9c70e0e994",
+          "control-id": "ca-1",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "8dca23fe-05f1-4b70-91e3-6213bdab20f7",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ca-1_smt",
+              "uuid": "28798cf6-4f6d-4d59-a1ee-1d1c47a4631e"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Develop, document, and disseminate to {{ insert: param, ca-1_prm_1 }}:\n    1. {{ insert: param, ca-01_odp.03 }} assessment, authorization, and monitoring policy that:\n      (a) Addresses purpose, scope, roles, responsibilities, management commitment, coordination among organizational entities, and compliance; and\n      (b) Is consistent with applicable laws, executive orders, directives, regulations, policies, standards, and guidelines; and\n    2. Procedures to facilitate the implementation of the assessment, authorization, and monitoring policy and the associated assessment, authorization, and monitoring controls;\n  b. Designate an {{ insert: param, ca-01_odp.04 }} to manage the development, documentation, and dissemination of the assessment, authorization, and monitoring policy and procedures; and\n  c. Review and update the current assessment, authorization, and monitoring:\n    1. Policy {{ insert: param, ca-01_odp.05 }} and following {{ insert: param, ca-01_odp.06 }} ; and\n    2. Procedures {{ insert: param, ca-01_odp.07 }} and following {{ insert: param, ca-01_odp.08 }}."
+        },
+        {
+          "uuid": "e9cf260a-7fad-4ac3-b54d-cec0e0f5a871",
+          "control-id": "ca-2",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "d24c1e68-44a8-4256-ad22-ad71629a3666",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ca-2_smt",
+              "uuid": "0ef72261-f654-4a35-9341-414a6ff81de7"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Select the appropriate assessor or assessment team for the type of assessment to be conducted;\n  b. Develop a control assessment plan that describes the scope of the assessment including:\n    1. Controls and control enhancements under assessment;\n    2. Assessment procedures to be used to determine control effectiveness; and\n    3. Assessment environment, assessment team, and assessment roles and responsibilities;\n  c. Ensure the control assessment plan is reviewed and approved by the authorizing official or designated representative prior to conducting the assessment;\n  d. Assess the controls in the system and its environment of operation {{ insert: param, ca-02_odp.01 }} to determine the extent to which the controls are implemented correctly, operating as intended, and producing the desired outcome with respect to meeting established security and privacy requirements;\n  e. Produce a control assessment report that document the results of the assessment; and\n  f. Provide the results of the control assessment to {{ insert: param, ca-02_odp.02 }}."
+        },
+        {
+          "uuid": "70f90ee9-3e7d-4497-82e5-0156df58ad9a",
+          "control-id": "ca-5",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "01d2704a-df99-4d7d-bbe0-59574e37866e",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ca-5_smt",
+              "uuid": "d3f86c98-962b-46e3-a9b5-1815b5bc8cc3"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Develop a plan of action and milestones for the system to document the planned remediation actions of the organization to correct weaknesses or deficiencies noted during the assessment of the controls and to reduce or eliminate known vulnerabilities in the system; and\n  b. Update existing plan of action and milestones {{ insert: param, ca-05_odp }} based on the findings from control assessments, independent audits or reviews, and continuous monitoring activities."
+        },
+        {
+          "uuid": "b8aa3e09-159b-4e89-aa5f-0c1ad0a55d48",
+          "control-id": "ca-7",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "3ace5ac3-8419-48c3-9f26-42e332d266cc",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ca-7_smt",
+              "uuid": "8230a7c4-f4a3-447b-ae37-11c472d29603"
+            }
+          ],
+          "remarks": "Stated Requirement: Develop a system-level continuous monitoring strategy and implement continuous monitoring in accordance with the organization-level continuous monitoring strategy that includes:\n  a. Establishing the following system-level metrics to be monitored: {{ insert: param, ca-07_odp.01 }};\n  b. Establishing {{ insert: param, ca-07_odp.02 }} for monitoring and {{ insert: param, ca-07_odp.03 }} for assessment of control effectiveness;\n  c. Ongoing control assessments in accordance with the continuous monitoring strategy;\n  d. Ongoing monitoring of system and organization-defined metrics in accordance with the continuous monitoring strategy;\n  e. Correlation and analysis of information generated by control assessments and monitoring;\n  f. Response actions to address results of the analysis of control assessment and monitoring information; and\n  g. Reporting the security and privacy status of the system to {{ insert: param, ca-7_prm_4 }} {{ insert: param, ca-7_prm_5 }}."
+        },
+        {
+          "uuid": "15502a95-e24e-43bd-89e1-1c359976b53e",
+          "control-id": "cm-1",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "54801136-b9f8-4515-bc38-a4b687705cb3",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cm-1_smt",
+              "uuid": "ccd51a74-519d-465b-b56d-f33dd6be5890"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Develop, document, and disseminate to {{ insert: param, cm-1_prm_1 }}:\n    1. {{ insert: param, cm-01_odp.03 }} configuration management policy that:\n      (a) Addresses purpose, scope, roles, responsibilities, management commitment, coordination among organizational entities, and compliance; and\n      (b) Is consistent with applicable laws, executive orders, directives, regulations, policies, standards, and guidelines; and\n    2. Procedures to facilitate the implementation of the configuration management policy and the associated configuration management controls;\n  b. Designate an {{ insert: param, cm-01_odp.04 }} to manage the development, documentation, and dissemination of the configuration management policy and procedures; and\n  c. Review and update the current configuration management:\n    1. Policy {{ insert: param, cm-01_odp.05 }} and following {{ insert: param, cm-01_odp.06 }} ; and\n    2. Procedures {{ insert: param, cm-01_odp.07 }} and following {{ insert: param, cm-01_odp.08 }}."
+        },
+        {
+          "uuid": "15b6ae34-1a2e-401c-8efe-73801c1ee428",
+          "control-id": "cm-2",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "7de6ab90-6cd7-45b1-a6ad-096d84a7beb8",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cm-2_smt",
+              "uuid": "a206cfb4-4489-4785-95ef-d12e7d1dd464"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Develop, document, and maintain under configuration control, a current baseline configuration of the system; and\n  b. Review and update the baseline configuration of the system:\n    1. {{ insert: param, cm-02_odp.01 }};\n    2. When required due to {{ insert: param, cm-02_odp.02 }} ; and\n    3. When system components are installed or upgraded."
+        },
+        {
+          "uuid": "7ba58f0e-0b71-4313-9853-180b4a4066d4",
+          "control-id": "cm-6",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "39acc303-8fb9-461c-98aa-05d363cc36af",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cm-6_smt",
+              "uuid": "6e83c0bf-c063-49dd-8b8d-2eb524e2a123"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Establish and document configuration settings for components employed within the system that reflect the most restrictive mode consistent with operational requirements using {{ insert: param, cm-06_odp.01 }};\n  b. Implement the configuration settings;\n  c. Identify, document, and approve any deviations from established configuration settings for {{ insert: param, cm-06_odp.02 }} based on {{ insert: param, cm-06_odp.03 }} ; and\n  d. Monitor and control changes to the configuration settings in accordance with organizational policies and procedures."
+        },
+        {
+          "uuid": "7da23c64-e133-4ab9-a194-4a03b20fd1da",
+          "control-id": "cp-9",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "5f1d984a-a60b-498e-81d4-2378fff93a8b",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cp-9_smt",
+              "uuid": "d4ac4430-765b-4252-8e29-7c61413b2bc0",
+              "remarks": "CP-9 is implemented centrally by the reference platform and inherited by every leveraging system.",
+              "links": [
+                {
+                  "href": "uuid:e5ad5b35-5fcb-45f5-9647-f78f279ca3f3",
+                  "rel": "inherited"
+                }
+              ]
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Conduct backups of user-level information contained in {{ insert: param, cp-09_odp.01 }} {{ insert: param, cp-09_odp.02 }};\n  b. Conduct backups of system-level information contained in the system {{ insert: param, cp-09_odp.03 }};\n  c. Conduct backups of system documentation, including security- and privacy-related documentation {{ insert: param, cp-09_odp.04 }} ; and\n  d. Protect the confidentiality, integrity, and availability of backup information."
+        },
+        {
+          "uuid": "e37e2429-a95e-4c4d-9416-31f524dd5974",
+          "control-id": "ia-2",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "428d2a1a-6287-4ba2-a4a4-6d793df0c403",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ia-2_smt",
+              "uuid": "475c46b6-bc58-4731-873a-f8dbea852b91"
+            }
+          ],
+          "remarks": "Stated Requirement: Uniquely identify and authenticate organizational users and associate that unique identification with processes acting on behalf of those users."
+        },
+        {
+          "uuid": "6ca78d94-e8a1-4c1d-93de-e27acf487348",
+          "control-id": "ia-5",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "e0001710-f665-4e7c-a28a-39634d00fbd1",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ia-5_smt",
+              "uuid": "5f0ed476-4766-4bb2-9e09-cf338d07a2e9",
+              "links": [
+                {
+                  "href": "uuid:ec85275d-2476-4e96-9340-b1ee62cd81fb",
+                  "rel": "inherited"
+                }
+              ]
+            }
+          ],
+          "remarks": "Stated Requirement: Manage system authenticators by:\n  a. Verifying, as part of the initial authenticator distribution, the identity of the individual, group, role, service, or device receiving the authenticator;\n  b. Establishing initial authenticator content for any authenticators issued by the organization;\n  c. Ensuring that authenticators have sufficient strength of mechanism for their intended use;\n  d. Establishing and implementing administrative procedures for initial authenticator distribution, for lost or compromised or damaged authenticators, and for revoking authenticators;\n  e. Changing default authenticators prior to first use;\n  f. Changing or refreshing authenticators {{ insert: param, ia-05_odp.01 }} or when {{ insert: param, ia-05_odp.02 }} occur;\n  g. Protecting authenticator content from unauthorized disclosure and modification;\n  h. Requiring individuals to take, and having devices implement, specific controls to protect authenticators; and\n  i. Changing authenticators for group or role accounts when membership to those accounts changes."
+        },
+        {
+          "uuid": "dc9b3a0c-3395-4ca8-89ec-c7eb2e499275",
+          "control-id": "ir-1",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "60ae7825-fe5b-4ee6-843e-d512817b9595",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ir-1_smt",
+              "uuid": "f7afb35b-7408-4ca7-b5da-1a1b30c03151"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Develop, document, and disseminate to {{ insert: param, ir-1_prm_1 }}:\n    1. {{ insert: param, ir-01_odp.03 }} incident response policy that:\n      (a) Addresses purpose, scope, roles, responsibilities, management commitment, coordination among organizational entities, and compliance; and\n      (b) Is consistent with applicable laws, executive orders, directives, regulations, policies, standards, and guidelines; and\n    2. Procedures to facilitate the implementation of the incident response policy and the associated incident response controls;\n  b. Designate an {{ insert: param, ir-01_odp.04 }} to manage the development, documentation, and dissemination of the incident response policy and procedures; and\n  c. Review and update the current incident response:\n    1. Policy {{ insert: param, ir-01_odp.05 }} and following {{ insert: param, ir-01_odp.06 }} ; and\n    2. Procedures {{ insert: param, ir-01_odp.07 }} and following {{ insert: param, ir-01_odp.08 }}."
+        },
+        {
+          "uuid": "59b57df9-8c5e-455e-966c-5978b6462093",
+          "control-id": "ir-4",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "b35842bf-d2b8-4922-8347-117bcf686715",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ir-4_smt",
+              "uuid": "c79a70b1-123c-453f-a1c6-02c64c5e69b6"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Implement an incident handling capability for incidents that is consistent with the incident response plan and includes preparation, detection and analysis, containment, eradication, and recovery;\n  b. Coordinate incident handling activities with contingency planning activities;\n  c. Incorporate lessons learned from ongoing incident handling activities into incident response procedures, training, and testing, and implement the resulting changes accordingly; and\n  d. Ensure the rigor, intensity, scope, and results of incident handling activities are comparable and predictable across the organization."
+        },
+        {
+          "uuid": "88b4b332-c0a0-4a44-8a7a-28f58717c30c",
+          "control-id": "ma-2",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "a5995b50-2391-4267-8441-a56271307360",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ma-2_smt",
+              "uuid": "7bb6fcb3-fec3-41b9-a5ae-d9f7af7b2226",
+              "remarks": "MA-2 is implemented centrally by the reference platform and inherited by every leveraging system.",
+              "links": [
+                {
+                  "href": "uuid:bca9f368-8e8a-4760-9868-c67522e4ce23",
+                  "rel": "inherited"
+                }
+              ]
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Schedule, document, and review records of maintenance, repair, and replacement on system components in accordance with manufacturer or vendor specifications and/or organizational requirements;\n  b. Approve and monitor all maintenance activities, whether performed on site or remotely and whether the system or system components are serviced on site or removed to another location;\n  c. Require that {{ insert: param, ma-02_odp.01 }} explicitly approve the removal of the system or system components from organizational facilities for off-site maintenance, repair, or replacement;\n  d. Sanitize equipment to remove the following information from associated media prior to removal from organizational facilities for off-site maintenance, repair, or replacement: {{ insert: param, ma-02_odp.02 }};\n  e. Check all potentially impacted controls to verify that the controls are still functioning properly following maintenance, repair, or replacement actions; and\n  f. Include the following information in organizational maintenance records: {{ insert: param, ma-02_odp.03 }}."
+        },
+        {
+          "uuid": "13b37902-ed49-4887-a065-216273aaf614",
+          "control-id": "mp-2",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "af078790-b6ff-4439-ac8d-808a5338190e",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "mp-2_smt",
+              "uuid": "0dc98776-3405-4ebf-9f39-19dc46047fd9"
+            }
+          ],
+          "remarks": "Stated Requirement: Restrict access to {{ insert: param, mp-2_prm_1 }} to {{ insert: param, mp-2_prm_2 }}."
+        },
+        {
+          "uuid": "06b6e445-a708-407d-8022-8b06f7b904cf",
+          "control-id": "pe-3",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "37742040-c391-4849-9760-6d892751a9a5",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "pe-3_smt",
+              "uuid": "ca47120b-9ccd-4acf-82b9-21bd066fb15c",
+              "remarks": "PE-3 is implemented centrally by the reference platform and inherited by every leveraging system.",
+              "links": [
+                {
+                  "href": "uuid:c797d2b6-9ca7-480f-98da-8f89907c734c",
+                  "rel": "inherited"
+                }
+              ]
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Enforce physical access authorizations at {{ insert: param, pe-03_odp.01 }} by:\n    1. Verifying individual access authorizations before granting access to the facility; and\n    2. Controlling ingress and egress to the facility using {{ insert: param, pe-03_odp.02 }};\n  b. Maintain physical access audit logs for {{ insert: param, pe-03_odp.04 }};\n  c. Control access to areas within the facility designated as publicly accessible by implementing the following controls: {{ insert: param, pe-03_odp.05 }};\n  d. Escort visitors and control visitor activity {{ insert: param, pe-03_odp.06 }};\n  e. Secure keys, combinations, and other physical access devices;\n  f. Inventory {{ insert: param, pe-03_odp.07 }} every {{ insert: param, pe-03_odp.08 }} ; and\n  g. Change combinations and keys {{ insert: param, pe-3_prm_9 }} and/or when keys are lost, combinations are compromised, or when individuals possessing the keys or combinations are transferred or terminated."
+        },
+        {
+          "uuid": "4f040b00-02fe-435f-897c-7bd69ecd82aa",
+          "control-id": "pl-2",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "70271c15-1ba4-453f-a512-03b59b3cda3f",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "pl-2_smt",
+              "uuid": "6c5b6f29-9c93-4ed7-bd1c-73ec7b59ac59"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Develop security and privacy plans for the system that:\n    1. Are consistent with the organization’s enterprise architecture;\n    2. Explicitly define the constituent system components;\n    3. Describe the operational context of the system in terms of mission and business processes;\n    4. Identify the individuals that fulfill system roles and responsibilities;\n    5. Identify the information types processed, stored, and transmitted by the system;\n    6. Provide the security categorization of the system, including supporting rationale;\n    7. Describe any specific threats to the system that are of concern to the organization;\n    8. Provide the results of a privacy risk assessment for systems processing personally identifiable information;\n    9. Describe the operational environment for the system and any dependencies on or connections to other systems or system components;\n    10. Provide an overview of the security and privacy requirements for the system;\n    11. Identify any relevant control baselines or overlays, if applicable;\n    12. Describe the controls in place or planned for meeting the security and privacy requirements, including a rationale for any tailoring decisions;\n    13. Include risk determinations for security and privacy architecture and design decisions;\n    14. Include security- and privacy-related activities affecting the system that require planning and coordination with {{ insert: param, pl-02_odp.01 }} ; and\n    15. Are reviewed and approved by the authorizing official or designated representative prior to plan implementation.\n  b. Distribute copies of the plans and communicate subsequent changes to the plans to {{ insert: param, pl-02_odp.02 }};\n  c. Review the plans {{ insert: param, pl-02_odp.03 }};\n  d. Update the plans to address changes to the system and environment of operation or problems identified during plan implementation or control assessments; and\n  e. Protect the plans from unauthorized disclosure and modification."
+        },
+        {
+          "uuid": "26b439ab-f183-49e6-a13e-9e8fe8afd9d7",
+          "control-id": "pm-1",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "90a65895-d632-4c11-be77-0d280c178032",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "pm-1_smt",
+              "uuid": "7ae2f4ad-a4c7-4ba4-9a01-20bd4c69f06e"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Develop and disseminate an organization-wide information security program plan that:\n    1. Provides an overview of the requirements for the security program and a description of the security program management controls and common controls in place or planned for meeting those requirements;\n    2. Includes the identification and assignment of roles, responsibilities, management commitment, coordination among organizational entities, and compliance;\n    3. Reflects the coordination among organizational entities responsible for information security; and\n    4. Is approved by a senior official with responsibility and accountability for the risk being incurred to organizational operations (including mission, functions, image, and reputation), organizational assets, individuals, other organizations, and the Nation;\n  b. Review and update the organization-wide information security program plan {{ insert: param, pm-01_odp.01 }} and following {{ insert: param, pm-01_odp.02 }} ; and\n  c. Protect the information security program plan from unauthorized disclosure and modification."
+        },
+        {
+          "uuid": "042d6ae4-24d2-455d-80bb-bc28a372b06c",
+          "control-id": "ps-3",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "52385815-9bdb-4cc7-b1fa-278f1878c76c",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ps-3_smt",
+              "uuid": "402e7473-6cb5-4695-bc08-8951c9fa8d1e"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Screen individuals prior to authorizing access to the system; and\n  b. Rescreen individuals in accordance with {{ insert: param, ps-3_prm_1 }}."
+        },
+        {
+          "uuid": "b611c723-cb4d-403f-846c-d4a2aa8ab148",
+          "control-id": "pt-2",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "223852d9-804d-4fb5-b923-be9672748eb1",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "pt-2_smt",
+              "uuid": "64e51722-0c70-480c-afc4-fd602d7935a0"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Determine and document the {{ insert: param, pt-02_odp.01 }} that permits the {{ insert: param, pt-02_odp.02 }} of personally identifiable information; and\n  b. Restrict the {{ insert: param, pt-02_odp.03 }} of personally identifiable information to only that which is authorized."
+        },
+        {
+          "uuid": "3b4d3dd6-6adc-4488-b9e7-aaedff4d082d",
+          "control-id": "ra-1",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "9e6e134a-4ffb-4caa-ba2f-562b98757056",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ra-1_smt",
+              "uuid": "54d4113c-cbf6-408e-b841-cee1d97b6906"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Develop, document, and disseminate to {{ insert: param, ra-1_prm_1 }}:\n    1. {{ insert: param, ra-01_odp.03 }} risk assessment policy that:\n      (a) Addresses purpose, scope, roles, responsibilities, management commitment, coordination among organizational entities, and compliance; and\n      (b) Is consistent with applicable laws, executive orders, directives, regulations, policies, standards, and guidelines; and\n    2. Procedures to facilitate the implementation of the risk assessment policy and the associated risk assessment controls;\n  b. Designate an {{ insert: param, ra-01_odp.04 }} to manage the development, documentation, and dissemination of the risk assessment policy and procedures; and\n  c. Review and update the current risk assessment:\n    1. Policy {{ insert: param, ra-01_odp.05 }} and following {{ insert: param, ra-01_odp.06 }} ; and\n    2. Procedures {{ insert: param, ra-01_odp.07 }} and following {{ insert: param, ra-01_odp.08 }}."
+        },
+        {
+          "uuid": "d6e0c198-834d-4421-955a-6e330204d587",
+          "control-id": "ra-5",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "dcba051b-b3f4-4064-9a65-c10569df6bfe",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ra-5_smt",
+              "uuid": "0d4e9ebf-bb7d-4dff-abb7-d705d5f08a63"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Monitor and scan for vulnerabilities in the system and hosted applications {{ insert: param, ra-5_prm_1 }} and when new vulnerabilities potentially affecting the system are identified and reported;\n  b. Employ vulnerability monitoring tools and techniques that facilitate interoperability among tools and automate parts of the vulnerability management process by using standards for:\n    1. Enumerating platforms, software flaws, and improper configurations;\n    2. Formatting checklists and test procedures; and\n    3. Measuring vulnerability impact;\n  c. Analyze vulnerability scan reports and results from vulnerability monitoring;\n  d. Remediate legitimate vulnerabilities {{ insert: param, ra-05_odp.03 }} in accordance with an organizational assessment of risk;\n  e. Share information obtained from the vulnerability monitoring process and control assessments with {{ insert: param, ra-05_odp.04 }} to help eliminate similar vulnerabilities in other systems; and\n  f. Employ vulnerability monitoring tools that include the capability to readily update the vulnerabilities to be scanned."
+        },
+        {
+          "uuid": "a5e5bd09-02ce-4080-93a5-b5a58dc07f3d",
+          "control-id": "sa-4",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "2b530a92-e17e-4c22-a7cc-6625664c862b",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "sa-4_smt",
+              "uuid": "e5813349-ccce-419d-a462-8da2b035af59"
+            }
+          ],
+          "remarks": "Stated Requirement: Include the following requirements, descriptions, and criteria, explicitly or by reference, using {{ insert: param, sa-04_odp.01 }} in the acquisition contract for the system, system component, or system service:\n  a. Security and privacy functional requirements;\n  b. Strength of mechanism requirements;\n  c. Security and privacy assurance requirements;\n  d. Controls needed to satisfy the security and privacy requirements.\n  e. Security and privacy documentation requirements;\n  f. Requirements for protecting security and privacy documentation;\n  g. Description of the system development environment and environment in which the system is intended to operate;\n  h. Allocation of responsibility or identification of parties responsible for information security, privacy, and supply chain risk management; and\n  i. Acceptance criteria."
+        },
+        {
+          "uuid": "ed40cfc2-35b9-4472-9342-00a3eeb8e9be",
+          "control-id": "sa-9",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "93897a02-5f80-47ba-802e-0a6e0a3a7292",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "sa-9_smt",
+              "uuid": "6c1d052d-2d6a-46e7-b266-7d0368faa320",
+              "links": [
+                {
+                  "href": "uuid:e363c987-0bfd-4e0e-9477-08aeb22fd654",
+                  "rel": "inherited"
+                }
+              ]
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Require that providers of external system services comply with organizational security and privacy requirements and employ the following controls: {{ insert: param, sa-09_odp.01 }};\n  b. Define and document organizational oversight and user roles and responsibilities with regard to external system services; and\n  c. Employ the following processes, methods, and techniques to monitor control compliance by external service providers on an ongoing basis: {{ insert: param, sa-09_odp.02 }}."
+        },
+        {
+          "uuid": "812c4251-937e-4d42-b5ce-1f621462f479",
+          "control-id": "sc-13",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "7c93023d-a454-4b49-9f26-1e92d66e443c",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "sc-13_smt",
+              "uuid": "9f86dd11-eebf-45bc-8470-5ad7f898ae7a"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Determine the {{ insert: param, sc-13_odp.01 }} ; and\n  b. Implement the following types of cryptography required for each specified cryptographic use: {{ insert: param, sc-13_odp.02 }}."
+        },
+        {
+          "uuid": "62a9b10b-aaa4-4581-a652-fd4cf326be71",
+          "control-id": "sc-7",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "ce5e3545-442e-4369-b4fd-979ddada26a0",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "sc-7_smt",
+              "uuid": "9263e0ab-6c19-4b24-bf20-7848bf8d1412",
+              "remarks": "SC-7 is implemented centrally by the reference platform and inherited by every leveraging system.",
+              "links": [
+                {
+                  "href": "uuid:8299beda-e46b-4dc1-aa3b-4924687cf13f",
+                  "rel": "inherited"
+                }
+              ]
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Monitor and control communications at the external managed interfaces to the system and at key internal managed interfaces within the system;\n  b. Implement subnetworks for publicly accessible system components that are {{ insert: param, sc-07_odp }} separated from internal organizational networks; and\n  c. Connect to external networks or systems only through managed interfaces consisting of boundary protection devices arranged in accordance with an organizational security and privacy architecture."
+        },
+        {
+          "uuid": "ec087395-d6ef-4e45-8773-268efaeab29c",
+          "control-id": "si-1",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "143bb424-9bb2-415c-8126-95c74fa3891c",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "si-1_smt",
+              "uuid": "f6a32a6b-97b9-4ef9-9900-ec02b4313f7b"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Develop, document, and disseminate to {{ insert: param, si-1_prm_1 }}:\n    1. {{ insert: param, si-01_odp.03 }} system and information integrity policy that:\n      (a) Addresses purpose, scope, roles, responsibilities, management commitment, coordination among organizational entities, and compliance; and\n      (b) Is consistent with applicable laws, executive orders, directives, regulations, policies, standards, and guidelines; and\n    2. Procedures to facilitate the implementation of the system and information integrity policy and the associated system and information integrity controls;\n  b. Designate an {{ insert: param, si-01_odp.04 }} to manage the development, documentation, and dissemination of the system and information integrity policy and procedures; and\n  c. Review and update the current system and information integrity:\n    1. Policy {{ insert: param, si-01_odp.05 }} and following {{ insert: param, si-01_odp.06 }} ; and\n    2. Procedures {{ insert: param, si-01_odp.07 }} and following {{ insert: param, si-01_odp.08 }}."
+        },
+        {
+          "uuid": "50a8dde3-642f-4943-a53a-6f362f142a2c",
+          "control-id": "si-2",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "a14f8f71-4ffc-480a-902d-9be1d4880d65",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "si-2_smt",
+              "uuid": "200b4a9c-77a3-4803-a31a-c42c032fb143"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Identify, report, and correct system flaws;\n  b. Test software and firmware updates related to flaw remediation for effectiveness and potential side effects before installation;\n  c. Install security-relevant software and firmware updates within {{ insert: param, si-02_odp }} of the release of the updates; and\n  d. Incorporate flaw remediation into the organizational configuration management process."
+        },
+        {
+          "uuid": "dfcf86a2-106a-44ed-b2ce-325f476bc1f7",
+          "control-id": "si-4",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "355a45bd-a595-46b5-a260-a31731eb69fb",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "si-4_smt",
+              "uuid": "34dc2a61-b544-47a7-8280-ff91f56bbfa3"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Monitor the system to detect:\n    1. Attacks and indicators of potential attacks in accordance with the following monitoring objectives: {{ insert: param, si-04_odp.01 }} ; and\n    2. Unauthorized local, network, and remote connections;\n  b. Identify unauthorized use of the system through the following techniques and methods: {{ insert: param, si-04_odp.02 }};\n  c. Invoke internal monitoring capabilities or deploy monitoring devices:\n    1. Strategically within the system to collect organization-determined essential information; and\n    2. At ad hoc locations within the system to track specific types of transactions of interest to the organization;\n  d. Analyze detected events and anomalies;\n  e. Adjust the level of system monitoring activity when there is a change in risk to organizational operations and assets, individuals, other organizations, or the Nation;\n  f. Obtain legal opinion regarding system monitoring activities; and\n  g. Provide {{ insert: param, si-04_odp.03 }} to {{ insert: param, si-04_odp.04 }} {{ insert: param, si-04_odp.05 }}."
+        },
+        {
+          "uuid": "1775b4fa-7aa5-40d6-afb1-0daf565934a7",
+          "control-id": "sr-3",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            }
+          ],
+          "by-components": [
+            {
+              "component-uuid": "89e33af4-a0c2-4c9c-837b-0ec38f604dfc",
+              "uuid": "9c8f7b9c-2e5b-40bb-a5a0-64f481441af6",
+              "description": "Implementation of this control by Reference Mission System (Boundary 2) — SSP.",
+              "implementation-status": {
+                "state": "planned"
+              }
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "sr-3_smt",
+              "uuid": "8ac06fa6-2744-4f21-9ae2-b7145df229aa"
+            }
+          ],
+          "remarks": "Stated Requirement:   a. Establish a process or processes to identify and address weaknesses or deficiencies in the supply chain elements and processes of {{ insert: param, sr-03_odp.01 }} in coordination with {{ insert: param, sr-03_odp.02 }};\n  b. Employ the following controls to protect against supply chain risks to the system, system component, or system service and to limit the harm or consequences from supply chain-related events: {{ insert: param, sr-03_odp.03 }} ; and\n  c. Document the selected and implemented supply chain processes and controls in {{ insert: param, sr-03_odp.04 }}."
+        }
+      ]
+    },
+    "back-matter": {
+      "resources": [
+        {
+          "uuid": "ccef6385-35f0-47f0-890d-5b06ad69b1ca",
+          "title": "Reference Mission System (Boundary 2) — AC Policy and Procedures",
+          "description": "Policy Document evidence linked to ac-1",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/ccef6385-35f0-47f0-890d-5b06ad69b1ca"
+            }
+          ]
+        },
+        {
+          "uuid": "0e3080f3-d890-4d7a-8ce9-1640b060ce2d",
+          "title": "Reference Mission System (Boundary 2) — AT Policy and Procedures",
+          "description": "Policy Document evidence linked to at-2",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/0e3080f3-d890-4d7a-8ce9-1640b060ce2d"
+            }
+          ]
+        },
+        {
+          "uuid": "f63c85c0-ff1a-4c46-b4df-9773f2f0e0b2",
+          "title": "Reference Mission System (Boundary 2) — AU Policy and Procedures",
+          "description": "Policy Document evidence linked to au-1",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/f63c85c0-ff1a-4c46-b4df-9773f2f0e0b2"
+            }
+          ]
+        },
+        {
+          "uuid": "90ba16a1-055e-4829-b5df-0dae405b2286",
+          "title": "Reference Mission System (Boundary 2) — CA Policy and Procedures",
+          "description": "Policy Document evidence linked to ca-1",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/90ba16a1-055e-4829-b5df-0dae405b2286"
+            }
+          ]
+        },
+        {
+          "uuid": "1cd20f2e-3d72-4400-8924-37ef19e9edc0",
+          "title": "Reference Mission System (Boundary 2) — CM Policy and Procedures",
+          "description": "Policy Document evidence linked to cm-1",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/1cd20f2e-3d72-4400-8924-37ef19e9edc0"
+            }
+          ]
+        },
+        {
+          "uuid": "51fdafe6-1d41-43b4-8421-7ff89b9b2367",
+          "title": "Reference Mission System (Boundary 2) — IR Policy and Procedures",
+          "description": "Policy Document evidence linked to ir-1",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/51fdafe6-1d41-43b4-8421-7ff89b9b2367"
+            }
+          ]
+        },
+        {
+          "uuid": "c7450690-6bbb-4710-af8f-72f5f5f54084",
+          "title": "Reference Mission System (Boundary 2) — PL Policy and Procedures",
+          "description": "Policy Document evidence linked to pl-2",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/c7450690-6bbb-4710-af8f-72f5f5f54084"
+            }
+          ]
+        },
+        {
+          "uuid": "7bb8ef1e-214c-477e-b6d0-a0821e8d4724",
+          "title": "Reference Mission System (Boundary 2) — PM Policy and Procedures",
+          "description": "Policy Document evidence linked to pm-1",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/7bb8ef1e-214c-477e-b6d0-a0821e8d4724"
+            }
+          ]
+        },
+        {
+          "uuid": "9696bb2e-9632-4822-8425-6a22a88c163d",
+          "title": "Reference Mission System (Boundary 2) — PS Policy and Procedures",
+          "description": "Policy Document evidence linked to ps-3",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/9696bb2e-9632-4822-8425-6a22a88c163d"
+            }
+          ]
+        },
+        {
+          "uuid": "d4298214-451f-4929-8297-28090548d1e8",
+          "title": "Reference Mission System (Boundary 2) — PT Policy and Procedures",
+          "description": "Policy Document evidence linked to pt-2",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/d4298214-451f-4929-8297-28090548d1e8"
+            }
+          ]
+        },
+        {
+          "uuid": "294d23fe-76fe-48dc-b6ff-e37446692241",
+          "title": "Reference Mission System (Boundary 2) — RA Policy and Procedures",
+          "description": "Policy Document evidence linked to ra-1",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/294d23fe-76fe-48dc-b6ff-e37446692241"
+            }
+          ]
+        },
+        {
+          "uuid": "f3e6f80f-e22f-4a01-971a-748344d86e19",
+          "title": "Reference Mission System (Boundary 2) — SI Policy and Procedures",
+          "description": "Policy Document evidence linked to si-1",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/f3e6f80f-e22f-4a01-971a-748344d86e19"
+            }
+          ]
+        },
+        {
+          "uuid": "9db6424c-6071-4d42-8cc7-c73a4a6b59ff",
+          "title": "Reference Mission System (Boundary 2) — SR Policy and Procedures",
+          "description": "Policy Document evidence linked to sr-3",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000/artifacts/9db6424c-6071-4d42-8cc7-c73a4a6b59ff"
+            }
+          ]
+        },
+        {
+          "uuid": "bbaa53c1-029d-46f9-bd4d-a93cd55ef3b4",
+          "title": "SPARC Document Source",
+          "description": "Managed by SPARC",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000",
+              "media-type": "text/html"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
