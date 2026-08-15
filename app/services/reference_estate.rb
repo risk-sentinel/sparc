@@ -30,6 +30,28 @@ module ReferenceEstate
       boundary.update!(boundary_metadata: boundary.boundary_metadata.merge(TIER_KEY => tier.to_s))
     end
 
+    # The one way to load the estate. The rake task, the seed section and the
+    # spec helper all come through here, so "replace a differing tier rather
+    # than stack a second estate on top of it" is decided once. Three callers
+    # each re-implementing that is three chances to get it wrong.
+    def load!(tier, catalog: nil, verbose: true)
+      tier = tier.to_sym
+      unless ReferenceEstateBuilder::TIERS.include?(tier)
+        raise ArgumentError,
+              "unknown tier #{tier.inspect}, expected one of #{ReferenceEstateBuilder::TIERS.inspect}"
+      end
+
+      loaded = loaded_tier
+      if loaded && loaded != tier.to_s
+        puts "[reference] a #{loaded} estate is already loaded — replacing it with #{tier}." if verbose
+        purge!
+      end
+
+      result = ReferenceEstateBuilder.new(tier: tier, catalog: catalog).build
+      record_tier!(tier)
+      result
+    end
+
     def leveraged_boundary
       AuthorizationBoundary.find_by(name: ReferenceEstateBuilder::LEVERAGED_BOUNDARY)
     end

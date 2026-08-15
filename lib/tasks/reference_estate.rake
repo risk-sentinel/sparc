@@ -31,18 +31,11 @@ namespace :db do
               "documents that are indistinguishable from real ones."
       end
 
-      loaded = ReferenceEstate.loaded_tier
-      if loaded && loaded != tier.to_s
-        puts "[reference] a #{loaded} estate is already loaded — replacing it with #{tier}."
-        ReferenceEstate.purge!
-      end
-
       puts "[reference] building the #{tier} estate..."
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      result  = ReferenceEstateBuilder.new(tier: tier).build
+      result  = ReferenceEstate.load!(tier)
       elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
 
-      ReferenceEstate.record_tier!(tier)
       puts format("[reference] done in %.1fs", elapsed)
       ReferenceEstate.report(result)
     end

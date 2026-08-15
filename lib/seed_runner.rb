@@ -26,7 +26,10 @@ module SeedRunner
     "demo_evidence"        => "1.1.0",  # #738 boundary-scoping smoke fixtures
     "demo_sample_artifacts" => "1.2.0",  # #832 POA&M risks carry a deadline
     "oscal_schemas"         => "1.0.0",
-    "cdef_service_aliases"  => "1.0.0"  # #904 coverage analysis escape hatches
+    "cdef_service_aliases"  => "1.0.0",  # #904 coverage analysis escape hatches
+    # #845 — the requested tier is appended to this at run time, so a tier
+    # change re-runs the section. Bump the base to force a rebuild.
+    "reference_leveraged_boundaries" => "1.0.0"
   }.freeze
 
   # Ensure the seed_sections table exists (handles first-ever run before migrations).

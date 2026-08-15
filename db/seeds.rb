@@ -2626,6 +2626,26 @@ SeedRunner.run_section("oscal_schemas") do
 end # SeedRunner oscal_schemas
 
 # ══════════════════════════════════════════════════════════════════════
+# OPT-IN: #845 Reference Leveraged Authorization Estate
+# ══════════════════════════════════════════════════════════════════════
+# Last, because it consumes almost everything above it — the Rev 5 catalog,
+# roles, and the admin user who ends up as the recorded actor.
+#
+# The tier is part of what "completed" means: a database seeded at `lean` is
+# NOT already seeded when the operator asks for `full`. Folding it into the
+# version is what makes SeedRunner re-run the section on a tier change instead
+# of skipping it and leaving the wrong estate in place.
+REFERENCE_TIER = ENV["SPARC_SEED_REFERENCE"].presence&.downcase
+if REFERENCE_TIER
+  SeedRunner.run_section(
+    "reference_leveraged_boundaries",
+    version: "#{SeedRunner::CURRENT_VERSIONS.fetch('reference_leveraged_boundaries')}+#{REFERENCE_TIER}"
+  ) do
+    load Rails.root.join("db/seeds/reference_estate.rb")
+  end
+end # if REFERENCE_TIER
+
+# ══════════════════════════════════════════════════════════════════════
 # SEED SUMMARY + COMPLETENESS CHECK
 # ══════════════════════════════════════════════════════════════════════
 SeedRunner.summary
