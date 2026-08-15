@@ -61,10 +61,20 @@ RSpec.describe ReferenceEstateBuilder do
       end
 
       it "names what it found, so the operator can see why" do
-        create(:ssp_document, name: "Real SSP")
-        create(:authorization_boundary, name: "Real Boundary")
+        2.times { |i| create(:ssp_document, name: "Real SSP #{i}") }
+        2.times { |i| create(:authorization_boundary, name: "Real Boundary #{i}") }
 
-        expect { builder.build }.to raise_error(described_class::UnsafeEnvironment, /SSPs.*boundar|boundar.*SSPs/i)
+        expect { builder.build }
+          .to raise_error(described_class::UnsafeEnvironment, /2 authorization boundaries.*2 SSPs/)
+      end
+
+      # The counts are read by a human deciding whether their instance is the
+      # one being protected, so "1 SSPs" undermines the message it appears in.
+      it "counts in the singular when there is one of something" do
+        create(:ssp_document, name: "Real SSP")
+
+        expect { builder.build }
+          .to raise_error(described_class::UnsafeEnvironment, /1 SSP\)/)
       end
 
       # `NOT (name LIKE ...)` is NULL for a NULL name, so a `where.not` here

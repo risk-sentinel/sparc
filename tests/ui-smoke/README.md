@@ -108,8 +108,18 @@ Measured A/B on the same instance (the 13 data-thinness files, chromium):
 | With the estate | 189 | 15 |
 
 Closed: `leveraged_poams` ×3 and the `poam`/`profile` index-filter corpora ×4.
-The review-queue and promotion-queue entries close a further 6 that the A/B
-predates. `federation_peers` ×3 stays — it is a different subsystem (#372).
+
+Measured again on the **UBI9 production image** over TLS, across the two files
+that carry the collection-view and index-filter skips:
+
+| `test_collection_views.py` + `test_index_filters_908.py` | Passed | Skipped |
+|---|---|---|
+| Demo seed only | 45 | 16 |
+| Reference estate loaded | 58 | **3** |
+
+The 3 remaining are all `federation_peers` — a different subsystem (#372), and
+deliberately not covered. `review_queue`, `promotion_queue`, `leveraged_poams`
+and both index-filter corpora all close.
 
 **This is the target that matters.** `ui-smoke.yml` is `workflow_dispatch` only
 and defaults to a deployed instance, which runs in production mode — so these

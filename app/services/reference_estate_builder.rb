@@ -56,11 +56,11 @@ class ReferenceEstateBuilder
       ).ids
 
       {
-        "authorization boundaries" => AuthorizationBoundary.where.not(id: estate_boundary_ids).count,
-        "SSPs"                     => foreign_count(SspDocument),
-        "SAPs"                     => foreign_count(SapDocument),
-        "SARs"                     => foreign_count(SarDocument),
-        "POA&Ms"                   => foreign_count(PoamDocument)
+        "authorization boundary" => AuthorizationBoundary.where.not(id: estate_boundary_ids).count,
+        "SSP"                    => foreign_count(SspDocument),
+        "SAP"                    => foreign_count(SapDocument),
+        "SAR"                    => foreign_count(SarDocument),
+        "POA&M"                  => foreign_count(PoamDocument)
       }.reject { |_label, count| count.zero? }
     end
 
@@ -186,9 +186,10 @@ class ReferenceEstateBuilder
     occupants = self.class.foreign_authorization_data
     return if occupants.empty?
 
+    found = occupants.map { |label, count| "#{count} #{label.pluralize(count)}" }.join(", ")
     raise UnsafeEnvironment,
           "refusing to build a reference estate in production: this instance already holds " \
-          "authorization data that is not the estate's own (#{occupants.map { |k, v| "#{v} #{k}" }.join(', ')}). " \
+          "authorization data that is not the estate's own (#{found}). " \
           "#{PRODUCTION_OPT_IN} is for empty, disposable targets — not a live deployment."
   end
 
