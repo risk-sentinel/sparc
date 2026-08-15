@@ -294,7 +294,7 @@ class CatalogImportService
 
     # Create sub-control records for each statement item part (a., 1., (a), …)
     stmt_part = (ctrl["parts"] || []).find { |p| p["name"] == "statement" }
-    import_oscal_item_parts(family, control_id, stmt_part&.[]("parts"))
+    import_oscal_item_parts(family, control_id, sort_id, stmt_part&.[]("parts"))
 
     # Recurse into enhancements (sub-controls like AC-1(1), AC-1(2))
     (ctrl["controls"] || []).each do |sub|
@@ -309,25 +309,28 @@ class CatalogImportService
   #   parent "ac-1" + label "a." → "ac-1a"
   #   parent "ac-1a" + label "1." → "ac-1a.1"
   #   parent "ac-1a.1" + label "(a)" → "ac-1a.1.(a)"
-  def import_oscal_item_parts(family, parent_id, parts)
+  def import_oscal_item_parts(family, parent_id, parent_sort_id, parts)
     return if parts.blank?
     parts.each do |part|
       next unless part["name"] == "item"
       label = oscal_prop(part["props"], "label").to_s.strip
       next if label.blank?
 
-      sub_id = parent_id + label_to_suffix(label)
-      prose  = part["prose"].to_s.strip
+      sub_id   = parent_id + label_to_suffix(label)
+      sub_sort = derived_sort_id(parent_sort_id, parent_id, sub_id)
+      prose    = part["prose"].to_s.strip
 
       # Use the prose text as the title (truncated for readability) instead of
       # the raw label ("a.", "1.") which is meaningless as a title.
       title = prose.present? ? prose.truncate(200) : label
 
       upsert_catalog_control(family, sub_id, title, nil, nil,
-        prose.present? ? { "statement" => prose } : {})
+        prose.present? ? { "statement" => prose } : {},
+        sort_id: sub_sort)
 
-      # Recurse into nested item parts
-      import_oscal_item_parts(family, sub_id, part["parts"])
+      # Recurse into nested item parts. The sub-part's own derived key becomes
+      # the base for its children, so depth keeps extending one padded string.
+      import_oscal_item_parts(family, sub_id, sub_sort, part["parts"])
     end
   end
 
@@ -475,7 +478,7 @@ class CatalogImportService
     # Sub-control records for statement item parts
     stmt_parts = ctrl_node.xpath("part").select { |p| p["name"] == "statement" }
     stmt_parts.each do |stmt|
-      import_oscal_xml_item_parts(family, control_id, stmt.xpath("part"))
+      import_oscal_xml_item_parts(family, control_id, sort_id, stmt.xpath("part"))
     end
 
     # Recurse into enhancements (nested <control> elements)
@@ -485,24 +488,26 @@ class CatalogImportService
   end
 
   # Recursively create CatalogControl records for OSCAL XML statement item parts.
-  def import_oscal_xml_item_parts(family, parent_id, parts)
+  def import_oscal_xml_item_parts(family, parent_id, parent_sort_id, parts)
     return if parts.nil? || parts.empty?
     parts.each do |part|
       next unless part["name"] == "item"
       label = oscal_xml_prop(part, "label").to_s.strip
       next if label.blank?
 
-      sub_id = parent_id + label_to_suffix(label)
-      prose  = xml_prose_with_inserts(part.at_xpath("p")).presence ||
-               xml_text_content(part).strip.presence
+      sub_id   = parent_id + label_to_suffix(label)
+      sub_sort = derived_sort_id(parent_sort_id, parent_id, sub_id)
+      prose    = xml_prose_with_inserts(part.at_xpath("p")).presence ||
+                 xml_text_content(part).strip.presence
 
       title = prose.present? ? prose.truncate(200) : label
 
       upsert_catalog_control(family, sub_id, title, nil, nil,
-        prose.present? ? { "statement" => prose } : {})
+        prose.present? ? { "statement" => prose } : {},
+        sort_id: sub_sort)
 
       # Recurse into nested item parts
-      import_oscal_xml_item_parts(family, sub_id, part.xpath("part"))
+      import_oscal_xml_item_parts(family, sub_id, sub_sort, part.xpath("part"))
     end
   end
 
@@ -675,7 +680,7 @@ class CatalogImportService
     stats[result]    += 1
 
     # Create sub-control records from nested <statement> elements
-    import_xml_item_parts(family, control_id, root_stmt) if root_stmt
+    import_xml_item_parts(family, control_id, sort_id, root_stmt) if root_stmt
 
     # Import control enhancements (e.g., AC-2(1), AC-2(2))
     ctrl_node.xpath("control-enhancement").each do |enh_node|
@@ -715,7 +720,7 @@ class CatalogImportService
     stats[result]    += 1
 
     # Enhancement sub-parts from nested <statement> elements
-    import_xml_item_parts(family, control_id, root_stmt) if root_stmt
+    import_xml_item_parts(family, control_id, sort_id, root_stmt) if root_stmt
   end
 
   # Recursively create CatalogControl records for XML nested statement elements.
@@ -726,7 +731,7 @@ class CatalogImportService
   #   "AC-1a.1.(a)"  → sub_id "ac-1a.1.(a)" (label: "AC-1a.1.(a)")
   #
   # We strip the trailing dot and lowercase for canonical format.
-  def import_xml_item_parts(family, _parent_id, stmt_node)
+  def import_xml_item_parts(family, parent_id, parent_sort_id, stmt_node)
     return if stmt_node.nil?
     stmt_node.xpath("statement").each do |child|
       number = child.at_xpath("number")&.text.to_s.strip
@@ -737,6 +742,12 @@ class CatalogImportService
       label  = raw                        # "AC-1a" (display)
       next if sub_id.blank?
 
+      # NIST XML spells the full sub-ID in <number> rather than a suffix, so the
+      # prefix relationship holds for base controls ("ac-1" → "ac-1a") but not
+      # for enhancements, whose numbering keeps its own parenthesised form.
+      # `derived_sort_id` returns nil in that case and the fallback stands.
+      sub_sort = derived_sort_id(parent_sort_id, parent_id, sub_id)
+
       desc   = child.at_xpath("description")
       prose  = desc ? xml_text_content(desc).strip.presence : nil
 
@@ -745,10 +756,10 @@ class CatalogImportService
 
       upsert_catalog_control(family, sub_id, title, nil, nil,
         prose ? { "statement" => prose } : {},
-        label: label)
+        label: label, sort_id: sub_sort)
 
       # Recurse into deeper nesting
-      import_xml_item_parts(family, sub_id, child)
+      import_xml_item_parts(family, sub_id, sub_sort, child)
     end
   end
 
@@ -817,6 +828,33 @@ class CatalogImportService
   # Only the base number segment is padded; sub-part suffixes are unaffected.
   def pad_control_id(id)
     id.to_s.sub(/\A([A-Z]+-?)(\d+)\z/) { "#{$1}#{$2.rjust(2, '0')}" }
+  end
+
+  # Sort key for a statement sub-part, derived from its parent's (#941).
+  #
+  # OSCAL emits `props.sort-id` on controls — all 1196 of them in the Rev 5
+  # catalog — and on none of its 11159 `part` elements. That is not an omission
+  # to read around, because the sub-part ROW is ours: `import_*_item_parts`
+  # mints "ac-2.7" + ".(a)" → "ac-2.7.(a)" itself. Having invented the
+  # identifier, we must invent the matching sort key, or `default_scope`'s
+  # `COALESCE(sort_id, control_id)` compares an unpadded "ac-2.7.(a)" against a
+  # padded "ac-25" and the sub-part sorts after the last control in the family
+  # instead of directly under its parent.
+  #
+  # Applying the sub-id's own suffix to the parent's sort_id keeps the two in
+  # one padded vocabulary: "ac-02.07" + ".(a)" → "ac-02.07.(a)", which orders
+  # after "ac-02.07" and before "ac-03".
+  #
+  # Returns nil — leaving the column NULL and the COALESCE fallback in place —
+  # when the sub-id is not actually built from the parent-id. NIST XML carries
+  # the full sub-ID in <number> with its own spelling, so the prefix does not
+  # always hold there, and guessing would be worse than the fallback.
+  def derived_sort_id(parent_sort_id, parent_id, sub_id)
+    base = parent_sort_id.presence || parent_id.presence
+    return nil if base.blank? || parent_id.blank?
+    return nil unless sub_id.to_s.start_with?(parent_id)
+
+    "#{base}#{sub_id.delete_prefix(parent_id)}"
   end
 
   # Convert an OSCAL/XML statement label into an ID suffix for the parent control:
