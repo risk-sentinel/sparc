@@ -403,9 +403,31 @@ build, so wanting the first does not get you the second.
 
 `lean` curates 40 controls spanning all 20 families; `full` uses the real NIST
 MODERATE and LOW baselines. Loading one tier replaces the other — there is one
-reference estate, not one per tier. **Neither loads in production**, because a
-reference estate is indistinguishable from real authorization data once it is in
-a database.
+reference estate, not one per tier.
+
+### Production-mode targets
+
+| Variable | Values | Effect |
+|---|---|---|
+| `SPARC_ALLOW_REFERENCE_ESTATE` | `true` | Permits the estate in a production-mode instance |
+
+**Neither tier loads in production by default**, because a reference estate is
+indistinguishable from real authorization data once it is in a database.
+
+Production *mode*, though, is not the same as a production *deployment*. Every
+container image runs in production mode, including the disposable target you
+point a security scan at — and a scan needs full documents to crawl. Setting
+`SPARC_ALLOW_REFERENCE_ESTATE=true` allows that case.
+
+A second gate stays in place regardless of the flag: **the estate refuses to
+load if the instance already holds any authorization boundary, SSP, SAP, SAR or
+POA&M that is not its own**, and names what it found. A scan target is freshly
+built and empty; a live deployment never is — so setting the flag against your
+real deployment by mistake still refuses.
+
+While an estate is loaded in production mode, SPARC logs a warning at every boot
+naming the tier and the removal command. Every record it owns is named
+`Reference …`.
 
 See [Getting Started §5](Getting-Started#5-optional--load-a-realistic-authorization-to-look-at)
 for what it contains and how to remove it.

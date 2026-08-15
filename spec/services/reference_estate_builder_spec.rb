@@ -35,6 +35,54 @@ RSpec.describe ReferenceEstateBuilder do
       expect { builder.build }.to raise_error(described_class::UnsafeEnvironment, /will not run in production/)
     end
 
+    # #845 — production MODE is not the thing worth refusing. Every container
+    # image runs in it, including the disposable target an authenticated DAST
+    # run is pointed at, and DAST is precisely what needs full documents.
+    # Refusing production outright banned the fixture from the only place it
+    # was needed.
+    context "in production with the opt-in set" do
+      before do
+        allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
+        stub_const("ENV", ENV.to_h.merge(described_class::PRODUCTION_OPT_IN => "true"))
+      end
+
+      it "builds on an otherwise empty instance" do
+        expect { builder.build }.not_to raise_error
+      end
+
+      # The gate that actually protects: it does not depend on an operator
+      # setting a variable correctly. Pointing the flag at a live deployment by
+      # mistake still refuses, because a live deployment is never empty.
+      it "still refuses when the instance holds authorization data of its own" do
+        create(:ssp_document, name: "Somebody's Real System SSP")
+
+        expect { builder.build }
+          .to raise_error(described_class::UnsafeEnvironment, /already holds authorization data/)
+      end
+
+      it "names what it found, so the operator can see why" do
+        create(:ssp_document, name: "Real SSP")
+        create(:authorization_boundary, name: "Real Boundary")
+
+        expect { builder.build }.to raise_error(described_class::UnsafeEnvironment, /SSPs.*boundar|boundar.*SSPs/i)
+      end
+
+      # `NOT (name LIKE ...)` is NULL for a NULL name, so a `where.not` here
+      # would skip exactly the unnamed rows the guard exists to catch.
+      it "counts a record with no name at all as foreign" do
+        create(:ssp_document).update_columns(name: nil)
+
+        expect { builder.build }
+          .to raise_error(described_class::UnsafeEnvironment, /already holds authorization data/)
+      end
+
+      it "does not count the estate's own records as foreign" do
+        builder.build # first run creates them
+
+        expect { described_class.new(tier: :lean, catalog: catalog).build }.not_to raise_error
+      end
+    end
+
     it "rejects an unknown tier before touching the database" do
       expect { described_class.new(tier: :medium) }
         .to raise_error(ArgumentError, /unknown tier/)
@@ -63,6 +111,58 @@ RSpec.describe ReferenceEstateBuilder do
       result = side[:sar].sar_results.first
       expect(result.sar_findings.count).to eq(controls.size)
       expect(result.sar_risks.count).to eq(controls.size - side[:satisfied_control_ids].size)
+    end
+
+    # #845 — a real estate always has something in flight. Without these the
+    # review and promotion queues render empty and every check against them
+    # skips, which reads as "screen not covered" rather than "no data".
+    describe "queue fixtures" do
+      it "leaves a profile awaiting review, and an admin can act on it" do
+        builder.build
+
+        pending_profile = ProfileDocument.pending_review.first
+        expect(pending_profile).to be_present
+        expect(pending_profile.name).to include("proposed revision")
+
+        admin = create(:user, :admin)
+        expect(DocumentApprovalService.new(document: pending_profile, actor: admin).can_approve?).to be(true)
+      end
+
+      # ReviewQueueController accepts Catalog, Profile and CDEF only, so the
+      # entry has to be a profile — and a SEPARATE one. The boundaries' own
+      # profiles are published; a published profile at `pending_review` is a
+      # contradiction the screen would render as nonsense.
+      it "does not disturb the published profiles the SSPs were built from" do
+        result = builder.build
+
+        [ result.leveraged, result.leveraging ].each do |side|
+          expect(side[:profile].lifecycle_status).to eq("published")
+          expect(side[:profile].approval_status).not_to eq("pending_review")
+        end
+      end
+
+      it "leaves a back-matter resource awaiting promotion" do
+        builder.build
+
+        expect(BackMatterResource.pending_promotion.count).to eq(1)
+      end
+
+      # `submit_for_review!` stamps submitted_at with Time.current, which would
+      # put a fresh value in the database on every rebuild.
+      it "pins the review submission timestamp" do
+        builder.build
+        first = ProfileDocument.pending_review.first.submitted_at
+
+        expect(first).to eq(described_class::PINNED_ASSESSMENT[:end])
+      end
+
+      it "is idempotent — a second build does not stack up queue entries" do
+        builder.build
+
+        expect { builder.build }.not_to change {
+          [ ProfileDocument.pending_review.count, BackMatterResource.pending_promotion.count ]
+        }
+      end
     end
 
     # #952 — SspFromProfileService leaves authorization_boundary_id nil, and a

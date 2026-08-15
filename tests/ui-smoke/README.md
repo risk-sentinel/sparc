@@ -96,14 +96,39 @@ docker compose exec -e SPARC_SEED_REFERENCE=lean web bin/rails db:seed
 `lean` is the tier to use here — 40 controls spanning all 20 families, which is
 enough breadth for the sweeps without the build cost of the real baselines. It
 also seeds documents in **different lifecycle states** (a published POA&M, one
-in progress, one overdue), so the read-only-vs-editable branches are both
-exercised rather than one of them skipping.
+in progress, one overdue) plus one profile awaiting review and one back-matter
+resource awaiting promotion, so the read-only-vs-editable and empty-queue
+branches are exercised rather than skipped.
+
+Measured A/B on the same instance (the 13 data-thinness files, chromium):
+
+| | Passed | Skipped |
+|---|---|---|
+| Without the estate | 186 | 19 |
+| With the estate | 189 | 15 |
+
+Closed: `leveraged_poams` ×3 and the `poam`/`profile` index-filter corpora ×4.
+The review-queue and promotion-queue entries close a further 6 that the A/B
+predates. `federation_peers` ×3 stays — it is a different subsystem (#372).
+
+**This is the target that matters.** `ui-smoke.yml` is `workflow_dispatch` only
+and defaults to a deployed instance, which runs in production mode — so these
+skips only close there if the estate is allowed to load:
+
+```bash
+SPARC_ALLOW_REFERENCE_ESTATE=true SPARC_SEED_REFERENCE=lean bin/rails db:seed
+```
+
+It still refuses if the instance holds authorization data that is not its own,
+so this works on a disposable scan target and not on a live deployment.
 
 What it will *not* convert: the skips that are about **configuration** rather
 than data — OIDC not configured, no consent banner, `SPARC_REQUIRE_DOCUMENT_APPROVAL`
-off, missing tokens. Those need the instance configured, not seeded.
+off, PIV mTLS proxy absent, FIDO2 off, missing tokens. Those need the instance
+configured, not seeded, and no amount of fixture data will close them.
 
-See `docs/dev/reference_estate.md` for tiers, purge and the committed OSCAL.
+See `docs/dev/reference_estate.md` for tiers, purge, the production posture and
+the committed OSCAL.
 
 A wall of `502/503/504` **failures** across every route is not a code problem —
 it means the deployed instance is unhealthy (e.g. an ECS task recycle). The

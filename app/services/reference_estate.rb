@@ -62,13 +62,20 @@ module ReferenceEstate
 
     def boundary_ids
       AuthorizationBoundary.where(name: [ ReferenceEstateBuilder::LEVERAGED_BOUNDARY,
-                                          ReferenceEstateBuilder::LEVERAGING_BOUNDARY ]).pluck(:id)
+                                          ReferenceEstateBuilder::LEVERAGING_BOUNDARY ]).ids
     end
 
     # Returns a count per model so a caller can report what it removed rather
     # than claiming success blindly.
+    # Purge follows the same opt-in as the build. A target allowed to CARRY the
+    # estate must be allowed to remove it again — otherwise a DAST run could
+    # load fixtures it had no way to clean up, which is worse than not loading
+    # them. Purge only ever touches records the estate owns.
     def purge!
-      raise ReferenceEstateBuilder::UnsafeEnvironment, "refusing to purge in production" if Rails.env.production?
+      if Rails.env.production? && !ReferenceEstateBuilder.production_opt_in?
+        raise ReferenceEstateBuilder::UnsafeEnvironment,
+              "refusing to purge in production without #{ReferenceEstateBuilder::PRODUCTION_OPT_IN}=true"
+      end
 
       bids = boundary_ids
       counts = {}
@@ -166,7 +173,7 @@ module ReferenceEstate
 
     def estate_evidence_ids
       Evidence.where(authorization_boundary_id: boundary_ids)
-              .or(Evidence.where("title LIKE ?", like_prefix)).pluck(:id)
+              .or(Evidence.where("title LIKE ?", like_prefix)).ids
     end
 
     def regenerate!(tier)

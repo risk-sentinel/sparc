@@ -821,6 +821,7 @@ The `ServiceAccountMaintenanceJob` runs daily (3 AM, production) and auto-disabl
 | SPARC_SEED_MODE | Controls which sample data is seeded | full | `traditional`, `20x`, `full` | No |
 | SPARC_SEED_DEMO | Seed illustrative demo records (organizations, boundaries, SSPs, SARs, evidence, sample artifacts) | false | `true` | No |
 | SPARC_SEED_REFERENCE | Seed the reference leveraged authorization estate at this tier (#845). Unset means do not seed it | (unset) | `lean`, `full` | No |
+| SPARC_ALLOW_REFERENCE_ESTATE | Permit the reference estate in a **production-mode** instance — for a disposable target such as an authenticated DAST run. Still refuses if the instance holds any non-estate authorization data | false | `true` | No |
 
 The web container automatically runs `db:prepare` (which includes seeding) on startup. Use `SPARC_RUN_SEEDS=true` for Sidekiq or one-shot ECS tasks that need seed data without running the Rails server.
 
@@ -848,12 +849,35 @@ The provider gets the **higher** baseline deliberately: MODERATE is a strict
 superset of LOW, so a consumer control always has a provider counterpart to
 inherit from. Reversed, 138 controls would have had nowhere to inherit from.
 
-Neither tier will load in production — a reference estate is indistinguishable
-from real authorization data once it is in a database.
-
 Loading a different tier **replaces** the current estate rather than sitting
 alongside it. See `docs/dev/reference_estate.md` for the rake tasks, the
 committed OSCAL artifacts and the drift gate.
+
+#### Running it in production mode (DAST targets)
+
+By default the estate refuses to load in production. That default was once
+absolute, which was the wrong call: **production mode is not the thing worth
+refusing.** Every container image runs in it, including the disposable target an
+authenticated DAST run is pointed at — and DAST is exactly the case that needs
+full documents. Banning production banned the fixture from the only place it was
+needed.
+
+`SPARC_ALLOW_REFERENCE_ESTATE=true` lifts that, and a second gate stays in place
+regardless:
+
+> Even with the flag set, the estate **refuses to load if the instance already
+> holds any authorization boundary, SSP, SAP, SAR or POA&M that is not its own**,
+> and names what it found.
+
+That second gate is the one that actually protects, because it does not depend on
+an operator setting a variable correctly. A DAST target is freshly built and
+empty; a live deployment never is, so setting the flag against production by
+mistake still refuses.
+
+While an estate is present in a production-mode instance, SPARC logs a permanent
+warning at boot naming the tier and how to remove it — the same posture-warning
+pattern as `SPARC_ALLOW_LOCAL_STORAGE`. Every record the estate owns is named
+`Reference …`, and `bin/rails db:seed:reference:purge` removes it.
 
 ---
 

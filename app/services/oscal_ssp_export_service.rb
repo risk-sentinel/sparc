@@ -22,6 +22,7 @@ class OscalSspExportService
 
   # OSCAL prop/statement names reused across the export build.
   DATE_AUTHORIZED       = "date-authorized".freeze
+  PARTY_UUID            = "party-uuid".freeze
   RESPONSIBLE_ROLES     = "responsible-roles".freeze
   IMPLEMENTATION_STATUS = "implementation-status".freeze
   STATEMENT_ID          = "statement-id".freeze
@@ -355,7 +356,7 @@ class OscalSspExportService
     entry = {
       "uuid"            => la.uuid,
       "title"           => la.title,
-      "party-uuid"      => la.party_uuid,
+      PARTY_UUID        => la.party_uuid,
       DATE_AUTHORIZED => la.date_authorized&.iso8601
     }
     entry["props"]   = la.props_data if la.props_data.present?
@@ -393,7 +394,7 @@ class OscalSspExportService
     entry = {
       "uuid"       => la.uuid,
       "title"      => la.name,
-      "party-uuid" => leveraged_party_uuid(la)
+      PARTY_UUID   => leveraged_party_uuid(la)
     }
     entry[DATE_AUTHORIZED] = la.date_authorized.iso8601 if la.date_authorized
     entry["remarks"] = la.description if la.description.present?
@@ -408,7 +409,7 @@ class OscalSspExportService
     entry.compact
 
     party_uuid = la.metadata && la.metadata["party_uuid"]
-    entry["party-uuid"] = party_uuid if party_uuid.present?
+    entry[PARTY_UUID] = party_uuid if party_uuid.present?
 
     entry.compact
   end

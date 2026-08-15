@@ -74,6 +74,35 @@ which become POA&M items. Each boundary gets three POA&Ms — Initial (published
 Current (in progress) and Overdue — because a POA&M screen with one row in one
 state exercises almost nothing.
 
+### Work in flight
+
+A real estate always has something awaiting a decision, so the fixture creates
+two queue entries. Without them the review and promotion screens render empty
+and every check against them skips — which reads as "screen not covered" rather
+than "no data".
+
+| Queue | What the estate creates | Why that shape |
+| --- | --- | --- |
+| Review | A **third** profile, "Profile (proposed revision)", at `pending_review` | `ReviewQueueController` accepts Catalog/Profile/CDEF only — not SSPs or POA&Ms. It has to be separate: the boundaries' own profiles are published, and a published profile at `pending_review` is a contradiction the screen renders as nonsense |
+| Promotion | One existing back-matter resource flipped to `promotion_status: pending_review` | The rows already exist — `EvidenceControlLink` syncs one per evidence record — so this promotes one rather than inventing a resource nothing points at |
+
+Two details that will bite anyone changing this:
+
+- `submit_for_review!` stamps `submitted_at` with `Time.current`, which puts a
+  fresh value in the database on every rebuild. The status is what the queue
+  reads; the timestamp is pinned like every other one here.
+- The promoted resource is chosen with `.order(:uuid).first`. "Whichever comes
+  back first" is not a fixture, it is a coin flip that moves the promotion
+  between rebuilds.
+- `side[:evidence]` holds only the three explicitly-built records, **not** all 16
+  — the simulated scanner and policy evidence is created separately, and it is
+  the part that carries back-matter. Reading the wrong one finds nothing and
+  silently leaves the queue empty.
+
+`federation_peers` is deliberately **not** covered. It belongs to the federation
+subsystem (#372), and adding a row to a leveraged-authorization fixture purely to
+silence a skip would make the fixture dishonest about what it models.
+
 ## Commands
 
 ```bash
@@ -96,8 +125,50 @@ seeded at `lean` is correctly **not** considered seeded when the operator asks
 for `full`. Without that, `SeedRunner` would skip the section and leave the wrong
 estate in place.
 
-Every entry point refuses to run in production. A reference estate is
-indistinguishable from real authorization data once it is in a database.
+## Running it in production mode — DAST
+
+DAST is run manually against a deployed, production-mode instance, and a DAST
+run is worthless without full documents to crawl. The first version of this
+fixture refused `Rails.env.production?` outright, which meant the estate could
+never reach the one environment that most needed it. That was a design error,
+not a safety property: **production mode is not the thing worth refusing.**
+Every container image runs in it, including a disposable scan target.
+
+What deserves protection is an instance holding *real* authorizations. So there
+are two gates:
+
+1. **`SPARC_ALLOW_REFERENCE_ESTATE=true`** — an explicit opt-in, mirroring
+   `config/initializers/zz_storage_posture.rb`: refuse by default, name an
+   escape hatch, warn permanently when it is used.
+2. **Emptiness** — even with the flag set, refuse if the instance holds any
+   authorization boundary, SSP, SAP, SAR or POA&M that is not the estate's own,
+   and name what was found.
+
+The second gate is the one that actually protects. It does not depend on an
+operator setting a variable correctly: a DAST target is freshly built and empty,
+a live deployment never is, so fat-fingering the flag onto production still
+refuses.
+
+`purge` follows the same opt-in — a target allowed to *carry* the estate must be
+able to remove it, or a scan run could load fixtures it had no way to clean up.
+`regenerate` still refuses in production unconditionally, because it writes into
+the repository working tree.
+
+Typical DAST target:
+
+```bash
+SPARC_ALLOW_REFERENCE_ESTATE=true SPARC_SEED_REFERENCE=lean bin/rails db:seed
+```
+
+While an estate is loaded in production mode, `zz_reference_estate_posture.rb`
+logs a permanent warning at boot naming the tier and the purge command, so
+nobody has to guess whether the documents on screen are real.
+
+**Deliberately not done:** stamping exported OSCAL with a "this is a fixture"
+prop. The artifacts are meant to be exemplary output — marking them would make
+them unrepresentative of what SPARC actually produces, which is most of their
+value. Distinguishability lives at the instance level instead: the boot warning,
+and the `Reference …` naming on every record.
 
 ## Committed OSCAL artifacts
 

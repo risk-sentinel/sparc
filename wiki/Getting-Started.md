@@ -97,8 +97,12 @@ bin/rails db:seed:reference:purge    # remove it again
 
 Two tiers are available: `lean` (40 curated controls spanning all 20 families)
 and `full` (real NIST MODERATE and LOW baselines). Loading one replaces the
-other. **Neither will load in production** — a reference estate is
-indistinguishable from real authorization data once it is in a database.
+other. **Neither loads in production by default** — a reference estate is
+indistinguishable from real authorization data once it is in a database. A
+disposable production-mode target (a security scan, a release-verification
+stack) can opt in with `SPARC_ALLOW_REFERENCE_ESTATE=true`, and even then it
+refuses if the instance already holds authorization data of its own. See
+[Configuration](Configuration#seed-data).
 
 For the separate, lighter `SPARC_SEED_DEMO` sample records, see
 [Configuration](Configuration).

@@ -24,11 +24,13 @@ namespace :db do
         abort "Unknown tier #{tier.inspect}. Expected one of: #{ReferenceEstateBuilder::TIERS.join(', ')}."
       end
 
-      # The builder refuses production itself; aborting here too means the
-      # operator gets a clear message instead of a backtrace.
-      if Rails.env.production?
+      # The builder enforces this itself; aborting here means the operator gets
+      # a clear message instead of a backtrace.
+      if Rails.env.production? && !ReferenceEstateBuilder.production_opt_in?
         abort "Refusing to load the reference estate in production — it creates authorization " \
-              "documents that are indistinguishable from real ones."
+              "documents that are indistinguishable from real ones. If this is a disposable " \
+              "target (e.g. an authenticated DAST run), set " \
+              "#{ReferenceEstateBuilder::PRODUCTION_OPT_IN}=true."
       end
 
       puts "[reference] building the #{tier} estate..."
@@ -43,8 +45,9 @@ namespace :db do
     namespace :reference do
       desc "Remove the reference estate"
       task purge: :environment do
-        if Rails.env.production?
-          abort "Refusing to touch reference estate data in production."
+        if Rails.env.production? && !ReferenceEstateBuilder.production_opt_in?
+          abort "Refusing to touch reference estate data in production without " \
+                "#{ReferenceEstateBuilder::PRODUCTION_OPT_IN}=true."
         end
 
         counts = ReferenceEstate.purge!

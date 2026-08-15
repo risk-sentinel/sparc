@@ -39,6 +39,41 @@ class ReferenceEstateBuilder
 
   TIERS = %i[lean full].freeze
 
+  # The escape hatch that lets a disposable production-mode target (a DAST
+  # run, a release-verification stack) carry the estate. See
+  # `refuse_in_production!` for why production mode alone is not the test.
+  PRODUCTION_OPT_IN = "SPARC_ALLOW_REFERENCE_ESTATE"
+
+  class << self
+    def production_opt_in? = ENV.fetch(PRODUCTION_OPT_IN, "false") == "true"
+
+    # Authorization data that is NOT part of the reference estate, as
+    # { "ssp_documents" => 3, ... }. Empty means the instance holds nothing the
+    # estate would be confused with.
+    def foreign_authorization_data
+      estate_boundary_ids = AuthorizationBoundary.where(
+        name: [ LEVERAGED_BOUNDARY, LEVERAGING_BOUNDARY ]
+      ).ids
+
+      {
+        "authorization boundaries" => AuthorizationBoundary.where.not(id: estate_boundary_ids).count,
+        "SSPs"                     => foreign_count(SspDocument),
+        "SAPs"                     => foreign_count(SapDocument),
+        "SARs"                     => foreign_count(SarDocument),
+        "POA&Ms"                   => foreign_count(PoamDocument)
+      }.reject { |_label, count| count.zero? }
+    end
+
+    private
+
+    # Explicit IS NULL arm: `NOT (name LIKE ...)` is NULL for a NULL name, so
+    # `where.not` would silently skip exactly the unnamed rows this must catch.
+    # The same trap already produced a guard that counted nothing (#959).
+    def foreign_count(klass)
+      klass.where("name IS NULL OR name NOT LIKE ?", "#{NAME_PREFIX}%").count
+    end
+  end
+
   # Every record the estate owns starts with this, which is how
   # ReferenceEstate finds them again to purge or report. Both tiers use the
   # SAME names deliberately: there is one reference estate, not one per tier,
@@ -103,6 +138,12 @@ class ReferenceEstateBuilder
     declare_customer_responsibility_split(leveraged)
     links = wire_leveraging(leveraged: leveraged, leveraging: leveraging)
 
+    # A real estate always has something in flight. Without these, the review
+    # and promotion queues render empty and every check against them skips,
+    # which reads as "screen not covered" rather than "no data".
+    build_review_queue_entry(leveraging)
+    build_promotion_queue_entry(leveraged)
+
     # LAST, because anything that writes afterwards would bump it again.
     pin_last_modified!([ leveraged, leveraging ])
 
@@ -112,14 +153,43 @@ class ReferenceEstateBuilder
   private
 
   # A reference estate is indistinguishable from real authorization data once
-  # it is in a database — same models, same screens, same exports. Refusing
-  # here is cheaper than explaining it later.
+  # it is in a database — same models, same screens, same exports.
+  #
+  # The first version of this refused `Rails.env.production?` outright, which
+  # was the wrong discriminator and defeated half the fixture's purpose. Every
+  # container image runs in production MODE, including the disposable target an
+  # authenticated DAST run is pointed at — and DAST is exactly what needs full
+  # documents. Banning production banned the fixture from the only place it was
+  # needed.
+  #
+  # What deserves protection is not production mode; it is an instance holding
+  # REAL authorizations. So there are two gates, and the second is the one that
+  # actually protects:
+  #
+  #   1. An explicit opt-in, mirroring config/initializers/zz_storage_posture.rb
+  #      — refuse by default, name an escape hatch, warn permanently when used.
+  #   2. Emptiness. Even with the hatch set, refuse if the instance holds any
+  #      authorization document or boundary that is not the estate's own. A DAST
+  #      target is freshly built and empty; a live instance never is. This one
+  #      does not depend on an operator setting a variable correctly, so setting
+  #      the flag against a real deployment by mistake still refuses.
   def refuse_in_production!
     return unless Rails.env.production?
 
+    unless self.class.production_opt_in?
+      raise UnsafeEnvironment,
+            "ReferenceEstateBuilder will not run in production — it creates authorization " \
+            "documents that are indistinguishable from real ones. If this is a disposable " \
+            "target (e.g. an authenticated DAST run), set #{PRODUCTION_OPT_IN}=true."
+    end
+
+    occupants = self.class.foreign_authorization_data
+    return if occupants.empty?
+
     raise UnsafeEnvironment,
-          "ReferenceEstateBuilder will not run in production — it creates authorization " \
-          "documents that are indistinguishable from real ones."
+          "refusing to build a reference estate in production: this instance already holds " \
+          "authorization data that is not the estate's own (#{occupants.map { |k, v| "#{v} #{k}" }.join(', ')}). " \
+          "#{PRODUCTION_OPT_IN} is for empty, disposable targets — not a live deployment."
   end
 
   # `leveraged` is the boundary being consumed — the platform that PROVIDES
@@ -202,6 +272,60 @@ class ReferenceEstateBuilder
 
     pin_identifiers!(side)
     side.merge(ssp: ssp.reload, sar: sar.reload)
+  end
+
+  # ── Queue fixtures ───────────────────────────────────────────────────────
+  #
+  # ReviewQueueController accepts ControlCatalog, ProfileDocument and
+  # CdefDocument only — not SSPs or POA&Ms — so the entry has to be a profile.
+  # It is a SEPARATE, third profile rather than the boundary's own: the live
+  # ones are published, and a published profile sitting at `pending_review`
+  # would be a contradiction the screen would render as nonsense. A proposed
+  # revision awaiting sign-off is what actually happens.
+  def build_review_queue_entry(leveraging)
+    name    = "#{LEVERAGING_BOUNDARY} — Profile (proposed revision)"
+    profile = ProfileDocument.find_or_initialize_by(name: name)
+    return profile unless profile.new_record?
+
+    profile.control_catalog_id = catalog.id
+    profile.baseline_level     = leveraging[:profile].baseline_level
+    profile.description        = "Reference estate profile revision (#845) awaiting review."
+    profile.save!
+
+    ProfileControlSelectionService.new(profile).update(
+      leveraging[:ssp].ssp_controls.pluck(:control_id).compact.sort
+    )
+
+    # submit_for_review! stamps submitted_at with Time.current, which would put
+    # a fresh value in the database on every rebuild. The status is what the
+    # queue reads; the timestamp is pinned for the same reason every other
+    # timestamp here is.
+    profile.update!(approval_status:    "pending_review",
+                    submitted_by_user:  @actor,
+                    submitted_at:       PINNED_ASSESSMENT[:end],
+                    lifecycle_status:   "in_progress")
+    pin_record(profile, "reference-profile-revision", name)
+    profile
+  end
+
+  # BackMatterResource rows already exist — EvidenceControlLink syncs one per
+  # evidence record — so this promotes one rather than inventing a resource
+  # that nothing points at. `.order(:uuid)` because "whichever comes back
+  # first" is not a fixture, it is a coin flip that would move the promotion
+  # between rebuilds.
+  def build_promotion_queue_entry(leveraged)
+    # By BOUNDARY, not `leveraged[:evidence]` — that key holds only the three
+    # explicitly-built records, while the simulated scanner and policy evidence
+    # (the rest of the 16, and the ones that actually carry back-matter) is
+    # created separately. Reading the wrong one found nothing and silently
+    # skipped, leaving the queue empty exactly as before.
+    evidence_ids = Evidence.where(authorization_boundary_id: leveraged[:boundary].id).ids
+    resource = BackMatterResource.where(evidence_id: evidence_ids)
+                                 .order(:uuid).first
+    return if resource.nil?
+
+    resource.update!(promotion_status: "pending_review")
+    resource
   end
 
   def upsert_organization(name)

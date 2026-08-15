@@ -2635,7 +2635,7 @@ end # SeedRunner oscal_schemas
 # NOT already seeded when the operator asks for `full`. Folding it into the
 # version is what makes SeedRunner re-run the section on a tier change instead
 # of skipping it and leaving the wrong estate in place.
-REFERENCE_TIER = ENV["SPARC_SEED_REFERENCE"].presence&.downcase
+REFERENCE_TIER = ENV.fetch("SPARC_SEED_REFERENCE", "").presence&.downcase
 if REFERENCE_TIER
   SeedRunner.run_section(
     "reference_leveraged_boundaries",
