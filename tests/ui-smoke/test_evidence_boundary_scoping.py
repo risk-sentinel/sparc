@@ -13,25 +13,43 @@ real scoping regression can't hide behind "no data".
 
 from __future__ import annotations
 
+import re
+from urllib.parse import quote_plus
+
 import pytest
 
 from helpers import csp_violations, record_csp
+
+SHOW_HREF = re.compile(r"^/evidences/[^/?#]+$")
 
 GLOBAL_TITLE = "SMOKE GLOBAL EVIDENCE"
 RESTRICTED_TITLE = "SMOKE RESTRICTED EVIDENCE"
 
 
 def _restricted_href(admin_page) -> str:
-    admin_page.goto("/evidences")
+    # Search rather than trusting page 1 of /evidences. This used to load the
+    # bare index and skip when the link was not on it, reporting the fixture as
+    # "missing — run the demo seed". It was not missing: loading any additional
+    # evidence (e.g. the #845 reference estate, which adds 32 records) pushed it
+    # off the first page, and the suite then quietly stopped testing boundary
+    # scoping while claiming a seeding problem the operator could not find.
+    admin_page.goto(f"/evidences?q={quote_plus(RESTRICTED_TITLE)}")
     admin_page.wait_for_load_state("networkidle")
-    link = admin_page.get_by_role("link", name=RESTRICTED_TITLE)
-    if link.count() == 0:
-        pytest.skip(
-            f"seed fixture '{RESTRICTED_TITLE}' missing — run the demo seed (SPARC_SEED_DEMO=true)"
-        )
-    href = link.first.get_attribute("href")
-    assert href, "restricted evidence link has no href"
-    return href
+
+    # Take the first link that is actually an evidence SHOW url. Searching adds
+    # an active-facet chip carrying the same accessible name whose href is the
+    # index itself, so `.first` on the name alone returns "/evidences" — which
+    # then makes the redirect assertion below compare the index against itself.
+    links = admin_page.get_by_role("link", name=RESTRICTED_TITLE)
+    for index in range(links.count()):
+        href = links.nth(index).get_attribute("href")
+        if href and SHOW_HREF.match(href):
+            return href
+
+    pytest.skip(
+        f"seed fixture '{RESTRICTED_TITLE}' not found by search — "
+        "run the demo seed (SPARC_SEED_DEMO=true)"
+    )
 
 
 def test_non_admin_index_hides_out_of_boundary_evidence(user_authed_page, authed_page):

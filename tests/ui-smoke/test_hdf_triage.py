@@ -146,6 +146,7 @@ def test_disposition_form_stimulus_hint(authed_page, base_url):
         pytest.skip("no authorization boundary available to triage")
 
     # Ensure at least one finding exists to disposition.
+    ingested = False
     if page.locator("details").count() == 0:
         with tempfile.NamedTemporaryFile("w", suffix=".hdf.json", delete=False) as f:
             json.dump(HDF_SAMPLE, f)
@@ -153,9 +154,18 @@ def test_disposition_form_stimulus_hint(authed_page, base_url):
         page.locator("input[type='file']").first.set_input_files(sample_path)
         page.get_by_role("button", name="Upload & Ingest").click()
         page.wait_for_load_state("networkidle")
+        ingested = True
 
     details = page.locator("details").first
     if details.count() == 0:
+        # This test supplies its own finding, so after an ingest "no findings"
+        # is not thin data — the ingest failed and the skip was hiding it. It
+        # did exactly that against a boundary whose triage page 500s: the run
+        # reported a skip where it should have reported a broken screen.
+        assert not ingested, (
+            "ingested an HDF sample but no finding appeared — the ingest failed "
+            f"on {page.url}"
+        )
         pytest.skip("no findings to disposition")
 
     details.locator("summary").click()
