@@ -51,6 +51,30 @@ RSpec.describe "CDEF authoring (#944)", type: :request do
       expect(response).to have_http_status(:unprocessable_entity)
     end
 
+    # Found by the ui-smoke run, not by this spec's first version: `status`
+    # defaults to "pending" at the column, so the original `||=` never fired and
+    # the document sat as though a parse were queued. The show screen then
+    # rendered its processing view instead of the component — invisible from a
+    # request spec that only checked the redirect and the attributes.
+    it "marks an authored document completed, not pending" do
+      post cdef_documents_path, params: { cdef_document: authoring_attrs }
+
+      expect(CdefDocument.order(:id).last.status).to eq("completed")
+    end
+
+    it "records it as custom rather than leaving the type unset" do
+      post cdef_documents_path, params: { cdef_document: authoring_attrs }
+
+      expect(CdefDocument.order(:id).last.cdef_type).to eq("custom")
+    end
+
+    it "shows the authored document on its own page afterwards" do
+      post cdef_documents_path, params: { cdef_document: authoring_attrs }
+      follow_redirect!
+
+      expect(response.body).to include("Okta Identity Platform")
+    end
+
     it "offers the authoring form on the new page" do
       get new_cdef_document_path
 

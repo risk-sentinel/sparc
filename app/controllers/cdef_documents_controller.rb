@@ -594,9 +594,15 @@ class CdefDocumentsController < ApplicationController
   def create_authored
     @cdef_document = CdefDocument.new(component_authoring_params)
     # An authored component has no source file and no controls yet; it is
-    # complete as a document, and `populate_from_profile` or manual authoring
+    # complete as a DOCUMENT, and `populate_from_profile` or manual authoring
     # gives it a control basis next.
-    @cdef_document.status ||= "completed"
+    #
+    # Assigned, not `||=`. `status` defaults to "pending" at the column, so it
+    # is never nil and `||=` silently did nothing — the document then sat in
+    # "pending" as though a parse were still queued, and the show screen
+    # rendered its processing view instead of the component. Nothing was
+    # waiting on it; there is no file to parse.
+    @cdef_document.status = "completed"
     @cdef_document.cdef_type ||= "custom"
     @cdef_document.uploaded_by_user = current_user if @cdef_document.respond_to?(:uploaded_by_user=)
 
