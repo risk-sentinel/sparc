@@ -545,4 +545,57 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       expect(CdefDocument.exists?(cdef.id)).to be(true)
     end
   end
+
+  # #944 — an integrator could create a CDEF over the API and still had no way
+  # to say what kind of component it described: the exporter hardcoded `type`
+  # to "software", took the title from the document name, and synthesised the
+  # control-implementation source.
+  describe "component authoring fields (#944)" do
+    let(:authoring) do
+      { component_type: "service", component_title: "Okta",
+        component_description: "Workforce identity provider.",
+        control_implementation_source: "https://example.gov/rev5.json",
+        control_implementation_description: "Implements the IA family." }
+    end
+
+    it "accepts them on create" do
+      post "/api/v1/cdef_documents",
+           params: { cdef_document: { name: "Authored over the API" }.merge(authoring) },
+           headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      body = JSON.parse(response.body)["data"]
+      expect(body["component_type"]).to eq("service")
+      expect(body["control_implementation_source"]).to eq("https://example.gov/rev5.json")
+    end
+
+    it "accepts them on update" do
+      cdef = create(:cdef_document)
+
+      patch "/api/v1/cdef_documents/#{cdef.slug}",
+            params: { cdef_document: authoring }, headers: auth_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(cdef.reload.component_title).to eq("Okta")
+    end
+
+    it "refuses a component type OSCAL does not define" do
+      cdef = create(:cdef_document)
+
+      patch "/api/v1/cdef_documents/#{cdef.slug}",
+            params: { cdef_document: { component_type: "wetware" } }, headers: auth_headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(cdef.reload.component_type).to be_nil
+    end
+
+    it "reports them, so a consumer sees what will be exported" do
+      cdef = create(:cdef_document)
+      cdef.update!(component_type: "policy")
+
+      get "/api/v1/cdef_documents/#{cdef.slug}", headers: auth_headers
+
+      expect(JSON.parse(response.body)["data"]["component_type"]).to eq("policy")
+    end
+  end
 end

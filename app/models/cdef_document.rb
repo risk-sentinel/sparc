@@ -54,6 +54,21 @@ class CdefDocument < ApplicationRecord
 
   validates :name, presence: true
 
+  # #944 — OSCAL `defined-component` types, taken verbatim from the enum in the
+  # baked-in v1.1.2 component schema rather than retyped from memory.
+  #
+  # The schema expresses this as `anyOf: [string, enum]`, so a bespoke value is
+  # technically valid OSCAL. The picker therefore offers these and validation
+  # allows blank — but a value outside the list is refused, because every
+  # instance of one we have seen has been a typo rather than a considered
+  # extension, and a mistyped type is not visible in the exported artifact.
+  COMPONENT_TYPES = %w[
+    interconnection software hardware service policy physical
+    process-procedure plan guidance standard validation
+  ].freeze
+
+  validates :component_type, inclusion: { in: COMPONENT_TYPES }, allow_blank: true
+
   # Scope: CDEFs visible to a given organization for SSP composition.
   # Returns globally_available CDEFs in that org. (Boundary-specific CDEFs
   # are reached via the boundary's `boundaries.cdef_documents` association.)

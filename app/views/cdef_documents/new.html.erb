@@ -18,6 +18,29 @@
   <% end %>
 </div>
 
+<%# #944 — authoring from scratch. Until now `create` was unconditionally an
+    upload handler, so the only way a component definition entered SPARC was as
+    a file someone else had authored. This form carries no file field, which is
+    exactly how the controller tells the two apart. %>
+<div class="card">
+  <h2>Author a Component Definition</h2>
+  <p class="text-body-secondary" style="font-size: 0.88rem;">
+    Describe a component yourself, rather than importing one. You can give it a
+    control basis afterwards — from a published profile, or by adding controls
+    directly.
+  </p>
+
+  <%= form_with model: @cdef_document, local: true do |f| %>
+    <%= render "component_fields", f: f %>
+
+    <div class="d-flex gap-3 mt-4">
+      <%= f.submit "Create Component Definition", class: "btn btn-success",
+            data: { testid: "author-cdef-submit" } %>
+      <%= link_to "Cancel", cdef_documents_path, class: "btn btn-secondary" %>
+    </div>
+  <% end %>
+</div>
+
 <div class="card">
   <h2>Create from Published Profile</h2>
   <p class="text-body-secondary mb-3">

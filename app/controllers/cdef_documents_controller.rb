@@ -14,15 +14,15 @@ class CdefDocumentsController < ApplicationController
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
 
-  before_action :set_cdef_document, only: %i[set_baseline show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm attach_profile populate_from_profile submit_for_review approve reject]
-  before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :attach_profile, :populate_from_profile, :submit_for_review ]
+  before_action :set_cdef_document, only: %i[set_baseline show edit update destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm attach_profile populate_from_profile submit_for_review approve reject]
+  before_action :ensure_editable!, only: [ :edit, :update, :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :attach_profile, :populate_from_profile, :submit_for_review ]
   # Issue #488 — same RBAC bucket as the DISA CCI "Refresh Now" button on
   # ConvertersController. Treats AWS Labs catalog refresh as an
   # authoritative-upstream-content operation alongside DISA CCI / STIG
   # refreshes — gated on `converters.write` or admin.
   before_action :authorize_converter_write!, only: [ :refresh_aws_labs ]
   # #738: CDEF is global (no boundary); mutations require cdef.write (instance-level). (AC-3)
-  before_action :authorize_cdef_write!, only: %i[create destroy update_field update_metadata copy create_from_profile populate_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review]
+  before_action :authorize_cdef_write!, only: %i[create update destroy update_field update_metadata copy create_from_profile populate_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -83,11 +83,43 @@ class CdefDocumentsController < ApplicationController
     end
   end
 
+  # #944 — a component definition had `new`/`create` but no `edit` and no
+  # `update`, and `create` was upload-only. So the only way a CDEF entered SPARC
+  # was as a file someone else authored, and afterwards the only mutators were
+  # the three inline fragment paths. Every field NIST's simple-component-
+  # definition tutorial calls required — the component's type, title and
+  # description, and the control-implementation's source and description — had
+  # nowhere to be entered at all.
+  #
+  # `edit`/`update` go through the SAME `ensure_editable!` and
+  # `authorize_cdef_write!` guards as every other mutation, so an AWS-Labs
+  # -sourced or published document stays read-only. Nothing here weakens them.
+  def edit
+  end
+
+  def update
+    if @cdef_document.update(component_authoring_params)
+      audit_log("cdef_document_updated", subject: @cdef_document,
+                metadata: { name: @cdef_document.name,
+                            component_type: @cdef_document.component_type })
+      redirect_to cdef_document_path(@cdef_document),
+                  flash: { success: "Component definition updated." }
+    else
+      flash.now[:error] = @cdef_document.errors.full_messages.join(", ")
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
   def new
     @cdef_document = CdefDocument.new
   end
 
   def create
+    # #944 — authoring from scratch, when no file was supplied. `create` was
+    # unconditionally an upload handler, which is why the only way a component
+    # definition entered SPARC was as a file someone else had authored.
+    return create_authored if authoring_from_scratch?
+
     handle_multi_file_upload(:cdef, param_key: :cdef_document)
   end
 
@@ -549,6 +581,46 @@ class CdefDocumentsController < ApplicationController
 
   def control_resource_params
     params.require(:back_matter_resource).permit(:title, :description, :href, :media_type, :rel)
+  end
+
+  # A create with no file attached is an authoring request, not a failed
+  # upload. Checked on the FILE rather than on a hidden mode flag, so a form
+  # that forgets the flag cannot silently take the wrong branch.
+  def authoring_from_scratch?
+    files = params.dig(:cdef_document, :files) || params.dig(:cdef_document, :file)
+    Array(files).compact_blank.empty?
+  end
+
+  def create_authored
+    @cdef_document = CdefDocument.new(component_authoring_params)
+    # An authored component has no source file and no controls yet; it is
+    # complete as a document, and `populate_from_profile` or manual authoring
+    # gives it a control basis next.
+    @cdef_document.status ||= "completed"
+    @cdef_document.cdef_type ||= "custom"
+    @cdef_document.uploaded_by_user = current_user if @cdef_document.respond_to?(:uploaded_by_user=)
+
+    if @cdef_document.save
+      audit_log("cdef_document_authored", subject: @cdef_document,
+                metadata: { name: @cdef_document.name,
+                            component_type: @cdef_document.component_type })
+      redirect_to cdef_document_path(@cdef_document),
+                  flash: { success: "Component definition created. Add controls to it next." }
+    else
+      flash.now[:error] = @cdef_document.errors.full_messages.join(", ")
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  # #944 — the component's own OSCAL fields, separate from
+  # `document_metadata_params` (which the inline fragment paths use) so the
+  # authoring form cannot quietly widen what those accept.
+  def component_authoring_params
+    params.require(:cdef_document).permit(
+      :name, :description, :cdef_version, :oscal_version,
+      :component_type, :component_title, :component_description,
+      :control_implementation_source, :control_implementation_description
+    )
   end
 
   def document_metadata_params

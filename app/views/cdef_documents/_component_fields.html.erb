@@ -1,0 +1,74 @@
+<%# #944 — the OSCAL fields NIST's simple-component-definition tutorial calls
+    required. Before this they had nowhere to be entered: the exporter
+    hardcoded `type` to "software", took the title from the document name, and
+    synthesised the control-implementation source as a sparc.local URL.
+
+    Shared by `new` (authoring from scratch) and `edit`. %>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="form-group">
+      <%= f.label :name, "Document name", class: "form-label" %>
+      <%= field_help "What this component definition is called inside SPARC. The component's own title is set below." %>
+      <%= f.text_field :name, class: "form-control", required: true,
+            placeholder: "e.g. Okta Identity Platform" %>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="form-group">
+      <%= f.label :component_type, "Component type", class: "form-label" %>
+      <%= field_help "What kind of thing this component is. OSCAL constrains this list; every export previously claimed 'software' regardless." %>
+      <%= f.select :component_type,
+            options_for_select(
+              CdefDocument::COMPONENT_TYPES.map { |t| [ t.tr("-", " ").capitalize, t ] },
+              f.object.component_type
+            ),
+            { include_blank: "— Select type (defaults to software) —" },
+            class: "form-select" %>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="form-group">
+      <%= f.label :component_title, "Component title", class: "form-label" %>
+      <%= field_help "The component's title as it appears in exported OSCAL. Leave blank to reuse the document name." %>
+      <%= f.text_field :component_title, class: "form-control",
+            placeholder: "Defaults to the document name" %>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="form-group">
+      <%= f.label :control_implementation_source, "Control implementation source", class: "form-label" %>
+      <%= field_help "The catalog or profile whose controls this component implements. Without it, export synthesises a placeholder URL that resolves to nothing." %>
+      <%= f.text_field :control_implementation_source, class: "form-control",
+            placeholder: "e.g. https://raw.githubusercontent.com/usnistgov/oscal-content/.../NIST_SP-800-53_rev5_catalog.json" %>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="form-group">
+      <%= f.label :component_description, "Component description", class: "form-label" %>
+      <%= field_help "What the component does. This is what a reader of the exported component definition sees." %>
+      <%= f.text_area :component_description, rows: 3, class: "form-control",
+            placeholder: "Defaults to the document description" %>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="form-group">
+      <%= f.label :control_implementation_description, "Control implementation description", class: "form-label" %>
+      <%= field_help "How this component implements the controls below — the narrative that accompanies the implemented requirements." %>
+      <%= f.text_area :control_implementation_description, rows: 3, class: "form-control",
+            placeholder: "Defaults to a generated summary" %>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="form-group">
+      <%= f.label :description, "Document description", class: "form-label" %>
+      <%= f.text_area :description, rows: 2, class: "form-control" %>
+    </div>
+  </div>
+</div>

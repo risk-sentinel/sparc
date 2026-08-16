@@ -270,7 +270,12 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   def cdef_params
     params.require(:cdef_document).permit(
       :name, :description, :cdef_type, :cdef_version, :benchmark_id,
-      :oscal_version, :lifecycle_status, :file_type
+      :oscal_version, :lifecycle_status, :file_type,
+      # #944 — the component's own OSCAL fields. The exporter hardcoded these,
+      # so an integrator could create a CDEF over the API and still had no way
+      # to say what kind of component it described.
+      :component_type, :component_title, :component_description,
+      :control_implementation_source, :control_implementation_description
     )
   end
 
@@ -290,6 +295,13 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       cdef_type: cdef.cdef_type,
       cdef_version: cdef.cdef_version,
       benchmark_id: cdef.benchmark_id,
+      # #944 — reported so a consumer can see what will be exported, rather
+      # than discovering the hardcoded defaults from the artifact.
+      component_type: cdef.component_type,
+      component_title: cdef.component_title,
+      component_description: cdef.component_description,
+      control_implementation_source: cdef.control_implementation_source,
+      control_implementation_description: cdef.control_implementation_description,
       created_at: cdef.created_at.iso8601,
       updated_at: cdef.updated_at.iso8601
     }
