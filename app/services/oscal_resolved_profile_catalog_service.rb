@@ -104,7 +104,7 @@ class OscalResolvedProfileCatalogService
     props = build_control_props(catalog_control, profile_control)
     result["props"] = props if props.any?
 
-    parts = build_control_parts(catalog_control)
+    parts = build_control_parts(catalog_control, profile_control)
     result["parts"] = parts if parts.any?
 
     result
@@ -115,23 +115,61 @@ class OscalResolvedProfileCatalogService
   def build_resolved_params(catalog_control, profile_control)
     return [] unless catalog_control.params_present?
 
-    # Build lookup of profile parameter values
-    param_values = {}
-    if profile_control
-      profile_control.profile_control_fields.each do |field|
-        next unless field.field_name.start_with?("parameter:") && !field.field_name.start_with?("parameter_label:")
-        param_id = field.field_name.delete_prefix("parameter:")
-        param_values[param_id] = field.field_value if field.field_value.present?
-      end
-    end
+    param_values = set_parameter_values(profile_control)
+    # #942 — the stored value for a `select` is WHICH branches were chosen, and
+    # each branch can itself reference another parameter. Copying it into the
+    # label verbatim put `{{ insert: param, ac-20_odp.02 }}` back into the
+    # resolved output through the params, after the statement had been resolved.
+    resolver = parameter_resolver(catalog_control, profile_control)
 
     catalog_control.params_list.map do |param|
       resolved = param.dup
       if param_values[param["id"]].present?
-        resolved["label"] = param_values[param["id"]]
+        resolved["label"] = resolver.resolve_param(param["id"]).presence ||
+                            param_values[param["id"]]
       end
+
+      # The options a selection offers are prose a person reads too, and
+      # "establish {{ insert: param, ac-20_odp.02 }}" is the exact string a
+      # resolved profile must not contain. Resolved in place; the choice keeps
+      # its own wording ("establish", "identify") and only the reference is
+      # substituted.
+      if resolved["select"].is_a?(Hash) && resolved["select"]["choice"].present?
+        select = resolved["select"].dup
+        select["choice"] = Array(select["choice"]).map { |c| resolver.resolve_text(c).strip }
+        resolved["select"] = select
+      end
+
       resolved
     end
+  end
+
+  # param_id => the operator's set value. `parameter:` only: `parameter_label:`
+  # is the catalog's own wording and `parameter_choices:` (#942) is the list of
+  # options, neither of which is an answer.
+  def set_parameter_values(profile_control)
+    values = {}
+    return values unless profile_control
+
+    profile_control.profile_control_fields.each do |field|
+      next unless field.field_name.start_with?("parameter:")
+      next if field.field_name.start_with?("parameter_label:")
+
+      param_id = field.field_name.delete_prefix("parameter:")
+      values[param_id] = field.field_value if field.field_value.present?
+    end
+    values
+  end
+
+  # Resolves against the control's own params PLUS its parent's, because a
+  # sub-control's statement references parameters declared on the parent
+  # ("ac-1a" referencing "ac-1_prm_1"); resolving only the local set would leave
+  # exactly those references standing.
+  def parameter_resolver(catalog_control, profile_control)
+    OscalParameterResolver.new(
+      catalog_control.effective_params_list.presence || catalog_control.params_list,
+      set_parameter_values(profile_control)
+    )
   end
 
   def build_control_props(catalog_control, profile_control)
@@ -154,15 +192,21 @@ class OscalResolvedProfileCatalogService
     props
   end
 
-  def build_control_parts(catalog_control)
+  def build_control_parts(catalog_control, profile_control = nil)
     parts = []
     guidance = catalog_control.guidance_data || {}
+    # #942 — this is a RESOLVED catalog. Copying the statement verbatim left
+    # `{{ insert: param, ac-20_odp.01 }}` in the output, which is the one thing
+    # a resolved profile must not contain: the reader is handed markup where the
+    # organization-defined text belongs. Resolution is recursive because a
+    # substituted parameter can itself reference others.
+    resolver = parameter_resolver(catalog_control, profile_control)
 
     if guidance["statement"].present?
       parts << {
         "id"    => "#{catalog_control.control_id}_smt",
         "name"  => "statement",
-        "prose" => guidance["statement"]
+        "prose" => resolver.resolve_text(guidance["statement"])
       }
     end
 
@@ -170,7 +214,7 @@ class OscalResolvedProfileCatalogService
       guidance_part = {
         "id"    => "#{catalog_control.control_id}_gdn",
         "name"  => "guidance",
-        "prose" => guidance["supplemental_guidance"]
+        "prose" => resolver.resolve_text(guidance["supplemental_guidance"])
       }
 
       if guidance["related_controls"].present?

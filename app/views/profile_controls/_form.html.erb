@@ -32,6 +32,10 @@
                   .select { |pcf| pcf.field_name.start_with?("parameter_label:") }
                   .index_by { |pcf| pcf.field_name.delete_prefix("parameter_label:") }
 
+    # #942 — param_id => label, for resolving `{{ insert: param, <id> }}` inside
+    # a selection choice into the term it stands for.
+    param_label_lookup = label_map.transform_values(&:field_value)
+
     # Build select/choice metadata from the linked catalog control (if available),
     # including parent-control params inherited by sub-controls
     select_meta = {}
@@ -87,13 +91,17 @@
                       <span class="text-body-tertiary" style="font-size: 0.72rem;">
                         Selection<%= is_multi ? " (one or more)" : "" %>:
                       </span>
+                      <%# #942 — show the resolved wording, carry the verbatim
+                          OSCAL in data-choice-value so what gets written back
+                          still round-trips. %>
                       <% choices.each do |choice| %>
                         <span class="badge bg-primary-subtle text-primary-emphasis sparc-param-choice"
                               style="cursor: pointer; font-size: 0.72rem; font-weight: 500; margin: 0.1rem 0;"
                               data-multi="<%= is_multi %>"
+                              data-choice-value="<%= choice %>"
                               data-controller="param-choice"
                               data-action="click->param-choice#pick">
-                          <%= choice %>
+                          <%= OscalParamReference.resolve(choice, param_label_lookup) %>
                         </span>
                       <% end %>
                     </div>

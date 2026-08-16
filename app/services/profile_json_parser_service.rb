@@ -395,10 +395,20 @@ class ProfileJsonParserService
       label = param["label"]
       field_entries << [ idx, "parameter_label:#{param_id}", label ] if label.present?
 
-      # Store select choices if present
+      # Store select choices if present.
+      #
+      # #942 — under `parameter_choices:`, NOT `parameter:`. The latter is the
+      # operator's chosen VALUE: it is what `OscalProfileExportService` emits as
+      # `set-parameters`, what `OscalResolvedProfileCatalogService` resolves the
+      # baseline with, and what `BaselineReviewService` counts as a
+      # customization. Writing the available choices there made a freshly
+      # imported profile look as though someone had already answered every
+      # selection — with the answer being the list of options, raw
+      # `{{ insert: param, … }}` markup and all, which then travelled into the
+      # exported OSCAL.
       if param["select"]
         choices = Array(param.dig("select", "choice")).join(", ")
-        field_entries << [ idx, "parameter:#{param_id}", choices ] if choices.present?
+        field_entries << [ idx, "parameter_choices:#{param_id}", choices ] if choices.present?
       end
 
       # Store guidelines
