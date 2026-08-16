@@ -21,9 +21,15 @@ class SspJsonParserService
   ADJUSTMENT_JUSTIFICATION = "adjustment-justification".freeze
   NO_DESCRIPTION           = "No description provided.".freeze
 
+  # Statements the import could not create, with the reason (#963). Kept so a
+  # caller can report a partial import as partial: previously these went only
+  # to the log, and an import that dropped rows still looked like a clean one.
+  attr_reader :skipped_statements
+
   def initialize(document, file_path)
     @document  = document
     @file_path = file_path
+    @skipped_statements = []
   end
 
   def parse
@@ -336,15 +342,28 @@ class SspJsonParserService
       # query-match on set_parameters_data.
       set_params = statement_set_parameters(stmt)
 
-      record = ctrl.ssp_control_statements.create!(
-        uuid:                   uuid,
-        statement_id:           stmt_id,
-        implementation_prose:   narrative,
-        remarks:                stmt["remarks"],
-        responsible_roles_data: stmt[RESPONSIBLE_ROLES] || [],
-        set_parameters_data:    set_params,
-        row_order:              idx
-      )
+      # #963 — the create runs in its OWN savepoint. Rescuing a uniqueness
+      # violation without one does not skip the row, it kills the import:
+      # Postgres aborts the whole transaction on the failed statement, and
+      # every statement after it raises InFailedSqlTransaction until the
+      # outer transaction rolls back. The rescue below was written to make one
+      # bad statement survivable and, without `requires_new`, did the opposite.
+      #
+      # This is reachable on ordinary input, not just malformed input:
+      # `idx_ssp_stmt_on_uuid` is unique GLOBALLY, and an export carries the
+      # statement UUIDs it already has, so re-importing a document the instance
+      # already holds collides on the first statement.
+      record = ActiveRecord::Base.transaction(requires_new: true) do
+        ctrl.ssp_control_statements.create!(
+          uuid:                   uuid,
+          statement_id:           stmt_id,
+          implementation_prose:   narrative,
+          remarks:                stmt["remarks"],
+          responsible_roles_data: stmt[RESPONSIBLE_ROLES] || [],
+          set_parameters_data:    set_params,
+          row_order:              idx
+        )
+      end
 
       # #396 + #398: resolve inheritance links from statements[].links[]
       # with rel="implements" (CDEF source) or rel="inherited" (leveraged
@@ -353,6 +372,9 @@ class SspJsonParserService
       # because the source may be imported later in the same run.
       queue_inheritance_links(record, stmt)
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
+      # Counted, not only logged: an import that silently drops statements
+      # reports success while delivering less than it was given.
+      @skipped_statements << { statement_id: stmt_id, error: e.message }
       Rails.logger.warn("[SspJsonParser] skipping statement #{stmt_id}: #{e.message}")
     end
   end
@@ -417,12 +439,18 @@ class SspJsonParserService
       source, source_type = resolve_inheritance_source(entry[:source_uuid], entry[:rel])
       next unless source
 
-      SspControlStatementInheritance.find_or_create_by!(
-        ssp_control_statement_id: entry[:target_id],
-        source_type: source_type,
-        source_id: source.id
-      ) do |link|
-        link.source_uuid = entry[:source_uuid]
+      # #963 — same savepoint requirement as the statement create above.
+      # `find_or_create_by!` races and collides like any other insert, and
+      # rescuing that without `requires_new` would poison the transaction and
+      # take down the rest of the link pass.
+      ActiveRecord::Base.transaction(requires_new: true) do
+        SspControlStatementInheritance.find_or_create_by!(
+          ssp_control_statement_id: entry[:target_id],
+          source_type: source_type,
+          source_id: source.id
+        ) do |link|
+          link.source_uuid = entry[:source_uuid]
+        end
       end
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
       Rails.logger.warn("[SspJsonParser] inheritance link skipped: #{e.message}")
