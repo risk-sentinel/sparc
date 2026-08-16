@@ -92,12 +92,16 @@ class SarFromProfileService
       end
     end
 
+    # #957 — derived, not minted (see BatchInsertable).
     batch_insert_records(
       control_class: SarControl,
       field_class:   SarControlField,
       document_fk:   :sar_document_id,
       control_attrs: control_attrs,
-      field_entries: field_entries
+      field_entries: field_entries,
+      uuid_for:       ->(attrs) {
+        OscalUuidService.derived(@document.uuid, "sar-control", attrs[:control_id].to_s)
+      }
     )
   end
 
@@ -105,7 +109,8 @@ class SarFromProfileService
 
   def create_default_result
     @result = @document.sar_results.create!(
-      uuid:        SecureRandom.uuid,
+      # #957 — derived from the document, not minted.
+      uuid:        OscalUuidService.derived(@document.uuid, "sar-result", "default"),
       title:       "Assessment Results for #{@document.name}",
       description: "Assessment results generated from profile #{@profile.name}.",
       start_time:  Time.current,
@@ -122,7 +127,7 @@ class SarFromProfileService
       control_id = normalize_control_id(sar_ctrl.control_id)
 
       @result.sar_findings.create!(
-        uuid:        SecureRandom.uuid,
+        uuid:        OscalUuidService.derived(@result.uuid, "sar-finding", control_id),
         title:       "Finding for #{sar_ctrl.control_id}",
         description: "Assessment finding for control #{sar_ctrl.control_id}",
         target_data: {

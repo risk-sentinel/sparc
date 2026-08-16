@@ -85,6 +85,10 @@ class SarFromSspService
   def build_controls_from_ssp
     @ssp.ssp_controls.order(:row_order).includes(:ssp_control_fields).each_with_index do |ssp_ctrl, idx|
       sar_ctrl = @document.sar_controls.create!(
+        # #957 — `create!` would otherwise take the `gen_random_uuid()` column
+        # default, so regenerating the SAR renamed every control.
+        uuid:           OscalUuidService.derived(@document.uuid, "sar-control",
+                                                 ssp_ctrl.control_id.to_s),
         control_id:     ssp_ctrl.control_id,
         title:          ssp_ctrl.title,
         row_order:      idx,
@@ -130,7 +134,9 @@ class SarFromSspService
 
   def create_default_result
     @result = @document.sar_results.create!(
-      uuid:        SecureRandom.uuid,
+      # #957 — the sole result of a generated SAR, so its identity comes from
+      # the document rather than from randomness.
+      uuid:        OscalUuidService.derived(@document.uuid, "sar-result", "default"),
       title:       "Assessment Results for #{@document.name}",
       description: "Assessment results generated from SSP #{@ssp.name}.",
       start_time:  Time.current,
@@ -164,7 +170,9 @@ class SarFromSspService
       state      = @satisfied.include?(control_id) ? SATISFIED : NOT_SATISFIED
 
       finding = @result.sar_findings.create!(
-        uuid:        SecureRandom.uuid,
+        # Seeded from the result and the control it assesses: regenerating the
+        # same SAR from the same SSP must name the same finding.
+        uuid:        OscalUuidService.derived(@result.uuid, "sar-finding", control_id),
         title:       "Finding for #{sar_ctrl.control_id}",
         description: "Assessment finding for control #{sar_ctrl.control_id}",
         target_data: {
@@ -186,7 +194,8 @@ class SarFromSspService
   # statement says exactly that instead of implying an assessment nobody made.
   def link_risk_to(finding, sar_ctrl)
     risk = @result.sar_risks.create!(
-      uuid:        SecureRandom.uuid,
+      uuid:        OscalUuidService.derived(@result.uuid, "sar-risk",
+                                            normalize_control_id(sar_ctrl.control_id)),
       title:       "Risk for #{sar_ctrl.control_id}",
       description: "Control #{sar_ctrl.control_id} was assessed #{NOT_SATISFIED}.",
       statement:   risk_statement_for(sar_ctrl),

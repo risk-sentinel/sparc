@@ -112,9 +112,11 @@ class SspFromProfileService
     attrs
   end
 
+  # #957 — these are singletons of the generated SSP, so their identity is
+  # seeded from the document plus what they are, not from randomness.
   def create_this_system_component
     @document.ssp_components.create!(
-      uuid:           SecureRandom.uuid,
+      uuid:           OscalUuidService.derived(@document.uuid, "ssp-component", "this-system"),
       component_type: "this-system",
       title:          @document.name,
       description:    "This system — #{@document.name}",
@@ -124,7 +126,7 @@ class SspFromProfileService
 
   def create_default_information_type
     @document.ssp_information_types.create!(
-      uuid:        SecureRandom.uuid,
+      uuid:        OscalUuidService.derived(@document.uuid, "ssp-information-type", "general"),
       title:       "General Information",
       description: "Default information type — update via enrichment."
     )
@@ -132,7 +134,7 @@ class SspFromProfileService
 
   def create_default_user
     @document.ssp_users.create!(
-      uuid:        SecureRandom.uuid,
+      uuid:        OscalUuidService.derived(@document.uuid, "ssp-user", "system-administrator"),
       title:       "System Administrator",
       description: "Default administrative user — update via enrichment."
     )
@@ -176,12 +178,18 @@ class SspFromProfileService
       end
     end
 
+    # #957 — derived, not minted. Building an SSP twice from the same published
+    # profile must yield the same control identifiers, or every OSCAL export
+    # diffs completely and the statement UUIDs derived FROM these move too.
     imported_ids = batch_insert_records(
       control_class: SspControl,
       field_class:   SspControlField,
       document_fk:   :ssp_document_id,
       control_attrs: control_attrs,
-      field_entries: field_entries
+      field_entries: field_entries,
+      uuid_for:       ->(attrs) {
+        OscalUuidService.derived(@document.uuid, "ssp-control", attrs[:control_id].to_s)
+      }
     )
 
     create_statements_from_catalog(imported_ids, statement_entries)
@@ -247,7 +255,12 @@ class SspFromProfileService
       SspByComponent.new(
         ssp_control_id:        control_id,
         ssp_component_id:      @this_system.id,
-        uuid:                  SecureRandom.uuid,
+        # Seeded from the pair it joins, so the link is stable across
+        # regeneration exactly as the two rows it connects are.
+        uuid:                  OscalUuidService.derived(
+                                 @document.uuid, "ssp-by-component",
+                                 control_id.to_s, @this_system.id.to_s
+                               ),
         implementation_status: "planned"
       )
     end
