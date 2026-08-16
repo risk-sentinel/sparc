@@ -14,6 +14,8 @@ entered.
 
 from __future__ import annotations
 
+import os
+
 import pytest
 
 from helpers import assert_no_csp_violations, record_csp
@@ -64,8 +66,15 @@ def test_the_authoring_form_is_offered(authed_page):
     assert_no_csp_violations(authed_page, during="CDEF authoring form render")
 
 
-def test_authoring_a_component_definition_end_to_end(authed_page):
-    """Create one with no file at all and land on its page."""
+def test_authoring_a_component_definition_end_to_end(authed_page, base_url):
+    """Create one with no file at all and land on its page.
+
+    Cleans up after itself. An authored component definition starts with NO
+    controls, and a CDEF with no controls cannot produce valid OSCAL — so
+    leaving one behind puts it at the top of the index and makes
+    `test_document_exports` fail on a document this test created. A smoke test
+    that breaks three other tests is worse than no smoke test.
+    """
     record_csp(authed_page)
     authed_page.goto(NEW)
     authed_page.wait_for_load_state("networkidle")
@@ -81,13 +90,44 @@ def test_authoring_a_component_definition_end_to_end(authed_page):
     authed_page.click(SUBMIT)
     authed_page.wait_for_load_state("networkidle")
 
-    body = authed_page.locator("body").inner_text()
-    assert name in body, (
-        f"authored component definition {name!r} did not appear after submit — "
-        "create still went down the upload path"
-    )
+    try:
+        # Assert on the URL, not on body prose: the landing page's wording is
+        # not what this test is about, and the slug is unambiguous.
+        assert "/cdef_documents/" in authed_page.url and "/new" not in authed_page.url, (
+            f"submit did not land on the authored document (url={authed_page.url!r}) — "
+            "create still went down the upload path"
+        )
+        body = authed_page.locator("body").inner_text()
+        assert name in body, (
+            f"landed on {authed_page.url!r} but {name!r} is not on the page; a document "
+            "left in a non-completed state renders the processing view instead"
+        )
+        assert_no_csp_violations(authed_page, during="CDEF authoring submit")
+    finally:
+        _delete_authored(authed_page, base_url)
 
-    assert_no_csp_violations(authed_page, during="CDEF authoring submit")
+
+def _delete_authored(page, base_url):
+    """Remove the document this test created, whatever the assertions did.
+
+    Deleted through the API rather than the web route: a non-GET to the web app
+    needs an authenticity token this request context does not carry, whereas the
+    bearer token needs no CSRF. Failures are ignored — cleanup must never turn
+    into a second reported failure on top of a real one.
+    """
+    slug = page.url.rstrip("/").split("/")[-1]
+    if not slug or slug in ("new", "cdef_documents"):
+        return
+
+    token = os.environ.get("SPARC_SMOKE_SA_TOKEN")
+    if not token:
+        return
+
+    page.request.delete(
+        f"{base_url}/api/v1/cdef_documents/{slug}",
+        headers={"Authorization": f"Bearer {token}"},
+        fail_on_status_code=False,
+    )
 
 
 def test_the_edit_route_resolves_to_a_real_screen(authed_page):
