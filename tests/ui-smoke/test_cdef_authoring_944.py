@@ -15,6 +15,7 @@ entered.
 from __future__ import annotations
 
 import os
+import uuid
 
 import pytest
 
@@ -82,13 +83,20 @@ def test_authoring_a_component_definition_end_to_end(authed_page, base_url):
     if authed_page.locator(SUBMIT).count() == 0:
         pytest.skip("current user cannot author CDEFs on this deployment")
 
-    name = "UI Smoke Authored Component"
+    # Unique per run. A fixed name collides on `slug` with anything a previous
+    # run left behind, and the create then fails for a reason that has nothing
+    # to do with what this test is checking — which is exactly how it failed
+    # once cleanup did not fire.
+    name = f"UI Smoke Authored Component {uuid.uuid4().hex[:8]}"
     authed_page.fill("input[name='cdef_document[name]']", name)
     authed_page.select_option(TYPE_SELECT, "service")
     authed_page.fill("input[name='cdef_document[component_title]']", "Smoke Component")
 
-    authed_page.click(SUBMIT)
-    authed_page.wait_for_load_state("networkidle")
+    # Wait for the NAVIGATION, not just the load state. `wait_for_load_state`
+    # can return before the redirect lands, leaving `page.url` on /new and
+    # making a create that actually succeeded look like it never happened.
+    with authed_page.expect_navigation(wait_until="networkidle"):
+        authed_page.click(SUBMIT)
 
     try:
         # Assert on the URL, not on body prose: the landing page's wording is
