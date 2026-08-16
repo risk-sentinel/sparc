@@ -1796,83 +1796,40 @@ ssp2 = seed_ssp_from_oscal(
 puts "  SSP 2 '#{ssp2.name}': #{ssp2.ssp_controls.count} controls imported from OSCAL"
 
 # -- SAR 1: Rev 5 Annual Assessment (multi-section demo) --------------
-sar1 = SarDocument.create!(
-  name:              "ACME Cloud Platform — Annual Security Assessment (Rev 5)",
-  # #946 — seeded, not uploaded. It previously claimed a
-  # `demo_acme_cloud_platform_sar_rev5.xlsx` that does not exist in this
-  # repository. OSCAL fixtures for the demo SARs are follow-on work; until then
-  # the provenance says what is true rather than naming a file nobody has.
-  file_type:         "json",
-  status:            "completed",
-  # #946 — a SAR assesses an SSP. Leaving this null made the demo estate a set
-  # of documents that happened to share a naming convention rather than one
-  # authorization: the SAP and POA&M named their SSP and the SARs did not, so
-  # nothing could trace an assessment result back to the system assessed.
-  ssp_document_id:   ssp1.id,
-  creation_method:   "ssp"
-)
-
-REV5_CONTROLS.each do |c|
-  family = c[:id].split("-").first
-  section_name = case family
-  when "AC", "AT" then "System Test"
-  when "AU", "CA" then "Location Tests"
-  else "System Test"
-  end
-  subj = REV5_SUBJECTS[c[:id]] || {}
-
-  # Derive working_status from result
-  working_status = case c[:test_status]
-  when "Pass"          then "Final Satisfied"
-  when "Failed"        then "Not Satisfied"
-  when "Not Specified" then "Not Specified"
-  else nil
-  end
-
-  # working_comments only for Failed controls
-  working_comments = c[:test_status] == "Failed" ? c[:remediation] : nil
-
-  seed_sar_control(sar1, pad_ctrl_id(c[:id]), c[:title], section_name,
-    subj[:asset].to_s, subj[:env].to_s,
-    result:           c[:test_status],
-    date:             c[:test_date],
-    tester:           c[:tester],
-    notes_weakness:   c[:test_result],
-    recommended_fix:  c[:remediation],
-    working_status:   working_status,
-    working_comments: working_comments)
+# #946 — the SARs are GENERATED from their SSPs, not hand-built beside them.
+#
+# `SarFromSspService` is the real path a SAR takes: it assesses the SSP's
+# controls, writes a finding for each, and creates a RISK only where a control
+# is not satisfied — which is what `PoamGeneratorService` turns into POA&M
+# items (#954). Hand-seeding a parallel control list produced an assessment
+# that referenced controls the SSP did not contain and could not feed a POA&M.
+#
+# Satisfaction is DERIVED, not sprinkled: a control the SSP records as
+# Implemented passes, and one it records as Deferred does not. That lands the
+# estate at roughly 95/5 because the SSPs do, and it stays explainable — every
+# failure traces to a control the system says it has not implemented yet.
+def demo_satisfied_control_ids(ssp)
+  SspControlField
+    .where(ssp_control_id: ssp.ssp_controls.select(:id), field_name: "status")
+    .where(field_value: [ "Implemented", "Not Applicable" ])
+    .joins("JOIN ssp_controls ON ssp_controls.id = ssp_control_fields.ssp_control_id")
+    .pluck("ssp_controls.control_id")
 end
-puts "  SAR 1 '#{sar1.name}': #{sar1.sar_controls.count} controls"
 
-# -- SAR 2: Rev 4 HR Assessment ----------------------------------------
-sar2 = SarDocument.create!(
-  name:              "ACME HR Portal — Security Assessment (Rev 5)",
-  # #946 — seeded, not uploaded. See the note on the Rev 5 SAR above.
-  file_type:         "json",
-  status:            "completed",
-  ssp_document_id:   ssp2.id,
-  creation_method:   "ssp"
-)
-
-REV4_CONTROLS.each do |c|
-  working_status = case c[:test_status]
-  when "Pass"          then "Final Satisfied"
-  when "Failed"        then "Not Satisfied"
-  when "Not Specified" then "Not Specified"
-  else nil
-  end
-
-  seed_sar_control(sar2, pad_ctrl_id(c[:id]), c[:title], "System Test",
-    nil, nil,
-    result:           c[:test_status],
-    date:             c[:test_date],
-    tester:           c[:tester],
-    notes_weakness:   c[:test_result],
-    recommended_fix:  c[:remediation],
-    working_status:   working_status,
-    working_comments: (c[:test_status] == "Failed" ? c[:remediation] : nil))
+[
+  { ssp: ssp1, name: "ACME Cloud Platform — Annual Security Assessment (Rev 5)", label: "SAR 1" },
+  { ssp: ssp2, name: "ACME HR Portal — Security Assessment (Rev 5)",             label: "SAR 2" }
+].each do |spec|
+  satisfied = demo_satisfied_control_ids(spec[:ssp])
+  sar = SarFromSspService.new(spec[:ssp], name: spec[:name], satisfied_control_ids: satisfied).create
+  result   = sar.sar_results.first
+  findings = result ? result.sar_findings.count : 0
+  risks    = result ? result.sar_risks.count : 0
+  passed   = findings - risks
+  pct      = findings.positive? ? (passed * 100.0 / findings).round(1) : 0.0
+  puts "  #{spec[:label]} '#{sar.name}': #{sar.sar_controls.count} controls, " \
+       "#{passed} satisfied / #{risks} not satisfied (#{pct}% pass)"
 end
-puts "  SAR 2 '#{sar2.name}': #{sar2.sar_controls.count} controls"
 
 # ============================================================
 # Catalog Guidance — load from providing-catalog JSON files
