@@ -133,6 +133,50 @@ same source ID can appear many times, but never twice pointing at the same targe
 
 ---
 
+## Authoring entries by hand
+
+Generated mappings are the common case, but an entry can also be added, corrected
+or removed directly on a mapping's page.
+
+**The control identifiers are picked, not typed.** Both sides are bound to the
+mapping's own catalogs — the source field offers the source catalog's controls,
+the target field the target catalog's — so an entry pointing at a control that
+exists in neither is not expressible. Typing still filters the list, so a long
+catalog stays usable.
+
+The same rule is enforced on the model, which means the API is guarded by it too,
+not just the form:
+
+```
+POST   /api/v1/control_mappings/:id/entries
+PATCH  /api/v1/control_mappings/:id/entries/:entry_id
+DELETE /api/v1/control_mappings/:id/entries/:entry_id
+GET    /api/v1/control_mappings/:id/entries
+```
+
+Two details worth knowing:
+
+- **The source side is matched verbatim first.** SPARC's canonical form encodes
+  NIST numbering, and the source side of a mapping is by definition the non-NIST
+  one — a FedRAMP KSI id such as `ksi-iam-01` would canonicalise to `ksi-iam-1`,
+  which the KSI catalog does not contain. A verbatim match therefore wins, and
+  canonicalisation is only a fallback for the NIST-shaped side.
+- **A catalog with no controls loaded is not treated as a failure.** If SPARC
+  holds nothing for that catalog it cannot answer the question, so entries are
+  accepted rather than refused — otherwise a mapping would be unusable until
+  someone imported the catalog's contents.
+
+### Entries that no longer resolve
+
+Entries recorded before the identifiers were checked may name controls that are
+not in the mapped catalogs. SPARC **reports** these and never rewrites them: a
+mapping records a judgement, and guessing at what someone meant would destroy the
+thing being recorded. The mapping page names the unresolvable entries, and the
+API returns `resolved` and `unresolved_sides` per entry plus an `unresolved`
+count in `meta`. Such an entry stays editable, so it can be corrected in place.
+
+---
+
 ## Service API
 
 After importing a STIG/CIS/SCAP XCCDF file as a `CdefDocument`, the generator
