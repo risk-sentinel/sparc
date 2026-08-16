@@ -327,12 +327,41 @@ class SspJsonParserService
   # Preserve the OSCAL statement UUID when supplied; fall back to the
   # deterministic OscalUuidService.derived value (matches what the
   # exporter emits for backfilled rows so re-export is UUID-stable).
+  # #946 — the inverse of OscalSspExportService#build_statements_from_fields.
+  #
+  # That exporter synthesises an OSCAL statement from a control FIELD, naming it
+  # `<control>_priv` (implementation_statement) or `<control>_pub`
+  # (implementation_summary). Re-importing those as statement ROWS would be a
+  # lossy round-trip in a way that is invisible until someone opens the screen:
+  # the narrative would survive in the database but the edit form, which renders
+  # the field, would show every control as blank.
+  #
+  # Restoring the field is what makes export -> import faithful. A statement
+  # SPARC synthesised from a field is not independent content, so it goes back
+  # where it came from rather than becoming a second copy.
+  SYNTHESISED_STATEMENT_FIELDS = {
+    "_priv" => "implementation_statement",
+    "_pub"  => "implementation_summary"
+  }.freeze
+
+  def synthesised_statement_field(stmt_id)
+    suffix = SYNTHESISED_STATEMENT_FIELDS.keys.find { |s| stmt_id.to_s.end_with?(s) }
+    suffix && SYNTHESISED_STATEMENT_FIELDS[suffix]
+  end
+
   def parse_statements_as_fields(ctrl, ir)
     (ir["statements"] || []).each_with_index do |stmt, idx|
       stmt_id = stmt["statement-id"]
       next if stmt_id.blank?
 
       narrative = stmt["remarks"] || stmt.dig(BY_COMPONENTS, 0, "description")
+
+      if (field_name = synthesised_statement_field(stmt_id))
+        if narrative.present?
+          ctrl.ssp_control_fields.create!(field_name: field_name, field_value: narrative)
+        end
+        next
+      end
       uuid = stmt["uuid"].presence ||
              OscalUuidService.derived(ctrl.uuid, "ssp-statement", stmt_id)
 
@@ -475,13 +504,64 @@ class SspJsonParserService
     href.to_s.sub(/\A(uuid:|#)/, "")
   end
 
-  def parse_remarks_as_field(ctrl, ir)
-    return unless ir["remarks"].present?
+  # #946 — the inverse of OscalSspExportService#build_remarks.
+  #
+  # That exporter packs FIVE distinct fields into one `remarks` string, each
+  # behind a label ("Stated Requirement: …\n\nNotes: …"). Filing the whole
+  # string under `notes` collapsed all five into one and put four of them in the
+  # wrong place, so a re-imported SSP showed its catalog requirement as an
+  # operator's note and lost the note itself.
+  #
+  # Anything that does not carry a recognised label is genuinely a remark and
+  # still becomes `notes`, so remarks written by other tools survive.
+  REMARK_LABEL_FIELDS = {
+    "Stated Requirement"  => "stated_requirement",
+    "Notes"               => "notes",
+    "Expected Completion" => "expected_completion",
+    "Inherited From"      => "inherited_from",
+    "History"             => "history"
+  }.freeze
 
-    ctrl.ssp_control_fields.create!(
-      field_name:  "notes",
-      field_value: ir["remarks"]
-    )
+  def parse_remarks_as_field(ctrl, ir)
+    remarks = ir["remarks"]
+    return if remarks.blank?
+
+    labelled, unlabelled = split_labelled_remarks(remarks)
+
+    labelled.each do |field_name, value|
+      ctrl.ssp_control_fields.create!(field_name: field_name, field_value: value)
+    end
+
+    return if unlabelled.blank?
+
+    ctrl.ssp_control_fields.create!(field_name: "notes", field_value: unlabelled)
+  end
+
+  # Returns [{field_name => value}, leftover_prose].
+  def split_labelled_remarks(remarks)
+    fields = {}
+    leftovers = []
+
+    remarks.to_s.split("\n\n").each do |part|
+      label, value = part.split(": ", 2)
+      field_name = REMARK_LABEL_FIELDS[label.to_s.strip]
+
+      if field_name && value.present?
+        fields[field_name] = value.strip
+      else
+        leftovers << part
+      end
+    end
+
+    # `notes` may arrive both as a label and as unlabelled prose; the labelled
+    # one is the one the exporter wrote, so it wins and the rest is appended.
+    leftover = leftovers.join("\n\n").presence
+    if leftover && fields["notes"]
+      fields["notes"] = "#{fields['notes']}\n\n#{leftover}"
+      leftover = nil
+    end
+
+    [ fields, leftover ]
   end
 
   # ── Helpers ──────────────────────────────────────────────────────

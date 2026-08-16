@@ -177,4 +177,45 @@ RSpec.describe "SapDocuments", type: :request do
       expect(objective.reload.status).to eq("pending")
     end
   end
+
+  # #946 — the wizard could not derive the assessment baseline, because the SSP
+  # never recorded one and the form only filled Baseline on a `change` event.
+  describe "GET /sap_documents/new — deriving the baseline (#946)" do
+    let(:catalog) { create(:control_catalog) }
+    let(:profile) { create(:profile_document, name: "Derived Baseline", status: "completed", control_catalog: catalog) }
+
+    it "preselects the baseline the chosen SSP records" do
+      ssp = create(:ssp_document, status: "completed", profile_document: profile)
+
+      get new_sap_document_path(ssp_document_id: ssp.id)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(%(<option selected="selected" value="#{profile.id}"))
+    end
+
+    it "preselects the SSP itself, so the choice is not silently dropped" do
+      ssp = create(:ssp_document, status: "completed", profile_document: profile)
+
+      get new_sap_document_path(ssp_document_id: ssp.id)
+
+      expect(response.body).to include(%(<option selected="selected" value="#{ssp.id}"))
+    end
+
+    # An SSP with no baseline must not have one invented for it. The remedy is
+    # to record one on the SSP, which is what #911's lineage reporting says.
+    it "leaves the baseline blank when the SSP records none" do
+      ssp = create(:ssp_document, status: "completed", profile_document: nil)
+      profile
+
+      get new_sap_document_path(ssp_document_id: ssp.id)
+
+      expect(response.body).not_to include(%(<option selected="selected" value="#{profile.id}"))
+    end
+
+    it "renders with no SSP chosen at all" do
+      get new_sap_document_path
+
+      expect(response).to have_http_status(:ok)
+    end
+  end
 end

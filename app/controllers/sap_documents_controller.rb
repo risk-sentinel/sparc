@@ -81,7 +81,15 @@ class SapDocumentsController < ApplicationController
   end
 
   def new
-    @sap_document = SapDocument.new
+    # #946 — derive the baseline on RENDER, not only on change. The Stimulus
+    # controller fills Baseline when the SSP select fires `change`, so a form
+    # arriving with an SSP already chosen — a deep link, or a re-render after a
+    # validation error — showed Baseline blank even though the SSP records one.
+    # The wizard then looked like it had nothing to derive, which is the symptom
+    # #946 was filed for.
+    @sap_document = SapDocument.new(ssp_document_id: params[:ssp_document_id].presence)
+    @sap_document.profile_document_id ||= @sap_document.ssp_document&.profile_document_id
+
     @ssp_documents = SspDocument.where(status: "completed").order(:name)
     @profile_documents = ProfileDocument.where(status: "completed").order(:name)
   end

@@ -9,14 +9,33 @@ module OscalMetadata
   DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
   OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
-  # #395 P2: resolve an OSCAL `import-*.href` value to a SPARC document.
-  # Only handles the `uuid:<...>` scheme — anchor placeholders (`#system-...`)
-  # return nil so callers can fall back to boundary-sibling lookup (which
-  # the BoundaryLinkInheritance concern already wires up).
+  # #395 P2 / #946: resolve an OSCAL `import-*.href` value to a SPARC document.
+  #
+  # SPARC writes `uuid:<...>` on export, so that form was the only one the
+  # resolver understood. Everyone else writes something different — OSCAL's own
+  # examples use a `#<uuid>` fragment, and real files carry bare UUIDs or a
+  # filename with the UUID in it. Against those the resolver returned nil
+  # silently, the FK stayed unset, and the document could never reach the
+  # baseline it declared it was based on.
+  #
+  # So the rule is: find a UUID ANYWHERE in the href and resolve THAT. A UUID
+  # is an identity, and matching one is not a guess.
+  #
+  # What it still refuses to do is match by NAME. A href of
+  # "NIST_SP-800-53_rev5_LOW-baseline_profile.json" names a file, and picking
+  # the loaded profile whose title looks similar would invent a lineage claim
+  # nobody made — the exact inference #911 forbids. Anchor placeholders
+  # (`#system-security-plan`) carry no UUID and so still return nil, leaving
+  # callers to fall back to boundary-sibling lookup via BoundaryLinkInheritance.
+  UUID_IN_HREF = /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/
+
   def self.resolve_import_href(href, target_class)
     return nil if href.blank?
-    return nil unless href.to_s.start_with?("uuid:")
-    target_class.find_by(uuid: href.to_s.delete_prefix("uuid:"))
+
+    uuid = href.to_s[UUID_IN_HREF]
+    return nil if uuid.blank?
+
+    target_class.find_by(uuid: uuid)
   end
 
   # #395 P2: build the export-side `import-*.href` for a sibling document.
