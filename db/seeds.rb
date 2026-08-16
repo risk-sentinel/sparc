@@ -1665,12 +1665,12 @@ REV4_CONTROLS = [
 # the re-run is the thing that creates the second copy.
 [
   "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
-  "ACME HR Portal — SSP (NIST SP 800-53 Rev 4, Low)"
+  "ACME HR Portal — SSP (NIST SP 800-53 Rev 5, Low)"
 ].each { |n| SspDocument.where(name: n).each(&:destroy) }
 
 [
   "ACME Cloud Platform — Annual Security Assessment (Rev 5)",
-  "ACME HR Portal — Security Assessment (Rev 4)"
+  "ACME HR Portal — Security Assessment (Rev 5)"
 ].each { |n| SarDocument.where(name: n).each(&:destroy) }
 
 # #946 — the demo SSPs are IMPORTED from committed OSCAL, not fabricated.
@@ -1790,8 +1790,8 @@ puts "  SSP 1 '#{ssp1.name}': #{ssp1.ssp_controls.count} controls imported from 
 
 # -- SSP 2: Rev 4 Low Baseline ----------------------------------------
 ssp2 = seed_ssp_from_oscal(
-  "demo_acme_hr_portal_ssp_rev4.json",
-  "ACME HR Portal — SSP (NIST SP 800-53 Rev 4, Low)"
+  "demo_acme_hr_portal_ssp_rev5.json",
+  "ACME HR Portal — SSP (NIST SP 800-53 Rev 5, Low)"
 )
 puts "  SSP 2 '#{ssp2.name}': #{ssp2.ssp_controls.count} controls imported from OSCAL"
 
@@ -1803,7 +1803,13 @@ sar1 = SarDocument.create!(
   # repository. OSCAL fixtures for the demo SARs are follow-on work; until then
   # the provenance says what is true rather than naming a file nobody has.
   file_type:         "json",
-  status:            "completed"
+  status:            "completed",
+  # #946 — a SAR assesses an SSP. Leaving this null made the demo estate a set
+  # of documents that happened to share a naming convention rather than one
+  # authorization: the SAP and POA&M named their SSP and the SARs did not, so
+  # nothing could trace an assessment result back to the system assessed.
+  ssp_document_id:   ssp1.id,
+  creation_method:   "ssp"
 )
 
 REV5_CONTROLS.each do |c|
@@ -1840,10 +1846,12 @@ puts "  SAR 1 '#{sar1.name}': #{sar1.sar_controls.count} controls"
 
 # -- SAR 2: Rev 4 HR Assessment ----------------------------------------
 sar2 = SarDocument.create!(
-  name:              "ACME HR Portal — Security Assessment (Rev 4)",
+  name:              "ACME HR Portal — Security Assessment (Rev 5)",
   # #946 — seeded, not uploaded. See the note on the Rev 5 SAR above.
   file_type:         "json",
-  status:            "completed"
+  status:            "completed",
+  ssp_document_id:   ssp2.id,
+  creation_method:   "ssp"
 )
 
 REV4_CONTROLS.each do |c|
