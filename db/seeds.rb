@@ -874,10 +874,33 @@ end
 # NIST SP 800-53 Rev 5 and Rev 4 catalogs above.  Idempotent.
 # ============================================================
 
-# #946 — the demo baseline's identity, fixed so the committed SSP fixtures can
-# name it. Derived rather than typed so it is obviously not a hand-picked value,
-# and stable because the inputs never change.
-DEMO_PROFILE_UUID = OscalUuidService.derived("demo-published-profile", "Demo LOW Baseline").freeze
+# #946 — the demo baselines' identities, fixed so the committed SSP fixtures can
+# name them. Derived rather than typed so they are obviously not hand-picked
+# values, and stable because the inputs never change.
+#
+# TWO baselines, both Rev 5. The demo estate models two real authorizations —
+# a MODERATE system and a LOW one — because that is what an operator actually
+# has. Pointing a Rev 4 document at a Rev 5 profile, as this seed briefly did,
+# is not a scenario that exists: a baseline never mixes revisions (#915), so
+# every control in it would read as out-of-baseline and the finding would be an
+# artefact of the seed rather than of the system.
+DEMO_MODERATE_PROFILE_UUID =
+  OscalUuidService.derived("demo-published-profile", "NIST SP 800-53 Rev 5 MODERATE Baseline").freeze
+DEMO_LOW_PROFILE_UUID =
+  OscalUuidService.derived("demo-published-profile", "NIST SP 800-53 Rev 5 LOW Baseline").freeze
+
+# Control ids the real NIST baseline profiles select, read from the vendored
+# OSCAL rather than hand-listed: LOW selects 149 controls and MODERATE 287, and
+# a demo that invents its own ten-control "baseline" teaches the wrong shape.
+def demo_baseline_control_ids(filename)
+  path = Rails.root.join("db/seeds/oscal", filename)
+  return [] unless File.exist?(path)
+
+  data = JSON.parse(File.read(path))
+  (data.dig("profile", "imports") || []).flat_map do |import|
+    (import["include-controls"] || []).flat_map { |inc| inc["with-ids"] || [] }
+  end.uniq
+end
 
 # NOTE: this section runs BEFORE the demo SSP/SAR section on purpose (#946).
 # The demo SSPs import OSCAL that declares `import-profile`, and that href can
@@ -897,41 +920,63 @@ SeedRunner.run_section("demo_published_profile") do
   if catalog.nil? || catalog.catalog_controls.empty?
     puts "  Skipping demo published profile — no catalog with controls available."
   else
-    profile = ProfileDocument.find_or_create_by!(name: "Demo LOW Baseline") do |p|
-      p.description     = "Seeded demo baseline: a small published profile providing a " \
-                          "control basis for populate-from-profile and review flows (#757)."
-      p.control_catalog = catalog
-      p.baseline_level  = "low"
-      p.status          = "completed"
+    # #946 — the two real Rev 5 baselines, seeded from the vendored NIST
+    # profiles. A demo authorization has to be shaped like a real one: a system
+    # is authorized at LOW or MODERATE, its SSP documents the controls in that
+    # baseline, and anything it implements beyond them is a finding worth
+    # reporting — not the other way round.
+    [
+      { name: "NIST SP 800-53 Rev 5 MODERATE Baseline", level: "moderate",
+        file: "nist_rev5_moderate_baseline_profile.json", uuid: DEMO_MODERATE_PROFILE_UUID },
+      { name: "NIST SP 800-53 Rev 5 LOW Baseline", level: "low",
+        file: "nist_rev5_low_baseline_profile.json", uuid: DEMO_LOW_PROFILE_UUID }
+    ].each do |spec|
+      control_ids = demo_baseline_control_ids(spec[:file])
+      if control_ids.empty?
+        puts "  Skipping #{spec[:name]} — #{spec[:file]} not found or selects nothing."
+        next
+      end
+
+      profile = ProfileDocument.find_or_create_by!(name: spec[:name]) do |p|
+        p.description     = "The NIST SP 800-53 Rev 5 #{spec[:level].upcase} control baseline, " \
+                            "seeded from the published NIST profile so the demo estate is " \
+                            "shaped like a real authorization."
+        p.control_catalog = catalog
+        p.baseline_level  = spec[:level]
+        p.status          = "completed"
+      end
+
+      if profile.profile_controls.empty?
+        # Only what this catalog actually holds. Selecting an id the catalog
+        # does not contain would put the profile in the state #911 exists to
+        # report, in the seed itself.
+        present = catalog.catalog_controls.where(control_id: control_ids).pluck(:control_id)
+        ProfileControlSelectionService.new(profile).update(present)
+      end
+
+      if profile.lifecycle_status != "published"
+        resolved = OscalResolvedProfileCatalogService.new(profile).export
+        profile.update!(resolved_catalog_json: JSON.parse(resolved), lifecycle_status: "published")
+      end
+
+      # #946 — pin the identity LAST, and with update_column.
+      #
+      # The committed demo SSP fixtures declare `import-profile.href` as this
+      # UUID, and a href can only resolve to an identifier that is the same on
+      # every seeded instance. Setting it at create does NOT survive:
+      # `ProfileControlSelectionService#update` regenerates the root UUID,
+      # correctly — OSCAL requires a content change to produce a new one — so a
+      # UUID pinned before the controls are selected is overwritten moments
+      # later and the fixtures resolve to nothing.
+      #
+      # `update_column` for the same reason ReferenceEstateBuilder#pin_record
+      # uses it: the immutability callback exists to stop accidental overwrites
+      # during normal attribute assignment, not deliberate pinning.
+      profile.update_column(:uuid, spec[:uuid]) unless profile.uuid == spec[:uuid]
+
+      puts "  Published '#{profile.name}' — #{profile.profile_controls.count} controls, " \
+           "lifecycle=#{profile.lifecycle_status}, uuid pinned."
     end
-
-    if profile.profile_controls.empty?
-      control_ids = catalog.catalog_controls.order(:control_id).limit(10).pluck(:control_id)
-      ProfileControlSelectionService.new(profile).update(control_ids)
-    end
-
-    if profile.lifecycle_status != "published"
-      resolved = OscalResolvedProfileCatalogService.new(profile).export
-      profile.update!(resolved_catalog_json: JSON.parse(resolved), lifecycle_status: "published")
-    end
-
-    # #946 — pin the identity LAST, and with update_column.
-    #
-    # The committed demo SSP fixtures declare `import-profile.href` as this
-    # UUID, and a href can only resolve to an identifier that is the same on
-    # every seeded instance. Setting it at create does NOT survive:
-    # `ProfileControlSelectionService#update` regenerates the root UUID,
-    # correctly — OSCAL requires a content change to produce a new one — so a
-    # UUID pinned before the controls are selected is overwritten moments later
-    # and the fixtures resolve to nothing.
-    #
-    # `update_column` for the same reason ReferenceEstateBuilder#pin_record uses
-    # it: the immutability callback exists to stop accidental overwrites during
-    # normal attribute assignment, not deliberate pinning.
-    profile.update_column(:uuid, DEMO_PROFILE_UUID) unless profile.uuid == DEMO_PROFILE_UUID
-
-    puts "  Published demo profile '#{profile.name}' — #{profile.profile_controls.count} controls, " \
-         "lifecycle=#{profile.lifecycle_status}, uuid pinned."
   end
 end
 end # if SEED_DEMO (published profile)
@@ -1875,8 +1920,24 @@ CATALOG_GUIDANCE_SOURCES.each do |source|
       # Normalize the control_id from external JSON to match OSCAL canonical format
       normalized_id = control_id.downcase.gsub(/\s+/, "-").gsub("(", ".").gsub(")", "")
                                 .gsub(/(?<=-|\.)0+(\d)/) { $1 }
-      updated = CatalogControl.where(control_id: [ control_id, normalized_id ]).update_all(guidance_data: guidance)
-      count  += updated
+
+      # MERGE, do not replace. `update_all(guidance_data: guidance)` overwrote
+      # the whole JSONB column, and this hash carries no `statement` key — so
+      # every control it touched silently lost the control text the OSCAL
+      # import had just collected. 187 Rev 5 controls ended up with no
+      # statement, including AC-2, and an SSP generated from the catalog came
+      # out with no control language at all: the document said "Account
+      # Management" and nothing about what the control requires.
+      #
+      # Row-by-row because the merge depends on each row's existing value,
+      # which one UPDATE cannot express. This runs over a few hundred enriched
+      # controls, not the whole catalog.
+      CatalogControl.unscoped
+                    .where(control_id: [ control_id, normalized_id ])
+                    .find_each do |row|
+        row.update_columns(guidance_data: (row.guidance_data || {}).merge(guidance))
+        count += 1
+      end
     end
   end
 
@@ -1942,9 +2003,15 @@ inline_count = 0
 INLINE_CATALOG_GUIDANCE.each do |ctrl_id, guidance|
   # Match both old (AC-02) and new (ac-2) formats
   normalized_id = ctrl_id.downcase.gsub(/(?<=-|\.)0+(\d)/) { $1 }
-  updated = CatalogControl.where(control_id: [ ctrl_id, normalized_id ])
-                           .update_all(guidance_data: guidance)
-  inline_count += updated
+  # MERGE, for the same reason as the enrichment above: this hash carries no
+  # `statement`, and replacing the column wholesale deleted the control text
+  # the OSCAL import had collected.
+  CatalogControl.unscoped
+                .where(control_id: [ ctrl_id, normalized_id ])
+                .find_each do |row|
+    row.update_columns(guidance_data: (row.guidance_data || {}).merge(guidance))
+    inline_count += 1
+  end
 end
 puts "  Inline demo guidance applied to #{inline_count} catalog control(s)"
 
