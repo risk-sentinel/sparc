@@ -903,10 +903,6 @@ SeedRunner.run_section("demo_published_profile") do
       p.control_catalog = catalog
       p.baseline_level  = "low"
       p.status          = "completed"
-      # #946 — pinned, not random. The committed demo SSP fixtures declare
-      # `import-profile.href` as this UUID, and a href can only resolve to an
-      # identifier that is the same on every seeded instance.
-      p.uuid            = DEMO_PROFILE_UUID
     end
 
     if profile.profile_controls.empty?
@@ -919,8 +915,23 @@ SeedRunner.run_section("demo_published_profile") do
       profile.update!(resolved_catalog_json: JSON.parse(resolved), lifecycle_status: "published")
     end
 
+    # #946 — pin the identity LAST, and with update_column.
+    #
+    # The committed demo SSP fixtures declare `import-profile.href` as this
+    # UUID, and a href can only resolve to an identifier that is the same on
+    # every seeded instance. Setting it at create does NOT survive:
+    # `ProfileControlSelectionService#update` regenerates the root UUID,
+    # correctly — OSCAL requires a content change to produce a new one — so a
+    # UUID pinned before the controls are selected is overwritten moments later
+    # and the fixtures resolve to nothing.
+    #
+    # `update_column` for the same reason ReferenceEstateBuilder#pin_record uses
+    # it: the immutability callback exists to stop accidental overwrites during
+    # normal attribute assignment, not deliberate pinning.
+    profile.update_column(:uuid, DEMO_PROFILE_UUID) unless profile.uuid == DEMO_PROFILE_UUID
+
     puts "  Published demo profile '#{profile.name}' — #{profile.profile_controls.count} controls, " \
-         "lifecycle=#{profile.lifecycle_status}."
+         "lifecycle=#{profile.lifecycle_status}, uuid pinned."
   end
 end
 end # if SEED_DEMO (published profile)
