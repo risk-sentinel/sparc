@@ -436,7 +436,8 @@ Rails.application.routes.draw do
       patch :deprecate
       get :download_oscal
     end
-    resources :control_mapping_entries, only: [ :create, :destroy ], as: :entries, path: "entries"
+    # #945 — `update` added: an entry could be created and deleted but never corrected.
+    resources :control_mapping_entries, only: [ :create, :update, :destroy ], as: :entries, path: "entries"
   end
 
   # ── Admin ───────────────────────────────────────────────────────────
@@ -693,7 +694,15 @@ Rails.application.routes.draw do
           post "fields/import/confirm", to: "cdef_documents#import_fields_confirm", as: :import_fields_confirm
         end
       end
-      resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ]
+      resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ] do
+        # #945 — the mapping shell had a full API; its entries had none, so the
+        # web form was the only way to add or remove a control-to-control
+        # relationship. `update` exists here and on the web for the same reason:
+        # an entry could previously be created and deleted but never corrected.
+        resources :control_mapping_entries,
+                  only: [ :index, :create, :update, :destroy ],
+                  as: :entries, path: "entries"
+      end
 
       # Back-matter resource management (#375) + authoritative workflow (#372)
       resources :back_matter_resources, only: [ :index, :show, :create, :update, :destroy ] do

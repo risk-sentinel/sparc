@@ -30,6 +30,17 @@ class ControlMappingsController < ApplicationController
   def show
     @entries = @control_mapping.control_mapping_entries.includes(:control_mapping)
     @entry   = ControlMappingEntry.new
+
+    # #945 — the choices come from the mapping's OWN catalogs. Both are already
+    # chosen and SPARC holds every control in them, so asking someone to
+    # remember and retype an identifier was inventing a way to get it wrong.
+    @source_control_options = catalog_control_options(@control_mapping.source_catalog)
+    @target_control_options = catalog_control_options(@control_mapping.target_catalog)
+
+    # Entries stored before the identifiers were validated. Surfaced, never
+    # rewritten — a mapping records a judgement, and guessing at what someone
+    # meant would destroy the thing being recorded.
+    @unresolved_entries = @entries.reject(&:resolved?)
   end
 
   def new
@@ -99,6 +110,29 @@ class ControlMappingsController < ApplicationController
   end
 
   private
+
+  # Every control in a catalog, as [label, value] for a picker (#945).
+  #
+  # Includes statement sub-parts, because a mapping's subject type may be
+  # `statement` and #941 stores those as CatalogControl rows — so the picker
+  # reaches statements without a second lookup path.
+  #
+  # Returns [] for a mapping with no catalog on that side, which the view reads
+  # as "fall back to a free-text field": a mapping created before both catalogs
+  # were required must stay editable.
+  def catalog_control_options(catalog)
+    return [] if catalog.nil?
+
+    CatalogControl.unscoped
+                  .joins(control_family: :control_catalog)
+                  .where(control_families: { control_catalog_id: catalog.id })
+                  .order(Arel.sql("COALESCE(sort_id, control_id)"))
+                  .pluck(:control_id, :label, :title)
+                  .map do |control_id, label, title|
+                    display = label.presence || control_id
+                    [ "#{display} — #{title.to_s.truncate(60)}", control_id ]
+                  end
+  end
 
   def set_control_mapping
     @control_mapping = ControlMapping.find_by!(slug: params[:id])
