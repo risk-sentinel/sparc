@@ -28,7 +28,7 @@
               doc, count: doc.sar_controls.count, count_label: "controls",
               version: doc.sar_version, enriched: doc.enriched?).merge(
               url: sar_document_path(doc),
-              badges: document_card_badges(doc, enriched: doc.enriched?) + [ creation_method_badge(doc) ],
+              badges: (document_card_badges(doc, enriched: doc.enriched?) + [ creation_method_badge(doc) ]).compact,
               actions: render("sar_documents/item_actions", doc: doc, compact: true)) %>
       <% end %>
     </div>
@@ -51,12 +51,15 @@
           <tr>
             <td><strong><%= link_to doc.name, sar_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td>
-              <% source_label, source_class = case doc.creation_method
-                               when "wizard" then ["Wizard", "sparc-source-wizard"]
-                               when "oscal_import" then ["OSCAL", "sparc-source-oscal"]
-                               else ["Import", "sparc-source-excel"]
-                               end %>
-              <span class="sparc-source-badge <%= source_class %>"><%= source_label %></span>
+              <%# #946 — one mapping, in the helper. A second copy here rendered
+                  "Import" with spreadsheet styling for profile- and SSP-generated
+                  documents, and for any with no recorded origin at all. %>
+              <% badge = creation_method_badge(doc) %>
+              <% if badge %>
+                <span class="<%= badge[:class] %>"><%= badge[:text] %></span>
+              <% else %>
+                <span class="text-body-tertiary">&mdash;</span>
+              <% end %>
             </td>
             <td class="text-body-secondary" style="font-size: 0.85rem;"><%= doc.sar_version.presence || "\u2014" %></td>
             <td style="white-space: nowrap;">

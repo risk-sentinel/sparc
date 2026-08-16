@@ -110,8 +110,14 @@ RSpec.describe SspJsonParserService do
       ctrl = document.ssp_controls.find_by(control_id: "ac-1")
       expect(ctrl).to be_present
 
+      # #946 — was `eq("implemented")`, which pinned the defect: the OSCAL token
+      # was stored verbatim, so the value was not one of VALID_STATUSES and
+      # every compliance count matching the canonical spelling found nothing.
+      # The importer now maps it back, so a re-imported SSP reports the
+      # compliance it actually has.
       status_field = ctrl.ssp_control_fields.find_by(field_name: "status")
-      expect(status_field.field_value).to eq("implemented")
+      expect(status_field.field_value).to eq("Implemented")
+      expect(SspControlField::VALID_STATUSES).to include(status_field.field_value)
 
       origination_field = ctrl.ssp_control_fields.find_by(field_name: "control_type")
       expect(origination_field.field_value).to eq("system-specific")
@@ -174,6 +180,53 @@ RSpec.describe SspJsonParserService do
       doc = create(:ssp_document, name: "Only import", status: "processing")
 
       expect(import_into(doc).skipped_statements).to be_empty
+    end
+  end
+
+  # #946 — the exporter writes `implementation-status` as an OSCAL token
+  # (`status.downcase.gsub(/\s+/, "-")`), so "Implemented" leaves as
+  # "implemented". Storing that back verbatim put a value in the field that is
+  # not one of VALID_STATUSES, and everything counting compliance matches the
+  # canonical spelling — a re-imported SSP reported 0.0% compliant while showing
+  # 21 controls implemented, which reads as a wall of findings that are not real.
+  describe "status vocabulary survives the round trip (#946)" do
+    def import_status(oscal_value)
+      doc = create(:ssp_document, name: "status probe", status: "processing")
+      described_class.new(doc, nil).send(:parse_from_hash, {
+        "system-security-plan" => {
+          "uuid" => SecureRandom.uuid,
+          "metadata" => { "title" => "Probe", "version" => "1.0",
+                          "oscal-version" => "1.1.2", "last-modified" => Time.current.iso8601 },
+          "control-implementation" => {
+            "description" => "probe",
+            "implemented-requirements" => [ {
+              "uuid" => SecureRandom.uuid, "control-id" => "ac-1",
+              "props" => [ { "name" => "implementation-status", "value" => oscal_value } ]
+            } ]
+          }
+        }
+      })
+      doc.ssp_controls.first.ssp_control_fields.find_by(field_name: "status")&.field_value
+    end
+
+    it "maps every status the exporter can emit back to its canonical spelling" do
+      SspControlField::VALID_STATUSES.each do |canonical|
+        token = canonical.downcase.gsub(/\s+/, "-")
+
+        expect(import_status(token)).to eq(canonical),
+          "OSCAL #{token.inspect} did not come back as #{canonical.inspect}"
+      end
+    end
+
+    it "stores a value the compliance calculation can actually count" do
+      expect(SspControlField::VALID_STATUSES).to include(import_status("implemented"))
+    end
+
+    # A vocabulary another tool used is left exactly as it arrived. OSCAL also
+    # defines `planned`, `partial` and `alternative`; mapping those onto SPARC's
+    # four would invent an assessment judgement nobody made.
+    it "leaves a foreign vocabulary alone rather than guessing at it" do
+      expect(import_status("partial")).to eq("partial")
     end
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_16_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1300,7 +1300,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
     t.datetime "assessment_start"
     t.bigint "authorization_boundary_id"
     t.datetime "created_at", null: false
-    t.string "creation_method", default: "excel"
+    t.string "creation_method"
     t.datetime "deleted_at"
     t.text "description"
     t.text "error_message"
@@ -1646,7 +1646,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
     t.text "authorization_boundary_description"
     t.bigint "authorization_boundary_id"
     t.datetime "created_at", null: false
-    t.string "creation_method", default: "excel"
+    t.string "creation_method"
     t.text "data_flow_description"
     t.date "date_authorized"
     t.datetime "deleted_at"

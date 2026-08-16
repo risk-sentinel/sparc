@@ -56,9 +56,16 @@ module FileUploadable
         original_filename: uploaded_file.original_filename,
         status:            "pending"
       }
-      # Only set creation_method on models that have the column (SSP, SAR)
-      if document_class.column_names.include?("creation_method") && file_type != "excel"
-        attrs[:creation_method] = "oscal_import"
+      # Only set creation_method on models that have the column (SSP, SAR).
+      #
+      # #946 — set it for the excel case TOO, rather than leaning on the column
+      # default. That default was `'excel'`, so every document created without
+      # naming a method claimed to have come from a spreadsheet: the seeded demo
+      # SARs said `creation_method: "excel"` beside `file_type: "json"` and no
+      # filename, which is a provenance claim nobody made. Stating it here is
+      # what lets the default become NULL.
+      if document_class.column_names.include?("creation_method")
+        attrs[:creation_method] = file_type == "excel" ? "excel" : "oscal_import"
       end
       # #623 — persist the uploader so the async failure paths (conversion-job
       # rescue, stuck-document reaper) can notify them. Guarded on the column so

@@ -289,14 +289,42 @@ class SspJsonParserService
     end
   end
 
+  # #946 — the inverse of the exporter's status token.
+  #
+  # `OscalSspExportService#build_props` writes the OSCAL `implementation-status`
+  # as `status.downcase.gsub(/\s+/, "-")`, so "Implemented" leaves as
+  # "implemented" and "Not Applicable" as "not-applicable". Storing that back
+  # verbatim put a value in the field that is not one of
+  # `SspControlField::VALID_STATUSES`, and everything that counts compliance
+  # matches the canonical spelling — so a re-imported SSP reported **0.0%
+  # compliant with 21 controls implemented**, which reads as a wall of findings
+  # that are not real.
+  #
+  # Derived FROM `VALID_STATUSES` rather than typed out, so the two cannot
+  # drift: whatever the exporter can emit, this maps back.
+  STATUS_FROM_OSCAL = SspControlField::VALID_STATUSES
+                        .index_by { |status| status.downcase.gsub(/\s+/, "-") }
+                        .freeze
+
+  # A vocabulary another tool used that SPARC has no equivalent for is left
+  # exactly as it arrived. OSCAL also defines `planned`, `partial` and
+  # `alternative`; mapping those onto SPARC's four would be inventing an
+  # assessment judgement nobody made, and a value that is visibly foreign is
+  # better than one that is silently wrong.
+  def canonical_status(value)
+    STATUS_FROM_OSCAL[value.to_s.downcase] || value
+  end
+
   def parse_implemented_requirement_props(ctrl, ir)
     (ir["props"] || []).each do |prop|
       field_name = prop_name_to_field(prop["name"])
       next unless field_name
 
+      value = field_name == "status" ? canonical_status(prop["value"]) : prop["value"]
+
       ctrl.ssp_control_fields.create!(
         field_name:  field_name,
-        field_value: prop["value"]
+        field_value: value
       )
     end
   end
