@@ -59,12 +59,19 @@
     <h4 class="mb-3">Artifact Summary</h4>
     <%# #770 bug 4 — every tile is the same size and a clickable link. Single
         artifacts (SSP/SAP/SAR) link to the document when present, else to the
-        index to add one; POA&Ms (many) show a count and link to the index. %>
+        attach screen; POA&Ms (many) show a count and link to the index.
+        #929 — "Add…" used to link to the unfiltered index of every document of
+        that type, dropping the boundary context entirely, so the tile promised
+        an action it could not perform. It now leads to a screen that can
+        actually attach a document to THIS boundary. %>
     <div class="row row-cols-2 row-cols-md-4 g-3">
       <% single_artifacts = [
-           { label: "SSP", doc: @authorization_boundary.ssp_document, index: ssp_documents_path },
-           { label: "SAP", doc: @authorization_boundary.sap_document, index: sap_documents_path },
-           { label: "SAR", doc: @authorization_boundary.sar_document, index: sar_documents_path }
+           { label: "SSP", doc: @authorization_boundary.ssp_document,
+             index: attach_document_authorization_boundary_path(@authorization_boundary, type: "ssp") },
+           { label: "SAP", doc: @authorization_boundary.sap_document,
+             index: attach_document_authorization_boundary_path(@authorization_boundary, type: "sap") },
+           { label: "SAR", doc: @authorization_boundary.sar_document,
+             index: attach_document_authorization_boundary_path(@authorization_boundary, type: "sar") }
          ] %>
       <% single_artifacts.each do |a| %>
         <div class="col">
@@ -84,11 +91,23 @@
         </div>
       <% end %>
       <div class="col">
-        <%= link_to poam_documents_path,
+        <%# #929 — POA&Ms are many, so the tile keeps its count and its link to
+            the index. With none attached it behaves like the other tiles and
+            leads somewhere that can attach one. %>
+        <% poam_count = @summary[:poam_count] %>
+        <%= link_to (poam_count.to_i.zero? ?
+                      attach_document_authorization_boundary_path(@authorization_boundary, type: "poam") :
+                      poam_documents_path),
               class: "sparc-hero-tile-link d-block text-decoration-none" do %>
           <div class="sparc-hero-tile">
             <div class="sparc-hero-tile-label">POA&amp;Ms</div>
-            <div class="sparc-hero-tile-count" style="font-size: 1rem;"><%= @summary[:poam_count] %></div>
+            <div class="sparc-hero-tile-count" style="font-size: 1rem;">
+              <% if poam_count.to_i.zero? %>
+                <span class="text-body-secondary">Add…</span>
+              <% else %>
+                <%= poam_count %>
+              <% end %>
+            </div>
           </div>
         <% end %>
       </div>

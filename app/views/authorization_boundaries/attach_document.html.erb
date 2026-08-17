@@ -1,0 +1,83 @@
+<%# #929 — the destination of the Artifact Summary's "Add…" tile.
+    Two ways to fill an empty artifact slot: attach a document that belongs to
+    no boundary, or upload a new one with this boundary pre-selected. Before
+    this the tile linked to the unfiltered index of every document of that type
+    and carried no reference to the boundary you came from. %>
+<%
+  type_labels = { "ssp" => "System Security Plan", "sap" => "Assessment Plan",
+                  "sar" => "Assessment Results",   "poam" => "POA&M" }
+  type_label  = type_labels.fetch(@document_type, @document_type.upcase)
+  new_path    = { "ssp"  => new_ssp_document_path(authorization_boundary_id: @authorization_boundary.id),
+                  "sap"  => new_sap_document_path(authorization_boundary_id: @authorization_boundary.id),
+                  "sar"  => new_sar_document_path(authorization_boundary_id: @authorization_boundary.id),
+                  "poam" => new_poam_document_path(authorization_boundary_id: @authorization_boundary.id) }[@document_type]
+%>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Add a <%= type_label %></h2>
+  <%= link_to "Back to #{@authorization_boundary.name}",
+        authorization_boundary_path(@authorization_boundary),
+        class: "btn btn-outline-primary btn-sm" %>
+</div>
+
+<p class="text-body-secondary">
+  Attach an existing <%= type_label %> that does not yet belong to an authorization
+  boundary, or upload a new one.
+</p>
+
+<%# ── Attach an existing document ──────────────────────────────────────── %>
+<div class="card mb-4">
+  <div class="card-body">
+    <h4 class="mb-3">Attach an existing <%= type_label %></h4>
+
+    <% if @candidates.any? %>
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Uploaded</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @candidates.each do |doc| %>
+            <tr>
+              <td><%= link_to doc.name, polymorphic_path(doc) %></td>
+              <td><span class="badge bg-secondary"><%= doc.status %></span></td>
+              <td class="text-body-secondary small"><%= doc.created_at.to_date %></td>
+              <td class="text-end">
+                <%= button_to "Attach",
+                      url_for([ :attach_boundary, doc ]),
+                      method: :patch,
+                      params: { authorization_boundary_id: @authorization_boundary.id,
+                                return_to: "boundary" },
+                      class: "btn btn-success btn-sm",
+                      form: { style: "display: inline;" } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-body-secondary mb-0">
+        No unattached <%= type_label %> documents are available to you. A document that
+        belongs to no authorization boundary is visible to Instance-Admins only —
+        ask an administrator to attach it, or upload a new one below.
+      </p>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Upload a new one ─────────────────────────────────────────────────── %>
+<div class="card mb-4">
+  <div class="card-body d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Upload a new <%= type_label %></h4>
+      <p class="text-body-secondary mb-0">
+        <%= @authorization_boundary.name %> is pre-selected on the upload form.
+      </p>
+    </div>
+    <%= link_to "Upload", new_path, class: "btn btn-success btn-sm" %>
+  </div>
+</div>

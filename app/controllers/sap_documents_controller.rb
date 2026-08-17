@@ -10,17 +10,23 @@ class SapDocumentsController < ApplicationController
   include OscalExportable
   include BoundaryScopedDocument
   boundary_scoped SapDocument, read: "sap.read", write: "sap.write"
+  # #929 — attach/re-point the boundary after upload. Deliberately absent from
+  # `ensure_editable!`: a published document with NO boundary is the case that
+  # most needs repairing, and the concern applies the draft bar to re-pointing
+  # only.
+  include BoundaryAttachable
 
   before_action :set_sap_document, only: %i[set_baseline
     show edit update destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
     download_yaml download_xml validate_oscal_export status
     update_metadata publish publish_check associate_source update_objective
+    attach_boundary
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :edit, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :status, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :update_metadata, :associate_source, :update_objective, :publish ]
+  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :update_metadata, :associate_source, :update_objective, :publish, :attach_boundary ]
 
   METHOD_ORDER = %w[examine interview test].freeze
 
@@ -368,7 +374,9 @@ class SapDocumentsController < ApplicationController
 
   def document_metadata_params
     permitted = params.require(:sap_document).permit(:name, :sap_version, :oscal_version, :description,
-      :assessment_type, :assessment_start, :assessment_end)
+      :assessment_type, :assessment_start, :assessment_end,
+      # #929 — permitted by Api::V1 all along, but not here.
+      :authorization_boundary_id)
     merge_metadata_extra(permitted, :sap_document)
   end
 

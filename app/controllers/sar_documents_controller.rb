@@ -10,6 +10,11 @@ class SarDocumentsController < ApplicationController
   include OscalExportable
   include BoundaryScopedDocument
   boundary_scoped SarDocument, read: "sar.read", write: "sar.write"
+  # #929 — attach/re-point the boundary after upload. Deliberately absent from
+  # `ensure_editable!`: a published document with NO boundary is the case that
+  # most needs repairing, and the concern applies the draft bar to re-pointing
+  # only.
+  include BoundaryAttachable
 
   CONTROLS_PER_PAGE = 50
   NO_DESCRIPTION = "No description provided.".freeze
@@ -19,12 +24,13 @@ class SarDocumentsController < ApplicationController
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :validate_oscal_export,
     :edit_control, :status, :update_metadata, :enrich, :update_enrich,
-    :publish, :publish_check, :update_objective, :associate_source
+    :publish, :publish_check, :update_objective, :associate_source,
+    :attach_boundary
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective, :associate_source ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_excel, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :enrich, :edit_control, :status, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :create_from_ssp, :update, :update_enrich, :update_metadata, :associate_source, :update_objective, :publish, :destroy ]
+  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :create_from_ssp, :update, :update_enrich, :update_metadata, :associate_source, :update_objective, :publish, :destroy, :attach_boundary ]
 
   helper_method :filter_params
 
@@ -473,7 +479,9 @@ class SarDocumentsController < ApplicationController
   private
 
   def document_metadata_params
-    permitted = params.require(:sar_document).permit(:name, :sar_version, :oscal_version, :description)
+    # #929 — permitted by Api::V1 all along, but not here.
+    permitted = params.require(:sar_document).permit(:name, :sar_version, :oscal_version, :description,
+      :authorization_boundary_id)
     merge_metadata_extra(permitted, :sar_document)
   end
 

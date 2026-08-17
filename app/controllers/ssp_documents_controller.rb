@@ -10,6 +10,11 @@ class SspDocumentsController < ApplicationController
   include OscalExportable
   include BoundaryScopedDocument
   boundary_scoped SspDocument, read: "ssp.read", write: "ssp.write"
+  # #929 — attach/re-point the boundary after upload. Deliberately absent from
+  # `ensure_editable!`: a published document with NO boundary is the case that
+  # most needs repairing, and the concern applies the draft bar to re-pointing
+  # only.
+  include BoundaryAttachable
 
   before_action :set_ssp_document, only: [ :set_baseline,
     :show, :edit, :update, :destroy,
@@ -20,12 +25,13 @@ class SspDocumentsController < ApplicationController
     :create_control_resource, :link_control_resource, :unlink_control_resource,
     :update_statement,
     :refresh_inherited_statements, :reset_inherited_statement,
-    :attach_profile, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter
+    :attach_profile, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter,
+    :attach_boundary
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users, :import_cdef_components, :import_back_matter ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :validate_oscal_export, :status, :edit, :enrich, :attach_profile, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter ]
+  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter, :attach_boundary ]
 
   def index
     scope = boundary_scoped_relation(SspDocument).order(created_at: :desc)
@@ -586,7 +592,11 @@ class SspDocumentsController < ApplicationController
   end
 
   def document_metadata_params
-    permitted = params.require(:ssp_document).permit(:name, :ssp_version, :oscal_version, :description)
+    # #929 — `:authorization_boundary_id` was permitted by
+    # api/v1/ssp_documents_controller.rb all along but not here, so the boundary
+    # could be set at upload and never again from the UI.
+    permitted = params.require(:ssp_document).permit(:name, :ssp_version, :oscal_version, :description,
+      :authorization_boundary_id)
     merge_metadata_extra(permitted, :ssp_document)
   end
 

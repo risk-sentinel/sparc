@@ -66,13 +66,40 @@ module BoundaryScopedDocument
   end
 
   # before_action for write actions (member or collection/create).
+  #
+  # #929 — a write that MOVES a document must be authorized against the target
+  # boundary too. This previously read `record&.authorization_boundary_id ||
+  # params[…]`, so once a record had a boundary the requested one was never
+  # looked at, and a user with write on boundary A could move a document into
+  # boundary B without holding anything on B.
   def authorize_document_write!
     return unless SparcConfig.any_auth_enabled?
 
     record = bsd_document_record
-    boundary_id = record&.authorization_boundary_id ||
-                  params.dig(bsd_model.model_name.param_key, :authorization_boundary_id).presence
+    current_id   = record&.authorization_boundary_id
+    requested_id = requested_boundary_id
 
-    authorize_permission!(bsd_write_key, authorization_boundary_id: boundary_id)
+    # Create (no record) authorizes the requested boundary; attaching an orphan
+    # likewise authorizes the target, since `current_id` is nil.
+    authorize_permission!(bsd_write_key, authorization_boundary_id: current_id || requested_id)
+
+    # Re-pointing: hold write on the boundary it LEAVES and the one it JOINS.
+    return if requested_id.blank? || current_id.blank?
+    return if requested_id.to_s == current_id.to_s
+
+    authorize_permission!(bsd_write_key, authorization_boundary_id: requested_id)
+  end
+
+  # The boundary this request is asking the document to belong to.
+  #
+  # The top-level `authorization_boundary_id` is honoured ONLY for the attach
+  # action. Index and filter screens carry that same param name to narrow a
+  # list, and letting it reach an authorization decision would mean a query
+  # string chose which boundary was checked.
+  def requested_boundary_id
+    nested = params.dig(bsd_model.model_name.param_key, :authorization_boundary_id).presence
+    return nested if nested.present?
+
+    params[:authorization_boundary_id].presence if action_name == "attach_boundary"
   end
 end

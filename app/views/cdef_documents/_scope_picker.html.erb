@@ -9,14 +9,11 @@
 %>
 <%
   param_key = local_assigns.fetch(:param_key, :cdef_document)
-  boundaries = if current_user
-    AuthorizationBoundary
-      .joins(:authorization_boundary_memberships)
-      .where(authorization_boundary_memberships: { user_id: current_user.id })
-      .distinct.order(:name)
-  else
-    AuthorizationBoundary.none
-  end
+  # #929 — shared with shared/_boundary_picker so the two cannot drift. The
+  # legacy roster join this replaced returned an empty set for every user.
+  boundaries = assignable_boundaries(current_user)
+  selected_boundary_id = local_assigns.fetch(:selected, nil).presence
+  selected_scope = local_assigns.fetch(:scope, "boundary").to_s
 %>
 
 <div data-controller="cdef-scope">
@@ -24,7 +21,7 @@
   <span class="fw-semibold d-block mb-2">CDEF Scope</span>
 
   <div class="form-check">
-    <%= radio_button_tag "#{param_key}[scope]", "boundary", true,
+    <%= radio_button_tag "#{param_key}[scope]", "boundary", selected_scope != "global",
           class: "form-check-input",
           id:    "#{param_key}_scope_boundary",
           data:  { action: "change->cdef-scope#toggle", cdef_scope_target: "boundaryRadio" } %>
@@ -35,7 +32,7 @@
   </div>
 
   <div class="form-check">
-    <%= radio_button_tag "#{param_key}[scope]", "global", false,
+    <%= radio_button_tag "#{param_key}[scope]", "global", selected_scope == "global",
           class: "form-check-input",
           id:    "#{param_key}_scope_global",
           data:  { action: "change->cdef-scope#toggle", cdef_scope_target: "globalRadio" } %>
@@ -48,20 +45,28 @@
 
 <%# Boundary picker (only relevant when scope = boundary). The TODO below
     tracks the org-admin permission check for global publishing per #395 P2. %>
-<% if boundaries.any? %>
-  <div class="form-group mb-3" id="<%= param_key %>_boundary_picker_wrapper" data-cdef-scope-target="wrapper">
-    <label for="<%= param_key %>_authorization_boundary_id" class="fw-semibold">
-      Authorization Boundary
-    </label>
+<div class="form-group mb-3" id="<%= param_key %>_boundary_picker_wrapper" data-cdef-scope-target="wrapper">
+  <label for="<%= param_key %>_authorization_boundary_id" class="fw-semibold">
+    Authorization Boundary
+  </label>
+  <% if boundaries.any? %>
     <%= select_tag "#{param_key}[authorization_boundary_id]",
           options_for_select([ [ "— Select a boundary —", "" ] ] +
-                             boundaries.map { |b| [ b.name, b.id ] }),
+                             boundaries.map { |b| [ b.name, b.id ] },
+                             selected_boundary_id.to_s),
           class: "form-control",
           id:    "#{param_key}_authorization_boundary_id" %>
     <small class="text-body-secondary d-block mt-1">
       Required when scope is "Boundary-specific". Ignored when "Globally available" is selected.
     </small>
-  </div>
-<% end %>
+  <% else %>
+    <%# #929 — the field used to vanish when the list was empty, leaving
+        "Boundary-specific" selected with nothing to select. %>
+    <p class="text-body-secondary small mb-0" id="<%= param_key %>_authorization_boundary_id">
+      You are not on the roster of any authorization boundary. Choose
+      "Globally available" above, or ask to be added to a boundary first.
+    </p>
+  <% end %>
+</div>
 
 </div><%# end data-controller="cdef-scope" %>

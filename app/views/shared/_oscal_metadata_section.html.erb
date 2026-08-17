@@ -266,6 +266,18 @@
           </div>
         </div>
 
+        <%# #929 — the boundary could be chosen at upload and never again: this
+            form's controller permitted only name/version/oscal_version/
+            description, while Api::V1 accepted authorization_boundary_id all
+            along. Rendered only for the types that carry the column (SSP, SAP,
+            SAR, POA&M); CDEF, profile and catalog have none. %>
+        <% if document.respond_to?(:authorization_boundary_id) %>
+          <%= render "shared/boundary_picker",
+                param_key: param_key,
+                label:     "Authorization Boundary",
+                selected:  document.authorization_boundary_id %>
+        <% end %>
+
         <%# ── Structured Roles Editor ── %>
         <div class="mb-3">
           <span class="form-label small fw-semibold">Roles</span>

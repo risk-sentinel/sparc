@@ -85,6 +85,10 @@ Rails.application.routes.draw do
       get  :ato_wizard
       post :create_ato_package
       get  :download_ato_package
+      # #929 — where the Artifact Summary's "Add…" tile now leads: attach an
+      # existing boundary-less document, or upload one with this boundary
+      # pre-selected.
+      get  :attach_document
       # #447 — HDF Amendment triage UI (thin client over the triage services).
       get    :triage,              to: "hdf_triage#show"
       post   "triage/ingest",      to: "hdf_triage#ingest",            as: :triage_ingest
@@ -111,6 +115,9 @@ Rails.application.routes.draw do
 
   resources :ssp_documents do
     member do
+      # #929 — attach or re-point this document's authorization boundary
+      # after upload. Serves the document screen and the boundary "Add…" tile.
+      patch :attach_boundary
       # #911 — the write the reconciliation gate exists to provoke.
       patch :set_baseline, to: "ssp_documents#set_baseline"
       patch :update_metadata
@@ -156,6 +163,9 @@ Rails.application.routes.draw do
 
   resources :sar_documents do
     member do
+      # #929 — attach or re-point this document's authorization boundary
+      # after upload. Serves the document screen and the boundary "Add…" tile.
+      patch :attach_boundary
       # #911 — the write the reconciliation gate exists to provoke.
       patch :set_baseline, to: "sar_documents#set_baseline"
       patch :update_metadata
@@ -228,6 +238,9 @@ Rails.application.routes.draw do
 
   resources :sap_documents do
     member do
+      # #929 — attach or re-point this document's authorization boundary
+      # after upload. Serves the document screen and the boundary "Add…" tile.
+      patch :attach_boundary
       # #911 — the write the reconciliation gate exists to provoke.
       patch :set_baseline, to: "sap_documents#set_baseline"
       patch :update_metadata
@@ -252,6 +265,9 @@ Rails.application.routes.draw do
 
   resources :poam_documents do
     member do
+      # #929 — attach or re-point this document's authorization boundary
+      # after upload. Serves the document screen and the boundary "Add…" tile.
+      patch :attach_boundary
       # #911 — the write the reconciliation gate exists to provoke.
       patch :set_baseline, to: "poam_documents#set_baseline"
       patch :update_metadata
