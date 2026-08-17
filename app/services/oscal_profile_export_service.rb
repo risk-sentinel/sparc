@@ -146,7 +146,11 @@ class OscalProfileExportService
         # Omitting an untailored parameter invents nothing; it drops an assertion
         # that was never made. (Contrast poam risk/statement, which is REQUIRED
         # substantive content and must never be synthesised — see that exporter.)
-        values = field.field_value.to_s.split(", ").map(&:strip).reject(&:blank?)
+        # #942 — ParameterValueList, not a bare comma split. OSCAL insert markup
+        # always contains a comma, so splitting on ", " turned a single chosen
+        # branch ("establish {{ insert: param, ac-20_odp.02 }}") into two
+        # `set-parameters` values nobody selected, and both were exported.
+        values = ParameterValueList.split(field.field_value)
         next if values.empty?
 
         params << { "param-id" => param_id, "values" => values }

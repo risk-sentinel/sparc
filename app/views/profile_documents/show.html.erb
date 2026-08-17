@@ -273,6 +273,11 @@
 
             <%# ── Parameters & properties (collapsed by default) ── %>
             <% param_fields = field_map.select { |k, _| k.start_with?("parameter:") } %>
+            <%# #942 — param_id => label, for resolving insert references inside
+                selection choices into the terms they stand for. %>
+            <% param_label_lookup = field_map.filter_map { |k, v|
+                 [ k.delete_prefix("parameter_label:"), v.field_value ] if k.start_with?("parameter_label:")
+               }.to_h %>
             <% prop_fields  = field_map.select { |k, _| k.start_with?("prop:") } %>
             <% sub_parts    = @catalog_sub_parts[control.control_id] %>
             <% has_details  = param_fields.any? || prop_fields.any? || sub_parts&.any? %>
@@ -318,9 +323,13 @@
                               <% if sel %>
                                 <% choices = sel["choice"] || [] %>
                                 <% is_multi = sel["how-many"] == "one-or-more" %>
+                                <%# #942 — resolve `{{ insert: param, <id> }}` to
+                                    the term it stands for; raw markup is not an
+                                    option a person can choose between. %>
+                                <% resolved = choices.map { |c| OscalParamReference.resolve(c, param_label_lookup) } %>
                                 <div class="text-body-tertiary" style="font-size: 0.72rem; margin-top: 0.2rem;">
                                   Catalog options<%= is_multi ? " (one or more)" : "" %>:
-                                  <%= choices.join(", ") %>
+                                  <%= resolved.join(", ") %>
                                 </div>
                               <% end %>
                             </td>

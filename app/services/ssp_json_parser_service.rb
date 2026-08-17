@@ -21,9 +21,15 @@ class SspJsonParserService
   ADJUSTMENT_JUSTIFICATION = "adjustment-justification".freeze
   NO_DESCRIPTION           = "No description provided.".freeze
 
+  # Statements the import could not create, with the reason (#963). Kept so a
+  # caller can report a partial import as partial: previously these went only
+  # to the log, and an import that dropped rows still looked like a clean one.
+  attr_reader :skipped_statements
+
   def initialize(document, file_path)
     @document  = document
     @file_path = file_path
+    @skipped_statements = []
   end
 
   def parse
@@ -283,14 +289,42 @@ class SspJsonParserService
     end
   end
 
+  # #946 — the inverse of the exporter's status token.
+  #
+  # `OscalSspExportService#build_props` writes the OSCAL `implementation-status`
+  # as `status.downcase.gsub(/\s+/, "-")`, so "Implemented" leaves as
+  # "implemented" and "Not Applicable" as "not-applicable". Storing that back
+  # verbatim put a value in the field that is not one of
+  # `SspControlField::VALID_STATUSES`, and everything that counts compliance
+  # matches the canonical spelling — so a re-imported SSP reported **0.0%
+  # compliant with 21 controls implemented**, which reads as a wall of findings
+  # that are not real.
+  #
+  # Derived FROM `VALID_STATUSES` rather than typed out, so the two cannot
+  # drift: whatever the exporter can emit, this maps back.
+  STATUS_FROM_OSCAL = SspControlField::VALID_STATUSES
+                        .index_by { |status| status.downcase.gsub(/\s+/, "-") }
+                        .freeze
+
+  # A vocabulary another tool used that SPARC has no equivalent for is left
+  # exactly as it arrived. OSCAL also defines `planned`, `partial` and
+  # `alternative`; mapping those onto SPARC's four would be inventing an
+  # assessment judgement nobody made, and a value that is visibly foreign is
+  # better than one that is silently wrong.
+  def canonical_status(value)
+    STATUS_FROM_OSCAL[value.to_s.downcase] || value
+  end
+
   def parse_implemented_requirement_props(ctrl, ir)
     (ir["props"] || []).each do |prop|
       field_name = prop_name_to_field(prop["name"])
       next unless field_name
 
+      value = field_name == "status" ? canonical_status(prop["value"]) : prop["value"]
+
       ctrl.ssp_control_fields.create!(
         field_name:  field_name,
-        field_value: prop["value"]
+        field_value: value
       )
     end
   end
@@ -321,12 +355,41 @@ class SspJsonParserService
   # Preserve the OSCAL statement UUID when supplied; fall back to the
   # deterministic OscalUuidService.derived value (matches what the
   # exporter emits for backfilled rows so re-export is UUID-stable).
+  # #946 — the inverse of OscalSspExportService#build_statements_from_fields.
+  #
+  # That exporter synthesises an OSCAL statement from a control FIELD, naming it
+  # `<control>_priv` (implementation_statement) or `<control>_pub`
+  # (implementation_summary). Re-importing those as statement ROWS would be a
+  # lossy round-trip in a way that is invisible until someone opens the screen:
+  # the narrative would survive in the database but the edit form, which renders
+  # the field, would show every control as blank.
+  #
+  # Restoring the field is what makes export -> import faithful. A statement
+  # SPARC synthesised from a field is not independent content, so it goes back
+  # where it came from rather than becoming a second copy.
+  SYNTHESISED_STATEMENT_FIELDS = {
+    "_priv" => "implementation_statement",
+    "_pub"  => "implementation_summary"
+  }.freeze
+
+  def synthesised_statement_field(stmt_id)
+    suffix = SYNTHESISED_STATEMENT_FIELDS.keys.find { |s| stmt_id.to_s.end_with?(s) }
+    suffix && SYNTHESISED_STATEMENT_FIELDS[suffix]
+  end
+
   def parse_statements_as_fields(ctrl, ir)
     (ir["statements"] || []).each_with_index do |stmt, idx|
       stmt_id = stmt["statement-id"]
       next if stmt_id.blank?
 
       narrative = stmt["remarks"] || stmt.dig(BY_COMPONENTS, 0, "description")
+
+      if (field_name = synthesised_statement_field(stmt_id))
+        if narrative.present?
+          ctrl.ssp_control_fields.create!(field_name: field_name, field_value: narrative)
+        end
+        next
+      end
       uuid = stmt["uuid"].presence ||
              OscalUuidService.derived(ctrl.uuid, "ssp-statement", stmt_id)
 
@@ -336,15 +399,28 @@ class SspJsonParserService
       # query-match on set_parameters_data.
       set_params = statement_set_parameters(stmt)
 
-      record = ctrl.ssp_control_statements.create!(
-        uuid:                   uuid,
-        statement_id:           stmt_id,
-        implementation_prose:   narrative,
-        remarks:                stmt["remarks"],
-        responsible_roles_data: stmt[RESPONSIBLE_ROLES] || [],
-        set_parameters_data:    set_params,
-        row_order:              idx
-      )
+      # #963 — the create runs in its OWN savepoint. Rescuing a uniqueness
+      # violation without one does not skip the row, it kills the import:
+      # Postgres aborts the whole transaction on the failed statement, and
+      # every statement after it raises InFailedSqlTransaction until the
+      # outer transaction rolls back. The rescue below was written to make one
+      # bad statement survivable and, without `requires_new`, did the opposite.
+      #
+      # This is reachable on ordinary input, not just malformed input:
+      # `idx_ssp_stmt_on_uuid` is unique GLOBALLY, and an export carries the
+      # statement UUIDs it already has, so re-importing a document the instance
+      # already holds collides on the first statement.
+      record = ActiveRecord::Base.transaction(requires_new: true) do
+        ctrl.ssp_control_statements.create!(
+          uuid:                   uuid,
+          statement_id:           stmt_id,
+          implementation_prose:   narrative,
+          remarks:                stmt["remarks"],
+          responsible_roles_data: stmt[RESPONSIBLE_ROLES] || [],
+          set_parameters_data:    set_params,
+          row_order:              idx
+        )
+      end
 
       # #396 + #398: resolve inheritance links from statements[].links[]
       # with rel="implements" (CDEF source) or rel="inherited" (leveraged
@@ -353,6 +429,9 @@ class SspJsonParserService
       # because the source may be imported later in the same run.
       queue_inheritance_links(record, stmt)
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
+      # Counted, not only logged: an import that silently drops statements
+      # reports success while delivering less than it was given.
+      @skipped_statements << { statement_id: stmt_id, error: e.message }
       Rails.logger.warn("[SspJsonParser] skipping statement #{stmt_id}: #{e.message}")
     end
   end
@@ -417,12 +496,18 @@ class SspJsonParserService
       source, source_type = resolve_inheritance_source(entry[:source_uuid], entry[:rel])
       next unless source
 
-      SspControlStatementInheritance.find_or_create_by!(
-        ssp_control_statement_id: entry[:target_id],
-        source_type: source_type,
-        source_id: source.id
-      ) do |link|
-        link.source_uuid = entry[:source_uuid]
+      # #963 — same savepoint requirement as the statement create above.
+      # `find_or_create_by!` races and collides like any other insert, and
+      # rescuing that without `requires_new` would poison the transaction and
+      # take down the rest of the link pass.
+      ActiveRecord::Base.transaction(requires_new: true) do
+        SspControlStatementInheritance.find_or_create_by!(
+          ssp_control_statement_id: entry[:target_id],
+          source_type: source_type,
+          source_id: source.id
+        ) do |link|
+          link.source_uuid = entry[:source_uuid]
+        end
       end
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
       Rails.logger.warn("[SspJsonParser] inheritance link skipped: #{e.message}")
@@ -447,13 +532,64 @@ class SspJsonParserService
     href.to_s.sub(/\A(uuid:|#)/, "")
   end
 
-  def parse_remarks_as_field(ctrl, ir)
-    return unless ir["remarks"].present?
+  # #946 — the inverse of OscalSspExportService#build_remarks.
+  #
+  # That exporter packs FIVE distinct fields into one `remarks` string, each
+  # behind a label ("Stated Requirement: …\n\nNotes: …"). Filing the whole
+  # string under `notes` collapsed all five into one and put four of them in the
+  # wrong place, so a re-imported SSP showed its catalog requirement as an
+  # operator's note and lost the note itself.
+  #
+  # Anything that does not carry a recognised label is genuinely a remark and
+  # still becomes `notes`, so remarks written by other tools survive.
+  REMARK_LABEL_FIELDS = {
+    "Stated Requirement"  => "stated_requirement",
+    "Notes"               => "notes",
+    "Expected Completion" => "expected_completion",
+    "Inherited From"      => "inherited_from",
+    "History"             => "history"
+  }.freeze
 
-    ctrl.ssp_control_fields.create!(
-      field_name:  "notes",
-      field_value: ir["remarks"]
-    )
+  def parse_remarks_as_field(ctrl, ir)
+    remarks = ir["remarks"]
+    return if remarks.blank?
+
+    labelled, unlabelled = split_labelled_remarks(remarks)
+
+    labelled.each do |field_name, value|
+      ctrl.ssp_control_fields.create!(field_name: field_name, field_value: value)
+    end
+
+    return if unlabelled.blank?
+
+    ctrl.ssp_control_fields.create!(field_name: "notes", field_value: unlabelled)
+  end
+
+  # Returns [{field_name => value}, leftover_prose].
+  def split_labelled_remarks(remarks)
+    fields = {}
+    leftovers = []
+
+    remarks.to_s.split("\n\n").each do |part|
+      label, value = part.split(": ", 2)
+      field_name = REMARK_LABEL_FIELDS[label.to_s.strip]
+
+      if field_name && value.present?
+        fields[field_name] = value.strip
+      else
+        leftovers << part
+      end
+    end
+
+    # `notes` may arrive both as a label and as unlabelled prose; the labelled
+    # one is the one the exporter wrote, so it wins and the rest is appended.
+    leftover = leftovers.join("\n\n").presence
+    if leftover && fields["notes"]
+      fields["notes"] = "#{fields['notes']}\n\n#{leftover}"
+      leftover = nil
+    end
+
+    [ fields, leftover ]
   end
 
   # ── Helpers ──────────────────────────────────────────────────────

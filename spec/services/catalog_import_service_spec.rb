@@ -454,4 +454,72 @@ RSpec.describe CatalogImportService do
       expect(json_ids).to eq(yaml_ids)
     end
   end
+
+  # ── #941 — sub-part sort keys ────────────────────────────────────────────
+  #
+  # OSCAL puts `props.sort-id` on every control and on none of its 11159
+  # `part` elements. The sub-part ROW is SPARC's own invention, so the sort key
+  # has to be SPARC's too, or `default_scope { order(COALESCE(sort_id,
+  # control_id)) }` compares an unpadded "ac-2.7.(a)" against a padded "ac-25".
+  describe "statement sub-part ordering (#941)" do
+    subject(:service) { described_class.new(File.open(rev5_json_path), "catalog.json") }
+
+    describe "#derived_sort_id" do
+      it "extends the parent's key with the suffix the identifier added" do
+        expect(service.send(:derived_sort_id, "ac-02.07", "ac-2.7", "ac-2.7.(a)"))
+          .to eq("ac-02.07.(a)")
+      end
+
+      it "extends a letter suffix without a separator, as the identifier does" do
+        expect(service.send(:derived_sort_id, "ac-01", "ac-1", "ac-1a")).to eq("ac-01a")
+      end
+
+      # Depth keeps extending one padded string rather than restarting.
+      it "chains through an already-derived parent key" do
+        expect(service.send(:derived_sort_id, "ac-03.03.(b)", "ac-3.3.(b)", "ac-3.3.(b).(1)"))
+          .to eq("ac-03.03.(b).(1)")
+      end
+
+      # NIST XML enhancement sub-parts keep their own parenthesised numbering,
+      # so the prefix relationship does not hold and a guess would be worse than
+      # the COALESCE fallback.
+      it "returns nil when the sub-id is not built from the parent-id" do
+        expect(service.send(:derived_sort_id, "ac-02.07", "ac-2.7", "ac-2(7)(a)")).to be_nil
+      end
+
+      it "falls back to the parent's identifier when the parent has no key" do
+        expect(service.send(:derived_sort_id, nil, "ac-2.7", "ac-2.7.(a)")).to eq("ac-2.7.(a)")
+      end
+
+      it "returns nil rather than inventing a key with no parent to extend" do
+        expect(service.send(:derived_sort_id, nil, nil, "ac-2.7.(a)")).to be_nil
+      end
+    end
+
+    describe "importing the real Rev 5 catalog" do
+      before { described_class.call(File.open(rev5_json_path), "NIST_SP-800-53_rev5_catalog.json") }
+
+      it "gives every statement sub-part a key derived from its parent" do
+        parent  = CatalogControl.find_by(control_id: "ac-2.7")
+        subpart = CatalogControl.find_by(control_id: "ac-2.7.(a)")
+
+        expect(parent.sort_id).to eq("ac-02.07")
+        expect(subpart.sort_id).to eq("ac-02.07.(a)")
+      end
+
+      it "sorts the sub-part under its parent instead of after the last control" do
+        family = CatalogControl.find_by(control_id: "ac-2.7").control_family
+        ordered = family.catalog_controls.pluck(:control_id)
+
+        expect(ordered.index("ac-2.7.(a)")).to eq(ordered.index("ac-2.7") + 1)
+        expect(ordered.index("ac-2.7.(a)")).to be < ordered.index("ac-25")
+      end
+
+      it "leaves no imported sub-part without a sort key" do
+        family = CatalogControl.find_by(control_id: "ac-2.7").control_family
+
+        expect(family.catalog_controls.where(sort_id: nil)).to be_empty
+      end
+    end
+  end
 end

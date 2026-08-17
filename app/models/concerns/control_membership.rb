@@ -150,13 +150,18 @@ module ControlMembership
 
   def membership_message(authority, count, shown, suffix)
     controls = "control".pluralize(count)
+    # The verb has to agree too. A well-scoped document reports ONE stray
+    # control far more often than many, so "1 control are not in" was the
+    # common case, not the edge one.
+    is_are   = count == 1 ? "is" : "are"
+    matches  = count == 1 ? "matches" : "match"
 
     if authority == AUTHORITATIVE
-      "#{count} #{controls} are not in this document's #{membership_def[:label]}: " \
+      "#{count} #{controls} #{is_are} not in this document's #{membership_def[:label]}: " \
       "#{shown.join(', ')}#{suffix}. A system may legitimately implement more than its " \
       "baseline, so this is reported rather than refused."
     else
-      "#{count} #{controls} match no control in any loaded catalog: " \
+      "#{count} #{controls} #{matches} no control in any loaded catalog: " \
       "#{shown.join(', ')}#{suffix}. This document has no #{membership_def[:label]}, so " \
       "SPARC can only check that the identifiers exist at all — not whether they are in scope."
     end

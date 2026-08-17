@@ -36,6 +36,11 @@ class BaselineParameterService
   def extract_schema(family: nil)
     raw_params = extract_raw_parameters(family: family)
     current_values = load_current_values
+    # #942 — built from the UNFILTERED set: a selection in the AC family can
+    # reference a parameter the `family:` filter would have excluded, and
+    # resolving it to raw markup because of a display filter would be worse than
+    # not filtering at all.
+    resolver = OscalParameterResolver.new(extract_raw_parameters, current_values)
 
     parameters = []
     selections = []
@@ -45,7 +50,7 @@ class BaselineParameterService
       control_title = param["_control_title"]
 
       if param["select"].present?
-        selections << build_selection(param, control_id, control_title, current_values)
+        selections << build_selection(param, control_id, control_title, current_values, resolver)
       else
         parameters << build_parameter(param, control_id, control_title, current_values)
       end
@@ -97,9 +102,25 @@ class BaselineParameterService
         next
       end
 
-      value = selected.is_a?(Array) ? selected.join(", ") : selected.to_s
+      # #942 — a choice can contain a comma (insert markup always does), so the
+      # values are joined with a separator that cannot appear in OSCAL prose.
+      value = selected.is_a?(Array) ? ParameterValueList.join(selected) : selected.to_s
       upsert_parameter_field(select_id, value)
       selections_updated += 1
+
+      # #942 — a chosen branch can carry its own parameter ("establish
+      # {{ insert: param, ac-20_odp.02 }}" is answered by odp.02). Accepting the
+      # selection while that parameter is still blank stores a half-answered
+      # question that reads as complete, and the gap only surfaces once the
+      # resolved baseline is generated. Reported, not refused: the operator may
+      # be supplying the two in either order, or in separate calls.
+      unanswered_references(select_id, Array(selected)).each do |missing|
+        validation_errors << {
+          select_id: select_id,
+          param_id: missing,
+          error: "Selected choice references parameter #{missing}, which has no value"
+        }
+      end
     end
 
     {
@@ -229,14 +250,24 @@ class BaselineParameterService
   end
 
   # Builds a selection/enumeration entry for the schema.
-  def build_selection(param, control_id, control_title, current_values)
+  #
+  # #942 — a choice may be composed from OTHER parameters rather than being a
+  # literal value ("establish {{ insert: param, ac-20_odp.02 }}"). `choices`
+  # keeps the verbatim OSCAL text, because that is what has to be written back
+  # for the document to round-trip; `choice_details` carries the resolved
+  # display form and the ids it depends on, so a consumer can render the term
+  # instead of the markup and ask for the referenced parameter only when the
+  # branch that needs it is chosen.
+  def build_selection(param, control_id, control_title, current_values, resolver = nil)
     param_id = param["id"]
     select = param["select"] || {}
     choices = select["choice"] || []
     how_many = select["how-many"] || "one-or-more"
 
     current = current_values[param_id]
-    selected = current.present? ? current.split(/\s*,\s*/) : []
+    selected = ParameterValueList.split(current)
+
+    details = choices.map { |choice| build_choice(choice, resolver) }
 
     {
       select_id: param_id,
@@ -246,8 +277,58 @@ class BaselineParameterService
       description: extract_description(param),
       how_many: how_many,
       choices: choices,
+      choice_details: details,
+      # The union across every choice — what this selection could require,
+      # regardless of which branch is taken.
+      depends_on: details.flat_map { |detail| detail[:references] }.uniq,
       selected: selected
     }
+  end
+
+  # One choice, in all three forms a consumer needs: what OSCAL stores, what a
+  # person should read, and what it depends on.
+  def build_choice(choice, resolver)
+    {
+      text: choice,
+      display: resolver ? resolver.resolve_text(choice).strip : choice,
+      references: OscalParamReference.ids(choice)
+    }
+  end
+
+  # Parameter ids the SELECTED choices reference but which still hold no value.
+  #
+  # Only the chosen branches are examined: a selection's other choices may
+  # reference parameters that are legitimately irrelevant, and demanding those
+  # is the over-collection #942 exists to stop.
+  #
+  # Values are re-read rather than taken from the payload's own parameter list,
+  # so a call that sets odp.02 and odp.01 together is satisfied by the write
+  # that has already happened in this same pass.
+  def unanswered_references(select_id, selected)
+    return [] if selected.empty?
+
+    choices = choices_for(select_id)
+    return [] if choices.empty?
+
+    chosen = choices.select { |choice| selected.include?(choice) }
+    referenced = chosen.flat_map { |choice| OscalParamReference.ids(choice) }.uniq
+    return [] if referenced.empty?
+
+    values = load_current_values
+    referenced.reject { |id| values[id].present? }
+  end
+
+  def choices_for(select_id)
+    param = extract_raw_parameters.find { |p| p["id"] == select_id }
+    Array(param&.dig("select", "choice"))
+  end
+
+  # param_id => label, across the whole profile.
+  def parameter_labels
+    extract_raw_parameters.each_with_object({}) do |param, labels|
+      id = param["id"]
+      labels[id] = param["label"] if id.present? && param["label"].present?
+    end
   end
 
   # Finds or creates a ProfileControlField for the given parameter.
@@ -339,7 +420,15 @@ class BaselineParameterService
           ) do
             builder.label(sel[:label]) if sel[:label]
             builder.description(sel[:description]) if sel[:description]
-            sel[:choices].each { |c| builder.choice(c) }
+            # #942 — the choice carries its resolved display form and the
+            # parameters it references as attributes, so the XML says what the
+            # JSON says. The element text stays the verbatim OSCAL so the file
+            # round-trips.
+            Array(sel[:choice_details]).each do |detail|
+              attrs = { display: detail[:display] }
+              attrs[:references] = detail[:references].join(" ") if detail[:references].present?
+              builder.choice(detail[:text], **attrs)
+            end
             sel[:selected].each { |s| builder.selected(s) }
           end
         end

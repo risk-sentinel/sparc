@@ -15,6 +15,24 @@ class ControlMappingEntriesController < ApplicationController
     end
   end
 
+  # #945 — an entry could be created and deleted but never corrected, so a
+  # mistyped identifier could only be fixed by deleting the judgement and
+  # re-recording it.
+  def update
+    entry = @control_mapping.control_mapping_entries.find(params[:id])
+
+    if entry.update(entry_params)
+      audit_log("mapping_entry_updated", subject: entry,
+                metadata: { mapping_id: @control_mapping.id,
+                            source_control_id: entry.source_control_id,
+                            target_control_id: entry.target_control_id })
+      redirect_to @control_mapping, flash: { success: "Mapping entry updated." }
+    else
+      redirect_to @control_mapping,
+                  flash: { error: "Failed to update entry: #{entry.errors.full_messages.join(', ')}" }
+    end
+  end
+
   def destroy
     entry = @control_mapping.control_mapping_entries.find(params[:id])
     audit_log("mapping_entry_deleted", subject: entry, metadata: { mapping_id: @control_mapping.id })

@@ -52,8 +52,19 @@ The SAP is the OSCAL `assessment-plan`; the SAR (see
 1. Go to *Assessment → Assessment Plans* (`/sap_documents`).
 2. Click **Create New**, or **Upload** to import an existing SAP from JSON.
 3. Provide the plan metadata.
-4. Save. The detail page (`/sap_documents/:id`) shows controls organized by
+4. Choose the **System Security Plan** being assessed. The **Baseline Profile**
+   fills in automatically from whatever that SSP records as its baseline — that
+   is the baseline the assessment is scoped against, so you normally leave it
+   alone. You can override it if the assessment is deliberately scoped to a
+   different one.
+5. Save. The detail page (`/sap_documents/:id`) shows controls organized by
    family with an **assessment method heatmap**.
+
+**If Baseline stays blank**, the SSP you picked does not record what it is based
+on. SPARC will not guess one — a baseline invented for an assessment is not a
+baseline anyone approved. Fix it on the SSP: open it and set its profile, or
+re-import it from OSCAL that declares `import-profile`. See
+[System Security Plans](User-Guide-System-Security-Plans).
 
 ## How to review assessment coverage
 

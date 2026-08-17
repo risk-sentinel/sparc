@@ -1,0 +1,34 @@
+<%# #944 — a component definition could not be edited at all. `config/routes.rb`
+    generated this route from a bare `resources :cdef_documents`, so it existed
+    and resolved to an action that did not. %>
+
+<% content_for :title, "Edit #{@cdef_document.name}" %>
+
+<div class="container-fluid" style="max-width: 60rem;">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><%= link_to "Component Definitions", cdef_documents_path %></li>
+      <li class="breadcrumb-item">
+        <%= link_to @cdef_document.name, cdef_document_path(@cdef_document) %>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">Edit</li>
+    </ol>
+  </nav>
+
+  <h1 class="h4 mb-3">Edit component definition</h1>
+
+  <div class="card">
+    <div class="card-body">
+      <%= form_with model: @cdef_document, url: cdef_document_path(@cdef_document),
+                    method: :patch, local: true do |f| %>
+
+        <%= render "component_fields", f: f %>
+
+        <div class="d-flex gap-2 mt-4">
+          <%= f.submit "Save changes", class: "btn btn-primary" %>
+          <%= link_to "Cancel", cdef_document_path(@cdef_document), class: "btn btn-outline-secondary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

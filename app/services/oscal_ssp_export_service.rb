@@ -539,11 +539,20 @@ class OscalSspExportService
   # (backfilled or imported), they are the source of truth. Falls back to
   # the legacy field-synthesized statements (implementation_statement,
   # implementation_summary) for un-backfilled SSPs (no linked profile).
+  # #946 — BOTH sources, not one or the other.
+  #
+  # This returned the table statements when any existed and the
+  # field-synthesized ones otherwise, so a control that had both lost the
+  # field. That is the normal state for a generated SSP: `SspFromProfileService`
+  # creates statement rows from the catalog (#955), and the organisation's own
+  # narrative lives in the `implementation_statement` FIELD. Exporting only the
+  # first dropped the part a reader actually cares about — what the system does
+  # about the control — while keeping the part the catalog already states.
+  #
+  # Statement ids are unique per control, and the field-synthesized ones are
+  # suffixed `_priv`/`_pub`, so the two sets cannot collide.
   def build_statements(control, field_map)
-    if control.ssp_control_statements.any?
-      return build_statements_from_table(control)
-    end
-    build_statements_from_fields(control, field_map)
+    build_statements_from_table(control) + build_statements_from_fields(control, field_map)
   end
 
   def build_statements_from_table(control)

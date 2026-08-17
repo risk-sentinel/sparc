@@ -31,7 +31,12 @@ INCOMPLETE_BADGE = "Incomplete — needs content"
 
 @pytest.fixture
 def empty_cdef(session_cookie) -> Iterator[dict[str, Any]]:
-    doc = create_cdef()
+    # Explicitly the EMPTY shell: this file exists to test the
+    # incomplete-badge and populate-from-profile flow, so it needs a CDEF with
+    # no controls. `create_cdef` now gives fixtures a control basis by default,
+    # because a control-less CDEF cannot export and the shells other tests left
+    # behind were failing `test_document_exports`.
+    doc = create_cdef(with_controls=False)
     try:
         yield doc
     finally:

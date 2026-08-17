@@ -384,4 +384,35 @@ RSpec.describe "Api::V1::CatalogControls", type: :request do
       end
     end
   end
+
+  # #941 — the ordering fix has to reach the API, not just the screen. An
+  # integrator reading a control's sub-parts gets them in document order or the
+  # statement is unreadable, and "ac-2.7.(a)" after "ac-25" is not document
+  # order.
+  #
+  # The rows are built inside the example rather than in a `let`, so they exist
+  # before the request rather than being conjured by the assertion that reads
+  # them.
+  describe "GET index ordering of statement sub-parts" do
+    it "returns a sub-part directly after its parent, not after the family" do
+      family.catalog_controls.create!(control_id: "ac-2.7", label: "AC-2(7)",
+                                     title: "Privileged Accounts", sort_id: "ac-02.07")
+      family.catalog_controls.create!(control_id: "ac-2.7.(a)", title: "Establish roles",
+                                      sort_id: "ac-02.07.(a)")
+      family.catalog_controls.create!(control_id: "ac-25", label: "AC-25",
+                                      title: "Reference Monitor", sort_id: "ac-25")
+
+      get catalog_path, headers: auth
+
+      expect(response).to have_http_status(:ok)
+      # `control_id`, not `identifier`: #881 canonicalises the URL form, so the
+      # sub-part serialises its identifier as "ac-2.7.a". The stored id is the
+      # unambiguous thing to assert order on.
+      ids = JSON.parse(response.body)["data"].map { |c| c["control_id"] }
+
+      expect(ids).to include("ac-2.7.(a)")
+      expect(ids.index("ac-2.7.(a)")).to eq(ids.index("ac-2.7") + 1)
+      expect(ids.index("ac-2.7.(a)")).to be < ids.index("ac-25")
+    end
+  end
 end

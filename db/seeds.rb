@@ -874,6 +874,113 @@ end
 # NIST SP 800-53 Rev 5 and Rev 4 catalogs above.  Idempotent.
 # ============================================================
 
+# #946 — the demo baselines' identities, fixed so the committed SSP fixtures can
+# name them. Derived rather than typed so they are obviously not hand-picked
+# values, and stable because the inputs never change.
+#
+# TWO baselines, both Rev 5. The demo estate models two real authorizations —
+# a MODERATE system and a LOW one — because that is what an operator actually
+# has. Pointing a Rev 4 document at a Rev 5 profile, as this seed briefly did,
+# is not a scenario that exists: a baseline never mixes revisions (#915), so
+# every control in it would read as out-of-baseline and the finding would be an
+# artefact of the seed rather than of the system.
+DEMO_MODERATE_PROFILE_UUID =
+  OscalUuidService.derived("demo-published-profile", "NIST SP 800-53 Rev 5 MODERATE Baseline").freeze
+DEMO_LOW_PROFILE_UUID =
+  OscalUuidService.derived("demo-published-profile", "NIST SP 800-53 Rev 5 LOW Baseline").freeze
+
+# Control ids the real NIST baseline profiles select, read from the vendored
+# OSCAL rather than hand-listed: LOW selects 149 controls and MODERATE 287, and
+# a demo that invents its own ten-control "baseline" teaches the wrong shape.
+def demo_baseline_control_ids(filename)
+  path = Rails.root.join("db/seeds/oscal", filename)
+  return [] unless File.exist?(path)
+
+  data = JSON.parse(File.read(path))
+  (data.dig("profile", "imports") || []).flat_map do |import|
+    (import["include-controls"] || []).flat_map { |inc| inc["with-ids"] || [] }
+  end.uniq
+end
+
+# NOTE: this section runs BEFORE the demo SSP/SAR section on purpose (#946).
+# The demo SSPs import OSCAL that declares `import-profile`, and that href can
+# only resolve to a ProfileDocument that already exists. Seeded the other way
+# round -- which is how it was until #946 -- every demo SSP came up with no
+# baseline, which is precisely the bug the SAP wizard then reported.
+# ══════════════════════════════════════════════════════════════════════
+# DEMO: A published baseline profile (#757)
+# ══════════════════════════════════════════════════════════════════════
+# Gives the instance a published ProfileDocument with a resolved catalog, so the
+# populate-from-profile flow (SSP/SAR/SAP/CDEF) and the review/approval contract
+# have a real control basis to work from — previously there was none, which
+# forced the API contract suite to skip those paths.
+if SEED_DEMO
+SeedRunner.run_section("demo_published_profile") do
+  catalog = ControlCatalog.where("name LIKE ?", "%Rev 5%").first || ControlCatalog.first
+  if catalog.nil? || catalog.catalog_controls.empty?
+    puts "  Skipping demo published profile — no catalog with controls available."
+  else
+    # #946 — the two real Rev 5 baselines, seeded from the vendored NIST
+    # profiles. A demo authorization has to be shaped like a real one: a system
+    # is authorized at LOW or MODERATE, its SSP documents the controls in that
+    # baseline, and anything it implements beyond them is a finding worth
+    # reporting — not the other way round.
+    [
+      { name: "NIST SP 800-53 Rev 5 MODERATE Baseline", level: "moderate",
+        file: "nist_rev5_moderate_baseline_profile.json", uuid: DEMO_MODERATE_PROFILE_UUID },
+      { name: "NIST SP 800-53 Rev 5 LOW Baseline", level: "low",
+        file: "nist_rev5_low_baseline_profile.json", uuid: DEMO_LOW_PROFILE_UUID }
+    ].each do |spec|
+      control_ids = demo_baseline_control_ids(spec[:file])
+      if control_ids.empty?
+        puts "  Skipping #{spec[:name]} — #{spec[:file]} not found or selects nothing."
+        next
+      end
+
+      profile = ProfileDocument.find_or_create_by!(name: spec[:name]) do |p|
+        p.description     = "The NIST SP 800-53 Rev 5 #{spec[:level].upcase} control baseline, " \
+                            "seeded from the published NIST profile so the demo estate is " \
+                            "shaped like a real authorization."
+        p.control_catalog = catalog
+        p.baseline_level  = spec[:level]
+        p.status          = "completed"
+      end
+
+      if profile.profile_controls.empty?
+        # Only what this catalog actually holds. Selecting an id the catalog
+        # does not contain would put the profile in the state #911 exists to
+        # report, in the seed itself.
+        present = catalog.catalog_controls.where(control_id: control_ids).pluck(:control_id)
+        ProfileControlSelectionService.new(profile).update(present)
+      end
+
+      if profile.lifecycle_status != "published"
+        resolved = OscalResolvedProfileCatalogService.new(profile).export
+        profile.update!(resolved_catalog_json: JSON.parse(resolved), lifecycle_status: "published")
+      end
+
+      # #946 — pin the identity LAST, and with update_column.
+      #
+      # The committed demo SSP fixtures declare `import-profile.href` as this
+      # UUID, and a href can only resolve to an identifier that is the same on
+      # every seeded instance. Setting it at create does NOT survive:
+      # `ProfileControlSelectionService#update` regenerates the root UUID,
+      # correctly — OSCAL requires a content change to produce a new one — so a
+      # UUID pinned before the controls are selected is overwritten moments
+      # later and the fixtures resolve to nothing.
+      #
+      # `update_column` for the same reason ReferenceEstateBuilder#pin_record
+      # uses it: the immutability callback exists to stop accidental overwrites
+      # during normal attribute assignment, not deliberate pinning.
+      profile.update_column(:uuid, spec[:uuid]) unless profile.uuid == spec[:uuid]
+
+      puts "  Published '#{profile.name}' — #{profile.profile_controls.count} controls, " \
+           "lifecycle=#{profile.lifecycle_status}, uuid pinned."
+    end
+  end
+end
+end # if SEED_DEMO (published profile)
+
 # ══════════════════════════════════════════════════════════════════════
 # DEMO: SSP, SAR documents + catalog guidance (opt-in)
 # ══════════════════════════════════════════════════════════════════════
@@ -1550,22 +1657,79 @@ REV4_CONTROLS = [
 ].freeze
 
 # Demo docs are always destroyed and recreated to keep field names current.
+#
+# #946 — `where(...).each`, not `find_by(...)&.destroy`. The singular form
+# removes ONE row, so a name that had somehow acquired two copies kept one
+# forever and every subsequent seed added another. That is not hypothetical:
+# bumping this section's version to re-run it is exactly when it bites, because
+# the re-run is the thing that creates the second copy.
 [
   "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
-  "ACME HR Portal — SSP (NIST SP 800-53 Rev 4, Low)"
-].each { |n| SspDocument.find_by(name: n)&.destroy }
+  "ACME HR Portal — SSP (NIST SP 800-53 Rev 5, Low)"
+].each { |n| SspDocument.where(name: n).each(&:destroy) }
 
 [
   "ACME Cloud Platform — Annual Security Assessment (Rev 5)",
-  "ACME HR Portal — Security Assessment (Rev 4)"
-].each { |n| SarDocument.find_by(name: n)&.destroy }
+  "ACME HR Portal — Security Assessment (Rev 5)"
+].each { |n| SarDocument.where(name: n).each(&:destroy) }
+
+# #946 — the demo SSPs are IMPORTED from committed OSCAL, not fabricated.
+#
+# They used to be built in Ruby and stamped `file_type: "excel"` with an
+# `original_filename` of `demo_acme_*.xlsx` — a file that does not exist in this
+# repository and never did. That false provenance was the direct cause of #946:
+# a document claiming a spreadsheet origin has no `import-profile` to resolve,
+# so it could never reach a baseline, and the SAP wizard had nothing to derive
+# from. Every demo instance therefore reproduced the bug on first boot.
+#
+# The fixtures are schema-valid OSCAL carrying a resolvable `import-profile`
+# href, so the seeded estate now exercises the real import path rather than
+# describing one it never took.
+# Re-imports IN PLACE when the document already exists, rather than destroying
+# and recreating it.
+#
+# The destroy-and-recreate above cannot be relied on: `SafeDestroyable` refuses
+# to delete an SSP that something depends on, and a demo SSP acquires an
+# Assessment Plan as soon as the SAP seed runs. `destroy` then aborts silently,
+# the old row survives, and creating a fresh one leaves TWO demo SSPs with the
+# same name — which is exactly the state a version bump on this section
+# produces. Reusing the row keeps the seed idempotent and keeps whatever
+# legitimately points at it (SAPs, boundary links) pointing at it.
+def seed_ssp_from_oscal(filename, name)
+  path = Rails.root.join("db/seeds/oscal", filename)
+  doc  = SspDocument.where(name: name).first
+
+  if doc
+    # Clear everything the import REBUILDS, so dependants survive but nothing
+    # collides. Each of these carries a document-scoped unique index on uuid,
+    # and the fixture supplies the same uuid every time — so a collection left
+    # behind fails the re-import on a duplicate key rather than being replaced.
+    doc.ssp_controls.destroy_all
+    doc.ssp_components.destroy_all
+    doc.ssp_information_types.destroy_all
+    doc.ssp_users.destroy_all
+    doc.update!(file_type: "json", original_filename: filename, status: "processing")
+  else
+    doc = SspDocument.create!(
+      name:              name,
+      file_type:         "json",
+      original_filename: filename,
+      status:            "processing"
+    )
+  end
+
+  SspJsonParserService.new(doc, path.to_s).parse
+  doc.reload
+  # The importer sets the name from the OSCAL metadata title; re-assert the
+  # seed's name so the demo labels stay under the seed's control.
+  doc.update!(name: name, status: "completed")
+  doc
+end
 
 # -- SSP 1: Rev 5 Moderate Baseline ----------------------------------
-ssp1 = SspDocument.create!(
-  name:              "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
-  file_type:         "excel",
-  original_filename: "demo_acme_cloud_platform_ssp_rev5.xlsx",
-  status:            "completed"
+ssp1 = seed_ssp_from_oscal(
+  "demo_acme_cloud_platform_ssp_rev5.json",
+  "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)"
 )
 
 # Representative stated requirements for key Rev 5 controls.
@@ -1622,124 +1786,50 @@ SSP1_INHERITED = {
   ]
 }.freeze
 
-REV5_CONTROLS.each do |c|
-  # Derive control_application and coverage_level from existing origin/status fields
-  type_use = case c[:origin]
-  when "Inherited" then "Inherited"
-  when "Hybrid"    then "Hybrid"
-  else                  "System Specific"
-  end
-  prov_as = c[:ssp_status] == "Implemented" ? "Implemented" : "Documented"
-
-  seed_ssp_control(ssp1, pad_ctrl_id(c[:id]), c[:title],
-    {
-      status:                 c[:ssp_status],
-      control_application:            type_use,
-      coverage_level:            prov_as,
-      responsible_entities:   c[:role],
-      control_type:    c[:origin],
-      implementation_statement: c[:guidance],
-      stated_requirement:     SSP1_STATED_REQS[c[:id]]
-    },
-    inherited_rows: SSP1_INHERITED[c[:id]] || [])
-end
-puts "  SSP 1 '#{ssp1.name}': #{ssp1.ssp_controls.count} controls"
+puts "  SSP 1 '#{ssp1.name}': #{ssp1.ssp_controls.count} controls imported from OSCAL"
 
 # -- SSP 2: Rev 4 Low Baseline ----------------------------------------
-ssp2 = SspDocument.create!(
-  name:              "ACME HR Portal — SSP (NIST SP 800-53 Rev 4, Low)",
-  file_type:         "excel",
-  original_filename: "demo_acme_hr_portal_ssp_rev4.xlsx",
-  status:            "completed"
+ssp2 = seed_ssp_from_oscal(
+  "demo_acme_hr_portal_ssp_rev5.json",
+  "ACME HR Portal — SSP (NIST SP 800-53 Rev 5, Low)"
 )
-
-REV4_CONTROLS.each do |c|
-  type_use = case c[:origin]
-  when "Inherited" then "Inherited"
-  when "Hybrid"    then "Hybrid"
-  else                  "System Specific"
-  end
-  prov_as = c[:ssp_status] == "Implemented" ? "Implemented" : "Documented"
-
-  seed_ssp_control(ssp2, pad_ctrl_id(c[:id]), c[:title],
-    {
-      status:                 c[:ssp_status],
-      control_application:            type_use,
-      coverage_level:            prov_as,
-      responsible_entities:   c[:role],
-      control_type:    c[:origin],
-      implementation_statement: c[:guidance]
-    })
-end
-puts "  SSP 2 '#{ssp2.name}': #{ssp2.ssp_controls.count} controls"
+puts "  SSP 2 '#{ssp2.name}': #{ssp2.ssp_controls.count} controls imported from OSCAL"
 
 # -- SAR 1: Rev 5 Annual Assessment (multi-section demo) --------------
-sar1 = SarDocument.create!(
-  name:              "ACME Cloud Platform — Annual Security Assessment (Rev 5)",
-  file_type:         "excel",
-  original_filename: "demo_acme_cloud_platform_sar_rev5.xlsx",
-  status:            "completed"
-)
-
-REV5_CONTROLS.each do |c|
-  family = c[:id].split("-").first
-  section_name = case family
-  when "AC", "AT" then "System Test"
-  when "AU", "CA" then "Location Tests"
-  else "System Test"
-  end
-  subj = REV5_SUBJECTS[c[:id]] || {}
-
-  # Derive working_status from result
-  working_status = case c[:test_status]
-  when "Pass"          then "Final Satisfied"
-  when "Failed"        then "Not Satisfied"
-  when "Not Specified" then "Not Specified"
-  else nil
-  end
-
-  # working_comments only for Failed controls
-  working_comments = c[:test_status] == "Failed" ? c[:remediation] : nil
-
-  seed_sar_control(sar1, pad_ctrl_id(c[:id]), c[:title], section_name,
-    subj[:asset].to_s, subj[:env].to_s,
-    result:           c[:test_status],
-    date:             c[:test_date],
-    tester:           c[:tester],
-    notes_weakness:   c[:test_result],
-    recommended_fix:  c[:remediation],
-    working_status:   working_status,
-    working_comments: working_comments)
+# #946 — the SARs are GENERATED from their SSPs, not hand-built beside them.
+#
+# `SarFromSspService` is the real path a SAR takes: it assesses the SSP's
+# controls, writes a finding for each, and creates a RISK only where a control
+# is not satisfied — which is what `PoamGeneratorService` turns into POA&M
+# items (#954). Hand-seeding a parallel control list produced an assessment
+# that referenced controls the SSP did not contain and could not feed a POA&M.
+#
+# Satisfaction is DERIVED, not sprinkled: a control the SSP records as
+# Implemented passes, and one it records as Deferred does not. That lands the
+# estate at roughly 95/5 because the SSPs do, and it stays explainable — every
+# failure traces to a control the system says it has not implemented yet.
+def demo_satisfied_control_ids(ssp)
+  SspControlField
+    .where(ssp_control_id: ssp.ssp_controls.select(:id), field_name: "status")
+    .where(field_value: [ "Implemented", "Not Applicable" ])
+    .joins("JOIN ssp_controls ON ssp_controls.id = ssp_control_fields.ssp_control_id")
+    .pluck("ssp_controls.control_id")
 end
-puts "  SAR 1 '#{sar1.name}': #{sar1.sar_controls.count} controls"
 
-# -- SAR 2: Rev 4 HR Assessment ----------------------------------------
-sar2 = SarDocument.create!(
-  name:              "ACME HR Portal — Security Assessment (Rev 4)",
-  file_type:         "excel",
-  original_filename: "demo_acme_hr_portal_sar_rev4.xlsx",
-  status:            "completed"
-)
-
-REV4_CONTROLS.each do |c|
-  working_status = case c[:test_status]
-  when "Pass"          then "Final Satisfied"
-  when "Failed"        then "Not Satisfied"
-  when "Not Specified" then "Not Specified"
-  else nil
-  end
-
-  seed_sar_control(sar2, pad_ctrl_id(c[:id]), c[:title], "System Test",
-    nil, nil,
-    result:           c[:test_status],
-    date:             c[:test_date],
-    tester:           c[:tester],
-    notes_weakness:   c[:test_result],
-    recommended_fix:  c[:remediation],
-    working_status:   working_status,
-    working_comments: (c[:test_status] == "Failed" ? c[:remediation] : nil))
+[
+  { ssp: ssp1, name: "ACME Cloud Platform — Annual Security Assessment (Rev 5)", label: "SAR 1" },
+  { ssp: ssp2, name: "ACME HR Portal — Security Assessment (Rev 5)",             label: "SAR 2" }
+].each do |spec|
+  satisfied = demo_satisfied_control_ids(spec[:ssp])
+  sar = SarFromSspService.new(spec[:ssp], name: spec[:name], satisfied_control_ids: satisfied).create
+  result   = sar.sar_results.first
+  findings = result ? result.sar_findings.count : 0
+  risks    = result ? result.sar_risks.count : 0
+  passed   = findings - risks
+  pct      = findings.positive? ? (passed * 100.0 / findings).round(1) : 0.0
+  puts "  #{spec[:label]} '#{sar.name}': #{sar.sar_controls.count} controls, " \
+       "#{passed} satisfied / #{risks} not satisfied (#{pct}% pass)"
 end
-puts "  SAR 2 '#{sar2.name}': #{sar2.sar_controls.count} controls"
 
 # ============================================================
 # Catalog Guidance — load from providing-catalog JSON files
@@ -1795,8 +1885,24 @@ CATALOG_GUIDANCE_SOURCES.each do |source|
       # Normalize the control_id from external JSON to match OSCAL canonical format
       normalized_id = control_id.downcase.gsub(/\s+/, "-").gsub("(", ".").gsub(")", "")
                                 .gsub(/(?<=-|\.)0+(\d)/) { $1 }
-      updated = CatalogControl.where(control_id: [ control_id, normalized_id ]).update_all(guidance_data: guidance)
-      count  += updated
+
+      # MERGE, do not replace. `update_all(guidance_data: guidance)` overwrote
+      # the whole JSONB column, and this hash carries no `statement` key — so
+      # every control it touched silently lost the control text the OSCAL
+      # import had just collected. 187 Rev 5 controls ended up with no
+      # statement, including AC-2, and an SSP generated from the catalog came
+      # out with no control language at all: the document said "Account
+      # Management" and nothing about what the control requires.
+      #
+      # Row-by-row because the merge depends on each row's existing value,
+      # which one UPDATE cannot express. This runs over a few hundred enriched
+      # controls, not the whole catalog.
+      CatalogControl.unscoped
+                    .where(control_id: [ control_id, normalized_id ])
+                    .find_each do |row|
+        row.update_columns(guidance_data: (row.guidance_data || {}).merge(guidance))
+        count += 1
+      end
     end
   end
 
@@ -1862,9 +1968,15 @@ inline_count = 0
 INLINE_CATALOG_GUIDANCE.each do |ctrl_id, guidance|
   # Match both old (AC-02) and new (ac-2) formats
   normalized_id = ctrl_id.downcase.gsub(/(?<=-|\.)0+(\d)/) { $1 }
-  updated = CatalogControl.where(control_id: [ ctrl_id, normalized_id ])
-                           .update_all(guidance_data: guidance)
-  inline_count += updated
+  # MERGE, for the same reason as the enrichment above: this hash carries no
+  # `statement`, and replacing the column wholesale deleted the control text
+  # the OSCAL import had collected.
+  CatalogControl.unscoped
+                .where(control_id: [ ctrl_id, normalized_id ])
+                .find_each do |row|
+    row.update_columns(guidance_data: (row.guidance_data || {}).merge(guidance))
+    inline_count += 1
+  end
 end
 puts "  Inline demo guidance applied to #{inline_count} catalog control(s)"
 
@@ -1929,42 +2041,6 @@ puts "Done! Demo SSP and SAR documents seeded."
 end # SeedRunner demo_ssp_sar
 end # if SEED_DEMO (ssp/sar)
 
-# ══════════════════════════════════════════════════════════════════════
-# DEMO: A published baseline profile (#757)
-# ══════════════════════════════════════════════════════════════════════
-# Gives the instance a published ProfileDocument with a resolved catalog, so the
-# populate-from-profile flow (SSP/SAR/SAP/CDEF) and the review/approval contract
-# have a real control basis to work from — previously there was none, which
-# forced the API contract suite to skip those paths.
-if SEED_DEMO
-SeedRunner.run_section("demo_published_profile") do
-  catalog = ControlCatalog.where("name LIKE ?", "%Rev 5%").first || ControlCatalog.first
-  if catalog.nil? || catalog.catalog_controls.empty?
-    puts "  Skipping demo published profile — no catalog with controls available."
-  else
-    profile = ProfileDocument.find_or_create_by!(name: "Demo LOW Baseline") do |p|
-      p.description     = "Seeded demo baseline: a small published profile providing a " \
-                          "control basis for populate-from-profile and review flows (#757)."
-      p.control_catalog = catalog
-      p.baseline_level  = "low"
-      p.status          = "completed"
-    end
-
-    if profile.profile_controls.empty?
-      control_ids = catalog.catalog_controls.order(:control_id).limit(10).pluck(:control_id)
-      ProfileControlSelectionService.new(profile).update(control_ids)
-    end
-
-    if profile.lifecycle_status != "published"
-      resolved = OscalResolvedProfileCatalogService.new(profile).export
-      profile.update!(resolved_catalog_json: JSON.parse(resolved), lifecycle_status: "published")
-    end
-
-    puts "  Published demo profile '#{profile.name}' — #{profile.profile_controls.count} controls, " \
-         "lifecycle=#{profile.lifecycle_status}."
-  end
-end
-end # if SEED_DEMO (published profile)
 
 # ══════════════════════════════════════════════════════════════════════
 # REQUIRED: Remediation-timeline (SLA) defaults (#809)

@@ -63,10 +63,12 @@
         <div class="col">
           <div class="form-group">
             <label for="sap_document_ssp_document_id">System Security Plan (SSP)</label><%= field_help "The system being assessed — links this plan to the SSP whose controls it will test." %>
+            <%# #946 — preselect on render, so a form arriving with an SSP
+                already chosen shows it rather than resetting to blank. %>
             <%= f.select :ssp_document_id,
                   options_for_select(
                     @ssp_documents.map { |s| ["#{s.name} (#{s.ssp_controls.count} controls)", s.id] },
-                    nil
+                    @sap_document.ssp_document_id
                   ),
                   { include_blank: "— Select SSP (optional) —" },
                   class: "form-control", id: "ssp-select",
@@ -77,10 +79,12 @@
         <div class="col">
           <div class="form-group">
             <label for="sap_document_profile_document_id">Baseline Profile</label><%= field_help "The baseline that decides which controls are in scope for this assessment." %>
+            <%# #946 — the baseline the selected SSP records, filled server-side.
+                The Stimulus sync still handles later changes. %>
             <%= f.select :profile_document_id,
                   options_for_select(
                     @profile_documents.map { |p| ["#{p.name} (#{p.baseline_level || 'Custom'}, #{p.profile_controls.count} controls)", p.id] },
-                    nil
+                    @sap_document.profile_document_id
                   ),
                   { include_blank: "— Select Profile (optional) —" },
                   class: "form-control", id: "profile-select",

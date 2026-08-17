@@ -146,12 +146,16 @@ class CdefFromProfileService
       end
     end
 
+    # #957 — derived, not minted (see BatchInsertable).
     batch_insert_records(
       control_class: CdefControl,
       field_class:   CdefControlField,
       document_fk:   :cdef_document_id,
       control_attrs: control_attrs,
-      field_entries: field_entries
+      field_entries: field_entries,
+      uuid_for:       ->(attrs) {
+        OscalUuidService.derived(@document.uuid, "cdef-control", attrs[:control_id].to_s)
+      }
     )
   end
 

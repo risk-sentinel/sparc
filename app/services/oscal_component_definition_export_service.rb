@@ -85,11 +85,17 @@ class OscalComponentDefinitionExportService
             "supply the missing CCI references in the benchmark, then export again."
     end
 
+    # #944 — authored values win; the fallbacks are exactly what was hardcoded
+    # here before, so a document nobody has edited exports byte-identically.
+    # "software" as a blanket default meant every exported CDEF claimed to be
+    # software regardless of what it described.
     {
       "uuid"        => OscalUuidService.derived(@document.uuid, "cdef-component"),
-      "type"        => "software",
-      "title"       => @document.name,
-      "description" => @document.description || "Imported component definition",
+      "type"        => @document.component_type.presence || "software",
+      "title"       => @document.component_title.presence || @document.name,
+      "description" => @document.component_description.presence ||
+                       @document.description.presence ||
+                       "Imported component definition",
       "control-implementations" => [ build_control_implementation(controls) ]
     }
   end
@@ -97,8 +103,13 @@ class OscalComponentDefinitionExportService
   def build_control_implementation(controls)
     {
       "uuid"        => OscalUuidService.derived(@document.uuid, "cdef-control-implementation"),
-      "source"      => determine_source,
-      "description" => "Controls from #{@document.cdef_type || 'imported'} component definition: #{@document.name}",
+      # #944 — an authored source names the catalog or profile whose controls
+      # are actually being implemented. `determine_source` otherwise synthesises
+      # a `sparc.local` URL that resolves to nothing and carries the database
+      # primary key into a delivered artifact.
+      "source"      => @document.control_implementation_source.presence || determine_source,
+      "description" => @document.control_implementation_description.presence ||
+                       "Controls from #{@document.cdef_type || 'imported'} component definition: #{@document.name}",
       "implemented-requirements" => controls.map { |ctrl| build_implemented_requirement(ctrl) }
     }
   end

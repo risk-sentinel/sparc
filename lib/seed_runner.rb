@@ -20,8 +20,11 @@ module SeedRunner
     "converters"           => "1.4.0",
     "demo_organization"    => "1.0.0",
     "demo_auth_boundary"   => "1.0.0",
-    "demo_ssp_sar"         => "1.0.0",
-    "demo_published_profile" => "1.0.0",
+    # #946 — the demo SSPs are now imported from committed OSCAL instead of
+    # fabricated with a spreadsheet provenance they never had.
+    "demo_ssp_sar"         => "2.0.0",
+    # #946 — pinned UUID so the SSP fixtures' import-profile href resolves.
+    "demo_published_profile" => "1.1.0",
     "demo_catalog_guidance" => "1.0.0",
     "demo_evidence"        => "1.1.0",  # #738 boundary-scoping smoke fixtures
     "demo_sample_artifacts" => "1.2.0",  # #832 POA&M risks carry a deadline

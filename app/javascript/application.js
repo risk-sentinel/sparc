@@ -74,30 +74,56 @@ window.sparc = window.sparc || {}
 // Parameter suggestion badge click handler.
 // Single-select: replaces the text input value.
 // Multi-select (one-or-more): appends with ", " separator (toggle off if already present).
+// #942 — mirrors app/lib/parameter_value_list.rb. A multi-valued parameter used
+// to be comma-joined, but OSCAL insert markup always contains a comma, so a
+// composed choice ("establish {{ insert: param, ac-20_odp.02 }}") split in half.
+// Of 355 selection choices in the Rev 5 catalog, 74 contain a comma and none
+// contains a pipe. Keep the two implementations in step.
+const PARAM_VALUE_SEPARATOR = " | "
+const PARAM_INSERT_PATTERN = /\{\{\s*insert:\s*param,\s*[^}\s]+\s*\}\}/
+
+function splitParamValues(value) {
+  const text = (value ?? "").trim()
+  if (!text) return []
+  if (text.includes(PARAM_VALUE_SEPARATOR)) {
+    return text.split(PARAM_VALUE_SEPARATOR).map(v => v.trim()).filter(v => v.length > 0)
+  }
+  // Never split a value that references a parameter — splitting is what
+  // corrupts it, and such a value is never a comma-separated list.
+  if (PARAM_INSERT_PATTERN.test(text)) return [text]
+  return text.split(",").map(v => v.trim()).filter(v => v.length > 0)
+}
+
 window.sparc.pickParamChoice = function(badge) {
   const input = badge.closest("td").querySelector("input[type='text']")
   if (!input) return
 
-  const choice = badge.textContent.trim()
+  // #942 — the badge SHOWS the resolved wording ("establish terms and
+  // conditions") but the value written back must be the verbatim OSCAL
+  // ("establish {{ insert: param, ac-20_odp.02 }}"), or the document stops
+  // round-tripping. Falls back to the text for badges with no reference.
+  const choiceValue = badge => badge.dataset.choiceValue ?? badge.textContent.trim()
+
+  const choice = choiceValue(badge)
   const isMulti = badge.dataset.multi === "true"
 
   if (isMulti) {
-    const values = input.value.split(",").map(v => v.trim()).filter(v => v.length > 0)
+    const values = splitParamValues(input.value)
     const idx = values.indexOf(choice)
     if (idx >= 0) {
       values.splice(idx, 1)
     } else {
       values.push(choice)
     }
-    input.value = values.join(", ")
+    input.value = values.join(PARAM_VALUE_SEPARATOR)
   } else {
     input.value = input.value.trim() === choice ? "" : choice
   }
 
   // Highlight active badges
   badge.closest("td").querySelectorAll(".sparc-param-choice").forEach(b => {
-    const val = b.textContent.trim()
-    const current = input.value.split(",").map(v => v.trim())
+    const val = choiceValue(b)
+    const current = splitParamValues(input.value)
     if (current.includes(val)) {
       b.classList.remove("bg-primary-subtle", "text-primary-emphasis")
       b.classList.add("bg-primary", "text-white")

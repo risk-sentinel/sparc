@@ -90,6 +90,25 @@
   <%# ── Mapping Entries ── %>
   <div class="card mt-4">
     <div class="card-header fw-semibold">Mapping Entries (<%= @entries.size %>)</div>
+
+    <%# #945 — entries stored before the identifiers were checked. Reported,
+        not rewritten: an entry pointing at a control that does not exist looks
+        identical to a correct one in the table, and it exports. Saying which
+        ones they are is the remedy; guessing what was meant is not. %>
+    <% if @unresolved_entries.any? %>
+      <div class="alert alert-warning mb-0 rounded-0 border-start-0 border-end-0" role="alert">
+        <strong><%= @unresolved_entries.size %></strong>
+        <%= "entry".pluralize(@unresolved_entries.size) %>
+        <%= @unresolved_entries.size == 1 ? "names a control" : "name controls" %>
+        that <%= @unresolved_entries.size == 1 ? "does" : "do" %> not exist in the
+        mapped catalogs, so <%= @unresolved_entries.size == 1 ? "it" : "they" %>
+        cannot be traced:
+        <%= safe_join(@unresolved_entries.first(8).map { |e|
+              tag.code("#{e.source_control_id} → #{e.target_control_id}")
+            }, ", ") %><%= " and #{@unresolved_entries.size - 8} more" if @unresolved_entries.size > 8 %>.
+        Edit each entry to point at a control that exists; SPARC will not guess.
+      </div>
+    <% end %>
     <div class="table-responsive">
       <table class="table table-sm mb-0 align-middle">
         <thead>
@@ -137,17 +156,44 @@
             <tr class="table-light">
               <td colspan="8">
                 <%= form_with model: [@control_mapping, @entry], url: control_mapping_entries_path(@control_mapping), class: "row g-2 align-items-end" do |f| %>
+                  <%# #945 — picked from the source catalog, not typed. A
+                      datalist keeps typing-to-filter while constraining the
+                      value to a control that exists. Falls back to free text
+                      only when the mapping has no catalog on this side. %>
                   <div class="col-md-2">
-                    <%= f.text_field :source_control_id, class: "form-control form-control-sm",
-                          placeholder: "e.g. AC-1" %>
+                    <% if @source_control_options.any? %>
+                      <%= f.text_field :source_control_id, class: "form-control form-control-sm",
+                            list: "source-control-options", autocomplete: "off",
+                            placeholder: "Pick from #{@control_mapping.source_catalog.name.truncate(24)}" %>
+                      <datalist id="source-control-options">
+                        <% @source_control_options.each do |label, value| %>
+                          <option value="<%= value %>"><%= label %></option>
+                        <% end %>
+                      </datalist>
+                    <% else %>
+                      <%= f.text_field :source_control_id, class: "form-control form-control-sm",
+                            placeholder: "e.g. AC-1" %>
+                    <% end %>
                   </div>
                   <div class="col-md-1">
                     <%= f.select :source_type, ControlMappingEntry::SUBJECT_TYPES.map { |t| [t.titleize, t] },
                           {}, class: "form-select form-select-sm" %>
                   </div>
+                  <%# #945 — picked from the target catalog. %>
                   <div class="col-md-2">
-                    <%= f.text_field :target_control_id, class: "form-control form-control-sm",
-                          placeholder: "e.g. A.5.1" %>
+                    <% if @target_control_options.any? %>
+                      <%= f.text_field :target_control_id, class: "form-control form-control-sm",
+                            list: "target-control-options", autocomplete: "off",
+                            placeholder: "Pick from #{@control_mapping.target_catalog.name.truncate(24)}" %>
+                      <datalist id="target-control-options">
+                        <% @target_control_options.each do |label, value| %>
+                          <option value="<%= value %>"><%= label %></option>
+                        <% end %>
+                      </datalist>
+                    <% else %>
+                      <%= f.text_field :target_control_id, class: "form-control form-control-sm",
+                            placeholder: "e.g. A.5.1" %>
+                    <% end %>
                   </div>
                   <div class="col-md-1">
                     <%= f.select :target_type, ControlMappingEntry::SUBJECT_TYPES.map { |t| [t.titleize, t] },

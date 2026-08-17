@@ -33,8 +33,13 @@ if %w[traditional full].include?(mode)
     d.assessment_start  = Date.new(2026, 1, 15)
     d.assessment_end    = Date.new(2026, 3, 15)
     d.assessors         = "Dr. Sarah Chen (3PAO Lead), Mike Torres (Technical Assessor)"
-    d.assessment_scope  = "Full assessment of ACME Cloud Platform per NIST SP 800-53 Rev 5 Moderate baseline. " \
-                          "Covers all 370 controls across production and development environments."
+    # #946 — the scope has to describe the plan that exists. This said "all 370
+    # controls" beside a hand-written list of fourteen, and 370 is not the size
+    # of the Rev 5 MODERATE baseline either. The count is read from the SSP so
+    # it cannot drift from the document again.
+    d.assessment_scope  = "Full assessment of ACME Cloud Platform per NIST SP 800-53 Rev 5 Moderate " \
+                          "baseline. Covers #{acme_ssp&.ssp_controls&.count || 0} controls across " \
+                          "production and development environments."
     d.sap_version       = "1.0"
     d.description       = "DEMO/SAMPLE — Fictional annual security assessment plan for testing purposes only."
     d.ssp_document      = acme_ssp if acme_ssp
@@ -58,7 +63,21 @@ if %w[traditional full].include?(mode)
     { control_id: "ra-5",  title: "Vulnerability Monitoring and Scanning",    method: "test" }
   ].freeze
 
-  SAP_CONTROLS.each_with_index do |ctrl, idx|
+  # #946 — plan the assessment of the SSP's controls, not a hand-written
+  # fourteen. A SAP that covers 14 controls while its SAR assesses 288 is not a
+  # plan for that assessment. The curated fourteen keep their chosen method;
+  # every other control the SSP documents is added with a derived one.
+  curated_ids = SAP_CONTROLS.map { |c| c[:control_id] }
+  extra = (acme_ssp&.ssp_controls || [])
+            .reject { |c| curated_ids.include?(c.control_id.to_s.downcase) }
+            .map.with_index do |c, i|
+              { control_id: c.control_id.to_s.downcase, title: c.title.to_s,
+                # Deterministic, not `sample`: a seed that produces different
+                # data on each run cannot be diffed or reasoned about.
+                method: %w[examine interview test][i % 3] }
+            end
+
+  (SAP_CONTROLS + extra).each_with_index do |ctrl, idx|
     sap_ctrl = SapControl.find_or_create_by!(sap_document: sap, control_id: ctrl[:control_id]) do |c|
       c.title             = ctrl[:title]
       c.assessment_method  = ctrl[:method]
@@ -69,7 +88,11 @@ if %w[traditional full].include?(mode)
     # Add assessment detail fields
     [
       { field_name: "assessment_objectives", field_value: "Verify #{ctrl[:title].downcase} implementation meets NIST SP 800-53 Rev 5 requirements." },
-      { field_name: "assessment_depth", field_value: %w[basic focused comprehensive].sample }
+      # Derived from what is being assessed rather than randomised: a control
+      # with a bespoke implementation warrants a deeper look than one inherited
+      # wholesale from the platform.
+      { field_name: "assessment_depth",
+        field_value: curated_ids.include?(ctrl[:control_id]) ? "comprehensive" : "focused" }
     ].each do |field|
       SapControlField.find_or_create_by!(sap_control: sap_ctrl, field_name: field[:field_name]) do |f|
         f.field_value = field[:field_value]

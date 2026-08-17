@@ -270,7 +270,12 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   def cdef_params
     params.require(:cdef_document).permit(
       :name, :description, :cdef_type, :cdef_version, :benchmark_id,
-      :oscal_version, :lifecycle_status, :file_type
+      :oscal_version, :lifecycle_status, :file_type,
+      # #944 — the component's own OSCAL fields. The exporter hardcoded these,
+      # so an integrator could create a CDEF over the API and still had no way
+      # to say what kind of component it described.
+      :component_type, :component_title, :component_description,
+      :control_implementation_source, :control_implementation_description
     )
   end
 
@@ -298,6 +303,17 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       data[:description] = cdef.description
       data[:oscal_version] = cdef.oscal_version
       data[:controls_count] = cdef.cdef_controls.count
+
+      # #944 — the component's own OSCAL fields, reported so a consumer can see
+      # what will be exported rather than discovering the hardcoded defaults
+      # from the artifact. DETAIL only: five authoring fields on every index row
+      # is payload nobody asked for, and `description` already sets that
+      # precedent.
+      data[:component_type] = cdef.component_type
+      data[:component_title] = cdef.component_title
+      data[:component_description] = cdef.component_description
+      data[:control_implementation_source] = cdef.control_implementation_source
+      data[:control_implementation_description] = cdef.control_implementation_description
 
       # #911 — lineage and unmapped STIG rules in ONE object, carrying the
       # remedy. Same shape whether advisory or the body of a 422 refusal, so an

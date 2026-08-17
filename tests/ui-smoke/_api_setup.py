@@ -38,14 +38,58 @@ def _name(kind: str) -> str:
     return f"phase2-ui-{kind}-{uuid.uuid4().hex[:8]}"
 
 
-def create_cdef() -> dict[str, Any]:
+def create_cdef(*, with_controls: bool = True) -> dict[str, Any]:
+    """Create a component definition fixture, WITH a control basis by default.
+
+    A CDEF created from metadata alone has no controls, and a CDEF with no
+    controls cannot produce valid OSCAL — `implemented-requirements` must be
+    non-empty, so every export of it 302s back carrying
+    `oscal_validation_failed=1`.
+
+    Eight test files call this and nothing cleans the documents up, so they
+    accumulate on an instance until one lands first on an index. That is what
+    made `test_document_exports` fail three cases on documents it had never
+    heard of: the fixture, not the app. Populating from a published profile
+    makes the fixture resemble a real component definition instead of a shell.
+
+    Pass `with_controls=False` when a test specifically needs the empty-shell
+    state (content-completeness gates, populate-from-profile flows).
+    """
     with _client() as c:
         r = c.post(
             "/api/v1/cdef_documents",
             json={"cdef_document": {"name": _name("cdef"), "description": "ui-smoke"}},
         )
         r.raise_for_status()
-        return r.json()["data"]
+        cdef = r.json()["data"]
+
+        if not with_controls:
+            return cdef
+
+        profile = _first_published_profile(c)
+        if profile is None:
+            # Nothing to populate from; return the shell rather than failing a
+            # fixture for a reason unrelated to the test that asked for it.
+            return cdef
+
+        populated = c.post(
+            f"/api/v1/cdef_documents/{cdef['slug']}/populate_from_profile",
+            json={"source_profile_id": profile["id"]},
+        )
+        if populated.status_code == 200:
+            return populated.json()["data"]
+        return cdef
+
+
+def _first_published_profile(c: httpx.Client) -> dict[str, Any] | None:
+    """A published profile to give CDEF fixtures a control basis, or None."""
+    r = c.get("/api/v1/profile_documents", params={"lifecycle_status": "published"})
+    if r.status_code != 200:
+        return None
+    for item in r.json().get("data", []):
+        if item.get("lifecycle_status") == "published":
+            return item
+    return None
 
 
 def create_boundary() -> dict[str, Any]:

@@ -67,12 +67,26 @@ module CollectionCardHelper
 
   # How a document got here changes how much to trust its structure, so it is
   # worth a chip rather than a column a reader has to go looking for.
+  # #946 — say what the document's origin actually was, or say nothing.
+  #
+  # The `else` branch used to render "Import" with spreadsheet styling for
+  # EVERYTHING that was not wizard or oscal_import — so a profile-generated SSP
+  # and an SSP-generated SAR both displayed as spreadsheet imports, and a
+  # document with no recorded method displayed as one too. That is the same
+  # false provenance the `creation_method` column default was making, one layer
+  # up: `default: "excel"` was dropped precisely so an unknown origin stops
+  # claiming to be a spreadsheet, and a view that fills the gap back in would
+  # undo it.
+  CREATION_METHOD_BADGES = {
+    "wizard"       => { text: "Wizard",   class: "sparc-source-badge sparc-source-wizard" },
+    "oscal_import" => { text: "OSCAL",    class: "sparc-source-badge sparc-source-oscal" },
+    "excel"        => { text: "Import",   class: "sparc-source-badge sparc-source-excel" },
+    "profile"      => { text: "Profile",  class: "sparc-source-badge sparc-source-profile" },
+    "ssp"          => { text: "From SSP", class: "sparc-source-badge sparc-source-profile" }
+  }.freeze
+
   def creation_method_badge(doc)
-    case doc.try(:creation_method)
-    when "wizard"       then { text: "Wizard", class: "sparc-source-badge sparc-source-wizard" }
-    when "oscal_import" then { text: "OSCAL", class: "sparc-source-badge sparc-source-oscal" }
-    else { text: "Import", class: "sparc-source-badge sparc-source-excel" }
-    end
+    CREATION_METHOD_BADGES[doc.try(:creation_method).to_s]
   end
 
   # Truncation belongs here rather than in CSS when the value is a single long

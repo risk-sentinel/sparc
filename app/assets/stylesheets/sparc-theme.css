@@ -1704,9 +1704,20 @@ a.link-purple { color: var(--sparc-purple); }
   border: 1px solid rgba(46, 204, 113, 0.33);
 }
 
-[data-bs-theme="dark"] .sparc-source-excel  { color: #ced4da; }
-[data-bs-theme="dark"] .sparc-source-wizard { color: #5dade2; }
-[data-bs-theme="dark"] .sparc-source-oscal  { color: #68d391; }
+/* #946 — profile- and SSP-generated documents. They previously rendered with
+   .sparc-source-excel, so a document built from a profile inside SPARC claimed
+   to be a spreadsheet import. Purple keeps it distinct from OSCAL's green and
+   the wizard's blue. Contrast picked to match the AA corrections above. */
+.sparc-source-profile {
+  background: rgba(155, 89, 182, 0.13);
+  color: #5b2c6f;
+  border: 1px solid rgba(155, 89, 182, 0.33);
+}
+
+[data-bs-theme="dark"] .sparc-source-excel   { color: #ced4da; }
+[data-bs-theme="dark"] .sparc-source-wizard  { color: #5dade2; }
+[data-bs-theme="dark"] .sparc-source-oscal   { color: #68d391; }
+[data-bs-theme="dark"] .sparc-source-profile { color: #c39bd3; }
 
 /* Index table "Enriched" / "Basic" indicators */
 .sparc-oscal-enriched {

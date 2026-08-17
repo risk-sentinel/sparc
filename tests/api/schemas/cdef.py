@@ -131,6 +131,19 @@ class CdefDocumentShow(CdefDocumentIndex):
     description: str | None = None
     oscal_version: str | None = None
     controls_count: Annotated[int, Field(ge=0)]
+    # #944 — the component's own OSCAL fields. Before these existed the exporter
+    # hardcoded them, so every component definition SPARC emitted claimed to be
+    # `software` and its control-implementation source was a synthesised URL
+    # that resolved to nothing. Nullable: a document nobody has authored still
+    # exports the previous defaults.
+    #
+    # DETAIL only, deliberately — the index stays lean, as it already does for
+    # `description`.
+    component_type: str | None = None
+    component_title: str | None = None
+    component_description: str | None = None
+    control_implementation_source: str | None = None
+    control_implementation_description: str | None = None
     oscal_metadata: dict = Field(default_factory=dict)
     back_matter_resources: list[BackMatterResource] = Field(default_factory=list)
     component_details: list[ComponentDetail] = Field(default_factory=list)

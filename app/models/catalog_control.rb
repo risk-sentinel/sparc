@@ -273,7 +273,7 @@ class CatalogControl < ApplicationRecord
     return own if own.present?
 
     # Extract param IDs referenced in the title via {{ insert: param, <id> }}
-    referenced_ids = (title.to_s.scan(/\{\{\s*insert:\s*param,\s*([^}\s]+)\s*\}\}/).flatten)
+    referenced_ids = OscalParamReference.ids(title)
     return [] if referenced_ids.empty?
 
     # Determine parent control ID: strip the trailing sub-part suffix to get the base

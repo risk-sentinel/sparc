@@ -55,11 +55,46 @@ The CDEF is the OSCAL `component-definition`; SSPs consume it (see
 
 ## How to create a component definition
 
+There are three ways in, on the same **Create New** page (`/cdef_documents/new`):
+upload a file someone else authored, generate one from a published profile, or
+**author one yourself**.
+
+### Author one from scratch
+
 1. Go to *Implementation → Component Definitions* (`/cdef_documents`).
-2. Click **Create New**.
-3. Enter the component metadata (name/title, version, description).
-4. Save. The detail page (`/cdef_documents/:id`) shows the component's controls
+2. Click **Create New**, then use the **Author a Component Definition** form.
+3. Fill in what the component *is*:
+   - **Document name** — what it is called inside SPARC.
+   - **Component type** — what kind of thing it is: service, hardware, policy,
+     process-procedure, and so on. OSCAL constrains this list. Leave it blank and
+     the export falls back to `software`.
+   - **Component title** and **description** — what a reader of the exported
+     OSCAL sees. Leave them blank to reuse the document's name and description.
+   - **Control implementation source** — the catalog or profile whose controls
+     this component implements. Worth setting: without it the export synthesises
+     a placeholder that resolves to nothing.
+   - **Control implementation description** — the narrative that accompanies the
+     implemented requirements.
+4. Save. You now have a component definition with no controls yet — give it a
+   control basis next, either from a published profile or by adding controls
+   directly.
+
+### Upload or generate
+
+1. Click **Create New** and either drop a file into **Upload Component
+   Definition**, or pick a baseline under **Create from Published Profile**.
+2. The detail page (`/cdef_documents/:id`) shows the component's controls
    organized by family, with a **severity heatmap**.
+
+## How to edit a component definition
+
+1. Open the component definition and click **Edit**.
+2. Change any of the fields above and save.
+
+The **Edit** button appears only where an edit is actually allowed. It is absent
+on a **published** component definition and on one **imported from AWS Labs** —
+both are read-only by design. To change either, use **Copy** to make an editable
+clone; the clone records what it came from, so upstream refreshes never touch it.
 
 ## How to populate controls with a converter (bulk apply)
 

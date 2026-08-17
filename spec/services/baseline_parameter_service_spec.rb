@@ -191,4 +191,128 @@ RSpec.describe BaselineParameterService do
       expect { service.export(format: :csv) }.to raise_error(ArgumentError, /Unsupported format/)
     end
   end
+
+  # ── #942 — choices composed from other parameters ────────────────────────
+  #
+  # AC-20 as the issue reports it: odp.01 is a select whose two choices are
+  # templates referencing odp.02 and odp.03, so odp.01 chooses WHICH of those
+  # applies. Presented as literal choices, the operator is asked the wrong
+  # question and the relationship is lost.
+  describe "selection choices that reference other parameters (#942)" do
+    let!(:ac_20) do
+      family.catalog_controls.create!(
+        control_id: "ac-20",
+        title: "Use of External Systems",
+        params_data: [
+          { "id" => "ac-20_odp.01",
+            "select" => { "how-many" => "one-or-more",
+                          "choice" => [ "establish {{ insert: param, ac-20_odp.02 }}",
+                                        "identify {{ insert: param, ac-20_odp.03 }}" ] } },
+          { "id" => "ac-20_odp.02", "label" => "terms and conditions" },
+          { "id" => "ac-20_odp.03", "label" => "controls asserted" }
+        ]
+      )
+    end
+
+    def selection_for(id, schema = service.extract_schema)
+      schema[:selections].find { |s| s[:select_id] == id }
+    end
+
+    it "keeps the verbatim OSCAL text so the document round-trips" do
+      expect(selection_for("ac-20_odp.01")[:choices])
+        .to eq([ "establish {{ insert: param, ac-20_odp.02 }}",
+                 "identify {{ insert: param, ac-20_odp.03 }}" ])
+    end
+
+    it "resolves each choice to the term it stands for" do
+      expect(selection_for("ac-20_odp.01")[:choice_details].map { |d| d[:display] })
+        .to eq([ "establish terms and conditions", "identify controls asserted" ])
+    end
+
+    it "records which parameter each choice depends on" do
+      details = selection_for("ac-20_odp.01")[:choice_details]
+
+      expect(details.map { |d| d[:references] })
+        .to eq([ [ "ac-20_odp.02" ], [ "ac-20_odp.03" ] ])
+    end
+
+    it "reports the union of everything the selection could require" do
+      expect(selection_for("ac-20_odp.01")[:depends_on])
+        .to contain_exactly("ac-20_odp.02", "ac-20_odp.03")
+    end
+
+    it "leaves a literal selection's choices unresolved and undependent" do
+      selection = selection_for("ac-2_prm_1")
+
+      expect(selection[:depends_on]).to be_empty
+      expect(selection[:choice_details].map { |d| d[:display] }).to eq(selection[:choices])
+    end
+
+    # A reference can point at a parameter the family filter excluded. Resolving
+    # to raw markup because of a DISPLAY filter would be worse than not
+    # filtering, so the label index is built from the unfiltered set.
+    it "resolves a reference even when the schema is filtered to one family" do
+      selection = selection_for("ac-20_odp.01", service.extract_schema(family: "AC"))
+
+      expect(selection[:choice_details].first[:display]).to eq("establish terms and conditions")
+    end
+
+    it "carries the resolved form and the references into the XML export" do
+      output = service.export(format: :xml)
+
+      expect(output).to include('display="establish terms and conditions"')
+      expect(output).to include('references="ac-20_odp.02"')
+      # The element text stays verbatim so the file round-trips.
+      expect(output).to include("insert: param, ac-20_odp.02")
+    end
+
+    # Issue point 4: "a payload setting odp.01 without odp.02 should be
+    # answerable rather than silently accepted."
+    describe "the update path" do
+      it "reports a selected branch whose referenced parameter has no value" do
+        result = service.update_parameters(
+          selections: [ { select_id: "ac-20_odp.01",
+                          selected: [ "establish {{ insert: param, ac-20_odp.02 }}" ] } ]
+        )
+
+        expect(result[:status]).to eq("partial")
+        expect(result[:validation_errors]).to include(
+          hash_including(select_id: "ac-20_odp.01", param_id: "ac-20_odp.02")
+        )
+      end
+
+      it "accepts the selection once the referenced parameter is answered" do
+        result = service.update_parameters(
+          parameters: [ { param_id: "ac-20_odp.02", value: "the agreed terms" } ],
+          selections: [ { select_id: "ac-20_odp.01",
+                          selected: [ "establish {{ insert: param, ac-20_odp.02 }}" ] } ]
+        )
+
+        expect(result[:validation_errors]).to be_empty
+        expect(result[:status]).to eq("updated")
+      end
+
+      # Demanding a parameter that belongs to a branch nobody chose is the
+      # over-collection the issue exists to stop.
+      it "does not demand a parameter belonging to an unchosen branch" do
+        result = service.update_parameters(
+          parameters: [ { param_id: "ac-20_odp.02", value: "the agreed terms" } ],
+          selections: [ { select_id: "ac-20_odp.01",
+                          selected: [ "establish {{ insert: param, ac-20_odp.02 }}" ] } ]
+        )
+
+        expect(result[:validation_errors].map { |e| e[:param_id] }).not_to include("ac-20_odp.03")
+      end
+
+      it "still records the selection it flagged, rather than dropping the write" do
+        service.update_parameters(
+          selections: [ { select_id: "ac-20_odp.01",
+                          selected: [ "establish {{ insert: param, ac-20_odp.02 }}" ] } ]
+        )
+
+        expect(selection_for("ac-20_odp.01")[:selected])
+          .to eq([ "establish {{ insert: param, ac-20_odp.02 }}" ])
+      end
+    end
+  end
 end

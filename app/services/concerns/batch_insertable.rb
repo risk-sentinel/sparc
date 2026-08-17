@@ -34,9 +34,20 @@ module BatchInsertable
   # @param document_fk   [Symbol] Foreign key column name (e.g. :sar_document_id)
   # @param control_attrs [Array<Hash>] Attribute hashes for each control
   # @param field_entries [Array<Array>] Triples of [control_index, field_name, field_value]
+  # @param uuid_for [Proc, nil] #957 — derives a control's UUID from its
+  #   attributes. GENERATORS must supply this: a document built twice from the
+  #   same source has to produce the same identifiers, or every export of it
+  #   diffs completely and the cross-document references FedRAMP leveraged
+  #   authorization relies on move underneath it. IMPORTERS must NOT supply it —
+  #   an imported document carries the source's own UUIDs, and inventing a
+  #   derivation for them would overwrite the identity the source assigned.
+  # NOTE: no field-row equivalent. No *_control_fields table carries a `uuid`
+  # column, so `inject_uuid_for_field` is always false today; adding a
+  # derivation hook for it would be unreachable code.
   # @return [Array<Integer>] IDs of the imported control records
   #
-  def batch_insert_records(control_class:, field_class:, document_fk:, control_attrs:, field_entries:)
+  def batch_insert_records(control_class:, field_class:, document_fk:, control_attrs:, field_entries:,
+                           uuid_for: nil)
     control_fk = :"#{control_class.name.underscore}_id"
 
     # activerecord-import bypasses the PG `gen_random_uuid()` column default
@@ -53,7 +64,9 @@ module BatchInsertable
       control_attrs.each_slice(BATCH_SIZE_CONTROLS) do |batch|
         records = batch.map do |attrs|
           merged = attrs.compact
-          merged[:uuid] ||= SecureRandom.uuid if inject_uuid_for_control
+          if inject_uuid_for_control
+            merged[:uuid] ||= uuid_for ? uuid_for.call(merged) : SecureRandom.uuid
+          end
           record = control_class.new(document_fk => @document.id, **merged)
           canonicalise_control_ids(control_class, record)
         end
