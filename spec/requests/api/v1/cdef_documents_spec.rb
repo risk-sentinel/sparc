@@ -564,9 +564,20 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
            headers: auth_headers
 
       expect(response).to have_http_status(:created)
-      body = JSON.parse(response.body)["data"]
-      expect(body["component_type"]).to eq("service")
-      expect(body["control_implementation_source"]).to eq("https://example.gov/rev5.json")
+
+      # `create` renders the summary; the component fields live on the DETAIL
+      # representation, as `description` and `oscal_version` already do. So this
+      # asserts they were PERSISTED, and reads them back from show — which is
+      # where a consumer would look for them.
+      slug = JSON.parse(response.body)["data"]["slug"]
+      cdef = CdefDocument.find_by(slug: slug)
+      expect(cdef.component_type).to eq("service")
+      expect(cdef.control_implementation_source).to eq("https://example.gov/rev5.json")
+
+      get "/api/v1/cdef_documents/#{slug}", headers: auth_headers
+      detail = JSON.parse(response.body)["data"]
+      expect(detail["component_type"]).to eq("service")
+      expect(detail["control_implementation_source"]).to eq("https://example.gov/rev5.json")
     end
 
     it "accepts them on update" do
