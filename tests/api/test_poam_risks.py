@@ -52,8 +52,13 @@ def _complete_risk() -> dict[str, Any]:
 
 
 @pytest.fixture
-def poam_doc(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
-    doc = create_doc(admin_client, _POAM_DOCS, make_payload("poam_document"))
+def poam_doc(admin_client: httpx.Client, seeded_boundary_id: int) -> Iterator[dict[str, Any]]:
+    # #952 — a POA&M requires an authorization boundary at create.
+    doc = create_doc(
+        admin_client,
+        _POAM_DOCS,
+        make_payload("poam_document", {"authorization_boundary_id": seeded_boundary_id}),
+    )
     try:
         yield doc
     finally:
