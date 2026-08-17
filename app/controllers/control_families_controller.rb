@@ -1,5 +1,7 @@
 class ControlFamiliesController < ApplicationController
-  skip_before_action :require_authentication, only: [ :show ]
+  # #974 — was a BARE skip with no companion gate, so every control-family
+  # page was world-readable regardless of SPARC_PUBLIC_CATALOGS.
+  public_controls_read only: [ :show ]
 
   before_action :set_control_catalog, only: [ :new, :create ]
   before_action :set_control_family, only: [ :show, :edit, :update, :destroy ]

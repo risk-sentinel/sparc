@@ -13,12 +13,30 @@ RSpec.describe "CdefDocuments", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "is accessible without authentication" do
-      # CdefDocumentsController skips require_authentication for index/show
-      allow_any_instance_of(ApplicationController).to receive(:current_user).and_return(nil)
-      allow_any_instance_of(ApplicationController).to receive(:signed_in?).and_return(false)
-      get cdef_documents_path
-      expect(response).to have_http_status(:ok)
+    # #974 — this example asserted that the CDEF index is reachable without
+    # authentication, full stop. That WAS the behaviour, and it was the defect:
+    # the controller skipped `require_authentication` with no companion gate, so
+    # the whole library was public in every posture and no setting turned it off.
+    # Anonymous read is now conditional on SPARC_PUBLIC_CATALOGS, so both
+    # postures are asserted here rather than the one that happened to hold.
+    context "anonymous access" do
+      before do
+        allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
+        allow_any_instance_of(ApplicationController).to receive(:current_user).and_return(nil)
+        allow_any_instance_of(ApplicationController).to receive(:signed_in?).and_return(false)
+      end
+
+      it "is refused when the control library is not published" do
+        allow(SparcConfig).to receive(:public_catalogs?).and_return(false)
+        get cdef_documents_path
+        expect(response).to redirect_to(login_path)
+      end
+
+      it "is served when SPARC_PUBLIC_CATALOGS is enabled" do
+        allow(SparcConfig).to receive(:public_catalogs?).and_return(true)
+        get cdef_documents_path
+        expect(response).to have_http_status(:ok)
+      end
     end
 
     it "lists existing documents" do

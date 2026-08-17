@@ -76,6 +76,13 @@ RSpec.describe "CdefDocuments view parity", type: :request do
   context "as an anonymous visitor, with authentication enabled" do
     before do
       allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
+      # #974 — an anonymous visitor reaches the CDEF screens only when the
+      # control library is published. Before this the controller skipped
+      # authentication unconditionally, so this context reached the page in
+      # every posture; that was the defect, not the contract. What the context
+      # actually tests — that the view withholds destructive actions and keeps
+      # the read-only ones — is unchanged and still worth pinning.
+      allow(SparcConfig).to receive(:public_catalogs?).and_return(true)
       allow_any_instance_of(ApplicationController).to receive(:current_user).and_return(nil)
       allow_any_instance_of(ApplicationController).to receive(:signed_in?).and_return(false)
     end
