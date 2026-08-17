@@ -96,6 +96,7 @@ class AuditEvent < ApplicationRecord
     cdef_bulk_apply_converter_previewed
     cdef_bulk_apply_converter_applied
     aws_labs_cdef_refresh_requested
+    aws_labs_cdef_refresh_degraded
     control_resource_created
     control_resource_linked
     control_resource_unlinked
@@ -292,6 +293,7 @@ class AuditEvent < ApplicationRecord
                            cdef_bulk_apply_converter_previewed
                            cdef_bulk_apply_converter_applied
                            aws_labs_cdef_refresh_requested
+                           aws_labs_cdef_refresh_degraded
                            control_resource_created control_resource_linked
                            control_resource_unlinked cdef_document_baseline_declared],
     "SAP Documents" => %w[sap_document_created sap_document_generated sap_document_updated
