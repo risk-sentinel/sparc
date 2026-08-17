@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_18_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_18_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -477,6 +477,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_120000) do
     t.datetime "created_at", null: false
     t.text "description"
     t.text "error_message"
+    t.string "framework"
     t.string "lifecycle_status", default: "in_progress"
     t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
@@ -494,6 +495,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_120000) do
     t.string "version"
     t.index ["approval_status"], name: "index_control_catalogs_on_approval_status"
     t.index ["approved_by_user_id"], name: "index_control_catalogs_on_approved_by_user_id"
+    t.index ["framework"], name: "index_control_catalogs_on_framework"
     t.index ["lifecycle_status"], name: "index_control_catalogs_on_lifecycle_status"
     t.index ["name"], name: "index_control_catalogs_on_name"
     t.index ["oscal_uuid"], name: "index_control_catalogs_on_oscal_uuid", unique: true
@@ -1076,6 +1078,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_120000) do
     t.text "description"
     t.text "error_message"
     t.string "file_type"
+    t.string "framework"
     t.jsonb "import_metadata", default: {}
     t.string "lifecycle_status", default: "in_progress"
     t.jsonb "metadata_extra", default: {}, null: false
@@ -1099,6 +1102,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_120000) do
     t.index ["baseline_level"], name: "index_profile_documents_on_baseline_level"
     t.index ["created_at"], name: "index_profile_documents_on_created_at"
     t.index ["deleted_at"], name: "index_profile_documents_on_deleted_at"
+    t.index ["framework"], name: "index_profile_documents_on_framework"
     t.index ["lifecycle_status"], name: "index_profile_documents_on_lifecycle_status"
     t.index ["slug"], name: "index_profile_documents_on_slug", unique: true
     t.index ["source_profile_id"], name: "index_profile_documents_on_source_profile_id"

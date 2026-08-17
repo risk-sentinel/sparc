@@ -12,6 +12,10 @@
 class ProfileBrowseQuery < CollectionBrowseQuery
   queries ProfileDocument, order: { created_at: :desc }
 
+  # #935 — derived at import by FrameworkDeriver and persisted, so this is a
+  # column lookup rather than a per-request re-parse of the title. Rows where
+  # nothing said clearly are null and simply do not offer a value.
+  facet :framework,        label: "Framework"
   facet :baseline_level,   label: "Baseline"
   facet :oscal_version,    label: "OSCAL version"
   facet :profile_version,  label: "Revision"

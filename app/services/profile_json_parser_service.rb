@@ -56,9 +56,25 @@ class ProfileJsonParserService
 
     # Enrich profile controls with titles from the linked catalog
     enrich_titles_from_catalog
+
+    # #935 — derived last, when the catalog link and the controls both exist:
+    # lineage is the strongest signal and the control-id namespace the next,
+    # and neither is available earlier in this method.
+    derive_framework!
   end
 
   private
+
+  # Never overwrites a value already set — an operator's correction outranks a
+  # derivation, and a re-import must not undo it. Nil stays nil: "Unspecified"
+  # is honest, a guess is not (#935).
+  def derive_framework!
+    return if @document.framework.present?
+
+    framework = FrameworkDeriver.for_profile(@document.reload)
+    @document.update_column(:framework, framework) if framework.present?
+  end
+
 
   # Builds one control's attrs + field entries, appending to the shared
   # accumulators (kept out of #parse to bound its cognitive complexity).
@@ -282,6 +298,7 @@ class ProfileJsonParserService
 
     # Store the entire resolved catalog JSON directly — it IS the resolved catalog
     @document.update!(resolved_catalog_json: full_data)
+    derive_framework!
   end
 
   def update_resolved_metadata(metadata, catalog)
