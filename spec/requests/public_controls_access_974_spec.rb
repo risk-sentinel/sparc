@@ -137,13 +137,23 @@ RSpec.describe "Public Controls-layer access (#974)", type: :request do
       expect(response).to redirect_to(login_path)
     end
 
-    # The nav must not open a page it never advertises, and must not advertise
-    # one it cannot open.
-    it "advertises the newly public screens in the Controls nav" do
+    # Navigation stays where a user expects it. #974 changes VISIBILITY only —
+    # an entry is offered when the visitor can reach it — and never relocates an
+    # item to make it reachable. Component definitions and converters live in
+    # the Implementation menu and stay there.
+    it "offers the readable entries in their native menu" do
       get control_catalogs_path
 
       expect(response.body).to include(cdef_documents_path)
       expect(response.body).to include(converters_path)
+      expect(response.body).to include("Implementation")
+    end
+
+    # The same menu must not advertise what this visitor cannot open.
+    it "withholds boundary documents from that menu for an anonymous visitor" do
+      get control_catalogs_path
+
+      expect(response.body).not_to include(ssp_documents_path)
     end
   end
 
