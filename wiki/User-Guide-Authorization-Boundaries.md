@@ -102,6 +102,43 @@ Use this when your system inherits controls from an underlying authorized system
 The leveraging side can also view inherited POA&Ms read-only — see
 [POA&M](User-Guide-POAM).
 
+## How to attach a document to this boundary
+
+Every SSP, SAP, SAR and POA&M belongs to exactly one authorization boundary. You
+normally choose it on the upload form, but a document that arrived without one —
+or one you need to move — can be attached afterwards.
+
+**From the boundary (the usual way).** On the boundary detail page, the
+**Artifact Summary** shows a tile per document type. A tile reading **Add…**
+means no document of that type is attached yet; click it to open the attach
+screen, which offers both options:
+
+1. **Attach an existing document** — lists documents of that type that belong to
+   no boundary, with an **Attach** button on each.
+2. **Upload a new one** — takes you to the upload form with this boundary
+   already selected.
+
+**From the document.** Open the document, expand **OSCAL Metadata**, choose the
+boundary and save.
+
+A few rules worth knowing:
+
+- You need write permission on the boundary you are attaching **to**, not just
+  the one the document is currently in. Moving a document into a boundary you
+  cannot write to is refused.
+- A document with **no** boundary can be attached whatever its state, including
+  a published one — that is the case this exists to repair. Moving a document
+  from one boundary to **another** requires a draft.
+- A document that belongs to no boundary is visible to **Instance Admins only**,
+  so a boundary member may see an empty attach list. Ask an Instance Admin to
+  attach it.
+- Component definitions work differently: a CDEF has no single boundary. Use
+  **Scope** on the CDEF page to make it boundary-specific or available to the
+  whole organization. Component definitions imported from AWS Labs are read-only
+  — copy one first, then scope the copy.
+
+---
+
 ## How to assemble and download an ATO package
 
 1. On the boundary detail page, open the **ATO Package Wizard**
@@ -154,6 +191,9 @@ the wizard bundles their current state.
 | "Populate" pulls nothing | The leveraged system reference is incomplete | Re-check the leveraged system name/ID on the leveraged authorization |
 | Can't create a boundary | Your role lacks the permission | Ask an Instance Admin ([Administration](User-Guide-Administration)) |
 | A member can't see documents | Role assigned at the wrong scope | Confirm the boundary-scoped role in the Team members section |
+| An SSP/SAP/SAR/POA&M is missing from every list | It belongs to no boundary, so only Instance Admins can see it | Ask an Instance Admin to attach it from the boundary's Artifact Summary |
+| Upload form shows no boundary to pick | You are not on the roster of any boundary | Ask to be added — these document types cannot be created without one |
+| "Add…" tile lists nothing to attach | No unattached document of that type exists, or you are not an Instance Admin | Upload a new one from the same screen |
 
 ---
 

@@ -38,10 +38,22 @@ statements for end-to-end traceability.
 ## Isolation model
 
 - **Boundary-scoped access** — the authorization boundary is the access-control
-  perimeter. Users only see/act on documents in boundaries they belong to;
-  global (nil-boundary) documents remain open to all. The web UI enforces the
-  same rules as the API (v1.11.1, NIST AC-3). See [RBAC](RBAC) for how roles are
-  scoped to instances vs. boundaries.
+  perimeter. Users only see/act on documents in boundaries they belong to. The
+  web UI enforces the same rules as the API (v1.11.1, NIST AC-3). See
+  [RBAC](RBAC) for how roles are scoped to instances vs. boundaries.
+- **A system security plan, assessment plan, assessment result or POA&M must
+  belong to a boundary.** These four are per-system by definition, so from
+  v1.16.0 the boundary is required when the document is created. Documents
+  created before that rule and left unattached are **not** open to everyone —
+  they are visible to Instance Admins only until someone attaches them (see
+  [Authorization Boundaries](User-Guide-Authorization-Boundaries)). Earlier
+  releases treated a boundary-less document of these types as instance-wide and
+  showed it to every signed-in user.
+- **Evidence is deliberately exempt.** Evidence can be leveraged and inherited
+  across boundaries, so an evidence record with no boundary is a legitimate
+  instance-wide artifact and remains visible accordingly. Component definitions
+  are likewise instance-wide: a CDEF states that a control *can* be satisfied,
+  not how one particular system implements it.
 - **Organization grouping** — organizations group boundaries for multi-org
   (System-of-Systems) instances, each with UUID-based audit traceability.
 
