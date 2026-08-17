@@ -213,10 +213,32 @@ class TestRuns:
         assert analysed.status_code == 200
         token = analysed.json()["data"]["report_token"]
         assert token
+        analysed_counts = analysed.json()["data"]["counts"]
 
         saved = admin_client.post("/api/v1/cdef_coverage/runs", data={"report_token": token})
         assert saved.status_code == 201, saved.text
-        assert saved.json()["data"]["counts"]["needs_custom"] >= 1
+        saved_counts = saved.json()["data"]["counts"]
+
+        # Assert the ROUND TRIP, not a particular verdict.
+        #
+        # This asserted `needs_custom >= 1`, which silently required GuardDuty to
+        # have no Component Definition — true only while the AWS Labs corpus is
+        # absent, which is the default (SPARC_AWS_LABS_CDEF_ENABLED=false) and so
+        # held in CI. Enable the ingest and upstream's `guardduty` CDEF makes the
+        # correct verdict `adopt`, not `needs_custom`, and the test failed for
+        # reporting the right answer.
+        #
+        # What this test is actually for is that saving by report token yields
+        # the same analysis as the upload did, without re-uploading. Comparing
+        # the two count sets states that directly, is independent of which CDEFs
+        # happen to be loaded, and is a stronger assertion than the original.
+        assert saved_counts == analysed_counts, (
+            "saving by report token must preserve the analysis verdicts: "
+            f"analysed={analysed_counts} saved={saved_counts}"
+        )
+        # The state declares a service, so SOME verdict must have been recorded —
+        # this keeps an empty report from satisfying the equality above.
+        assert sum(saved_counts.values()) >= 1, f"no verdicts recorded: {saved_counts}"
 
         admin_client.delete(f"/api/v1/cdef_coverage/runs/{saved.json()['data']['id']}")
 

@@ -61,6 +61,9 @@ class AwsLabsCdefImportService
     @client = client
     @allowed_oscal_versions = Array(allowed_oscal_versions).map(&:to_s).map(&:strip).reject(&:blank?)
     @logger = logger
+    # Reset per `run`; initialized here so a caller that exercises
+    # `build_candidates` directly does not hit a nil.
+    @fetch_errors = []
   end
 
   def run(force: false)
@@ -82,6 +85,8 @@ class AwsLabsCdefImportService
     end
 
     commit_sha = @client.current_commit_sha
+    # #939 — fetch-stage failures are collected rather than aborting the pass.
+    @fetch_errors = []
     candidates = regions_first(build_candidates(tree_entries))
     @logger.info("[AwsLabsCdefImportService] Discovered #{candidates.length} candidate CDEFs after version filtering")
 
@@ -103,11 +108,53 @@ class AwsLabsCdefImportService
       errors << { path: candidate[:path], error: "#{e.class}: #{e.message}" }
     end
 
+    errors = @fetch_errors + errors
+    report_errors(errors)
+
     Result.new(discovered: tree_entries.length,
                imported: imported,
                skipped_unchanged: skipped_unchanged,
                superseded: superseded,
                errors: errors)
+  end
+
+  # #939 — a partial import used to be indistinguishable from a clean one.
+  #
+  # The count was reported alongside otherwise successful-looking totals and the
+  # bodies were never logged, so a cold pass that failed a fifth of the corpus
+  # read as a success and could not be diagnosed without reproducing it. That is
+  # the first thing the issue asked for, and it is what tells an operator to
+  # press "Refresh from AWS Labs" again — which, now that a failed file leaves no
+  # row behind, is enough to complete the corpus.
+  #
+  # Distinct error CLASSES with counts, not 39 near-identical lines: the class is
+  # what distinguishes an upstream schema gap from a transient fetch failure from
+  # a bug in SPARC, and it is the thing worth putting in an issue.
+  def report_errors(errors)
+    return if errors.empty?
+
+    by_class = errors.group_by { |e| e[:error].to_s.split(":").first }
+                     .transform_values(&:length)
+                     .sort_by { |_klass, count| -count }
+
+    @logger.error(
+      "[AwsLabsCdefImportService] Completed with #{errors.length} failed file(s). " \
+      "By error class: #{by_class.map { |k, v| "#{k}=#{v}" }.join(' ')}. " \
+      "Paths: #{errors.first(10).map { |e| e[:path] }.join(', ')}" \
+      "#{errors.length > 10 ? " (+#{errors.length - 10} more)" : ''}"
+    )
+
+    AuditEvent.log(
+      action: "aws_labs_cdef_refresh_degraded",
+      metadata: {
+        failed_files: errors.length,
+        by_error_class: by_class.to_h,
+        paths: errors.first(25).map { |e| e[:path] }
+      }
+    )
+  rescue StandardError => e
+    # Reporting must never be the reason an otherwise-complete import fails.
+    @logger.warn("[AwsLabsCdefImportService] Could not record degraded-run report: #{e.class}: #{e.message}")
   end
 
   private
@@ -139,6 +186,28 @@ class AwsLabsCdefImportService
       }
     rescue JSON::ParserError => e
       @logger.warn("[AwsLabsCdefImportService] Skipping #{entry['path']}: invalid JSON (#{e.message})")
+      @fetch_errors << { path: entry["path"], error: "JSON::ParserError: #{e.message}" }
+      nil
+    # #939 — one file's fetch must not lose the other 229.
+    #
+    # Only JSON::ParserError was rescued here, so a rate limit or a read timeout
+    # on a single blob raised straight out of `run` and abandoned the entire
+    # pass — 230 files discarded because one request failed. This is the site
+    # where transient network failure actually happens: the per-candidate import
+    # loop below does no network I/O at all (the content is already in hand),
+    # which is why the "GitHub is rate-limiting us" reading of the original
+    # report did not survive measurement.
+    #
+    # The rescued list is deliberately explicit rather than a bare `rescue =>`.
+    # An unexpected error class is a bug in SPARC, and it should raise rather
+    # than be absorbed into a per-file error count that reads like a problem
+    # with someone else's repository. See #968.
+    rescue AwsLabsCdefSourceClient::Error,
+           Net::OpenTimeout, Net::ReadTimeout,
+           Errno::ECONNRESET, Errno::ECONNREFUSED, Errno::EHOSTUNREACH,
+           OpenSSL::SSL::SSLError => e
+      @logger.warn("[AwsLabsCdefImportService] Fetch failed for #{entry['path']}: #{e.class}: #{e.message}")
+      @fetch_errors << { path: entry["path"], error: "#{e.class}: #{e.message}" }
       nil
     end.compact
 
@@ -241,7 +310,32 @@ class AwsLabsCdefImportService
   # The existing CdefJsonParserService reads the file from disk and writes
   # the document's import_metadata itself. We let it run, then merge our
   # AWS provenance fields on top so future refreshes can dedupe correctly.
+  #
+  # #939 — the whole sequence is ONE transaction, because the row was created
+  # before the work that can fail.
+  #
+  # `CdefJsonParserService#parse` opens its own transaction (via
+  # `CdefMutationService.apply`) and rolls back cleanly on failure — but the
+  # `create!` above it did not, so a parse failure rolled back the children and
+  # left the shell behind: `status: "processing"`, zero controls, and crucially
+  # no `source_type`, which put it outside `CdefDocument.aws_labs_sourced`. That
+  # made it invisible to the dedupe in `import_one`, so the next refresh could
+  # not reuse or repair it and leaked a fresh one instead. 82 were measured on
+  # one instance after four passes. They sorted to the top of the CDEF index and
+  # broke OSCAL export, because a CDEF with no controls fails validation.
+  #
+  # Wrapping the create makes a failed import leave nothing at all, which is
+  # what makes the existing "Refresh from AWS Labs" button sufficient to repair
+  # a partial run: a file that failed has no row, so the dedupe finds no match
+  # and simply imports it on the next pass. A killed process is covered by the
+  # same mechanism — an uncommitted transaction dies with the connection.
   def write_through_parser(candidate, commit_sha:)
+    ActiveRecord::Base.transaction do
+      write_through_parser_inner(candidate, commit_sha: commit_sha)
+    end
+  end
+
+  def write_through_parser_inner(candidate, commit_sha:)
     document = CdefDocument.create!(
       name: derive_name(candidate),
       status: "processing",
@@ -298,8 +392,22 @@ class AwsLabsCdefImportService
     document
   end
 
+  # Best-effort: a document whose component index fails is still a usable
+  # import, so this deliberately swallows rather than failing the file.
+  #
+  # #939 — the `requires_new: true` SAVEPOINT is load-bearing now that the
+  # caller runs inside a transaction. This is the #963 shape exactly: rescuing a
+  # database error inside a Postgres transaction WITHOUT a savepoint leaves the
+  # transaction poisoned, so every later statement fails with an error naming
+  # neither the original record nor the real cause. In #963 one colliding UUID
+  # discarded an entire OSCAL import that way. The savepoint confines the
+  # rollback to the indexer, so swallowing here stays a local decision instead
+  # of silently destroying the import that contains it. See #968 for the audit
+  # of this pattern elsewhere.
   def reindex_components(document, content)
-    CdefComponentIndexer.new(document, content).index!
+    ActiveRecord::Base.transaction(requires_new: true) do
+      CdefComponentIndexer.new(document, content).index!
+    end
   rescue StandardError => e
     @logger.warn("[AwsLabsCdefImportService] reindex failed for #{document.id}: #{e.class}: #{e.message}")
   end

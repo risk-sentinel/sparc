@@ -654,7 +654,7 @@ Backlog / gated:
 
 ### Phase 16: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
 
-**Goal:** Close the v1.16.0 milestone (**32 issues — 17 closed, 15 open as of 2026-08-15**; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, and #954, #955, #956, #958 filed and fixed inside Bundle M). The count has moved four times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
+**Goal:** Close the v1.16.0 milestone (**36 issues — 24 closed, 12 open, measured 2026-08-17**; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, and #935, #951, #959 added to the milestone by the owner on 2026-08-15). The count has moved five times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
 
 The two structural security deliverables led: a spec that fails when a controller ships without authorization (#919) and one that pins `disposition: "attachment"` on user content (#894). What remains is the document model, the boundary-attachment family, and the IdP entitlement epic.
 
@@ -673,8 +673,8 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 6 | F — CDEF coverage from Terraform | #904 | **Shipped** (PR #938) |
 | 7 | E — In-product help | #880 #879 | **Shipped** (PR #943) |
 | 8 | M — Reference authorization estate | #845 #954 #955 #956 #958 | **Shipped** (PR #960) |
-| 9 | N — Document model — reachable references | #941 #942 #944 #945 #946 #957 **#963** | **In PR** — 7 commits |
-| 10 | #939 — pulled forward, on its own | #939 | **NEXT** |
+| 9 | N — Document model — reachable references | #941 #942 #944 #945 #946 #957 **#963** | **Shipped** (PR #964) |
+| 10 | #939 — pulled forward, on its own | #939 **#967** | **IN PR** |
 | 11 | O — Boundary attachment | #929 #952 | Queued |
 | 12 | P — Evidence completeness | #947 #948 | Queued |
 | 13 | Q — Polish | #936 | Queued |
@@ -682,13 +682,39 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 
 **On the milestone since 2026-08-15, not yet slotted into a bundle:** #935 (derive and persist
 `framework` at import), #951 (sidebar re-organization), #959 (every export embeds every
-authoritative back-matter resource). **Tracked separately:** #953 (authenticated DAST —
-unblocked by Bundle M's production posture).
+authoritative back-matter resource). Three issues on the milestone and in no bundle is a
+scheduling gap, not a backlog — **slot them or take them off the milestone before the release
+is cut.** **Tracked separately, no milestone:** #953 (authenticated DAST — unblocked by Bundle
+M's production posture), #966 (SonarCloud findings triage — owner directed that it be filed
+and *not* worked; 281 open findings, 2 Blockers amounting to one defect), and **#968** (audit the
+swallow-and-continue rescue patterns — raised out of #939, **due 2026-09-06**; 54 rescue sites,
+11 log-and-continue in services/jobs, and 17 files combining a transaction with a rescue, which
+is the candidate set for the #963 shape).
 
-**Milestone measured 2026-08-16: 36 issues, 17 closed / 19 open.** It grew by two during
-Bundle N — #963 was filed from within it, and #944 was found CLOSED with no implementing PR
-and reopened. Re-measure with `gh issue list --milestone v1.16.0 --state all`; never read the
-count off this file.
+**Milestone measured 2026-08-17, after PR #964 merged: 36 issues, 24 closed / 12 open** — plus
+**#967**, filed 2026-08-17 and fixed in the #939 PR. It grew by two during Bundle N — #963 was
+filed from within it, and #944 was found CLOSED with no implementing PR and reopened. The 12
+open: #929 #935 #936 #939 #947 #948 #951 #952 #959 #860 #842 #822. Re-measure with
+`gh issue list --milestone v1.16.0 --state all`; never read the count off this file.
+
+**Dev/prod toolchain divergence — measured 2026-08-17. OWNER-DECIDED: this is done *with* #820,
+in sequence, not as a separate track.** The toolchain rebuild is the prerequisite step of that
+work item, so **#820 is no longer just a lockfile bump** — it is "rebuild the dev Ruby against
+OpenSSL 3, prove it, then take the gem bump", and the order is a hard dependency rather than a
+preference. Merging the bump first leaves a developer with a segfaulting bundler and no working
+`bundle` to recover with. It stays in Bundle R; nothing here pulls it earlier.
+
+**Ruby is identical on both sides — 3.4.4, pinned by `.ruby-version` and
+`ARG RUBY_VERSION=3.4.4` in the Dockerfile — and so is the openssl gem (3.3.0).** The split is
+the system library: local links **OpenSSL 1.1.1w** (the EOL 1.1.1 branch) while the prod UBI9
+image runs **3.5.5**, so no OpenSSL-3
+behaviour is exercised in the inner loop. The pre-push gate does cover it — the UBI9 prod image
+is required for the smoke/API run — so this is feedback latency rather than a hole in the gate,
+and the #750 pattern in a different layer. It does gate **#820** (openssl gem 3.3.0 → 4.0.2):
+the 4.x line requires OpenSSL 3.x, and on a 1.1.1-linked Ruby it **segfaults inside bundler
+itself**, so `bundle install`, `bundle exec` and `gem install` all stop working — a hostile
+failure to meet cold, since the crash names bundler rather than the dependency. Findings are
+recorded on PR #820.
 
 ---
 
@@ -696,43 +722,37 @@ count off this file.
 
 <!-- markdownlint-disable MD013 -->
 
-##### 9. Bundle N — Document model — reachable references  ·  **IN PR**
-
-Five open issues here are **one failure wearing different clothes**: *a record that cannot reach the thing it is based on.* #928 (profile → catalog) already shipped in Bundle D and #911 established the lineage rule, so this is the fourth and fifth time the same problem is being solved. **Design the linkage rule once here and apply it in Bundle O** rather than a sixth time. #957 joins the bundle because it is the same layer, and because Bundle M gave it a free regression target — the 12 committed artifacts under `db/fixtures/reference/lean/` regenerate byte-identically, so any UUID instability now shows up as drift in a tracked file.
-
-**What the bundle actually found.** The "design the linkage rule once" framing needed
-correcting: `CatalogLineage` already exists and six models declare `lineage_via`, but its own
-header says it *"reports. It does not block, rewrite, or **infer**."* The missing half was the
-**resolver**, not the reporting — `OscalMetadata.resolve_import_href` matched only the
-`uuid:<…>` spelling SPARC itself writes, so every other producer's href silently resolved to
-nil. That is the piece Bundle O inherits for #929.
-
-Two defects were found from inside the bundle and fixed in it, both on owner direction:
-**#963** (a colliding statement UUID discarded an entire OSCAL import, because a rescued
-`RecordNotUnique` without a SAVEPOINT poisons the Postgres transaction), and a lossy
-export/import round trip that only a *screen* would reveal — the narrative survived in the
-database while the edit form, which renders the field, showed every control blank.
-
-**#944 was found CLOSED with no implementing PR** — closed one second after the docs-only
-PR #961 merged, with no closing keyword anywhere — and was reopened after verifying against
-the code that none of it existed.
-
-| Issue | Description | Notes |
-| --- | --- | --- |
-| **#941** | Catalog statement sub-parts sort after the last control instead of under their parent | **Filed during Bundle F.** `ac-2.7.(a)` sorts after `AC-25`, because `default_scope order(COALESCE(sort_id, control_id))` mixes a padded `sort_id` ("ac-02.07") with an unpadded `control_id` ("ac-2.7.(a)") — OSCAL parts carry no `sort-id` at all. 31 of 60 `ac-2%` rows have a NULL `sort_id`.  **SHIPPED in Bundle N.** The stated cause was wrong: `sort-id` IS imported, for all 1196 controls. NIST emits none on `part` elements — but SPARC MINTS the sub-part rows itself (`"ac-2.7"` + `".(a)"`) and then called `upsert_catalog_control` with no `sort_id:`. Fixed in all three import paths by deriving from the parent, plus a deferred backfill. Real scale was **1882 of 4054 rows**, not 31 of 60. |
-| **#942** | Selection choices that reference other ODPs export as opaque text | **Filed during Bundle F.** A `select` whose choices are `{{ insert: param, <id> }}` references (AC-20 odp.01 → odp.02/odp.03) is exported as flat text, so the dependency is lost and the choices render as raw markup. Lives in `BaselineParameterService#extract_schema`.  **SHIPPED in Bundle N.** Larger than stated. Owner set the construction rule: resolution is RECURSIVE (AC-20 nests two levels), a `select` resolves to its SELECTED branches assembled, and a value ODP falls back to `guidelines[].prose`. Also fixed: the resolved profile was not resolved at all (statement prose copied verbatim), export split a chosen branch into two garbage `set-parameters` values on `", "`, and the importer wrote a select's CHOICES into the field read as its chosen VALUE. |
-| **#944** | A component definition cannot be authored from scratch, and cannot be edited at all | **Bundle N.** Found in local review of Bundle E. `CdefDocumentsController` has `new`/`create` but **no `edit` and no `update`**: `create` is `handle_multi_file_upload`, so the only way a CDEF enters SPARC is as a file someone else authored, and afterwards the only mutators are the three inline fragment paths (`update_field`, `update_metadata`, `update_statement`). There are **no routes and no views for authoring components at all**. So every field NIST's simple-component-definition tutorial calls required — component `type`/`title`/`description`, `control-implementations[].source`/`.description`, `implemented-requirements[].control-id` — has nowhere to be entered. `create_from_profile` gives a control basis but never describes the component. Same create/edit inversion as #928 and #929, on the document type where authoring matters most. Must not weaken `refuse_if_aws_labs!` or `ensure_editable!`.  **SHIPPED in Bundle N — and was found CLOSED with no implementing PR, then reopened.** The OSCAL fields had nowhere to be entered because the exporter HARDCODED them (`"type" => "software"` for every component ever exported). Five nullable columns, authoring + edit on the web, the same fields on `Api::V1`, exporter falls back to the previous values so unedited documents export byte-identically. `refuse_if_aws_labs!` and `ensure_editable!` untouched and mutation-proven. |
-| **#945** | Mapping entries are typed as free text instead of picked from the source and target catalogs | **Was never in this plan** — on the milestone since before Bundle F and missed by every previous currency pass. Same family as #928/#929/#944/#946: a record that cannot reach the thing it refers to.  **SHIPPED in Bundle N.** Validated on the MODEL so `Api::V1` is guarded by the same rule. Two further gaps closed: `Api::V1::ControlMappingEntries` did not exist at all (the web form was the only way to mutate an entry), and neither surface had `update`, so an entry could be created and deleted but never corrected. |
-| **#946** | The assessment baseline is not derived from the selected SSP — and the SSP does not record what it is based on | **Found in local review of PR #943.** The sync is not broken: `sap_documents/new` already builds an `ssp → profile` map for `ssp_profile_sync_controller`, and `SapDocument` already inherits `profile_document_id: ->(b) { b.ssp_document&.profile_document_id }`. It has **nothing to derive from** — measured on a demo-seeded instance, both SSPs have `profile_document_id` nil, `import_profile_href` nil and no boundary profile, so the map serialises to `{}`. The demo seed creates SSPs and a "Demo LOW Baseline" and never links them, so a fresh instance shows the bug immediately. **Owner-DECIDED: derive and lock**, with an explicit override, which means fixing the upstream gap — link `profile_document_id` at import when the OSCAL `import-profile` href resolves, keep the href when it does not, idempotent `IS NULL`-predicated backfill, and fix the seed (bump `SeedRunner::CURRENT_VERSIONS`). Also populate on **render**, not only on `change`: a form returning with a preselected SSP leaves Baseline blank today even when the SSP has one. Fourth instance of the #928/#929/#944 family — a document that cannot reach the baseline it is based on.  **SHIPPED in Bundle N.** Three upstream causes, not one: the demo SSPs claimed a `demo_acme_*.xlsx` that does not exist in the repo (now imported from committed schema-valid OSCAL under `db/seeds/oscal/`), the profile was seeded AFTER the documents meant to reference it (now first, with a pinned UUID), and the resolver understood one href spelling. The seed was also not idempotent — `SafeDestroyable` refuses to delete an SSP an Assessment Plan points at. |
-| **#957** | Generated documents mint random UUIDs, so regenerating produces a different document | **Filed during Bundle M, open.** The general form of a problem #845 solved fixture-locally by pinning identifiers. OSCAL's own rule is explicit — a UUID "should be assigned per-subject … consistently used to identify the same subject across revisions" — and an export must never mint one. **The committed reference artifacts are now a ready-made regression target:** any UUID instability shows up as drift in a committed file, so this is cheaper to fix now than when it was filed.  **SHIPPED in Bundle N.** `batch_insert_records` takes a caller-supplied `uuid_for`; the four generators derive, the six importers deliberately do not. `SarFromSspService` was additionally taking the `gen_random_uuid()` column default. Existing rows not rewritten. The #845 artifacts still regenerate byte-identically against a clean database. |
-
 ##### 10. #939 — pulled forward, on its own
 
 **Out of Q at owner direction (2026-08-15).** It is small, and its cost **grows rather than staying flat**: every cold pass leaks more permanent orphans. Sequenced after N so it does not block the document-model work, and before O.
 
+**The filed cause did not survive measurement.** The issue suspected GitHub rate limiting. But
+every blob is fetched in `build_candidates`, and the per-candidate loop that counts the errors
+already holds `candidate[:content]` — `import_one` performs **no network I/O at all**, so a rate
+limit cannot be what it was counting.
+
+**And the symptom no longer reproduces.** A live cold pass on current `main`, against the UBI9
+prod image with a GitHub token, reported `discovered=230 imported=230 skipped_unchanged=0
+superseded=0 errors=0` in 136 seconds, with 230 `aws_labs_sourced` documents and **zero** rows
+in the orphan shape. Most likely repaired as a side effect of Bundle N — #944 stopped the
+exporter hardcoding component fields and #963 fixed a rescued `RecordNotUnique` poisoning the
+transaction, both directly on the failing path — but **causation is not demonstrated** and is
+not claimed.
+
+**The structural defect is real and latent, which is what the fix addresses.** Nothing about a
+clean run makes a future parse failure safe. That framing also collapsed the planned scope: the
+owner's point that "the refresh button should be sufficient to fix failed loads" is correct once
+a failed file leaves no residue, so the separately-planned re-pull endpoint, "Fetch AWS" control
+and failure-record table were all dropped. The retry/backoff classification was dropped too — its
+justification was a failure mode that no longer reproduces, and #584's intent is that a genuine
+upstream schema gap should surface as an error rather than be retried into silence.
+
+**Cold-pass runtime — owner-decided 2026-08-17, not an issue.** The 136 seconds measured locally is a laptop artifact. In a live deployment the corpus is already in the database, so reads happen at the DB layer rather than re-fetching through the application, and the AWS↔GitHub path is far faster than a home connection — observed during the sparc.risk-sentinel.org deployment. **No follow-up issue.**
+
 | Issue | Description | Notes |
 | --- | --- | --- |
-| **#939** | `AwsLabsCdefRefreshJob` reports 39–51 errors on a cold pass and still reports success | **Filed during Bundle F. Pulled out of Bundle Q and sequenced on its own** (owner, 2026-08-15). The most serious open finding on this milestone: each failed file leaks a **permanent orphaned `CdefDocument`** — `write_through_parser` creates the row before parsing, so a parse failure leaves `status: "processing"`, zero controls and no `source_type`, which means `aws_labs_sourced` cannot even see it to clean it up. 82 measured after four passes. They surface at the top of the CDEF index and they break OSCAL export. |
+| **#939** | ~~`AwsLabsCdefRefreshJob` reports 39–51 errors on a cold pass and still reports success~~ — **FIXED, in PR** | **Filed during Bundle F. Pulled out of Bundle Q and sequenced on its own** (owner, 2026-08-15). Each failed file leaked a **permanent orphaned `CdefDocument`** — `write_through_parser` created the row before parsing, so a parse failure left `status: "processing"`, zero controls and no `source_type`, putting it outside `aws_labs_sourced` and therefore invisible to both cleanup and the dedupe in `import_one`, so each retry leaked another. 82 measured after four passes; they sorted to the top of the CDEF index and broke OSCAL export. **Fixed by wrapping the create in the transaction**, which is what makes the existing "Refresh from AWS Labs" button sufficient to repair a partial run. Also: `reindex_components` takes a SAVEPOINT (it rescues `StandardError` and is now inside a transaction — the #963 shape), `build_candidates` rescues an explicit list of fetch failures so one rate-limited blob no longer discards all 230, a degraded run emits an `aws_labs_cdef_refresh_degraded` audit event with an error-class histogram, and a deferred idempotent migration removes pre-existing shells behind seven conjunctive conditions. |
+| **#967** | ~~Index totals count soft-deleted documents' children — 1 CDEF reports 1290 controls~~ — **FIXED, in PR** | **Filed 2026-08-17, found while validating the #939 plan against the running image** — the owner could not confirm the plan's claims from the screen, which is what surfaced it. The document models are `SoftDeletable` (`default_scope { where(deleted_at: nil) }`); the child models are not, and five index controllers counted the child table directly. Measured: CDEF **+1280**, SSP +149, Profile +10 (SAR and POA&M read 0 only because their soft-deleted documents carried no children). Not orphaned rows — the FK is `ON DELETE CASCADE`, validated, and proven to fire; a soft delete triggers neither it nor `dependent: :delete_all`, by design. Counting through the parent also stops the four boundary-scoped tiles reporting a population their own list does not. **Bundled into the #939 PR at owner direction.** |
 
 ##### 11. Bundle O — Boundary attachment
 
@@ -762,7 +782,9 @@ The cheapest item on the milestone.
 
 ##### 14. Bundle R — Auth entitlements — IdP as system of record
 
-Last by owner direction. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end of the release**, since it is paired with #822 so one two-ceremony TLS verification round covers both. `bundle-audit` reports no vulnerabilities against the current lock, so the deferral is schedulable rather than reactive — **if that changes, decouple #820 from #822 and take it on its own.** Within the bundle: #860 answers the design questions, #842 needs a written answer for which of the two role systems a claim binds to, and #822 carries the PIV ceremony.
+Last by owner direction. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end of the release**, since it is paired with #822 so one two-ceremony TLS verification round covers both. `bundle-audit` reports no vulnerabilities against the current lock, so the deferral is schedulable rather than reactive — **if that changes, decouple #820 from #822 and take it on its own.**
+
+**#820 gained a prerequisite on 2026-08-17 (owner-decided): rebuild the dev Ruby against OpenSSL 3 FIRST, as part of the same work item.** Local Ruby links the EOL OpenSSL 1.1.1 branch while the prod image runs 3.5.5, and the openssl 4.x gem requires 3.x — so on an unmodified dev box the bump produces a **segmentation fault inside bundler itself**, leaving no working `bundle` to diagnose it with. Measurements and recovery steps are on PR #820. Recommended shape: install the OpenSSL-3-linked Ruby **alongside** rather than replacing, prove it with a full suite run, then switch — the rvm Ruby is shared with other work on the machine (InSpec profiles among it), so an in-place relink has a blast radius beyond this repo. Expect some specs to legitimately go red on OpenSSL 3 (legacy provider, stricter security level, PKCS#12 defaults); those are real differences prod already has and dev cannot currently see. Within the bundle: #860 answers the design questions, #842 needs a written answer for which of the two role systems a claim binds to, and #822 carries the PIV ceremony.
 
 | Issue | Description | Notes |
 | --- | --- | --- |
@@ -835,6 +857,60 @@ Last by owner direction. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end 
 | **#956** | ~~A customer responsibility is auto-marked addressed~~ — **MERGED (PR #960)** | Bundle M. The filing understated it: `responsibility_gaps` was inverted in **both** directions. "Addressed" meant *an active inheritance link exists*, but `populate_from_leveraged!` creates that link for every responsibility — so doing **nothing** cleared the gap — and editing the statement flips the link to `overridden`, dropping it from `.active`, so doing the **right thing** re-opened it. A customer who correctly implemented a responsibility was told they had not. Also stopped copying the provider's "you must do this" text in as the customer's own implementation, which asserted the opposite of an implementation and was visible on screen. |
 | **#958** | ~~An SSP with provided/responsibility statements cannot be exported~~ — **MERGED (PR #960)** | Bundle M. Third instance of the #954/#955 shape. Also made exports **reproducible** — `set-parameters` misuse replaced with `by-component.export.provided` / `.responsibilities`, plus the ordering and identifier pinning the drift gate depends on. |
 
+##### 9. Bundle N — Document model — reachable references  ·  PR #964
+
+**SHIPPED 2026-08-17**, PR #964 squash-merged as `fcb5bb67`, 20 commits, all seven issues
+auto-closed. Final gates: `rspec` **5217 / 0 failures / 24 pending**, `tests/api` **464 / 0**
+and `tests/ui-smoke` **442 passed / 28 skipped / 0 failed** against the UBI9 production image
+over TLS, rubocop / brakeman / zeitwerk clean, 25+ mutations RED.
+
+Five open issues here were **one failure wearing different clothes**: *a record that cannot reach the thing it is based on.* #928 (profile → catalog) already shipped in Bundle D and #911 established the lineage rule, so this is the fourth and fifth time the same problem is being solved. **Design the linkage rule once here and apply it in Bundle O** rather than a sixth time. #957 joins the bundle because it is the same layer, and because Bundle M gave it a free regression target — the 12 committed artifacts under `db/fixtures/reference/lean/` regenerate byte-identically, so any UUID instability now shows up as drift in a tracked file.
+
+**What the bundle actually found.** The "design the linkage rule once" framing needed
+correcting: `CatalogLineage` already exists and six models declare `lineage_via`, but its own
+header says it *"reports. It does not block, rewrite, or **infer**."* The missing half was the
+**resolver**, not the reporting — `OscalMetadata.resolve_import_href` matched only the
+`uuid:<…>` spelling SPARC itself writes, so every other producer's href silently resolved to
+nil. That is the piece Bundle O inherits for #929.
+
+Two defects were found from inside the bundle and fixed in it, both on owner direction:
+**#963** (a colliding statement UUID discarded an entire OSCAL import, because a rescued
+`RecordNotUnique` without a SAVEPOINT poisons the Postgres transaction), and a lossy
+export/import round trip that only a *screen* would reveal — the narrative survived in the
+database while the edit form, which renders the field, showed every control blank.
+
+**#944 was found CLOSED with no implementing PR** — closed one second after the docs-only
+PR #961 merged, with no closing keyword anywhere — and was reopened after verifying against
+the code that none of it existed.
+
+**The demo estate was rebuilt mid-PR at owner direction, and that is where most of the bundle's
+value came from.** A Rev 4 system cannot inherit from a Rev 5 one, and matching control *ids*
+is not the same as matching control *language*, so both boundaries are now Rev 5 — ACME Cloud
+Platform on MODERATE (288 controls, 95.8% compliant) and ACME HR Portal on LOW (150 controls,
+96.6%) — generated from **real NIST baselines** vendored at
+`db/seeds/oscal/nist_rev5_{low,moderate}_baseline_profile.json`. The previous "Demo LOW
+Baseline" was a `limit(10)` slice being called a baseline. Compliance is **derived**, not
+asserted: Implemented → passes, Deferred → fails → risk → POA&M, through the #845 mechanism.
+
+Rebuilding it exposed seven defects, all fixed in the PR, none of which a green suite had
+caught: `update_all(guidance_data:)` **replaced** the JSONB column at two seed call sites and
+deleted the statement text of 187 Rev 5 controls (both now merge); `build_statements` returned
+table statements **or** field-synthesized ones and never both, so an export kept the catalog's
+words and dropped the organization's narrative; the OSCAL status token had no inverse, so a
+screen showed **0.0% compliant beside 21 implemented controls**; `creation_method` defaulted to
+`'excel'` **at the column**, so every path that forgot to set it claimed a spreadsheet import;
+SARs named no SSP; `assessment_depth` was `%w[…].sample`; and #963 above.
+
+| Issue | Description | Notes |
+| --- | --- | --- |
+| **#941** | ~~Catalog statement sub-parts sort after the last control instead of under their parent~~ — **MERGED (PR #964)** | **Filed during Bundle F.** `ac-2.7.(a)` sorts after `AC-25`, because `default_scope order(COALESCE(sort_id, control_id))` mixes a padded `sort_id` ("ac-02.07") with an unpadded `control_id` ("ac-2.7.(a)") — OSCAL parts carry no `sort-id` at all. 31 of 60 `ac-2%` rows have a NULL `sort_id`.  **SHIPPED in Bundle N.** The stated cause was wrong: `sort-id` IS imported, for all 1196 controls. NIST emits none on `part` elements — but SPARC MINTS the sub-part rows itself (`"ac-2.7"` + `".(a)"`) and then called `upsert_catalog_control` with no `sort_id:`. Fixed in all three import paths by deriving from the parent, plus a deferred backfill. Real scale was **1882 of 4054 rows**, not 31 of 60. |
+| **#942** | ~~Selection choices that reference other ODPs export as opaque text~~ — **MERGED (PR #964)** | **Filed during Bundle F.** A `select` whose choices are `{{ insert: param, <id> }}` references (AC-20 odp.01 → odp.02/odp.03) is exported as flat text, so the dependency is lost and the choices render as raw markup. Lives in `BaselineParameterService#extract_schema`.  **SHIPPED in Bundle N.** Larger than stated. Owner set the construction rule: resolution is RECURSIVE (AC-20 nests two levels), a `select` resolves to its SELECTED branches assembled, and a value ODP falls back to `guidelines[].prose`. Also fixed: the resolved profile was not resolved at all (statement prose copied verbatim), export split a chosen branch into two garbage `set-parameters` values on `", "`, and the importer wrote a select's CHOICES into the field read as its chosen VALUE. |
+| **#944** | ~~A component definition cannot be authored from scratch, and cannot be edited at all~~ — **MERGED (PR #964)** | **Bundle N.** Found in local review of Bundle E. `CdefDocumentsController` has `new`/`create` but **no `edit` and no `update`**: `create` is `handle_multi_file_upload`, so the only way a CDEF enters SPARC is as a file someone else authored, and afterwards the only mutators are the three inline fragment paths (`update_field`, `update_metadata`, `update_statement`). There are **no routes and no views for authoring components at all**. So every field NIST's simple-component-definition tutorial calls required — component `type`/`title`/`description`, `control-implementations[].source`/`.description`, `implemented-requirements[].control-id` — has nowhere to be entered. `create_from_profile` gives a control basis but never describes the component. Same create/edit inversion as #928 and #929, on the document type where authoring matters most. Must not weaken `refuse_if_aws_labs!` or `ensure_editable!`.  **SHIPPED in Bundle N — and was found CLOSED with no implementing PR, then reopened.** The OSCAL fields had nowhere to be entered because the exporter HARDCODED them (`"type" => "software"` for every component ever exported). Five nullable columns, authoring + edit on the web, the same fields on `Api::V1`, exporter falls back to the previous values so unedited documents export byte-identically. `refuse_if_aws_labs!` and `ensure_editable!` untouched and mutation-proven. |
+| **#945** | ~~Mapping entries are typed as free text instead of picked from the source and target catalogs~~ — **MERGED (PR #964)** | **Was never in this plan** — on the milestone since before Bundle F and missed by every previous currency pass. Same family as #928/#929/#944/#946: a record that cannot reach the thing it refers to.  **SHIPPED in Bundle N.** Validated on the MODEL so `Api::V1` is guarded by the same rule. Two further gaps closed: `Api::V1::ControlMappingEntries` did not exist at all (the web form was the only way to mutate an entry), and neither surface had `update`, so an entry could be created and deleted but never corrected. |
+| **#946** | ~~The assessment baseline is not derived from the selected SSP — and the SSP does not record what it is based on~~ — **MERGED (PR #964)** | **Found in local review of PR #943.** The sync is not broken: `sap_documents/new` already builds an `ssp → profile` map for `ssp_profile_sync_controller`, and `SapDocument` already inherits `profile_document_id: ->(b) { b.ssp_document&.profile_document_id }`. It has **nothing to derive from** — measured on a demo-seeded instance, both SSPs have `profile_document_id` nil, `import_profile_href` nil and no boundary profile, so the map serialises to `{}`. The demo seed creates SSPs and a "Demo LOW Baseline" and never links them, so a fresh instance shows the bug immediately. **Owner-DECIDED: derive and lock**, with an explicit override, which means fixing the upstream gap — link `profile_document_id` at import when the OSCAL `import-profile` href resolves, keep the href when it does not, idempotent `IS NULL`-predicated backfill, and fix the seed (bump `SeedRunner::CURRENT_VERSIONS`). Also populate on **render**, not only on `change`: a form returning with a preselected SSP leaves Baseline blank today even when the SSP has one. Fourth instance of the #928/#929/#944 family — a document that cannot reach the baseline it is based on.  **SHIPPED in Bundle N.** Three upstream causes, not one: the demo SSPs claimed a `demo_acme_*.xlsx` that does not exist in the repo (now imported from committed schema-valid OSCAL under `db/seeds/oscal/`), the profile was seeded AFTER the documents meant to reference it (now first, with a pinned UUID), and the resolver understood one href spelling. The seed was also not idempotent — `SafeDestroyable` refuses to delete an SSP an Assessment Plan points at. |
+| **#957** | ~~Generated documents mint random UUIDs, so regenerating produces a different document~~ — **MERGED (PR #964)** | **Filed during Bundle M, open.** The general form of a problem #845 solved fixture-locally by pinning identifiers. OSCAL's own rule is explicit — a UUID "should be assigned per-subject … consistently used to identify the same subject across revisions" — and an export must never mint one. **The committed reference artifacts are now a ready-made regression target:** any UUID instability shows up as drift in a committed file, so this is cheaper to fix now than when it was filed.  **SHIPPED in Bundle N.** `batch_insert_records` takes a caller-supplied `uuid_for`; the four generators derive, the six importers deliberately do not. `SarFromSspService` was additionally taking the `gen_random_uuid()` column default. Existing rows not rewritten. The #845 artifacts still regenerate byte-identically against a clean database. |
+| **#963** | ~~Re-importing an SSP that already exists rolls back the entire import, and the error is unrelated to the cause~~ — **MERGED (PR #964)** | **Filed from inside Bundle N and fixed in it, on owner direction.** A single colliding statement UUID discarded the whole OSCAL import: the `RecordNotUnique` was rescued, but a rescue with no SAVEPOINT leaves the Postgres transaction poisoned, so every subsequent statement in the same import failed with an error naming neither the colliding record nor the real cause. |
+
 <!-- markdownlint-enable MD013 -->
 
 **Deliverables:** Config that extends instead of silently replacing; a build that fails when a
@@ -857,7 +933,7 @@ is what makes them schedulable around the feature work rather than reactive to i
 | **#923** | `actions-updates` — `github/codeql-action` (init/analyze/upload-sarif), `dorny/paths-filter` | **BEFORE #919** | The one that impacts the sweep. #919's premise is that CodeQL/Brakeman/Semgrep **cannot** detect missing authorization, and it touches 16 controllers while adding a structural spec. If the CodeQL engine changes mid-sweep, a new alert is ambiguous — engine or our change? Fix the scanner baseline first. CI-only; its own run is the gate. |
 | **#922** | `minor-updates` — `aws-sdk-s3` 1.228.2→1.229.0, aws-sdk-core/rds/partitions, io-console, rbs, reline | **AFTER #925** | `aws-sdk-s3` sits directly under ActiveStorage presigned-URL generation, which is exactly what #894's new spec pins (`disposition=attachment` on the emitted URL). Good interaction — the pin catches a regression — but the pin must land first. **Specific check: re-run `spec/security/user_content_disposition_spec.rb`.** |
 | **#921** | `erb` 6.0.6→6.0.7 (patch) | **AFTER #925**, batch with #922 | Low risk. `erb` is one of the default-gem shadows showing as a residual UBI9 High, so it may reduce scanner-audit noise at release time. |
-| **#820** | `openssl` 3.3.0→**4.0.2** (major) | **WITH Bundle G (#822)** | Blast radius is 8 files: `piv_auth_service`, `federation_bundle_signing_service`, `sparc_http`, `sparc_key_derivation`, `ldap_auth_service`, `authoritative_source_fetch_service`, `cdef_bulk_apply_service`, `hdf_package_service` — PIV cert parsing, federation HMAC, outbound TLS, LDAP. #822 already requires the **two-ceremony** TLS proof, so pairing them means one verification round covers both. Also needs the Gemfile constraint change `~> 3.3` → `~> 4.0`; `~> 3.3` forbids 4.x today. |
+| **#820** | `openssl` 3.3.0→**4.0.2** (major) | **WITH Bundle G (#822)** — and **gated on the dev-toolchain rebuild** (owner-decided 2026-08-17: same work item, toolchain first) | Blast radius is 8 files: `piv_auth_service`, `federation_bundle_signing_service`, `sparc_http`, `sparc_key_derivation`, `ldap_auth_service`, `authoritative_source_fetch_service`, `cdef_bulk_apply_service`, `hdf_package_service` — PIV cert parsing, federation HMAC, outbound TLS, LDAP. #822 already requires the **two-ceremony** TLS proof, so pairing them means one verification round covers both. Also needs the Gemfile constraint change `~> 3.3` → `~> 4.0`; `~> 3.3` forbids 4.x today. |
 
 **Closed 2026-08-11:** ~~#886 `activestorage` 8.1.3→8.1.3.1~~ — already in the image on `main`.
 Worth recording *why it lingered*, because the same shape will recur: `activestorage` is **not a
@@ -967,7 +1043,7 @@ removed and are no longer tracked:
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
-| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, #941, #942, #945, #946, #957, #944, #939, #929, #952, #947, #948, #936, #860, #842, #822 | In Progress — **17 of 32 shipped** (PRs #924, #925, #931, #932, #933, #937, #938, #943, #960). The count moved 16 → 24 → 25 → **32**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; and **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Remaining order set by the owner 2026-08-15: **N** (#941 #942 #945 #946 #957 #944 — the document-model family) → **#939 pulled forward** → **O** (#929 #952) → **P** (#947 #948) → **Q** (#936) → **R** (#860 #842 #822 +#820). Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, #939, #929, #952, #947, #948, #936, #935, #951, #959, #860, #842, #822 | In Progress — **24 of 36 shipped** (PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964). The count moved 16 → 24 → 25 → 32 → **36**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; and the owner added #935, #951, #959 on 2026-08-15. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Remaining order set by the owner 2026-08-15: **#939 pulled forward** (in progress) → **O** (#929 #952) → **P** (#947 #948) → **Q** (#936) → **R** (#860 #842 #822 +#820), with #935, #951, #959 still unslotted. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 

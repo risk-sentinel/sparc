@@ -28,7 +28,10 @@ class PoamDocumentsController < ApplicationController
   def index
     scope = boundary_scoped_relation(PoamDocument).order(created_at: :desc)
     @total_count = scope.count
-    @items_count = PoamItem.count
+    # #967 — see ssp_documents_controller. Measured 0 inflation only because the
+    # soft-deleted POA&Ms on that instance carried no items; the defect is the
+    # same one.
+    @items_count = PoamItem.where(poam_document_id: scope.reorder(nil).select(:id)).count
     @completed_count = scope.where(status: "completed").count
 
     # #672 search + #908 facets, both through the shared query object so this

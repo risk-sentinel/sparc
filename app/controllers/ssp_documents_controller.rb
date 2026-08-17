@@ -30,7 +30,13 @@ class SspDocumentsController < ApplicationController
   def index
     scope = boundary_scoped_relation(SspDocument).order(created_at: :desc)
     @total_count = scope.count
-    @controls_count = SspControl.count
+    # #967 — count through `scope`, the same relation the tile beside this one
+    # counts. SspDocument is SoftDeletable; SspControl is not, so a bare
+    # `SspControl.count` counted the controls of soft-deleted documents (+149
+    # measured on a demo instance). Subquerying `scope` inherits both the
+    # soft-delete scope and the boundary scope, so the two tiles cannot report
+    # different populations.
+    @controls_count = SspControl.where(ssp_document_id: scope.reorder(nil).select(:id)).count
     @completed_count = scope.where(status: "completed").count
 
     # #672 — filter listed rows; the tiles above keep showing totals.

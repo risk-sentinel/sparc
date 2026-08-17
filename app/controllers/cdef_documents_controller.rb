@@ -28,7 +28,16 @@ class CdefDocumentsController < ApplicationController
 
   def index
     @total_count = CdefDocument.count
-    @controls_count = CdefControl.count
+    # #967 — count through the parent, not the child table. CdefDocument is
+    # SoftDeletable (`default_scope { where(deleted_at: nil) }`); CdefControl is
+    # not, so a bare `CdefControl.count` counts the controls of every
+    # soft-deleted document. Measured on a demo instance: 1 live CDEF with 10
+    # controls rendered "1 Component Defs" beside "1290 Total Controls", the
+    # other 1280 belonging to 59 soft-deleted rows. A soft delete never fires
+    # the FK cascade or `dependent: :delete_all`, by design — nothing propagated
+    # the hidden parent to the aggregate. Subquerying the parent inherits its
+    # scope, so the two tiles cannot drift apart again.
+    @controls_count = CdefControl.where(cdef_document_id: CdefDocument.select(:id)).count
     @completed_count = CdefDocument.where(status: "completed").count
 
     # #887 §5 — search and facets live in CdefBrowseQuery so this screen and
