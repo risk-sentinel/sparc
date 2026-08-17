@@ -14,7 +14,7 @@ class CdefDocumentsController < ApplicationController
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
 
-  before_action :set_cdef_document, only: %i[set_baseline show edit update destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm attach_profile populate_from_profile submit_for_review approve reject]
+  before_action :set_cdef_document, only: %i[set_baseline show edit update destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm attach_profile populate_from_profile submit_for_review approve reject update_scope]
   before_action :ensure_editable!, only: [ :edit, :update, :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :attach_profile, :populate_from_profile, :submit_for_review ]
   # Issue #488 — same RBAC bucket as the DISA CCI "Refresh Now" button on
   # ConvertersController. Treats AWS Labs catalog refresh as an
@@ -22,7 +22,7 @@ class CdefDocumentsController < ApplicationController
   # refreshes — gated on `converters.write` or admin.
   before_action :authorize_converter_write!, only: [ :refresh_aws_labs ]
   # #738: CDEF is global (no boundary); mutations require cdef.write (instance-level). (AC-3)
-  before_action :authorize_cdef_write!, only: %i[create update destroy update_field update_metadata copy create_from_profile populate_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review]
+  before_action :authorize_cdef_write!, only: %i[create update destroy update_field update_metadata copy create_from_profile populate_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review update_scope]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -329,6 +329,41 @@ class CdefDocumentsController < ApplicationController
                                .where.not(resolved_catalog_json: nil)
                                .includes(:control_catalog)
                                .order(updated_at: :desc)
+  end
+
+  # PATCH /cdef_documents/:id/update_scope
+  #
+  # #929 — a CDEF's scope could be chosen at upload and changed by no route
+  # afterwards, the same gap the other four document types had. CDEF carries no
+  # `authorization_boundary_id`; its scope is `boundary_cdef_documents` rows
+  # plus `globally_available`, so the work lives in CdefScopeService.
+  #
+  # Deliberately NOT gated on `ensure_editable!`. Scope is an assignment, not
+  # OSCAL content, and a published CDEF is the normal case — on a corpus fed by
+  # the AWS Labs importer every document is published, so gating here would
+  # leave the action unreachable for the documents that need it.
+  def update_scope
+    # The shared scope picker submits under `cdef_document[...]`; the flat form
+    # is accepted too so a caller does not have to know which screen it came
+    # from.
+    requested_scope = params.dig(:cdef_document, :scope).presence || params[:scope]
+    requested_boundary = params.dig(:cdef_document, :authorization_boundary_id).presence ||
+                         params[:authorization_boundary_id]
+
+    CdefScopeService.apply(@cdef_document,
+      scope: requested_scope,
+      authorization_boundary_id: requested_boundary,
+      organization_id: current_user&.organizations&.first&.id)
+
+    audit_log("cdef_document_scope_updated", subject: @cdef_document,
+      metadata: { name: @cdef_document.name,
+                  scope: requested_scope.to_s,
+                  authorization_boundary_id: CdefScopeService.current_boundary_id(@cdef_document) })
+    flash[:success] = "Component definition scope updated."
+    redirect_to cdef_document_path(@cdef_document)
+  rescue ArgumentError => e
+    flash[:error] = e.message
+    redirect_to cdef_document_path(@cdef_document)
   end
 
   def create_from_profile

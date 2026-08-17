@@ -530,6 +530,40 @@
 
 <%= render "shared/uuid_replaced_warning", document: @cdef_document %>
 
+<%# #929 — CDEF scope, re-pointable after upload. A component definition has no
+    `authorization_boundary_id`: it reaches a boundary through its environments
+    (boundary_cdef_documents) or is globally available. That was applied only at
+    create, and no route changed it afterwards. %>
+<% if signed_in? %>
+  <% current_scope_boundary = CdefScopeService.current_boundary_id(@cdef_document) %>
+  <div class="card mt-4">
+    <div class="card-body">
+      <h5 class="fw-bold mb-3">Scope</h5>
+      <p class="text-body-secondary small">
+        <% if @cdef_document.globally_available? %>
+          Globally available — any boundary's SSP can compose this component definition.
+        <% elsif current_scope_boundary.present? %>
+          Boundary-specific —
+          <%= AuthorizationBoundary.find_by(id: current_scope_boundary)&.name || "boundary ##{current_scope_boundary}" %>.
+        <% else %>
+          This component definition is not scoped to a boundary and is not marked globally available.
+        <% end %>
+      </p>
+
+      <%= form_with url: update_scope_cdef_document_path(@cdef_document),
+                    method: :patch, local: true do %>
+        <%= render "cdef_documents/scope_picker",
+              param_key: :cdef_document,
+              selected:  current_scope_boundary,
+              scope:     @cdef_document.globally_available? ? "global" : "boundary" %>
+        <%# The picker submits under cdef_document[...]; this action reads the
+            flat names, so mirror them across. %>
+        <button type="submit" class="btn btn-primary btn-sm">Update Scope</button>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
 <%= render "shared/oscal_metadata_section",
            document: @cdef_document,
            update_path: update_metadata_cdef_document_path(@cdef_document),
