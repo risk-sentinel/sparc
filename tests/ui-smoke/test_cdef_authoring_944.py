@@ -29,23 +29,46 @@ TYPE_SELECT = "select[name='cdef_document[component_type]']"
 SUBMIT = "[data-testid='author-cdef-submit']"
 
 
-def _first_editable_cdef(page):
-    """Path of a CDEF that offers an Edit link, or None.
+def _author_editable_cdef(page):
+    """Author a fresh CDEF and return its URL, or None if authoring is refused.
 
-    AWS-Labs-sourced and published documents are read-only by design, so the
-    link is absent on them and this returns None rather than a false failure.
+    The edit test used to take the FIRST link off the index and hope it was
+    editable. It never was, and the test skipped instead of failing, so the #944
+    edit coverage was silently absent:
+
+      * every AWS-Labs-sourced document is read-only by design — the flow there
+        is fetch -> copy -> edit, so Edit is correctly absent on the original;
+      * `write_through_parser` also creates them `lifecycle_status: "published"`,
+        which is read-only for a second, independent reason;
+      * and on a demo-seeded instance the one non-AWS document is published too.
+
+    Measured on a UBI9 instance with the corpus ingested: 231 documents, 230
+    AWS-Labs-sourced, **231 published, 0 editable**. So the skip fired every
+    time, on every deployment — including before the corpus existed. A test that
+    can never reach its assertions is not coverage.
+
+    Authoring one here makes the document under test a property of the test
+    rather than of whatever the deployment happens to hold. A freshly authored
+    CDEF is a draft, which is exactly the state the Edit affordance exists for.
     """
-    page.goto(INDEX)
+    page.goto(NEW)
     page.wait_for_load_state("networkidle")
-    return page.evaluate(
-        """() => {
-            const link = [...document.querySelectorAll("a[href*='/cdef_documents/']")]
-                .map(a => a.getAttribute("href"))
-                .find(h => h && !h.includes("/new") && !h.includes("/edit")
-                             && h !== "/cdef_documents");
-            return link || null;
-        }"""
-    )
+
+    if page.locator(SUBMIT).count() == 0:
+        return None
+
+    name = f"UI Smoke Editable Component {uuid.uuid4().hex[:8]}"
+    page.fill("input[name='cdef_document[name]']", name)
+    page.select_option(TYPE_SELECT, "service")
+    page.fill("input[name='cdef_document[component_title]']", "Smoke Editable Component")
+
+    with page.expect_navigation(wait_until="networkidle"):
+        page.click(SUBMIT)
+
+    if "/cdef_documents/" not in page.url or "/new" in page.url:
+        return None
+
+    return page.url
 
 
 def test_the_authoring_form_is_offered(authed_page):
@@ -138,26 +161,72 @@ def _delete_authored(page, base_url):
     )
 
 
-def test_the_edit_route_resolves_to_a_real_screen(authed_page):
-    """The route existed and resolved to an action that did not."""
+def test_the_edit_route_resolves_to_a_real_screen(authed_page, base_url):
+    """The route existed and resolved to an action that did not.
+
+    Authors its own document, for the reasons in `_author_editable_cdef`, and
+    cleans it up — an authored CDEF has no controls, so leaving one behind fails
+    `test_document_exports` on OSCAL validation.
+    """
     record_csp(authed_page)
-    path = _first_editable_cdef(authed_page)
-    if not path:
-        pytest.skip("no component definition seeded on this deployment")
+    url = _author_editable_cdef(authed_page)
+    if not url:
+        pytest.skip("current user cannot author CDEFs on this deployment")
 
-    authed_page.goto(path)
+    try:
+        edit_link = authed_page.locator("[data-testid='edit-cdef']")
+        # No longer a skip. This document was just authored by this test and is
+        # a draft, so the Edit affordance MUST be present — its absence is the
+        # #944 regression, which is the whole point of the file.
+        assert edit_link.count() > 0, (
+            "a freshly authored draft CDEF offers no Edit control — #944 has regressed "
+            f"(url={authed_page.url!r})"
+        )
+
+        # Wait for the NAVIGATION, not just the load state — the same trap this
+        # file already documents for the authoring submit. `wait_for_load_state`
+        # can return before the navigation lands, leaving `page.url` on the show
+        # page and making a working Edit control look broken.
+        with authed_page.expect_navigation(wait_until="networkidle"):
+            edit_link.first.click()
+
+        assert "/edit" in authed_page.url, "the Edit control did not navigate to the edit screen"
+        assert authed_page.locator(TYPE_SELECT).count() > 0, (
+            "the edit screen rendered without the component fields it exists to edit"
+        )
+
+        assert_no_csp_violations(authed_page, during="CDEF edit navigation")
+    finally:
+        authed_page.goto(url)
+        _delete_authored(authed_page, base_url)
+
+
+def test_an_aws_labs_cdef_offers_no_edit_control(authed_page):
+    """The other half of the rule: fetch -> copy -> edit, never edit in place.
+
+    Pinning this is what lets the test above assert rather than skip. Without
+    it, "no Edit link" could mean either the correct read-only posture or the
+    #944 regression, and the suite could not tell the two apart — which is how
+    the missing coverage stayed invisible.
+    """
+    record_csp(authed_page)
+    authed_page.goto(INDEX)
     authed_page.wait_for_load_state("networkidle")
 
-    edit_link = authed_page.locator("[data-testid='edit-cdef']")
-    if edit_link.count() == 0:
-        pytest.skip("this CDEF is read-only (AWS Labs or published), so Edit is absent by design")
-
-    edit_link.first.click()
-    authed_page.wait_for_load_state("networkidle")
-
-    assert "/edit" in authed_page.url, "the Edit control did not navigate to the edit screen"
-    assert authed_page.locator(TYPE_SELECT).count() > 0, (
-        "the edit screen rendered without the component fields it exists to edit"
+    aws_href = authed_page.evaluate(
+        """() => {
+            const rows = [...document.querySelectorAll("a[href*='/cdef_documents/']")];
+            const hit = rows.find(a => /^AWS\\s/.test((a.textContent || "").trim()));
+            return hit ? hit.getAttribute("href") : null;
+        }"""
     )
+    if not aws_href:
+        pytest.skip("no AWS-Labs-sourced CDEF on this deployment (ingestion is off by default)")
 
-    assert_no_csp_violations(authed_page, during="CDEF edit navigation")
+    authed_page.goto(aws_href)
+    authed_page.wait_for_load_state("networkidle")
+
+    assert authed_page.locator("[data-testid='edit-cdef']").count() == 0, (
+        "an AWS-Labs-sourced CDEF offers an Edit control — upstream content must be "
+        "copied before it can be edited, never edited in place"
+    )
