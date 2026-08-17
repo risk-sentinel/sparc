@@ -284,6 +284,7 @@ Rack::Attack throttle thresholds. Defaults are conservative; tighten for high-se
 | `SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER` | `100` | Per-user cap on upload endpoints |
 | `SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE` | `300` | Per-token cap on `/api/v1` write methods |
 | `SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN` | `5` | Per-IP cap on login failures (credential-stuffing defense) |
+| `SPARC_RATE_LIMIT_CONTROLS_DOWNLOADS_PER_5MIN_PER_IP` | `30` | Per-IP cap on Controls-layer downloads in 5 minutes. Matters most with `SPARC_PUBLIC_CATALOGS=true`, when those downloads are anonymous and a full catalog export costs ~24s and ~3 MB |
 | `SPARC_RATE_LIMIT_SAFELIST_CIDRS` | `127.0.0.1,::1` | CIDRs that bypass all throttles (health checks, NLB targets) |
 
 ## Document Lifecycle & Workflow

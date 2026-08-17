@@ -37,6 +37,84 @@ RSpec.describe "Rack::Attack initializer (#513)" do
     end
   end
 
+  # #974 — Controls-layer downloads become anonymous when the control library is
+  # published, and they are the most expensive read in the product: the full NIST
+  # 800-53 Rev 5 catalog export measured 24 seconds and 2.97 MB on a UBI9 prod
+  # image. Every other throttle covers writes, uploads or credentials, so before
+  # this an anonymous caller could repeat that as fast as it returned.
+  describe "controls/downloads/5min/ip throttle (#974)" do
+    let(:limit) { SparcConfig.rate_limit_controls_downloads_per_5min_per_ip }
+
+    it "throttles a download endpoint once the limit is exceeded" do
+      path = "/control_catalogs/nist-800-53/download_oscal"
+
+      limit.times { get path, {}, "REMOTE_ADDR" => "203.0.113.10" }
+      expect(last_response.status).to eq(200)
+
+      get path, {}, "REMOTE_ADDR" => "203.0.113.10"
+      expect(last_response.status).to eq(429), "the #{limit + 1}th download was not throttled"
+    end
+
+    it "counts per IP, so one caller cannot exhaust another's budget" do
+      path = "/cdef_documents/some-component/download_json"
+
+      (limit + 1).times { get path, {}, "REMOTE_ADDR" => "203.0.113.11" }
+      expect(last_response.status).to eq(429)
+
+      get path, {}, "REMOTE_ADDR" => "203.0.113.12"
+      expect(last_response.status).to eq(200), "a second IP was throttled by the first IP's traffic"
+    end
+
+    it "covers every Controls-layer download path" do
+      %w[
+        /control_catalogs/x/download_oscal
+        /control_catalogs/x/download_yaml
+        /control_catalogs/x/download_xml
+        /profile_documents/x/download_json
+        /profile_documents/x/download_resolved_catalog
+        /control_mappings/x/download_oscal
+        /cdef_documents/x/download_oscal_validated
+      ].each_with_index do |path, i|
+        ip = "198.51.100.#{i + 1}"
+        (limit + 1).times { get path, {}, "REMOTE_ADDR" => ip }
+        expect(last_response.status).to eq(429), "#{path} is not throttled"
+      end
+    end
+
+    # The bucket is for READS. A non-GET to the same path is a different kind of
+    # request and belongs in the upload/write buckets, which have their own
+    # limits; letting it consume the read budget would let a write starve
+    # legitimate browsing. Untested until a mutation removing the method check
+    # passed the whole file.
+    it "counts reads only, not a POST to the same path" do
+      path = "/control_catalogs/x/download_oscal"
+
+      (limit + 1).times { post path, {}, "REMOTE_ADDR" => "198.51.100.90" }
+
+      expect(last_response.status).to eq(200),
+        "a POST was counted in the Controls-download read bucket"
+    end
+
+    # The screens are cheap and paginated. Throttling them would make a
+    # published catalog unbrowsable, which is the opposite of the intent — and a
+    # regex greedy enough to catch them is the likely way this breaks.
+    it "does NOT throttle the screens, the API, or unrelated paths" do
+      [
+        "/control_catalogs",
+        "/control_catalogs/x",
+        "/cdef_documents",
+        "/cdef_documents/x",
+        "/converters",
+        "/api/v1/control_catalogs",
+        "/ssp_documents/x/download_oscal"
+      ].each_with_index do |path, i|
+        ip = "198.51.100.2#{i}"
+        (limit + 5).times { get path, {}, "REMOTE_ADDR" => ip }
+        expect(last_response.status).to eq(200), "#{path} was throttled by the Controls-download bucket"
+      end
+    end
+  end
+
   describe "uploads/5min/ip throttle" do
     before { allow(SparcConfig).to receive(:rate_limit_uploads_per_5min_per_ip).and_return(2) }
 

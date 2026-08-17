@@ -62,6 +62,22 @@ def rack_attack_upload_request?(req)
     path.match?(%r{\A/evidences\z})
 end
 
+# #974 — Controls-layer document downloads. These become readable without a
+# session when SPARC_PUBLIC_CATALOGS=true, and they are the most expensive read
+# in the product: exporting the full NIST 800-53 Rev 5 catalog measured **24
+# seconds and 2.97 MB** on a UBI9 prod image, 16 of those seconds in GC.
+#
+# Every other throttle here covers writes, uploads or credentials, so an
+# anonymous caller could previously repeat that export as fast as it returned.
+# The screens stay unthrottled — they are cheap and paginated; it is the
+# serialize-the-whole-catalog endpoints that need a bucket.
+def rack_attack_controls_download_request?(req)
+  return false unless %w[GET HEAD].include?(req.request_method)
+
+  req.path.match?(%r{\A/(control_catalogs|profile_documents|control_mappings|cdef_documents)/[^/]+/download_[a-z_]+\z}) ||
+    req.path.match?(%r{\A/profile_documents/[^/]+/download_resolved_catalog\z})
+end
+
 def rack_attack_api_write_request?(req)
   return false unless %w[POST PUT PATCH DELETE].include?(req.request_method)
   req.path.start_with?("/api/v1/")
@@ -107,6 +123,15 @@ Rack::Attack.throttle("api/writes/min/token",
                       limit: ->(_req) { SparcConfig.rate_limit_api_writes_per_minute },
                       period: 1.minute) do |req|
   rack_attack_api_token_id(req) if rack_attack_api_write_request?(req)
+end
+
+# #974 — by IP, because the caller these protect against has no session and no
+# token. Generous enough that a human clicking through a published catalog never
+# notices, and low enough that the endpoint cannot be used as an amplifier.
+Rack::Attack.throttle("controls/downloads/5min/ip",
+                      limit: ->(_req) { SparcConfig.rate_limit_controls_downloads_per_5min_per_ip },
+                      period: 5.minutes) do |req|
+  req.ip if rack_attack_controls_download_request?(req)
 end
 
 Rack::Attack.throttle("logins/failures/min/ip",
