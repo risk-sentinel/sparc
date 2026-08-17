@@ -676,7 +676,7 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 9 | N — Document model — reachable references | #941 #942 #944 #945 #946 #957 **#963** | **Shipped** (PR #964) |
 | 10 | #939 — pulled forward, on its own | #939 **#967** **#970** | **Shipped** (PR #969) |
 | 11 | O — Boundary attachment | #929 #952 | **Shipped** (PR #975) |
-| 12 | **S — Controls layer: who can see it, and what it carries** | **#974 #959 #935** | **IN PROGRESS** (branch `feature/974_controls_layer_access`; phases 1–2 of 5 committed) |
+| 12 | **S — Controls layer: who can see it, and what it carries** | **#974 #959 #935** | **IN PROGRESS** (branch `feature/974_controls_layer_access`; phases 1–3 of 5 committed) |
 | 13 | P — Evidence completeness | #947 #948 | Queued |
 | 14 | Q — Polish | #936 | Queued |
 | 15 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
@@ -790,11 +790,11 @@ Three issues that all land on the same controllers, views and export builder. Se
 | --- | --- | --- |
 | 1 | #974 — `public_controls_read` declaration + structural spec + both-posture request specs | **Committed** `b5a48012` |
 | 2 | #959 — export carries only referenced back-matter + reference-integrity invariant + advisory report | **Committed** `0772f826` |
-| 3 | #974 — Converters index/show, and Controls-layer downloads under the flag | Next |
-| 4 | #935 — `framework` derived at import + facet on catalogs and baselines | Pending |
+| 3 | #974 — Converters index/show, Controls-layer downloads under the flag, nav consistency | **Committed** `f96d4bb7` |
+| 4 | #935 — `framework` derived at import + facet on catalogs and baselines | Next |
 | 5 | Docs, compliance, wiki, both-posture Playwright | Pending |
 
-Suite at phase 2: **5335 examples, 0 failures, 10 pending**; rubocop, brakeman and zeitwerk clean; 7 mutations RED across the two phases.
+Suite at phase 3: **5341 examples, 0 failures, 10 pending**; rubocop, brakeman and zeitwerk clean; **11 mutations RED** across the three phases.
 
 **Two findings from phase 1 worth carrying forward.** The structural spec immediately caught that `api/v1/sessions` needed an explicit allowlist entry and that one allowlist entry was stale. And two mutations did NOT bite on the first round: the flag-on helper broke out on a login redirect and reported "status < 400", passing against a gate that never opens, and the macro's write-refusal guard had no test at all. Both are fixed and all four now bite — the same vacuous-test shape the #919 spec hit, which is why that file's history is cited in the new one.
 
