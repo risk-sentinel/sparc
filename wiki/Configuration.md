@@ -377,6 +377,28 @@ Runtime ingestion of OSCAL Component Definitions from [`awslabs/oscal-content-fo
 | `SPARC_AWS_LABS_CDEF_REFRESH_INTERVAL_DAYS` | `7` | How often the recurring refresh job runs (clamped 1..90) |
 | `SPARC_AWS_LABS_GITHUB_TOKEN` | (unset) | Optional GitHub PAT (`contents:read`) to raise the API rate limit 60→5000/hr |
 
+### When a refresh does not complete
+
+A refresh imports each component definition independently, so one file failing
+no longer costs you the rest of the run — including a rate-limited or timed-out
+fetch, which previously abandoned the entire pass.
+
+A file that fails leaves **nothing behind**: the import is atomic per file, so
+there is no half-created component definition to find or clean up. That is what
+makes the fix simple — **press "Refresh from AWS Labs" again**. Files already
+imported are skipped as unchanged, and anything that failed is retried, so
+repeated refreshes converge on the complete corpus.
+
+To see whether a refresh was partial, check the audit log for
+**`aws_labs_cdef_refresh_degraded`**. It records how many files failed, the
+error classes with counts, and the affected paths. A run that imported
+everything emits no such event. The same detail is written to the application
+log, so a partial run can be diagnosed without reproducing it.
+
+If failures persist across refreshes for the same files, the error class in that
+audit event is the thing to report — it distinguishes an upstream content
+problem from a transient network one.
+
 ## Redis / Background Jobs
 
 **Solid Queue is the default background-job backend and needs no Redis.** Redis (with the optional Sidekiq adapter) is only required if you explicitly opt into Sidekiq.
