@@ -17,4 +17,24 @@
   <li><%= link_to control_mappings_path, class: "dropdown-item" do %>
     <span class="sparc-dropdown-icon">&#128260;</span> Mappings
   <% end %></li>
+
+  <%# #974 — Component Definitions and Converters are Controls-layer reference
+      content too, and the flag now opens them for reading. They live in the
+      Implementation dropdown, which renders only for a signed-in user, so
+      without this an anonymous visitor on a published instance could reach
+      both by URL while the nav advertised neither.
+
+      Appended only for the viewer who does not already have them, so a
+      signed-in user keeps one home for each rather than seeing them twice.
+      Deliberately not relocated: moving them for every user is a navigation
+      change that belongs with #951, not with a visibility fix. %>
+  <% if SparcConfig.any_auth_enabled? && !signed_in? %>
+    <li><hr class="dropdown-divider"></li>
+    <li><%= link_to cdef_documents_path, class: "dropdown-item" do %>
+      <span class="sparc-dropdown-icon">&#129513;</span> Component Definitions
+    <% end %></li>
+    <li><%= link_to converters_path, class: "dropdown-item" do %>
+      <span class="sparc-dropdown-icon">&#128260;</span> Converters
+    <% end %></li>
+  <% end %>
 </ul>

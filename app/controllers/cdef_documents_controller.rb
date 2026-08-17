@@ -13,7 +13,10 @@ class CdefDocumentsController < ApplicationController
   # #974 — was a BARE skip with no companion gate, so the whole CDEF library
   # was world-readable regardless of SPARC_PUBLIC_CATALOGS, with no setting
   # that could turn it off.
-  public_controls_read only: [ :index, :show ]
+  # #974 — downloads follow the screens (see ControlCatalogsController).
+  public_controls_read only: [ :index, :show,
+                               :download_json, :download_oscal, :download_oscal_validated,
+                               :download_oscal_unvalidated, :download_yaml, :download_xml ]
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
 

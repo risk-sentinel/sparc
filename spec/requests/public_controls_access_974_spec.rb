@@ -29,6 +29,7 @@ RSpec.describe "Public Controls-layer access (#974)", type: :request do
   let!(:profile) { create(:profile_document) }
   let!(:mapping) { create(:control_mapping) }
   let!(:cdef)    { create(:cdef_document) }
+  let!(:converter) { create(:converter) }
 
   # Every Controls-layer READ path, as [label, path].
   def controls_read_paths
@@ -42,6 +43,20 @@ RSpec.describe "Public Controls-layer access (#974)", type: :request do
       [ "mapping show",   control_mapping_path(mapping) ],
       [ "cdef index",     cdef_documents_path ],
       [ "cdef show",      cdef_document_path(cdef) ]
+    ]
+  end
+
+  # Downloads follow the screens (#974): the OSCAL a reader can see is the OSCAL
+  # they can fetch. Converters are the exception in the other direction — index
+  # and show only, never `export`.
+  def controls_download_paths
+    [
+      [ "catalog oscal",  download_oscal_control_catalog_path(catalog) ],
+      [ "catalog yaml",   download_yaml_control_catalog_path(catalog) ],
+      [ "profile json",   download_json_profile_document_path(profile) ],
+      [ "profile oscal",  download_oscal_profile_document_path(profile) ],
+      [ "mapping oscal",  download_oscal_control_mapping_path(mapping) ],
+      [ "cdef json",      download_json_cdef_document_path(cdef) ]
     ]
   end
 
@@ -69,6 +84,21 @@ RSpec.describe "Public Controls-layer access (#974)", type: :request do
       get control_catalog_family_path(catalog, family.code)
       expect(response).to redirect_to(login_path)
     end
+
+    it "refuses every Controls-layer download" do
+      controls_download_paths.each do |label, path|
+        get path
+        expect(response).to redirect_to(login_path), "#{label}: expected a redirect to /login"
+      end
+    end
+
+    it "refuses the converter list and detail" do
+      get converters_path
+      expect(response).to redirect_to(login_path)
+
+      get converter_path(converter)
+      expect(response).to redirect_to(login_path)
+    end
   end
 
   context "with SPARC_PUBLIC_CATALOGS=true" do
@@ -84,6 +114,36 @@ RSpec.describe "Public Controls-layer access (#974)", type: :request do
 
         expect(status).to eq(200), "#{label}: expected the page to render with the flag ON, got #{status}"
       end
+    end
+
+    it "serves every Controls-layer download" do
+      controls_download_paths.each do |label, path|
+        status = follow_to_final_status(path)
+
+        expect(status).to eq(200), "#{label}: expected the download to be served, got #{status}"
+      end
+    end
+
+    it "serves the converter list and detail" do
+      expect(follow_to_final_status(converters_path)).to eq(200)
+      expect(follow_to_final_status(converter_path(converter))).to eq(200)
+    end
+
+    # "View only, cannot fetch or update." `export` is a bulk pull of the
+    # mapping data rather than a screen, so it stays behind authentication even
+    # when the library is published.
+    it "still refuses a converter EXPORT" do
+      get export_converter_path(converter)
+      expect(response).to redirect_to(login_path)
+    end
+
+    # The nav must not open a page it never advertises, and must not advertise
+    # one it cannot open.
+    it "advertises the newly public screens in the Controls nav" do
+      get control_catalogs_path
+
+      expect(response.body).to include(cdef_documents_path)
+      expect(response.body).to include(converters_path)
     end
   end
 
@@ -136,7 +196,10 @@ RSpec.describe "Public Controls-layer access (#974)", type: :request do
           "new catalog"  => new_control_catalog_path,
           "edit catalog" => edit_control_catalog_path(catalog),
           "new mapping"  => new_control_mapping_path,
-          "new converter" => new_converter_path
+          "new converter" => new_converter_path,
+          # A converter refresh reaches out to DISA/AWS and writes. It is a
+          # write in effect even though the screen looks read-only.
+          "converter export" => export_converter_path(converter)
         }
 
         writes.each do |label, path|

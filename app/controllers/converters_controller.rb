@@ -2,6 +2,18 @@
 
 class ConvertersController < ApplicationController
   include CollectionViewable
+
+  # #974 — a converter's MAPPINGS are Controls-layer reference content, so the
+  # list and an individual converter become publicly readable when
+  # SPARC_PUBLIC_CATALOGS=true, and require authentication otherwise.
+  #
+  # Read means read. `index` and `show` only — deliberately not `export`, which
+  # is a bulk fetch of the mapping data rather than a screen, and not any of the
+  # refresh actions, which reach out to DISA/AWS and write. Those stay behind
+  # authentication plus `converters.write` in every posture, which is the point
+  # of "view only, cannot fetch or update".
+  public_controls_read only: [ :index, :show ]
+
   before_action :authorize_converter_write!, only: [
     :new, :create, :edit, :update, :destroy, :import, :do_import, :refresh_cci,
     :refresh_aws_config, :refresh_aws_security_hub, :import_stig
