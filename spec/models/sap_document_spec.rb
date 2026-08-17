@@ -11,7 +11,11 @@ RSpec.describe SapDocument, type: :model do
     it { is_expected.to have_many(:sap_controls).dependent(:delete_all) }
     it { is_expected.to belong_to(:ssp_document).optional }
     it { is_expected.to belong_to(:profile_document).optional }
-    it { is_expected.to belong_to(:authorization_boundary).optional }
+    # #952 — the belongs_to stays `optional: true` so a legacy boundary-less row
+    # still LOADS; the rule is a separate presence validation, which is what
+    # stops a new one being created. `.optional` no longer matches, because
+    # shouda-matchers also checks that no presence validation exists.
+    it { is_expected.to validate_presence_of(:authorization_boundary) }
     it { is_expected.to have_one_attached(:file) }
   end
 

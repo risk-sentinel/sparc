@@ -15,6 +15,15 @@ class SspDocument < ApplicationRecord
   after_initialize { self.status ||= "pending" }
 
   belongs_to :authorization_boundary, optional: true
+  # #952 — a system security plan, assessment plan, assessment result and POA&M
+  # are per-system by definition: they carry the implementation detail and the
+  # open weaknesses for ONE boundary. The association stays `optional: true` at
+  # the belongs_to so legacy rows load, and the rule is a validation so a row
+  # written before it can still be READ (and repaired via #929's attach flow)
+  # while no new one can be created. Evidence is deliberately exempt — it is
+  # leveraged and inherited across boundaries, so a boundary-less evidence
+  # record is a legitimate state.
+  validates :authorization_boundary, presence: true
 
   include BoundaryReferenceValidation
 
@@ -105,11 +114,16 @@ class SspDocument < ApplicationRecord
     }
   end
 
-  def self.from_excel(file_path, original_filename)
+  # #952 — an SSP must belong to an authorization boundary, so the caller has
+  # to say which. Keyword-with-default keeps the signature compatible; a call
+  # that omits it now fails validation rather than producing a document visible
+  # to everyone.
+  def self.from_excel(file_path, original_filename, authorization_boundary: nil)
     document = create!(
       name: File.basename(original_filename, ".*"),
       file_type: "excel",
       original_filename: original_filename,
+      authorization_boundary: authorization_boundary,
       status: "processing"
     )
 

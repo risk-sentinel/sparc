@@ -35,8 +35,12 @@ class SarFromSspService
   # control is not a risk to the authorization and must never reach the POA&M.
   # Empty by default, so a plain scaffold still means "nothing assessed yet"
   # and every existing caller is unchanged.
-  def initialize(ssp_document, name: nil, deadline: nil, satisfied_control_ids: [])
+  def initialize(ssp_document, name: nil, deadline: nil, satisfied_control_ids: [],
+                 authorization_boundary: nil)
     @ssp       = ssp_document
+    # #952 — an assessment result belongs to the system it assesses. Inherited
+    # from the SSP so the generator cannot mint a boundary-less document.
+    @boundary  = authorization_boundary || ssp_document&.authorization_boundary
     @name      = name.presence || "SAR from #{ssp_document.name}"
     @deadline  = deadline
     @satisfied = Array(satisfied_control_ids).map { |id| ControlId.canonical(id) }.to_set
@@ -71,6 +75,7 @@ class SarFromSspService
       oscal_version:       @ssp.oscal_version || "1.1.2",
       description:         "Assessment results for #{@ssp.name}",
       ssp_document_id:     @ssp.id,
+      authorization_boundary: @boundary,
       profile_document_id: @ssp.profile_document_id,
       import_metadata:     {
         "source_type"     => "ssp",

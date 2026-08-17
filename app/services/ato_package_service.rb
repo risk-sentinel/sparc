@@ -108,9 +108,9 @@ class AtoPackageService
         assessment_type: @params[:assessment_type].presence || "initial",
         assessment_start: parse_date(@params[:assessment_start]),
         assessment_end: parse_date(@params[:assessment_end]),
-        description: @params[:sap_description]
+        description: @params[:sap_description],
+        authorization_boundary: @ab   # #952 — required at creation now
       ).generate
-      @sap.update!(authorization_boundary: @ab)
     else
       nil # no/unknown sap_mode: skip this step
     end

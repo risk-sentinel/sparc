@@ -9,18 +9,24 @@ class PoamDocumentsController < ApplicationController
   include Publishable
   include OscalExportable
   include BoundaryScopedDocument
-  boundary_scoped PoamDocument, read: "poam.read", write: "poam.write"
+  boundary_scoped PoamDocument, read: "poam.read", write: "poam.write", global_fallback: false
+  # #929 — attach/re-point the boundary after upload. Deliberately absent from
+  # `ensure_editable!`: a published document with NO boundary is the case that
+  # most needs repairing, and the concern applies the draft bar to re-pointing
+  # only.
+  include BoundaryAttachable
 
   before_action :set_poam_document, only: %i[set_baseline
     show destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
     download_yaml download_xml validate_oscal_export
     update_metadata status update publish publish_check
+    attach_boundary
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :status, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :update_metadata, :publish ]
+  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :update_metadata, :publish, :attach_boundary ]
 
   RISK_STATUS_ORDER = %w[open investigating remediating deviation-requested deviation-approved closed].freeze
   IMPACT_ORDER      = %w[high medium low].freeze
@@ -303,7 +309,9 @@ class PoamDocumentsController < ApplicationController
   end
 
   def document_metadata_params
-    permitted = params.require(:poam_document).permit(:name, :poam_version, :oscal_version, :description)
+    # #929 — permitted by Api::V1 all along, but not here.
+    permitted = params.require(:poam_document).permit(:name, :poam_version, :oscal_version, :description,
+      :authorization_boundary_id)
     merge_metadata_extra(permitted, :poam_document)
   end
 

@@ -76,12 +76,16 @@ class AuditEvent < ApplicationRecord
     ssp_document_delete_blocked
     ssp_document_exported
     ssp_document_imported
+    ssp_document_boundary_attached
+    boundary_less_documents_reported
+    sar_document_boundary_attached
     sar_document_created
     sar_document_updated
     sar_document_deleted
     sar_document_delete_blocked
     sar_document_exported
     sar_document_imported
+    cdef_document_scope_updated
     cdef_document_created
     cdef_document_updated
     cdef_document_deleted
@@ -102,6 +106,7 @@ class AuditEvent < ApplicationRecord
     control_resource_unlinked
     authoritative_source_created
     data_migration_completed
+    sap_document_boundary_attached
     sap_document_created
     sap_document_generated
     sap_document_updated
@@ -109,6 +114,7 @@ class AuditEvent < ApplicationRecord
     sap_document_delete_blocked
     sap_document_exported
     sap_document_imported
+    poam_document_boundary_attached
     poam_document_created
     poam_document_generated
     poam_document_updated
@@ -280,10 +286,13 @@ class AuditEvent < ApplicationRecord
                                   project_membership_deleted],
     "SSP Documents" => %w[ssp_document_created ssp_document_updated ssp_document_deleted
                           ssp_document_delete_blocked ssp_document_exported ssp_document_imported
-                          ssp_document_published ssp_document_baseline_declared],
+                          ssp_document_published ssp_document_baseline_declared
+                          ssp_document_boundary_attached
+                          boundary_less_documents_reported],
     "SAR Documents" => %w[sar_document_created sar_document_updated sar_document_deleted
                           sar_document_delete_blocked sar_document_exported sar_document_imported
-                          sar_document_published sar_document_baseline_declared],
+                          sar_document_published sar_document_baseline_declared
+                          sar_document_boundary_attached],
     "CDEF Documents" => %w[cdef_document_created cdef_document_updated cdef_document_deleted
                            cdef_coverage_analyzed cdef_coverage_run_saved cdef_coverage_run_deleted
                            cdef_document_delete_blocked
@@ -295,11 +304,12 @@ class AuditEvent < ApplicationRecord
                            aws_labs_cdef_refresh_requested
                            aws_labs_cdef_refresh_degraded
                            control_resource_created control_resource_linked
-                           control_resource_unlinked cdef_document_baseline_declared],
+                           control_resource_unlinked cdef_document_baseline_declared
+                           cdef_document_scope_updated],
     "SAP Documents" => %w[sap_document_created sap_document_generated sap_document_updated
                           sap_document_deleted sap_document_delete_blocked sap_document_exported
                           sap_document_imported sap_document_published
-                          sap_document_baseline_declared],
+                          sap_document_baseline_declared sap_document_boundary_attached],
     "POAM Documents" => %w[poam_document_created poam_document_generated poam_document_updated
                            poam_document_deleted poam_document_delete_blocked
                            poam_document_exported poam_document_imported poam_item_created
@@ -311,7 +321,8 @@ class AuditEvent < ApplicationRecord
                            poam_finding_created poam_finding_updated poam_finding_deleted
                            poam_local_component_created poam_local_component_updated poam_local_component_deleted
                            poam_document_viewed_by_leveraging_user
-                           poam_document_published poam_document_baseline_declared],
+                           poam_document_published poam_document_baseline_declared
+                           poam_document_boundary_attached],
     "Profiles" => %w[profile_document_created profile_document_updated profile_document_deleted
                      profile_document_delete_blocked
                      profile_document_exported profile_document_imported profile_document_copied

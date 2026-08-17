@@ -50,7 +50,7 @@ RSpec.describe OscalUuidService do
     end
 
     it "falls back to a deterministic derived UUID when no boundary is linked" do
-      document = create(:sap_document, authorization_boundary: nil)
+      document = create_legacy_orphan(:sap_document)
       result = described_class.org_party_uuid_for(document)
       expect(result).to match(BackMatterResource::UUID_V4_REGEX)
       # Same document -> same fallback UUID across calls.

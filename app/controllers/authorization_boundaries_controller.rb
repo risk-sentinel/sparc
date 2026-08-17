@@ -4,8 +4,15 @@ class AuthorizationBoundariesController < ApplicationController
 
   before_action :set_authorization_boundary, only: [
     :show, :edit, :update, :destroy,
-    :ato_wizard, :create_ato_package, :download_ato_package
+    :ato_wizard, :create_ato_package, :download_ato_package,
+    :attach_document
   ]
+
+  # #929 — document types that carry `authorization_boundary_id` and can
+  # therefore be attached to a boundary after upload. CDEF is deliberately
+  # absent: it has no such column, and its scope is re-pointed through
+  # CdefScopeService instead.
+  ATTACHABLE_TYPES = %w[ssp sap sar poam].freeze
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
 
@@ -34,6 +41,24 @@ class AuthorizationBoundariesController < ApplicationController
     # OSCAL back-matter via evidence -> back_matter_resource), surfaced here so
     # they can be managed from the boundary screen.
     @evidences = @authorization_boundary.evidences.order(created_at: :desc)
+  end
+
+  # GET /authorization_boundaries/:id/attach_document?type=ssp
+  #
+  # #929 — the Artifact Summary's "Add…" tile used to link to the plain index of
+  # every document of that type, with no reference to the boundary you came
+  # from, so it could not do the one thing it advertised. This screen offers the
+  # two ways to fill an empty slot: attach a document that belongs to no
+  # boundary, or upload a new one with this boundary pre-selected.
+  def attach_document
+    @document_type = params[:type].to_s
+    unless ATTACHABLE_TYPES.include?(@document_type)
+      flash[:error] = "Unknown document type."
+      return redirect_to authorization_boundary_path(@authorization_boundary)
+    end
+
+    @document_class = DocumentTypeRegistry.for(@document_type).document_class
+    @candidates     = attachable_candidates(@document_class)
   end
 
   def new
@@ -152,6 +177,21 @@ class AuthorizationBoundariesController < ApplicationController
 
   def set_authorization_boundary
     @authorization_boundary = AuthorizationBoundary.find_by!(slug: params[:id])
+  end
+
+  # Documents belonging to no boundary that this user may be offered (#929).
+  #
+  # Follows the same rule as BoundaryScopedDocument#boundary_scoped_relation:
+  # a no-auth instance behaves as it always did, and once auth is enabled a
+  # boundary-less SSP/SAP/SAR/POA&M is visible to Instance-Admins only (#952).
+  # A non-admin therefore sees an empty list here and repairs an orphan by
+  # asking an admin — deliberate, and the reason the empty state says so.
+  def attachable_candidates(document_class)
+    orphans = document_class.where(authorization_boundary_id: nil).order(created_at: :desc)
+    return orphans unless SparcConfig.any_auth_enabled?
+    return orphans if current_user&.admin?
+
+    document_class.none
   end
 
   def authorization_boundary_params

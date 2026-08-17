@@ -19,7 +19,10 @@ module SeedRunner
     "remediation_timelines"  => "1.0.0",
     "converters"           => "1.4.0",
     "demo_organization"    => "1.0.0",
-    "demo_auth_boundary"   => "1.0.0",
+    # #952 — the section linked only the FIRST SSP and SAR, leaving the rest
+    # boundary-less and therefore visible to every signed-in user (and, once a
+    # boundary became mandatory, unsaveable). Re-run to attach them all.
+    "demo_auth_boundary"   => "1.1.0",
     # #946 — the demo SSPs are now imported from committed OSCAL instead of
     # fabricated with a spreadsheet provenance they never had.
     "demo_ssp_sar"         => "2.0.0",

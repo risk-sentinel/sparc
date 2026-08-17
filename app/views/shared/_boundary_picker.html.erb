@@ -1,37 +1,55 @@
 <%# Authorization Boundary picker for upload forms (#395 P1).
-    Optional dropdown filtered to boundaries the current user is a member
-    of. When picked, the BoundaryLinkInheritance concern auto-fills
-    cross-document FKs on the created document.
+    Dropdown of the boundaries the current user may attach to. When picked, the
+    BoundaryLinkInheritance concern auto-fills cross-document FKs on the
+    created document.
+
+    #929 — the boundary list comes from BoundaryPickerHelper#assignable_boundaries
+    (which mirrors the scoping rule) instead of the legacy roster join that
+    returned an empty set for every user, and an empty list now explains itself
+    rather than removing the field from the page.
 
     Required local: param_key (e.g. :sap_document, :ssp_document) -- the
     name the form submits under.
-    Optional local: label (default "Authorization Boundary (optional)").
+    Optional locals:
+      label    — default "Authorization Boundary".
+      selected — boundary id to pre-select (#929: the "Add…" tile passes the
+                 boundary you came from through as a query param).
 %>
 <%
-  param_key = local_assigns.fetch(:param_key)
-  label_text = local_assigns.fetch(:label, "Authorization Boundary (optional)")
-  boundaries = if current_user
-    AuthorizationBoundary
-      .joins(:authorization_boundary_memberships)
-      .where(authorization_boundary_memberships: { user_id: current_user.id })
-      .distinct.order(:name)
-  else
-    AuthorizationBoundary.none
-  end
+  param_key   = local_assigns.fetch(:param_key)
+  label_text  = local_assigns.fetch(:label, "Authorization Boundary")
+  selected_id = local_assigns.fetch(:selected, params[:authorization_boundary_id]).presence
+  boundaries  = assignable_boundaries(current_user)
 %>
-<% if boundaries.any? %>
-  <div class="form-group mb-3">
-    <label for="<%= param_key %>_authorization_boundary_id" class="fw-semibold">
-      <%= label_text %>
-    </label>
+<div class="form-group mb-3">
+  <label for="<%= param_key %>_authorization_boundary_id" class="fw-semibold">
+    <%= label_text %>
+  </label>
+  <% if boundaries.any? %>
+    <%# #952 — no "None (link later)" option. Every screen rendering this
+        partial is an SSP/SAP/SAR/POA&M, and those must belong to a boundary:
+        offering "none" would just produce a submit that the model refuses. The
+        `required` attribute is a courtesy — the validation is the real gate. %>
     <%= select_tag "#{param_key}[authorization_boundary_id]",
-          options_for_select([ [ "— None (link later) —", "" ] ] +
-                             boundaries.map { |b| [ b.name, b.id ] }),
-          class: "form-control",
-          id:    "#{param_key}_authorization_boundary_id" %>
+          options_for_select([ [ "— Select a boundary —", "" ] ] +
+                             boundaries.map { |b| [ b.name, b.id ] },
+                             selected_id.to_s),
+          class:    "form-control",
+          required: true,
+          id:       "#{param_key}_authorization_boundary_id" %>
     <small class="text-body-secondary d-block mt-1">
       Linking to a boundary auto-fills cross-document references (SSP, SAP, profile)
       from the boundary's other documents.
     </small>
-  </div>
-<% end %>
+  <% else %>
+    <%# #929 — this field used to disappear when the list was empty, so an
+        upload silently produced a document belonging to no boundary and there
+        was nothing on screen to explain why. #952 makes that state impossible,
+        so the copy has to say what actually happens now. %>
+    <p class="text-body-secondary small mb-0" id="<%= param_key %>_authorization_boundary_id">
+      You are not on the roster of any authorization boundary. A system security plan,
+      assessment plan, assessment result or POA&amp;M must belong to one, so ask to be
+      added to a boundary before uploading.
+    </p>
+  <% end %>
+</div>

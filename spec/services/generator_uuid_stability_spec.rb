@@ -14,6 +14,9 @@ require "rails_helper"
 # committed OSCAL artifacts churn on every rebuild, which makes a drift check
 # worthless.
 RSpec.describe "generated document UUID stability (#957)" do
+  # #952 — a profile belongs to no system, so the generator takes the boundary
+  # from its caller.
+  let(:boundary) { create(:authorization_boundary) }
   let(:resolved_catalog_json) do
     {
       "catalog" => {
@@ -52,8 +55,8 @@ RSpec.describe "generated document UUID stability (#957)" do
     # function of (document uuid, control id) — which is what makes regenerating
     # a document of known identity reproduce every identifier beneath it.
     it "derives every control UUID from its own document, in both documents" do
-      first  = SspFromProfileService.new(profile, name: "First").create
-      second = SspFromProfileService.new(profile, name: "Second").create
+      first  = SspFromProfileService.new(profile, name: "First", authorization_boundary: boundary).create
+      second = SspFromProfileService.new(profile, name: "Second", authorization_boundary: boundary).create
 
       [ first, second ].each do |ssp|
         ssp.ssp_controls.each do |control|
@@ -68,15 +71,15 @@ RSpec.describe "generated document UUID stability (#957)" do
     # random-and-unequal: the two documents' controls must differ BECAUSE their
     # document UUIDs differ.
     it "gives the same control id different UUIDs under different documents" do
-      first  = SspFromProfileService.new(profile, name: "First").create
-      second = SspFromProfileService.new(profile, name: "Second").create
+      first  = SspFromProfileService.new(profile, name: "First", authorization_boundary: boundary).create
+      second = SspFromProfileService.new(profile, name: "Second", authorization_boundary: boundary).create
 
       expect(first.ssp_controls.find_by(control_id: "ac-1").uuid)
         .not_to eq(second.ssp_controls.find_by(control_id: "ac-1").uuid)
     end
 
     it "produces a UUID that is a pure function of the document and control id" do
-      ssp = SspFromProfileService.new(profile, name: "Derived").create
+      ssp = SspFromProfileService.new(profile, name: "Derived", authorization_boundary: boundary).create
       control = ssp.ssp_controls.find_by(control_id: "ac-1")
 
       expect(control.uuid).to eq(OscalUuidService.derived(ssp.uuid, "ssp-control", "ac-1"))
@@ -92,13 +95,13 @@ RSpec.describe "generated document UUID stability (#957)" do
     end
 
     it "gives two different controls different UUIDs" do
-      ssp = SspFromProfileService.new(profile, name: "Distinct").create
+      ssp = SspFromProfileService.new(profile, name: "Distinct", authorization_boundary: boundary).create
 
       expect(ssp.ssp_controls.pluck(:uuid).uniq.length).to eq(ssp.ssp_controls.count)
     end
 
     it "scaffolds the this-system component deterministically" do
-      ssp = SspFromProfileService.new(profile, name: "Component").create
+      ssp = SspFromProfileService.new(profile, name: "Component", authorization_boundary: boundary).create
 
       expect(ssp.ssp_components.find_by(component_type: "this-system").uuid)
         .to eq(OscalUuidService.derived(ssp.uuid, "ssp-component", "this-system"))
@@ -107,7 +110,7 @@ RSpec.describe "generated document UUID stability (#957)" do
 
   describe "SarFromSspService" do
     it "derives result, control, finding and risk UUIDs from their parents" do
-      ssp = SspFromProfileService.new(profile, name: "For SAR").create
+      ssp = SspFromProfileService.new(profile, name: "For SAR", authorization_boundary: boundary).create
       sar = SarFromSspService.new(ssp, name: "SAR").create
 
       result = sar.sar_results.first

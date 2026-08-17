@@ -20,7 +20,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
   include DocumentApprovalApi
   include FieldImportable
-  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :populate_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm ]
+  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :populate_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm, :update_scope ]
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
   # #716 — field import is a bulk mutation; gate it like bulk-apply (converters.write).
@@ -104,6 +104,33 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     # #555 — return the detailed shape so callers can read-after-write.
     render json: { data: serialize_cdef(@cdef, detailed: true) }
   rescue CdefMutationService::ValidationError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  # PATCH /api/v1/cdef_documents/:id/scope
+  #
+  # #929 — parity with the web `update_scope`, so the UI stays a thin client
+  # over the API rather than the only place a CDEF's scope can be re-pointed.
+  # Body: { "scope": "global" | "boundary", "authorization_boundary_id": N }
+  def update_scope
+    # Matches the web twin's `cdef.write` gate. The sibling CRUD actions here
+    # are open to any authenticated user (see the class comment) — a
+    # pre-existing asymmetry this new endpoint does not extend.
+    unless current_user&.has_permission?("cdef.write")
+      return render json: { error: "Not authorized to change this component definition's scope" },
+                    status: :forbidden
+    end
+
+    CdefScopeService.apply(@cdef,
+      scope: params[:scope],
+      authorization_boundary_id: params[:authorization_boundary_id],
+      organization_id: current_user&.organizations&.first&.id)
+
+    audit_log("cdef_document_scope_updated", subject: @cdef,
+      metadata: { name: @cdef.name, scope: params[:scope].to_s,
+                  authorization_boundary_id: CdefScopeService.current_boundary_id(@cdef) })
+    render json: { data: serialize_cdef(@cdef, detailed: true) }
+  rescue ArgumentError => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 

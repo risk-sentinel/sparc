@@ -125,25 +125,23 @@ module FileUploadable
 
   # Post-create work: for boundary-scoped CDEFs, attach to all sub-Boundary
   # records of the picked AuthorizationBoundary via boundary_cdef_documents.
+  #
+  # #929 — the linking logic moved to CdefScopeService so that changing a
+  # CDEF's scope AFTER upload runs the same code. This scope could previously
+  # be set at create and by no route thereafter.
   def apply_post_create_scope!(document, param_key)
     return unless document.is_a?(CdefDocument)
     return if document.globally_available
-    return if document.respond_to?(:authorization_boundary_id) &&
-              document.authorization_boundary_id.blank?
 
     ab_id = params.dig(param_key, :authorization_boundary_id).presence
     return if ab_id.blank?
 
-    sub_boundary_ids = Boundary.where(authorization_boundary_id: ab_id).ids
-    sub_boundary_ids.each do |sb_id|
-      BoundaryCdefDocument.find_or_create_by!(
-        boundary_id: sb_id, cdef_document_id: document.id
-      )
-    end
-    # Also stash the AB id in import_metadata so the show page can display
-    # the linked boundary even though there's no direct FK on the CDEF.
-    md = (document.import_metadata || {}).merge("authorization_boundary_id" => ab_id.to_i)
-    document.update_column(:import_metadata, md)
+    CdefScopeService.apply(document, scope: "boundary", authorization_boundary_id: ab_id)
+  rescue ArgumentError => e
+    # A create must not fail because the picked boundary vanished between the
+    # form render and the submit; the CDEF exists and its scope can be set from
+    # the show screen.
+    Rails.logger.warn("[CdefScope] create-time scope not applied for cdef #{document.id}: #{e.message}")
   end
 
   def detect_file_type_from_registry(filename, registry)

@@ -11,6 +11,12 @@ requires authentication and a role with SAP permissions — see [RBAC](RBAC).
 
 ---
 
+
+> **A boundary is required.** From v1.16.0 this document type must belong to an
+> authorization boundary, chosen when you create it. One created before that rule
+> without a boundary is visible to Instance Admins only until it is attached —
+> see [Authorization Boundaries](User-Guide-Authorization-Boundaries) for how.
+
 ## Before you start
 
 - **Access:** signed in, with a role that permits creating/editing SAPs.

@@ -72,9 +72,12 @@ RSpec.describe SapGeneratorService do
       end
 
       it "creates a SAP document with controls from the Profile" do
+        # #952 — generated from a profile alone, so there is no SSP to inherit
+        # a boundary from; the caller supplies one.
         sap = described_class.new(
           name: "Profile Assessment",
-          profile_document: profile
+          profile_document: profile,
+          authorization_boundary: create(:authorization_boundary)
         ).generate
 
         expect(sap.sap_controls.count).to eq(2)

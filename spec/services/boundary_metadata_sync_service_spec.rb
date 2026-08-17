@@ -51,7 +51,7 @@ RSpec.describe BoundaryMetadataSyncService do
 
   describe "#status_for" do
     it "returns :missing_fk when document has no boundary FK" do
-      orphan = create(:ssp_document, authorization_boundary: nil)
+      orphan = create_legacy_orphan(:ssp_document)
       expect(described_class.new(boundary).status_for(orphan)).to eq(:missing_fk)
     end
 

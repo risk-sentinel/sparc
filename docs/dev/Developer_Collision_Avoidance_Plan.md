@@ -986,6 +986,37 @@ removed and are no longer tracked:
 
 ---
 
+## 13. Bundle O (v1.16.0) -- Boundary attachment (#929 #952)
+
+Touches more domains than any bundle since the authorization sweep, because
+"a document belongs to a boundary" is a rule every document domain has to obey.
+**Coordinate before editing any of these.**
+
+<!-- markdownlint-disable MD013 -->
+
+| Hot file | Why it is hot | Domain |
+| --- | --- | --- |
+| `app/controllers/concerns/boundary_scoped_document.rb` | Both the index scope and the read/write guards. `boundary_scoped` gained `global_fallback:`; write now authorizes the TARGET boundary as well as the current one | Shared -- 2-dev review |
+| `app/controllers/api/v1/document_base_controller.rb` | The API twin of the same two guards. They must stay symmetrical -- a fix applied to one and not the other is the shape of the original defect | API (v1) |
+| `app/helpers/boundary_picker_helper.rb` (new) | The single source of which boundaries a form may offer. Mirrors `boundary_scoped_relation`; changing one without the other reintroduces the drift that hid #929 | Shared |
+| `app/controllers/concerns/boundary_attachable.rb` (new) | One attach action serving the document screen and the boundary tile | Shared |
+| `app/services/cdef_scope_service.rb` (new) | CDEF scope, shared by create and update. CDEF has no boundary FK -- its scope is `boundary_cdef_documents` + `globally_available` | CDEF |
+| `app/models/{ssp,sap,sar,poam}_document.rb` | The presence validation. **Not** Evidence -- the exemption is deliberate | SSP / SAR / POAM-SAP |
+| The four generator services + `reference_estate_builder` | They minted boundary-less documents; each now inherits from its source or takes one from the caller | SSP / SAR / POAM-SAP |
+| `app/models/audit_event.rb` | `ACTIONS` and `ACTION_CATEGORIES`. An action missing from either is recorded NOWHERE, silently -- `AuditEvent.log` rescues `RecordInvalid` | Shared |
+| `spec/factories/{ssp,sap,sar,poam}_documents.rb` | Now associate a boundary, affecting ~390 call sites across ~150 spec files. A branch that adds spec files while this is in flight will conflict here | Shared |
+| `db/seeds.rb` + `lib/seed_runner.rb` | `demo_auth_boundary` bumped to 1.1.0 to re-run | Shared |
+
+<!-- markdownlint-enable MD013 -->
+
+**Rule for anyone adding an SSP/SAP/SAR/POA&M creation path:** it must carry an
+authorization boundary. Inherit it from the source document where there is one;
+otherwise take it from the caller and surface a picker. A path that does neither
+now fails validation at `create!`, which is the intended outcome -- it used to
+produce a document visible to every signed-in user.
+
+---
+
 ## Summary
 
 - **Total issues tracked:** 64 (23 original + 41 ad-hoc/new)

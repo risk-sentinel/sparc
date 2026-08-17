@@ -85,6 +85,10 @@ Rails.application.routes.draw do
       get  :ato_wizard
       post :create_ato_package
       get  :download_ato_package
+      # #929 — where the Artifact Summary's "Add…" tile now leads: attach an
+      # existing boundary-less document, or upload one with this boundary
+      # pre-selected.
+      get  :attach_document
       # #447 — HDF Amendment triage UI (thin client over the triage services).
       get    :triage,              to: "hdf_triage#show"
       post   "triage/ingest",      to: "hdf_triage#ingest",            as: :triage_ingest
@@ -111,6 +115,9 @@ Rails.application.routes.draw do
 
   resources :ssp_documents do
     member do
+      # #929 — attach or re-point this document's authorization boundary
+      # after upload. Serves the document screen and the boundary "Add…" tile.
+      patch :attach_boundary
       # #911 — the write the reconciliation gate exists to provoke.
       patch :set_baseline, to: "ssp_documents#set_baseline"
       patch :update_metadata
@@ -156,6 +163,9 @@ Rails.application.routes.draw do
 
   resources :sar_documents do
     member do
+      # #929 — attach or re-point this document's authorization boundary
+      # after upload. Serves the document screen and the boundary "Add…" tile.
+      patch :attach_boundary
       # #911 — the write the reconciliation gate exists to provoke.
       patch :set_baseline, to: "sar_documents#set_baseline"
       patch :update_metadata
@@ -228,6 +238,9 @@ Rails.application.routes.draw do
 
   resources :sap_documents do
     member do
+      # #929 — attach or re-point this document's authorization boundary
+      # after upload. Serves the document screen and the boundary "Add…" tile.
+      patch :attach_boundary
       # #911 — the write the reconciliation gate exists to provoke.
       patch :set_baseline, to: "sap_documents#set_baseline"
       patch :update_metadata
@@ -252,6 +265,9 @@ Rails.application.routes.draw do
 
   resources :poam_documents do
     member do
+      # #929 — attach or re-point this document's authorization boundary
+      # after upload. Serves the document screen and the boundary "Add…" tile.
+      patch :attach_boundary
       # #911 — the write the reconciliation gate exists to provoke.
       patch :set_baseline, to: "poam_documents#set_baseline"
       patch :update_metadata
@@ -312,6 +328,9 @@ Rails.application.routes.draw do
       patch :set_baseline, to: "cdef_documents#set_baseline"
       patch :update_metadata
       patch :update_field
+      # #929 — re-point a CDEF's scope (boundary-specific <-> global) after
+      # upload; it could previously be set at create and by no route after.
+      patch :update_scope
       patch :update_statement
       patch :publish
       get :publish_check
@@ -685,6 +704,8 @@ Rails.application.routes.draw do
           post "bulk_apply_converter/confirm", action: :bulk_apply_converter_confirm, as: :bulk_apply_converter_confirm
           # #628 — populate an existing empty CDEF from a published profile.
           post :populate_from_profile
+          # #929 — re-point a CDEF's scope after upload (web parity).
+          patch :scope, action: :update_scope, as: :update_scope
           # #630/#634 — review/approval workflow.
           post :submit_for_review, to: "cdef_documents#submit_for_review"
           post :approve, to: "cdef_documents#approve"

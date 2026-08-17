@@ -9,6 +9,15 @@ class PoamDocument < ApplicationRecord
   include BoundaryLinkInheritance
 
   belongs_to :authorization_boundary, optional: true
+  # #952 — a system security plan, assessment plan, assessment result and POA&M
+  # are per-system by definition: they carry the implementation detail and the
+  # open weaknesses for ONE boundary. The association stays `optional: true` at
+  # the belongs_to so legacy rows load, and the rule is a validation so a row
+  # written before it can still be READ (and repaired via #929's attach flow)
+  # while no new one can be created. Evidence is deliberately exempt — it is
+  # leveraged and inherited across boundaries, so a boundary-less evidence
+  # record is a legitimate state.
+  validates :authorization_boundary, presence: true
 
   include BoundaryReferenceValidation
   belongs_to :ssp_document, optional: true   # #395 P2: link to remediation source

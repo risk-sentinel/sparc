@@ -9,7 +9,12 @@ class SarDocumentsController < ApplicationController
   include Publishable
   include OscalExportable
   include BoundaryScopedDocument
-  boundary_scoped SarDocument, read: "sar.read", write: "sar.write"
+  boundary_scoped SarDocument, read: "sar.read", write: "sar.write", global_fallback: false
+  # #929 — attach/re-point the boundary after upload. Deliberately absent from
+  # `ensure_editable!`: a published document with NO boundary is the case that
+  # most needs repairing, and the concern applies the draft bar to re-pointing
+  # only.
+  include BoundaryAttachable
 
   CONTROLS_PER_PAGE = 50
   NO_DESCRIPTION = "No description provided.".freeze
@@ -19,12 +24,13 @@ class SarDocumentsController < ApplicationController
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :validate_oscal_export,
     :edit_control, :status, :update_metadata, :enrich, :update_enrich,
-    :publish, :publish_check, :update_objective, :associate_source
+    :publish, :publish_check, :update_objective, :associate_source,
+    :attach_boundary
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective, :associate_source ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_excel, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :enrich, :edit_control, :status, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :create_from_ssp, :update, :update_enrich, :update_metadata, :associate_source, :update_objective, :publish, :destroy ]
+  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :create_from_ssp, :update, :update_enrich, :update_metadata, :associate_source, :update_objective, :publish, :destroy, :attach_boundary ]
 
   helper_method :filter_params
 
@@ -178,7 +184,10 @@ class SarDocumentsController < ApplicationController
 
   def create_from_profile
     profile = ProfileDocument.find_by!(slug: params[:source_profile_id])
-    document = SarFromProfileService.new(profile, name: params[:sar_name]).create
+    # #952 — see the SSP twin: the boundary comes from the form.
+    boundary = AuthorizationBoundary.find_by(id: params[:authorization_boundary_id])
+    document = SarFromProfileService.new(profile, name: params[:sar_name],
+                                         authorization_boundary: boundary).create
 
     audit_log("sar_document_created", subject: document,
       metadata: { name: document.name, creation_method: "profile", source_profile_id: profile.id })
@@ -191,6 +200,11 @@ class SarDocumentsController < ApplicationController
   rescue ActiveRecord::RecordNotFound
     flash[:error] = "Profile not found."
     redirect_to select_profile_sar_documents_path
+  rescue ActiveRecord::RecordInvalid => e
+    # #952 — most commonly a missing authorization boundary. Report it on the
+    # picker rather than 500ing.
+    flash[:error] = e.record.errors.full_messages.join(", ")
+    redirect_to select_profile_sar_documents_path
   end
 
   def select_ssp
@@ -200,6 +214,7 @@ class SarDocumentsController < ApplicationController
 
   def create_from_ssp
     ssp = SspDocument.find_by!(slug: params[:source_ssp_id])
+    # #952 — the boundary is inherited from the SSP being assessed.
     document = SarFromSspService.new(ssp, name: params[:sar_name]).create
 
     audit_log("sar_document_created", subject: document,
@@ -473,13 +488,17 @@ class SarDocumentsController < ApplicationController
   private
 
   def document_metadata_params
-    permitted = params.require(:sar_document).permit(:name, :sar_version, :oscal_version, :description)
+    # #929 — permitted by Api::V1 all along, but not here.
+    permitted = params.require(:sar_document).permit(:name, :sar_version, :oscal_version, :description,
+      :authorization_boundary_id)
     merge_metadata_extra(permitted, :sar_document)
   end
 
   def wizard_params
     params.permit(
       :name, :description, :sap_document_id,
+      # #952 — a SAR must belong to an authorization boundary.
+      :authorization_boundary_id,
       :assessment_start, :assessment_end
     )
   end

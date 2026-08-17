@@ -41,7 +41,7 @@ RSpec.describe "Admin::AuditLogs", type: :request do
     it "filters by category" do
       AuditEvent.log(user: admin, action: "login_success", ip_address: "127.0.0.1")
       AuditEvent.log(user: admin, action: "ssp_document_created", ip_address: "127.0.0.1",
-                     subject: SspDocument.create!(name: "test", status: "pending"))
+                     subject: create(:ssp_document, name: "test", status: "pending"))
 
       get admin_audit_logs_path, params: { category: "Authentication" }
       expect(response).to have_http_status(:ok)

@@ -3,6 +3,9 @@
 require "rails_helper"
 
 RSpec.describe SspFromProfileService do
+  # #952 — a profile belongs to no system, so the generator takes the
+  # boundary from its caller. Without one the document cannot be saved.
+  let(:boundary) { create(:authorization_boundary) }
   let(:resolved_catalog_json) do
     {
       "catalog" => {
@@ -79,7 +82,7 @@ RSpec.describe SspFromProfileService do
 
   describe "#create" do
     it "creates an SspDocument with correct attributes" do
-      ssp = described_class.new(profile, name: "Test SSP").create
+      ssp = described_class.new(profile, name: "Test SSP", authorization_boundary: boundary).create
 
       expect(ssp).to be_persisted
       expect(ssp.name).to eq("Test SSP")
@@ -91,25 +94,25 @@ RSpec.describe SspFromProfileService do
     end
 
     it "uses default name when none provided" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       expect(ssp.name).to eq("SSP from #{profile.name}")
     end
 
     it "sets profile_document_id to the source profile" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       expect(ssp.profile_document_id).to eq(profile.id)
     end
 
     it "creates the correct number of SspControls" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       expect(ssp.ssp_controls.count).to eq(3)
     end
 
     it "creates controls with correct control_ids and titles" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = ssp.ssp_controls.find_by(control_id: "ac-1")
       expect(ac1).to be_present
@@ -120,7 +123,7 @@ RSpec.describe SspFromProfileService do
     end
 
     it "extracts stated_requirement from statement prose" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = ssp.ssp_controls.find_by(control_id: "ac-1")
       field = ac1.ssp_control_fields.find_by(field_name: "stated_requirement")
@@ -128,7 +131,7 @@ RSpec.describe SspFromProfileService do
     end
 
     it "extracts description from guidance prose" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = ssp.ssp_controls.find_by(control_id: "ac-1")
       field = ac1.ssp_control_fields.find_by(field_name: "description")
@@ -136,7 +139,7 @@ RSpec.describe SspFromProfileService do
     end
 
     it "creates editable placeholder fields with default status Deferred" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = ssp.ssp_controls.find_by(control_id: "ac-1")
       status = ac1.ssp_control_fields.find_by(field_name: "status")
@@ -144,7 +147,7 @@ RSpec.describe SspFromProfileService do
     end
 
     it "creates empty editable placeholder fields for implementation" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = ssp.ssp_controls.find_by(control_id: "ac-1")
       %w[control_type responsible_entities implementation_statement implementation_summary notes].each do |field_name|
@@ -155,7 +158,7 @@ RSpec.describe SspFromProfileService do
     end
 
     it "creates a this-system SspComponent" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       component = ssp.ssp_components.find_by(component_type: "this-system")
       expect(component).to be_present
@@ -164,7 +167,7 @@ RSpec.describe SspFromProfileService do
     end
 
     it "creates a default SspInformationType" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       expect(ssp.ssp_information_types.count).to eq(1)
       info_type = ssp.ssp_information_types.first
@@ -173,7 +176,7 @@ RSpec.describe SspFromProfileService do
     end
 
     it "creates a default SspUser" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       expect(ssp.ssp_users.count).to eq(1)
       user = ssp.ssp_users.first
@@ -182,7 +185,7 @@ RSpec.describe SspFromProfileService do
     end
 
     it "creates SspByComponent records linking controls to this-system" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       by_components = SspByComponent.joins(:ssp_control)
                                     .where(ssp_controls: { ssp_document_id: ssp.id })
@@ -191,7 +194,7 @@ RSpec.describe SspFromProfileService do
     end
 
     it "stores import_metadata with source profile info" do
-      ssp = described_class.new(profile).create
+      ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       expect(ssp.import_metadata["source_type"]).to eq("profile")
       expect(ssp.import_metadata["source_profile_id"]).to eq(profile.id)
@@ -209,7 +212,7 @@ RSpec.describe SspFromProfileService do
       end
 
       it "creates a statement for each control that has a catalog statement" do
-        ssp = described_class.new(profile).create
+        ssp = described_class.new(profile, authorization_boundary: boundary).create
 
         expect(statements_for(ssp).pluck(:statement_id))
           .to contain_exactly("ac-1_smt", "ac-2_smt", "sc-1_smt")
@@ -225,7 +228,7 @@ RSpec.describe SspFromProfileService do
                                            resolved_catalog_json: catalog,
                                            published: Time.current.iso8601)
 
-        ssp = described_class.new(silent).create
+        ssp = described_class.new(silent, authorization_boundary: boundary).create
 
         expect(statements_for(ssp).pluck(:statement_id)).to contain_exactly("ac-1_smt", "sc-1_smt")
         expect(ssp.ssp_controls.count).to eq(3)
@@ -237,7 +240,7 @@ RSpec.describe SspFromProfileService do
       # it they pass vacuously when no statement is created at all, which is
       # exactly the bug they exist to catch.
       it "derives the statement uuid from the control uuid" do
-        ssp = described_class.new(profile).create
+        ssp = described_class.new(profile, authorization_boundary: boundary).create
 
         statements = statements_for(ssp).to_a
         expect(statements.size).to eq(3)
@@ -249,7 +252,7 @@ RSpec.describe SspFromProfileService do
       end
 
       it "leaves implementation_prose blank — the author has written none yet" do
-        ssp = described_class.new(profile).create
+        ssp = described_class.new(profile, authorization_boundary: boundary).create
 
         prose = statements_for(ssp).pluck(:implementation_prose)
         expect(prose.size).to eq(3)
@@ -259,7 +262,7 @@ RSpec.describe SspFromProfileService do
       # Tagging is a system owner declaring a customer responsibility matrix.
       # Generating the tags would fabricate a CRM nobody authored.
       it "tags no statement provided or responsibility" do
-        ssp = described_class.new(profile).create
+        ssp = described_class.new(profile, authorization_boundary: boundary).create
 
         tags = statements_for(ssp).pluck(:set_parameters_data)
         expect(tags.size).to eq(3)
@@ -267,8 +270,8 @@ RSpec.describe SspFromProfileService do
       end
 
       it "makes the SSP leverageable once a statement is tagged provided" do
-        leveraged = described_class.new(profile, name: "Leveraged").create
-        leveraging = described_class.new(profile, name: "Leveraging").create
+        leveraged = described_class.new(profile, name: "Leveraged", authorization_boundary: boundary).create
+        leveraging = described_class.new(profile, name: "Leveraging", authorization_boundary: boundary).create
         b1 = create(:authorization_boundary)
         b2 = create(:authorization_boundary)
         leveraged.update!(authorization_boundary_id: b1.id)
@@ -307,7 +310,7 @@ RSpec.describe SspFromProfileService do
     it "imports controls into an existing empty SSP" do
       ssp = create(:ssp_document, name: "My Shell")
 
-      result = described_class.new(profile).populate(ssp)
+      result = described_class.new(profile, authorization_boundary: boundary).populate(ssp)
 
       expect(result).to eq(ssp)
       expect(ssp.reload.ssp_controls.count).to be > 0
@@ -317,7 +320,7 @@ RSpec.describe SspFromProfileService do
     it "links the profile and scaffolds the this-system component" do
       ssp = create(:ssp_document)
 
-      described_class.new(profile).populate(ssp)
+      described_class.new(profile, authorization_boundary: boundary).populate(ssp)
 
       expect(ssp.reload.profile_document_id).to eq(profile.id)
       expect(ssp.ssp_components.find_by(component_type: "this-system")).to be_present
@@ -327,7 +330,7 @@ RSpec.describe SspFromProfileService do
       ssp = create(:ssp_document, system_id: "SYS-1")
       expect(ssp.content_complete?).to be(false)
 
-      described_class.new(profile).populate(ssp)
+      described_class.new(profile, authorization_boundary: boundary).populate(ssp)
 
       expect(ssp.reload.content_complete?).to be(true)
     end
@@ -337,7 +340,7 @@ RSpec.describe SspFromProfileService do
       create(:ssp_control, ssp_document: ssp)
 
       expect {
-        described_class.new(profile).populate(ssp)
+        described_class.new(profile, authorization_boundary: boundary).populate(ssp)
       }.to raise_error(ArgumentError, /already has controls/)
     end
 
