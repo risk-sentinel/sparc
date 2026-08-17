@@ -676,7 +676,7 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 9 | N — Document model — reachable references | #941 #942 #944 #945 #946 #957 **#963** | **Shipped** (PR #964) |
 | 10 | #939 — pulled forward, on its own | #939 **#967** **#970** | **Shipped** (PR #969) |
 | 11 | O — Boundary attachment | #929 #952 | **Shipped** (PR #975) |
-| 12 | **S — Controls layer: who can see it, and what it carries** | **#974 #959 #935** | **IN PROGRESS** (branch `feature/974_controls_layer_access`; phases 1–3 of 5 committed) |
+| 12 | **S — Controls layer: who can see it, and what it carries** | **#974 #959 #935** | **IN PR** (branch `feature/974_controls_layer_access`) |
 | 13 | P — Evidence completeness | #947 #948 | Queued |
 | 14 | Q — Polish | #936 | Queued |
 | 15 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
@@ -791,12 +791,21 @@ Three issues that all land on the same controllers, views and export builder. Se
 | 1 | #974 — `public_controls_read` declaration + structural spec + both-posture request specs | **Committed** `b5a48012` |
 | 2 | #959 — export carries only referenced back-matter + reference-integrity invariant + advisory report | **Committed** `0772f826` |
 | 3 | #974 — Converters index/show, Controls-layer downloads under the flag, nav consistency | **Committed** `f96d4bb7` |
-| 4 | #935 — `framework` derived at import + facet on catalogs and baselines | Next |
-| 5 | Docs, compliance, wiki, both-posture Playwright | Pending |
+| 3b | #974 — rate-limit the newly-anonymous Controls downloads | **Committed** `23a0b541` |
+| 4 | #935 — `framework` derived at import + facet on catalogs and baselines | **Committed** `4db8948c` |
+| 5 | Docs, compliance, wiki, both-posture Playwright | **Committed** |
 
-Suite at phase 3: **5341 examples, 0 failures, 10 pending**; rubocop, brakeman and zeitwerk clean; **11 mutations RED** across the three phases.
+Suite at phase 4: **5365 examples, 0 failures, 10 pending**; rubocop, brakeman and zeitwerk clean; **20 mutations RED** across the bundle.
 
 **Two findings from phase 1 worth carrying forward.** The structural spec immediately caught that `api/v1/sessions` needed an explicit allowlist entry and that one allowlist entry was stale. And two mutations did NOT bite on the first round: the flag-on helper broke out on a login redirect and reported "status < 400", passing against a gate that never opens, and the macro's write-refusal guard had no test at all. Both are fixed and all four now bite — the same vacuous-test shape the #919 spec hit, which is why that file's history is cited in the new one.
+
+**Both postures were proven in a real browser, twice.** `tests/ui-smoke/test_public_controls_974.py` declares the posture via `SPARC_SMOKE_PUBLIC_CATALOGS` and independently confirms it against the app, failing loudly when the two disagree or nothing is declared — verified by running it with the wrong posture and with none, which produced errors rather than skips (#885's lesson). Full suite, same image, container recreated between runs: **flag OFF 452 passed / 1 failed / 29 skipped**, **flag ON 453 passed / 0 failed / 29 skipped**.
+
+**The one failure was a HARNESS bug, not a product one, and it is worth remembering why.** `test_index_filters_908` asserted `"framework=FedRAMP 20x" in url` against a URL reading `framework=FedRAMP+20x`. The filter worked; the assertion compared a raw value against an encoded query. Every facet value that file had ever seen was single-token (`OSCAL`, `1.1.2`, `published`), so the encoding path was never exercised — **`framework` is the first facet value in the product containing a space**. Fixed by parsing the query rather than by reordering the facet to dodge the first-dropdown position, which would have been gaming the test.
+
+**Phase 3 turned up a real availability gap, found by driving the app rather than reading the diff.** With the flag on, the catalog download that is now anonymous measured **24 seconds and 2.97 MB** (16s of it GC), and every existing Rack::Attack bucket covered writes, uploads or credentials — nothing throttled anonymous GETs. Owner directed the fix land in-bundle, so `controls/downloads/5min/ip` was added with a new documented env var, scoped to `download_*` only because throttling the screens would make a published catalog unbrowsable.
+
+**#935's derivation was proven on real data, not fixtures.** After the backfill, the live estate reads: the two NIST catalogs → `NIST SP 800-53`, FedRAMP KSI → `FedRAMP 20x`, and `Demo LOW Baseline` → `NIST SP 800-53` **through catalog lineage**, which is exactly the case the owner described — a baseline whose own name says nothing still resolves through the catalog it descends from.
 
 **Phase 2 was narrower than it looked.** Only the authoritative branch is scoped: evidence-derived back-matter is `source: "managed"` with `resourceable: doc` and flows through `managed_resources`, untouched. The #845 estate's thirteen policy resources per SSP are of that kind and are unaffected — verified against the committed artifacts rather than assumed.
 

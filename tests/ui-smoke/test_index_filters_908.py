@@ -22,6 +22,8 @@ Requires SPARC_SMOKE_SA_TOKEN; skipped otherwise. Run both browsers:
 
 from __future__ import annotations
 
+from urllib.parse import parse_qs, urlparse
+
 import pytest
 
 from helpers import csp_violations, record_csp
@@ -101,8 +103,16 @@ def test_filter_preserves_per_page_and_search(authed_page, name, path):
     param, value = applied
 
     url = authed_page.url
-    assert f"{param}={value}" in url, (
-        f"{name}: the selected filter did not reach the URL. URL: {url}"
+    # Compare against the DECODED query rather than the raw URL. A value
+    # containing a space arrives as `framework=FedRAMP+20x`, so a raw substring
+    # check fails on a filter that is working perfectly. Every facet value this
+    # file saw before #935 happened to be single-token ("OSCAL", "1.1.2",
+    # "published"), which is why the encoding was never exercised — the
+    # framework facet is the first with a space in it.
+    applied_params = parse_qs(urlparse(url).query)
+    assert value in applied_params.get(param, []), (
+        f"{name}: the selected filter did not reach the URL. "
+        f"looked for {param}={value!r}; URL: {url}"
     )
     assert "per_page=50" in url, (
         f"{name}: filtering dropped per_page — the user's page size was reset. URL: {url}"

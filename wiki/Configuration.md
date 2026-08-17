@@ -104,7 +104,7 @@ All auth features default to **disabled**. Enable one or more to activate `/logi
 | `SPARC_ENABLE_USER_REGISTRATION` | `false` | Allow self-service registration (usually `false` in prod) |
 | `SPARC_SESSION_TIMEOUT_MINUTES` | `60` | Session inactivity timeout (minutes) |
 | `SPARC_ADMIN_EMAIL` | `admin@sparc.local` | Email for the bootstrapped admin account |
-| `SPARC_PUBLIC_CATALOGS` | `false` | Make the Controls layer (catalogs, baselines, mappings) publicly readable without signing in. Secure-by-default off; enable only when SPARC is fronted by your own network auth (e.g. VPN) |
+| `SPARC_PUBLIC_CATALOGS` | `false` | Make the Controls layer publicly readable without signing in — control catalogs (and their families and controls), baselines, mappings, component definitions, converters, and the OSCAL downloads for each. **Read only**, and the web UI only: no write, no converter export or refresh, and `/api/v1` still requires a Bearer token. Boundary documents (SSP, SAP, SAR, POA&M, evidence) are never public. Secure-by-default off; enable only when SPARC is fronted by your own network auth (e.g. VPN) |
 
 > **Admin password rotation** is an operational concern managed via your secrets manager (AWS Secrets Manager on ECS), not a value you set as consumer config. See the deployment/rotation docs.
 

@@ -63,6 +63,26 @@ flowchart LR
 5. Save. Open the catalog to see its **control families**, each listing its
    controls.
 
+### How to filter by framework
+
+Catalog and baseline lists offer a **Framework** filter (for example *NIST SP
+800-53* or *FedRAMP 20x*). The value is worked out when the document is
+imported and stored on the record, so filtering is instant and does not depend
+on how a title happens to be worded.
+
+SPARC decides it from the strongest available signal, in order: an explicit
+source on the catalog, then the shape of the control identifiers (`ksi-auth-01`
+is a FedRAMP 20x indicator, `ac-2` an 800-53 family), then the title, then the
+filename. A baseline inherits from the catalog it was built from, so a baseline
+named simply *Demo LOW Baseline* still filters correctly.
+
+When nothing identifies the framework clearly, SPARC leaves it **unspecified**
+rather than guessing — a wrong framework label on a compliance artifact is worse
+than no label. If a document shows as unspecified and you know what it is, set
+the value on the record and SPARC will not overwrite it on a later import.
+
+---
+
 ### How to import a catalog
 
 1. From the catalog list, click **Import** (`/control_catalogs/import`).
