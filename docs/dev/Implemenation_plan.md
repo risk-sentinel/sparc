@@ -795,9 +795,15 @@ Three issues that all land on the same controllers, views and export builder. Se
 | 4 | #935 — `framework` derived at import + facet on catalogs and baselines | **Committed** `4db8948c` |
 | 5 | Docs, compliance, wiki, both-posture Playwright | **Committed** |
 
-Suite at phase 4: **5365 examples, 0 failures, 10 pending**; rubocop, brakeman and zeitwerk clean; **20 mutations RED** across the bundle.
+Suite after the nav work: **5372 examples, 0 failures, 10 pending**; rubocop, brakeman and zeitwerk clean; **20 mutations RED** across the bundle.
 
 **Two findings from phase 1 worth carrying forward.** The structural spec immediately caught that `api/v1/sessions` needed an explicit allowlist entry and that one allowlist entry was stale. And two mutations did NOT bite on the first round: the flag-on helper broke out on a login redirect and reported "status < 400", passing against a gate that never opens, and the macro's write-refusal guard had no test at all. Both are fixed and all four now bite — the same vacuous-test shape the #919 spec hit, which is why that file's history is cited in the new one.
+
+**A navigation defect was found during owner testing and fixed in-bundle.** With the flag on, the SIGN-IN page offered no route to component definitions or converters — and that is where an anonymous visitor lands, because `/` redirects there. The cause was not a missing entry: **the header banner was two hand-maintained copies**. Only `environment_header` and `controls_nav` had ever been extracted; the nav shell, brand, About, Resources and theme toggle were duplicated across `layouts/application` and `layouts/login`, and the Implementation/Assessment/Enterprise dropdowns existed in `application` alone. The copies had **already drifted** (the About link carried different classes in each), and `_controls_nav` even carries the comment "Shared by the application and login layouts so they can't drift" — the same lesson learned once and applied to one dropdown out of five.
+
+Mirroring the entry would have made a third copy. Instead the banner is now ONE partial, `shared/_main_nav.html.erb`, rendered by both layouts (371→116 and 266→222 lines). Extracting it exposed two more entries advertised to people who cannot open them: **Home** and **OSCAL overview** both 302 anonymously and are now signed-in only. A spec pins parity, reachability, and the structural rule that any layout with a navbar must render the shared partial.
+
+**OWNER HARD RULE, recorded 2026-08-17: NO NAVIGATION CHANGES WITHOUT APPROVAL.** SPARC's menus follow the NIST layers and a link must be findable in the same place every time. Placement never varies; only visibility does.
 
 **Both postures were proven in a real browser, twice.** `tests/ui-smoke/test_public_controls_974.py` declares the posture via `SPARC_SMOKE_PUBLIC_CATALOGS` and independently confirms it against the app, failing loudly when the two disagree or nothing is declared — verified by running it with the wrong posture and with none, which produced errors rather than skips (#885's lesson). Full suite, same image, container recreated between runs: **flag OFF 452 passed / 1 failed / 29 skipped**, **flag ON 453 passed / 0 failed / 29 skipped**.
 
