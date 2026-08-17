@@ -31,7 +31,11 @@ class SarDocumentsController < ApplicationController
   def index
     scope = boundary_scoped_relation(SarDocument).order(created_at: :desc)
     @total_count = scope.count
-    @controls_count = SarControl.count
+    # #967 — see ssp_documents_controller. Counting the child table directly
+    # ignores both the SoftDeletable default scope and the boundary scope the
+    # neighbouring tile uses. This one measured 0 inflation only because the
+    # soft-deleted SARs on that instance happened to carry no controls.
+    @controls_count = SarControl.where(sar_document_id: scope.reorder(nil).select(:id)).count
     @completed_count = scope.where(status: "completed").count
 
     # #672 — filter listed rows; the tiles above keep showing totals.

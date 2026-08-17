@@ -48,7 +48,8 @@ class ProfileDocumentsController < ApplicationController
   def index
     scope = ProfileDocument.order(created_at: :desc)
     @total_count = scope.count
-    @controls_count = ProfileControl.count
+    # #967 — see ssp_documents_controller. Measured +10 on a demo instance.
+    @controls_count = ProfileControl.where(profile_document_id: scope.reorder(nil).select(:id)).count
     @completed_count = scope.where(status: "completed").count
 
     # #672 search + #908 facets, both through the shared query object so this
