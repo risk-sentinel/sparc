@@ -676,7 +676,7 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 9 | N — Document model — reachable references | #941 #942 #944 #945 #946 #957 **#963** | **Shipped** (PR #964) |
 | 10 | #939 — pulled forward, on its own | #939 **#967** **#970** | **Shipped** (PR #969) |
 | 11 | O — Boundary attachment | #929 #952 | **Shipped** (PR #975) |
-| 12 | **S — Controls layer: who can see it, and what it carries** | **#974 #959 #935** | **NEXT** |
+| 12 | **S — Controls layer: who can see it, and what it carries** | **#974 #959 #935** | **IN PROGRESS** (branch `feature/974_controls_layer_access`; phases 1–2 of 5 committed) |
 | 13 | P — Evidence completeness | #947 #948 | Queued |
 | 14 | Q — Polish | #936 | Queued |
 | 15 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
@@ -780,9 +780,25 @@ upstream schema gap should surface as an error rather than be retried into silen
 | **#929** | ~~A document cannot be attached to a boundary after upload — the "Add…" tile leads nowhere~~ — **MERGED (PR #975)** | **Bundle O, and #952 depends on it landing first.** Same inversion as #928 and affects **all five** document types: the boundary can be set at upload but never after (`document_metadata_params` omits `authorization_boundary_id`), while the API permits it. Aggravated by the upload picker listing only boundaries the user is a member of, so the one chance to set it may not include the right one. Re-association must authorize against the **target** boundary — coordinate with #919. |
 | **#952** | ~~SSP/SAP/SAR/POA&M can exist with no boundary and are then visible to every signed-in user~~ — **MERGED (PR #975)** | **Bundle O, and it must follow #929 — tightly coupled.** A **data affiliation** problem, not a controller one: `boundary_scoped_relation` matches `boundary_ids + [nil]` and `authorize_document_read!` returns early on a nil boundary ("global -> open to all"), which is right for a genuinely instance-wide record and wrong for these four types. Measured on a demo instance at filing: 1 of 2 SSPs and 1 of 2 SARs. **Re-measured when the work started it was 1 of 2 SSPs and 2 of 2 SARs** — the seed links only `SspDocument.first`/`SarDocument.first` and had not re-run since Bundle N rebuilt the estate, so **the seed itself creates them**. **Evidence is deliberately exempt** — it can be leveraged/inherited across boundaries, so boundary-less evidence is legitimate. CDEFs are out of scope: a CDEF is generic, stating a control *can* be satisfied rather than how it is implemented here (provider capability, e.g. MFA → Okta, being the exception). #929 is the prerequisite: `document_metadata_params` permits only name/version/oscal_version/description, so the boundary can be set at upload and **never after** — requiring it without #929 leaves every orphan permanently invalid and unfixable. Cost is in the fixtures, not the validation: **no** SSP/SAP/SAR/POA&M factory set a boundary, across **~390 call sites in ~150 spec files** (368 was the estimate at filing); seeds fixed and `SeedRunner::CURRENT_VERSIONS` bumped. **What the estimate missed:** the presence validation exposed that four generator services minted boundary-less documents outright — 161 of the 188 initial failures, one cause. |
 
-##### 12. Bundle S — Controls layer: who can see it, and what it carries  ·  **NEXT**
+##### 12. Bundle S — Controls layer: who can see it, and what it carries  ·  **IN PROGRESS**
 
 Three issues that all land on the same controllers, views and export builder. Sequenced together at owner direction (2026-08-17) because **nothing releases until v1.16.0 is tagged**, so there is no incremental-delivery reason to split the security fix out, and one branch avoids three rounds of conflicts in the same files.
+
+**Progress on `feature/974_controls_layer_access`** — one commit per phase, one PR.
+
+| Phase | Scope | State |
+| --- | --- | --- |
+| 1 | #974 — `public_controls_read` declaration + structural spec + both-posture request specs | **Committed** `b5a48012` |
+| 2 | #959 — export carries only referenced back-matter + reference-integrity invariant + advisory report | **Committed** `0772f826` |
+| 3 | #974 — Converters index/show, and Controls-layer downloads under the flag | Next |
+| 4 | #935 — `framework` derived at import + facet on catalogs and baselines | Pending |
+| 5 | Docs, compliance, wiki, both-posture Playwright | Pending |
+
+Suite at phase 2: **5335 examples, 0 failures, 10 pending**; rubocop, brakeman and zeitwerk clean; 7 mutations RED across the two phases.
+
+**Two findings from phase 1 worth carrying forward.** The structural spec immediately caught that `api/v1/sessions` needed an explicit allowlist entry and that one allowlist entry was stale. And two mutations did NOT bite on the first round: the flag-on helper broke out on a login redirect and reported "status < 400", passing against a gate that never opens, and the macro's write-refusal guard had no test at all. Both are fixed and all four now bite — the same vacuous-test shape the #919 spec hit, which is why that file's history is cited in the new one.
+
+**Phase 2 was narrower than it looked.** Only the authoritative branch is scoped: evidence-derived back-matter is `source: "managed"` with `resourceable: doc` and flows through `managed_resources`, untouched. The #845 estate's thirteen policy resources per SSP are of that kind and are unaffected — verified against the committed artifacts rather than assumed.
 
 **#974 is a live exposure**, filed 2026-08-17 while answering a question about CDEF default scope. `CdefDocumentsController` and `ControlFamiliesController` carry a bare `skip_before_action :require_authentication` with **no** `require_authentication_unless_public_controls` companion, unlike catalogs, catalog controls, mappings and profiles. The pairing is a two-line convention repeated per controller, so omitting the second line is silent — nothing fails, the screen simply becomes public.
 
