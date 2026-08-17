@@ -42,7 +42,7 @@ RSpec.describe "Attaching a document to an authorization boundary (#929)", type:
         grant_permission(user, spec[:key], authorization_boundary: target)
         sign_in_as(user)
 
-        document = create(spec[:factory], authorization_boundary: nil)
+        document = create_legacy_orphan(spec[:factory])
 
         patch spec[:path].call(document),
               params: { authorization_boundary_id: target.id }
@@ -56,7 +56,7 @@ RSpec.describe "Attaching a document to an authorization boundary (#929)", type:
       user = create(:user)
       grant_permission(user, "ssp.write", authorization_boundary: target)
       sign_in_as(user)
-      document = create(:ssp_document, authorization_boundary: nil)
+      document = create_legacy_orphan(:ssp_document)
 
       expect {
         patch "/ssp_documents/#{document.slug}/attach_boundary",
@@ -72,7 +72,7 @@ RSpec.describe "Attaching a document to an authorization boundary (#929)", type:
       user = create(:user)
       grant_permission(user, "ssp.write", authorization_boundary: target)
       sign_in_as(user)
-      document = create(:ssp_document, authorization_boundary: nil, lifecycle_status: "published")
+      document = create_legacy_orphan(:ssp_document, lifecycle_status: "published")
 
       patch "/ssp_documents/#{document.slug}/attach_boundary",
             params: { authorization_boundary_id: target.id }
@@ -84,7 +84,7 @@ RSpec.describe "Attaching a document to an authorization boundary (#929)", type:
       user = create(:user)
       grant_permission(user, "ssp.write", authorization_boundary: target)
       sign_in_as(user)
-      document = create(:ssp_document, authorization_boundary: nil)
+      document = create_legacy_orphan(:ssp_document)
 
       patch "/ssp_documents/#{document.slug}/attach_boundary",
             params: { authorization_boundary_id: target.id, return_to: "boundary" }
@@ -116,7 +116,7 @@ RSpec.describe "Attaching a document to an authorization boundary (#929)", type:
       user = create(:user)
       grant_permission(user, "ssp.write", authorization_boundary: other)
       sign_in_as(user)
-      document = create(:ssp_document, authorization_boundary: nil)
+      document = create_legacy_orphan(:ssp_document)
 
       patch "/ssp_documents/#{document.slug}/attach_boundary",
             params: { authorization_boundary_id: target.id }
@@ -135,7 +135,7 @@ RSpec.describe "Attaching a document to an authorization boundary (#929)", type:
       user = create(:user)
       grant_permission(user, "ssp.write", authorization_boundary: target)
       sign_in_as(user)
-      orphan = create(:ssp_document, authorization_boundary: nil)
+      orphan = create_legacy_orphan(:ssp_document)
 
       delete "/ssp_documents/#{orphan.slug}?authorization_boundary_id=#{target.id}"
 
@@ -183,7 +183,7 @@ RSpec.describe "Attaching a document to an authorization boundary (#929)", type:
     before { sign_in_as(user) }
 
     it "reports a missing boundary id instead of silently doing nothing" do
-      document = create(:ssp_document, authorization_boundary: nil)
+      document = create_legacy_orphan(:ssp_document)
 
       patch "/ssp_documents/#{document.slug}/attach_boundary", params: {}
 
@@ -196,7 +196,7 @@ RSpec.describe "Attaching a document to an authorization boundary (#929)", type:
     # action's own existence check is reached. The `find_by` nil guard in
     # BoundaryAttachable stays as defence in depth for the no-auth instance.
     it "refuses a boundary id that does not exist, and writes nothing" do
-      document = create(:ssp_document, authorization_boundary: nil)
+      document = create_legacy_orphan(:ssp_document)
       missing_id = AuthorizationBoundary.maximum(:id).to_i + 1000
 
       patch "/ssp_documents/#{document.slug}/attach_boundary",
@@ -208,7 +208,7 @@ RSpec.describe "Attaching a document to an authorization boundary (#929)", type:
 
     it "reports a vanished boundary on an instance with no auth configured" do
       allow(SparcConfig).to receive(:any_auth_enabled?).and_return(false)
-      document = create(:ssp_document, authorization_boundary: nil)
+      document = create_legacy_orphan(:ssp_document)
       missing_id = AuthorizationBoundary.maximum(:id).to_i + 1000
 
       patch "/ssp_documents/#{document.slug}/attach_boundary",
@@ -224,7 +224,7 @@ RSpec.describe "Attaching a document to an authorization boundary (#929)", type:
       user = create(:user)
       grant_permission(user, "ssp.write", authorization_boundary: target)
       sign_in_as(user)
-      document = create(:ssp_document, authorization_boundary: nil)
+      document = create_legacy_orphan(:ssp_document)
 
       patch "/ssp_documents/#{document.slug}/update_metadata",
             params: { ssp_document: { authorization_boundary_id: target.id } }
@@ -251,7 +251,7 @@ RSpec.describe "Attaching a document to an authorization boundary (#929)", type:
     before { sign_in_as(admin) }
 
     it "leads to a screen that lists boundary-less documents of that type" do
-      orphan   = create(:ssp_document, authorization_boundary: nil, name: "Unattached Plan")
+      orphan   = create_legacy_orphan(:ssp_document, name: "Unattached Plan")
       attached = create(:ssp_document, authorization_boundary: other, name: "Already Attached Plan")
 
       get attach_document_authorization_boundary_path(target, type: "ssp")
@@ -279,7 +279,7 @@ RSpec.describe "Attaching a document to an authorization boundary (#929)", type:
 
     it "shows a non-admin no orphans — they are Instance-Admin-only under #952" do
       sign_in_as(create(:user))
-      orphan = create(:ssp_document, authorization_boundary: nil, name: "Unattached Plan")
+      orphan = create_legacy_orphan(:ssp_document, name: "Unattached Plan")
 
       get attach_document_authorization_boundary_path(target, type: "ssp")
 

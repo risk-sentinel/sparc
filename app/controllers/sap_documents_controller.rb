@@ -9,7 +9,7 @@ class SapDocumentsController < ApplicationController
   include Publishable
   include OscalExportable
   include BoundaryScopedDocument
-  boundary_scoped SapDocument, read: "sap.read", write: "sap.write"
+  boundary_scoped SapDocument, read: "sap.read", write: "sap.write", global_fallback: false
   # #929 — attach/re-point the boundary after upload. Deliberately absent from
   # `ensure_editable!`: a published document with NO boundary is the case that
   # most needs repairing, and the concern applies the draft bar to re-pointing
@@ -497,6 +497,9 @@ class SapDocumentsController < ApplicationController
     wizard_params = params.require(:sap_document).permit(
       :name, :ssp_document_id, :profile_document_id,
       :assessment_type, :assessment_start, :assessment_end, :description,
+      # #952 — the wizard can now say which boundary the plan is for; when it
+      # does not, SapGeneratorService inherits the SSP's.
+      :authorization_boundary_id,
       control_ids: [], assessment_methods: {}
     )
 
@@ -515,7 +518,10 @@ class SapDocumentsController < ApplicationController
         assessment_end: wizard_params[:assessment_end],
         description: wizard_params[:description],
         selected_control_ids: wizard_params[:control_ids]&.reject(&:blank?),
-        assessment_methods: wizard_params[:assessment_methods]&.to_unsafe_h
+        assessment_methods: wizard_params[:assessment_methods]&.to_unsafe_h,
+        # #952 — inherited from the SSP being planned against; the wizard's own
+        # picker wins when one was chosen.
+        authorization_boundary: AuthorizationBoundary.find_by(id: wizard_params[:authorization_boundary_id])
       ).generate
 
       audit_log("sap_document_created", subject: sap, metadata: { name: sap.name, creation_method: "wizard" })

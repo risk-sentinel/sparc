@@ -364,36 +364,30 @@ class ReferenceEstateBuilder
     profile
   end
 
-  # SspFromProfileService does NOT set authorization_boundary_id, and an SSP
-  # with a nil boundary is treated as instance-wide and shown to every signed-in
-  # user (#952). The builder must set it.
+  # #952 — the generator now takes the boundary, so the document is valid the
+  # moment it is created. This used to create the SSP and repair it afterwards,
+  # which a presence validation would refuse.
   def build_ssp(profile, boundary, label)
     name = "#{label} — SSP"
     existing = SspDocument.find_by(name: name)
     return existing if existing
 
-    ssp = SspFromProfileService.new(profile, name: name).create
-    ssp.update!(authorization_boundary_id: boundary.id)
-    ssp
+    SspFromProfileService.new(profile, name: name, authorization_boundary: boundary).create
   end
 
-  # Like the SSP, the generator does not attach the document to a boundary,
-  # and a nil boundary is treated as instance-wide and shown to every
-  # signed-in user (#952). It also makes the document invisible to
-  # HdfAggregationService, which reads `boundary.sap_document` and silently
-  # annotates nothing when it is nil.
+  # #952 — the boundary is passed in. Beyond visibility, a boundary-less SAP is
+  # invisible to HdfAggregationService, which reads `boundary.sap_document` and
+  # silently annotates nothing when it is nil.
   def build_sap(ssp, profile, boundary, label)
     name = "#{label} — SAP"
-    sap  = SapDocument.find_by(name: name) ||
-           SapGeneratorService.new(name: name,
-                                   ssp_document:     ssp,
-                                   profile_document: profile,
-                                   assessment_type:  "initial",
-                                   assessment_start: PINNED_ASSESSMENT[:start],
-                                   assessment_end:   PINNED_ASSESSMENT[:end]).generate
-
-    sap&.update!(authorization_boundary_id: boundary.id) if sap && sap.authorization_boundary_id != boundary.id
-    sap
+    SapDocument.find_by(name: name) ||
+      SapGeneratorService.new(name: name,
+                              ssp_document:     ssp,
+                              profile_document: profile,
+                              assessment_type:  "initial",
+                              assessment_start: PINNED_ASSESSMENT[:start],
+                              assessment_end:   PINNED_ASSESSMENT[:end],
+                              authorization_boundary: boundary).generate
   end
 
   # The pinned deadline is the point: left nil, PoamGeneratorService resolves
@@ -401,12 +395,10 @@ class ReferenceEstateBuilder
   # regeneration of the committed OSCAL would differ.
   def build_sar(ssp, boundary, label, satisfied_control_ids)
     name = "#{label} — SAR"
-    sar  = SarDocument.find_by(name: name) ||
-           SarFromSspService.new(ssp, name: name, deadline: PINNED_DEADLINE,
-                                      satisfied_control_ids: satisfied_control_ids).create
-
-    sar.update!(authorization_boundary_id: boundary.id) if sar.authorization_boundary_id != boundary.id
-    sar
+    SarDocument.find_by(name: name) ||
+      SarFromSspService.new(ssp, name: name, deadline: PINNED_DEADLINE,
+                                 satisfied_control_ids: satisfied_control_ids,
+                                 authorization_boundary: boundary).create
   end
 
   # Three POA&Ms with genuinely different postures, so screens that filter or

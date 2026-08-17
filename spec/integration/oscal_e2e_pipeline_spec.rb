@@ -21,6 +21,8 @@ require "rails_helper"
 # It is imported ONCE for the whole file, in before(:context). Transactional
 # fixtures do NOT wrap before(:context), so it is torn down explicitly.
 RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
+  # #952 — SSP/SAP/SAR must belong to an authorization boundary.
+  let(:pipeline_boundary) { create(:authorization_boundary) }
   CATALOG_FIXTURE = Rails.root.join(
     "spec/fixtures/files/catalogs/NIST_SP-800-53_rev5_catalog.json"
   ).freeze
@@ -495,7 +497,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
 
     describe "SSP" do
       it "is generated from the baseline and carries its controls" do
-        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP").create
+        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP", authorization_boundary: pipeline_boundary).create
 
         expect(ssp).to be_persisted
         selected = baseline.profile_controls.pluck(:control_id).to_set
@@ -506,14 +508,14 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       end
 
       it "exports as a schema-valid OSCAL system-security-plan (JSON + YAML)" do
-        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP").create
+        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP", authorization_boundary: pipeline_boundary).create
         json = OscalSspExportService.new(ssp).export
 
         expect_valid_json_and_yaml(json, model_type: :ssp, label: "Stage 5 SSP")
       end
 
       it "REJECTS an SSP missing its system-characteristics" do
-        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP").create
+        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP", authorization_boundary: pipeline_boundary).create
         json = OscalSspExportService.new(ssp).export
 
         expect_rejected_by_schema(json, model_type: :ssp, label: "Stage 5 SSP") do |data|
@@ -524,7 +526,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
 
     describe "SAP" do
       it "is generated from the SSP and exports as a valid assessment-plan" do
-        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP").create
+        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP", authorization_boundary: pipeline_boundary).create
         sap = SapGeneratorService.new(name: "ECS Fargate SAP", ssp_document: ssp).generate
 
         expect(sap).to be_persisted
@@ -533,7 +535,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       end
 
       it "REJECTS an assessment-plan with no import-ssp" do
-        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP").create
+        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP", authorization_boundary: pipeline_boundary).create
         sap = SapGeneratorService.new(name: "ECS Fargate SAP", ssp_document: ssp).generate
         json = OscalAssessmentPlanExportService.new(sap).export
 
@@ -545,7 +547,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
 
     describe "SAR" do
       it "is generated from the baseline and exports as valid assessment-results" do
-        sar = SarFromProfileService.new(baseline, name: "ECS Fargate SAR").create
+        sar = SarFromProfileService.new(baseline, name: "ECS Fargate SAR", authorization_boundary: pipeline_boundary).create
 
         expect(sar).to be_persisted
         json = OscalSarExportService.new(sar).export
@@ -553,7 +555,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       end
 
       it "REJECTS assessment-results with no results" do
-        sar = SarFromProfileService.new(baseline, name: "ECS Fargate SAR").create
+        sar = SarFromProfileService.new(baseline, name: "ECS Fargate SAR", authorization_boundary: pipeline_boundary).create
         json = OscalSarExportService.new(sar).export
 
         expect_rejected_by_schema(json, model_type: :assessment_results, label: "Stage 5 SAR") do |data|

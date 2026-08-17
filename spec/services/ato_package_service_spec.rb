@@ -281,12 +281,13 @@ RSpec.describe AtoPackageService do
 
         described_class.new(ab, params).create
 
+        # #952 — the boundary is handed to the generator rather than patched on
+        # after the fact, because a SAP with no boundary can no longer be saved.
         expect(SapGeneratorService).to have_received(:new) do |**kwargs|
           expect(kwargs[:name]).to eq("New SAP")
           expect(kwargs[:assessment_type]).to eq("annual")
+          expect(kwargs[:authorization_boundary]).to eq(ab)
         end
-        fake_sap.reload
-        expect(fake_sap.authorization_boundary).to eq(ab)
       end
     end
 

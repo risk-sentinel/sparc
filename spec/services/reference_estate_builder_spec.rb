@@ -61,8 +61,13 @@ RSpec.describe ReferenceEstateBuilder do
       end
 
       it "names what it found, so the operator can see why" do
-        2.times { |i| create(:ssp_document, name: "Real SSP #{i}") }
-        2.times { |i| create(:authorization_boundary, name: "Real Boundary #{i}") }
+        # #952 — the SSPs are created ON these boundaries. The factory now
+        # associates one, so creating them independently would leave four
+        # boundaries on the instance and the message would say so.
+        2.times do |i|
+          boundary = create(:authorization_boundary, name: "Real Boundary #{i}")
+          create(:ssp_document, name: "Real SSP #{i}", authorization_boundary: boundary)
+        end
 
         expect { builder.build }
           .to raise_error(described_class::UnsafeEnvironment, /2 authorization boundaries.*2 SSPs/)

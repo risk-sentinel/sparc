@@ -26,12 +26,17 @@
     <%= label_text %>
   </label>
   <% if boundaries.any? %>
+    <%# #952 — no "None (link later)" option. Every screen rendering this
+        partial is an SSP/SAP/SAR/POA&M, and those must belong to a boundary:
+        offering "none" would just produce a submit that the model refuses. The
+        `required` attribute is a courtesy — the validation is the real gate. %>
     <%= select_tag "#{param_key}[authorization_boundary_id]",
-          options_for_select([ [ "— None (link later) —", "" ] ] +
+          options_for_select([ [ "— Select a boundary —", "" ] ] +
                              boundaries.map { |b| [ b.name, b.id ] },
                              selected_id.to_s),
-          class: "form-control",
-          id:    "#{param_key}_authorization_boundary_id" %>
+          class:    "form-control",
+          required: true,
+          id:       "#{param_key}_authorization_boundary_id" %>
     <small class="text-body-secondary d-block mt-1">
       Linking to a boundary auto-fills cross-document references (SSP, SAP, profile)
       from the boundary's other documents.
@@ -39,11 +44,12 @@
   <% else %>
     <%# #929 — this field used to disappear when the list was empty, so an
         upload silently produced a document belonging to no boundary and there
-        was nothing on screen to explain why. %>
+        was nothing on screen to explain why. #952 makes that state impossible,
+        so the copy has to say what actually happens now. %>
     <p class="text-body-secondary small mb-0" id="<%= param_key %>_authorization_boundary_id">
-      You are not on the roster of any authorization boundary, so there is none to
-      link this document to yet. It can be attached later from the boundary's
-      Artifact Summary once you are added to one.
+      You are not on the roster of any authorization boundary. A system security plan,
+      assessment plan, assessment result or POA&amp;M must belong to one, so ask to be
+      added to a boundary before uploading.
     </p>
   <% end %>
 </div>

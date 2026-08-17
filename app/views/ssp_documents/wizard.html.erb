@@ -120,8 +120,21 @@
                   { class: "form-control" } %>
           </div>
         </div>
+        <%# #952 — the boundary this SSP belongs to. Distinct from the prose
+            field below, which is OSCAL narrative and links to nothing; an SSP
+            with no boundary was shown to every signed-in user. %>
+        <div class="form-group mb-3">
+          <label for="authorization_boundary_id" class="fw-semibold">Authorization Boundary</label>
+          <%= f.select :authorization_boundary_id,
+                options_for_select(assignable_boundaries(current_user).map { |b| [ b.name, b.id ] }),
+                { include_blank: "— Select a boundary —" },
+                { class: "form-control", required: true, id: "authorization_boundary_id" } %>
+          <small class="text-body-secondary d-block mt-1">
+            The system this plan describes. Required.
+          </small>
+        </div>
         <div class="form-group">
-          <label for="authorization_boundary_description">Authorization Boundary</label>
+          <label for="authorization_boundary_description">Authorization Boundary Description</label>
           <%= f.text_area :authorization_boundary_description, class: "form-control", rows: 3,
                 placeholder: "Describe the authorization boundary for this system..." %>
         </div>

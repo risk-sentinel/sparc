@@ -90,10 +90,12 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
         assessment_end: generate_params[:assessment_end],
         description: generate_params[:description],
         selected_control_ids: Array(generate_params[:control_ids]).reject(&:blank?).presence,
-        assessment_methods: generate_params[:assessment_methods]&.to_h
+        assessment_methods: generate_params[:assessment_methods]&.to_h,
+        # #952 — passed in, not patched on afterwards: a SAP with no boundary
+        # can no longer be saved at all.
+        authorization_boundary: boundary
       ).generate
 
-      generated.update!(authorization_boundary: boundary) if boundary
       raise ActiveRecord::Rollback if generated.sap_controls.empty?
 
       generated

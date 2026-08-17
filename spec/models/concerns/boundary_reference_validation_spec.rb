@@ -25,9 +25,21 @@ RSpec.describe BoundaryReferenceValidation do
         expect(record).to be_valid
       end
 
-      it "accepts no boundary at all (the association is optional)" do
+      # #952 — the ASSOCIATION is still optional; what changed is that
+      # SSP/SAP/SAR/POA&M carry a separate presence validation because those
+      # types are per-system. Evidence has none: it is leveraged and inherited
+      # across boundaries, so a boundary-less evidence record is legitimate.
+      # This concern's own rule — "a supplied id must resolve" — is unchanged
+      # for all five, which is what the next example pins.
+      it "leaves the boundary-less case to each model's own rule" do
         record = build(factory_name, authorization_boundary: nil)
-        expect(record).to be_valid
+
+        if klass == Evidence
+          expect(record).to be_valid
+        else
+          expect(record).not_to be_valid
+          expect(record.errors[:authorization_boundary]).to be_present
+        end
       end
 
       it "rejects a boundary id with no matching row instead of hitting the FK" do

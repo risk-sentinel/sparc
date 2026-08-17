@@ -14,8 +14,10 @@
 class SarFromProfileService
   include BatchInsertable
 
-  def initialize(profile_document, name: nil)
+  def initialize(profile_document, name: nil, authorization_boundary: nil)
     @profile = profile_document
+    # #952 — see SspFromProfileService: a profile belongs to no system.
+    @boundary = authorization_boundary
     @name    = name.presence || "SAR from #{profile_document.name}"
   end
 
@@ -34,6 +36,7 @@ class SarFromProfileService
       oscal_version:       metadata["oscal-version"] || "1.1.2",
       description:         "Assessment results for #{@profile.name}",
       profile_document_id: @profile.id,
+      authorization_boundary: @boundary,
       import_metadata:     {
         "source_type"         => "profile",
         "source_profile_id"   => @profile.id,

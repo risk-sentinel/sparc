@@ -216,7 +216,19 @@ class SspJsonParserService
       leveraging_boundary_id: leveraging_boundary.id,
       leveraged_boundary_id: leveraged_boundary&.id
     )
-    la.uuid            ||= auth["uuid"] || SecureRandom.uuid
+    # `leveraged_authorizations.uuid` is unique GLOBALLY, but this record is
+    # keyed on the (leveraging, leveraged) pair — so importing the same OSCAL
+    # SSP into two different boundaries produced two rows carrying the same
+    # imported uuid and raised RecordNotUnique, aborting the whole import.
+    #
+    # Exposed by #952: this method opens with `return unless leveraging_boundary`
+    # and simply never ran while documents could have no boundary.
+    #
+    # The imported uuid is kept when it is free, which is the round-trip-stable
+    # case (#957). When it is already taken, the two leveraged authorizations
+    # are genuinely different subjects in different SSPs and need distinct
+    # identifiers, so a fresh one is minted.
+    la.uuid ||= claimable_leveraged_authorization_uuid(auth["uuid"])
     la.name              = auth["title"] || la.name.presence || "Leveraged System"
     # For new records, the DB default ("oscal_with_access") means
     # `crm_type.presence` is never nil — explicitly pick based on href
@@ -230,8 +242,19 @@ class SspJsonParserService
       "raw_props"  => auth["props"] || []
     )
     la.save!
-  rescue ActiveRecord::RecordInvalid => e
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
+    # A leveraged-authorization row that cannot be written must not take the
+    # rest of the import down with it — the same rule #963 established for
+    # colliding statements.
     Rails.logger.warn("[SspJsonParser] leveraged_authorization upsert failed: #{e.message}")
+  end
+
+  # The imported uuid when nothing else holds it, otherwise a fresh one.
+  def claimable_leveraged_authorization_uuid(imported_uuid)
+    return SecureRandom.uuid if imported_uuid.blank?
+    return imported_uuid unless LeveragedAuthorization.exists?(uuid: imported_uuid)
+
+    SecureRandom.uuid
   end
 
   def resolve_leveraged_boundary(links)

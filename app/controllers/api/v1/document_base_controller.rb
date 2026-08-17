@@ -132,10 +132,21 @@ class Api::V1::DocumentBaseController < Api::V1::BaseController
     @document = document_class.find_by!(slug: params[:id])
   end
 
+  # #952 — a nil boundary no longer means "open to everyone" for the per-system
+  # document types. Every DocumentBase subclass (SSP/SAR/SAP/POA&M) is one of
+  # those, so the early return is gone: a legacy orphan falls through to an
+  # instance-level permission check, which an Instance-Admin holds and an
+  # ordinary boundary member does not. Evidence is not a DocumentBase subclass
+  # and keeps its own rules.
   def authorize_document_read!
     return if current_user.admin?
-    return if @document.authorization_boundary_id.nil?
-    return if current_user.has_permission?(read_permission_key, authorization_boundary_id: @document.authorization_boundary_id)
+
+    if @document.authorization_boundary_id.nil?
+      return if current_user.has_permission?(read_permission_key)
+    elsif current_user.has_permission?(read_permission_key,
+                                       authorization_boundary_id: @document.authorization_boundary_id)
+      return
+    end
 
     raise NotAuthorizedError, "Not authorized to view this #{document_class.model_name.human.downcase}"
   end

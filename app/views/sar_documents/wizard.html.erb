@@ -18,6 +18,15 @@
           <label for="name">Assessment Name <span class="sparc-required">*</span></label>
           <%= f.text_field :name, required: true, class: "form-control", placeholder: "e.g., FY2026 Annual Security Assessment" %>
         </div>
+        <%# #952 — the system these results assess. An assessment result with no
+            boundary was shown to every signed-in user. %>
+        <div class="form-group">
+          <label for="authorization_boundary_id">Authorization Boundary <span class="sparc-required">*</span></label>
+          <%= f.select :authorization_boundary_id,
+                options_for_select(assignable_boundaries(current_user).map { |b| [ b.name, b.id ] }),
+                { include_blank: "— Select a boundary —" },
+                { class: "form-control", required: true, id: "authorization_boundary_id" } %>
+        </div>
         <div class="form-group">
           <label for="description">Description</label>
           <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Brief description of the assessment scope and objectives..." %>

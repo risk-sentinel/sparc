@@ -84,7 +84,7 @@ RSpec.describe "Api::V1 boundary re-association (#929)", type: :request do
   it "refuses attaching an orphan to a boundary the caller cannot write to" do
     user = create(:user)
     grant_permission(user, "ssp.write", authorization_boundary: source)
-    document = create(:ssp_document, authorization_boundary: nil)
+    document = create_legacy_orphan(:ssp_document)
 
     put "/api/v1/ssp_documents/#{document.slug}",
         params: { ssp_document: { authorization_boundary_id: target.id } },

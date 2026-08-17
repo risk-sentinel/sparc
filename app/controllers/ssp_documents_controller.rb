@@ -9,7 +9,7 @@ class SspDocumentsController < ApplicationController
   include Publishable
   include OscalExportable
   include BoundaryScopedDocument
-  boundary_scoped SspDocument, read: "ssp.read", write: "ssp.write"
+  boundary_scoped SspDocument, read: "ssp.read", write: "ssp.write", global_fallback: false
   # #929 — attach/re-point the boundary after upload. Deliberately absent from
   # `ensure_editable!`: a published document with NO boundary is the case that
   # most needs repairing, and the concern applies the draft bar to re-pointing
@@ -181,7 +181,11 @@ class SspDocumentsController < ApplicationController
   def create_from_profile
     profile = ProfileDocument.find_by!(slug: params[:source_profile_id])
 
-    ssp = SspFromProfileService.new(profile, name: params[:ssp_name]).create
+    # #952 — a profile belongs to no system, so the boundary comes from the
+    # form. The service refuses to mint a boundary-less SSP.
+    boundary = AuthorizationBoundary.find_by(id: params[:authorization_boundary_id])
+    ssp = SspFromProfileService.new(profile, name: params[:ssp_name],
+                                    authorization_boundary: boundary).create
 
     audit_log("ssp_document_created_from_profile", subject: ssp,
       metadata: { name: ssp.name, source_profile_id: profile.id, source_profile_name: profile.name })
@@ -192,6 +196,11 @@ class SspDocumentsController < ApplicationController
     redirect_to select_profile_ssp_documents_path
   rescue ActiveRecord::RecordNotFound
     flash[:error] = "Published profile not found."
+    redirect_to select_profile_ssp_documents_path
+  rescue ActiveRecord::RecordInvalid => e
+    # #952 — most commonly a missing authorization boundary. Report it on the
+    # picker rather than 500ing.
+    flash[:error] = e.record.errors.full_messages.join(", ")
     redirect_to select_profile_ssp_documents_path
   end
 
@@ -603,6 +612,10 @@ class SspDocumentsController < ApplicationController
   def wizard_params
     params.permit(
       :name, :description, :profile_document_id,
+      # #952 — the FK. Not to be confused with
+      # `authorization_boundary_description` below, which is OSCAL prose
+      # describing the boundary and links to nothing.
+      :authorization_boundary_id,
       :system_status, :security_sensitivity_level,
       :security_objective_confidentiality,
       :security_objective_integrity,

@@ -3,6 +3,9 @@
 require "rails_helper"
 
 RSpec.describe SarFromProfileService do
+  # #952 — a profile belongs to no system, so the generator takes the
+  # boundary from its caller. Without one the document cannot be saved.
+  let(:boundary) { create(:authorization_boundary) }
   let(:resolved_catalog_json) do
     {
       "catalog" => {
@@ -93,7 +96,7 @@ RSpec.describe SarFromProfileService do
 
   describe "#create" do
     it "creates a SarDocument with correct attributes" do
-      sar = described_class.new(profile, name: "Test SAR").create
+      sar = described_class.new(profile, name: "Test SAR", authorization_boundary: boundary).create
 
       expect(sar).to be_persisted
       expect(sar.name).to eq("Test SAR")
@@ -105,25 +108,25 @@ RSpec.describe SarFromProfileService do
     end
 
     it "uses default name when none provided" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       expect(sar.name).to eq("SAR from #{profile.name}")
     end
 
     it "sets profile_document_id to the source profile" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       expect(sar.profile_document_id).to eq(profile.id)
     end
 
     it "creates the correct number of SarControls" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       expect(sar.sar_controls.count).to eq(4)
     end
 
     it "creates controls with correct control_ids and titles" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = sar.sar_controls.find_by(control_id: "ac-1")
       expect(ac1).to be_present
@@ -142,14 +145,14 @@ RSpec.describe SarFromProfileService do
     end
 
     it "assigns sequential row_order to controls" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       orders = sar.sar_controls.order(:row_order).pluck(:row_order)
       expect(orders).to eq([ 0, 1, 2, 3 ])
     end
 
     it "extracts stated_requirement from statement prose" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = sar.sar_controls.find_by(control_id: "ac-1")
       field = ac1.sar_control_fields.find_by(field_name: "stated_requirement")
@@ -158,7 +161,7 @@ RSpec.describe SarFromProfileService do
     end
 
     it "extracts description from guidance prose" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = sar.sar_controls.find_by(control_id: "ac-1")
       field = ac1.sar_control_fields.find_by(field_name: "description")
@@ -167,7 +170,7 @@ RSpec.describe SarFromProfileService do
     end
 
     it "does not create description field when no guidance part exists" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       sc1 = sar.sar_controls.find_by(control_id: "sc-1")
       field = sc1.sar_control_fields.find_by(field_name: "description")
@@ -175,7 +178,7 @@ RSpec.describe SarFromProfileService do
     end
 
     it "creates editable placeholder fields with empty values" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = sar.sar_controls.find_by(control_id: "ac-1")
       %w[result working_status notes_weakness recommended_fix working_comments date].each do |field_name|
@@ -186,7 +189,7 @@ RSpec.describe SarFromProfileService do
     end
 
     it "marks editable placeholder fields as editable" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = sar.sar_controls.find_by(control_id: "ac-1")
       %w[result working_status notes_weakness recommended_fix working_comments date].each do |field_name|
@@ -196,7 +199,7 @@ RSpec.describe SarFromProfileService do
     end
 
     it "creates a default SarResult" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       expect(sar.sar_results.count).to eq(1)
       result = sar.sar_results.first
@@ -206,14 +209,14 @@ RSpec.describe SarFromProfileService do
     end
 
     it "creates a SarFinding for each control" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       result = sar.sar_results.first
       expect(result.sar_findings.count).to eq(4)
     end
 
     it "creates findings with target_data referencing the control" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       result = sar.sar_results.first
       finding = result.sar_findings.find_by(title: "Finding for ac-1")
@@ -223,7 +226,7 @@ RSpec.describe SarFromProfileService do
     end
 
     it "stores import_metadata with source profile info" do
-      sar = described_class.new(profile).create
+      sar = described_class.new(profile, authorization_boundary: boundary).create
 
       expect(sar.import_metadata["source_type"]).to eq("profile")
       expect(sar.import_metadata["source_profile_id"]).to eq(profile.id)

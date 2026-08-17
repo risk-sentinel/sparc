@@ -46,7 +46,10 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
     temp_file.rewind
 
     begin
-      ssp_document = SspDocument.from_excel(temp_file.path, uploaded_file.original_filename)
+      # #952 — the boundary is required; `convert` takes it alongside the file.
+      boundary = AuthorizationBoundary.find_by(id: params[:authorization_boundary_id])
+      ssp_document = SspDocument.from_excel(temp_file.path, uploaded_file.original_filename,
+                                            authorization_boundary: boundary)
 
       audit_log("ssp_document_imported", subject: ssp_document,
                 metadata: { name: ssp_document.name, filename: uploaded_file.original_filename })
@@ -57,6 +60,11 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
         data: ssp_document.to_json_data,
         document_id: ssp_document.id
       }
+    rescue ActiveRecord::RecordInvalid => e
+      # #952 — most often a missing or unknown authorization_boundary_id. That
+      # is the caller's mistake, not a server fault, so it must not be a 500.
+      render json: { error: e.record.errors.full_messages.join(", ") },
+             status: :unprocessable_entity
     rescue StandardError => e
       render json: { error: e.message }, status: :internal_server_error
     ensure

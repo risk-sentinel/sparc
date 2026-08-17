@@ -8,7 +8,11 @@ RSpec.describe PoamDocument, type: :model do
   end
 
   describe "associations" do
-    it { is_expected.to belong_to(:authorization_boundary).optional }
+    # #952 — the belongs_to stays `optional: true` so a legacy boundary-less row
+    # still LOADS; the rule is a separate presence validation, which is what
+    # stops a new one being created. `.optional` no longer matches, because
+    # shouda-matchers also checks that no presence validation exists.
+    it { is_expected.to validate_presence_of(:authorization_boundary) }
     it { is_expected.to have_many(:poam_items).dependent(:delete_all) }
     it { is_expected.to have_many(:poam_risks).dependent(:delete_all) }
     it { is_expected.to have_many(:poam_observations).dependent(:delete_all) }

@@ -114,7 +114,7 @@ RSpec.describe StorageKeyService do
     end
 
     it "puts a boundary-less document under sparc/unattributed rather than the root" do
-      key = key_for(create(:ssp_document, authorization_boundary: nil))
+      key = key_for(create_legacy_orphan(:ssp_document))
 
       expect(key).to start_with("sparc/unattributed/")
     end

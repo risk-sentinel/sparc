@@ -31,6 +31,8 @@ class SarWizardService
       name:             @params[:name],
       description:      @params[:description],
       creation_method:  "wizard",
+      # #952 — a SAR must belong to an authorization boundary.
+      authorization_boundary_id: @params[:authorization_boundary_id],
       file_type:        "json",
       status:           "processing",
       oscal_version:    OscalSarExportService::OSCAL_VERSION,

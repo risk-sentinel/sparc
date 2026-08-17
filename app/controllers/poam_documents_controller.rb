@@ -9,7 +9,7 @@ class PoamDocumentsController < ApplicationController
   include Publishable
   include OscalExportable
   include BoundaryScopedDocument
-  boundary_scoped PoamDocument, read: "poam.read", write: "poam.write"
+  boundary_scoped PoamDocument, read: "poam.read", write: "poam.write", global_fallback: false
   # #929 — attach/re-point the boundary after upload. Deliberately absent from
   # `ensure_editable!`: a published document with NO boundary is the case that
   # most needs repairing, and the concern applies the draft bar to re-pointing

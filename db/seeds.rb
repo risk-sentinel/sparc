@@ -2495,16 +2495,19 @@ end
 auth_boundary.update!(organization: default_org) unless auth_boundary.organization_id
 puts "  Linked auth boundary to organization '#{default_org.name}'"
 
-# Link existing SSP if present
-if (ssp = SspDocument.first)
-  ssp.update!(authorization_boundary: auth_boundary) unless ssp.authorization_boundary_id
-  puts "  Linked SSP '#{ssp.name}' to authorization boundary"
-end
+# #952 — attach EVERY seeded per-system document, not just the first of each.
+# `SspDocument.first` / `SarDocument.first` linked one row and left the rest
+# boundary-less; on a demo instance that meant the seed itself shipped the bug,
+# with 1 of 2 SSPs and 2 of 2 SARs visible to every signed-in user. These types
+# now require a boundary, so an unattached seeded document is also unsaveable.
+[ SspDocument, SapDocument, SarDocument, PoamDocument ].each do |klass|
+  # `.to_a` before the writes: the relation is lazy, so counting it afterwards
+  # would re-query and always report zero.
+  orphans = klass.where(authorization_boundary_id: nil).to_a
+  next if orphans.empty?
 
-# Link existing SAR if present
-if (sar = SarDocument.first)
-  sar.update!(authorization_boundary: auth_boundary) unless sar.authorization_boundary_id
-  puts "  Linked SAR '#{sar.name}' to authorization boundary"
+  orphans.each { |doc| doc.update!(authorization_boundary: auth_boundary) }
+  puts "  Linked #{orphans.size} #{klass.model_name.human.pluralize} to authorization boundary"
 end
 
 # Create boundaries

@@ -34,30 +34,58 @@ RSpec.describe "SSP boundary-scoped access (#738)", type: :request do
 
   let!(:in_ssp)     { create(:ssp_document, name: "InBoundary SSP", authorization_boundary: boundary) }
   let!(:other_ssp)  { create(:ssp_document, name: "OtherBoundary SSP", authorization_boundary: other_boundary) }
-  let!(:global_ssp) { create(:ssp_document, name: "Global SSP", authorization_boundary: nil) }
+  # #952 — a LEGACY boundary-less SSP. New ones cannot be created; rows written
+  # before the rule exist on every upgraded instance, and until an admin
+  # attaches them (#929) they must NOT be readable by everyone. This file used
+  # to assert the opposite — "shows an outsider only globals" documented the
+  # defect as intended behaviour.
+  let!(:orphan_ssp) { create_legacy_orphan(:ssp_document, name: "Orphan SSP") }
 
   describe "GET /ssp_documents (index scoping)" do
-    it "scopes a boundary member to their boundary + globals" do
+    it "scopes a boundary member to their own boundary, and no further" do
       sign_in_as(editor)
       get ssp_documents_path
-      expect(response.body).to include("InBoundary SSP").and include("Global SSP")
+      expect(response.body).to include("InBoundary SSP")
       expect(response.body).not_to include("OtherBoundary SSP")
     end
 
-    it "shows an outsider only globals" do
+    it "hides a boundary-less SSP from a boundary member (#952)" do
+      sign_in_as(editor)
+      get ssp_documents_path
+      expect(response.body).not_to include("Orphan SSP")
+    end
+
+    it "shows an outsider nothing at all (#952)" do
       sign_in_as(outsider)
       get ssp_documents_path
-      expect(response.body).to include("Global SSP")
+      expect(response.body).not_to include("Orphan SSP")
       expect(response.body).not_to include("InBoundary SSP")
+    end
+
+    it "still shows an Instance-Admin the orphan, so it can be repaired" do
+      sign_in_as(create(:user, :admin))
+      get ssp_documents_path
+      expect(response.body).to include("Orphan SSP")
     end
   end
 
   describe "read authorization" do
-    it "allows in-boundary + global, blocks other-boundary" do
+    it "allows in-boundary, blocks other-boundary" do
       sign_in_as(viewer)
       get ssp_document_path(in_ssp);     expect(response).to have_http_status(:ok)
-      get ssp_document_path(global_ssp); expect(response).to have_http_status(:ok)
       get ssp_document_path(other_ssp);  expect(response).to have_http_status(:redirect)
+    end
+
+    it "blocks a boundary member from reading a boundary-less SSP (#952)" do
+      sign_in_as(viewer)
+      get ssp_document_path(orphan_ssp)
+      expect(response).to have_http_status(:redirect)
+    end
+
+    it "lets an Instance-Admin read it" do
+      sign_in_as(create(:user, :admin))
+      get ssp_document_path(orphan_ssp)
+      expect(response).to have_http_status(:ok)
     end
   end
 

@@ -146,7 +146,8 @@ RSpec.describe "PoamDocuments", type: :request do
           name: "Wizard POAM Defaults",
           description: "Defaulted versions",
           poam_version: "",
-          oscal_version: ""
+          oscal_version: "",
+          authorization_boundary_id: create(:authorization_boundary).id
         }
       }
       poam = PoamDocument.find_by(name: "Wizard POAM Defaults")

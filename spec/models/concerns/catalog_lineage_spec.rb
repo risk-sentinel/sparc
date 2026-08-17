@@ -195,14 +195,13 @@ RSpec.describe CatalogLineage, type: :model do
     end
 
     it "accepts a POA&M linked only to an SSP" do
-      poam = create(:poam_document, ssp_document: create(:ssp_document),
-                    authorization_boundary: nil)
+      poam = create_legacy_orphan(:poam_document, ssp_document: create(:ssp_document))
 
       expect(poam).to be_lineage_resolved
     end
 
     it "reports a POA&M with neither" do
-      poam = create(:poam_document, ssp_document: nil, authorization_boundary: nil)
+      poam = create_legacy_orphan(:poam_document, ssp_document: nil)
       create(:poam_item, poam_document: poam)
 
       expect(poam).not_to be_lineage_resolved

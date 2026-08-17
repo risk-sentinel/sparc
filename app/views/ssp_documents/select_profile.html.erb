@@ -46,6 +46,16 @@
                   <%= f.text_field :ssp_name, class: "form-control form-control-sm",
                         placeholder: "SSP from #{profile.name}" %>
                 </div>
+                <%# #952 — a SSP must belong to an authorization boundary, and a
+                    profile is a baseline that belongs to no system, so the boundary
+                    has to be chosen here. Without it the document cannot be saved. %>
+                <div class="flex-grow-1">
+                  <%= f.select :authorization_boundary_id,
+                        options_for_select(assignable_boundaries(current_user).map { |b| [ b.name, b.id ] }),
+                        { include_blank: "— Authorization Boundary —" },
+                        class: "form-select form-select-sm",
+                        "aria-label": "Authorization Boundary" %>
+                </div>
                 <%= f.submit "Create SSP", class: "btn btn-success btn-sm" %>
               <% end %>
             </div>

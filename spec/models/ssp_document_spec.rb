@@ -27,17 +27,27 @@ RSpec.describe SspDocument, type: :model do
   describe '.from_excel' do
     let(:file_path) { Rails.root.join('spec', 'fixtures', 'ssp_sample.xlsx') }
     let(:filename) { 'ssp_sample.xlsx' }
+    # #952 — an SSP belongs to an authorization boundary, so the importer takes one.
+    let(:boundary) { create(:authorization_boundary) }
 
     it 'creates document and parses controls' do
       expect {
-        SspDocument.from_excel(file_path, filename)
+        SspDocument.from_excel(file_path, filename, authorization_boundary: boundary)
       }.to change(SspDocument, :count).by(1)
         .and change(SspControl, :count).by_at_least(1)
     end
 
     it 'sets status to completed on success' do
-      document = SspDocument.from_excel(file_path, filename)
+      document = SspDocument.from_excel(file_path, filename, authorization_boundary: boundary)
       expect(document.status).to eq('completed')
+    end
+
+    it 'refuses to import without a boundary rather than creating an orphan (#952)' do
+      expect {
+        expect {
+          SspDocument.from_excel(file_path, filename)
+        }.to raise_error(ActiveRecord::RecordInvalid, /Authorization boundary/i)
+      }.not_to change(SspDocument, :count)
     end
   end
 end

@@ -184,7 +184,9 @@ RSpec.describe "SspDocuments", type: :request do
       expect {
         post create_from_profile_ssp_documents_path, params: {
           source_profile_id: profile.slug,
-          ssp_name: "Test SSP from Profile"
+          ssp_name: "Test SSP from Profile",
+          # #952 — a profile belongs to no system, so the form supplies the boundary.
+          authorization_boundary_id: create(:authorization_boundary).id
         }
       }.to change(SspDocument, :count).by(1)
       expect(response).to have_http_status(:redirect)
@@ -206,7 +208,8 @@ RSpec.describe "SspDocuments", type: :request do
       expect {
         post create_from_wizard_ssp_documents_path, params: {
           name: "Wizard SSP",
-          profile_document_id: profile.id
+          profile_document_id: profile.id,
+          authorization_boundary_id: create(:authorization_boundary).id
         }
       }.to change(SspDocument, :count).by(1)
       expect(response).to have_http_status(:redirect)

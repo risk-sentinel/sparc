@@ -36,6 +36,8 @@ class SspWizardService
       file_type:                         "json",
       status:                            "processing",
       profile_document_id:               @params[:profile_document_id],
+      # #952 — an SSP must belong to an authorization boundary.
+      authorization_boundary_id:         @params[:authorization_boundary_id],
       system_status:                     @params[:system_status].presence || "operational",
       security_sensitivity_level:        @params[:security_sensitivity_level],
       security_objective_confidentiality: @params[:security_objective_confidentiality], # lgtm[rb/clear-text-storage-sensitive-data] FIPS 199 impact levels, not secrets

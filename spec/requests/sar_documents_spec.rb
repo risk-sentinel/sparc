@@ -103,7 +103,8 @@ RSpec.describe "SarDocuments", type: :request do
       expect {
         post create_from_wizard_sar_documents_path, params: {
           name: "Wizard SAR",
-          description: "Test wizard SAR"
+          description: "Test wizard SAR",
+          authorization_boundary_id: create(:authorization_boundary).id
         }
       }.to change(SarDocument, :count).by(1)
       expect(response).to have_http_status(:redirect)
@@ -155,7 +156,8 @@ RSpec.describe "SarDocuments", type: :request do
       expect {
         post create_from_profile_sar_documents_path, params: {
           source_profile_id: profile.slug,
-          sar_name: "Test SAR from Profile"
+          sar_name: "Test SAR from Profile",
+          authorization_boundary_id: create(:authorization_boundary).id
         }
       }.to change(SarDocument, :count).by(1)
       expect(response).to have_http_status(:redirect)

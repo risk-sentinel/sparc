@@ -19,9 +19,12 @@ class SapGeneratorService
   def initialize(name:, ssp_document: nil, profile_document: nil,
                  assessment_type: "initial", assessment_start: nil,
                  assessment_end: nil, description: nil,
-                 selected_control_ids: nil, assessment_methods: nil)
+                 selected_control_ids: nil, assessment_methods: nil,
+                 authorization_boundary: nil)
     @name = name
     @ssp = ssp_document
+    # #952 — an assessment plan plans the assessment of ONE system.
+    @boundary = authorization_boundary || ssp_document&.authorization_boundary
     @profile = profile_document
     @assessment_type = assessment_type
     @assessment_start = assessment_start
@@ -152,6 +155,7 @@ class SapGeneratorService
     sap = SapDocument.create!(
       name: @name,
       ssp_document: @ssp,
+      authorization_boundary: @boundary,
       profile_document: @profile,
       status: "completed",
       assessment_type: @assessment_type,

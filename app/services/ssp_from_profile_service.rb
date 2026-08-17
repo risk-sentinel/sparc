@@ -20,8 +20,11 @@ class SspFromProfileService
     "P3" => "low"
   }.freeze
 
-  def initialize(profile_document, name: nil)
+  def initialize(profile_document, name: nil, authorization_boundary: nil)
     @profile = profile_document
+    # #952 — a profile is a baseline and belongs to no system, so the boundary
+    # has to be supplied by the caller. Without it the SSP cannot be saved.
+    @boundary = authorization_boundary
     @name    = name.presence || "SSP from #{profile_document.name}"
   end
 
@@ -37,6 +40,7 @@ class SspFromProfileService
       oscal_version:       metadata["oscal-version"] || "1.1.2",
       description:         metadata["title"],
       profile_document_id: @profile.id,
+      authorization_boundary: @boundary,
       import_metadata:     profile_import_metadata
     )
 

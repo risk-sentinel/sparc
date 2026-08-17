@@ -77,6 +77,7 @@ class AuditEvent < ApplicationRecord
     ssp_document_exported
     ssp_document_imported
     ssp_document_boundary_attached
+    boundary_less_documents_reported
     sar_document_boundary_attached
     sar_document_created
     sar_document_updated
@@ -286,7 +287,8 @@ class AuditEvent < ApplicationRecord
     "SSP Documents" => %w[ssp_document_created ssp_document_updated ssp_document_deleted
                           ssp_document_delete_blocked ssp_document_exported ssp_document_imported
                           ssp_document_published ssp_document_baseline_declared
-                          ssp_document_boundary_attached],
+                          ssp_document_boundary_attached
+                          boundary_less_documents_reported],
     "SAR Documents" => %w[sar_document_created sar_document_updated sar_document_deleted
                           sar_document_delete_blocked sar_document_exported sar_document_imported
                           sar_document_published sar_document_baseline_declared
