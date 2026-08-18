@@ -49,6 +49,12 @@ statements for end-to-end traceability.
   [Authorization Boundaries](User-Guide-Authorization-Boundaries)). Earlier
   releases treated a boundary-less document of these types as instance-wide and
   showed it to every signed-in user.
+- **Publishing the control library never publishes system data.** With
+  `SPARC_PUBLIC_CATALOGS=true` an anonymous visitor can read the Controls layer —
+  catalogs, baselines, mappings, component definitions, converters, and the OSCAL
+  downloads for each — and nothing else. Writing stays signed-in, the API still
+  requires a token, and every boundary document remains private. With the setting
+  off (the default) the whole Controls layer requires a sign-in too.
 - **Evidence is deliberately exempt.** Evidence can be leveraged and inherited
   across boundaries, so an evidence record with no boundary is a legitimate
   instance-wide artifact and remains visible accordingly. Component definitions

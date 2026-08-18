@@ -270,6 +270,25 @@
   --bs-btn-hover-border-color: var(--sparc-info);
 }
 
+/* #974: the navbar is `bg-dark` in BOTH themes, so it is not covered by the
+   `[data-bs-theme="dark"]` overrides below. `--sparc-info` (#0c6e80) was chosen
+   for AA on LIGHT surfaces (#599) and measures only **2.61:1** against the
+   navbar's #212529 — under the 4.5:1 minimum.
+
+   The Login button is the one outline button that renders in the navbar, and it
+   renders for every signed-out visitor. It surfaced when the header banner
+   became a single shared partial and therefore appeared on the sign-in page,
+   which the a11y suite audits anonymously; the defect was there for any
+   anonymous visitor beforehand, on a page nothing audited. Lighter cyan gives
+   ~10:1 on that surface. The token is untouched everywhere else. */
+.navbar .btn-outline-info {
+  --bs-btn-color: #6edff6;
+  --bs-btn-border-color: #6edff6;
+  --bs-btn-hover-bg: #6edff6;
+  --bs-btn-hover-border-color: #6edff6;
+  --bs-btn-hover-color: #000;
+}
+
 .btn-outline-warning {
   --bs-btn-color: var(--sparc-warning-fg);
   --bs-btn-border-color: var(--sparc-warning-fg);

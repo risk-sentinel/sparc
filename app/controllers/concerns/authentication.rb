@@ -24,6 +24,58 @@ module Authentication
     helper_method :current_user, :signed_in?, :controls_publicly_accessible?
   end
 
+  class_methods do
+    # Declare the READ actions of a Controls-layer controller as publicly
+    # readable when `SPARC_PUBLIC_CATALOGS=true`, and authenticated otherwise
+    # (#726, #974).
+    #
+    # This exists because the rule used to be TWO lines that had to agree:
+    #
+    #     skip_before_action :require_authentication, only: [ :index, :show ]
+    #     before_action :require_authentication_unless_public_controls, only: [ :index, :show ]
+    #
+    # The skip alone makes the action unconditionally public. Writing it and
+    # forgetting the gate is silent — nothing raises, no test fails, the screen
+    # simply stops requiring a login. That is exactly what happened to
+    # `CdefDocumentsController` and `ControlFamiliesController`: the CDEF
+    # library and every control-family page were world-readable regardless of
+    # the flag, and no configuration could turn it off.
+    #
+    # One declaration cannot be half-applied, and the action list cannot drift
+    # between the two halves because it is written once.
+    #
+    #     public_controls_read only: [ :index, :show ]
+    #
+    # Read-only by construction: a caller that passes a mutating action is
+    # refused, so this can never be the route by which a write becomes public.
+    #
+    # NIST 800-53: AC-3 Access Enforcement, CM-6 Configuration Settings.
+    def public_controls_read(only:)
+      actions = Array(only)
+      forbidden = actions.map(&:to_s) & MUTATING_ACTION_NAMES
+      if forbidden.any?
+        raise ArgumentError,
+              "public_controls_read is for READ actions only; refusing #{forbidden.join(', ')}. " \
+              "Writes never become public in any posture (#974)."
+      end
+
+      skip_before_action :require_authentication, only: actions, raise: false
+      before_action :require_authentication_unless_public_controls, only: actions
+    end
+  end
+
+  # Action names that may never be declared publicly readable. Deliberately
+  # broader than CRUD: anything that fetches, refreshes or imports is a write
+  # in effect even when its verb is GET.
+  MUTATING_ACTION_NAMES = %w[
+    create update destroy edit new
+    publish approve reject submit_for_review
+    import do_import import_stig export
+    refresh_cci refresh_aws_config refresh_aws_security_hub refresh_aws_labs
+    bulk_destroy bulk_apply bulk_apply_preview bulk_apply_confirm
+    update_metadata update_field update_statement update_scope set_baseline
+  ].freeze
+
   # ── Current User ──────────────────────────────────────────────────────
 
   def current_user

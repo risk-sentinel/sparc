@@ -35,51 +35,7 @@
         data-controller="video-easter-egg<% if @consent_banner_content.present? %> consent-banner<% end %>">
     <%= render "shared/environment_header" %>
     <%# ── Navbar (same as application layout) ── %>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
-      <div class="container-fluid">
-        <div class="d-flex align-items-center gap-2">
-          <a href="#" class="navbar-brand d-flex align-items-center" data-action="click->video-easter-egg#play">
-            <%= image_tag "sparc_logo.png", alt: "SPARC", class: "sparc-navbar-logo" %>
-          </a>
-          <span class="badge text-bg-dark" style="font-size: 0.65rem;">v<%= SparcConfig::VERSION %></span>
-          <%# ── About (left side, next to logo) ── %>
-          <%= link_to "About", about_path, class: "nav-link sparc-nav-btn text-light d-none d-lg-inline ms-2" %>
-        </div>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto align-items-center gap-1">
-
-            <%# ── Controls Layer (catalogs/baselines/mappings) — gated by #726 ── %>
-            <% if controls_publicly_accessible? %>
-              <li class="nav-item dropdown">
-                <%= render "shared/controls_nav" %>
-              </li>
-            <% end %>
-
-            <%# ── Resources ── %>
-            <li class="nav-item d-none d-lg-block">
-              <%= link_to "Resources", about_resources_path, class: "nav-link sparc-nav-btn" %>
-            </li>
-
-            <%# ── Separator ── %>
-            <li class="nav-item d-none d-lg-block">
-              <span class="sparc-nav-separator"></span>
-            </li>
-
-            <%# ── Theme toggle ── %>
-            <li class="nav-item" data-controller="theme">
-              <button class="btn btn-outline-light btn-sm sparc-nav-theme-btn"
-                      data-theme-target="icon"
-                      data-action="theme#toggle"
-                      title="Toggle light/dark mode">&#127769;</button>
-            </li>
-
-          </ul>
-        </div>
-      </div>
-    </nav>
+    <%= render "shared/main_nav" %>
 
     <%# ── Main content area ── %>
     <div class="container-fluid p-3 p-md-4" style="max-width: 1100px;">

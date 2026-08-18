@@ -17,6 +17,10 @@ class CatalogBrowseQuery < CollectionBrowseQuery
   # user means by "revision" on this screen — distinct from oscal_version, the
   # schema the file was written against. Both are offered because a single
   # package legitimately spans several of the latter.
+  # #935 — derived at import by FrameworkDeriver and persisted, so this is a
+  # column lookup rather than a per-request re-parse of the title. Rows where
+  # nothing said clearly are null and simply do not offer a value.
+  facet :framework,        label: "Framework"
   facet :oscal_version,    label: "OSCAL version"
   facet :version,          label: "Revision"
   facet :source,           label: "Source"

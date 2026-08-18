@@ -4,8 +4,9 @@ class ControlMappingsController < ApplicationController
   include CollectionViewable
   # #726: index/show join the Controls layer public-read gate
   # (SPARC_PUBLIC_CATALOGS, secure-by-default). (AC-3)
-  skip_before_action :require_authentication, only: [ :index, :show ]
-  before_action :require_authentication_unless_public_controls, only: [ :index, :show ]
+  # #726/#974 — public read when SPARC_PUBLIC_CATALOGS=true, authenticated otherwise.
+  # #974 — downloads follow the screens (see ControlCatalogsController).
+  public_controls_read only: [ :index, :show, :download_oscal ]
   before_action :authorize_mapping_write!, only: [
     :new, :create, :edit, :update, :destroy, :publish, :deprecate
   ]

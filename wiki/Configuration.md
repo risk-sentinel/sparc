@@ -104,7 +104,7 @@ All auth features default to **disabled**. Enable one or more to activate `/logi
 | `SPARC_ENABLE_USER_REGISTRATION` | `false` | Allow self-service registration (usually `false` in prod) |
 | `SPARC_SESSION_TIMEOUT_MINUTES` | `60` | Session inactivity timeout (minutes) |
 | `SPARC_ADMIN_EMAIL` | `admin@sparc.local` | Email for the bootstrapped admin account |
-| `SPARC_PUBLIC_CATALOGS` | `false` | Make the Controls layer (catalogs, baselines, mappings) publicly readable without signing in. Secure-by-default off; enable only when SPARC is fronted by your own network auth (e.g. VPN) |
+| `SPARC_PUBLIC_CATALOGS` | `false` | Make the Controls layer publicly readable without signing in — control catalogs (and their families and controls), baselines, mappings, component definitions, converters, and the OSCAL downloads for each. **Read only**, and the web UI only: no write, no converter export or refresh, and `/api/v1` still requires a Bearer token. Boundary documents (SSP, SAP, SAR, POA&M, evidence) are never public. Secure-by-default off; enable only when SPARC is fronted by your own network auth (e.g. VPN) |
 
 > **Admin password rotation** is an operational concern managed via your secrets manager (AWS Secrets Manager on ECS), not a value you set as consumer config. See the deployment/rotation docs.
 
@@ -284,6 +284,7 @@ Rack::Attack throttle thresholds. Defaults are conservative; tighten for high-se
 | `SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER` | `100` | Per-user cap on upload endpoints |
 | `SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE` | `300` | Per-token cap on `/api/v1` write methods |
 | `SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN` | `5` | Per-IP cap on login failures (credential-stuffing defense) |
+| `SPARC_RATE_LIMIT_CONTROLS_DOWNLOADS_PER_5MIN_PER_IP` | `30` | Per-IP cap on Controls-layer downloads in 5 minutes. Matters most with `SPARC_PUBLIC_CATALOGS=true`, when those downloads are anonymous and a full catalog export costs ~24s and ~3 MB |
 | `SPARC_RATE_LIMIT_SAFELIST_CIDRS` | `127.0.0.1,::1` | CIDRs that bypass all throttles (health checks, NLB targets) |
 
 ## Document Lifecycle & Workflow

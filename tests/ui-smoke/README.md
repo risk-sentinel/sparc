@@ -46,6 +46,51 @@ SPARC_SMOKE_SA_TOKEN=sparc_sa_... \
   uv run pytest --browser chromium --browser firefox
 ```
 
+## Both-posture run for the Controls layer (#974)
+
+`test_public_controls_974.py` asserts what an anonymous visitor can reach, and it
+must be run **twice** — once per value of `SPARC_PUBLIC_CATALOGS`. It refuses to
+run unless you declare which posture the deployment is in, and it fails (never
+skips) if the declaration does not match what it finds, so a green run always
+means a posture was genuinely proven.
+
+`public_catalogs?` reads the environment per request, so switching postures needs
+a container **recreate**, not a restart:
+
+```bash
+# ceremony 1 — the secure default
+SPARC_SMOKE_PUBLIC_CATALOGS=0 uv run pytest --browser chromium
+
+# flip SPARC_PUBLIC_CATALOGS in .env, then:
+docker compose -f docker-compose.ubi9.yaml up -d --force-recreate web
+
+# PURGE DANGLING BLOBS AGAIN — see the warning below
+docker exec sparc-ubi9-web-1 bin/rails runner '
+  ids = []
+  ActiveStorage::Attachment.includes(:blob).find_each do |a|
+    b = a.blob; next if b.nil?
+    ok = (ActiveStorage::Blob.service.exist?(b.key) rescue false)
+    ids << a.id unless ok
+  end
+  ActiveStorage::Attachment.where(id: ids).find_each { |a| a.purge rescue a.destroy }
+  puts "purged #{ids.size}"'
+
+# ceremony 2 — published
+SPARC_SMOKE_PUBLIC_CATALOGS=1 uv run pytest --browser chromium
+```
+
+> **A recreate destroys local ActiveStorage blobs.** This stack runs
+> `SPARC_ALLOW_LOCAL_STORAGE=true` with no persistent volume, so
+> `--force-recreate` wipes the files while the `active_storage_attachments`
+> rows survive. Every attachment then dangles, the admin avatar 404s on every
+> authenticated page, and one missing subresource fails every navigation and
+> collection test. Measured: **123 failures / 328 × HTTP 404**, twice, from
+> exactly this cause. It looks like a broad regression and is nothing of the
+> kind — purge after EVERY recreate, not once at the start.
+
+Report both numbers. A single total hides which posture was actually proven.
+
+
 ### Against a local container (the #650 local-first flow)
 
 CSP / inline-handler fixes are validated against a **locally running container

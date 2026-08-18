@@ -93,11 +93,16 @@ RSpec.describe BackMatterBuilder, type: :service do
     end
 
     it "skips archived authoritative resources too (#372)" do
-      BackMatterResource.create!(resourceable: nil, title: "AuthKept",
+      # #959 — both are attached to the document. This example is about
+      # ARCHIVING, and it used to rely on unreferenced authoritative resources
+      # being embedded in every export, which is the leak #959 removed. Making
+      # them referenced keeps the example testing what it is named for: the
+      # archived one is dropped and the live one is not.
+      BackMatterResource.create!(resourceable: ssp, title: "AuthKept",
                                  uuid: SecureRandom.uuid, source: "authoritative",
                                  globally_available: true,
                                  promotion_status: "approved")
-      BackMatterResource.create!(resourceable: nil, title: "AuthArchived",
+      BackMatterResource.create!(resourceable: ssp, title: "AuthArchived",
                                  uuid: SecureRandom.uuid, source: "authoritative",
                                  globally_available: true,
                                  promotion_status: "approved",

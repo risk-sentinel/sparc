@@ -654,7 +654,7 @@ Backlog / gated:
 
 ### Phase 16: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
 
-**Goal:** Close the v1.16.0 milestone (**36 issues — 25 closed, 11 open, measured 2026-08-17** after PR #969 merged; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, and #935, #951, #959 added to the milestone by the owner on 2026-08-15). The count has moved five times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
+**Goal:** Close the v1.16.0 milestone (**38 issues — 28 closed, 10 open, measured 2026-08-17** after PR #975 merged; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, and #935, #951, #959 added to the milestone by the owner on 2026-08-15). The count has moved five times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
 
 The two structural security deliverables led: a spec that fails when a controller ships without authorization (#919) and one that pins `disposition: "attachment"` on user content (#894). What remains is the document model, the boundary-attachment family, and the IdP entitlement epic.
 
@@ -675,28 +675,27 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 8 | M — Reference authorization estate | #845 #954 #955 #956 #958 | **Shipped** (PR #960) |
 | 9 | N — Document model — reachable references | #941 #942 #944 #945 #946 #957 **#963** | **Shipped** (PR #964) |
 | 10 | #939 — pulled forward, on its own | #939 **#967** **#970** | **Shipped** (PR #969) |
-| 11 | O — Boundary attachment | #929 #952 | **IN PROGRESS** (branch `bug/929_boundary_attachment`) |
-| 12 | P — Evidence completeness | #947 #948 | Queued |
-| 13 | Q — Polish | #936 | Queued |
-| 14 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
+| 11 | O — Boundary attachment | #929 #952 | **Shipped** (PR #975) |
+| 12 | **S — Controls layer: who can see it, and what it carries** | **#974 #959 #935** | **IN PR** (branch `feature/974_controls_layer_access`) |
+| 13 | P — Evidence completeness | #947 #948 | Queued |
+| 14 | Q — Polish | #936 | Queued |
+| 15 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
 
-**On the milestone since 2026-08-15, not yet slotted into a bundle:** #935 (derive and persist
-`framework` at import), #951 (sidebar re-organization), #959 (every export embeds every
-authoritative back-matter resource). Three issues on the milestone and in no bundle is a
-scheduling gap, not a backlog — **slot them or take them off the milestone before the release
-is cut.** **Tracked separately, no milestone:** #953 (authenticated DAST — unblocked by Bundle
+**Unslotted — down to one.** #935 and #959 were slotted into **Bundle S** on 2026-08-17;
+**#951** (sidebar re-organization and responsive breakpoint audit) is the only milestone issue
+still in no bundle. One issue on the milestone and in no bundle is a scheduling gap, not a
+backlog — **slot it or take it off the milestone before the release is cut.** **Tracked separately, no milestone:** #953 (authenticated DAST — unblocked by Bundle
 M's production posture), #966 (SonarCloud findings triage — owner directed that it be filed
 and *not* worked; 281 open findings, 2 Blockers amounting to one defect), and **#968** (audit the
 swallow-and-continue rescue patterns — raised out of #939, **due 2026-09-06**; 54 rescue sites,
 11 log-and-continue in services/jobs, and 17 files combining a transaction with a rescue, which
 is the candidate set for the #963 shape).
 
-**Milestone measured 2026-08-17, after PR #969 merged: 36 issues, 25 closed / 11 open.** The 11
-open: **#822 #842 #860 #929 #935 #936 #947 #948 #951 #952 #959**. #967 and #970 were filed
-WITHOUT a milestone and fixed in the #939 PR, so the total stayed 36. It grew by two during
-Bundle N — #963 was filed from within it, and #944 was found CLOSED with no implementing PR and
-reopened. Re-measure with `gh issue list --milestone v1.16.0 --state all`; never read the count
-off this file.
+**Milestone measured 2026-08-17, after PR #975 merged: 38 issues, 28 closed / 10 open.** The 10
+open: **#822 #842 #860 #935 #936 #947 #948 #951 #959 #974**. Measured over the REST API, because
+GraphQL was returning 503 through the GitHub incident that day. #967, #970 and #974 were filed
+during this milestone; #967 and #970 carried no milestone, #974 does. Re-measure with
+`gh issue list --milestone v1.16.0 --state all`; never read the count off this file.
 
 **Dev/prod toolchain divergence — measured 2026-08-17. OWNER-DECIDED: this is done *with* #820,
 in sequence, not as a separate track.** The toolchain rebuild is the prerequisite step of that
@@ -752,14 +751,14 @@ upstream schema gap should surface as an error rather than be retried into silen
 
 | Issue | Description | Notes |
 | --- | --- | --- |
-| **#939** | ~~`AwsLabsCdefRefreshJob` reports 39–51 errors on a cold pass and still reports success~~ — **FIXED, in PR** | **Filed during Bundle F. Pulled out of Bundle Q and sequenced on its own** (owner, 2026-08-15). Each failed file leaked a **permanent orphaned `CdefDocument`** — `write_through_parser` created the row before parsing, so a parse failure left `status: "processing"`, zero controls and no `source_type`, putting it outside `aws_labs_sourced` and therefore invisible to both cleanup and the dedupe in `import_one`, so each retry leaked another. 82 measured after four passes; they sorted to the top of the CDEF index and broke OSCAL export. **Fixed by wrapping the create in the transaction**, which is what makes the existing "Refresh from AWS Labs" button sufficient to repair a partial run. Also: `reindex_components` takes a SAVEPOINT (it rescues `StandardError` and is now inside a transaction — the #963 shape), `build_candidates` rescues an explicit list of fetch failures so one rate-limited blob no longer discards all 230, a degraded run emits an `aws_labs_cdef_refresh_degraded` audit event with an error-class histogram, and a deferred idempotent migration removes pre-existing shells behind seven conjunctive conditions. |
-| **#967** | ~~Index totals count soft-deleted documents' children — 1 CDEF reports 1290 controls~~ — **FIXED, in PR** | **Filed 2026-08-17, found while validating the #939 plan against the running image** — the owner could not confirm the plan's claims from the screen, which is what surfaced it. The document models are `SoftDeletable` (`default_scope { where(deleted_at: nil) }`); the child models are not, and five index controllers counted the child table directly. Measured: CDEF **+1280**, SSP +149, Profile +10 (SAR and POA&M read 0 only because their soft-deleted documents carried no children). Not orphaned rows — the FK is `ON DELETE CASCADE`, validated, and proven to fire; a soft delete triggers neither it nor `dependent: :delete_all`, by design. Counting through the parent also stops the four boundary-scoped tiles reporting a population their own list does not. **Bundled into the #939 PR at owner direction.** |
+| **#939** | ~~`AwsLabsCdefRefreshJob` reports 39–51 errors on a cold pass and still reports success~~ — **MERGED (PR #969)** | **Filed during Bundle F. Pulled out of Bundle Q and sequenced on its own** (owner, 2026-08-15). Each failed file leaked a **permanent orphaned `CdefDocument`** — `write_through_parser` created the row before parsing, so a parse failure left `status: "processing"`, zero controls and no `source_type`, putting it outside `aws_labs_sourced` and therefore invisible to both cleanup and the dedupe in `import_one`, so each retry leaked another. 82 measured after four passes; they sorted to the top of the CDEF index and broke OSCAL export. **Fixed by wrapping the create in the transaction**, which is what makes the existing "Refresh from AWS Labs" button sufficient to repair a partial run. Also: `reindex_components` takes a SAVEPOINT (it rescues `StandardError` and is now inside a transaction — the #963 shape), `build_candidates` rescues an explicit list of fetch failures so one rate-limited blob no longer discards all 230, a degraded run emits an `aws_labs_cdef_refresh_degraded` audit event with an error-class histogram, and a deferred idempotent migration removes pre-existing shells behind seven conjunctive conditions. |
+| **#967** | ~~Index totals count soft-deleted documents' children — 1 CDEF reports 1290 controls~~ — **MERGED (PR #969)** | **Filed 2026-08-17, found while validating the #939 plan against the running image** — the owner could not confirm the plan's claims from the screen, which is what surfaced it. The document models are `SoftDeletable` (`default_scope { where(deleted_at: nil) }`); the child models are not, and five index controllers counted the child table directly. Measured: CDEF **+1280**, SSP +149, Profile +10 (SAR and POA&M read 0 only because their soft-deleted documents carried no children). Not orphaned rows — the FK is `ON DELETE CASCADE`, validated, and proven to fire; a soft delete triggers neither it nor `dependent: :delete_all`, by design. Counting through the parent also stops the four boundary-scoped tiles reporting a population their own list does not. **Bundled into the #939 PR at owner direction.** |
 
 ##### 11. Bundle O — Boundary attachment
 
 **#929 first, #952 second — the order is a hard dependency, not a preference.** `document_metadata_params` permits only name/version/oscal_version/description, so a boundary can be set at upload and **never after**; requiring one before #929 lands leaves every orphaned document permanently invalid and unfixable. Bundle M built the groundwork — the reference estate attaches every document to its boundary explicitly and ships a spec pinning it, because the generators leave it nil.
 
-**IN PROGRESS on `bug/929_boundary_attachment`** — three commits: `e1e07a34` (#929 core), `5a73d684` (#929 CDEF scope), `fce52d62` (#952). Full suite **5311 examples, 0 failures, 10 pending**; rubocop, brakeman (0 warnings) and zeitwerk clean; **17 mutations RED**.
+**SHIPPED 2026-08-17, PR #975 merged as `d1abba57`**, 5 commits. Final gates on the rebuilt UBI9 prod image: rspec **5311 passed / 0 failed / 10 pending**, `tests/api` **464**, full ui-smoke **448 passed / 0 failed / 29 skipped** (all skips environment-gated and named), rubocop + brakeman (0 warnings) + zeitwerk + ruff clean, **17 mutations RED**. Wiki published `468bbc8`, which also cleared the publishes owed from Bundle N and #939.
 
 **Four measured findings correct the issues as written. Read these before trusting the issue text:**
 
@@ -778,10 +777,69 @@ upstream schema gap should surface as an error rather than be retried into silen
 
 | Issue | Description | Notes |
 | --- | --- | --- |
-| **#929** | ~~A document cannot be attached to a boundary after upload — the "Add…" tile leads nowhere~~ — **FIXED, in branch** | **Bundle O, and #952 depends on it landing first.** Same inversion as #928 and affects **all five** document types: the boundary can be set at upload but never after (`document_metadata_params` omits `authorization_boundary_id`), while the API permits it. Aggravated by the upload picker listing only boundaries the user is a member of, so the one chance to set it may not include the right one. Re-association must authorize against the **target** boundary — coordinate with #919. |
-| **#952** | ~~SSP/SAP/SAR/POA&M can exist with no boundary and are then visible to every signed-in user~~ — **FIXED, in branch** | **Bundle O, and it must follow #929 — tightly coupled.** A **data affiliation** problem, not a controller one: `boundary_scoped_relation` matches `boundary_ids + [nil]` and `authorize_document_read!` returns early on a nil boundary ("global -> open to all"), which is right for a genuinely instance-wide record and wrong for these four types. Measured on a demo instance: **1 of 2 SSPs and 1 of 2 SARs have no boundary**, and **the seed itself creates them** (`ACME HR Portal` SSP and SAR). **Evidence is deliberately exempt** — it can be leveraged/inherited across boundaries, so boundary-less evidence is legitimate. CDEFs are out of scope: a CDEF is generic, stating a control *can* be satisfied rather than how it is implemented here (provider capability, e.g. MFA → Okta, being the exception). #929 is the prerequisite: `document_metadata_params` permits only name/version/oscal_version/description, so the boundary can be set at upload and **never after** — requiring it without #929 leaves every orphan permanently invalid and unfixable. Cost is in the fixtures, not the validation: **no** SSP/SAP/SAR/POA&M factory sets a boundary, across **368 call sites in ~149 spec files**; seeds must be fixed and `SeedRunner::CURRENT_VERSIONS` bumped. |
+| **#929** | ~~A document cannot be attached to a boundary after upload — the "Add…" tile leads nowhere~~ — **MERGED (PR #975)** | **Bundle O, and #952 depends on it landing first.** Same inversion as #928 and affects **all five** document types: the boundary can be set at upload but never after (`document_metadata_params` omits `authorization_boundary_id`), while the API permits it. Aggravated by the upload picker listing only boundaries the user is a member of, so the one chance to set it may not include the right one. Re-association must authorize against the **target** boundary — coordinate with #919. |
+| **#952** | ~~SSP/SAP/SAR/POA&M can exist with no boundary and are then visible to every signed-in user~~ — **MERGED (PR #975)** | **Bundle O, and it must follow #929 — tightly coupled.** A **data affiliation** problem, not a controller one: `boundary_scoped_relation` matches `boundary_ids + [nil]` and `authorize_document_read!` returns early on a nil boundary ("global -> open to all"), which is right for a genuinely instance-wide record and wrong for these four types. Measured on a demo instance at filing: 1 of 2 SSPs and 1 of 2 SARs. **Re-measured when the work started it was 1 of 2 SSPs and 2 of 2 SARs** — the seed links only `SspDocument.first`/`SarDocument.first` and had not re-run since Bundle N rebuilt the estate, so **the seed itself creates them**. **Evidence is deliberately exempt** — it can be leveraged/inherited across boundaries, so boundary-less evidence is legitimate. CDEFs are out of scope: a CDEF is generic, stating a control *can* be satisfied rather than how it is implemented here (provider capability, e.g. MFA → Okta, being the exception). #929 is the prerequisite: `document_metadata_params` permits only name/version/oscal_version/description, so the boundary can be set at upload and **never after** — requiring it without #929 leaves every orphan permanently invalid and unfixable. Cost is in the fixtures, not the validation: **no** SSP/SAP/SAR/POA&M factory set a boundary, across **~390 call sites in ~150 spec files** (368 was the estimate at filing); seeds fixed and `SeedRunner::CURRENT_VERSIONS` bumped. **What the estimate missed:** the presence validation exposed that four generator services minted boundary-less documents outright — 161 of the 188 initial failures, one cause. |
 
-##### 12. Bundle P — Evidence completeness
+##### 12. Bundle S — Controls layer: who can see it, and what it carries  ·  **IN PROGRESS**
+
+Three issues that all land on the same controllers, views and export builder. Sequenced together at owner direction (2026-08-17) because **nothing releases until v1.16.0 is tagged**, so there is no incremental-delivery reason to split the security fix out, and one branch avoids three rounds of conflicts in the same files.
+
+**Progress on `feature/974_controls_layer_access`** — one commit per phase, one PR.
+
+| Phase | Scope | State |
+| --- | --- | --- |
+| 1 | #974 — `public_controls_read` declaration + structural spec + both-posture request specs | **Committed** `b5a48012` |
+| 2 | #959 — export carries only referenced back-matter + reference-integrity invariant + advisory report | **Committed** `0772f826` |
+| 3 | #974 — Converters index/show, Controls-layer downloads under the flag, nav consistency | **Committed** `f96d4bb7` |
+| 3b | #974 — rate-limit the newly-anonymous Controls downloads | **Committed** `23a0b541` |
+| 4 | #935 — `framework` derived at import + facet on catalogs and baselines | **Committed** `4db8948c` |
+| 5 | Docs, compliance, wiki, both-posture Playwright | **Committed** |
+
+Suite after the nav work: **5372 examples, 0 failures, 10 pending**; rubocop, brakeman and zeitwerk clean; **20 mutations RED** across the bundle.
+
+**Two findings from phase 1 worth carrying forward.** The structural spec immediately caught that `api/v1/sessions` needed an explicit allowlist entry and that one allowlist entry was stale. And two mutations did NOT bite on the first round: the flag-on helper broke out on a login redirect and reported "status < 400", passing against a gate that never opens, and the macro's write-refusal guard had no test at all. Both are fixed and all four now bite — the same vacuous-test shape the #919 spec hit, which is why that file's history is cited in the new one.
+
+**A navigation defect was found during owner testing and fixed in-bundle.** With the flag on, the SIGN-IN page offered no route to component definitions or converters — and that is where an anonymous visitor lands, because `/` redirects there. The cause was not a missing entry: **the header banner was two hand-maintained copies**. Only `environment_header` and `controls_nav` had ever been extracted; the nav shell, brand, About, Resources and theme toggle were duplicated across `layouts/application` and `layouts/login`, and the Implementation/Assessment/Enterprise dropdowns existed in `application` alone. The copies had **already drifted** (the About link carried different classes in each), and `_controls_nav` even carries the comment "Shared by the application and login layouts so they can't drift" — the same lesson learned once and applied to one dropdown out of five.
+
+Mirroring the entry would have made a third copy. Instead the banner is now ONE partial, `shared/_main_nav.html.erb`, rendered by both layouts (371→116 and 266→222 lines). Extracting it exposed two more entries advertised to people who cannot open them: **Home** and **OSCAL overview** both 302 anonymously and are now signed-in only. A spec pins parity, reachability, and the structural rule that any layout with a navbar must render the shared partial.
+
+**OWNER HARD RULE, recorded 2026-08-17: NO NAVIGATION CHANGES WITHOUT APPROVAL.** SPARC's menus follow the NIST layers and a link must be findable in the same place every time. Placement never varies; only visibility does.
+
+**Both postures were proven in a real browser, twice.** `tests/ui-smoke/test_public_controls_974.py` declares the posture via `SPARC_SMOKE_PUBLIC_CATALOGS` and independently confirms it against the app, failing loudly when the two disagree or nothing is declared — verified by running it with the wrong posture and with none, which produced errors rather than skips (#885's lesson). Full suite, same image, container recreated between runs: **flag OFF 452 passed / 1 failed / 29 skipped**, **flag ON 453 passed / 0 failed / 29 skipped**.
+
+**The one failure was a HARNESS bug, not a product one, and it is worth remembering why.** `test_index_filters_908` asserted `"framework=FedRAMP 20x" in url` against a URL reading `framework=FedRAMP+20x`. The filter worked; the assertion compared a raw value against an encoded query. Every facet value that file had ever seen was single-token (`OSCAL`, `1.1.2`, `published`), so the encoding path was never exercised — **`framework` is the first facet value in the product containing a space**. Fixed by parsing the query rather than by reordering the facet to dodge the first-dropdown position, which would have been gaming the test.
+
+**Phase 3 turned up a real availability gap, found by driving the app rather than reading the diff.** With the flag on, the catalog download that is now anonymous measured **24 seconds and 2.97 MB** (16s of it GC), and every existing Rack::Attack bucket covered writes, uploads or credentials — nothing throttled anonymous GETs. Owner directed the fix land in-bundle, so `controls/downloads/5min/ip` was added with a new documented env var, scoped to `download_*` only because throttling the screens would make a published catalog unbrowsable.
+
+**#935's derivation was proven on real data, not fixtures.** After the backfill, the live estate reads: the two NIST catalogs → `NIST SP 800-53`, FedRAMP KSI → `FedRAMP 20x`, and `Demo LOW Baseline` → `NIST SP 800-53` **through catalog lineage**, which is exactly the case the owner described — a baseline whose own name says nothing still resolves through the catalog it descends from.
+
+**Phase 2 was narrower than it looked.** Only the authoritative branch is scoped: evidence-derived back-matter is `source: "managed"` with `resourceable: doc` and flows through `managed_resources`, untouched. The #845 estate's thirteen policy resources per SSP are of that kind and are unaffected — verified against the committed artifacts rather than assumed.
+
+**#974 is a live exposure**, filed 2026-08-17 while answering a question about CDEF default scope. `CdefDocumentsController` and `ControlFamiliesController` carry a bare `skip_before_action :require_authentication` with **no** `require_authentication_unless_public_controls` companion, unlike catalogs, catalog controls, mappings and profiles. The pairing is a two-line convention repeated per controller, so omitting the second line is silent — nothing fails, the screen simply becomes public.
+
+Measured unauthenticated against a UBI9 prod-mode instance with `public_catalogs? == false`, sweeping all 100 collection GET routes plus the Controls-layer member routes. The unintended public surface is **exactly two controllers**:
+
+| Path | Unauthenticated today | Expected |
+| --- | --- | --- |
+| `/cdef_documents` and `/cdef_documents/:slug` | **200** | 302 → /login |
+| `/control_catalogs/:catalog/control_families/:code` | **200** | 302 → /login |
+| catalogs · profiles · mappings · converters · SSP/SAP/SAR/POA&M | 302 → /login | unchanged |
+
+24 CDEFs are linked to an anonymous caller on page 1 of a 231-document corpus, and a control-family page serves catalog content that `/control_catalogs` itself refuses anonymously — the same data answering differently depending on the URL used to reach it. **No configuration turns it off.**
+
+**The owner-decided view/auth matrix lives on #974 and is authoritative.** In short: the flag opens the Controls layer for **read on the web only** — catalogs, catalog controls, families, profiles, mappings, CDEFs, and Converters **index + show only**. Writes, fetches and refreshes never become public in any posture; **`/api/v1` always requires a Bearer token**; and **boundary documents (SSP/SAP/SAR/POA&M/Evidence) are never public**, which is what #929/#952 just tightened. Controls-layer **downloads/exports follow the screens** and become public under the flag.
+
+**That last decision makes #959 a hard prerequisite, not a companion.** `BackMatterBuilder#authoritative_resources` embeds **every** authoritative resource in the instance into **every** export, with no document, boundary or organization scoping — measured **12 today** on the dev estate, and 96 rows of UI-smoke residue that leaked into the #845 reference artifacts and once reached a public wiki screenshot. Publishing exports before that is scoped would publish unrelated instance state to anonymous callers.
+
+**#935 joins because it is the same screens.** It adds a derived-at-import `framework` column to `control_catalogs` and `profile_documents` plus a facet on those indexes and their `Api::V1` endpoints. No conceptual coupling to the other two — the reason to bundle is that all three edit the catalog and baseline index paths, and #908 already shipped the facet mechanism (`CollectionBrowseQuery`), so only the column is missing.
+
+| Issue | Description | Notes |
+| --- | --- | --- |
+| **#974** | CDEF and control-family screens are public regardless of `SPARC_PUBLIC_CATALOGS` | **Bundle S, security half.** Replace the two-line per-controller convention with one declarative helper so a controller cannot half-opt-in, then **make the gap fail a test** in the manner of #919's coverage spec — a convention that can be half-applied will be half-applied again. Assert **both** postures for every screen: a test that only runs with the flag off passes today for catalogs and never notices CDEFs. |
+| **#959** | Every export embeds every authoritative back-matter resource in the instance | **Bundle S, and #974's export half depends on it.** Filed as a *question* with three items to settle — whether instance-wide back-matter belongs in every document, whether it should be scoped by organization or boundary, and whether an export should be reproducible independent of unrelated instance state (#845 assumes yes; today it is not). **Settle those before writing code.** |
+| **#935** | Derive and persist `framework` at import, so catalogs and baselines can be filtered by it | **Bundle S, feature half.** Cut from #908 because framework is not a field — it exists only as prose and filename, and deriving it per request by regexing titles was rejected deliberately: confidently displaying a *wrong* framework is worse than offering no filter. Derive once at import, **leave null when nothing says clearly**, and make the rule a named, tested unit with a backfill through the same path. |
+
+##### 13. Bundle P — Evidence completeness
 
 Both are about evidence being trustworthy rather than merely present. Bundle M is the first fixture with evidence at more than one tier — 32 records across two boundaries in two organizations — so #948 finally has something real to render.
 
@@ -790,7 +848,7 @@ Both are about evidence being trustworthy rather than merely present. Bundle M i
 | **#947** | An attestation cannot be recorded without a file, the attester is unverifiable free text, and evidence can be saved with no controls | **Found in local review of PR #943.** Three defects on one screen. (1) The evidence form renders the dropzone with `required: !@evidence.file.attached?`, so a file is **always** mandatory on create — a UI-only constraint the model does not impose (`has_one_attached :file`, no presence validation). It also fails **silently**: the real input is `d-none`, and a browser cannot focus a hidden required field to report a message, so the form just refuses to submit. `EVIDENCE_TYPE_LABELS` already offers **Signed Statement**, so the vocabulary anticipates fileless evidence the form forbids. (2) `Attestation` stores `attester_name` / `attester_email` as **strings with no FK to users** and no tie to the boundary, while `ROLES` spans `system_owner`, `isso`, `ciso`, `authorizing_official` — so an attestation can claim the SO signed off when that person holds no such role. Same shape as #934, and the #919/#707 roster already knows who holds which role per boundary. (3) Nothing requires an `Evidence` to have any `EvidenceControlLink`, so evidence that supports no control can be saved. Owner: **collected evidence should require 1:n controls.** |
 | **#948** | Tier the evidence index Instance → Organization → Boundary | **Was never in this plan** — on the milestone and missed by every previous currency pass, found only by reconciling the plan against the GitHub milestone rather than reading it. Bundle P with #947. #845 listed it among the issues the reference estate unblocks: the estate is the first fixture with evidence at more than one tier (32 records across two boundaries in two organizations), so the tiering has something real to render. |
 
-##### 13. Bundle Q — Polish
+##### 14. Bundle Q — Polish
 
 The cheapest item on the milestone.
 
@@ -798,7 +856,7 @@ The cheapest item on the milestone.
 | --- | --- | --- |
 | **#936** | Serve a real favicon and link-preview metadata | **Filed during Bundle F.** Saved SPARC URLs show a generic globe. Cosmetic, but it is the cheapest item on the milestone. |
 
-##### 14. Bundle R — Auth entitlements — IdP as system of record
+##### 15. Bundle R — Auth entitlements — IdP as system of record
 
 Last by owner direction. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end of the release**, since it is paired with #822 so one two-ceremony TLS verification round covers both. `bundle-audit` reports no vulnerabilities against the current lock, so the deferral is schedulable rather than reactive — **if that changes, decouple #820 from #822 and take it on its own.**
 
@@ -1061,7 +1119,7 @@ removed and are no longer tracked:
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
-| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, #939, #929, #952, #947, #948, #936, #935, #951, #959, #860, #842, #822 | In Progress — **25 of 36 shipped** (PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969). **Bundle O (#929 #952) is in progress on `bug/929_boundary_attachment`.** The count moved 16 → 24 → 25 → 32 → **36**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; and the owner added #935, #951, #959 on 2026-08-15. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Remaining order set by the owner 2026-08-15: **#939 pulled forward** (shipped, PR #969) → **O** (#929 #952, in progress) → **P** (#947 #948) → **Q** (#936) → **R** (#860 #842 #822 +#820), with #935, #951, #959 still unslotted. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, #974, #947, #948, #936, #935, #951, #959, #860, #842, #822 | In Progress — **28 of 38 shipped** (PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969). **Bundle O (#929 #952) shipped in PR #975; Bundle S (#974 #959 #935) is next.** The count moved 16 → 24 → 25 → 32 → **36**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; and the owner added #935, #951, #959 on 2026-08-15. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Remaining order set by the owner 2026-08-15: **#939 pulled forward** (shipped, PR #969) → **O** (#929 #952, shipped) → **S** (#974 #959 #935) → **P** (#947 #948) → **Q** (#936) → **R** (#860 #842 #822 +#820). #935 and #959 are now slotted into Bundle S; **#951 remains unslotted**. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 

@@ -85,6 +85,7 @@ class CatalogImportService
     catalog = stats[:catalog]
     digest = Digest::SHA256.hexdigest(@content)
     catalog.update!(catalog_content_digest: digest, lifecycle_status: "published")
+    derive_framework!(catalog)
 
     # #393: populate catalog_control_parts from the freshly imported
     # guidance_data["parts"]. Best-effort -- failures don't block import
@@ -796,6 +797,16 @@ class CatalogImportService
     catalog.assign_attributes(attrs)
     catalog.save!
     catalog
+  end
+
+  # #935 — derived once, after the controls are in, because the control-id
+  # namespace is the strongest structural signal and it does not exist until
+  # they are. Never overwrites a value an operator set by hand.
+  def derive_framework!(catalog)
+    return if catalog.nil? || catalog.framework.present?
+
+    framework = FrameworkDeriver.for_catalog(catalog.reload)
+    catalog.update_column(:framework, framework) if framework.present?
   end
 
   def upsert_family(catalog, code, name, sort_order)

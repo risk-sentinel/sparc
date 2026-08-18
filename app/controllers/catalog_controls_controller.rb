@@ -4,8 +4,8 @@ class CatalogControlsController < ApplicationController
   # authentication only when the deployment opts into public controls (#726),
   # and never gated on catalogs.write. The write gate below was previously
   # unscoped, which was harmless while every action was a write.
-  skip_before_action :require_authentication, only: [ :show ]
-  before_action :require_authentication_unless_public_controls, only: [ :show ]
+  # #726/#974 — public read when SPARC_PUBLIC_CATALOGS=true, authenticated otherwise.
+  public_controls_read only: [ :show ]
 
   before_action :set_control_family, only: [ :new, :create, :batch_new, :batch_create ]
   before_action :set_catalog_control, only: [ :show, :edit, :update, :destroy ]

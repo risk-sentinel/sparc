@@ -749,6 +749,7 @@ Rack::Attack throttle thresholds. Counters live in `Rails.cache` (`solid_cache` 
 | SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER | Per-authenticated-user cap on upload endpoints. Stops a compromised account from filling storage. | `100` | `500` | No |
 | SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE | Per-Bearer-token cap on `/api/v1` write methods (POST/PUT/PATCH/DELETE). Protects mass-import API consumers from runaway scripts. | `300` | `600` | No |
 | SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN | Per-IP cap on `POST /login` + `/auth/failure` within 1 minute. Credential-stuffing defense. | `5` | `3` | No |
+| SPARC_RATE_LIMIT_CONTROLS_DOWNLOADS_PER_5MIN_PER_IP | Per-IP cap on Controls-layer document downloads (catalog/profile/mapping/CDEF `download_*`) within 5 minutes. These become anonymous when `SPARC_PUBLIC_CATALOGS=true` and are the most expensive read in the product — the full NIST 800-53 Rev 5 catalog export measures ~24s and ~3 MB — so the bucket stops a published instance being used as an amplifier. Screens and the API are unaffected. | `30` | `10` | No |
 | SPARC_RATE_LIMIT_SAFELIST_CIDRS | Comma-separated CIDR list. IPs in any listed CIDR bypass ALL throttles. Used for internal health-check IPs, NLB targets, etc. Loopback addresses safelisted by default for dev convenience. | `127.0.0.1,::1` | `127.0.0.1,::1,10.0.0.0/8` | No |
 
 <!-- markdownlint-enable MD013 -->

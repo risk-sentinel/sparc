@@ -9,9 +9,13 @@ class ProfileDocumentsController < ApplicationController
   include Publishable
   include OscalExportable
   include DocumentApprovalActions
-  skip_before_action :require_authentication, only: [ :index, :show ]
+  # #726/#974 — public read when SPARC_PUBLIC_CATALOGS=true, authenticated otherwise.
+  # #974 — downloads follow the screens (see ControlCatalogsController).
+  public_controls_read only: [ :index, :show,
+                               :download_json, :download_oscal, :download_oscal_validated,
+                               :download_oscal_unvalidated, :download_yaml, :download_xml,
+                               :download_resolved_catalog ]
   # #726: public reads are gated by SPARC_PUBLIC_CATALOGS (secure-by-default). (AC-3)
-  before_action :require_authentication_unless_public_controls, only: [ :index, :show ]
 
   before_action :set_profile_document, only: %i[set_baseline
     show destroy download_json download_oscal
