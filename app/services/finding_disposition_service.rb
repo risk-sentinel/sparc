@@ -8,11 +8,11 @@ require "digest"
 #
 # Linkage contract (design §4):
 #   falsePositive          -> Evidence
-#   waiver                 -> Attestation (role: authorizing_official) + expiration
+#   waiver                 -> Attestation (an Authorizing Official role) + expiration
 #   poam / vendorDependency -> PoamFinding
 #   inherited              -> AuthorizationBoundary (the upstream/providing system)
 #   riskAdjustment         -> RiskAssessment
-#   operationalRequirement -> Attestation (role: authorizing_official) + expiration
+#   operationalRequirement -> Attestation (an Authorizing Official role) + expiration
 #
 # Severity policy: CRITICAL findings may not be risk-accepted or downgraded
 # (waiver / riskAdjustment / operationalRequirement) — they must be remediated or
@@ -37,6 +37,22 @@ class FindingDispositionService
 
   # Attestation-linked kinds require an Authorizing Official attestation.
   AO_ATTESTATION_KINDS = %w[waiver operationalRequirement].freeze
+
+  # #947 — the AO role NAMES, not one hardcoded string.
+  #
+  # `Attestation#role` used to come from a six-item list of its own in which the
+  # AO was spelled `authorizing_official`. That list is gone: the role is now a
+  # canonical `Role` name, and the Authorizing Official is seeded as `ao` (with
+  # `agency_ao` for the agency-specific authorizer). Left as it was, this check
+  # would have refused EVERY newly recorded AO attestation — silently blocking
+  # waivers and operational-requirement dispositions, on a rule whose whole
+  # point is that only an AO may accept residual risk.
+  #
+  # `authorizing_official` is kept so attestations recorded under the old
+  # vocabulary keep satisfying dispositions already linked to them. Accepting a
+  # historical spelling is not the same as accepting a new unverified claim —
+  # `Attestation` validates the latter.
+  AO_ROLE_NAMES = %w[ao agency_ao authorizing_official].freeze
 
   # Not permitted on CRITICAL findings (no risk acceptance / downgrade).
   CRITICAL_BANNED_KINDS = %w[waiver riskAdjustment operationalRequirement].freeze
@@ -121,8 +137,10 @@ class FindingDispositionService
       raise DispositionError, "#{kind} must link a #{expected}, got #{subject.class.name}"
     end
 
-    if AO_ATTESTATION_KINDS.include?(kind) && subject.role.to_s != "authorizing_official"
-      raise DispositionError, "#{kind} requires an Attestation with role authorizing_official"
+    if AO_ATTESTATION_KINDS.include?(kind) && AO_ROLE_NAMES.exclude?(subject.role.to_s)
+      raise DispositionError,
+            "#{kind} requires an Attestation by an Authorizing Official " \
+            "(role: #{AO_ROLE_NAMES.join(' or ')}), got #{subject.role.inspect}"
     end
   end
 

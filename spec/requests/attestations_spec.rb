@@ -27,46 +27,66 @@ RSpec.describe "Attestations", type: :request do
   end
 
   describe "POST /evidences/:evidence_id/attestations" do
+    # #947 — an attestation now references an ACCOUNT and a role that account
+    # actually holds on the evidence's boundary. The name is snapshotted by the
+    # server, so it is deliberately absent from the payload.
+    let!(:attesting_role) do
+      role = create(:role, :authorization_boundary_scoped,
+                    name: "isso", display_name: "ISSO",
+                    permissions: { "evidence.attest" => true })
+      create(:user_role, user: attester, role: role,
+             authorization_boundary: create(:authorization_boundary))
+      role
+    end
+
+    let(:attester) { create(:user, display_name: "Jane Assessor") }
+
+    def post_attestation(overrides = {})
+      post evidence_attestations_path(evidence), params: {
+        attestation: {
+          attester_user_id: attester.id,
+          role: "isso",
+          statement: "This evidence is accurate and complete.",
+          attested_at: Time.current.iso8601
+        }.merge(overrides)
+      }
+    end
+
     it "creates an attestation with valid params" do
-      expect {
-        post evidence_attestations_path(evidence), params: {
-          attestation: {
-            attester_name: "Jane Assessor",
-            attester_email: "jane@example.com",
-            role: "assessor",
-            statement: "This evidence is accurate and complete.",
-            attested_at: Time.current.iso8601
-          }
-        }
-      }.to change(Attestation, :count).by(1)
+      expect { post_attestation }.to change(Attestation, :count).by(1)
       expect(response).to have_http_status(:redirect)
     end
 
-    it "updates evidence status" do
-      post evidence_attestations_path(evidence), params: {
-        attestation: {
-          attester_name: "Jane Assessor",
-          attester_email: "jane@example.com",
-          role: "assessor",
-          statement: "This evidence is accurate.",
-          attested_at: Time.current.iso8601
-        }
-      }
-      evidence.reload
-      expect(evidence.status).to be_in(%w[attested draft collected reviewed])
+    it "snapshots the attester name from the account" do
+      post_attestation
+      expect(Attestation.last.attester_name).to eq("Jane Assessor")
+    end
+
+    # This assertion used to be `be_in(%w[attested draft collected reviewed])`,
+    # which every possible status satisfies — it could not fail. Attesting
+    # evidence marks it attested, so that is what it now checks.
+    it "marks the evidence attested" do
+      post_attestation
+      expect(evidence.reload.status).to eq("attested")
     end
 
     it "generates a signature hash" do
-      post evidence_attestations_path(evidence), params: {
-        attestation: {
-          attester_name: "Jane Assessor",
-          attester_email: "jane@example.com",
-          role: "assessor",
-          statement: "This evidence is accurate.",
-          attested_at: Time.current.iso8601
-        }
-      }
+      post_attestation
       expect(Attestation.last.signature_hash).to be_present
+    end
+
+    it "refuses an attester who holds no attesting role" do
+      outsider = create(:user)
+
+      expect { post_attestation(attester_user_id: outsider.id) }
+        .not_to change(Attestation, :count)
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    # The free-text field #947 removed must not come back through the params.
+    it "ignores a client-supplied attester name" do
+      post_attestation(attester_name: "Someone Else")
+      expect(Attestation.last.attester_name).to eq("Jane Assessor")
     end
   end
 

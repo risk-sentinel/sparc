@@ -1,10 +1,15 @@
 # REST API for evidence attestations.
 #
-# Attestations are periodic-review records signed off by reviewers
-# (control owner / system owner / ISSO / CISO / assessor / AO) that an
-# evidence artifact accurately represents the current state of one or
-# more linked controls. Each attestation carries a tamper-evident
+# Attestations are periodic-review records signed off by an accountable
+# reviewer, asserting that an evidence artifact accurately represents the
+# current state of one or more linked controls. Each carries a tamper-evident
 # SHA-256 signature_hash for non-repudiation.
+#
+# #947 — who may attest is no longer a hardcoded list of role names. The
+# attester resolves to a SPARC account, and the role they claim is checked
+# against what they actually hold on the evidence's boundary, via the
+# `evidence.attest` permission. Which roles carry it is instance configuration,
+# so organizations with different rule sets express their own.
 #
 # This controller fills the API gap left by the existing UI-only
 # `AttestationsController` (per the SPARC api-first rule) and adds the
@@ -52,7 +57,16 @@ class Api::V1::AttestationsController < Api::V1::BaseController
 
     if attestation.save
       attestation.generate_signature!
-      @evidence.update!(status: :attested) unless @evidence.attested?
+      # #947 — check the STATUS, not `attested?`.
+      #
+      # `Evidence#attested?` is explicitly defined as `attestations.any?`, which
+      # SHADOWS the predicate the `status` enum generates for the "attested"
+      # value. By the time this line runs the attestation has just been saved, so
+      # the shadowing method is always true and the status update never fired —
+      # evidence could be signed off and still read "Draft" everywhere. The old
+      # spec asserted the status was one of four values, which no outcome could
+      # fail, so nothing caught it.
+      @evidence.update!(status: :attested) unless @evidence.status == "attested"
       audit_log("attestation_created", subject: attestation, metadata: { evidence_id: @evidence.id })
       render json: { data: serialize(attestation, detailed: true) }, status: :created
     else
@@ -97,9 +111,14 @@ class Api::V1::AttestationsController < Api::V1::BaseController
     @attestation = @evidence.attestations.find(params[:id])
   end
 
+  # #947 — `attester_name` / `attester_email` are NOT permitted. They are the
+  # snapshot the model takes from the resolved account (#934 rule), not values a
+  # caller supplies. Permitting them would let a request name one person while
+  # referencing another, which is precisely the unverifiable claim this issue
+  # exists to close.
   def attestation_params
     params.require(:attestation).permit(
-      :attester_name, :attester_email, :role, :statement, :attested_at,
+      :attester_user_id, :role, :statement, :attested_at,
       :frequency, :status
     )
   end
@@ -109,6 +128,11 @@ class Api::V1::AttestationsController < Api::V1::BaseController
       id: attestation.id,
       evidence_id: attestation.evidence_id,
       attester_name: attestation.attester_name,
+      attester_user_id: attestation.attester_user_id,
+      # #947 — whether the recorded role was checkable against the roster.
+      # False for rows written before the rule; those are reported, not
+      # rewritten, so a consumer can tell a verified claim from a legacy one.
+      attester_verified: attestation.attester_verified?,
       role: attestation.role,
       role_label: attestation.role_label,
       attested_at: attestation.attested_at.utc.iso8601,
@@ -127,16 +151,27 @@ class Api::V1::AttestationsController < Api::V1::BaseController
     data
   end
 
+  # #947 — scoped to the evidence's boundary, reconciling this controller with
+  # the stricter web guard its sibling already carried a note about.
+  #
+  # The unscoped form was not merely laxer, it was WRONG IN BOTH DIRECTIONS:
+  # `has_permission?(key)` with no boundary matches ONLY instance-scoped roles,
+  # so a boundary-scoped ISSO holding `evidence.read` on the very boundary the
+  # evidence belongs to was REFUSED here while being allowed in the UI, and an
+  # instance-level grant passed for every boundary at once. Passing the boundary
+  # is what makes the two surfaces answer the same question.
   def authorize_read!
     return if current_user.admin?
-    return if current_user.has_permission?("evidence.read")
+    return if current_user.has_permission?("evidence.read",
+                                           authorization_boundary_id: @evidence&.authorization_boundary_id)
 
     raise NotAuthorizedError, "Not authorized to view attestations"
   end
 
   def authorize_write!
     return if current_user.admin?
-    return if current_user.has_permission?("evidence.write")
+    return if current_user.has_permission?("evidence.write",
+                                           authorization_boundary_id: @evidence&.authorization_boundary_id)
 
     raise NotAuthorizedError, "Not authorized to manage attestations"
   end

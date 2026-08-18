@@ -24,6 +24,8 @@ RSpec.describe "Api::V1::EvidenceControlLinks", type: :request do
 
   describe "GET /api/v1/evidences/:evidence_id/control_links" do
     it "lists links for the evidence" do
+      # #947 — evidence must support at least one control, so the factory builds
+      # one: this evidence has that link plus the two created here.
       create_list(:evidence_control_link, 2, evidence: evidence)
       create(:evidence_control_link)  # belongs to other evidence
 
@@ -31,7 +33,7 @@ RSpec.describe "Api::V1::EvidenceControlLinks", type: :request do
 
       expect(response).to have_http_status(:ok)
       parsed = JSON.parse(response.body)
-      expect(parsed["data"].length).to eq(2)
+      expect(parsed["data"].length).to eq(3)
       expect(parsed["meta"]).to include("page", "count")
     end
 
@@ -48,8 +50,13 @@ RSpec.describe "Api::V1::EvidenceControlLinks", type: :request do
 
   describe "POST /api/v1/evidences/:evidence_id/control_links" do
     it "links a bare control with no document scope" do
+      # Forced BEFORE the block: `evidence` is a lazy let, and the factory now
+      # builds a control link with it. Naming it first inside the expect would
+      # put that link inside the delta and the +1 would read as +2.
+      target = evidence
+
       expect {
-        post api_v1_evidence_control_links_path(evidence_id: evidence.id),
+        post api_v1_evidence_control_links_path(evidence_id: target.id),
              params: { control_link: { control_id: "AC-2" } }, headers: admin_headers
       }.to change(EvidenceControlLink, :count).by(1)
 

@@ -52,11 +52,26 @@ RSpec.describe "Api::V1::Attestations", type: :request do
   end
 
   describe "POST /api/v1/evidences/:evidence_id/attestations" do
+    # #947 — the API contract changed with the model: an attestation references
+    # an ACCOUNT and a role that account actually holds on the boundary, and the
+    # name is snapshotted server-side rather than supplied. So the payload names
+    # `attester_user_id`, and the grant has to exist for the create to succeed.
+    let(:boundary) { create(:authorization_boundary) }
+    let(:evidence) { create(:evidence, authorization_boundary: boundary) }
+    let(:attester) { create(:user, display_name: "API Reviewer") }
+
+    let!(:attesting_role) do
+      role = create(:role, :authorization_boundary_scoped,
+                    name: "isso", display_name: "ISSO",
+                    permissions: { "evidence.attest" => true })
+      create(:user_role, user: attester, role: role, authorization_boundary: boundary)
+      role
+    end
+
     let(:valid_params) do
       {
         attestation: {
-          attester_name: "API Reviewer",
-          attester_email: "api@example.com",
+          attester_user_id: attester.id,
           role: "isso",
           statement: "Verified via API.",
           attested_at: Time.current.iso8601,
@@ -73,6 +88,41 @@ RSpec.describe "Api::V1::Attestations", type: :request do
       parsed = JSON.parse(response.body)
       expect(parsed.dig("data", "signature_hash")).to be_present
       expect(parsed.dig("data", "frequency")).to eq("annually")
+      expect(parsed.dig("data", "attester_verified")).to be(true)
+    end
+
+    # #947 — the name is a SNAPSHOT taken from the account, never client input.
+    it "snapshots the attester name from the account and ignores a supplied one" do
+      spoofed = valid_params.deep_merge(attestation: { attester_name: "Someone Else" })
+      post api_v1_evidence_attestations_path(evidence_id: evidence.id),
+           params: spoofed, headers: admin_headers
+
+      expect(response).to have_http_status(:created)
+      expect(JSON.parse(response.body).dig("data", "attester_name")).to eq("API Reviewer")
+    end
+
+    it "rejects an attester who holds no attesting role on the boundary" do
+      outsider = create(:user)
+      params = valid_params.deep_merge(attestation: { attester_user_id: outsider.id })
+
+      post api_v1_evidence_attestations_path(evidence_id: evidence.id),
+           params: params, headers: admin_headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["details"].join).to match(/holds no role|does not hold/i)
+    end
+
+    it "rejects a role that does not carry evidence.attest" do
+      create(:role, :authorization_boundary_scoped,
+             name: "view_only", display_name: "View Only",
+             permissions: { "evidence.read" => true })
+      params = valid_params.deep_merge(attestation: { role: "view_only" })
+
+      post api_v1_evidence_attestations_path(evidence_id: evidence.id),
+           params: params, headers: admin_headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["details"].join).to match(/not a role that may attest/i)
     end
 
     it "rejects an invalid frequency" do
@@ -105,10 +155,23 @@ RSpec.describe "Api::V1::Attestations", type: :request do
 
   describe "GET /api/v1/evidences/:evidence_id/attestations/export" do
     it "emits CMS-shape JSON denormalized per linked control" do
+      # #947 — the factory links one control already (evidence must support one),
+      # so the two asserted here are named rather than added on top of it.
+      evidence.evidence_control_links.destroy_all
       evidence.evidence_control_links.create!(control_id: "AC-2")
       evidence.evidence_control_links.create!(control_id: "AC-3")
+      jane = create(:user, display_name: "Jane")
+      ciso = create(:role, :authorization_boundary_scoped,
+                    name: "ciso", display_name: "CISO",
+                    permissions: { "evidence.attest" => true })
+      # This evidence is instance-wide (no boundary), so eligibility falls back
+      # to "may attest on some boundary" — the grant lives on one of its own.
+      create(:user_role, user: jane, role: ciso,
+             authorization_boundary: create(:authorization_boundary))
+
       create(:attestation, evidence: evidence,
-             attester_name: "Jane", role: "ciso",
+             attester_user: jane, role: "ciso",
+             grant_boundary_id: nil,
              statement: "Verified.",
              attested_at: Time.utc(2026, 4, 1, 12, 0, 0),
              frequency: "annually", status: "passed")
@@ -130,10 +193,24 @@ RSpec.describe "Api::V1::Attestations", type: :request do
     end
 
     it "returns an empty array when evidence has no control links" do
+      # The CMS shape is meaningless without a control_id. Evidence must now
+      # support a control, so a link-less row is a pre-rule one — written the
+      # way a pre-rule row is, by skipping the validation that forbids it.
+      unlinked = build(:evidence, :without_control_links)
+      unlinked.slug = "cms-export-unlinked"
+      unlinked.save!(validate: false)
+
+      create(:attestation, evidence: unlinked)
+      get export_api_v1_evidence_attestations_path(evidence_id: unlinked.id),
+          headers: admin_headers
+      expect(JSON.parse(response.body)["data"]).to be_empty
+    end
+
+    it "keeps the linked-evidence export non-empty (the control of the above)" do
       create(:attestation, evidence: evidence)
       get export_api_v1_evidence_attestations_path(evidence_id: evidence.id),
           headers: admin_headers
-      expect(JSON.parse(response.body)["data"]).to be_empty
+      expect(JSON.parse(response.body)["data"]).not_to be_empty
     end
   end
 end

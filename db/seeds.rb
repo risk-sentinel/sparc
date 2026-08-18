@@ -2077,6 +2077,12 @@ K_CDEF_READ                     = "cdef.read"
 K_CDEF_WRITE                    = "cdef.write"
 K_EVIDENCE_READ                 = "evidence.read"
 K_EVIDENCE_WRITE                = "evidence.write"
+# #947 — authority to ASSERT, distinct from the permission to add evidence.
+# An attestation is evidence whose whole substance is who asserted it, so
+# "may upload a file" must not imply "may sign for the system". Which roles
+# hold this is deliberately configuration rather than a hardcoded list, so
+# organizations with different rule sets can express their own.
+K_EVIDENCE_ATTEST               = "evidence.attest"
 K_MAPPINGS_READ                 = "mappings.read"
 K_POAM_READ                     = "poam.read"
 K_POAM_WRITE                    = "poam.write"
@@ -2088,8 +2094,16 @@ K_SAR_WRITE                     = "sar.write"
 K_SSP_READ                      = "ssp.read"
 K_SSP_WRITE                     = "ssp.write"
 
+# #947 — Policy holds `evidence.attest` so that INSTANCE-WIDE evidence has an
+# authority chain of its own. Boundary-less evidence is provider material —
+# it arrives from a leveraged SSP as inherited/common controls — so it belongs
+# to no single system and no System Owner can speak for it. The model confines
+# an instance-scoped attest grant to exactly that case: it does NOT let Policy
+# sign for an individual boundary's evidence, which remains the accountable
+# boundary roles' job. See Attestation.attestable_roles_for.
 PERM_POLICY_MANAGER = PERM_ALL_READ.merge(
-  "catalogs.write" => true, "profiles.write" => true, "mappings.write" => true
+  "catalogs.write" => true, "profiles.write" => true, "mappings.write" => true,
+  K_EVIDENCE_ATTEST => true
 ).freeze
 
 # #809 — the Authorizing Official accepts residual risk, so approving an HDF
@@ -2098,6 +2112,7 @@ PERM_AO = {
   K_AUTHORIZATION_BOUNDARIES_READ => true, K_SSP_READ => true, K_SAR_READ => true,
   K_SAP_READ => true, K_POAM_READ => true, K_POAM_WRITE => true,
   K_CDEF_READ => true, K_EVIDENCE_READ => true, K_MAPPINGS_READ => true,
+  K_EVIDENCE_ATTEST => true,
   "amendment.approve" => true
 }.freeze
 
@@ -2105,7 +2120,8 @@ PERM_SO_ISO = {
   K_AUTHORIZATION_BOUNDARIES_READ => true, K_SSP_READ => true, K_SSP_WRITE => true,
   K_SAR_READ => true, K_SAP_READ => true, K_POAM_READ => true,
   K_POAM_WRITE => true, K_CDEF_READ => true, K_CDEF_WRITE => true,
-  K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_MAPPINGS_READ => true
+  K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_MAPPINGS_READ => true,
+  K_EVIDENCE_ATTEST => true
 }.freeze
 
 PERM_CISO = {
@@ -2113,7 +2129,7 @@ PERM_CISO = {
   K_AUTHORIZATION_BOUNDARIES_READ => true, K_SSP_READ => true,
   K_SAR_READ => true, K_SAP_READ => true,
   K_POAM_READ => true, K_CDEF_READ => true, K_EVIDENCE_READ => true,
-  K_MAPPINGS_READ => true
+  K_MAPPINGS_READ => true, K_EVIDENCE_ATTEST => true
 }.freeze
 
 PERM_ISSO = {
@@ -2122,7 +2138,7 @@ PERM_ISSO = {
   K_SAP_READ => true, K_SAP_WRITE => true,
   K_POAM_READ => true, K_POAM_WRITE => true,
   K_CDEF_READ => true, K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
-  K_MAPPINGS_READ => true
+  K_MAPPINGS_READ => true, K_EVIDENCE_ATTEST => true
 }.freeze
 
 PERM_TEAM_MEMBER = {
@@ -2147,12 +2163,23 @@ PERM_VIEW_ONLY = {
   K_CDEF_READ => true, K_EVIDENCE_READ => true
 }.freeze
 
-PERM_SAO = PERM_CISO.dup.freeze  # Senior Accountable Official — oversight role
+# Senior Accountable Official — instance-scoped oversight role.
+#
+# #947 — `evidence.attest` is stripped rather than inherited. `has_permission?`
+# matches `authorization_boundary_id: [id, nil]`, so an INSTANCE-scoped grant
+# satisfies the check on EVERY boundary. Inheriting CISO's attest permission
+# here would hand one oversight role the authority to sign for every system on
+# the instance — estate-wide attestation authority that nobody decided to
+# grant, arriving silently through a `.dup`. Attest authority is deliberately
+# boundary-scoped: it is asserted about a specific system, by someone
+# accountable for that system.
+PERM_SAO = PERM_CISO.except(K_EVIDENCE_ATTEST).freeze
 
 PERM_COMMON_CONTROL = {
   K_AUTHORIZATION_BOUNDARIES_READ => true, K_SSP_READ => true, K_SSP_WRITE => true,
   K_CDEF_READ => true, K_CDEF_WRITE => true,
-  K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true
+  K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
+  K_EVIDENCE_ATTEST => true
 }.freeze
 
 PERM_SAOP = {
@@ -2199,7 +2226,7 @@ PERM_ISSM = {
   K_POAM_READ => true, K_POAM_WRITE => true,
   K_CDEF_READ => true,
   K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
-  K_MAPPINGS_READ => true,
+  K_MAPPINGS_READ => true, K_EVIDENCE_ATTEST => true,
   "amendment.approve" => true # #809 — ISSM reviews/approves amendments on the AO's behalf
 }.freeze
 

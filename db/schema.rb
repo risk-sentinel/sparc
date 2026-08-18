@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_18_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_18_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -83,6 +83,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_150000) do
     t.datetime "attested_at", null: false
     t.string "attester_email"
     t.string "attester_name", null: false
+    t.bigint "attester_user_id"
     t.datetime "created_at", null: false
     t.bigint "evidence_id", null: false
     t.string "frequency"
@@ -92,6 +93,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_150000) do
     t.string "status", default: "passed", null: false
     t.datetime "updated_at", null: false
     t.index ["attested_at"], name: "index_attestations_on_attested_at"
+    t.index ["attester_user_id"], name: "index_attestations_on_attester_user_id"
     t.index ["evidence_id"], name: "index_attestations_on_evidence_id"
     t.index ["status"], name: "index_attestations_on_status"
   end
@@ -1828,6 +1830,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_150000) do
   add_foreign_key "api_tokens", "users", column: "created_by_id"
   add_foreign_key "artifact_versions", "evidences", on_delete: :cascade
   add_foreign_key "attestations", "evidences", on_delete: :cascade
+  add_foreign_key "attestations", "users", column: "attester_user_id", on_delete: :nullify
   add_foreign_key "audit_events", "users", on_delete: :nullify
   add_foreign_key "authorization_boundaries", "organizations", on_delete: :nullify
   add_foreign_key "authorization_boundaries", "profile_documents", on_delete: :nullify

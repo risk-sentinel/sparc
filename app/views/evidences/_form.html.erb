@@ -2,7 +2,13 @@
   <div class="card-body">
     <h2 class="mb-4"><%= @evidence.persisted? ? "Edit Evidence" : "Upload Evidence" %></h2>
 
-    <%= form_with model: @evidence, local: true, html: { multipart: true } do |f| %>
+    <%# #947 — the form adapts to the evidence type: an attestation asks for a
+        statement and an attester and treats a file as optional; every other
+        type asks for the file. Server-side validation enforces both, so this
+        is convenience, not the constraint. %>
+    <%= form_with model: @evidence, local: true, html: { multipart: true },
+          data: { controller: "evidence-type-fields",
+                  evidence_type_fields_attestation_types_value: Evidence::ATTESTATION_TYPES.to_json } do |f| %>
       <% if @evidence.errors.any? %>
         <div class="alert alert-danger">
           <h6 class="fw-semibold"><%= pluralize(@evidence.errors.count, "error") %> prevented saving:</h6>
@@ -20,10 +26,12 @@
           <%= f.text_field :title, class: "form-control", placeholder: "e.g. AC-1 Policy Document Screenshot" %>
         </div>
         <div class="col-md-3">
-          <%= f.label :evidence_type, class: "form-label fw-semibold" do %>Evidence Type <span class="text-danger">*</span><% end %><%= field_help "What the artefact is — a screenshot, a scan output, a signed statement. It describes the file, not the control it supports." %>
+          <%= f.label :evidence_type, class: "form-label fw-semibold" do %>Evidence Type <span class="text-danger">*</span><% end %><%= field_help "What this evidence IS — most types describe a file, such as a screenshot or scan output. Attestation is the exception: the statement itself is the evidence and no file is required." %>
           <%= f.select :evidence_type,
               options_for_select(Evidence::EVIDENCE_TYPE_LABELS.map { |k, v| [ v, k ] }, @evidence.evidence_type),
-              {}, class: "form-select" %>
+              {}, class: "form-select",
+              data: { evidence_type_fields_target: "type",
+                      action: "change->evidence-type-fields#refresh" } %>
         </div>
         <div class="col-md-3">
           <%= f.label :status, "Status", class: "form-label fw-semibold" %><%= field_help "How far this has got in review, not whether the control passes. Only Attested means someone has formally signed off; Expired keeps it on record without counting as current." %>
@@ -137,21 +145,52 @@
         </div>
       </div>
 
+      <%# ── Attestation (attestation-type evidence only) ── %>
+      <%# #947 — an attestation IS evidence, so it is recorded HERE, with the
+          record it belongs to. It used to be reachable only after the evidence
+          existed, which forced attestation-type evidence through a state where
+          it asserted nothing. Re-review still happens on the attestation screen;
+          only origination moved. %>
+      <div class="<%= "d-none" unless @evidence.attestation_type? %> mb-4"
+           data-evidence-type-fields-target="attestation">
+        <div class="card border-primary">
+          <div class="card-body">
+            <h5 class="card-title mb-1">Attestation</h5>
+            <p class="text-body-secondary small mb-3">
+              The assertion itself. SPARC checks the attester holds the role they
+              are attesting under, on this system — so what is recorded here can
+              be relied on rather than merely read.
+            </p>
+            <%= f.fields_for :attestations, (@evidence.attestations.first || @evidence.attestations.build) do |af| %>
+              <%= render "attestations/fields",
+                    f: af,
+                    boundary_id: @evidence.authorization_boundary_id %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
       <%# ── File Upload ── %>
       <div class="mb-4">
         <%# #868 — `accept` comes from the same constant the server enforces, so
             the advertised list and the accepted list cannot drift. Archives are
             not accepted: a container hides what is inside it from every check. %>
-        <%# #902 — a file is required to create evidence, but NOT to edit a
-            record that already has one: demanding a re-upload to correct a typo
-            in the title would be its own trap. %>
+        <%# #947 — `required:` is deliberately NOT passed.
+            The dropzone's real <input type="file"> is `d-none`, and a browser
+            cannot focus a hidden required field to report a message: the form
+            simply refused to submit with nothing shown, which made an
+            attestation unrecordable for a reason the screen never gave. The
+            rule now lives on the model (`file_required_for_artefact_types`),
+            where a failure renders in the error summary above like every other.
+            #902's intent is preserved there: required on create, not on edit. %>
         <%= render "shared/dropzone",
           form: f,
           field: :file,
           accept: EvidenceUploadPolicy.accept_attribute,
-          required: !@evidence.file.attached?,
-          label: "Evidence File",
-          hint: "Screenshots, logs, config exports, scan results, or policy documents. Archives (.zip) are not accepted." %>
+          label: @evidence.attestation_type? ? "Supporting File (optional)" : "Evidence File",
+          hint: @evidence.attestation_type? ?
+            "An attestation is the statement itself — a file is optional. Attach one only if it supports the assertion." :
+            "Screenshots, logs, config exports, scan results, or policy documents. Archives (.zip) are not accepted." %>
         <% if @evidence.persisted? && @evidence.file.attached? %>
           <div class="mt-2">
             <span class="text-success small">Current file: <strong><%= @evidence.original_filename || @evidence.file.filename %></strong></span>

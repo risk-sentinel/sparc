@@ -257,7 +257,7 @@ class ReferenceEstateBuilder
     satisfied = simulate_automated_evidence(boundary, ssp, boundary_name)
     sar       = build_sar(ssp, boundary, boundary_name, satisfied)
     poams     = build_poams(sar, boundary, boundary_name)
-    evidence  = build_evidence(boundary, boundary_name)
+    evidence  = build_evidence(boundary, boundary_name, ssp)
 
     boundary.update!(profile_document_id: profile.id) if boundary.profile_document_id != profile.id
 
@@ -477,14 +477,22 @@ class ReferenceEstateBuilder
   # an invalid enum raises at assignment rather than failing validation.
   EVIDENCE_KINDS = %w[policy_document test_result scan_result].freeze
 
-  def build_evidence(boundary, label)
+  # #947 — the estate used to generate evidence that supported NO control and
+  # carried NO file, which is precisely the incomplete evidence the issue was
+  # filed about. A reference estate exists to show what good looks like, so it
+  # now produces records that satisfy the same rules a user's would: linked to a
+  # real control from the SSP, and carrying the artefact its type names.
+  def build_evidence(boundary, label, ssp)
+    control_ids = ssp.ssp_controls.order(:control_id).limit(EVIDENCE_KINDS.length).pluck(:control_id)
+
     EVIDENCE_KINDS.each_with_index.map do |kind, idx|
       title = "#{label} — #{kind.tr('_', ' ').titleize}"
-      Evidence.find_by(title: title) || create_evidence(boundary, title, kind, idx)
+      Evidence.find_by(title: title) ||
+        create_evidence(boundary, title, kind, idx, control_ids[idx] || control_ids.first)
     end
   end
 
-  def create_evidence(boundary, title, kind, idx)
+  def create_evidence(boundary, title, kind, idx, control_id)
     evidence = Evidence.new(
       title:                  title,
       evidence_type:          kind,
@@ -494,9 +502,29 @@ class ReferenceEstateBuilder
       authorization_boundary: boundary
     )
     evidence.collected_at = PINNED_ASSESSMENT[:start] + idx.days
+    # Built, not created afterwards: evidence must support a control, so the
+    # link has to be part of the same save rather than a follow-up write.
+    evidence.evidence_control_links.build(control_id: control_id) if control_id.present?
+    attach_reference_artifact(evidence, kind)
     evidence.save!
     evidence.stamp_collection!(actor: @actor, label: "Reference Estate") if @actor
     evidence
+  end
+
+  # A deterministic stand-in for the artefact the type names.
+  #
+  # Fixed content on purpose: the estate is regenerated and diffed (#957), so a
+  # timestamp or random body here would put a fresh blob checksum in every
+  # rebuild. Attestation types are satisfied by their statement and get no file.
+  def attach_reference_artifact(evidence, kind)
+    return if evidence.attestation_type?
+    return if evidence.file.attached?
+
+    evidence.file.attach(
+      io: StringIO.new("Reference estate #{kind} artefact (#845). Synthetic content for demonstration.\n"),
+      filename: "#{kind}.txt",
+      content_type: "text/plain"
+    )
   end
 
   # OSCAL `metadata.last-modified` comes from the record's `updated_at`
@@ -759,16 +787,27 @@ class ReferenceEstateBuilder
   def record_policy_evidence(boundary, ssp, policy_ids, label)
     policy_ids.group_by { |id| family_of(id) }.each do |family, ids|
       title = "#{label} — #{family.upcase} Policy and Procedures"
-      evidence = Evidence.find_by(title: title) || Evidence.create!(
-        title:                  title,
-        evidence_type:          "policy_document",
-        status:                 "reviewed",
-        description:            "Published #{family.upcase} policy and procedures, " \
-                                "maintained by the policy team and reviewed annually.",
-        source:                 "policy-team",
-        authorization_boundary: boundary,
-        collected_at:           PINNED_ASSESSMENT[:start]
-      )
+      evidence = Evidence.find_by(title: title)
+
+      unless evidence
+        evidence = Evidence.new(
+          title:                  title,
+          evidence_type:          "policy_document",
+          status:                 "reviewed",
+          description:            "Published #{family.upcase} policy and procedures, " \
+                                  "maintained by the policy team and reviewed annually.",
+          source:                 "policy-team",
+          authorization_boundary: boundary,
+          collected_at:           PINNED_ASSESSMENT[:start]
+        )
+        # #947 — the first link and the file are part of the create, not writes
+        # that follow it: a policy document with neither supports nothing and
+        # shows nothing.
+        evidence.evidence_control_links.build(control_id: ids.first,
+                                              document_type: "SspDocument", document_id: ssp.id)
+        attach_reference_artifact(evidence, "policy_document")
+        evidence.save!
+      end
 
       ids.each do |control_id|
         EvidenceControlLink.find_or_create_by!(evidence: evidence, control_id: control_id,

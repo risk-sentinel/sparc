@@ -121,6 +121,7 @@ SPARC defines **35 permission keys** across 14 resource areas (`Role::PERMISSION
 | `cdef.approve` | Approve / publish a Component Definition |
 | `evidence.read` | View evidence artifacts |
 | `evidence.write` | Upload / edit / link evidence artifacts |
+| `evidence.attest` | Sign an attestation — assert, as an accountable role, that evidence is accurate |
 | `mappings.read` | View control mappings |
 | `mappings.write` | Create / edit control mappings |
 | `converters.write` | Configure / manage converter definitions |

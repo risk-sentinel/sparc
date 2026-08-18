@@ -36,7 +36,9 @@ RSpec.describe "Evidence upload policy (#868)", type: :request do
       evidence_type: "artifact",
       status: "collected",
       source: "spec",
-      authorization_boundary_id: boundary.id
+      authorization_boundary_id: boundary.id,
+      # #947 — evidence must support at least one control.
+      control_ids: "ac-2"
     }
   end
 
