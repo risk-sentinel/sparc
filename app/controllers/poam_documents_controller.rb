@@ -5,6 +5,7 @@ class PoamDocumentsController < ApplicationController
   before_action :enforce_reconciliation_gate!, only: %i[update update_metadata]
   include BaselineDeclarable
   include CollectionViewable
+  include CollectionTierable
   include FileUploadable
   include Publishable
   include OscalExportable
@@ -52,7 +53,13 @@ class PoamDocumentsController < ApplicationController
     # #888 — cards by default, remembered per screen, and paginated because a
     # card costs far more to render than a table row.
     @view_mode = resolve_view_mode(:poam_documents)
-    @pagy, @poam_documents = paginate_collection(query.records)
+    filtered = query.records
+    @pagy, @poam_documents = paginate_collection(filtered)
+
+    # #948 — tiering receives the SAME relation the list came from, already
+    # boundary-scoped and already filtered. It groups; it never re-decides who
+    # may see what.
+    @tiering = build_tiering(scope: filtered, records: @poam_documents)
   end
 
   def show

@@ -1,0 +1,118 @@
+<%# #948 — how a SET of evidence records renders, extracted so the flat list and
+    each boundary tier draw from one definition.
+
+    Before this the card grid and the table were written inline in index.html.erb,
+    which meant tiering would have needed a second copy of both — and a second
+    copy is where the boundary column gets added to one and not the other.
+
+    Locals:
+      records   — the evidence to draw (a page, or one tier's slice of it)
+      view_mode — :card or :list
+      show_boundary — whether to show the boundary column. False inside a tier,
+                      where the heading above already says which boundary this
+                      is and repeating it on every row is noise.
+%>
+<% show_boundary = local_assigns.fetch(:show_boundary, true) %>
+
+<% if view_mode == :card %>
+  <div class="sparc-card-grid">
+    <% records.each do |evidence| %>
+      <%= render "shared/item_card",
+            title: evidence.title,
+            url: evidence_path(evidence),
+            badges: [ { text: Evidence::STATUS_LABELS[evidence.status] || evidence.status.to_s.titleize,
+                        class: "sparc-status sparc-status--#{evidence.status == 'approved' ? 'success' : 'neutral'}" },
+                      { text: Evidence::EVIDENCE_TYPE_LABELS[evidence.evidence_type] || evidence.evidence_type.to_s.titleize,
+                        class: "badge bg-light text-dark" } ],
+            description: evidence.description,
+            metrics: [ { value: evidence.evidence_control_links.size, label: "controls" } ],
+            chips: (show_boundary && evidence.authorization_boundary ? [ { text: evidence.authorization_boundary.name, class: "" } ] : []),
+            footer: [ evidence.collected_by.presence, evidence.created_at.strftime("%Y-%m-%d") ].compact.join(" · "),
+            actions: render("evidences/item_actions", evidence: evidence) %>
+    <% end %>
+  </div>
+<% else %>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Type</th>
+          <th>Status</th>
+          <%# #948 — the boundary was a card chip and NOTHING in the table, so a
+              user working across systems could not tell from this view which
+              system a row belonged to. %>
+          <% if show_boundary %><th>Boundary</th><% end %>
+          <th>Controls</th>
+          <th>Collected</th>
+          <th>File</th>
+          <th>Attestations</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% records.each do |evidence| %>
+          <tr>
+            <td>
+              <strong><%= link_to evidence.title, evidence, class: "text-primary", style: "text-decoration: none;" %></strong>
+              <% if evidence.description.present? %>
+                <br><span class="text-body-secondary small"><%= truncate(evidence.description, length: 60) %></span>
+              <% end %>
+            </td>
+            <td><span class="badge bg-body-secondary text-body"><%= evidence.type_label %></span></td>
+            <td>
+              <% badge_class = case evidence.status
+                 when "draft" then "bg-secondary"
+                 when "collected" then "bg-info text-dark"
+                 when "reviewed" then "bg-primary"
+                 when "attested" then "bg-success"
+                 when "expired" then "bg-danger"
+                 else "bg-secondary"
+                 end %>
+              <span class="badge <%= badge_class %>"><%= evidence.status_label %></span>
+            </td>
+            <% if show_boundary %>
+              <td class="small">
+                <% if evidence.authorization_boundary %>
+                  <%= link_to evidence.authorization_boundary.name,
+                        authorization_boundary_path(evidence.authorization_boundary),
+                        class: "text-body" %>
+                <% else %>
+                  <%# Not "none": a blank boundary means visible to every
+                      signed-in user, which is a fact about who can read it. %>
+                  <span class="text-body-secondary fst-italic">Instance-wide</span>
+                <% end %>
+              </td>
+            <% end %>
+            <td>
+              <% evidence.evidence_control_links.limit(3).each do |link| %>
+                <code class="small"><%= link.control_id %></code>
+              <% end %>
+              <% if evidence.evidence_control_links.size > 3 %>
+                <span class="text-body-secondary small">+<%= evidence.evidence_control_links.size - 3 %></span>
+              <% end %>
+            </td>
+            <td class="small"><%= evidence.collected_at&.strftime("%Y-%m-%d") %></td>
+            <td>
+              <% if evidence.file.attached? %>
+                <span class="text-success small"><%= evidence.original_filename || evidence.file.filename %></span>
+              <% else %>
+                <span class="text-body-tertiary small fst-italic">No file</span>
+              <% end %>
+            </td>
+            <td class="text-center">
+              <% if evidence.attestations.any? %>
+                <span class="badge bg-success"><%= evidence.attestations.count %></span>
+              <% else %>
+                <span class="text-body-tertiary">0</span>
+              <% end %>
+            </td>
+            <td>
+              <%= render "evidences/item_actions", evidence: evidence %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

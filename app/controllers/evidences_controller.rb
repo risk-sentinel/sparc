@@ -1,5 +1,6 @@
 class EvidencesController < ApplicationController
   include CollectionViewable
+  include CollectionTierable
   include BoundaryScopedDocument
   boundary_scoped Evidence, read: "evidence.read", write: "evidence.write"
 
@@ -22,7 +23,13 @@ class EvidencesController < ApplicationController
     @facets = active_facets(EvidenceBrowseQuery.facet_params, labels: EvidenceBrowseQuery.facet_labels)
     @clear_facets = clear_facets_params(EvidenceBrowseQuery.facet_params)
     @view_mode = resolve_view_mode(:evidences)
-    @pagy, @evidences = paginate_collection(query.records)
+    filtered = query.records
+    @pagy, @evidences = paginate_collection(filtered)
+
+    # #948 — tiering receives the SAME relation the list came from, already
+    # boundary-scoped and already filtered. It groups; it never re-decides who
+    # may see what.
+    @tiering = build_tiering(scope: filtered, records: @evidences)
   end
 
   def show

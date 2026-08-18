@@ -21,77 +21,18 @@
         label: "security assessment plans", placeholder: "Search SAPs…",
         view_mode: (@view_mode if @sap_documents.any?) %>
 
-  <% if @sap_documents.any? && @view_mode == :card %>
-    <div class="sparc-card-grid">
-      <% @sap_documents.each do |doc| %>
-        <%= render "shared/item_card", **document_card_slots(
-              doc, count: doc.sap_controls.count, count_label: "controls",
-              version: doc.sap_version).merge(
-              url: sap_document_path(doc),
-              badges: document_card_badges(doc),
-              actions: render("sap_documents/item_actions", doc: doc, compact: true)) %>
-      <% end %>
-    </div>
+  <% if @sap_documents.any? && @tiering&.tiered? %>
+    <%# #948 — tiering is AUTOMATIC, appearing only when more than one
+        boundary is visible, so a single-system user never meets a tree
+        with one branch. Card/list still applies inside each tier. %>
+    <%= render "shared/collection_tiers",
+          tiering: @tiering,
+          records_partial: "sap_documents/collection",
+          records_local: :records,
+          view_mode: @view_mode,
+          screen: "sap_documents" %>
   <% elsif @sap_documents.any? %>
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th style="white-space: nowrap;">Name</th>
-          <th style="white-space: nowrap;">Type</th>
-          <th style="white-space: nowrap;">SSP</th>
-          <th style="white-space: nowrap;">Version</th>
-          <th style="white-space: nowrap;">Status</th>
-          <th style="white-space: nowrap;">Controls</th>
-          <th style="white-space: nowrap;">Schedule</th>
-          <th style="white-space: nowrap;">Created</th>
-          <th style="white-space: nowrap;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @sap_documents.each do |doc| %>
-          <tr>
-            <td><strong><%= link_to doc.name, sap_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
-            <td>
-              <% type_variants = { "initial" => "info", "annual" => "success", "continuous" => "purple", "ad-hoc" => "warning" } %>
-              <span class="sparc-status sparc-status--<%= type_variants[doc.assessment_type] || 'neutral' %>">
-                <%= doc.assessment_type&.titleize || "Initial" %>
-              </span>
-            </td>
-            <td class="small text-body-secondary"><%= doc.ssp_document&.name || "—" %></td>
-            <td class="small text-body-secondary"><%= doc.sap_version.presence || "—" %></td>
-            <td style="white-space: nowrap;">
-              <% if doc.processing? || doc.pending? || doc.failed? %>
-                <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
-                  <%= doc.status %>
-                </span>
-                <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
-                  <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= doc.metadata_extra["processing_message"] %></span>
-                <% end %>
-              <% else %>
-                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
-                  <%= doc.lifecycle_label %>
-                </span>
-              <% end %>
-            </td>
-            <td><%= doc.sap_controls.count %></td>
-            <td class="text-body-secondary" style="font-size: 0.82rem; white-space: nowrap;">
-              <% if doc.assessment_start.present? %>
-                <%= doc.assessment_start.strftime("%Y-%m-%d") %>
-                <% if doc.assessment_end.present? %>
-                  &rarr; <%= doc.assessment_end.strftime("%Y-%m-%d") %>
-                <% end %>
-              <% else %>
-                —
-              <% end %>
-            </td>
-            <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
-            <td>
-              <%= render "sap_documents/item_actions", doc: doc %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+    <%= render "sap_documents/collection", records: @sap_documents, view_mode: @view_mode %>
   <% else %>
     <p class="text-center p-4 text-body-secondary">No assessment plans found. Create your first Security Assessment Plan to get started.</p>
   <% end %>

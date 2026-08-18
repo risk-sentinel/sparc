@@ -21,77 +21,18 @@
         label: "security assessment reports", placeholder: "Search SARs…",
         view_mode: (@view_mode if @sar_documents.any?) %>
 
-  <% if @sar_documents.any? && @view_mode == :card %>
-    <div class="sparc-card-grid">
-      <% @sar_documents.each do |doc| %>
-        <%= render "shared/item_card", **document_card_slots(
-              doc, count: doc.sar_controls.count, count_label: "controls",
-              version: doc.sar_version, enriched: doc.enriched?).merge(
-              url: sar_document_path(doc),
-              badges: (document_card_badges(doc, enriched: doc.enriched?) + [ creation_method_badge(doc) ]).compact,
-              actions: render("sar_documents/item_actions", doc: doc, compact: true)) %>
-      <% end %>
-    </div>
+  <% if @sar_documents.any? && @tiering&.tiered? %>
+    <%# #948 — tiering is AUTOMATIC, appearing only when more than one
+        boundary is visible, so a single-system user never meets a tree
+        with one branch. Card/list still applies inside each tier. %>
+    <%= render "shared/collection_tiers",
+          tiering: @tiering,
+          records_partial: "sar_documents/collection",
+          records_local: :records,
+          view_mode: @view_mode,
+          screen: "sar_documents" %>
   <% elsif @sar_documents.any? %>
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th style="white-space: nowrap;">Name</th>
-          <th style="white-space: nowrap;">Source</th>
-          <th style="white-space: nowrap;">Version</th>
-          <th style="white-space: nowrap;">Status</th>
-          <th style="white-space: nowrap;">OSCAL</th>
-          <th style="white-space: nowrap;">Controls</th>
-          <th style="white-space: nowrap;">Created</th>
-          <th style="white-space: nowrap;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @sar_documents.each do |doc| %>
-          <tr>
-            <td><strong><%= link_to doc.name, sar_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
-            <td>
-              <%# #946 — one mapping, in the helper. A second copy here rendered
-                  "Import" with spreadsheet styling for profile- and SSP-generated
-                  documents, and for any with no recorded origin at all. %>
-              <% badge = creation_method_badge(doc) %>
-              <% if badge %>
-                <span class="<%= badge[:class] %>"><%= badge[:text] %></span>
-              <% else %>
-                <span class="text-body-tertiary">&mdash;</span>
-              <% end %>
-            </td>
-            <td class="text-body-secondary" style="font-size: 0.85rem;"><%= doc.sar_version.presence || "\u2014" %></td>
-            <td style="white-space: nowrap;">
-              <% if doc.processing? || doc.pending? || doc.failed? %>
-                <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
-                  <%= doc.status %>
-                </span>
-                <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
-                  <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= doc.metadata_extra["processing_message"] %></span>
-                <% end %>
-              <% else %>
-                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
-                  <%= doc.lifecycle_label %>
-                </span>
-              <% end %>
-            </td>
-            <td>
-              <% if doc.enriched? %>
-                <span class="sparc-oscal-enriched">Enriched</span>
-              <% else %>
-                <span class="sparc-oscal-basic">Basic</span>
-              <% end %>
-            </td>
-            <td><%= doc.sar_controls.count %></td>
-            <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
-            <td>
-              <%= render "sar_documents/item_actions", doc: doc %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+    <%= render "sar_documents/collection", records: @sar_documents, view_mode: @view_mode %>
   <% else %>
     <p class="text-center p-4 text-body-secondary">No Security Assessment Results found. Upload an OSCAL file or create from the wizard to get started.</p>
   <% end %>
