@@ -654,7 +654,7 @@ Backlog / gated:
 
 ### Phase 16: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
 
-**Goal:** Close the v1.16.0 milestone (**38 issues — 28 closed, 10 open, measured 2026-08-17** after PR #975 merged; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, and #935, #951, #959 added to the milestone by the owner on 2026-08-15). The count has moved five times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
+**Goal:** Close the v1.16.0 milestone (**37 issues — 30 closed, 7 open, measured 2026-08-18** after PR #976 merged; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, and #935, #951, #959 added to the milestone by the owner on 2026-08-15). The count has moved five times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
 
 The two structural security deliverables led: a spec that fails when a controller ships without authorization (#919) and one that pins `disposition: "attachment"` on user content (#894). What remains is the document model, the boundary-attachment family, and the IdP entitlement epic.
 
@@ -691,11 +691,13 @@ swallow-and-continue rescue patterns — raised out of #939, **due 2026-09-06**;
 11 log-and-continue in services/jobs, and 17 files combining a transaction with a rescue, which
 is the candidate set for the #963 shape).
 
-**Milestone measured 2026-08-17, after PR #975 merged: 38 issues, 28 closed / 10 open.** The 10
-open: **#822 #842 #860 #935 #936 #947 #948 #951 #959 #974**. Measured over the REST API, because
-GraphQL was returning 503 through the GitHub incident that day. #967, #970 and #974 were filed
-during this milestone; #967 and #970 carried no milestone, #974 does. Re-measure with
-`gh issue list --milestone v1.16.0 --state all`; never read the count off this file.
+**Milestone measured 2026-08-18, after PR #976 merged: 37 issues, 30 closed / 7 open.** The 7
+open: **#822 #842 #860 #936 #947 #948 #951**. Bundle S closed #935, #959 and #974.
+
+**The milestone PAGE reads 38, and that is not a disagreement — it counts pull requests too.**
+PR #933 is attached to the milestone, so the web figure is issues + that PR. Count issues with
+`gh issue list --milestone v1.16.0 --state all`, which is what the numbers above are; never read
+the count off this file, and never off the milestone page without checking for attached PRs.
 
 **Dev/prod toolchain divergence — measured 2026-08-17. OWNER-DECIDED: this is done *with* #820,
 in sequence, not as a separate track.** The toolchain rebuild is the prerequisite step of that
@@ -780,7 +782,7 @@ upstream schema gap should surface as an error rather than be retried into silen
 | **#929** | ~~A document cannot be attached to a boundary after upload — the "Add…" tile leads nowhere~~ — **MERGED (PR #975)** | **Bundle O, and #952 depends on it landing first.** Same inversion as #928 and affects **all five** document types: the boundary can be set at upload but never after (`document_metadata_params` omits `authorization_boundary_id`), while the API permits it. Aggravated by the upload picker listing only boundaries the user is a member of, so the one chance to set it may not include the right one. Re-association must authorize against the **target** boundary — coordinate with #919. |
 | **#952** | ~~SSP/SAP/SAR/POA&M can exist with no boundary and are then visible to every signed-in user~~ — **MERGED (PR #975)** | **Bundle O, and it must follow #929 — tightly coupled.** A **data affiliation** problem, not a controller one: `boundary_scoped_relation` matches `boundary_ids + [nil]` and `authorize_document_read!` returns early on a nil boundary ("global -> open to all"), which is right for a genuinely instance-wide record and wrong for these four types. Measured on a demo instance at filing: 1 of 2 SSPs and 1 of 2 SARs. **Re-measured when the work started it was 1 of 2 SSPs and 2 of 2 SARs** — the seed links only `SspDocument.first`/`SarDocument.first` and had not re-run since Bundle N rebuilt the estate, so **the seed itself creates them**. **Evidence is deliberately exempt** — it can be leveraged/inherited across boundaries, so boundary-less evidence is legitimate. CDEFs are out of scope: a CDEF is generic, stating a control *can* be satisfied rather than how it is implemented here (provider capability, e.g. MFA → Okta, being the exception). #929 is the prerequisite: `document_metadata_params` permits only name/version/oscal_version/description, so the boundary can be set at upload and **never after** — requiring it without #929 leaves every orphan permanently invalid and unfixable. Cost is in the fixtures, not the validation: **no** SSP/SAP/SAR/POA&M factory set a boundary, across **~390 call sites in ~150 spec files** (368 was the estimate at filing); seeds fixed and `SeedRunner::CURRENT_VERSIONS` bumped. **What the estimate missed:** the presence validation exposed that four generator services minted boundary-less documents outright — 161 of the 188 initial failures, one cause. |
 
-##### 12. Bundle S — Controls layer: who can see it, and what it carries  ·  **IN PROGRESS**
+##### 12. Bundle S — Controls layer: who can see it, and what it carries  ·  **SHIPPED** (PR #976, merged `dc7c7dcf`, 2026-08-18)
 
 Three issues that all land on the same controllers, views and export builder. Sequenced together at owner direction (2026-08-17) because **nothing releases until v1.16.0 is tagged**, so there is no incremental-delivery reason to split the security fix out, and one branch avoids three rounds of conflicts in the same files.
 
@@ -794,8 +796,30 @@ Three issues that all land on the same controllers, views and export builder. Se
 | 3b | #974 — rate-limit the newly-anonymous Controls downloads | **Committed** `23a0b541` |
 | 4 | #935 — `framework` derived at import + facet on catalogs and baselines | **Committed** `4db8948c` |
 | 5 | Docs, compliance, wiki, both-posture Playwright | **Committed** |
+| — | SonarCloud findings on the PR: `find` over `each`+`return`, and four `<a role="button">` nav toggles made real `<button>`s | **Committed** `9ba70a70` |
 
-Suite after the nav work: **5372 examples, 0 failures, 10 pending**; rubocop, brakeman and zeitwerk clean; **20 mutations RED** across the bundle.
+Final gates on the merged tree: **rspec 5372 / 0 failures / 10 pending**, `tests/api` **464**,
+ui-smoke **453 / 0 / 29 in both postures**, brakeman 0, rubocop / zeitwerk / ruff clean, and
+**29 mutations RED** across the bundle.
+
+**SonarCloud's review caught a real accessibility defect, and the fix was already in the repo.**
+Eleven findings on the PR. Three were `FrameworkDeriver` iterating with `each` and returning from
+inside the block — a `find` wearing a disguise, since the documented rule was always
+first-match-wins. The other eight were four header dropdown toggles still written as
+`<a href="#" role="button">`, which announces itself to a screen reader as a button and then
+ignores the Space key, because anchors have no native activation. `_controls_nav` had **already**
+been converted to a real `<button>` and carries a comment explaining why — the lesson had reached
+one dropdown out of five, which is the same partial-application shape as the #974 gate itself.
+Sonar's suggested `onKeyDown` handler is the workaround; the right element is the fix.
+
+**The gap that allowed it:** nothing asserted that the menus OPEN. The parity spec checks which
+paths appear in the HTML, so four dead toggles behind a shared partial changed nothing it looked
+at. `spec/system/main_nav_dropdowns_spec.rb` now opens each menu in real Chrome via
+`click_button` — which will not match an anchor — and opens one with the Space key alone;
+reverting a single toggle fails both. **Deferred at owner direction:** six more
+`<a role="button">` survive in older views (`shared/_heatmap` x2, and the SSP / SAP / CDEF /
+profile `show` pages), outside this PR's diff and therefore never flagged. Not an issue; do not
+file one unprompted.
 
 **Two findings from phase 1 worth carrying forward.** The structural spec immediately caught that `api/v1/sessions` needed an explicit allowlist entry and that one allowlist entry was stale. And two mutations did NOT bite on the first round: the flag-on helper broke out on a login redirect and reported "status < 400", passing against a gate that never opens, and the macro's write-refusal guard had no test at all. Both are fixed and all four now bite — the same vacuous-test shape the #919 spec hit, which is why that file's history is cited in the new one.
 
