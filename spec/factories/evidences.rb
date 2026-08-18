@@ -64,8 +64,24 @@ FactoryBot.define do
       after(:build) do |evidence|
         next if evidence.attestations.any?
 
+        # A real attester holding a real attesting role — `attributes_for`
+        # cannot express that, because the association and the roster grant are
+        # the whole point of the check.
+        attester = create(:user)
+        role = Role.find_by(name: "attesting_role_spec", scope: "authorization_boundary") ||
+          create(:role, :authorization_boundary_scoped,
+                 name: "attesting_role_spec", display_name: "Attesting Role",
+                 permissions: { Attestation::ATTEST_PERMISSION => true })
+        create(:user_role, user: attester, role: role,
+               authorization_boundary_id: evidence.authorization_boundary_id ||
+                                          create(:authorization_boundary).id)
+
         evidence.attestations.build(
-          attributes_for(:attestation).except(:evidence)
+          attester_user: attester,
+          role: role.name,
+          statement: "I have reviewed this and confirm its validity.",
+          attested_at: Time.current,
+          status: "passed"
         )
       end
     end
