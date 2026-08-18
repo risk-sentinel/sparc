@@ -585,6 +585,12 @@ Form for adding OSCAL assessment result metadata: results, observations, finding
 
 Summary tiles. Lists all evidence items with filters for type, status, authorization boundary, and associated control. Search functionality. "Upload" button for new evidence.
 
+**Tiered Instance → Organization → Boundary (#948).** When the already-scoped collection spans more than one boundary, the list groups itself under collapsible `<details>` tiers with per-tier counts; when it does not, the flat list renders unchanged, so a single-system user never meets a tree with one branch. Counts describe the whole filtered set while the records shown are the current page, so a tier can read 24 and display 8.
+
+Grouping is presentation only. `CollectionTiering` receives the relation *after* `boundary_scoped_relation` and the #908 filters have run, has no access to `current_user`, and adds no `where` — a per-screen spec asserts the visible set is identical before and after. Collapse state persists in `localStorage` via `tier_collapse_controller.js`; the tiers are native `<details>`, so with no JavaScript they still open and close and merely forget.
+
+Boundary is a column in the table view (it was previously only a card chip), and a blank boundary reads **Instance-wide** — a statement about access, since such evidence is visible to every signed-in user. The same tiering applies to SSP, SAP, SAR and POA&M indexes, where a blank boundary instead reads **Not assigned to a system**, because those types are per-system by definition and a blank one is an unrepaired record rather than a sharing decision (#952). CDEFs are not tiered: `cdef_documents` has no boundary column ([#980](https://github.com/risk-sentinel/sparc/issues/980)).
+
 #### Evidence Upload / Edit
 
 | | |
@@ -601,7 +607,13 @@ A link whose identifier matches no loaded catalog renders as an **unrecognised**
 
 **Collected By** and **Collection Date** are read-only (#903). SPARC stamps both on save — UTC timestamp and the signed-in user — so collection provenance is system-recorded rather than self-asserted (NIST AU-10). They render as plain text with a "recorded automatically" note.
 
-A file is **required** when creating, optional when editing a record that already has one. The requirement is enforced by `dropzone_controller.js` on submit, not the native `required` attribute — the input is visually hidden, and Chrome silently refuses to submit a form containing a required control it cannot focus (#902).
+A file is **required** when creating an artefact type, optional when editing a record that already has one. The requirement is enforced by `dropzone_controller.js` on submit *and* by an `Evidence` validation — the input is visually hidden, and Chrome silently refuses to submit a form containing a required control it cannot focus (#902), so the native `required` attribute cannot be used and the model carries the rule as well (#947).
+
+**Evidence Type drives the form (#947).** Choosing **Attestation** (stored as `signed_statement`) reveals an attestation block — **Attester**, **Attesting As**, **Statement**, **Attestation Date**, **Review Frequency**, **Status** — and makes the file optional, because for that type the statement *is* the evidence. `evidence_type_fields_controller.js` reveals the block, disables its fields while hidden so a stale statement cannot be submitted invisibly, and rewrites the dropzone's `data-dropzone-required-value` so the JavaScript file guard moves with the type. That last part is load-bearing: the dropzone partial defaults `required` to **true** when the local is omitted, so dropping it would re-arm the guard rather than relax it, and the submit would be cancelled before any request with nothing shown.
+
+**Attester** lists only accounts holding a role that carries `evidence.attest` on the selected boundary (plus Instance Admins), and **Attesting As** is narrowed per attester by `attester_picker_controller.js` from a map the server embeds. The pairing is re-checked on save, so the picker cannot grant anything. Note the options are computed for the boundary the form was *rendered* with and do not refresh when the boundary select changes — tracked as [#981](https://github.com/risk-sentinel/sparc/issues/981).
+
+**At least one control is required** on every save, create or update (#947). Evidence supporting no control appears under nothing and cannot be assessed.
 
 Submit actions: **Upload Evidence** (or **Update Evidence**), **Save and add another** (create only, carries boundary + type forward), **Cancel**.
 

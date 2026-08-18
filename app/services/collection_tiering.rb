@@ -47,6 +47,13 @@
 # come from the scope and records come from the page: a tier can read 24 and
 # show 8 beneath it. Per-page counts would be arithmetically honest and useless
 # for reading the estate.
+# NIST 800-53 Controls:
+#   AC-3 Access Enforcement — this class deliberately enforces NOTHING. It
+#        receives an already-scoped relation and groups it, has no access to
+#        `current_user`, and adds no `where`. Generalising the tiering across
+#        six screens must not generalise visibility; the per-screen
+#        "visible set is identical" specs are what hold that line.
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class CollectionTiering
   # One boundary's worth of records within an organization group.
   BoundaryTier = Struct.new(:boundary, :label, :count, :records, keyword_init: true) do

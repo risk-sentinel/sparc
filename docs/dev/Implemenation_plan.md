@@ -654,7 +654,7 @@ Backlog / gated:
 
 ### Phase 16: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
 
-**Goal:** Close the v1.16.0 milestone (**37 issues — 30 closed, 7 open, measured 2026-08-18** after PR #976 merged; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, and #935, #951, #959 added to the milestone by the owner on 2026-08-15). The count has moved five times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
+**Goal:** Close the v1.16.0 milestone (**39 issues — 30 closed, 9 open, measured 2026-08-18** during Bundle P; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, and #935, #951, #959 added to the milestone by the owner on 2026-08-15, and **#981, #982 filed from the Bundle P verification gate and added on 2026-08-18**). The count has moved five times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
 
 The two structural security deliverables led: a spec that fails when a controller ships without authorization (#919) and one that pins `disposition: "attachment"` on user content (#894). What remains is the document model, the boundary-attachment family, and the IdP entitlement epic.
 
@@ -676,10 +676,11 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 9 | N — Document model — reachable references | #941 #942 #944 #945 #946 #957 **#963** | **Shipped** (PR #964) |
 | 10 | #939 — pulled forward, on its own | #939 **#967** **#970** | **Shipped** (PR #969) |
 | 11 | O — Boundary attachment | #929 #952 | **Shipped** (PR #975) |
-| 12 | **S — Controls layer: who can see it, and what it carries** | **#974 #959 #935** | **IN PR** (branch `feature/974_controls_layer_access`) |
-| 13 | P — Evidence completeness | #947 #948 | Queued |
-| 14 | Q — Polish | #936 | Queued |
-| 15 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
+| 12 | S — Controls layer: who can see it, and what it carries | #974 #959 #935 | **Shipped** (PR #976) |
+| 13 | **P — Evidence completeness** | **#947 #948** | **IN PR** (branch `bug/947_evidence_attestation_tiering`) |
+| 14 | T — Bundle P follow-ups | **#981 #982** | Queued — **after P**, see below |
+| 15 | Q — Polish | #936 | Queued |
+| 16 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
 
 **Unslotted — down to one.** #935 and #959 were slotted into **Bundle S** on 2026-08-17;
 **#951** (sidebar re-organization and responsive breakpoint audit) is the only milestone issue
@@ -691,8 +692,13 @@ swallow-and-continue rescue patterns — raised out of #939, **due 2026-09-06**;
 11 log-and-continue in services/jobs, and 17 files combining a transaction with a rescue, which
 is the candidate set for the #963 shape).
 
-**Milestone measured 2026-08-18, after PR #976 merged: 37 issues, 30 closed / 7 open.** The 7
-open: **#822 #842 #860 #936 #947 #948 #951**. Bundle S closed #935, #959 and #974.
+**Milestone measured 2026-08-18, during Bundle P: 39 issues, 30 closed / 9 open.** The 9
+open: **#822 #842 #860 #936 #947 #948 #951 #981 #982**. Bundle S closed #935, #959 and #974.
+
+**#981 and #982 were filed on 2026-08-18 from the Bundle P verification gate** and added to the
+milestone by the owner. Neither is worked in Bundle P's PR. They are the eighth and ninth
+additions to a milestone that has now moved six times — which is the whole reason this section
+says to measure rather than carry the figure forward.
 
 **The milestone PAGE reads 38, and that is not a disagreement — it counts pull requests too.**
 PR #933 is attached to the milestone, so the web figure is issues + that PR. Count issues with
@@ -863,7 +869,7 @@ Measured unauthenticated against a UBI9 prod-mode instance with `public_catalogs
 | **#959** | Every export embeds every authoritative back-matter resource in the instance | **Bundle S, and #974's export half depends on it.** Filed as a *question* with three items to settle — whether instance-wide back-matter belongs in every document, whether it should be scoped by organization or boundary, and whether an export should be reproducible independent of unrelated instance state (#845 assumes yes; today it is not). **Settle those before writing code.** |
 | **#935** | Derive and persist `framework` at import, so catalogs and baselines can be filtered by it | **Bundle S, feature half.** Cut from #908 because framework is not a field — it exists only as prose and filename, and deriving it per request by regexing titles was rejected deliberately: confidently displaying a *wrong* framework is worse than offering no filter. Derive once at import, **leave null when nothing says clearly**, and make the rule a named, tested unit with a backfill through the same path. |
 
-##### 13. Bundle P — Evidence completeness
+##### 13. Bundle P — Evidence completeness  ·  **IN PR** (branch `bug/947_evidence_attestation_tiering`)
 
 Both are about evidence being trustworthy rather than merely present. Bundle M is the first fixture with evidence at more than one tier — 32 records across two boundaries in two organizations — so #948 finally has something real to render.
 
@@ -872,7 +878,36 @@ Both are about evidence being trustworthy rather than merely present. Bundle M i
 | **#947** | An attestation cannot be recorded without a file, the attester is unverifiable free text, and evidence can be saved with no controls | **Found in local review of PR #943.** Three defects on one screen. (1) The evidence form renders the dropzone with `required: !@evidence.file.attached?`, so a file is **always** mandatory on create — a UI-only constraint the model does not impose (`has_one_attached :file`, no presence validation). It also fails **silently**: the real input is `d-none`, and a browser cannot focus a hidden required field to report a message, so the form just refuses to submit. `EVIDENCE_TYPE_LABELS` already offers **Signed Statement**, so the vocabulary anticipates fileless evidence the form forbids. (2) `Attestation` stores `attester_name` / `attester_email` as **strings with no FK to users** and no tie to the boundary, while `ROLES` spans `system_owner`, `isso`, `ciso`, `authorizing_official` — so an attestation can claim the SO signed off when that person holds no such role. Same shape as #934, and the #919/#707 roster already knows who holds which role per boundary. (3) Nothing requires an `Evidence` to have any `EvidenceControlLink`, so evidence that supports no control can be saved. Owner: **collected evidence should require 1:n controls.** |
 | **#948** | Tier the evidence index Instance → Organization → Boundary | **Was never in this plan** — on the milestone and missed by every previous currency pass, found only by reconciling the plan against the GitHub milestone rather than reading it. Bundle P with #947. #845 listed it among the issues the reference estate unblocks: the estate is the first fixture with evidence at more than one tier (32 records across two boundaries in two organizations), so the tiering has something real to render. |
 
-##### 14. Bundle Q — Polish
+**Owner decisions taken during the bundle** (recorded so they are not relitigated):
+an attestation **is** evidence, so it is created with the record on one screen rather than at a
+second screen afterwards; who may attest is expressed through a new **`evidence.attest`**
+permission rather than a hardcoded role list, seeded to the seven accountable boundary roles with
+`assessor_3pao` excluded on separation of duties; **instance-wide evidence is provider material**
+from a leveraged SSP, so Policy reaches it without thereby gaining authority over any individual
+boundary's evidence; zero-control-link rows are **reported and blocked on re-save**; tiering is
+**automatic**, appearing only when more than one boundary is visible; and the tiering generalises
+to five screens, not six — `cdef_documents` has no boundary column at all (**#980**).
+
+**Three defects the rspec suite could not see** were found by driving the form in a browser, which
+is the concrete case for the ui-smoke gate: removing the dropzone's `required:` local **re-armed**
+the JavaScript guard it was meant to remove (the partial defaults it to true, and
+`dropzone_controller` enforces it with a capture-phase `preventDefault`), the attester picker
+offered an Instance Admin a role it then disabled, and a blank review frequency posted `""` which
+`allow_nil` does not cover. Two further findings were filed rather than folded in: **#981** and
+**#982**.
+
+##### 14. Bundle T — Bundle P follow-ups
+
+Both came out of the Bundle P verification gate and are deliberately **not** in its PR. They are
+sequenced **after P** because #981 is a direct follow-on to the attester picker #947 introduces —
+there is nothing to refresh until that picker exists.
+
+| Issue | Description | Notes |
+| --- | --- | --- |
+| **#981** | The attester role list goes stale when the boundary changes, offering roles the server will reject | **Depends on #947.** The eligible attesters and roles are computed server-side for the boundary the form was *rendered* with, so changing the boundary select leaves them behind — the form can offer `policy_manager` (instance-scoped, valid only for instance-wide evidence) and the server correctly refuses it. The model is right; the form has not been told. Fix by re-rendering the fieldset in a Turbo Frame on boundary change, or by fetching the eligible set the way the control picker already does — **not** by embedding a map of the whole estate. |
+| **#982** | `cdef_document_populated_from_profile` is unregistered, so populating a CDEF records no audit event | **Independent of #947/#948; found incidentally in the container log.** The action is emitted by both the web and API controllers and appears nowhere in `AuditEvent::ACTIONS`, so the write fails validation and `audit_log` rescues it — silently. Worth more than the one-line fix: add a guard that fails when any `audit_log("…")` call site names an unregistered action, which catches the class rather than the instance, then sweep the remaining call sites. NIST AU-2 / AU-12 claim coverage this path does not deliver. |
+
+##### 15. Bundle Q — Polish
 
 The cheapest item on the milestone.
 
@@ -880,7 +915,7 @@ The cheapest item on the milestone.
 | --- | --- | --- |
 | **#936** | Serve a real favicon and link-preview metadata | **Filed during Bundle F.** Saved SPARC URLs show a generic globe. Cosmetic, but it is the cheapest item on the milestone. |
 
-##### 15. Bundle R — Auth entitlements — IdP as system of record
+##### 16. Bundle R — Auth entitlements — IdP as system of record
 
 Last by owner direction. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end of the release**, since it is paired with #822 so one two-ceremony TLS verification round covers both. `bundle-audit` reports no vulnerabilities against the current lock, so the deferral is schedulable rather than reactive — **if that changes, decouple #820 from #822 and take it on its own.**
 
@@ -1143,7 +1178,7 @@ removed and are no longer tracked:
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
-| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, #974, #947, #948, #936, #935, #951, #959, #860, #842, #822 | In Progress — **28 of 38 shipped** (PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969). **Bundle O (#929 #952) shipped in PR #975; Bundle S (#974 #959 #935) is next.** The count moved 16 → 24 → 25 → 32 → **36**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; and the owner added #935, #951, #959 on 2026-08-15. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Remaining order set by the owner 2026-08-15: **#939 pulled forward** (shipped, PR #969) → **O** (#929 #952, shipped) → **S** (#974 #959 #935) → **P** (#947 #948) → **Q** (#936) → **R** (#860 #842 #822 +#820). #935 and #959 are now slotted into Bundle S; **#951 remains unslotted**. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, #947, #948, #981, #982, #936, #951, #860, #842, #822 | In Progress — **30 of 39 shipped** (PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969). **Bundle O (#929 #952) shipped in PR #975; Bundle S (#974 #959 #935) shipped in PR #976; Bundle P (#947 #948) is in PR.** The count moved 16 → 24 → 25 → 32 → 36 → 37 → **39**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; and **#981, #982 were filed from Bundle P's verification gate and added on 2026-08-18** — the browser pass found three defects rspec could not see, and two more worth their own issues. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Remaining order set by the owner 2026-08-15, with **T** inserted 2026-08-18: **#939 pulled forward** (shipped, PR #969) → **O** (#929 #952, shipped) → **S** (#974 #959 #935, shipped) → **P** (#947 #948, in PR) → **T** (#981 #982, filed from P's gate) → **Q** (#936) → **R** (#860 #842 #822 +#820). #935 and #959 are now slotted into Bundle S; **#951 remains unslotted**. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 

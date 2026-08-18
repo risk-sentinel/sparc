@@ -141,6 +141,40 @@ SPARC defines **35 permission keys** across 14 resource areas (`Role::PERMISSION
 
 Triaging a scanner finding (`evidence.write`) and *approving* the resulting amendment are deliberately separate acts — the approval is what makes a disposition suppress its finding during aggregation and export, for the length of its validity window. `amendment.approve` is granted by default to the **Authorizing Official**, **Agency Authorizing Official**, and **ISSM** role seeds (the roles that accept residual risk), and Instance Admins bypass it. Any other role can be granted the key from **Admin → Roles**. See [User Guide: HDF Amendment Triage](User-Guide-HDF-Amendment-Triage).
 
+### Who may attest to evidence
+
+Uploading evidence and *vouching* for it are separate acts, and `evidence.attest`
+is the second one. An attestation is evidence whose whole substance is who
+asserted it — a System Owner confirming a periodic access review, say — so
+holding `evidence.write` is not sufficient. SPARC checks that the attester holds
+the role they are attesting under **on that system's authorization boundary**,
+not merely somewhere.
+
+By default the key is granted to the accountable boundary roles — **Authorizing
+Official**, **Agency Authorizing Official**, **System Owner / ISO**, **ISSM**,
+**ISSO**, **CISO** and **Common Control Provider** — and to **Policy Manager** at
+the instance tier.
+
+**Assessor / 3PAO is deliberately excluded.** An assessor must not vouch for the
+evidence it will later assess independently, the same separation of duties that
+keeps assessors out of back-matter authoring.
+
+The two tiers are not interchangeable, and the difference is deliberate. A grant
+made at the **instance** level satisfies a permission check on *every* boundary,
+so instance-scoped attesting authority applies only to **instance-wide
+evidence** — provider material inherited from a leveraged system, which belongs
+to no single boundary. It does **not** let Policy sign for an individual system's
+evidence; that remains the accountable boundary roles' job. For the same reason
+the key is withheld from Senior Accountable Official, whose permissions are
+otherwise derived from CISO's.
+
+Instance Admins may attest, as they clear every other permission check, but only
+under a role that actually carries the key — the bypass is on *who holds* the
+role, never on what the vocabulary contains.
+
+Any role can be granted or denied the key from **Admin → Roles**, so an
+organization whose process differs can express it.
+
 > **Note on seeded assignments (updated #919).** The permission *keys* above are the full set the platform can enforce, and — with one deliberate exception — every one is now granted to at least one seeded role. Before #919, eleven keys were enforced by code but granted to **no** role; because Instance Admins bypass permission checks entirely, that silently made back-matter authoring, promotion, and catalog/profile/CDEF approval **admin-only out of the box**. Nobody decided that, it fell out of the seeds. The current posture: **boundary-scoped back-matter** (`back_matter.write`, `.promote`, `.archive`, `.bulk_import`, and `converters.write`) is granted to the fourteen boundary roles that already write documents — excluding **Assessor / 3PAO** (separation of duties: an assessor must not edit the provenance it assesses), **View Only**, and the three oversight roles that write no document at all. **Instance-tier back-matter** (`back_matter.approve_promotion`, `.federate`) plus `catalogs.approve` and `profiles.approve` go to **Policy Manager**: a boundary *requests* promotion and the instance *approves* it, so granting both legs to one role would defeat the review queue. `cdef.approve` goes to ISSM / ISSO / SO-ISO **and** Policy Manager. `authorization_boundaries.write` and `authorization_boundaries.manage_members` are delegated to **ISSM / ISSO / SO-ISO**, so roster management is no longer admin-only. The one exception is `admin.rotate_credentials`, which remains Instance-Admin-only by design. `converters.read` was **removed** — any authenticated user may read converters, so a key implying a restriction that does not exist is worse than no key.
 
 ---

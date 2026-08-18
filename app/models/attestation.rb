@@ -1,3 +1,19 @@
+# An attestation is evidence whose substance is WHO asserted something, so its
+# provenance controls matter more than most.
+#
+# NIST 800-53 Controls:
+#   AC-3  Access Enforcement — the claimed role is verified against what the
+#         attester actually holds on the evidence's authorization boundary,
+#         through `evidence.attest` rather than `evidence.write` (#947).
+#   AC-5  Separation of Duties — `assessor_3pao` is deliberately NOT granted
+#         `evidence.attest`: an assessor must not vouch for the evidence it will
+#         later assess independently.
+#   AC-6  Least Privilege — the authority to assert is a distinct permission
+#         key, not an implication of being able to upload a file.
+#   AU-10 Non-Repudiation — the attester is bound to an account, and
+#         `attester_name` is a snapshot taken at signing time that no later
+#         rename or role change rewrites (#934 rule).
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class Attestation < ApplicationRecord
   belongs_to :evidence
 
