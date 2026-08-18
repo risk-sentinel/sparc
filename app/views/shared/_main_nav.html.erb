@@ -75,9 +75,9 @@
                 and stay signed-in only. %>
             <% if show_boundary_docs || show_controls_reference %>
               <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-implementation" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <button type="button" class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-implementation" data-bs-toggle="dropdown" aria-expanded="false">
                   Implementation
-                </a>
+                </button>
                 <ul class="dropdown-menu sparc-dropdown-menu">
                   <li class="sparc-dropdown-header sparc-dropdown-header-implementation">Implementation Layer</li>
                   <% if show_boundary_docs %>
@@ -101,9 +101,9 @@
 
               <%# ── Assessment Layer (orange) ── %>
               <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-assessment" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <button type="button" class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-assessment" data-bs-toggle="dropdown" aria-expanded="false">
                   Assessment
-                </a>
+                </button>
                 <ul class="dropdown-menu sparc-dropdown-menu">
                   <li class="sparc-dropdown-header sparc-dropdown-header-assessment">Assessment Layer</li>
                   <li><%= link_to sap_documents_path, class: "dropdown-item" do %>
@@ -125,9 +125,9 @@
               <% if signed_in? %>
                 <% boundaries = nav_authorization_boundaries %>
                 <li class="nav-item dropdown">
-                  <a class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-boundaries" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <button type="button" class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-boundaries" data-bs-toggle="dropdown" aria-expanded="false">
                     Enterprise
-                  </a>
+                  </button>
                   <ul class="dropdown-menu sparc-dropdown-menu">
                     <li class="sparc-dropdown-header sparc-dropdown-header-boundaries">Enterprise</li>
                     <li><%= link_to admin_organizations_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
@@ -238,12 +238,12 @@
             <% if SparcConfig.any_auth_enabled? %>
               <% if signed_in? %>
                 <li class="nav-item dropdown">
-                  <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 sparc-nav-user" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <button type="button" class="nav-link dropdown-toggle d-flex align-items-center gap-2 sparc-nav-user" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="sparc-avatar">
                       <%= safe_avatar_tag(current_user, alt: current_user.initials) %>
                     </span>
                     <span class="d-none d-xl-inline"><%= current_user.display_label %></span>
-                  </a>
+                  </button>
                   <ul class="dropdown-menu dropdown-menu-end sparc-dropdown-menu">
                     <li class="px-3 py-2">
                       <div class="d-flex align-items-center gap-2">

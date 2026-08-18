@@ -96,15 +96,13 @@ class FrameworkDeriver
     def from_source(value)
       return nil if value.blank?
 
-      SOURCE_RULES.each { |pattern, framework| return framework if value.match?(pattern) }
-      nil
+      SOURCE_RULES.find { |pattern, _framework| value.match?(pattern) }&.last
     end
 
     def from_text(value)
       return nil if value.blank?
 
-      TEXT_RULES.each { |pattern, framework| return framework if value.match?(pattern) }
-      nil
+      TEXT_RULES.find { |pattern, _framework| value.match?(pattern) }&.last
     end
 
     # Decided by what the identifiers ARE, so a retitled or re-sourced catalog
@@ -115,9 +113,10 @@ class FrameworkDeriver
       ids = Array(ids).compact.map { |id| id.to_s.downcase }
       return nil if ids.empty?
 
-      CONTROL_ID_RULES.each do |pattern, framework|
-        return framework if ids.any? { |id| id.match?(pattern) }
+      namespaced = CONTROL_ID_RULES.find do |pattern, _framework|
+        ids.any? { |id| id.match?(pattern) }
       end
+      return namespaced.last if namespaced
 
       families = ids.filter_map { |id| id[/\A([a-z]{2})[-.]/, 1] }
       return nil if families.empty?
