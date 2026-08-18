@@ -161,6 +161,68 @@ RSpec.describe "Api::V1::Evidences", type: :request do
     end
   end
 
+  # #948 — the grouping is exposed so the UI stays a thin client over the API,
+  # not the only place the estate's shape can be read.
+  describe "GET /api/v1/evidences?group=boundary" do
+    let(:org)    { create(:organization, name: "Alpha Agency") }
+    let(:mine)   { create(:authorization_boundary, name: "My System", organization: org) }
+    let(:theirs) { create(:authorization_boundary, name: "Their System", organization: org) }
+
+    it "omits the grouping unless asked, so existing consumers are unaffected" do
+      create(:evidence, authorization_boundary: mine)
+
+      get api_v1_evidences_path, headers: admin_headers
+
+      expect(JSON.parse(response.body)).not_to have_key("groups")
+    end
+
+    it "returns organizations, their boundaries, and per-tier counts" do
+      create(:evidence, authorization_boundary: mine)
+      create(:evidence, authorization_boundary: theirs)
+
+      get api_v1_evidences_path(group: "boundary"), headers: admin_headers
+
+      groups = JSON.parse(response.body)["groups"]
+      expect(groups["tiered"]).to be(true)
+      alpha = groups["organizations"].find { |o| o["label"] == "Alpha Agency" }
+      expect(alpha["count"]).to eq(2)
+      expect(alpha["boundaries"].map { |b| b["label"] }).to contain_exactly("My System", "Their System")
+    end
+
+    it "labels the instance tier for boundary-less evidence" do
+      create(:evidence, authorization_boundary: nil)
+      create(:evidence, authorization_boundary: mine)
+
+      get api_v1_evidences_path(group: "boundary"), headers: admin_headers
+
+      groups = JSON.parse(response.body)["groups"]
+      instance = groups["organizations"].find { |o| o["instance"] }
+      expect(instance["label"]).to eq("Instance-wide")
+      expect(instance["count"]).to eq(1)
+    end
+
+    it "reports not-tiered when only one boundary is visible" do
+      create_list(:evidence, 2, authorization_boundary: mine)
+
+      get api_v1_evidences_path(group: "boundary"), headers: admin_headers
+
+      expect(JSON.parse(response.body).dig("groups", "tiered")).to be(false)
+    end
+
+    # The same guarantee the web screen carries: grouping describes what the
+    # caller can already see, and never widens it.
+    it "groups only what the filter left" do
+      create(:evidence, status: "collected", authorization_boundary: mine)
+      create(:evidence, status: "draft", authorization_boundary: theirs)
+
+      get api_v1_evidences_path(group: "boundary", status: "collected"), headers: admin_headers
+
+      groups = JSON.parse(response.body)["groups"]
+      ids = groups["organizations"].flat_map { |o| o["boundaries"] }.flat_map { |b| b["record_ids"] }
+      expect(ids.length).to eq(1)
+    end
+  end
+
   describe "POST /api/v1/evidences" do
     it "creates evidence with its artefact and control link" do
       expect {

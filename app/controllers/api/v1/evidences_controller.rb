@@ -47,10 +47,21 @@ class Api::V1::EvidencesController < Api::V1::BaseController
     scope = apply_filters(scoped_evidences)
 
     result = paginate(scope)
-    render json: {
+    payload = {
       data: result[:data].map { |e| serialize(e) },
       meta: result[:meta]
     }
+
+    # #948 — the grouping is exposed here so the UI stays a thin client over the
+    # API rather than being the only place the estate's shape can be read.
+    #
+    # Opt-in via `?group=boundary`, so an existing consumer's response shape does
+    # not change underneath it. The grouping is built from the SAME scope the
+    # page came from, already boundary-scoped and already filtered: it describes
+    # what the caller can see and never widens it.
+    payload[:groups] = serialize_tiers(scope, result[:data]) if params[:group] == "boundary"
+
+    render json: payload
   end
 
   # GET /api/v1/evidences/:id
@@ -187,6 +198,41 @@ class Api::V1::EvidencesController < Api::V1::BaseController
 
     existing = evidence.evidence_control_links.reject(&:marked_for_destruction?).map(&:control_id)
     (control_ids - existing).each { |cid| evidence.evidence_control_links.build(control_id: cid) }
+  end
+
+  # #948 — the tier tree, flattened for JSON. Counts describe the whole filtered
+  # collection; `record_ids` describe the page, mirroring the web screen exactly
+  # so the two surfaces cannot disagree about what a tier contains.
+  def serialize_tiers(scope, records)
+    tiering = CollectionTiering.new(
+      scope: scope,
+      records: records,
+      instance_label: "Instance-wide",
+      instance_help: "Not owned by one system — inherited or common-control material, " \
+                     "visible to every signed-in user."
+    )
+
+    {
+      tiered: tiering.tiered?,
+      organizations: tiering.tiers.map do |tier|
+        {
+          key: tier.key,
+          label: tier.label,
+          help: tier.help,
+          instance: tier.instance?,
+          organization_id: tier.organization&.id,
+          count: tier.count,
+          boundaries: tier.boundaries.map do |boundary_tier|
+            {
+              authorization_boundary_id: boundary_tier.boundary&.id,
+              label: boundary_tier.label,
+              count: boundary_tier.count,
+              record_ids: boundary_tier.records.map(&:id)
+            }
+          end
+        }
+      end
+    }
   end
 
   def evidence_params
