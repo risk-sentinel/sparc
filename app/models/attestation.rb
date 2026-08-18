@@ -20,6 +20,17 @@ class Attestation < ApplicationRecord
   # rewrite what the record said at the moment it was signed.
   before_validation :snapshot_attester_name, if: :attester_user_id_changed?
 
+  # #947 — a blank cadence means "not specified", which is `nil`.
+  #
+  # The form's frequency select offers "Not specified" as `include_blank`, so it
+  # posts an EMPTY STRING — and `inclusion: { in: FREQUENCIES }, allow_nil: true`
+  # rejects "" because "" is not nil. The result was a save refused with
+  # "Frequency is not included in the list" for a field the user deliberately
+  # left alone. Normalising here fixes both the nested block and the standalone
+  # attestation screen, which posts the same control and carried the same latent
+  # defect.
+  before_validation { self.frequency = nil if frequency.blank? }
+
   validates :attester_name, presence: true
   validates :statement, presence: true
   validates :attested_at, presence: true
@@ -123,6 +134,19 @@ class Attestation < ApplicationRecord
     return Role.none if user.nil?
 
     permitted = attestable_roles(authorization_boundary_id: authorization_boundary_id)
+
+    # An Instance Admin may attest without a roster grant — the same bypass
+    # `authorize_permission!` carries everywhere, and the same one
+    # `attester_holds_the_attested_role` applies on save.
+    #
+    # This branch is what stops the FORM from contradicting the MODEL. Without
+    # it the picker offered an admin as an attester and then found no role they
+    # held, so it disabled the role select and an admin could not record an
+    # attestation through the UI at all — while the server would have accepted
+    # it. A UI-only constraint blocking something the model permits is precisely
+    # the defect #947 was filed about; reintroducing one here would be its own
+    # small joke.
+    return permitted if user.admin?
 
     held = user.user_roles
     if authorization_boundary_id.present?

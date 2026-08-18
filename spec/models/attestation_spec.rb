@@ -70,6 +70,16 @@ RSpec.describe Attestation, type: :model do
       expect(attestation.errors[:frequency]).to be_present
     end
 
+    # #947 — the form's "Not specified" option posts "", not nil, and
+    # `allow_nil` does not cover "". Left unnormalised this refused a save for a
+    # field the user deliberately left alone.
+    it "treats a blank frequency as not specified rather than invalid" do
+      attestation = build(:attestation, frequency: "")
+
+      expect(attestation).to be_valid
+      expect(attestation.frequency).to be_nil
+    end
+
     it "allows nil frequency (optional)" do
       expect(build(:attestation, frequency: nil)).to be_valid
     end
@@ -327,6 +337,24 @@ RSpec.describe Attestation, type: :model do
 
     it "appears in the attester picker even with no roster grant" do
       expect(Attestation.eligible_attesters_for(authorization_boundary_id: boundary.id)).to include(admin)
+    end
+
+    # The picker must not contradict the model. Offering an admin as an attester
+    # and then finding no role they hold left the role select empty and
+    # disabled, so an admin could not record an attestation through the UI while
+    # the server would have accepted it — a UI-only constraint blocking
+    # something the model permits, which is the defect #947 exists to remove.
+    it "is offered every attesting role, not only ones held on the roster" do
+      roles = Attestation.attestable_roles_for(user: admin, authorization_boundary_id: boundary.id)
+
+      expect(roles).to include(attesting_role)
+    end
+
+    it "does not extend that to a non-admin with no grant" do
+      ordinary = create(:user)
+      roles = Attestation.attestable_roles_for(user: ordinary, authorization_boundary_id: boundary.id)
+
+      expect(roles).to be_empty
     end
   end
 

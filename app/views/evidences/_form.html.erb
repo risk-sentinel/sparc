@@ -183,9 +183,18 @@
             rule now lives on the model (`file_required_for_artefact_types`),
             where a failure renders in the error summary above like every other.
             #902's intent is preserved there: required on create, not on edit. %>
+        <%# `required:` is passed EXPLICITLY, and must be.
+            The partial defaults it to TRUE when the local is absent, and
+            `dropzone_controller` enforces that with its own capture-phase
+            submit guard (#902) — not with the HTML attribute. So simply
+            dropping the local did not relax the rule, it re-armed it in
+            JavaScript: the submit was cancelled before any request was made,
+            which is the same silent refusal #947 is about, through a different
+            door. The type controller flips this as the user changes type. %>
         <%= render "shared/dropzone",
           form: f,
           field: :file,
+          required: !@evidence.attestation_type?,
           accept: EvidenceUploadPolicy.accept_attribute,
           label: @evidence.attestation_type? ? "Supporting File (optional)" : "Evidence File",
           hint: @evidence.attestation_type? ?
