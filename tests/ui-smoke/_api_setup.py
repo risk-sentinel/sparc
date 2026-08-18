@@ -139,25 +139,31 @@ def create_ssp(boundary_id: int) -> dict[str, Any]:
 
 
 def create_evidence(title: str | None = None) -> dict[str, Any]:
-    """Metadata-only evidence submitted by the smoke service account (#934).
+    """Evidence submitted by the smoke service account (#934).
 
     Collection provenance is never sent — the server stamps `collected_at`,
     `collected_by` and `collected_by_user_id` from the token's account, which is
     what the "Added by" smoke then looks for on screen. A record created here is
     therefore attributed to the service account, not to its owner.
+
+    #947 — this used to be metadata-only, which no longer creates: evidence must
+    support at least one control, and an artefact type must carry its file. Both
+    rules live on the model, so they apply to the API exactly as they do to the
+    form — a rule enforced only on the form was the defect #947 was filed about.
+    So the record and its artefact are sent together, multipart.
     """
     with _client() as c:
         r = c.post(
             "/api/v1/evidences",
-            json={
-                "evidence": {
-                    "title": title or _name("evidence"),
-                    "description": "ui-smoke",
-                    "evidence_type": "artifact",
-                    "status": "collected",
-                    "source": "ui-smoke",
-                }
+            data={
+                "evidence[title]": title or _name("evidence"),
+                "evidence[description]": "ui-smoke",
+                "evidence[evidence_type]": "artifact",
+                "evidence[status]": "collected",
+                "evidence[source]": "ui-smoke",
+                "evidence[control_ids]": "ac-2",
             },
+            files={"evidence[file]": ("evidence.txt", b"ui-smoke artifact", "text/plain")},
         )
         r.raise_for_status()
         return r.json()["data"]

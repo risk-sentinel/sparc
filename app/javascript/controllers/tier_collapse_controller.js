@@ -16,7 +16,7 @@ import { Controller } from "@hotwired/stimulus"
 // Keys are scoped per screen, so collapsing an organization on /evidences does
 // not collapse it on /ssp_documents — a user narrowing one screen has said
 // nothing about another.
-export default class extends Controller {
+export default class TierCollapseController extends Controller {
   static targets = ["tier"]
   static values = { screen: String }
 

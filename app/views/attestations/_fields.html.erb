@@ -50,8 +50,13 @@
       <%= f.select :role, options_for_select([]), {},
             class: "form-select",
             data: { attester_picker_target: "role" } %>
-      <div class="form-text" role="status" aria-live="polite"
-           data-attester-picker-target="status"></div>
+      <%# `<output>` rather than `<p role="status" aria-live="polite">`: it carries
+          both implicitly and is better supported across devices than the same
+          roles spelled out in ARIA — the same reasoning `shared/_collection_pagination`
+          already applies. `d-block` because `<output>` is inline by default and
+          `.form-text` does not set display. %>
+      <output class="form-text d-block"
+              data-attester-picker-target="status"></output>
     </div>
   </div>
 

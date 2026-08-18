@@ -14,7 +14,7 @@ import { Controller } from "@hotwired/stimulus"
 //
 // Stimulus rather than an inline handler: the CSP forbids inline `on*=` and
 // unnonced <script>.
-export default class extends Controller {
+export default class EvidenceTypeFieldsController extends Controller {
   static targets = ["type", "attestation", "fileHint", "artefactHint"]
   static values = { attestationTypes: Array }
 
@@ -49,7 +49,9 @@ export default class extends Controller {
     // Found by its own controller attribute rather than a target, so the shared
     // dropzone partial does not need to know this screen exists.
     this.element.querySelectorAll('[data-controller~="dropzone"]').forEach((el) => {
-      el.setAttribute("data-dropzone-required-value", String(!isAttestation))
+      // `dataset` writes the same underlying attribute, so Stimulus still sees
+      // the value change on the dropzone controller.
+      el.dataset.dropzoneRequiredValue = String(!isAttestation)
     })
   }
 }

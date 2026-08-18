@@ -63,6 +63,13 @@ def _fill_metadata(page, title: str = TITLE_PREFIX) -> None:
     page.fill("#evidence_description", "Uploaded by the #902 smoke test.")
     page.fill("#evidence_source", "ui-smoke")
     page.select_option("#evidence_evidence_type", "artifact")
+    # #947 — evidence must support at least one control. The picker posts
+    # canonical identifiers through a hidden field, so this sets what a user
+    # choosing a control from the type-ahead would have produced.
+    page.eval_on_selector(
+        "#evidence_control_ids",
+        "el => { el.value = 'ac-2'; el.dispatchEvent(new Event('change', {bubbles: true})); }",
+    )
 
 
 def _attach_pdf(page, name: str = "smoke-evidence.pdf") -> None:

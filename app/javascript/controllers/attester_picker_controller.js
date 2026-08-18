@@ -15,7 +15,7 @@ import { Controller } from "@hotwired/stimulus"
 // Stimulus rather than an inline handler: the CSP forbids inline `on*=` and
 // unnonced <script>, and a form that silently stops working is exactly the
 // failure mode this screen already had.
-export default class extends Controller {
+export default class AttesterPickerController extends Controller {
   static targets = ["attester", "role", "status"]
 
   // { "<user id>": [{ name: "so_iso", label: "System Owner / ISO" }, ...] }
