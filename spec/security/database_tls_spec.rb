@@ -108,16 +108,37 @@ end
 # Configuration-level companion: proves the floor is applied to EVERY database,
 # not just primary. Runs anywhere, no servers needed.
 RSpec.describe "database.yml TLS floor" do
+  # Throwaway credentials, supplied so the PRODUCTION branch of database.yml can
+  # be evaluated at all.
+  #
+  # `DbUrl.password` raises MissingPasswordError when nothing is configured
+  # (#849, fail-closed: a Postgres server set to `trust` would accept an empty
+  # password, so SPARC refuses to start rather than serve traffic against an
+  # unauthenticated connection). That guard is correct and is covered by
+  # spec/lib/db_url_fail_closed_spec.rb — it is not what THIS file is about,
+  # which is the TLS floor applying to every database.
+  #
+  # Without these, the production examples depended on the developer's ambient
+  # shell happening to export DB credentials, and failed in any environment that
+  # did not. Setting them here makes the file self-sufficient.
+  ENV_KEYS = %w[
+    RAILS_ENV SPARC_DB_SSLMODE SPARC_DB_SSLROOTCERT
+    SPARC_DB_HOST SPARC_DB_NAME SPARC_DB_USER SPARC_DB_PASSWORD
+  ].freeze
+
   def resolve(rails_env, sslmode: nil, rootcert: nil)
-    old = ENV.to_h.slice("RAILS_ENV", "SPARC_DB_SSLMODE", "SPARC_DB_SSLROOTCERT")
+    old = ENV.to_h.slice(*ENV_KEYS)
     ENV["RAILS_ENV"] = rails_env
+    ENV["SPARC_DB_HOST"]     = "localhost"
+    ENV["SPARC_DB_NAME"]     = "sparc_tls_floor_spec"
+    ENV["SPARC_DB_USER"]     = "postgres"
+    ENV["SPARC_DB_PASSWORD"] = "password" # gitleaks:allow — throwaway, never connects
     sslmode  ? ENV["SPARC_DB_SSLMODE"] = sslmode      : ENV.delete("SPARC_DB_SSLMODE")
     rootcert ? ENV["SPARC_DB_SSLROOTCERT"] = rootcert : ENV.delete("SPARC_DB_SSLROOTCERT")
     yaml = YAML.load(ERB.new(File.read(Rails.root.join("config/database.yml"))).result, aliases: true)
     yaml.fetch(rails_env)
   ensure
-    ENV.delete("SPARC_DB_SSLMODE")
-    ENV.delete("SPARC_DB_SSLROOTCERT")
+    ENV_KEYS.each { |key| ENV.delete(key) }
     old.each { |k, v| ENV[k] = v }
   end
 

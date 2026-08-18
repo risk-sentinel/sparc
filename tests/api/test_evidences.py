@@ -30,22 +30,41 @@ _EVIDENCES = "/api/v1/evidences"
 _MISSING_EVIDENCE = "99999999"
 
 
-def _new_evidence_payload(**overrides: Any) -> dict[str, Any]:
-    payload = {
-        "title": "Contract-suite evidence",
-        "description": "Created by the API contract suite.",
-        "evidence_type": "artifact",
-        "status": "draft",
-        "source": "https://example.com/contract-suite",
+# #947 — CONTRACT CHANGE.
+#
+# Evidence must now support at least one control, and an artefact type must
+# carry its file. Both are enforced by the model, so they apply to this API
+# exactly as they do to the form -- a rule enforced only on the form was the
+# defect #947 was filed about.
+#
+# The practical consequence for a consumer: metadata-only creation of artefact
+# evidence no longer succeeds. A record and its artefact are sent together, or
+# an attestation is recorded instead (see test_create_fileless_attestation).
+# That means these payloads are multipart rather than JSON.
+def _new_evidence_form(**overrides: str) -> dict[str, str]:
+    form = {
+        "evidence[title]": "Contract-suite evidence",
+        "evidence[description]": "Created by the API contract suite.",
+        "evidence[evidence_type]": "artifact",
+        "evidence[status]": "draft",
+        "evidence[source]": "https://example.com/contract-suite",
+        # Deliberately NOT ac-2: several tests link AC-2 themselves and assert on
+        # it, and control links are unique per evidence, so a shared default
+        # would collide and read as a broken endpoint.
+        "evidence[control_ids]": "cm-6",
     }
-    payload.update(overrides)
-    return {"evidence": payload}
+    form.update(overrides)
+    return form
+
+
+def _evidence_file() -> dict[str, tuple[str, bytes, str]]:
+    return {"evidence[file]": ("evidence.txt", b"contract suite artifact", "text/plain")}
 
 
 @pytest.fixture
 def evidence(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
     """Create a throwaway evidence record and clean it up afterwards."""
-    response = admin_client.post(_EVIDENCES, json=_new_evidence_payload())
+    response = admin_client.post(_EVIDENCES, data=_new_evidence_form(), files=_evidence_file())
     assert response.status_code == 201, response.text
     record = response.json()["data"]
     try:
@@ -68,7 +87,8 @@ class TestAuth:
     @pytest.mark.auth
     def test_create_no_token_returns_401(self, anon_client: httpx.Client) -> None:
         assert_error_envelope(
-            anon_client.post(_EVIDENCES, json=_new_evidence_payload()), expected_status=401
+            anon_client.post(_EVIDENCES, data=_new_evidence_form(), files=_evidence_file()),
+            expected_status=401,
         )
 
     @pytest.mark.auth
@@ -100,7 +120,7 @@ class TestNotFound:
 class TestAuthz:
     @pytest.mark.authz
     def test_non_privileged_create_rejected(self, user_client: httpx.Client) -> None:
-        response = user_client.post(_EVIDENCES, json=_new_evidence_payload())
+        response = user_client.post(_EVIDENCES, data=_new_evidence_form(), files=_evidence_file())
         assert response.status_code in (401, 403), response.text
 
     @pytest.mark.authz
@@ -140,14 +160,14 @@ class TestIndex:
 class TestLifecycle:
     @pytest.mark.happy
     def test_create_show_update_destroy(self, admin_client: httpx.Client) -> None:
-        created = admin_client.post(_EVIDENCES, json=_new_evidence_payload())
+        created = admin_client.post(_EVIDENCES, data=_new_evidence_form(), files=_evidence_file())
         assert created.status_code == 201, created.text
         record = created.json()["data"]
         evidence_id = record["id"]
 
         try:
             assert record["title"] == "Contract-suite evidence"
-            assert record["has_file"] is False
+            assert record["has_file"] is True
             assert record["uuid"]
             # Detailed shape on create.
             assert "oscal_resolver_url" in record
@@ -181,6 +201,7 @@ class TestLifecycle:
             "evidence[evidence_type]": "artifact",
             "evidence[status]": "draft",
             "evidence[source]": "https://example.com/contract-suite",
+            "evidence[control_ids]": "ac-2",
         }
         created = admin_client.post(_EVIDENCES, data=data, files=files)
         assert created.status_code == 201, created.text
@@ -191,6 +212,64 @@ class TestLifecycle:
             assert record["original_filename"] == "evidence.txt"
             assert record["file_hash"], "expected a SHA-256 file_hash to be computed"
             assert record["file_size"] > 0
+        finally:
+            admin_client.delete(f"{_EVIDENCES}/{record['id']}")
+
+    # #947 — the two completeness rules, as contract. A consumer needs these to
+    # fail loudly and say what is missing, not to half-succeed.
+    @pytest.mark.validation
+    def test_create_artefact_without_file_returns_422(self, admin_client: httpx.Client) -> None:
+        response = admin_client.post(_EVIDENCES, json={"evidence": {
+            "title": "No artefact",
+            "description": "Artefact type with no file.",
+            "evidence_type": "artifact",
+            "status": "draft",
+            "source": "https://example.com/contract-suite",
+            "control_ids": "ac-2",
+        }})
+        assert response.status_code == 422, response.text
+        assert any("is required for Artifact evidence" in d for d in response.json()["details"])
+
+    @pytest.mark.validation
+    def test_create_without_control_links_returns_422(self, admin_client: httpx.Client) -> None:
+        response = admin_client.post(
+            _EVIDENCES,
+            data=_new_evidence_form(**{"evidence[control_ids]": ""}),
+            files=_evidence_file(),
+        )
+        assert response.status_code == 422, response.text
+        assert any("Link at least one control" in d for d in response.json()["details"])
+
+    # #947 headline: an attestation IS evidence, and needs no file. The attester
+    # must resolve to an account holding a role that may attest; an Instance
+    # Admin clears that the way it clears every other permission check.
+    @pytest.mark.happy
+    def test_create_fileless_attestation(self, admin_client: httpx.Client) -> None:
+        me = admin_client.get("/api/v1/users?per_page=100")
+        assert me.status_code == 200, me.text
+        admin_id = next(u["id"] for u in me.json()["data"] if u.get("admin"))
+
+        created = admin_client.post(_EVIDENCES, json={"evidence": {
+            "title": "Contract-suite attestation",
+            "description": "Quarterly access review, asserted rather than uploaded.",
+            "evidence_type": "signed_statement",
+            "status": "collected",
+            "source": "Manual",
+            "control_ids": "ac-2",
+            "attestations_attributes": {
+                "0": {
+                    "attester_user_id": admin_id,
+                    "role": "so_iso",
+                    "statement": "I have reviewed the access list and confirm its validity.",
+                    "attested_at": "2026-08-18T12:00:00Z",
+                    "status": "passed",
+                }
+            },
+        }})
+        assert created.status_code == 201, created.text
+        record = created.json()["data"]
+        try:
+            assert record["has_file"] is False, "an attestation needs no file"
         finally:
             admin_client.delete(f"{_EVIDENCES}/{record['id']}")
 
@@ -212,6 +291,7 @@ class TestLifecycle:
             "evidence[evidence_type]": "artifact",
             "evidence[status]": "draft",
             "evidence[source]": "https://example.com/contract-suite",
+            "evidence[control_ids]": "ac-2",
         }
 
     @pytest.mark.validation
@@ -256,9 +336,13 @@ class TestLifecycle:
         """collected_at / collected_by are system-recorded (#738, AU-10)."""
         created = admin_client.post(
             _EVIDENCES,
-            json=_new_evidence_payload(
-                collected_by="spoofed@example.com", collected_at="1999-01-01T00:00:00Z"
+            data=_new_evidence_form(
+                **{
+                    "evidence[collected_by]": "spoofed@example.com",
+                    "evidence[collected_at]": "1999-01-01T00:00:00Z",
+                }
             ),
+            files=_evidence_file(),
         )
         assert created.status_code == 201, created.text
         record = created.json()["data"]
