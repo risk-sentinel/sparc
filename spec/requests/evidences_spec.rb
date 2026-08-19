@@ -3,6 +3,12 @@
 require "rails_helper"
 
 RSpec.describe "Evidences", type: :request do
+  # #947 — declare the auth posture rather than inherit it from the developer's
+  # `.env`. The roster check short-circuits with no auth enabled, so in CI
+  # (which configures none) these rejection specs asserted nothing and still
+  # reported green. Same convention as controller_authorization_919_spec.rb.
+  before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
+
   let(:user) { create(:user, :admin) }
 
   before { sign_in_as(user) }
@@ -49,6 +55,16 @@ RSpec.describe "Evidences", type: :request do
     end
   end
 
+  # #947 — an artefact-type record must carry its file, so specs that create one
+  # need a real upload. (Attestation-type evidence is satisfied by its statement
+  # instead — see the fileless-attestation specs below.)
+  def artefact_file
+    Rack::Test::UploadedFile.new(
+      StringIO.new("SPARC request spec fixture"),
+      "text/plain", true, original_filename: "evidence.txt"
+    )
+  end
+
   describe "POST /evidences" do
     it "creates evidence with valid params" do
       expect {
@@ -58,7 +74,11 @@ RSpec.describe "Evidences", type: :request do
             evidence_type: "artifact",
             status: "draft",
             description: "A test evidence item",
-            source: "Unit test"
+            source: "Unit test",
+            # #947 — evidence must support at least one control, and an artefact
+            # type must carry its file.
+            control_ids: "ac-2",
+            file: artefact_file
           }
         }
       }.to change(Evidence, :count).by(1)
@@ -82,7 +102,9 @@ RSpec.describe "Evidences", type: :request do
     let(:metadata) do
       {
         title: "Quarterly access review", evidence_type: "artifact", status: "draft",
-        description: "Screenshot of the review board", source: "Manual"
+        description: "Screenshot of the review board", source: "Manual",
+        # #947 — evidence must support at least one control.
+        control_ids: "ac-2"
       }
     end
 
@@ -120,20 +142,145 @@ RSpec.describe "Evidences", type: :request do
       expect(response.body).to include("Quarterly access review")
     end
 
+    # #902 — the storage layer accepts the record but not the blob, so the record
+    # saves without its artefact and "uploaded successfully" would be a lie.
+    #
+    # #947 moved this to the UPDATE path. The create path now validates that an
+    # artefact type HAS a file, so stubbing `attached?` false there no longer
+    # reproduces this scenario — it reproduces a rejected create instead, which
+    # is a different (and correctly handled) thing. The file rule is create-only,
+    # so update is where a saved-but-blobless record is still reachable, and the
+    # guard still has to catch it.
     it "refuses to claim success when a posted file did not attach" do
-      # Simulate the storage layer accepting the record but not the blob.
+      evidence = create(:evidence)
+
       allow_any_instance_of(Evidence).to receive(:file).and_wrap_original do |orig, *args|
         attachment = orig.call(*args)
         allow(attachment).to receive(:attached?).and_return(false)
         attachment
       end
 
-      post evidences_path, params: { evidence: metadata.merge(file: pdf) }
+      patch evidence_path(evidence), params: {
+        evidence: { title: evidence.title, control_ids: "ac-2", file: pdf }
+      }
       follow_redirect!
 
       expect(response.body).to include("did NOT attach")
       expect(response.body).to include('data-flash-key="error"')
       expect(response.body).not_to include("uploaded successfully")
+    end
+  end
+
+  # #947 — the three defects the issue was filed for, exercised end to end.
+  describe "recording an attestation with no file (#947)" do
+    let(:boundary) { create(:authorization_boundary) }
+    let(:attester) { create(:user, display_name: "Dana Okafor") }
+
+    let!(:attesting_role) do
+      role = create(:role, :authorization_boundary_scoped,
+                    name: "so_iso", display_name: "System Owner / ISO",
+                    permissions: { "evidence.attest" => true })
+      create(:user_role, user: attester, role: role, authorization_boundary: boundary)
+      role
+    end
+
+    def attestation_payload(overrides = {})
+      {
+        title: "Q3 access review", evidence_type: "signed_statement", status: "collected",
+        description: "System Owner review of the access control board", source: "Manual",
+        authorization_boundary_id: boundary.id,
+        control_ids: "ac-2",
+        attestations_attributes: {
+          "0" => {
+            attester_user_id: attester.id, role: "so_iso",
+            statement: "I have reviewed the access list and confirm its validity.",
+            attested_at: Time.current.iso8601, status: "passed"
+          }
+        }
+      }.merge(overrides)
+    end
+
+    # The headline defect: this was impossible, and failed SILENTLY because the
+    # dropzone's required input is `d-none` and a browser cannot report on it.
+    it "creates attestation evidence with NO file at all" do
+      expect {
+        post evidences_path, params: { evidence: attestation_payload }
+      }.to change(Evidence, :count).by(1)
+        .and change(Attestation, :count).by(1)
+
+      expect(response).to have_http_status(:redirect)
+
+      evidence = Evidence.find_by(title: "Q3 access review")
+      expect(evidence.file).not_to be_attached
+      expect(evidence.attestations.first.attester_name).to eq("Dana Okafor")
+      expect(evidence.linked_control_ids).to eq([ "ac-2" ])
+    end
+
+    it "refuses an artefact type with no file, and SAYS SO on the page" do
+      expect {
+        post evidences_path, params: {
+          evidence: attestation_payload(evidence_type: "screenshot", attestations_attributes: {})
+        }
+      }.not_to change(Evidence, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include("is required for Screenshot evidence")
+    end
+
+    it "refuses attestation evidence with no statement or attester" do
+      expect {
+        post evidences_path, params: {
+          evidence: attestation_payload(attestations_attributes: {})
+        }
+      }.not_to change(Evidence, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include("An attestation needs a statement and an attester")
+    end
+
+    it "refuses an attester who holds no attesting role on the boundary" do
+      outsider = create(:user)
+      payload = attestation_payload
+      payload[:attestations_attributes]["0"][:attester_user_id] = outsider.id
+
+      expect {
+        post evidences_path, params: { evidence: payload }
+      }.not_to change(Evidence, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+  end
+
+  describe "evidence must support at least one control (#947)" do
+    it "refuses a create with no control links, naming the missing thing" do
+      expect {
+        post evidences_path, params: {
+          evidence: {
+            title: "Unlinked", evidence_type: "artifact", status: "draft",
+            description: "d", source: "s", control_ids: "", file: artefact_file
+          }
+        }
+      }.not_to change(Evidence, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include("Link at least one control")
+    end
+
+    # The disposition chosen for existing rows: readable, but the next edit has
+    # to resolve them.
+    it "blocks re-saving a legacy row that has no links" do
+      legacy = build(:evidence, :without_control_links)
+      # `save!(validate: false)` is how a pre-rule row is reproduced, but it also
+      # skips the before_validation that generates the slug the route needs.
+      legacy.slug = "legacy-unlinked-evidence"
+      legacy.save!(validate: false)
+
+      patch evidence_path(legacy), params: {
+        evidence: { title: "Retitled", control_ids: "" }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(legacy.reload.title).not_to eq("Retitled")
     end
   end
 
@@ -169,7 +316,7 @@ RSpec.describe "Evidences", type: :request do
       post evidences_path, params: {
         evidence: {
           title: "Forged provenance", evidence_type: "artifact", status: "draft",
-          description: "d", source: "s",
+          description: "d", source: "s", control_ids: "ac-2", file: artefact_file,
           collected_at: 5.years.from_now.iso8601, collected_by: "spoofed"
         }
       }
@@ -188,7 +335,8 @@ RSpec.describe "Evidences", type: :request do
       post evidences_path, params: {
         evidence: {
           title: "Session provenance", evidence_type: "artifact", status: "draft",
-          description: "d", source: "s", collected_by_user_id: other.id
+          description: "d", source: "s", control_ids: "ac-2", file: artefact_file,
+          collected_by_user_id: other.id
         }
       }
 

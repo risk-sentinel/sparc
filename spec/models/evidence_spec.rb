@@ -90,13 +90,44 @@ RSpec.describe Evidence, type: :model do
     end
   end
 
+  # #947 — the one exemption from the 1:n control rule, and the fact that it is
+  # narrow. An exemption nobody can see the edges of is a loophole.
+  describe "the system-fetched exemption" do
+    it "lets a fetched authoritative source save with no control link" do
+      evidence = build(:evidence, :without_control_links)
+      evidence.system_fetched = true
+
+      expect(evidence).to be_valid
+    end
+
+    it "does NOT exempt ordinary evidence" do
+      expect(build(:evidence, :without_control_links)).not_to be_valid
+    end
+
+    # The flag is virtual, so it does not survive the record. The moment a
+    # person edits a fetched source, it obeys the ordinary rule.
+    it "stops applying once the record is reloaded and edited by a person" do
+      evidence = build(:evidence, :without_control_links)
+      evidence.system_fetched = true
+      evidence.save!
+
+      reloaded = Evidence.find(evidence.id)
+      reloaded.title = "Renamed by a person"
+
+      expect(reloaded).not_to be_valid
+      expect(reloaded.errors[:base].join).to match(/Link at least one control/i)
+    end
+  end
+
   describe "#linked_control_ids" do
     it "returns unique control IDs from links" do
-      evidence = create(:evidence)
-      create(:evidence_control_link, evidence: evidence, control_id: "AC-01")
+      # The factory always builds one link (evidence must support a control), so
+      # this names it rather than adding a third — the default canonicalises to
+      # "ac-2" and would collide with AC-02 below.
+      evidence = create(:evidence, control_id: "AC-01")
       create(:evidence_control_link, evidence: evidence, control_id: "AC-02")
 
-      expect(evidence.linked_control_ids).to contain_exactly("ac-1", "ac-2")
+      expect(evidence.reload.linked_control_ids).to contain_exactly("ac-1", "ac-2")
     end
   end
 

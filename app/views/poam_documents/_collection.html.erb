@@ -1,0 +1,80 @@
+<%# #948 — how a SET of poam documents renders, extracted so the flat list and each
+    boundary tier draw from one definition rather than a second copy that can
+    drift.
+
+    Locals:
+      records       — the documents to draw (a page, or one tier's slice)
+      view_mode     — :card or :list
+
+    No boundary column here, unlike evidences/_collection. These types are
+    per-system by definition, so the column would be either redundant (inside a
+    tier, where the heading already names the system) or constant (untiered,
+    which by definition means at most one boundary is in view). Evidence is
+    different: it is the high-volume artefact gathered across systems, and #948
+    asked for the column there specifically.
+%>
+
+<% if view_mode == :card %>
+    <div class="sparc-card-grid">
+      <% records.each do |doc| %>
+        <%= render "shared/item_card", **document_card_slots(
+              doc, count: doc.poam_items.count, count_label: "items",
+              version: doc.poam_version).merge(
+              url: poam_document_path(doc),
+              badges: document_card_badges(doc),
+              actions: render("poam_documents/item_actions", doc: doc, compact: true)) %>
+      <% end %>
+    </div>
+<% else %>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th style="white-space: nowrap;">Name</th>
+          <th style="white-space: nowrap;">Version</th>
+          <th style="white-space: nowrap;">Status</th>
+          <th style="white-space: nowrap;">Items</th>
+          <th style="white-space: nowrap;">Entities</th>
+          <th style="white-space: nowrap;">Created</th>
+          <th style="white-space: nowrap;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% records.each do |doc| %>
+          <tr>
+            <td><strong><%= link_to doc.name, poam_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
+            <td class="small text-body-secondary"><%= doc.poam_version.presence || "—" %></td>
+            <td style="white-space: nowrap;">
+              <% if doc.processing? || doc.pending? || doc.failed? %>
+                <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                  <%= doc.status %>
+                </span>
+                <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
+                  <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= doc.metadata_extra["processing_message"] %></span>
+                <% end %>
+              <% else %>
+                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                  <%= doc.lifecycle_label %>
+                </span>
+              <% end %>
+            </td>
+            <td><%= doc.poam_items.count %></td>
+            <td style="font-size: 0.8rem;">
+              <% if doc.completed? %>
+                <span class="text-primary" title="Risks"><%= doc.poam_risks.count %>R</span>
+                <span class="sparc-heading-enterprise" title="Observations"><%= doc.poam_observations.count %>O</span>
+                <span class="sparc-heading-assessment" title="Findings"><%= doc.poam_findings.count %>F</span>
+              <% else %>
+                <span class="text-body-tertiary">—</span>
+              <% end %>
+            </td>
+            <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td>
+              <%= render "poam_documents/item_actions", doc: doc %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

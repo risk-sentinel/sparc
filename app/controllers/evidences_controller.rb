@@ -1,5 +1,6 @@
 class EvidencesController < ApplicationController
   include CollectionViewable
+  include CollectionTierable
   include BoundaryScopedDocument
   boundary_scoped Evidence, read: "evidence.read", write: "evidence.write"
 
@@ -22,7 +23,13 @@ class EvidencesController < ApplicationController
     @facets = active_facets(EvidenceBrowseQuery.facet_params, labels: EvidenceBrowseQuery.facet_labels)
     @clear_facets = clear_facets_params(EvidenceBrowseQuery.facet_params)
     @view_mode = resolve_view_mode(:evidences)
-    @pagy, @evidences = paginate_collection(query.records)
+    filtered = query.records
+    @pagy, @evidences = paginate_collection(filtered)
+
+    # #948 — tiering receives the SAME relation the list came from, already
+    # boundary-scoped and already filtered. It groups; it never re-decides who
+    # may see what.
+    @tiering = build_tiering(scope: filtered, records: @evidences)
   end
 
   def show
@@ -50,11 +57,18 @@ class EvidencesController < ApplicationController
     # #738 / #934: collection provenance is system-recorded (UTC, no DST drift),
     # not self-asserted, and written in one place so no creation path can omit it.
     @evidence.stamp_collection!(actor: current_user)
+    # #947 — links are BUILT before the first save, not created after it.
+    #
+    # Ordering matters now that at least one control link is required.
+    # `process_file_upload` calls `compute_file_hash!`, which calls `save!` — so
+    # with links still created afterwards, that save would re-run validation on a
+    # record that had no links yet and raise on every upload that carried a file.
+    # Building them first means the record is valid the whole way through.
+    build_control_links
 
     if @evidence.save
       audit_log("evidence_created", subject: @evidence, metadata: { title: @evidence.title })
       process_file_upload if @evidence.file.attached?
-      sync_control_links
 
       # #902 — never report success for a file that is not there. If the user
       # chose a file and it did not end up attached, the record saved but the
@@ -79,10 +93,12 @@ class EvidencesController < ApplicationController
   def update
     EvidenceUploadPolicy.validate!(uploaded_file)
 
-    if @evidence.update(evidence_params)
+    @evidence.assign_attributes(evidence_params)
+    build_control_links
+
+    if @evidence.save
       audit_log("evidence_updated", subject: @evidence, metadata: { title: @evidence.title })
       process_file_upload if @evidence.file.attached? && @evidence.file_hash.blank?
-      sync_control_links
 
       if file_posted_but_not_attached?
         redirect_to @evidence, flash: { error: missing_attachment_error(@evidence) }
@@ -111,9 +127,15 @@ class EvidencesController < ApplicationController
 
   def evidence_params
     # collected_at / collected_by are set by the server on create (#738), never user-supplied.
+    #
+    # #947 — attestations nest here so an assertion is created WITH the evidence
+    # it is. `attester_name` / `attester_email` are deliberately absent: they are
+    # the snapshot the model takes from the resolved account (#934), not input.
     params.require(:evidence).permit(
       :title, :description, :evidence_type, :status,
-      :source, :authorization_boundary_id, :file
+      :source, :authorization_boundary_id, :file,
+      attestations_attributes: [ :id, :attester_user_id, :role, :statement,
+                                 :attested_at, :frequency, :status ]
     )
   end
 
@@ -173,13 +195,28 @@ class EvidencesController < ApplicationController
     @evidence.compute_file_hash!
   end
 
-  def sync_control_links
-    control_ids = params.dig(:evidence, :control_ids).to_s.split(",").map(&:strip).reject(&:blank?)
-    return if control_ids.empty? && !params.dig(:evidence, :control_ids)
+  # #947 — replaces `sync_control_links`, which ran AFTER the record was saved.
+  #
+  # Two things changed. Links are now built onto the record so they are part of
+  # the same save (see the ordering note in `create`), and the 1:n rule means an
+  # omitted `control_ids` param can no longer quietly mean "leave them alone" on
+  # create — a record with no links is now invalid, and the error has to name
+  # that rather than surfacing as a save that silently did nothing.
+  def build_control_links
+    return unless params[:evidence]&.key?(:control_ids)
 
-    @evidence.evidence_control_links.destroy_all
-    control_ids.each do |cid|
-      @evidence.evidence_control_links.create!(control_id: cid)
+    control_ids = params.dig(:evidence, :control_ids).to_s.split(",").map(&:strip).reject(&:blank?)
+
+    # Existing links are marked for destruction rather than destroyed outright,
+    # so a failed validation leaves the record's links exactly as they were —
+    # `destroy_all` up front would strip them even when the save was rejected.
+    @evidence.evidence_control_links.each do |link|
+      link.mark_for_destruction unless control_ids.include?(link.control_id)
+    end
+
+    existing = @evidence.evidence_control_links.reject(&:marked_for_destruction?).map(&:control_id)
+    (control_ids - existing).each do |cid|
+      @evidence.evidence_control_links.build(control_id: cid)
     end
   end
 end

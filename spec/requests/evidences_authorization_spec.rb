@@ -96,7 +96,15 @@ RSpec.describe "Evidence boundary-scoped access (#738)", type: :request do
   end
 
   describe "evidence-validity guards (#738)" do
-    let(:base_params) { { title: "New Ev", evidence_type: "artifact", status: "draft", description: "d", source: "s" } }
+    # #947 — evidence must support at least one control, and an artefact type
+    # must carry its file.
+    let(:base_params) do
+      { title: "New Ev", evidence_type: "artifact", status: "draft",
+        description: "d", source: "s", control_ids: "ac-2",
+        file: Rack::Test::UploadedFile.new(
+          StringIO.new("authz fixture"), "text/plain", true,
+          original_filename: "evidence.txt") }
+    end
 
     it "requires description and source" do
       sign_in_as(admin)

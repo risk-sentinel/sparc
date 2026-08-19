@@ -156,6 +156,8 @@ class AuditEvent < ApplicationRecord
     evidence_created
     evidence_updated
     evidence_deleted
+    evidence_upload_rejected
+    incomplete_evidence_reported
     attestation_created
     attestation_deleted
     authorization_boundary_created
@@ -346,6 +348,7 @@ class AuditEvent < ApplicationRecord
                              control_mapping_deprecated mapping_entry_created mapping_entry_deleted
                              converter_refresh_started],
     "Evidence" => %w[evidence_created evidence_updated evidence_deleted
+                     evidence_upload_rejected incomplete_evidence_reported
                      attestation_created attestation_deleted],
     "Authorization Boundaries" => %w[authorization_boundary_created authorization_boundary_updated
                                      authorization_boundary_deleted authorization_boundary_delete_blocked

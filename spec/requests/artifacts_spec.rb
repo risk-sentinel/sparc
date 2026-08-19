@@ -41,7 +41,12 @@ RSpec.describe "Artifacts resolver", type: :request do
       end
 
       it "404s when the artifact has no attached file" do
-        evidence = create(:evidence) # no file attached
+        # #947 — the factory attaches a file (artefact types must carry one), so
+        # the fileless state this asserts on is produced by purging it: a blob
+        # that went missing after the record was written is exactly the case the
+        # resolver has to 404 on.
+        evidence = create(:evidence)
+        evidence.file.purge
         get artifact_path(uuid: evidence.uuid)
         expect(response).to have_http_status(:not_found)
       end

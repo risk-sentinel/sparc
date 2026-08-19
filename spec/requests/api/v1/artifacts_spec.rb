@@ -47,7 +47,10 @@ RSpec.describe "Api::V1::Artifacts", type: :request do
     end
 
     it "404s when the artifact has no attached file" do
+      # #947 — see artifacts_spec: the factory attaches a file, so the fileless
+      # state is produced by purging the blob.
       evidence = create(:evidence)
+      evidence.file.purge
       get api_v1_artifact_path(uuid: evidence.uuid), headers: admin_headers
       expect(response).to have_http_status(:not_found)
     end

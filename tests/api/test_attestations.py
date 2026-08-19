@@ -30,17 +30,34 @@ def _attestations_path(evidence_id: str | int) -> str:
     return f"/api/v1/evidences/{evidence_id}/attestations"
 
 
-def _new_attestation_payload() -> dict[str, Any]:
+def _admin_user_id(admin_client: httpx.Client) -> int:
+    """The attesting account. Resolved from the API rather than assumed, so the
+    suite does not depend on the admin happening to be user 1."""
+    response = admin_client.get("/api/v1/users?per_page=100")
+    assert response.status_code == 200, response.text
+    return next(u["id"] for u in response.json()["data"] if u.get("admin"))
+
+
+def _new_attestation_payload(admin_user_id: int = 1) -> dict[str, Any]:
     # attested_at is required (Attestation validates presence) and status is
     # bounded to Attestation::STATUSES == %w[passed failed]. This payload
     # previously sent status="current" and omitted attested_at — it never
     # failed because the lifecycle skipped by default until #756 gave the
     # suite a way to create its own evidence.
+    #
+    # #947 — an attestation now references an ACCOUNT, and the role it claims is
+    # checked against what that account holds on the evidence's boundary.
+    # `attester_name` / `attester_email` are no longer accepted: the server
+    # snapshots them from the resolved account, so a request can no longer name
+    # one person while referencing another.
+    #
+    # The admin's own id is used because an Instance Admin clears the roster
+    # check the way it clears every other permission check; `so_iso` is a seeded
+    # role that carries `evidence.attest`.
     return {
         "attestation": {
-            "attester_name": "Phase2 Reviewer",
-            "attester_email": "phase2@example.com",
-            "role": "isso",
+            "attester_user_id": admin_user_id,
+            "role": "so_iso",
             "statement": "Evidence reviewed and accurate as of this test run.",
             "attested_at": "2026-01-01T00:00:00Z",
             "frequency": "quarterly",
@@ -52,17 +69,19 @@ def _new_attestation_payload() -> dict[str, Any]:
 @pytest.fixture
 def evidence_id(admin_client: httpx.Client) -> Iterator[str]:
     """Create a throwaway evidence record for the lifecycle, then remove it."""
+    # #947 — evidence must support at least one control, and an artefact type
+    # must carry its file, so the host record is created multipart.
     created = admin_client.post(
         _EVIDENCES,
-        json={
-            "evidence": {
-                "title": "Attestation lifecycle evidence",
-                "description": "Created by the attestation contract suite.",
-                "evidence_type": "artifact",
-                "status": "draft",
-                "source": "https://example.com/contract-suite",
-            }
+        data={
+            "evidence[title]": "Attestation lifecycle evidence",
+            "evidence[description]": "Created by the attestation contract suite.",
+            "evidence[evidence_type]": "artifact",
+            "evidence[status]": "draft",
+            "evidence[source]": "https://example.com/contract-suite",
+            "evidence[control_ids]": "ac-2",
         },
+        files={"evidence[file]": ("evidence.txt", b"attestation host artifact", "text/plain")},
     )
     assert created.status_code == 201, created.text
     evidence = created.json()["data"]
@@ -118,6 +137,8 @@ class TestAuthz:
         # depending on whether the (test) evidence exists.
         response = user_client.post(
             _attestations_path(_MISSING_EVIDENCE),
+            # The evidence does not exist, so the payload's attester is never
+            # reached — the assertion is about the guard, not the body.
             json=_new_attestation_payload(),
         )
         assert response.status_code in (401, 403, 404), response.text
@@ -132,7 +153,8 @@ class TestLifecycle:
     ) -> None:
         base = _attestations_path(evidence_id)
 
-        created = admin_client.post(base, json=_new_attestation_payload())
+        payload = _new_attestation_payload(_admin_user_id(admin_client))
+        created = admin_client.post(base, json=payload)
         assert created.status_code == 201, created.text
         attestation = created.json()["data"]
         att_id = attestation["id"]

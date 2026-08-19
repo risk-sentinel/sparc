@@ -106,14 +106,24 @@ class AuthoritativeSourceFetchService
     # SYSTEM_COLLECTOR rather than left blank: a null user with a real timestamp
     # and a named collector is honest, silence is not.
     evidence.stamp_collection!(actor: @actor, label: (SYSTEM_COLLECTOR if @actor.nil?))
-    evidence.save!
+
+    # #947 — the artefact is attached BEFORE the first save, and this path is
+    # exempt from the 1:n control rule.
+    #
+    # A policy document must carry its file, and the file was previously
+    # attached after the record was already saved — so the record was briefly
+    # (and then validatably) an artefact type with no artefact. The control rule
+    # is exempted rather than satisfied: which controls cite an authoritative
+    # source is a property of the citing document, discovered later, and this
+    # service has nothing truthful to link. See Evidence#system_fetched.
     evidence.file.attach(
       io: StringIO.new(body),
       filename: filename,
       content_type: content_type
     )
-    evidence.compute_file_hash!
+    evidence.system_fetched = true
     evidence.save!
+    evidence.compute_file_hash!
     evidence
   end
 

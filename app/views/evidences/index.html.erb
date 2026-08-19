@@ -26,88 +26,19 @@
           filter_fields: @filter_fields, facets: @facets, clear_params: @clear_facets,
           view_mode: (@evidences.any? ? @view_mode : nil) %>
 
-    <% if @evidences.any? && @view_mode == :card %>
-      <div class="sparc-card-grid">
-        <% @evidences.each do |evidence| %>
-          <%= render "shared/item_card",
-                title: evidence.title,
-                url: evidence_path(evidence),
-                badges: [ { text: Evidence::STATUS_LABELS[evidence.status] || evidence.status.to_s.titleize,
-                            class: "sparc-status sparc-status--#{evidence.status == 'approved' ? 'success' : 'neutral'}" },
-                          { text: Evidence::EVIDENCE_TYPE_LABELS[evidence.evidence_type] || evidence.evidence_type.to_s.titleize,
-                            class: "badge bg-light text-dark" } ],
-                description: evidence.description,
-                metrics: [ { value: evidence.evidence_control_links.size, label: "controls" } ],
-                chips: (evidence.authorization_boundary ? [ { text: evidence.authorization_boundary.name, class: "" } ] : []),
-                footer: [ evidence.collected_by.presence, evidence.created_at.strftime("%Y-%m-%d") ].compact.join(" · "),
-                actions: render("evidences/item_actions", evidence: evidence) %>
-        <% end %>
-      </div>
+    <% if @evidences.any? && @tiering&.tiered? %>
+      <%# #948 — tiering is AUTOMATIC, not a view mode: it appears only when the
+          user can actually see more than one boundary, so a single-boundary
+          user never pays for a tree with one branch. Card/list still applies
+          inside each tier. %>
+      <%= render "shared/collection_tiers",
+            tiering: @tiering,
+            records_partial: "evidences/collection",
+            records_local: :records,
+            view_mode: @view_mode,
+            screen: "evidences" %>
     <% elsif @evidences.any? %>
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Controls</th>
-            <th>Collected</th>
-            <th>File</th>
-            <th>Attestations</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @evidences.each do |evidence| %>
-            <tr>
-              <td>
-                <strong><%= link_to evidence.title, evidence, class: "text-primary", style: "text-decoration: none;" %></strong>
-                <% if evidence.description.present? %>
-                  <br><span class="text-body-secondary small"><%= truncate(evidence.description, length: 60) %></span>
-                <% end %>
-              </td>
-              <td><span class="badge bg-body-secondary text-body"><%= evidence.type_label %></span></td>
-              <td>
-                <% badge_class = case evidence.status
-                   when "draft" then "bg-secondary"
-                   when "collected" then "bg-info text-dark"
-                   when "reviewed" then "bg-primary"
-                   when "attested" then "bg-success"
-                   when "expired" then "bg-danger"
-                   else "bg-secondary"
-                   end %>
-                <span class="badge <%= badge_class %>"><%= evidence.status_label %></span>
-              </td>
-              <td>
-                <% evidence.evidence_control_links.limit(3).each do |link| %>
-                  <code class="small"><%= link.control_id %></code>
-                <% end %>
-                <% if evidence.evidence_control_links.size > 3 %>
-                  <span class="text-body-secondary small">+<%= evidence.evidence_control_links.size - 3 %></span>
-                <% end %>
-              </td>
-              <td class="small"><%= evidence.collected_at&.strftime("%Y-%m-%d") %></td>
-              <td>
-                <% if evidence.file.attached? %>
-                  <span class="text-success small"><%= evidence.original_filename || evidence.file.filename %></span>
-                <% else %>
-                  <span class="text-body-tertiary small fst-italic">No file</span>
-                <% end %>
-              </td>
-              <td class="text-center">
-                <% if evidence.attestations.any? %>
-                  <span class="badge bg-success"><%= evidence.attestations.count %></span>
-                <% else %>
-                  <span class="text-body-tertiary">0</span>
-                <% end %>
-              </td>
-              <td>
-                <%= render "evidences/item_actions", evidence: evidence %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+      <%= render "evidences/collection", records: @evidences, view_mode: @view_mode %>
     <% else %>
       <div class="text-center text-body-secondary p-4">
         <p>No evidence records found. <%= link_to "Add evidence", new_evidence_path, class: "text-primary" %> to get started.</p>

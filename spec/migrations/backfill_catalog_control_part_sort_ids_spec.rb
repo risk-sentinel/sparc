@@ -41,14 +41,25 @@ RSpec.describe BackfillCatalogControlPartSortIds do
     end
 
     # Proves the fix is the derived key and not an accident of the identifiers:
-    # left NULL, the same three rows come back in the broken order.
+    # left NULL, the sub-part falls to the END of the family instead of sitting
+    # under its parent.
+    #
+    # The neighbour is `ac-10`, not `ac-25`, and that matters. Ordering is
+    # `COALESCE(sort_id, control_id)`, so with the key NULL the comparison is
+    # against the raw identifier — and "ac-2.7.(a)" vs "ac-25" differ first at
+    # `.` versus `5`, which sorts differently depending on the DATABASE
+    # COLLATION (byte order puts `.` first; a locale that ignores punctuation
+    # does not). This example previously asserted that collation-dependent
+    # result and failed on any database whose collation disagreed. Against
+    # "ac-10" the digits differ first, so every collation agrees and the control
+    # tests the derived key rather than the machine it ran on.
     it "orders them wrongly while the sub-part key is still NULL" do
       control_for("ac-2.7", sort_id: "ac-02.07")
-      control_for("ac-25",  sort_id: "ac-25")
+      control_for("ac-10",  sort_id: "ac-10")
       control_for("ac-2.7.(a)")
 
       ordered = family.catalog_controls.reload.map(&:control_id)
-      expect(ordered).to eq(%w[ac-2.7 ac-25 ac-2.7.(a)])
+      expect(ordered).to eq(%w[ac-2.7 ac-10 ac-2.7.(a)])
     end
   end
 

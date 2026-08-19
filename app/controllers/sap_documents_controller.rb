@@ -5,6 +5,7 @@ class SapDocumentsController < ApplicationController
   before_action :enforce_reconciliation_gate!, only: %i[update update_metadata update_objective]
   include BaselineDeclarable
   include CollectionViewable
+  include CollectionTierable
   include FileUploadable
   include Publishable
   include OscalExportable
@@ -42,7 +43,13 @@ class SapDocumentsController < ApplicationController
     # #888 — cards by default, remembered per screen, and paginated because a
     # card costs far more to render than a table row.
     @view_mode = resolve_view_mode(:sap_documents)
-    @pagy, @sap_documents = paginate_collection(scope)
+    filtered = scope
+    @pagy, @sap_documents = paginate_collection(filtered)
+
+    # #948 — tiering receives the SAME relation the list came from, already
+    # boundary-scoped and already filtered. It groups; it never re-decides who
+    # may see what.
+    @tiering = build_tiering(scope: filtered, records: @sap_documents)
   end
 
   def show

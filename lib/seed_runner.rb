@@ -12,7 +12,7 @@ module SeedRunner
   CURRENT_VERSIONS = {
     "nist_rev5_catalog"    => "2.0.0",
     "nist_rev4_catalog"    => "2.0.0",
-    "roles"                => "1.2.0",  # #919 back-matter/roster/approve grants
+    "roles"                => "1.3.0",  # #947 evidence.attest on the 7 accountable boundary roles
     "admin_user"           => "1.1.0",
     "fedramp_20x_ksi"      => "1.0.0",
     "nist_rev4_rev5_mapping" => "1.0.0",
@@ -29,7 +29,7 @@ module SeedRunner
     # #946 — pinned UUID so the SSP fixtures' import-profile href resolves.
     "demo_published_profile" => "1.1.0",
     "demo_catalog_guidance" => "1.0.0",
-    "demo_evidence"        => "1.1.0",  # #738 boundary-scoping smoke fixtures
+    "demo_evidence"        => "1.2.0",  # #947 evidence completeness: control links, artefacts, verified attesters
     "demo_sample_artifacts" => "1.2.0",  # #832 POA&M risks carry a deadline
     "oscal_schemas"         => "1.0.0",
     "cdef_service_aliases"  => "1.0.0",  # #904 coverage analysis escape hatches

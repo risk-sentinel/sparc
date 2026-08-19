@@ -1,0 +1,67 @@
+<%# #948 — the shared tier chrome: Instance → Organization → Boundary.
+    Used by every collection screen so a user does not meet a different layout
+    on each one.
+
+    Native <details>, so collapse works with no JavaScript at all. The Stimulus
+    controller only PERSISTS the open/closed choice — if it never loads, the
+    tiers still open and close. (Nothing here uses an inline on* handler; the
+    CSP forbids them and a screen that silently stops working is the failure
+    this bundle is already about.)
+
+    Locals:
+      tiering          — a CollectionTiering
+      records_partial  — partial that renders a set of records
+      records_local    — the local name that partial expects (e.g. :records)
+      view_mode        — :card or :list, passed straight through
+      screen           — scopes the remembered collapse state per screen
+%>
+<div data-controller="tier-collapse"
+     data-tier-collapse-screen-value="<%= screen %>">
+
+  <% tiering.tiers.each do |tier| %>
+    <details class="sparc-tier mb-3" open
+             data-tier-collapse-target="tier"
+             data-tier-key="<%= tier.dom_id %>"
+             data-action="toggle->tier-collapse#remember">
+      <summary class="sparc-tier__summary d-flex align-items-center gap-2">
+        <span class="fw-semibold"><%= tier.label %></span>
+        <span class="badge bg-body-secondary text-body"><%= tier.count %></span>
+        <% if tier.instance? %>
+          <span class="badge bg-info-subtle text-info-emphasis">Instance</span>
+        <% end %>
+      </summary>
+
+      <% if tier.help.present? %>
+        <p class="form-text mt-1 mb-2"><%= tier.help %></p>
+      <% end %>
+
+      <div class="sparc-tier__body ps-3">
+        <% if tier.instance? %>
+          <%# No second level: the organization heading and the boundary heading
+              would carry the same words, and a tree with a redundant rung reads
+              as a mistake. %>
+          <%= render records_partial,
+                records_local => tier.boundaries.first&.records || [],
+                view_mode: view_mode, show_boundary: false %>
+        <% else %>
+          <% tier.boundaries.each do |boundary_tier| %>
+            <details class="sparc-tier sparc-tier--boundary mb-2" open
+                     data-tier-collapse-target="tier"
+                     data-tier-key="<%= boundary_tier.dom_id %>"
+                     data-action="toggle->tier-collapse#remember">
+              <summary class="sparc-tier__summary d-flex align-items-center gap-2">
+                <span><%= boundary_tier.label %></span>
+                <span class="badge bg-body-secondary text-body"><%= boundary_tier.count %></span>
+              </summary>
+              <div class="sparc-tier__body ps-3 pt-2">
+                <%= render records_partial,
+                      records_local => boundary_tier.records,
+                      view_mode: view_mode, show_boundary: false %>
+              </div>
+            </details>
+          <% end %>
+        <% end %>
+      </div>
+    </details>
+  <% end %>
+</div>

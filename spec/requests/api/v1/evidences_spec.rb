@@ -13,14 +13,27 @@ RSpec.describe "Api::V1::Evidences", type: :request do
 
   before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
 
+  # #947 — evidence must support at least one control, and an artefact type must
+  # carry its file. Both apply to the API exactly as they do to the UI: the
+  # original defect was a rule enforced only on the form, so enforcing this one
+  # only there would repeat it.
   def valid_attributes(overrides = {})
     {
       title: "API Evidence",
       description: "Created through the REST API",
       evidence_type: "artifact",
       status: "draft",
-      source: "https://example.com/scanner"
+      source: "https://example.com/scanner",
+      control_ids: "ac-2",
+      file: api_artefact_file
     }.merge(overrides)
+  end
+
+  def api_artefact_file
+    Rack::Test::UploadedFile.new(
+      StringIO.new("SPARC api spec fixture"),
+      "text/plain", true, original_filename: "evidence.txt"
+    )
   end
 
   describe "authentication" do
@@ -56,9 +69,11 @@ RSpec.describe "Api::V1::Evidences", type: :request do
     end
 
     it "filters by linked control_id" do
-      linked = create(:evidence)
-      create(:evidence_control_link, evidence: linked, control_id: "AC-2")
-      create(:evidence)
+      # The factory links a control by default (evidence must support one), so
+      # the two records are given DIFFERENT ones — otherwise both match and the
+      # filter appears broken when it is the fixture that is ambiguous.
+      linked = create(:evidence, control_id: "AC-2")
+      create(:evidence, control_id: "cm-6")
 
       get api_v1_evidences_path, params: { control_id: "AC-2" }, headers: admin_headers
       parsed = JSON.parse(response.body)
@@ -146,8 +161,70 @@ RSpec.describe "Api::V1::Evidences", type: :request do
     end
   end
 
+  # #948 — the grouping is exposed so the UI stays a thin client over the API,
+  # not the only place the estate's shape can be read.
+  describe "GET /api/v1/evidences?group=boundary" do
+    let(:org)    { create(:organization, name: "Alpha Agency") }
+    let(:mine)   { create(:authorization_boundary, name: "My System", organization: org) }
+    let(:theirs) { create(:authorization_boundary, name: "Their System", organization: org) }
+
+    it "omits the grouping unless asked, so existing consumers are unaffected" do
+      create(:evidence, authorization_boundary: mine)
+
+      get api_v1_evidences_path, headers: admin_headers
+
+      expect(JSON.parse(response.body)).not_to have_key("groups")
+    end
+
+    it "returns organizations, their boundaries, and per-tier counts" do
+      create(:evidence, authorization_boundary: mine)
+      create(:evidence, authorization_boundary: theirs)
+
+      get api_v1_evidences_path(group: "boundary"), headers: admin_headers
+
+      groups = JSON.parse(response.body)["groups"]
+      expect(groups["tiered"]).to be(true)
+      alpha = groups["organizations"].find { |o| o["label"] == "Alpha Agency" }
+      expect(alpha["count"]).to eq(2)
+      expect(alpha["boundaries"].map { |b| b["label"] }).to contain_exactly("My System", "Their System")
+    end
+
+    it "labels the instance tier for boundary-less evidence" do
+      create(:evidence, authorization_boundary: nil)
+      create(:evidence, authorization_boundary: mine)
+
+      get api_v1_evidences_path(group: "boundary"), headers: admin_headers
+
+      groups = JSON.parse(response.body)["groups"]
+      instance = groups["organizations"].find { |o| o["instance"] }
+      expect(instance["label"]).to eq("Instance-wide")
+      expect(instance["count"]).to eq(1)
+    end
+
+    it "reports not-tiered when only one boundary is visible" do
+      create_list(:evidence, 2, authorization_boundary: mine)
+
+      get api_v1_evidences_path(group: "boundary"), headers: admin_headers
+
+      expect(JSON.parse(response.body).dig("groups", "tiered")).to be(false)
+    end
+
+    # The same guarantee the web screen carries: grouping describes what the
+    # caller can already see, and never widens it.
+    it "groups only what the filter left" do
+      create(:evidence, status: "collected", authorization_boundary: mine)
+      create(:evidence, status: "draft", authorization_boundary: theirs)
+
+      get api_v1_evidences_path(group: "boundary", status: "collected"), headers: admin_headers
+
+      groups = JSON.parse(response.body)["groups"]
+      ids = groups["organizations"].flat_map { |o| o["boundaries"] }.flat_map { |b| b["record_ids"] }
+      expect(ids.length).to eq(1)
+    end
+  end
+
   describe "POST /api/v1/evidences" do
-    it "creates metadata-only evidence" do
+    it "creates evidence with its artefact and control link" do
       expect {
         post api_v1_evidences_path, params: { evidence: valid_attributes }, headers: admin_headers
       }.to change(Evidence, :count).by(1)
@@ -155,7 +232,61 @@ RSpec.describe "Api::V1::Evidences", type: :request do
       expect(response).to have_http_status(:created)
       data = JSON.parse(response.body)["data"]
       expect(data["title"]).to eq("API Evidence")
+      expect(data["has_file"]).to be(true)
+    end
+
+    # #947 — CONTRACT CHANGE. Metadata-only creation of an artefact type used to
+    # succeed and produce evidence that showed nothing and supported nothing.
+    # An API consumer that created the record first and uploaded afterwards must
+    # now send both together, or record an attestation instead.
+    it "refuses artefact evidence with no file" do
+      expect {
+        post api_v1_evidences_path,
+             params: { evidence: valid_attributes(file: nil) }, headers: admin_headers
+      }.not_to change(Evidence, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["details"].join).to match(/is required for Artifact evidence/i)
+    end
+
+    it "refuses evidence with no control links" do
+      expect {
+        post api_v1_evidences_path,
+             params: { evidence: valid_attributes(control_ids: "") }, headers: admin_headers
+      }.not_to change(Evidence, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["details"].join).to match(/Link at least one control/i)
+    end
+
+    # The fileless path the issue exists to enable, through the API.
+    it "creates a fileless attestation in one call" do
+      boundary = create(:authorization_boundary)
+      attester = create(:user, display_name: "Dana Okafor")
+      role = create(:role, :authorization_boundary_scoped, name: "so_iso",
+                    display_name: "System Owner / ISO",
+                    permissions: { "evidence.attest" => true })
+      create(:user_role, user: attester, role: role, authorization_boundary: boundary)
+
+      expect {
+        post api_v1_evidences_path, params: {
+          evidence: valid_attributes(
+            evidence_type: "signed_statement",
+            file: nil,
+            authorization_boundary_id: boundary.id,
+            attestations_attributes: {
+              "0" => { attester_user_id: attester.id, role: "so_iso",
+                       statement: "I have reviewed the access list and confirm its validity.",
+                       attested_at: Time.current.iso8601, status: "passed" }
+            }
+          )
+        }, headers: admin_headers
+      }.to change(Evidence, :count).by(1).and change(Attestation, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      data = JSON.parse(response.body)["data"]
       expect(data["has_file"]).to be(false)
+      expect(Attestation.last.attester_name).to eq("Dana Okafor")
     end
 
     it "server-stamps collected_at / collected_by and ignores client-supplied values" do

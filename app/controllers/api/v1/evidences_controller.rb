@@ -47,10 +47,21 @@ class Api::V1::EvidencesController < Api::V1::BaseController
     scope = apply_filters(scoped_evidences)
 
     result = paginate(scope)
-    render json: {
+    payload = {
       data: result[:data].map { |e| serialize(e) },
       meta: result[:meta]
     }
+
+    # #948 — the grouping is exposed here so the UI stays a thin client over the
+    # API rather than being the only place the estate's shape can be read.
+    #
+    # Opt-in via `?group=boundary`, so an existing consumer's response shape does
+    # not change underneath it. The grouping is built from the SAME scope the
+    # page came from, already boundary-scoped and already filtered: it describes
+    # what the caller can see and never widens it.
+    payload[:groups] = serialize_tiers(scope, result[:data]) if params[:group] == "boundary"
+
+    render json: payload
   end
 
   # GET /api/v1/evidences/:id
@@ -73,10 +84,14 @@ class Api::V1::EvidencesController < Api::V1::BaseController
     # so evidence submitted by automation is attributed to the account that
     # submitted it rather than to the human who owns that account.
     evidence.stamp_collection!(actor: current_user)
+    # #947 — links are BUILT before the first save, not created after it.
+    # `compute_file_hash!` calls `save!`, so with links still created afterwards
+    # that save would re-validate a record with no links and raise on every
+    # upload carrying a file, now that at least one link is required.
+    build_control_links(evidence)
 
     if evidence.save
       evidence.compute_file_hash! if evidence.file.attached?
-      sync_control_links(evidence)
       audit_log("evidence_created", subject: evidence, metadata: { title: evidence.title })
       render json: { data: serialize(evidence, detailed: true) }, status: :created,
              location: api_v1_evidence_url(evidence.slug)
@@ -92,10 +107,12 @@ class Api::V1::EvidencesController < Api::V1::BaseController
   def update
     EvidenceUploadPolicy.validate!(uploaded_file)
 
-    if @evidence.update(evidence_params)
+    @evidence.assign_attributes(evidence_params)
+    build_control_links(@evidence)
+
+    if @evidence.save
       # Re-hash only when a new blob arrived (mirrors the web controller).
       @evidence.compute_file_hash! if @evidence.file.attached? && @evidence.file_hash.blank?
-      sync_control_links(@evidence)
       audit_log("evidence_updated", subject: @evidence, metadata: { title: @evidence.title })
       render json: { data: serialize(@evidence, detailed: true) }
     else
@@ -164,22 +181,72 @@ class Api::V1::EvidencesController < Api::V1::BaseController
   # Accepts either an array (`control_ids[]=AC-1&control_ids[]=AC-2`) or
   # the comma-separated string the web form posts. Absent key ⇒ leave
   # existing links untouched; present-but-empty ⇒ clear them.
-  def sync_control_links(evidence)
+  # #947 — replaces `sync_control_links`, which ran AFTER the save. Mirrors
+  # EvidencesController#build_control_links so the two surfaces cannot diverge
+  # on a rule the model now enforces for both.
+  def build_control_links(evidence)
     raw = params.dig(:evidence, :control_ids)
     return if raw.nil?
 
     control_ids = (raw.is_a?(Array) ? raw : raw.to_s.split(",")).map { |c| c.to_s.strip }.reject(&:blank?)
 
-    evidence.evidence_control_links.destroy_all
-    control_ids.each { |cid| evidence.evidence_control_links.create!(control_id: cid) }
+    # Marked for destruction rather than destroyed outright, so a rejected save
+    # leaves the existing links intact instead of stripping them anyway.
+    evidence.evidence_control_links.each do |link|
+      link.mark_for_destruction unless control_ids.include?(link.control_id)
+    end
+
+    existing = evidence.evidence_control_links.reject(&:marked_for_destruction?).map(&:control_id)
+    (control_ids - existing).each { |cid| evidence.evidence_control_links.build(control_id: cid) }
+  end
+
+  # #948 — the tier tree, flattened for JSON. Counts describe the whole filtered
+  # collection; `record_ids` describe the page, mirroring the web screen exactly
+  # so the two surfaces cannot disagree about what a tier contains.
+  def serialize_tiers(scope, records)
+    tiering = CollectionTiering.new(
+      scope: scope,
+      records: records,
+      instance_label: "Instance-wide",
+      instance_help: "Not owned by one system — inherited or common-control material, " \
+                     "visible to every signed-in user."
+    )
+
+    {
+      tiered: tiering.tiered?,
+      organizations: tiering.tiers.map do |tier|
+        {
+          key: tier.key,
+          label: tier.label,
+          help: tier.help,
+          instance: tier.instance?,
+          organization_id: tier.organization&.id,
+          count: tier.count,
+          boundaries: tier.boundaries.map do |boundary_tier|
+            {
+              authorization_boundary_id: boundary_tier.boundary&.id,
+              label: boundary_tier.label,
+              count: boundary_tier.count,
+              record_ids: boundary_tier.records.map(&:id)
+            }
+          end
+        }
+      end
+    }
   end
 
   def evidence_params
     # collected_at / collected_by are server-stamped on create (#738),
     # never user-supplied.
+    # #947 — attestations nest here too, so the API can record a fileless
+    # attestation in one call exactly as the UI does. `attester_name` /
+    # `attester_email` are absent deliberately: they are the snapshot the model
+    # takes from the resolved account (#934), not client input.
     params.require(:evidence).permit(
       :title, :description, :evidence_type, :status,
-      :source, :authorization_boundary_id, :file
+      :source, :authorization_boundary_id, :file,
+      attestations_attributes: [ :id, :attester_user_id, :role, :statement,
+                                 :attested_at, :frequency, :status ]
     )
   end
 

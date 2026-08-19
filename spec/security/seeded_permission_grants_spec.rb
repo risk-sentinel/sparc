@@ -151,7 +151,7 @@ RSpec.describe "Seeded permission grants (#919)" do
   # never receive them — the change ships and silently does nothing, which is
   # indistinguishable from it not being made.
   it "requires a seed version that reflects the #919 grants" do
-    expect(SeedRunner::CURRENT_VERSIONS["roles"]).to eq("1.2.0"),
+    expect(SeedRunner::CURRENT_VERSIONS["roles"]).to eq("1.3.0"),
       "The roles seed version must be bumped whenever these grants change, or " \
       "SeedRunner skips the section on every existing database. If you changed the " \
       "grants above, bump the version AND update this expectation."

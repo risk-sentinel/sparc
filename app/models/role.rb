@@ -63,6 +63,7 @@ class Role < ApplicationRecord
     cdef.approve
     evidence.read
     evidence.write
+    evidence.attest
     mappings.read
     mappings.write
     converters.write

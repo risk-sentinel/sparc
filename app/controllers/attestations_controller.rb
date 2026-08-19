@@ -20,7 +20,16 @@ class AttestationsController < ApplicationController
 
     if @attestation.save
       @attestation.generate_signature!
-      @evidence.update!(status: :attested) unless @evidence.attested?
+      # #947 — check the STATUS, not `attested?`.
+      #
+      # `Evidence#attested?` is explicitly defined as `attestations.any?`, which
+      # SHADOWS the predicate the `status` enum generates for the "attested"
+      # value. By the time this line runs the attestation has just been saved, so
+      # the shadowing method is always true and the status update never fired —
+      # evidence could be signed off and still read "Draft" everywhere. The old
+      # spec asserted the status was one of four values, which no outcome could
+      # fail, so nothing caught it.
+      @evidence.update!(status: :attested) unless @evidence.status == "attested"
       audit_log("attestation_created", subject: @attestation, metadata: { evidence_id: @evidence.id })
       redirect_to evidence_path(@evidence), notice: "Attestation recorded by #{@attestation.attester_name}."
     else
@@ -46,7 +55,11 @@ class AttestationsController < ApplicationController
     @evidence = Evidence.find_by!(slug: params[:evidence_id])
   end
 
+  # #947 — `attester_name` / `attester_email` are NOT permitted. They are the
+  # snapshot the model takes from the resolved account (#934 rule), not values a
+  # user types. Permitting them would put the free-text field this issue removed
+  # straight back, and let a request name one person while referencing another.
   def attestation_params
-    params.require(:attestation).permit(:attester_name, :attester_email, :role, :statement, :attested_at, :frequency, :status)
+    params.require(:attestation).permit(:attester_user_id, :role, :statement, :attested_at, :frequency, :status)
   end
 end

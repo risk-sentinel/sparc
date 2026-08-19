@@ -1,0 +1,95 @@
+<%# #947 — the attestation fields, shared by the standalone "record an
+    attestation" screen and the inline block on the evidence create form.
+
+    One partial because the two surfaces must not drift: the whole point of the
+    issue is that an attestation names someone checkable, and a second copy of
+    these fields is a second place for that to be quietly relaxed.
+
+    `f` is the form builder for an Attestation (nested or top-level).
+    `boundary_id` is the boundary the evidence belongs to — nil means
+    instance-wide evidence, where eligibility falls back to "may attest on some
+    boundary" (see Attestation.attestable_roles_for).
+%>
+<% attesters = Attestation.eligible_attesters_for(authorization_boundary_id: boundary_id) %>
+<% eligible = attesters.each_with_object({}) do |user, map|
+     map[user.id.to_s] = Attestation.attestable_roles_for(
+       user: user, authorization_boundary_id: boundary_id
+     ).map { |role| { name: role.name, label: role.display_name } }
+   end %>
+
+<div data-controller="attester-picker"
+     data-attester-picker-eligible-value="<%= eligible.to_json %>">
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <%= f.label :attester_user_id, class: "form-label fw-semibold" do %>
+        Attester <span class="text-danger">*</span>
+      <% end %>
+      <%= field_help "Who is making this assertion. Only accounts holding a role that may attest on this system are listed — the permission to upload evidence is not the authority to sign for it." %>
+      <%= f.select :attester_user_id,
+            options_for_select(attesters.map { |u| [ u.display_label.presence || u.email, u.id ] },
+                               f.object.attester_user_id),
+            { include_blank: "Select attester…" },
+            class: "form-select",
+            data: { attester_picker_target: "attester",
+                    action: "change->attester-picker#refresh" } %>
+      <% if attesters.none? %>
+        <div class="form-text text-danger">
+          No account holds a role that may attest here. Grant an attesting role on
+          the boundary roster, or add <code>evidence.attest</code> to a role in
+          Admin &rsaquo; Roles.
+        </div>
+      <% end %>
+    </div>
+
+    <div class="col-md-6">
+      <%= f.label :role, class: "form-label fw-semibold" do %>
+        Attesting As <span class="text-danger">*</span>
+      <% end %>
+      <%= field_help "The role the assertion is made under. SPARC checks the attester actually holds it on this system, so a claim cannot outrun the roster." %>
+      <%= f.select :role, options_for_select([]), {},
+            class: "form-select",
+            data: { attester_picker_target: "role" } %>
+      <%# `<output>` rather than `<p role="status" aria-live="polite">`: it carries
+          both implicitly and is better supported across devices than the same
+          roles spelled out in ARIA — the same reasoning `shared/_collection_pagination`
+          already applies. `d-block` because `<output>` is inline by default and
+          `.form-text` does not set display. %>
+      <output class="form-text d-block"
+              data-attester-picker-target="status"></output>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :statement, class: "form-label fw-semibold" do %>
+      Attestation Statement <span class="text-danger">*</span>
+    <% end %>
+    <%= field_help "The assertion itself, in the attester's own words. This is the evidence when there is no file — say what was reviewed and what is being confirmed." %>
+    <%= f.text_area :statement, class: "form-control", rows: 4,
+          placeholder: "I attest that the evidence provided is accurate, complete, and represents the current state of the control implementation..." %>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <%= f.label :attested_at, class: "form-label fw-semibold" do %>
+        Attestation Date <span class="text-danger">*</span>
+      <% end %>
+      <%= f.datetime_local_field :attested_at, class: "form-control",
+            value: (f.object.attested_at || Time.current).strftime("%Y-%m-%dT%H:%M") %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :frequency, "Review Frequency", class: "form-label fw-semibold" %>
+      <%= field_help "How often this assertion must be renewed. Drives the next-review-due and overdue indicators on the artifact." %>
+      <%= f.select :frequency,
+            options_for_select(Attestation::FREQUENCY_LABELS.map { |k, v| [ v, k ] }, f.object.frequency),
+            { include_blank: "Not specified" }, class: "form-select" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :status, "Status", class: "form-label fw-semibold" %>
+      <%= field_help "The outcome being attested to. Passed means the control was verified; failed records an assertion that it was not." %>
+      <%= f.select :status,
+            options_for_select(Attestation::STATUSES.map { |s| [ s.titleize, s ] }, f.object.status || "passed"),
+            {}, class: "form-select" %>
+    </div>
+  </div>
+</div>

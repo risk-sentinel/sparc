@@ -61,6 +61,27 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
   files and history is a separate, larger piece of work — do not attempt it
   inside an unrelated PR.)
 
+- **Never run more than one container stack at a time.** Bring up the least
+  needed for the test being performed, and stop it the moment that test is done.
+  Check `docker ps` before starting anything. Two SPARC compose projects idling
+  (`sparc` = Postgres + Redis, `sparc-ubi9` = Caddy + Postgres + Redis + Rails)
+  is two Postgres instances, two Redis and an idle Rails app competing for host
+  memory — and on this box `rspec` runs against the **local** Postgres, so the
+  `sparc` project serves nothing at all. Use `stop`, never `down -v`: volumes
+  and ActiveStorage blobs must survive. After any `--force-recreate`, purge
+  dangling attachments before running the smoke suite.
+
+- **A spec must declare the posture it asserts, never inherit it from `.env`.**
+  `SparcConfig.any_auth_enabled?` is read from the environment and several
+  guards short-circuit when it is false (`BoundaryScopedDocument`,
+  `authorize_permission!`, `Attestation`'s attester check). A developer with
+  local login enabled sees them fire; CI configures no auth, so the same specs
+  run with the guard short-circuited — they assert nothing and still report
+  green. Stub it in the file's own `before`, the way
+  `spec/requests/controller_authorization_919_spec.rb` does, and assert **both**
+  postures where the behaviour genuinely forks. This shipped twelve vacuous
+  specs to CI in #947.
+
 - **Never commit real secrets; keep test credentials scanner-clean.** Real
   secrets live only in gitignored `.env` files or the CI/deploy secret store —
   never in tracked code, compose files, or workflows. Test/local/CI credentials

@@ -122,6 +122,58 @@ def create_catalog() -> dict[str, Any]:
         return r.json()["data"]
 
 
+def create_profile() -> dict[str, Any]:
+    """A DRAFT profile, for tests that need editable OSCAL metadata panels.
+
+    Created rather than discovered. `first_show_href` returns whatever happens
+    to be first on the index, which is a published document on any real
+    deployment — so the metadata-edit smoke skipped its own assertions
+    ("non-draft — expand-only check") while reporting as passed, and scanning a
+    large index for a candidate is also what made it time out. A fixture the
+    test owns is draft by construction and reachable by a known URL.
+    """
+    with _client() as c:
+        r = c.post(
+            "/api/v1/profile_documents",
+            # No lifecycle_status: the default is the unpublished, EDITABLE state.
+            # `Lifecycle::LIFECYCLE_STATUSES` is `started / in_progress /
+            # published` — there is no "draft", and sending one 422s.
+            json={
+                "profile_document": {
+                    "name": _name("profile"),
+                    "description": "ui-smoke",
+                }
+            },
+        )
+        r.raise_for_status()
+        return r.json()["data"]
+
+
+def create_back_matter_resource(resourceable_type: str, resourceable_id: Any) -> dict[str, Any]:
+    """A managed back-matter resource on a document.
+
+    The back-matter edit smoke needs one to exist: a freshly created draft has
+    no resources, so the per-resource Edit toggle it exercises never renders and
+    the test used to skip its own assertion.
+    """
+    with _client() as c:
+        r = c.post(
+            "/api/v1/back_matter_resources",
+            json={
+                "back_matter_resource": {
+                    "title": _name("back-matter"),
+                    "description": "ui-smoke",
+                    "href": "https://example.com/ui-smoke.pdf",
+                    "media_type": "application/pdf",
+                    "resourceable_type": resourceable_type,
+                    "resourceable_id": resourceable_id,
+                }
+            },
+        )
+        r.raise_for_status()
+        return r.json()["data"]
+
+
 def create_ssp(boundary_id: int) -> dict[str, Any]:
     with _client() as c:
         r = c.post(
@@ -139,25 +191,31 @@ def create_ssp(boundary_id: int) -> dict[str, Any]:
 
 
 def create_evidence(title: str | None = None) -> dict[str, Any]:
-    """Metadata-only evidence submitted by the smoke service account (#934).
+    """Evidence submitted by the smoke service account (#934).
 
     Collection provenance is never sent — the server stamps `collected_at`,
     `collected_by` and `collected_by_user_id` from the token's account, which is
     what the "Added by" smoke then looks for on screen. A record created here is
     therefore attributed to the service account, not to its owner.
+
+    #947 — this used to be metadata-only, which no longer creates: evidence must
+    support at least one control, and an artefact type must carry its file. Both
+    rules live on the model, so they apply to the API exactly as they do to the
+    form — a rule enforced only on the form was the defect #947 was filed about.
+    So the record and its artefact are sent together, multipart.
     """
     with _client() as c:
         r = c.post(
             "/api/v1/evidences",
-            json={
-                "evidence": {
-                    "title": title or _name("evidence"),
-                    "description": "ui-smoke",
-                    "evidence_type": "artifact",
-                    "status": "collected",
-                    "source": "ui-smoke",
-                }
+            data={
+                "evidence[title]": title or _name("evidence"),
+                "evidence[description]": "ui-smoke",
+                "evidence[evidence_type]": "artifact",
+                "evidence[status]": "collected",
+                "evidence[source]": "ui-smoke",
+                "evidence[control_ids]": "ac-2",
             },
+            files={"evidence[file]": ("evidence.txt", b"ui-smoke artifact", "text/plain")},
         )
         r.raise_for_status()
         return r.json()["data"]

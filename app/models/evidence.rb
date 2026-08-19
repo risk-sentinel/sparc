@@ -21,6 +21,20 @@ class Evidence < ApplicationRecord
   include BoundaryReferenceValidation
   has_many :evidence_control_links, dependent: :destroy
   has_many :attestations, dependent: :destroy
+
+  # #947 — an attestation IS evidence, so it is created WITH the record rather
+  # than bolted on at a second screen afterwards.
+  #
+  # Before this, `Attestation` could only be reached at
+  # /evidences/:id/attestations/new — after the evidence row already existed —
+  # which meant attestation-type evidence had to pass through a state where it
+  # asserted nothing. Nesting closes that window: one screen, one save.
+  #
+  # `reject_if` keeps the nested block inert for artefact types, so a form that
+  # renders the fields but leaves them blank does not try to build an empty
+  # attestation and fail validation on fields the user never saw.
+  accepts_nested_attributes_for :attestations,
+    reject_if: ->(attrs) { attrs["statement"].blank? && attrs["attester_user_id"].blank? }
   has_many :ksi_validations
 
   validates :title, presence: true
@@ -41,6 +55,42 @@ class Evidence < ApplicationRecord
   # can still be corrected — a validation that locks the record it is meant to
   # protect helps nobody.
   validate :collected_at_not_in_future
+
+  # #947 — the file rule, moved OFF the form and onto the model.
+  #
+  # It lived in the view as `required: !@evidence.file.attached?` on a dropzone
+  # whose real `<input type="file">` is `d-none`. A browser cannot focus a
+  # hidden required field to report a message, so the form simply refused to
+  # submit with nothing shown — an attestation was unrecordable and the screen
+  # never said why. A constraint that cannot report itself is not a constraint,
+  # it is a trap; here it is stated where it can produce an error message.
+  #
+  # `on: :create` deliberately. Rows written before this rule exist without
+  # files, and demanding a re-upload to fix a typo in a title would be its own
+  # trap (the same reasoning #902 applied to editing).
+  validate :file_required_for_artefact_types, on: :create
+
+  # #947 — attestation-type evidence must carry its assertion.
+  #
+  # The mirror of the file rule: an artefact type without a file is incomplete,
+  # and so is an assertion type without an assertion. Create-only for the same
+  # reason — rows that predate the rule are reported by the advisory migration,
+  # not made uneditable.
+  validate :attestation_required_for_attestation_types, on: :create
+
+  # #947 — evidence must support at least one control.
+  #
+  # Evidence that supports nothing cannot be assessed, appears under no control,
+  # and quietly inflates the evidence count. Owner decision: collected evidence
+  # requires 1:n controls.
+  #
+  # Fires on create AND update, which is the stronger of the two dispositions
+  # considered and the one chosen: rows that predate the rule are reported by
+  # the advisory migration and stay readable, but the next time anyone edits one
+  # they must attach a control before saving. That does block an unrelated title
+  # fix behind the cleanup — a cost accepted deliberately, so the backlog gets
+  # worked rather than accumulating.
+  validate :at_least_one_control_link
 
   # Stable, immutable OSCAL back-matter href (#680). Resolves via the
   # /artifacts/:uuid resolver to a freshly-signed download URL, so the
@@ -76,10 +126,21 @@ class Evidence < ApplicationRecord
     "log" => "Log File",
     "config_export" => "Configuration Export",
     "scan_result" => "Scan Result",
-    "signed_statement" => "Signed Statement",
+    # #947 — relabelled from "Signed Statement". An attestation IS evidence: a
+    # System Owner performing a periodic access review satisfies the control by
+    # ASSERTING it, and there may be no file at all. The stored enum value is
+    # unchanged, so no migration and no data churn — only what a user reads.
+    "signed_statement" => "Attestation",
     "policy_document" => "Policy Document",
     "test_result" => "Test Result"
   }.freeze
+
+  # #947 — the types whose substance is an assertion rather than a file.
+  #
+  # These require a statement and a verified attester, and do NOT require a
+  # file (one may still be attached). Every other type names an artefact, so
+  # the file requirement stands for them.
+  ATTESTATION_TYPES = %w[signed_statement].freeze
 
   STATUS_LABELS = {
     "draft" => "Draft",
@@ -90,7 +151,7 @@ class Evidence < ApplicationRecord
   }.freeze
 
   def type_label
-    EVIDENCE_TYPE_LABELS[evidence_type] || evidence_type.titleize
+    EVIDENCE_TYPE_LABELS[evidence_type] || evidence_type&.titleize
   end
 
   def status_label
@@ -137,7 +198,55 @@ class Evidence < ApplicationRecord
     attestations.any?
   end
 
+  # #947 — is this evidence an assertion rather than an artefact?
+  def attestation_type?
+    ATTESTATION_TYPES.include?(evidence_type)
+  end
+
+  # #947 — set ONLY by AuthoritativeSourceFetchService, for the one creation
+  # path that genuinely cannot name a control.
+  #
+  # An authoritative source pulled into a document's back-matter is a REFERENCE
+  # artefact: which controls cite it is a property of the document, discovered
+  # after the fetch, not something the fetch knows. Requiring a link there would
+  # mean inventing one, and an invented control link in a compliance tool is
+  # worse than an honest gap.
+  #
+  # Deliberately VIRTUAL, not a column. It exempts the fetching save and nothing
+  # else, so the moment a person edits the record it falls under the ordinary
+  # rule like any other evidence. The advisory migration reports these rows
+  # alongside the other unlinked ones — an exemption nobody can see is a
+  # loophole, not a decision.
+  attr_accessor :system_fetched
+
   private
+
+  def at_least_one_control_link
+    return if system_fetched
+    return if evidence_control_links.reject(&:marked_for_destruction?).any?
+
+    errors.add(:base, "Link at least one control — evidence that supports no " \
+                      "control cannot be assessed and appears under nothing.")
+  end
+
+  def attestation_required_for_attestation_types
+    return unless attestation_type?
+    return if attestations.reject(&:marked_for_destruction?).any?
+
+    errors.add(:base, "An attestation needs a statement and an attester — " \
+                      "that assertion is the evidence when there is no file.")
+  end
+
+  def file_required_for_artefact_types
+    # The presence validation already reports a missing type; adding a second
+    # error about which file a nameless type needs only obscures it.
+    return if evidence_type.blank?
+    return if attestation_type?
+    return if file.attached?
+
+    errors.add(:file, "is required for #{type_label} evidence. " \
+                      "To record an assertion with no file, choose the Attestation type.")
+  end
 
   def collected_at_not_in_future
     return if collected_at.blank?
