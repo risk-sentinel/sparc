@@ -20,7 +20,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
   include DocumentApprovalApi
   include FieldImportable
-  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :populate_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm, :update_scope ]
+  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :source_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm, :update_scope ]
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
   # #716 — field import is a bulk mutation; gate it like bulk-apply (converters.write).
@@ -209,16 +209,20 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     render json: { error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_entity
   end
 
-  # POST /api/v1/cdef_documents/:id/populate_from_profile
-  # #628 — populate an existing empty CDEF from a published profile so a
-  # metadata-only shell gains a control basis instead of being a dead end.
-  def populate_from_profile
+  # POST /api/v1/cdef_documents/:id/source_from_profile
+  #
+  # #628 — give a metadata-only CDEF shell a control basis instead of a dead
+  # end. #982 renamed it: OSCAL reaches a profile from a component-definition
+  # only through `control-implementation/@source`, never an import. The old
+  # `populate_from_profile` path still routes here (deprecated, removal
+  # v1.18.0) so integrators are not broken by the correction.
+  def source_from_profile
     profile = find_published_profile(params[:source_profile_id])
     return render(json: { error: "Published profile not found" }, status: :not_found) unless profile
 
     CdefFromProfileService.new(profile).populate(@cdef)
 
-    audit_log("cdef_document_populated_from_profile", subject: @cdef,
+    audit_log("cdef_control_implementation_sourced_from_profile", subject: @cdef,
               metadata: { name: @cdef.name, source_profile_id: profile.id, source_profile_name: profile.name })
     render json: { data: serialize_cdef(@cdef, detailed: true) }
   rescue ArgumentError => e

@@ -1,6 +1,6 @@
 """Shared contract for the populate-from-profile endpoints (#628).
 
-`POST /api/v1/<resource>/:id/populate_from_profile` with a
+`POST /api/v1/<resource>/:id/<ACTION>` with a
 ``{"source_profile_id": <id-or-slug>}`` body seeds an existing document's
 controls from a **published** profile (only published profiles with a resolved
 catalog are a valid basis). Contract:
@@ -11,6 +11,14 @@ catalog are a valid basis). Contract:
 
 Subclass ``PopulateFromProfileContract``, set ``PATH``, and provide a
 ``populate_doc`` fixture yielding a slug-addressed target document.
+
+``ACTION`` is overridable because the two resources genuinely differ (#982). An
+OSCAL SSP has ``import-profile`` as a first-class element, so
+``populate_from_profile`` describes it correctly. A component-definition has no
+such import and reaches a profile only through
+``control-implementation/@source``, so the CDEF endpoint is
+``source_from_profile``. The old CDEF path still routes (deprecated, removal
+v1.18.0) and is covered separately in ``test_cdef_documents.py``.
 
 The happy path needs a published profile to exist on the target instance; when
 none is present the test skips (mirrors the ui-smoke "no sample record" skip)
@@ -31,12 +39,13 @@ import pytest
 
 class PopulateFromProfileContract:
     PATH: str = ""
+    ACTION: str = "populate_from_profile"
 
     def _populate(
         self, client: httpx.Client, slug: str, source_profile_id: Any
     ) -> httpx.Response:
         return client.post(
-            f"{self.PATH}/{slug}/populate_from_profile",
+            f"{self.PATH}/{slug}/{self.ACTION}",
             json={"source_profile_id": source_profile_id},
         )
 

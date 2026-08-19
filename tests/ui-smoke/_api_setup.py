@@ -73,7 +73,7 @@ def create_cdef(*, with_controls: bool = True) -> dict[str, Any]:
             return cdef
 
         populated = c.post(
-            f"/api/v1/cdef_documents/{cdef['slug']}/populate_from_profile",
+            f"/api/v1/cdef_documents/{cdef['slug']}/source_from_profile",
             json={"source_profile_id": profile["id"]},
         )
         if populated.status_code == 200:

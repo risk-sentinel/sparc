@@ -354,10 +354,17 @@ Rails.application.routes.draw do
       get  :bulk_apply
       post :bulk_apply_preview
       post :bulk_apply_confirm
-      # #628: populate an existing empty CDEF from a published profile so a
-      # metadata-only shell isn't a dead end.
-      get :attach_profile
-      post :populate_from_profile
+      # #628/#982: give an empty CDEF its control-implementation basis from a
+      # published profile, so a metadata-only shell isn't a dead end.
+      #
+      # Named for the OSCAL relationship rather than the SSP's. An SSP has
+      # `import-profile` as a first-class element, so `populate_from_profile`
+      # is correct there; a component-definition has no such import
+      # (`import-component-definition` imports another CDEF) and reaches a
+      # profile only as `control-implementation/@source`. The CDEF path had
+      # borrowed the SSP's vocabulary for a relationship OSCAL does not have.
+      get :select_profile_source
+      post :source_from_profile
     end
     collection do
       get :select_profile
@@ -702,8 +709,15 @@ Rails.application.routes.draw do
           # Preview returns a signed token; confirm (slice 4) replays it.
           post "bulk_apply_converter/preview", action: :bulk_apply_converter_preview, as: :bulk_apply_converter_preview
           post "bulk_apply_converter/confirm", action: :bulk_apply_converter_confirm, as: :bulk_apply_converter_confirm
-          # #628 — populate an existing empty CDEF from a published profile.
-          post :populate_from_profile
+          # #628/#982 — source an empty CDEF's control-implementation from a
+          # published profile. See the web routes for why this is not named
+          # `populate_from_profile` the way the SSP endpoint is.
+          post :source_from_profile
+          # DEPRECATED (#982): the pre-rename path, kept so integrators are not
+          # broken by a vocabulary correction. Honoured, undocumented, and
+          # scheduled for removal in v1.18.0 alongside the SPARC_BANNER_* names
+          # (#909 precedent).
+          post :populate_from_profile, action: :source_from_profile
           # #929 — re-point a CDEF's scope after upload (web parity).
           patch :scope, action: :update_scope, as: :update_scope
           # #630/#634 — review/approval workflow.

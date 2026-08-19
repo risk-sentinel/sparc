@@ -45,7 +45,7 @@ class ReviewWorkflowContract:
 
         Content-gated types reject an empty document with 422 "missing required
         content: ... At least one control". #757 provisions that content where an
-        API path exists — CDEF fixtures populate_from_profile off the seeded
+        API path exists — CDEF fixtures source_from_profile off the seeded
         published baseline, so their submit -> approve/reject contract now runs.
         The remaining skip is **profile**: a profile's baseline controls are
         built in the UI baseline builder or imported from a resolved-profile file

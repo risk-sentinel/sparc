@@ -283,7 +283,7 @@ RSpec.describe "CdefDocuments", type: :request do
   end
 
   # #628 — populate an existing empty CDEF from a published profile.
-  describe "POST /cdef_documents/:id/populate_from_profile" do
+  describe "POST /cdef_documents/:id/source_from_profile" do
     let(:resolved_catalog) do
       {
         "catalog" => {
@@ -310,7 +310,7 @@ RSpec.describe "CdefDocuments", type: :request do
     it "populates an empty CDEF and redirects to it" do
       cdef = create(:cdef_document)
 
-      post populate_from_profile_cdef_document_path(cdef), params: { source_profile_id: profile.slug }
+      post source_from_profile_cdef_document_path(cdef), params: { source_profile_id: profile.slug }
 
       expect(cdef.reload.cdef_controls.count).to eq(1)
       expect(response).to redirect_to(cdef_document_path(cdef))
@@ -320,10 +320,28 @@ RSpec.describe "CdefDocuments", type: :request do
       cdef = create(:cdef_document)
       create(:cdef_control, cdef_document: cdef)
 
-      post populate_from_profile_cdef_document_path(cdef), params: { source_profile_id: profile.slug }
+      post source_from_profile_cdef_document_path(cdef), params: { source_profile_id: profile.slug }
 
-      expect(response).to redirect_to(attach_profile_cdef_document_path(cdef))
+      expect(response).to redirect_to(select_profile_source_cdef_document_path(cdef))
       expect(flash[:error]).to include("already has controls")
+    end
+
+    # #982 — this recorded NOTHING before: the action was absent from
+    # AuditEvent::ACTIONS, so the write failed validation and `.log` swallowed
+    # the RecordInvalid. Asserting the row exists is the only thing that would
+    # have caught it, on either surface.
+    it "records an audit event on the web path" do
+      cdef = create(:cdef_document)
+
+      expect {
+        post source_from_profile_cdef_document_path(cdef), params: { source_profile_id: profile.slug }
+      }.to change {
+        AuditEvent.where(action: "cdef_control_implementation_sourced_from_profile").count
+      }.by(1)
+
+      event = AuditEvent.where(action: "cdef_control_implementation_sourced_from_profile").last
+      expect(event.subject_id).to eq(cdef.id)
+      expect(event.metadata["source_profile_id"]).to eq(profile.id)
     end
   end
 
