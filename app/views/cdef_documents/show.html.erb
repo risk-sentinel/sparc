@@ -270,7 +270,7 @@
       </div>
       <% if signed_in? %>
         <%= link_to "Populate from Profile",
-              attach_profile_cdef_document_path(@cdef_document),
+              select_profile_source_cdef_document_path(@cdef_document),
               class: "btn btn-success" %>
       <% end %>
     </div>

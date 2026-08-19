@@ -20,15 +20,15 @@ class CdefDocumentsController < ApplicationController
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
 
-  before_action :set_cdef_document, only: %i[set_baseline show edit update destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm attach_profile populate_from_profile submit_for_review approve reject update_scope]
-  before_action :ensure_editable!, only: [ :edit, :update, :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :attach_profile, :populate_from_profile, :submit_for_review ]
+  before_action :set_cdef_document, only: %i[set_baseline show edit update destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm select_profile_source source_from_profile submit_for_review approve reject update_scope]
+  before_action :ensure_editable!, only: [ :edit, :update, :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :select_profile_source, :source_from_profile, :submit_for_review ]
   # Issue #488 — same RBAC bucket as the DISA CCI "Refresh Now" button on
   # ConvertersController. Treats AWS Labs catalog refresh as an
   # authoritative-upstream-content operation alongside DISA CCI / STIG
   # refreshes — gated on `converters.write` or admin.
   before_action :authorize_converter_write!, only: [ :refresh_aws_labs ]
   # #738: CDEF is global (no boundary); mutations require cdef.write (instance-level). (AC-3)
-  before_action :authorize_cdef_write!, only: %i[create update destroy update_field update_metadata copy create_from_profile populate_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review update_scope]
+  before_action :authorize_cdef_write!, only: %i[create update destroy update_field update_metadata copy create_from_profile source_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review update_scope]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -389,10 +389,10 @@ class CdefDocumentsController < ApplicationController
     redirect_to select_profile_cdef_documents_path
   end
 
-  # GET /cdef_documents/:id/attach_profile (#628)
+  # GET /cdef_documents/:id/select_profile_source (#628, renamed #982)
   # Profile picker for an EXISTING empty CDEF so a metadata-only shell can
   # gain a control basis instead of being a dead end.
-  def attach_profile
+  def select_profile_source
     if @cdef_document.cdef_controls.exists?
       flash[:notice] = "This component definition already has controls."
       redirect_to(cdef_document_path(@cdef_document)) && return
@@ -404,23 +404,27 @@ class CdefDocumentsController < ApplicationController
                                .order(updated_at: :desc)
   end
 
-  # POST /cdef_documents/:id/populate_from_profile (#628)
-  # Populate an existing empty CDEF from a published profile.
-  def populate_from_profile
+  # POST /cdef_documents/:id/source_from_profile (#628, renamed #982)
+  #
+  # Set this component definition's `control-implementation/@source` to a
+  # published profile and materialise its implemented-requirements. Named for
+  # the OSCAL relationship, not the SSP's: a component-definition has no
+  # `import-profile`, so the profile is reachable only as the source.
+  def source_from_profile
     profile = ProfileDocument.find_by!(slug: params[:source_profile_id])
 
     CdefFromProfileService.new(profile).populate(@cdef_document)
 
-    audit_log("cdef_document_populated_from_profile", subject: @cdef_document,
+    audit_log("cdef_control_implementation_sourced_from_profile", subject: @cdef_document,
       metadata: { name: @cdef_document.name, source_profile_id: profile.id, source_profile_name: profile.name })
     flash[:success] = "Populated '#{@cdef_document.name}' from profile '#{profile.name}'."
     redirect_to cdef_document_path(@cdef_document)
   rescue ArgumentError => e
     flash[:error] = e.message
-    redirect_to attach_profile_cdef_document_path(@cdef_document)
+    redirect_to select_profile_source_cdef_document_path(@cdef_document)
   rescue ActiveRecord::RecordNotFound
     flash[:error] = "Published profile not found."
-    redirect_to attach_profile_cdef_document_path(@cdef_document)
+    redirect_to select_profile_source_cdef_document_path(@cdef_document)
   end
 
   # POST /cdef_documents/refresh_aws_labs (#488)
@@ -644,7 +648,7 @@ class CdefDocumentsController < ApplicationController
   def create_authored
     @cdef_document = CdefDocument.new(component_authoring_params)
     # An authored component has no source file and no controls yet; it is
-    # complete as a DOCUMENT, and `populate_from_profile` or manual authoring
+    # complete as a DOCUMENT, and `source_from_profile` or manual authoring
     # gives it a control basis next.
     #
     # Assigned, not `||=`. `status` defaults to "pending" at the column, so it

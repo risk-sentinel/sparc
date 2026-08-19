@@ -24,6 +24,35 @@ class LeveragedAuthorization < ApplicationRecord
                    format: { with: BackMatterResource::UUID_V4_REGEX }
   validates :name, presence: true
   validates :crm_type, inclusion: { in: CRM_TYPES }
+
+  # #988 — a system cannot leverage one that was never authorized.
+  #
+  # Leveraging means relying on someone else's authorization, so a leveraged
+  # authorization with no authorization date is not an incomplete record — it is
+  # a claim to inherit an authorization that does not exist.
+  #
+  # It is also what OSCAL requires. `date-authorized` is mandatory on every
+  # `leveraged-authorization`, so ONE dateless row made every SSP on the
+  # leveraging boundary fail export validation, in all three formats, with the
+  # user bounced to `?oscal_validation_failed=1` and nothing pointing at the row
+  # responsible. Both export builders omitted the property rather than refusing
+  # to build an entry they knew was invalid, which is why it surfaced only at
+  # schema validation.
+  #
+  # `SspLeveragedAuthorization` — the OSCAL round-trip sibling that feeds the
+  # SAME `leveraged-authorizations` array — has always required this. The two
+  # models had one output contract and two different rules; this is the
+  # inconsistency, not a deliberate difference.
+  #
+  # Rows written before this validation existed stay readable and are reported
+  # by a data migration; the check fires on their next save, so an operator
+  # resolves each one knowingly rather than having a date invented for them.
+  #
+  # NIST CA-3 / CA-9 — an interconnection record that cannot say when the other
+  # side was authorized does not evidence the reliance it claims.
+  validates :date_authorized, presence: {
+    message: "is required — a system cannot leverage another that has not been authorized"
+  }
   validate  :no_self_reference
   validate  :no_cycle
 

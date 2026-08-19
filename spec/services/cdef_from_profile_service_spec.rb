@@ -265,4 +265,31 @@ RSpec.describe CdefFromProfileService do
       }.to raise_error(ArgumentError, /must be published/)
     end
   end
+
+  # #982 — the end-to-end consequence of the two halves of this bundle: a CDEF
+  # whose controls came from a profile must SAY so in its OSCAL. Both entry
+  # points set `profile_document`, and the export now reads it, so neither path
+  # can ship the `sparc.local` placeholder that named the database row instead
+  # of the control basis.
+  describe "OSCAL control-implementation source" do
+    def exported_source(document)
+      JSON.parse(OscalComponentDefinitionExportService.new(document.reload).export)
+          .dig("component-definition", "components", 0, "control-implementations", 0, "source")
+    end
+
+    it "names the profile after #create" do
+      cdef = described_class.new(profile, name: "Sourced CDEF").create
+
+      expect(cdef.profile_document_id).to eq(profile.id)
+      expect(exported_source(cdef)).to eq("uuid:#{profile.uuid}")
+    end
+
+    it "names the profile after #populate of an empty shell" do
+      cdef = create(:cdef_document)
+      described_class.new(profile).populate(cdef)
+
+      expect(cdef.reload.profile_document_id).to eq(profile.id)
+      expect(exported_source(cdef)).to eq("uuid:#{profile.uuid}")
+    end
+  end
 end

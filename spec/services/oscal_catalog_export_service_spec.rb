@@ -37,6 +37,13 @@ RSpec.describe OscalCatalogExportService do
 
   it_behaves_like "produces stable UUIDs across exports"
 
+  # #989 — this spec asserted the catalog's SHAPE nine times and its schema
+  # VALIDITY never. The file's own `before` block supplies the controls, so the
+  # document under test here is the same one the examples below describe.
+  it_behaves_like "an OSCAL export with validated and unvalidated paths",
+                  model_type: :catalog,
+                  service: -> { described_class.new(catalog) }
+
   describe "#export_unvalidated" do
     it "produces valid JSON with catalog root key" do
       json = subject.export_unvalidated

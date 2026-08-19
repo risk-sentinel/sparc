@@ -20,6 +20,8 @@ Requires SPARC_SMOKE_SA_TOKEN; skipped otherwise.
 
 from __future__ import annotations
 
+import os
+
 import pytest
 
 from helpers import collect_console_errors, csp_violations, record_csp
@@ -47,18 +49,49 @@ COLLECTION_PAGES = [
     ("review_queue", "/review_queue"),
 ]
 
+# #984 — the four screens that used to skip all three checks because a
+# demo-seeded instance held no records for them. The demo seed now builds a
+# fixture for each (db/seeds/collection_screens.rb), so the skips should be
+# gone; `test_seeded_screens_are_populated` is what says so out loud instead of
+# letting them quietly resume skipping.
+SEEDED_SCREENS = [
+    "review_queue",
+    "promotion_queue",
+    "leveraged_poams",
+    "federation_peers",
+    # Not one of the four #984 measured — the instance it was measured on had
+    # curated rows — but a freshly seeded database has none and it would skip
+    # there for the same reason. Seeded so a fresh install does not rediscover it.
+    "authoritative_sources",
+]
+
 CARD = ".sparc-item-card"
 GRID = ".sparc-card-grid"
 TOGGLE = '[role="radiogroup"]'
 
 
+def _demo_seeded() -> bool:
+    """Is this deployment expected to carry the demo fixtures?
+
+    Declared by the runner rather than sniffed, the way
+    SPARC_SMOKE_PUBLIC_CATALOGS declares the catalog posture. Defaults to true
+    because the gate ceremony seeds demo data (`SPARC_SEED_DEMO=true`); a
+    deployment that deliberately has none sets it to 0.
+    """
+    return os.environ.get("SPARC_SMOKE_DEMO_SEEDED", "1").strip() not in ("0", "false", "")
+
+
 def _populated(page) -> bool:
     """Does this screen have any records on this deployment?
 
-    An empty collection is a legitimate state, not a failure — the seeded demo
-    data does not cover every screen. Emptiness is judged by the absence of
-    BOTH renderings, so a screen that has records but draws neither still
+    An empty collection is a legitimate state, not a failure — a non-seeded
+    deployment genuinely has nothing to draw. Emptiness is judged by the absence
+    of BOTH renderings, so a screen that has records but draws neither still
     fails.
+
+    #984 kept this guard deliberately. What changed is that the four screens it
+    used to fire on are now seeded, so it should no longer fire anywhere on a
+    demo instance — and `test_seeded_screens_are_populated` fails if it does.
     """
     return page.locator(f"{CARD}, table tbody tr").count() > 0
 
@@ -261,3 +294,29 @@ def test_actions_are_present_in_both_views(authed_page):
             f"the card view is missing '{action}' that the list view offers "
             f"(list={count}, card={card_actions[action]})"
         )
+
+
+@pytest.mark.parametrize("label", SEEDED_SCREENS)
+def test_seeded_screens_are_populated(authed_page, label):
+    """#984 — the four screens that used to skip all three checks have records.
+
+    12 checks (4 screens x 3) skipped on a fully demo-seeded instance, so the
+    card-versus-table assertions — the actual subject of this file — had never
+    run there. Page load and console errors were still covered, which is what
+    made it easy to miss: the screens were green, and green meant "loaded", not
+    "renders correctly".
+
+    This is the assertion that keeps them from quietly going back to skipping.
+    A skip is invisible in a passing run; a failure is not.
+    """
+    if not _demo_seeded():
+        pytest.skip("SPARC_SMOKE_DEMO_SEEDED=0 — deployment carries no demo fixtures")
+
+    path = dict(COLLECTION_PAGES)[label]
+    _load(authed_page, path, during=f"{label} seeded check")
+
+    assert _populated(authed_page), (
+        f"{label}: no records, so its card/list checks will skip and prove nothing. "
+        f"Re-run the demo seed (SPARC_SEED_DEMO=true bin/rails db:seed) — the "
+        f"demo_collection_screens section builds this screen's fixture (#984)."
+    )

@@ -302,6 +302,13 @@ Rails.application.routes.draw do
   # API excludes cookies and the browser cannot send a Bearer token.
   get "controls/lookup", to: "control_lookups#index", as: :control_lookup, defaults: { format: :json }
 
+  # #981 — JSON for the evidence attester picker, refreshed when the boundary
+  # select changes. Session-authenticated sibling of
+  # GET /api/v1/attestations/eligible; both run AttesterEligibilityService,
+  # because the API excludes cookies and the browser cannot send a Bearer token.
+  get "attestations/eligible", to: "attester_eligibility#index",
+      as: :attester_eligibility, defaults: { format: :json }
+
   resources :evidences do
     resources :attestations, only: [ :new, :create, :destroy ]
   end
@@ -354,10 +361,17 @@ Rails.application.routes.draw do
       get  :bulk_apply
       post :bulk_apply_preview
       post :bulk_apply_confirm
-      # #628: populate an existing empty CDEF from a published profile so a
-      # metadata-only shell isn't a dead end.
-      get :attach_profile
-      post :populate_from_profile
+      # #628/#982: give an empty CDEF its control-implementation basis from a
+      # published profile, so a metadata-only shell isn't a dead end.
+      #
+      # Named for the OSCAL relationship rather than the SSP's. An SSP has
+      # `import-profile` as a first-class element, so `populate_from_profile`
+      # is correct there; a component-definition has no such import
+      # (`import-component-definition` imports another CDEF) and reaches a
+      # profile only as `control-implementation/@source`. The CDEF path had
+      # borrowed the SSP's vocabulary for a relationship OSCAL does not have.
+      get :select_profile_source
+      post :source_from_profile
     end
     collection do
       get :select_profile
@@ -632,6 +646,10 @@ Rails.application.routes.draw do
       get "controls",         to: "control_lookups#index",   as: :control_lookups
       get "controls/resolve", to: "control_lookups#resolve", as: :resolve_control_lookup
 
+      # #981 — who may attest on a boundary, and under which role. Backs the
+      # evidence attester picker so it cannot offer a pair the server refuses.
+      get "attestations/eligible", to: "attester_eligibility#index", as: :attester_eligibility
+
       resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ] do
         # #895 — catalog CONTENTS. The catalog container had a full API while
         # its families and controls had none. Families are addressed by code
@@ -702,8 +720,15 @@ Rails.application.routes.draw do
           # Preview returns a signed token; confirm (slice 4) replays it.
           post "bulk_apply_converter/preview", action: :bulk_apply_converter_preview, as: :bulk_apply_converter_preview
           post "bulk_apply_converter/confirm", action: :bulk_apply_converter_confirm, as: :bulk_apply_converter_confirm
-          # #628 — populate an existing empty CDEF from a published profile.
-          post :populate_from_profile
+          # #628/#982 — source an empty CDEF's control-implementation from a
+          # published profile. See the web routes for why this is not named
+          # `populate_from_profile` the way the SSP endpoint is.
+          post :source_from_profile
+          # DEPRECATED (#982): the pre-rename path, kept so integrators are not
+          # broken by a vocabulary correction. Honoured, undocumented, and
+          # scheduled for removal in v1.18.0 alongside the SPARC_BANNER_* names
+          # (#909 precedent).
+          post :populate_from_profile, action: :source_from_profile
           # #929 — re-point a CDEF's scope after upload (web parity).
           patch :scope, action: :update_scope, as: :update_scope
           # #630/#634 — review/approval workflow.

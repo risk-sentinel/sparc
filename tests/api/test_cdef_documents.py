@@ -37,7 +37,7 @@ PARAM_KEY = "cdef_document"
 # Contract coverage of non-generic actions (bin/api_inventory_check.rb scans this
 # module for each action name): the review workflow — submit_for_review /
 # approve / reject — is exercised via ReviewWorkflowContract; bulk_destroy via
-# BulkDestroyContract; populate_from_profile via PopulateFromProfileContract;
+# BulkDestroyContract; source_from_profile via PopulateFromProfileContract;
 # bulk_apply_converter_preview / bulk_apply_converter_confirm via
 # TestBulkApplyConverter below.
 
@@ -192,7 +192,7 @@ class TestReviewWorkflow(ReviewWorkflowContract):
         profile = published_profile(admin_client)
         if profile:
             resp = admin_client.post(
-                f"{PATH}/{cdef_doc['slug']}/populate_from_profile",
+                f"{PATH}/{cdef_doc['slug']}/source_from_profile",
                 json={"source_profile_id": profile},
             )
             assert resp.status_code == 200, resp.text
@@ -218,10 +218,16 @@ class TestBulkDestroy(BulkDestroyContract):
 
 
 class TestPopulateFromProfile(PopulateFromProfileContract):
-    """Populate a CDEF from a published profile (#628). Contract lives in
-    _populate_from_profile; CDEFs are slug-addressed."""
+    """Source a CDEF's control-implementation from a published profile (#628).
+
+    Contract lives in _populate_from_profile; CDEFs are slug-addressed. #982
+    renamed the action to `source_from_profile`: OSCAL reaches a profile from a
+    component-definition only via `control-implementation/@source`, never an
+    import, so the SSP's `populate_from_profile` vocabulary did not apply here.
+    """
 
     PATH = PATH
+    ACTION = "source_from_profile"
 
     @pytest.fixture
     def populate_doc(self, cdef_doc: dict[str, Any]) -> dict[str, Any]:

@@ -4,7 +4,9 @@ An empty CDEF/SSP shows an "Incomplete — needs content" badge and a
 "Populate from Profile" card; choosing a published profile imports its controls
 and clears the badge. Empty documents are provisioned via the API (SA token),
 then the flow is driven in the browser. Selectors verified against
-app/views/{cdef,ssp}_documents/{show,attach_profile}.html.erb.
+app/views/cdef_documents/{show,select_profile_source}.html.erb and
+app/views/ssp_documents/{show,attach_profile}.html.erb — the CDEF picker was
+renamed in #982 (OSCAL `control-implementation/@source`), the SSP one was not.
 """
 
 from __future__ import annotations
@@ -76,21 +78,25 @@ class TestPopulateFlow:
             authed_page, f"/ssp_documents/{empty_ssp['slug']}", "ssp show (empty)"
         )
 
-    def test_cdef_attach_profile_page_loads_clean(self, authed_page, empty_cdef):
+    def test_cdef_select_profile_source_page_loads_clean(self, authed_page, empty_cdef):
         record_csp(authed_page)
         authed_page.goto(f"/cdef_documents/{empty_cdef['slug']}")
         authed_page.get_by_role("link", name="Populate from Profile").click()
         authed_page.wait_for_load_state("networkidle")
-        assert "/attach_profile" in authed_page.url, (
-            f"expected attach_profile page, got {authed_page.url}"
+        assert "/select_profile_source" in authed_page.url, (
+            f"expected select_profile_source page, got {authed_page.url}"
         )
-        assert_no_csp_violations(authed_page, during="attach_profile navigation")
+        assert_no_csp_violations(
+            authed_page, during="select_profile_source navigation"
+        )
 
     def test_populate_cdef_clears_badge(self, authed_page, empty_cdef):
         if published_profile_slug() is None:
             pytest.skip("no published profile on this instance to populate from")
         record_csp(authed_page)
-        authed_page.goto(f"/cdef_documents/{empty_cdef['slug']}/attach_profile")
+        authed_page.goto(
+            f"/cdef_documents/{empty_cdef['slug']}/select_profile_source"
+        )
         authed_page.get_by_role(
             "button", name="Populate from this Profile"
         ).first.click()

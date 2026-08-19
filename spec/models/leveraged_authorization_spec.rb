@@ -41,6 +41,46 @@ RSpec.describe LeveragedAuthorization, type: :model do
     end
   end
 
+  # #988 — a system cannot leverage one that was never authorized. Both
+  # directions, because only asserting the refusal would also pass against a
+  # model that refused everything.
+  describe "date_authorized (#988)" do
+    it "accepts a leveraged authorization that names an authorization date" do
+      la = build(:leveraged_authorization, date_authorized: Date.new(2026, 1, 15))
+
+      expect(la).to be_valid
+    end
+
+    it "refuses one with no authorization date" do
+      la = build(:leveraged_authorization, date_authorized: nil)
+
+      expect(la).not_to be_valid
+      expect(la.errors[:date_authorized].join).to match(/has not been authorized/)
+    end
+
+    # Rows written before the validation existed stay readable — the check fires
+    # on their NEXT save, so an operator resolves each knowingly instead of
+    # having a date invented for them (the #952 report-and-block precedent).
+    it "refuses to save an existing undated row until it is dated" do
+      la = build(:leveraged_authorization, date_authorized: nil)
+      la.save!(validate: false)
+
+      la.description = "an unrelated edit"
+
+      expect(la.save).to be(false)
+      expect(la.reload.description).not_to eq("an unrelated edit")
+    end
+
+    # The sibling model that feeds the SAME OSCAL array has always required
+    # this. Pinning it here so the two cannot drift apart again.
+    it "matches SspLeveragedAuthorization, which feeds the same OSCAL array" do
+      sibling = SspLeveragedAuthorization.new(title: "x", party_uuid: SecureRandom.uuid)
+      sibling.valid?
+
+      expect(sibling.errors[:date_authorized]).to be_present
+    end
+  end
+
   describe "#scenario" do
     it { expect(build(:leveraged_authorization, crm_type: "oscal_with_access").scenario).to eq(1) }
     it { expect(build(:leveraged_authorization, :oscal_no_access).scenario).to eq(2) }

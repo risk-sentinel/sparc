@@ -33,6 +33,7 @@ GET /api/v1/artifacts/:uuid
 GET /api/v1/artifacts/:uuid/freshness
 GET /api/v1/artifacts/:uuid/versions
 GET /api/v1/artifacts/versions/:uuid
+GET /api/v1/attestations/eligible
 GET /api/v1/authoritative_sources/export
 GET /api/v1/authorization_boundaries
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments
@@ -152,6 +153,7 @@ POST /api/v1/cdef_documents/:id/fields/import/confirm
 POST /api/v1/cdef_documents/:id/fields/import/preview
 POST /api/v1/cdef_documents/:id/populate_from_profile
 POST /api/v1/cdef_documents/:id/reject
+POST /api/v1/cdef_documents/:id/source_from_profile
 POST /api/v1/cdef_documents/:id/submit_for_review
 POST /api/v1/control_catalogs
 POST /api/v1/control_catalogs/:control_catalog_id/control_families

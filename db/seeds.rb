@@ -988,6 +988,27 @@ if SEED_DEMO
 SeedRunner.run_section("demo_ssp_sar") do
 puts "\nSeeding demo SSP and SAR documents..."
 
+# #984 — resolve the demo boundary BEFORE any document is built.
+#
+# #929/#952 (d1abba57) made `authorization_boundary` mandatory on every
+# per-system document, but this section still created its SSPs without one. On
+# an EXISTING database that went unnoticed: the documents were already there, so
+# the importer took the update path and `demo_organization` attached boundaries
+# afterwards. On a FRESH database the very first `SspDocument.create!` raised
+# "Authorization boundary can't be blank", SeedRunner marked the section failed,
+# and everything after it — the second SSP, the SARs, the whole demo estate —
+# never ran at all. A new install therefore had no SSP and no SAR.
+#
+# Created here rather than waited for: `demo_organization` runs LATER in this
+# file and uses the same `find_or_create_by!` name, so whichever section reaches
+# it first creates the row and the other finds it. That keeps the fix
+# order-independent instead of trading one ordering assumption for another.
+demo_boundary = AuthorizationBoundary.find_or_create_by!(name: "Cloud Web Application ATO") do |b|
+  b.description = "Authorization to Operate package for the organization's cloud-based web application. " \
+                  "Encompasses production and development environments under a single authorization boundary."
+  b.status = "active"
+end
+
 def seed_ssp_control(doc, ctrl_id, title, fields, inherited_rows: [])
   ctrl = doc.ssp_controls.create!(control_id: ctrl_id, title: title)
   fields.each do |name, val|
@@ -1695,7 +1716,7 @@ REV4_CONTROLS = [
 # same name — which is exactly the state a version bump on this section
 # produces. Reusing the row keeps the seed idempotent and keeps whatever
 # legitimately points at it (SAPs, boundary links) pointing at it.
-def seed_ssp_from_oscal(filename, name)
+def seed_ssp_from_oscal(filename, name, boundary)
   path = Rails.root.join("db/seeds/oscal", filename)
   doc  = SspDocument.where(name: name).first
 
@@ -1708,13 +1729,17 @@ def seed_ssp_from_oscal(filename, name)
     doc.ssp_components.destroy_all
     doc.ssp_information_types.destroy_all
     doc.ssp_users.destroy_all
-    doc.update!(file_type: "json", original_filename: filename, status: "processing")
+    doc.update!(file_type: "json", original_filename: filename, status: "processing",
+                authorization_boundary: doc.authorization_boundary || boundary)
   else
     doc = SspDocument.create!(
-      name:              name,
-      file_type:         "json",
-      original_filename: filename,
-      status:            "processing"
+      name:                    name,
+      file_type:               "json",
+      original_filename:       filename,
+      status:                  "processing",
+      # #984 — mandatory since #929/#952; without it this raised and took the
+      # rest of the section with it on every fresh install.
+      authorization_boundary:  boundary
     )
   end
 
@@ -1729,7 +1754,8 @@ end
 # -- SSP 1: Rev 5 Moderate Baseline ----------------------------------
 ssp1 = seed_ssp_from_oscal(
   "demo_acme_cloud_platform_ssp_rev5.json",
-  "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)"
+  "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
+  demo_boundary
 )
 
 # Representative stated requirements for key Rev 5 controls.
@@ -1791,7 +1817,8 @@ puts "  SSP 1 '#{ssp1.name}': #{ssp1.ssp_controls.count} controls imported from 
 # -- SSP 2: Rev 4 Low Baseline ----------------------------------------
 ssp2 = seed_ssp_from_oscal(
   "demo_acme_hr_portal_ssp_rev5.json",
-  "ACME HR Portal — SSP (NIST SP 800-53 Rev 5, Low)"
+  "ACME HR Portal — SSP (NIST SP 800-53 Rev 5, Low)",
+  demo_boundary
 )
 puts "  SSP 2 '#{ssp2.name}': #{ssp2.ssp_controls.count} controls imported from OSCAL"
 
@@ -2774,6 +2801,22 @@ SeedRunner.run_section("demo_sample_artifacts") do
 load Rails.root.join("db/seeds/sample_artifacts.rb")
 end # SeedRunner demo_sample_artifacts
 end # if SEED_DEMO (sample artifacts)
+
+# ══════════════════════════════════════════════════════════════════════
+# DEMO: #984 collection-screen fixtures
+# ══════════════════════════════════════════════════════════════════════
+# review_queue, promotion_queue, leveraged_poams and federation_peers held
+# nothing on a demo instance, so 12 of test_collection_views.py's checks
+# skipped and the card-versus-table assertions never ran there.
+#
+# Last of the demo sections because it consumes them: the boundary and
+# organization from demo_organization, a published baseline from
+# demo_published_profile, and back-matter resources synced from demo_evidence.
+if SEED_DEMO
+SeedRunner.run_section("demo_collection_screens") do
+load Rails.root.join("db/seeds/collection_screens.rb")
+end # SeedRunner demo_collection_screens
+end # if SEED_DEMO (collection screens)
 
 # ══════════════════════════════════════════════════════════════════════
 # OSCAL Schemas — seed NIST JSON schemas for version-aware validation

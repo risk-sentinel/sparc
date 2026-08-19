@@ -1122,6 +1122,7 @@ The API lives under the `Api::V1::` namespace. No UI screens -- these are JSON-o
 | Resource | Base path |
 |----------|-----------|
 | SSP documents | `/api/v1/ssp_documents` (+ `POST populate_from_profile`) |
+| CDEF documents | `/api/v1/cdef_documents` (+ `POST source_from_profile`; `populate_from_profile` deprecated, removal v1.18.0) |
 | SAR documents | `/api/v1/sar_documents` |
 | SAP documents | `/api/v1/sap_documents` |
 | POA&M documents | `/api/v1/poam_documents` |

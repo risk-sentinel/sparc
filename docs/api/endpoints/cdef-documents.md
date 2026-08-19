@@ -26,7 +26,7 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | `PUT` | `/api/v1/cdef_documents/:slug` | Update a CDEF |
 | `DELETE` | `/api/v1/cdef_documents/:slug` | Delete a CDEF (soft-delete) |
 | `DELETE` | `/api/v1/cdef_documents/bulk` | Bulk-delete CDEFs (admin-only) |
-| `POST` | `/api/v1/cdef_documents/:id/populate_from_profile` | Populate an empty CDEF from a published profile |
+| `POST` | `/api/v1/cdef_documents/:id/source_from_profile` | Source an empty CDEF's control-implementation from a published profile |
 | `POST` | `/api/v1/cdef_documents/:id/bulk_apply_converter/preview` | Preview a bulk Converter apply (no writes) |
 | `POST` | `/api/v1/cdef_documents/:id/bulk_apply_converter/confirm` | Confirm and apply a previewed Converter changeset |
 | `POST` | `/api/v1/cdef_documents/:id/submit_for_review` | Submit a CDEF for review |
@@ -373,11 +373,15 @@ curl -X DELETE "https://sparc.example.com/api/v1/cdef_documents/bulk" \
 
 ---
 
-### POST Populate a CDEF from a Published Profile
+### POST Source a CDEF's Control Implementation from a Published Profile
 
-Populate an existing empty (metadata-only) CDEF with a control basis derived from a published profile (#628), so a shell created by `POST /api/v1/cdef_documents` gains controls instead of being a dead end.
+Give an existing empty (metadata-only) CDEF a control basis derived from a published profile (#628), so a shell created by `POST /api/v1/cdef_documents` gains controls instead of being a dead end. The profile becomes the component's OSCAL `control-implementation/@source`, and its controls become the implemented requirements.
 
-**Path:** `POST /api/v1/cdef_documents/:id/populate_from_profile`
+**Path:** `POST /api/v1/cdef_documents/:id/source_from_profile`
+
+> **Renamed in v1.16.0 (#982).** This endpoint was `populate_from_profile`. An OSCAL component-definition has no `import-profile` — `import-component-definition` imports another component definition — so a profile is reachable only as `control-implementation/@source`, and the old name described a relationship the model does not have. The SSP endpoint keeps `populate_from_profile`, because an SSP *does* have `import-profile`.
+>
+> **The old path still works.** `POST /api/v1/cdef_documents/:id/populate_from_profile` routes to this action, is deprecated and undocumented, and is **scheduled for removal in v1.18.0**. Move to `source_from_profile`.
 
 **Path Parameters**
 
@@ -394,7 +398,7 @@ Populate an existing empty (metadata-only) CDEF with a control basis derived fro
 **Example Request**
 
 ```bash
-curl -X POST "https://sparc.example.com/api/v1/cdef_documents/web-application-server/populate_from_profile" \
+curl -X POST "https://sparc.example.com/api/v1/cdef_documents/web-application-server/source_from_profile" \
   -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
   -H "Content-Type: application/json" \
   -d '{ "source_profile_id": "fedramp-moderate" }'

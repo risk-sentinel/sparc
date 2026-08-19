@@ -459,7 +459,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
   end
 
   # #628 — populate an existing empty CDEF from a published profile.
-  describe "POST /api/v1/cdef_documents/:id/populate_from_profile" do
+  describe "POST /api/v1/cdef_documents/:id/source_from_profile" do
     let(:resolved_catalog) do
       {
         "catalog" => {
@@ -484,7 +484,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
     it "populates an empty CDEF and returns it content-complete" do
       cdef = create(:cdef_document)
 
-      post populate_from_profile_api_v1_cdef_document_path(cdef),
+      post source_from_profile_api_v1_cdef_document_path(cdef),
         params: { source_profile_id: profile.slug }, headers: auth_headers, as: :json
 
       expect(response).to have_http_status(:ok)
@@ -497,7 +497,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       cdef = create(:cdef_document)
       create(:cdef_control, cdef_document: cdef)
 
-      post populate_from_profile_api_v1_cdef_document_path(cdef),
+      post source_from_profile_api_v1_cdef_document_path(cdef),
         params: { source_profile_id: profile.slug }, headers: auth_headers, as: :json
 
       expect(response).to have_http_status(:unprocessable_entity)
@@ -507,10 +507,37 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       cdef = create(:cdef_document)
       draft = create(:profile_document, lifecycle_status: "in_progress")
 
-      post populate_from_profile_api_v1_cdef_document_path(cdef),
+      post source_from_profile_api_v1_cdef_document_path(cdef),
         params: { source_profile_id: draft.slug }, headers: auth_headers, as: :json
 
       expect(response).to have_http_status(:not_found)
+    end
+
+    # #982 — the API surface emitted the same unregistered action, so it was
+    # equally silent. `.log` rescues internally, so the outer
+    # `raise unless Rails.env.production?` in the base controller never fired
+    # and even the test environment stayed quiet.
+    it "records an audit event on the API path" do
+      cdef = create(:cdef_document)
+
+      expect {
+        post source_from_profile_api_v1_cdef_document_path(cdef),
+          params: { source_profile_id: profile.slug }, headers: auth_headers, as: :json
+      }.to change {
+        AuditEvent.where(action: "cdef_control_implementation_sourced_from_profile").count
+      }.by(1)
+    end
+
+    # #982 — the rename must not break integrators. The pre-rename path is
+    # deprecated and undocumented, but it still has to work until v1.18.0.
+    it "still honours the deprecated populate_from_profile path" do
+      cdef = create(:cdef_document)
+
+      post populate_from_profile_api_v1_cdef_document_path(cdef),
+        params: { source_profile_id: profile.slug }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(cdef.reload.cdef_controls.count).to eq(1)
     end
   end
 

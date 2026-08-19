@@ -40,7 +40,7 @@
                 Published: <%= profile.published.present? ? Time.parse(profile.published).strftime("%b %d, %Y") : "N/A" %>
               </p>
 
-              <%= form_with url: populate_from_profile_cdef_document_path(@cdef_document), method: :post, local: true do |f| %>
+              <%= form_with url: source_from_profile_cdef_document_path(@cdef_document), method: :post, local: true do |f| %>
                 <%= f.hidden_field :source_profile_id, value: profile.slug %>
                 <%= f.submit "Populate from this Profile", class: "btn btn-success btn-sm" %>
               <% end %>

@@ -45,6 +45,89 @@ RSpec.describe AuditEvent, type: :model do
     end
   end
 
+  # #982 — the registry trap, caught as a CLASS rather than an instance.
+  #
+  # `AuditEvent` validates `action` against ACTIONS, and `AuditEvent.log` rescues
+  # RecordInvalid *internally* (logging and returning nil). Because the rescue is
+  # inside `.log`, the API base controller's outer `raise unless
+  # Rails.env.production?` never fires — so an unregistered action writes NO row
+  # in ANY environment, and nothing raises to tell anyone. That is how 69 emitted
+  # actions, including API token create/revoke and every finding disposition,
+  # recorded nothing at all while the suite stayed green.
+  #
+  # Pairing specs cannot catch this: they compare ACTIONS to ACTION_CATEGORIES,
+  # and an action absent from BOTH is consistent with itself. Only the source
+  # tells the truth about what is actually emitted.
+  describe "emitted actions are registered (#982)" do
+    # Literal first arguments to the three audit_log helpers
+    # (`concerns/auditable.rb`, `api/v1/base_controller.rb`,
+    # `api/v1/admin/credentials_controller.rb`), plus direct `AuditEvent.log`.
+    let(:literal_call_sites) do
+      pattern = /(?:audit_log|audit_log_api)\(\s*"([a-z0-9_.]+)"|
+                 AuditEvent\.log\(\s*(?:[a-z_]+:\s*[^,]+,\s*)*action:\s*"([a-z0-9_.]+)"/x
+
+      Dir[Rails.root.join("{app,lib}/**/*.rb")].sort.flat_map do |file|
+        File.readlines(file).each_with_index.filter_map do |line, index|
+          match = line.match(pattern)
+          next unless match
+
+          { action: match[1] || match[2],
+            location: "#{Pathname.new(file).relative_path_from(Rails.root)}:#{index + 1}" }
+        end
+      end
+    end
+
+    # Call sites whose action is built at runtime, which no static scan can
+    # resolve. Named rather than ignored: a silent blind spot reads as coverage.
+    # Every entry's expansions ARE registered — `#{doc.class.name.underscore}_fields_imported`
+    # was NOT, which is how the four *_fields_imported actions were found.
+    let(:known_dynamic_call_sites) do
+      %w[
+        app/controllers/api/v1/document_base_controller.rb
+        app/controllers/concerns/baseline_declarable.rb
+        app/controllers/concerns/boundary_attachable.rb
+        app/controllers/concerns/field_importable.rb
+        app/controllers/concerns/file_uploadable.rb
+        app/controllers/concerns/publishable.rb
+      ]
+    end
+
+    it "finds the call sites it claims to scan" do
+      expect(literal_call_sites.size).to be > 200,
+        "the scanner matched #{literal_call_sites.size} call sites — the regex has probably " \
+        "drifted from the helper signatures, and a guard that scans nothing passes everything"
+    end
+
+    it "emits no action that is missing from ACTIONS" do
+      unregistered = literal_call_sites.reject { |site| AuditEvent::ACTIONS.include?(site[:action]) }
+
+      expect(unregistered).to be_empty, <<~MESSAGE
+        These audit_log call sites name an action absent from AuditEvent::ACTIONS.
+        Each one writes NO audit record, in every environment, and raises nothing:
+
+        #{unregistered.map { |s| "  #{s[:location]}\t#{s[:action]}" }.join("\n")}
+
+        Add each action to ACTIONS and to the matching ACTION_CATEGORIES group.
+      MESSAGE
+    end
+
+    it "has no undeclared dynamic call site whose expansions cannot be checked" do
+      interpolated = Dir[Rails.root.join("{app,lib}/**/*.rb")].sort.select do |file|
+        File.read(file).match?(/(?:audit_log|audit_log_api)\(\s*(?:"[^"]*\#\{|[a-z_]+[\[(])/)
+      end.map { |file| Pathname.new(file).relative_path_from(Rails.root).to_s }
+
+      expect(interpolated - known_dynamic_call_sites).to be_empty, <<~MESSAGE
+        New audit_log call site(s) build the action name at runtime, so the static
+        guard above cannot verify them:
+
+        #{(interpolated - known_dynamic_call_sites).map { |f| "  #{f}" }.join("\n")}
+
+        Work out every string each one can produce, register them all, then add the
+        file to `known_dynamic_call_sites`.
+      MESSAGE
+    end
+  end
+
   describe ".log" do
     let(:user) { create(:user) }
 

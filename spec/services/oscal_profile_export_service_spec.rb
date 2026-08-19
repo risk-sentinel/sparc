@@ -41,6 +41,11 @@ RSpec.describe OscalProfileExportService do
 
   subject { described_class.new(profile) }
 
+  # #989 — the shared contract.
+  it_behaves_like "an OSCAL export with validated and unvalidated paths",
+                  model_type: :profile,
+                  service: -> { described_class.new(profile) }
+
   describe "#export — schema compliance" do
     it "produces schema-valid OSCAL JSON (validate! does not raise)" do
       expect { subject.export }.not_to raise_error

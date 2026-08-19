@@ -58,6 +58,13 @@ RSpec.describe OscalSspExportService do
 
   subject { described_class.new(ssp) }
 
+  # #989 — this spec already asserted the validated path; the shared contract
+  # adds the half nothing asserted anywhere: that `export_unvalidated` does NOT
+  # validate, so the two methods cannot drift into each other.
+  it_behaves_like "an OSCAL export with validated and unvalidated paths",
+                  model_type: :ssp,
+                  service: -> { described_class.new(ssp) }
+
   describe "#export — schema compliance" do
     it "produces schema-valid OSCAL JSON (validate! does not raise)" do
       expect { subject.export }.not_to raise_error

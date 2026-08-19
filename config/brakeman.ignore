@@ -2,14 +2,6 @@
   "brakeman_version": "8.0.5",
   "ignored_warnings": [
     {
-      "fingerprint": "85a0dc658a70597402234c68bb646c6ca9b9f8eb02dcf92f686dcbd95f4cfbe4",
-      "note": "Attestation#role is descriptive metadata identifying the attester (control_owner, isso, ciso, etc.), NOT an app-level authorization role. Defense-in-depth: app/models/attestation.rb adds `validates :role, inclusion: { in: ROLES }` so mass-assignment cannot set arbitrary values; only the controlled vocabulary in Attestation::ROLES is accepted. Same rationale applies to :frequency (FREQUENCIES inclusion) and :status (STATUSES inclusion) added in #440. The Brakeman BRAKE0105 warning fires because the field name 'role' is on its dangerous-key list, not because the assignment is actually unsafe."
-    },
-    {
-      "fingerprint": "c11c11d05203d702220c243b2bfca868efe10bf17ec4e9bee1197641e7bf8e72",
-      "note": "API mirror of the UI attestations_controller.rb permit list. Same rationale as fingerprint 85a0dc658a70...: Attestation#role/#frequency/#status are bounded by inclusion validators on the model so mass-assignment cannot set arbitrary values."
-    },
-    {
       "fingerprint": "199675786ba99a935e6d82db70b3ded4dfd64225415eb50a0321fa5c2aa95693",
       "note": "Admin::ServiceAccountsController#service_account_params permits :admin BY DESIGN. This is the admin-only service-account admin interface (module Admin, admin-gated) and granting admin to a service account is an intentional, documented feature \u2014 the 'Grant admin privileges' checkbox (see spec/system/admin_service_account_admin_checkbox_spec.rb), called out in the model header as AC-6 'admin flag is per-SA opt-in, never implicit'. Brakeman flags :admin because it's on its dangerous-key list; the assignment is safe here because it is reachable only by an authenticated admin. Unlike the Attestation permits there is no value-bounding validator (:admin is a boolean); the safety rests on the admin-only namespace + intended capability."
     },
@@ -76,6 +68,14 @@
       "user_input": "params[:filename]",
       "warning_code": 16,
       "warning_type": "File Access"
+    },
+    {
+      "fingerprint": "a5232caf38eda922c2ea4b123a4fff9f40b804fc25205cea64a39702f57d46ca",
+      "note": "AttestationsController#attestation_params permits :attester_user_id and :role. BRAKE0105 fires on the field NAMES (an *_id foreign key and 'role' are both on Brakeman's dangerous-key list), not on a demonstrated unsafe assignment. Neither key can escalate the CALLER's privileges: the caller is already gated by authorize_attestation_write! (evidence.write, scoped to the evidence's authorization boundary), and neither field grants the caller any access. Both values are constrained by the model, not by this permit list. Attestation#attester_holds_the_attested_role (#947) rejects the record unless the NAMED attester actually holds an attesting role on that evidence's boundary, resolved from the evidence.attest permission via the #919/#707 roster \u2014 so a forged attester_user_id/role pair cannot be saved. attester_name/attester_email are deliberately NOT permitted; they are snapshotted from the resolved account (#934 rule), which is what stops a request naming one person while referencing another. SUPERSEDES fingerprint 85a0dc658a70..., whose note claimed role was 'descriptive metadata, NOT an app-level authorization' and cited Attestation::ROLES. #947 made both statements false: the role IS now checked against the roster, and ROLES was deleted in favour of permission-derived eligibility. The fingerprint moved because #947 replaced attester_name/attester_email with attester_user_id in this permit list."
+    },
+    {
+      "fingerprint": "d7cec1b32f72126a8b216910af205ec71f29cab6639464cd2b8e642ad7deaf67",
+      "note": "Api::V1::AttestationsController#attestation_params \u2014 API mirror of the UI permit list, same rationale as the AttestationsController entry above: BRAKE0105 fires on the field names, and Attestation#attester_holds_the_attested_role validates the named attester against the boundary roster on save, so neither key is assignable to anything the model will accept from an unauthorised caller. SUPERSEDES fingerprint c11c11d05203..., stale for the same reason. NOTE for future review: this controller's own guard is unscoped where the UI sibling scopes to the evidence's boundary \u2014 a known asymmetry tracked in the #919 memo, unrelated to this warning."
     }
   ],
   "updated": "2026-07-11"

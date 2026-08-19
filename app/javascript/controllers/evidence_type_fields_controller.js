@@ -54,4 +54,21 @@ export default class EvidenceTypeFieldsController extends Controller {
       el.dataset.dropzoneRequiredValue = String(!isAttestation)
     })
   }
+
+  // #981 — announce a boundary change so the attester picker can refetch.
+  //
+  // The picker lives inside the attestation block, and the boundary select does
+  // not, so a `change->attester-picker#...` action on the select would resolve
+  // to no controller. An event is also the honest shape: this controller has no
+  // business knowing who may attest, only that the answer just changed.
+  //
+  // Dispatched from `this.element` (the form), so it bubbles to window, where
+  // the picker listens. The partial is shared with the standalone attestation
+  // screen, which has no boundary select — there this simply never fires.
+  boundaryChanged(event) {
+    this.dispatch("boundaryChanged", {
+      prefix: "evidence",
+      detail: { boundaryId: event.target.value }
+    })
+  }
 }

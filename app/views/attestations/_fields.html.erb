@@ -10,15 +10,23 @@
     instance-wide evidence, where eligibility falls back to "may attest on some
     boundary" (see Attestation.attestable_roles_for).
 %>
-<% attesters = Attestation.eligible_attesters_for(authorization_boundary_id: boundary_id) %>
-<% eligible = attesters.each_with_object({}) do |user, map|
-     map[user.id.to_s] = Attestation.attestable_roles_for(
-       user: user, authorization_boundary_id: boundary_id
-     ).map { |role| { name: role.name, label: role.display_name } }
-   end %>
+<%# #981 — the eligible set is a property of the BOUNDARY, so it is computed
+    through AttesterEligibilityService, the same object behind
+    GET /attestations/eligible and its Api::V1 twin. Rendering it here is the
+    first paint; the picker refetches through that endpoint whenever the
+    evidence form's boundary select changes, so the options can never describe
+    a boundary the user has since navigated away from. %>
+<% eligibility = AttesterEligibilityService.new(authorization_boundary_id: boundary_id) %>
+<% attesters = eligibility.attesters %>
 
+<%# `url` is what makes the refresh possible; the standalone attestation screen
+    renders this partial too, but its boundary is fixed by the evidence record,
+    so the window event below simply never fires there. %>
 <div data-controller="attester-picker"
-     data-attester-picker-eligible-value="<%= eligible.to_json %>">
+     data-attester-picker-url-value="<%= attester_eligibility_path %>"
+     data-attester-picker-boundary-id-value="<%= boundary_id %>"
+     data-attester-picker-eligible-value="<%= eligibility.roles_by_attester.to_json %>"
+     data-action="evidence:boundaryChanged@window->attester-picker#boundaryChanged">
 
   <div class="row g-3 mb-3">
     <div class="col-md-6">

@@ -107,7 +107,26 @@ class OscalComponentDefinitionExportService
       # are actually being implemented. `determine_source` otherwise synthesises
       # a `sparc.local` URL that resolves to nothing and carries the database
       # primary key into a delivered artifact.
-      "source"      => @document.control_implementation_source.presence || determine_source,
+      #
+      # #982 — #944 gave authors a way to name it but never read the one SPARC
+      # already knew. A CDEF built from a published profile records that profile
+      # in `profile_document_id`, which #911 declared as exactly this hop
+      # (`CdefDocument.lineage_via :profile_document`; `CatalogLineage` names the
+      # chain `cdef -> @source`). Nothing consulted it, so every profile-sourced
+      # CDEF exported the `sparc.local` placeholder while the real source sat one
+      # association away — the document declined to name its own control basis.
+      #
+      # Resolved live from the association rather than copied to the column at
+      # build time, so re-pointing a CDEF's profile cannot leave a stale source
+      # behind, and every CDEF already in the database is corrected on its next
+      # export without a backfill.
+      #
+      # The authored value still wins: #944 exists so a human can name a source
+      # SPARC has no record of, and a form field that silently loses to a foreign
+      # key would be its own defect.
+      "source"      => @document.control_implementation_source.presence ||
+                       OscalMetadata.import_href_for(@document.profile_document) ||
+                       determine_source,
       "description" => @document.control_implementation_description.presence ||
                        "Controls from #{@document.cdef_type || 'imported'} component definition: #{@document.name}",
       "implemented-requirements" => controls.map { |ctrl| build_implemented_requirement(ctrl) }

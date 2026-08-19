@@ -12,6 +12,20 @@ RSpec.describe OscalSarExportService do
 
   subject { described_class.new(document) }
 
+  # #989 — the SAR's validated path had no coverage at all. The lazy lets are
+  # forced: an assessment result with no findings or objectives is not the
+  # document the rest of this file is about.
+  it_behaves_like "an OSCAL export with validated and unvalidated paths",
+                  model_type: :assessment_results,
+                  service: lambda {
+                    # Validated export additionally refuses a document citing a
+                    # control that exists in no loaded catalog (#911), which is a
+                    # different failure from the one under test.
+                    ensure_control("ac-1")
+                    result; sar_control; objective
+                    described_class.new(document)
+                  }
+
   it_behaves_like "produces stable UUIDs across exports"
 
   describe "#export_unvalidated -- finding target with linked objective" do
