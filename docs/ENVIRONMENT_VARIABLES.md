@@ -620,7 +620,7 @@ Override the URL for air-gapped or mirror environments.
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
 | SPARC_APP_URL | Base public URL of the application (used in emails, links, redirects) | `http://localhost:3000` | `https://sparc.example.com` | Yes (prod) |
-| SPARC_APP_NAME | Human-readable name of the platform | SPARC | `SPARC Compliance Platform` | No |
+| SPARC_APP_NAME | Human-readable name of the platform. Also the browser tab title fallback and the `og:site_name` in link previews (#936/#991) — a rebranded deployment gets its own name in tabs and in every shared link, with no further configuration. | SPARC | `SPARC Compliance Platform` | No |
 | SPARC_WELCOME_TEXT | Message displayed on the login page | Welcome to SPARC | `Welcome to ACME Compliance` | No |
 | SPARC_CONTACT_EMAIL | Support/admin email shown in UI and login page | (none) | `compliance-team@yourorg.com` | No |
 | SPARC_RESOURCES | JSON array of external resource links **added to** the shipped list (#914). Entries need `display_text` and `href`; malformed JSON is logged and ignored | (adds to the 9 shipped links) | `'[{"display_text":"Internal Wiki","href":"https://wiki.example.gov"}]'` | No |
