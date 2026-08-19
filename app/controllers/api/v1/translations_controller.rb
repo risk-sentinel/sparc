@@ -50,7 +50,8 @@ class Api::V1::TranslationsController < Api::V1::BaseController
     # oversight ("a POA&M is not so much a 'result set' as it is a 'document
     # enhancing a result set'" — mitre/hdf-libs#104). POA&M is produced from an
     # HDF *amendments* doc (hdf-amendments → oscal-poam), not from raw scanner
-    # HDF. Re-verified against the 3.4.1 convert catalog (#764).
+    # HDF. Re-verified against the 3.5.1 convert catalog — `oscal-poam` still
+    # converts only to `hdf`, and there is still no `hdf → oscal-poam` (#764).
     #
     # Match only the stable literal. The follow-on line hdf-cli emits ("The
     # 'hdf' format can convert to: …") is map-iteration ordered and therefore
