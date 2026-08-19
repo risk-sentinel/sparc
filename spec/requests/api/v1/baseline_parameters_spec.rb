@@ -103,6 +103,128 @@ RSpec.describe "Api::V1::BaselineParameters", type: :request do
       }.to change(AuditEvent, :count).by(1)
     end
 
+    # ── #994: a 200 that changed nothing is not a success ──────────────────
+    #
+    # Every example below reproduces a payload that previously answered
+    # **200 with `parameters_updated: 0, selections_updated: 0` and an empty
+    # `validation_errors`** — the caller told the operation succeeded while the
+    # request was never parsed at all. Each asserts BOTH halves: the refusal,
+    # and that nothing was written.
+    describe "a payload the endpoint cannot parse (#994)" do
+      let(:field_names) do
+        ProfileControlField.joins(:profile_control)
+                           .where(profile_controls: { profile_document_id: profile.id })
+                           .pluck(:field_name)
+      end
+
+      it "refuses a body wrapped in a root key, naming the expected structure" do
+        put api_v1_profile_document_parameters_path(profile), params: {
+          baseline_parameters: { parameters: [ { param_id: "ac-1_prm_1", value: "ISSO" } ] }
+        }, headers: auth_headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        parsed = JSON.parse(response.body)
+        expect(parsed["details"].join(" ")).to include("TOP LEVEL")
+        expect(parsed["expected"]).to eq(
+          "parameters" => [ { "param_id" => "string", "value" => "string" } ],
+          "selections" => [ { "select_id" => "string", "selected" => [ "string" ] } ]
+        )
+        expect(field_names).to be_empty
+      end
+
+      it "refuses `parameters` sent as an object map instead of an array" do
+        put api_v1_profile_document_parameters_path(profile), params: {
+          parameters: { "ac-1_prm_1" => "ISSO" }
+        }, headers: auth_headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)["details"].join(" ")).to include("must be an ARRAY")
+        expect(field_names).to be_empty
+      end
+
+      it "refuses a body that did not arrive as JSON" do
+        # No `as: :json`, so the body is form-encoded and `parameters` never
+        # becomes an array of objects. This returned 200/0/0.
+        put api_v1_profile_document_parameters_path(profile),
+          params: { note: "no parameters here" }, headers: auth_headers
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(field_names).to be_empty
+      end
+
+      it "refuses a `selected` that is a string rather than an array" do
+        put api_v1_profile_document_parameters_path(profile), params: {
+          selections: [ { select_id: "ac-2_prm_1", selected: "removes" } ]
+        }, headers: auth_headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)["details"].join(" ")).to include("must be an ARRAY")
+        expect(field_names).to be_empty
+      end
+
+      it "refuses a parameters entry carrying no param_id" do
+        put api_v1_profile_document_parameters_path(profile), params: {
+          parameters: [ { value: "ISSO" } ]
+        }, headers: auth_headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)["details"].join(" ")).to include("missing `param_id`")
+        expect(field_names).to be_empty
+      end
+
+      # The other direction: "nothing to do" is a legitimate request and must
+      # stay distinguishable from "I did not understand you". A caller who
+      # explicitly sends empty lists gets the 200 the old code gave everyone.
+      it "accepts explicitly empty lists as a no-op" do
+        put api_v1_profile_document_parameters_path(profile), params: {
+          parameters: [], selections: []
+        }, headers: auth_headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        parsed = JSON.parse(response.body)
+        expect(parsed["data"]["parameters_updated"]).to eq(0)
+        expect(parsed["data"]["selections_updated"]).to eq(0)
+        expect(parsed["data"]["validation_errors"]).to be_empty
+      end
+
+      it "records no audit event for a refused payload" do
+        expect {
+          put api_v1_profile_document_parameters_path(profile), params: {
+            baseline_parameters: { parameters: [ { param_id: "ac-1_prm_1", value: "ISSO" } ] }
+          }, headers: auth_headers, as: :json
+        }.not_to change(AuditEvent, :count)
+      end
+    end
+
+    # ── #994: `selection_id` is the guess everybody makes ───────────────────
+    describe "the selection_id alias (#994)" do
+      before { create(:profile_control, profile_document: profile, control_id: "ac-2") }
+
+      it "applies a selection sent as selection_id" do
+        put api_v1_profile_document_parameters_path(profile), params: {
+          selections: [ { selection_id: "ac-2_prm_1", selected: [ "removes" ] } ]
+        }, headers: auth_headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)["data"]["selections_updated"]).to eq(1)
+        field = ProfileControlField.joins(:profile_control)
+                                   .find_by(profile_controls: { profile_document_id: profile.id },
+                                            field_name: "parameter:ac-2_prm_1")
+        expect(field.field_value).to eq("removes")
+      end
+
+      it "names the id it could not find rather than reporting null" do
+        put api_v1_profile_document_parameters_path(profile), params: {
+          selections: [ { selection_id: "zz-9_odp.01", selected: [ "removes" ] } ]
+        }, headers: auth_headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        errors = JSON.parse(response.body)["data"]["validation_errors"]
+        expect(errors.first["select_id"]).to eq("zz-9_odp.01")
+        expect(errors.first["error"]).to eq("Unknown selection ID")
+      end
+    end
+
     it "returns 422 for unknown param_ids" do
       put api_v1_profile_document_parameters_path(profile), params: {
         parameters: [

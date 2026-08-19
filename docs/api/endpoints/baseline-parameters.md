@@ -99,6 +99,8 @@ curl -X GET "https://sparc.example.com/api/v1/profile_documents/fedramp-high-bas
 
 Update parameter values and selections in bulk. Only the parameters and selections included in the request body are modified; others remain unchanged.
 
+`parameters` and `selections` are **arrays of objects at the top level of the body**, and at least one of them must be present. A body the endpoint cannot parse into that shape is refused with `422` and changes nothing — it does not report success for work it did not do (#994).
+
 **Request Body**
 
 ```json
@@ -122,6 +124,8 @@ Update parameter values and selections in bulk. Only the parameters and selectio
 }
 ```
 
+`selection_id` is accepted as an alias for `select_id` **on input only**; `select_id` stays canonical and is what `GET .../parameters/export` emits. `selected` must be an array even when one choice is selected — a bare string is refused rather than coerced, because there is no honest way to tell whether `"a, b"` was one choice or two.
+
 **Example Request**
 
 ```bash
@@ -144,37 +148,43 @@ curl -X PUT "https://sparc.example.com/api/v1/profile_documents/fedramp-high-bas
 ```json
 {
   "data": {
-    "profile_document_id": "fedramp-high-baseline",
-    "updated_parameters": 2,
-    "updated_selections": 1,
-    "parameters": [
-      {
-        "param_id": "ac-2_prm_1",
-        "value": "quarterly"
-      },
-      {
-        "param_id": "ac-2_prm_2",
-        "value": "60 days"
-      }
-    ],
-    "selections": [
-      {
-        "select_id": "ac-2_sel_1",
-        "selected": ["notify", "disable", "remove"]
-      }
-    ]
+    "status": "updated",
+    "baseline_id": "fedramp-high-baseline",
+    "parameters_updated": 2,
+    "selections_updated": 1,
+    "validation_errors": []
   }
 }
 ```
+
+`status` is `"updated"` when `validation_errors` is empty and `"partial"` otherwise. A response carrying any validation error is returned with `422`, not `200`.
+
+**A refused body** names what was expected and states plainly that nothing changed:
+
+```json
+{
+  "error": "The request body could not be parsed as a baseline parameter update. Nothing was changed.",
+  "details": [
+    "`parameters` must be an ARRAY of objects, each carrying `param_id` and `value`. Received an object."
+  ],
+  "expected": {
+    "parameters": [{ "param_id": "string", "value": "string" }],
+    "selections": [{ "select_id": "string", "selected": ["string"] }]
+  }
+}
+```
+
+Sending `{"parameters": [], "selections": []}` is a legitimate no-op and returns `200` with both counts at zero — "nothing to do" and "I did not understand you" are deliberately different responses.
 
 **Status Codes**
 
 | Code | Description |
 |------|-------------|
-| `200` | Parameters updated successfully |
+| `200` | Parameters updated successfully, or an explicitly empty request accepted as a no-op |
 | `401` | Unauthorized -- missing or invalid token |
+| `403` | Forbidden -- the token's user lacks `profiles.write` |
 | `404` | Profile document not found |
-| `422` | Validation error -- invalid param_id or select_id |
+| `422` | Body could not be parsed into the expected shape, or an id in it is unknown to the baseline |
 
 ---
 
@@ -344,5 +354,5 @@ curl -X POST "https://sparc.example.com/api/v1/profile_documents/fedramp-high-ba
 | `401` | `Unauthorized` | Missing or invalid Bearer token |
 | `404` | `Not Found` | Profile document does not exist or is not accessible |
 | `406` | `Not Acceptable` | Requested export format is not supported |
-| `422` | `Unprocessable Entity` | Invalid parameter or selection IDs in request body |
+| `422` | `Unprocessable Entity` | Invalid parameter or selection IDs in request body, or a body that could not be parsed into the documented shape |
 | `500` | `Internal Server Error` | Unexpected server error -- contact your administrator |

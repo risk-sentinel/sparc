@@ -97,14 +97,36 @@ class BaselineParameterService
       select_id = sel_entry[:select_id] || sel_entry["select_id"]
       selected = sel_entry[:selected] || sel_entry["selected"] || []
 
+      # #994 — an entry naming nothing cannot report which id was not found, so
+      # it says what it is missing instead of reporting `select_id: null` under
+      # "Unknown selection ID", which described the wrong problem. Callers reach
+      # this through BaselineParameterPayload, which resolves the `selection_id`
+      # alias; this is the guard for every other caller.
+      if select_id.blank?
+        validation_errors << { select_id: nil, error: "Selection entry is missing select_id" }
+        next
+      end
+
       unless known_param_ids.include?(select_id)
         validation_errors << { select_id: select_id, error: "Unknown selection ID" }
         next
       end
 
+      # #994 — a non-array `selected` used to be coerced with `to_s` and
+      # PERSISTED, reporting `selections_updated: 1` for a value the catalog
+      # never offered as a choice. Refused rather than repaired: there is no
+      # honest way to tell whether "a, b" was one choice or two.
+      unless selected.is_a?(Array)
+        validation_errors << {
+          select_id: select_id,
+          error: "selected must be an array of choice strings, even for a single choice"
+        }
+        next
+      end
+
       # #942 — a choice can contain a comma (insert markup always does), so the
       # values are joined with a separator that cannot appear in OSCAL prose.
-      value = selected.is_a?(Array) ? ParameterValueList.join(selected) : selected.to_s
+      value = ParameterValueList.join(selected)
       upsert_parameter_field(select_id, value)
       selections_updated += 1
 
