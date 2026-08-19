@@ -9,7 +9,7 @@
 # Immutable by design: no updated_at column, no update methods.
 #
 # NIST 800-53 Controls:
-#   AU-2 Event Logging (139 auditable event types)
+#   AU-2 Event Logging (286 auditable event types across 28 categories)
 #   AU-3 Content of Audit Records (user, action, IP, timestamp, metadata)
 #   AU-9 Protection of Audit Information (append-only, immutable records)
 #   AU-12 Audit Record Generation (AuditEvent.log factory)
@@ -26,6 +26,16 @@ class AuditEvent < ApplicationRecord
   # below), so an action missing from it fails validation and the whole write
   # fails — not just the audit. A new audited action MUST be added here AND to
   # ACTION_CATEGORIES, which a spec enforces.
+  #
+  # #982 — that pairing spec was not enough, and 69 emitted actions proved it.
+  # Comparing ACTIONS to ACTION_CATEGORIES cannot see an action missing from
+  # BOTH: the two constants agreed with each other while the code emitted names
+  # neither had heard of. `.log` rescues the resulting RecordInvalid internally,
+  # so those writes were dropped in every environment with nothing raised — API
+  # token create/revoke, every finding disposition, every federation peer
+  # change, and the whole back-matter promotion workflow recorded nothing.
+  # `spec/models/audit_event_spec.rb` now scans the SOURCE for emitted actions,
+  # because only the source knows what is really emitted.
   #
   # NOTE: this is a `%w[]` literal — it has no comment syntax. A `#` inside it
   # becomes an array element, not a comment.
@@ -252,6 +262,89 @@ class AuditEvent < ApplicationRecord
     api_catalog_control_created
     api_catalog_control_updated
     api_catalog_control_deleted
+
+    api_authorization_boundary_org_assigned
+    organization_boundary_assigned
+    api_token_created
+    api_token_revoked
+    ato_package_created
+    ato_package_exported
+
+    authoritative_sources_export
+    authoritative_sources_import
+
+    back_matter_resource_created
+    back_matter_resource_updated
+    back_matter_resource_deleted
+    back_matter_resource_linked
+    back_matter_resource_unlinked
+    back_matter_resource_archived
+    back_matter_resource_restored
+    back_matter_resource_promotion_requested
+    back_matter_resource_promotion_approved
+    back_matter_resource_promotion_rejected
+    back_matter_resources_bulk_imported
+
+    cdef_control_updated
+    cdef_statement_updated
+    cdef_document_authored
+    cdef_document_copy_failed
+    cdef_document_created_from_profile
+    cdef_document_populated_from_profile
+
+    converter_created
+    converter_updated
+    converter_deleted
+    converter_imported
+    converter_exported
+    converter_entry_created
+    converter_entry_deleted
+    stig_imported
+
+    evidence_control_link_created
+    evidence_control_link_deleted
+
+    federation_peer_created
+    federation_peer_updated
+    federation_peer_deleted
+    federation_peer_synced
+
+    finding_disposition_set
+    finding_disposition_cleared
+    finding_disposition_approved
+    finding_disposition_rejected
+    scan_run_ingested
+    hdf_aggregation_enqueued
+    hdf_aggregation_run
+    hdf_amendments_exported
+    hdf_package_exported
+
+    ksi_validation_created
+    ksi_validation_updated
+    ksi_validation_deleted
+
+    mapping_entry_updated
+    api_mapping_entry_created
+    api_mapping_entry_updated
+    api_mapping_entry_deleted
+
+    remediation_timeline_updated
+
+    sap_document_reprocessed
+    sap_objective_updated
+    sar_document_reprocessed
+    sar_objective_updated
+
+    ssp_document_created_from_profile
+    ssp_document_populated_from_profile
+    ssp_statement_updated
+    ssp_statement_reset_to_source
+    ssp_inherited_refreshed
+
+    ssp_document_fields_imported
+    sar_document_fields_imported
+    sap_document_fields_imported
+    cdef_document_fields_imported
   ].freeze
 
   validates :action, inclusion: { in: ACTIONS }
@@ -272,7 +365,8 @@ class AuditEvent < ApplicationRecord
                             api_user_created api_user_updated api_user_deactivated],
     "Auth Boundary Admin" => %w[api_authorization_boundary_created
                                 api_authorization_boundary_updated
-                                api_authorization_boundary_deleted],
+                                api_authorization_boundary_deleted
+                                api_authorization_boundary_org_assigned],
     "Catalog Management" => %w[api_control_family_created api_control_family_updated
                               api_control_family_deleted
                               api_catalog_control_created api_catalog_control_updated
@@ -292,11 +386,16 @@ class AuditEvent < ApplicationRecord
                           ssp_document_published ssp_document_baseline_declared
                           ssp_document_boundary_attached
                           boundary_less_documents_reported
-                          unscoped_authoritative_back_matter_reported],
+                          unscoped_authoritative_back_matter_reported
+                          ssp_document_created_from_profile ssp_document_populated_from_profile
+                          ssp_statement_updated ssp_statement_reset_to_source
+                          ssp_inherited_refreshed ssp_document_fields_imported],
     "SAR Documents" => %w[sar_document_created sar_document_updated sar_document_deleted
                           sar_document_delete_blocked sar_document_exported sar_document_imported
                           sar_document_published sar_document_baseline_declared
-                          sar_document_boundary_attached],
+                          sar_document_boundary_attached
+                          sar_document_reprocessed sar_objective_updated
+                          sar_document_fields_imported],
     "CDEF Documents" => %w[cdef_document_created cdef_document_updated cdef_document_deleted
                            cdef_coverage_analyzed cdef_coverage_run_saved cdef_coverage_run_deleted
                            cdef_document_delete_blocked
@@ -309,11 +408,18 @@ class AuditEvent < ApplicationRecord
                            aws_labs_cdef_refresh_degraded
                            control_resource_created control_resource_linked
                            control_resource_unlinked cdef_document_baseline_declared
-                           cdef_document_scope_updated],
+                           cdef_document_scope_updated
+                           cdef_control_updated cdef_statement_updated
+                           cdef_document_authored cdef_document_copy_failed
+                           cdef_document_created_from_profile
+                           cdef_document_populated_from_profile
+                           cdef_document_fields_imported],
     "SAP Documents" => %w[sap_document_created sap_document_generated sap_document_updated
                           sap_document_deleted sap_document_delete_blocked sap_document_exported
                           sap_document_imported sap_document_published
-                          sap_document_baseline_declared sap_document_boundary_attached],
+                          sap_document_baseline_declared sap_document_boundary_attached
+                          sap_document_reprocessed sap_objective_updated
+                          sap_document_fields_imported],
     "POAM Documents" => %w[poam_document_created poam_document_generated poam_document_updated
                            poam_document_deleted poam_document_delete_blocked
                            poam_document_exported poam_document_imported poam_item_created
@@ -326,7 +432,8 @@ class AuditEvent < ApplicationRecord
                            poam_local_component_created poam_local_component_updated poam_local_component_deleted
                            poam_document_viewed_by_leveraging_user
                            poam_document_published poam_document_baseline_declared
-                           poam_document_boundary_attached],
+                           poam_document_boundary_attached
+                           remediation_timeline_updated],
     "Profiles" => %w[profile_document_created profile_document_updated profile_document_deleted
                      profile_document_delete_blocked
                      profile_document_exported profile_document_imported profile_document_copied
@@ -346,24 +453,52 @@ class AuditEvent < ApplicationRecord
     "Control Mappings" => %w[control_mapping_created control_mapping_updated control_mapping_deleted
                              control_mapping_exported control_mapping_published
                              control_mapping_deprecated mapping_entry_created mapping_entry_deleted
+                             mapping_entry_updated
+                             api_mapping_entry_created api_mapping_entry_updated api_mapping_entry_deleted
                              converter_refresh_started],
     "Evidence" => %w[evidence_created evidence_updated evidence_deleted
                      evidence_upload_rejected incomplete_evidence_reported
-                     attestation_created attestation_deleted],
+                     attestation_created attestation_deleted
+                     evidence_control_link_created evidence_control_link_deleted],
     "Authorization Boundaries" => %w[authorization_boundary_created authorization_boundary_updated
                                      authorization_boundary_deleted authorization_boundary_delete_blocked
                                      project_created project_updated
-                                     project_deleted boundary_created boundary_updated boundary_deleted],
+                                     project_deleted boundary_created boundary_updated boundary_deleted
+                                     ato_package_created ato_package_exported],
     "Organizations" => %w[organization_created organization_updated organization_deactivated
-                          organization_reactivated organization_member_added organization_member_removed],
+                          organization_reactivated organization_member_added organization_member_removed
+                          organization_boundary_assigned],
     "Service Accounts" => %w[service_account_created service_account_updated service_account_disabled
                              service_account_enabled service_account_deleted
                              service_account_token_regenerated service_account_auto_disabled],
     "Translations" => %w[translation_hdf_to_oscal_sar translation_hdf_to_oscal_poam
                          translation_hdf_amendments_to_oscal_poam
                          translation_oscal_poam_to_hdf_amendments],
+    "API Tokens" => %w[api_token_created api_token_revoked],
+    "Back Matter" => %w[back_matter_resource_created back_matter_resource_updated
+                        back_matter_resource_deleted back_matter_resource_linked
+                        back_matter_resource_unlinked back_matter_resource_archived
+                        back_matter_resource_restored
+                        back_matter_resource_promotion_requested
+                        back_matter_resource_promotion_approved
+                        back_matter_resource_promotion_rejected
+                        back_matter_resources_bulk_imported],
+    "Converters" => %w[converter_created converter_updated converter_deleted
+                       converter_imported converter_exported
+                       converter_entry_created converter_entry_deleted
+                       stig_imported],
+    "Federation" => %w[federation_peer_created federation_peer_updated
+                       federation_peer_deleted federation_peer_synced],
+    "Findings & Scanning" => %w[finding_disposition_set finding_disposition_cleared
+                                finding_disposition_approved finding_disposition_rejected
+                                scan_run_ingested
+                                hdf_aggregation_enqueued hdf_aggregation_run
+                                hdf_amendments_exported hdf_package_exported],
+    "KSI Validations" => %w[ksi_validation_created ksi_validation_updated
+                            ksi_validation_deleted],
     "Data Migrations" => %w[data_migration_completed],
-    "Authoritative Sources" => %w[authoritative_source_created]
+    "Authoritative Sources" => %w[authoritative_source_created
+                                  authoritative_sources_import authoritative_sources_export]
   }.freeze
 
   # ── Scopes ─────────────────────────────────────────────────────────────
