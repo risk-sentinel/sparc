@@ -678,8 +678,9 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 11 | O — Boundary attachment | #929 #952 | **Shipped** (PR #975) |
 | 12 | S — Controls layer: who can see it, and what it carries | #974 #959 #935 | **Shipped** (PR #976) |
 | 13 | P — Evidence completeness | #947 #948 | **Shipped** (PR #983) |
-| 14 | **T — Bundle P follow-ups** | **#981 #982 #984 #988 #989** | **IN PR** (branch `bug/981_bundle_t_followups`) |
-| 15 | **Q — Polish** | **#936 #991** | **IN PR** (branch `feature/936_favicon_link_preview`) |
+| 14 | T — Bundle P follow-ups | #981 #982 #984 #988 #989 | **Shipped** (PR #986 → `28443b7c`) |
+| 15 | Q — Polish | #936 #991 | **Shipped** (PR #992 → `6d39e089`) |
+| — | **hdf-cli 3.5.1 — pulled forward, on its own** | **toolchain** | **IN PR** (branch `feature/hdf_cli_3_5_1`) |
 | 16 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
 
 **Unslotted — down to one.** #935 and #959 were slotted into **Bundle S** on 2026-08-17;
@@ -896,7 +897,7 @@ offered an Instance Admin a role it then disabled, and a blank review frequency 
 `allow_nil` does not cover. Two further findings were filed rather than folded in: **#981** and
 **#982**.
 
-##### 14. Bundle T — Bundle P follow-ups  ·  **IN PR** (branch `bug/981_bundle_t_followups`)
+##### 14. Bundle T — Bundle P follow-ups  ·  **Shipped** (PR #986 → `28443b7c`)
 
 All three came out of the Bundle P verification gate and are deliberately **not** in its PR. They
 are sequenced **after P** because #981 is a direct follow-on to the attester picker #947
@@ -973,7 +974,7 @@ OSCAL requires `source` to be present, not to be true. Resolution order is now a
 linked profile → `determine_source`, resolved live from the association so no backfill or
 migration is needed.
 
-##### 15. Bundle Q — Polish  ·  **IN PR** (branch `feature/936_favicon_link_preview`)
+##### 15. Bundle Q — Polish  ·  **Shipped** (PR #992 → `6d39e089`)
 
 The cheapest item on the milestone — and the one that turned out to have a second defect inside it.
 
@@ -981,6 +982,58 @@ The cheapest item on the milestone — and the one that turned out to have a sec
 | --- | --- | --- |
 | **#936** | ~~Serve a real favicon and link-preview metadata~~ — **FIXED** | **Filed during Bundle F.** Both causes confirmed in the checkout: no icon `<link>` in any layout, so the browser fell back to `/favicon.ico`, which did not exist; and `public/icon.svg` was the stock Rails placeholder, 122 bytes containing one red circle. **The crop was the part worth getting right.** `sparc_logo.png` is a LOCKUP — a circular medallion above a "SPARC" wordmark, separated by a transparent band measured from the alpha channel at y759–793. Rendered and inspected at real sizes before choosing: at 16px the whole lockup turns the wordmark into an illegible smear, while the medallion alone still reads and at 32px the bolt is unmistakable. So icons are cut from the medallion and the full lockup is reserved for the 1200×630 preview. There is **no vector source anywhere in the repo**, so `icon.svg` embeds the raster rather than pretending to be drawn; a hand-made approximation would be a new mark, not the logo. `og:url`/`og:image` are absolute — every consumer fetches them from another host — which is safe behind the proxy only because `config.assume_ssl = true`. Branding comes from the existing `SparcConfig.app_name`, so **no new environment variables**. |
 | **#991** | ~~Nine views set a page title the layout never yields~~ — **FIXED, found while investigating #936** | `content_for :title` was called in nine templates and no layout ever yielded it, so every browser tab read "SPARC" regardless of page. `content_for` writes to a buffer, and a buffer nobody reads is indistinguishable from one that does not exist — no error, no warning, no failing spec. **The same silent shape as #982's unregistered audit actions.** Also a rebranding leak: `SparcConfig.app_name` already existed and the LOGIN layout used it correctly while the application layout hardcoded the literal. Yielded as-is rather than suffixed, because two of the nine templates already append "— SPARC" and the layout would have produced "API Documentation — SPARC — SPARC". **Proven green and mutation-checked BEFORE the issue was filed** — the correction from Bundle T. |
+
+##### 15a. hdf-cli 3.5.1 — pulled forward, on its own  ·  **IN PR** (branch `feature/hdf_cli_3_5_1`)
+
+**Not a routine version bump, and not scheduled work** — Heimdall and the CI runners cut over to
+hdf-cli **3.5.1** on 2026-08-19, so SPARC had to meet it the same day. Sequenced on its own branch
+at owner direction rather than folded into Bundle Q, because it changes the translation engine, a
+pinned external binary and NIST-facing OSCAL output, none of which belong in a PR about favicons.
+
+**It surfaced by accident and by good test design.** Two specs failed during Bundle Q's suite run on
+a machine where a `go install` build of 3.5.1 in `~/go/bin` shadowed the pinned 3.4.1 (`~/go/bin` at
+PATH position 6, `/usr/local/bin` at 19 — `hdf_runner_spec`'s own failure message predicts exactly
+that shadowing). One was the version allowlist. The other was
+`oscal_e2e_pipeline_spec.rb`, which asserted the SAR conversion was REFUSED for being
+schema-invalid and carried this instruction:
+
+> "This example pins the CURRENT upstream state. When #184 lands, the conversion starts succeeding
+> and this fails — deliberately, so the improvement is noticed rather than sitting unclaimed. At
+> that point swap it for the positive assertion below it."
+
+It did exactly that, and this is that swap.
+
+**The headline: `hdf → oscal-sar` is safe for the first time.** Under 3.5.1 the output SATISFIES the
+OSCAL v1.1.2 Assessment Results schema — upstream **mitre/hdf-libs#184 is fixed**. That conversion
+was unsafe on *every previously shipping version* ([[project_hdf_cli_version_matrix]] measured 3.2.0
+through 3.4.1), so the long-standing "do not trust hdf→oscal-sar" conclusion is now version-specific
+rather than universal, and the assertion pins the opposite guarantee: the translation succeeds and
+what comes back is schema-valid in both JSON and YAML.
+
+**Every other behaviour was re-verified rather than assumed**, because the surrounding code carries
+comments asserting version-specific behaviour that would silently rot:
+
+| behaviour | 3.5.1 |
+| --- | --- |
+| `hdf → oscal-sar` schema validity | **CHANGED** — now valid |
+| `validate --type results` still demands top-level `baselines` while the converter does not | unchanged — the upstream disagreement persists |
+| no direct `hdf → oscal-poam` (the 501 path, mitre/hdf-libs#104) | unchanged |
+| `--from oscal-poam` refuses an item whose risks carry no deadline, with the exact string the 422 branch matches on | unchanged |
+
+One documentation error was corrected while confirming the last row: `poam_risk.rb` described the
+command as `hdf convert --from oscal-poam --to hdf-amendments`, a direction hdf-cli does not offer —
+`oscal-poam` converts only to `hdf`, and POA&M flows the other way, from an amendments doc. The code
+was always right (`from: OSCAL_POAM` with no `to:`); only the comment named a dead end.
+
+**The bump is four pins, not one.** `HdfRunner::PINNED_VERSION`, `bin/install-hdf.sh`, and — easy to
+miss — `ARG HDF_LIBS_VERSION` in **both** `Dockerfile` and `Dockerfile_debian`, which bake the
+binary independently of the install script. Changing only the script would have left the container
+running 3.4.1 while the app pinned 3.5.1, so translations would have been refused inside the image.
+No checksum to update: `install-hdf.sh` fetches `checksums.txt` from the release itself.
+
+**CI cannot verify any of this** — it does not install hdf-cli (open issue **#835**), so these specs
+skip there and CI stayed green throughout while local runs failed. The same class as #984: a check
+that passes because it never ran. Verification for this change is therefore local and explicit.
 
 ##### 16. Bundle R — Auth entitlements — IdP as system of record
 

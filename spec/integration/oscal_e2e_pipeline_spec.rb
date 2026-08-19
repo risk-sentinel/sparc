@@ -611,24 +611,30 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
 
       # #831 — SPARC no longer hands back OSCAL that fails NIST's own schema.
       #
-      # hdf-cli 3.4.1 emits assessment-results missing required properties
-      # (reviewed-controls, finding/description, characterization/origin, plus
-      # an empty prop.value). That is an upstream defect — mitre/hdf-libs#184 —
-      # and SPARC cannot repair it without INVENTING what the assessment
-      # reviewed, which would be schema-valid and untrue. So the translation is
-      # rejected rather than returned.
+      # ── This assertion was inverted on 2026-08-19, exactly as designed ─────
       #
-      # This example pins the CURRENT upstream state. When #184 lands, the
-      # conversion starts succeeding and this fails — deliberately, so the
-      # improvement is noticed rather than sitting unclaimed. At that point
-      # swap it for the positive assertion below it.
-      it "REFUSES to return schema-invalid assessment-results from hdf-cli" do
-        expect {
-          HdfOscalTranslationService.new.hdf_to_oscal_sar(hdf_fixture)
-        }.to raise_error(OscalValidationError, /reviewed-controls/),
-             "hdf-cli SAR output now satisfies the OSCAL schema. mitre/hdf-libs#184 " \
-             "appears fixed — replace this with the positive assertion: " \
-             "expect_valid_json_and_yaml(JSON.generate(oscal), model_type: :assessment_results, ...)"
+      # It used to assert the conversion was REFUSED. hdf-cli through 3.4.1
+      # emitted assessment-results missing required properties
+      # (reviewed-controls, finding/description, characterization/origin, plus
+      # an empty prop.value) — upstream defect mitre/hdf-libs#184 — and SPARC
+      # could not repair that without INVENTING what the assessment reviewed,
+      # which would have been schema-valid and untrue.
+      #
+      # The refusal carried a failure message telling whoever saw it to swap in
+      # the positive assertion when #184 landed, so the improvement would be
+      # noticed rather than sitting unclaimed. **3.5.1 fixed it, this example
+      # failed on cue, and this is that swap.**
+      #
+      # So it now pins the opposite guarantee, which is the one that matters to
+      # a user: the translation SUCCEEDS and what comes back satisfies the NIST
+      # schema in both JSON and YAML. If a future hdf-cli regresses #184, this
+      # goes red rather than quietly shipping invalid OSCAL again.
+      it "returns schema-valid assessment-results from hdf-cli" do
+        oscal = HdfOscalTranslationService.new.hdf_to_oscal_sar(hdf_fixture)
+
+        expect_valid_json_and_yaml(JSON.generate(oscal),
+                                   model_type: :assessment_results,
+                                   label: "Stage 5 hdf-cli SAR")
       end
 
       # The gate must reject for the RIGHT reason. Given output the schema

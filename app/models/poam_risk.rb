@@ -29,10 +29,16 @@ class PoamRisk < ApplicationRecord
   #   2. A risk with no deadline is not a plan. `deadline` is a SPARC rule
   #      rather than an OSCAL one — OSCAL does not require it — but a POA&M
   #      whose items carry no time commitment is not a POA&M an assessor or AO
-  #      would accept, and `hdf convert --from oscal-poam --to hdf-amendments`
-  #      correctly REFUSES an item whose risks carry no usable deadline.
+  #      would accept, and `hdf convert --from oscal-poam` correctly REFUSES an
+  #      item whose risks carry no usable deadline.
   #      (hdf-cli 3.3.2 used to invent "conversion time + one year"; 3.4.1
-  #      stopped, which is the behaviour we want.)
+  #      stopped, which is the behaviour we want. Re-verified on 3.5.1: same
+  #      refusal, same message the API matches on.)
+  #
+  #      The command takes `--from oscal-poam` with no `--to` — the default
+  #      output is HDF. `oscal-poam → hdf-amendments` is not a conversion
+  #      hdf-cli offers; POA&M flows the other way, from an amendments doc
+  #      (mitre/hdf-libs#104, and MITRE's own use-case docs).
   #
   # Enforced on every save, not just create. Grandfathering existing rows would
   # keep exactly the invalid data this exists to stop, and silently. Rows that

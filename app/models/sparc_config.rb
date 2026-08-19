@@ -561,7 +561,7 @@ module SparcConfig
   # SPARC_HDF_NORMALIZE_BASELINES was removed in #764. It injected an empty
   # `baselines: []` to work around hdf-cli 3.2.0 requiring that field for
   # hdf→oscal-sar (upstream mitre/hdf-libs#104). Fixed upstream in 3.3.1, so
-  # from the 3.4.1 pin the injection is not merely unnecessary — it is the only
+  # from the 3.4.1 pin onward the injection is not merely unnecessary — it is the only
   # thing that lets non-HDF input through: garbage converts at exit 0 with the
   # field injected and is correctly rejected without it. Removing it restores
   # the "garbage in → 422" contract.
@@ -569,7 +569,7 @@ module SparcConfig
   # Allowlist of certified hdf-cli tool versions for the translation surface.
   # Empty (default) = accept whatever version is baked into the image (chosen
   # at build via the HDF_LIBS_VERSION Docker build arg). When set (e.g.
-  # "3.4.1,3.4.0"), the translation endpoints refuse to run on an
+  # "3.5.1,3.4.1"), the translation endpoints refuse to run on an
   # uncertified hdf-cli build.
   def hdf_allowed_versions
     ENV.fetch("SPARC_HDF_ALLOWED_VERSIONS", "").split(",").map(&:strip).reject(&:empty?)

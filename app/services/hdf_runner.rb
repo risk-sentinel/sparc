@@ -24,7 +24,12 @@ require "stringio"
 #   SA-11 Developer Testing   (validate against schema before persistence)
 class HdfRunner
   JSON_FLAG = "--json".freeze
-  PINNED_VERSION = "3.4.1".freeze
+  # 3.5.1 (2026-08-19) — the org pin, matching what Heimdall and the CI runners
+  # use. The move off 3.4.1 was not a routine bump: 3.5.1 fixes
+  # mitre/hdf-libs#184, so `hdf -> oscal-sar` now emits assessment-results that
+  # SATISFY the OSCAL v1.1.2 schema. That conversion was unsafe on every
+  # previously shipping version and is now the first that can be trusted.
+  PINNED_VERSION = "3.5.1".freeze
   DEFAULT_BINARY = "hdf".freeze
 
   class Error < StandardError
@@ -60,8 +65,9 @@ class HdfRunner
   # Validate input against the bundled hdf-cli schema. Raises on mismatch.
   #
   # NOTE: `hdf validate --type results` still requires a top-level `baselines`
-  # field even on 3.4.1, while the oscal-sar converter no longer does — the
-  # validator and the converter disagree upstream. Don't reach for this as a
+  # field — re-verified on 3.5.1, which fixed the SAR schema defect but NOT
+  # this — while the oscal-sar converter does not. The validator and the
+  # converter still disagree upstream. Don't reach for this as a
   # pre-flight check on scanner HDF; it will reject input that converts fine.
   # @param type [String] "results" | "baseline" | "amendments" | etc.
   def validate(input, type: "results")
