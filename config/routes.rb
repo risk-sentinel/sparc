@@ -302,6 +302,13 @@ Rails.application.routes.draw do
   # API excludes cookies and the browser cannot send a Bearer token.
   get "controls/lookup", to: "control_lookups#index", as: :control_lookup, defaults: { format: :json }
 
+  # #981 — JSON for the evidence attester picker, refreshed when the boundary
+  # select changes. Session-authenticated sibling of
+  # GET /api/v1/attestations/eligible; both run AttesterEligibilityService,
+  # because the API excludes cookies and the browser cannot send a Bearer token.
+  get "attestations/eligible", to: "attester_eligibility#index",
+      as: :attester_eligibility, defaults: { format: :json }
+
   resources :evidences do
     resources :attestations, only: [ :new, :create, :destroy ]
   end
@@ -638,6 +645,10 @@ Rails.application.routes.draw do
       # evidence control picker so a link can only name a control that exists.
       get "controls",         to: "control_lookups#index",   as: :control_lookups
       get "controls/resolve", to: "control_lookups#resolve", as: :resolve_control_lookup
+
+      # #981 — who may attest on a boundary, and under which role. Backs the
+      # evidence attester picker so it cannot offer a pair the server refuses.
+      get "attestations/eligible", to: "attester_eligibility#index", as: :attester_eligibility
 
       resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ] do
         # #895 — catalog CONTENTS. The catalog container had a full API while

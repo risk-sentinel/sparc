@@ -41,6 +41,7 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | `POST` | `/api/v1/evidences/:evidence_id/attestations` | Create + cryptographically sign an attestation |
 | `DELETE` | `/api/v1/evidences/:evidence_id/attestations/:id` | Delete an attestation (audit-logged) |
 | `GET` | `/api/v1/evidences/:evidence_id/attestations/export` | CMS / SAF CLI JSON export (one record per linked control_id) |
+| `GET` | `/api/v1/attestations/eligible` | Who may attest on a boundary, and under which role (#981) |
 
 ---
 
@@ -134,7 +135,43 @@ Emits CMS / SAF CLI attestation JSON for all attestations on the evidence, **den
 }
 ```
 
+## GET /api/v1/attestations/eligible
+
+Who may attest on a boundary, and under which role. Backs the evidence form's attester picker so it cannot offer a pair the server will refuse (#981).
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `authorization_boundary_id` | integer | No | The system the evidence belongs to. **Omit it for instance-wide evidence**, which has a deliberately wider rule — see below. |
+
+**Response** `200 OK`
+
+```json
+{
+  "data": {
+    "attesters": [ { "id": 42, "label": "Jane Okafor" } ],
+    "roles_by_attester": {
+      "42": [ { "name": "isso", "label": "ISSO" } ]
+    }
+  },
+  "meta": { "authorization_boundary_id": "5" }
+}
+```
+
+### The instance / boundary asymmetry
+
+Omitting `authorization_boundary_id` returns the eligible set for **instance-wide evidence**, which includes **instance-scoped** attesting roles such as `policy_manager`. Naming a boundary withdraws them, returning only boundary-scoped roles the person actually holds *there*.
+
+That is deliberate, not an inconsistency. Boundary-less evidence is provider material arriving from a leveraged SSP, so it belongs to no single system and Policy is exactly who speaks for it. But an instance-scoped grant satisfies `has_permission?` on *every* boundary, so allowing it through on a named boundary would hand one role estate-wide authority to sign for every system. Policy reaches global evidence; it does not thereby gain authority over any individual system's.
+
+`Attestation` enforces the same rule on save, so this endpoint only narrows what is *offered* — it can never widen what is *accepted*.
+
+**Authorization:** `evidence.write` on the boundary in question. Unlike catalog lookups this is not global reference data: it discloses which accounts hold an attesting role on a named system.
+
 ## Errors
+
+
 
 | Status | When |
 |--------|------|

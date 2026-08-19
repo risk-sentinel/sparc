@@ -79,9 +79,16 @@
       <div class="row g-3 mb-3">
         <div class="col-md-6">
           <%= f.label :authorization_boundary_id, "Authorization Boundary", class: "form-label fw-semibold" %><%= field_help "Which system this belongs to, and who can see it. Left blank, the evidence is visible to every signed-in user." %>
+          <%# #981 — changing this used to leave the attester and role options
+              behind, so the form offered a role the server would then refuse
+              (`policy_manager` is instance-scoped and valid only for
+              instance-wide evidence). The change is announced; the attester
+              picker refetches the eligible set for the new boundary. %>
           <%= f.select :authorization_boundary_id,
               options_for_select(AuthorizationBoundary.order(:name).pluck(:name, :id), @evidence.authorization_boundary_id),
-              { include_blank: "None" }, class: "form-select" %>
+              { include_blank: "None" },
+              class: "form-select",
+              data: { action: "change->evidence-type-fields#boundaryChanged" } %>
         </div>
         <%# #902 follow-up — this was a free-text box, and free text is what got
             stored. A typo linked evidence to a control in no catalog, and

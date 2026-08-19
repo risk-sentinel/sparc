@@ -101,6 +101,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/artifacts/:uuid/freshness` | `artifacts#freshness` | **MISSING** | **MISSING** | **MISSING** |
 | `GET` | `/api/v1/artifacts/:uuid/versions` | `artifacts#versions` | yes | **MISSING** | yes |
 | `GET` | `/api/v1/artifacts/versions/:uuid` | `artifacts#version` | yes | yes | yes |
+| `GET` | `/api/v1/attestations/eligible` | `attester_eligibility#index` | yes | yes | yes |
 | `GET` | `/api/v1/evidences/:evidence_id/attestations` | `attestations#index` | yes | yes | yes |
 | `POST` | `/api/v1/evidences/:evidence_id/attestations` | `attestations#create` | yes | yes | yes |
 | `DELETE` | `/api/v1/evidences/:evidence_id/attestations/:id` | `attestations#destroy` | yes | yes | yes |
