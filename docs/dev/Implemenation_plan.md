@@ -679,7 +679,7 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 12 | S — Controls layer: who can see it, and what it carries | #974 #959 #935 | **Shipped** (PR #976) |
 | 13 | P — Evidence completeness | #947 #948 | **Shipped** (PR #983) |
 | 14 | **T — Bundle P follow-ups** | **#981 #982 #984 #988 #989** | **IN PR** (branch `bug/981_bundle_t_followups`) |
-| 15 | Q — Polish | #936 | Queued |
+| 15 | **Q — Polish** | **#936 #991** | **IN PR** (branch `feature/936_favicon_link_preview`) |
 | 16 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
 
 **Unslotted — down to one.** #935 and #959 were slotted into **Bundle S** on 2026-08-17;
@@ -973,13 +973,14 @@ OSCAL requires `source` to be present, not to be true. Resolution order is now a
 linked profile → `determine_source`, resolved live from the association so no backfill or
 migration is needed.
 
-##### 15. Bundle Q — Polish
+##### 15. Bundle Q — Polish  ·  **IN PR** (branch `feature/936_favicon_link_preview`)
 
-The cheapest item on the milestone.
+The cheapest item on the milestone — and the one that turned out to have a second defect inside it.
 
 | Issue | Description | Notes |
 | --- | --- | --- |
-| **#936** | Serve a real favicon and link-preview metadata | **Filed during Bundle F.** Saved SPARC URLs show a generic globe. Cosmetic, but it is the cheapest item on the milestone. |
+| **#936** | ~~Serve a real favicon and link-preview metadata~~ — **FIXED** | **Filed during Bundle F.** Both causes confirmed in the checkout: no icon `<link>` in any layout, so the browser fell back to `/favicon.ico`, which did not exist; and `public/icon.svg` was the stock Rails placeholder, 122 bytes containing one red circle. **The crop was the part worth getting right.** `sparc_logo.png` is a LOCKUP — a circular medallion above a "SPARC" wordmark, separated by a transparent band measured from the alpha channel at y759–793. Rendered and inspected at real sizes before choosing: at 16px the whole lockup turns the wordmark into an illegible smear, while the medallion alone still reads and at 32px the bolt is unmistakable. So icons are cut from the medallion and the full lockup is reserved for the 1200×630 preview. There is **no vector source anywhere in the repo**, so `icon.svg` embeds the raster rather than pretending to be drawn; a hand-made approximation would be a new mark, not the logo. `og:url`/`og:image` are absolute — every consumer fetches them from another host — which is safe behind the proxy only because `config.assume_ssl = true`. Branding comes from the existing `SparcConfig.app_name`, so **no new environment variables**. |
+| **#991** | ~~Nine views set a page title the layout never yields~~ — **FIXED, found while investigating #936** | `content_for :title` was called in nine templates and no layout ever yielded it, so every browser tab read "SPARC" regardless of page. `content_for` writes to a buffer, and a buffer nobody reads is indistinguishable from one that does not exist — no error, no warning, no failing spec. **The same silent shape as #982's unregistered audit actions.** Also a rebranding leak: `SparcConfig.app_name` already existed and the LOGIN layout used it correctly while the application layout hardcoded the literal. Yielded as-is rather than suffixed, because two of the nine templates already append "— SPARC" and the layout would have produced "API Documentation — SPARC — SPARC". **Proven green and mutation-checked BEFORE the issue was filed** — the correction from Bundle T. |
 
 ##### 16. Bundle R — Auth entitlements — IdP as system of record
 

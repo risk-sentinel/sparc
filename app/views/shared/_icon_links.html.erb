@@ -1,0 +1,18 @@
+<%# #936 — the browser-tab and bookmark icons.
+
+    A partial rather than duplicated markup: the application and login layouts
+    both need these, and an icon set that is right on one screen and stale on
+    the other is the kind of drift nobody notices until a bookmark looks wrong.
+
+    Order matters. A browser takes the LAST icon link it understands, so the
+    .ico is declared first as the universal fallback and the SVG after it, which
+    lets a modern browser scale the mark on a high-DPI tab while an older one
+    still finds something it can render.
+
+    Paths are literal rather than `asset_path`: these live in `public/`, not the
+    asset pipeline, because /favicon.ico is a fixed location browsers request
+    with no link element at all — a digested filename could never satisfy that.
+%>
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">

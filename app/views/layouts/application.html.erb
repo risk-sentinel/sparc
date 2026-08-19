@@ -1,11 +1,33 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
   <head>
-    <title>SPARC</title>
+    <%# #936 — yield the title nine views were already setting.
+
+        `content_for :title` was called in nine templates and NO layout ever
+        yielded it, so every tab read "SPARC" no matter where you were. The
+        same silent shape as an unregistered audit action: a call site whose
+        value goes nowhere, with nothing to signal it.
+
+        Yielded AS-IS rather than suffixed with the app name. Two of the nine
+        already append "— SPARC" themselves, so adding it here would produce
+        "API Documentation — SPARC — SPARC". Making those templates consistent
+        is a copy decision, not a layout one; the link-preview tags below get a
+        clean split instead (`og:title` is the page, `og:site_name` the app).
+
+        Falls back to `SparcConfig.app_name`, not a literal, so a rebranded
+        deployment gets its own name — the login layout already did this. %>
+    <title><%= content_for?(:title) ? yield(:title) : SparcConfig.app_name %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-cache-control" content="no-cache">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+
+    <%# #936 — without these a browser falls back to /favicon.ico, which did not
+        exist, so a saved SPARC URL showed the generic globe. All same-origin, so
+        the CSP is unchanged: `img_src :self, :data, :https` already covers these
+        files and the data URI inside icon.svg. %>
+    <%= render "shared/icon_links" %>
+    <%= render "shared/link_preview" %>
 
     <%# Apply saved or system theme before first paint to prevent FOUC %>
     <script nonce="<%= content_security_policy_nonce %>">
