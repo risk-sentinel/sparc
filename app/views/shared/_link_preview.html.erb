@@ -1,0 +1,35 @@
+<%# #936 — Open Graph + Twitter card metadata.
+
+    Without these a SPARC link pasted into Slack, Teams or iMessage renders as
+    bare text. The favicon has no effect on those surfaces; they read `og:image`.
+
+    `og:url` and `og:image` are ABSOLUTE. Every consumer fetches them from
+    another host, so a relative path resolves against nothing and the card comes
+    back blank — see LinkPreviewHelper for why `request.base_url` is trustworthy
+    behind the proxy.
+
+    `og:title` is the page and `og:site_name` the app, which is the split that
+    lets the layout yield a page title as-is (#991) without either value having
+    to carry the other.
+
+    A plain <meta name="description"> rides along: it is the same sentence, and
+    a page that describes itself to a link preview but not to a search engine is
+    an odd thing to ship.
+%>
+<meta name="description" content="<%= link_preview_description %>">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="<%= SparcConfig.app_name %>">
+<meta property="og:title" content="<%= link_preview_title %>">
+<meta property="og:description" content="<%= link_preview_description %>">
+<meta property="og:url" content="<%= link_preview_url %>">
+<meta property="og:image" content="<%= link_preview_image_url %>">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<%# summary_large_image, not summary: the card is a 1200x630 lockup, and the
+    small variant would crop it to a square and cut the wordmark off. %>
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<%= link_preview_title %>">
+<meta name="twitter:description" content="<%= link_preview_description %>">
+<meta name="twitter:image" content="<%= link_preview_image_url %>">

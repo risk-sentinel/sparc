@@ -7,6 +7,11 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <%# #936 — the login screen is the first page an operator ever bookmarks. %>
+    <%= render "shared/icon_links" %>
+    <%# The login page is the most-shared SPARC URL. %>
+    <%= render "shared/link_preview" %>
+
     <%# Apply saved or system theme before first paint to prevent FOUC %>
     <script nonce="<%= content_security_policy_nonce %>">
       (function() {
