@@ -153,7 +153,8 @@ class TestLifecycle:
     ) -> None:
         base = _attestations_path(evidence_id)
 
-        created = admin_client.post(base, json=_new_attestation_payload(_admin_user_id(admin_client)))
+        payload = _new_attestation_payload(_admin_user_id(admin_client))
+        created = admin_client.post(base, json=payload)
         assert created.status_code == 201, created.text
         attestation = created.json()["data"]
         att_id = attestation["id"]

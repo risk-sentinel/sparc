@@ -3,6 +3,12 @@
 require "rails_helper"
 
 RSpec.describe "Attestations", type: :request do
+  # #947 — declare the auth posture rather than inherit it from the developer's
+  # `.env`. The roster check short-circuits with no auth enabled, so in CI
+  # (which configures none) these rejection specs asserted nothing and still
+  # reported green. Same convention as controller_authorization_919_spec.rb.
+  before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
+
   let(:user) { create(:user) }
   let(:evidence) { create(:evidence) }
 

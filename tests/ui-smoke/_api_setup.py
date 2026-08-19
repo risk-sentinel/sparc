@@ -122,6 +122,56 @@ def create_catalog() -> dict[str, Any]:
         return r.json()["data"]
 
 
+def create_profile() -> dict[str, Any]:
+    """A DRAFT profile, for tests that need editable OSCAL metadata panels.
+
+    Created rather than discovered. `first_show_href` returns whatever happens
+    to be first on the index, which is a published document on any real
+    deployment — so the metadata-edit smoke skipped its own assertions
+    ("non-draft — expand-only check") while reporting as passed, and scanning a
+    large index for a candidate is also what made it time out. A fixture the
+    test owns is draft by construction and reachable by a known URL.
+    """
+    with _client() as c:
+        r = c.post(
+            "/api/v1/profile_documents",
+            json={
+                "profile_document": {
+                    "name": _name("profile"),
+                    "description": "ui-smoke",
+                    "lifecycle_status": "draft",
+                }
+            },
+        )
+        r.raise_for_status()
+        return r.json()["data"]
+
+
+def create_back_matter_resource(resourceable_type: str, resourceable_id: Any) -> dict[str, Any]:
+    """A managed back-matter resource on a document.
+
+    The back-matter edit smoke needs one to exist: a freshly created draft has
+    no resources, so the per-resource Edit toggle it exercises never renders and
+    the test used to skip its own assertion.
+    """
+    with _client() as c:
+        r = c.post(
+            "/api/v1/back_matter_resources",
+            json={
+                "back_matter_resource": {
+                    "title": _name("back-matter"),
+                    "description": "ui-smoke",
+                    "href": "https://example.com/ui-smoke.pdf",
+                    "media_type": "application/pdf",
+                    "resourceable_type": resourceable_type,
+                    "resourceable_id": resourceable_id,
+                }
+            },
+        )
+        r.raise_for_status()
+        return r.json()["data"]
+
+
 def create_ssp(boundary_id: int) -> dict[str, Any]:
     with _client() as c:
         r = c.post(

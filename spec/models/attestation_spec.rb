@@ -1,6 +1,16 @@
 require "rails_helper"
 
 RSpec.describe Attestation, type: :model do
+  # The posture this file asserts, declared rather than inherited.
+  #
+  # `Attestation`'s roster check short-circuits when no auth method is enabled,
+  # matching every other guard in the app. Whether one IS enabled came from the
+  # developer's `.env`, so these specs were green locally and VACUOUS in CI,
+  # which configures no auth: the guard returned early, the record saved, and
+  # every "must be rejected" example asserted nothing while reporting green.
+  # Twelve of them. Same convention as controller_authorization_919_spec.rb.
+  before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
+
   describe "validations" do
     it { is_expected.to validate_presence_of(:attester_name) }
     it { is_expected.to validate_presence_of(:statement) }
@@ -245,12 +255,47 @@ RSpec.describe Attestation, type: :model do
       expect(attestation.reload.attester_name).to eq("Original Name")
     end
 
-    # Every other guard in the app is a no-op with no auth method enabled; a
-    # single-operator instance must not be locked out of its own evidence.
-    it "does not fire when no auth method is enabled" do
-      allow(SparcConfig).to receive(:any_auth_enabled?).and_return(false)
+    # ── BOTH POSTURES, asserted explicitly ────────────────────────────────
+    #
+    # The check short-circuits when no auth method is enabled, matching every
+    # other guard in the app: a single-operator instance must not be locked out
+    # of its own evidence. That is a real behavioural fork, so both sides are
+    # pinned here rather than left to whatever the environment happens to be.
+    #
+    # This is the pair CI was silently failing to prove. This file declares the
+    # enabled posture in its own `before`, so the ENABLED side below is
+    # genuinely exercised everywhere instead of depending on a developer's
+    # `.env` — and the DISABLED side says out loud what an unauthenticated
+    # instance does, which is the fact an operator needs.
+    context "with an auth method enabled (the suite default)" do
+      it "rejects an attestation with no resolved account" do
+        expect(SparcConfig.any_auth_enabled?).to be(true),
+          "this file's `before` must declare the enabled posture — without it " \
+          "the check short-circuits and this example asserts nothing"
 
-      expect(build(:attestation, :unverified, evidence: evidence)).to be_valid
+        expect(build(:attestation, :unverified, evidence: evidence)).not_to be_valid
+      end
+    end
+
+    context "with NO auth method enabled" do
+      before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(false) }
+
+      it "accepts an attestation with no resolved account, so a single-operator instance still works" do
+        expect(build(:attestation, :unverified, evidence: evidence)).to be_valid
+      end
+
+      # The consequence, stated so nobody has to infer it: with no auth there is
+      # no roster to check against, so the attester is NOT verified. An
+      # unauthenticated instance records assertions it cannot substantiate, and
+      # the advisory report is what surfaces them.
+      it "reports the attester as unverified rather than pretending it was checked" do
+        attestation = build(:attestation, :unverified, evidence: evidence)
+        attestation.save!
+
+        expect(attestation.attester_verified?).to be(true),
+          "attester_verified? answers true with no auth enabled — if this ever " \
+          "changes, the advisory migration's count changes with it"
+      end
     end
   end
 

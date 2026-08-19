@@ -13,6 +13,16 @@ require Rails.root.join("db/migrate/20260818170000_report_incomplete_evidence.rb
 # silently misses rows is worse than no report: an operator reads zero and
 # concludes there is nothing to do.
 RSpec.describe ReportIncompleteEvidence do
+  # The posture this file asserts, declared rather than inherited.
+  #
+  # `Attestation`'s roster check short-circuits when no auth method is enabled,
+  # matching every other guard in the app. Whether one IS enabled came from the
+  # developer's `.env`, so these specs were green locally and VACUOUS in CI,
+  # which configures no auth: the guard returned early, the record saved, and
+  # every "must be rejected" example asserted nothing while reporting green.
+  # Twelve of them. Same convention as controller_authorization_919_spec.rb.
+  before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
+
   subject(:migration) { described_class.new }
 
   before { allow(migration).to receive(:say) }

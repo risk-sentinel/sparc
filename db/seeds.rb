@@ -2629,10 +2629,28 @@ sample_evidences = [
   }
 ]
 
+# #947 — evidence must support at least one control, and an artefact type must
+# carry its file. Both are part of the SAME save now: links created after the
+# record would leave it briefly invalid, which is what broke this seed when the
+# rules landed. `seed_evidence_artifact` gives non-attestation types a small
+# deterministic stand-in — fixed content, so re-seeding does not churn blobs.
+def seed_evidence_artifact(evidence)
+  return if evidence.attestation_type?
+  return if evidence.file.attached?
+
+  evidence.file.attach(
+    io: StringIO.new("SPARC demo evidence artefact. Synthetic content for demonstration.\n"),
+    filename: "#{evidence.evidence_type}.txt",
+    content_type: "text/plain"
+  )
+end
+
 sample_evidences.each do |attrs|
   control_ids = attrs.delete(:control_ids)
   evidence = Evidence.find_or_create_by!(title: attrs[:title]) do |e|
     e.assign_attributes(attrs.merge(collected_at: Time.current - rand(1..90).days))
+    e.evidence_control_links.build(control_id: control_ids.first)
+    seed_evidence_artifact(e)
   end
 
   control_ids.each do |cid|
@@ -2656,6 +2674,10 @@ Evidence.find_or_create_by!(title: "SMOKE RESTRICTED EVIDENCE") do |e|
     description: "Boundary-scoped fixture — only admins / members of Smoke Restricted Boundary may see it (#738).",
     collected_by: "seed", collected_at: Time.current.utc, authorization_boundary: smoke_restricted_boundary
   )
+  # #947 — the completeness rules apply to fixtures too. A fixture that cannot
+  # be created is a smoke test that silently stops running.
+  e.evidence_control_links.build(control_id: "ac-2")
+  seed_evidence_artifact(e)
 end
 Evidence.find_or_create_by!(title: "SMOKE GLOBAL EVIDENCE") do |e|
   e.assign_attributes(
@@ -2663,20 +2685,39 @@ Evidence.find_or_create_by!(title: "SMOKE GLOBAL EVIDENCE") do |e|
     description: "Global (nil-boundary) fixture — visible to all authenticated users (#738).",
     collected_by: "seed", collected_at: Time.current.utc, authorization_boundary: nil
   )
+  e.evidence_control_links.build(control_id: "ac-2")
+  seed_evidence_artifact(e)
 end
 puts "  Seeded #738 boundary-scoping smoke fixtures (restricted + global evidence)."
 
 # Add sample attestations to attested evidence
-Evidence.where(status: "attested").each do |evidence|
-  next if evidence.attestations.any?
-  evidence.attestations.create!(
-    attester_name: "Dr. Sarah Chen",
-    attester_email: "sarah.chen@example.gov",
-    role: "isso",
-    statement: "I attest that the evidence provided is accurate, complete, and represents the current state of the control implementation as of the attestation date.",
-    attested_at: Time.current - rand(1..30).days
-  )
-  evidence.attestations.last.generate_signature!
+# #947 — an attestation names an ACCOUNT and a role that account actually holds
+# on the evidence's boundary; `attester_name` is snapshotted by the model, not
+# supplied. The seeded admin is used because an Instance Admin clears the roster
+# check the way it clears every other permission — a demo seed should not have
+# to invent a roster to make its own fixtures valid.
+#
+# If no attesting role is seeded (the roles section is skipped, or the catalog
+# was customised) this leaves the evidence unattested rather than failing the
+# whole seed: a demo instance missing sample attestations is a far smaller
+# problem than one that will not seed at all.
+seed_attester = User.find_by(admin: true)
+seed_attest_role = Role.where("permissions @> ?", { "evidence.attest" => true }.to_json)
+                       .where(scope: "authorization_boundary").order(:sort_order).first
+
+if seed_attester && seed_attest_role
+  Evidence.where(status: "attested").each do |evidence|
+    next if evidence.attestations.any?
+    evidence.attestations.create!(
+      attester_user: seed_attester,
+      role: seed_attest_role.name,
+      statement: "I attest that the evidence provided is accurate, complete, and represents the current state of the control implementation as of the attestation date.",
+      attested_at: Time.current - rand(1..30).days
+    )
+    evidence.attestations.last.generate_signature!
+  end
+else
+  puts "  Skipped sample attestations: no admin account or no role granting evidence.attest."
 end
 
 puts "  Created #{Evidence.count} evidence records"

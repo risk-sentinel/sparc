@@ -29,7 +29,7 @@ module SeedRunner
     # #946 — pinned UUID so the SSP fixtures' import-profile href resolves.
     "demo_published_profile" => "1.1.0",
     "demo_catalog_guidance" => "1.0.0",
-    "demo_evidence"        => "1.1.0",  # #738 boundary-scoping smoke fixtures
+    "demo_evidence"        => "1.2.0",  # #947 evidence completeness: control links, artefacts, verified attesters
     "demo_sample_artifacts" => "1.2.0",  # #832 POA&M risks carry a deadline
     "oscal_schemas"         => "1.0.0",
     "cdef_service_aliases"  => "1.0.0",  # #904 coverage analysis escape hatches
