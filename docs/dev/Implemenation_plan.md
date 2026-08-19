@@ -677,8 +677,8 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 10 | #939 — pulled forward, on its own | #939 **#967** **#970** | **Shipped** (PR #969) |
 | 11 | O — Boundary attachment | #929 #952 | **Shipped** (PR #975) |
 | 12 | S — Controls layer: who can see it, and what it carries | #974 #959 #935 | **Shipped** (PR #976) |
-| 13 | **P — Evidence completeness** | **#947 #948** | **IN PR** (branch `bug/947_evidence_attestation_tiering`) |
-| 14 | T — Bundle P follow-ups | **#981 #982 #984** | Queued — **after P**, see below |
+| 13 | P — Evidence completeness | #947 #948 | **Shipped** (PR #983) |
+| 14 | **T — Bundle P follow-ups** | **#981 #982 #984** | **IN PR** (branch `bug/981_bundle_t_followups`) |
 | 15 | Q — Polish | #936 | Queued |
 | 16 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
 
@@ -869,7 +869,7 @@ Measured unauthenticated against a UBI9 prod-mode instance with `public_catalogs
 | **#959** | Every export embeds every authoritative back-matter resource in the instance | **Bundle S, and #974's export half depends on it.** Filed as a *question* with three items to settle — whether instance-wide back-matter belongs in every document, whether it should be scoped by organization or boundary, and whether an export should be reproducible independent of unrelated instance state (#845 assumes yes; today it is not). **Settle those before writing code.** |
 | **#935** | Derive and persist `framework` at import, so catalogs and baselines can be filtered by it | **Bundle S, feature half.** Cut from #908 because framework is not a field — it exists only as prose and filename, and deriving it per request by regexing titles was rejected deliberately: confidently displaying a *wrong* framework is worse than offering no filter. Derive once at import, **leave null when nothing says clearly**, and make the rule a named, tested unit with a backfill through the same path. |
 
-##### 13. Bundle P — Evidence completeness  ·  **IN PR** (branch `bug/947_evidence_attestation_tiering`)
+##### 13. Bundle P — Evidence completeness  ·  **Shipped** (PR #983 → `1589bbbf`)
 
 Both are about evidence being trustworthy rather than merely present. Bundle M is the first fixture with evidence at more than one tier — 32 records across two boundaries in two organizations — so #948 finally has something real to render.
 
@@ -896,7 +896,7 @@ offered an Instance Admin a role it then disabled, and a blank review frequency 
 `allow_nil` does not cover. Two further findings were filed rather than folded in: **#981** and
 **#982**.
 
-##### 14. Bundle T — Bundle P follow-ups
+##### 14. Bundle T — Bundle P follow-ups  ·  **IN PR** (branch `bug/981_bundle_t_followups`)
 
 All three came out of the Bundle P verification gate and are deliberately **not** in its PR. They
 are sequenced **after P** because #981 is a direct follow-on to the attester picker #947
@@ -910,9 +910,32 @@ treating as one theme rather than three tickets.
 
 | Issue | Description | Notes |
 | --- | --- | --- |
-| **#981** | The attester role list goes stale when the boundary changes, offering roles the server will reject | **Depends on #947.** The eligible attesters and roles are computed server-side for the boundary the form was *rendered* with, so changing the boundary select leaves them behind — the form can offer `policy_manager` (instance-scoped, valid only for instance-wide evidence) and the server correctly refuses it. The model is right; the form has not been told. Fix by re-rendering the fieldset in a Turbo Frame on boundary change, or by fetching the eligible set the way the control picker already does — **not** by embedding a map of the whole estate. |
-| **#984** | 12 collection-view checks skip on four screens with no records, so card/list rendering is unproven there | **Found running Bundle P's ui-smoke gate.** `test_collection_views` runs three checks across 16 screens; on `review_queue`, `promotion_queue`, `leveraged_poams` and `federation_peers` all three skip, because the screen is empty on a demo-seeded instance. Page load and console errors are still asserted — only the card-versus-table assertions never run, which is the file's actual subject and exactly what a change to the #888 shared component would break on all sixteen at once. Fix by SEEDING the four (the estate builder already produces review/promotion entries), not by creating records per test: view-mode persistence is across a visit and a torn-down fixture cannot exercise it. Keep the `_populated` guard — an empty collection is legitimate on a non-seeded deployment. |
-| **#982** | `cdef_document_populated_from_profile` is unregistered, so populating a CDEF records no audit event | **Independent of #947/#948; found incidentally in the container log.** The action is emitted by both the web and API controllers and appears nowhere in `AuditEvent::ACTIONS`, so the write fails validation and `audit_log` rescues it — silently. Worth more than the one-line fix: add a guard that fails when any `audit_log("…")` call site names an unregistered action, which catches the class rather than the instance, then sweep the remaining call sites. NIST AU-2 / AU-12 claim coverage this path does not deliver. |
+| **#981** | ~~The attester role list goes stale when the boundary changes~~ — **FIXED** | **Depends on #947.** Resolved with the JSON-lookup option, not the Turbo Frame: the attestation fieldset also holds the statement, date, frequency and status, and re-rendering the frame would discard typed input — trading one silent data-loss defect for another. `AttesterEligibilityService` now backs the partial, a session endpoint and its `Api::V1` twin, so what is OFFERED and what is ACCEPTED cannot drift. Original note: The eligible attesters and roles are computed server-side for the boundary the form was *rendered* with, so changing the boundary select leaves them behind — the form can offer `policy_manager` (instance-scoped, valid only for instance-wide evidence) and the server correctly refuses it. The model is right; the form has not been told. Fix by re-rendering the fieldset in a Turbo Frame on boundary change, or by fetching the eligible set the way the control picker already does — **not** by embedding a map of the whole estate. |
+| **#984** | ~~12 collection-view checks skip on four screens with no records~~ — **FIXED** | Seeded on the DEMO path (the estate builder's fixtures live behind `SPARC_SEED_REFERENCE`, a separate opt-in). `authoritative_sources` was seeded too — not one of the four, but empty on any fresh database for the same reason. **Running the seed end to end found a worse bug than the one filed:** on a fresh database `demo_ssp_sar` died on its first `SspDocument.create!` ("Authorization boundary can't be blank") because #929/#952 made the boundary mandatory and never updated the seed, so the section aborted and the second SSP and **both SARs** never ran — a new install had no SSP and no SAR. Fixed and the section bumped to 2.1.0. Original note: `test_collection_views` runs three checks across 16 screens; on `review_queue`, `promotion_queue`, `leveraged_poams` and `federation_peers` all three skip, because the screen is empty on a demo-seeded instance. Page load and console errors are still asserted — only the card-versus-table assertions never run, which is the file's actual subject and exactly what a change to the #888 shared component would break on all sixteen at once. Fix by SEEDING the four (the estate builder already produces review/promotion entries), not by creating records per test: view-mode persistence is across a visit and a torn-down fixture cannot exercise it. Keep the `_populated` guard — an empty collection is legitimate on a non-seeded deployment. |
+| **#982** | ~~`cdef_document_populated_from_profile` is unregistered~~ — **FIXED, and it was 69 actions, not one** | **The sweep the issue asked for found 69 unregistered actions across 79 call sites in 29 files** — API token create/revoke, every finding disposition, every federation peer change, the whole back-matter promotion workflow, and the `converter_*` / `ksi_validation_*` families. None wrote a row in ANY environment: `.log` rescues `RecordInvalid` internally, so the API base controller's `raise unless Rails.env.production?` never fired and dev/test were as silent as prod. Four more were reachable only by resolving the call sites that build their action at runtime. Two further corrections rode along, see below. Original note: The action is emitted by both the web and API controllers and appears nowhere in `AuditEvent::ACTIONS`, so the write fails validation and `audit_log` rescues it — silently. Worth more than the one-line fix: add a guard that fails when any `audit_log("…")` call site names an unregistered action, which catches the class rather than the instance, then sweep the remaining call sites. NIST AU-2 / AU-12 claim coverage this path does not deliver. |
+
+**Two corrections #982 pulled in, both owner-approved during planning.**
+
+**The action was renamed, not just registered.** `cdef_document_populated_from_profile` became
+`cdef_control_implementation_sourced_from_profile`, and the CDEF route/method
+`populate_from_profile` / `attach_profile` became `source_from_profile` /
+`select_profile_source`. An OSCAL SSP has `import-profile` as a first-class element, so
+`populate_from_profile` is **correct for SSPs and was left alone**; a component-definition has no
+such import — `import-component-definition` imports another CDEF — and reaches a profile only as
+`control-implementation/@source`. The CDEF path had borrowed the SSP's vocabulary for a
+relationship OSCAL does not give it. `POST /api/v1/cdef_documents/:id/populate_from_profile` is
+published, so it still routes to the renamed action: **deprecated, undocumented, removal in
+v1.18.0** alongside the `SPARC_BANNER_*` names (#909 precedent).
+
+**A profile-sourced CDEF exported a fabricated `@source`.** #911 declared `profile_document` as
+exactly that hop (`CdefDocument.lineage_via :profile_document`; `CatalogLineage` names the chain
+`cdef -> @source`) and #944 gave authors a field to name it, but the export read neither — every
+profile-sourced CDEF emitted `https://sparc.local/component-definitions/<primary key>`, a URI
+resolving to nothing, on a document whose entire control basis came from a published,
+UUID-bearing profile. Schema-valid the whole time, which is why validation never caught it:
+OSCAL requires `source` to be present, not to be true. Resolution order is now authored value →
+linked profile → `determine_source`, resolved live from the association so no backfill or
+migration is needed.
 
 ##### 15. Bundle Q — Polish
 
