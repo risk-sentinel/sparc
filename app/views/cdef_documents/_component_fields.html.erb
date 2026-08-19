@@ -41,7 +41,7 @@
   <div class="col-md-6">
     <div class="form-group">
       <%= f.label :control_implementation_source, "Control implementation source", class: "form-label" %>
-      <%= field_help "The catalog or profile whose controls this component implements. Without it, export synthesises a placeholder URL that resolves to nothing." %>
+      <%= field_help "The catalog or profile whose controls this component implements. Leave it blank when this component definition was built from a profile — export names that profile automatically. Set it only to point at a source SPARC has no record of; without either, export synthesises a placeholder URL that resolves to nothing." %>
       <%= f.text_field :control_implementation_source, class: "form-control",
             placeholder: "e.g. https://raw.githubusercontent.com/usnistgov/oscal-content/.../NIST_SP-800-53_rev5_catalog.json" %>
     </div>
