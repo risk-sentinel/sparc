@@ -37,6 +37,11 @@ RSpec.describe OscalMappingExportService do
 
   subject { described_class.new(mapping) }
 
+  # #989 — nine shape assertions, no validity assertion.
+  it_behaves_like "an OSCAL export with validated and unvalidated paths",
+                  model_type: :mapping,
+                  service: -> { described_class.new(mapping) }
+
   it_behaves_like "produces stable UUIDs across exports"
 
   describe "#export_unvalidated" do

@@ -678,7 +678,7 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 11 | O — Boundary attachment | #929 #952 | **Shipped** (PR #975) |
 | 12 | S — Controls layer: who can see it, and what it carries | #974 #959 #935 | **Shipped** (PR #976) |
 | 13 | P — Evidence completeness | #947 #948 | **Shipped** (PR #983) |
-| 14 | **T — Bundle P follow-ups** | **#981 #982 #984 #988** | **IN PR** (branch `bug/981_bundle_t_followups`) |
+| 14 | **T — Bundle P follow-ups** | **#981 #982 #984 #988 #989** | **IN PR** (branch `bug/981_bundle_t_followups`) |
 | 15 | Q — Polish | #936 | Queued |
 | 16 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
 
@@ -935,6 +935,20 @@ schema validity** — `oscal_catalog_export_service` (9/0), `oscal_mapping_expor
 `oscal_sar_export_service` (5/0), `hdf_aggregation_service` (2/0), `cdef_unmapped_stig_rules`
 (2/0), `oscal_compliance_audit` (1/0). Same class as #984: green while proving less than it
 appears. **Raised, not filed** — needs an owner call.
+
+**#989 joined the bundle** — owner-directed after the #988 report. Eight OSCAL export services
+define both `#export` (schema-validated) and `#export_unvalidated`; **four had specs that never
+called the validated method once** (SAP, SAR, catalog, mapping), so schema validity was an
+untested guarantee on those paths. Measured first: all four *succeed* today, so this was not a
+live defect — it was a guarantee no test asserted, which is exactly how #988 shipped. A shared
+example group now gives **all eight** the same contract: the validated path produces legal OSCAL,
+it validates against the **right** schema, it **raises rather than returning a payload** when
+validation fails (the alerting half, surfaced in the UI as `?oscal_validation_failed=1`), and
+`export_unvalidated` **does not validate** — so neither method can drift into the other unnoticed.
+Every existing `export_unvalidated` example is preserved: the four gap specs gained 38 lines and
+lost none, and their unvalidated call counts are unchanged. Mutation-checked three ways — dropping
+`validate!`, adding it to the unvalidated path, and validating against the wrong schema each turn
+the contract red.
 
 **Two corrections #982 pulled in, both owner-approved during planning.**
 

@@ -27,6 +27,12 @@ RSpec.describe OscalComponentDefinitionExportService do
 
   subject { described_class.new(cdef) }
 
+  # #989 — the shared contract, so this service cannot lose validation or gain
+  # it on the unvalidated path without a spec saying so.
+  it_behaves_like "an OSCAL export with validated and unvalidated paths",
+                  model_type: :component_definition,
+                  service: -> { described_class.new(cdef) }
+
   describe "#export — schema compliance" do
     it "produces schema-valid OSCAL JSON (validate! does not raise)" do
       expect { subject.export }.not_to raise_error

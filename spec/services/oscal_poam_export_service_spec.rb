@@ -1,6 +1,28 @@
 require "rails_helper"
 
 RSpec.describe OscalPoamExportService do
+  # #989 — the shared contract. Nested inside its own describe because this
+  # file's fixtures live per-block rather than at the top level; the POA&M is
+  # rebuilt here so the contract does not depend on another block's setup.
+  describe "the export contract" do
+    let(:boundary) { create(:authorization_boundary) }
+    let(:poam) do
+      create(:poam_document, name: "Contract POAM", authorization_boundary: boundary,
+                             oscal_version: "1.1.2", lifecycle_status: "in_progress")
+    end
+
+    before do
+      # The schema requires at least one POA&M item.
+      create(:poam_item, poam_document: poam, title: "An item",
+                         description: "Present so the document satisfies the schema",
+                         risk_status: "open")
+    end
+
+    it_behaves_like "an OSCAL export with validated and unvalidated paths",
+                    model_type: :poam,
+                    service: -> { described_class.new(poam.reload) }
+  end
+
   describe "#export — wizard-created POAMs (#389)" do
     let(:boundary) { create(:authorization_boundary) }
     let(:source_ssp) { create(:ssp_document, name: "Source SSP", authorization_boundary: boundary) }

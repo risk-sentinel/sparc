@@ -28,6 +28,18 @@ RSpec.describe OscalAssessmentPlanExportService do
 
   subject { described_class.new(sap) }
 
+  # #989 — seven shape assertions, no validity assertion.
+  it_behaves_like "an OSCAL export with validated and unvalidated paths",
+                  model_type: :assessment_plan,
+                  service: lambda {
+                    # Validated export additionally refuses a document citing
+                    # controls that exist in no loaded catalog (#911) — a
+                    # different failure from the one under test here.
+                    ensure_control("ac-1")
+                    ensure_control("ac-2")
+                    described_class.new(sap)
+                  }
+
   it_behaves_like "produces stable UUIDs across exports"
 
   describe "#export_unvalidated" do
