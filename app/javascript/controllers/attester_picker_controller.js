@@ -75,11 +75,18 @@ export default class AttesterPickerController extends Controller {
       // Say so rather than leave the previous boundary's options standing and
       // looking authoritative. A wrong offer is worse than a visible failure —
       // the save would be refused with a message the user cannot act on.
+      //
+      // The reason is carried through, the way control_picker_controller does
+      // it: "HTTP 403" and a dropped connection are different problems with
+      // different remedies, and a message that hides which one occurred leaves
+      // the user guessing. Swallowing the error object entirely would be the
+      // silent-failure pattern this screen already suffered from once.
       this.replaceAttesters([])
       this.eligibleValue = {}
       this.refresh()
       this.announce(
-        "Could not load attesters for this system. Reload the page and try again."
+        `Could not load attesters for this system (${error.message}). ` +
+          "Reload the page and try again."
       )
     }
   }
