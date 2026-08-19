@@ -25,12 +25,19 @@ module SeedRunner
     "demo_auth_boundary"   => "1.1.0",
     # #946 — the demo SSPs are now imported from committed OSCAL instead of
     # fabricated with a spreadsheet provenance they never had.
-    "demo_ssp_sar"         => "2.0.0",
+    # #984 — the section built SSPs with no authorization_boundary, which
+    # #929/#952 made mandatory. On a fresh database the first create! raised and
+    # took the second SSP and BOTH SARs with it. Re-run so any database that
+    # failed this section, or holds a boundary-less SSP, is healed.
+    "demo_ssp_sar"         => "2.1.0",
     # #946 — pinned UUID so the SSP fixtures' import-profile href resolves.
     "demo_published_profile" => "1.1.0",
     "demo_catalog_guidance" => "1.0.0",
     "demo_evidence"        => "1.2.0",  # #947 evidence completeness: control links, artefacts, verified attesters
     "demo_sample_artifacts" => "1.2.0",  # #832 POA&M risks carry a deadline
+    # #984 — review_queue, promotion_queue, leveraged_poams and federation_peers
+    # rendered nothing on a demo instance, so 12 collection-view checks skipped.
+    "demo_collection_screens" => "1.0.0",
     "oscal_schemas"         => "1.0.0",
     "cdef_service_aliases"  => "1.0.0",  # #904 coverage analysis escape hatches
     # #845 — the requested tier is appended to this at run time, so a tier
