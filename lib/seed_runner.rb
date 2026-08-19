@@ -37,7 +37,10 @@ module SeedRunner
     "demo_sample_artifacts" => "1.2.0",  # #832 POA&M risks carry a deadline
     # #984 — review_queue, promotion_queue, leveraged_poams and federation_peers
     # rendered nothing on a demo instance, so 12 collection-view checks skipped.
-    "demo_collection_screens" => "1.0.0",
+    # 1.1.0 — the #984 leveraged-authorization fixture was created without
+    # `date_authorized`, which OSCAL REQUIRES, so every SSP on the leveraging
+    # boundary failed export validation. Re-run to heal existing rows.
+    "demo_collection_screens" => "1.1.0",
     "oscal_schemas"         => "1.0.0",
     "cdef_service_aliases"  => "1.0.0",  # #904 coverage analysis escape hatches
     # #845 — the requested tier is appended to this at run time, so a tier

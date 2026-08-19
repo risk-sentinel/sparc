@@ -165,12 +165,31 @@ else
   end
   leveraged_boundary.update!(organization: default_org) if leveraged_boundary.organization_id.nil?
 
-  LeveragedAuthorization.find_or_create_by!(
+  # `date_authorized` is NOT optional even though the column is nullable: OSCAL
+  # requires it on every `leveraged-authorization`, and
+  # `OscalSspExportService#build_leveraged_authorizations` emits the entry
+  # regardless. Omitting it made EVERY SSP on the leveraging boundary fail
+  # export validation with
+  #   /system-implementation/leveraged-authorizations/0: missing required
+  #   properties: date-authorized
+  # — so a fixture added to un-skip four collection screens broke SSP export
+  # (JSON, XML and YAML) for the whole demo estate. Caught by the ui-smoke gate,
+  # invisible to rspec. `ReferenceEstateBuilder#wire_leveraging` sets both these
+  # fields for the same reason; this matches it.
+  leveraged_authorization = LeveragedAuthorization.find_or_create_by!(
     leveraging_boundary: auth_boundary,
     leveraged_boundary:  leveraged_boundary
   ) do |la|
-    la.name        = "#{auth_boundary.name} leverages #{leveraged_boundary.name}"
-    la.description = "DEMO/SAMPLE — leveraged authorization (#984)."
+    la.name            = "#{auth_boundary.name} leverages #{leveraged_boundary.name}"
+    la.crm_type        = "oscal_with_access"
+    la.date_authorized = Date.new(2026, 1, 15)
+    la.description     = "DEMO/SAMPLE — leveraged authorization (#984)."
+  end
+
+  # Heal a row created before the line above set the date — otherwise a demo
+  # instance seeded once already keeps exporting invalid SSPs forever.
+  if leveraged_authorization.date_authorized.blank?
+    leveraged_authorization.update!(date_authorized: Date.new(2026, 1, 15))
   end
 
   leveraged_poam = PoamDocument.find_or_create_by!(
