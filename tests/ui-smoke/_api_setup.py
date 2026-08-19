@@ -135,11 +135,13 @@ def create_profile() -> dict[str, Any]:
     with _client() as c:
         r = c.post(
             "/api/v1/profile_documents",
+            # No lifecycle_status: the default is the unpublished, EDITABLE state.
+            # `Lifecycle::LIFECYCLE_STATUSES` is `started / in_progress /
+            # published` — there is no "draft", and sending one 422s.
             json={
                 "profile_document": {
                     "name": _name("profile"),
                     "description": "ui-smoke",
-                    "lifecycle_status": "draft",
                 }
             },
         )

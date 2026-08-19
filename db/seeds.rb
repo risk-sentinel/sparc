@@ -2649,12 +2649,22 @@ sample_evidences.each do |attrs|
   control_ids = attrs.delete(:control_ids)
   evidence = Evidence.find_or_create_by!(title: attrs[:title]) do |e|
     e.assign_attributes(attrs.merge(collected_at: Time.current - rand(1..90).days))
-    e.evidence_control_links.build(control_id: control_ids.first)
+    # ALL of them, in the same save. Building one and adding the rest afterwards
+    # meant the follow-up used `find_or_create_by!` with the RAW identifier
+    # ("AC-01") while the stored value is canonical ("ac-1"), so it matched
+    # nothing, tried to insert a duplicate, and failed the whole seed on
+    # "Control has already been taken".
+    control_ids.each { |cid| e.evidence_control_links.build(control_id: cid) }
     seed_evidence_artifact(e)
   end
 
+  # For a record that already existed, top up any missing links — compared
+  # CANONICALLY, because that is the form the column holds.
+  existing = evidence.evidence_control_links.pluck(:control_id)
   control_ids.each do |cid|
-    evidence.evidence_control_links.find_or_create_by!(control_id: cid)
+    next if existing.include?(ControlId.canonical(cid))
+
+    evidence.evidence_control_links.create!(control_id: cid)
   end
 end
 
