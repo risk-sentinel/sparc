@@ -61,9 +61,21 @@
               class: "form-select" %>
       </div>
 
+      <%# #988 — required, and the form now says so. Leaving this blank used to
+          record a system as leveraging one that was never authorized, and OSCAL
+          requires `date-authorized` on every leveraged-authorization, so a
+          single dateless row made EVERY SSP on this boundary fail export in all
+          three formats. The input is visible, so `required` reports properly
+          here — unlike a hidden control, which refuses silently. %>
       <div class="mb-3">
         <%= f.label :date_authorized, "Date authorized", class: "form-label" %>
-        <%= f.date_field :date_authorized, class: "form-control" %>
+        <span class="text-danger">*</span>
+        <%= f.date_field :date_authorized, class: "form-control", required: true %>
+        <div class="form-text">
+          When the leveraged system received its authorization. A system cannot
+          leverage another that has not been authorized, and SSP exports for this
+          boundary will not validate without it.
+        </div>
       </div>
 
       <div class="mb-3">

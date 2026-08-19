@@ -21,7 +21,9 @@ RSpec.describe "LeveragedPoamDocuments", type: :request do
       name: "Test Leveraged Auth",
       uuid: SecureRandom.uuid,
       leveraging_boundary: leveraging_boundary,
-      leveraged_boundary: leveraged_boundary
+      leveraged_boundary: leveraged_boundary,
+      # #988 — a system cannot leverage one that was never authorized.
+      date_authorized: Date.new(2026, 1, 15)
     )
   end
   let!(:leveraged_poam) do

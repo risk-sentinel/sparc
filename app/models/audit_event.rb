@@ -340,6 +340,7 @@ class AuditEvent < ApplicationRecord
     ssp_statement_updated
     ssp_statement_reset_to_source
     ssp_inherited_refreshed
+    leveraged_authorizations_without_date_reported
 
     ssp_document_fields_imported
     sar_document_fields_imported
@@ -464,7 +465,8 @@ class AuditEvent < ApplicationRecord
                                      authorization_boundary_deleted authorization_boundary_delete_blocked
                                      project_created project_updated
                                      project_deleted boundary_created boundary_updated boundary_deleted
-                                     ato_package_created ato_package_exported],
+                                     ato_package_created ato_package_exported
+                                     leveraged_authorizations_without_date_reported],
     "Organizations" => %w[organization_created organization_updated organization_deactivated
                           organization_reactivated organization_member_added organization_member_removed
                           organization_boundary_assigned],

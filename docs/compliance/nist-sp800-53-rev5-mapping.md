@@ -214,7 +214,7 @@ injection for direct import into compliance dashboards.
 | CA-7(1) | Independent Assessment | H | Organizational Policy | Organization schedules independent continuous monitoring assessments | Org policy docs | Planned |
 | CA-7(4) | Risk Monitoring | H | Hybrid | Security pipeline evaluates severity thresholds via SAF CLI threshold gating against amended HDFs (#244); dependency audit detects new CVEs; Brakeman/CodeQL/Trivy/Gitleaks all enforce strict severity bands in `threshold.yml` | `.github/workflows/security.yml` (security_gate), `docs/compliance/threshold.yml` | Implemented |
 | CA-8 | Penetration Testing | H | Organizational Policy | Organization conducts penetration testing per policy | Org policy docs | Planned |
-| CA-9 | Internal System Connections | H | Hybrid | Application boundary scoping; network segmentation in sparc-iac | `app/controllers/concerns/authorization.rb`, sparc-iac | Partial |
+| CA-9 | Internal System Connections | H | Hybrid | Application boundary scoping; network segmentation in sparc-iac. **Leveraged authorizations must name an authorization date (#988)** — a boundary cannot be recorded as leveraging a system that was never authorized, so an interconnection record can always evidence the reliance it claims. Enforced on the model rather than the form, and legacy undated rows are reported and refused on next save rather than back-filled with a date belonging to another system's ATO. | `app/controllers/concerns/authorization.rb`, `app/models/leveraged_authorization.rb`, `db/migrate/20260819140000_report_leveraged_authorizations_without_date.rb`, sparc-iac | Partial |
 
 ---
 

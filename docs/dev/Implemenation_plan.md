@@ -678,7 +678,7 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 11 | O — Boundary attachment | #929 #952 | **Shipped** (PR #975) |
 | 12 | S — Controls layer: who can see it, and what it carries | #974 #959 #935 | **Shipped** (PR #976) |
 | 13 | P — Evidence completeness | #947 #948 | **Shipped** (PR #983) |
-| 14 | **T — Bundle P follow-ups** | **#981 #982 #984** | **IN PR** (branch `bug/981_bundle_t_followups`) |
+| 14 | **T — Bundle P follow-ups** | **#981 #982 #984 #988** | **IN PR** (branch `bug/981_bundle_t_followups`) |
 | 15 | Q — Polish | #936 | Queued |
 | 16 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
 
@@ -913,6 +913,28 @@ treating as one theme rather than three tickets.
 | **#981** | ~~The attester role list goes stale when the boundary changes~~ — **FIXED** | **Depends on #947.** Resolved with the JSON-lookup option, not the Turbo Frame: the attestation fieldset also holds the statement, date, frequency and status, and re-rendering the frame would discard typed input — trading one silent data-loss defect for another. `AttesterEligibilityService` now backs the partial, a session endpoint and its `Api::V1` twin, so what is OFFERED and what is ACCEPTED cannot drift. Original note: The eligible attesters and roles are computed server-side for the boundary the form was *rendered* with, so changing the boundary select leaves them behind — the form can offer `policy_manager` (instance-scoped, valid only for instance-wide evidence) and the server correctly refuses it. The model is right; the form has not been told. Fix by re-rendering the fieldset in a Turbo Frame on boundary change, or by fetching the eligible set the way the control picker already does — **not** by embedding a map of the whole estate. |
 | **#984** | ~~12 collection-view checks skip on four screens with no records~~ — **FIXED** | Seeded on the DEMO path (the estate builder's fixtures live behind `SPARC_SEED_REFERENCE`, a separate opt-in). `authoritative_sources` was seeded too — not one of the four, but empty on any fresh database for the same reason. **Running the seed end to end found a worse bug than the one filed:** on a fresh database `demo_ssp_sar` died on its first `SspDocument.create!` ("Authorization boundary can't be blank") because #929/#952 made the boundary mandatory and never updated the seed, so the section aborted and the second SSP and **both SARs** never ran — a new install had no SSP and no SAR. Fixed and the section bumped to 2.1.0. Original note: `test_collection_views` runs three checks across 16 screens; on `review_queue`, `promotion_queue`, `leveraged_poams` and `federation_peers` all three skip, because the screen is empty on a demo-seeded instance. Page load and console errors are still asserted — only the card-versus-table assertions never run, which is the file's actual subject and exactly what a change to the #888 shared component would break on all sixteen at once. Fix by SEEDING the four (the estate builder already produces review/promotion entries), not by creating records per test: view-mode persistence is across a visit and a torn-down fixture cannot exercise it. Keep the `_populated` guard — an empty collection is legitimate on a non-seeded deployment. |
 | **#982** | ~~`cdef_document_populated_from_profile` is unregistered~~ — **FIXED, and it was 69 actions, not one** | **The sweep the issue asked for found 69 unregistered actions across 79 call sites in 29 files** — API token create/revoke, every finding disposition, every federation peer change, the whole back-matter promotion workflow, and the `converter_*` / `ksi_validation_*` families. None wrote a row in ANY environment: `.log` rescues `RecordInvalid` internally, so the API base controller's `raise unless Rails.env.production?` never fired and dev/test were as silent as prod. Four more were reachable only by resolving the call sites that build their action at runtime. Two further corrections rode along, see below. Original note: The action is emitted by both the web and API controllers and appears nowhere in `AuditEvent::ACTIONS`, so the write fails validation and `audit_log` rescues it — silently. Worth more than the one-line fix: add a guard that fails when any `audit_log("…")` call site names an unregistered action, which catches the class rather than the instance, then sweep the remaining call sites. NIST AU-2 / AU-12 claim coverage this path does not deliver. |
+
+**#988 joined the bundle** — owner-directed, filed and fixed here. A boundary could be
+recorded as leveraging a system that was **never authorized**:
+`LeveragedAuthorization#date_authorized` was nullable with no presence validation and the form
+offered it as optional. OSCAL requires `date-authorized` on every `leveraged-authorization`, so a
+single dateless row made **every SSP on the leveraging boundary** fail export validation in all
+three formats, bouncing the user to `?oscal_validation_failed=1` with nothing naming the row
+responsible. The OSCAL round-trip sibling `SspLeveragedAuthorization` has **always** required it,
+and both feed the same `leveraged-authorizations` array — one output contract, two different
+rules. Fixed with a presence validation, a required form field, and a report-only data migration
+for legacy rows (#952 precedent: report, and refuse on next save, rather than inventing a date
+that belongs to someone else's ATO).
+
+**Why no spec caught it, and the wider gap it exposes.** Every example in
+`oscal_ssp_export_inheritance_spec.rb` called `export_unvalidated`, which checks the SHAPE of a
+field and skips schema validation entirely. A validated-export example now covers it. **Eight
+other spec files exercise an export path only through `export_unvalidated` and never once assert
+schema validity** — `oscal_catalog_export_service` (9/0), `oscal_mapping_export_service` (9/0),
+`oscal_assessment_plan_export_service` (7/0), `ato_package_export_service` (6/0),
+`oscal_sar_export_service` (5/0), `hdf_aggregation_service` (2/0), `cdef_unmapped_stig_rules`
+(2/0), `oscal_compliance_audit` (1/0). Same class as #984: green while proving less than it
+appears. **Raised, not filed** — needs an owner call.
 
 **Two corrections #982 pulled in, both owner-approved during planning.**
 

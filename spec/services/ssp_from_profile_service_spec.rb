@@ -281,7 +281,8 @@ RSpec.describe SspFromProfileService do
                                  .update!(set_parameters_data: [ { "tag" => "provided" } ])
 
         la = LeveragedAuthorization.create!(name: "LA", leveraging_boundary: b2,
-                                            leveraged_boundary: b1, crm_type: "oscal_with_access")
+                                            leveraged_boundary: b1, crm_type: "oscal_with_access",
+                                            date_authorized: Date.new(2026, 1, 15)) # #988
 
         expect(la.inheritable_statements.count).to eq(1)
         expect(LeveragedAuthorizationService.populate_from_leveraged!(la)).to eq(1)
