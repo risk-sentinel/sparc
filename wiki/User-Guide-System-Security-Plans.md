@@ -142,6 +142,44 @@ reflect the current state you want to submit.
 
 ---
 
+## How to record a product validation
+
+A FedRAMP or FISMA package leans on validated cryptography, and "this module is
+FIPS 140-2 validated, certificate #4282" is exactly the claim an assessor checks
+and an AO relies on.
+
+OSCAL models it as a **pair** of components — the product, and a separate
+component of type `validation` carrying the certificate — because the
+certificate is an assertion *about* the product, made by someone else. SPARC
+follows that model:
+
+1. Open **Enrich** on the SSP and add the **product** component (type
+   `software`, `hardware`, and so on) if it is not already there. Save.
+2. Add a second component with type **Validation**, titled for the certificate.
+   Save.
+3. Re-open **Enrich**. The validation component now shows a **Validation**
+   block. Fill in:
+   - **Validation type** — the scheme, e.g. `fips-140-2`
+   - **Certificate reference** — the certificate number
+   - **Authoritative record (URL)** — where the certificate can be verified
+   - **Validates which component** — the product it is about
+4. Save.
+
+The validation fields appear only on a component already typed `validation`;
+they mean nothing on any other type and are refused there rather than stored
+somewhere no export looks. That is why the type is saved first.
+
+On export, the validation component carries `validation-type` and
+`validation-reference` props and a `validation-details` link to the
+authoritative record, and the product carries a `validation` link back to it —
+so a consumer can follow the claim in either direction.
+
+Component definitions (CDEFs) support this only partly: a CDEF exports exactly
+one component and cannot carry a pair. See
+[Component Definitions](User-Guide-Component-Definitions).
+
+---
+
 ## Troubleshooting
 
 | Symptom | Likely cause | What to do |

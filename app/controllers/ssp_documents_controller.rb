@@ -729,7 +729,13 @@ class SspDocumentsController < ApplicationController
     seen_ids = []
 
     incoming.each do |c_params|
-      c_params = c_params.permit(:id, :component_type, :title, :description, :status_state)
+      # #998 — the validation pair. The model refuses these on a component that
+      # is not a validation, rather than storing them somewhere no exporter
+      # looks: an enum value with no supporting fields reads as support without
+      # being it.
+      c_params = c_params.permit(:id, :component_type, :title, :description, :status_state,
+                                 :validation_type, :validation_reference,
+                                 :validation_details_href, :validates_component_id)
       if c_params[:id].present? && existing_ids.include?(c_params[:id].to_i)
         record = @ssp_document.ssp_components.find(c_params[:id])
         record.update!(c_params.except(:id))

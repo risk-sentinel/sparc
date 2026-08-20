@@ -78,6 +78,19 @@ class CdefJsonParserService
 
     # Extract controls from components
     components = cdef["components"] || []
+
+    # #998 — component-level props and links had nowhere to go, and
+    # build_component emitted neither, so an imported CDEF's component-level
+    # claims were dropped on the way back out. Props and links were already
+    # carried on implemented-requirements and statements; the component was the
+    # one place they were missing.
+    #
+    # Taken from the FIRST component because a CdefDocument exports exactly one
+    # (`"components" => [ build_component ]`), built from the
+    # cdef_documents.component_* columns. That is also why a validation PAIR
+    # cannot be expressed in a CDEF at all — see #998, where the decision was to
+    # model validation on the SSP and document CDEF as partial.
+    capture_component_metadata(components.first)
     control_attrs = []
     field_entries = []
     row_order = 0
@@ -132,6 +145,17 @@ class CdefJsonParserService
     # Non-fatal: a CDEF that imports but fails to index is a degraded browser
     # row, not a failed import, and cdef:reindex can repair it.
     index_components(data)
+  end
+
+  # #998 — see the note at the call site.
+  def capture_component_metadata(component)
+    return if component.blank?
+
+    props = Array(component["props"])
+    links = Array(component["links"])
+    return if props.empty? && links.empty?
+
+    @document.update!(component_props_data: props, component_links_data: links)
   end
 
   def index_components(data)
