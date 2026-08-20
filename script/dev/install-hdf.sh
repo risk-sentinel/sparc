@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
 # Install the MITRE hdf-libs CLI (https://github.com/mitre/hdf-libs).
 #
-# Single source of truth for hdf-cli provisioning, used by:
-#   - Dockerfile (bakes binary into the SPARC container)
-#   - .github/workflows/security.yml (CI security_gate job)
-#   - Local development (run `bin/install-hdf.sh` to provision the binary)
+# LOCAL DEVELOPER CONVENIENCE ONLY (#1001). This downloads MITRE's published
+# release binary, which is the fastest way to get a working `hdf` on a laptop.
+#
+# It is deliberately NOT how the shipping image or CI gets the tool any more.
+# Both compile hdf-cli from source against a pinned Go toolchain, because the
+# published binaries are built with go1.26.5 and the GO-2026-5026 stdlib fix
+# line is go1.26.6 — no release download can clear that, whatever version it
+# names. See the hdf-builder stage in ./Dockerfile and the security_gate job
+# in .github/workflows/security.yml.
+#
+# So a binary installed by this script may report the same `hdf version` as the
+# one in the container and still carry CVEs the container does not. That is
+# fine for local work and is the reason this lives under script/dev/ rather
+# than bin/. Do not re-wire a build or a gate to it.
 #
 # Pinned version: HDF_LIBS_VERSION env var (default tracks current SPARC release).
 # Install path:   $HDF_INSTALL_DIR (default /usr/local/bin) — caller may need sudo.
@@ -91,6 +101,6 @@ if [[ -n "${RESOLVED}" && "${RESOLVED}" != "${HDF_INSTALL_DIR}/hdf" ]]; then
   echo "  ${RESOLVED} reports: $("${RESOLVED}" version 2>/dev/null | head -1)"
   echo "  Most often a leftover 'go install' build in \$GOBIN shadowing this one."
   echo "  Fix by installing over the copy that wins:"
-  echo "    HDF_LIBS_VERSION=${HDF_LIBS_VERSION} HDF_INSTALL_DIR=\"$(dirname "${RESOLVED}")\" bin/install-hdf.sh"
+  echo "    HDF_LIBS_VERSION=${HDF_LIBS_VERSION} HDF_INSTALL_DIR=\"$(dirname "${RESOLVED}")\" script/dev/install-hdf.sh"
   echo "  Or remove the shadowing copy:  rm ${RESOLVED} && hash -r"
 fi

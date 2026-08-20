@@ -171,7 +171,7 @@ the boundary id for forensic traceability.
 
 ```bash
 # One-time: install hdf binary into your shell's PATH
-bin/install-hdf.sh   # installs the pinned version (3.5.1)
+script/dev/install-hdf.sh   # installs the pinned version (3.5.1)
 
 # Verify
 hdf version

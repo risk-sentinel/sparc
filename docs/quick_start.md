@@ -40,20 +40,27 @@ image bakes it in, so this is only needed for local development against the
 bridge — everything else runs without it.
 
 ```bash
-sudo bin/install-hdf.sh          # installs the pinned version to /usr/local/bin
+sudo script/dev/install-hdf.sh   # installs the pinned version to /usr/local/bin
 hdf version                      # confirm
 ```
 
-`bin/install-hdf.sh` is the single source of truth for provisioning, shared by
-the `Dockerfile` and CI. It downloads the release tarball, **verifies SHA-256
-against the release `checksums.txt`**, and refuses to install on mismatch. It
+`script/dev/install-hdf.sh` is a **local developer convenience**. It downloads
+the release tarball, **verifies SHA-256 against the release `checksums.txt`**,
+and refuses to install on mismatch.
+
+It is no longer how the image or CI get the tool. Both compile hdf-cli from
+source against a pinned Go toolchain (#1001), because every published hdf
+release is built with `go1.26.5` and the `GO-2026-5026` stdlib fix line is
+`go1.26.6` — so a locally installed binary can report the same `hdf version` as
+the container and still carry CVEs the container does not. That is fine for
+local work against the bridge, which is all this script is for. It
 defaults to the version SPARC pins (`HdfRunner::PINNED_VERSION`); override with
 `HDF_LIBS_VERSION=x.y.z` to test another build, or `HDF_INSTALL_DIR=...` to
 install somewhere other than `/usr/local/bin` (no `sudo` needed for a writable
 directory):
 
 ```bash
-HDF_LIBS_VERSION=3.5.1 HDF_INSTALL_DIR="$PWD/tmp/hdfbin" bin/install-hdf.sh
+HDF_LIBS_VERSION=3.5.1 HDF_INSTALL_DIR="$PWD/tmp/hdfbin" script/dev/install-hdf.sh
 ```
 
 > **If `hdf version` still reports the old version after installing**, another
@@ -61,7 +68,7 @@ HDF_LIBS_VERSION=3.5.1 HDF_INSTALL_DIR="$PWD/tmp/hdfbin" bin/install-hdf.sh
 > in `$GOBIN` (usually `~/go/bin`), which commonly precedes `/usr/local/bin`.
 > The installer now detects this and prints the fix. Check with `which hdf`, then
 > either install over the copy that wins
-> (`HDF_INSTALL_DIR="$(dirname "$(command -v hdf)")" bin/install-hdf.sh`) or
+> (`HDF_INSTALL_DIR="$(dirname "$(command -v hdf)")" script/dev/install-hdf.sh`) or
 > remove it (`rm "$(command -v hdf)" && hash -r`).
 
 SPARC only asserts the version when you ask it to: set

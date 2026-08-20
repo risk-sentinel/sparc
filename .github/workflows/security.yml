@@ -1405,7 +1405,6 @@ jobs:
             docs/compliance/sparc-findings.yml
             docs/compliance/threshold.yml
             bin/sparc_findings_to_hdf_amendments.rb
-            bin/install-hdf.sh
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (converter only — no bundle)
@@ -1419,21 +1418,54 @@ jobs:
           name: hdf-results
           path: hdf-results/
 
-      - name: Install hdf (mitre/hdf-libs CLI)
-        # Single source of truth for hdf provisioning is bin/install-hdf.sh —
-        # used here, by the SPARC Dockerfile (#449), and by local dev. The
-        # script handles arch detection and SHA-256 verification against
-        # checksums.txt from the same release.
+      # hdf-cli, compiled from source with the same pinned toolchain the image
+      # uses (#1001). This job used to run bin/install-hdf.sh, which downloads
+      # MITRE's release binary. Two problems with that, both found by measuring
+      # rather than reading:
+      #
+      #   1. It had drifted. This job pinned HDF_LIBS_VERSION 3.4.1 while the
+      #      image baked 3.5.1, so the gate validated amendments with a
+      #      different binary than the product ships — the exact failure the
+      #      script's "single source of truth" header claimed to prevent. The
+      #      3.4.1 pin existed "until hdf-libs ships the fix for the oscal-sar
+      #      schema defects (mitre/hdf-libs#184)", which 3.5.1 shipped in
+      #      #993/#996 and nothing came back to unpin.
+      #   2. Every published hdf release, 3.5.1 included, is built with
+      #      go1.26.5; the GO-2026-5026 fix line is go1.26.6. A download cannot
+      #      clear a stdlib CVE — choosing the toolchain does.
+      #
+      # HDF_LIBS_VERSION lives in Dockerfile as the single ARG both surfaces
+      # follow. Grep repo-wide before changing it.
+      - name: Set up Go (pinned to the hdf-cli fix line)
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.6'
+
+      - name: Build hdf (mitre/hdf-libs CLI) from source
         env:
-          # Pinned to 3.4.1 org-wide until hdf-libs ships the fix for the
-          # oscal-sar schema defects (mitre/hdf-libs#184, root-caused upstream).
-          # Was 3.2.0, which silently diverged from the 3.4.1 the image bakes —
-          # and 3.2.0 cannot perform hdf->oscal-sar at all. Verified before
-          # bumping: `hdf amend verify`, `amend list` and `amend apply` all
-          # behave identically on 3.2.0 and 3.4.1 against this repo's real
-          # sparc-findings.yml amendments, which is all this job uses.
-          HDF_LIBS_VERSION: "3.4.1"
-        run: bin/install-hdf.sh
+          HDF_LIBS_VERSION: "3.5.1"
+          # hdf-libs 3.5.1 pins golang.org/x/text v0.27.0 (CVE-2026-56852,
+          # HIGH). Bumped here to match the image; drop when upstream ships
+          # x/text >= 0.39.0.
+          XTEXT_VERSION: "0.39.0"
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
+            https://github.com/mitre/hdf-libs.git /tmp/hdf-src
+          cd /tmp/hdf-src/hdf-cli
+          go mod edit -require="golang.org/x/text@v${XTEXT_VERSION}"
+          go mod download golang.org/x/text
+          PKG="github.com/mitre/hdf-libs/hdf-cli/v3/cmd/hdf/cmd"
+          CGO_ENABLED=0 go build -trimpath \
+            -ldflags "-s -w -X ${PKG}.version=${HDF_LIBS_VERSION}" \
+            -o /usr/local/bin/hdf ./cmd/hdf
+          # Read the result back out of the binary rather than trusting the
+          # steps above — a drifted requirement or a changed toolchain would
+          # otherwise build clean and reintroduce the CVE silently.
+          go version -m /usr/local/bin/hdf | grep -E "golang.org/x/text[[:space:]]+v${XTEXT_VERSION}" \
+            || { echo "::error::hdf does not carry x/text v${XTEXT_VERSION}"; exit 1; }
+          hdf version | grep -q "${HDF_LIBS_VERSION}" \
+            || { echo "::error::hdf is not version ${HDF_LIBS_VERSION}"; exit 1; }
 
       - name: Convert sparc-findings.yml to HDF Amendments
         run: |

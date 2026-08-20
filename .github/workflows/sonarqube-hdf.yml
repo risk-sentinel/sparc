@@ -73,7 +73,10 @@ env:
   # schema defects (mitre/hdf-libs#184, root-caused upstream). Was v3.3.2,
   # which diverged from the 3.4.1 baked into the app image — and 3.3.2 emits
   # OSCAL SAR without `risk/statement`, a defect 3.4.0 fixed. Keep this equal
-  # to bin/install-hdf.sh's HDF_LIBS_VERSION.
+  # to the HDF_LIBS_VERSION in Dockerfile. NOTE (#1001): this pin is STALE at
+  # v3.4.1 while the image and security_gate are on 3.5.1, and the reason
+  # given above (mitre/hdf-libs#184) was resolved by #993/#996. Left alone
+  # deliberately — changing this workflow needs its own approval.
   HDF_CLI_VERSION: v3.4.1
   SAF_VERSION: '1.6.0'
   BUCKET: sparc-prod-security-artifacts

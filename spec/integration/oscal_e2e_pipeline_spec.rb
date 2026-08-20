@@ -696,7 +696,8 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       let(:hdf_fixture) { Rails.root.join("spec/fixtures/files/hdf/sample-results.hdf.json").to_s }
 
       # These drive the REAL hdf-cli, so they need the binary. The container
-      # image installs it (bin/install-hdf.sh, pinned to HDF_LIBS_VERSION), and
+      # image compiles it from source (the hdf-builder stage in Dockerfile,
+      # pinned to HDF_LIBS_VERSION), and
       # so does a local dev setup; the GitHub Actions runner does NOT, so
       # without this they fail with Errno::ENOENT there.
       #
@@ -712,8 +713,9 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
 
       before do
         unless hdf_cli_available?
-          skip "hdf-cli not on PATH. The container image installs it via " \
-               "bin/install-hdf.sh; the CI runner does not (see #835). " \
+          skip "hdf-cli not on PATH. The container image compiles it in; " \
+               "locally, script/dev/install-hdf.sh provisions one. The CI " \
+               "runner has neither (see #835). " \
                "Run these in the image: docker compose exec web bundle exec rspec"
         end
       end

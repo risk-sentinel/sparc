@@ -220,7 +220,7 @@ RSpec.describe HdfRunner do
 
       expect(allowed).to include(reported),
         "local hdf reports #{reported.inspect}, expected one of #{allowed.inspect}. " \
-        "Upgrade with `sudo bin/install-hdf.sh` (check `which hdf` — a `go install` " \
+        "Upgrade with `sudo script/dev/install-hdf.sh` (check `which hdf` — a `go install` " \
         "build in $GOBIN can shadow it), or set SPARC_HDF_ALLOWED_VERSIONS=#{reported}."
     end
 

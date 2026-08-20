@@ -41,7 +41,8 @@ ARG HDF_LIBS_VERSION=3.5.1
 ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:8eb2830d0936237fc13a1f2f7e45aecf90d69043380ad167fad0343632937f41
 
 # ── hdf-builder: hdf-cli compiled from source, toolchain pinned (#1001) ──────
-# This used to be a release-tarball download (bin/install-hdf.sh). Same tool,
+# This used to be a release-tarball download (script/dev/install-hdf.sh, then
+# at bin/). Same tool,
 # same org, two strategies — and only one of them can fix a Go stdlib CVE.
 #
 # Measured with `go version -m` on the binary that shipped in v1.16.0-rc:
@@ -57,8 +58,10 @@ ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:8eb2830d0936237
 # v3.5.1 tag from the same canonical repo and then asserts, twice, on what the
 # emitted binary actually contains — which the tarball path never did.
 #
-# bin/install-hdf.sh is deliberately KEPT: CI's security_gate and local dev
-# still provision the tool that way, and neither ships to a user.
+# The download script is KEPT, demoted to script/dev/install-hdf.sh, as a
+# local developer convenience only. CI's security_gate builds from source
+# the same way this stage does, so no surface that gates or ships a
+# release depends on the published binary any more.
 #
 # Pin the patch (golang:1.26.6), not the minor (golang:1.26) — a floating minor
 # does not deterministically clear a stdlib CVE, which is the entire point.
