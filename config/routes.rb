@@ -804,6 +804,19 @@ Rails.application.routes.draw do
       # CRUD API endpoints (#95)
       # #841 — issuing a reset is a user-facing admin function, so it has an API
       # surface too. Returns the one-time link; the token is never persisted.
+      # #1011 — converters ingest external framework mappings (CCI, AWS Config,
+      # AWS Security Hub, STIG). Every refresh and import was browser-only.
+      # The three web refresh actions collapse into one endpoint: they differ
+      # only in the converter_type they accept, and a caller already knows it.
+      resources :converters, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          post :refresh
+          get  :export
+        end
+        resources :entries, only: [ :index, :create, :destroy ],
+                  controller: "converter_entries"
+      end
+
       # #1012 — organizations scope boundaries and documents, and membership
       # decides who can see what. Never hard-deleted: deactivate/reactivate
       # preserve the UUID for audit traceability, so there is no destroy.
