@@ -804,6 +804,21 @@ Rails.application.routes.draw do
       # CRUD API endpoints (#95)
       # #841 — issuing a reset is a user-facing admin function, so it has an API
       # surface too. Returns the one-time link; the token is never persisted.
+      # #1012 — organizations scope boundaries and documents, and membership
+      # decides who can see what. Never hard-deleted: deactivate/reactivate
+      # preserve the UUID for audit traceability, so there is no destroy.
+      resources :organizations, only: [ :index, :show, :create, :update ] do
+        member do
+          post :deactivate
+          post :reactivate
+          post "boundaries", to: "organizations#assign_boundary"
+          get  "members",    to: "organizations#members"
+          post "members",    to: "organizations#add_member"
+          delete "members/:membership_id", to: "organizations#remove_member",
+                 as: :remove_member
+        end
+      end
+
       # #1013 — every part of a service account's lifecycle was browser-only,
       # so provisioning automation could not provision the identity it runs as,
       # and rotating a compromised credential needed a human.
