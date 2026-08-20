@@ -108,6 +108,10 @@ The SSP detail page (`/ssp_documents/:id`) is where the real work happens.
      **read-only here** — an SSP consumes the baseline, it does not define it.
      To change a value, tailor it on the baseline itself (see
      [Control Catalogs and Baselines](User-Guide-Control-Catalogs-and-Baselines#how-to-tailor-a-baselines-parameters)).
+     It also lists the control's **implementation statements** — the lettered
+     sub-parts (`ac-1a`, `ac-1a.1`, …) — with the same values substituted.
+
+     ![The read-only What This Baseline Requires panel on an SSP control card, showing the resolved control statement, parameters, guidance and implementation statements](images/ssp-baseline-requires.png)
 3. Click **Edit** on the card to open the inline form and set:
    - **Status** (implementation status)
    - **Control application** and **coverage level**
@@ -164,6 +168,8 @@ follows that model:
    - **Authoritative record (URL)** — where the certificate can be verified
    - **Validates which component** — the product it is about
 4. Save.
+
+![The Validation block on an SSP component in the Enrich screen, with validation type, certificate reference, authoritative record URL and the component it validates](images/ssp-component-validation.png)
 
 The validation fields appear only on a component already typed `validation`;
 they mean nothing on any other type and are refused there rather than stored
