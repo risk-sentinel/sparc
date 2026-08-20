@@ -1277,7 +1277,75 @@ does not repeat it.
    reading, and nothing else would have caught it.
 5. **Findings filed as issues, not fixed inline** (per `issue_rules.md`).
 
+#### Progress, measured 2026-08-20 — first pass on branch `feature/995_api_contract_sweep`
+
+**Three of this section's own numbers were wrong, and the corrections matter more
+than the progress.**
+
+- **"229 route entries / 168 logical endpoints" — the second figure is 208.**
+  Both denominators are real (229 counts PATCH and PUT separately; 208 collapses
+  the aliases), but `docs/api/INVENTORY.md` published **142** and had done since
+  2026-07-18, so every percentage it carried was computed against a denominator
+  66 endpoints short. It read as 99% documented and 93% in Postman. Measured
+  honestly: **165 of 208 listed in a doc page's own Endpoints table, 24 more
+  mentioned only in prose, 19 documented nowhere.**
+  The summary drifted because it was hand-written prose beside a generated
+  table. It is generated now, between markers, along with the gaps list.
+- **"Four modules never read a response body at all" is a measurement artefact**
+  of grepping for `.json()`. `test_sessions.py` asserts a cookie, which is that
+  endpoint's actual contract, and then uses it to fetch an authenticated page;
+  `test_authoritative_sources.py` parses every body through
+  `assert_error_envelope`; `test_admin_credentials.py` documents why it stops at
+  the gate paths, and its published contract was checked against the controller
+  and matches. **Only `test_artifacts.py` was a real gap** — it asserted 404 and
+  401 and nothing else, so it would have passed against a resolver that 404'd
+  for every artifact.
+- **The Postman collection was worse than "63% covered".** It had **zero** saved
+  response examples, 15 write requests with no body at all, and a Bulk Update
+  Parameters body carrying the object map the API refuses — the published
+  collection taught the payload that #994 answered `200 {"status":"updated"}` to.
+
+**Landed on the branch:**
+
+| | |
+|---|---|
+| `f82a1d67` | INVENTORY baseline generated, not asserted; the doc matcher now reads each page's own Endpoints table instead of grepping for an action name anywhere in a mapped file |
+| `f383c57f` | `assert_update_round_trip` + `assert_unhandled_payload_is_not_reported_as_success`; `sparc-api doctor` fixed (it never passed `-k`, so it reported valid tokens as rejected against the local UBI9 target this document mandates) |
+| `605e5dc3` | all 8 status-only update tests converted to real round trips, one committed RED |
+| `b4d7f8c5` | **#1007** and **#1008** fixed |
+| `8ea6821a` | unrecognised fields refused at all 25 permit sites |
+| `0e1866b0` | Postman reconciled: 132 → **208 of 208**, 93 saved examples captured live |
+| `34c06b03` | artifact resolver happy path; the "body-blind" count corrected |
+
+**Findings, all filed:**
+
+- **#1007** — a tailored ODP wrote, persisted, and read back as the old value.
+  `load_current_values` keyed a flat map by `param_id` across every control, so
+  a control and its statement sub-part fought over one logical parameter and
+  iteration order decided the winner. `parameters_updated` counted attempts
+  rather than writes, so it could not report the discrepancy in principle.
+- **#1008** — a **published** profile's parameters could be rewritten, on the API
+  and the web path alike. The `Lifecycle` concern has documented "Published
+  documents are read-only" since it was written; nothing enforced it.
+- **The refusal policy** (owner-decided): every write endpoint accepted and
+  silently discarded unknown fields. Two cases were security-relevant — evidence
+  provenance and an attestation's `attester_name` were accepted-and-ignored, so
+  a caller backdating evidence or attesting under another name received 201 and
+  a record they could reasonably believe carried what they sent.
+
+**Yield so far: two filed defects plus a policy-level defect, from roughly four
+groups.** Extrapolating 34 groups from that is not yet warranted — the groups
+touched first were chosen because they were named as weak — but nothing so far
+argues the ~2026-09-21 target is comfortable.
+
 #### Progress by group — 229 route entries, 34 groups
+
+**No group is yet complete under the 6-check matrix above**, so nothing below is
+ticked. The work landed so far is per-endpoint rather than per-group: the eight
+update endpoints, the parameters endpoints, artifacts, and a refusal path on
+every write endpoint in the API.
+
+
 
 | Group | Entries | Writes | Reads | Swept |
 | --- | --- | --- | --- | --- |
@@ -1737,7 +1805,7 @@ removed and are no longer tracked:
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
-| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, ~~#947~~, ~~#948~~, ~~#981~~, ~~#982~~, ~~#984~~, ~~#988~~, ~~#989~~, ~~#936~~, ~~#991~~, ~~#993~~, ~~#994~~, ~~#997~~, ~~#998~~, ~~#999~~, #995, #951, #860, #842, #822, #1001, #1002, #1003, #1004 | In Progress — **44 of 53 shipped** (merged PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969, #975, #976, #983, #986, #992, #996, #1000; **#1005 open**). Bundles **O** (#929 #952, PR #975), **S** (#974 #959 #935, PR #976), **P** (#947 #948, PR #983), **T** (#981 #982 #984 #988 #989, PR #986), **Q** (#936 #991, PR #992) and the **hdf-cli 3.5.1 pin** (#993, PR #996) have all shipped. **Bundle U** (#997 #999 #998 + #994) shipped in PR #1000; **Bundle W** (#1001 #1002 #1003) plus U's carried debt is **in [PR #1005](https://github.com/risk-sentinel/sparc/pull/1005) on `bug/1001_ubi9_findings_and_bundle_u_debt`, NOT MERGED** — 15 commits, image CVEs 132 -> 80, undispositioned HIGHs 19 -> 0, rspec 5669/0/10, tests/api 473, ui-smoke 496 passed / 9 skipped / 0 failed. **#1002, #1003 and #1004 were all filed during it**: the first two found by running Bundle U's held gate, the third by the OWNER reviewing live exports — none by the suite. The count moved 16 → 24 → 25 → 32 → 36 → 37 → 39 → 40 → 49 → 50 → 52 → **53**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; **#981, #982 came from Bundle P's verification gate**; **#988, #989 from Bundle T**, **#991 from Bundle Q** and **#993 from the hdf pin**; and **#994, #995, #997, #998, #999 were filed on 2026-08-19 — every one of them found by USING the product rather than by the suite**, which is the argument #995 makes; **#1001 was filed on 2026-08-20 from a scan of the shipping image**, which is the same argument aimed at the container; **#1002 and #1003 were filed and fixed inside Bundle W**, both surfaced by running the gate Bundle U had held — neither the suite nor a reading of the code had found either. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** (#997 #999 #998 #994, SHIPPED in PR #1000 -> `27aea200`) → **W + U's carried debt** (#1001) → **V** (#995 #951) → **R** (#860 #842 #822 +#820). **W was moved from LAST to FIRST on 2026-08-20 at owner direction**, to land the milestone; the earlier "W is last" placement in the Bundle W section above is superseded. **#951 and #995 were slotted into Bundle V on 2026-08-19**, which makes V the next bundle and moves R behind it — the right order for a release gate whose findings generate work. **Bundle V is the endpoint sweep, and the gate is SWEPT + FIXED** (owner-decided 2026-08-20): all 229 `/api/v1` route entries verified against their published contracts with an independent read — ~1,294 checks against the 103 value-verifying assertions that exist today — **and every finding fixed inside this milestone**, tracked per group. **Treat the ~2026-09-21 target as provisional until the first three groups report a yield.** Nothing on the milestone is now in no bundle. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, ~~#947~~, ~~#948~~, ~~#981~~, ~~#982~~, ~~#984~~, ~~#988~~, ~~#989~~, ~~#936~~, ~~#991~~, ~~#993~~, ~~#994~~, ~~#997~~, ~~#998~~, ~~#999~~, #995, #951, #860, #842, #822, #1001, #1002, #1003, #1004, #1007, #1008 | In Progress — **47 of 55 closed** (recounted 2026-08-20 with `gh issue list --milestone v1.16.0 --state all --limit 300`; the default 30-row limit under-reports it, and the milestone page counts PRs too). Open: 822 842 860 951 995 1004 1007 1008 — **#1007 and #1008 are fixed on `feature/995_api_contract_sweep` and close when it merges**. Previously **44 of 53 shipped** (merged PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969, #975, #976, #983, #986, #992, #996, #1000; **#1005 open**). Bundles **O** (#929 #952, PR #975), **S** (#974 #959 #935, PR #976), **P** (#947 #948, PR #983), **T** (#981 #982 #984 #988 #989, PR #986), **Q** (#936 #991, PR #992) and the **hdf-cli 3.5.1 pin** (#993, PR #996) have all shipped. **Bundle U** (#997 #999 #998 + #994) shipped in PR #1000; **Bundle W** (#1001 #1002 #1003) plus U's carried debt is **in [PR #1005](https://github.com/risk-sentinel/sparc/pull/1005) on `bug/1001_ubi9_findings_and_bundle_u_debt`, NOT MERGED** — 15 commits, image CVEs 132 -> 80, undispositioned HIGHs 19 -> 0, rspec 5669/0/10, tests/api 473, ui-smoke 496 passed / 9 skipped / 0 failed. **#1002, #1003 and #1004 were all filed during it**: the first two found by running Bundle U's held gate, the third by the OWNER reviewing live exports — none by the suite. The count moved 16 → 24 → 25 → 32 → 36 → 37 → 39 → 40 → 49 → 50 → 52 → **53**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; **#981, #982 came from Bundle P's verification gate**; **#988, #989 from Bundle T**, **#991 from Bundle Q** and **#993 from the hdf pin**; and **#994, #995, #997, #998, #999 were filed on 2026-08-19 — every one of them found by USING the product rather than by the suite**, which is the argument #995 makes; **#1001 was filed on 2026-08-20 from a scan of the shipping image**, which is the same argument aimed at the container; **#1002 and #1003 were filed and fixed inside Bundle W**, both surfaced by running the gate Bundle U had held — neither the suite nor a reading of the code had found either. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** (#997 #999 #998 #994, SHIPPED in PR #1000 -> `27aea200`) → **W + U's carried debt** (#1001) → **V** (#995 #951) → **R** (#860 #842 #822 +#820). **W was moved from LAST to FIRST on 2026-08-20 at owner direction**, to land the milestone; the earlier "W is last" placement in the Bundle W section above is superseded. **#951 and #995 were slotted into Bundle V on 2026-08-19**, which makes V the next bundle and moves R behind it — the right order for a release gate whose findings generate work. **Bundle V is the endpoint sweep, and the gate is SWEPT + FIXED** (owner-decided 2026-08-20): all 229 `/api/v1` route entries verified against their published contracts with an independent read — ~1,294 checks against the 103 value-verifying assertions that exist today — **and every finding fixed inside this milestone**, tracked per group. **Treat the ~2026-09-21 target as provisional until the first three groups report a yield.** Nothing on the milestone is now in no bundle. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 
