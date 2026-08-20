@@ -1,0 +1,1261 @@
+# Retired security findings — remediation VERIFIED ABSENT from the shipping image.
+#
+# A fixed finding is retired, not reviewed on a cadence: a review cadence asks
+# "is this accepted risk still acceptable?", which is a question about a LIVE
+# disposition. Owner-decided 2026-08-20.
+#
+# Retirement is HARDER than review, deliberately. Every entry here carries
+# `verified_absent_on` and `verified_by` — the date a real scan of the shipping
+# image reported nothing, and what scanned it. Without that, retiring is just
+# deleting. scripts/ci/check_findings_freshness.rb gates on their presence.
+#
+# This file is EVIDENCE (FedRAMP): append, do not rewrite history.
+findings:
+- cve_id: GO-2026-5005
+  package: golang.org/x/crypto
+  installed_version: 0.46.0
+  fixed_version: 0.52.0
+  severity: CRITICAL
+  disposition: remediated
+  rationale: REMEDIATED (#639 — thruster gem removed; the Go binary is no longer in the image, so this
+    finding no longer appears in the scan). FALSE POSITIVE (unreachable). CVE-2026-39833 — invoking key
+    constraints are not enforced in golang.org/x/crypto/ssh/agent. Flagged because the thruster 0.1.21
+    Go reverse-proxy binary (gem "thruster", in front of Puma) embeds golang.org/x/crypto v0.46.0, but
+    thruster imports x/crypto only for ACME/autocert TLS — NOT the ssh/ssh-agent/knownhosts subpackages.
+    SPARC runs no SSH client, server, or agent through thruster or anywhere in the app; the vulnerable
+    golang.org/x/crypto/ssh/agent code path is never imported or invoked (Go dead-code elimination drops
+    unimported packages). Same present-but-unreachable basis as the libgnutls30/perl entries above. Remediation
+    candidate when an upstream thruster release bumps golang.org/x/crypto>=0.52.0.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-06-04'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: GO-2026-5006
+  package: golang.org/x/crypto
+  installed_version: 0.46.0
+  fixed_version: 0.52.0
+  severity: CRITICAL
+  disposition: remediated
+  rationale: 'REMEDIATED (#639 — thruster gem removed; the Go binary is no longer in the image, so this
+    finding no longer appears in the scan). FALSE POSITIVE (unreachable). CVE-2026-39832 — agent constraints
+    dropped when forwarding keys in golang.org/x/crypto/ssh/agent. thruster (the only consumer of x/crypto
+    in the image) is an HTTP/2 reverse proxy and does not import golang.org/x/crypto/ssh/agent; SPARC
+    performs no SSH agent forwarding. The vulnerable code path is not linked or invoked. Same basis as
+    the other x/crypto/ssh findings in #612. Remediation: upstream thruster release bumping golang.org/x/crypto>=0.52.0.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-06-04'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: GO-2026-5017
+  package: golang.org/x/crypto
+  installed_version: 0.46.0
+  fixed_version: 0.52.0
+  severity: CRITICAL
+  disposition: remediated
+  rationale: 'REMEDIATED (#639 — thruster gem removed; the Go binary is no longer in the image, so this
+    finding no longer appears in the scan). FALSE POSITIVE (unreachable). CVE-2026-39830 — a client can
+    cause server deadlock on unexpected responses in golang.org/x/crypto/ssh. thruster does not import
+    golang.org/x/crypto/ssh; SPARC runs no SSH server, so the deadlock path cannot be reached. x/crypto
+    is present in the thruster binary only for ACME/autocert TLS. Remediation: upstream thruster release
+    bumping golang.org/x/crypto>=0.52.0.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-06-04'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: GO-2026-5019
+  package: golang.org/x/crypto
+  installed_version: 0.46.0
+  fixed_version: 0.52.0
+  severity: CRITICAL
+  disposition: remediated
+  rationale: 'REMEDIATED (#639 — thruster gem removed; the Go binary is no longer in the image, so this
+    finding no longer appears in the scan). FALSE POSITIVE (unreachable). CVE-2026-39831 — bypass of FIDO/U2F
+    security-key physical-interaction in golang.org/x/crypto/ssh. SPARC uses no SSH and no FIDO/U2F SSH
+    keys; thruster (HTTP proxy) does not import golang.org/x/crypto/ssh. The code path is not linked or
+    invoked. Remediation: upstream thruster release bumping golang.org/x/crypto>=0.52.0.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-06-04'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: GO-2026-5020
+  package: golang.org/x/crypto
+  installed_version: 0.46.0
+  fixed_version: 0.52.0
+  severity: CRITICAL
+  disposition: remediated
+  rationale: 'REMEDIATED (#639 — thruster gem removed; the Go binary is no longer in the image, so this
+    finding no longer appears in the scan). FALSE POSITIVE (unreachable). CVE-2026-39834 — infinite loop
+    on large channel writes in golang.org/x/crypto/ssh. thruster does not import golang.org/x/crypto/ssh
+    and SPARC opens no SSH channels; the DoS path is unreachable. x/crypto is present only for ACME/autocert
+    TLS in the thruster binary. Remediation: upstream thruster release bumping golang.org/x/crypto>=0.52.0.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-06-04'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: GO-2026-5021
+  package: golang.org/x/crypto
+  installed_version: 0.46.0
+  fixed_version: 0.52.0
+  severity: CRITICAL
+  disposition: remediated
+  rationale: 'REMEDIATED (#639 — thruster gem removed; the Go binary is no longer in the image, so this
+    finding no longer appears in the scan). FALSE POSITIVE (unreachable). CVE-2026-42508 — authorization
+    bypass via unenforced @revoked status in golang.org/x/crypto/ssh/knownhosts. SPARC maintains no SSH
+    known_hosts and performs no SSH host-key verification; thruster (HTTP proxy) does not import golang.org/x/crypto/ssh/knownhosts.
+    The vulnerable path is not linked or invoked. Remediation: upstream thruster release bumping golang.org/x/crypto>=0.52.0.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-06-04'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: GO-2026-5023
+  package: golang.org/x/crypto
+  installed_version: 0.46.0
+  fixed_version: 0.52.0
+  severity: CRITICAL
+  disposition: remediated
+  rationale: 'REMEDIATED (#639 — thruster gem removed; the Go binary is no longer in the image, so this
+    finding no longer appears in the scan). FALSE POSITIVE (unreachable). CVE-2026-46595 — VerifiedPublicKeyCallback
+    permissions-skip enforcement gap in golang.org/x/crypto/ssh. SPARC runs no SSH server and does not
+    use ssh.ServerConfig callbacks; thruster (HTTP proxy) does not import golang.org/x/crypto/ssh. The
+    code path is not linked or invoked. Remediation: upstream thruster release bumping golang.org/x/crypto>=0.52.0.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-06-04'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-69720
+  package: libncursesw6
+  installed_version: 6.4-4
+  fixed_version: none
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). libncursesw6 is a Debian bookworm package that does not exist in the shipped Red Hat UBI9
+    image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is
+    absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: ACCEPTED RISK. Ruby readline extension links to libncursesw6
+    at compile time. Removing ncurses may cause the Ruby binary to fail on startup. No interactive terminal
+    attached in production -- ncurses code paths are not exercised. Cannot safely remove without recompiling
+    Ruby. Remediation path: Debian Trixie upgrade.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-11'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-27135
+  package: libnghttp2-14
+  installed_version: 1.52.0-1+deb12u2
+  fixed_version: none
+  severity: HIGH
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-29111
+  package: libsystemd0
+  installed_version: 252.39-1~deb12u1
+  fixed_version: none
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). libsystemd0 is a Debian bookworm package that does not exist in the shipped Red Hat UBI9
+    image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is
+    absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: FALSE POSITIVE. CVE requires systemd running as PID 1 receiving
+    IPC API calls with spurious data. SPARC container runs Rails server as PID 1 (docker-entrypoint ->
+    bin/rails server), not systemd. No D-Bus socket exists in the container, no systemd IPC calls in the
+    codebase, no sd_bus/sd_notify/systemctl usage. libsystemd0 is a transitive dependency of the base
+    image, never invoked. Attack vector is unreachable.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-4878
+  package: libcap2
+  installed_version: 1:2.66-4+deb12u2+b2
+  fixed_version: none
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). libcap2 is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. TOCTOU race condition in libcap''s cap_set_file()
+    that allows a local unprivileged user with write access to a parent directory to redirect file capability
+    updates. SPARC container runs as non-root UID 1000 with no Linux capabilities granted, no setcap operations
+    performed at runtime, and no shared writable directories. Attack vector requires (a) local shell access
+    with write permissions and (b) ability to invoke setcap on attacker-controlled paths -- neither exists
+    in the container''s runtime model. libcap2 is a transitive dependency of base-image utilities and
+    is not invoked by the application. Remediation path: Debian Trixie upgrade or distroless base.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-11'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-42246
+  package: net-imap (base-image-bundled stdlib, version 0.5.8)
+  installed_version: 0.6.6 (bundled; 0.5.8 removed from the image)
+  fixed_version: '>= 0.6.4'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the shadowed-gem prune (#862): bin/prune-shadowed-gems.rb, invoked from the
+    runtime stage of the Dockerfile, deletes Ruby-shipped bundled gems that the application bundle already
+    shadows at an equal-or-newer version. net-imap 0.5.8 -- the copy this finding was raised against --
+    is removed from the image entirely; only the bundled net-imap 0.6.6 remains, above the >= 0.6.4 fix
+    floor. Verified on a build of this branch: no net-imap 0.5.8 path anywhere on the filesystem, bundle
+    check passes, a bundle exec require of net/imap resolves 0.6.6, and a Grype rescan of the built image
+    clears all eight net-imap advisories that the published v1.15.3 image reported. Previously false_positive
+    on the grounds that the vulnerable copy was present but never loaded; that copy no longer exists,
+    so remediation is the correct disposition. Prior assessment: FALSE POSITIVE (default-gem shadow).
+    Net::IMAP STARTTLS-stripping MITM. The Gemfile now explicitly pins net-imap >= 0.6.4 (#620, resolv-style
+    override); Bundler activates the patched 0.6.4.x from /usr/local/bundle. ruby:3.4.4-slim ships net-imap
+    0.5.8 as a default gem, which the scanner reports, but it is never activated — and SPARC uses no Net::IMAP
+    code path (no IMAP client / email retrieval) regardless. Present-but-not-loaded; see CVE-2026-42257/42258
+    (the CRITICAL siblings in the same net-imap 0.5.8 default gem). Remediation candidate: drop the default-gem
+    file on a distroless/base migration. Re-verified on the v1.15.3 image 2026-07-29 (#862): net-imap
+    0.5.8 remains on disk as a Ruby-shipped gem; Bundler resolves 0.6.6, above the >= 0.6.4 fix floor.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-29'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-32280
+  package: thruster (Go binary, stdlib v1.26.1)
+  installed_version: thruster 0.1.21 / Go stdlib v1.26.2
+  fixed_version: '>= Go 1.26.2'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the removal of the thruster gem (2026-06-14, #639 / PR #651, commit fc7e4d73),
+    which dropped the Go binary that carried this stdlib CVE. Verified against the shipped v1.15.3 image
+    on 2026-07-29 (#862): no thruster binary on PATH or anywhere on the filesystem, no thruster gem installed,
+    thruster absent from Gemfile.lock, and bin/docker-entrypoint runs Puma directly. Fresh Trivy and Grype
+    scans of that image report this CVE zero times and find no thruster artifact; the only Go binary remaining
+    is /usr/local/bin/hdf (hdf-cli, tracked separately by #776). NOTE: this entry carried a discovery_date
+    AFTER the gem was removed, which indicates it was re-imported from stale scan data during the v1.12.2
+    reconciliation (#770/#777) rather than observed in a shipped image. Original assessment: DEFERRED
+    to hdf-libs (#776). Go stdlib v1.26.1 CVE carried by the hdf-cli binary (mitre/hdf-libs 3.4.1, #764);
+    fixed in Go 1.25.9/1.26.2. SPARC installs hdf-cli verbatim (SHA-256 verified) and cannot recompile
+    it — remediation requires an upstream hdf-libs build on Go>=1.26.2. Prior remediated label referenced
+    the removed thruster binary (#639) and is stale. hdf-cli runs as a short-lived subprocess on operator
+    files, not a TLS server, so the crypto/x509/tls path is not reached. Tracked: #776.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-20'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-32281
+  package: thruster (Go binary, stdlib v1.26.1)
+  installed_version: thruster 0.1.21 / Go stdlib v1.26.2
+  fixed_version: '>= Go 1.26.2'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the removal of the thruster gem (2026-06-14, #639 / PR #651, commit fc7e4d73),
+    which dropped the Go binary that carried this stdlib CVE. Verified against the shipped v1.15.3 image
+    on 2026-07-29 (#862): no thruster binary on PATH or anywhere on the filesystem, no thruster gem installed,
+    thruster absent from Gemfile.lock, and bin/docker-entrypoint runs Puma directly. Fresh Trivy and Grype
+    scans of that image report this CVE zero times and find no thruster artifact; the only Go binary remaining
+    is /usr/local/bin/hdf (hdf-cli, tracked separately by #776). NOTE: this entry carried a discovery_date
+    AFTER the gem was removed, which indicates it was re-imported from stale scan data during the v1.12.2
+    reconciliation (#770/#777) rather than observed in a shipped image. Original assessment: DEFERRED
+    to hdf-libs (#776). Go stdlib v1.26.1 CVE carried by the hdf-cli binary (mitre/hdf-libs 3.4.1, #764);
+    fixed in Go 1.25.9/1.26.2. SPARC installs hdf-cli verbatim (SHA-256 verified) and cannot recompile
+    it — remediation requires an upstream hdf-libs build on Go>=1.26.2. Prior remediated label referenced
+    the removed thruster binary (#639) and is stale. hdf-cli runs as a short-lived subprocess on operator
+    files, not a TLS server, so the crypto/x509/tls path is not reached. Tracked: #776.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-20'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-32283
+  package: thruster (Go binary, stdlib v1.26.1)
+  installed_version: thruster 0.1.21 / Go stdlib v1.26.2
+  fixed_version: '>= Go 1.26.2'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the removal of the thruster gem (2026-06-14, #639 / PR #651, commit fc7e4d73),
+    which dropped the Go binary that carried this stdlib CVE. Verified against the shipped v1.15.3 image
+    on 2026-07-29 (#862): no thruster binary on PATH or anywhere on the filesystem, no thruster gem installed,
+    thruster absent from Gemfile.lock, and bin/docker-entrypoint runs Puma directly. Fresh Trivy and Grype
+    scans of that image report this CVE zero times and find no thruster artifact; the only Go binary remaining
+    is /usr/local/bin/hdf (hdf-cli, tracked separately by #776). NOTE: this entry carried a discovery_date
+    AFTER the gem was removed, which indicates it was re-imported from stale scan data during the v1.12.2
+    reconciliation (#770/#777) rather than observed in a shipped image. Original assessment: DEFERRED
+    to hdf-libs (#776). Go stdlib v1.26.1 CVE carried by the hdf-cli binary (mitre/hdf-libs 3.4.1, #764);
+    fixed in Go 1.25.9/1.26.2. SPARC installs hdf-cli verbatim (SHA-256 verified) and cannot recompile
+    it — remediation requires an upstream hdf-libs build on Go>=1.26.2. Prior remediated label referenced
+    the removed thruster binary (#639) and is stale. hdf-cli runs as a short-lived subprocess on operator
+    files, not a TLS server, so the crypto/x509/tls path is not reached. Tracked: #776.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-20'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-33810
+  package: thruster (Go binary, stdlib v1.26.1)
+  installed_version: thruster 0.1.21 / Go stdlib v1.26.2
+  fixed_version: '>= Go 1.26.2'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the removal of the thruster gem (2026-06-14, #639 / PR #651, commit fc7e4d73),
+    which dropped the Go binary that carried this stdlib CVE. Verified against the shipped v1.15.3 image
+    on 2026-07-29 (#862): no thruster binary on PATH or anywhere on the filesystem, no thruster gem installed,
+    thruster absent from Gemfile.lock, and bin/docker-entrypoint runs Puma directly. Fresh Trivy and Grype
+    scans of that image report this CVE zero times and find no thruster artifact; the only Go binary remaining
+    is /usr/local/bin/hdf (hdf-cli, tracked separately by #776). NOTE: this entry carried a discovery_date
+    AFTER the gem was removed, which indicates it was re-imported from stale scan data during the v1.12.2
+    reconciliation (#770/#777) rather than observed in a shipped image. Original assessment: DEFERRED
+    to hdf-libs (#776). Go stdlib v1.26.1 CVE carried by the hdf-cli binary (mitre/hdf-libs 3.4.1, #764);
+    fixed in Go 1.25.9/1.26.2. SPARC installs hdf-cli verbatim (SHA-256 verified) and cannot recompile
+    it — remediation requires an upstream hdf-libs build on Go>=1.26.2. Prior remediated label referenced
+    the removed thruster binary (#639) and is stale. hdf-cli runs as a short-lived subprocess on operator
+    files, not a TLS server, so the crypto/x509/tls path is not reached. Tracked: #776.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-20'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-10148
+  package: curl
+  installed_version: 7.88.1-10+deb12u14
+  fixed_version: none
+  severity: MEDIUM
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2024-10041
+  package: libpam-modules
+  installed_version: 1.5.2-6+deb12u2
+  fixed_version: none
+  severity: MEDIUM
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). libpam-modules is a Debian bookworm package that does not exist in the shipped Red Hat
+    UBI9 image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component
+    is absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: ACCEPTED RISK. PAM authentication modules. SPARC uses app-layer
+    auth (Devise/OIDC), not PAM. Required by login/passwd package chain. Remediation path: evaluate removal
+    when login/passwd are moved to bootstrap stage.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-08'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-7709
+  package: libsqlite3-0
+  installed_version: 3.40.1-2+deb12u2
+  fixed_version: none
+  severity: MEDIUM
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-13151
+  package: libtasn1-6
+  installed_version: 4.19.0-2+deb12u1
+  fixed_version: none
+  severity: MEDIUM
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). libtasn1-6 is a Debian bookworm package that does not exist in the shipped Red Hat UBI9
+    image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is
+    absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: DEFERRED (re-triaged v1.12.2, #770). libtasn1 CVE present in
+    the UBI9 image; fix available in 4.16.0-10.el9_8 (Red Hat). Remediates on the next UBI9 base-image
+    refresh (#742 lineage). Prior remediated label was stale. Mitigating controls apply (non-root, no
+    inbound path, SC-7 boundary).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-20'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-58767
+  package: rexml
+  installed_version: 3.4.4
+  fixed_version: '>= 3.4.2'
+  severity: MEDIUM
+  disposition: remediated
+  rationale: XML parsing vulnerability in rexml gem. Remediated -- current version 3.4.4 exceeds fix threshold
+    (>= 3.4.2). SPARC uses rexml for OSCAL XML parsing -- input is from trusted admin uploads only.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2011-3374
+  package: apt
+  installed_version: 2.6.1
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). apt is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. APT package manager -- not invoked at runtime (all
+    packages installed at build time). Removing is possible but aggressive and may break future image
+    debugging. Remediation path: distroless base image (long-term).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: TEMP-0841856-B18BAF
+  package: bash
+  installed_version: 5.2.15-2+b10
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). bash is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. Required by container entrypoint script (bin/docker-entrypoint).
+    Cannot remove. Remediation path: none -- bash is a runtime requirement.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2022-0563
+  package: bsdutils
+  installed_version: 1:2.38.1-5+deb12u3
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). bsdutils is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. Part of util-linux chain -- deep base image dependency.
+    Container does not use mount, blkid, or block device utilities. Removal risks breaking dpkg and other
+    core package management. Remediation path: Debian Trixie upgrade or distroless base.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-14104
+  package: bsdutils
+  installed_version: 1:2.38.1-5+deb12u3
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). bsdutils is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. Part of util-linux chain -- deep base image dependency.
+    Container does not use mount, blkid, or block device utilities. Removal risks breaking dpkg and other
+    core package management. Remediation path: Debian Trixie upgrade or distroless base.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-3184
+  package: bsdutils
+  installed_version: 1:2.38.1-5+deb12u3
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). bsdutils is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. Part of util-linux chain -- deep base image dependency.
+    Container does not use mount, blkid, or block device utilities. Removal risks breaking dpkg and other
+    core package management. Remediation path: Debian Trixie upgrade or distroless base.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2016-2781
+  package: coreutils
+  installed_version: 9.1-1
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). coreutils is a Debian bookworm package that does not exist in the shipped Red Hat UBI9
+    image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is
+    absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: ACCEPTED RISK. GNU core utilities (cp, mv, chmod, chown, mkdir,
+    etc.) required by Rails asset pipeline, entrypoint script, and file operations. Cannot remove. Remediation
+    path: Debian Trixie upgrade.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2017-18018
+  package: coreutils
+  installed_version: 9.1-1
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). coreutils is a Debian bookworm package that does not exist in the shipped Red Hat UBI9
+    image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is
+    absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: ACCEPTED RISK. GNU core utilities (cp, mv, chmod, chown, mkdir,
+    etc.) required by Rails asset pipeline, entrypoint script, and file operations. Cannot remove. Remediation
+    path: Debian Trixie upgrade.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-5278
+  package: coreutils
+  installed_version: 9.1-1
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). coreutils is a Debian bookworm package that does not exist in the shipped Red Hat UBI9
+    image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is
+    absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: ACCEPTED RISK. GNU core utilities (cp, mv, chmod, chown, mkdir,
+    etc.) required by Rails asset pipeline, entrypoint script, and file operations. Cannot remove. Remediation
+    path: Debian Trixie upgrade.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2024-2379
+  package: curl
+  installed_version: 7.88.1-10+deb12u14
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-0725
+  package: curl
+  installed_version: 7.88.1-10+deb12u14
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-10966
+  package: curl
+  installed_version: 7.88.1-10+deb12u14
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-14819
+  package: curl
+  installed_version: 7.88.1-10+deb12u14
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-6297
+  package: dpkg
+  installed_version: 1.21.22
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). dpkg is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. Debian package manager -- deep base image dependency.
+    Not invoked at runtime but removing breaks the OS package chain. Remediation path: distroless base
+    image (long-term).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2018-6829
+  package: libgcrypt20
+  installed_version: 1.10.1-3
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2024-2236
+  package: libgcrypt20
+  installed_version: 1.10.1-3
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2018-5709
+  package: libgssapi-krb5-2
+  installed_version: 1.20.1-2+deb12u4
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2024-26458
+  package: libgssapi-krb5-2
+  installed_version: 1.20.1-2+deb12u4
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2024-26461
+  package: libgssapi-krb5-2
+  installed_version: 1.20.1-2+deb12u4
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2015-3276
+  package: libldap-2.5-0
+  installed_version: 2.5.13+dfsg-5
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2017-14159
+  package: libldap-2.5-0
+  installed_version: 2.5.13+dfsg-5
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2017-17740
+  package: libldap-2.5-0
+  installed_version: 2.5.13+dfsg-5
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2020-15719
+  package: libldap-2.5-0
+  installed_version: 2.5.13+dfsg-5
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-6141
+  package: libncursesw6
+  installed_version: 6.4-4
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). libncursesw6 is a Debian bookworm package that does not exist in the shipped Red Hat UBI9
+    image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is
+    absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: ACCEPTED RISK. Ruby readline extension links to libncursesw6
+    at compile time. Removing ncurses may cause the Ruby binary to fail on startup. No interactive terminal
+    attached in production -- ncurses code paths are not exercised. Cannot safely remove without recompiling
+    Ruby. Remediation path: Debian Trixie upgrade.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2021-45346
+  package: libsqlite3-0
+  installed_version: 3.40.1-2+deb12u2
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-29088
+  package: libsqlite3-0
+  installed_version: 3.40.1-2+deb12u2
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap
+    stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in
+    the runtime container.
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2025-27587
+  package: libssl3
+  installed_version: 3.0.18-1~deb12u2
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). libssl3 is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. OpenSSL/TLS library required for PostgreSQL connections
+    (libpq), Redis TLS, and OIDC HTTPS calls. Cannot remove -- critical for data in transit encryption.
+    Remediation path: none -- runtime requirement. Apply Debian security updates when available.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2013-4392
+  package: libsystemd0
+  installed_version: 252.39-1~deb12u1
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). libsystemd0 is a Debian bookworm package that does not exist in the shipped Red Hat UBI9
+    image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is
+    absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: ACCEPTED RISK. libsystemd0 is a transitive dependency of the
+    Debian base image. Container does not run systemd -- library is never invoked. Cannot safely remove
+    without breaking dependent base packages (dbus, polkit chain). Remediation path: evaluate removal
+    in Debian Trixie upgrade or distroless base.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2023-31437
+  package: libsystemd0
+  installed_version: 252.39-1~deb12u1
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). libsystemd0 is a Debian bookworm package that does not exist in the shipped Red Hat UBI9
+    image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is
+    absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: ACCEPTED RISK. libsystemd0 is a transitive dependency of the
+    Debian base image. Container does not run systemd -- library is never invoked. Cannot safely remove
+    without breaking dependent base packages (dbus, polkit chain). Remediation path: evaluate removal
+    in Debian Trixie upgrade or distroless base.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2023-31438
+  package: libsystemd0
+  installed_version: 252.39-1~deb12u1
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). libsystemd0 is a Debian bookworm package that does not exist in the shipped Red Hat UBI9
+    image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is
+    absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: ACCEPTED RISK. libsystemd0 is a transitive dependency of the
+    Debian base image. Container does not run systemd -- library is never invoked. Cannot safely remove
+    without breaking dependent base packages (dbus, polkit chain). Remediation path: evaluate removal
+    in Debian Trixie upgrade or distroless base.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2023-31439
+  package: libsystemd0
+  installed_version: 252.39-1~deb12u1
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). libsystemd0 is a Debian bookworm package that does not exist in the shipped Red Hat UBI9
+    image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is
+    absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: ACCEPTED RISK. libsystemd0 is a transitive dependency of the
+    Debian base image. Container does not run systemd -- library is never invoked. Cannot safely remove
+    without breaking dependent base packages (dbus, polkit chain). Remediation path: evaluate removal
+    in Debian Trixie upgrade or distroless base.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2007-5686
+  package: login
+  installed_version: 1:4.13+dfsg1-1+deb12u2
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). login is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. Shadow utilities (login, su, nologin). Container
+    runs as non-root UID 1000 with no interactive login. useradd (from this package) is only needed at
+    build time for user creation. Cannot remove at runtime without breaking passwd/shadow chain. Remediation
+    path: move user creation to bootstrap stage in Trixie upgrade.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2024-56433
+  package: login
+  installed_version: 1:4.13+dfsg1-1+deb12u2
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). login is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. Shadow utilities (login, su, nologin). Container
+    runs as non-root UID 1000 with no interactive login. useradd (from this package) is only needed at
+    build time for user creation. Cannot remove at runtime without breaking passwd/shadow chain. Remediation
+    path: move user creation to bootstrap stage in Trixie upgrade.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: TEMP-0628843-DBAD28
+  package: login
+  installed_version: 1:4.13+dfsg1-1+deb12u2
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). login is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. Shadow utilities (login, su, nologin). Container
+    runs as non-root UID 1000 with no interactive login. useradd (from this package) is only needed at
+    build time for user creation. Cannot remove at runtime without breaking passwd/shadow chain. Remediation
+    path: move user creation to bootstrap stage in Trixie upgrade.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: TEMP-0517018-A83CE6
+  package: sysvinit-utils
+  installed_version: 3.06-4
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). sysvinit-utils is a Debian bookworm package that does not exist in the shipped Red Hat
+    UBI9 image (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component
+    is absent, not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml
+    and in git history; the original read: ACCEPTED RISK. SysV init utilities. Container does not use
+    SysV init. Candidate for removal but may have transitive dependencies. Remediation path: evaluate
+    removal in Debian Trixie upgrade.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: TEMP-0290435-0B57B5
+  package: tar
+  installed_version: 1.34+dfsg-1.2+deb12u1
+  fixed_version: none
+  severity: LOW
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). tar is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. GNU tar utility. SPARC does not extract archives
+    at runtime. Candidate for removal but may be required by dpkg/apt chain. Remediation path: evaluate
+    removal in Debian Trixie upgrade.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-05-06'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-2219
+  package: dpkg
+  installed_version: 1.21.22
+  fixed_version: none
+  severity: INFORMATIONAL
+  disposition: remediated
+  rationale: 'REMEDIATED by the UBI9 base-image rotation (2026-07-17, v1.12.0, #742 / PR #746, commit
+    66da4810). dpkg is a Debian bookworm package that does not exist in the shipped Red Hat UBI9 image
+    (verified against v1.15.3, rpm -qa, 112 packages, no apt/dpkg). The vulnerable component is absent,
+    not merely unreachable. Debian-era assessment retained for audit in sparc-findings.debian.yml and
+    in git history; the original read: ACCEPTED RISK. Debian package manager -- deep base image dependency.
+    Not invoked at runtime but removing breaks the OS package chain. Remediation path: distroless base
+    image (long-term).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-08'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-42257
+  package: net-imap (default gem 0.5.8; bundled 0.6.4.1)
+  installed_version: 0.6.6 (bundled; 0.5.8 removed from the image)
+  fixed_version: '>= 0.6.4'
+  severity: CRITICAL
+  disposition: remediated
+  rationale: 'REMEDIATED by the shadowed-gem prune (#862): bin/prune-shadowed-gems.rb, invoked from the
+    runtime stage of the Dockerfile, deletes Ruby-shipped bundled gems that the application bundle already
+    shadows at an equal-or-newer version. net-imap 0.5.8 -- the copy this finding was raised against --
+    is removed from the image entirely; only the bundled net-imap 0.6.6 remains, above the >= 0.6.4 fix
+    floor. Verified on a build of this branch: no net-imap 0.5.8 path anywhere on the filesystem, bundle
+    check passes, a bundle exec require of net/imap resolves 0.6.6, and a Grype rescan of the built image
+    clears all eight net-imap advisories that the published v1.15.3 image reported. Previously false_positive
+    on the grounds that the vulnerable copy was present but never loaded; that copy no longer exists,
+    so remediation is the correct disposition. Prior assessment: FALSE POSITIVE (default-gem shadow).
+    Net::IMAP response-parsing flaw. The Gemfile pins net-imap >= 0.6.4 (#620), so Bundler activates the
+    patched 0.6.4.1 from /usr/local/bundle. ruby:3.4.4-slim''s net-imap 0.5.8 default gem is reported
+    by the filesystem scanner but never activated; additionally SPARC uses no Net::IMAP code path (no
+    IMAP client / email retrieval). Vulnerable code is not loaded. Re-verified on the v1.15.3 image 2026-07-29
+    (#862): Bundler resolves net-imap 0.6.6 (>= 0.6.4 fix floor); the 0.5.8 tree is present but never
+    loaded.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-29'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-42258
+  package: net-imap (default gem 0.5.8; bundled 0.6.4.1)
+  installed_version: 0.6.6 (bundled; 0.5.8 removed from the image)
+  fixed_version: '>= 0.6.4'
+  severity: CRITICAL
+  disposition: remediated
+  rationale: 'REMEDIATED by the shadowed-gem prune (#862): bin/prune-shadowed-gems.rb, invoked from the
+    runtime stage of the Dockerfile, deletes Ruby-shipped bundled gems that the application bundle already
+    shadows at an equal-or-newer version. net-imap 0.5.8 -- the copy this finding was raised against --
+    is removed from the image entirely; only the bundled net-imap 0.6.6 remains, above the >= 0.6.4 fix
+    floor. Verified on a build of this branch: no net-imap 0.5.8 path anywhere on the filesystem, bundle
+    check passes, a bundle exec require of net/imap resolves 0.6.6, and a Grype rescan of the built image
+    clears all eight net-imap advisories that the published v1.15.3 image reported. Previously false_positive
+    on the grounds that the vulnerable copy was present but never loaded; that copy no longer exists,
+    so remediation is the correct disposition. Prior assessment: FALSE POSITIVE (default-gem shadow).
+    Second net-imap 0.5.8 parsing CVE; same basis as CVE-2026-42257 -- patched 0.6.4.1 is bundled and
+    loaded, the 0.5.8 default gem is present-but-not-loaded, and SPARC invokes no Net::IMAP path. Re-verified
+    on the v1.15.3 image 2026-07-29 (#862): Bundler resolves net-imap 0.6.6 (>= 0.6.4 fix floor); the
+    0.5.8 tree is present but never loaded.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-29'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-42245
+  package: net-imap (default gem 0.5.8; bundled 0.6.4.1)
+  installed_version: 0.6.6 (bundled; 0.5.8 removed from the image)
+  fixed_version: '>= 0.6.4'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the shadowed-gem prune (#862): bin/prune-shadowed-gems.rb, invoked from the
+    runtime stage of the Dockerfile, deletes Ruby-shipped bundled gems that the application bundle already
+    shadows at an equal-or-newer version. net-imap 0.5.8 -- the copy this finding was raised against --
+    is removed from the image entirely; only the bundled net-imap 0.6.6 remains, above the >= 0.6.4 fix
+    floor. Verified on a build of this branch: no net-imap 0.5.8 path anywhere on the filesystem, bundle
+    check passes, a bundle exec require of net/imap resolves 0.6.6, and a Grype rescan of the built image
+    clears all eight net-imap advisories that the published v1.15.3 image reported. Previously false_positive
+    on the grounds that the vulnerable copy was present but never loaded; that copy no longer exists,
+    so remediation is the correct disposition. Prior assessment: FALSE POSITIVE (default-gem shadow).
+    net-imap 0.5.8 HIGH CVE; same basis as CVE-2026-42257 -- patched 0.6.4.1 bundled and loaded, 0.5.8
+    default gem not activated, no Net::IMAP usage in SPARC. Re-verified on the v1.15.3 image 2026-07-29
+    (#862): /usr/local/lib/ruby/gems/3.4.0/gems/net-imap-0.5.8 is present but shadowed by /usr/local/bundle/ruby/3.4.0/gems/net-imap-0.6.6,
+    which Bundler resolves. 0.6.6 exceeds the >= 0.6.4 fix floor.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-29'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-33811
+  package: thruster (Go binary, stdlib v1.26.2)
+  installed_version: thruster 0.1.21 / Go stdlib v1.26.2
+  fixed_version: '>= Go 1.26.3'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the removal of the thruster gem (2026-06-14, #639 / PR #651, commit fc7e4d73),
+    which dropped the Go binary that carried this stdlib CVE. Verified against the shipped v1.15.3 image
+    on 2026-07-29 (#862): no thruster binary on PATH or anywhere on the filesystem, no thruster gem installed,
+    thruster absent from Gemfile.lock, and bin/docker-entrypoint runs Puma directly. Fresh Trivy and Grype
+    scans of that image report this CVE zero times and find no thruster artifact; the only Go binary remaining
+    is /usr/local/bin/hdf (hdf-cli, tracked separately by #776). NOTE: this entry carried a discovery_date
+    AFTER the gem was removed, which indicates it was re-imported from stale scan data during the v1.12.2
+    reconciliation (#770/#777) rather than observed in a shipped image. Original assessment: ACCEPTED
+    RISK. Go 1.26.2 stdlib CVE in the thruster precompiled binary (HTTP/2 reverse proxy in front of Puma,
+    on the production request path). thruster 0.1.21 is the latest release (no upstream build on Go >=
+    1.26.3 exists), so no bump remediates it yet. Mitigations: thruster sits behind ALB/nginx with TLS
+    termination, trusts only AWS-issued certs, and serves a controlled static-asset/upstream set. Risk
+    knowingly accepted with compensating controls; re-evaluate when basecamp/thruster ships on Go >= 1.26.3
+    (or rebuild in-house).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-11'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-33814
+  package: thruster (Go binary, stdlib v1.26.2)
+  installed_version: thruster 0.1.21 / Go stdlib v1.26.2
+  fixed_version: '>= Go 1.26.3'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the removal of the thruster gem (2026-06-14, #639 / PR #651, commit fc7e4d73),
+    which dropped the Go binary that carried this stdlib CVE. Verified against the shipped v1.15.3 image
+    on 2026-07-29 (#862): no thruster binary on PATH or anywhere on the filesystem, no thruster gem installed,
+    thruster absent from Gemfile.lock, and bin/docker-entrypoint runs Puma directly. Fresh Trivy and Grype
+    scans of that image report this CVE zero times and find no thruster artifact; the only Go binary remaining
+    is /usr/local/bin/hdf (hdf-cli, tracked separately by #776). NOTE: this entry carried a discovery_date
+    AFTER the gem was removed, which indicates it was re-imported from stale scan data during the v1.12.2
+    reconciliation (#770/#777) rather than observed in a shipped image. Original assessment: ACCEPTED
+    RISK. Go 1.26.2 stdlib CVE in the thruster binary; same package, deployment posture, and mitigations
+    as CVE-2026-33811. No upstream thruster release on Go >= 1.26.3.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-11'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-39820
+  package: thruster (Go binary, stdlib v1.26.2)
+  installed_version: thruster 0.1.21 / Go stdlib v1.26.2
+  fixed_version: '>= Go 1.26.3'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the removal of the thruster gem (2026-06-14, #639 / PR #651, commit fc7e4d73),
+    which dropped the Go binary that carried this stdlib CVE. Verified against the shipped v1.15.3 image
+    on 2026-07-29 (#862): no thruster binary on PATH or anywhere on the filesystem, no thruster gem installed,
+    thruster absent from Gemfile.lock, and bin/docker-entrypoint runs Puma directly. Fresh Trivy and Grype
+    scans of that image report this CVE zero times and find no thruster artifact; the only Go binary remaining
+    is /usr/local/bin/hdf (hdf-cli, tracked separately by #776). NOTE: this entry carried a discovery_date
+    AFTER the gem was removed, which indicates it was re-imported from stale scan data during the v1.12.2
+    reconciliation (#770/#777) rather than observed in a shipped image. Original assessment: ACCEPTED
+    RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-11'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-39823
+  package: thruster (Go binary, stdlib v1.26.2)
+  installed_version: thruster 0.1.21 / Go stdlib v1.26.2
+  fixed_version: '>= Go 1.26.3'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the removal of the thruster gem (2026-06-14, #639 / PR #651, commit fc7e4d73),
+    which dropped the Go binary that carried this stdlib CVE. Verified against the shipped v1.15.3 image
+    on 2026-07-29 (#862): no thruster binary on PATH or anywhere on the filesystem, no thruster gem installed,
+    thruster absent from Gemfile.lock, and bin/docker-entrypoint runs Puma directly. Fresh Trivy and Grype
+    scans of that image report this CVE zero times and find no thruster artifact; the only Go binary remaining
+    is /usr/local/bin/hdf (hdf-cli, tracked separately by #776). NOTE: this entry carried a discovery_date
+    AFTER the gem was removed, which indicates it was re-imported from stale scan data during the v1.12.2
+    reconciliation (#770/#777) rather than observed in a shipped image. Original assessment: ACCEPTED
+    RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-11'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-39825
+  package: thruster (Go binary, stdlib v1.26.2)
+  installed_version: thruster 0.1.21 / Go stdlib v1.26.2
+  fixed_version: '>= Go 1.26.3'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the removal of the thruster gem (2026-06-14, #639 / PR #651, commit fc7e4d73),
+    which dropped the Go binary that carried this stdlib CVE. Verified against the shipped v1.15.3 image
+    on 2026-07-29 (#862): no thruster binary on PATH or anywhere on the filesystem, no thruster gem installed,
+    thruster absent from Gemfile.lock, and bin/docker-entrypoint runs Puma directly. Fresh Trivy and Grype
+    scans of that image report this CVE zero times and find no thruster artifact; the only Go binary remaining
+    is /usr/local/bin/hdf (hdf-cli, tracked separately by #776). NOTE: this entry carried a discovery_date
+    AFTER the gem was removed, which indicates it was re-imported from stale scan data during the v1.12.2
+    reconciliation (#770/#777) rather than observed in a shipped image. Original assessment: ACCEPTED
+    RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-11'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-39836
+  package: thruster (Go binary, stdlib v1.26.2)
+  installed_version: thruster 0.1.21 / Go stdlib v1.26.2
+  fixed_version: '>= Go 1.26.3'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the removal of the thruster gem (2026-06-14, #639 / PR #651, commit fc7e4d73),
+    which dropped the Go binary that carried this stdlib CVE. Verified against the shipped v1.15.3 image
+    on 2026-07-29 (#862): no thruster binary on PATH or anywhere on the filesystem, no thruster gem installed,
+    thruster absent from Gemfile.lock, and bin/docker-entrypoint runs Puma directly. Fresh Trivy and Grype
+    scans of that image report this CVE zero times and find no thruster artifact; the only Go binary remaining
+    is /usr/local/bin/hdf (hdf-cli, tracked separately by #776). NOTE: this entry carried a discovery_date
+    AFTER the gem was removed, which indicates it was re-imported from stale scan data during the v1.12.2
+    reconciliation (#770/#777) rather than observed in a shipped image. Original assessment: ACCEPTED
+    RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-11'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-42499
+  package: thruster (Go binary, stdlib v1.26.2)
+  installed_version: thruster 0.1.21 / Go stdlib v1.26.2
+  fixed_version: '>= Go 1.26.3'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the removal of the thruster gem (2026-06-14, #639 / PR #651, commit fc7e4d73),
+    which dropped the Go binary that carried this stdlib CVE. Verified against the shipped v1.15.3 image
+    on 2026-07-29 (#862): no thruster binary on PATH or anywhere on the filesystem, no thruster gem installed,
+    thruster absent from Gemfile.lock, and bin/docker-entrypoint runs Puma directly. Fresh Trivy and Grype
+    scans of that image report this CVE zero times and find no thruster artifact; the only Go binary remaining
+    is /usr/local/bin/hdf (hdf-cli, tracked separately by #776). NOTE: this entry carried a discovery_date
+    AFTER the gem was removed, which indicates it was re-imported from stale scan data during the v1.12.2
+    reconciliation (#770/#777) rather than observed in a shipped image. Original assessment: ACCEPTED
+    RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-11'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: CVE-2026-42504
+  package: thruster (Go binary, stdlib v1.26.2)
+  installed_version: thruster 0.1.21 / Go stdlib v1.26.2
+  fixed_version: '>= Go 1.26.4'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED by the removal of the thruster gem (2026-06-14, #639 / PR #651, commit fc7e4d73),
+    which dropped the Go binary that carried this stdlib CVE. Verified against the shipped v1.15.3 image
+    on 2026-07-29 (#862): no thruster binary on PATH or anywhere on the filesystem, no thruster gem installed,
+    thruster absent from Gemfile.lock, and bin/docker-entrypoint runs Puma directly. Fresh Trivy and Grype
+    scans of that image report this CVE zero times and find no thruster artifact; the only Go binary remaining
+    is /usr/local/bin/hdf (hdf-cli, tracked separately by #776). NOTE: this entry carried a discovery_date
+    AFTER the gem was removed, which indicates it was re-imported from stale scan data during the v1.12.2
+    reconciliation (#770/#777) rather than observed in a shipped image. Original assessment: ACCEPTED
+    RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811. Fixed
+    upstream in Go 1.26.4.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-11'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: GHSA-pp92-crg2-gfv9
+  package: oauth2
+  installed_version: 2.0.25 (bundled)
+  fixed_version: '>= 2.0.22'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED (re-verified on the v1.15.3 image 2026-07-29, #862). Previously dispositioned
+    false_positive at v1.12.2 (#770): the runtime gem was already oauth2 2.0.25 (advisory fixed in >=
+    2.0.22 via #767), but Trivy tripped on an ORPHANED oauth2-2.0.18.gemspec left in usr/local/bundle/.../specifications
+    by a cached build layer. That orphan is now gone — an audit of the shipped image found oauth2-2.0.25.gemspec
+    as the only oauth2 gemspec present, and zero orphaned gemspecs overall (every .gemspec in specifications/
+    has a matching gems/ directory). The vulnerable artifact no longer exists in the image, so this is
+    remediation rather than a false positive.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-29'
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)

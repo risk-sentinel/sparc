@@ -57,6 +57,25 @@ releases stale. None of these block CI, so nothing catches them but this.
       **every suppression's review date is within 90 days** — bump or clear the
       stale ones. A suppression nobody has re-read is an accepted risk nobody
       has re-accepted.
+- [ ] **RELEASE BLOCKER — no `RELEASE-BLOCKING` finding is still open.**
+      Owner condition, 2026-08-20 (#1001): an approved deviation is **not**
+      permission to ship. A finding carrying `RELEASE-BLOCKING` in its rationale
+      is released only once it is **fixed**, or **documented as having no
+      upstream fix**. Check with:
+
+      ```bash
+      grep -c 'RELEASE-BLOCKING' docs/compliance/sparc-findings.yml
+      ```
+
+      Currently open: **`GO-2026-5026`** (Go stdlib, fix: 1.26.6) and
+      **`CVE-2026-41989`** (libgcrypt, fix: 0:1.10.0-13.el9_8), plus 18 with no
+      upstream fix. The two with fixes must be taken — the deviation carries
+      them for a rebuild window, not for a release.
+- [ ] **A `remediated` finding is retired, not reviewed** — the active register
+      holds only live dispositions. Confirm `sparc-findings.retired.yml` entries
+      all carry `verified_absent_on` + `verified_by`, and that the verification
+      scanned the **image** (not an SBOM — #862 measured the SBOM path missing
+      55% of what the image scan found, including a CRITICAL).
 
 ## 2. Documentation
 

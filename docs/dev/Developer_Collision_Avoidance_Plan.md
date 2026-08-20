@@ -1,6 +1,6 @@
 # SPARC Developer Collision Avoidance Plan
 
-Companion to `Implemenation_plan.md`. Maps every issue to exact
+Companion to `Implementation_plan.md`. Maps every issue to exact
 files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.

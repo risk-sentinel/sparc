@@ -26,7 +26,7 @@ development. See [`issue_rules.md`](issue_rules.md) for the full doc-update proc
 |---|---|
 | [`issue_rules.md`](issue_rules.md) | **Mandatory** issue-process workflow, guardrails, compliance-artifact + doc-update requirements |
 | [`release_checklist.md`](release_checklist.md) | **Run end to end before tagging.** Guide prose, wiki Changelog, VERSION, real scanner rescan — none of these fail CI |
-| [`Implemenation_plan.md`](Implemenation_plan.md) | Phased roadmap & issue tracking |
+| [`Implementation_plan.md`](Implementation_plan.md) | Phased roadmap & issue tracking |
 | [`Developer_Collision_Avoidance_Plan.md`](Developer_Collision_Avoidance_Plan.md) | Domain ownership, hot files, migration coordination |
 | [`secrets_variables.md`](secrets_variables.md) | GitHub Actions secrets & variables inventory |
 | [`aws_labs_cdef_coverage.md`](aws_labs_cdef_coverage.md) · [`aws_security_hub_nist_mapping.md`](aws_security_hub_nist_mapping.md) | AWS Labs CDEF coverage; Security Hub → NIST mapping |

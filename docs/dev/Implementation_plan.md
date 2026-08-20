@@ -691,6 +691,7 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 17 | U — Profile fidelity: what the baseline says, and what SPARC shows | #997 #999 #998 **#994** | **IN PR** (#1000) |
 | 18 | **V — SWEEP every API endpoint against its published contract** | **#995** #951 | **NEXT — release gate, SWEPT + FIXED** (owner-decided 2026-08-20). 229 route entries, ~1,294 checks, every finding fixed in-milestone; per-group tracker in the Phase 16 section |
 | 19 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
+| 20 | **W — The remediation claims the UBI9 migration invalidated** | **#1001** | **LAST** (owner-placed 2026-08-20). 20 `remediated` findings still in the shipping image; 18 deferred to 2026-09-03, 2 blocked on a fix-vs-deviation decision |
 
 **Nothing is unslotted.** #935 and #959 went into **Bundle S** on 2026-08-17, #997 #998 #999 #994
 into **Bundle U**, and **#995 and #951 into Bundle V on 2026-08-19 at owner direction** — which
@@ -1350,6 +1351,50 @@ Last by owner direction. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end 
 | **#860** | Epic: IdP as system of record for entitlements | Bundle I with #842. Five design questions answered in a memo commit before code. Dry-run built first, not last. |
 | **#842** | Map OIDC claims to organization, boundary and role | Bundle I. A **missing** claim is an error, never "revoke everything" — that failure mode is what the blast-radius guard exists for. |
 | **#822** | IdP-mediated PIV via OIDC `acr`/`amr` | Bundle G. Both auth paths stay configurable; two-ceremony verification required. |
+
+##### 20. Bundle W — The remediation claims the UBI9 migration invalidated  ·  **LAST**
+
+**Placed at the END, after Bundle R, by owner direction 2026-08-20** — the letter is not
+alphabetical sequencing; the POSITION is what matters.
+
+**#1001 — 20 of 89 findings marked `remediated` are still in the shipping image.** The claims were
+true for the **Debian** image and were carried across the **Debian → UBI9 migration without
+re-verification**; the same CVEs are present under the RHEL equivalent packages. Same class as the
+v1.12.2 audit (#770), which found eleven of these — recurring because nothing re-checked a
+remediation claim once it was made.
+
+**Found by scanning, not by reading.** Implementing the owner's retire-with-proof ruling meant
+cross-checking every `remediated` entry against `grype 0.114.0` on `sparc-ubi9-web:latest`
+(RHEL 9.8, confirmed from `/etc/os-release`): 177 matches, 132 distinct ids. **69 confirmed absent
+→ retired to `sparc-findings.retired.yml` with `verified_absent_on` + `verified_by`. 20 still
+reported → not remediated.** Had `remediated` simply been exempted from the review cadence — the
+other option on the table — all 20 would have been exempted permanently, across 92% of the file.
+
+**`GO-2026-5026` is the sharp one.** The file records it against `golang.org/x/net 0.48.0`; the
+image attributes it to **`stdlib go1.26.5`**, a different artifact entirely, so remediating x/net
+never touched it. A fix exists (Go 1.26.6).
+
+**Two are blocked by the #865 deviation policy, and that is the policy working.** The review window
+is `next_review_date - discovery_date`, so **no deferral date can satisfy it** for a finding already
+past its maximum:
+
+| CVE | Severity | Discovered | Policy max | Actual |
+| --- | --- | --- | --- | --- |
+| `GO-2026-5026` | CRITICAL | 2026-06-04 | 30d | **77d** |
+| `CVE-2026-41989` | HIGH | 2026-05-06 | 30d | **106d** |
+
+`discovery_date` is **preserved deliberately**. Resetting it to today would make the register pass
+while the real exposure has run for months — compliant numbers, false ones. The other 18 defer
+cleanly to 2026-09-03 and need nothing.
+
+**Owner decision owed on those two only:** take the fixes (Go 1.26.6 and the `el9_8` RPM updates —
+a base-image change, not a findings-file edit), or approve a deviation for each through the existing
+`deviation-approval` workflow with real mitigating factors.
+
+| Issue | Description | Notes |
+| --- | --- | --- |
+| **#1001** | 20 findings claim remediation the Debian→UBI9 migration invalidated | **Bundle W, last.** 18 deferred; 2 blocked on the owner decision above. Acceptance also asks for the rest of the file to be audited the same way — these 20 were found by scanning, and nothing guarantees they were the only Debian-era assumptions left. |
+
 
 <!-- markdownlint-enable MD013 -->
 
