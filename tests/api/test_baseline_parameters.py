@@ -90,6 +90,11 @@ def tailorable_parameter(
         slug = item.get("slug")
         if not slug:
             continue
+        # #1008 — a published profile is read-only, so it cannot demonstrate
+        # that an update persists. Skipping it here is the product rule, not a
+        # convenience: the refusal itself is asserted below.
+        if item.get("lifecycle_status") == "published":
+            continue
         response = admin_client.get(_path(slug))
         if response.status_code != 200:
             continue
@@ -153,6 +158,53 @@ class TestUpdate:
         assert persisted[param_id] == new_value, (
             f"{param_id} reported updated but an independent read shows "
             f"{persisted[param_id]!r}"
+        )
+
+    @pytest.mark.authz
+    def test_published_profile_is_refused(self, admin_client: httpx.Client) -> None:
+        """A published profile cannot be edited, and says so (#1008).
+
+        The Lifecycle concern has documented "Published documents are read-only"
+        since it was written, and nothing enforced it on this path: a published
+        baseline's ODPs could be rewritten through the API, with the change
+        persisting. A published baseline is what other documents are derived
+        from and attested against.
+        """
+        listing = admin_client.get(PROFILES_PATH, params={"items": 100})
+        assert listing.status_code == 200, listing.text
+
+        published = next(
+            (
+                item
+                for item in listing.json().get("data", [])
+                if item.get("lifecycle_status") == "published"
+            ),
+            None,
+        )
+        if published is None:
+            pytest.skip("no published profile on this instance")
+
+        before = admin_client.get(_path(published["slug"]))
+        assert before.status_code == 200, before.text
+        original = before.json()["data"]["parameters"]
+        if not original:
+            pytest.skip("the published profile exposes no parameters")
+
+        param_id = original[0]["param_id"]
+        response = admin_client.put(
+            _path(published["slug"]),
+            json={"parameters": [{"param_id": param_id, "value": "must-be-refused"}]},
+        )
+        assert response.status_code == 422, response.text
+        assert "published" in response.json()["error"].lower(), response.text
+
+        after = admin_client.get(_path(published["slug"]))
+        persisted = {
+            row["param_id"]: row.get("current_value")
+            for row in after.json()["data"]["parameters"]
+        }
+        assert persisted[param_id] == original[0].get("current_value"), (
+            "the update was refused but the value changed anyway"
         )
 
     @pytest.mark.validation

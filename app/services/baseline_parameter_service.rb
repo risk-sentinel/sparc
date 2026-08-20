@@ -88,8 +88,22 @@ class BaselineParameterService
         next
       end
 
-      upsert_parameter_field(param_id, value.to_s)
-      params_updated += 1
+      if upsert_parameter_field(param_id, value.to_s)
+        params_updated += 1
+      else
+        # #1007 — nothing was written, so nothing is counted. Not reachable
+        # today: `known_param_ids` and `find_control_id_for_param` read the same
+        # extraction, and both extractors always set `_control_id`, so a param
+        # that passes the guard above resolves here. It is kept because the
+        # counter must never be able to run ahead of the writes again — that is
+        # what made the old code report success for an update it had skipped —
+        # and a future extractor that omits `_control_id` would otherwise
+        # reintroduce it silently.
+        validation_errors << {
+          param_id: param_id,
+          error: "Parameter is not attached to any control in this profile; nothing was written"
+        }
+      end
     end
 
     # Update selections
@@ -127,7 +141,13 @@ class BaselineParameterService
       # #942 — a choice can contain a comma (insert markup always does), so the
       # values are joined with a separator that cannot appear in OSCAL prose.
       value = ParameterValueList.join(selected)
-      upsert_parameter_field(select_id, value)
+      unless upsert_parameter_field(select_id, value)
+        validation_errors << {
+          select_id: select_id,
+          error: "Selection is not attached to any control in this profile; nothing was written"
+        }
+        next
+      end
       selections_updated += 1
 
       # #942 — a chosen branch can carry its own parameter ("establish
@@ -208,7 +228,10 @@ class BaselineParameterService
     (control["params"] || []).each do |param|
       params << param.merge(
         "_control_id" => control["id"],
-        "_control_title" => control["title"]
+        "_control_title" => control["title"],
+        # A resolved catalog carries each parameter under the control that
+        # declares it, so every row here is an owner.
+        "_owns_param" => true
       )
     end
   end
@@ -223,10 +246,17 @@ class BaselineParameterService
     scope = scope.where(control_families: { code: family.upcase }) if family.present?
 
     scope.find_each do |catalog_control|
+      # #1007 — `effective_params_list` returns a statement sub-part's PARENT
+      # parameters when the sub-part's title cites them, so the same param_id
+      # legitimately appears on several rows for display. Only one of those
+      # controls declares it, and that is the one a value is stored against.
+      own_param_ids = catalog_control.params_list.map { |p| p["id"] }.to_set
+
       catalog_control.effective_params_list.each do |param|
         params << param.merge(
           "_control_id" => catalog_control.control_id,
-          "_control_title" => catalog_control.title
+          "_control_title" => catalog_control.title,
+          "_owns_param" => own_param_ids.include?(param["id"])
         )
       end
     end
@@ -235,17 +265,27 @@ class BaselineParameterService
   end
 
   # Loads current parameter values from profile_control_fields.
+  # #1007 — a parameter has ONE value per profile, and while the profile is a
+  # draft the LAST UPDATE WINS, whether it arrived through the API or the UI.
+  #
+  # This used to walk `profile_controls` and assign into a flat `param_id =>
+  # value` map, so where two controls held a row for the same parameter — a
+  # control and a statement sub-part citing it — whichever the association
+  # happened to yield last silently won. A tailored value could be written,
+  # persisted, and then read back as the old one, with the write reporting
+  # success. Ordering by `updated_at` makes the winner the most recent write
+  # rather than an artefact of iteration order, and `upsert_parameter_field`
+  # now collapses duplicates so there is normally only one row to choose from.
   def load_current_values
-    values = {}
-    profile.profile_controls.includes(:profile_control_fields).each do |pc|
-      pc.profile_control_fields.each do |field|
-        if field.field_name.start_with?("parameter:") && !field.field_name.start_with?("parameter_label:")
-          param_id = field.field_name.delete_prefix("parameter:")
-          values[param_id] = field.field_value
-        end
+    ProfileControlField
+      .joins(:profile_control)
+      .where(profile_controls: { profile_document_id: profile.id })
+      .where("field_name LIKE ?", "parameter:%")
+      .order(:updated_at, :id)
+      .pluck(:field_name, :field_value)
+      .each_with_object({}) do |(field_name, field_value), values|
+        values[field_name.delete_prefix("parameter:")] = field_value
       end
-    end
-    values
   end
 
   # Builds a parameter entry for the schema.
@@ -349,10 +389,14 @@ class BaselineParameterService
   end
 
   # Finds or creates a ProfileControlField for the given parameter.
+  # Returns true when a value was written, false when the parameter resolved to
+  # no control in this profile. The caller counts the trues: #1007 shipped a
+  # counter that incremented after this method had already returned early, so
+  # `parameters_updated` counted ATTEMPTS and could not report the difference
+  # even in principle.
   def upsert_parameter_field(param_id, value)
-    # Find the profile_control this parameter belongs to
     control_id = find_control_id_for_param(param_id)
-    return unless control_id
+    return false unless control_id
 
     profile_control = profile.profile_controls.find_by(control_id: control_id)
     unless profile_control
@@ -367,11 +411,32 @@ class BaselineParameterService
     )
     field.field_value = value
     field.save!
+
+    # #1007 — a param_id is unique within a profile. Any row left on another
+    # control is a duplicate of the same logical ODP and would shadow this
+    # write on the next read.
+    ProfileControlField
+      .joins(:profile_control)
+      .where(profile_controls: { profile_document_id: profile.id },
+             field_name: "parameter:#{param_id}")
+      .where.not(id: field.id)
+      .delete_all
+
+    true
   end
 
-  # Looks up which control_id a parameter belongs to.
+  # Which control a parameter is stored against.
+  #
+  # #1007 — prefer the control that DECLARES the parameter over one that merely
+  # cites it in a statement sub-part. Both appear in the extracted list, and
+  # taking whichever came first made the storage location depend on catalog
+  # iteration order.
   def find_control_id_for_param(param_id)
-    extract_raw_parameters.find { |p| p["id"] == param_id }&.dig("_control_id")
+    matches = extract_raw_parameters.select { |p| p["id"] == param_id }
+    return nil if matches.empty?
+
+    owner = matches.find { |p| p["_owns_param"] }
+    (owner || matches.first)["_control_id"]
   end
 
   # Extracts constraint text from a parameter definition.

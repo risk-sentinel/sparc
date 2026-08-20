@@ -195,6 +195,126 @@ RSpec.describe BaselineParameterService do
     end
   end
 
+  # ── #1007: one value per param_id, and the last write wins ────────────────
+  #
+  # `effective_params_list` hands a statement sub-part its PARENT's parameters
+  # when the sub-part's title cites them, so the same param_id legitimately
+  # appears on several controls for display. Only one of them declares it. The
+  # service used to store a value against whichever control resolved first and
+  # read values back into a flat `param_id => value` map built by walking the
+  # association, so a stale row on the sub-part could win and a tailored value
+  # would read back as the old one — with the write reporting success.
+  describe "a parameter cited by a statement sub-part" do
+    let!(:sub_part) do
+      create(:catalog_control,
+        control_family: family,
+        control_id: "ac-1a",
+        title: "Develop {{ insert: param, ac-1_prm_1 }} policy",
+        params_data: [])
+    end
+
+    it "the sub-part surfaces the parent's parameter for display" do
+      param_rows = service.extract_schema[:parameters].select { |p| p[:param_id] == "ac-1_prm_1" }
+
+      expect(param_rows.map { |p| p[:control_id] }).to contain_exactly("ac-1", "ac-1a")
+    end
+
+    it "reads back the value that was written, not the one that iterated last" do
+      create(:profile_control, profile_document: profile, control_id: "ac-1")
+      stale = create(:profile_control, profile_document: profile, control_id: "ac-1a")
+      stale.profile_control_fields.create!(
+        field_name: "parameter:ac-1_prm_1", field_value: "STALE"
+      )
+
+      result = service.update_parameters(parameters: [ { param_id: "ac-1_prm_1", value: "ISSO" } ])
+      expect(result[:parameters_updated]).to eq(1)
+
+      current = described_class.new(profile.reload).extract_schema[:parameters]
+        .select { |p| p[:param_id] == "ac-1_prm_1" }
+        .map { |p| p[:current_value] }
+
+      expect(current.uniq).to eq([ "ISSO" ])
+    end
+
+    it "leaves exactly one stored row for the parameter" do
+      create(:profile_control, profile_document: profile, control_id: "ac-1")
+      stale = create(:profile_control, profile_document: profile, control_id: "ac-1a")
+      stale.profile_control_fields.create!(
+        field_name: "parameter:ac-1_prm_1", field_value: "STALE"
+      )
+
+      service.update_parameters(parameters: [ { param_id: "ac-1_prm_1", value: "ISSO" } ])
+
+      rows = ProfileControlField.joins(:profile_control)
+        .where(profile_controls: { profile_document_id: profile.id },
+               field_name: "parameter:ac-1_prm_1")
+
+      expect(rows.count).to eq(1)
+      expect(rows.first.field_value).to eq("ISSO")
+    end
+
+    # Reads of data written before the collapse landed — or by another writer,
+    # such as OdpImportService or the web form path — still have to choose
+    # between rows. The owner's rule is that while a profile is a draft the LAST
+    # UPDATE WINS, whichever surface it arrived from, so the choice is by
+    # `updated_at` and not by whatever order the association yields.
+    it "resolves pre-existing duplicate rows to the most recently updated one" do
+      older = create(:profile_control, profile_document: profile, control_id: "ac-1")
+      newer = create(:profile_control, profile_document: profile, control_id: "ac-1a")
+
+      older.profile_control_fields.create!(
+        field_name: "parameter:ac-1_prm_1", field_value: "WRITTEN FIRST",
+        updated_at: 2.days.ago
+      )
+      newer.profile_control_fields.create!(
+        field_name: "parameter:ac-1_prm_1", field_value: "WRITTEN LAST",
+        updated_at: 1.hour.ago
+      )
+
+      current = described_class.new(profile.reload).extract_schema[:parameters]
+        .select { |p| p[:param_id] == "ac-1_prm_1" }
+        .map { |p| p[:current_value] }
+
+      expect(current.uniq).to eq([ "WRITTEN LAST" ])
+    end
+
+    it "resolves them the same way when the newer row was created first" do
+      first_created = create(:profile_control, profile_document: profile, control_id: "ac-1")
+      second_created = create(:profile_control, profile_document: profile, control_id: "ac-1a")
+
+      # The row with the LOWER id carries the LATER update, so an ordering that
+      # leans on insertion order rather than `updated_at` picks the wrong one.
+      first_created.profile_control_fields.create!(
+        field_name: "parameter:ac-1_prm_1", field_value: "WRITTEN LAST",
+        updated_at: 1.hour.ago
+      )
+      second_created.profile_control_fields.create!(
+        field_name: "parameter:ac-1_prm_1", field_value: "WRITTEN FIRST",
+        updated_at: 2.days.ago
+      )
+
+      current = described_class.new(profile.reload).extract_schema[:parameters]
+        .select { |p| p[:param_id] == "ac-1_prm_1" }
+        .map { |p| p[:current_value] }
+
+      expect(current.uniq).to eq([ "WRITTEN LAST" ])
+    end
+
+    it "stores the value against the control that DECLARES the parameter" do
+      create(:profile_control, profile_document: profile, control_id: "ac-1")
+      create(:profile_control, profile_document: profile, control_id: "ac-1a")
+
+      service.update_parameters(parameters: [ { param_id: "ac-1_prm_1", value: "ISSO" } ])
+
+      stored = ProfileControlField.joins(:profile_control)
+        .where(profile_controls: { profile_document_id: profile.id },
+               field_name: "parameter:ac-1_prm_1")
+        .first
+
+      expect(stored.profile_control.control_id).to eq("ac-1")
+    end
+  end
+
   describe "#export" do
     it "exports as JSON" do
       output = service.export(format: :json)

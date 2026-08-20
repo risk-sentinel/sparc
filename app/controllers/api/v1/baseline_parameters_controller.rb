@@ -26,6 +26,17 @@ class Api::V1::BaselineParametersController < Api::V1::BaseController
   #
   # profiles.write, unscoped, matching both the web and Api::V1 profile guards.
   before_action :authorize_profiles_write!, only: %i[update import_preview import_confirm]
+  # #1008 — `profiles.write` answers "may this caller edit profiles", which is a
+  # different question from "is this profile still editable". Only the first was
+  # ever asked here, so a PUBLISHED baseline's parameters could be rewritten
+  # through the API: 200, `parameters_updated: 1`, and the change persisted. The
+  # Lifecycle concern has said "Published documents are read-only. Use the
+  # duplication service to create an editable copy" since it was written;
+  # nothing enforced it on this path.
+  #
+  # `import_preview` is a dry run and writes nothing, so it stays available on a
+  # published profile — a reader may still ask what a file WOULD change.
+  before_action :refuse_published_profile!, only: %i[update import_confirm]
 
   # GET /api/v1/profile_documents/:profile_document_id/parameters
   def show
@@ -137,6 +148,19 @@ class Api::V1::BaselineParametersController < Api::V1::BaseController
   end
 
   private
+
+  # #1008 — a published profile is what other documents are derived from and
+  # attested against. Editing one after publication moves the basis of every
+  # SSP built on it, so it is refused with a reason naming the way forward
+  # rather than a bare 403.
+  def refuse_published_profile!
+    return unless @profile.published_lifecycle?
+
+    render json: {
+      error: "This profile is published and cannot be edited. Duplicate it to create an editable draft.",
+      details: [ "lifecycle_status is \"published\"" ]
+    }, status: :unprocessable_entity
+  end
 
   # #574 — accept either numeric id or slug; same rationale as the
   # ksi_validations and #566 fixes.
