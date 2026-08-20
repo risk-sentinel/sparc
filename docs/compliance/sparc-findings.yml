@@ -3,7 +3,7 @@ findings:
   package: stdlib
   installed_version: go1.26.5
   fixed_version: 1.25.13,1.26.6,1.27.0-rc.3
-  severity: CRITICAL
+  severity: HIGH
   disposition: deferred
   rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
     ''golang.org/x/net 0.48.0'' and was marked remediated because that package was removed — true, and
@@ -12,42 +12,19 @@ findings:
     go1.26.5 [go-module]. Rewritten to describe what the image actually contains; discovery_date is the
     date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8).
     Fix: 1.25.13,1.26.6,1.27.0-rc.3. Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image
-    is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
+    is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). SEVERITY
+    CORRECTED CRITICAL -> HIGH: CRITICAL was the grading of the DEBIAN artifact this entry used to describe,
+    which is not in the image. HIGH is how grype 0.114.0 grades the artifact that IS present.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
   next_review_date: '2026-09-03'
   superseded_debian_finding: golang.org/x/net 0.48.0 (removed with the Debian base image)
-  deviation:
-    type: operational_requirement
-    risk_status: deviation-approved
-    approved_by: '@clem-field'
-    approved_in: risk-sentinel/sparc#1000
-    approved_at: '2026-08-20T00:00:00Z'
-    approval_mechanism: review
-    mitigating_factors:
-    - description: 'The image carrying this artifact is NOT RELEASED. Owner condition, 2026-08-20: release
-        is blocked until the finding is fixed, or documented as having no upstream fix. A fix exists (Go
-        1.26.6), so the path here is remediation, not indefinite deferral.'
-    - description: 'Approved as an operational requirement rather than a risk adjustment: the risk is
-        not being re-scored, it is being carried for a bounded window while the base image is rebuilt
-        onto a fixed Go toolchain.'
-    - description: The exposure was only correctly attributed on 2026-08-20. The entry previously described
-        a Debian artifact that is genuinely absent; the real artifact is the Go stdlib in the UBI9 image,
-        which no prior review had seen.
-    - description: Review window is 14 days, not the 30 the policy permits for CRITICAL, because a fix
-        is available and the intent is to take it.
-    kev_checked: '2026-08-20'
-    kev_listed: false
-    operational_justification: 'The fix is a Go TOOLCHAIN change in the base image (go1.26.5 -> 1.26.6),
-      not a gem or package bump that can be taken in this change set. It requires rebuilding and re-verifying
-      the UBI9 production image, which is a separate, sequenced piece of work (bundle W, #1001). The deviation
-      carries the finding for that bounded window only, and the image is not released while it stands.'
 - cve_id: CVE-2026-41989
   package: libgcrypt
   installed_version: 1.10.0-11.el9
   fixed_version: 0:1.10.0-13.el9_8
-  severity: HIGH
+  severity: MEDIUM
   disposition: deferred
   rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
     ''libgcrypt20 1.10.1-3'' and was marked remediated because that package was removed — true, and the
@@ -56,7 +33,9 @@ findings:
     [rpm]. Rewritten to describe what the image actually contains; discovery_date is the date THIS artifact''s
     exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8). Fix: 0:1.10.0-13.el9_8.
     Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until this is fixed
-    or documented as having no upstream fix (owner, 2026-08-20).'
+    or documented as having no upstream fix (owner, 2026-08-20). SEVERITY CORRECTED HIGH -> MEDIUM: HIGH
+    was the grading of the DEBIAN artifact this entry used to describe, which is not in the image. MEDIUM
+    is how grype 0.114.0 grades the artifact that IS present.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -155,7 +134,7 @@ findings:
   package: gnupg2
   installed_version: 2.3.3-5.el9_7
   fixed_version: none available upstream (not-fixed)
-  severity: MEDIUM
+  severity: LOW
   disposition: deferred
   rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
     ''dirmngr 2.2.40-1.1+deb12u2'' and was marked remediated because that package was removed — true,
@@ -164,7 +143,9 @@ findings:
     2.3.3-5.el9_7 [rpm]. Rewritten to describe what the image actually contains; discovery_date is the
     date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8).
     Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the
-    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
+    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
+    SEVERITY CORRECTED MEDIUM -> LOW: MEDIUM was the grading of the DEBIAN artifact this entry used to
+    describe, which is not in the image. LOW is how grype 0.114.0 grades the artifact that IS present.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -193,7 +174,7 @@ findings:
   package: ncurses-base/ncurses-libs
   installed_version: 6.2-12.20210508.el9
   fixed_version: none available upstream (not-fixed)
-  severity: MEDIUM
+  severity: LOW
   disposition: deferred
   rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
     ''libncursesw6 6.4-4'' and was marked remediated because that package was removed — true, and the
@@ -202,7 +183,9 @@ findings:
     [rpm]; ncurses-libs 6.2-12.20210508.el9 [rpm]. Rewritten to describe what the image actually contains;
     discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
     RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
+    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
+    SEVERITY CORRECTED MEDIUM -> LOW: MEDIUM was the grading of the DEBIAN artifact this entry used to
+    describe, which is not in the image. LOW is how grype 0.114.0 grades the artifact that IS present.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -231,7 +214,7 @@ findings:
   package: zlib
   installed_version: 1.2.11-40.el9
   fixed_version: none available upstream (not-fixed)
-  severity: MEDIUM
+  severity: LOW
   disposition: deferred
   rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
     ''zlib1g 1:1.2.13.dfsg-1'' and was marked remediated because that package was removed — true, and
@@ -240,7 +223,9 @@ findings:
     [rpm]. Rewritten to describe what the image actually contains; discovery_date is the date THIS artifact''s
     exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8). Fix: none available upstream
     (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until
-    this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
+    this is fixed or documented as having no upstream fix (owner, 2026-08-20). SEVERITY CORRECTED MEDIUM
+    -> LOW: MEDIUM was the grading of the DEBIAN artifact this entry used to describe, which is not in
+    the image. LOW is how grype 0.114.0 grades the artifact that IS present.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -250,7 +235,7 @@ findings:
   package: curl-minimal/libcurl-minimal
   installed_version: 7.76.1-40.el9
   fixed_version: none available upstream (wont-fix)
-  severity: LOW
+  severity: MEDIUM
   disposition: deferred
   rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
     ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
@@ -259,7 +244,9 @@ findings:
     7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
     contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
     RHEL 9.8). Fix: none available upstream (wont-fix). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
+    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
+    SEVERITY CORRECTED LOW -> MEDIUM: LOW was the grading of the DEBIAN artifact this entry used to describe,
+    which is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -364,7 +351,7 @@ findings:
   package: openldap
   installed_version: 2.6.8-4.el9
   fixed_version: none available upstream (not-fixed)
-  severity: LOW
+  severity: MEDIUM
   disposition: deferred
   rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
     ''libldap-2.5-0 2.5.13+dfsg-5'' and was marked remediated because that package was removed — true,
@@ -373,7 +360,9 @@ findings:
     2.6.8-4.el9 [rpm]. Rewritten to describe what the image actually contains; discovery_date is the date
     THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8). Fix:
     none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image
-    is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
+    is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). SEVERITY
+    CORRECTED LOW -> MEDIUM: LOW was the grading of the DEBIAN artifact this entry used to describe, which
+    is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -402,7 +391,7 @@ findings:
   package: libblkid/libmount/libsmartcols/libuuid
   installed_version: 2.37.4-25.el9
   fixed_version: none available upstream (not-fixed)
-  severity: INFORMATIONAL
+  severity: MEDIUM
   disposition: deferred
   rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
     ''bsdutils 1:2.38.1-5+deb12u3'' and was marked remediated because that package was removed — true,
@@ -412,7 +401,9 @@ findings:
     describe what the image actually contains; discovery_date is the date THIS artifact''s exposure was
     found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8). Fix: none available upstream (not-fixed).
     Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until this is fixed
-    or documented as having no upstream fix (owner, 2026-08-20).'
+    or documented as having no upstream fix (owner, 2026-08-20). SEVERITY CORRECTED INFORMATIONAL -> MEDIUM:
+    INFORMATIONAL was the grading of the DEBIAN artifact this entry used to describe, which is not in
+    the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -422,7 +413,7 @@ findings:
   package: xz-libs
   installed_version: 5.2.5-8.el9_0
   fixed_version: none available upstream (not-fixed)
-  severity: INFORMATIONAL
+  severity: MEDIUM
   disposition: deferred
   rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
     ''liblzma5 5.4.1-1'' and was marked remediated because that package was removed — true, and the Debian
@@ -431,7 +422,9 @@ findings:
     Rewritten to describe what the image actually contains; discovery_date is the date THIS artifact''s
     exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8). Fix: none available upstream
     (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until
-    this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
+    this is fixed or documented as having no upstream fix (owner, 2026-08-20). SEVERITY CORRECTED INFORMATIONAL
+    -> MEDIUM: INFORMATIONAL was the grading of the DEBIAN artifact this entry used to describe, which
+    is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'

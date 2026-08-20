@@ -49,9 +49,13 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
   **Retirement requires PROOF, and is deliberately harder than review.** Every
   retired entry carries `verified_absent_on` (the date a real scan of the shipping
   image reported nothing) and `verified_by` (what scanned it). Without that,
-  retiring is just deleting. `scripts/ci/check_findings_freshness.rb` gates both
-  directions: a `remediated` entry left in the active file fails, and a retired
-  entry with no evidence fails.
+  retiring is just deleting.
+
+  **This is currently a convention, NOT an enforced gate.** A CI check for it was
+  written and pulled back out — changing a CI gate needs its own approval, and it
+  did not have one. Until that lands, nothing fails a build when a `remediated`
+  entry is left in the active file or a retired entry carries no evidence. Treat
+  the convention as binding on the author, and do not describe it as enforced.
 
   **Verify against the IMAGE, not an SBOM** (#862 — grype's SBOM path missed 55%
   of what the image scan found, including a CRITICAL):
