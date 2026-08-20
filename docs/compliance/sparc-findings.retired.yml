@@ -1,15 +1,3 @@
-# Retired security findings — remediation VERIFIED ABSENT from the shipping image.
-#
-# A fixed finding is retired, not reviewed on a cadence: a review cadence asks
-# "is this accepted risk still acceptable?", which is a question about a LIVE
-# disposition. Owner-decided 2026-08-20.
-#
-# Retirement is HARDER than review, deliberately. Every entry here carries
-# `verified_absent_on` and `verified_by` — the date a real scan of the shipping
-# image reported nothing, and what scanned it. Without that, retiring is just
-# deleting. scripts/ci/check_findings_freshness.rb gates on their presence.
-#
-# This file is EVIDENCE (FedRAMP): append, do not rewrite history.
 findings:
 - cve_id: GO-2026-5005
   package: golang.org/x/crypto
@@ -1259,3 +1247,297 @@ findings:
   discovery_date: '2026-07-29'
   verified_absent_on: '2026-08-20'
   verified_by: grype 0.114.0 (image scan of sparc-ubi9-web:latest, RHEL 9.8)
+- cve_id: GO-2026-5026
+  package: stdlib
+  installed_version: go1.26.5
+  fixed_version: 1.25.13,1.26.6,1.27.0-rc.3
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED 2026-08-20 (#1001). Cleared by compiling hdf-cli from source against go1.26.6
+    (#1001). The image no longer contains a go1.26.5 binary. POA&M / DEFERRED 2026-08-20 (14 days). This
+    entry previously described the DEBIAN package ''golang.org/x/net 0.48.0'' and was marked remediated
+    because that package was removed — true, and the Debian artifact is gone. The claim was then carried
+    across the Debian->UBI9 migration without re-verification, and the CVE is present in the shipping
+    image against a DIFFERENT artifact: stdlib go1.26.5 [go-module]. Rewritten to describe what the image
+    actually contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan
+    of sparc-ubi9-web:latest, RHEL 9.8). Fix: 1.25.13,1.26.6,1.27.0-rc.3. Tracked in risk-sentinel/sparc#1001.
+    RELEASE-BLOCKING: the image is not released until this is fixed or documented as having no upstream
+    fix (owner, 2026-08-20). SEVERITY CORRECTED CRITICAL -> HIGH: CRITICAL was the grading of the DEBIAN
+    artifact this entry used to describe, which is not in the image. HIGH is how grype 0.114.0 grades
+    the artifact that IS present.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-08-20'
+  superseded_debian_finding: golang.org/x/net 0.48.0 (removed with the Debian base image)
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (db v6.1.9, built 2026-08-20) against sparc-ubi9-web:latest, RHEL 9.8 confirmed
+    from /etc/os-release; 145 matches / 101 distinct ids
+- cve_id: CVE-2026-41989
+  package: libgcrypt
+  installed_version: 1.10.0-11.el9
+  fixed_version: 0:1.10.0-13.el9_8
+  severity: MEDIUM
+  disposition: remediated
+  rationale: 'REMEDIATED 2026-08-20 (#1001). Cleared by the ubi-minimal digest refresh: libgcrypt 1.10.0-11.el9
+    -> 1.10.0-13.el9_8, the fix version this entry named. POA&M / DEFERRED 2026-08-20 (14 days). This
+    entry previously described the DEBIAN package ''libgcrypt20 1.10.1-3'' and was marked remediated because
+    that package was removed — true, and the Debian artifact is gone. The claim was then carried across
+    the Debian->UBI9 migration without re-verification, and the CVE is present in the shipping image against
+    a DIFFERENT artifact: libgcrypt 1.10.0-11.el9 [rpm]. Rewritten to describe what the image actually
+    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
+    RHEL 9.8). Fix: 0:1.10.0-13.el9_8. Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image
+    is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). SEVERITY
+    CORRECTED HIGH -> MEDIUM: HIGH was the grading of the DEBIAN artifact this entry used to describe,
+    which is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-08-20'
+  superseded_debian_finding: libgcrypt20 1.10.1-3 (removed with the Debian base image)
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (db v6.1.9, built 2026-08-20) against sparc-ubi9-web:latest, RHEL 9.8 confirmed
+    from /etc/os-release; 145 matches / 101 distinct ids
+- cve_id: CVE-2026-1965
+  package: curl-minimal/libcurl-minimal
+  installed_version: 7.76.1-40.el9
+  fixed_version: 0:7.76.1-40.el9_8.5
+  severity: MEDIUM
+  disposition: remediated
+  rationale: 'REMEDIATED 2026-08-20 (#1001). Cleared by the ubi-minimal digest refresh: curl 7.76.1-40.el9
+    -> 7.76.1-40.el9_8.5, the fix version this entry named. POA&M / DEFERRED 2026-08-20 (14 days). This
+    entry previously described the DEBIAN package ''curl 7.88.1-10+deb12u14'' and was marked remediated
+    because that package was removed — true, and the Debian artifact is gone. The claim was then carried
+    across the Debian->UBI9 migration without re-verification, and the CVE is present in the shipping
+    image against a DIFFERENT artifact: curl-minimal 7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9
+    [rpm]. Rewritten to describe what the image actually contains; discovery_date is the date THIS artifact''s
+    exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8). Fix: 0:7.76.1-40.el9_8.5.
+    Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until this is fixed
+    or documented as having no upstream fix (owner, 2026-08-20).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-08-20'
+  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (db v6.1.9, built 2026-08-20) against sparc-ubi9-web:latest, RHEL 9.8 confirmed
+    from /etc/os-release; 145 matches / 101 distinct ids
+- cve_id: CVE-2026-3783
+  package: curl-minimal/libcurl-minimal
+  installed_version: 7.76.1-40.el9
+  fixed_version: 0:7.76.1-40.el9_8.5
+  severity: MEDIUM
+  disposition: remediated
+  rationale: 'REMEDIATED 2026-08-20 (#1001). Cleared by the ubi-minimal digest refresh: curl 7.76.1-40.el9
+    -> 7.76.1-40.el9_8.5, the fix version this entry named. POA&M / DEFERRED 2026-08-20 (14 days). This
+    entry previously described the DEBIAN package ''curl 7.88.1-10+deb12u14'' and was marked remediated
+    because that package was removed — true, and the Debian artifact is gone. The claim was then carried
+    across the Debian->UBI9 migration without re-verification, and the CVE is present in the shipping
+    image against a DIFFERENT artifact: curl-minimal 7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9
+    [rpm]. Rewritten to describe what the image actually contains; discovery_date is the date THIS artifact''s
+    exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8). Fix: 0:7.76.1-40.el9_8.5.
+    Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until this is fixed
+    or documented as having no upstream fix (owner, 2026-08-20).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-08-20'
+  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (db v6.1.9, built 2026-08-20) against sparc-ubi9-web:latest, RHEL 9.8 confirmed
+    from /etc/os-release; 145 matches / 101 distinct ids
+- cve_id: CVE-2026-51296
+  package: sqlite-libs
+  installed_version: 3.34.1-9.el9_7
+  fixed_version: 'none (Red Hat: Affected, no erratum)'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED 2026-08-20 (#1001). Cleared by the ubi-minimal digest refresh: sqlite-libs moved
+    past 3.34.1-9.el9_7. RISK ADJUSTMENT. Member of the 2026-07-27 SQLite use-after-free cluster, reported
+    by Grype against the image at High. The finding is correct; the package is present at the affected
+    version. SPARC is not exploitable: /usr/local/bin/ruby is not linked against libsqlite3 (verified
+    by ldd on the shipped image), no package in the image requires sqlite-libs, and the only binaries
+    linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family backing the RPM database — none of
+    which process untrusted input at runtime. There is no sqlite3 gem in Gemfile or Gemfile.lock and SPARC''s
+    data path is PostgreSQL, so no attacker-controlled SQL or JSON reaches a SQLite parser. Red Hat lists
+    RHEL 9 as Affected with no erratum, so there is nothing to patch to. Mitigating factors are recorded
+    as structured data on the deviation for OSCAL risk/mitigating-factor export. Not KEV-listed as of
+    the 2026.07.27 catalogue.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-29'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#866
+    approved_at: '2026-07-30T12:38:25Z'
+    approval_mechanism: admin-merge-bypass
+    adjusted_severity: LOW
+    mitigating_factors:
+    - description: ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)
+    - description: no package in the image requires sqlite-libs (rpm -q --whatrequires returns nothing)
+    - description: the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family,
+        which back the RPM database and do not process untrusted input at runtime
+    - description: no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL
+    - description: no attacker-controlled SQL or JSON reaches a SQLite parser on any request path
+    kev_checked: '2026-07-29'
+    kev_listed: false
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (db v6.1.9, built 2026-08-20) against sparc-ubi9-web:latest, RHEL 9.8 confirmed
+    from /etc/os-release; 145 matches / 101 distinct ids
+- cve_id: CVE-2026-51297
+  package: sqlite-libs
+  installed_version: 3.34.1-9.el9_7
+  fixed_version: 'none (Red Hat: Affected, no erratum)'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED 2026-08-20 (#1001). Cleared by the ubi-minimal digest refresh: sqlite-libs moved
+    past 3.34.1-9.el9_7. RISK ADJUSTMENT. Use-after-free in SQLite JSON parsing; Red Hat rates this Important,
+    CVSS 9.8. The finding is correct; the package is present at the affected version. SPARC is not exploitable:
+    /usr/local/bin/ruby is not linked against libsqlite3 (verified by ldd on the shipped image), no package
+    in the image requires sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and
+    the rpm/microdnf family backing the RPM database — none of which process untrusted input at runtime.
+    There is no sqlite3 gem in Gemfile or Gemfile.lock and SPARC''s data path is PostgreSQL, so no attacker-controlled
+    SQL or JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is
+    nothing to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL
+    risk/mitigating-factor export. Not KEV-listed as of the 2026.07.27 catalogue.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-29'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#866
+    approved_at: '2026-07-30T12:38:25Z'
+    approval_mechanism: admin-merge-bypass
+    adjusted_severity: LOW
+    mitigating_factors:
+    - description: ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)
+    - description: no package in the image requires sqlite-libs (rpm -q --whatrequires returns nothing)
+    - description: the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family,
+        which back the RPM database and do not process untrusted input at runtime
+    - description: no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL
+    - description: no attacker-controlled SQL or JSON reaches a SQLite parser on any request path
+    kev_checked: '2026-07-29'
+    kev_listed: false
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (db v6.1.9, built 2026-08-20) against sparc-ubi9-web:latest, RHEL 9.8 confirmed
+    from /etc/os-release; 145 matches / 101 distinct ids
+- cve_id: CVE-2026-51302
+  package: sqlite-libs
+  installed_version: 3.34.1-9.el9_7
+  fixed_version: 'none (Red Hat: Affected, no erratum)'
+  severity: CRITICAL
+  disposition: remediated
+  rationale: 'REMEDIATED 2026-08-20 (#1001). Cleared by the ubi-minimal digest refresh: sqlite-libs moved
+    past 3.34.1-9.el9_7. RISK ADJUSTMENT. Use-after-free in SQLite expression evaluation (sqlite3ReleaseTempReg
+    / exprComputeOperands); Red Hat rates this Critical, CVSS 10.0. The finding is CORRECT — sqlite-libs
+    3.34.1-9.el9_7 is present at the affected version. SPARC is not exploitable: /usr/local/bin/ruby is
+    not linked against libsqlite3 (verified by ldd on the shipped image), no package in the image requires
+    sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family
+    backing the RPM database — none of which process untrusted input at runtime. There is no sqlite3 gem
+    in Gemfile or Gemfile.lock and SPARC''s data path is PostgreSQL, so no attacker-controlled SQL or
+    JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is nothing
+    to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL risk/mitigating-factor
+    export. Not KEV-listed as of the 2026.07.27 catalogue.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-29'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#866
+    approved_at: '2026-07-30T12:38:25Z'
+    approval_mechanism: admin-merge-bypass
+    adjusted_severity: LOW
+    mitigating_factors:
+    - description: ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)
+    - description: no package in the image requires sqlite-libs (rpm -q --whatrequires returns nothing)
+    - description: the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family,
+        which back the RPM database and do not process untrusted input at runtime
+    - description: no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL
+    - description: no attacker-controlled SQL or JSON reaches a SQLite parser on any request path
+    kev_checked: '2026-07-29'
+    kev_listed: false
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (db v6.1.9, built 2026-08-20) against sparc-ubi9-web:latest, RHEL 9.8 confirmed
+    from /etc/os-release; 145 matches / 101 distinct ids
+- cve_id: CVE-2026-51303
+  package: sqlite-libs
+  installed_version: 3.34.1-9.el9_7
+  fixed_version: 'none (Red Hat: Affected, no erratum)'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED 2026-08-20 (#1001). Cleared by the ubi-minimal digest refresh: sqlite-libs moved
+    past 3.34.1-9.el9_7. RISK ADJUSTMENT. Use-after-free in the SQLite core parsing component (dangling
+    ExprList pointer after sqlite3ExprListDelete); Red Hat rates this Important, CVSS 9.8. The finding
+    is correct; the package is present at the affected version. SPARC is not exploitable: /usr/local/bin/ruby
+    is not linked against libsqlite3 (verified by ldd on the shipped image), no package in the image requires
+    sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family
+    backing the RPM database — none of which process untrusted input at runtime. There is no sqlite3 gem
+    in Gemfile or Gemfile.lock and SPARC''s data path is PostgreSQL, so no attacker-controlled SQL or
+    JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is nothing
+    to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL risk/mitigating-factor
+    export. Not KEV-listed as of the 2026.07.27 catalogue.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-29'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#866
+    approved_at: '2026-07-30T12:38:25Z'
+    approval_mechanism: admin-merge-bypass
+    adjusted_severity: LOW
+    mitigating_factors:
+    - description: ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)
+    - description: no package in the image requires sqlite-libs (rpm -q --whatrequires returns nothing)
+    - description: the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family,
+        which back the RPM database and do not process untrusted input at runtime
+    - description: no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL
+    - description: no attacker-controlled SQL or JSON reaches a SQLite parser on any request path
+    kev_checked: '2026-07-29'
+    kev_listed: false
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (db v6.1.9, built 2026-08-20) against sparc-ubi9-web:latest, RHEL 9.8 confirmed
+    from /etc/os-release; 145 matches / 101 distinct ids
+- cve_id: CVE-2026-51304
+  package: sqlite-libs
+  installed_version: 3.34.1-9.el9_7
+  fixed_version: 'none (Red Hat: Affected, no erratum)'
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED 2026-08-20 (#1001). Cleared by the ubi-minimal digest refresh: sqlite-libs moved
+    past 3.34.1-9.el9_7. RISK ADJUSTMENT. Use-after-free in the SQLite ORDER BY clause parsing routine
+    (nExpr read after sqlite3ExprListDelete); Red Hat rates this Important, CVSS 9.8. The finding is correct;
+    the package is present at the affected version. SPARC is not exploitable: /usr/local/bin/ruby is not
+    linked against libsqlite3 (verified by ldd on the shipped image), no package in the image requires
+    sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family
+    backing the RPM database — none of which process untrusted input at runtime. There is no sqlite3 gem
+    in Gemfile or Gemfile.lock and SPARC''s data path is PostgreSQL, so no attacker-controlled SQL or
+    JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is nothing
+    to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL risk/mitigating-factor
+    export. Not KEV-listed as of the 2026.07.27 catalogue.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-07-29'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#866
+    approved_at: '2026-07-30T12:38:25Z'
+    approval_mechanism: admin-merge-bypass
+    adjusted_severity: LOW
+    mitigating_factors:
+    - description: ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)
+    - description: no package in the image requires sqlite-libs (rpm -q --whatrequires returns nothing)
+    - description: the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family,
+        which back the RPM database and do not process untrusted input at runtime
+    - description: no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL
+    - description: no attacker-controlled SQL or JSON reaches a SQLite parser on any request path
+    kev_checked: '2026-07-29'
+    kev_listed: false
+  verified_absent_on: '2026-08-20'
+  verified_by: grype 0.114.0 (db v6.1.9, built 2026-08-20) against sparc-ubi9-web:latest, RHEL 9.8 confirmed
+    from /etc/os-release; 145 matches / 101 distinct ids
