@@ -275,9 +275,19 @@ Summary tiles with document and control counts. Lists all baseline profiles with
 
 Shows the baseline profile with:
 - Controls listed with priority information
+- Per control, a **What this baseline requires** panel: the control statement
+  with this baseline's parameter values substituted, the parameters themselves,
+  priority, guidance and related controls. Raw OSCAL `{{ insert: param }}`
+  markup is never shown — values are resolved before render.
+- Inline **parameter tailoring** on that panel (text values and selection
+  checkboxes, **Save parameters**), gated on `profiles.write` and hidden once
+  the baseline is published. Writes through `BaselineParameterService`, the same
+  service `PUT /api/v1/profile_documents/:id/parameters` uses.
 - Priority heatmap grouped by NIST family
 - Copy button (creates a duplicate profile)
-- Export buttons: JSON, OSCAL (validated/unvalidated)
+- Export buttons: JSON, OSCAL (validated/unvalidated), **Resolved Catalog**
+  (a conformant OSCAL resolved-profile catalog — enhancements nested inside
+  their parent control, control links resolving into back-matter)
 - Editable metadata via inline toggle
 
 #### Create Baseline from Catalog
@@ -423,6 +433,12 @@ Buttons: "Create New SSP" (links to wizard), "Upload File" (direct file upload).
      - Stated requirement block (highlighted)
      - Ordered field table (editable fields marked with pencil icon)
      - Inherited/provider statements (collapsible, purple-accented)
+     - **What This Baseline Requires** (collapsible, blue-accented) -- the
+       control statement with the linked baseline's parameter values
+       substituted, plus that baseline's parameters, priority, guidance and
+       related controls. **Read-only**: an SSP consumes the baseline, it does
+       not define it. Renders the same `shared/_baseline_control_detail`
+       partial the Baseline Detail screen uses.
      - Catalog guidance (collapsible, reference from source catalog)
    - Edit button toggling an inline edit form with dropdowns for status, control_application, coverage_level, control_type, date picker for expected_completion, and text areas for other fields
    - Read-only fields shown in a collapsible sub-section
@@ -448,6 +464,15 @@ Multi-step creation flow: profile/baseline selector, CDEF selector, system detai
 | **Auth** | Required |
 
 Form for adding OSCAL-required metadata: system characteristics (description, sensitivity level, status, authorization boundary), components (title, type, description), system users (title, role IDs), and information types.
+
+A component already typed `validation` also shows a **Validation** block --
+validation type, certificate reference, authoritative-record URL, and the
+product component it validates. These fields appear only on a validation
+component (they mean nothing on any other type and the model refuses them
+there), so the type is saved first and the block appears on the next open.
+On export they become `validation-type` / `validation-reference` props and a
+`validation-details` link on the validation component, with a `validation`
+link on the product pointing back at it.
 
 #### SSP Editor
 
