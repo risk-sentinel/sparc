@@ -19,6 +19,7 @@ from schemas import (
     ControlCatalogIndex,
     ControlCatalogShow,
     assert_create_round_trip,
+    assert_update_round_trip,
     validate_index_response,
     validate_show_response,
 )
@@ -163,12 +164,22 @@ class TestUpdate:
     def test_admin_updates_catalog(
         self, admin_client: httpx.Client, catalog: dict[str, Any]
     ) -> None:
-        new_desc = f"updated {uuid.uuid4().hex[:6]}"
-        response = admin_client.patch(
-            f"{PATH}/{catalog['id']}",
-            json={"control_catalog": {"description": new_desc}},
+        """The PATCH persists, confirmed by an independent read.
+
+        This asserted only ``status_code == 200`` until #995. It would have
+        passed against an endpoint that discarded the payload — which is not a
+        hypothetical failure mode here: #994's parameters endpoint answered
+        ``200 {"status": "updated"}`` to a body it never parsed.
+        """
+        assert_update_round_trip(
+            admin_client,
+            PATH,
+            catalog["id"],
+            {"description": f"updated {uuid.uuid4().hex[:6]}"},
+            "control_catalog",
+            ControlCatalogShow,
+            restore=False,  # the fixture owns this catalog and deletes it
         )
-        assert response.status_code == 200, response.text
 
     @pytest.mark.authz
     def test_non_admin_returns_403(self, user_client: httpx.Client) -> None:

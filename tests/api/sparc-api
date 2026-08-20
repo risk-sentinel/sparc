@@ -49,9 +49,26 @@ base_url() { get_env SPARC_TEST_BASE_URL; }
 
 redact() { local t="${1:-}"; [ -n "$t" ] && printf '%s…%s (len %s)' "${t:0:12}" "${t: -4}" "${#t}" || printf '<empty>'; }
 
+# curl_args → the flags every request here shares.
+#
+# SPARC_TEST_INSECURE_TLS=1 must reach curl, exactly as conftest.py already
+# honours it for the suite itself. Without it `doctor` reported 000000 —
+# curl exiting on an unverifiable certificate, printed once by -w and again by
+# the fallback below — against https://localhost:3443, which is the local
+# UBI9 target the pre-push gate in docs/dev/issue_rules.md mandates. Valid
+# tokens read as rejected and the preflight said NOT READY while the suite it
+# gates ran green.
+# Prints -k when insecure TLS is configured, nothing otherwise. Kept as a
+# single word so it can be word-split into an args array without mapfile,
+# which macOS's system bash 3.2 does not have.
+tls_flag() { [ "$(get_env SPARC_TEST_INSECURE_TLS)" = "1" ] && printf -- '-k'; }
+
 # status_code <path> [token]  → prints HTTP code (000 on connection failure)
 status_code() {
-  local url="$1" tok="${2:-}" args=(-sS -o /dev/null -w '%{http_code}' --max-time 20)
+  local url="$1" tok="${2:-}" k
+  k="$(tls_flag)"
+  local args=(-sS -o /dev/null -w '%{http_code}' --max-time 20)
+  [ -n "$k" ] && args+=("$k")
   [ -n "$tok" ] && args+=(-H "Authorization: Bearer $tok")
   curl "${args[@]}" "$url" 2>/dev/null || printf '000'
 }
@@ -61,13 +78,22 @@ need_admin() { local t; t="$(get_env SPARC_TEST_ADMIN_TOKEN)"; [ -n "$t" ] || { 
 
 # ── commands ────────────────────────────────────────────────────────────────
 cmd_target() {
-  local t="${1:-}"
+  local t="${1:-}" insecure=0
   case "$t" in
     prod)  t="https://sparc.risk-sentinel.org" ;;
-    local) t="http://localhost:3000" ;;
+    # The local UBI9 stack the pre-push gate uses: Caddy on 3443 with a
+    # self-signed cert, which is why insecure TLS has to reach curl. Plain
+    # :3000 is the container's own port, behind no proxy — the browser
+    # cannot POST to it (silent CSRF 422, #978), so it is not the shortcut.
+    local) t="https://localhost:3443"; insecure=1 ;;
     "")    echo "usage: $0 target <prod|local|URL>"; exit 1 ;;
   esac
   set_env SPARC_TEST_BASE_URL "$t"
+  # The named shortcuts carry their own TLS posture, so switching targets does
+  # not silently leave verification off against a real deployment.
+  case "${1:-}" in
+    prod|local) set_env SPARC_TEST_INSECURE_TLS "$insecure" ;;
+  esac
   echo "target → $t"
   echo -n "reachable: "; local st; st="$(status_code "$t$AVAIL")"; echo "$st (no-auth; 401 is expected here)"
 }
@@ -125,11 +151,12 @@ cmd_create_users() {
   url="$(need_url)"; tok="$(need_admin)"
   echo "Creating $count active local-login test user(s) on $url"
   echo "(save these passwords — shown once)"
-  local n pw email resp
+  local n pw email resp k
+  k="$(tls_flag)"
   for n in $(seq 1 "$count"); do
     pw="DastTest-$(openssl rand -hex 12)"
     email="dast-test-${n}@example.com"
-    resp="$(curl -sS -X POST "$url/api/v1/users" \
+    resp="$(curl -sS ${k:+"$k"} -X POST "$url/api/v1/users" \
       -H "Authorization: Bearer $tok" -H 'Content-Type: application/json' \
       -d "{\"user\":{\"email\":\"$email\",\"password\":\"$pw\",\"password_confirmation\":\"$pw\",\"first_name\":\"DAST\",\"last_name\":\"Test $n\",\"status\":\"active\"}}" 2>/dev/null)"
     echo "== $email =="

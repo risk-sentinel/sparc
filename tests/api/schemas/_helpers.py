@@ -144,3 +144,151 @@ def _format_drift(
         body_excerpt += "...[truncated]"
     lines.append(f"\nResponse body: {body_excerpt}")
     return "\n".join(lines)
+
+
+def assert_update_round_trip[ItemT: BaseModel](
+    client: httpx.Client,
+    path: str,
+    resource_id: str | int,
+    changes: dict,
+    param_key: str,
+    show_model: type[ItemT],
+    *,
+    method: str = "patch",
+    ignore_fields: set[str] | None = None,
+    restore: bool = True,
+) -> ShowEnvelope[ItemT]:
+    """Update a resource, fetch it back with an INDEPENDENT read, assert every
+    changed field actually persisted, then restore the original values.
+
+    This is the update-side counterpart of ``assert_create_round_trip``, and it
+    exists because eight update tests in this suite assert a status code and
+    never read the response body — every one of which would pass against an
+    endpoint that discarded the payload entirely. That is not hypothetical:
+    #994's ``PUT .../parameters`` answered ``200 {"status": "updated"}`` to a
+    body it never parsed, with a green suite throughout.
+
+    Three things are asserted, in this order:
+
+    1. **The change is a real change.** Each field in ``changes`` is compared
+       against the resource's current value first, and the helper fails if they
+       already match. Asserting that a field equals a value it already held
+       proves nothing about the write, and the failure mode is invisible — the
+       test passes forever while covering nothing.
+    2. **The write reports success.**
+    3. **An independent GET shows the new value.** Not the write's own echo,
+       which can be synthesised from the request without anything being
+       persisted.
+
+    Args:
+        resource_id: the show-URL segment — slug, id or canonical identifier,
+            whichever the endpoint addresses resources by.
+        changes: the fields to set, unwrapped. Wrapped in ``param_key`` for the
+            request when that is how the endpoint accepts them.
+        method: ``"patch"`` (default) or ``"put"``.
+        ignore_fields: fields sent but not expected to be mirrored back, e.g.
+            write-only credentials the API reports only as ``*_set`` booleans.
+        restore: put the original values back afterwards. Leave on unless the
+            caller owns a throwaway resource it deletes itself.
+    """
+    ignore_fields = ignore_fields or set()
+
+    before = validate_show_response(client.get(f"{path}/{resource_id}"), show_model)
+    original = before.data.model_dump(mode="json")
+
+    no_ops = [
+        f"  - {field!r}: already {original[field]!r} before the update"
+        for field, value in changes.items()
+        if field not in ignore_fields and field in original and original[field] == value
+    ]
+    if no_ops:
+        pytest.fail(
+            f"Vacuous update at {path}/{resource_id} — these fields already held the "
+            f"value the test sets, so the round trip would pass without the endpoint "
+            f"writing anything:\n" + "\n".join(no_ops)
+        )
+
+    body = {param_key: changes} if param_key else changes
+    write = getattr(client, method)(f"{path}/{resource_id}", json=body)
+    assert write.status_code in (200, 201, 202), write.text
+
+    try:
+        after = validate_show_response(client.get(f"{path}/{resource_id}"), show_model)
+        shown = after.data.model_dump(mode="json")
+
+        mismatches = []
+        for field, expected in changes.items():
+            if field in ignore_fields:
+                continue
+            if field not in shown:
+                mismatches.append(
+                    f"  - {field!r}: sent {expected!r}, not present in show response"
+                )
+            elif shown[field] != expected:
+                mismatches.append(
+                    f"  - {field!r}: sent {expected!r}, shown {shown[field]!r} "
+                    f"(was {original.get(field)!r} before the update)"
+                )
+
+        if mismatches:
+            pytest.fail(
+                f"Update round-trip drift at {path}/{resource_id} — the write returned "
+                f"{write.status_code} but an independent read disagrees:\n"
+                + "\n".join(mismatches)
+            )
+
+        return after
+    finally:
+        if restore:
+            restore_body = {f: original.get(f) for f in changes if f not in ignore_fields}
+            getattr(client, method)(
+                f"{path}/{resource_id}",
+                json={param_key: restore_body} if param_key else restore_body,
+            )
+
+
+def assert_unhandled_payload_is_not_reported_as_success[ItemT: BaseModel](
+    client: httpx.Client,
+    path: str,
+    resource_id: str | int,
+    payload: dict,
+    show_model: type[ItemT],
+    *,
+    method: str = "patch",
+) -> httpx.Response:
+    """Send a payload the endpoint cannot act on and prove it does not answer
+    as though it had.
+
+    "Nothing to do" and "I did not understand you" must not share a response.
+    Rails' ``params.permit`` drops what it does not recognise, so a controller
+    reading the wrong key sees an empty set of changes and takes the success
+    branch — the exact mechanism behind #994, and it is available to every
+    controller in the codebase.
+
+    The rule enforced here is narrow and checkable: if an independent read
+    shows the resource is byte-identical afterwards, the response must not have
+    been a 2xx. An endpoint that changed nothing is free to say so with a 4xx,
+    and free to change something and report it; what it may not do is accept a
+    payload, change nothing, and report success.
+
+    Returns the write response so the caller can assert on the specific error
+    shape its documentation publishes.
+    """
+    before = validate_show_response(client.get(f"{path}/{resource_id}"), show_model)
+    original = before.data.model_dump(mode="json")
+
+    write = getattr(client, method)(f"{path}/{resource_id}", json=payload)
+
+    after = validate_show_response(client.get(f"{path}/{resource_id}"), show_model)
+    shown = after.data.model_dump(mode="json")
+
+    if shown == original and 200 <= write.status_code < 300:
+        pytest.fail(
+            f"{method.upper()} {path}/{resource_id} answered {write.status_code} "
+            f"{write.text[:200]!r} to a payload it did not act on — an independent read "
+            f"shows the resource is unchanged. This is the #994 shape: a wrong answer "
+            f"carrying a right status. Refuse the payload, or report honestly that "
+            f"nothing was written."
+        )
+
+    return write
