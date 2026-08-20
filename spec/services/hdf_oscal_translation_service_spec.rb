@@ -31,6 +31,31 @@ RSpec.describe HdfOscalTranslationService do
     }
   end
 
+  # #1017 — the same reasoning as `minimal_sar`, for the two POA&M paths. The
+  # placeholder these examples used to stub — `{"plan-of-action-and-milestones"
+  # => {"uuid" => "def"}}` — is precisely what the gate exists to stop, and it
+  # is why the gap went unnoticed: the spec passed against a document no OSCAL
+  # tool would accept, because nothing validated it.
+  def minimal_poam(uuid: "11111111-1111-4111-8111-111111111111")
+    {
+      "plan-of-action-and-milestones" => {
+        "uuid" => uuid,
+        "metadata" => {
+          "title" => "Stub POA&M",
+          "last-modified" => "2026-07-27T00:00:00Z",
+          "version" => "1.0",
+          "oscal-version" => "1.1.2"
+        },
+        "import-ssp" => { "href" => "#22222222-2222-4222-8222-222222222222" },
+        "poam-items" => [ {
+          "uuid" => "33333333-3333-4333-8333-333333333333",
+          "title" => "Stub item",
+          "description" => "Stub description."
+        } ]
+      }
+    }
+  end
+
   describe "#hdf_to_oscal_sar" do
     it "shells `hdf convert --from hdf --to oscal-sar`" do
       expect(runner).to receive(:convert).with("/tmp/scan.hdf.json", from: "hdf", to: "oscal-sar")
@@ -97,9 +122,48 @@ RSpec.describe HdfOscalTranslationService do
   describe "#hdf_to_oscal_poam" do
     it "shells `hdf convert --from hdf --to oscal-poam`" do
       expect(runner).to receive(:convert).with("/tmp/scan.hdf.json", from: "hdf", to: "oscal-poam")
-                                           .and_return("plan-of-action-and-milestones" => { "uuid" => "def" })
+                                           .and_return(minimal_poam(uuid: "44444444-4444-4444-8444-444444444444"))
       result = service.hdf_to_oscal_poam("/tmp/scan.hdf.json")
-      expect(result.dig("plan-of-action-and-milestones", "uuid")).to eq("def")
+      expect(result.dig("plan-of-action-and-milestones", "uuid"))
+        .to eq("44444444-4444-4444-8444-444444444444")
+    end
+
+    it "refuses to return a POA&M that fails the OSCAL schema (#1017)" do
+      allow(runner).to receive(:convert)
+        .and_return("plan-of-action-and-milestones" => { "uuid" => "def" })
+
+      expect { service.hdf_to_oscal_poam("/tmp/scan.hdf.json") }
+        .to raise_error(OscalValidationError)
+    end
+  end
+
+  # #1017 — the reachable half of the gap. `poam_from_hdf` 501s by design since
+  # hdf-cli 3.2.0, so this is the path a tenant CI pipeline actually calls, and
+  # it was emitting `poam-items: null` with a 200.
+  describe "#oscal_poam_from_hdf_amendments" do
+    it "shells `hdf convert --from hdf-amendments --to oscal-poam`" do
+      expect(runner).to receive(:convert)
+        .with("/tmp/amendments.json", from: "hdf-amendments", to: "oscal-poam")
+        .and_return(minimal_poam(uuid: "55555555-5555-4555-8555-555555555555"))
+
+      result = service.oscal_poam_from_hdf_amendments("/tmp/amendments.json")
+      expect(result.dig("plan-of-action-and-milestones", "uuid"))
+        .to eq("55555555-5555-4555-8555-555555555555")
+    end
+
+    it "refuses a POA&M whose poam-items is null, which is what the gap emitted" do
+      allow(runner).to receive(:convert).and_return(
+        "plan-of-action-and-milestones" => {
+          "uuid" => "66666666-6666-4666-8666-666666666666",
+          "metadata" => { "title" => "", "last-modified" => "2026-08-20T23:29:17Z",
+                          "version" => "1.0.0", "oscal-version" => "1.1.2" },
+          "import-ssp" => { "href" => "#" },
+          "poam-items" => nil
+        }
+      )
+
+      expect { service.oscal_poam_from_hdf_amendments("/tmp/amendments.json") }
+        .to raise_error(OscalValidationError, /poam-items/)
     end
   end
 
