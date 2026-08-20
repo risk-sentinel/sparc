@@ -72,16 +72,107 @@ class TestShow:
         )
 
 
+@pytest.fixture
+def tailorable_parameter(
+    admin_client: httpx.Client,
+) -> Iterator[tuple[str, dict[str, Any]]] | None:
+    """A (profile_slug, parameter) pair on a profile that actually has ODPs.
+
+    The module's own ``profile`` fixture creates an empty profile, which has no
+    parameters at all — nothing there can prove a parameter update persisted.
+    Parameters come from a profile's resolved catalog, so this finds a profile
+    that has some and restores whatever it changes.
+    """
+    listing = admin_client.get(PROFILES_PATH, params={"items": 100})
+    assert listing.status_code == 200, listing.text
+
+    for item in listing.json().get("data", []):
+        slug = item.get("slug")
+        if not slug:
+            continue
+        response = admin_client.get(_path(slug))
+        if response.status_code != 200:
+            continue
+        parameters = response.json().get("data", {}).get("parameters") or []
+        if parameters:
+            original = parameters[0]
+            yield slug, original
+            admin_client.put(
+                _path(slug),
+                json={
+                    "parameters": [
+                        {
+                            "param_id": original["param_id"],
+                            "value": original.get("current_value"),
+                        }
+                    ]
+                },
+            )
+            return
+
+    pytest.skip("no profile on this instance exposes any tailorable parameters")
+
+
 class TestUpdate:
     @pytest.mark.happy
     def test_admin_updates_parameters(
+        self,
+        admin_client: httpx.Client,
+        tailorable_parameter: tuple[str, dict[str, Any]],
+    ) -> None:
+        """A tailored ODP value persists, confirmed by an independent read.
+
+        What this replaced sent ``{"parameters": {}}`` — an empty *object map*
+        — and accepted ``200 or 422``. Both halves were vacuous. The map shape
+        is the one #994's parser rejects, so the test named
+        ``test_admin_updates_parameters`` and marked ``happy`` exercised the
+        refusal path and never once verified that a parameter update persists;
+        and accepting either status meant no response could fail it.
+        """
+        slug, parameter = tailorable_parameter
+        param_id = parameter["param_id"]
+        new_value = f"sweep-{uuid.uuid4().hex[:8]}"
+        assert parameter.get("current_value") != new_value
+
+        response = admin_client.put(
+            _path(slug),
+            json={"parameters": [{"param_id": param_id, "value": new_value}]},
+        )
+        assert response.status_code == 200, response.text
+
+        result = response.json()["data"]
+        assert result["parameters_updated"] == 1, result
+        assert result["validation_errors"] == [], result
+
+        after = admin_client.get(_path(slug))
+        assert after.status_code == 200, after.text
+        persisted = {
+            row["param_id"]: row.get("current_value")
+            for row in after.json()["data"]["parameters"]
+        }
+        assert persisted[param_id] == new_value, (
+            f"{param_id} reported updated but an independent read shows "
+            f"{persisted[param_id]!r}"
+        )
+
+    @pytest.mark.validation
+    def test_object_map_shape_is_refused_with_a_named_reason(
         self, admin_client: httpx.Client, profile: dict[str, Any]
     ) -> None:
-        # Sending an empty parameters map exercises the bulk-update
-        # contract without depending on which parameter ids the seed
-        # exposes.
+        """The #994 shape: an object map where an array is expected.
+
+        It must be told apart from "nothing to do" — before #994 this answered
+        ``200 {"status": "updated", "parameters_updated": 0}``.
+        """
         response = admin_client.put(_path(profile["slug"]), json={"parameters": {}})
-        assert response.status_code in (200, 422), response.text
+        assert response.status_code == 422, response.text
+
+        body = response.json()
+        assert "could not be parsed" in body["error"], body
+        assert any("ARRAY" in detail for detail in body["details"]), body
+        assert body["expected"]["parameters"] == [
+            {"param_id": "string", "value": "string"}
+        ], body
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

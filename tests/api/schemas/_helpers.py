@@ -146,18 +146,43 @@ def _format_drift(
     return "\n".join(lines)
 
 
+def _read_back(
+    client: httpx.Client,
+    url: str,
+    show_model: type[BaseModel] | None,
+) -> tuple[dict, object]:
+    """Independent GET of a resource, as a plain dict plus whatever the caller
+    should get back.
+
+    ``show_model`` is optional because only about half the API surface has a
+    pydantic model here, and the round-trip check is worth having on the half
+    that does not. With a model the response envelope is validated too; without
+    one the read still happens and the fields are still compared — it just
+    proves less about the response's shape.
+    """
+    response = client.get(url)
+    if show_model is not None:
+        envelope = validate_show_response(response, show_model)
+        return envelope.data.model_dump(mode="json"), envelope
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    data = body.get("data", body) if isinstance(body, dict) else body
+    return data, data
+
+
 def assert_update_round_trip[ItemT: BaseModel](
     client: httpx.Client,
     path: str,
     resource_id: str | int,
     changes: dict,
     param_key: str,
-    show_model: type[ItemT],
+    show_model: type[ItemT] | None = None,
     *,
     method: str = "patch",
     ignore_fields: set[str] | None = None,
     restore: bool = True,
-) -> ShowEnvelope[ItemT]:
+) -> ShowEnvelope[ItemT] | dict:
     """Update a resource, fetch it back with an INDEPENDENT read, assert every
     changed field actually persisted, then restore the original values.
 
@@ -193,8 +218,7 @@ def assert_update_round_trip[ItemT: BaseModel](
     """
     ignore_fields = ignore_fields or set()
 
-    before = validate_show_response(client.get(f"{path}/{resource_id}"), show_model)
-    original = before.data.model_dump(mode="json")
+    original, _ = _read_back(client, f"{path}/{resource_id}", show_model)
 
     no_ops = [
         f"  - {field!r}: already {original[field]!r} before the update"
@@ -213,8 +237,7 @@ def assert_update_round_trip[ItemT: BaseModel](
     assert write.status_code in (200, 201, 202), write.text
 
     try:
-        after = validate_show_response(client.get(f"{path}/{resource_id}"), show_model)
-        shown = after.data.model_dump(mode="json")
+        shown, after = _read_back(client, f"{path}/{resource_id}", show_model)
 
         mismatches = []
         for field, expected in changes.items():
@@ -252,7 +275,7 @@ def assert_unhandled_payload_is_not_reported_as_success[ItemT: BaseModel](
     path: str,
     resource_id: str | int,
     payload: dict,
-    show_model: type[ItemT],
+    show_model: type[ItemT] | None = None,
     *,
     method: str = "patch",
 ) -> httpx.Response:
@@ -274,8 +297,7 @@ def assert_unhandled_payload_is_not_reported_as_success[ItemT: BaseModel](
     Returns the write response so the caller can assert on the specific error
     shape its documentation publishes.
     """
-    before = validate_show_response(client.get(f"{path}/{resource_id}"), show_model)
-    original = before.data.model_dump(mode="json")
+    original, _ = _read_back(client, f"{path}/{resource_id}", show_model)
 
     write = getattr(client, method)(f"{path}/{resource_id}", json=payload)
 

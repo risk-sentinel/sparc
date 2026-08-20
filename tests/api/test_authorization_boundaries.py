@@ -17,6 +17,7 @@ import pytest
 
 from _bulk_destroy import BulkDestroyContract
 from conftest import assert_error_envelope, assert_paginated_envelope
+from schemas import assert_update_round_trip
 
 pytestmark = [pytest.mark.boundaries, pytest.mark.phase1]
 
@@ -130,12 +131,20 @@ class TestUpdate:
     def test_admin_updates_boundary(
         self, admin_client: httpx.Client, boundary: dict[str, Any]
     ) -> None:
-        new_desc = f"updated {uuid.uuid4().hex[:6]}"
-        response = admin_client.patch(
-            f"{PATH}/{boundary['id']}",
-            json={"authorization_boundary": {"description": new_desc}},
+        """The PATCH persists, confirmed by an independent read.
+
+        This asserted only a status code until #995 — it would have passed
+        against an endpoint that discarded the payload entirely, which is
+        exactly what #994 did.
+        """
+        assert_update_round_trip(
+            admin_client,
+            PATH,
+            boundary["id"],
+            {"description": f"updated {uuid.uuid4().hex[:6]}"},
+            "authorization_boundary",
+            restore=False,  # the fixture owns this boundary and deletes it
         )
-        assert response.status_code == 200, response.text
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

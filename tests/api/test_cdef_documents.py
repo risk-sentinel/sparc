@@ -24,6 +24,7 @@ from schemas import (
     CdefDocumentIndex,
     CdefDocumentShow,
     assert_create_round_trip,
+    assert_update_round_trip,
     validate_index_response,
     validate_show_response,
 )
@@ -353,11 +354,21 @@ class TestUpdate:
     def test_admin_updates_via_patch(
         self, admin_client: httpx.Client, cdef_doc: dict[str, Any]
     ) -> None:
-        response = admin_client.patch(
-            f"{PATH}/{cdef_doc['slug']}",
-            json={PARAM_KEY: {"description": "patched"}},
+        """The PATCH persists, confirmed by an independent read.
+
+        This asserted only a status code until #995 — it would have passed
+        against an endpoint that discarded the payload entirely, which is
+        exactly what #994 did.
+        """
+        assert_update_round_trip(
+            admin_client,
+            PATH,
+            cdef_doc["slug"],
+            {"description": f"patched {uuid.uuid4().hex[:6]}"},
+            PARAM_KEY,
+            CdefDocumentShow,
+            restore=False,  # the fixture owns this document and deletes it
         )
-        assert response.status_code == 200
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

@@ -19,6 +19,7 @@ import httpx
 import pytest
 
 from conftest import assert_error_envelope
+from schemas import assert_update_round_trip
 
 pytestmark = [pytest.mark.users, pytest.mark.phase1]
 
@@ -159,12 +160,20 @@ class TestUpdate:
     def test_admin_updates_user(
         self, admin_client: httpx.Client, created_user: dict[str, Any]
     ) -> None:
-        new_first = f"updated-{uuid.uuid4().hex[:6]}"
-        response = admin_client.patch(
-            f"{PATH}/{created_user['id']}",
-            json={"user": {"first_name": new_first}},
+        """The PATCH persists, confirmed by an independent read.
+
+        This asserted only a status code until #995 — it would have passed
+        against an endpoint that discarded the payload entirely, which is
+        exactly what #994 did.
+        """
+        assert_update_round_trip(
+            admin_client,
+            PATH,
+            created_user["id"],
+            {"first_name": f"updated-{uuid.uuid4().hex[:6]}"},
+            "user",
+            restore=False,  # the fixture owns this user and deletes it
         )
-        assert response.status_code == 200, response.text
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
