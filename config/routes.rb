@@ -804,6 +804,11 @@ Rails.application.routes.draw do
       # CRUD API endpoints (#95)
       # #841 — issuing a reset is a user-facing admin function, so it has an API
       # surface too. Returns the one-time link; the token is never persisted.
+      # #1014 — roles carry the permission sets every authorization check reads,
+      # and were editable only in a browser, so an instance's RBAC configuration
+      # could not be reviewed or reproduced programmatically.
+      resources :roles, only: [ :index, :show, :create, :update, :destroy ]
+
       resources :users, only: [ :index, :show, :create, :update, :destroy ] do
         member do
           post :password_reset

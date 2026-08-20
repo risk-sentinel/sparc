@@ -39,6 +39,13 @@ class AuditEvent < ApplicationRecord
   #
   # NOTE: this is a `%w[]` literal — it has no comment syntax. A `#` inside it
   # becomes an array element, not a comment.
+  # NOTE: this is a %w[] array — do NOT put comments inside it. Each line becomes
+  # an element, so a comment silently registers junk actions rather than being
+  # ignored (the same trap Role::PERMISSION_KEYS documents; #1015 walked into it).
+  #
+  # An action absent from this list records NOTHING: audit_log rescues
+  # RecordInvalid, so the write is dropped in silence. That was #982 — 69
+  # unregistered actions logging nothing in every environment.
   ACTIONS = %w[
     login_success
     login_failure

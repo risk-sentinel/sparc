@@ -23,6 +23,7 @@ DELETE /api/v1/federation_peers/:id
 DELETE /api/v1/poam_documents/:id
 DELETE /api/v1/poam_risks/:id
 DELETE /api/v1/profile_documents/:id
+DELETE /api/v1/roles/:id
 DELETE /api/v1/sap_documents/:id
 DELETE /api/v1/sar_documents/:id
 DELETE /api/v1/scanner_findings/:scanner_finding_id/disposition
@@ -98,6 +99,8 @@ GET /api/v1/profile_documents/:id
 GET /api/v1/profile_documents/:id/baseline_review
 GET /api/v1/profile_documents/:profile_document_id/parameters
 GET /api/v1/profile_documents/:profile_document_id/parameters/export
+GET /api/v1/roles
+GET /api/v1/roles/:id
 GET /api/v1/sap_documents
 GET /api/v1/sap_documents/:id
 GET /api/v1/sar_documents
@@ -131,6 +134,7 @@ PATCH /api/v1/poam_documents/:id
 PATCH /api/v1/poam_risks/:id
 PATCH /api/v1/profile_documents/:id
 PATCH /api/v1/profile_documents/:profile_document_id/parameters
+PATCH /api/v1/roles/:id
 PATCH /api/v1/sap_documents/:id
 PATCH /api/v1/sar_documents/:id
 PATCH /api/v1/ssp_documents/:id
@@ -192,6 +196,7 @@ POST /api/v1/profile_documents/:id/reject
 POST /api/v1/profile_documents/:id/submit_for_review
 POST /api/v1/profile_documents/:profile_document_id/parameters/import/confirm
 POST /api/v1/profile_documents/:profile_document_id/parameters/import/preview
+POST /api/v1/roles
 POST /api/v1/sap_documents
 POST /api/v1/sap_documents/:id/fields/import/confirm
 POST /api/v1/sap_documents/:id/fields/import/preview
@@ -231,6 +236,7 @@ PUT /api/v1/poam_risks/:id
 PUT /api/v1/profile_documents/:id
 PUT /api/v1/profile_documents/:id/controls
 PUT /api/v1/profile_documents/:profile_document_id/parameters
+PUT /api/v1/roles/:id
 PUT /api/v1/sap_documents/:id
 PUT /api/v1/sar_documents/:id
 PUT /api/v1/sar_documents/:id/update_fields
