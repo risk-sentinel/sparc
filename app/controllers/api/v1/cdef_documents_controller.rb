@@ -235,8 +235,21 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   # #629 — admin-only bulk delete; honors the referential-integrity guard and
   # returns a per-id partial-success result.
   def bulk_destroy
+    # #1018 — parse before deleting. `params[:ids]` used to be read straight
+    # off the request, so a misspelled key deleted nothing and answered 200
+    # with zeros: "nothing to do" and "I did not understand you" were the same
+    # response, on an endpoint whose job is deletion.
+    payload = BulkDestroyPayload.parse(params)
+    unless payload.valid?
+      return render json: {
+        error: "The request body could not be parsed as a bulk delete. Nothing was changed.",
+        details: payload.errors,
+        expected: BulkDestroyPayload::EXPECTED
+      }, status: :unprocessable_entity
+    end
+
     result = BulkDestroyService.new(
-      model_class: CdefDocument, ids: params[:ids],
+      model_class: CdefDocument, ids: payload.ids,
       user: current_user, ip_address: request.remote_ip
     ).call
     render json: {
