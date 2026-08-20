@@ -36,9 +36,24 @@ class Api::V1::BaselineParametersController < Api::V1::BaseController
   end
 
   # PUT /api/v1/profile_documents/:profile_document_id/parameters
+  #
+  # #994 — the payload is parsed and REFUSED before the service sees it. This
+  # endpoint used to answer 200 with `parameters_updated: 0` for bodies it had
+  # never understood, because `params.permit` discards an unrecognised shape
+  # silently and the resulting empty arrays are indistinguishable from a caller
+  # who asked for nothing. See BaselineParameterPayload for the full account.
   def update
+    payload = BaselineParameterPayload.parse(params)
+    unless payload.valid?
+      return render json: {
+        error:    "The request body could not be parsed as a baseline parameter update. Nothing was changed.",
+        details:  payload.errors,
+        expected: BaselineParameterPayload::EXPECTED
+      }, status: :unprocessable_entity
+    end
+
     service = BaselineParameterService.new(@profile)
-    result = service.update_parameters(parameter_payload)
+    result = service.update_parameters(payload.to_h)
 
     audit_log("profile_document_updated",
       subject: @profile,
@@ -139,13 +154,6 @@ class Api::V1::BaselineParametersController < Api::V1::BaseController
     else
       ProfileDocument.find_by!(slug: id_or_slug)
     end
-  end
-
-  def parameter_payload
-    params.permit(
-      parameters: [ :param_id, :value ],
-      selections: [ :select_id, selected: [] ]
-    ).to_h.deep_symbolize_keys
   end
 
   # #697 — SI-10 upload guard: cap the ODP import file size (consistent with the

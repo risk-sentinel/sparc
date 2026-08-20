@@ -111,6 +111,12 @@ class SspDocumentsController < ApplicationController
                           .where(control_id: normalized_ids)
                           .index_by(&:control_id)
 
+    # #997 — the ODP values the SSP's baseline has set, so the screen can show
+    # the control language WITH them substituted rather than raw
+    # `{{ insert: param, … }}` markup, or nothing at all. Read-only here: the
+    # SSP consumes the baseline, it does not define it.
+    @baseline_param_values = baseline_parameter_values(@ssp_document.profile_document)
+
     # Heatmap uses root controls; status field is now 'status'
     @heatmap_data, @heatmap_families, @heatmap_statuses =
       build_heatmap(@controls, "status")
@@ -603,6 +609,21 @@ class SspDocumentsController < ApplicationController
 
   private
 
+  # #997 — param_id => value across the linked profile. Ids are unique within a
+  # catalog, so one lookup serves every control on the page and the screen does
+  # not issue a query per card.
+  def baseline_parameter_values(profile)
+    return {} if profile.blank?
+
+    ProfileControlField
+      .joins(:profile_control)
+      .where(profile_controls: { profile_document_id: profile.id })
+      .where("field_name LIKE ?", "parameter:%")
+      .where.not("field_name LIKE ?", "parameter_label:%")
+      .pluck(:field_name, :field_value)
+      .to_h { |name, value| [ name.delete_prefix("parameter:"), value ] }
+  end
+
   def ssp_control_resource_params
     params.require(:back_matter_resource).permit(:title, :description, :href, :media_type, :rel)
   end
@@ -708,7 +729,13 @@ class SspDocumentsController < ApplicationController
     seen_ids = []
 
     incoming.each do |c_params|
-      c_params = c_params.permit(:id, :component_type, :title, :description, :status_state)
+      # #998 — the validation pair. The model refuses these on a component that
+      # is not a validation, rather than storing them somewhere no exporter
+      # looks: an enum value with no supporting fields reads as support without
+      # being it.
+      c_params = c_params.permit(:id, :component_type, :title, :description, :status_state,
+                                 :validation_type, :validation_reference,
+                                 :validation_details_href, :validates_component_id)
       if c_params[:id].present? && existing_ids.include?(c_params[:id].to_i)
         record = @ssp_document.ssp_components.find(c_params[:id])
         record.update!(c_params.except(:id))

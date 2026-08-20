@@ -19,7 +19,7 @@ in the main repo — this page summarizes them.
 3. Start a fresh branch — `feature/<n>_short_name` or `bug/<n>_short_name`.
 4. Create a plan and get approval.
 5. Implement, troubleshoot, and add/update specs.
-6. Update project docs (`docs/dev/Implemenation_plan.md`, the
+6. Update project docs (`docs/dev/Implementation_plan.md`, the
    [Developer Collision Avoidance Plan](https://github.com/risk-sentinel/sparc/blob/main/docs/dev/Developer_Collision_Avoidance_Plan.md), etc.).
 7. **Compliance artifact review** — for security-critical code (auth, authz,
    audit, session, crypto, input validation, config), update

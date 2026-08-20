@@ -40,6 +40,33 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
   for fast inner-loop checks, never for the release/pre-push gate. Green `rspec`
   alone is **not** sufficient — it never exercises the running image, routing, or
   CSP. **CI-only or docs-only changes are exempt.**
+- **A `remediated` finding is RETIRED, not reviewed** (owner-decided 2026-08-20).
+  A review cadence asks "is this accepted risk still acceptable?", which is a
+  question about a LIVE disposition and the wrong question for something already
+  fixed. So `remediated` entries do not live in `docs/compliance/sparc-findings.yml`
+  at all — they move to `docs/compliance/sparc-findings.retired.yml`.
+
+  **Retirement requires PROOF, and is deliberately harder than review.** Every
+  retired entry carries `verified_absent_on` (the date a real scan of the shipping
+  image reported nothing) and `verified_by` (what scanned it). Without that,
+  retiring is just deleting.
+
+  **This is currently a convention, NOT an enforced gate.** A CI check for it was
+  written and pulled back out — changing a CI gate needs its own approval, and it
+  did not have one. Until that lands, nothing fails a build when a `remediated`
+  entry is left in the active file or a retired entry carries no evidence. Treat
+  the convention as binding on the author, and do not describe it as enforced.
+
+  **Verify against the IMAGE, not an SBOM** (#862 — grype's SBOM path missed 55%
+  of what the image scan found, including a CRITICAL):
+  `grype <image> -o json`, then check each `cve_id` against the reported set.
+
+  **Do not exempt `remediated` from review instead.** That was the alternative and
+  it was rejected on evidence: verifying the file this way found **20 of 89**
+  entries claiming a remediation the Debian→UBI9 migration had invalidated (#1001),
+  on top of the eleven #770 found. Exempting the disposition would have made every
+  one of them permanent.
+
 - **Refresh the scanner-findings audit on every release** — cutting a release
   (VERSION bump + tag) MUST update `docs/security/SCANNER_FINDINGS_AUDIT.md` in
   the same release PR: re-run `bundle-audit` + Trivy + Grype, refresh the
@@ -60,6 +87,18 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
   body of a merged PR. (Removing the references that already exist in tracked
   files and history is a separate, larger piece of work — do not attempt it
   inside an unrelated PR.)
+
+- **If the current branch is not `main`, ASK before switching branches or cutting
+  a new one.** Run `git rev-parse --abbrev-ref HEAD` before any `git checkout` /
+  `git switch` / `git checkout -b`. Not on `main` → stop and ask. There is no
+  exception for "this new work is unrelated and deserves its own branch": that
+  reasoning is wrong twice over. Supporting changes ride the open bundle's own PR,
+  and a second branch cut from `main` gets a **stale copy of every shared file** —
+  the roadmap, `issue_rules.md`, `CLAUDE.md` — because the current bundle's edits
+  live on the unmerged branch. An edit made against that stale copy cannot be
+  cherry-picked back; it has to be re-done. When new work arrives mid-bundle the
+  default is to do it **on the current branch**; if it genuinely warrants
+  separation, say so and ask.
 
 - **Never run more than one container stack at a time.** Bring up the least
   needed for the test being performed, and stop it the moment that test is done.
@@ -106,7 +145,7 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
 6. **Implement the approved plan**
 7. **Troubleshoot any issues**
 8. **Update project documentation:**
-   - `docs/dev/Implemenation_plan.md` — mark issue complete, update phase status
+   - `docs/dev/Implementation_plan.md` — mark issue complete, update phase status
    - `docs/dev/Developer_Collision_Avoidance_Plan.md` — update file lists, status
    - **Public-facing changes → update the GitHub wiki** (source under `wiki/`):
    if a user, operator, or integrator would read it (new/changed feature, screen,
@@ -325,7 +364,7 @@ In OSCAL CDEFs, use the `remarks` field to note configuration dependencies:
 
 ## References
 
-- `docs/dev/Implemenation_plan.md` — phased roadmap and issue tracking
+- `docs/dev/Implementation_plan.md` — phased roadmap and issue tracking
 - `docs/dev/tls_verification_testing.md` — **required** standard for any TLS/MITM
 surface: prove BOTH directions (untrusted rejected, trusted accepted) with a real
 handshake, negative test first

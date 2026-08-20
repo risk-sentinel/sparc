@@ -162,10 +162,61 @@ Open a baseline, then **Edit** an individual profile control
 (`/profile_documents/:id/profile_controls/:id/edit`) to set its **priority**.
 The priority heatmap on the detail page reflects your selections.
 
+### How to read what a baseline requires
+
+Open a baseline and expand a control's **What this baseline requires** panel.
+It shows, for that control:
+
+- the **control statement** — the actual requirement language, with this
+  baseline's parameter values substituted into it
+- the **parameters** (organization-defined values, or ODPs) the control
+  defines, and what this baseline has set for each
+- the **priority** the baseline assigns
+- the **guidance** from the source catalog
+- the **related controls**
+
+You never see raw OSCAL markup such as `{{ insert: param, ac-20_odp.01 }}` —
+the values are substituted before the page renders, so what you read is what
+the baseline actually asserts. A parameter nobody has set reads *"Not set — the
+baseline default applies"* rather than being hidden.
+
+The same panel appears on an SSP's controls, where it is **read-only**: an SSP
+consumes the baseline, it does not define it.
+
+### How to tailor a baseline's parameters
+
+Tailoring means answering the organization-defined values a control leaves
+open — "lock the account after **N** unsuccessful attempts", "review the policy
+**every N months**".
+
+1. Open the baseline (it must not be published — publish freezes it).
+2. Expand a control's **What this baseline requires** panel.
+3. Type the value into the parameter's box, or tick the choices for a
+   selection.
+4. **Save parameters**.
+
+The screen returns to that control with the new value in place, substituted
+into the control statement. If the value cannot be applied — an id the catalog
+does not define, or a selection sent in the wrong shape — the page says which
+one and why, and nothing is written.
+
+You need the **profiles.write** permission ([RBAC](RBAC)). Without it you still
+see every value; you simply have no boxes to change them in.
+
+API equivalent: `PUT /api/v1/profile_documents/:id/parameters`, and
+`GET .../parameters` to read the whole schema. Bulk ODP files can be uploaded
+through `POST .../parameters/import/preview` and `.../import/confirm`.
+
 ### How to export a baseline
 
 On the baseline detail page: **JSON** for the raw document, or **OSCAL**
 (validated / unvalidated) for the profile.
+
+**Resolved Catalog** exports the baseline as a conformant OSCAL *resolved
+profile catalog* — the shape NIST publishes for its own baselines. Control
+enhancements are nested inside their parent control (`ac-2` contains `ac-2.1`,
+`ac-2.2`, …) rather than listed beside it, and each control carries its links
+back to the reference material in the document's back-matter.
 
 ---
 
@@ -212,6 +263,10 @@ mapping in OSCAL form.
 | Baseline shows no controls | None selected in the checklist step | Re-run **Create from Catalog** and select controls |
 | No **Publish** or **Manage Controls** button on a baseline | It has no source catalog — the header shows **No source catalog** | [Link it to a catalog](#how-to-link-an-imported-baseline-to-its-source-catalog) |
 | Can't change a published baseline's catalog | Published baselines have a fixed catalog, so assessments stay meaningful | Create an editable copy, then link the copy |
+| A control shows **Details** instead of **What this baseline requires** | The linked catalog has no statement, parameters or guidance for it | Check the control in the catalog; an imported catalog may carry identifiers only |
+| No **Save parameters** button, but the values are visible | You have read access, not `profiles.write` | Ask an administrator ([RBAC](RBAC)) |
+| Parameters can be read but not changed on a baseline you may write | The baseline is published | Create an editable copy and tailor that |
+| **Related Controls** is empty on every control | The catalog predates the fix that reads control-level links | Re-import the catalog |
 
 ---
 

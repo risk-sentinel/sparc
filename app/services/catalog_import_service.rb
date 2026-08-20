@@ -30,6 +30,10 @@ class CatalogImportService
   include ProgressTrackable
 
   HOW_MANY = "how-many".freeze
+  # Same spelling and same convention as OscalResolvedProfileCatalogService,
+  # SapXmlParserService and SspXmlParserService — OSCAL hyphenates it, so it
+  # cannot be a symbol and a bare literal repeated is a typo waiting to happen.
+  MEDIA_TYPE = "media-type".freeze
 
   class ImportError < StandardError; end
 
@@ -203,6 +207,10 @@ class CatalogImportService
     metadata_extra["import_format"] = @import_format_override || "oscal_json"
     back_matter_resources = cat_data.dig("back-matter", "resources")
     metadata_extra["back_matter_resources"] = back_matter_resources if back_matter_resources.present?
+    # #999 — the same list, promoted to rows as the controls that reference it
+    # are imported. It stays in metadata_extra as well: that is the verbatim
+    # record of what the file declared, rows or no rows.
+    @catalog_back_matter_resources = back_matter_resources
 
     catalog = if @existing_catalog
       target = resolve_import_target(metadata_extra["catalog_uuid"])
@@ -219,6 +227,7 @@ class CatalogImportService
                      metadata_extra: metadata_extra)
     end
     stats   = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
+    @catalog_for_back_matter = catalog
 
     update_processing_stage!(:creating_records, "Importing #{groups.size} control families...")
 
@@ -258,11 +267,22 @@ class CatalogImportService
     guidance_part = (ctrl["parts"] || []).find { |p| p["name"] == "guidance" }
     supplemental  = guidance_part&.dig("prose").to_s.strip.presence
 
-    # Related controls from guidance part links
-    related = (guidance_part&.dig("links") || [])
+    # Related controls.
+    #
+    # #999 — this read the GUIDANCE PART's links only, which is where Rev 4 puts
+    # them. Rev 5 puts them on the control itself, and the difference was never
+    # visible as an error: measured on the live instance, the Rev 5 catalog had
+    # `related_controls` on 7 of 2318 controls while its source file carries
+    # 3512 `related` links, and Rev 4 had 480 of 1682. So SPARC showed "Related
+    # Controls" as blank for essentially every Rev 5 control, on the screens and
+    # in every export, for as long as Rev 5 has been seeded.
+    #
+    # Both locations are read and unioned, so Rev 4 is unaffected.
+    control_links = Array(ctrl["links"])
+    related = (Array(guidance_part&.dig("links")) + control_links)
               .select { |l| l["rel"] == "related" }
-              .map    { |l| l["href"]&.delete("#") }
-              .compact
+              .filter_map { |l| l["href"].to_s.delete_prefix("#").presence }
+              .uniq
               .join(", ")
 
     # Assessment methods (EXAMINE, INTERVIEW, TEST with objects prose)
@@ -290,8 +310,10 @@ class CatalogImportService
     # Parameter definitions (Assignment/Selection placeholders for profiles to resolve)
     params_data = ctrl["params"].presence || []
 
-    result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data,
-                                    params_data: params_data, label: ctrl_label, sort_id: sort_id)
+    result = upsert_catalog_control(family, control_id,
+                                    title: title, priority: priority, baseline: baseline,
+                                    guidance_data: guidance_data, params_data: params_data,
+                                    label: ctrl_label, sort_id: sort_id, links_data: control_links)
 
     # Create sub-control records for each statement item part (a., 1., (a), …)
     stmt_part = (ctrl["parts"] || []).find { |p| p["name"] == "statement" }
@@ -325,9 +347,8 @@ class CatalogImportService
       # the raw label ("a.", "1.") which is meaningless as a title.
       title = prose.present? ? prose.truncate(200) : label
 
-      upsert_catalog_control(family, sub_id, title, nil, nil,
-        prose.present? ? { "statement" => prose } : {},
-        sort_id: sub_sort)
+      upsert_catalog_control(family, sub_id, title: title, sort_id: sub_sort,
+        guidance_data: prose.present? ? { "statement" => prose } : {})
 
       # Recurse into nested item parts. The sub-part's own derived key becomes
       # the base for its children, so depth keeps extending one padded string.
@@ -391,6 +412,7 @@ class CatalogImportService
                      metadata_extra: metadata_extra)
     end
     stats = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
+    @catalog_for_back_matter = catalog
 
     import_oscal_xml_groups(groups, catalog, stats)
 
@@ -405,6 +427,7 @@ class CatalogImportService
     extra["import_format"] = "oscal_xml"
 
     resources = extract_oscal_xml_back_matter(catalog_node.at_xpath("back-matter"))
+    @catalog_back_matter_resources = resources
     extra["back_matter_resources"] = resources if resources.any?
     extra
   end
@@ -418,7 +441,7 @@ class CatalogImportService
       res["title"] = title_node.text.strip if title_node
       r.xpath("rlink").each do |rl|
         res["rlinks"] ||= []
-        res["rlinks"] << { "href" => rl["href"], "media-type" => rl["media-type"] }.compact
+        res["rlinks"] << { "href" => rl["href"], MEDIA_TYPE => rl[MEDIA_TYPE] }.compact
       end
       res
     end
@@ -455,12 +478,15 @@ class CatalogImportService
     guidance_node = ctrl_node.xpath("part").find { |p| p["name"] == "guidance" }
     supplemental  = guidance_node ? xml_text_content(guidance_node).strip.presence : nil
 
-    # Related controls from guidance links
-    related = if guidance_node
-      guidance_node.xpath("link").select { |l| l["rel"] == "related" }
-                   .map { |l| l["href"]&.delete("#") }
-                   .compact.join(", ").presence
+    # Related controls — guidance links and control-level links unioned, for
+    # the reason recorded on the JSON path above (#999).
+    control_links = ctrl_node.xpath("link").map do |l|
+      { "href" => l["href"], "rel" => l["rel"] }.compact
     end
+    related_nodes = (guidance_node ? guidance_node.xpath("link").to_a : []) + ctrl_node.xpath("link").to_a
+    related = related_nodes.select { |l| l["rel"] == "related" }
+                           .filter_map { |l| l["href"].to_s.delete_prefix("#").presence }
+                           .uniq.join(", ").presence
 
     guidance_data = {
       "statement"             => statement,
@@ -471,8 +497,10 @@ class CatalogImportService
     # Parameter definitions — the key addition for issue #162
     params_data = oscal_xml_collect_params(ctrl_node)
 
-    result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data,
-                                    params_data: params_data, label: ctrl_label, sort_id: sort_id)
+    result = upsert_catalog_control(family, control_id,
+                                    title: title, priority: priority, baseline: baseline,
+                                    guidance_data: guidance_data, params_data: params_data,
+                                    label: ctrl_label, sort_id: sort_id, links_data: control_links)
     stats[:controls] += 1
     stats[result]    += 1
 
@@ -503,9 +531,8 @@ class CatalogImportService
 
       title = prose.present? ? prose.truncate(200) : label
 
-      upsert_catalog_control(family, sub_id, title, nil, nil,
-        prose.present? ? { "statement" => prose } : {},
-        sort_id: sub_sort)
+      upsert_catalog_control(family, sub_id, title: title, sort_id: sub_sort,
+        guidance_data: prose.present? ? { "statement" => prose } : {})
 
       # Recurse into nested item parts
       import_oscal_xml_item_parts(family, sub_id, sub_sort, part.xpath("part"))
@@ -675,7 +702,8 @@ class CatalogImportService
       "nist_references"       => nist_refs
     }.compact.reject { |_, v| v.blank? }
 
-    result = upsert_catalog_control(family, control_id, title, nil, baseline, guidance_data,
+    result = upsert_catalog_control(family, control_id,
+                                    title: title, baseline: baseline, guidance_data: guidance_data,
                                     label: ctrl_label, sort_id: sort_id)
     stats[:controls] += 1
     stats[result]    += 1
@@ -715,7 +743,8 @@ class CatalogImportService
       "related_controls"      => related
     }.compact.reject { |_, v| v.blank? }
 
-    result = upsert_catalog_control(family, control_id, title, nil, baseline, guidance_data,
+    result = upsert_catalog_control(family, control_id,
+                                    title: title, baseline: baseline, guidance_data: guidance_data,
                                     label: ctrl_label, sort_id: sort_id)
     stats[:controls] += 1
     stats[result]    += 1
@@ -755,9 +784,8 @@ class CatalogImportService
       # Use prose text as the title (truncated) instead of the raw label
       title = prose.present? ? prose.truncate(200) : label
 
-      upsert_catalog_control(family, sub_id, title, nil, nil,
-        prose ? { "statement" => prose } : {},
-        label: label, sort_id: sub_sort)
+      upsert_catalog_control(family, sub_id, title: title, label: label, sort_id: sub_sort,
+        guidance_data: prose ? { "statement" => prose } : {})
 
       # Recurse into deeper nesting
       import_xml_item_parts(family, sub_id, sub_sort, child)
@@ -816,21 +844,116 @@ class CatalogImportService
     family
   end
 
-  def upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data, params_data: [], label: nil, sort_id: nil)
-    ctrl = family.catalog_controls.find_or_initialize_by(control_id: control_id)
+  # The fields an importer can set on a control. Named so a typo is a loud
+  # failure rather than a value that quietly never arrives — the same reasoning
+  # as #994: a call that silently discards what it did not recognise cannot be
+  # distinguished from one that had nothing to say.
+  CONTROL_FIELDS = %i[title priority baseline guidance_data
+                      params_data label sort_id links_data].freeze
+
+  # Six positional arguments plus four keywords was ten, which is more than
+  # anyone can hold, and #999 was the change that pushed it over. The fields
+  # travel as one keyword bag instead, validated against CONTROL_FIELDS.
+  def upsert_catalog_control(family, control_id, **fields)
+    fields.assert_valid_keys(*CONTROL_FIELDS)
+
+    ctrl   = family.catalog_controls.find_or_initialize_by(control_id: control_id)
     is_new = ctrl.new_record?
+    guidance = fields[:guidance_data] || {}
+    links    = fields[:links_data] || []
+
     attrs = {
-      title:            title.presence || ctrl.title,
-      priority:         priority.presence || ctrl.priority,
-      baseline_impact:  baseline.presence || ctrl.baseline_impact,
-      guidance_data:    guidance_data.any? ? guidance_data : (ctrl.guidance_data || {})
+      title:            fields[:title].presence || ctrl.title,
+      priority:         fields[:priority].presence || ctrl.priority,
+      baseline_impact:  fields[:baseline].presence || ctrl.baseline_impact,
+      guidance_data:    guidance.any? ? guidance : (ctrl.guidance_data || {})
     }
-    attrs[:params_data] = params_data if params_data.present?
-    attrs[:label] = label if label.present?
-    attrs[:sort_id] = sort_id if sort_id.present?
+    attrs[:params_data] = fields[:params_data] if fields[:params_data].present?
+    attrs[:label]       = fields[:label] if fields[:label].present?
+    attrs[:sort_id]     = fields[:sort_id] if fields[:sort_id].present?
+    # #999 — verbatim, so the catalog round-trips. Absent links leave the
+    # existing value alone rather than clearing it, matching params_data above:
+    # a re-import from a partial source must not erase what a fuller one stored.
+    attrs[:links_data]  = links if links.present?
+
     ctrl.assign_attributes(attrs)
     ctrl.save!
+    link_back_matter_references(ctrl, links)
     is_new ? :created : :updated
+  end
+
+  # ── #999: control-level links ────────────────────────────────────────────
+  #
+  # A `reference` link points into back-matter by UUID
+  # (`{"href": "#2956e175-…", "rel": "reference"}`). Preserving the href alone
+  # would leave a dangling pointer, so the resources it names are promoted to
+  # first-class BackMatterResource rows (the #583 pattern) and joined to the
+  # control, which is what every exporter already turns back into
+  # `{"href" => "#uuid"}`.
+  #
+  # Only `reference` is promoted. The other four rels measured in the Rev 5
+  # catalog — related, required, incorporated-into, moved-to — point at other
+  # CONTROLS, not at resources, and stay in links_data where they belong.
+  def link_back_matter_references(ctrl, links_data)
+    return if links_data.blank?
+    return if catalog_back_matter_index.empty?
+
+    uuids = Array(links_data).select { |l| l["rel"].to_s == "reference" }
+                             .filter_map { |l| l["href"].to_s.delete_prefix("#").presence }
+                             .uniq
+    return if uuids.empty?
+
+    uuids.each do |uuid|
+      resource = promoted_back_matter_resource(uuid)
+      next unless resource
+
+      ControlBackMatterLink.find_or_create_by!(linkable: ctrl, back_matter_resource: resource)
+    end
+  end
+
+  # uuid => the resource hash the catalog declared, built once per import.
+  def catalog_back_matter_index
+    @catalog_back_matter_index ||= begin
+      resources = @catalog_back_matter_resources || []
+      resources.each_with_object({}) do |resource, index|
+        uuid = resource["uuid"].to_s
+        index[uuid] = resource if uuid.present?
+      end
+    end
+  end
+
+  # Idempotent on the catalog's own UUID: a re-import reuses the row rather
+  # than minting a second resource for the same reference, which is what keeps
+  # the seeded catalogs stable across seed-version bumps.
+  def promoted_back_matter_resource(uuid)
+    @promoted_back_matter ||= {}
+    return @promoted_back_matter[uuid] if @promoted_back_matter.key?(uuid)
+
+    declared = catalog_back_matter_index[uuid]
+    @promoted_back_matter[uuid] = declared && build_promoted_resource(uuid, declared)
+  end
+
+  def build_promoted_resource(uuid, declared)
+    resource = BackMatterResource.find_or_initialize_by(uuid: uuid)
+    resource.title       = declared["title"].presence || citation_text(declared).presence || uuid
+    resource.description = citation_text(declared).presence || resource.description
+    resource.href        = Array(declared["rlinks"]).first&.dig("href").presence || resource.href
+    resource.media_type  = Array(declared["rlinks"]).first&.dig(MEDIA_TYPE).presence || resource.media_type
+    resource.rel         = "reference"
+    resource.source      = "imported"
+    resource.resourceable = @catalog_for_back_matter if @catalog_for_back_matter
+    resource.resource_data = declared
+    resource.save!
+    resource
+  rescue ActiveRecord::RecordInvalid => e
+    # A malformed resource must not abort the import of an otherwise good
+    # catalog; the link is simply not made and the href stays in links_data.
+    Rails.logger.warn("[CatalogImportService] skipped back-matter resource #{uuid}: #{e.message}")
+    nil
+  end
+
+  def citation_text(declared)
+    declared.dig("citation", "text").to_s
   end
 
   # ── ID helpers ───────────────────────────────────────────────────────────────

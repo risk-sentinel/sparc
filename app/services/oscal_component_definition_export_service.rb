@@ -89,15 +89,35 @@ class OscalComponentDefinitionExportService
     # here before, so a document nobody has edited exports byte-identically.
     # "software" as a blanket default meant every exported CDEF claimed to be
     # software regardless of what it described.
-    {
+    # #998 — props and links on the COMPONENT. They were already emitted on
+    # implemented-requirements and statements; the component was the one place
+    # they were missing, so an imported CDEF's component-level claims were
+    # dropped on the way back out and a `validation` component had no way to
+    # cite its certificate.
+    #
+    # A CDEF still exports exactly ONE component, built from the
+    # cdef_documents.component_* columns, so it cannot carry the component PAIR
+    # OSCAL uses to model validation (product + validation joined by
+    # `rel="validation"`). `validation` is therefore documented as PARTIAL on
+    # CDEF — see docs/api and the Component Definitions guide — and the full
+    # model lives on the SSP, where ssp_components is a real table with many
+    # rows per document.
+    component = {
       "uuid"        => OscalUuidService.derived(@document.uuid, "cdef-component"),
       "type"        => @document.component_type.presence || "software",
       "title"       => @document.component_title.presence || @document.name,
       "description" => @document.component_description.presence ||
                        @document.description.presence ||
-                       "Imported component definition",
-      "control-implementations" => [ build_control_implementation(controls) ]
+                       "Imported component definition"
     }
+
+    props = Array(@document.component_props_data)
+    links = Array(@document.component_links_data)
+    component["props"] = props if props.present?
+    component["links"] = links if links.present?
+
+    component["control-implementations"] = [ build_control_implementation(controls) ]
+    component
   end
 
   def build_control_implementation(controls)

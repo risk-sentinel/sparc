@@ -160,9 +160,54 @@ class SspJsonParserService
         protocols_data:         comp["protocols"] || [],
         props_data:             comp["props"] || [],
         links_data:             comp["links"] || [],
-        remarks:                comp["remarks"]
+        remarks:                comp["remarks"],
+        **validation_attributes(comp)
       )
       component_map[comp["uuid"]] = record
+    end
+
+    link_validation_pairs(components, component_map)
+  end
+
+  # #998 — the certificate a validation component carries, lifted out of props
+  # and links into the first-class columns so it is checkable rather than a
+  # string in a bag. The raw props and links are still stored verbatim, so
+  # nothing is lost if a document carries more than SPARC models.
+  def validation_attributes(comp)
+    return {} unless comp["type"] == "validation"
+
+    props = Array(comp["props"])
+    detail = Array(comp["links"])
+             .find { |l| l["rel"] == SspComponent::VALIDATION_DETAILS_REL }
+
+    {
+      validation_type:         prop_value(props, SspComponent::VALIDATION_TYPE_PROP),
+      validation_reference:    prop_value(props, SspComponent::VALIDATION_REFERENCE_PROP),
+      validation_details_href: detail && detail["href"]
+    }.compact
+  end
+
+  def prop_value(props, name)
+    props.find { |p| p["name"] == name }&.dig("value")
+  end
+
+  # The pairing, restored. The link lives on the PRODUCT
+  # (`rel="validation"` → the validation component's uuid), so it can only be
+  # resolved once every component in the document exists — which is why this is
+  # a second pass rather than part of the create above.
+  def link_validation_pairs(components, component_map)
+    components.each do |comp|
+      product = component_map[comp["uuid"]]
+      next unless product
+
+      Array(comp["links"]).each do |link|
+        next unless link["rel"] == SspComponent::VALIDATION_REL
+
+        validation = component_map[link["href"].to_s.delete_prefix("#")]
+        next unless validation
+
+        validation.update!(validates_component_id: product.id)
+      end
     end
   end
 

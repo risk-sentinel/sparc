@@ -83,11 +83,51 @@ class OscalResolvedProfileCatalogService
         "id"       => family.code.downcase,
         "class"    => "family",
         "title"    => family.name,
-        "controls" => selected_controls.map { |cc| build_control(cc, profile_lookup[cc.control_id]) }
+        "controls" => nest_enhancements(selected_controls, profile_lookup)
       }
     end
 
     groups.presence
+  end
+
+  # An enhancement id carries its parent: `ac-2.1` belongs inside `ac-2`.
+  # Statement sub-parts (`ac-1a`, `ac-1a.1`) do not match and stay where they
+  # are — they are parts of a statement, not controls, and nesting them here
+  # would assert a relationship OSCAL does not model that way.
+  ENHANCEMENT_ID = /\A([a-z]+-\d+(?:\.\d+)*)\.\d+\z/i
+
+  # #999 — a conformant resolved catalog NESTS an enhancement inside its parent
+  # control, exactly as NIST's own published resolved profile catalogs do:
+  # `ac-2` contains `ac-2.1` … `ac-2.11`, giving 188 top-level controls and 182
+  # nested rather than 370 siblings. SPARC emitted every control as a top-level
+  # sibling, so a consumer could not tell an enhancement from a base control
+  # except by parsing the identifier — precisely the inference a structured
+  # format exists to remove.
+  #
+  # An enhancement whose PARENT is not in the profile stays top-level. That is a
+  # real profile (a tailoring may select an enhancement without its base), and
+  # inventing a parent control the baseline never selected would be a worse lie
+  # than the flat list.
+  #
+  # Ordering is deliberately unchanged: the callers sort by `control_id`, and in
+  # that ordering a child already sorts immediately after its parent
+  # ("ac-2" < "ac-2.1" < "ac-20", because "." precedes "0"), so the document
+  # order of the nested tree matches the flat list this replaces byte for byte.
+  def nest_enhancements(catalog_controls, profile_lookup)
+    built = catalog_controls.to_h do |cc|
+      [ cc.control_id, build_control(cc, profile_lookup[cc.control_id]) ]
+    end
+
+    catalog_controls.each_with_object([]) do |cc, roots|
+      parent_id = cc.control_id.to_s[ENHANCEMENT_ID, 1]
+      parent    = parent_id && built[parent_id]
+
+      if parent
+        (parent["controls"] ||= []) << built[cc.control_id]
+      else
+        roots << built[cc.control_id]
+      end
+    end
   end
 
   def build_control(catalog_control, profile_control)
@@ -104,10 +144,49 @@ class OscalResolvedProfileCatalogService
     props = build_control_props(catalog_control, profile_control)
     result["props"] = props if props.any?
 
+    # #999 — between props and parts, matching the key order in NIST's own
+    # published resolved catalogs (id, class, title, params, props, links,
+    # parts, controls).
+    links = build_control_links(catalog_control)
+    result["links"] = links if links.any?
+
     parts = build_control_parts(catalog_control, profile_control)
     result["parts"] = parts if parts.any?
 
     result
+  end
+
+  # #999 — SPARC emitted `links` on none of its 287 controls where NIST emits
+  # them on 188 of 188, so the references to source material did not survive
+  # resolution and the back-matter the catalog carried had nothing pointing at
+  # it. Emitted verbatim from what the catalog declared.
+  #
+  # `related` hrefs are kept even when they name a control outside this
+  # baseline, which is what NIST does: its LOW resolved catalog carries 1523
+  # `related` links across 149 controls, many of them pointing at controls LOW
+  # does not select. A related link is a statement about the control, not a
+  # reference the document has to resolve.
+  #
+  # Every `reference` href, by contrast, MUST resolve — measured on NIST's LOW
+  # and MODERATE resolved catalogs, 128 of 128 and 138 of 138 land in
+  # back-matter with none dangling — so the uuids are collected here and the
+  # resources they name are carried by build_back_matter.
+  def build_control_links(catalog_control)
+    links = catalog_control.links_list
+    return [] if links.empty?
+
+    links.each do |link|
+      next unless link["rel"].to_s == "reference"
+
+      uuid = link["href"].to_s.delete_prefix("#")
+      referenced_resource_uuids << uuid if uuid.present?
+    end
+
+    links
+  end
+
+  def referenced_resource_uuids
+    @referenced_resource_uuids ||= Set.new
   end
 
   # Merges catalog param definitions with profile-set parameter values.
@@ -256,6 +335,23 @@ class OscalResolvedProfileCatalogService
       "rlinks"      => [ { "href" => SparcConfig.app_url, MEDIA_TYPE => "text/html" } ]
     }
 
+    # #999 — the resources the exported controls actually reference. The rule is
+    # the OSCAL one #959 established for every other document: back-matter
+    # exists to resolve the references the document makes, so a resource is
+    # carried when something in it points at the resource, and never otherwise.
+    #
+    # This runs after build_groups because build_catalog evaluates `groups`
+    # first, which is where the uuids are collected.
+    resources.concat(referenced_back_matter_resources)
+
     { "resources" => resources }
+  end
+
+  def referenced_back_matter_resources
+    return [] if referenced_resource_uuids.empty?
+
+    BackMatterResource.where(uuid: referenced_resource_uuids.to_a)
+                      .order(:id)
+                      .map(&:to_oscal_resource)
   end
 end

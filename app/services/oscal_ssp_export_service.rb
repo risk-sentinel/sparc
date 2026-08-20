@@ -340,10 +340,50 @@ class OscalSspExportService
     entry["status"]  = build_component_status(comp)
     entry[RESPONSIBLE_ROLES] = comp.responsible_roles_data if comp.responsible_roles_data.present?
     entry["protocols"]         = comp.protocols_data if comp.protocols_data.present?
-    entry["props"]             = comp.props_data if comp.props_data.present?
-    entry["links"]             = comp.links_data if comp.links_data.present?
+    # #998 — the validation pair. Props and links are MERGED with whatever the
+    # component already carries rather than replacing them: props_data and
+    # links_data hold what was imported, and a validation claim is an addition
+    # to that, not a substitute for it.
+    props = Array(comp.props_data) + validation_props(comp)
+    links = Array(comp.links_data) + validation_links(comp)
+
+    entry["props"]             = props if props.present?
+    entry["links"]             = links if links.present?
     entry["remarks"]           = comp.remarks if comp.remarks.present?
     entry
+  end
+
+  # The certificate, on the validation component itself.
+  def validation_props(comp)
+    return [] unless comp.validation?
+
+    props = []
+    if comp.validation_type.present?
+      props << { "name" => SspComponent::VALIDATION_TYPE_PROP, "value" => comp.validation_type }
+    end
+    if comp.validation_reference.present?
+      props << { "name" => SspComponent::VALIDATION_REFERENCE_PROP, "value" => comp.validation_reference }
+    end
+    props
+  end
+
+  # Two directions, and both are needed for the pair to mean anything: the
+  # validation component points OUT to the authoritative record, and the product
+  # component points IN to its validation. A validation component pointing at
+  # nothing is another partial, which is what #998 exists to stop.
+  def validation_links(comp)
+    links = []
+
+    if comp.validation? && comp.validation_details_href.present?
+      links << { "href" => comp.validation_details_href,
+                 "rel"  => SspComponent::VALIDATION_DETAILS_REL }
+    end
+
+    comp.validations.each do |validation|
+      links << { "href" => "##{validation.uuid}", "rel" => SspComponent::VALIDATION_REL }
+    end
+
+    links
   end
 
   def build_component_status(comp)

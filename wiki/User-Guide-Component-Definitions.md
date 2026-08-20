@@ -68,6 +68,16 @@ upload a file someone else authored, generate one from a published profile, or
    - **Component type** — what kind of thing it is: service, hardware, policy,
      process-procedure, and so on. OSCAL constrains this list. Leave it blank and
      the export falls back to `software`.
+     - **`validation` is only partly supported here.** OSCAL models a
+       third-party product validation — "this module is FIPS 140-2 validated,
+       certificate #4282" — as a *pair* of components: the product, and a
+       separate `validation` component carrying the certificate, joined by a
+       link from one to the other. **A component definition exports exactly one
+       component**, so it cannot carry that pair. A CDEF typed `validation` will
+       carry any props and links it was imported with, but it cannot say which
+       product it validates. Record validations on the
+       [System Security Plan](User-Guide-System-Security-Plans#how-to-record-a-product-validation)
+       instead, where a document holds many components.
    - **Component title** and **description** — what a reader of the exported
      OSCAL sees. Leave them blank to reuse the document's name and description.
    - **Control implementation source** — the catalog or profile whose controls
@@ -146,6 +156,7 @@ On the detail page:
 | Bulk-apply adds no controls | Converter has no entries, or wrong converter | Refresh/verify the converter, then re-apply |
 | CDEF doesn't seed the SSP | Not selected at the wizard's CDEF step | Re-run the SSP wizard and pick the CDEF |
 | OSCAL export fails validation | Missing required component metadata | Fill the flagged fields, then use the validated export |
+| A `validation` CDEF cannot say what it validates | A component definition exports one component, and the OSCAL validation model needs a pair | Record the validation on the SSP ([how](User-Guide-System-Security-Plans#how-to-record-a-product-validation)) |
 | Can't edit the CDEF | View-only role | Request CDEF write permission ([RBAC](RBAC)) |
 
 ---

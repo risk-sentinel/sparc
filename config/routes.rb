@@ -232,6 +232,11 @@ Rails.application.routes.draw do
     resources :profile_controls, only: [ :new, :create, :edit, :update, :destroy ] do
       resources :control_back_matter_links, only: [ :create, :destroy ]
       post :link_resource, on: :member, controller: "control_back_matter_links", action: "link"
+      # #997 — tailor one control's ODP values from the Profile screen itself.
+      # Writes through BaselineParameterService, the same service
+      # PUT /api/v1/profile_documents/:id/parameters uses, so the web form and
+      # the API cannot validate a tailoring decision differently.
+      patch :parameters, on: :member, action: "update_parameters"
     end
     resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
@@ -559,6 +564,11 @@ Rails.application.routes.draw do
 
       # Document CRUD + legacy actions (#229)
       resources :ssp_documents, only: [ :index, :show, :create, :update, :destroy ] do
+        # #998 follow-up — SSP components had no Api::V1 surface at all: they
+        # could be created, edited and deleted only through the enrichment
+        # screen, making the web UI the only way to perform those mutations.
+        resources :components, only: [ :index, :show, :create, :update, :destroy ],
+                               controller: "ssp_components"
         collection do
           post :convert
         end

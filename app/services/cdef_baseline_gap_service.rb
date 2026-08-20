@@ -50,20 +50,16 @@ class CdefBaselineGapService
 
   private
 
+  # #999 — through ResolvedCatalog, so a nested enhancement counts as covered
+  # rather than reading as a gap the CDEF was never asked to fill.
   def extract_baseline_control_ids
-    groups = @profile.resolved_catalog_json.dig("catalog", "groups") || []
-    ids = Set.new
-    groups.each do |group|
-      (group["controls"] || []).each { |c| ids << c["id"] }
-    end
-    ids
+    ResolvedCatalog.wrap(@profile.resolved_catalog_json).control_ids.to_set
   end
 
   def build_catalog_control_map
-    groups = @profile.resolved_catalog_json.dig("catalog", "groups") || []
     map = {}
-    groups.each do |group|
-      (group["controls"] || []).each { |c| map[c["id"]] = c["title"] }
+    ResolvedCatalog.wrap(@profile.resolved_catalog_json).each_control do |control, _group|
+      map[control["id"]] = control["title"]
     end
     map
   end

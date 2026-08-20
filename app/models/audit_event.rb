@@ -80,6 +80,9 @@ class AuditEvent < ApplicationRecord
     cdef_document_baseline_declared
     profile_document_baseline_declared
 
+    ssp_component_created
+    ssp_component_updated
+    ssp_component_deleted
     ssp_document_created
     ssp_document_updated
     ssp_document_deleted
@@ -390,6 +393,7 @@ class AuditEvent < ApplicationRecord
                           unscoped_authoritative_back_matter_reported
                           ssp_document_created_from_profile ssp_document_populated_from_profile
                           ssp_statement_updated ssp_statement_reset_to_source
+                          ssp_component_created ssp_component_updated ssp_component_deleted
                           ssp_inherited_refreshed ssp_document_fields_imported],
     "SAR Documents" => %w[sar_document_created sar_document_updated sar_document_deleted
                           sar_document_delete_blocked sar_document_exported sar_document_imported

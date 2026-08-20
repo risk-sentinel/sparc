@@ -124,6 +124,40 @@ RSpec.describe BaselineParameterService do
       expect(field.field_value).to eq("ISSO")
     end
 
+    # ── #994: the service is the last guard, not the only one ──────────────
+    #
+    # The API reaches here through BaselineParameterPayload, which refuses these
+    # shapes at the edge. These examples pin the SERVICE's own behaviour,
+    # because OdpImportService (#697) and any future caller reach it directly —
+    # and because a guard nothing exercises is a guard that can be deleted
+    # without a single test going red.
+    it "refuses a non-array `selected` instead of coercing it into the record" do
+      create(:profile_control, profile_document: profile, control_id: "ac-2")
+
+      result = service.update_parameters(
+        selections: [ { select_id: "ac-2_prm_1", selected: "removes" } ]
+      )
+
+      expect(result[:selections_updated]).to eq(0)
+      expect(result[:status]).to eq("partial")
+      expect(result[:validation_errors].first).to include(
+        select_id: "ac-2_prm_1",
+        error: a_string_matching(/must be an array/)
+      )
+      # The write is what mattered: a string used to be `to_s`'d straight in and
+      # reported as `selections_updated: 1`.
+      expect(ProfileControlField.find_by(field_name: "parameter:ac-2_prm_1")).to be_nil
+    end
+
+    it "reports a selection entry that names no id as missing one" do
+      create(:profile_control, profile_document: profile, control_id: "ac-2")
+
+      result = service.update_parameters(selections: [ { selected: [ "removes" ] } ])
+
+      expect(result[:selections_updated]).to eq(0)
+      expect(result[:validation_errors].first[:error]).to match(/missing select_id/)
+    end
+
     it "updates selection fields" do
       create(:profile_control, profile_document: profile, control_id: "ac-2")
 

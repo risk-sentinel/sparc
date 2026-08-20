@@ -208,9 +208,118 @@ RSpec.describe CatalogImportService do
       select_params = ac1.params_list.select { |p| p["select"].present? }
       expect(select_params).to be_present
     end
+
+    # ── #999: control-level links ──────────────────────────────────────────
+    #
+    # These were discarded outright. Measured on the fixture: 1191 of 1196
+    # controls carry links, and none of them reached the database — so an
+    # exporter had nothing to emit and the 200 back-matter resources the
+    # catalog declares had nothing pointing at them.
+    describe "control-level links (#999)" do
+      before { result }
+
+      let(:ac1) { CatalogControl.find_by(control_id: "ac-1") }
+
+      it "stores the control's links verbatim" do
+        expect(ac1.links_list).to be_present
+        expect(ac1.links_list.map { |l| l["rel"] }.uniq).to include("reference")
+        expect(ac1.links_list.first["href"]).to start_with("#")
+      end
+
+      # The Rev 5 catalog puts `related` on the CONTROL; the importer read only
+      # the guidance part's links, which is a Rev 4 shape. The consequence was
+      # measured on the live instance: related_controls was populated on 7 of
+      # 2318 Rev 5 controls, and blank on every screen and export.
+      it "populates related_controls from the control's own links" do
+        expect(ac1.guidance_data["related_controls"]).to be_present
+        expect(ac1.guidance_data["related_controls"].split(", ")).to include("ia-1")
+      end
+
+      # Counted against the source file rather than a threshold: every control
+      # the catalog gives a `related` link must end up with one. The old code
+      # produced 7 of these on the live instance; the source declares 651.
+      it "keeps every related link the source declares" do
+        source = JSON.parse(File.read(rev5_json_path)).dig("catalog", "groups")
+        expected = 0
+        walk = lambda do |control|
+          expected += 1 if Array(control["links"]).any? { |l| l["rel"] == "related" }
+          Array(control["controls"]).each { |child| walk.call(child) }
+        end
+        source.each { |group| Array(group["controls"]).each { |c| walk.call(c) } }
+
+        imported = CatalogControl.where.not(guidance_data: {})
+                                 .select { |c| c.guidance_data["related_controls"].present? }.size
+
+        expect(expected).to be > 600, "the fixture no longer exercises this"
+        expect(imported).to eq(expected)
+      end
+
+      it "promotes the referenced back-matter resources to rows" do
+        referenced = ac1.links_list.select { |l| l["rel"] == "reference" }
+                        .map { |l| l["href"].delete_prefix("#") }
+
+        expect(ac1.back_matter_resources.pluck(:uuid)).to match_array(referenced)
+        expect(ac1.back_matter_resources.first.source).to eq("imported")
+        expect(ac1.back_matter_resources.first.title).to be_present
+      end
+
+      it "reuses a promoted resource rather than minting a second on re-import" do
+        before_count = BackMatterResource.where(source: "imported").count
+
+        described_class.call(File.open(rev5_json_path), "NIST_SP-800-53_rev5_catalog.json",
+                             existing_catalog: CatalogControl.first.control_family.control_catalog)
+
+        expect(BackMatterResource.where(source: "imported").count).to eq(before_count)
+      end
+
+      it "does not promote a `related` link, which names a control and not a resource" do
+        related_hrefs = ac1.links_list.select { |l| l["rel"] == "related" }
+                           .map { |l| l["href"].delete_prefix("#") }
+
+        expect(related_hrefs).to be_present
+        expect(ac1.back_matter_resources.pluck(:uuid)).not_to include(*related_hrefs)
+      end
+    end
   end
 
   # ── XML parameter helper unit tests ──────────────────────────────────────
+
+  # ── The keyword bag is only safe if a typo is LOUD ──────────────────────
+  #
+  # Collapsing ten parameters into `**fields` traded one problem for another:
+  # a misspelled key would simply never arrive, and the control would import
+  # with that field quietly unset. That is the #994 shape — a call that
+  # discards what it did not recognise is indistinguishable from one that had
+  # nothing to say — so the method validates its own keys.
+  describe "#upsert_catalog_control field validation" do
+    let(:catalog) { create(:control_catalog) }
+    let(:family)  { create(:control_family, control_catalog: catalog, code: "AC") }
+    let(:service) { described_class.new(StringIO.new(""), "test.json") }
+
+    it "accepts every documented field" do
+      expect {
+        service.send(:upsert_catalog_control, family, "ac-1",
+          title: "Policy", priority: "P1", baseline: "LOW",
+          guidance_data: { "statement" => "s" }, params_data: [],
+          label: "AC-1", sort_id: "ac-01", links_data: [])
+      }.not_to raise_error
+
+      expect(family.catalog_controls.find_by(control_id: "ac-1").title).to eq("Policy")
+    end
+
+    it "REFUSES an unknown key instead of silently dropping it" do
+      expect {
+        service.send(:upsert_catalog_control, family, "ac-2", title: "X", lnks_data: [ { "rel" => "reference" } ])
+      }.to raise_error(ArgumentError, /lnks_data/)
+    end
+
+    it "names every field it will accept, so the list cannot drift from the method" do
+      expect(described_class::CONTROL_FIELDS).to contain_exactly(
+        :title, :priority, :baseline, :guidance_data,
+        :params_data, :label, :sort_id, :links_data
+      )
+    end
+  end
 
   describe "#oscal_xml_collect_params" do
     let(:service) { described_class.new(StringIO.new(""), "test.xml") }

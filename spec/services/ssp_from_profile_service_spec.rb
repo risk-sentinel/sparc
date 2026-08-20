@@ -80,6 +80,70 @@ RSpec.describe SspFromProfileService do
       published: Time.current.iso8601)
   end
 
+  # ── #999: the shape an IMPORTED resolved catalog actually arrives in ──────
+  #
+  # ProfileJsonParserService stores an imported resolved profile verbatim, and
+  # NIST's published resolved catalogs NEST enhancements inside their parent
+  # control. This service walked `groups[].controls[]` and stopped, so every
+  # enhancement was silently dropped: against NIST's HIGH baseline that is 188
+  # controls generated from a profile carrying 370. No error, no warning, and
+  # the SSP simply had nothing to say about ac-2(1) onwards.
+  describe "a nested resolved catalog, as imported from NIST (#999)" do
+    let(:nested_catalog_json) do
+      {
+        "catalog" => {
+          "uuid" => SecureRandom.uuid,
+          "metadata" => { "title" => "NIST-shaped", "version" => "1.0.0", "oscal-version" => "1.1.2" },
+          "groups" => [
+            {
+              "id" => "ac", "class" => "family", "title" => "Access Control",
+              "controls" => [
+                {
+                  "id" => "ac-2", "class" => "SP800-53", "title" => "Account Management",
+                  "parts" => [ { "id" => "ac-2_smt", "name" => "statement", "prose" => "Define account types." } ],
+                  "controls" => [
+                    { "id" => "ac-2.1", "class" => "SP800-53", "title" => "Automated System Account Management",
+                      "parts" => [ { "id" => "ac-2.1_smt", "name" => "statement", "prose" => "Support the management of system accounts." } ] },
+                    { "id" => "ac-2.2", "class" => "SP800-53", "title" => "Automated Temporary and Emergency Account Management" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    end
+
+    let(:nested_profile) do
+      create(:profile_document,
+        lifecycle_status: "published",
+        resolved_catalog_json: nested_catalog_json,
+        published: Time.current.iso8601)
+    end
+
+    it "generates a control for every enhancement, not just the base controls" do
+      ssp = described_class.new(nested_profile, authorization_boundary: boundary).create
+
+      expect(ssp.ssp_controls.pluck(:control_id)).to contain_exactly("ac-2", "ac-2.1", "ac-2.2")
+    end
+
+    it "carries a nested enhancement's own statement prose" do
+      ssp = described_class.new(nested_profile, authorization_boundary: boundary).create
+      control = ssp.ssp_controls.find_by(control_id: "ac-2.1")
+
+      expect(control.title).to eq("Automated System Account Management")
+      expect(control.ssp_control_fields.find_by(field_name: "stated_requirement").field_value)
+        .to eq("Support the management of system accounts.")
+    end
+
+    it "orders a parent before its enhancements" do
+      ssp = described_class.new(nested_profile, authorization_boundary: boundary).create
+      ordered = ssp.ssp_controls.order(:row_order).pluck(:control_id)
+
+      expect(ordered).to eq(%w[ac-2 ac-2.1 ac-2.2])
+    end
+  end
+
   describe "#create" do
     it "creates an SspDocument with correct attributes" do
       ssp = described_class.new(profile, name: "Test SSP", authorization_boundary: boundary).create

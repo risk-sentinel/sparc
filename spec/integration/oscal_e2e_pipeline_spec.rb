@@ -203,12 +203,134 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       selected = profile.profile_controls.pluck(:control_id).to_set
 
       data = JSON.parse(OscalResolvedProfileCatalogService.new(profile).export)
-      resolved = (data.dig("catalog", "groups") || [])
-                 .flat_map { |g| g["controls"] || [] }
-                 .map { |c| c["id"] }.to_set
+      # #999 — walked, not flat-mapped. An enhancement is now nested inside its
+      # parent control, which is what a conformant resolved catalog looks like;
+      # reading only `group["controls"]` reported 18 selected controls as
+      # "dropped" when every one of them was present, one level down. That is
+      # the same mistake the six production consumers were making.
+      resolved = ResolvedCatalog.wrap(data).control_ids.to_set
 
       expect(selected - resolved).to be_empty,
         "resolution dropped #{(selected - resolved).size} controls the profile selected"
+    end
+
+    # #999 — the structure, asserted against NIST's own published resolved
+    # profile catalog rather than against what SPARC happens to emit.
+    it "nests enhancements inside their parent control, the way NIST does" do
+      profile = build_baseline("LOW")
+      data = JSON.parse(OscalResolvedProfileCatalogService.new(profile).export)
+      groups = data.dig("catalog", "groups")
+
+      top_level = groups.flat_map { |g| g["controls"] || [] }
+      nested    = top_level.flat_map { |c| c["controls"] || [] }
+
+      expect(nested).not_to be_empty,
+        "no enhancement is nested — the catalog is still a flat list of siblings"
+
+      # Every nested control is an enhancement of the control it sits inside.
+      nested_pairs = top_level.flat_map { |parent| (parent["controls"] || []).map { |c| [ parent["id"], c["id"] ] } }
+      nested_pairs.each do |parent_id, child_id|
+        expect(child_id).to start_with("#{parent_id}."),
+          "#{child_id} is nested inside #{parent_id}, which is not its parent"
+      end
+
+      # And no enhancement is left at the top level while its parent is present.
+      top_ids = top_level.map { |c| c["id"] }.to_set
+      orphaned = top_ids.select { |id| id =~ /\A([a-z]+-\d+)\.\d+\z/ && top_ids.include?($1) }
+      expect(orphaned).to be_empty,
+        "#{orphaned.size} enhancements sit beside their parent instead of inside it"
+    end
+
+    # ── #999: measured against NIST's own published resolved catalog ────────
+    #
+    # The point of these is that the reference is not SPARC's own output. NIST
+    # publishes the canonical result of profile resolution, two of which are
+    # committed under spec/fixtures/files/profiles/, and the structural claims
+    # below are read off THOSE files rather than asserted from memory. When the
+    # issue was filed, SPARC's MODERATE resolved catalog matched NIST's HIGH on
+    # root keys, group count and param keys, and differed on exactly two things:
+    # 0 nested enhancements against 182, and 0 of 287 controls carrying links
+    # against 188 of 188.
+    describe "conformance with NIST's published resolved catalog" do
+      let(:reference) do
+        JSON.parse(Rails.root.join(
+          "spec/fixtures/files/profiles/NIST_SP-800-53_rev5_LOW-baseline-resolved-profile_catalog.json"
+        ).read).fetch("catalog")
+      end
+      let(:resolved) do
+        JSON.parse(OscalResolvedProfileCatalogService.new(build_baseline("LOW")).export).fetch("catalog")
+      end
+
+      def controls_of(catalog)
+        catalog["groups"].flat_map { |g| g["controls"] || [] }
+      end
+
+      def nested_of(catalog)
+        controls_of(catalog).flat_map { |c| c["controls"] || [] }
+      end
+
+      it "carries the same top-level keys" do
+        expect(resolved.keys).to match_array(reference.keys)
+      end
+
+      it "nests enhancements, as the reference does" do
+        expect(nested_of(reference)).not_to be_empty, "the reference fixture no longer exercises this"
+        expect(nested_of(resolved)).not_to be_empty
+      end
+
+      it "carries links on its controls, as the reference does" do
+        ref_with_links = controls_of(reference).count { |c| c["links"].present? }
+        got_with_links = controls_of(resolved).count { |c| c["links"].present? }
+
+        expect(ref_with_links).to be > 0, "the reference fixture no longer exercises this"
+        expect(got_with_links).to be > 0,
+          "no control carries links — the references to source material did not survive resolution"
+      end
+
+      it "emits reference links, not only related ones" do
+        rels = controls_of(resolved).flat_map { |c| c["links"] || [] }.map { |l| l["rel"] }.uniq
+        expect(rels).to include("reference")
+      end
+
+      # The property that makes back-matter worth carrying, and the one the
+      # reference satisfies exactly: on NIST's LOW and MODERATE resolved
+      # catalogs, 128 of 128 and 138 of 138 reference hrefs land in back-matter
+      # with none dangling.
+      it "leaves no reference href dangling, as the reference does" do
+        [ [ "reference fixture", reference ], [ "SPARC output", resolved ] ].each do |label, catalog|
+          carried = Array(catalog.dig("back-matter", "resources")).map { |r| r["uuid"] }.to_set
+          referenced = (controls_of(catalog) + nested_of(catalog))
+                       .flat_map { |c| c["links"] || [] }
+                       .select { |l| l["rel"] == "reference" }
+                       .map { |l| l["href"].to_s.delete_prefix("#") }
+                       .to_set
+
+          expect(referenced).not_to be_empty, "#{label}: nothing references back-matter at all"
+          expect(referenced - carried).to be_empty,
+            "#{label}: #{(referenced - carried).size} reference hrefs resolve to nothing in back-matter"
+        end
+      end
+
+      # The other direction of #959's rule: back-matter exists to resolve the
+      # references the document makes, so a resource nothing points at must not
+      # be dragged along.
+      it "carries no promoted resource that nothing in the document references" do
+        carried = Array(resolved.dig("back-matter", "resources"))
+        referenced = (controls_of(resolved) + nested_of(resolved))
+                     .flat_map { |c| c["links"] || [] }
+                     .select { |l| l["rel"] == "reference" }
+                     .map { |l| l["href"].to_s.delete_prefix("#") }
+                     .to_set
+
+        # The three SPARC identity resources (source profile, source catalog,
+        # SPARC itself) are referenced from metadata rather than from a control.
+        promoted = carried.select { |r| r["title"] != "SPARC Document Source" }
+                          .reject { |r| [ resolved.dig("metadata", "links", 0, "href")&.delete_prefix("#") ].compact.include?(r["uuid"]) }
+
+        stray = promoted.map { |r| r["uuid"] }.to_set - referenced - [ catalog.oscal_uuid ].compact.to_set
+        expect(stray).to be_empty,
+          "#{stray.size} back-matter resources are carried that nothing references"
+      end
     end
 
     it "REJECTS a profile with no import — a baseline that selects nothing" do

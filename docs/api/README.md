@@ -66,6 +66,13 @@ SPARC supports three API authentication modes (controlled by `SPARC_API_AUTH` en
 ### 2. SSP Documents (8 requests)
 - CRUD + file convert + bulk field update + JSON export
 - Uses `:slug` identifier (e.g., `acme-cloud-platform-ssp`)
+- **Components** — [`endpoints/ssp-components.md`](endpoints/ssp-components.md),
+  nested at `/api/v1/ssp_documents/:slug/components`. CRUD over the system's
+  components, including the OSCAL validation pair (#998: a `validation`
+  component carrying a certificate, linked to the product it validates).
+  Documented and covered by request specs and by the pytest suite
+  (`tests/api/test_ssp_components.py`); **not yet in the Postman collection**. Closes a real gap — components previously had no API
+  at all and could only be edited through the enrichment screen
 
 ### 3. SAR Documents (8 requests)
 - Same pattern as SSP — CRUD + convert + bulk field update + export

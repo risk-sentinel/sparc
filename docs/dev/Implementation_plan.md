@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-05-25
+**Last updated:** 2026-08-19
 
 ---
 
@@ -654,7 +654,14 @@ Backlog / gated:
 
 ### Phase 16: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
 
-**Goal:** Close the v1.16.0 milestone (**40 issues — 30 closed, 10 open, measured 2026-08-19** during Bundle P; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, and #935, #951, #959 added to the milestone by the owner on 2026-08-15, and **#981, #982, #984 filed from the Bundle P verification gate**). The count has moved five times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
+**Goal:** Close the v1.16.0 milestone (**49 issues — 40 closed, 9 open, re-measured 2026-08-19 late**, after Bundles T and Q and the hdf-cli pin shipped; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, #935, #951, #959 added by the owner on 2026-08-15, **#981, #982, #984 filed from the Bundle P verification gate**, **#988, #989 filed and fixed inside Bundle T**, **#991 filed and fixed inside Bundle Q**, **#993 filed and fixed by the hdf-cli 3.5.1 pin**, and **#994, #995, #997, #998, #999 filed 2026-08-19**). The count has moved **eight** times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
+
+**The release gate is Bundle V: sweep all 229 `/api/v1` route entries against their published
+contracts** — send a payload, parse the response, and prove with an INDEPENDENT read that the
+endpoint did what `docs/api/endpoints/*.md` says it does. Not "it returned 200." The full matrix,
+the ~1,294-check floor and a per-group progress tracker are in the **Bundle V** section below.
+
+**The last five were all found by USING the product, none by the suite.** #994, #997, #998 and #999 came out of exercising `/api/v1` against a live instance and reading SPARC's output against NIST's published OSCAL references; #995 is the epic that generalises them. Every underlying defect was green at the time it was found — which is the argument #995 makes and the reason it is a release gate rather than a nice-to-have.
 
 The two structural security deliverables led: a spec that fails when a controller ships without authorization (#919) and one that pins `disposition: "attachment"` on user content (#894). What remains is the document model, the boundary-attachment family, and the IdP entitlement epic.
 
@@ -680,21 +687,30 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 13 | P — Evidence completeness | #947 #948 | **Shipped** (PR #983) |
 | 14 | T — Bundle P follow-ups | #981 #982 #984 #988 #989 | **Shipped** (PR #986 → `28443b7c`) |
 | 15 | Q — Polish | #936 #991 | **Shipped** (PR #992 → `6d39e089`) |
-| — | **hdf-cli 3.5.1 — pulled forward, on its own** | **toolchain** | **IN PR** (branch `feature/hdf_cli_3_5_1`) |
-| 16 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
+| 16 | **hdf-cli 3.5.1 — pulled forward, on its own** | **#993** | **Shipped** (PR #996 → `e0473814`) |
+| 17 | U — Profile fidelity: what the baseline says, and what SPARC shows | #997 #999 #998 **#994** | **IN PR** (#1000) |
+| 18 | **V — SWEEP every API endpoint against its published contract** | **#995** #951 | **NEXT — release gate, SWEPT + FIXED** (owner-decided 2026-08-20). 229 route entries, ~1,294 checks, every finding fixed in-milestone; per-group tracker in the Phase 16 section |
+| 19 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
+| 20 | **W — The remediation claims the UBI9 migration invalidated** | **#1001** | **LAST** (owner-placed 2026-08-20). 20 `remediated` findings still in the shipping image; 18 deferred to 2026-09-03, 2 blocked on a fix-vs-deviation decision |
 
-**Unslotted — down to one.** #935 and #959 were slotted into **Bundle S** on 2026-08-17;
-**#951** (sidebar re-organization and responsive breakpoint audit) is the only milestone issue
-still in no bundle. One issue on the milestone and in no bundle is a scheduling gap, not a
-backlog — **slot it or take it off the milestone before the release is cut.** **Tracked separately, no milestone:** #953 (authenticated DAST — unblocked by Bundle
+**Nothing is unslotted.** #935 and #959 went into **Bundle S** on 2026-08-17, #997 #998 #999 #994
+into **Bundle U**, and **#995 and #951 into Bundle V on 2026-08-19 at owner direction** — which
+makes V the NEXT bundle and moves R behind it. That ordering is the right way round for a release
+gate: #995 must be satisfied before the tag, and its findings generate work, so discovering them
+after the largest bundle in the milestone would be discovering them too late. **Tracked separately, no milestone:** #953 (authenticated DAST — unblocked by Bundle
 M's production posture), #966 (SonarCloud findings triage — owner directed that it be filed
 and *not* worked; 281 open findings, 2 Blockers amounting to one defect), and **#968** (audit the
 swallow-and-continue rescue patterns — raised out of #939, **due 2026-09-06**; 54 rescue sites,
 11 log-and-continue in services/jobs, and 17 files combining a transaction with a rescue, which
 is the candidate set for the #963 shape).
 
-**Milestone measured 2026-08-19, during Bundle P: 40 issues, 30 closed / 10 open.** The 10
-open: **#822 #842 #860 #936 #947 #948 #951 #981 #982 #984**. Bundle S closed #935, #959 and #974.
+**Milestone re-measured 2026-08-19 late, after Bundles T and Q and the hdf pin: 49 issues,
+40 closed / 9 open.** The 9 open: **#822 #842 #860 #951 #994 #995 #997 #998 #999**. Bundle S closed
+#935, #959 and #974; Bundle P closed #947 and #948; Bundle T closed #981, #982, #984, #988 and
+#989; Bundle Q closed #936 and #991; the hdf pin closed #993.
+
+**The earlier figure in this section — 40 issues, 30 closed / 10 open — was measured during Bundle
+P and is superseded.** It is left in the paragraphs below as the record of what was known then.
 
 **#981 and #982 were filed on 2026-08-18 from the Bundle P verification gate** and added to the
 milestone by the owner. Neither is worked in Bundle P's PR. They are the eighth and ninth
@@ -983,7 +999,7 @@ The cheapest item on the milestone — and the one that turned out to have a sec
 | **#936** | ~~Serve a real favicon and link-preview metadata~~ — **FIXED** | **Filed during Bundle F.** Both causes confirmed in the checkout: no icon `<link>` in any layout, so the browser fell back to `/favicon.ico`, which did not exist; and `public/icon.svg` was the stock Rails placeholder, 122 bytes containing one red circle. **The crop was the part worth getting right.** `sparc_logo.png` is a LOCKUP — a circular medallion above a "SPARC" wordmark, separated by a transparent band measured from the alpha channel at y759–793. Rendered and inspected at real sizes before choosing: at 16px the whole lockup turns the wordmark into an illegible smear, while the medallion alone still reads and at 32px the bolt is unmistakable. So icons are cut from the medallion and the full lockup is reserved for the 1200×630 preview. There is **no vector source anywhere in the repo**, so `icon.svg` embeds the raster rather than pretending to be drawn; a hand-made approximation would be a new mark, not the logo. `og:url`/`og:image` are absolute — every consumer fetches them from another host — which is safe behind the proxy only because `config.assume_ssl = true`. Branding comes from the existing `SparcConfig.app_name`, so **no new environment variables**. |
 | **#991** | ~~Nine views set a page title the layout never yields~~ — **FIXED, found while investigating #936** | `content_for :title` was called in nine templates and no layout ever yielded it, so every browser tab read "SPARC" regardless of page. `content_for` writes to a buffer, and a buffer nobody reads is indistinguishable from one that does not exist — no error, no warning, no failing spec. **The same silent shape as #982's unregistered audit actions.** Also a rebranding leak: `SparcConfig.app_name` already existed and the LOGIN layout used it correctly while the application layout hardcoded the literal. Yielded as-is rather than suffixed, because two of the nine templates already append "— SPARC" and the layout would have produced "API Documentation — SPARC — SPARC". **Proven green and mutation-checked BEFORE the issue was filed** — the correction from Bundle T. |
 
-##### 15a. hdf-cli 3.5.1 — pulled forward, on its own  ·  **IN PR** (branch `feature/hdf_cli_3_5_1`)
+##### 15a. hdf-cli 3.5.1 — pulled forward, on its own  ·  **Shipped** (PR #996 → `e0473814`)
 
 **Not a routine version bump, and not scheduled work** — Heimdall and the CI runners cut over to
 hdf-cli **3.5.1** on 2026-08-19, so SPARC had to meet it the same day. Sequenced on its own branch
@@ -1035,7 +1051,296 @@ No checksum to update: `install-hdf.sh` fetches `checksums.txt` from the release
 skip there and CI stayed green throughout while local runs failed. The same class as #984: a check
 that passes because it never ran. Verification for this change is therefore local and explicit.
 
-##### 16. Bundle R — Auth entitlements — IdP as system of record
+##### 16. Bundle U — Profile fidelity: what the baseline says, and what SPARC shows  ·  **In progress**
+
+Branch `bug/997_999_998_994_profile_oscal_fidelity`, cut 2026-08-19 from `e0473814`. Chosen by the
+owner as the bundle after T and Q.
+
+**Four issues, one defect at four layers: SPARC holds the right answer and does not hand it over.**
+#994 accepts a tailoring decision and reports nothing happened; #997 never shows what was changed;
+#999 exports it in a shape a conformant consumer cannot read; #998 offers a component type that
+cannot carry its own claim. This is the same silent-success class as #982 (69 audit actions that
+recorded nothing), #991 (page titles that rendered nowhere) and #902 (flash keys that displayed
+nowhere) — and it is the worked example behind **#995**, the release gate.
+
+**Three findings from the checkout that correct the issues as written.** Recorded here because each
+changes what the work is, not merely how it is done:
+
+1. **The flattening #999 describes is already losing data today.** `ProfileJsonParserService`
+   handles nested `control["controls"]` on import, so an imported NIST resolved catalog gives the
+   profile all 370 controls. But **six** consumers of `resolved_catalog_json` read only
+   `group["controls"]` — `SspFromProfileService`, `SarFromProfileService`, `CdefFromProfileService`,
+   `CdefBaselineGapService`, `CdefBulkApplyService`, and `BaselineParameterService` (one level
+   only). Generate an SSP from an imported HIGH resolved catalog and you get **188 controls, not
+   370** — every enhancement silently dropped. To be proven by spec before it is fixed.
+2. **Control-level `links` cannot survive resolution because they never survive import.**
+   `CatalogImportService` reads the guidance part's links for `related_controls` and discards
+   control-level `links` entirely; the catalog's own back-matter resources are stashed inert in
+   `metadata_extra["back_matter_resources"]`. So #999's second half is a **catalog-import** defect
+   wearing an exporter's clothes.
+3. **A CDEF cannot express #998's component pair at all.**
+   `OscalComponentDefinitionExportService` emits `"components" => [ build_component ]` — exactly
+   ONE component, built from the `cdef_documents.component_type` / `component_title` /
+   `component_description` columns. A validation pair needs two components joined by
+   `rel="validation"`. `ssp_components` is a real table with `props_data` / `links_data` and many
+   rows per document, and the SSP exporter already emits both. That asymmetry is what the scope
+   decision turns on.
+
+**Owner decisions — taken 2026-08-19, before any code.** All three were put as questions because
+each changes the size of the work, and two of them touch shared infrastructure:
+
+1. **#999 — the download IS a conformant OSCAL resolved catalog.** Enhancements nest inside their
+   parent, and a **shared reader walks nested-or-flat** so the six consumers above see every
+   control regardless of which shape the column holds. Explicitly approved as a shared-
+   infrastructure change; it is also the fix for finding 1.
+2. **#999 — links are preserved at import.** Control-level `links` are stored at catalog import
+   AND the catalog's back-matter resources are promoted to real `BackMatterResource` rows, so an
+   emitted `href` resolves to a resource the document actually carries. Costs a
+   `SeedRunner::CURRENT_VERSIONS` bump, a re-import of the seeded catalogs, and a backfill for
+   existing installs. The cheaper alternative — emit only the `related` links SPARC already holds —
+   was offered and declined, because it leaves NIST's reference links absent while looking complete.
+3. **#998 — SSP first, CDEF documented as partial.** First-class `validation-type` /
+   `validation-reference` / `validation-details` on `SspComponent` plus the `rel="validation"`
+   pairing, round-tripping through export and import. CDEF component export gains `props` / `links`
+   so it can at least carry its own claim, and `validation` is documented as **partial** on CDEF
+   with the single-component reason stated. Giving CDEF a real multi-component model was offered
+   and declined as its own bundle: it is a document-model change well beyond #998.
+
+**A fourth finding, from building it: SSP components had NO Api::V1 surface at all.** They
+could be created, edited and deleted only through the enrichment screen, which makes the web UI
+the only way to perform those mutations — the one thing the API-first guardrail exists to
+prevent. It was invisible to every endpoint sweep, because **an endpoint that was never written
+cannot appear in a list of endpoints that answer wrongly**; it surfaced only from the other
+direction, while adding #998's validation fields and finding there was no way to set them except
+by hand in a browser. Closed in this bundle with five endpoints nested under the SSP
+(`/api/v1/ssp_documents/:slug/components`), boundary-scoped on `ssp.read`/`ssp.write`, plus
+request specs and a `tests/api` contract module. **This is the shape #995 should hunt for** —
+the epic is scoped to "do the 223 endpoints do what they claim", and this was a mutation with no
+endpoint at all. The surface is now 229 route entries.
+
+**OWED — the a11y sweep cannot see the new panel.** `tests/ui-smoke/test_accessibility.py`
+audits `profile_show`, but axe **skips hidden content** and the entire
+`shared/_baseline_control_detail` panel — including its parameter form — sits inside a collapsed
+`<details>`. So the sweep audits that page and never looks at the new controls, reporting clean
+either way. This is the same structural gap #880 hit, which is why `help_drawer_open` exists as its
+own baseline key recorded at zero violations. **Bundle U's panel needs the equivalent** — an
+expanded-state audit key — and it cannot be added here because a new baseline entry has to be
+recorded from a real run, which the deferred UBI9 gate did not do. **Sonar caught two a11y defects
+in this partial that axe would never have reported** (a label associated only by wrapping, and a
+text input with no accessible name at all); both are fixed, but the gap that hid them is not.
+
+**Two holds — OWNER-DECIDED 2026-08-19, do not re-raise inside this bundle:**
+
+1. **The UBI9 prod-image gate is deferred for this cycle.** `tests/api` and the full Playwright
+   suite were **NOT** run against a built container, and no screenshots were captured. The guides
+   updated here therefore describe three screens — the Baseline detail panel, the SSP read-only
+   panel, the enrichment Validation block — that have **no current images in `wiki/images/`**.
+   That debt is real and is carried, not discharged: say so on the PR rather than letting a green
+   rspec read as a verified feature.
+2. **`wiki/API-Reference.md` is knowingly stale and left alone.** It still documents hdf-cli 3.4.1
+   and the `sar_from_hdf` 502, which PR #996 made false. It is held for the **#995** API overhaul,
+   which is expected to find more of the same on that page — fixing one line now would just
+   invite a second pass.
+
+**Scope notes.** #997's parameter editing lands **inline on the existing Profile screen**, so
+there is no navigation change — but it is a new clickable control, so it takes a Playwright
+interaction test with a CSP assertion. One shared control-detail partial renders statement,
+resolved parameters, priority, guidance and related controls, used by the Profile screen (editable,
+gated on `profiles.write`) and the SSP screen (read-only), rather than growing a third copy of
+`control_families/show.html.erb`. Substitution goes through `OscalParameterResolver` (#942) — raw
+`{{ insert: param }}` must never reach the screen.
+
+| Issue | Description | Notes |
+| --- | --- | --- |
+| **#994** | `PUT /api/v1/profile_documents/:id/parameters` returns 200 with `0/0` and no errors for payloads it never parsed | **Bundle U, and the smallest of the four.** `params.permit` silently discards any shape it does not recognise, so a root-wrapped body, an object map instead of an array, or a missing `Content-Type` all arrive as empty arrays; both loops iterate zero times, `validation_errors` stays empty, and the controller's `errors.any? ? :unprocessable_entity : :ok` therefore returns **200**. A caller cannot distinguish "nothing matched" from "I never parsed your request", and that difference is the entire question when tailoring a baseline an ATO rests on. Two more on the same endpoint: `selection_id` instead of `select_id` is swallowed and the error then names `null` rather than the id, and a non-array `selected` is **coerced and persisted** rather than refused. Export keeps emitting `select_id` — it is published and #697's import reads files already in the wild — so the alias is input-only. |
+| **#997** | A profile's controls, parameters and guidance are invisible; parameter edits cannot be seen | **Bundle U, and the largest.** There is no web UI for baseline parameters at all — the only way to observe a tailoring decision is to call the API back. More broadly, nothing on the Profile or SSP screens says what is legitimately part of the profile: the Profile screen lists identifiers grouped by family with priority counts and stops. Mostly assembly rather than new capability — the rendering exists in `control_families/show.html.erb` (#881), the data is on `catalog_controls`, the substitution is `OscalParameterResolver` (#942), the values come from `BaselineParameterService#extract_schema`, and the write path is the endpoint #994 repairs. **The resolver is what makes it worth doing properly:** showing raw `{{ insert: param, ac-20_odp.01 }}` would be worse than showing nothing. |
+| **#999** | The resolved-catalog download is not shaped like a conformant resolver's output | **Bundle U.** Measured against NIST's own published resolved profile catalog: same root keys, same 18 groups, same param keys — but **182 nested enhancements vs 0** (SPARC emits every control as a top-level sibling, so a consumer cannot tell an enhancement from a base control except by parsing the identifier) and **188/188 controls carrying `links` vs 0/287**. Findings 1 and 2 above are what the work actually is. Assert through the validated path, not `export_unvalidated` (#989), and pin SPARC's output against the **structure** of NIST's published catalog so drift is caught rather than discovered. |
+| **API gap** | SSP components had no `Api::V1` surface at all — found while building #998 | **Bundle U, not on the milestone.** Five endpoints under `/api/v1/ssp_documents/:slug/components`, carrying the validation pair so a pipeline can record "FIPS 140-2, certificate #4282, validating this component". Two deliberate refusals: `this-system` cannot be deleted (OSCAL requires it and the enrichment screen already protects it), and a validation claim on a non-validation component, or a pairing into another SSP, answers 422. The three audit actions are **registered** in `AuditEvent::ACTIONS` — an unregistered action records nowhere, which is #982's shape. |
+| **#998** | `validation` is an allowed component type but nothing can express what it validates | **Bundle U.** OSCAL models third-party product validation as a **component pair** — the product, and a `validation` component carrying `validation-type` / `validation-reference` props and a `validation-details` link — joined by `rel="validation"`. SPARC has the enum value and none of the rest: the props appear nowhere in `app/`, and per finding 3 a CDEF cannot carry a second component at all. An enum value with no supporting fields reads as support without being it, which is worse than not offering the type — "this module is FIPS 140-2 validated, certificate #4282" is exactly the assertion an assessor checks. |
+
+##### 18. Bundle V — Sweep every API endpoint against its published contract  ·  **NEXT**
+
+**This is the endpoint sweep. It is the v1.16.0 release gate, and the gate is SWEPT + FIXED**
+(owner-decided 2026-08-20): every endpoint verified, and every finding fixed inside this milestone. Slotted by the owner on
+2026-08-19, ahead of Bundle R, because #995's findings generate work and finding them after the
+largest bundle in the milestone is finding them too late.
+
+---
+
+#### What the sweep IS
+
+For **every one of the 229 `/api/v1` route entries**: send a real payload, read the response,
+parse it, and prove the endpoint **did what `docs/api/endpoints/*.md` publishes that it does** —
+confirmed by an **independent read**, not by the write's own echo.
+
+The standard is not "it returned 200." Every defect Bundle U found was **a wrong answer carrying a
+right status**:
+
+- **#994** — `PUT .../parameters` answered `200 {"status":"updated"}` with zero updates for a body
+  it never parsed. **Reproduced live against the running instance on 2026-08-19**, twice, before
+  the fix. Green test suite throughout.
+- **#999** — the resolved-catalog download returned `200` with a document shaped wrongly:
+  0 nested enhancements against NIST's 182, 0 of 287 controls carrying links against 188 of 188.
+- **#982** (Bundle T) — 69 audit actions recorded nothing, in every environment.
+- **The SSP components gap** — a whole CRUD surface with **no endpoint at all**, invisible to any
+  route-list sweep.
+
+A suite that asserts status codes cannot find any of those. That is the entire reason this bundle
+exists.
+
+#### The surface, measured 2026-08-19
+
+**229 route entries / 168 logical endpoints** across 34 groups —
+**80 GET, 74 POST, 27 DELETE, 25 PUT, 23 PATCH** (149 writes, 80 reads).
+
+#### The per-endpoint check matrix — this is what makes it countable
+
+**Every write endpoint (149) — 6 checks:**
+
+| # | Check | Why |
+|---|---|---|
+| 1 | Returns the status its published doc claims | Documented status codes must be reachable |
+| 2 | The response body carries the fields the doc names | A doc naming a field the endpoint never returns is a lie (`baseline-parameters.md` did exactly this) |
+| 3 | **An INDEPENDENT read confirms the change persisted** | The write's own echo can be synthesised; #994 proves a write can report success and change nothing |
+| 4 | A payload in the wrong shape is **refused with a named reason**, not silently discarded | `params.permit` drops what it does not recognise — the #994 mechanism, and it is in every controller |
+| 5 | An unauthorized caller is refused, and **the record is unchanged afterwards** | Refusing the button is not refusing the write |
+| 6 | DELETE additionally: gone from `show` **and** from its parent's index | A soft-delete that still lists is not deleted |
+
+**Every read endpoint (80) — 5 checks:** documented envelope; content equals what was written;
+filters and pagination narrow the set **truthfully** (a filter that returns everything is worse
+than none); boundary/organization scoping shows only what the caller may see; unauthorized refused.
+
+**Floor: 149 × 6 + 80 × 5 = 1,294 checks.** Today the `tests/api` estate holds **438 test
+functions and 540 assertions, of which 103 compare a value to what was sent.** So against this
+standard the estate is at roughly **103 of ~1,294 — about 8%** — while `docs/api/INVENTORY.md`
+reports 99% documented and 167/168 pytest-covered. **Those columns count whether a module exists,
+not whether it proves anything.**
+
+#### A second axis — endpoints that do not exist
+
+The sweep must also walk the **web controllers**, not the route list, and ask of every mutation a
+user can perform: **is there an `Api::V1` endpoint at all?** SSP components had none — found only
+because Bundle U needed to set a field and there was nowhere to set it from. A route-list sweep
+cannot find this class, and there is no reason to think components were the only one.
+
+#### Fix the baseline before measuring anything
+
+`docs/api/INVENTORY.md`'s summary says **"142 logical endpoints (as of 2026-07-18)"** while its own
+table carries **168 rows** — 26 stale. Its 99% / 93% percentages are computed against the wrong
+denominator. A screening pass measured against that reports progress it has not made.
+
+#### Named starting points — measured, not guessed
+
+**Eight update tests assert a status code and never read the response body.** Each one would pass
+if the endpoint discarded the payload entirely, which is precisely #994:
+
+`test_authorization_boundaries.py::test_admin_updates_boundary` ·
+`test_baseline_parameters.py::test_admin_updates_parameters` ·
+`test_cdef_documents.py::test_admin_updates_via_patch` ·
+`test_control_catalogs.py::test_admin_updates_catalog` ·
+`test_poam_documents.py::test_admin_updates_via_patch` ·
+`test_profile_documents.py::test_admin_updates_via_patch` ·
+`test_sap_documents.py::test_admin_updates_via_patch` ·
+`test_users.py::test_admin_updates_user`
+
+**Four modules never read a response body at all:** `test_admin_credentials.py` (4 writes,
+0 reads), `test_artifacts.py`, `test_authoritative_sources.py`, `test_sessions.py`.
+
+**Hand-probed live 2026-08-19 (7 of 229 — 3%, not a sweep):** control_catalogs, authorization_
+boundaries, poam_documents, profile_documents, sap_documents all genuinely persist a PATCH;
+cdef_documents correctly refuses with 422 (#911 lineage gate, not a defect); baseline_parameters
+reproduced #994. **No conclusion may be drawn from a 3% sample** — it is recorded so the next pass
+does not repeat it.
+
+#### Deliverables
+
+1. **`assert_crud_round_trip` helper** in `tests/api/` — write → independent read → field equality
+   → restore, so check 3 is one call and cannot be skipped by accident. An `assert_create_round_trip`
+   already exists and is used by **10 of 30** modules; there is **no update equivalent at all**.
+2. **Per-group progress table** (below) — the sweep is 34 groups; track it there so status is
+   visible mid-flight rather than at the end.
+3. **Negative-path coverage raised** from 39 `4xx` assertions against 167 `2xx`.
+4. **Contract reconciliation** — each `docs/api/endpoints/*.md` checked against real responses.
+   `baseline-parameters.md` documented four fields the endpoint has never returned; it was found by
+   reading, and nothing else would have caught it.
+5. **Findings filed as issues, not fixed inline** (per `issue_rules.md`).
+
+#### Progress by group — 229 route entries, 34 groups
+
+| Group | Entries | Writes | Reads | Swept |
+| --- | --- | --- | --- | --- |
+| `cdef_documents` | 17 | 15 | 2 | [ ] |
+| `back_matter_resources` | 16 | 12 | 4 | [ ] |
+| `authorization_boundaries` | 15 | 8 | 7 | [ ] |
+| `evidences` | 14 | 8 | 6 | [ ] |
+| `ssp_documents` | 12 | 9 | 3 | [ ] |
+| `control_mappings` | 11 | 8 | 3 | [ ] |
+| `sar_documents` | 11 | 8 | 3 | [ ] |
+| `profile_documents` | 10 | 7 | 3 | [ ] |
+| `control_catalogs` | 9 | 7 | 2 | [ ] |
+| `poam_documents` | 9 | 6 | 3 | [ ] |
+| `sap_documents` | 9 | 7 | 2 | [ ] |
+| `authorization_boundaries/ksi_validations` | 8 | 4 | 4 | [ ] |
+| `control_catalogs/control_families` | 8 | 5 | 3 | [ ] |
+| `authorization_boundaries/memberships` | 7 | 4 | 3 | [ ] |
+| `federation_peers` | 7 | 5 | 2 | [ ] |
+| `users` | 7 | 5 | 2 | [ ] |
+| `scanner_findings` | 6 | 4 | 2 | [ ] |
+| `ssp_documents/components` | 6 | 4 | 2 | [ ] |
+| `profile_documents/parameters` | 6 | 4 | 2 | [ ] |
+| `cdef_coverage` | 5 | 3 | 2 | [ ] |
+| `control_catalogs/controls` | 5 | 3 | 2 | [ ] |
+| `poam_risks` | 4 | 3 | 1 | [ ] |
+| `admin` | 4 | 2 | 2 | [ ] |
+| `artifacts` | 4 | 0 | 4 | [ ] |
+| `ksi_catalog` | 4 | 0 | 4 | [ ] |
+| `authoritative_sources` | 3 | 2 | 1 | [ ] |
+| `oscal` | 3 | 3 | 0 | [ ] |
+| `controls` | 2 | 0 | 2 | [ ] |
+| `guides` | 2 | 0 | 2 | [ ] |
+| `attestations` | 1 | 0 | 1 | [ ] |
+| `available` | 1 | 0 | 1 | [ ] |
+| `hdf` | 1 | 1 | 0 | [ ] |
+| `sessions` | 1 | 1 | 0 | [ ] |
+| `profile_documents/controls` | 1 | 1 | 0 | [ ] |
+
+#### What satisfies the gate — **OWNER-DECIDED 2026-08-20: SWEPT + FIXED**
+
+**The gate is "every endpoint swept AND every finding fixed."** Not "the sweep ran and its
+findings are triaged." **DECIDED — do not re-open.**
+
+What that commits us to:
+
+- All **229 route entries** verified against their published contracts under the matrix above.
+- **Every defect the sweep surfaces is fixed inside v1.16.0**, not deferred to v1.17.0 and not
+  closed as "documented as known."
+- A finding is only closed when the fix is proven the same way the sweep proves an endpoint:
+  an independent read showing the corrected behaviour, and a mutation check showing the new
+  assertion goes RED against the old code.
+
+**Schedule consequence, stated once and not re-litigated.** The number of findings is unknown by
+construction — that is what a sweep is for. Bundle U swept **zero** endpoints and produced four
+issues plus a whole missing CRUD surface; the same yield across 34 groups is not a small number.
+**The ~2026-09-21 target should be treated as provisional until the first few groups report**, at
+which point the yield per group is measurable and the date can be set from evidence rather than
+hope. Re-measure after the first three groups and say plainly what the run rate implies.
+
+**Findings are still filed as issues** (per `issue_rules.md` — bugs found by a test program become
+issues, they are not fixed silently inline). The difference the ruling makes is that those issues
+are **in scope for this milestone**, not triage fodder for the next one.
+
+---
+
+**#951** is the last UX item on the milestone and is unrelated to the sweep; it rides along because
+it is small and because leaving one issue in no bundle is the scheduling gap this section exists to
+close.
+
+| Issue | Description | Notes |
+| --- | --- | --- |
+| **#995** | Epic: validate every `/api/v1` endpoint actually does what the published docs say — a 200 is not evidence | **Bundle V, RELEASE GATE.** The sweep, the matrix, the floor of ~1,294 checks and the per-group tracker are above. Sequence: fix the inventory baseline → build `assert_crud_round_trip` → the 8 status-only update tests and 4 body-blind modules (cheapest first wins) → the per-group sweep → the missing-endpoint axis over the web controllers → contract reconciliation against `docs/api/endpoints/*.md`. |
+| **#951** | Sidebar independent scroll, re-organization, and a responsive breakpoint audit | **Bundle V.** Owner-added 2026-08-15. **Re-organization is a NAVIGATION change and needs explicit approval** — nav follows the NIST layers and links must be findable in the same place every time; visibility may differ, placement may not. Any new or moved control also takes a Playwright interaction check with a CSP assertion. |
+
+##### 19. Bundle R — Auth entitlements — IdP as system of record
 
 Last by owner direction. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end of the release**, since it is paired with #822 so one two-ceremony TLS verification round covers both. `bundle-audit` reports no vulnerabilities against the current lock, so the deferral is schedulable rather than reactive — **if that changes, decouple #820 from #822 and take it on its own.**
 
@@ -1046,6 +1351,50 @@ Last by owner direction. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end 
 | **#860** | Epic: IdP as system of record for entitlements | Bundle I with #842. Five design questions answered in a memo commit before code. Dry-run built first, not last. |
 | **#842** | Map OIDC claims to organization, boundary and role | Bundle I. A **missing** claim is an error, never "revoke everything" — that failure mode is what the blast-radius guard exists for. |
 | **#822** | IdP-mediated PIV via OIDC `acr`/`amr` | Bundle G. Both auth paths stay configurable; two-ceremony verification required. |
+
+##### 20. Bundle W — The remediation claims the UBI9 migration invalidated  ·  **LAST**
+
+**Placed at the END, after Bundle R, by owner direction 2026-08-20** — the letter is not
+alphabetical sequencing; the POSITION is what matters.
+
+**#1001 — 20 of 89 findings marked `remediated` are still in the shipping image.** The claims were
+true for the **Debian** image and were carried across the **Debian → UBI9 migration without
+re-verification**; the same CVEs are present under the RHEL equivalent packages. Same class as the
+v1.12.2 audit (#770), which found eleven of these — recurring because nothing re-checked a
+remediation claim once it was made.
+
+**Found by scanning, not by reading.** Implementing the owner's retire-with-proof ruling meant
+cross-checking every `remediated` entry against `grype 0.114.0` on `sparc-ubi9-web:latest`
+(RHEL 9.8, confirmed from `/etc/os-release`): 177 matches, 132 distinct ids. **69 confirmed absent
+→ retired to `sparc-findings.retired.yml` with `verified_absent_on` + `verified_by`. 20 still
+reported → not remediated.** Had `remediated` simply been exempted from the review cadence — the
+other option on the table — all 20 would have been exempted permanently, across 92% of the file.
+
+**`GO-2026-5026` is the sharp one.** The file records it against `golang.org/x/net 0.48.0`; the
+image attributes it to **`stdlib go1.26.5`**, a different artifact entirely, so remediating x/net
+never touched it. A fix exists (Go 1.26.6).
+
+**Two are blocked by the #865 deviation policy, and that is the policy working.** The review window
+is `next_review_date - discovery_date`, so **no deferral date can satisfy it** for a finding already
+past its maximum:
+
+| CVE | Severity | Discovered | Policy max | Actual |
+| --- | --- | --- | --- | --- |
+| `GO-2026-5026` | CRITICAL | 2026-06-04 | 30d | **77d** |
+| `CVE-2026-41989` | HIGH | 2026-05-06 | 30d | **106d** |
+
+`discovery_date` is **preserved deliberately**. Resetting it to today would make the register pass
+while the real exposure has run for months — compliant numbers, false ones. The other 18 defer
+cleanly to 2026-09-03 and need nothing.
+
+**Owner decision owed on those two only:** take the fixes (Go 1.26.6 and the `el9_8` RPM updates —
+a base-image change, not a findings-file edit), or approve a deviation for each through the existing
+`deviation-approval` workflow with real mitigating factors.
+
+| Issue | Description | Notes |
+| --- | --- | --- |
+| **#1001** | 20 findings claim remediation the Debian→UBI9 migration invalidated | **Bundle W, last.** 18 deferred; 2 blocked on the owner decision above. Acceptance also asks for the rest of the file to be audited the same way — these 20 were found by scanning, and nothing guarantees they were the only Debian-era assumptions left. |
+
 
 <!-- markdownlint-enable MD013 -->
 
@@ -1298,7 +1647,7 @@ removed and are no longer tracked:
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
-| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, #947, #948, #981, #982, #984, #936, #951, #860, #842, #822 | In Progress — **30 of 39 shipped** (PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969). **Bundle O (#929 #952) shipped in PR #975; Bundle S (#974 #959 #935) shipped in PR #976; Bundle P (#947 #948) is in PR.** The count moved 16 → 24 → 25 → 32 → 36 → 37 → **39**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; and **#981, #982 were filed from Bundle P's verification gate and added on 2026-08-18** — the browser pass found three defects rspec could not see, and two more worth their own issues. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Remaining order set by the owner 2026-08-15, with **T** inserted 2026-08-18: **#939 pulled forward** (shipped, PR #969) → **O** (#929 #952, shipped) → **S** (#974 #959 #935, shipped) → **P** (#947 #948, in PR) → **T** (#981 #982 #984, filed from P's gate) → **Q** (#936) → **R** (#860 #842 #822 +#820). #935 and #959 are now slotted into Bundle S; **#951 remains unslotted**. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, ~~#947~~, ~~#948~~, ~~#981~~, ~~#982~~, ~~#984~~, ~~#988~~, ~~#989~~, ~~#936~~, ~~#991~~, ~~#993~~, #994, #995, #997, #998, #999, #951, #860, #842, #822 | In Progress — **40 of 49 shipped** (PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969, #975, #976, #983, #986, #992, #996). Bundles **O** (#929 #952, PR #975), **S** (#974 #959 #935, PR #976), **P** (#947 #948, PR #983), **T** (#981 #982 #984 #988 #989, PR #986), **Q** (#936 #991, PR #992) and the **hdf-cli 3.5.1 pin** (#993, PR #996) have all shipped. **Bundle U** (#997 #999 #998 + #994) is in progress on `bug/997_999_998_994_profile_oscal_fidelity`. The count moved 16 → 24 → 25 → 32 → 36 → 37 → 39 → 40 → **49**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; **#981, #982 came from Bundle P's verification gate**; **#988, #989 from Bundle T**, **#991 from Bundle Q** and **#993 from the hdf pin**; and **#994, #995, #997, #998, #999 were filed on 2026-08-19 — every one of them found by USING the product rather than by the suite**, which is the argument #995 makes. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** (#997 #999 #998 #994, in PR #1000) → **V** (#995 #951) → **R** (#860 #842 #822 +#820). **#951 and #995 were slotted into Bundle V on 2026-08-19**, which makes V the next bundle and moves R behind it — the right order for a release gate whose findings generate work. **Bundle V is the endpoint sweep, and the gate is SWEPT + FIXED** (owner-decided 2026-08-20): all 229 `/api/v1` route entries verified against their published contracts with an independent read — ~1,294 checks against the 103 value-verifying assertions that exist today — **and every finding fixed inside this milestone**, tracked per group. **Treat the ~2026-09-21 target as provisional until the first three groups report a yield.** Nothing on the milestone is now in no bundle. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 

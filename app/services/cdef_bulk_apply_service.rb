@@ -310,8 +310,10 @@ class CdefBulkApplyService
     titles = {}
     return titles if catalog.blank?
 
-    Array(catalog.dig("catalog", "groups")).each do |group|
-      Array(group["controls"]).each { |c| titles[c["id"].to_s.downcase] = c["title"] if c["id"] }
+    # #999 — nested enhancements have titles too, and a missing one showed up
+    # as an untitled row rather than as anything that looked wrong.
+    ResolvedCatalog.wrap(catalog).each_control do |control, _group|
+      titles[control["id"].to_s.downcase] = control["title"] if control["id"]
     end
     titles
   end

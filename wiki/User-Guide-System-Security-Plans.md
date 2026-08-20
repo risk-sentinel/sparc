@@ -102,6 +102,12 @@ The SSP detail page (`/ssp_documents/:id`) is where the real work happens.
    you need — chips filter the control cards by status.
 2. Expand a **control card** to see its stated requirement, catalog guidance, and
    any inherited/provider statements.
+   - **What This Baseline Requires** shows the control language with the
+     linked baseline's organization-defined values already substituted, plus
+     that baseline's parameters, priority, guidance and related controls. It is
+     **read-only here** — an SSP consumes the baseline, it does not define it.
+     To change a value, tailor it on the baseline itself (see
+     [Control Catalogs and Baselines](User-Guide-Control-Catalogs-and-Baselines#how-to-tailor-a-baselines-parameters)).
 3. Click **Edit** on the card to open the inline form and set:
    - **Status** (implementation status)
    - **Control application** and **coverage level**
@@ -136,6 +142,44 @@ reflect the current state you want to submit.
 
 ---
 
+## How to record a product validation
+
+A FedRAMP or FISMA package leans on validated cryptography, and "this module is
+FIPS 140-2 validated, certificate #4282" is exactly the claim an assessor checks
+and an AO relies on.
+
+OSCAL models it as a **pair** of components — the product, and a separate
+component of type `validation` carrying the certificate — because the
+certificate is an assertion *about* the product, made by someone else. SPARC
+follows that model:
+
+1. Open **Enrich** on the SSP and add the **product** component (type
+   `software`, `hardware`, and so on) if it is not already there. Save.
+2. Add a second component with type **Validation**, titled for the certificate.
+   Save.
+3. Re-open **Enrich**. The validation component now shows a **Validation**
+   block. Fill in:
+   - **Validation type** — the scheme, e.g. `fips-140-2`
+   - **Certificate reference** — the certificate number
+   - **Authoritative record (URL)** — where the certificate can be verified
+   - **Validates which component** — the product it is about
+4. Save.
+
+The validation fields appear only on a component already typed `validation`;
+they mean nothing on any other type and are refused there rather than stored
+somewhere no export looks. That is why the type is saved first.
+
+On export, the validation component carries `validation-type` and
+`validation-reference` props and a `validation-details` link to the
+authoritative record, and the product carries a `validation` link back to it —
+so a consumer can follow the claim in either direction.
+
+Component definitions (CDEFs) support this only partly: a CDEF exports exactly
+one component and cannot carry a pair. See
+[Component Definitions](User-Guide-Component-Definitions).
+
+---
+
 ## Troubleshooting
 
 | Symptom | Likely cause | What to do |
@@ -145,6 +189,8 @@ reflect the current state you want to submit.
 | OSCAL export fails validation | Missing enrichment or required control fields | Enrich the SSP and fill the flagged control fields, then re-export |
 | Compliance score seems stuck | Control edits not saved | Re-open the control card, set the status, and save |
 | Can't edit control cards | View-only role | Request SSP write permission ([RBAC](RBAC)) |
+| **What This Baseline Requires** shows no panel on a control | The SSP has no linked baseline, or its catalog carries no statement for that control | Link the SSP to its baseline, or check the control in the catalog |
+| A parameter value on the SSP looks wrong | It comes from the baseline, not the SSP | Change it on the baseline, then re-open the SSP |
 
 ---
 

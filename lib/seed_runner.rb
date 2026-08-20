@@ -10,8 +10,14 @@
 # NIST SA-10: Developer Configuration Management
 module SeedRunner
   CURRENT_VERSIONS = {
-    "nist_rev5_catalog"    => "2.0.0",
-    "nist_rev4_catalog"    => "2.0.0",
+    # #999 — 3.0.0 re-imports both catalogs so control-level OSCAL `links` are
+    # stored (they were discarded, and the source file is not retained, so there
+    # is nothing to backfill from) and the catalog's back-matter resources are
+    # promoted to rows the emitted `#uuid` hrefs can resolve to. It also repairs
+    # `related_controls`, which the Rev 5 import left blank on 2311 of 2318
+    # controls by reading only the guidance part's links.
+    "nist_rev5_catalog"    => "3.0.0",
+    "nist_rev4_catalog"    => "3.0.0",
     "roles"                => "1.3.0",  # #947 evidence.attest on the 7 accountable boundary roles
     "admin_user"           => "1.1.0",
     "fedramp_20x_ksi"      => "1.0.0",

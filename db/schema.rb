@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_19_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_19_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -254,6 +254,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_140000) do
     t.text "description"
     t.jsonb "guidance_data", default: {}
     t.string "label"
+    t.jsonb "links_data", default: []
     t.jsonb "params_data", default: []
     t.string "priority"
     t.string "sort_id"
@@ -403,6 +404,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_140000) do
     t.string "cdef_version"
     t.bigint "cloned_from_id"
     t.text "component_description"
+    t.jsonb "component_links_data", default: []
+    t.jsonb "component_props_data", default: []
     t.string "component_title"
     t.string "component_type"
     t.text "control_implementation_description"
@@ -1576,10 +1579,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_140000) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", null: false
+    t.bigint "validates_component_id"
+    t.string "validation_details_href"
+    t.string "validation_reference"
+    t.string "validation_type"
     t.index ["cdef_document_id"], name: "index_ssp_components_on_cdef_document_id"
     t.index ["ssp_document_id", "component_type"], name: "idx_ssp_components_doc_type"
     t.index ["ssp_document_id", "uuid"], name: "idx_ssp_components_doc_uuid", unique: true
     t.index ["ssp_document_id"], name: "index_ssp_components_on_ssp_document_id"
+    t.index ["validates_component_id"], name: "index_ssp_components_on_validates_component_id"
   end
 
   create_table "ssp_control_fields", force: :cascade do |t|

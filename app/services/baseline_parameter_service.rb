@@ -97,14 +97,36 @@ class BaselineParameterService
       select_id = sel_entry[:select_id] || sel_entry["select_id"]
       selected = sel_entry[:selected] || sel_entry["selected"] || []
 
+      # #994 — an entry naming nothing cannot report which id was not found, so
+      # it says what it is missing instead of reporting `select_id: null` under
+      # "Unknown selection ID", which described the wrong problem. Callers reach
+      # this through BaselineParameterPayload, which resolves the `selection_id`
+      # alias; this is the guard for every other caller.
+      if select_id.blank?
+        validation_errors << { select_id: nil, error: "Selection entry is missing select_id" }
+        next
+      end
+
       unless known_param_ids.include?(select_id)
         validation_errors << { select_id: select_id, error: "Unknown selection ID" }
         next
       end
 
+      # #994 — a non-array `selected` used to be coerced with `to_s` and
+      # PERSISTED, reporting `selections_updated: 1` for a value the catalog
+      # never offered as a choice. Refused rather than repaired: there is no
+      # honest way to tell whether "a, b" was one choice or two.
+      unless selected.is_a?(Array)
+        validation_errors << {
+          select_id: select_id,
+          error: "selected must be an array of choice strings, even for a single choice"
+        }
+        next
+      end
+
       # #942 — a choice can contain a comma (insert markup always does), so the
       # values are joined with a separator that cannot appear in OSCAL prose.
-      value = selected.is_a?(Array) ? ParameterValueList.join(selected) : selected.to_s
+      value = ParameterValueList.join(selected)
       upsert_parameter_field(select_id, value)
       selections_updated += 1
 
@@ -165,22 +187,17 @@ class BaselineParameterService
   end
 
   # Extracts parameters from the resolved_catalog_json JSONB column.
+  #
+  # #999 — through ResolvedCatalog. This method already reached ONE level of
+  # nesting by hand, which was enough for the enhancements NIST nests directly
+  # under a control and silently wrong for anything deeper.
   def extract_from_resolved_catalog(family: nil)
-    catalog = profile.resolved_catalog_json
     params = []
 
-    groups = catalog["groups"] || catalog.dig("catalog", "groups") || []
-    groups.each do |group|
-      group_id = group["id"].to_s.upcase # e.g., "ac"
-      next if family.present? && group_id != family.upcase
+    ResolvedCatalog.wrap(profile.resolved_catalog_json).each_control do |control, group|
+      next if family.present? && group["id"].to_s.upcase != family.upcase
 
-      (group["controls"] || []).each do |control|
-        collect_control_params(control, params)
-        # Include enhancement params
-        (control["controls"] || []).each do |enhancement|
-          collect_control_params(enhancement, params)
-        end
-      end
+      collect_control_params(control, params)
     end
 
     params

@@ -280,6 +280,44 @@
                 <label for="ssp-component-<%= comp_idx %>-description" style="font-size: 0.75rem;">Description</label>
                 <input type="text" id="ssp-component-<%= comp_idx %>-description" name="ssp_document[components][][description]" value="<%= comp.description %>" class="form-control" style="font-size: 0.85rem;">
               </div>
+
+              <%# ── #998: what this validation validates ────────────────────
+                  OSCAL models third-party product validation as a component
+                  PAIR — the product, and a `validation` component carrying the
+                  certificate, joined by a link from the product. Shown only on
+                  a component already typed `validation`: the fields mean
+                  nothing anywhere else, and the model refuses them there. %>
+              <% if comp.validation? %>
+                <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1; border-top: 1px solid var(--bs-border-color); padding-top: 0.5rem; margin-top: 0.35rem;">
+                  <div class="fw-semibold" style="font-size: 0.75rem; margin-bottom: 0.35rem;">
+                    Validation
+                    <span class="text-body-tertiary" style="font-weight: 400;">— the certificate this component asserts, and the product it is about</span>
+                  </div>
+                  <div class="row row-cols-1 row-cols-md-2 g-2">
+                    <div class="form-group">
+                      <label for="ssp-component-<%= comp_idx %>-validation-type" style="font-size: 0.75rem;">Validation type</label>
+                      <input type="text" id="ssp-component-<%= comp_idx %>-validation-type" name="ssp_document[components][][validation_type]" value="<%= comp.validation_type %>" class="form-control" style="font-size: 0.85rem;" placeholder="e.g. fips-140-2">
+                    </div>
+                    <div class="form-group">
+                      <label for="ssp-component-<%= comp_idx %>-validation-reference" style="font-size: 0.75rem;">Certificate reference</label>
+                      <input type="text" id="ssp-component-<%= comp_idx %>-validation-reference" name="ssp_document[components][][validation_reference]" value="<%= comp.validation_reference %>" class="form-control" style="font-size: 0.85rem;" placeholder="e.g. 4282">
+                    </div>
+                    <div class="form-group">
+                      <label for="ssp-component-<%= comp_idx %>-validation-details" style="font-size: 0.75rem;">Authoritative record (URL)</label>
+                      <input type="url" id="ssp-component-<%= comp_idx %>-validation-details" name="ssp_document[components][][validation_details_href]" value="<%= comp.validation_details_href %>" class="form-control" style="font-size: 0.85rem;" placeholder="https://…">
+                    </div>
+                    <div class="form-group">
+                      <label for="ssp-component-<%= comp_idx %>-validates" style="font-size: 0.75rem;">Validates which component</label>
+                      <select id="ssp-component-<%= comp_idx %>-validates" name="ssp_document[components][][validates_component_id]" class="form-control" style="font-size: 0.85rem;">
+                        <option value="">— not linked to a product —</option>
+                        <% @components.reject { |other| other.id == comp.id || other.validation? }.each do |other| %>
+                          <option value="<%= other.id %>" <%= "selected" if comp.validates_component_id == other.id %>><%= other.title %></option>
+                        <% end %>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
             </div>
           </div>
         <% end %>

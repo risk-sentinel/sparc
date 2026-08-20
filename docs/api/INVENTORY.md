@@ -18,6 +18,17 @@ This file is the work-tracking spine for issue [#413](https://github.com/risk-se
 > `endpoints/users.md` and covered by `spec/requests/password_recovery_spec.rb`
 > plus `tests/ui-smoke/test_password_recovery.py`, which drives it end to end.
 >
+> The five `ssp_components` endpoints added alongside #998 are documented
+> (`endpoints/ssp-components.md`) and covered by request specs
+> (`spec/requests/api/v1/ssp_components_spec.rb`) and by the pytest suite
+> (`tests/api/test_ssp_components.py`), but are **not yet** in the Postman
+> collection. They close a real gap rather than
+> extending an existing one: SSP components previously had **no** Api::V1
+> surface at all, so they could be created, edited and deleted only through the
+> enrichment screen. An endpoint that was never written cannot appear in a list
+> of endpoints that answer wrongly, which is why an inventory sweep did not find
+> it — see #995.
+>
 > The five `cdef_coverage` endpoints added in #904 are documented
 > (`endpoints/cdef-coverage.md`), covered by request specs
 > (`spec/requests/api/v1/cdef_coverage_spec.rb`) and by the pytest suite
@@ -241,6 +252,11 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `PUT` | `/api/v1/sar_documents/:id/update_fields` | `sar_documents#update_fields` | yes | yes | yes |
 | `POST` | `/api/v1/sar_documents/convert` | `sar_documents#convert` | yes | yes | yes |
 | `POST` | `/api/v1/sessions/from_token` | `sessions#from_token` | yes | yes | yes |
+| `GET` | `/api/v1/ssp_documents/:ssp_document_id/components` | `ssp_components#index` | yes | **MISSING** | yes |
+| `POST` | `/api/v1/ssp_documents/:ssp_document_id/components` | `ssp_components#create` | yes | **MISSING** | yes |
+| `GET` | `/api/v1/ssp_documents/:ssp_document_id/components/:id` | `ssp_components#show` | yes | **MISSING** | yes |
+| `PATCH/PUT` | `/api/v1/ssp_documents/:ssp_document_id/components/:id` | `ssp_components#update` | yes | **MISSING** | yes |
+| `DELETE` | `/api/v1/ssp_documents/:ssp_document_id/components/:id` | `ssp_components#destroy` | yes | **MISSING** | yes |
 | `GET` | `/api/v1/ssp_documents` | `ssp_documents#index` | yes | yes | yes |
 | `POST` | `/api/v1/ssp_documents` | `ssp_documents#create` | yes | yes | yes |
 | `DELETE` | `/api/v1/ssp_documents/:id` | `ssp_documents#destroy` | yes | yes | yes |

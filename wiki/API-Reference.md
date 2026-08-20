@@ -38,6 +38,15 @@ baseline parameters, back-matter resources, evidence and evidence control links,
 attestations, the KSI catalog and validations, admin credentials, users, and
 discovery. Common verbs include `convert`, `update_fields`, and `export`.
 
+> **New: SSP components.** `/api/v1/ssp_documents/:slug/components` is full CRUD
+> over the components of a system security plan. Components previously had **no
+> API at all** — they could be created, edited and deleted only through the
+> enrichment screen. The endpoints also carry the OSCAL validation pair: a
+> `validation` component recording `validation_type`, `validation_reference` and
+> a link to the authoritative record, joined to the product component it
+> validates. Full details in
+> [`docs/api/endpoints/ssp-components.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/ssp-components.md).
+
 > **Breaking: `POST /api/v1/users` no longer takes a password (v1.15.4).**
 > `password` and `password_confirmation` are no longer permitted attributes.
 > SPARC generates the initial credential itself, returns it **once** as
