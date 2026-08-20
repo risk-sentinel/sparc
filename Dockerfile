@@ -221,6 +221,40 @@ RUN find /etc/pki/ca-trust/source/anchors/sparc-custom/ -type f \
       ! \( -name '*.crt' -o -name '*.pem' -o -name '*.cer' \) -delete 2>/dev/null || true; \
     update-ca-trust
 
+# ── Drop curl and the package manager from the runtime image (#1001) ─────────
+# MEASURED, not assumed. Every ELF in the runtime image that links libcurl:
+# /usr/bin/curl, /usr/bin/microdnf, /usr/lib64/libdnf.so.2, /usr/lib64/librepo.so.0.
+# Nothing of ours. The application never shells out to curl and never links it:
+# every outbound fetch — the DISA CCI refresh, the AWS Labs CDEF ingest, source
+# federation, Security Hub — goes through Ruby's Net::HTTP / open-uri on Ruby's
+# OpenSSL bindings, `ldd` on the compiled ruby reports zero libcurl references,
+# and hdf-cli is a static Go binary. No gem in Gemfile.lock links it either
+# (no curb / typhoeus / ethon / patron).
+#
+# That left curl-minimal and libcurl-minimal carrying ~16 findings, two of them
+# HIGH, for code nothing in the image calls. They cannot be removed with
+# microdnf: rpm declares a dependency on the curl BINARY and librepo on
+# libcurl, so a depsolve refuses. `rpm -e --nodeps` removes them along with the
+# package manager that needs them, which is the right posture for an immutable
+# runtime anyway — a container that cannot install packages cannot have
+# packages installed into it.
+#
+# RPM ITSELF IS DELIBERATELY KEPT. Grype and Trivy enumerate OS packages by
+# reading the rpm database; removing rpm would make the image scan clean by
+# making it unreadable, which is the same lie #1001 was filed about. 107
+# packages remain enumerable after this, down from 112.
+#
+# Verified in the built image before this was written: rpm -qa still lists,
+# `require "pg"` loads, `rails zeitwerk:check` eager loads clean, hdf runs, and
+# update-ca-trust and pg_isready — the two runtime tools that matter — survive,
+# since both come from ca-certificates/p11-kit and postgresql, not from curl.
+# The runtime CA mechanism in bin/lib/ca-trust.sh uses neither curl nor dnf.
+RUN rpm -e --nodeps curl-minimal libcurl-minimal microdnf libdnf librepo \
+    && rm -rf /var/cache/dnf /var/cache/yum \
+    && ! command -v curl \
+    && ! ls /usr/lib64/libcurl.so.4 2>/dev/null \
+    && rpm -qa | wc -l
+
 # ── Database TLS trust (#785, NIST SC-8(1)) ──────────────────────────────────
 # libpq does NOT honour SSL_CERT_FILE, so the runtime CA mechanism above (which
 # covers every Ruby OpenSSL client) does not reach Postgres. Postgres verifies
