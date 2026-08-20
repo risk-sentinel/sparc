@@ -30,6 +30,10 @@ class CatalogImportService
   include ProgressTrackable
 
   HOW_MANY = "how-many".freeze
+  # Same spelling and same convention as OscalResolvedProfileCatalogService,
+  # SapXmlParserService and SspXmlParserService — OSCAL hyphenates it, so it
+  # cannot be a symbol and a bare literal repeated is a typo waiting to happen.
+  MEDIA_TYPE = "media-type".freeze
 
   class ImportError < StandardError; end
 
@@ -306,9 +310,10 @@ class CatalogImportService
     # Parameter definitions (Assignment/Selection placeholders for profiles to resolve)
     params_data = ctrl["params"].presence || []
 
-    result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data,
-                                    params_data: params_data, label: ctrl_label, sort_id: sort_id,
-                                    links_data: control_links)
+    result = upsert_catalog_control(family, control_id,
+                                    title: title, priority: priority, baseline: baseline,
+                                    guidance_data: guidance_data, params_data: params_data,
+                                    label: ctrl_label, sort_id: sort_id, links_data: control_links)
 
     # Create sub-control records for each statement item part (a., 1., (a), …)
     stmt_part = (ctrl["parts"] || []).find { |p| p["name"] == "statement" }
@@ -342,9 +347,8 @@ class CatalogImportService
       # the raw label ("a.", "1.") which is meaningless as a title.
       title = prose.present? ? prose.truncate(200) : label
 
-      upsert_catalog_control(family, sub_id, title, nil, nil,
-        prose.present? ? { "statement" => prose } : {},
-        sort_id: sub_sort)
+      upsert_catalog_control(family, sub_id, title: title, sort_id: sub_sort,
+        guidance_data: prose.present? ? { "statement" => prose } : {})
 
       # Recurse into nested item parts. The sub-part's own derived key becomes
       # the base for its children, so depth keeps extending one padded string.
@@ -437,7 +441,7 @@ class CatalogImportService
       res["title"] = title_node.text.strip if title_node
       r.xpath("rlink").each do |rl|
         res["rlinks"] ||= []
-        res["rlinks"] << { "href" => rl["href"], "media-type" => rl["media-type"] }.compact
+        res["rlinks"] << { "href" => rl["href"], MEDIA_TYPE => rl[MEDIA_TYPE] }.compact
       end
       res
     end
@@ -493,9 +497,10 @@ class CatalogImportService
     # Parameter definitions — the key addition for issue #162
     params_data = oscal_xml_collect_params(ctrl_node)
 
-    result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data,
-                                    params_data: params_data, label: ctrl_label, sort_id: sort_id,
-                                    links_data: control_links)
+    result = upsert_catalog_control(family, control_id,
+                                    title: title, priority: priority, baseline: baseline,
+                                    guidance_data: guidance_data, params_data: params_data,
+                                    label: ctrl_label, sort_id: sort_id, links_data: control_links)
     stats[:controls] += 1
     stats[result]    += 1
 
@@ -526,9 +531,8 @@ class CatalogImportService
 
       title = prose.present? ? prose.truncate(200) : label
 
-      upsert_catalog_control(family, sub_id, title, nil, nil,
-        prose.present? ? { "statement" => prose } : {},
-        sort_id: sub_sort)
+      upsert_catalog_control(family, sub_id, title: title, sort_id: sub_sort,
+        guidance_data: prose.present? ? { "statement" => prose } : {})
 
       # Recurse into nested item parts
       import_oscal_xml_item_parts(family, sub_id, sub_sort, part.xpath("part"))
@@ -698,7 +702,8 @@ class CatalogImportService
       "nist_references"       => nist_refs
     }.compact.reject { |_, v| v.blank? }
 
-    result = upsert_catalog_control(family, control_id, title, nil, baseline, guidance_data,
+    result = upsert_catalog_control(family, control_id,
+                                    title: title, baseline: baseline, guidance_data: guidance_data,
                                     label: ctrl_label, sort_id: sort_id)
     stats[:controls] += 1
     stats[result]    += 1
@@ -738,7 +743,8 @@ class CatalogImportService
       "related_controls"      => related
     }.compact.reject { |_, v| v.blank? }
 
-    result = upsert_catalog_control(family, control_id, title, nil, baseline, guidance_data,
+    result = upsert_catalog_control(family, control_id,
+                                    title: title, baseline: baseline, guidance_data: guidance_data,
                                     label: ctrl_label, sort_id: sort_id)
     stats[:controls] += 1
     stats[result]    += 1
@@ -778,9 +784,8 @@ class CatalogImportService
       # Use prose text as the title (truncated) instead of the raw label
       title = prose.present? ? prose.truncate(200) : label
 
-      upsert_catalog_control(family, sub_id, title, nil, nil,
-        prose ? { "statement" => prose } : {},
-        label: label, sort_id: sub_sort)
+      upsert_catalog_control(family, sub_id, title: title, label: label, sort_id: sub_sort,
+        guidance_data: prose ? { "statement" => prose } : {})
 
       # Recurse into deeper nesting
       import_xml_item_parts(family, sub_id, sub_sort, child)
@@ -839,25 +844,41 @@ class CatalogImportService
     family
   end
 
-  def upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data, params_data: [], label: nil, sort_id: nil, links_data: [])
-    ctrl = family.catalog_controls.find_or_initialize_by(control_id: control_id)
+  # The fields an importer can set on a control. Named so a typo is a loud
+  # failure rather than a value that quietly never arrives — the same reasoning
+  # as #994: a call that silently discards what it did not recognise cannot be
+  # distinguished from one that had nothing to say.
+  CONTROL_FIELDS = %i[title priority baseline guidance_data
+                      params_data label sort_id links_data].freeze
+
+  # Six positional arguments plus four keywords was ten, which is more than
+  # anyone can hold, and #999 was the change that pushed it over. The fields
+  # travel as one keyword bag instead, validated against CONTROL_FIELDS.
+  def upsert_catalog_control(family, control_id, **fields)
+    fields.assert_valid_keys(*CONTROL_FIELDS)
+
+    ctrl   = family.catalog_controls.find_or_initialize_by(control_id: control_id)
     is_new = ctrl.new_record?
+    guidance = fields[:guidance_data] || {}
+    links    = fields[:links_data] || []
+
     attrs = {
-      title:            title.presence || ctrl.title,
-      priority:         priority.presence || ctrl.priority,
-      baseline_impact:  baseline.presence || ctrl.baseline_impact,
-      guidance_data:    guidance_data.any? ? guidance_data : (ctrl.guidance_data || {})
+      title:            fields[:title].presence || ctrl.title,
+      priority:         fields[:priority].presence || ctrl.priority,
+      baseline_impact:  fields[:baseline].presence || ctrl.baseline_impact,
+      guidance_data:    guidance.any? ? guidance : (ctrl.guidance_data || {})
     }
-    attrs[:params_data] = params_data if params_data.present?
-    attrs[:label] = label if label.present?
-    attrs[:sort_id] = sort_id if sort_id.present?
+    attrs[:params_data] = fields[:params_data] if fields[:params_data].present?
+    attrs[:label]       = fields[:label] if fields[:label].present?
+    attrs[:sort_id]     = fields[:sort_id] if fields[:sort_id].present?
     # #999 — verbatim, so the catalog round-trips. Absent links leave the
     # existing value alone rather than clearing it, matching params_data above:
     # a re-import from a partial source must not erase what a fuller one stored.
-    attrs[:links_data] = links_data if links_data.present?
+    attrs[:links_data]  = links if links.present?
+
     ctrl.assign_attributes(attrs)
     ctrl.save!
-    link_back_matter_references(ctrl, links_data)
+    link_back_matter_references(ctrl, links)
     is_new ? :created : :updated
   end
 
@@ -917,7 +938,7 @@ class CatalogImportService
     resource.title       = declared["title"].presence || citation_text(declared).presence || uuid
     resource.description = citation_text(declared).presence || resource.description
     resource.href        = Array(declared["rlinks"]).first&.dig("href").presence || resource.href
-    resource.media_type  = Array(declared["rlinks"]).first&.dig("media-type").presence || resource.media_type
+    resource.media_type  = Array(declared["rlinks"]).first&.dig(MEDIA_TYPE).presence || resource.media_type
     resource.rel         = "reference"
     resource.source      = "imported"
     resource.resourceable = @catalog_for_back_matter if @catalog_for_back_matter

@@ -1117,6 +1117,17 @@ request specs and a `tests/api` contract module. **This is the shape #995 should
 the epic is scoped to "do the 223 endpoints do what they claim", and this was a mutation with no
 endpoint at all. The surface is now 229 route entries.
 
+**OWED — the a11y sweep cannot see the new panel.** `tests/ui-smoke/test_accessibility.py`
+audits `profile_show`, but axe **skips hidden content** and the entire
+`shared/_baseline_control_detail` panel — including its parameter form — sits inside a collapsed
+`<details>`. So the sweep audits that page and never looks at the new controls, reporting clean
+either way. This is the same structural gap #880 hit, which is why `help_drawer_open` exists as its
+own baseline key recorded at zero violations. **Bundle U's panel needs the equivalent** — an
+expanded-state audit key — and it cannot be added here because a new baseline entry has to be
+recorded from a real run, which the deferred UBI9 gate did not do. **Sonar caught two a11y defects
+in this partial that axe would never have reported** (a label associated only by wrapping, and a
+text input with no accessible name at all); both are fixed, but the gap that hid them is not.
+
 **Two holds — OWNER-DECIDED 2026-08-19, do not re-raise inside this bundle:**
 
 1. **The UBI9 prod-image gate is deferred for this cycle.** `tests/api` and the full Playwright

@@ -284,6 +284,43 @@ RSpec.describe CatalogImportService do
 
   # ── XML parameter helper unit tests ──────────────────────────────────────
 
+  # ── The keyword bag is only safe if a typo is LOUD ──────────────────────
+  #
+  # Collapsing ten parameters into `**fields` traded one problem for another:
+  # a misspelled key would simply never arrive, and the control would import
+  # with that field quietly unset. That is the #994 shape — a call that
+  # discards what it did not recognise is indistinguishable from one that had
+  # nothing to say — so the method validates its own keys.
+  describe "#upsert_catalog_control field validation" do
+    let(:catalog) { create(:control_catalog) }
+    let(:family)  { create(:control_family, control_catalog: catalog, code: "AC") }
+    let(:service) { described_class.new(StringIO.new(""), "test.json") }
+
+    it "accepts every documented field" do
+      expect {
+        service.send(:upsert_catalog_control, family, "ac-1",
+          title: "Policy", priority: "P1", baseline: "LOW",
+          guidance_data: { "statement" => "s" }, params_data: [],
+          label: "AC-1", sort_id: "ac-01", links_data: [])
+      }.not_to raise_error
+
+      expect(family.catalog_controls.find_by(control_id: "ac-1").title).to eq("Policy")
+    end
+
+    it "REFUSES an unknown key instead of silently dropping it" do
+      expect {
+        service.send(:upsert_catalog_control, family, "ac-2", title: "X", lnks_data: [ { "rel" => "reference" } ])
+      }.to raise_error(ArgumentError, /lnks_data/)
+    end
+
+    it "names every field it will accept, so the list cannot drift from the method" do
+      expect(described_class::CONTROL_FIELDS).to contain_exactly(
+        :title, :priority, :baseline, :guidance_data,
+        :params_data, :label, :sort_id, :links_data
+      )
+    end
+  end
+
   describe "#oscal_xml_collect_params" do
     let(:service) { described_class.new(StringIO.new(""), "test.xml") }
 

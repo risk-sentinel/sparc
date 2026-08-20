@@ -67,10 +67,15 @@
                       <%= hidden_field_tag "param_values[#{param.id}][]", "", id: nil %>
                       <div class="d-flex flex-wrap gap-3">
                         <% param.choices.each_with_index do |choice, i| %>
-                          <label class="form-check" style="font-size: 0.82rem;">
+                          <%# `for` explicitly, not just by wrapping. Both are
+                              valid HTML, but an explicit association is what
+                              assistive technology handles most reliably and it
+                              survives the markup being restructured later. %>
+                          <% choice_id = "param-#{param.id.parameterize}-#{i}" %>
+                          <label class="form-check" for="<%= choice_id %>" style="font-size: 0.82rem;">
                             <%= check_box_tag "param_values[#{param.id}][]", choice,
                                   ParameterValueList.split(param.value).include?(choice),
-                                  id: "param-#{param.id.parameterize}-#{i}", class: "form-check-input" %>
+                                  id: choice_id, class: "form-check-input" %>
                             <span class="form-check-label"><%= choice %></span>
                           </label>
                         <% end %>
@@ -79,9 +84,14 @@
                         Select <%= param.how_many == "one-or-more" ? "one or more" : "one" %>
                       </div>
                     <% else %>
+                      <%# The parameter's name lives in the row header, which a
+                          screen reader reads for a table cell — but a form
+                          control still needs its own accessible name, so it is
+                          stated rather than inferred. %>
                       <%= text_field_tag "param_values[#{param.id}]", param.value,
                             id: "param-#{param.id.parameterize}",
                             class: "form-control form-control-sm",
+                            "aria-label": "#{param.label.presence || param.id} (#{param.id})",
                             placeholder: param.label.presence || "Organization-defined value" %>
                       <% if param.description.present? %>
                         <div class="text-body-tertiary" style="font-size: 0.72rem; margin-top: 0.2rem;"><%= param.description %></div>
