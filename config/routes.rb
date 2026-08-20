@@ -808,6 +808,9 @@ Rails.application.routes.draw do
         member do
           post :password_reset
         end
+        # #1016 — issuing and revoking the credential the API authenticates
+        # with was browser-only, so rotation required a human session.
+        resources :api_tokens, only: [ :index, :create, :destroy ]
       end
       resources :authorization_boundaries, only: [ :index, :show, :create, :update, :destroy ] do
         # #770 bug 6 — assign/move/clear the boundary's organization, enforcing
