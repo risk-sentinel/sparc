@@ -65,7 +65,17 @@ TEST_MODULE_EXCEPTIONS = {
   "authorization_boundary_memberships" => "test_boundary_memberships.py",
   # Nested collections covered inside their parent's module.
   "control_mapping_entries"            => "test_control_mappings.py",
-  "attester_eligibility"               => "test_attestations.py"
+  "attester_eligibility"               => "test_attestations.py",
+  # #1010/#1011 — one module per SHAPE rather than per controller. The six
+  # POA&M sub-objects are one contract, and converter entries are tested
+  # alongside the converter they belong to.
+  "converter_entries"                  => "test_converters.py",
+  "poam_items"                         => "test_poam_subresources.py",
+  "poam_observations"                  => "test_poam_subresources.py",
+  "poam_findings"                      => "test_poam_subresources.py",
+  "poam_local_components"              => "test_poam_subresources.py",
+  "poam_remediations"                  => "test_poam_subresources.py",
+  "poam_milestones"                    => "test_poam_subresources.py"
 }.freeze
 
 def load_routes

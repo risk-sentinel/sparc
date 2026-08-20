@@ -42,11 +42,36 @@ All six support the same five actions.
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `…/<resource>` | List (paginated) |
-| `POST` | `…/<resource>` | Create |
-| `GET` | `…/<resource>/:id` | Show, including the OSCAL arrays |
-| `PATCH`/`PUT` | `…/<resource>/:id` | Update |
-| `DELETE` | `…/<resource>/:id` | Delete |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/items` | List (paginated) |
+| `POST` | `/api/v1/poam_documents/:poam_document_id/items` | Create |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/items/:id` | Show, including the OSCAL arrays |
+| `PATCH`/`PUT` | `/api/v1/poam_documents/:poam_document_id/items/:id` | Update |
+| `DELETE` | `/api/v1/poam_documents/:poam_document_id/items/:id` | Delete |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/observations` | List (paginated) |
+| `POST` | `/api/v1/poam_documents/:poam_document_id/observations` | Create |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/observations/:id` | Show, including the OSCAL arrays |
+| `PATCH`/`PUT` | `/api/v1/poam_documents/:poam_document_id/observations/:id` | Update |
+| `DELETE` | `/api/v1/poam_documents/:poam_document_id/observations/:id` | Delete |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/findings` | List (paginated) |
+| `POST` | `/api/v1/poam_documents/:poam_document_id/findings` | Create |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/findings/:id` | Show, including the OSCAL arrays |
+| `PATCH`/`PUT` | `/api/v1/poam_documents/:poam_document_id/findings/:id` | Update |
+| `DELETE` | `/api/v1/poam_documents/:poam_document_id/findings/:id` | Delete |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/local_components` | List (paginated) |
+| `POST` | `/api/v1/poam_documents/:poam_document_id/local_components` | Create |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/local_components/:id` | Show, including the OSCAL arrays |
+| `PATCH`/`PUT` | `/api/v1/poam_documents/:poam_document_id/local_components/:id` | Update |
+| `DELETE` | `/api/v1/poam_documents/:poam_document_id/local_components/:id` | Delete |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/remediations` | List (paginated) |
+| `POST` | `/api/v1/poam_documents/:poam_document_id/remediations` | Create |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/remediations/:id` | Show, including the OSCAL arrays |
+| `PATCH`/`PUT` | `/api/v1/poam_documents/:poam_document_id/remediations/:id` | Update |
+| `DELETE` | `/api/v1/poam_documents/:poam_document_id/remediations/:id` | Delete |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones` | List a remediation's milestones |
+| `POST` | `/api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones` | Create a milestone |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones/:id` | Show one |
+| `PATCH`/`PUT` | `/api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones/:id` | Update |
+| `DELETE` | `/api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones/:id` | Delete |
 
 ## Shared shape
 
