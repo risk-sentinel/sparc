@@ -133,6 +133,37 @@ class CatalogControl < ApplicationRecord
         .sort_by(&:control_id)
   end
 
+  # Group catalog controls under the parents they are sub-parts of (#1002).
+  #
+  # Extracted from ProfileDocumentsController, which had the only copy. The SSP
+  # screen needed the same grouping and `direct_children` is not it: that
+  # returns ONE level, while these screens show the whole statement — ac-1a and
+  # ac-1a.1 both. Two hand-written versions of this rule is how the SSP screen
+  # came to render no sub-parts at all, so there is now one.
+  #
+  # A sub-part id is a parent id followed by a lowercase letter (ac-1 -> ac-1a
+  # -> ac-1a.1). Parents are matched longest-first so ac-1 does not claim a
+  # control that belongs to a longer parent id.
+  #
+  # @param controls [Enumerable<CatalogControl>] candidates, already loaded
+  # @param parent_ids [Enumerable<String>] the control ids being displayed
+  # @return [Hash{String => Array<CatalogControl>}] parent id => its sub-parts
+  def self.sub_parts_by_parent(controls, parent_ids)
+    parents = Array(parent_ids).to_set
+    longest_first = parents.sort_by { |id| -id.length }
+
+    controls.each_with_object({}) do |cc, acc|
+      next if parents.include?(cc.control_id)
+
+      parent = longest_first.find { |pid|
+        cc.control_id.start_with?(pid) &&
+        cc.control_id.length > pid.length &&
+        cc.control_id[pid.length]&.match?(/[a-z]/)
+      }
+      (acc[parent] ||= []) << cc if parent
+    end
+  end
+
   def to_param = canonical_identifier
 
   # Resolve a control within a catalog by its canonical identifier.

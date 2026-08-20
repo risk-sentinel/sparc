@@ -117,6 +117,35 @@ class SspDocumentsController < ApplicationController
     # SSP consumes the baseline, it does not define it.
     @baseline_param_values = baseline_parameter_values(@ssp_document.profile_document)
 
+    # #1002 — the statement sub-parts, which this screen never loaded and so
+    # never showed. The Profile screen has displayed them since #997; the SSP
+    # screen rendered the same shared partial without them, so an SSP reader
+    # saw the control statement and none of its implementation statements.
+    # Loaded here in one query rather than per control card.
+    #
+    # SCOPED to the baseline's own catalog. `@catalog_guidance` above is not,
+    # and an unscoped lookup here rendered Rev 4 sub-parts under a Rev 5
+    # control — whose `{{ insert: param, cm-3_prm_4 }}` then could not resolve,
+    # because that parameter is defined in the OTHER catalog. Measured on the
+    # seeded Moderate SSP. The same unscoped read in `@catalog_guidance`
+    # predates this and is left alone: narrowing it changes which control text
+    # the screen shows, which is not this issue's to decide.
+    catalog_id = @ssp_document.profile_document&.control_catalog_id
+    @catalog_sub_parts =
+      if normalized_ids.any?
+        candidates = CatalogControl.where(
+          normalized_ids.map { "control_id LIKE ?" }.join(" OR "),
+          *normalized_ids.map { |id| "#{id}%" }
+        )
+        if catalog_id
+          candidates = candidates.joins(:control_family)
+                                 .where(control_families: { control_catalog_id: catalog_id })
+        end
+        CatalogControl.sub_parts_by_parent(candidates, normalized_ids)
+      else
+        {}
+      end
+
     # Heatmap uses root controls; status field is now 'status'
     @heatmap_data, @heatmap_families, @heatmap_statuses =
       build_heatmap(@controls, "status")
