@@ -76,14 +76,16 @@ The **HDF ↔ OSCAL bridge** adds three stateless endpoints — `oscal/sar_from_
 > problem and there is nothing you can change about the submitted HDF — the
 > fault is in the upstream converter.
 >
-> **Known limitation:** with the currently pinned hdf-cli (3.4.1) this endpoint
-> returns `502` for real HDF input, because the converter omits OSCAL-required
-> properties (`reviewed-controls`, `finding/description`,
-> `characterization/origin`). Tracked upstream at
-> [mitre/hdf-libs#184](https://github.com/mitre/hdf-libs/issues/184); it returns
-> `200` again once a fixed hdf-libs is pinned. SPARC does not fill the gaps in —
-> `reviewed-controls` is *what the assessment covered*, and synthesising it would
-> produce a document that passes the schema and misstates the assessment.
+> **Resolved in v1.16.0.** This endpoint previously returned `502` for real HDF
+> input on hdf-cli 3.4.1, because the converter omitted OSCAL-required properties
+> (`reviewed-controls`, `finding/description`, `characterization/origin`) —
+> [mitre/hdf-libs#184](https://github.com/mitre/hdf-libs/issues/184). **hdf-cli
+> 3.5.1 fixed it**, and the endpoint now returns `200` with schema-valid
+> assessment-results, verified against the production image. The `502` contract
+> above still stands as the behaviour for any future converter regression: SPARC
+> does not fill the gaps in — `reviewed-controls` is *what the assessment
+> covered*, and synthesising it would produce a document that passes the schema
+> and misstates the assessment.
 
 ### Evidence (v1.12.2)
 
