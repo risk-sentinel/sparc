@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "sparc-api-v1-collection",
     "name": "SPARC API v1",
-    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 211 endpoints across 37 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
+    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 216 endpoints across 38 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -7544,6 +7544,171 @@
               "body": "{\n  \"system\": {\n    \"boundary_id\": 1,\n    \"boundary_name\": \"Cloud Web Application ATO\",\n    \"boundary_slug\": \"cloud-web-application-ato\",\n    \"boundary_status\": \"active\",\n    \"organization\": null\n  },\n  \"ksi_catalog\": {\n    \"name\": \"FedRAMP 20x Key Security Indicators\",\n    \"version\": \"1.0.0\",\n    \"source\": \"FedRAMP 20x\",\n    \"themes_count\": 11,\n    \"indicators_count\": 54\n  },\n  \"export_timestamp\": \"2026-08-20T19:43:00Z\",\n  \"validations\": [\n    {\n      \"ksi_id\": \"ksi-cm-01\",\n      \"ksi_title\": \"Configuration Baseline\",\n      \"theme_code\": \"CM\",\n      \"theme_name\": \"Change Management\",\n      \"status\": \"passed\",\n      \"validation_method\": \"automated\",\n      \"evidence_format\": \"json\",\n      \"last_validated_at\": \"2026-08-06T20:02:14Z\",\n      \"next_validation_due\": \"2026-08-23T20:02:14Z\",\n      \"overdue\": false,\n      \"notes\": \"Infrastructure-as-code baselines in Terraform\",\n      \"evidence\": null,\n      \"mapped_nist_controls\": [],\n      \"validation_metadata\": {\n        \"tool\": \"SPARC CI/CD\",\n        \"scan_id\": \"c2a686a97d2b860c\"\n      }\n    },\n    {\n      \"ksi_id\": \"ksi-cm-02\",\n      \"ksi_title\": \"Version Control\",\n      \"theme_code\": \"CM\",\n      \"theme_name\": \"Change Management\",\n      \"status\": \"passed\",\n      \"validation_method\": \"automated\",\n      \"evidence_format\": \"json\",\n      \"last_validated_at\": \"2026-08-04T20:02:14Z\",\n      \"next_validation_due\": \"2026-08-23T20:02:14Z\",\n      \"overdue\": false,\n      \"notes\": \"All code in GitHub with branch protection\",\n      \"evidence\": null,\n      \"mapped_nist_controls\": [],\n      \"validation_metadata\": {\n        \"tool\": \"SPARC CI/CD\",\n        \"scan_id\": \"d492a58742a7d005\"\n      }\n    },\n    {\n      \"ksi_id\": \"ksi-cm-04\",\n      \"ksi_title\": \"Automated Testing\",\n      \"theme_code\": \"CM\",\n      \"theme_name\": \"Change Management\",\n      \"status\": \"passed\",\n      \"validation_method\": \"automated\",\n      \"evidence_format\": \"json\",\n      \"last_validated_at\": \"2026-08-07T20:02:14Z\",\n      \"next_validation_due\": \"2026-08-23T20:02:14Z\",\n      \"overdue\": false,\n      \"notes\": \"CI/CD pipeline runs automated tests on every PR\",\n      \"evidence\": null,\n      \"mapped_nist_controls\": [],\n      \"validation_metadata\": {\n        \"tool\": \"SPARC CI/CD\",\n        \"scan_id\": \"6d9fd2e69f8a41cb\"\n      }\n    },\n    {\n      \"ksi_id\": \"ksi-edu-01\",\n      \"ksi_title\": \"Security Awareness Training\",\n      \"theme_code\": \"EDU\",\n      \"theme_name\": \"Cybersecurity Education\",\n      \"status\": \"not_assessed\",\n      \"validation_method\": null,\n      \"evidence_format\": \"manual_review\",\n      \"last_validated_at\": null,\n      \"next_validation_due\": \"2026-11-14T20:02:14Z\",\n      \"overdue\": false,\n      \"notes\": \"Training records not yet reviewed\",\n      \"evidence\": null,\n      \"mapped_nist_controls\": [],\n      \"validation_metadata\": {}\n    },\n    {\n      \"ksi_id\": \"ksi-iam-01\",\n      \"ksi_title\": \"Phishing-Resistant MFA\",\n      \"theme_code\": \"IAM\",\n      \"theme_name\": \"Identity and Access Management\",\n      \"status\": \"passed\",\n      \"validation_method\": \"automated\",\n      \"evidence_format\": \"json\",\n      \"last_validated_at\": \"2026-08-05T20:02:14Z\",\n      \"next_validation_due\": \"2026-08-23T20:02:14Z\",\n      \"overdue\": false,\n      \"notes\": \"Okta MFA enforced for all users via SPARC_OIDC_FORCE_MFA=true\",\n      \"evidence\": null,\n      \"mapped_nist_controls\": [],\n      \"validation_metadata\": {\n        \"tool\": \"SPARC CI/CD\",\n        \"scan_id\": \"c47ba8c0fc24ddb7\"\n      }\n    },\n    {\n      \"ksi_id\": \"ksi-iam-02\",\n      \"ksi_title\": \"Least Privilege Access\",\n      \"theme_code\": \"IAM\",\n      \"theme_name\": \"Identity and Access Management\",\n      \"status\": \"passed\",\n      \"validation_method\": \"automated\",\n      \"evidence_format\": \"json\",\n      \"last_validated_at\": \"2026-08-11T20:02:14Z\",\n      \"next_validation_due\": \"2026-08-23T20:02:14Z\",\n      \"overdue\": false,\n      \"notes\": \"RBAC with boundary-scoped permissions verified\",\n      \"evidence\": null,\n      \"mapped_nist_controls\": [],\n      \"validation_metadata\": {\n        \"tool\": \"SPARC CI/CD\",\n        \"scan_id\": \"3b3cf031d6613ab5\"\n      }\n    },\n    {\n      \"ksi_id\": \"ksi-iam-03\",\n      \"ksi_title\": \"Centralized Identity\",\n      \"theme_code\": \"IAM\",\n      \"theme_name\": \"Identity and Access Management\",\n      \"status\": \"passed\",\n      \"validation_method\": \"automated\",\n      \"evidence_format\": \"json\",\n      \"last_validated_at\": \"2026-08-09T20:02:14Z\",\n      \"next_validation_due\": \"2026-08-23T20:02:14Z\",\n      \"overdue\": false,\n      \"notes\": \"Okta SSO integrated via OIDC\",\n      \"evidence\": null,\n      \"mapped_nist_controls\": [],\n      \"validation_metadata\": {\n        \"tool\": \"SPARC CI/CD\",\n        \"scan_id\": \"00f0883583cedbef\"\n      }\n    },\n    {\n      \"ksi_id\": \"ksi-ir-01\",\n      \"ksi_title\": \"Incident Response Plan\",\n      \"theme_code\": \"IR\",\n      \"theme_name\": \"Incident Response\",\n      \"status\": \"partial\",\n      \"validation_method\": \"manual\",\n      \"evidence_format\": \"manual_review\",\n      \"last_validated_at\": \"2026-08-07T20:02:14Z\",\n      \"next_validation_due\": \"2026-11-14T20:02:14Z\",\n      \"overdue\": false,\n      \"notes\": \"IR plan documented but not tested in 12 months\",\n      \"evidence\": null,\n      \"mapped_nist_controls\": [],\n      \"validation_metadata\": {}\n    },\n    {\n      \"ksi_id\": \"ksi-mla-01\",\n      \"ksi_title\": \"Centralized Logging\",\n      \"theme_code\": \"MLA\",\n      \"theme_name\": \"Monitoring, Logging, and Auditing\",\n      \"status\": \"partial\",\n      \"validation_method\": \"hybrid\",\n      \"evidence_format\": \"manual_review\",\n      \"last_validated_at\": \"2026-08-11T20:02:14Z\",\n      \"next_validation_due\": \"2026-08-23T20:02:14Z\",\n      \"overdue\": false,\n      \"notes\": \"CloudWatch centralized, but legacy syslog not forwarded\",\n      \"evidence\": null,\n      \"mapped_nist_controls\": [],\n      \"validation_metadata\": {}\n    },\n    {\n      \"ksi_id\": \"ksi-mla-03\",\n      \"ksi_title\": \"Vulnerability Scanning\",\n      \"theme_code\": \"MLA\",\n      \"theme_name\": \"Monitoring, Logging, and Auditing\",\n      \"status\": \"passed\",\n      \"validation_method\": \"autom\n… truncated for the collection"
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "Leveraged Authorizations",
+      "item": [
+        {
+          "name": "GET index",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{authorization_boundary_id}}/leveraged_authorizations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{authorization_boundary_id}}",
+                "leveraged_authorizations"
+              ]
+            },
+            "description": "`leveraged_authorizations#index`. Generated by bin/api_postman_check.rb from the route table and the controller's own permitted-field list."
+          }
+        },
+        {
+          "name": "POST create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{authorization_boundary_id}}/leveraged_authorizations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{authorization_boundary_id}}",
+                "leveraged_authorizations"
+              ]
+            },
+            "description": "`leveraged_authorizations#create`. Generated by bin/api_postman_check.rb from the route table and the controller's own permitted-field list.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leveraged_authorization\": {\n    \"name\": \"\",\n    \"crm_type\": \"\",\n    \"leveraged_boundary_id\": \"\",\n    \"date_authorized\": \"\",\n    \"description\": \"\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{authorization_boundary_id}}/leveraged_authorizations/{{id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{authorization_boundary_id}}",
+                "leveraged_authorizations",
+                "{{id}}"
+              ]
+            },
+            "description": "`leveraged_authorizations#destroy`. Generated by bin/api_postman_check.rb from the route table and the controller's own permitted-field list."
+          }
+        },
+        {
+          "name": "GET show",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{authorization_boundary_id}}/leveraged_authorizations/{{id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{authorization_boundary_id}}",
+                "leveraged_authorizations",
+                "{{id}}"
+              ]
+            },
+            "description": "`leveraged_authorizations#show`. Generated by bin/api_postman_check.rb from the route table and the controller's own permitted-field list."
+          }
+        },
+        {
+          "name": "POST populate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{authorization_boundary_id}}/leveraged_authorizations/{{id}}/populate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{authorization_boundary_id}}",
+                "leveraged_authorizations",
+                "{{id}}",
+                "populate"
+              ]
+            },
+            "description": "`leveraged_authorizations#populate`. Generated by bin/api_postman_check.rb from the route table and the controller's own permitted-field list.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leveraged_authorization\": {\n    \"name\": \"\",\n    \"crm_type\": \"\",\n    \"leveraged_boundary_id\": \"\",\n    \"date_authorized\": \"\",\n    \"description\": \"\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
         }
       ]
     },

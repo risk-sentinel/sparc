@@ -813,6 +813,14 @@ Rails.application.routes.draw do
         resources :api_tokens, only: [ :index, :create, :destroy ]
       end
       resources :authorization_boundaries, only: [ :index, :show, :create, :update, :destroy ] do
+        # #1015 — a leveraged authorization records the ATO a system inherits
+        # from, and OSCAL exports it on every SSP for the boundary. It was
+        # creatable only from a browser.
+        resources :leveraged_authorizations, only: [ :index, :show, :create, :destroy ] do
+          member do
+            post :populate
+          end
+        end
         # #770 bug 6 — assign/move/clear the boundary's organization, enforcing
         # the org-admin authorization matrix (instance admin may move; org_admin
         # may attach an unassigned boundary only).
