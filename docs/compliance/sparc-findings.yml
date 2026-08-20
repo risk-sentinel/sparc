@@ -40,25 +40,6 @@ findings:
     kev_checked: '2026-07-29'
     kev_listed: false
   also_known_as: CVE-2026-41316
-- cve_id: CVE-2026-3784
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9
-  fixed_version: none available upstream (not-fixed)
-  severity: MEDIUM
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: curl-minimal
-    7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
-    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
-    RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
 - cve_id: CVE-2025-30258
   package: gnupg2
   installed_version: 2.3.3-5.el9_7
@@ -160,84 +141,6 @@ findings:
   discovery_date: '2026-08-20'
   next_review_date: '2026-09-03'
   superseded_debian_finding: zlib1g 1:1.2.13.dfsg-1 (removed with the Debian base image)
-- cve_id: CVE-2025-14017
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9
-  fixed_version: none available upstream (wont-fix)
-  severity: MEDIUM
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: curl-minimal
-    7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
-    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
-    RHEL 9.8). Fix: none available upstream (wont-fix). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
-    SEVERITY CORRECTED LOW -> MEDIUM: LOW was the grading of the DEBIAN artifact this entry used to describe,
-    which is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
-- cve_id: CVE-2025-14524
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9
-  fixed_version: none available upstream (not-fixed)
-  severity: LOW
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: curl-minimal
-    7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
-    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
-    RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
-- cve_id: CVE-2025-15079
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9
-  fixed_version: none available upstream (not-fixed)
-  severity: LOW
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: curl-minimal
-    7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
-    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
-    RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
-- cve_id: CVE-2025-15224
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9
-  fixed_version: none available upstream (not-fixed)
-  severity: LOW
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: curl-minimal
-    7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
-    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
-    RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
 - cve_id: CVE-2022-3219
   package: gnupg2
   installed_version: 2.3.3-5.el9_7
@@ -472,39 +375,3 @@ findings:
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
   next_review_date: '2026-10-19'
-- cve_id: CVE-2026-8458
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9_8.5
-  fixed_version: none
-  severity: HIGH
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days) — first dispositioned in #1001. libcurl may reuse
-    an authenticated connection for an unintended service when doing Negotiate-authenticated transfers,
-    because the connection-pool match does not account for the service. SPARC configures no Negotiate/GSSAPI
-    authentication anywhere and makes no outbound calls through libcurl — Ruby HTTP goes through net/http
-    and OpenSSL. Deferred rather than called a false positive because the honest measurement is narrower
-    than the claim would be: /usr/bin/curl IS present in the runtime image, contrary to the Dockerfile
-    comment asserting it is not, so the code is there and merely unused. `rpm -q --whatrequires` reports
-    NOTHING in the image requires curl-minimal or libcurl-minimal — they are inherited from ubi-minimal.
-    Removing them would retire this and roughly fifteen more findings outright; that is raised in #1001
-    and is a deliberate image change, not a disposition.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-- cve_id: CVE-2026-8927
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9_8.5
-  fixed_version: none
-  severity: HIGH
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days) — first dispositioned in #1001. libcurl fails to clear
-    proxy authentication state when a handle is reused for sequential transfers under environment-variable
-    proxy configuration, so a Proxy-Authorization header authenticated against one proxy can be sent to
-    another. SPARC sets no proxy environment variables in the image and performs no libcurl transfers.
-    Same reasoning and same remedy as CVE-2026-8458: the package is inherited from ubi-minimal, nothing
-    requires it, and removing it is the real fix — tracked in #1001 rather than assumed here.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
