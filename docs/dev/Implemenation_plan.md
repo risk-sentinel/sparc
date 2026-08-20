@@ -683,17 +683,15 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 14 | T — Bundle P follow-ups | #981 #982 #984 #988 #989 | **Shipped** (PR #986 → `28443b7c`) |
 | 15 | Q — Polish | #936 #991 | **Shipped** (PR #992 → `6d39e089`) |
 | 16 | **hdf-cli 3.5.1 — pulled forward, on its own** | **#993** | **Shipped** (PR #996 → `e0473814`) |
-| 17 | U — Profile fidelity: what the baseline says, and what SPARC shows | #997 #999 #998 **#994** | **In progress** (branch `bug/997_999_998_994_profile_oscal_fidelity`) |
-| 18 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
+| 17 | U — Profile fidelity: what the baseline says, and what SPARC shows | #997 #999 #998 **#994** | **IN PR** (#1000) |
+| 18 | V — The release gate, and the last unslotted screen | **#995** #951 | **Next** (owner-slotted 2026-08-19) |
+| 19 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
 
-**Unslotted — back to two, and one of them is the release gate.** #935 and #959 were slotted into
-**Bundle S** on 2026-08-17, and #997 #998 #999 #994 into **Bundle U** on 2026-08-19. Still in no
-bundle: **#951** (sidebar re-organization and responsive breakpoint audit) and **#995** (validate
-all 223 `/api/v1` endpoints actually do what they claim). #995 is an **epic and a release gate** —
-it is not a bundle-sized unit and cannot be closed by one, so it needs either its own sequenced
-pass before the tag or an explicit decision to carry it to v1.17.0. An issue on the milestone and
-in no bundle is a scheduling gap, not a backlog — **slot it or take it off the milestone before the
-release is cut.** **Tracked separately, no milestone:** #953 (authenticated DAST — unblocked by Bundle
+**Nothing is unslotted.** #935 and #959 went into **Bundle S** on 2026-08-17, #997 #998 #999 #994
+into **Bundle U**, and **#995 and #951 into Bundle V on 2026-08-19 at owner direction** — which
+makes V the NEXT bundle and moves R behind it. That ordering is the right way round for a release
+gate: #995 must be satisfied before the tag, and its findings generate work, so discovering them
+after the largest bundle in the milestone would be discovering them too late. **Tracked separately, no milestone:** #953 (authenticated DAST — unblocked by Bundle
 M's production posture), #966 (SonarCloud findings triage — owner directed that it be filed
 and *not* worked; 281 open findings, 2 Blockers amounting to one defect), and **#968** (audit the
 swallow-and-continue rescue patterns — raised out of #939, **due 2026-09-06**; 54 rescue sites,
@@ -1143,7 +1141,47 @@ gated on `profiles.write`) and the SSP screen (read-only), rather than growing a
 | **API gap** | SSP components had no `Api::V1` surface at all — found while building #998 | **Bundle U, not on the milestone.** Five endpoints under `/api/v1/ssp_documents/:slug/components`, carrying the validation pair so a pipeline can record "FIPS 140-2, certificate #4282, validating this component". Two deliberate refusals: `this-system` cannot be deleted (OSCAL requires it and the enrichment screen already protects it), and a validation claim on a non-validation component, or a pairing into another SSP, answers 422. The three audit actions are **registered** in `AuditEvent::ACTIONS` — an unregistered action records nowhere, which is #982's shape. |
 | **#998** | `validation` is an allowed component type but nothing can express what it validates | **Bundle U.** OSCAL models third-party product validation as a **component pair** — the product, and a `validation` component carrying `validation-type` / `validation-reference` props and a `validation-details` link — joined by `rel="validation"`. SPARC has the enum value and none of the rest: the props appear nowhere in `app/`, and per finding 3 a CDEF cannot carry a second component at all. An enum value with no supporting fields reads as support without being it, which is worse than not offering the type — "this module is FIPS 140-2 validated, certificate #4282" is exactly the assertion an assessor checks. |
 
-##### 17. Bundle R — Auth entitlements — IdP as system of record
+##### 18. Bundle V — The release gate, and the last unslotted screen  ·  **Next**
+
+Slotted by the owner on 2026-08-19, which makes V the next bundle and moves R behind it. That is
+the right way round: **#995 is a release gate**, its findings generate work, and discovering them
+after the largest bundle in the milestone would be discovering them too late.
+
+**#995 needs its framing corrected before it starts, and its baseline is stale.** Measured
+2026-08-19 while closing Bundle U:
+
+1. **The title counts endpoints that exist.** "Validate all 223 `/api/v1` endpoints actually do
+   what they claim" cannot find a mutation with **no endpoint at all** — and that is exactly what
+   Bundle U hit: SSP components were create/edit/delete-able only through the enrichment screen,
+   invisible to any route-list sweep, found only by coming at it from the model. **Add a second
+   axis: walk the WEB controllers and ask, for every mutation a user can perform, whether an
+   `Api::V1` endpoint exists at all.** There is no reason to think components were the only one.
+2. **The coverage columns measure presence, not teeth.** `docs/api/INVENTORY.md` reports
+   167/168 documented and 167/168 pytest-covered, which reads as done. But **four `tests/api`
+   modules never read a response body at all** — `test_admin_credentials.py`,
+   `test_artifacts.py`, `test_authoritative_sources.py`, `test_sessions.py` — and
+   `test_admin_credentials.py` performs **4 writes and 0 reads**, so nothing it does is ever read
+   back. A test that exists is not evidence, for the same reason a 200 is not.
+3. **The suite is weighted 4:1 toward happy paths** — 167 `2xx` assertions against 39 `4xx`.
+   #994 was a *wrong status on a request that was never parsed*; every defect in Bundle U was a
+   wrong answer carrying a right status. A suite shaped like this cannot find that class, which is
+   the class the epic exists for.
+4. **The inventory's own summary is 26 endpoints stale.** It states "142 logical endpoints
+   (as of 2026-07-18)" while its table carries **168 rows** (229 route entries after Bundle U).
+   The 99% / 93% coverage figures are therefore computed against the wrong denominator. **Fix the
+   baseline first** — a screening pass measured against a stale inventory reports progress it has
+   not made.
+
+**#951** is the last UX item on the milestone and is unrelated to #995; it rides along because it
+is small and because leaving one issue in no bundle is the scheduling gap this section exists to
+close.
+
+| Issue | Description | Notes |
+| --- | --- | --- |
+| **#995** | Epic: validate all `/api/v1` endpoints actually do what they claim — a 200 is not evidence | **Bundle V, release gate for v1.16.0.** Four corrections above, all measured. Order: fix the inventory baseline, then the missing-endpoint axis, then strengthen negative coverage, then the per-endpoint semantic sweep. The four body-blind modules are the cheapest first win. **Expect this to generate issues rather than close cleanly** — decide explicitly whether the gate is "the sweep ran and its findings are triaged" or "every finding is fixed", because those are different release dates. |
+| **#951** | Sidebar independent scroll, re-organization, and a responsive breakpoint audit | **Bundle V.** Owner-added 2026-08-15, unslotted until now. **Re-organization is a NAVIGATION change and needs explicit approval** — nav follows the NIST layers and links must be findable in the same place every time; visibility may differ, placement may not. Any new or moved control also takes a Playwright interaction check with a CSP assertion. |
+
+##### 19. Bundle R — Auth entitlements — IdP as system of record
 
 Last by owner direction. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end of the release**, since it is paired with #822 so one two-ceremony TLS verification round covers both. `bundle-audit` reports no vulnerabilities against the current lock, so the deferral is schedulable rather than reactive — **if that changes, decouple #820 from #822 and take it on its own.**
 
@@ -1406,7 +1444,7 @@ removed and are no longer tracked:
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
-| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, ~~#947~~, ~~#948~~, ~~#981~~, ~~#982~~, ~~#984~~, ~~#988~~, ~~#989~~, ~~#936~~, ~~#991~~, ~~#993~~, #994, #995, #997, #998, #999, #951, #860, #842, #822 | In Progress — **40 of 49 shipped** (PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969, #975, #976, #983, #986, #992, #996). Bundles **O** (#929 #952, PR #975), **S** (#974 #959 #935, PR #976), **P** (#947 #948, PR #983), **T** (#981 #982 #984 #988 #989, PR #986), **Q** (#936 #991, PR #992) and the **hdf-cli 3.5.1 pin** (#993, PR #996) have all shipped. **Bundle U** (#997 #999 #998 + #994) is in progress on `bug/997_999_998_994_profile_oscal_fidelity`. The count moved 16 → 24 → 25 → 32 → 36 → 37 → 39 → 40 → **49**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; **#981, #982 came from Bundle P's verification gate**; **#988, #989 from Bundle T**, **#991 from Bundle Q** and **#993 from the hdf pin**; and **#994, #995, #997, #998, #999 were filed on 2026-08-19 — every one of them found by USING the product rather than by the suite**, which is the argument #995 makes. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** (#997 #999 #998 #994, 2026-08-19) → **R** (#860 #842 #822 +#820). **#951 and #995 remain unslotted**, and #995 is a release gate rather than a bundle-sized unit. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, ~~#947~~, ~~#948~~, ~~#981~~, ~~#982~~, ~~#984~~, ~~#988~~, ~~#989~~, ~~#936~~, ~~#991~~, ~~#993~~, #994, #995, #997, #998, #999, #951, #860, #842, #822 | In Progress — **40 of 49 shipped** (PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969, #975, #976, #983, #986, #992, #996). Bundles **O** (#929 #952, PR #975), **S** (#974 #959 #935, PR #976), **P** (#947 #948, PR #983), **T** (#981 #982 #984 #988 #989, PR #986), **Q** (#936 #991, PR #992) and the **hdf-cli 3.5.1 pin** (#993, PR #996) have all shipped. **Bundle U** (#997 #999 #998 + #994) is in progress on `bug/997_999_998_994_profile_oscal_fidelity`. The count moved 16 → 24 → 25 → 32 → 36 → 37 → 39 → 40 → **49**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; **#981, #982 came from Bundle P's verification gate**; **#988, #989 from Bundle T**, **#991 from Bundle Q** and **#993 from the hdf pin**; and **#994, #995, #997, #998, #999 were filed on 2026-08-19 — every one of them found by USING the product rather than by the suite**, which is the argument #995 makes. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** (#997 #999 #998 #994, in PR #1000) → **V** (#995 #951) → **R** (#860 #842 #822 +#820). **#951 and #995 were slotted into Bundle V on 2026-08-19**, which makes V the next bundle and moves R behind it — the right order for a release gate whose findings generate work. Nothing on the milestone is now in no bundle. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 
