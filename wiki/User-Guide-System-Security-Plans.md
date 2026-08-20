@@ -102,6 +102,12 @@ The SSP detail page (`/ssp_documents/:id`) is where the real work happens.
    you need — chips filter the control cards by status.
 2. Expand a **control card** to see its stated requirement, catalog guidance, and
    any inherited/provider statements.
+   - **What This Baseline Requires** shows the control language with the
+     linked baseline's organization-defined values already substituted, plus
+     that baseline's parameters, priority, guidance and related controls. It is
+     **read-only here** — an SSP consumes the baseline, it does not define it.
+     To change a value, tailor it on the baseline itself (see
+     [Control Catalogs and Baselines](User-Guide-Control-Catalogs-and-Baselines#how-to-tailor-a-baselines-parameters)).
 3. Click **Edit** on the card to open the inline form and set:
    - **Status** (implementation status)
    - **Control application** and **coverage level**
@@ -145,6 +151,8 @@ reflect the current state you want to submit.
 | OSCAL export fails validation | Missing enrichment or required control fields | Enrich the SSP and fill the flagged control fields, then re-export |
 | Compliance score seems stuck | Control edits not saved | Re-open the control card, set the status, and save |
 | Can't edit control cards | View-only role | Request SSP write permission ([RBAC](RBAC)) |
+| **What This Baseline Requires** shows no panel on a control | The SSP has no linked baseline, or its catalog carries no statement for that control | Link the SSP to its baseline, or check the control in the catalog |
+| A parameter value on the SSP looks wrong | It comes from the baseline, not the SSP | Change it on the baseline, then re-open the SSP |
 
 ---
 

@@ -5,7 +5,7 @@ class ProfileControlsController < ApplicationController
   # because profiles are instance-level, not boundary-scoped. Every action here
   # (new/create/edit/update/destroy) is authoring.
   before_action :authorize_profiles_write!
-  before_action :set_profile_control, only: %i[edit update destroy]
+  before_action :set_profile_control, only: %i[edit update update_parameters destroy]
 
   def new
     @profile_control = @profile_document.profile_controls.build
@@ -42,6 +42,36 @@ class ProfileControlsController < ApplicationController
     end
   end
 
+  # PATCH /profile_documents/:id/profile_controls/:id/parameters  (#997)
+  #
+  # The tailoring write the Profile screen offers inline. It goes through
+  # BaselineParameterService — the same service the Api::V1 endpoint uses — so
+  # the web form and the API agree on what a valid tailoring decision is, and
+  # the #994 guards (unknown ids named, a non-array selection refused) apply to
+  # both. `save_param_values` on the full edit form writes any id it is handed;
+  # this path does not.
+  def update_parameters
+    result = BaselineParameterService.new(@profile_document)
+                                     .update_parameters(parameter_payload_from_form)
+
+    audit_log("profile_control_updated", subject: @profile_control,
+              metadata: { control_id: @profile_control.control_id,
+                          action: "parameter_update",
+                          parameters_updated: result[:parameters_updated],
+                          selections_updated: result[:selections_updated] })
+
+    if result[:validation_errors].any?
+      flash[:error] = "Some values were not applied: " \
+                      "#{result[:validation_errors].map { |e| e[:error] }.uniq.join('; ')}"
+    else
+      applied = result[:parameters_updated] + result[:selections_updated]
+      flash[:success] = "#{@profile_control.display_id} — #{applied} " \
+                        "#{'parameter'.pluralize(applied)} updated"
+    end
+
+    redirect_to profile_document_path(@profile_document, anchor: "control-#{@profile_control.id}")
+  end
+
   def destroy
     control_id = @profile_control.control_id
     audit_log("profile_control_deleted", subject: @profile_control, metadata: { control_id: control_id })
@@ -76,6 +106,28 @@ class ProfileControlsController < ApplicationController
       field.field_value = value.to_s.strip
       field.save!
     end
+  end
+
+  # A checkbox group posts an array and a text input posts a string, which is
+  # exactly the parameter/selection split the service expects. A select with
+  # nothing ticked still posts its hidden empty entry, so clearing an answer is
+  # possible — without it the field would simply vanish from the payload and
+  # the old value would silently stand.
+  def parameter_payload_from_form
+    payload = { parameters: [], selections: [] }
+
+    (params[:param_values] || {}).each do |param_id, value|
+      if value.is_a?(Array)
+        payload[:selections] << {
+          select_id: param_id.to_s,
+          selected: value.map { |v| v.to_s.strip }.reject(&:blank?)
+        }
+      else
+        payload[:parameters] << { param_id: param_id.to_s, value: value.to_s.strip }
+      end
+    end
+
+    payload
   end
 
   def save_param_values

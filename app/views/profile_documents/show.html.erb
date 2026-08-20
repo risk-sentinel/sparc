@@ -271,72 +271,46 @@
               <% end %>
             </div>
 
-            <%# ── Parameters & properties (collapsed by default) ── %>
-            <% param_fields = field_map.select { |k, _| k.start_with?("parameter:") } %>
-            <%# #942 — param_id => label, for resolving insert references inside
-                selection choices into the terms they stand for. %>
-            <% param_label_lookup = field_map.filter_map { |k, v|
-                 [ k.delete_prefix("parameter_label:"), v.field_value ] if k.start_with?("parameter_label:")
+            <%# ── What the baseline requires (collapsed by default) ── %>
+            <%# #997 — the control language, its parameters WITH this profile's
+                values substituted, its priority, guidance and related controls.
+                Assembled by BaselineControlDetail and rendered by the same
+                partial the SSP screen uses, so the two cannot drift. %>
+            <% catalog_ctrl = @catalog_controls_by_id[control.control_id] %>
+            <% param_values = field_map.filter_map { |k, v|
+                 [ k.delete_prefix("parameter:"), v.field_value ] if k.start_with?("parameter:") && !k.start_with?("parameter_label:")
                }.to_h %>
+            <% detail = catalog_ctrl && BaselineControlDetail.new(catalog_ctrl,
+                          values: param_values, priority: control.priority) %>
             <% prop_fields  = field_map.select { |k, _| k.start_with?("prop:") } %>
             <% sub_parts    = @catalog_sub_parts[control.control_id] %>
-            <% has_details  = param_fields.any? || prop_fields.any? || sub_parts&.any? %>
+            <% has_details  = detail&.any? || prop_fields.any? || sub_parts&.any? %>
             <% if has_details %>
               <details class="card-details" style="margin-top: 0.35rem;">
+                <%# #997 — the toggle used to be a bare arrow, so nothing said
+                    there was anything behind it. It is now labelled with what
+                    it opens, which is the difference between a screen that
+                    holds the baseline and one that shows it. %>
                 <summary class="sparc-card-detail-toggle d-flex align-items-center gap-1">
                   <span class="card-arrow sparc-card-arrow">&#9658;</span>
+                  <span style="font-size: 0.78rem;">
+                    <%= detail&.any? ? "What this baseline requires" : "Details" %>
+                    <% if detail&.parameters&.any? %>
+                      <span class="badge rounded-pill text-bg-info" style="font-size: 0.66rem;">
+                        <%= detail.parameters.size %> param<%= "s" unless detail.parameters.size == 1 %>
+                      </span>
+                    <% end %>
+                  </span>
                   <span class="sparc-card-detail-separator"></span>
                 </summary>
 
                 <div class="mt-2">
-                  <% if param_fields.any? %>
-                    <%
-                      # Build select/choice metadata from catalog for this control
-                      show_select_meta = {}
-                      if @profile_document.control_catalog.present?
-                        show_cat_ctrl = @profile_document.control_catalog.catalog_controls.find_by(control_id: control.control_id)
-                        if show_cat_ctrl
-                          show_cat_ctrl.effective_params_list.each do |p|
-                            show_select_meta[p["id"]] = p["select"] if p["select"].present?
-                          end
-                        end
-                      end
-                    %>
-                    <div class="sparc-statement-block">
-                      <div class="sparc-statement-label" style="color: var(--bs-primary);">Parameters</div>
-                      <table class="sparc-field-table">
-                        <% param_fields.each do |fname, field| %>
-                          <% param_id = fname.delete_prefix("parameter:") %>
-                          <% label_field = field_map["parameter_label:#{param_id}"] %>
-                          <% sel = show_select_meta[param_id] %>
-                          <tr>
-                            <th scope="row" class="sparc-field-label" style="width: 30%; font-family: monospace;">
-                              <%= param_id %>
-                            </th>
-                            <% if label_field %>
-                              <td class="text-body-secondary" style="width: 25%; font-size: 0.82rem;">
-                                <%= label_field.field_value %>
-                              </td>
-                            <% end %>
-                            <td class="sparc-field-value" <%= "colspan=2" unless label_field %>>
-                              <%= field.field_value %>
-                              <% if sel %>
-                                <% choices = sel["choice"] || [] %>
-                                <% is_multi = sel["how-many"] == "one-or-more" %>
-                                <%# #942 — resolve `{{ insert: param, <id> }}` to
-                                    the term it stands for; raw markup is not an
-                                    option a person can choose between. %>
-                                <% resolved = choices.map { |c| OscalParamReference.resolve(c, param_label_lookup) } %>
-                                <div class="text-body-tertiary" style="font-size: 0.72rem; margin-top: 0.2rem;">
-                                  Catalog options<%= is_multi ? " (one or more)" : "" %>:
-                                  <%= resolved.join(", ") %>
-                                </div>
-                              <% end %>
-                            </td>
-                          </tr>
-                        <% end %>
-                      </table>
-                    </div>
+                  <% if detail&.any? %>
+                    <%= render "shared/baseline_control_detail",
+                          detail: detail,
+                          editable: signed_in? && can_write_profiles? && !@profile_document.published_lifecycle?,
+                          form_url: parameters_profile_document_profile_control_path(@profile_document, control),
+                          anchor_id: "control-#{control.id}" %>
                   <% end %>
 
                   <% if prop_fields.any? %>

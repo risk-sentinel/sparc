@@ -111,6 +111,12 @@ class SspDocumentsController < ApplicationController
                           .where(control_id: normalized_ids)
                           .index_by(&:control_id)
 
+    # #997 — the ODP values the SSP's baseline has set, so the screen can show
+    # the control language WITH them substituted rather than raw
+    # `{{ insert: param, … }}` markup, or nothing at all. Read-only here: the
+    # SSP consumes the baseline, it does not define it.
+    @baseline_param_values = baseline_parameter_values(@ssp_document.profile_document)
+
     # Heatmap uses root controls; status field is now 'status'
     @heatmap_data, @heatmap_families, @heatmap_statuses =
       build_heatmap(@controls, "status")
@@ -602,6 +608,21 @@ class SspDocumentsController < ApplicationController
   end
 
   private
+
+  # #997 — param_id => value across the linked profile. Ids are unique within a
+  # catalog, so one lookup serves every control on the page and the screen does
+  # not issue a query per card.
+  def baseline_parameter_values(profile)
+    return {} if profile.blank?
+
+    ProfileControlField
+      .joins(:profile_control)
+      .where(profile_controls: { profile_document_id: profile.id })
+      .where("field_name LIKE ?", "parameter:%")
+      .where.not("field_name LIKE ?", "parameter_label:%")
+      .pluck(:field_name, :field_value)
+      .to_h { |name, value| [ name.delete_prefix("parameter:"), value ] }
+  end
 
   def ssp_control_resource_params
     params.require(:back_matter_resource).permit(:title, :description, :href, :media_type, :rel)

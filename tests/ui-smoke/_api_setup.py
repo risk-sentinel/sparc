@@ -149,6 +149,53 @@ def create_profile() -> dict[str, Any]:
         return r.json()["data"]
 
 
+def create_tailorable_profile() -> dict[str, Any]:
+    """#997 — an EDITABLE profile carrying real catalog controls with parameters.
+
+    `create_profile()` is deliberately bare (no catalog, no controls), so it has
+    nothing to tailor and the parameter panel legitimately renders nothing. A
+    seeded baseline has the controls but is published, which is exactly the
+    state that hides the editing controls — so neither fixture exercises the
+    write path this issue adds.
+
+    This one links a seeded catalog and selects controls that carry ODPs, so the
+    form is present by construction rather than by luck of what the instance
+    happens to hold.
+    """
+    with _client() as c:
+        catalogs = c.get("/api/v1/control_catalogs", params={"per_page": 50})
+        catalogs.raise_for_status()
+        rows = catalogs.json().get("data", [])
+        def _is_rev5(row: dict[str, Any]) -> bool:
+            name = str(row.get("name", ""))
+            return "800-53" in name and "5" in name
+
+        rev5 = next((row for row in rows if _is_rev5(row)), rows[0] if rows else None)
+        if not rev5:
+            raise RuntimeError("no control catalog on this instance to tailor against")
+
+        created = c.post(
+            "/api/v1/profile_documents",
+            json={
+                "profile_document": {
+                    "name": _name("tailorable-profile"),
+                    "description": "ui-smoke #997",
+                    "control_catalog_id": rev5["id"],
+                }
+            },
+        )
+        created.raise_for_status()
+        profile = created.json()["data"]
+
+        # ac-1 and ac-2 carry ODPs in every Rev 5 catalog SPARC seeds.
+        applied = c.put(
+            f"/api/v1/profile_documents/{profile['slug']}/controls",
+            json={"control_ids": ["ac-1", "ac-2"]},
+        )
+        applied.raise_for_status()
+        return profile
+
+
 def create_back_matter_resource(resourceable_type: str, resourceable_id: Any) -> dict[str, Any]:
     """A managed back-matter resource on a document.
 

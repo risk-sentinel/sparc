@@ -1,0 +1,148 @@
+<%#
+  What the baseline requires of one control (#997) — shared by the Profile
+  screen (editable, gated on profiles.write) and the SSP screen (read-only).
+
+  Locals:
+    detail    — BaselineControlDetail; every string on it is already resolved,
+                so `{{ insert: param, … }}` never reaches this template
+    editable  — true to offer the parameter form
+    form_url  — where the parameter form PATCHes to (required when editable)
+    anchor_id — optional DOM id so a redirect can return to this control
+
+  Nothing renders when the control carries no statement, parameters, guidance
+  or related controls: an empty panel that invites a click and shows nothing is
+  worse than no panel.
+%>
+<% editable  = false unless defined?(editable) %>
+<% form_url  = nil   unless defined?(form_url) %>
+<% anchor_id = nil   unless defined?(anchor_id) %>
+
+<% if detail.any? %>
+  <div class="sparc-baseline-detail" <%= "id=#{anchor_id}".html_safe if anchor_id.present? %>>
+
+    <%# ── Control statement ─────────────────────────────────────────── %>
+    <% if detail.statement.present? %>
+      <div class="sparc-statement-block">
+        <div class="sparc-statement-label" style="color: var(--bs-primary);">
+          Control Statement
+          <% if detail.priority.present? %>
+            <span class="badge rounded-pill text-bg-secondary" style="font-size: 0.68rem; margin-left: 0.4rem;">
+              <%= detail.priority %>
+            </span>
+          <% end %>
+        </div>
+        <div class="text-body-secondary" style="font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap;"><%= detail.statement %></div>
+      </div>
+    <% end %>
+
+    <%# ── Parameters ────────────────────────────────────────────────── %>
+    <% if detail.parameters.any? %>
+      <div class="sparc-statement-block">
+        <div class="sparc-statement-label" style="color: var(--bs-primary);">
+          Parameters
+          <span class="text-body-tertiary" style="font-weight: 400; font-size: 0.72rem;">
+            organization-defined values for this baseline
+          </span>
+        </div>
+
+        <% if editable && form_url.present? %>
+          <%= form_with url: form_url, method: :patch, local: true, class: "sparc-param-form" do %>
+            <table class="sparc-field-table">
+              <% detail.parameters.each do |param| %>
+                <tr>
+                  <th scope="row" class="sparc-field-label" style="width: 28%;">
+                    <div style="font-family: monospace; font-size: 0.78rem;"><%= param.id %></div>
+                    <% if param.label.present? %>
+                      <div class="text-body-secondary" style="font-weight: 400; font-size: 0.78rem;"><%= param.label %></div>
+                    <% end %>
+                  </th>
+                  <td class="sparc-field-value">
+                    <% if param.select? %>
+                      <%# An empty entry so an operator can clear every choice;
+                          without it the field vanishes from the payload and the
+                          old answer silently stands. %>
+                      <%= hidden_field_tag "param_values[#{param.id}][]", "", id: nil %>
+                      <div class="d-flex flex-wrap gap-3">
+                        <% param.choices.each_with_index do |choice, i| %>
+                          <label class="form-check" style="font-size: 0.82rem;">
+                            <%= check_box_tag "param_values[#{param.id}][]", choice,
+                                  ParameterValueList.split(param.value).include?(choice),
+                                  id: "param-#{param.id.parameterize}-#{i}", class: "form-check-input" %>
+                            <span class="form-check-label"><%= choice %></span>
+                          </label>
+                        <% end %>
+                      </div>
+                      <div class="text-body-tertiary" style="font-size: 0.72rem; margin-top: 0.2rem;">
+                        Select <%= param.how_many == "one-or-more" ? "one or more" : "one" %>
+                      </div>
+                    <% else %>
+                      <%= text_field_tag "param_values[#{param.id}]", param.value,
+                            id: "param-#{param.id.parameterize}",
+                            class: "form-control form-control-sm",
+                            placeholder: param.label.presence || "Organization-defined value" %>
+                      <% if param.description.present? %>
+                        <div class="text-body-tertiary" style="font-size: 0.72rem; margin-top: 0.2rem;"><%= param.description %></div>
+                      <% end %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </table>
+            <div class="d-flex justify-content-end mt-2">
+              <%= submit_tag "Save parameters", class: "btn btn-primary btn-sm", data: { disable_with: "Saving…" } %>
+            </div>
+          <% end %>
+        <% else %>
+          <table class="sparc-field-table">
+            <% detail.parameters.each do |param| %>
+              <tr>
+                <th scope="row" class="sparc-field-label" style="width: 28%;">
+                  <div style="font-family: monospace; font-size: 0.78rem;"><%= param.id %></div>
+                  <% if param.label.present? %>
+                    <div class="text-body-secondary" style="font-weight: 400; font-size: 0.78rem;"><%= param.label %></div>
+                  <% end %>
+                </th>
+                <td class="sparc-field-value">
+                  <% if param.answered? %>
+                    <%# The resolved reading, not the stored value: a selection
+                        stores WHICH branches were chosen, which is not the text
+                        the control ends up asserting. %>
+                    <span><%= param.display.presence || param.value %></span>
+                  <% else %>
+                    <span class="text-body-tertiary fst-italic">Not set — the baseline default applies</span>
+                  <% end %>
+                  <% if param.select? && param.choices.any? %>
+                    <div class="text-body-tertiary" style="font-size: 0.72rem; margin-top: 0.2rem;">
+                      Options: <%= param.choices.join("; ") %>
+                    </div>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </table>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── Guidance ──────────────────────────────────────────────────── %>
+    <% if detail.guidance.present? %>
+      <div class="sparc-statement-block">
+        <div class="sparc-statement-label">Guidance</div>
+        <div class="text-body-secondary" style="font-size: 0.82rem; line-height: 1.5; white-space: pre-wrap;"><%= detail.guidance %></div>
+      </div>
+    <% end %>
+
+    <%# ── Related controls ──────────────────────────────────────────── %>
+    <% if detail.related_controls.any? %>
+      <div class="sparc-statement-block">
+        <div class="sparc-statement-label">Related Controls</div>
+        <div class="d-flex flex-wrap gap-1">
+          <% detail.related_controls.each do |ref| %>
+            <span class="badge text-bg-light" style="font-family: monospace; font-size: 0.72rem;"><%= ref.upcase %></span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+  </div>
+<% end %>

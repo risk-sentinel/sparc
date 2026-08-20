@@ -90,6 +90,12 @@ class ProfileDocumentsController < ApplicationController
     @family_names = {}
     @catalog_sub_parts = {}
     @sort_id_map = {}
+    # #997 — the control as the CATALOG defines it, keyed by control_id, so the
+    # screen can show what the baseline actually requires (statement, params,
+    # priority, guidance, related controls) instead of an identifier and a
+    # priority count. Loaded here rather than per-card so the view does not
+    # issue one query per control.
+    @catalog_controls_by_id = {}
 
     if @profile_document.control_catalog.present?
       catalog = @profile_document.control_catalog
@@ -100,6 +106,9 @@ class ProfileDocumentsController < ApplicationController
 
       catalog.catalog_controls.includes(:control_family).each do |cc|
         @sort_id_map[cc.control_id] = cc.sort_id if cc.sort_id.present?
+        if profile_control_ids.include?(cc.control_id)
+          @catalog_controls_by_id[cc.control_id] = cc
+        end
         next if profile_control_ids.include?(cc.control_id)
 
         # Sub-parts start with a parent ID followed by a lowercase letter (e.g., ac-1a, ac-1a.1)
