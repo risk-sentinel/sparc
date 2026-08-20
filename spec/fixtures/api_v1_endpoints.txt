@@ -26,6 +26,7 @@ DELETE /api/v1/sap_documents/:id
 DELETE /api/v1/sar_documents/:id
 DELETE /api/v1/scanner_findings/:scanner_finding_id/disposition
 DELETE /api/v1/ssp_documents/:id
+DELETE /api/v1/ssp_documents/:ssp_document_id/components/:id
 DELETE /api/v1/users/:id
 GET /api/v1/admin/reconciliation
 GET /api/v1/admin/remediation_timelines
@@ -103,6 +104,8 @@ GET /api/v1/scanner_findings/:scanner_finding_id/disposition
 GET /api/v1/ssp_documents
 GET /api/v1/ssp_documents/:id
 GET /api/v1/ssp_documents/:id/export
+GET /api/v1/ssp_documents/:ssp_document_id/components
+GET /api/v1/ssp_documents/:ssp_document_id/components/:id
 GET /api/v1/users
 GET /api/v1/users/:id
 PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
@@ -126,6 +129,7 @@ PATCH /api/v1/profile_documents/:profile_document_id/parameters
 PATCH /api/v1/sap_documents/:id
 PATCH /api/v1/sar_documents/:id
 PATCH /api/v1/ssp_documents/:id
+PATCH /api/v1/ssp_documents/:ssp_document_id/components/:id
 PATCH /api/v1/users/:id
 POST /api/v1/admin/refresh_credentials
 POST /api/v1/authoritative_sources
@@ -197,6 +201,7 @@ POST /api/v1/ssp_documents
 POST /api/v1/ssp_documents/:id/fields/import/confirm
 POST /api/v1/ssp_documents/:id/fields/import/preview
 POST /api/v1/ssp_documents/:id/populate_from_profile
+POST /api/v1/ssp_documents/:ssp_document_id/components
 POST /api/v1/ssp_documents/convert
 POST /api/v1/users
 POST /api/v1/users/:id/password_reset
@@ -223,4 +228,5 @@ PUT /api/v1/sar_documents/:id
 PUT /api/v1/sar_documents/:id/update_fields
 PUT /api/v1/ssp_documents/:id
 PUT /api/v1/ssp_documents/:id/update_fields
+PUT /api/v1/ssp_documents/:ssp_document_id/components/:id
 PUT /api/v1/users/:id
