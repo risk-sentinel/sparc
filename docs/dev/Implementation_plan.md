@@ -654,14 +654,14 @@ Backlog / gated:
 
 ### Phase 16: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
 
-**Goal:** Close the v1.16.0 milestone (**49 issues — 40 closed, 9 open, re-measured 2026-08-19 late**, after Bundles T and Q and the hdf-cli pin shipped; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, #935, #951, #959 added by the owner on 2026-08-15, **#981, #982, #984 filed from the Bundle P verification gate**, **#988, #989 filed and fixed inside Bundle T**, **#991 filed and fixed inside Bundle Q**, **#993 filed and fixed by the hdf-cli 3.5.1 pin**, and **#994, #995, #997, #998, #999 filed 2026-08-19**). The count has moved **eight** times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
+**Goal:** Close the v1.16.0 milestone (**53 issues — 44 closed, 9 open, re-measured 2026-08-20**, after Bundle U shipped and Bundle W opened in PR #1005; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, #935, #951, #959 added by the owner on 2026-08-15, **#981, #982, #984 filed from the Bundle P verification gate**, **#988, #989 filed and fixed inside Bundle T**, **#991 filed and fixed inside Bundle Q**, **#993 filed and fixed by the hdf-cli 3.5.1 pin**, and **#994, #995, #997, #998, #999 filed 2026-08-19**). The count has moved **eight** times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
 
 **The release gate is Bundle V: sweep all 229 `/api/v1` route entries against their published
 contracts** — send a payload, parse the response, and prove with an INDEPENDENT read that the
 endpoint did what `docs/api/endpoints/*.md` says it does. Not "it returned 200." The full matrix,
 the ~1,294-check floor and a per-group progress tracker are in the **Bundle V** section below.
 
-**The last five were all found by USING the product, none by the suite.** #994, #997, #998 and #999 came out of exercising `/api/v1` against a live instance and reading SPARC's output against NIST's published OSCAL references; #995 is the epic that generalises them. Every underlying defect was green at the time it was found — which is the argument #995 makes and the reason it is a release gate rather than a nice-to-have.
+**The last five were all found by USING the product, none by the suite.** #994, #997, #998 and #999 came out of exercising `/api/v1` against a live instance and reading SPARC's output against NIST's published OSCAL references; #995 is the epic that generalises them. Every underlying defect was green at the time it was found — which is the argument #995 makes and the reason it is a release gate rather than a nice-to-have. **That has now held for nine in a row:** #1001 came from scanning the shipping image, #1002 and #1003 from running the UBI9 gate Bundle U had held, and #1004 from the owner reading a live OSCAL export. Not one of the nine was found by the rspec suite.
 
 The two structural security deliverables led: a spec that fails when a controller ships without authorization (#919) and one that pins `disposition: "attachment"` on user content (#894). What remains is the document model, the boundary-attachment family, and the IdP entitlement epic.
 
@@ -688,26 +688,32 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 14 | T — Bundle P follow-ups | #981 #982 #984 #988 #989 | **Shipped** (PR #986 → `28443b7c`) |
 | 15 | Q — Polish | #936 #991 | **Shipped** (PR #992 → `6d39e089`) |
 | 16 | **hdf-cli 3.5.1 — pulled forward, on its own** | **#993** | **Shipped** (PR #996 → `e0473814`) |
-| 17 | U — Profile fidelity: what the baseline says, and what SPARC shows | #997 #999 #998 **#994** | **IN PR** (#1000) |
-| 18 | **V — SWEEP every API endpoint against its published contract** | **#995** #951 | **NEXT — release gate, SWEPT + FIXED** (owner-decided 2026-08-20). 229 route entries, ~1,294 checks, every finding fixed in-milestone; per-group tracker in the Phase 16 section |
-| 19 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
-| 20 | **W — The remediation claims the UBI9 migration invalidated** | **#1001** | **LAST** (owner-placed 2026-08-20). 20 `remediated` findings still in the shipping image; 18 deferred to 2026-09-03, 2 blocked on a fix-vs-deviation decision |
+| 17 | U — Profile fidelity: what the baseline says, and what SPARC shows | #997 #999 #998 **#994** | **Shipped** (PR #1000 → `27aea200`) |
+| 18 | **W — The CVEs the UBI9 migration hid, + Bundle U's carried debt** | **#1001** **#1002** **#1003** | **IN PR** ([#1005](https://github.com/risk-sentinel/sparc/pull/1005), 15 commits, **not merged**). Image CVEs 132 → 80, undispositioned HIGHs 19 → 0; rspec 5669/0/10, tests/api 473, ui-smoke 496 passed / 9 skipped / 0 failed. **#1002 and #1003 were filed and fixed inside it**, both surfaced by running the gate U had held |
+| 19 | **V — SWEEP every API endpoint against its published contract** | **#995** #951 | **NEXT, once #1005 merges — release gate, SWEPT + FIXED** (owner-decided 2026-08-20). 229 route entries, ~1,294 checks, every finding fixed in-milestone; per-group tracker in the Phase 16 section |
+| 20 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
+| — | **#1004 — SSP back-matter carries no href for the boundary's CDEFs** | **#1004** | **Filed 2026-08-20 from OWNER review of live exports, in NO bundle yet.** Scope owner-decided: **all** of the boundary's CDEFs. See the Bundle W section for the measurements and the profile-exporter pattern to copy |
 
-**Nothing is unslotted.** #935 and #959 went into **Bundle S** on 2026-08-17, #997 #998 #999 #994
-into **Bundle U**, and **#995 and #951 into Bundle V on 2026-08-19 at owner direction** — which
-makes V the NEXT bundle and moves R behind it. That ordering is the right way round for a release
-gate: #995 must be satisfied before the tag, and its findings generate work, so discovering them
-after the largest bundle in the milestone would be discovering them too late. **Tracked separately, no milestone:** #953 (authenticated DAST — unblocked by Bundle
+**One issue is unslotted: #1004**, filed 2026-08-20 and not yet in a bundle — the owner's call
+whether it rides V or waits. Everything else is slotted. #935 and #959 went into **Bundle S** on
+2026-08-17, #997 #998 #999 #994 into **Bundle U**, and **#995 and #951 into Bundle V on 2026-08-19
+at owner direction**. **W was then moved from LAST to FIRST on 2026-08-20**, combined with Bundle
+U's carried debt, to land the milestone — so the order is now **W → V → R**, not V → R → W. V
+before R remains the right way round for a release gate: #995 must be satisfied before the tag, and
+its findings generate work, so discovering them after the largest bundle in the milestone would be
+discovering them too late. **Tracked separately, no milestone:** #953 (authenticated DAST — unblocked by Bundle
 M's production posture), #966 (SonarCloud findings triage — owner directed that it be filed
 and *not* worked; 281 open findings, 2 Blockers amounting to one defect), and **#968** (audit the
 swallow-and-continue rescue patterns — raised out of #939, **due 2026-09-06**; 54 rescue sites,
 11 log-and-continue in services/jobs, and 17 files combining a transaction with a rescue, which
 is the candidate set for the #963 shape).
 
-**Milestone re-measured 2026-08-19 late, after Bundles T and Q and the hdf pin: 49 issues,
-40 closed / 9 open.** The 9 open: **#822 #842 #860 #951 #994 #995 #997 #998 #999**. Bundle S closed
-#935, #959 and #974; Bundle P closed #947 and #948; Bundle T closed #981, #982, #984, #988 and
-#989; Bundle Q closed #936 and #991; the hdf pin closed #993.
+**Milestone re-measured 2026-08-20, after Bundle U shipped and Bundle W was opened: 53 issues,
+44 closed / 9 open.** The 9 open: **#822 #842 #860 #951 #995 #1001 #1002 #1003 #1004**. #1001,
+#1002 and #1003 are open only because PR #1005 has not merged; #1004 is a follow-up in no bundle.
+Bundle S closed #935, #959 and #974; Bundle P closed #947 and #948; Bundle T closed #981, #982,
+#984, #988 and #989; Bundle Q closed #936 and #991; the hdf pin closed #993; Bundle U closed #994,
+#997, #998 and #999.
 
 **The earlier figure in this section — 40 issues, 30 closed / 10 open — was measured during Bundle
 P and is superseded.** It is left in the paragraphs below as the record of what was known then.
