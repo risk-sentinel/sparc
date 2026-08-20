@@ -139,7 +139,7 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   end
 
   def profile_params
-    params.require(:profile_document).permit(
+    permit_strictly(:profile_document,
       :name, :description, :baseline_level, :profile_version,
       :oscal_version, :control_catalog_id, :lifecycle_status, :file_type
     )

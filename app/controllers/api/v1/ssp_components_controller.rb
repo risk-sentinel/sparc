@@ -132,7 +132,7 @@ class Api::V1::SspComponentsController < Api::V1::BaseController
   end
 
   def component_params
-    params.require(:ssp_component).permit(
+    permit_strictly(:ssp_component,
       :uuid, :component_type, :title, :description, :purpose,
       :status_state, :status_remarks, :remarks,
       # #998 — the validation pair. The model refuses these where they would

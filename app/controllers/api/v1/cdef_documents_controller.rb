@@ -299,7 +299,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   end
 
   def cdef_params
-    params.require(:cdef_document).permit(
+    permit_strictly(:cdef_document,
       :name, :description, :cdef_type, :cdef_version, :benchmark_id,
       :oscal_version, :lifecycle_status, :file_type,
       # #944 — the component's own OSCAL fields. The exporter hardcoded these,

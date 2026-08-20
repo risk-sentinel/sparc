@@ -266,7 +266,7 @@ class TestParameterEnumeration:
         assert "injected_key" not in guidance
 
     @pytest.mark.validation
-    def test_drops_an_unenumerated_attribute(
+    def test_refuses_an_unenumerated_attribute(
         self, admin_client: httpx.Client, catalog: dict[str, Any], family: dict[str, Any]
     ) -> None:
         control = _create(admin_client, catalog, family)
@@ -281,11 +281,17 @@ class TestParameterEnumeration:
                 }
             },
         )
-        assert response.status_code == 200, response.text
-        data = response.json()["data"]
-        assert data["title"] == "Renamed"
-        assert data["id"] == control["id"]
-        assert data["control_family_id"] == family["id"]
+        # #995 — refused rather than dropped. Applying the recognised half of a
+        # body while discarding the rest, under a 200, is what let a caller
+        # believe a re-parenting had taken.
+        assert response.status_code == 422, response.text
+        details = " ".join(response.json()["details"])
+        assert "control_family_id" in details
+        assert "id" in details
+
+        unchanged = admin_client.get(_controls_path(catalog, control["identifier"]))
+        assert unchanged.status_code == 200, unchanged.text
+        assert unchanged.json()["data"]["title"] != "Renamed"
 
     @pytest.mark.validation
     def test_keeps_the_enumerated_odp_shape_and_drops_the_rest(

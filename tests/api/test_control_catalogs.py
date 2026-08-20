@@ -19,6 +19,7 @@ from schemas import (
     ControlCatalogIndex,
     ControlCatalogShow,
     assert_create_round_trip,
+    assert_unhandled_payload_is_not_reported_as_success,
     assert_update_round_trip,
     validate_index_response,
     validate_show_response,
@@ -180,6 +181,31 @@ class TestUpdate:
             ControlCatalogShow,
             restore=False,  # the fixture owns this catalog and deletes it
         )
+
+    @pytest.mark.validation
+    def test_unrecognized_fields_are_refused(
+        self, admin_client: httpx.Client, catalog: dict[str, Any]
+    ) -> None:
+        """A payload the endpoint cannot act on must not come back as success.
+
+        `params.permit` drops what it does not recognise, so before #995 a
+        controller handed the wrong key saw an empty change set and took the
+        success branch — 200, with the resource unchanged. Nothing
+        distinguished "nothing to do" from "I did not understand you".
+        """
+        response = assert_unhandled_payload_is_not_reported_as_success(
+            admin_client,
+            PATH,
+            catalog["id"],
+            {"control_catalog": {"not_a_real_column": "x", "descriptionn": "typo"}},
+            ControlCatalogShow,
+        )
+
+        assert response.status_code == 422, response.text
+        details = " ".join(response.json()["details"])
+        assert "not_a_real_column" in details
+        assert "descriptionn" in details
+        assert "description" in response.json()["expected"]
 
     @pytest.mark.authz
     def test_non_admin_returns_403(self, user_client: httpx.Client) -> None:

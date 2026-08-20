@@ -117,7 +117,7 @@ class Api::V1::AttestationsController < Api::V1::BaseController
   # referencing another, which is precisely the unverifiable claim this issue
   # exists to close.
   def attestation_params
-    params.require(:attestation).permit(
+    permit_strictly(:attestation,
       :attester_user_id, :role, :statement, :attested_at,
       :frequency, :status
     )

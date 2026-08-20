@@ -160,7 +160,7 @@ class Api::V1::UsersController < Api::V1::BaseController
   # here — they flow through UserProvisioningService#apply_privileged_attributes!
   # for admin actors only, never Rails mass-assignment. (Brakeman BRAKE0105.)
   def user_self_update_params
-    params.require(:user).permit(:first_name, :last_name, :display_name, :email)
+    permit_strictly(:user, :first_name, :last_name, :display_name, :email)
   end
 
   def serialize_user(user, detailed: false)

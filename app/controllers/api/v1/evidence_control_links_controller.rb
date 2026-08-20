@@ -98,7 +98,7 @@ class Api::V1::EvidenceControlLinksController < Api::V1::BaseController
   end
 
   def control_link_params
-    params.require(:control_link).permit(:control_id, :control_type, :document_type, :document_id)
+    permit_strictly(:control_link, :control_id, :control_type, :document_type, :document_id)
   end
 
   def serialize(link, detailed: false)

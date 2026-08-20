@@ -147,7 +147,7 @@ class Api::V1::CatalogControlsController < Api::V1::BaseController
   # (CatalogControl.guidance_params_filter / .params_data_filter) so the schema
   # is stated in one place.
   def control_params
-    params.require(:catalog_control).permit(
+    permit_strictly(:catalog_control,
       :control_id, :title, :description, :priority, :label, :sort_id, :baseline_impact,
       baseline_levels: [],
       guidance_data: CatalogControl.guidance_params_filter,

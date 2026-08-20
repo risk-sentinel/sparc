@@ -265,10 +265,12 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
   end
 
   def resource_params
-    params.require(:back_matter_resource).permit(
+    permit_strictly(:back_matter_resource,
       :title, :description, :href, :media_type, :rel,
       :globally_available, :organization_id,
-      :resourceable_type, :resourceable_id
+      :resourceable_type, :resourceable_id,
+      # `create` reads this off the raw params to gate authoritative resources.
+      also_accepts: %i[source]
     )
   end
 

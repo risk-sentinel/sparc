@@ -111,7 +111,7 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
   end
 
   def catalog_params
-    params.require(:control_catalog).permit(
+    permit_strictly(:control_catalog,
       :name, :description, :version, :source, :oscal_version, :lifecycle_status
     )
   end

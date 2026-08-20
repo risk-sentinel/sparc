@@ -344,8 +344,19 @@ class TestLifecycle:
             ),
             files=_evidence_file(),
         )
-        assert created.status_code == 201, created.text
-        record = created.json()["data"]
+        # #995 — supplying provenance is REFUSED now, not accepted and dropped.
+        # A caller backdating evidence is told no rather than receiving 201 and
+        # believing the timestamp took. The stamp itself is unchanged.
+        assert created.status_code == 422, created.text
+        details = " ".join(created.json()["details"])
+        assert "collected_by" in details
+        assert "collected_at" in details
+
+        stamped = admin_client.post(
+            _EVIDENCES, data=_new_evidence_form(), files=_evidence_file()
+        )
+        assert stamped.status_code == 201, stamped.text
+        record = stamped.json()["data"]
         try:
             assert record["collected_by"] != "spoofed@example.com"
             assert not record["collected_at"].startswith("1999")

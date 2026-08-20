@@ -128,7 +128,7 @@ class Api::V1::KsiValidationsController < Api::V1::BaseController
   # belongs to this boundary. Left mass-assignable deliberately: the guard
   # belongs on the model so every writer is covered, not on this one call site.
   def validation_params
-    params.require(:ksi_validation).permit(
+    permit_strictly(:ksi_validation,
       :catalog_control_id, :evidence_id, :status, :validation_method,
       :evidence_format, :last_validated_at, :next_validation_due,
       :notes, validation_metadata: {}

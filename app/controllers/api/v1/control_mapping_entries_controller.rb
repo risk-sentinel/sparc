@@ -86,7 +86,7 @@ class Api::V1::ControlMappingEntriesController < Api::V1::BaseController
   end
 
   def entry_params
-    params.require(:control_mapping_entry).permit(
+    permit_strictly(:control_mapping_entry,
       :source_control_id, :source_type,
       :target_control_id, :target_type,
       :relationship, :matching_rationale, :remarks, :row_order

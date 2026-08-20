@@ -129,7 +129,7 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
   # --- #844 generation helpers ---
 
   def generate_params
-    @generate_params ||= params.require(:sap_document).permit(
+    @generate_params ||= permit_strictly(:sap_document,
       :name, :description, :authorization_boundary_id,
       :ssp_document_id, :profile_document_id,
       :assessment_type, :assessment_start, :assessment_end,
@@ -185,7 +185,7 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
   end
 
   def document_params
-    params.require(:sap_document).permit(
+    permit_strictly(:sap_document,
       :name, :description, :authorization_boundary_id,
       :ssp_document_id, :profile_document_id,
       :assessment_type, :assessment_start, :assessment_end,

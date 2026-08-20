@@ -137,7 +137,7 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
   end
 
   def boundary_params
-    params.require(:authorization_boundary).permit(:name, :description, :status, :authorization_boundary_description)
+    permit_strictly(:authorization_boundary, :name, :description, :status, :authorization_boundary_description)
   end
 
   def serialize_boundary(ab, detailed: false)

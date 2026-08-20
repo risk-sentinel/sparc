@@ -63,7 +63,7 @@ class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
   private
 
   def generate_params
-    @generate_params ||= params.require(:poam_document).permit(
+    @generate_params ||= permit_strictly(:poam_document,
       :name, :description, :authorization_boundary_id, :sar_document_id
     )
   end
@@ -114,7 +114,7 @@ class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
   def write_permission_key = "poam.write"
 
   def document_params
-    params.require(:poam_document).permit(
+    permit_strictly(:poam_document,
       :name, :description, :authorization_boundary_id,
       :poam_version, :system_id, :lifecycle_status
     )

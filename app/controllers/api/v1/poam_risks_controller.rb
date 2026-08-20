@@ -82,7 +82,7 @@ class Api::V1::PoamRisksController < Api::V1::BaseController
   end
 
   def risk_params
-    params.require(:poam_risk).permit(
+    permit_strictly(:poam_risk,
       :uuid, :title, :description, :statement, :status,
       :deadline, :likelihood, :impact, :remarks
     )

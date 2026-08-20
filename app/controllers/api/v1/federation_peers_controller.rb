@@ -102,11 +102,13 @@ class Api::V1::FederationPeersController < Api::V1::BaseController
   # The genuinely sensitive fields are handled below in `apply_secrets` and are
   # deliberately OUTSIDE this surface — see the comment there.
   def peer_params_for_create
-    params.require(:federation_peer).permit(:name, :base_url, :enabled, public_metadata: {})
+    permit_strictly(:federation_peer, :name, :base_url, :enabled, public_metadata: {},
+      also_accepts: %i[service_token signing_secret])
   end
 
   def peer_params_for_update
-    params.require(:federation_peer).permit(:base_url, :enabled, public_metadata: {})
+    permit_strictly(:federation_peer, :base_url, :enabled, public_metadata: {},
+      also_accepts: %i[service_token signing_secret])
   end
 
   # service_token and signing_secret are write-only and live outside the

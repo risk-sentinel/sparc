@@ -12,6 +12,21 @@ class Api::V1::BaseController < ActionController::API
 
   before_action :authenticate_api_token!
 
+  # Raised by `permit_strictly` when a request body carries fields the endpoint
+  # does not accept. Carries the offending names and what was expected, so the
+  # caller can correct the payload rather than guess which of the two failures
+  # they hit.
+  class UnrecognizedFields < StandardError
+    attr_reader :fields, :permitted
+
+    def initialize(fields, permitted)
+      @fields = fields
+      @permitted = permitted
+      super("Unrecognized fields: #{fields.join(', ')}")
+    end
+  end
+
+
   rescue_from ActiveRecord::RecordNotFound do |_e|
     render json: { error: "Not found" }, status: :not_found
   end
@@ -33,7 +48,71 @@ class Api::V1::BaseController < ActionController::API
     render json: { error: "Missing required parameter: #{e.param}" }, status: :bad_request
   end
 
+  # #995 — a field this endpoint does not accept is refused, not discarded.
+  #
+  # `params.permit` drops what it does not recognise, silently and by design,
+  # and `action_on_unpermitted_parameters` is `false`, so a caller who misspells
+  # a field gets 200 and a resource that did not change. "Nothing to do" and
+  # "I did not understand you" arrive as the same response, which is the shape
+  # #994 was filed for — there it produced `200 {"status":"updated"}` for a body
+  # the endpoint had never parsed.
+  #
+  # The check lives here rather than in `config.action_controller.
+  # action_on_unpermitted_parameters` because that setting is global: flipping
+  # it to `:raise` would change how every web form is handled too, and toggling
+  # it per request is not safe across Puma's threads.
+  rescue_from UnrecognizedFields do |e|
+    render json: {
+      error: "The request body contained fields this endpoint does not accept. Nothing was changed.",
+      details: e.fields.map { |field| "Unrecognized field: #{field}" },
+      expected: e.permitted
+    }, status: :unprocessable_entity
+  end
+
   private
+
+  # Keys a client may send that are never part of a resource's attributes.
+  # `format` is a routing artefact rather than a field, so it is not the
+  # caller's mistake. `id` is deliberately NOT here: exempting it would mean a
+  # request could name a primary key and be told nothing, while the neighbouring
+  # `control_family_id` in the same body was refused. A caller echoing back a
+  # resource it read is not rescued by the exemption anyway — `created_at`,
+  # `updated_at` and `slug` are refused with or without it.
+  ALWAYS_ALLOWED_FIELDS = %w[format].freeze
+
+  # `params.require(root).permit(*filters)`, except that anything permit would
+  # have dropped is reported instead. Returns the permitted parameters, so call
+  # sites read the same as the ones they replaced.
+  # `also_accepts:` names fields the endpoint genuinely consumes OUTSIDE the
+  # permit list — read straight off the raw params by the action, the way
+  # `back_matter_resource[source]` and `federation_peer[service_token]` are.
+  # They are part of the endpoint's contract, so refusing them would be wrong;
+  # they simply are not mass-assigned. Nothing else may be sent.
+  # `nested` absorbs the hash-shaped filters (`public_metadata: {}`,
+  # `attestations_attributes: [...]`) that would otherwise be read as unknown
+  # keyword arguments once `also_accepts:` made this method take keywords.
+  def permit_strictly(root, *filters, also_accepts: [], **nested)
+    filters += [ nested ] if nested.any?
+
+    scope = params.require(root)
+    permitted = scope.permit(*filters)
+
+    submitted = scope.respond_to?(:to_unsafe_h) ? scope.to_unsafe_h.keys.map(&:to_s) : []
+    accepted  = permitted.to_h.keys.map(&:to_s)
+    unknown   = submitted - accepted - also_accepts.map(&:to_s) - ALWAYS_ALLOWED_FIELDS
+
+    raise UnrecognizedFields.new(unknown, expected_fields(filters) + also_accepts.map(&:to_s)) if unknown.any?
+
+    permitted
+  end
+
+  # The filter list rendered as names a caller can act on. A nested filter
+  # (`props: []`, `metadata: {}`) is named by its key.
+  def expected_fields(filters)
+    filters.flat_map do |filter|
+      filter.is_a?(Hash) ? filter.keys.map(&:to_s) : filter.to_s
+    end
+  end
 
   # Resolve pagination size from request params (?items=N or ?per_page=N),
   # falling back to the per-endpoint default. Clamped to a hard ceiling to

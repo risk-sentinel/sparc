@@ -139,7 +139,7 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
   end
 
   def document_params
-    params.require(:ssp_document).permit(
+    permit_strictly(:ssp_document,
       :name, :description, :authorization_boundary_id, :profile_document_id,
       :system_status, :security_sensitivity_level, :ssp_version,
       :security_objective_confidentiality, :security_objective_integrity,

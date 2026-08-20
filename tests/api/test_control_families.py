@@ -157,7 +157,7 @@ class TestCreate:
         assert_error_envelope(response, expected_status=422)
 
     @pytest.mark.validation
-    def test_ignores_fields_outside_the_allowlist(
+    def test_refuses_fields_outside_the_allowlist(
         self, admin_client: httpx.Client, catalog: dict[str, Any]
     ) -> None:
         """Params are enumerated, not a loose hash — an endpoint accepting
@@ -173,10 +173,20 @@ class TestCreate:
                 }
             },
         )
-        assert response.status_code in (200, 201), response.text
-        created = response.json().get("data") or response.json()
-        assert created["id"] != 999_999
+        # #995 — refused rather than silently dropped, so a caller aiming a
+        # record at another catalog is told so instead of receiving 201.
+        assert response.status_code == 422, response.text
+        details = " ".join(response.json()["details"])
+        assert "control_catalog_id" in details
+        assert "id" in details
+
+        clean = admin_client.post(
+            _path(catalog), json={"control_family": {"code": "ZQ", "name": "Allowlist Test"}}
+        )
+        assert clean.status_code in (200, 201), clean.text
+        created = clean.json().get("data") or clean.json()
         assert created["control_catalog_id"] == catalog["id"]
+        admin_client.delete(f"{_path(catalog)}/{created['code']}")
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client, catalog: dict[str, Any]) -> None:
