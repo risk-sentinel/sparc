@@ -100,50 +100,47 @@ class CdefFromProfileService
   end
 
   def build_controls_from_catalog(catalog)
-    groups = catalog.dig("catalog", "groups") || []
     control_attrs = []
     field_entries = []
     row_order = 0
 
-    groups.each do |group|
+    ResolvedCatalog.wrap(catalog).each_control do |control, group|
       family_code = group["id"].to_s.upcase
 
-      (group["controls"] || []).each do |control|
-        idx = control_attrs.size
-        severity = extract_severity(control["props"])
+      idx = control_attrs.size
+      severity = extract_severity(control["props"])
 
-        control_attrs << {
-          control_id:     control["id"],
-          title:          control["title"],
-          control_family: family_code,
-          severity:       severity,
-          row_order:      row_order
-        }
+      control_attrs << {
+        control_id:     control["id"],
+        title:          control["title"],
+        control_family: family_code,
+        severity:       severity,
+        row_order:      row_order
+      }
 
-        # Pre-populated read-only fields
-        statement = extract_part_prose(control, "statement")
-        guidance  = extract_part_prose(control, "guidance")
-        params    = extract_params(control)
+      # Pre-populated read-only fields
+      statement = extract_part_prose(control, "statement")
+      guidance  = extract_part_prose(control, "guidance")
+      params    = extract_params(control)
 
-        field_entries << [ idx, "description", statement ] if statement.present?
-        field_entries << [ idx, "guidance", guidance ]      if guidance.present?
-        field_entries << [ idx, "parameters", params ]      if params.present?
+      field_entries << [ idx, "description", statement ] if statement.present?
+      field_entries << [ idx, "guidance", guidance ]      if guidance.present?
+      field_entries << [ idx, "parameters", params ]      if params.present?
 
-        # Preserve baseline priority as read-only field
-        priority = extract_priority(control["props"])
-        field_entries << [ idx, "baseline_priority", priority ] if priority.present?
+      # Preserve baseline priority as read-only field
+      priority = extract_priority(control["props"])
+      field_entries << [ idx, "baseline_priority", priority ] if priority.present?
 
-        # Editable placeholder fields
-        field_entries << [ idx, "implementation_narrative", "" ]
-        field_entries << [ idx, "notes", "" ]
-        field_entries << [ idx, "status_override", "" ]
-        field_entries << [ idx, "implementation_status", "" ]
-        field_entries << [ idx, "control_origin", "" ]
-        field_entries << [ idx, "responsible_roles", "" ]
-        field_entries << [ idx, "set_parameters", "" ]
+      # Editable placeholder fields
+      field_entries << [ idx, "implementation_narrative", "" ]
+      field_entries << [ idx, "notes", "" ]
+      field_entries << [ idx, "status_override", "" ]
+      field_entries << [ idx, "implementation_status", "" ]
+      field_entries << [ idx, "control_origin", "" ]
+      field_entries << [ idx, "responsible_roles", "" ]
+      field_entries << [ idx, "set_parameters", "" ]
 
-        row_order += 1
-      end
+      row_order += 1
     end
 
     # #957 — derived, not minted (see BatchInsertable).

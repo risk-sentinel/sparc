@@ -83,11 +83,51 @@ class OscalResolvedProfileCatalogService
         "id"       => family.code.downcase,
         "class"    => "family",
         "title"    => family.name,
-        "controls" => selected_controls.map { |cc| build_control(cc, profile_lookup[cc.control_id]) }
+        "controls" => nest_enhancements(selected_controls, profile_lookup)
       }
     end
 
     groups.presence
+  end
+
+  # An enhancement id carries its parent: `ac-2.1` belongs inside `ac-2`.
+  # Statement sub-parts (`ac-1a`, `ac-1a.1`) do not match and stay where they
+  # are — they are parts of a statement, not controls, and nesting them here
+  # would assert a relationship OSCAL does not model that way.
+  ENHANCEMENT_ID = /\A([a-z]+-\d+(?:\.\d+)*)\.\d+\z/i
+
+  # #999 — a conformant resolved catalog NESTS an enhancement inside its parent
+  # control, exactly as NIST's own published resolved profile catalogs do:
+  # `ac-2` contains `ac-2.1` … `ac-2.11`, giving 188 top-level controls and 182
+  # nested rather than 370 siblings. SPARC emitted every control as a top-level
+  # sibling, so a consumer could not tell an enhancement from a base control
+  # except by parsing the identifier — precisely the inference a structured
+  # format exists to remove.
+  #
+  # An enhancement whose PARENT is not in the profile stays top-level. That is a
+  # real profile (a tailoring may select an enhancement without its base), and
+  # inventing a parent control the baseline never selected would be a worse lie
+  # than the flat list.
+  #
+  # Ordering is deliberately unchanged: the callers sort by `control_id`, and in
+  # that ordering a child already sorts immediately after its parent
+  # ("ac-2" < "ac-2.1" < "ac-20", because "." precedes "0"), so the document
+  # order of the nested tree matches the flat list this replaces byte for byte.
+  def nest_enhancements(catalog_controls, profile_lookup)
+    built = catalog_controls.to_h do |cc|
+      [ cc.control_id, build_control(cc, profile_lookup[cc.control_id]) ]
+    end
+
+    catalog_controls.each_with_object([]) do |cc, roots|
+      parent_id = cc.control_id.to_s[ENHANCEMENT_ID, 1]
+      parent    = parent_id && built[parent_id]
+
+      if parent
+        (parent["controls"] ||= []) << built[cc.control_id]
+      else
+        roots << built[cc.control_id]
+      end
+    end
   end
 
   def build_control(catalog_control, profile_control)

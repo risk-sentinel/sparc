@@ -187,22 +187,17 @@ class BaselineParameterService
   end
 
   # Extracts parameters from the resolved_catalog_json JSONB column.
+  #
+  # #999 — through ResolvedCatalog. This method already reached ONE level of
+  # nesting by hand, which was enough for the enhancements NIST nests directly
+  # under a control and silently wrong for anything deeper.
   def extract_from_resolved_catalog(family: nil)
-    catalog = profile.resolved_catalog_json
     params = []
 
-    groups = catalog["groups"] || catalog.dig("catalog", "groups") || []
-    groups.each do |group|
-      group_id = group["id"].to_s.upcase # e.g., "ac"
-      next if family.present? && group_id != family.upcase
+    ResolvedCatalog.wrap(profile.resolved_catalog_json).each_control do |control, group|
+      next if family.present? && group["id"].to_s.upcase != family.upcase
 
-      (group["controls"] || []).each do |control|
-        collect_control_params(control, params)
-        # Include enhancement params
-        (control["controls"] || []).each do |enhancement|
-          collect_control_params(enhancement, params)
-        end
-      end
+      collect_control_params(control, params)
     end
 
     params

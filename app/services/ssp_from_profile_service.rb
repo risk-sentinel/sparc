@@ -145,41 +145,38 @@ class SspFromProfileService
   end
 
   def build_controls_from_catalog(catalog)
-    groups = catalog.dig("catalog", "groups") || []
     control_attrs = []
     field_entries = []
     statement_entries = []
     row_order = 0
 
-    groups.each do |group|
-      (group["controls"] || []).each do |control|
-        idx = control_attrs.size
+    ResolvedCatalog.wrap(catalog).each_control do |control, _group|
+      idx = control_attrs.size
 
-        control_attrs << {
-          control_id: control["id"],
-          title:      control["title"],
-          row_order:  row_order
-        }
+      control_attrs << {
+        control_id: control["id"],
+        title:      control["title"],
+        row_order:  row_order
+      }
 
-        # Pre-populated read-only fields
-        statement = extract_part_prose(control, "statement")
-        guidance  = extract_part_prose(control, "guidance")
+      # Pre-populated read-only fields
+      statement = extract_part_prose(control, "statement")
+      guidance  = extract_part_prose(control, "guidance")
 
-        field_entries << [ idx, "stated_requirement", statement ] if statement.present?
-        field_entries << [ idx, "description", guidance ]         if guidance.present?
+      field_entries << [ idx, "stated_requirement", statement ] if statement.present?
+      field_entries << [ idx, "description", guidance ]         if guidance.present?
 
-        statement_entries << [ idx, statement_part_id(control) ] if statement.present?
+      statement_entries << [ idx, statement_part_id(control) ] if statement.present?
 
-        # Editable placeholder fields
-        field_entries << [ idx, "status", "Deferred" ]
-        field_entries << [ idx, "control_type", "" ]
-        field_entries << [ idx, "responsible_entities", "" ]
-        field_entries << [ idx, "implementation_statement", "" ]
-        field_entries << [ idx, "implementation_summary", "" ]
-        field_entries << [ idx, "notes", "" ]
+      # Editable placeholder fields
+      field_entries << [ idx, "status", "Deferred" ]
+      field_entries << [ idx, "control_type", "" ]
+      field_entries << [ idx, "responsible_entities", "" ]
+      field_entries << [ idx, "implementation_statement", "" ]
+      field_entries << [ idx, "implementation_summary", "" ]
+      field_entries << [ idx, "notes", "" ]
 
-        row_order += 1
-      end
+      row_order += 1
     end
 
     # #957 — derived, not minted. Building an SSP twice from the same published

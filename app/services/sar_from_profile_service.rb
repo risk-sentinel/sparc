@@ -61,38 +61,35 @@ class SarFromProfileService
   end
 
   def build_controls_from_catalog(catalog)
-    groups = catalog.dig("catalog", "groups") || []
     control_attrs = []
     field_entries = []
     row_order = 0
 
-    groups.each do |group|
-      (group["controls"] || []).each do |control|
-        idx = control_attrs.size
+    ResolvedCatalog.wrap(catalog).each_control do |control, _group|
+      idx = control_attrs.size
 
-        control_attrs << {
-          control_id: control["id"],
-          title:      control["title"],
-          row_order:  row_order
-        }
+      control_attrs << {
+        control_id: control["id"],
+        title:      control["title"],
+        row_order:  row_order
+      }
 
-        # Pre-populated read-only fields
-        statement = extract_part_prose(control, "statement")
-        guidance  = extract_part_prose(control, "guidance")
+      # Pre-populated read-only fields
+      statement = extract_part_prose(control, "statement")
+      guidance  = extract_part_prose(control, "guidance")
 
-        field_entries << [ idx, "stated_requirement", statement ] if statement.present?
-        field_entries << [ idx, "description", guidance ]         if guidance.present?
+      field_entries << [ idx, "stated_requirement", statement ] if statement.present?
+      field_entries << [ idx, "description", guidance ]         if guidance.present?
 
-        # Editable placeholder fields for assessment
-        field_entries << [ idx, "result", "" ]
-        field_entries << [ idx, "working_status", "" ]
-        field_entries << [ idx, "notes_weakness", "" ]
-        field_entries << [ idx, "recommended_fix", "" ]
-        field_entries << [ idx, "working_comments", "" ]
-        field_entries << [ idx, "date", "" ]
+      # Editable placeholder fields for assessment
+      field_entries << [ idx, "result", "" ]
+      field_entries << [ idx, "working_status", "" ]
+      field_entries << [ idx, "notes_weakness", "" ]
+      field_entries << [ idx, "recommended_fix", "" ]
+      field_entries << [ idx, "working_comments", "" ]
+      field_entries << [ idx, "date", "" ]
 
-        row_order += 1
-      end
+      row_order += 1
     end
 
     # #957 — derived, not minted (see BatchInsertable).

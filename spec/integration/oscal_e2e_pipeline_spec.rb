@@ -203,12 +203,42 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       selected = profile.profile_controls.pluck(:control_id).to_set
 
       data = JSON.parse(OscalResolvedProfileCatalogService.new(profile).export)
-      resolved = (data.dig("catalog", "groups") || [])
-                 .flat_map { |g| g["controls"] || [] }
-                 .map { |c| c["id"] }.to_set
+      # #999 — walked, not flat-mapped. An enhancement is now nested inside its
+      # parent control, which is what a conformant resolved catalog looks like;
+      # reading only `group["controls"]` reported 18 selected controls as
+      # "dropped" when every one of them was present, one level down. That is
+      # the same mistake the six production consumers were making.
+      resolved = ResolvedCatalog.wrap(data).control_ids.to_set
 
       expect(selected - resolved).to be_empty,
         "resolution dropped #{(selected - resolved).size} controls the profile selected"
+    end
+
+    # #999 — the structure, asserted against NIST's own published resolved
+    # profile catalog rather than against what SPARC happens to emit.
+    it "nests enhancements inside their parent control, the way NIST does" do
+      profile = build_baseline("LOW")
+      data = JSON.parse(OscalResolvedProfileCatalogService.new(profile).export)
+      groups = data.dig("catalog", "groups")
+
+      top_level = groups.flat_map { |g| g["controls"] || [] }
+      nested    = top_level.flat_map { |c| c["controls"] || [] }
+
+      expect(nested).not_to be_empty,
+        "no enhancement is nested — the catalog is still a flat list of siblings"
+
+      # Every nested control is an enhancement of the control it sits inside.
+      nested_pairs = top_level.flat_map { |parent| (parent["controls"] || []).map { |c| [ parent["id"], c["id"] ] } }
+      nested_pairs.each do |parent_id, child_id|
+        expect(child_id).to start_with("#{parent_id}."),
+          "#{child_id} is nested inside #{parent_id}, which is not its parent"
+      end
+
+      # And no enhancement is left at the top level while its parent is present.
+      top_ids = top_level.map { |c| c["id"] }.to_set
+      orphaned = top_ids.select { |id| id =~ /\A([a-z]+-\d+)\.\d+\z/ && top_ids.include?($1) }
+      expect(orphaned).to be_empty,
+        "#{orphaned.size} enhancements sit beside their parent instead of inside it"
     end
 
     it "REJECTS a profile with no import — a baseline that selects nothing" do
