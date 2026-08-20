@@ -22,7 +22,7 @@ that had been wrong since 2026-07-18 (#995).
 - **Generated:** 2026-08-20 from `bin/rails routes` on this commit
 - **Code:** **208 logical endpoints** across 42 controller groups (PATCH+PUT aliases collapsed) — 80 GET, 74 POST, 27 DELETE, 25 PUT, 23 PATCH
 - **Documentation:** **165 / 208** endpoints are listed in an `endpoints/*.md` page's own Endpoints table (**79%**); 24 more are mentioned only in prose
-- **Postman collection:** **132 / 208** endpoints covered (**63%**)
+- **Postman collection:** **208 / 208** endpoints covered (**100%**)
 - **Pytest suite:** **170 / 208** endpoints map to a `tests/api/test_*.py` module (**82%**)
 
 > **The pytest column counts module presence, not verification.** For generic CRUD
@@ -151,38 +151,10 @@ working from the tables will not find them.
 | `profile_documents` | 1 | `tests/api/test_profile_documents.py` |
 | `users` | 1 | `tests/api/test_users.py` |
 
-### Not in the Postman collection — 76 endpoints
+### Not in the Postman collection — 0 endpoints
 
 | Controller | Endpoints |
 |---|---|
-| `authorization_boundary_memberships` | 6 |
-| `catalog_controls` | 6 |
-| `cdef_coverage` | 5 |
-| `control_families` | 5 |
-| `finding_dispositions` | 5 |
-| `poam_risks` | 5 |
-| `ssp_components` | 5 |
-| `cdef_documents` | 4 |
-| `control_mapping_entries` | 4 |
-| `sap_documents` | 3 |
-| `scan_runs` | 3 |
-| `admin/remediation_timelines` | 2 |
-| `artifacts` | 2 |
-| `baseline_parameters` | 2 |
-| `control_lookups` | 2 |
-| `guides` | 2 |
-| `sar_documents` | 2 |
-| `scanner_findings` | 2 |
-| `ssp_documents` | 2 |
-| `admin/reconciliation` | 1 |
-| `aggregations` | 1 |
-| `attester_eligibility` | 1 |
-| `authorization_boundaries` | 1 |
-| `hdf_amendments` | 1 |
-| `hdf_packages` | 1 |
-| `poam_documents` | 1 |
-| `profile_documents` | 1 |
-| `users` | 1 |
 
 <!-- END GENERATED GAPS -->
 
@@ -243,20 +215,20 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | Method | Path | Controller#action | In `endpoints/*.md` | In Postman collection | Covered by pytest |
 |--------|------|-------------------|---------------------|------------------------|-------------------|
 | `POST` | `/api/v1/admin/refresh_credentials` | `admin/credentials#refresh` | [`admin-credentials.md`](endpoints/admin-credentials.md) | yes | yes |
-| `GET` | `/api/v1/admin/reconciliation` | `admin/reconciliation#index` | **MISSING** | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/admin/remediation_timelines` | `admin/remediation_timelines#index` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | **MISSING** | **MISSING** |
-| `PUT` | `/api/v1/admin/remediation_timelines` | `admin/remediation_timelines#update` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/aggregate` | `aggregations#create` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | **MISSING** | **MISSING** |
+| `GET` | `/api/v1/admin/reconciliation` | `admin/reconciliation#index` | **MISSING** | yes | **MISSING** |
+| `GET` | `/api/v1/admin/remediation_timelines` | `admin/remediation_timelines#index` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
+| `PUT` | `/api/v1/admin/remediation_timelines` | `admin/remediation_timelines#update` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
+| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/aggregate` | `aggregations#create` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
 | `GET` | `/api/v1/artifacts/:uuid` | `artifacts#show` | [`artifacts.md`](endpoints/artifacts.md) | yes | yes |
-| `GET` | `/api/v1/artifacts/:uuid/freshness` | `artifacts#freshness` | **MISSING** | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/artifacts/:uuid/versions` | `artifacts#versions` | **MISSING** | **MISSING** | yes |
+| `GET` | `/api/v1/artifacts/:uuid/freshness` | `artifacts#freshness` | **MISSING** | yes | **MISSING** |
+| `GET` | `/api/v1/artifacts/:uuid/versions` | `artifacts#versions` | **MISSING** | yes | yes |
 | `GET` | `/api/v1/artifacts/versions/:uuid` | `artifacts#version` | [`artifacts.md`](endpoints/artifacts.md) | yes | yes |
 | `GET` | `/api/v1/evidences/:evidence_id/attestations` | `attestations#index` | [`attestations.md`](endpoints/attestations.md) | yes | yes |
 | `POST` | `/api/v1/evidences/:evidence_id/attestations` | `attestations#create` | [`attestations.md`](endpoints/attestations.md) | yes | yes |
 | `DELETE` | `/api/v1/evidences/:evidence_id/attestations/:id` | `attestations#destroy` | [`attestations.md`](endpoints/attestations.md) | yes | yes |
 | `GET` | `/api/v1/evidences/:evidence_id/attestations/:id` | `attestations#show` | [`attestations.md`](endpoints/attestations.md) | yes | yes |
 | `GET` | `/api/v1/evidences/:evidence_id/attestations/export` | `attestations#export` | [`attestations.md`](endpoints/attestations.md) | yes | yes |
-| `GET` | `/api/v1/attestations/eligible` | `attester_eligibility#index` | [`attestations.md`](endpoints/attestations.md) | **MISSING** | yes |
+| `GET` | `/api/v1/attestations/eligible` | `attester_eligibility#index` | [`attestations.md`](endpoints/attestations.md) | yes | yes |
 | `POST` | `/api/v1/authoritative_sources` | `authoritative_sources#create` | prose only — [`authoritative-sources.md`](endpoints/authoritative-sources.md) | yes | yes |
 | `GET` | `/api/v1/authoritative_sources/export` | `authoritative_sources#export` | [`authoritative-sources.md`](endpoints/authoritative-sources.md) | yes | yes |
 | `POST` | `/api/v1/authoritative_sources/import` | `authoritative_sources#import` | [`authoritative-sources.md`](endpoints/authoritative-sources.md) | yes | yes |
@@ -265,14 +237,14 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#destroy` | [`authorization-boundaries.md`](endpoints/authorization-boundaries.md) | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#show` | [`authorization-boundaries.md`](endpoints/authorization-boundaries.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#update` | [`authorization-boundaries.md`](endpoints/authorization-boundaries.md) | yes | yes |
-| `PATCH` | `/api/v1/authorization_boundaries/:id/organization` | `authorization_boundaries#assign_organization` | **MISSING** | **MISSING** | **MISSING** |
+| `PATCH` | `/api/v1/authorization_boundaries/:id/organization` | `authorization_boundaries#assign_organization` | **MISSING** | yes | **MISSING** |
 | `DELETE` | `/api/v1/authorization_boundaries/bulk` | `authorization_boundaries#bulk_destroy` | [`authorization-boundaries.md`](endpoints/authorization-boundaries.md) | yes | yes |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships` | `authorization_boundary_memberships#index` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | **MISSING** | yes |
-| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships` | `authorization_boundary_memberships#create` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | **MISSING** | yes |
-| `DELETE` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id` | `authorization_boundary_memberships#destroy` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | **MISSING** | yes |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id` | `authorization_boundary_memberships#show` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | **MISSING** | yes |
-| `PATCH/PUT` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id` | `authorization_boundary_memberships#update` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | **MISSING** | yes |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships/roles` | `authorization_boundary_memberships#roles` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | **MISSING** | yes |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships` | `authorization_boundary_memberships#index` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | yes | yes |
+| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships` | `authorization_boundary_memberships#create` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | yes | yes |
+| `DELETE` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id` | `authorization_boundary_memberships#destroy` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | yes | yes |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id` | `authorization_boundary_memberships#show` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | yes | yes |
+| `PATCH/PUT` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id` | `authorization_boundary_memberships#update` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | yes | yes |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships/roles` | `authorization_boundary_memberships#roles` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | yes | yes |
 | `GET` | `/api/v1/back_matter_resources` | `back_matter_resources#index` | [`back-matter-resources.md`](endpoints/back-matter-resources.md) | yes | yes |
 | `POST` | `/api/v1/back_matter_resources` | `back_matter_resources#create` | [`back-matter-resources.md`](endpoints/back-matter-resources.md) | yes | yes |
 | `DELETE` | `/api/v1/back_matter_resources/:id` | `back_matter_resources#destroy` | [`back-matter-resources.md`](endpoints/back-matter-resources.md) | yes | yes |
@@ -291,19 +263,19 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/profile_documents/:profile_document_id/parameters` | `baseline_parameters#show` | [`baseline-parameters.md`](endpoints/baseline-parameters.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/profile_documents/:profile_document_id/parameters` | `baseline_parameters#update` | [`baseline-parameters.md`](endpoints/baseline-parameters.md) | yes | yes |
 | `GET` | `/api/v1/profile_documents/:profile_document_id/parameters/export` | `baseline_parameters#export` | [`baseline-parameters.md`](endpoints/baseline-parameters.md) | yes | yes |
-| `POST` | `/api/v1/profile_documents/:profile_document_id/parameters/import/confirm` | `baseline_parameters#import_confirm` | [`baseline-parameters.md`](endpoints/baseline-parameters.md) | **MISSING** | yes |
-| `POST` | `/api/v1/profile_documents/:profile_document_id/parameters/import/preview` | `baseline_parameters#import_preview` | [`baseline-parameters.md`](endpoints/baseline-parameters.md) | **MISSING** | yes |
-| `GET` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:control_family_id/controls` | `catalog_controls#index` | [`catalog-controls.md`](endpoints/catalog-controls.md) | **MISSING** | yes |
-| `POST` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:control_family_id/controls` | `catalog_controls#create` | [`catalog-controls.md`](endpoints/catalog-controls.md) | **MISSING** | yes |
-| `GET` | `/api/v1/control_catalogs/:control_catalog_id/controls` | `catalog_controls#index` | [`catalog-controls.md`](endpoints/catalog-controls.md) | **MISSING** | yes |
-| `DELETE` | `/api/v1/control_catalogs/:control_catalog_id/controls/:id` | `catalog_controls#destroy` | [`catalog-controls.md`](endpoints/catalog-controls.md) | **MISSING** | yes |
-| `GET` | `/api/v1/control_catalogs/:control_catalog_id/controls/:id` | `catalog_controls#show` | [`catalog-controls.md`](endpoints/catalog-controls.md) | **MISSING** | yes |
-| `PATCH/PUT` | `/api/v1/control_catalogs/:control_catalog_id/controls/:id` | `catalog_controls#update` | [`catalog-controls.md`](endpoints/catalog-controls.md) | **MISSING** | yes |
-| `POST` | `/api/v1/cdef_coverage/analyze` | `cdef_coverage#analyze` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | **MISSING** | yes |
-| `GET` | `/api/v1/cdef_coverage/runs` | `cdef_coverage#runs` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | **MISSING** | yes |
-| `POST` | `/api/v1/cdef_coverage/runs` | `cdef_coverage#create_run` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | **MISSING** | **MISSING** |
-| `DELETE` | `/api/v1/cdef_coverage/runs/:id` | `cdef_coverage#destroy_run` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/cdef_coverage/runs/:id` | `cdef_coverage#show_run` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | **MISSING** | **MISSING** |
+| `POST` | `/api/v1/profile_documents/:profile_document_id/parameters/import/confirm` | `baseline_parameters#import_confirm` | [`baseline-parameters.md`](endpoints/baseline-parameters.md) | yes | yes |
+| `POST` | `/api/v1/profile_documents/:profile_document_id/parameters/import/preview` | `baseline_parameters#import_preview` | [`baseline-parameters.md`](endpoints/baseline-parameters.md) | yes | yes |
+| `GET` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:control_family_id/controls` | `catalog_controls#index` | [`catalog-controls.md`](endpoints/catalog-controls.md) | yes | yes |
+| `POST` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:control_family_id/controls` | `catalog_controls#create` | [`catalog-controls.md`](endpoints/catalog-controls.md) | yes | yes |
+| `GET` | `/api/v1/control_catalogs/:control_catalog_id/controls` | `catalog_controls#index` | [`catalog-controls.md`](endpoints/catalog-controls.md) | yes | yes |
+| `DELETE` | `/api/v1/control_catalogs/:control_catalog_id/controls/:id` | `catalog_controls#destroy` | [`catalog-controls.md`](endpoints/catalog-controls.md) | yes | yes |
+| `GET` | `/api/v1/control_catalogs/:control_catalog_id/controls/:id` | `catalog_controls#show` | [`catalog-controls.md`](endpoints/catalog-controls.md) | yes | yes |
+| `PATCH/PUT` | `/api/v1/control_catalogs/:control_catalog_id/controls/:id` | `catalog_controls#update` | [`catalog-controls.md`](endpoints/catalog-controls.md) | yes | yes |
+| `POST` | `/api/v1/cdef_coverage/analyze` | `cdef_coverage#analyze` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | yes |
+| `GET` | `/api/v1/cdef_coverage/runs` | `cdef_coverage#runs` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | yes |
+| `POST` | `/api/v1/cdef_coverage/runs` | `cdef_coverage#create_run` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | **MISSING** |
+| `DELETE` | `/api/v1/cdef_coverage/runs/:id` | `cdef_coverage#destroy_run` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | **MISSING** |
+| `GET` | `/api/v1/cdef_coverage/runs/:id` | `cdef_coverage#show_run` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | **MISSING** |
 | `GET` | `/api/v1/cdef_documents` | `cdef_documents#index` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents` | `cdef_documents#create` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `DELETE` | `/api/v1/cdef_documents/:id` | `cdef_documents#destroy` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
@@ -312,11 +284,11 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/cdef_documents/:id/approve` | `cdef_documents#approve` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/bulk_apply_converter/confirm` | `cdef_documents#bulk_apply_converter_confirm` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/bulk_apply_converter/preview` | `cdef_documents#bulk_apply_converter_preview` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
-| `POST` | `/api/v1/cdef_documents/:id/fields/import/confirm` | `cdef_documents#import_fields_confirm` | prose only — [`field-import.md`](endpoints/field-import.md) | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/cdef_documents/:id/fields/import/preview` | `cdef_documents#import_fields_preview` | prose only — [`field-import.md`](endpoints/field-import.md) | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/cdef_documents/:id/populate_from_profile` | `cdef_documents#source_from_profile` | prose only — [`cdef-documents.md`](endpoints/cdef-documents.md) | **MISSING** | yes |
+| `POST` | `/api/v1/cdef_documents/:id/fields/import/confirm` | `cdef_documents#import_fields_confirm` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | **MISSING** |
+| `POST` | `/api/v1/cdef_documents/:id/fields/import/preview` | `cdef_documents#import_fields_preview` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | **MISSING** |
+| `POST` | `/api/v1/cdef_documents/:id/populate_from_profile` | `cdef_documents#source_from_profile` | prose only — [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/reject` | `cdef_documents#reject` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
-| `PATCH` | `/api/v1/cdef_documents/:id/scope` | `cdef_documents#update_scope` | **MISSING** | **MISSING** | **MISSING** |
+| `PATCH` | `/api/v1/cdef_documents/:id/scope` | `cdef_documents#update_scope` | **MISSING** | yes | **MISSING** |
 | `POST` | `/api/v1/cdef_documents/:id/source_from_profile` | `cdef_documents#source_from_profile` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/submit_for_review` | `cdef_documents#submit_for_review` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `DELETE` | `/api/v1/cdef_documents/bulk` | `cdef_documents#bulk_destroy` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
@@ -328,17 +300,17 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/control_catalogs/:id/approve` | `control_catalogs#approve` | [`control-catalogs.md`](endpoints/control-catalogs.md) | yes | yes |
 | `POST` | `/api/v1/control_catalogs/:id/reject` | `control_catalogs#reject` | [`control-catalogs.md`](endpoints/control-catalogs.md) | yes | yes |
 | `POST` | `/api/v1/control_catalogs/:id/submit_for_review` | `control_catalogs#submit_for_review` | [`control-catalogs.md`](endpoints/control-catalogs.md) | yes | yes |
-| `GET` | `/api/v1/control_catalogs/:control_catalog_id/control_families` | `control_families#index` | [`control-families.md`](endpoints/control-families.md) | **MISSING** | yes |
-| `POST` | `/api/v1/control_catalogs/:control_catalog_id/control_families` | `control_families#create` | [`control-families.md`](endpoints/control-families.md) | **MISSING** | yes |
-| `DELETE` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:id` | `control_families#destroy` | [`control-families.md`](endpoints/control-families.md) | **MISSING** | yes |
-| `GET` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:id` | `control_families#show` | [`control-families.md`](endpoints/control-families.md) | **MISSING** | yes |
-| `PATCH/PUT` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:id` | `control_families#update` | [`control-families.md`](endpoints/control-families.md) | **MISSING** | yes |
-| `GET` | `/api/v1/controls` | `control_lookups#index` | [`control-lookup.md`](endpoints/control-lookup.md) | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/controls/resolve` | `control_lookups#resolve` | [`control-lookup.md`](endpoints/control-lookup.md) | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/control_mappings/:control_mapping_id/entries` | `control_mapping_entries#index` | **MISSING** | **MISSING** | yes |
-| `POST` | `/api/v1/control_mappings/:control_mapping_id/entries` | `control_mapping_entries#create` | **MISSING** | **MISSING** | yes |
-| `DELETE` | `/api/v1/control_mappings/:control_mapping_id/entries/:id` | `control_mapping_entries#destroy` | **MISSING** | **MISSING** | yes |
-| `PATCH/PUT` | `/api/v1/control_mappings/:control_mapping_id/entries/:id` | `control_mapping_entries#update` | **MISSING** | **MISSING** | yes |
+| `GET` | `/api/v1/control_catalogs/:control_catalog_id/control_families` | `control_families#index` | [`control-families.md`](endpoints/control-families.md) | yes | yes |
+| `POST` | `/api/v1/control_catalogs/:control_catalog_id/control_families` | `control_families#create` | [`control-families.md`](endpoints/control-families.md) | yes | yes |
+| `DELETE` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:id` | `control_families#destroy` | [`control-families.md`](endpoints/control-families.md) | yes | yes |
+| `GET` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:id` | `control_families#show` | [`control-families.md`](endpoints/control-families.md) | yes | yes |
+| `PATCH/PUT` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:id` | `control_families#update` | [`control-families.md`](endpoints/control-families.md) | yes | yes |
+| `GET` | `/api/v1/controls` | `control_lookups#index` | [`control-lookup.md`](endpoints/control-lookup.md) | yes | **MISSING** |
+| `GET` | `/api/v1/controls/resolve` | `control_lookups#resolve` | [`control-lookup.md`](endpoints/control-lookup.md) | yes | **MISSING** |
+| `GET` | `/api/v1/control_mappings/:control_mapping_id/entries` | `control_mapping_entries#index` | **MISSING** | yes | yes |
+| `POST` | `/api/v1/control_mappings/:control_mapping_id/entries` | `control_mapping_entries#create` | **MISSING** | yes | yes |
+| `DELETE` | `/api/v1/control_mappings/:control_mapping_id/entries/:id` | `control_mapping_entries#destroy` | **MISSING** | yes | yes |
+| `PATCH/PUT` | `/api/v1/control_mappings/:control_mapping_id/entries/:id` | `control_mapping_entries#update` | **MISSING** | yes | yes |
 | `GET` | `/api/v1/control_mappings` | `control_mappings#index` | [`control-mappings.md`](endpoints/control-mappings.md) | yes | yes |
 | `POST` | `/api/v1/control_mappings` | `control_mappings#create` | [`control-mappings.md`](endpoints/control-mappings.md) | yes | yes |
 | `DELETE` | `/api/v1/control_mappings/:id` | `control_mappings#destroy` | [`control-mappings.md`](endpoints/control-mappings.md) | yes | yes |
@@ -359,15 +331,15 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/federation_peers/:id` | `federation_peers#show` | [`federation-peers.md`](endpoints/federation-peers.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/federation_peers/:id` | `federation_peers#update` | [`federation-peers.md`](endpoints/federation-peers.md) | yes | yes |
 | `POST` | `/api/v1/federation_peers/:id/sync` | `federation_peers#sync` | [`federation-peers.md`](endpoints/federation-peers.md) | yes | yes |
-| `DELETE` | `/api/v1/scanner_findings/:scanner_finding_id/disposition` | `finding_dispositions#destroy` | **MISSING** | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/scanner_findings/:scanner_finding_id/disposition` | `finding_dispositions#show` | **MISSING** | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition` | `finding_dispositions#create` | **MISSING** | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition/approve` | `finding_dispositions#approve` | **MISSING** | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition/reject` | `finding_dispositions#reject` | **MISSING** | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/guides` | `guides#index` | **MISSING** | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/guides/:slug` | `guides#show` | **MISSING** | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments` | `hdf_amendments#show` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package` | `hdf_packages#show` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | **MISSING** | **MISSING** |
+| `DELETE` | `/api/v1/scanner_findings/:scanner_finding_id/disposition` | `finding_dispositions#destroy` | **MISSING** | yes | **MISSING** |
+| `GET` | `/api/v1/scanner_findings/:scanner_finding_id/disposition` | `finding_dispositions#show` | **MISSING** | yes | **MISSING** |
+| `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition` | `finding_dispositions#create` | **MISSING** | yes | **MISSING** |
+| `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition/approve` | `finding_dispositions#approve` | **MISSING** | yes | **MISSING** |
+| `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition/reject` | `finding_dispositions#reject` | **MISSING** | yes | **MISSING** |
+| `GET` | `/api/v1/guides` | `guides#index` | **MISSING** | yes | **MISSING** |
+| `GET` | `/api/v1/guides/:slug` | `guides#show` | **MISSING** | yes | **MISSING** |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments` | `hdf_amendments#show` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package` | `hdf_packages#show` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
 | `GET` | `/api/v1/ksi_catalog/indicators` | `ksi_catalog#indicators` | [`ksi-catalog.md`](endpoints/ksi-catalog.md) | yes | yes |
 | `GET` | `/api/v1/ksi_catalog/indicators/:id` | `ksi_catalog#show_indicator` | [`ksi-catalog.md`](endpoints/ksi-catalog.md) | yes | yes |
 | `GET` | `/api/v1/ksi_catalog/mappings` | `ksi_catalog#mappings` | [`ksi-catalog.md`](endpoints/ksi-catalog.md) | yes | yes |
@@ -384,12 +356,12 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/poam_documents/:id` | `poam_documents#destroy` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
 | `GET` | `/api/v1/poam_documents/:id` | `poam_documents#show` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/poam_documents/:id` | `poam_documents#update` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
-| `POST` | `/api/v1/poam_documents/generate` | `poam_documents#generate` | [`poam-documents.md`](endpoints/poam-documents.md) | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/poam_documents/:poam_document_id/risks` | `poam_risks#index` | [`poam-risks.md`](endpoints/poam-risks.md) | **MISSING** | yes |
-| `POST` | `/api/v1/poam_documents/:poam_document_id/risks` | `poam_risks#create` | [`poam-risks.md`](endpoints/poam-risks.md) | **MISSING** | yes |
-| `DELETE` | `/api/v1/poam_risks/:id` | `poam_risks#destroy` | [`poam-risks.md`](endpoints/poam-risks.md) | **MISSING** | yes |
-| `GET` | `/api/v1/poam_risks/:id` | `poam_risks#show` | [`poam-risks.md`](endpoints/poam-risks.md) | **MISSING** | yes |
-| `PATCH/PUT` | `/api/v1/poam_risks/:id` | `poam_risks#update` | [`poam-risks.md`](endpoints/poam-risks.md) | **MISSING** | yes |
+| `POST` | `/api/v1/poam_documents/generate` | `poam_documents#generate` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | **MISSING** |
+| `GET` | `/api/v1/poam_documents/:poam_document_id/risks` | `poam_risks#index` | [`poam-risks.md`](endpoints/poam-risks.md) | yes | yes |
+| `POST` | `/api/v1/poam_documents/:poam_document_id/risks` | `poam_risks#create` | [`poam-risks.md`](endpoints/poam-risks.md) | yes | yes |
+| `DELETE` | `/api/v1/poam_risks/:id` | `poam_risks#destroy` | [`poam-risks.md`](endpoints/poam-risks.md) | yes | yes |
+| `GET` | `/api/v1/poam_risks/:id` | `poam_risks#show` | [`poam-risks.md`](endpoints/poam-risks.md) | yes | yes |
+| `PATCH/PUT` | `/api/v1/poam_risks/:id` | `poam_risks#update` | [`poam-risks.md`](endpoints/poam-risks.md) | yes | yes |
 | `GET` | `/api/v1/profile_documents` | `profile_documents#index` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `POST` | `/api/v1/profile_documents` | `profile_documents#create` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `DELETE` | `/api/v1/profile_documents/:id` | `profile_documents#destroy` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
@@ -397,7 +369,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `PATCH/PUT` | `/api/v1/profile_documents/:id` | `profile_documents#update` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `POST` | `/api/v1/profile_documents/:id/approve` | `profile_documents#approve` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `GET` | `/api/v1/profile_documents/:id/baseline_review` | `profile_documents#baseline_review` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
-| `PUT` | `/api/v1/profile_documents/:id/controls` | `profile_documents#update_controls` | **MISSING** | **MISSING** | **MISSING** |
+| `PUT` | `/api/v1/profile_documents/:id/controls` | `profile_documents#update_controls` | **MISSING** | yes | **MISSING** |
 | `POST` | `/api/v1/profile_documents/:id/reject` | `profile_documents#reject` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `POST` | `/api/v1/profile_documents/:id/submit_for_review` | `profile_documents#submit_for_review` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `GET` | `/api/v1/sap_documents` | `sap_documents#index` | [`sap-documents.md`](endpoints/sap-documents.md) | yes | yes |
@@ -405,38 +377,38 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/sap_documents/:id` | `sap_documents#destroy` | [`sap-documents.md`](endpoints/sap-documents.md) | yes | yes |
 | `GET` | `/api/v1/sap_documents/:id` | `sap_documents#show` | [`sap-documents.md`](endpoints/sap-documents.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/sap_documents/:id` | `sap_documents#update` | [`sap-documents.md`](endpoints/sap-documents.md) | yes | yes |
-| `POST` | `/api/v1/sap_documents/:id/fields/import/confirm` | `sap_documents#import_fields_confirm` | prose only — [`field-import.md`](endpoints/field-import.md) | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/sap_documents/:id/fields/import/preview` | `sap_documents#import_fields_preview` | prose only — [`field-import.md`](endpoints/field-import.md) | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/sap_documents/generate` | `sap_documents#generate` | [`sap-documents.md`](endpoints/sap-documents.md) | **MISSING** | **MISSING** |
+| `POST` | `/api/v1/sap_documents/:id/fields/import/confirm` | `sap_documents#import_fields_confirm` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | **MISSING** |
+| `POST` | `/api/v1/sap_documents/:id/fields/import/preview` | `sap_documents#import_fields_preview` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | **MISSING** |
+| `POST` | `/api/v1/sap_documents/generate` | `sap_documents#generate` | [`sap-documents.md`](endpoints/sap-documents.md) | yes | **MISSING** |
 | `GET` | `/api/v1/sar_documents` | `sar_documents#index` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
 | `POST` | `/api/v1/sar_documents` | `sar_documents#create` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
 | `DELETE` | `/api/v1/sar_documents/:id` | `sar_documents#destroy` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
 | `GET` | `/api/v1/sar_documents/:id` | `sar_documents#show` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/sar_documents/:id` | `sar_documents#update` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
 | `GET` | `/api/v1/sar_documents/:id/export` | `sar_documents#export` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
-| `POST` | `/api/v1/sar_documents/:id/fields/import/confirm` | `sar_documents#import_fields_confirm` | prose only — [`field-import.md`](endpoints/field-import.md) | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/sar_documents/:id/fields/import/preview` | `sar_documents#import_fields_preview` | prose only — [`field-import.md`](endpoints/field-import.md) | **MISSING** | **MISSING** |
+| `POST` | `/api/v1/sar_documents/:id/fields/import/confirm` | `sar_documents#import_fields_confirm` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | **MISSING** |
+| `POST` | `/api/v1/sar_documents/:id/fields/import/preview` | `sar_documents#import_fields_preview` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | **MISSING** |
 | `PUT` | `/api/v1/sar_documents/:id/update_fields` | `sar_documents#update_fields` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
 | `POST` | `/api/v1/sar_documents/convert` | `sar_documents#convert` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs` | `scan_runs#index` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs` | `scan_runs#create` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs/:id` | `scan_runs#show` | **MISSING** | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scanner_findings` | `scanner_findings#index` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/scanner_findings/:id` | `scanner_findings#show` | **MISSING** | **MISSING** | **MISSING** |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs` | `scan_runs#index` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
+| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs` | `scan_runs#create` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs/:id` | `scan_runs#show` | **MISSING** | yes | **MISSING** |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scanner_findings` | `scanner_findings#index` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
+| `GET` | `/api/v1/scanner_findings/:id` | `scanner_findings#show` | **MISSING** | yes | **MISSING** |
 | `POST` | `/api/v1/sessions/from_token` | `sessions#from_token` | [`sessions.md`](endpoints/sessions.md) | yes | yes |
-| `GET` | `/api/v1/ssp_documents/:ssp_document_id/components` | `ssp_components#index` | [`ssp-components.md`](endpoints/ssp-components.md) | **MISSING** | yes |
-| `POST` | `/api/v1/ssp_documents/:ssp_document_id/components` | `ssp_components#create` | [`ssp-components.md`](endpoints/ssp-components.md) | **MISSING** | yes |
-| `DELETE` | `/api/v1/ssp_documents/:ssp_document_id/components/:id` | `ssp_components#destroy` | [`ssp-components.md`](endpoints/ssp-components.md) | **MISSING** | yes |
-| `GET` | `/api/v1/ssp_documents/:ssp_document_id/components/:id` | `ssp_components#show` | [`ssp-components.md`](endpoints/ssp-components.md) | **MISSING** | yes |
-| `PATCH/PUT` | `/api/v1/ssp_documents/:ssp_document_id/components/:id` | `ssp_components#update` | [`ssp-components.md`](endpoints/ssp-components.md) | **MISSING** | yes |
+| `GET` | `/api/v1/ssp_documents/:ssp_document_id/components` | `ssp_components#index` | [`ssp-components.md`](endpoints/ssp-components.md) | yes | yes |
+| `POST` | `/api/v1/ssp_documents/:ssp_document_id/components` | `ssp_components#create` | [`ssp-components.md`](endpoints/ssp-components.md) | yes | yes |
+| `DELETE` | `/api/v1/ssp_documents/:ssp_document_id/components/:id` | `ssp_components#destroy` | [`ssp-components.md`](endpoints/ssp-components.md) | yes | yes |
+| `GET` | `/api/v1/ssp_documents/:ssp_document_id/components/:id` | `ssp_components#show` | [`ssp-components.md`](endpoints/ssp-components.md) | yes | yes |
+| `PATCH/PUT` | `/api/v1/ssp_documents/:ssp_document_id/components/:id` | `ssp_components#update` | [`ssp-components.md`](endpoints/ssp-components.md) | yes | yes |
 | `GET` | `/api/v1/ssp_documents` | `ssp_documents#index` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `POST` | `/api/v1/ssp_documents` | `ssp_documents#create` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `DELETE` | `/api/v1/ssp_documents/:id` | `ssp_documents#destroy` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `GET` | `/api/v1/ssp_documents/:id` | `ssp_documents#show` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/ssp_documents/:id` | `ssp_documents#update` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `GET` | `/api/v1/ssp_documents/:id/export` | `ssp_documents#export` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
-| `POST` | `/api/v1/ssp_documents/:id/fields/import/confirm` | `ssp_documents#import_fields_confirm` | prose only — [`field-import.md`](endpoints/field-import.md) | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/ssp_documents/:id/fields/import/preview` | `ssp_documents#import_fields_preview` | prose only — [`field-import.md`](endpoints/field-import.md) | **MISSING** | **MISSING** |
+| `POST` | `/api/v1/ssp_documents/:id/fields/import/confirm` | `ssp_documents#import_fields_confirm` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | **MISSING** |
+| `POST` | `/api/v1/ssp_documents/:id/fields/import/preview` | `ssp_documents#import_fields_preview` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | **MISSING** |
 | `POST` | `/api/v1/ssp_documents/:id/populate_from_profile` | `ssp_documents#populate_from_profile` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `PUT` | `/api/v1/ssp_documents/:id/update_fields` | `ssp_documents#update_fields` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `POST` | `/api/v1/ssp_documents/convert` | `ssp_documents#convert` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
@@ -449,6 +421,6 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/users/:id` | `users#destroy` | [`users.md`](endpoints/users.md) | yes | yes |
 | `GET` | `/api/v1/users/:id` | `users#show` | [`users.md`](endpoints/users.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/users/:id` | `users#update` | [`users.md`](endpoints/users.md) | yes | yes |
-| `POST` | `/api/v1/users/:id/password_reset` | `users#password_reset` | prose only — [`users.md`](endpoints/users.md) | **MISSING** | **MISSING** |
+| `POST` | `/api/v1/users/:id/password_reset` | `users#password_reset` | prose only — [`users.md`](endpoints/users.md) | yes | **MISSING** |
 
 <!-- END GENERATED INVENTORY -->

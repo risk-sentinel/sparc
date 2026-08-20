@@ -343,6 +343,17 @@ rows.each do |r|
            "#{r[:doc]} | #{r[:postman]} | #{r[:pytest]} |\n"
 end
 
+# The surface, as data, so a second tool does not have to re-derive it. The
+# Postman reconciler consumes this rather than duplicating the route loader —
+# two scripts computing "the endpoints" independently is how they end up
+# disagreeing about how many there are.
+if ARGV.include?("--routes-json")
+  puts JSON.pretty_generate(routes.map { |r|
+    { method: r[:method], path: r[:path], controller: r[:controller], action: r[:action] }
+  })
+  exit 0
+end
+
 if ARGV.include?("--write")
   original = File.read(INVENTORY)
   updated  = original.dup
