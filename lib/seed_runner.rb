@@ -16,8 +16,14 @@ module SeedRunner
     # promoted to rows the emitted `#uuid` hrefs can resolve to. It also repairs
     # `related_controls`, which the Rev 5 import left blank on 2311 of 2318
     # controls by reading only the guidance part's links.
-    "nist_rev5_catalog"    => "3.0.0",
-    "nist_rev4_catalog"    => "3.0.0",
+    # #1003 — 3.1.0 re-imports both catalogs because the importer no longer
+    # truncates statement prose to 200 characters. The stored rows carry the
+    # truncation, including 44 severed `{{ insert: param, …` references that
+    # nothing can resolve, and it reaches the OSCAL export as the control's
+    # title. There is nothing to backfill from but the source files, so this
+    # is a re-import for the same reason 3.0.0 was.
+    "nist_rev5_catalog"    => "3.1.0",
+    "nist_rev4_catalog"    => "3.1.0",
     "roles"                => "1.3.0",  # #947 evidence.attest on the 7 accountable boundary roles
     "admin_user"           => "1.1.0",
     "fedramp_20x_ksi"      => "1.0.0",

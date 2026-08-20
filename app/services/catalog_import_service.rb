@@ -343,9 +343,18 @@ class CatalogImportService
       sub_sort = derived_sort_id(parent_sort_id, parent_id, sub_id)
       prose    = part["prose"].to_s.strip
 
-      # Use the prose text as the title (truncated for readability) instead of
-      # the raw label ("a.", "1.") which is meaningless as a title.
-      title = prose.present? ? prose.truncate(200) : label
+      # Use the prose text as the title instead of the raw label ("a.", "1.")
+      # which is meaningless as a title.
+      #
+      # NOT truncated (#1003). It was cut to 200 characters "for readability",
+      # which cost three things: the Implementation Statements on the Profile
+      # and SSP screens were fragments, 44 controls were severed mid
+      # `{{ insert: param, … }}` leaving a reference nothing could resolve, and
+      # the OSCAL catalog export emitted the fragment as the control's title —
+      # wrong OSCAL, with no way for a consumer to tell. The column is an
+      # unbounded varchar; a screen that wants a short form can shorten it at
+      # display, where the full text is still there for everything else.
+      title = prose.presence || label
 
       upsert_catalog_control(family, sub_id, title: title, sort_id: sub_sort,
         guidance_data: prose.present? ? { "statement" => prose } : {})
@@ -529,7 +538,8 @@ class CatalogImportService
       prose    = xml_prose_with_inserts(part.at_xpath("p")).presence ||
                  xml_text_content(part).strip.presence
 
-      title = prose.present? ? prose.truncate(200) : label
+      # Not truncated — see #1003 and the JSON path above.
+      title = prose.presence || label
 
       upsert_catalog_control(family, sub_id, title: title, sort_id: sub_sort,
         guidance_data: prose.present? ? { "statement" => prose } : {})
@@ -781,8 +791,9 @@ class CatalogImportService
       desc   = child.at_xpath("description")
       prose  = desc ? xml_text_content(desc).strip.presence : nil
 
-      # Use prose text as the title (truncated) instead of the raw label
-      title = prose.present? ? prose.truncate(200) : label
+      # Use prose text as the title instead of the raw label.
+      # Not truncated — see #1003 and the JSON path above.
+      title = prose.presence || label
 
       upsert_catalog_control(family, sub_id, title: title, label: label, sort_id: sub_sort,
         guidance_data: prose ? { "statement" => prose } : {})
