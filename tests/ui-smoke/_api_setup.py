@@ -167,8 +167,14 @@ def create_tailorable_profile() -> dict[str, Any]:
         catalogs.raise_for_status()
         rows = catalogs.json().get("data", [])
         def _is_rev5(row: dict[str, Any]) -> bool:
-            name = str(row.get("name", ""))
-            return "800-53" in name and "5" in name
+            # `"5" in name` was the original second test and it is vacuous —
+            # "800-53" contains a "5", so every 800-53 catalog matched and the
+            # fixture silently took whichever row sorted first, Rev 4 included.
+            # Match the revision explicitly instead.
+            name = str(row.get("name", "")).lower()
+            if "800-53" not in name:
+                return False
+            return "rev 5" in name or "revision 5" in name or "rev5" in name
 
         rev5 = next((row for row in rows if _is_rev5(row)), rows[0] if rows else None)
         if not rev5:

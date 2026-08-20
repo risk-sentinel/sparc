@@ -75,27 +75,35 @@ class TestSarFromHdf:
         assert "baselines" not in json.loads(_hdf_bytes()), "fixture must stay baseline-less"
         response = _post_raw(admin_client, SAR_PATH, _hdf_bytes())
 
-        # #831 — SPARC validates every OSCAL document it emits. hdf-cli 3.4.1
-        # produces assessment-results missing OSCAL-REQUIRED properties
-        # (reviewed-controls, finding/description, characterization/origin), so
-        # the translation is REFUSED rather than returned. 502, not 422: the
-        # caller's input is fine; the fault is in the upstream converter.
+        # #831 — SPARC validates every OSCAL document it emits.
         #
-        # This pins the CURRENT upstream state. When mitre/hdf-libs#184 lands
-        # this starts returning 200 and the assertion below fails ON PURPOSE, so
-        # the fix is noticed rather than sitting unclaimed.
-        if response.status_code == 200:
-            assert "assessment-results" in response.json(), response.text
-            pytest.fail(
-                "hdf-cli now emits schema-valid assessment-results — mitre/hdf-libs#184 "
-                "appears fixed. Restore the plain 200 assertion here and in "
-                "spec/integration/oscal_e2e_pipeline_spec.rb."
-            )
-
-        assert response.status_code == 502, response.text
+        # ── This assertion was inverted on 2026-08-20, exactly as designed ────
+        #
+        # It used to assert a 502. hdf-cli through 3.4.1 emitted
+        # assessment-results missing OSCAL-REQUIRED properties
+        # (reviewed-controls, finding/description, characterization/origin) —
+        # upstream defect mitre/hdf-libs#184 — and SPARC refused to hand back
+        # OSCAL that fails NIST's own schema rather than invent what the
+        # assessment reviewed. The refusal carried a message telling whoever
+        # saw it to swap in the positive assertion once #184 landed.
+        #
+        # 3.5.1 fixed it (#993/#996) and the rspec counterpart in
+        # spec/integration/oscal_e2e_pipeline_spec.rb was swapped the same day.
+        # THIS half was not, because tests/api never ran against the UBI9 image
+        # in that cycle — the held gate is the only thing that fires it, and it
+        # fired the first time the gate ran (#1001).
+        #
+        # It now pins the guarantee that matters to a caller: the translation
+        # SUCCEEDS and returns a real assessment-results. A future hdf-cli that
+        # regresses #184 goes red here instead of quietly shipping invalid
+        # OSCAL — the same both-directions cover the 502 assertion gave.
+        assert response.status_code == 200, response.text
         body = response.json()
-        assert "reviewed-controls" in " ".join(body["details"]), body
-        assert "hdf-libs" in body["note"]
+        assert "assessment-results" in body, response.text
+        assert body["assessment-results"].get("results"), (
+            "assessment-results came back with no results — a converter that "
+            "emits an empty envelope would satisfy the key check alone"
+        )
 
     @pytest.mark.happy
     def test_multipart_upload_returns_oscal_sar(self, admin_client: httpx.Client) -> None:

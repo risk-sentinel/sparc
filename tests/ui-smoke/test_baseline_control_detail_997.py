@@ -36,15 +36,41 @@ def profile():
         delete_doc("profile_documents", p["slug"])
 
 
+def _ensure_open(page, summary_selector: str) -> None:
+    """Open a <details> and CONFIRM it opened — never toggle it blindly.
+
+    Two failures made the original one-line click unreliable, both measured
+    against the running app rather than guessed at:
+
+      * it clicked unconditionally, so after a save — where the family group
+        comes back already open — the click CLOSED it and every later
+        assertion read an empty panel;
+      * the panel it waited on was not necessarily the panel the click drove.
+        `details.card-details` also matches the OSCAL Metadata and Back Matter
+        disclosures, so a wait keyed on the selector could be satisfied by an
+        unrelated open section while the control's panel stayed shut, and the
+        assertion then failed for a reason that had nothing to do with what it
+        was testing.
+
+    So: derive the <details> FROM the summary being clicked, and poll that same
+    element until it actually reports open.
+    """
+    summary = page.locator(summary_selector).first
+    summary.wait_for(state="attached", timeout=5000)
+    panel = summary.locator("xpath=..")          # the <details> this summary drives
+    for _ in range(20):                          # ~2s, re-reading the SAME element
+        if panel.evaluate("e => e.open"):
+            return
+        summary.click()
+        page.wait_for_timeout(100)
+    raise AssertionError(f"{summary_selector} never opened its panel")
+
+
 def _open_first_control(page, profile) -> None:
     page.goto(f"/profile_documents/{profile['slug']}")
     page.wait_for_load_state("networkidle")
-    # Families are collapsed; open the first one, then the control's panel.
-    family = page.locator("details.sparc-family-group").first
-    family.locator("summary").first.click()
-    page.wait_for_timeout(150)
-    page.locator(DISCLOSURE).first.click()
-    page.wait_for_timeout(150)
+    _ensure_open(page, "details.sparc-family-group > summary")
+    _ensure_open(page, DISCLOSURE)
 
 
 class TestTheBaselineIsVisible:
@@ -55,7 +81,11 @@ class TestTheBaselineIsVisible:
 
         panel = page.locator(".sparc-baseline-detail").first
         assert panel.is_visible(), "the baseline detail panel did not open"
-        assert "Control Statement" in panel.inner_text(), (
+        # Case-insensitive: the label is styled `text-transform: uppercase`, so
+        # inner_text() returns "CONTROL STATEMENT". Asserting the CSS-rendered
+        # casing would tie this test to a stylesheet; asserting the label is
+        # present is what the test actually means.
+        assert "control statement" in panel.inner_text().lower(), (
             "the panel opened without the control language, which is what it exists to show"
         )
         assert_no_csp_violations(page, during="opening the baseline detail panel")
@@ -93,13 +123,32 @@ class TestTailoringRoundTrip:
 
         value = "ui-smoke tailored value"
         text_input.fill(value)
-        page.locator(SAVE).first.click()
+        # Wait for the SAVE ITSELF, not for the network to go quiet. The
+        # original `click(); wait_for_load_state("networkidle")` returns as soon
+        # as nothing is in flight, which can be before the POST has been handled
+        # — the next navigation then renders pre-save state while the write
+        # lands behind it. Confirmed against the running app: the value was in
+        # the database and in the raw HTML of a later request, and absent only
+        # from the page this test had already read. A race in the test, not a
+        # defect in the screen.
+        with page.expect_navigation(wait_until="load"):
+            page.locator(SAVE).first.click()
         page.wait_for_load_state("networkidle")
 
         # Back on the profile screen: the value must be readable without
         # calling the API to find out what happened.
         _open_first_control(page, profile)
-        assert value in page.locator("body").inner_text(), (
+        # Look in BOTH places a value can legitimately be on this screen.
+        # `inner_text()` alone was the original assertion and it cannot pass
+        # here: the Profile screen is editable, so the saved value comes back
+        # in the parameter form field, and inner_text() does not include input
+        # values. Verified against the running app — the value was saved and on
+        # screen the whole time, in an <input value="...">.
+        body_text = page.locator("body").inner_text()
+        input_values = page.eval_on_selector_all(
+            "input, textarea", "els => els.map(e => e.value).filter(Boolean)"
+        )
+        assert value in body_text or any(value in v for v in input_values), (
             "the tailored value was accepted and is not visible on the screen — "
             "which is the whole of #997"
         )
