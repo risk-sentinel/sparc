@@ -564,6 +564,11 @@ Rails.application.routes.draw do
 
       # Document CRUD + legacy actions (#229)
       resources :ssp_documents, only: [ :index, :show, :create, :update, :destroy ] do
+        # #998 follow-up — SSP components had no Api::V1 surface at all: they
+        # could be created, edited and deleted only through the enrichment
+        # screen, making the web UI the only way to perform those mutations.
+        resources :components, only: [ :index, :show, :create, :update, :destroy ],
+                               controller: "ssp_components"
         collection do
           post :convert
         end

@@ -18,7 +18,10 @@
 <% anchor_id = nil   unless defined?(anchor_id) %>
 
 <% if detail.any? %>
-  <div class="sparc-baseline-detail" <%= "id=#{anchor_id}".html_safe if anchor_id.present? %>>
+  <%# `tag.attributes` builds an ESCAPED attribute string. Interpolating into
+      an html_safe literal would disable escaping for the interpolated value,
+      which spec/security/view_output_escaping_spec.rb refuses on sight. %>
+  <div class="sparc-baseline-detail" <%= tag.attributes(id: anchor_id) if anchor_id.present? %>>
 
     <%# ── Control statement ─────────────────────────────────────────── %>
     <% if detail.statement.present? %>
