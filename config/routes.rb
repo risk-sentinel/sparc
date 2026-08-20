@@ -619,6 +619,22 @@ Rails.application.routes.draw do
           post "generate", to: "poam_documents#generate", as: :generate
         end
         resources :risks, only: [ :index, :create ], controller: "poam_risks"
+
+        # #1010 — #832 gave risks an API and left their six siblings behind.
+        # These are the substance of a POA&M: what OSCAL exports.
+        resources :items, only: [ :index, :show, :create, :update, :destroy ],
+                  controller: "poam_items"
+        resources :observations, only: [ :index, :show, :create, :update, :destroy ],
+                  controller: "poam_observations"
+        resources :findings, only: [ :index, :show, :create, :update, :destroy ],
+                  controller: "poam_findings"
+        resources :local_components, only: [ :index, :show, :create, :update, :destroy ],
+                  controller: "poam_local_components"
+        resources :remediations, only: [ :index, :show, :create, :update, :destroy ],
+                  controller: "poam_remediations" do
+          resources :milestones, only: [ :index, :show, :create, :update, :destroy ],
+                    controller: "poam_milestones"
+        end
       end
       resources :poam_risks, only: [ :show, :update, :destroy ]
 
