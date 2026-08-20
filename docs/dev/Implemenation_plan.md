@@ -1114,6 +1114,19 @@ request specs and a `tests/api` contract module. **This is the shape #995 should
 the epic is scoped to "do the 223 endpoints do what they claim", and this was a mutation with no
 endpoint at all. The surface is now 229 route entries.
 
+**Two holds — OWNER-DECIDED 2026-08-19, do not re-raise inside this bundle:**
+
+1. **The UBI9 prod-image gate is deferred for this cycle.** `tests/api` and the full Playwright
+   suite were **NOT** run against a built container, and no screenshots were captured. The guides
+   updated here therefore describe three screens — the Baseline detail panel, the SSP read-only
+   panel, the enrichment Validation block — that have **no current images in `wiki/images/`**.
+   That debt is real and is carried, not discharged: say so on the PR rather than letting a green
+   rspec read as a verified feature.
+2. **`wiki/API-Reference.md` is knowingly stale and left alone.** It still documents hdf-cli 3.4.1
+   and the `sar_from_hdf` 502, which PR #996 made false. It is held for the **#995** API overhaul,
+   which is expected to find more of the same on that page — fixing one line now would just
+   invite a second pass.
+
 **Scope notes.** #997's parameter editing lands **inline on the existing Profile screen**, so
 there is no navigation change — but it is a new clickable control, so it takes a Playwright
 interaction test with a CSP assertion. One shared control-detail partial renders statement,
