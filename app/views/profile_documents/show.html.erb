@@ -280,10 +280,11 @@
             <% param_values = field_map.filter_map { |k, v|
                  [ k.delete_prefix("parameter:"), v.field_value ] if k.start_with?("parameter:") && !k.start_with?("parameter_label:")
                }.to_h %>
-            <% detail = catalog_ctrl && BaselineControlDetail.new(catalog_ctrl,
-                          values: param_values, priority: control.priority) %>
-            <% prop_fields  = field_map.select { |k, _| k.start_with?("prop:") } %>
             <% sub_parts    = @catalog_sub_parts[control.control_id] %>
+            <% detail = catalog_ctrl && BaselineControlDetail.new(catalog_ctrl,
+                          values: param_values, priority: control.priority,
+                          sub_parts: sub_parts) %>
+            <% prop_fields  = field_map.select { |k, _| k.start_with?("prop:") } %>
             <% has_details  = detail&.any? || prop_fields.any? || sub_parts&.any? %>
             <% if has_details %>
               <details class="card-details" style="margin-top: 0.35rem;">
@@ -328,20 +329,11 @@
                     </table>
                   <% end %>
 
-                  <%# ── Catalog sub-parts / implementation statements ── %>
-                  <% if sub_parts&.any? %>
-                    <div class="sparc-sub-parts-section">
-                      <div class="sparc-statement-label">Implementation Statements</div>
-                      <% sub_parts.sort_by { |sp| sp.sort_id || sp.control_id.gsub(/\d+/) { |n| n.rjust(3, "0") } }.each do |sp| %>
-                        <div class="sparc-sub-part-item">
-                          <span class="sparc-sub-part-id"><%= sp.display_id %></span>
-                          <% if sp.title.present? %>
-                            <span class="sparc-sub-part-title"><%= sp.title %></span>
-                          <% end %>
-                        </div>
-                      <% end %>
-                    </div>
-                  <% end %>
+                  <%# #1002 — the sub-parts block used to live HERE, outside the
+                      shared partial. That is why it rendered raw
+                      `{{ insert: param, ... }}` and why the SSP screen showed no
+                      implementation statements at all. It now renders from
+                      shared/_baseline_control_detail via detail.sub_parts. %>
                 </div>
               </details>
             <% end %>

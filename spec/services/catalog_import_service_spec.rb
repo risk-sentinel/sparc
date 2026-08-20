@@ -35,6 +35,44 @@ RSpec.describe CatalogImportService do
 
   # ── OSCAL XML import ─────────────────────────────────────────────────────
 
+  # #1003 — the importer used to store a sub-part's prose as its title cut to
+  # 200 characters "for readability". These pin that it does not any more,
+  # because the truncation reached three places at once: the Implementation
+  # Statements a user reads, the parameter references they contain, and the
+  # OSCAL catalog export, which emits `title` verbatim.
+  describe "statement prose is stored whole" do
+    %w[xml json].each do |format|
+      context "importing OSCAL #{format.upcase}" do
+        let(:path) { format == "xml" ? rev5_xml_path : rev5_json_path }
+
+        before do
+          file = File.open(path)
+          described_class.call(file, "NIST_SP-800-53_rev5_catalog.#{format}")
+        end
+
+        it "keeps a sub-part title longer than 200 characters intact" do
+          long = CatalogControl.where("LENGTH(title) > 200")
+
+          expect(long).to be_present,
+            "no sub-part over 200 chars was imported, so this fixture cannot " \
+            "prove the truncation is gone — check the fixture, not the code"
+          expect(long.map(&:title)).to all(satisfy { |t| !t.end_with?("...") })
+        end
+
+        it "never severs a parameter reference" do
+          severed = CatalogControl
+                      .where("title LIKE ?", "%{{ insert: param%")
+                      .reject { |c| c.title.scan("{{").size == c.title.scan("}}").size }
+
+          expect(severed).to be_empty,
+            "these titles open a `{{ insert: param` they never close, so " \
+            "nothing can resolve them: " \
+            "#{severed.map { |c| "#{c.control_id}: ...#{c.title.last(60)}" }.join("; ")}"
+        end
+      end
+    end
+  end
+
   describe "#import_oscal_xml (Rev 5)" do
     let(:result) do
       file = File.open(rev5_xml_path)

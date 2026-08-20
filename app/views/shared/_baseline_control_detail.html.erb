@@ -4,7 +4,12 @@
 
   Locals:
     detail    — BaselineControlDetail; every string on it is already resolved,
-                so `{{ insert: param, … }}` never reaches this template
+                so `{{ insert: param, … }}` never reaches this template.
+                That now includes the statement sub-parts (#1002): they used to
+                be rendered by the Profile view OUTSIDE this partial, which is
+                how they reached the screen raw AND how the SSP screen came to
+                omit them entirely — half the policy language, missing, with
+                nothing to say so.
     editable  — true to offer the parameter form
     form_url  — where the parameter form PATCHes to (required when editable)
     anchor_id — optional DOM id so a redirect can return to this control
@@ -157,5 +162,23 @@
       </div>
     <% end %>
 
+  
+
+  <%# ── Catalog sub-parts / implementation statements (#1002) ──
+      Moved here from profile_documents/show.html.erb so the SSP screen shows
+      them too, and so neither screen can render them unresolved again. %>
+  <% if detail.sub_parts.any? %>
+    <div class="sparc-sub-parts-section">
+      <div class="sparc-statement-label">Implementation Statements</div>
+      <% detail.sub_parts.each do |sp| %>
+        <div class="sparc-sub-part-item">
+          <span class="sparc-sub-part-id"><%= sp.display_id %></span>
+          <% if sp.title.present? %>
+            <span class="sparc-sub-part-title"><%= sp.title %></span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
   </div>
 <% end %>

@@ -416,7 +416,11 @@
               read-only by owner direction. Same partial the Profile screen
               renders, so the two screens cannot describe the same control
               differently. %>
-          <% baseline_detail = catalog_ctrl && BaselineControlDetail.new(catalog_ctrl, values: @baseline_param_values) %>
+          <%# #1002 — sub_parts passed so this screen shows the implementation
+              statements the Profile screen has shown since #997. %>
+          <% baseline_detail = catalog_ctrl && BaselineControlDetail.new(
+               catalog_ctrl, values: @baseline_param_values,
+               sub_parts: @catalog_sub_parts[normalize_ctrl_id(control.control_id)]) %>
           <% if baseline_detail&.any? %>
             <details style="margin-top: 0.85rem;">
               <summary class="sparc-ctx-header d-flex align-items-center gap-1 fw-semibold text-body-secondary rounded" style="font-size: 0.8rem; background: rgba(52,152,219,0.06); border: 1px solid rgba(52,152,219,0.18);">

@@ -28,6 +28,77 @@ RSpec.describe BaselineControlDetail do
       ])
   end
 
+  # #1002 — sub-parts were rendered straight from the catalog by the Profile
+  # view, OUTSIDE this class, so they were the one string on the panel that
+  # reached the screen as raw OSCAL markup — and the SSP screen, which renders
+  # the same shared partial, showed none of them at all.
+  describe "statement sub-parts" do
+    let(:sub_part_a) do
+      create(:catalog_control, control_family: family, control_id: "ac-20a",
+        title: "Establish {{ insert: param, ac-20_odp.01 }} before allowing access;",
+        params_data: [])
+    end
+
+    # Declares its OWN parameter, which the parent's list does not carry. This
+    # is the case that survived the first fix: resolving sub-part prose against
+    # only the parent's definitions left exactly these references standing.
+    let(:sub_part_b) do
+      create(:catalog_control, control_family: family, control_id: "ac-20b",
+        title: "Review the terms {{ insert: param, ac-20_prm_9 }}.",
+        params_data: [ { "id" => "ac-20_prm_9", "label" => "at least annually" } ])
+    end
+
+    it "resolves a sub-part title against the PARENT's parameters" do
+      detail = described_class.new(control, values: { "ac-20_odp.01" => "a signed agreement" },
+                                            sub_parts: [ sub_part_a ])
+
+      expect(detail.sub_parts.map(&:title)).to include(a_string_including("Establish a signed agreement"))
+      expect(detail.sub_parts.map(&:title).join).not_to include("insert:")
+    end
+
+    it "resolves a parameter the SUB-PART declares and the parent does not" do
+      detail = described_class.new(control, values: {}, sub_parts: [ sub_part_b ])
+
+      expect(detail.sub_parts.first.title).to include("at least annually")
+      expect(detail.sub_parts.first.title).not_to include("insert:")
+    end
+
+    it "orders sub-parts, so the two screens cannot disagree about the statement" do
+      detail = described_class.new(control, values: {}, sub_parts: [ sub_part_b, sub_part_a ])
+
+      expect(detail.sub_parts.map(&:display_id)).to eq([ sub_part_a.display_id, sub_part_b.display_id ])
+    end
+
+    it "counts as content, so a control with only sub-parts still renders a panel" do
+      bare = create(:catalog_control, control_family: family, control_id: "ac-21",
+                    title: "Information Sharing", guidance_data: {}, params_data: [])
+
+      expect(described_class.new(bare, values: {}).any?).to be(false)
+      expect(described_class.new(bare, values: {}, sub_parts: [ sub_part_a ]).any?).to be(true)
+    end
+
+    # CatalogImportService stores a sub-part's prose as its title via
+    # `prose.truncate(200)`, and 44 seeded controls are cut mid-reference —
+    # `{{ insert: param, cm-06...` with no closing brace and no usable id.
+    # Nothing can resolve that, and the screen still must not show it.
+    it "degrades an unresolvable reference instead of printing OSCAL markup" do
+      orphan = create(:catalog_control, control_family: family, control_id: "ac-20c",
+        title: "Apply {{ insert: param, ac-20_odp.99 }} to each connection.", params_data: [])
+      truncated = create(:catalog_control, control_family: family, control_id: "ac-20d",
+        title: "Configure the most restrictive mode using {{ insert: param, cm-06...", params_data: [])
+
+      titles = described_class.new(control, values: {},
+                                   sub_parts: [ orphan, truncated ]).sub_parts.map(&:title)
+
+      expect(titles.join).not_to include("insert:")
+      expect(titles.join).not_to include("{{")
+      # A recoverable id is kept, because "which ODP is missing" is the first
+      # question a reviewer asks; a mangled one is dropped rather than shown.
+      expect(titles).to include(a_string_including("[organization-defined: ac-20_odp.99]"))
+      expect(titles).to include(a_string_including("[organization-defined parameter]"))
+    end
+  end
+
   describe "the resolution rule" do
     it "substitutes a set value into the statement" do
       detail = described_class.new(control, values: { "ac-20_odp.01" => "the Acme access terms" })

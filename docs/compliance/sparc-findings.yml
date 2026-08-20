@@ -1,58 +1,24 @@
 findings:
-- cve_id: GO-2026-5026
-  package: stdlib
-  installed_version: go1.26.5
-  fixed_version: 1.25.13,1.26.6,1.27.0-rc.3
-  severity: HIGH
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''golang.org/x/net 0.48.0'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: stdlib
-    go1.26.5 [go-module]. Rewritten to describe what the image actually contains; discovery_date is the
-    date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8).
-    Fix: 1.25.13,1.26.6,1.27.0-rc.3. Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image
-    is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). SEVERITY
-    CORRECTED CRITICAL -> HIGH: CRITICAL was the grading of the DEBIAN artifact this entry used to describe,
-    which is not in the image. HIGH is how grype 0.114.0 grades the artifact that IS present.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: golang.org/x/net 0.48.0 (removed with the Debian base image)
-- cve_id: CVE-2026-41989
-  package: libgcrypt
-  installed_version: 1.10.0-11.el9
-  fixed_version: 0:1.10.0-13.el9_8
-  severity: MEDIUM
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''libgcrypt20 1.10.1-3'' and was marked remediated because that package was removed — true, and the
-    Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without re-verification,
-    and the CVE is present in the shipping image against a DIFFERENT artifact: libgcrypt 1.10.0-11.el9
-    [rpm]. Rewritten to describe what the image actually contains; discovery_date is the date THIS artifact''s
-    exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8). Fix: 0:1.10.0-13.el9_8.
-    Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until this is fixed
-    or documented as having no upstream fix (owner, 2026-08-20). SEVERITY CORRECTED HIGH -> MEDIUM: HIGH
-    was the grading of the DEBIAN artifact this entry used to describe, which is not in the image. MEDIUM
-    is how grype 0.114.0 grades the artifact that IS present.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: libgcrypt20 1.10.1-3 (removed with the Debian base image)
-- cve_id: CVE-2026-41316
-  package: erb (base-image-bundled stdlib, version 4.0.4)
-  installed_version: 4.0.4 (default gem) / 6.0.6 (bundled, loaded)
+- cve_id: GHSA-q339-8rmv-2mhv
+  package: erb
+  installed_version: 4.0.4
   fixed_version: '>= 6.0.4 (or backport 4.0.4.1)'
   severity: HIGH
   disposition: deferred
-  rationale: 'RISK ADJUSTMENT. The vulnerable erb 4.0.4 (Ruby default gem) tree is present on disk but
-    never loaded: Bundler resolves erb 6.0.6 from /usr/local/bundle, which is above the fix floor. The
-    shipped copy is a Ruby default gem whose code is the standard library, so it cannot be pruned without
-    falsifying the scan — deleting only the gemspec would hide the package while leaving the code in place.
-    Risk is adjusted rather than accepted because the vulnerable code path is unreachable, not because
-    the finding is wrong. Re-verified on the shipped image 2026-07-29 (#862).'
+  rationale: 'RE-KEYED 2026-08-20 (#1001) from CVE-2026-41316 to GHSA-q339-8rmv-2mhv, which is the id
+    grype now reports for this same erb defect (it lists CVE-2026-41316 as a related vulnerability of
+    GHSA-q339-8rmv-2mhv). NOT a new finding and NOT a cleared one: the audit''s first pass read CVE-2026-41316
+    as absent from the scan and would have retired it with proof, which would have been a false remediation
+    claim of exactly the kind this issue exists to stop. discovery_date is preserved — the exposure is
+    continuous, only the label moved. RISK ADJUSTMENT. The vulnerable erb 4.0.4 (Ruby default gem) tree
+    is present on disk but never loaded: Bundler resolves erb 6.0.6 from /usr/local/bundle, which is above
+    the fix floor. The shipped copy is a Ruby default gem whose code is the standard library, so it cannot
+    be pruned without falsifying the scan — deleting only the gemspec would hide the package while leaving
+    the code in place. Risk is adjusted rather than accepted because the vulnerable code path is unreachable,
+    not because the finding is wrong. Re-verified on the shipped image 2026-07-29 (#862). Package/version
+    normalised to what the scan reports (erb 4.0.4, the Ruby DEFAULT gem left on disk deliberately by
+    bin/prune-shadowed-gems.rb; the bundle resolves and loads erb 6.0.6). SEVERITY HIGH -> HIGH to match
+    grype''s grading of GHSA-q339-8rmv-2mhv.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-07-29'
@@ -73,63 +39,7 @@ findings:
         prune'
     kev_checked: '2026-07-29'
     kev_listed: false
-- cve_id: CVE-2026-1965
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9
-  fixed_version: 0:7.76.1-40.el9_8.5
-  severity: MEDIUM
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: curl-minimal
-    7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
-    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
-    RHEL 9.8). Fix: 0:7.76.1-40.el9_8.5. Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image
-    is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
-- cve_id: CVE-2026-3783
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9
-  fixed_version: 0:7.76.1-40.el9_8.5
-  severity: MEDIUM
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: curl-minimal
-    7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
-    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
-    RHEL 9.8). Fix: 0:7.76.1-40.el9_8.5. Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image
-    is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
-- cve_id: CVE-2026-3784
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9
-  fixed_version: none available upstream (not-fixed)
-  severity: MEDIUM
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: curl-minimal
-    7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
-    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
-    RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
+  also_known_as: CVE-2026-41316
 - cve_id: CVE-2025-30258
   package: gnupg2
   installed_version: 2.3.3-5.el9_7
@@ -231,84 +141,6 @@ findings:
   discovery_date: '2026-08-20'
   next_review_date: '2026-09-03'
   superseded_debian_finding: zlib1g 1:1.2.13.dfsg-1 (removed with the Debian base image)
-- cve_id: CVE-2025-14017
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9
-  fixed_version: none available upstream (wont-fix)
-  severity: MEDIUM
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: curl-minimal
-    7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
-    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
-    RHEL 9.8). Fix: none available upstream (wont-fix). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
-    SEVERITY CORRECTED LOW -> MEDIUM: LOW was the grading of the DEBIAN artifact this entry used to describe,
-    which is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
-- cve_id: CVE-2025-14524
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9
-  fixed_version: none available upstream (not-fixed)
-  severity: LOW
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: curl-minimal
-    7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
-    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
-    RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
-- cve_id: CVE-2025-15079
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9
-  fixed_version: none available upstream (not-fixed)
-  severity: LOW
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: curl-minimal
-    7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
-    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
-    RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
-- cve_id: CVE-2025-15224
-  package: curl-minimal/libcurl-minimal
-  installed_version: 7.76.1-40.el9
-  fixed_version: none available upstream (not-fixed)
-  severity: LOW
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-08-20 (14 days). This entry previously described the DEBIAN package
-    ''curl 7.88.1-10+deb12u14'' and was marked remediated because that package was removed — true, and
-    the Debian artifact is gone. The claim was then carried across the Debian->UBI9 migration without
-    re-verification, and the CVE is present in the shipping image against a DIFFERENT artifact: curl-minimal
-    7.76.1-40.el9 [rpm]; libcurl-minimal 7.76.1-40.el9 [rpm]. Rewritten to describe what the image actually
-    contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
-    RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
-  superseded_debian_finding: curl 7.88.1-10+deb12u14 (removed with the Debian base image)
 - cve_id: CVE-2022-3219
   package: gnupg2
   installed_version: 2.3.3-5.el9_7
@@ -430,18 +262,28 @@ findings:
   discovery_date: '2026-08-20'
   next_review_date: '2026-09-03'
   superseded_debian_finding: liblzma5 5.4.1-1 (removed with the Debian base image)
-- cve_id: CVE-2026-27820
+- cve_id: GHSA-g857-hhfv-j68w
   package: zlib
   installed_version: 3.2.1 (default gem) / 3.2.3 (bundled, loaded)
   fixed_version: '>= 3.2.3'
-  severity: CRITICAL
+  severity: MEDIUM
   disposition: deferred
-  rationale: 'RISK ADJUSTMENT. The vulnerable zlib 3.2.1 (Ruby default gem) tree is present on disk but
-    never loaded: Bundler resolves zlib 3.2.3 from /usr/local/bundle, which is above the fix floor. The
-    shipped copy is a Ruby default gem whose code is the standard library, so it cannot be pruned without
-    falsifying the scan — deleting only the gemspec would hide the package while leaving the code in place.
-    Risk is adjusted rather than accepted because the vulnerable code path is unreachable, not because
-    the finding is wrong. Re-verified on the shipped image 2026-07-29 (#862).'
+  rationale: 'RE-KEYED 2026-08-20 (#1001) from CVE-2026-27820 to GHSA-g857-hhfv-j68w, which is the id
+    grype now reports for this same zlib defect (it lists CVE-2026-27820 as a related vulnerability of
+    GHSA-g857-hhfv-j68w). NOT a new finding and NOT a cleared one: the audit''s first pass read CVE-2026-27820
+    as absent from the scan and would have retired it with proof, which would have been a false remediation
+    claim of exactly the kind this issue exists to stop. discovery_date is preserved — the exposure is
+    continuous, only the label moved. RISK ADJUSTMENT. The vulnerable zlib 3.2.1 (Ruby default gem) tree
+    is present on disk but never loaded: Bundler resolves zlib 3.2.3 from /usr/local/bundle, which is
+    above the fix floor. The shipped copy is a Ruby default gem whose code is the standard library, so
+    it cannot be pruned without falsifying the scan — deleting only the gemspec would hide the package
+    while leaving the code in place. Risk is adjusted rather than accepted because the vulnerable code
+    path is unreachable, not because the finding is wrong. Re-verified on the shipped image 2026-07-29
+    (#862). SEVERITY CORRECTED CRITICAL -> MEDIUM: CRITICAL was the grading of CVE-2026-27820, the id
+    this entry used to carry. MEDIUM is how grype 0.114.0 grades GHSA-g857-hhfv-j68w, which is the id
+    it actually reports against the artifact in the image. Same lesson as the Debian->UBI9 severities:
+    re-key the entry and leave the grading stale and the register still describes something that is not
+    there.'
   nist_control: ra-5
   reviewed_by: '@clem-field'
   discovery_date: '2026-07-29'
@@ -462,189 +304,7 @@ findings:
         prune'
     kev_checked: '2026-07-29'
     kev_listed: false
-- cve_id: CVE-2026-51302
-  package: sqlite-libs
-  installed_version: 3.34.1-9.el9_7
-  fixed_version: 'none (Red Hat: Affected, no erratum)'
-  severity: CRITICAL
-  disposition: deferred
-  rationale: 'RISK ADJUSTMENT. Use-after-free in SQLite expression evaluation (sqlite3ReleaseTempReg /
-    exprComputeOperands); Red Hat rates this Critical, CVSS 10.0. The finding is CORRECT — sqlite-libs
-    3.34.1-9.el9_7 is present at the affected version. SPARC is not exploitable: /usr/local/bin/ruby is
-    not linked against libsqlite3 (verified by ldd on the shipped image), no package in the image requires
-    sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family
-    backing the RPM database — none of which process untrusted input at runtime. There is no sqlite3 gem
-    in Gemfile or Gemfile.lock and SPARC''s data path is PostgreSQL, so no attacker-controlled SQL or
-    JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is nothing
-    to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL risk/mitigating-factor
-    export. Not KEV-listed as of the 2026.07.27 catalogue.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-07-29'
-  next_review_date: '2026-08-28'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: '@clem-field'
-    approved_in: risk-sentinel/sparc#866
-    approved_at: '2026-07-30T12:38:25Z'
-    approval_mechanism: admin-merge-bypass
-    adjusted_severity: LOW
-    mitigating_factors:
-    - description: ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)
-    - description: no package in the image requires sqlite-libs (rpm -q --whatrequires returns nothing)
-    - description: the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family,
-        which back the RPM database and do not process untrusted input at runtime
-    - description: no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL
-    - description: no attacker-controlled SQL or JSON reaches a SQLite parser on any request path
-    kev_checked: '2026-07-29'
-    kev_listed: false
-- cve_id: CVE-2026-51297
-  package: sqlite-libs
-  installed_version: 3.34.1-9.el9_7
-  fixed_version: 'none (Red Hat: Affected, no erratum)'
-  severity: HIGH
-  disposition: deferred
-  rationale: 'RISK ADJUSTMENT. Use-after-free in SQLite JSON parsing; Red Hat rates this Important, CVSS
-    9.8. The finding is correct; the package is present at the affected version. SPARC is not exploitable:
-    /usr/local/bin/ruby is not linked against libsqlite3 (verified by ldd on the shipped image), no package
-    in the image requires sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and
-    the rpm/microdnf family backing the RPM database — none of which process untrusted input at runtime.
-    There is no sqlite3 gem in Gemfile or Gemfile.lock and SPARC''s data path is PostgreSQL, so no attacker-controlled
-    SQL or JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is
-    nothing to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL
-    risk/mitigating-factor export. Not KEV-listed as of the 2026.07.27 catalogue.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-07-29'
-  next_review_date: '2026-08-28'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: '@clem-field'
-    approved_in: risk-sentinel/sparc#866
-    approved_at: '2026-07-30T12:38:25Z'
-    approval_mechanism: admin-merge-bypass
-    adjusted_severity: LOW
-    mitigating_factors:
-    - description: ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)
-    - description: no package in the image requires sqlite-libs (rpm -q --whatrequires returns nothing)
-    - description: the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family,
-        which back the RPM database and do not process untrusted input at runtime
-    - description: no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL
-    - description: no attacker-controlled SQL or JSON reaches a SQLite parser on any request path
-    kev_checked: '2026-07-29'
-    kev_listed: false
-- cve_id: CVE-2026-51303
-  package: sqlite-libs
-  installed_version: 3.34.1-9.el9_7
-  fixed_version: 'none (Red Hat: Affected, no erratum)'
-  severity: HIGH
-  disposition: deferred
-  rationale: 'RISK ADJUSTMENT. Use-after-free in the SQLite core parsing component (dangling ExprList
-    pointer after sqlite3ExprListDelete); Red Hat rates this Important, CVSS 9.8. The finding is correct;
-    the package is present at the affected version. SPARC is not exploitable: /usr/local/bin/ruby is not
-    linked against libsqlite3 (verified by ldd on the shipped image), no package in the image requires
-    sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family
-    backing the RPM database — none of which process untrusted input at runtime. There is no sqlite3 gem
-    in Gemfile or Gemfile.lock and SPARC''s data path is PostgreSQL, so no attacker-controlled SQL or
-    JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is nothing
-    to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL risk/mitigating-factor
-    export. Not KEV-listed as of the 2026.07.27 catalogue.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-07-29'
-  next_review_date: '2026-08-28'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: '@clem-field'
-    approved_in: risk-sentinel/sparc#866
-    approved_at: '2026-07-30T12:38:25Z'
-    approval_mechanism: admin-merge-bypass
-    adjusted_severity: LOW
-    mitigating_factors:
-    - description: ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)
-    - description: no package in the image requires sqlite-libs (rpm -q --whatrequires returns nothing)
-    - description: the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family,
-        which back the RPM database and do not process untrusted input at runtime
-    - description: no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL
-    - description: no attacker-controlled SQL or JSON reaches a SQLite parser on any request path
-    kev_checked: '2026-07-29'
-    kev_listed: false
-- cve_id: CVE-2026-51304
-  package: sqlite-libs
-  installed_version: 3.34.1-9.el9_7
-  fixed_version: 'none (Red Hat: Affected, no erratum)'
-  severity: HIGH
-  disposition: deferred
-  rationale: 'RISK ADJUSTMENT. Use-after-free in the SQLite ORDER BY clause parsing routine (nExpr read
-    after sqlite3ExprListDelete); Red Hat rates this Important, CVSS 9.8. The finding is correct; the
-    package is present at the affected version. SPARC is not exploitable: /usr/local/bin/ruby is not linked
-    against libsqlite3 (verified by ldd on the shipped image), no package in the image requires sqlite-libs,
-    and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family backing the
-    RPM database — none of which process untrusted input at runtime. There is no sqlite3 gem in Gemfile
-    or Gemfile.lock and SPARC''s data path is PostgreSQL, so no attacker-controlled SQL or JSON reaches
-    a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is nothing to patch to.
-    Mitigating factors are recorded as structured data on the deviation for OSCAL risk/mitigating-factor
-    export. Not KEV-listed as of the 2026.07.27 catalogue.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-07-29'
-  next_review_date: '2026-08-28'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: '@clem-field'
-    approved_in: risk-sentinel/sparc#866
-    approved_at: '2026-07-30T12:38:25Z'
-    approval_mechanism: admin-merge-bypass
-    adjusted_severity: LOW
-    mitigating_factors:
-    - description: ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)
-    - description: no package in the image requires sqlite-libs (rpm -q --whatrequires returns nothing)
-    - description: the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family,
-        which back the RPM database and do not process untrusted input at runtime
-    - description: no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL
-    - description: no attacker-controlled SQL or JSON reaches a SQLite parser on any request path
-    kev_checked: '2026-07-29'
-    kev_listed: false
-- cve_id: CVE-2026-51296
-  package: sqlite-libs
-  installed_version: 3.34.1-9.el9_7
-  fixed_version: 'none (Red Hat: Affected, no erratum)'
-  severity: HIGH
-  disposition: deferred
-  rationale: 'RISK ADJUSTMENT. Member of the 2026-07-27 SQLite use-after-free cluster, reported by Grype
-    against the image at High. The finding is correct; the package is present at the affected version.
-    SPARC is not exploitable: /usr/local/bin/ruby is not linked against libsqlite3 (verified by ldd on
-    the shipped image), no package in the image requires sqlite-libs, and the only binaries linking libsqlite3.so.0
-    are gpg/gpg2 and the rpm/microdnf family backing the RPM database — none of which process untrusted
-    input at runtime. There is no sqlite3 gem in Gemfile or Gemfile.lock and SPARC''s data path is PostgreSQL,
-    so no attacker-controlled SQL or JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with
-    no erratum, so there is nothing to patch to. Mitigating factors are recorded as structured data on
-    the deviation for OSCAL risk/mitigating-factor export. Not KEV-listed as of the 2026.07.27 catalogue.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-07-29'
-  next_review_date: '2026-08-28'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: '@clem-field'
-    approved_in: risk-sentinel/sparc#866
-    approved_at: '2026-07-30T12:38:25Z'
-    approval_mechanism: admin-merge-bypass
-    adjusted_severity: LOW
-    mitigating_factors:
-    - description: ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)
-    - description: no package in the image requires sqlite-libs (rpm -q --whatrequires returns nothing)
-    - description: the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family,
-        which back the RPM database and do not process untrusted input at runtime
-    - description: no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL
-    - description: no attacker-controlled SQL or JSON reaches a SQLite parser on any request path
-    kev_checked: '2026-07-29'
-    kev_listed: false
+  also_known_as: CVE-2026-27820
 - cve_id: CVE-2026-51298
   package: sqlite-libs
   installed_version: 3.34.1-9.el9_7
@@ -681,3 +341,37 @@ findings:
     - description: no attacker-controlled SQL or JSON reaches a SQLite parser on any request path
     kev_checked: '2026-07-29'
     kev_listed: false
+- cve_id: CVE-2026-53613
+  package: libblkid/libmount/libsmartcols/libuuid
+  installed_version: 2.37.4-25.el9
+  fixed_version: none
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-08-20 (#1001). util-linux
+    TOCTOU in mount(8): with an /etc/fstab entry carrying the `user`/`users` option, mount validates the
+    target before the syscall, and a local unprivileged user with write access to an ancestor of the target
+    can swap it to redirect the mount. MEASURED in the shipping image, not argued: `command -v mount`
+    finds no mount(8), there is no /etc/fstab at all, and the runtime user is uid=1000(rails) non-root.
+    Only the shared libraries from the util-linux source package are present, pulled in as dependencies;
+    the vulnerable executable is not in the image. No fix is available upstream, so this would otherwise
+    defer indefinitely against a program we do not ship.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-08-20'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-14456
+  package: openssl-libs
+  installed_version: 1:3.5.5-6.el9_8
+  fixed_version: none
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (feature not used) — first dispositioned 2026-08-20 (#1001). Unbounded channel
+    allocation in an OpenSSL QUIC server (Listener SSL object) processing Initial packets for unknown
+    destination connection IDs, giving a remote memory-exhaustion DoS. SPARC runs no QUIC listener: the
+    application is Puma serving HTTP/1.1 over TCP, TLS terminates ahead of it (ALB in production, caddy
+    locally), and nothing in the image opens a QUIC socket. The library is linked for TLS and X.509, and
+    the QUIC server path is never entered. No upstream fix exists.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-08-20'
+  next_review_date: '2026-10-19'

@@ -153,8 +153,9 @@ dispositions:
 
   # ── Vendored binary: MITRE hdf-libs CLI (#481, holistic disposition) ─────
   #
-  # The `hdf` CLI binary (downloaded by bin/install-hdf.sh and installed
-  # at /usr/local/bin/hdf) is a single Apache-2.0 distribution from MITRE
+  # The `hdf` CLI binary (compiled from the signed mitre/hdf-libs v3.5.1 tag
+  # by the hdf-builder stage in Dockerfile, installed at /usr/local/bin/hdf)
+  # is a single Apache-2.0 distribution from MITRE
   # (mitre/hdf-libs). Its 80+ transitively-vendored Go modules
   # (github.com/*, golang.org/*, gopkg.in/*, sigs.k8s.io/*, etc.) are
   # subsumed under the Apache-2.0 grant of the consolidated binary -- no
@@ -164,7 +165,7 @@ dispositions:
   - name: "hdf (vendored binary)"
     license: Apache-2.0
     disposition: accepted
-    rationale: "MITRE hdf-libs CLI binary embedded in SPARC's container image at /usr/local/bin/hdf via bin/install-hdf.sh. The binary as a unit ships under Apache-2.0 (mitre/hdf-libs upstream). License text committed at LICENSES/MITRE-HDF-LIBS-LICENSE. Its transitively-vendored Go module dependencies are subsumed under the Apache-2.0 grant of the consolidated binary distribution and skip-patterned from inventory itemization."
+    rationale: "MITRE hdf-libs CLI binary embedded in SPARC's container image at /usr/local/bin/hdf, compiled from the signed upstream v3.5.1 tag by the hdf-builder stage in Dockerfile (#1001; previously downloaded as a release binary via install-hdf.sh). Building rather than downloading does not change the licence position: the source carries the same Apache-2.0 grant, and the one dependency SPARC raises above upstream (golang.org/x/text v0.39.0, for CVE-2026-56852) is BSD-3-Clause, already accepted elsewhere in this file. The binary as a unit ships under Apache-2.0 (mitre/hdf-libs upstream). License text committed at LICENSES/MITRE-HDF-LIBS-LICENSE. Its transitively-vendored Go module dependencies are subsumed under the Apache-2.0 grant of the consolidated binary distribution and skip-patterned from inventory itemization."
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"

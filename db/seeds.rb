@@ -26,16 +26,26 @@ if File.exist?(oscal_rev5_path)
   existing = ControlCatalog.where("name LIKE ?", "%800-53%Rev%5%").where("name LIKE ?", "%OSCAL%").first
   existing ||= ControlCatalog.where("name LIKE ?", "%800-53%5.2%").first
 
-  if existing && existing.catalog_controls.count > 1000
-    puts "  Rev 5 OSCAL catalog already seeded (#{existing.catalog_controls.count} controls) — skipping import."
-  else
-    # Import the full OSCAL catalog via CatalogImportService
-    file_io = File.open(oscal_rev5_path)
-    result = CatalogImportService.call(file_io, File.basename(oscal_rev5_path))
-    file_io.close
-    catalog = result[:catalog]
-    puts "  Imported #{result[:families]} families, #{catalog.catalog_controls.count} controls"
-  end
+  # NO "already seeded, skipping" GUARD (#1003).
+  #
+  # There was one — `catalog_controls.count > 1000` — and it made every future
+  # SeedRunner version bump inert on any database that already held the
+  # catalog. That is the exact opposite of what a bump is for: CURRENT_VERSIONS
+  # exists so a section RE-RUNS as passive catch-up for existing databases, and
+  # this body then refused the only work the section does. #1003 bumped to
+  # 3.1.0 to repair truncated titles, the section ran, the log said
+  # "[OK] nist_rev5_catalog v3.1.0", and nothing was re-imported. #999's 3.0.0
+  # bump, for control links and back-matter, had the same hole.
+  #
+  # SeedRunner already provides the idempotency this guard was reaching for:
+  # it skips a section that has completed at the current version, so the body
+  # only runs on a fresh database, after a failure, or on a deliberate bump —
+  # and in all three cases importing is what we want. The import upserts.
+  file_io = File.open(oscal_rev5_path)
+  result = CatalogImportService.call(file_io, File.basename(oscal_rev5_path))
+  file_io.close
+  catalog = result[:catalog]
+  puts "  Imported #{result[:families]} families, #{catalog.catalog_controls.count} controls"
 else
   puts "  ⚠ OSCAL fixture not found at #{oscal_rev5_path}"
   # Fallback: create a minimal catalog record
@@ -493,16 +503,14 @@ if File.exist?(oscal_rev4_path)
   catalog_r4 = ControlCatalog.find_by("metadata_extra->>'catalog_uuid' = ?", "b954d3b7-d2c7-453b-8eb2-459e8d3b8462")
   catalog_r4 ||= ControlCatalog.find_by(name: "NIST SP 800-53 Rev 4")
 
-  if catalog_r4 && catalog_r4.catalog_controls.exists?
-    puts "  Rev 4 catalog already seeded (#{catalog_r4.catalog_controls.count} controls) — skipping import."
-  else
-    # Create or reuse the catalog record, then import via CatalogImportService
-    catalog_r4 ||= ControlCatalog.create!(name: "NIST SP 800-53 Rev 4", version: "4.0", source: "NIST")
-    file_io = File.open(oscal_rev4_path)
-    result = CatalogImportService.call(file_io, File.basename(oscal_rev4_path), existing_catalog: catalog_r4)
-    file_io.close
-    puts "  Imported #{result[:families]} families, #{result[:catalog].catalog_controls.count} controls (with enhancements and sub-parts)"
-  end
+  # No "already seeded, skipping" guard — see the Rev 5 section above (#1003).
+  # SeedRunner's version gate is the idempotency; this body's own guard only
+  # ever prevented the catch-up a version bump exists to perform.
+  catalog_r4 ||= ControlCatalog.create!(name: "NIST SP 800-53 Rev 4", version: "4.0", source: "NIST")
+  file_io = File.open(oscal_rev4_path)
+  result = CatalogImportService.call(file_io, File.basename(oscal_rev4_path), existing_catalog: catalog_r4)
+  file_io.close
+  puts "  Imported #{result[:families]} families, #{result[:catalog].catalog_controls.count} controls (with enhancements and sub-parts)"
 else
   puts "  ⚠ OSCAL fixture not found at #{oscal_rev4_path}"
   # Fallback: create an empty catalog record so downstream seeds don't break

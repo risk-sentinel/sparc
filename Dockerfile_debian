@@ -31,7 +31,7 @@ RUN rm -f /etc/apt/sources.list /etc/apt/sources.list.d/* && \
 # Provision MITRE hdf-libs CLI for runtime translation between scanner
 # formats and OSCAL/HDF artefacts (#449). Pinned via HDF_LIBS_VERSION;
 # tarball SHA-256 verified against checksums.txt from the same release.
-COPY bin/install-hdf.sh /tmp/install-hdf.sh
+COPY script/dev/install-hdf.sh /tmp/install-hdf.sh
 RUN mkdir -p /tmp/hdf-install && \
     HDF_LIBS_VERSION="${HDF_LIBS_VERSION}" HDF_INSTALL_DIR=/tmp/hdf-install \
       /tmp/install-hdf.sh
@@ -49,7 +49,9 @@ COPY --from=bootstrap /etc/ssl/certs/ /etc/ssl/certs/
 COPY --from=bootstrap /usr/share/ca-certificates/ /usr/share/ca-certificates/
 
 # hdf-cli static binary (Go) — single file, no transitive runtime deps.
-# See bin/install-hdf.sh for SHA-256 verification.
+# See script/dev/install-hdf.sh for SHA-256 verification. NOTE the UBI9
+# image compiles this from source instead (#1001); this rollback image
+# still downloads the release binary and so carries GO-2026-5026.
 COPY --from=bootstrap /tmp/hdf-install/hdf /usr/local/bin/hdf
 
 # Install runtime deps only — no build tools, no unused packages

@@ -174,6 +174,10 @@ It shows, for that control:
 - the **priority** the baseline assigns
 - the **guidance** from the source catalog
 - the **related controls**
+- the **implementation statements** — the lettered sub-parts of the requirement
+  (`ac-1a`, `ac-1a.1`, …), each with the baseline's parameter values substituted
+
+![The What this baseline requires panel on a baseline, showing the resolved control statement, its parameters, priority, guidance, related controls and implementation statements](images/baseline-control-detail.png)
 
 You never see raw OSCAL markup such as `{{ insert: param, ac-20_odp.01 }}` —
 the values are substituted before the page renders, so what you read is what

@@ -21,7 +21,101 @@ ARG HDF_LIBS_VERSION=3.5.1
 #   glib2   2.68.4-18.el9_7.2 -> 2.68.4-19.el9_8.2 CVE-2026-58016
 # The base already carries them, so a digest bump is sufficient — no `microdnf
 # update`, which would trade reproducibility for the same result.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:48fa5d8cda7fc00d270d8747c3eaa54ae196f0820d8540074a9c8c61d5e3056f
+#
+# Bumped again 2026-08-20 (9.8 -> 9.8, newer build) for #1001. The 9.8 pin above
+# was three months of errata behind, and the register's Debian->UBI9 re-base
+# found the same CVEs still in the image under their RHEL package names.
+# Measured with `rpm -q` on both digests rather than read off an advisory:
+#   libgcrypt      1.10.0-11.el9    -> 1.10.0-13.el9_8    CVE-2026-41989
+#   curl-minimal   7.76.1-40.el9    -> 7.76.1-40.el9_8.5  CVE-2026-1965/-3783
+#   libcurl-minimal 7.76.1-40.el9   -> 7.76.1-40.el9_8.5  (same pair)
+#   glib2          2.68.4-19.el9_8.2 -> 2.68.4-19.el9_8.9
+#   libarchive     3.5.3-9.el9_7    -> 3.5.3-11.el9_8
+# That is three of the four fixable findings in #1001; the fourth is the Go
+# stdlib CVE in hdf-cli, which no base bump can reach — see the hdf-builder
+# stage below.
+#
+# NOTE the header's "Iron Bank / DISA-aligned" is a description of the UBI9
+# LINEAGE, not the source: this pulls Red Hat's PUBLIC registry, not
+# registry1.dso.mil. Nothing here holds Iron Bank pull credentials.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:8eb2830d0936237fc13a1f2f7e45aecf90d69043380ad167fad0343632937f41
+
+# ── hdf-builder: hdf-cli compiled from source, toolchain pinned (#1001) ──────
+# This used to be a release-tarball download (script/dev/install-hdf.sh, then
+# at bin/). Same tool,
+# same org, two strategies — and only one of them can fix a Go stdlib CVE.
+#
+# Measured with `go version -m` on the binary that shipped in v1.16.0-rc:
+# hdf 3.5.1 (the NEWEST published release, 2026-08-12) is built with go1.26.5,
+# and the GO-2026-5026 fix line is go1.26.6. No version bump reaches it —
+# choosing the toolchain does. risk-sentinel/container-build-sign reached the
+# same conclusion for its ci-runner and sparc-auditor images (#234, #246);
+# this stage is a port of the one in containers/ci-runner/Dockerfile, and the
+# two should be kept in step.
+#
+# This is NOT a weaker supply chain than the tarball it replaces. The download
+# verified a SHA-256 against the release checksums; this clones the signed
+# v3.5.1 tag from the same canonical repo and then asserts, twice, on what the
+# emitted binary actually contains — which the tarball path never did.
+#
+# The download script is KEPT, demoted to script/dev/install-hdf.sh, as a
+# local developer convenience only. CI's security_gate builds from source
+# the same way this stage does, so no surface that gates or ships a
+# release depends on the published binary any more.
+#
+# Pin the patch (golang:1.26.6), not the minor (golang:1.26) — a floating minor
+# does not deterministically clear a stdlib CVE, which is the entire point.
+FROM --platform=$BUILDPLATFORM golang:1.26.6-bookworm AS hdf-builder
+ARG HDF_LIBS_VERSION
+ARG TARGETOS
+ARG TARGETARCH
+
+RUN git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
+        https://github.com/mitre/hdf-libs.git /src
+WORKDIR /src/hdf-cli
+
+# Security bump of a TRANSITIVE dependency, ahead of upstream. hdf-libs v3.5.1
+# pins golang.org/x/text v0.27.0, which carries CVE-2026-56852 (HIGH):
+# norm.Iter can enter an infinite loop on invalid UTF-8. Fixed in v0.39.0.
+# Confirmed present in the shipped binary before this change. We build here
+# precisely so the upgrade clock is ours; accepting a fixable HIGH when we
+# control the compile would be declining to use the capability.
+# REMOVE once hdf-libs ships x/text >= 0.39.0 — the assertion below reports
+# that the bump was undone, never that it became redundant.
+ARG XTEXT_VERSION=0.39.0
+# `go mod edit` + `go mod download`, not `go get`: edit sets the requirement
+# mechanically with no version resolution and download records the hash in
+# go.sum. `go get` resolves a module graph at build time — less predictable,
+# and what SonarQube flags as a non-lock-file command.
+RUN go mod edit -require="golang.org/x/text@v${XTEXT_VERSION}" \
+    && go mod download golang.org/x/text
+
+# hadolint ignore=DL3003
+RUN COMMIT="$(git -C /src rev-parse --short HEAD)" \
+    && DATE="$(git -C /src show -s --format=%cI HEAD)" \
+    && PKG="github.com/mitre/hdf-libs/hdf-cli/v3/cmd/hdf/cmd" \
+    && CGO_ENABLED=0 GOOS="${TARGETOS:-linux}" GOARCH="${TARGETARCH}" go build -trimpath \
+         -ldflags "-s -w -X ${PKG}.version=${HDF_LIBS_VERSION} -X ${PKG}.commit=${COMMIT} -X ${PKG}.date=${DATE}" \
+         -o /out/hdf ./cmd/hdf
+
+# The x/text bump is silent if it stops applying — a later hdf-libs could pin a
+# newer x/text, or the requirement could stop resolving, and the build would
+# still succeed carrying a vulnerable copy. Read it back out of the ACTUAL
+# binary rather than trusting the instruction above.
+RUN go version -m /out/hdf | grep -E "golang.org/x/text[[:space:]]+v${XTEXT_VERSION}" \
+      || { echo "FAIL: /out/hdf does not carry x/text v${XTEXT_VERSION} (CVE-2026-56852)" >&2; \
+           go version -m /out/hdf | grep "golang.org/x/text" >&2; exit 1; }
+# And assert the toolchain, which is the finding this stage exists to close.
+# `go build` silently uses whatever toolchain the image carries; if the FROM
+# above is ever downgraded, GO-2026-5026 comes back with no other signal.
+# A real version comparison, not a pattern match: `sort -V -C` succeeds only
+# when the floor sorts at or before what the binary reports, so a newer Go
+# (1.27.0, 1.30.x) passes while anything below the fix line fails.
+ARG GO_FIX_LINE=1.26.6
+RUN actual="$(go version -m /out/hdf | head -1 | awk '{ print $2 }' | sed 's/^go//')" \
+    && printf '%s\n%s\n' "${GO_FIX_LINE}" "${actual}" | sort -V -C \
+      || { echo "FAIL: /out/hdf built with go${actual}, older than the GO-2026-5026 fix line go${GO_FIX_LINE}" >&2; \
+           exit 1; }
 
 # ── builder: toolchain + Ruby/jemalloc from source + hdf-cli + gems + assets ──
 FROM ${UBI_IMAGE} AS builder
@@ -67,9 +161,20 @@ ADD https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /tmp/rds-g
 RUN grep -q "BEGIN CERTIFICATE" /tmp/rds-global-bundle.pem \
     && test "$(grep -c 'BEGIN CERTIFICATE' /tmp/rds-global-bundle.pem)" -gt 50
 
-# hdf-cli (Go static binary), SHA-256 verified — same script the Debian image uses.
-COPY bin/install-hdf.sh /tmp/install-hdf.sh
-RUN HDF_LIBS_VERSION="${HDF_LIBS_VERSION}" HDF_INSTALL_DIR=/usr/local/bin /tmp/install-hdf.sh
+# hdf-cli, compiled from source with a pinned Go toolchain (#1001). Lands in
+# /usr/local/bin so it rides the existing `COPY --from=builder /usr/local` into
+# the runtime stage, exactly as the downloaded binary did.
+COPY --from=hdf-builder /out/hdf /usr/local/bin/hdf
+# A bare `hdf version` asserts nothing: built from source, a binary with drifted
+# ldflags reports `development` and still exits 0. Match the pinned version so a
+# wrong build fails here instead of shipping. This stage runs on the TARGET
+# platform, so the binary is executable here even though it was cross-compiled.
+# DL4006: grep's exit status is the gate; pipefail not needed.
+# hadolint ignore=DL4006
+RUN out="$(hdf version 2>&1)"; \
+    echo "$out"; \
+    echo "$out" | grep -q "${HDF_LIBS_VERSION}" \
+      || { echo "FAIL: hdf CLI missing or not version ${HDF_LIBS_VERSION}" >&2; exit 1; }
 
 # LANG/LC_ALL (#750): UBI9 minimal ships no locale, so with LANG unset Ruby's
 # Encoding.default_external falls back to US-ASCII — ERB then reads templates as
@@ -115,6 +220,40 @@ COPY certs/ /etc/pki/ca-trust/source/anchors/sparc-custom/
 RUN find /etc/pki/ca-trust/source/anchors/sparc-custom/ -type f \
       ! \( -name '*.crt' -o -name '*.pem' -o -name '*.cer' \) -delete 2>/dev/null || true; \
     update-ca-trust
+
+# ── Drop curl and the package manager from the runtime image (#1001) ─────────
+# MEASURED, not assumed. Every ELF in the runtime image that links libcurl:
+# /usr/bin/curl, /usr/bin/microdnf, /usr/lib64/libdnf.so.2, /usr/lib64/librepo.so.0.
+# Nothing of ours. The application never shells out to curl and never links it:
+# every outbound fetch — the DISA CCI refresh, the AWS Labs CDEF ingest, source
+# federation, Security Hub — goes through Ruby's Net::HTTP / open-uri on Ruby's
+# OpenSSL bindings, `ldd` on the compiled ruby reports zero libcurl references,
+# and hdf-cli is a static Go binary. No gem in Gemfile.lock links it either
+# (no curb / typhoeus / ethon / patron).
+#
+# That left curl-minimal and libcurl-minimal carrying ~16 findings, two of them
+# HIGH, for code nothing in the image calls. They cannot be removed with
+# microdnf: rpm declares a dependency on the curl BINARY and librepo on
+# libcurl, so a depsolve refuses. `rpm -e --nodeps` removes them along with the
+# package manager that needs them, which is the right posture for an immutable
+# runtime anyway — a container that cannot install packages cannot have
+# packages installed into it.
+#
+# RPM ITSELF IS DELIBERATELY KEPT. Grype and Trivy enumerate OS packages by
+# reading the rpm database; removing rpm would make the image scan clean by
+# making it unreadable, which is the same lie #1001 was filed about. 107
+# packages remain enumerable after this, down from 112.
+#
+# Verified in the built image before this was written: rpm -qa still lists,
+# `require "pg"` loads, `rails zeitwerk:check` eager loads clean, hdf runs, and
+# update-ca-trust and pg_isready — the two runtime tools that matter — survive,
+# since both come from ca-certificates/p11-kit and postgresql, not from curl.
+# The runtime CA mechanism in bin/lib/ca-trust.sh uses neither curl nor dnf.
+RUN rpm -e --nodeps curl-minimal libcurl-minimal microdnf libdnf librepo \
+    && rm -rf /var/cache/dnf /var/cache/yum \
+    && ! command -v curl \
+    && ! ls /usr/lib64/libcurl.so.4 2>/dev/null \
+    && rpm -qa | wc -l
 
 # ── Database TLS trust (#785, NIST SC-8(1)) ──────────────────────────────────
 # libpq does NOT honour SSL_CERT_FILE, so the runtime CA mechanism above (which

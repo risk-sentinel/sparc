@@ -654,14 +654,14 @@ Backlog / gated:
 
 ### Phase 16: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
 
-**Goal:** Close the v1.16.0 milestone (**49 issues — 40 closed, 9 open, re-measured 2026-08-19 late**, after Bundles T and Q and the hdf-cli pin shipped; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, #935, #951, #959 added by the owner on 2026-08-15, **#981, #982, #984 filed from the Bundle P verification gate**, **#988, #989 filed and fixed inside Bundle T**, **#991 filed and fixed inside Bundle Q**, **#993 filed and fixed by the hdf-cli 3.5.1 pin**, and **#994, #995, #997, #998, #999 filed 2026-08-19**). The count has moved **eight** times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
+**Goal:** Close the v1.16.0 milestone (**53 issues — 44 closed, 9 open, re-measured 2026-08-20**, after Bundle U shipped and Bundle W opened in PR #1005; 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, #944, #946, #947 + #952 found in local review of Bundle E, #845 pulled in to make the test data real, #954, #955, #956, #958 filed and fixed inside Bundle M, #963 filed and fixed inside Bundle N, #935, #951, #959 added by the owner on 2026-08-15, **#981, #982, #984 filed from the Bundle P verification gate**, **#988, #989 filed and fixed inside Bundle T**, **#991 filed and fixed inside Bundle Q**, **#993 filed and fixed by the hdf-cli 3.5.1 pin**, and **#994, #995, #997, #998, #999 filed 2026-08-19**). The count has moved **eight** times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
 
 **The release gate is Bundle V: sweep all 229 `/api/v1` route entries against their published
 contracts** — send a payload, parse the response, and prove with an INDEPENDENT read that the
 endpoint did what `docs/api/endpoints/*.md` says it does. Not "it returned 200." The full matrix,
 the ~1,294-check floor and a per-group progress tracker are in the **Bundle V** section below.
 
-**The last five were all found by USING the product, none by the suite.** #994, #997, #998 and #999 came out of exercising `/api/v1` against a live instance and reading SPARC's output against NIST's published OSCAL references; #995 is the epic that generalises them. Every underlying defect was green at the time it was found — which is the argument #995 makes and the reason it is a release gate rather than a nice-to-have.
+**The last five were all found by USING the product, none by the suite.** #994, #997, #998 and #999 came out of exercising `/api/v1` against a live instance and reading SPARC's output against NIST's published OSCAL references; #995 is the epic that generalises them. Every underlying defect was green at the time it was found — which is the argument #995 makes and the reason it is a release gate rather than a nice-to-have. **That has now held for nine in a row:** #1001 came from scanning the shipping image, #1002 and #1003 from running the UBI9 gate Bundle U had held, and #1004 from the owner reading a live OSCAL export. Not one of the nine was found by the rspec suite.
 
 The two structural security deliverables led: a spec that fails when a controller ships without authorization (#919) and one that pins `disposition: "attachment"` on user content (#894). What remains is the document model, the boundary-attachment family, and the IdP entitlement epic.
 
@@ -688,26 +688,32 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 14 | T — Bundle P follow-ups | #981 #982 #984 #988 #989 | **Shipped** (PR #986 → `28443b7c`) |
 | 15 | Q — Polish | #936 #991 | **Shipped** (PR #992 → `6d39e089`) |
 | 16 | **hdf-cli 3.5.1 — pulled forward, on its own** | **#993** | **Shipped** (PR #996 → `e0473814`) |
-| 17 | U — Profile fidelity: what the baseline says, and what SPARC shows | #997 #999 #998 **#994** | **IN PR** (#1000) |
-| 18 | **V — SWEEP every API endpoint against its published contract** | **#995** #951 | **NEXT — release gate, SWEPT + FIXED** (owner-decided 2026-08-20). 229 route entries, ~1,294 checks, every finding fixed in-milestone; per-group tracker in the Phase 16 section |
-| 19 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
-| 20 | **W — The remediation claims the UBI9 migration invalidated** | **#1001** | **LAST** (owner-placed 2026-08-20). 20 `remediated` findings still in the shipping image; 18 deferred to 2026-09-03, 2 blocked on a fix-vs-deviation decision |
+| 17 | U — Profile fidelity: what the baseline says, and what SPARC shows | #997 #999 #998 **#994** | **Shipped** (PR #1000 → `27aea200`) |
+| 18 | **W — The CVEs the UBI9 migration hid, + Bundle U's carried debt** | **#1001** **#1002** **#1003** | **IN PR** ([#1005](https://github.com/risk-sentinel/sparc/pull/1005), 15 commits, **not merged**). Image CVEs 132 → 80, undispositioned HIGHs 19 → 0; rspec 5669/0/10, tests/api 473, ui-smoke 496 passed / 9 skipped / 0 failed. **#1002 and #1003 were filed and fixed inside it**, both surfaced by running the gate U had held |
+| 19 | **V — SWEEP every API endpoint against its published contract** | **#995** #951 | **NEXT, once #1005 merges — release gate, SWEPT + FIXED** (owner-decided 2026-08-20). 229 route entries, ~1,294 checks, every finding fixed in-milestone; per-group tracker in the Phase 16 section |
+| 20 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | Queued |
+| — | **#1004 — SSP back-matter carries no href for the boundary's CDEFs** | **#1004** | **Filed 2026-08-20 from OWNER review of live exports, in NO bundle yet.** Scope owner-decided: **all** of the boundary's CDEFs. See the Bundle W section for the measurements and the profile-exporter pattern to copy |
 
-**Nothing is unslotted.** #935 and #959 went into **Bundle S** on 2026-08-17, #997 #998 #999 #994
-into **Bundle U**, and **#995 and #951 into Bundle V on 2026-08-19 at owner direction** — which
-makes V the NEXT bundle and moves R behind it. That ordering is the right way round for a release
-gate: #995 must be satisfied before the tag, and its findings generate work, so discovering them
-after the largest bundle in the milestone would be discovering them too late. **Tracked separately, no milestone:** #953 (authenticated DAST — unblocked by Bundle
+**One issue is unslotted: #1004**, filed 2026-08-20 and not yet in a bundle — the owner's call
+whether it rides V or waits. Everything else is slotted. #935 and #959 went into **Bundle S** on
+2026-08-17, #997 #998 #999 #994 into **Bundle U**, and **#995 and #951 into Bundle V on 2026-08-19
+at owner direction**. **W was then moved from LAST to FIRST on 2026-08-20**, combined with Bundle
+U's carried debt, to land the milestone — so the order is now **W → V → R**, not V → R → W. V
+before R remains the right way round for a release gate: #995 must be satisfied before the tag, and
+its findings generate work, so discovering them after the largest bundle in the milestone would be
+discovering them too late. **Tracked separately, no milestone:** #953 (authenticated DAST — unblocked by Bundle
 M's production posture), #966 (SonarCloud findings triage — owner directed that it be filed
 and *not* worked; 281 open findings, 2 Blockers amounting to one defect), and **#968** (audit the
 swallow-and-continue rescue patterns — raised out of #939, **due 2026-09-06**; 54 rescue sites,
 11 log-and-continue in services/jobs, and 17 files combining a transaction with a rescue, which
 is the candidate set for the #963 shape).
 
-**Milestone re-measured 2026-08-19 late, after Bundles T and Q and the hdf pin: 49 issues,
-40 closed / 9 open.** The 9 open: **#822 #842 #860 #951 #994 #995 #997 #998 #999**. Bundle S closed
-#935, #959 and #974; Bundle P closed #947 and #948; Bundle T closed #981, #982, #984, #988 and
-#989; Bundle Q closed #936 and #991; the hdf pin closed #993.
+**Milestone re-measured 2026-08-20, after Bundle U shipped and Bundle W was opened: 53 issues,
+44 closed / 9 open.** The 9 open: **#822 #842 #860 #951 #995 #1001 #1002 #1003 #1004**. #1001,
+#1002 and #1003 are open only because PR #1005 has not merged; #1004 is a follow-up in no bundle.
+Bundle S closed #935, #959 and #974; Bundle P closed #947 and #948; Bundle T closed #981, #982,
+#984, #988 and #989; Bundle Q closed #936 and #991; the hdf pin closed #993; Bundle U closed #994,
+#997, #998 and #999.
 
 **The earlier figure in this section — 40 issues, 30 closed / 10 open — was measured during Bundle
 P and is superseded.** It is left in the paragraphs below as the record of what was known then.
@@ -1041,11 +1047,17 @@ command as `hdf convert --from oscal-poam --to hdf-amendments`, a direction hdf-
 `oscal-poam` converts only to `hdf`, and POA&M flows the other way, from an amendments doc. The code
 was always right (`from: OSCAL_POAM` with no `to:`); only the comment named a dead end.
 
-**The bump is four pins, not one.** `HdfRunner::PINNED_VERSION`, `bin/install-hdf.sh`, and — easy to
-miss — `ARG HDF_LIBS_VERSION` in **both** `Dockerfile` and `Dockerfile_debian`, which bake the
-binary independently of the install script. Changing only the script would have left the container
-running 3.4.1 while the app pinned 3.5.1, so translations would have been refused inside the image.
-No checksum to update: `install-hdf.sh` fetches `checksums.txt` from the release itself.
+**The bump is five pins, not one.** `HdfRunner::PINNED_VERSION`, `script/dev/install-hdf.sh`
+(moved from `bin/` in #1001), `ARG HDF_LIBS_VERSION` in **both** `Dockerfile` and
+`Dockerfile_debian`, and the `HDF_LIBS_VERSION` in the `security_gate` job of
+`.github/workflows/security.yml`. Changing only the script would have left the container running
+3.4.1 while the app pinned 3.5.1, so translations would have been refused inside the image. No
+checksum to update: `install-hdf.sh` fetches `checksums.txt` from the release itself.
+
+**And that drift really happened.** #1001 found `security_gate` still pinned at 3.4.1 after
+#993/#996 moved everything else to 3.5.1 — the gate validated amendments with a different binary
+than the product shipped. `sonarqube-hdf.yml` still carries the same stale `HDF_CLI_VERSION:
+v3.4.1`; it is a separate workflow and was left alone deliberately, pending its own approval.
 
 **CI cannot verify any of this** — it does not install hdf-cli (open issue **#835**), so these specs
 skip there and CI stayed green throughout while local runs failed. The same class as #984: a check
@@ -1158,7 +1170,7 @@ gated on `profiles.write`) and the SSP screen (read-only), rather than growing a
 | **API gap** | SSP components had no `Api::V1` surface at all — found while building #998 | **Bundle U, not on the milestone.** Five endpoints under `/api/v1/ssp_documents/:slug/components`, carrying the validation pair so a pipeline can record "FIPS 140-2, certificate #4282, validating this component". Two deliberate refusals: `this-system` cannot be deleted (OSCAL requires it and the enrichment screen already protects it), and a validation claim on a non-validation component, or a pairing into another SSP, answers 422. The three audit actions are **registered** in `AuditEvent::ACTIONS` — an unregistered action records nowhere, which is #982's shape. |
 | **#998** | `validation` is an allowed component type but nothing can express what it validates | **Bundle U.** OSCAL models third-party product validation as a **component pair** — the product, and a `validation` component carrying `validation-type` / `validation-reference` props and a `validation-details` link — joined by `rel="validation"`. SPARC has the enum value and none of the rest: the props appear nowhere in `app/`, and per finding 3 a CDEF cannot carry a second component at all. An enum value with no supporting fields reads as support without being it, which is worse than not offering the type — "this module is FIPS 140-2 validated, certificate #4282" is exactly the assertion an assessor checks. |
 
-##### 18. Bundle V — Sweep every API endpoint against its published contract  ·  **NEXT**
+##### 18. Bundle V — Sweep every API endpoint against its published contract  ·  **NEXT, once PR #1005 merges**
 
 **This is the endpoint sweep. It is the v1.16.0 release gate, and the gate is SWEPT + FIXED**
 (owner-decided 2026-08-20): every endpoint verified, and every finding fixed inside this milestone. Slotted by the owner on
@@ -1352,10 +1364,42 @@ Last by owner direction. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end 
 | **#842** | Map OIDC claims to organization, boundary and role | Bundle I. A **missing** claim is an error, never "revoke everything" — that failure mode is what the blast-radius guard exists for. |
 | **#822** | IdP-mediated PIV via OIDC `acr`/`amr` | Bundle G. Both auth paths stay configurable; two-ceremony verification required. |
 
-##### 20. Bundle W — The remediation claims the UBI9 migration invalidated  ·  **LAST**
+##### 20. Bundle W — The remediation claims the UBI9 migration invalidated, + Bundle U's carried debt  ·  **IN PR #1005**
 
-**Placed at the END, after Bundle R, by owner direction 2026-08-20** — the letter is not
-alphabetical sequencing; the POSITION is what matters.
+**MOVED TO THE FRONT and combined with Bundle U's carried debt, by owner direction 2026-08-20**
+(superseding the same day's "placed at the END, after Bundle R"). The order is now
+**W + U-debt -> V -> R**, chosen to land the milestone. The letter is not alphabetical sequencing;
+the POSITION is what matters, and it changed.
+
+**The two halves share one image build.** U's debt needs a built UBI9 prod image to run its gate
+and capture screenshots; W needs one to prove the CVE fixes. The Dockerfile fixes therefore land
+FIRST, and everything downstream runs against the image that will actually ship — one build, one
+arch, one code state.
+
+**STATUS: in [PR #1005](https://github.com/risk-sentinel/sparc/pull/1005), 15 commits, NOT MERGED.**
+`Closes #1001 #1002 #1003`. **Milestone re-counted 2026-08-20 against
+`gh issue list --milestone v1.16.0 --state all`: 53 issues, 44 closed, 9 open —
+822 842 860 951 995 1001 1002 1003 1004.** The three this PR closes are still
+open until it merges; #1004 is a follow-up that is NOT in this bundle. Everything below — including this plan section — is **updated on
+`bug/1001_ubi9_findings_and_bundle_u_debt` and invisible on `main` until the owner merges.**
+
+**What the bundle actually did, measured against the image it produces:**
+
+| | before | after |
+| --- | --- | --- |
+| distinct CVEs in the image | 132 | **80** |
+| grype matches | 177 | 103 |
+| undispositioned HIGHs | 19 | **0** |
+| curl-attributed findings | 16+ | **0** |
+| register | 28 live / 69 retired | **16 live / 85 retired** |
+| enumerable packages | 112 | 107 (rpm KEPT) |
+
+**Gates, all against the final built image** — rspec **5669 / 0 failed / 10 pending** (every pending
+one environment-gated and named), rubocop clean on changed files, `tests/api` **473 passed / 0
+skipped**, `tests/ui-smoke` **496 passed / 9 skipped / 0 failed**, `test_authenticated_nav.py`
+**71/71** with the screenshots in place, grype **103 matches / 80 distinct**, findings converter
+**16 overrides, exit 0**. Eight mutations (four on `BaselineControlDetail`, four on the importer
+specs) each go RED and restore green.
 
 **#1001 — 20 of 89 findings marked `remediated` are still in the shipping image.** The claims were
 true for the **Debian** image and were carried across the **Debian → UBI9 migration without
@@ -1374,26 +1418,72 @@ other option on the table — all 20 would have been exempted permanently, acros
 image attributes it to **`stdlib go1.26.5`**, a different artifact entirely, so remediating x/net
 never touched it. A fix exists (Go 1.26.6).
 
-**Two are blocked by the #865 deviation policy, and that is the policy working.** The review window
-is `next_review_date - discovery_date`, so **no deferral date can satisfy it** for a finding already
-past its maximum:
+**The "two blocked by the #865 deviation policy" state is GONE — and the issue text describing it
+is stale.** The severity re-grading that shipped inside PR #1000 (`GO-2026-5026` CRITICAL->HIGH,
+`CVE-2026-41989` HIGH->MEDIUM, each re-graded to the artifact actually in the image) together with
+the re-based `discovery_date` puts both inside their caps at a 14-day window. Measured 2026-08-20:
+`ruby bin/sparc_findings_to_hdf_amendments.rb --input docs/compliance/sparc-findings.yml` writes 28
+overrides and exits 0, with no policy errors. **No deviation was needed and none was written.**
+Note the script has no `--validate` flag, which #1001's acceptance criteria assume — use
+`--input`/`--output`.
 
-| CVE | Severity | Discovered | Policy max | Actual |
-| --- | --- | --- | --- | --- |
-| `GO-2026-5026` | CRITICAL | 2026-06-04 | 30d | **77d** |
-| `CVE-2026-41989` | HIGH | 2026-05-06 | 30d | **106d** |
+**Owner decisions 2026-08-20 — DECIDED, do not re-ask:**
 
-`discovery_date` is **preserved deliberately**. Resetting it to today would make the register pass
-while the real exposure has run for months — compliant numbers, false ones. The other 18 defer
-cleanly to 2026-09-03 and need nothing.
+1. **`GO-2026-5026`: compile hdf-cli from source.** The artifact is not a base package — it is
+   hdf-cli, the MITRE Go binary the image used to download. hdf 3.5.1 is the NEWEST published
+   release and `go version -m` on the shipped binary confirms go1.26.5 against a go1.26.6 fix line,
+   so no version bump reaches it. `risk-sentinel/container-build-sign` hit this on the same tool
+   (#234, #246) and fixed it the same way; SPARC was the last consumer still on the tarball. The
+   `hdf-builder` stage is a port of the one in its `containers/ci-runner/Dockerfile` and the two
+   should be kept in step. Takes CVE-2026-56852 (HIGH, `golang.org/x/text` v0.27.0 -> v0.39.0) with it.
+2. **`CVE-2026-41989`: refresh the public UBI digest.** Same mechanism and registry as the 9.7->9.8
+   bump of 2026-08-04. A digest bump updates versions in place and removes nothing.
+3. **Audit scope: the live entries plus the HIGH undispositioned orphans.** The MEDIUM and LOW
+   orphans are a follow-up.
+4. **CI stops downloading hdf too** — `security_gate` builds from source with the same pinned
+   toolchain, and `install-hdf.sh` moves to `script/dev/` as a local-developer convenience.
 
-**Owner decision owed on those two only:** take the fixes (Go 1.26.6 and the `el9_8` RPM updates —
-a base-image change, not a findings-file edit), or approve a deviation for each through the existing
-`deviation-approval` workflow with real mitigating factors.
+**We are NOT on Iron Bank, and the file said otherwise by implication.** `Dockerfile`'s header
+reads "Red Hat UBI9 (Iron Bank / DISA-aligned)", which describes the UBI9 LINEAGE — but the pin is
+`registry.access.redhat.com`, Red Hat's PUBLIC registry. There is no `registry1.dso.mil` reference
+and no Iron Bank pull credential in `sparc` or in `container-build-sign`. A comment now says so.
+Moving to a genuine Iron Bank base would need credentials in CI and sparc-iac and belongs in
+`container-build-sign`; it is explicitly out of scope here.
+
+**What the rebuilt image measured (2026-08-20, grype 0.114.0 db v6.1.9 on `sparc-ubi9-web:latest`,
+RHEL 9.8 confirmed from `/etc/os-release`):** distinct CVEs **132 -> 101**, matches 177 -> 145.
+All four fixable findings in #1001's table cleared, plus five `sqlite-libs` CVEs the digest bump
+took as a side effect and CVE-2026-56852 the toolchain change took. Undispositioned **HIGHs 19 -> 5**.
+
+**Two of the eleven entries that vanished from the scan had NOT been fixed — the scanner renamed
+them.** `CVE-2026-27820` (zlib) is now reported as `GHSA-g857-hhfv-j68w` and `CVE-2026-41316` (erb)
+as `GHSA-q339-8rmv-2mhv`, each listing the old id as a related vulnerability. A retire-with-proof
+pass keyed on "absent from the scan" would have marked both remediated — **the exact false
+remediation claim this issue exists to stop, reproduced inside the fix for it.** Both were re-keyed
+to the id the scanner reports, with `discovery_date` preserved because the exposure is continuous
+and only the label moved; their severities were re-graded to the new ids as well (zlib
+CRITICAL -> MEDIUM), because leaving a grading attached to an id that is no longer reported is the
+same defect in miniature. **Check every "absent" entry against `relatedVulnerabilities` before
+retiring it.**
+
+**Also found, raised not acted on:** `/usr/bin/curl` IS in the runtime image, contradicting the
+`Dockerfile` comment that says runtime "deliberately carries no curl". `rpm -q --whatrequires`
+reports **nothing in the image requires `curl-minimal` or `libcurl-minimal`** — they are inherited
+from ubi-minimal. Removing them would retire roughly sixteen findings including two HIGHs. That is
+a deliberate image change and needs its own approval.
+
+**Also stale, left alone deliberately:** `.github/workflows/sonarqube-hdf.yml` still pins
+`HDF_CLI_VERSION: v3.4.1` for a reason (mitre/hdf-libs#184) that #993/#996 resolved. It is a
+separate workflow and changing it needs its own approval; a comment now records the drift.
 
 | Issue | Description | Notes |
 | --- | --- | --- |
-| **#1001** | 20 findings claim remediation the Debian→UBI9 migration invalidated | **Bundle W, last.** 18 deferred; 2 blocked on the owner decision above. Acceptance also asks for the rest of the file to be audited the same way — these 20 were found by scanning, and nothing guarantees they were the only Debian-era assumptions left. |
+| **#1001** | 20 findings claim remediation the Debian→UBI9 migration invalidated | **Bundle W, in progress, moved to the front.** Register now **23 live / 78 retired**, validator green, **zero** live entries absent from the scan and **zero** undispositioned HIGHs. Acceptance box 2 is met by fixing rather than deviating; boxes 1, 3 and 4 by the audit above. The issue body still describes the superseded blocked-by-policy state and should be corrected on close. |
+| **#1002** | Raw OSCAL `{{ insert: param }}` on the Profile screen, and NO implementation statements on the SSP screen | **Filed and fixed inside Bundle W**, at owner direction, after the held gate caught it. Four defects stacked: sub-parts rendered outside the shared partial (so raw on Profile, absent on SSP); sub-parts declaring parameters the parent's list does not carry; the SSP lookup unscoped, rendering Rev 4 sub-parts under Rev 5 controls; and unresolvable references printed as markup. `CatalogControl.sub_parts_by_parent` is now the one definition of the grouping rule — the Profile controller had the only copy, which is how the SSP screen came to have none. |
+| **#1003** | `CatalogImportService` truncates statement prose to 200 chars | **Filed and fixed inside Bundle W**, at owner direction. `prose.truncate(200)` at three call sites, "for readability", with nothing forcing it — the column is an unbounded varchar. Three costs: every implementation statement on both screens was a fragment; **44 controls were severed mid `{{ insert: param, ...`**, leaving a reference nothing can resolve; and **`title` is emitted verbatim by `OscalCatalogExportService` and `OscalResolvedProfileCatalogService`, so the OSCAL export carried truncated control titles** — wrong OSCAL a consumer cannot detect. `SeedRunner` 3.0.0 → **3.1.0** re-imports both catalogs; the truncation is in stored rows and the source files are the only thing to re-read. |
+| **curl removal** | `curl-minimal` / `libcurl-minimal` dropped from the runtime image | **Owner-directed 2026-08-20, on proof rather than assertion.** Every ELF linking libcurl was `/usr/bin/curl`, `microdnf`, `libdnf`, `librepo` — the CLI and the package manager. Ruby links it zero times, hdf-cli is static, no gem links it, and every outbound fetch (DISA CCI, AWS Labs CDEFs, federation, Security Hub) is `Net::HTTP`/`open-uri`. Removable only via `rpm -e --nodeps`, which takes the package manager with it — correct for an immutable runtime. **`rpm` is KEPT: scanners enumerate OS packages from its database, and removing it would make the image scan clean by making it unreadable — the same lie #1001 was filed about.** 112 → 107 packages, all enumerable. |
+| **#1004** | An SSP's back-matter carries no resource or href for the CDEFs its components came from | **Filed 2026-08-20 from owner review of the live exports, NOT fixed here.** Measured on the seeded Moderate SSP: 3 components, 20 back-matter resources, **zero** referencing a CDEF; the only internal `#uuid` href points at a component, not a resource. `ssp_components` already carries `cdef_document_id`, so the provenance is stored and never emitted — the same gap #999 closed for catalogs, on the SSP side. **Scope owner-DECIDED 2026-08-20: ALL of the boundary's CDEFs**, referenced or not — back-matter is the evidence set, and an unreferenced resource is still a citation someone can follow. Also found while confirming it: the **profile exporter already does this correctly** (its `import` href uuid matches a back-matter resource carrying an rlink to the catalog file), while the **SSP's `import-profile` href resolves to nothing** — its 4 back-matter resources are all generic "SPARC Document Source". Same code path, same rule, and an in-repo reference implementation to copy. |
+| **Bundle U debt** | The UBI9 gate and screenshots held on 2026-08-19 | Carried from PR #1000, cleared here. `tests/api` and `tests/ui-smoke` run against the built prod image, and the three screens documented without images get captured. **The held gate immediately earned its keep**: `test_translations.py::TestSarFromHdf::test_raw_body_returns_oscal_sar` is a deliberate tripwire for mitre/hdf-libs#184, and it fired — hdf-cli 3.5.1 emits schema-valid assessment-results, so the 502 assertion was swapped for the positive one. The rspec half was swapped when #996 shipped; **the Python half was not, because nothing ran it.** **DONE:** the three screenshots are captured (`tests/ui-smoke/capture_baseline_panels_997.py`, a new one-off runner — the panels are disclosures three `<details>` deep on the SSP screen and the flat `pages.py` inventory cannot reach them), the guides carry them plus the implementation-statements prose, and both suites are green against the final image. **The gate caught the guide edit too**: adding image references before capturing the files turned `/help/system-security-plans` red, because the in-app Help Center serves `wiki/images` at `/help/images/*` and one 404 is a console error. **Of the 6 failures and 5 errors the first full gate run produced: 5 errors were a harness omission** (`SPARC_SMOKE_PUBLIC_CATALOGS` must be 0 or 1 — the file refuses to guess or skip), **3 were flakes under sustained load** (pass isolated), **2 were test defects**, and **1 was the real product bug that became #1002**. Root-cause each against the running app before calling it either. |
 
 
 <!-- markdownlint-enable MD013 -->
@@ -1647,7 +1737,7 @@ removed and are no longer tracked:
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
-| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, ~~#947~~, ~~#948~~, ~~#981~~, ~~#982~~, ~~#984~~, ~~#988~~, ~~#989~~, ~~#936~~, ~~#991~~, ~~#993~~, #994, #995, #997, #998, #999, #951, #860, #842, #822 | In Progress — **40 of 49 shipped** (PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969, #975, #976, #983, #986, #992, #996). Bundles **O** (#929 #952, PR #975), **S** (#974 #959 #935, PR #976), **P** (#947 #948, PR #983), **T** (#981 #982 #984 #988 #989, PR #986), **Q** (#936 #991, PR #992) and the **hdf-cli 3.5.1 pin** (#993, PR #996) have all shipped. **Bundle U** (#997 #999 #998 + #994) is in progress on `bug/997_999_998_994_profile_oscal_fidelity`. The count moved 16 → 24 → 25 → 32 → 36 → 37 → 39 → 40 → **49**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; **#981, #982 came from Bundle P's verification gate**; **#988, #989 from Bundle T**, **#991 from Bundle Q** and **#993 from the hdf pin**; and **#994, #995, #997, #998, #999 were filed on 2026-08-19 — every one of them found by USING the product rather than by the suite**, which is the argument #995 makes. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** (#997 #999 #998 #994, in PR #1000) → **V** (#995 #951) → **R** (#860 #842 #822 +#820). **#951 and #995 were slotted into Bundle V on 2026-08-19**, which makes V the next bundle and moves R behind it — the right order for a release gate whose findings generate work. **Bundle V is the endpoint sweep, and the gate is SWEPT + FIXED** (owner-decided 2026-08-20): all 229 `/api/v1` route entries verified against their published contracts with an independent read — ~1,294 checks against the 103 value-verifying assertions that exist today — **and every finding fixed inside this milestone**, tracked per group. **Treat the ~2026-09-21 target as provisional until the first three groups report a yield.** Nothing on the milestone is now in no bundle. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, ~~#947~~, ~~#948~~, ~~#981~~, ~~#982~~, ~~#984~~, ~~#988~~, ~~#989~~, ~~#936~~, ~~#991~~, ~~#993~~, ~~#994~~, ~~#997~~, ~~#998~~, ~~#999~~, #995, #951, #860, #842, #822, #1001, #1002, #1003, #1004 | In Progress — **44 of 53 shipped** (merged PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969, #975, #976, #983, #986, #992, #996, #1000; **#1005 open**). Bundles **O** (#929 #952, PR #975), **S** (#974 #959 #935, PR #976), **P** (#947 #948, PR #983), **T** (#981 #982 #984 #988 #989, PR #986), **Q** (#936 #991, PR #992) and the **hdf-cli 3.5.1 pin** (#993, PR #996) have all shipped. **Bundle U** (#997 #999 #998 + #994) shipped in PR #1000; **Bundle W** (#1001 #1002 #1003) plus U's carried debt is **in [PR #1005](https://github.com/risk-sentinel/sparc/pull/1005) on `bug/1001_ubi9_findings_and_bundle_u_debt`, NOT MERGED** — 15 commits, image CVEs 132 -> 80, undispositioned HIGHs 19 -> 0, rspec 5669/0/10, tests/api 473, ui-smoke 496 passed / 9 skipped / 0 failed. **#1002, #1003 and #1004 were all filed during it**: the first two found by running Bundle U's held gate, the third by the OWNER reviewing live exports — none by the suite. The count moved 16 → 24 → 25 → 32 → 36 → 37 → 39 → 40 → 49 → 50 → 52 → **53**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; **#981, #982 came from Bundle P's verification gate**; **#988, #989 from Bundle T**, **#991 from Bundle Q** and **#993 from the hdf pin**; and **#994, #995, #997, #998, #999 were filed on 2026-08-19 — every one of them found by USING the product rather than by the suite**, which is the argument #995 makes; **#1001 was filed on 2026-08-20 from a scan of the shipping image**, which is the same argument aimed at the container; **#1002 and #1003 were filed and fixed inside Bundle W**, both surfaced by running the gate Bundle U had held — neither the suite nor a reading of the code had found either. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** (#997 #999 #998 #994, SHIPPED in PR #1000 -> `27aea200`) → **W + U's carried debt** (#1001) → **V** (#995 #951) → **R** (#860 #842 #822 +#820). **W was moved from LAST to FIRST on 2026-08-20 at owner direction**, to land the milestone; the earlier "W is last" placement in the Bundle W section above is superseded. **#951 and #995 were slotted into Bundle V on 2026-08-19**, which makes V the next bundle and moves R behind it — the right order for a release gate whose findings generate work. **Bundle V is the endpoint sweep, and the gate is SWEPT + FIXED** (owner-decided 2026-08-20): all 229 `/api/v1` route entries verified against their published contracts with an independent read — ~1,294 checks against the 103 value-verifying assertions that exist today — **and every finding fixed inside this milestone**, tracked per group. **Treat the ~2026-09-21 target as provisional until the first three groups report a yield.** Nothing on the milestone is now in no bundle. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 

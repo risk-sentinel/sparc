@@ -102,27 +102,18 @@ class ProfileDocumentsController < ApplicationController
       catalog.control_families.each { |f| @family_names[f.code] = f.name }
 
       profile_control_ids = @controls.map(&:control_id).to_set
-      sorted_parent_ids = profile_control_ids.sort_by { |id| -id.length }
 
-      catalog.catalog_controls.includes(:control_family).each do |cc|
+      catalog_controls = catalog.catalog_controls.includes(:control_family).to_a
+      catalog_controls.each do |cc|
         @sort_id_map[cc.control_id] = cc.sort_id if cc.sort_id.present?
         if profile_control_ids.include?(cc.control_id)
           @catalog_controls_by_id[cc.control_id] = cc
         end
-        next if profile_control_ids.include?(cc.control_id)
-
-        # Sub-parts start with a parent ID followed by a lowercase letter (e.g., ac-1a, ac-1a.1)
-        parent = sorted_parent_ids.find { |pid|
-          cc.control_id.start_with?(pid) &&
-          cc.control_id.length > pid.length &&
-          cc.control_id[pid.length]&.match?(/[a-z]/)
-        }
-
-        if parent
-          @catalog_sub_parts[parent] ||= []
-          @catalog_sub_parts[parent] << cc
-        end
       end
+
+      # #1002 — one definition of the sub-part rule, on the model, so the SSP
+      # screen groups them identically instead of carrying a second copy.
+      @catalog_sub_parts = CatalogControl.sub_parts_by_parent(catalog_controls, profile_control_ids)
     end
   end
 
