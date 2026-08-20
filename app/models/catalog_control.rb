@@ -250,6 +250,28 @@ class CatalogControl < ApplicationRecord
     existing
   end
 
+  # ── Control-level OSCAL links (#999) ──────────────────────────────────────
+  #
+  # Stored verbatim by CatalogImportService so a catalog round-trips: the Rev 5
+  # source carries five rels — `reference` (into back-matter), `related`,
+  # `required`, and `incorporated-into` / `moved-to`, which record where a
+  # WITHDRAWN control went and are recoverable from nothing else SPARC keeps.
+  #
+  # `reference` links are additionally joined to promoted BackMatterResource
+  # rows, so an exported `#uuid` href resolves; this column stays the archival
+  # record of what the source file said.
+  def links_list
+    raw = links_data
+    return [] if raw.blank?
+
+    result = raw.is_a?(String) ? JSON.parse(raw) : raw
+    result.is_a?(Array) ? result : []
+  rescue JSON::ParserError
+    []
+  end
+
+  def links_present? = links_list.present?
+
   # Returns true when at least one parameter definition exists.
   def params_present?
     params_list.present?

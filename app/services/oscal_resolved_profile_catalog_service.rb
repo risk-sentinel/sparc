@@ -144,10 +144,49 @@ class OscalResolvedProfileCatalogService
     props = build_control_props(catalog_control, profile_control)
     result["props"] = props if props.any?
 
+    # #999 — between props and parts, matching the key order in NIST's own
+    # published resolved catalogs (id, class, title, params, props, links,
+    # parts, controls).
+    links = build_control_links(catalog_control)
+    result["links"] = links if links.any?
+
     parts = build_control_parts(catalog_control, profile_control)
     result["parts"] = parts if parts.any?
 
     result
+  end
+
+  # #999 — SPARC emitted `links` on none of its 287 controls where NIST emits
+  # them on 188 of 188, so the references to source material did not survive
+  # resolution and the back-matter the catalog carried had nothing pointing at
+  # it. Emitted verbatim from what the catalog declared.
+  #
+  # `related` hrefs are kept even when they name a control outside this
+  # baseline, which is what NIST does: its LOW resolved catalog carries 1523
+  # `related` links across 149 controls, many of them pointing at controls LOW
+  # does not select. A related link is a statement about the control, not a
+  # reference the document has to resolve.
+  #
+  # Every `reference` href, by contrast, MUST resolve — measured on NIST's LOW
+  # and MODERATE resolved catalogs, 128 of 128 and 138 of 138 land in
+  # back-matter with none dangling — so the uuids are collected here and the
+  # resources they name are carried by build_back_matter.
+  def build_control_links(catalog_control)
+    links = catalog_control.links_list
+    return [] if links.empty?
+
+    links.each do |link|
+      next unless link["rel"].to_s == "reference"
+
+      uuid = link["href"].to_s.delete_prefix("#")
+      referenced_resource_uuids << uuid if uuid.present?
+    end
+
+    links
+  end
+
+  def referenced_resource_uuids
+    @referenced_resource_uuids ||= Set.new
   end
 
   # Merges catalog param definitions with profile-set parameter values.
@@ -296,6 +335,23 @@ class OscalResolvedProfileCatalogService
       "rlinks"      => [ { "href" => SparcConfig.app_url, MEDIA_TYPE => "text/html" } ]
     }
 
+    # #999 — the resources the exported controls actually reference. The rule is
+    # the OSCAL one #959 established for every other document: back-matter
+    # exists to resolve the references the document makes, so a resource is
+    # carried when something in it points at the resource, and never otherwise.
+    #
+    # This runs after build_groups because build_catalog evaluates `groups`
+    # first, which is where the uuids are collected.
+    resources.concat(referenced_back_matter_resources)
+
     { "resources" => resources }
+  end
+
+  def referenced_back_matter_resources
+    return [] if referenced_resource_uuids.empty?
+
+    BackMatterResource.where(uuid: referenced_resource_uuids.to_a)
+                      .order(:id)
+                      .map(&:to_oscal_resource)
   end
 end

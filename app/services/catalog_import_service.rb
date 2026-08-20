@@ -203,6 +203,10 @@ class CatalogImportService
     metadata_extra["import_format"] = @import_format_override || "oscal_json"
     back_matter_resources = cat_data.dig("back-matter", "resources")
     metadata_extra["back_matter_resources"] = back_matter_resources if back_matter_resources.present?
+    # #999 — the same list, promoted to rows as the controls that reference it
+    # are imported. It stays in metadata_extra as well: that is the verbatim
+    # record of what the file declared, rows or no rows.
+    @catalog_back_matter_resources = back_matter_resources
 
     catalog = if @existing_catalog
       target = resolve_import_target(metadata_extra["catalog_uuid"])
@@ -219,6 +223,7 @@ class CatalogImportService
                      metadata_extra: metadata_extra)
     end
     stats   = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
+    @catalog_for_back_matter = catalog
 
     update_processing_stage!(:creating_records, "Importing #{groups.size} control families...")
 
@@ -258,11 +263,22 @@ class CatalogImportService
     guidance_part = (ctrl["parts"] || []).find { |p| p["name"] == "guidance" }
     supplemental  = guidance_part&.dig("prose").to_s.strip.presence
 
-    # Related controls from guidance part links
-    related = (guidance_part&.dig("links") || [])
+    # Related controls.
+    #
+    # #999 — this read the GUIDANCE PART's links only, which is where Rev 4 puts
+    # them. Rev 5 puts them on the control itself, and the difference was never
+    # visible as an error: measured on the live instance, the Rev 5 catalog had
+    # `related_controls` on 7 of 2318 controls while its source file carries
+    # 3512 `related` links, and Rev 4 had 480 of 1682. So SPARC showed "Related
+    # Controls" as blank for essentially every Rev 5 control, on the screens and
+    # in every export, for as long as Rev 5 has been seeded.
+    #
+    # Both locations are read and unioned, so Rev 4 is unaffected.
+    control_links = Array(ctrl["links"])
+    related = (Array(guidance_part&.dig("links")) + control_links)
               .select { |l| l["rel"] == "related" }
-              .map    { |l| l["href"]&.delete("#") }
-              .compact
+              .filter_map { |l| l["href"].to_s.delete_prefix("#").presence }
+              .uniq
               .join(", ")
 
     # Assessment methods (EXAMINE, INTERVIEW, TEST with objects prose)
@@ -291,7 +307,8 @@ class CatalogImportService
     params_data = ctrl["params"].presence || []
 
     result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data,
-                                    params_data: params_data, label: ctrl_label, sort_id: sort_id)
+                                    params_data: params_data, label: ctrl_label, sort_id: sort_id,
+                                    links_data: control_links)
 
     # Create sub-control records for each statement item part (a., 1., (a), …)
     stmt_part = (ctrl["parts"] || []).find { |p| p["name"] == "statement" }
@@ -391,6 +408,7 @@ class CatalogImportService
                      metadata_extra: metadata_extra)
     end
     stats = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
+    @catalog_for_back_matter = catalog
 
     import_oscal_xml_groups(groups, catalog, stats)
 
@@ -405,6 +423,7 @@ class CatalogImportService
     extra["import_format"] = "oscal_xml"
 
     resources = extract_oscal_xml_back_matter(catalog_node.at_xpath("back-matter"))
+    @catalog_back_matter_resources = resources
     extra["back_matter_resources"] = resources if resources.any?
     extra
   end
@@ -455,12 +474,15 @@ class CatalogImportService
     guidance_node = ctrl_node.xpath("part").find { |p| p["name"] == "guidance" }
     supplemental  = guidance_node ? xml_text_content(guidance_node).strip.presence : nil
 
-    # Related controls from guidance links
-    related = if guidance_node
-      guidance_node.xpath("link").select { |l| l["rel"] == "related" }
-                   .map { |l| l["href"]&.delete("#") }
-                   .compact.join(", ").presence
+    # Related controls — guidance links and control-level links unioned, for
+    # the reason recorded on the JSON path above (#999).
+    control_links = ctrl_node.xpath("link").map do |l|
+      { "href" => l["href"], "rel" => l["rel"] }.compact
     end
+    related_nodes = (guidance_node ? guidance_node.xpath("link").to_a : []) + ctrl_node.xpath("link").to_a
+    related = related_nodes.select { |l| l["rel"] == "related" }
+                           .filter_map { |l| l["href"].to_s.delete_prefix("#").presence }
+                           .uniq.join(", ").presence
 
     guidance_data = {
       "statement"             => statement,
@@ -472,7 +494,8 @@ class CatalogImportService
     params_data = oscal_xml_collect_params(ctrl_node)
 
     result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data,
-                                    params_data: params_data, label: ctrl_label, sort_id: sort_id)
+                                    params_data: params_data, label: ctrl_label, sort_id: sort_id,
+                                    links_data: control_links)
     stats[:controls] += 1
     stats[result]    += 1
 
@@ -816,7 +839,7 @@ class CatalogImportService
     family
   end
 
-  def upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data, params_data: [], label: nil, sort_id: nil)
+  def upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data, params_data: [], label: nil, sort_id: nil, links_data: [])
     ctrl = family.catalog_controls.find_or_initialize_by(control_id: control_id)
     is_new = ctrl.new_record?
     attrs = {
@@ -828,9 +851,88 @@ class CatalogImportService
     attrs[:params_data] = params_data if params_data.present?
     attrs[:label] = label if label.present?
     attrs[:sort_id] = sort_id if sort_id.present?
+    # #999 — verbatim, so the catalog round-trips. Absent links leave the
+    # existing value alone rather than clearing it, matching params_data above:
+    # a re-import from a partial source must not erase what a fuller one stored.
+    attrs[:links_data] = links_data if links_data.present?
     ctrl.assign_attributes(attrs)
     ctrl.save!
+    link_back_matter_references(ctrl, links_data)
     is_new ? :created : :updated
+  end
+
+  # ── #999: control-level links ────────────────────────────────────────────
+  #
+  # A `reference` link points into back-matter by UUID
+  # (`{"href": "#2956e175-…", "rel": "reference"}`). Preserving the href alone
+  # would leave a dangling pointer, so the resources it names are promoted to
+  # first-class BackMatterResource rows (the #583 pattern) and joined to the
+  # control, which is what every exporter already turns back into
+  # `{"href" => "#uuid"}`.
+  #
+  # Only `reference` is promoted. The other four rels measured in the Rev 5
+  # catalog — related, required, incorporated-into, moved-to — point at other
+  # CONTROLS, not at resources, and stay in links_data where they belong.
+  def link_back_matter_references(ctrl, links_data)
+    return if links_data.blank?
+    return if catalog_back_matter_index.empty?
+
+    uuids = Array(links_data).select { |l| l["rel"].to_s == "reference" }
+                             .filter_map { |l| l["href"].to_s.delete_prefix("#").presence }
+                             .uniq
+    return if uuids.empty?
+
+    uuids.each do |uuid|
+      resource = promoted_back_matter_resource(uuid)
+      next unless resource
+
+      ControlBackMatterLink.find_or_create_by!(linkable: ctrl, back_matter_resource: resource)
+    end
+  end
+
+  # uuid => the resource hash the catalog declared, built once per import.
+  def catalog_back_matter_index
+    @catalog_back_matter_index ||= begin
+      resources = @catalog_back_matter_resources || []
+      resources.each_with_object({}) do |resource, index|
+        uuid = resource["uuid"].to_s
+        index[uuid] = resource if uuid.present?
+      end
+    end
+  end
+
+  # Idempotent on the catalog's own UUID: a re-import reuses the row rather
+  # than minting a second resource for the same reference, which is what keeps
+  # the seeded catalogs stable across seed-version bumps.
+  def promoted_back_matter_resource(uuid)
+    @promoted_back_matter ||= {}
+    return @promoted_back_matter[uuid] if @promoted_back_matter.key?(uuid)
+
+    declared = catalog_back_matter_index[uuid]
+    @promoted_back_matter[uuid] = declared && build_promoted_resource(uuid, declared)
+  end
+
+  def build_promoted_resource(uuid, declared)
+    resource = BackMatterResource.find_or_initialize_by(uuid: uuid)
+    resource.title       = declared["title"].presence || citation_text(declared).presence || uuid
+    resource.description = citation_text(declared).presence || resource.description
+    resource.href        = Array(declared["rlinks"]).first&.dig("href").presence || resource.href
+    resource.media_type  = Array(declared["rlinks"]).first&.dig("media-type").presence || resource.media_type
+    resource.rel         = "reference"
+    resource.source      = "imported"
+    resource.resourceable = @catalog_for_back_matter if @catalog_for_back_matter
+    resource.resource_data = declared
+    resource.save!
+    resource
+  rescue ActiveRecord::RecordInvalid => e
+    # A malformed resource must not abort the import of an otherwise good
+    # catalog; the link is simply not made and the href stays in links_data.
+    Rails.logger.warn("[CatalogImportService] skipped back-matter resource #{uuid}: #{e.message}")
+    nil
+  end
+
+  def citation_text(declared)
+    declared.dig("citation", "text").to_s
   end
 
   # ── ID helpers ───────────────────────────────────────────────────────────────
