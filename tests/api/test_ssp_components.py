@@ -13,6 +13,8 @@ import uuid
 
 import pytest
 
+from _crud_contract import CrudContract
+
 pytestmark = [pytest.mark.documents, pytest.mark.phase2]
 
 
@@ -46,6 +48,24 @@ def component(admin_client, ssp_slug):
     created = r.json()["data"]
     yield created
     admin_client.delete(f"/api/v1/ssp_documents/{ssp_slug}/components/{created['uuid']}")
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PARAM_KEY = "ssp_component"
+    IDENTIFIER = "uuid"
+
+    def _base_path(self, admin_client):
+        ssps = admin_client.get("/api/v1/ssp_documents", params={"items": 1})
+        rows = ssps.json()["data"]
+        assert rows, "no SSP document on this instance"
+        return f"/api/v1/ssp_documents/{rows[0]['slug']}/components"
+
+    def _payload(self, admin_client):
+        return _component_payload()["ssp_component"]
+
+    def _update_fields(self):
+        return {"title": f"renamed {uuid.uuid4().hex[:8]}"}
 
 
 class TestComponentCrud:

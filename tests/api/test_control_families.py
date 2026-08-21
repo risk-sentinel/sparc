@@ -19,6 +19,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 
 pytestmark = [pytest.mark.catalogs, pytest.mark.phase2]
@@ -59,6 +60,24 @@ def _create(client: httpx.Client, catalog: dict[str, Any], **overrides: Any) -> 
     response = client.post(_path(catalog), json={"control_family": body})
     assert response.status_code in (200, 201), response.text
     return response.json().get("data") or response.json()
+
+
+# #995 — the shared matrix for this nested group.
+class TestCrudContract(CrudContract):
+    PARAM_KEY = "control_family"
+    IDENTIFIER = "code"
+
+    def _base_path(self, admin_client):
+        catalogs = admin_client.get("/api/v1/control_catalogs", params={"items": 1})
+        rows = catalogs.json()["data"]
+        assert rows, "no control catalog on this instance"
+        return f"/api/v1/control_catalogs/{rows[0]['id']}/control_families"
+
+    def _payload(self, admin_client):
+        return {"code": f"Z{uuidlib.uuid4().hex[:2].upper()}", "name": "Contract Family"}
+
+    def _update_fields(self):
+        return {"name": f"Renamed {uuidlib.uuid4().hex[:6]}"}
 
 
 class TestCatalogIdentifier:

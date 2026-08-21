@@ -62,6 +62,12 @@ class TestCrudContract(CrudContract):
     def _update_fields(self):
         return {"description": f"updated {uuid.uuid4().hex[:8]}"}
 
+    def _destroy(self, client, record):
+        # There is no destroy route, so the default DELETE would 404 and leave
+        # the record behind forever. Deactivating is the terminal state this
+        # resource actually offers.
+        client.post(f"{PATH}/{record['id']}/deactivate")
+
 
 class TestCreate:
     @pytest.mark.happy

@@ -21,6 +21,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     BackMatterResourceIndex,
@@ -85,6 +86,20 @@ def archived_resource(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
 
 
 # ── index / show ───────────────────────────────────────────────────────────
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PARAM_KEY = "back_matter_resource"
+    IDENTIFIER = "id"
+
+    PATH = PATH
+
+    def _payload(self, admin_client):
+        return _new_payload()["back_matter_resource"]
+
+    def _update_fields(self):
+        return {"title": f"renamed {uuid.uuid4().hex[:8]}"}
+
 
 class TestIndex:
     @pytest.mark.happy
