@@ -1,9 +1,8 @@
 <!-- markdownlint-disable MD013 -->
 # hdf-cli v3.5.1: `hdf-amendments → oscal-poam` emits an OSCAL POA&M that fails the NIST OSCAL 1.1.2 schema
 
-> **Status: NOT YET FILED upstream.** Evidence captured 2026-08-21 so an issue can be
-> raised against [mitre/hdf-libs](https://github.com/mitre/hdf-libs) with a complete
-> reproducer. Contains no proprietary content — the input is the four-line synthetic
+> **Status: FILED upstream as [mitre/hdf-libs#236](https://github.com/mitre/hdf-libs/issues/236)**
+> (2026-08-21). Contains no proprietary content — the input is the four-line synthetic
 > fixture already committed at `tests/api/fixtures/sample.hdf-amendments.json`.
 > Tracked on our side by the issue that ships this report.
 > Follows the same shape as [`hdf-libs-3.4.1-oscal-sar-upstream-report.md`](hdf-libs-3.4.1-oscal-sar-upstream-report.md),
@@ -16,17 +15,49 @@ that is **not valid OSCAL Plan of Action and Milestones**.
 
 - **Converter:** hdf-cli **3.5.1** (`hdf version` → `hdf version 3.5.1`), the version
   SPARC currently bundles.
-- **Validated against:** **NIST OSCAL v1.1.2** POA&M JSON Schema
-  (`lib/oscal_schemas/oscal_poam_schema.json`; validator reports
-  `schema_version=1.1.2`).
-- **Result:** `VALID=false`, **three schema violations**.
+- **Validated against:** **every OSCAL version SPARC carries a POA&M schema for —
+  1.1.1, 1.1.2, 1.1.3, 1.2.0 and 1.2.1.** Not one of them accepts the output.
+- **The document declares its own version as `"oscal-version": "1.1.2"`**, so
+  validating it against 1.1.2 is what the document itself asks for. This is not a
+  case of SPARC checking against the wrong schema.
+- **Result:** `VALID=false` on all five. **3 violations on the 1.1.x line, 7–8 on
+  the 1.2.x line** — the output gets *further* from valid on newer OSCAL, not
+  closer.
 
 The converter reports success, so a consumer has no signal that the document is
 unusable until it reaches a schema-validating tool. This is the identical failure
 mode to the `hdf → oscal-sar` path reported in mitre/hdf-libs#184 — and note that
 `oscal-sar` was **fixed** by 3.5.1, while this path was not.
 
-## The three defects
+## OSCAL version matrix
+
+The **same converter output** validated against every OSCAL version SPARC has a
+POA&M schema seeded for:
+
+| OSCAL version | Valid? | Errors | New on this version |
+|---|---|---|---|
+| **1.1.1** | ✗ | 3 | — |
+| **1.1.2** | ✗ | 3 | — (the version the document declares) |
+| **1.1.3** | ✗ | 3 | — |
+| **1.2.0** | ✗ | **8** | `risks[].title`, `metadata.title`, `poam-items[].title` empty-string violations; `related-risks[].risk-uuid` rejected as a **disallowed additional property** |
+| **1.2.1** | ✗ | **7** | same as 1.2.0 except `related-risks[].risk-uuid` is accepted again |
+
+Two things follow:
+
+1. **This is not a version mismatch.** The converter stamps its own output
+   `"oscal-version": "1.1.2"` and that output fails the 1.1.2 schema. Upgrading
+   the target OSCAL version does not fix it — 1.2.x rejects *more*, because 1.2.x
+   applies the non-empty-string datatype to `title` fields the 1.1.x schemas left
+   unconstrained.
+2. **`related-risks[].risk-uuid` is rejected by 1.2.0 and accepted by 1.2.1**, from
+   an unchanged document. Worth flagging to NIST separately if it is not
+   deliberate; it is noted here because it is visible from this same reproducer.
+
+> SPARC bundles schemas up to **1.2.1** (`OscalSchema::SUPPORTED_VERSIONS`). If NIST
+> has published a later release, it is not covered by this matrix and should be
+> added before filing.
+
+## The three defects (1.1.x line)
 
 | # | Location | Problem |
 |---|---|---|
@@ -34,13 +65,29 @@ mode to the `hdf → oscal-sar` path reported in mitre/hdf-libs#184 — and note
 | 2 | `risks[].props[]` | `value: ""` violates the OSCAL non-empty string datatype |
 | 3 | `metadata.parties[].name` | `name: ""` violates the same datatype |
 
-Verbatim validator output:
+Verbatim validator output (1.1.2):
 
 ```
 /plan-of-action-and-milestones/risks/0: missing required properties: statement
 /plan-of-action-and-milestones/risks/0/props/0/value: does not match pattern
 /plan-of-action-and-milestones/metadata/parties/0/name: does not match pattern
 ```
+
+And on 1.2.1, from the same document:
+
+```
+/plan-of-action-and-milestones/risks/0/props/0/value: does not match pattern
+/plan-of-action-and-milestones/risks/0/title: does not match pattern
+/plan-of-action-and-milestones/risks/0: missing required properties: statement
+/plan-of-action-and-milestones/metadata/title: does not match pattern
+/plan-of-action-and-milestones/metadata/parties/0/name: does not match pattern
+/plan-of-action-and-milestones/poam-items/0/title: does not match pattern
+```
+
+The empty-string defects are the same root cause throughout: the converter emits
+`""` wherever it has no value to carry across, and OSCAL's string datatype requires
+at least one non-whitespace character. 1.2.x simply applies that datatype in more
+places, so the same emptiness surfaces as more violations.
 
 **Defects 2 and 3 are the same class as defect 4 in the SAR report** — an empty
 string emitted where OSCAL requires a non-empty one. That was introduced in 3.4.0
@@ -163,14 +210,15 @@ unavailable on the bundled converter until this is fixed upstream. That is state
 `docs/api/endpoints/translations.md` and in the wiki API reference so a pipeline
 owner learns it from the documentation rather than from a 502.
 
-## Version matrix
+## Converter version matrix
 
-**Only 3.5.1 was tested for this report** — the version SPARC bundles today. The SAR
-report's matrix was built by running every release from 3.2.0 forward, and the same
-should be done here before filing, so the upstream issue can say when each defect
-appeared rather than only that it is present now.
+**Only hdf-cli 3.5.1 was tested** — the version SPARC bundles today. The OSCAL
+version matrix above is complete; this one is not. The SAR report's matrix was built
+by running every release from 3.2.0 forward, and the same should be done here before
+filing, so the upstream issue can say when each defect appeared rather than only
+that it is present now.
 
-| Version | Converts? | Schema errors | Notes |
+| hdf-cli | Converts? | Schema errors (OSCAL 1.1.2) | Notes |
 |---|---|---|---|
 | **3.5.1** | ✓ exit 0 | **3** | `risks[].statement` missing; two empty-string datatype violations. Not yet compared against earlier releases. |
 

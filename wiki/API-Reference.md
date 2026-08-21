@@ -92,7 +92,8 @@ The **HDF ↔ OSCAL bridge** adds three stateless endpoints — `oscal/sar_from_
 > The same validation now applies to **every** translation path, not just
 > `sar_from_hdf` — it had been guarding one of three. With it on,
 > **`oscal/poam_from_amendments` returns `502` for valid HDF Amendments input**,
-> because hdf-cli **3.5.1** emits a POA&M that fails the NIST **OSCAL 1.1.2**
+> because hdf-cli **3.5.1** emits a POA&M that fails the NIST OSCAL schema on **every
+> version SPARC validates against (1.1.1–1.2.1)**
 > schema on three counts:
 >
 > - `risks[]` is missing the required `statement`
@@ -106,7 +107,10 @@ The **HDF ↔ OSCAL bridge** adds three stateless endpoints — `oscal/sar_from_
 > SPARC hands it to you. Before v1.16.0 the endpoint returned `200` with the
 > invalid document.
 >
-> Evidence, reproducer and raw output for the upstream report:
+> Filed upstream as [mitre/hdf-libs#236](https://github.com/mitre/hdf-libs/issues/236).
+> Targeting a newer OSCAL version does not help — 1.2.x rejects more, not fewer.
+>
+> Evidence, reproducer and raw output:
 > [`docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md).
 
 ### Evidence (v1.12.2)
