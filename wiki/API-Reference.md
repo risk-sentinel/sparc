@@ -93,7 +93,7 @@ The **HDF ↔ OSCAL bridge** adds three stateless endpoints — `oscal/sar_from_
 > `sar_from_hdf` — it had been guarding one of three. With it on,
 > **`oscal/poam_from_amendments` returns `502` for valid HDF Amendments input**,
 > because hdf-cli **3.5.1** emits a POA&M that fails the NIST OSCAL schema on **every
-> version SPARC validates against (1.1.1–1.2.1)**
+> OSCAL release from 1.1.1 through 1.2.2, including NIST's current one**
 > schema on three counts:
 >
 > - `risks[]` is missing the required `statement`

@@ -155,7 +155,7 @@ POST /api/v1/oscal/poam_from_amendments
 > ### ⚠️ Currently unavailable on the bundled converter
 >
 > **hdf-cli 3.5.1 emits an OSCAL POA&M that fails the NIST OSCAL schema on EVERY
-> version SPARC validates against — 1.1.1, 1.1.2, 1.1.3, 1.2.0 and 1.2.1** — so this
+> OSCAL release from 1.1.1 through 1.2.2** — so this
 > endpoint returns **`502 Bad Gateway`** rather than an invalid document, for *valid*
 > HDF Amendments input and not only for malformed input.
 >

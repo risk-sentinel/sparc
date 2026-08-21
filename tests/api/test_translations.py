@@ -158,7 +158,7 @@ class TestPoamFromAmendments:
 
     **This path is currently unavailable on the bundled converter.** hdf-cli
     3.5.1 emits a POA&M that fails the NIST OSCAL schema on EVERY version SPARC
-    validates against (1.1.1, 1.1.2, 1.1.3, 1.2.0, 1.2.1) for VALID amendments
+    release from 1.1.1 through 1.2.2 for VALID amendments
     input, so SPARC refuses to return it (#1017). Newer OSCAL does not help —
     1.2.x rejects more, not fewer. Filed upstream as mitre/hdf-libs#236;
     evidence and reproducer in

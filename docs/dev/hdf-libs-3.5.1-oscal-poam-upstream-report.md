@@ -15,13 +15,14 @@ that is **not valid OSCAL Plan of Action and Milestones**.
 
 - **Converter:** hdf-cli **3.5.1** (`hdf version` → `hdf version 3.5.1`), the version
   SPARC currently bundles.
-- **Validated against:** **every OSCAL version SPARC carries a POA&M schema for —
-  1.1.1, 1.1.2, 1.1.3, 1.2.0 and 1.2.1.** Not one of them accepts the output.
+- **Validated against:** **every OSCAL release from 1.1.1 through 1.2.2** — the five
+  SPARC bundles, plus 1.2.2 fetched from NIST for this report. Not one of them
+  accepts the output.
 - **The document declares its own version as `"oscal-version": "1.1.2"`**, so
   validating it against 1.1.2 is what the document itself asks for. This is not a
   case of SPARC checking against the wrong schema.
 - **Result:** `VALID=false` on all five. **3 violations on the 1.1.x line, 7–8 on
-  the 1.2.x line** — the output gets *further* from valid on newer OSCAL, not
+  the 1.2.x line (1.2.2 included)** — the output gets *further* from valid on newer OSCAL, not
   closer.
 
 The converter reports success, so a consumer has no signal that the document is
@@ -41,6 +42,7 @@ POA&M schema seeded for:
 | **1.1.3** | ✗ | 3 | — |
 | **1.2.0** | ✗ | **8** | `risks[].title`, `metadata.title`, `poam-items[].title` empty-string violations; `related-risks[].risk-uuid` rejected as a **disallowed additional property** |
 | **1.2.1** | ✗ | **7** | same as 1.2.0 except `related-risks[].risk-uuid` is accepted again |
+| **1.2.2** | ✗ | **7** | identical to 1.2.1. NIST's current release; fetched from the release asset and validated for this report |
 
 Two things follow:
 
@@ -49,13 +51,14 @@ Two things follow:
    the target OSCAL version does not fix it — 1.2.x rejects *more*, because 1.2.x
    applies the non-empty-string datatype to `title` fields the 1.1.x schemas left
    unconstrained.
-2. **`related-risks[].risk-uuid` is rejected by 1.2.0 and accepted by 1.2.1**, from
-   an unchanged document. Worth flagging to NIST separately if it is not
+2. **`related-risks[].risk-uuid` is rejected by 1.2.0 alone** — accepted by 1.2.1 and
+   1.2.2, from an unchanged document. Worth flagging to NIST separately if it is not
    deliberate; it is noted here because it is visible from this same reproducer.
 
-> SPARC bundles schemas up to **1.2.1** (`OscalSchema::SUPPORTED_VERSIONS`). If NIST
-> has published a later release, it is not covered by this matrix and should be
-> added before filing.
+> **SPARC bundles schemas up to 1.2.1** (`OscalSchema::SUPPORTED_VERSIONS`), but NIST
+> has published **1.2.2**. It was fetched and validated for this report and behaves
+> identically to 1.2.1, so it changes no conclusion here — but SPARC not carrying it
+> is a separate gap worth closing on its own terms, not because of this bug.
 
 ## The three defects (1.1.x line)
 
