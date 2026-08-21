@@ -192,8 +192,22 @@ RSpec.describe OscalSchema, type: :model do
   end
 
   describe "constants" do
-    it "has 5 supported versions" do
-      expect(OscalSchema::SUPPORTED_VERSIONS).to eq(%w[1.1.1 1.1.2 1.1.3 1.2.0 1.2.1])
+    it "has 6 supported versions" do
+      expect(OscalSchema::SUPPORTED_VERSIONS).to eq(%w[1.1.1 1.1.2 1.1.3 1.2.0 1.2.1 1.2.2])
+    end
+
+    # #1020 — the two lists drifted apart once before. `mapping` exists only
+    # from 1.2.0, so every 1.2.x release must be in MAPPING_VERSIONS or its
+    # mapping schema is silently skipped by the seed task.
+    it "lists every 1.2.x release as a mapping version" do
+      one_two_line = OscalSchema::SUPPORTED_VERSIONS.grep(/\A1\.2\./)
+
+      expect(OscalSchema::MAPPING_VERSIONS).to match_array(one_two_line)
+    end
+
+    it "emits 1.1.2 by default, whatever it can validate against" do
+      expect(OscalSchema::DEFAULT_VERSION).to eq("1.1.2")
+      expect(OscalSchema::SUPPORTED_VERSIONS).to include(OscalSchema::DEFAULT_VERSION)
     end
 
     it "has 8 document types" do

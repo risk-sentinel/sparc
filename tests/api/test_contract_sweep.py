@@ -34,13 +34,19 @@ BODYLESS_WRITES = {
     "POST /api/v1/sessions/from_token",
 }
 
-ALL = [pytest.param(e, id=_id(e)) for e in ENDPOINTS]
-WRITES = [pytest.param(e, id=_id(e)) for e in ENDPOINTS if e.is_write]
-BODY_WRITES = [
-    pytest.param(e, id=_id(e))
-    for e in ENDPOINTS
-    if e.is_write and _id(e) not in BODYLESS_WRITES
+# Raw subject sets, then the parametrized wrappers derived from them. The raw
+# lists are what the census and the probing tests iterate; keeping both from one
+# definition is what stops the two disagreeing about what is covered.
+WRITE_ENDPOINTS = [e for e in ENDPOINTS if e.is_write]
+BODY_WRITE_ENDPOINTS = [e for e in WRITE_ENDPOINTS if _id(e) not in BODYLESS_WRITES]
+ID_BEARING_ENDPOINTS = [e for e in ENDPOINTS if ":" in e.template]
+COLLECTION_READ_ENDPOINTS = [
+    e for e in ENDPOINTS if e.method == "GET" and ":" not in e.template
 ]
+
+ALL = [pytest.param(e, id=_id(e)) for e in ENDPOINTS]
+WRITES = [pytest.param(e, id=_id(e)) for e in WRITE_ENDPOINTS]
+BODY_WRITES = [pytest.param(e, id=_id(e)) for e in BODY_WRITE_ENDPOINTS]
 
 
 def test_the_bodyless_exclusions_are_all_real_endpoints() -> None:
@@ -134,11 +140,7 @@ def test_no_write_endpoint_answers_success_to_a_body_it_cannot_act_on(
 
 # Collection reads: a GET whose path carries no parameters is an index, and
 # every index in this API publishes the same paginated envelope.
-COLLECTION_READS = [
-    pytest.param(e, id=_id(e))
-    for e in ENDPOINTS
-    if e.method == "GET" and ":" not in e.template
-]
+COLLECTION_READS = [pytest.param(e, id=_id(e)) for e in COLLECTION_READ_ENDPOINTS]
 
 
 # Endpoints whose list envelope deliberately differs, with the page that says
@@ -155,64 +157,161 @@ DOCUMENTED_ENVELOPE_DIVERGENCES = {
 
 
 @pytest.mark.happy
-@pytest.mark.parametrize("endpoint", COLLECTION_READS)
-def test_every_collection_read_returns_the_documented_envelope(
-    admin_client: httpx.Client, endpoint: Endpoint
+def test_every_list_endpoint_returns_the_documented_envelope(
+    admin_client: httpx.Client
 ) -> None:
-    """Matrix read-check 1, applied to every index on the surface.
+    """Matrix read-check 1, over every collection read that actually lists.
 
-    `docs/api/errors.md` and every endpoint page publish `{data: [...], meta:
-    {page, pages, count, items}}` for a list. An index that returns a bare
-    array, or omits `meta`, breaks every paginating client — and no single
-    resource module would notice, because each one only ever looks at its own.
+    Written as ONE test that probes and reports, rather than as a parametrized
+    case per endpoint that skips when the endpoint turns out not to be a
+    listing. A per-case skip is indistinguishable from a per-case pass in the
+    summary line, and "70 skipped" answers nothing about what was checked — the
+    skip happened because the check was written to skip, which is circular.
+
+    Here the subjects are DISCOVERED and counted. Every endpoint that returns a
+    list is asserted, every endpoint that does not is named as excluded, and the
+    census below pins the numbers so silent erosion fails.
     """
-    response = admin_client.get(endpoint.path)
+    listed, not_listings, offenders = [], [], []
 
-    # A few collection paths are actions rather than listings (export, discovery
-    # summaries). They are still reads and must still answer, but they do not
-    # promise a paginated envelope.
-    if response.status_code != 200:
-        pytest.skip(f"{endpoint} answered {response.status_code}, not a listing to shape-check")
+    for endpoint in COLLECTION_READ_ENDPOINTS:
+        if _id(endpoint) in DOCUMENTED_ENVELOPE_DIVERGENCES:
+            not_listings.append((_id(endpoint), "documented divergence"))
+            continue
 
-    body = response.json()
-    if not isinstance(body, dict) or "data" not in body or not isinstance(body["data"], list):
-        pytest.skip(f"{endpoint} is not a list endpoint")
+        response = admin_client.get(endpoint.path)
+        if response.status_code != 200:
+            not_listings.append((_id(endpoint), f"answered {response.status_code}"))
+            continue
 
-    if _id(endpoint) in DOCUMENTED_ENVELOPE_DIVERGENCES:
-        pytest.skip(
-            f"{endpoint} publishes a different envelope on purpose: "
-            f"{DOCUMENTED_ENVELOPE_DIVERGENCES[_id(endpoint)]}"
-        )
+        body = response.json()
+        if not isinstance(body, dict) or not isinstance(body.get("data"), list):
+            not_listings.append((_id(endpoint), "does not return a list"))
+            continue
 
-    assert "meta" in body, f"{endpoint} returned a list with no `meta`: {response.text[:200]}"
-    missing = {"page", "pages", "count", "items"} - set(body["meta"])
-    assert not missing, (
-        f"{endpoint} `meta` is missing {sorted(missing)}: {body['meta']}"
+        listed.append(_id(endpoint))
+        meta = body.get("meta")
+        if not isinstance(meta, dict):
+            offenders.append(f"{_id(endpoint)}: no `meta`")
+            continue
+        missing = {"page", "pages", "count", "items"} - set(meta)
+        if missing:
+            offenders.append(f"{_id(endpoint)}: `meta` missing {sorted(missing)} — got {meta}")
+
+    assert not offenders, "list endpoints not publishing the standard envelope:\n" + "\n".join(
+        f"  {o}" for o in offenders
+    )
+
+    # A check that asserts nothing passes silently, so the subject count is
+    # itself asserted. If a refactor stops these from listing, this fails.
+    assert len(listed) >= 20, (
+        f"only {len(listed)} endpoints returned a list, which is too few for this "
+        f"check to mean anything. Excluded: {not_listings}"
     )
 
 
 @pytest.mark.validation
 @pytest.mark.parametrize("endpoint", ALL)
-def test_every_not_found_uses_the_documented_error_envelope(
+def test_every_refusal_is_a_json_error_envelope(
     admin_client: httpx.Client, endpoint: Endpoint
 ) -> None:
-    """When an endpoint 404s, it must say so in JSON with an `error` key.
+    """Whatever an endpoint refuses with, it refuses in JSON naming the reason.
+
+    This replaced a 404-only version that skipped whenever the answer was not a
+    404 — 64 of 310 cases, which made the check's own coverage unreadable. Any
+    non-2xx qualifies now, so nothing skips and 400/404/422/502 are all covered
+    rather than just one of them.
 
     This is the shape ActionController::ParameterMissing used to break: a JSON
-    API rendering Rails' HTML error page. Asserted only when the answer IS a
-    404, so an endpoint that legitimately answers otherwise is not forced into
-    one.
+    API rendering Rails' HTML error page.
     """
     response = admin_client.request(endpoint.method, endpoint.path)
-    if response.status_code != 404:
-        pytest.skip(f"{endpoint} answered {response.status_code}")
+    if 200 <= response.status_code < 300:
+        return  # success is checked elsewhere; this is about refusals
 
-    assert response.headers.get("content-type", "").startswith("application/json"), (
-        f"{endpoint} 404'd with content-type "
-        f"{response.headers.get('content-type')!r}: {response.text[:160]}"
+    content_type = response.headers.get("content-type", "")
+    assert content_type.startswith("application/json"), (
+        f"{endpoint} refused with {response.status_code} and content-type "
+        f"{content_type!r}: {response.text[:160]}"
     )
 
     body = response.json()
     assert isinstance(body, dict) and body.get("error"), (
-        f"{endpoint} 404'd without an `error` key: {response.text[:200]}"
+        f"{endpoint} refused with {response.status_code} and no `error` key: "
+        f"{response.text[:200]}"
+    )
+
+
+# Endpoints whose path carries a parameter, so an unresolvable value names a
+# record that cannot exist.
+ID_BEARING = [pytest.param(e, id=_id(e)) for e in ID_BEARING_ENDPOINTS]
+
+
+@pytest.mark.validation
+@pytest.mark.parametrize("endpoint", ID_BEARING)
+def test_no_id_bearing_endpoint_succeeds_for_a_record_that_cannot_exist(
+    admin_client: httpx.Client, endpoint: Endpoint
+) -> None:
+    """A 2xx for an unresolvable id means the endpoint found something absent.
+
+    This exists because the 404-envelope check above SKIPS whenever the answer
+    is not a 404 — which is correct for a collection with no id to miss, but
+    would also skip silently past an endpoint that answered 200 for a record
+    that does not exist. A conditional skip that can hide the very thing it
+    should catch is the #984 shape, so the condition is asserted here instead
+    of being left to whoever reads the skip list.
+
+    404, 401, 403, 400 and 422 are all fine. Only success is not.
+    """
+    response = admin_client.request(endpoint.method, endpoint.path)
+
+    assert not (200 <= response.status_code < 300), (
+        f"{endpoint} answered {response.status_code} for an id that cannot resolve "
+        f"({endpoint.path}): {response.text[:200]}"
+    )
+
+
+def test_the_sweep_census(admin_client: httpx.Client) -> None:
+    """What this file actually asserts, pinned as numbers.
+
+    A sweep's credibility is its subject count, and a subject count that lives
+    only in a summary line can shrink without anyone noticing — a check that
+    silently starts covering nothing still reports green. So the counts are
+    asserted here, and a change to the surface has to come through this test.
+
+    Reported by `-s` so the numbers are legible in a run, not just enforced.
+    """
+    total = len(ENDPOINTS)
+    writes = sum(1 for e in ENDPOINTS if e.is_write)
+    reads = total - writes
+    body_writes = len(BODY_WRITE_ENDPOINTS)
+    id_bearing = len(ID_BEARING_ENDPOINTS)
+    collection_reads = len(COLLECTION_READ_ENDPOINTS)
+
+    census = {
+        "endpoints on the surface": total,
+        "  writes": writes,
+        "  reads": reads,
+        "refuses anonymous": total,
+        "refuses a bad token": total,
+        "no 5xx": total,
+        "refuses an unparseable body": body_writes,
+        "no 2xx for an unresolvable id": id_bearing,
+        "refusals are JSON envelopes": total,
+        "collection reads probed for the list envelope": collection_reads,
+    }
+    print("\n  sweep census")
+    for label, count in census.items():
+        print(f"    {label:48} {count:4}")
+    print(f"    {'TOTAL per-endpoint assertions':48} "
+          f"{total * 4 + body_writes + id_bearing:4}")
+
+    # The surface only grows in practice; a drop means the snapshot lost
+    # entries, which is the drift guard's business but worth failing here too.
+    assert total >= 310, f"the surface shrank to {total} entries"
+    assert writes >= 200, f"only {writes} write endpoints — did the snapshot lose entries?"
+    assert id_bearing >= 240, f"only {id_bearing} id-bearing endpoints"
+    assert collection_reads >= 25, f"only {collection_reads} collection reads"
+    assert body_writes == writes - len(BODYLESS_WRITES), (
+        "the bodyless-write exclusion list and the write count disagree"
     )

@@ -10,7 +10,16 @@
 #
 # NIST SA-10: Developer Configuration Management
 class OscalSchema < ApplicationRecord
-  SUPPORTED_VERSIONS = %w[1.1.1 1.1.2 1.1.3 1.2.0 1.2.1].freeze
+  # #1020 — 1.2.2 added 2026-08-21. A version SPARC does not carry is a version
+  # it cannot validate against, and 1.2.x tightens real constraints: it applies
+  # the non-empty-string datatype to `metadata.title` and other title fields
+  # that 1.1.x left unconstrained. An exporter that satisfies 1.1.2 does not
+  # automatically satisfy 1.2.x, and finding that out from an assessor would be
+  # finding out too late.
+  SUPPORTED_VERSIONS = %w[1.1.1 1.1.2 1.1.3 1.2.0 1.2.1 1.2.2].freeze
+
+  # What SPARC EMITS. Adding a version to validate against is a different
+  # decision from changing the version we write, so this is unchanged.
   DEFAULT_VERSION    = "1.1.2"
 
   # OSCAL document-type strings reused as map keys + root_keys below.
@@ -19,7 +28,7 @@ class OscalSchema < ApplicationRecord
   ASSESSMENT_RESULTS   = "assessment-results".freeze
 
   # Versions where mapping schemas exist (introduced in 1.2.0)
-  MAPPING_VERSIONS = %w[1.2.0 1.2.1].freeze
+  MAPPING_VERSIONS = %w[1.2.0 1.2.1 1.2.2].freeze
 
   # Maps OSCAL document types to their NIST schema filename component and
   # root key. Filenames match exactly what NIST publishes as GitHub
