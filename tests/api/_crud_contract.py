@@ -44,6 +44,14 @@ class CrudContract:
     # later page. The index check compares what came back against meta.count and
     # says so when they differ, rather than asserting against whatever fitted.
     INDEX_PAGE_SIZE: int = 200
+    # When the resource has a search parameter, the index check SEARCHES for the
+    # record instead of paging to it. Paging cannot work on a collection larger
+    # than MAX_PAGINATION_LIMIT (200) — organizations passed that, and the check
+    # started reporting a record it had just created as missing. The same lesson
+    # the service-accounts test learned: search, do not page.
+    INDEX_SEARCH_PARAM: str | None = None
+    # Which field of the created record to search for.
+    INDEX_SEARCH_FIELD: str = "name"
     # Deletion is not one behaviour across this API, and the differences are
     # deliberate. Declare which one applies, with the reason — the contract then
     # asserts THAT, so a resource's actual promise is pinned rather than a
@@ -177,16 +185,25 @@ class CrudContract:
         record = self._create(admin_client, self._payload(admin_client))
 
         try:
-            listing = admin_client.get(base, params={"items": self.INDEX_PAGE_SIZE})
+            params: dict[str, Any] = {"items": self.INDEX_PAGE_SIZE}
+            if self.INDEX_SEARCH_PARAM:
+                params[self.INDEX_SEARCH_PARAM] = record[self.INDEX_SEARCH_FIELD]
+
+            listing = admin_client.get(base, params=params)
             assert listing.status_code == 200, listing.text
 
             body = listing.json()
             ids = [row.get("id") for row in body["data"]]
             total = body.get("meta", {}).get("count", len(ids))
+            hint = (
+                f"searched {self.INDEX_SEARCH_PARAM}="
+                f"{record.get(self.INDEX_SEARCH_FIELD)!r}"
+                if self.INDEX_SEARCH_PARAM
+                else f"{len(ids)} of {total} rows returned — if those differ it may be "
+                     f"on a later page; set INDEX_SEARCH_PARAM so this searches instead"
+            )
             assert record["id"] in ids, (
-                f"{record['id']} was created but does not appear in {base}. "
-                f"{len(ids)} of {total} rows returned — if those differ it may be on "
-                f"a later page rather than missing; raise INDEX_PAGE_SIZE."
+                f"{record['id']} was created but does not appear in {base}. {hint}"
             )
         finally:
             self._destroy(admin_client, record)

@@ -51,6 +51,9 @@ class TestCrudContract(CrudContract):
     PATH = PATH
     PARAM_KEY = "organization"
     IDENTIFIER = "id"
+    # The collection has passed MAX_PAGINATION_LIMIT, so paging can no longer
+    # reach a new record. Organizations support ?q=.
+    INDEX_SEARCH_PARAM = "q"
     NO_DESTROY_ROUTE_BECAUSE = (
         "organizations are never hard-deleted (#1012): deactivate/reactivate "
         "preserve the UUID so a boundary that referenced one still resolves"

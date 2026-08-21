@@ -56,20 +56,14 @@ def boundary(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
 class TestCrudContract(CrudContract):
     PARAM_KEY = "ksi_validation"
     IDENTIFIER = "id"
-    # The controller's own header: "DELETE is admin-only. All other operations
-    # available to authenticated users." Pinned so a later tightening is a
-    # failing test rather than a silent change.
+    # #1024 — this used to declare NON_ADMIN_MAY_WRITE_BECAUSE, pinning the
+    # behaviour where any authenticated user could record an assessment result
+    # on any boundary. That is now gated on evidence.write scoped to the
+    # boundary, so the declaration is REMOVED rather than reworded: leaving it
+    # would assert the opposite of the rule the endpoint now enforces.
     #
-    # Note for whoever reads this next: unlike every other boundary-nested
-    # write in this API — leveraged authorizations require membership, POA&M
-    # sub-objects require poam.write on the boundary — create and update here
-    # require nothing beyond a valid token, on ANY boundary. `set_boundary`
-    # looks the boundary up without checking the caller against it. Raised with
-    # the owner; documented as intended, so asserted as intended.
-    NON_ADMIN_MAY_WRITE_BECAUSE = (
-        "the controller documents every operation except DELETE as available "
-        "to any authenticated user"
-    )
+    # The contract's default closed posture is correct here, and the suite's
+    # non-admin token holds no grant on this boundary.
 
     def _boundary(self, admin_client):
         # Its OWN boundary, not a shared one: catalog_control_id is unique per

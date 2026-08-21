@@ -78,6 +78,10 @@ def service_account(admin_client: httpx.Client, owner_id: int) -> Iterator[dict[
 class TestCrudContract(CrudContract):
     PARAM_KEY = "service_account"
     IDENTIFIER = "id"
+    # Service accounts deactivate rather than delete, so this collection only
+    # grows. Search rather than page.
+    INDEX_SEARCH_PARAM = "q"
+    INDEX_SEARCH_FIELD = "email"
     DESTROY_IS_SOFT_BECAUSE = (
         "service accounts deactivate rather than delete, so the account stays "
         "attached to the audit events it is the actor on (#1013)"
