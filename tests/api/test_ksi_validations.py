@@ -18,6 +18,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.ksi, pytest.mark.phase1]
@@ -49,6 +50,65 @@ def boundary(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield body
     finally:
         admin_client.delete(f"{BOUNDARIES_PATH}/{body['id']}")
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PARAM_KEY = "ksi_validation"
+    IDENTIFIER = "id"
+    # The controller's own header: "DELETE is admin-only. All other operations
+    # available to authenticated users." Pinned so a later tightening is a
+    # failing test rather than a silent change.
+    #
+    # Note for whoever reads this next: unlike every other boundary-nested
+    # write in this API — leveraged authorizations require membership, POA&M
+    # sub-objects require poam.write on the boundary — create and update here
+    # require nothing beyond a valid token, on ANY boundary. `set_boundary`
+    # looks the boundary up without checking the caller against it. Raised with
+    # the owner; documented as intended, so asserted as intended.
+    NON_ADMIN_MAY_WRITE_BECAUSE = (
+        "the controller documents every operation except DELETE as available "
+        "to any authenticated user"
+    )
+
+    def _boundary(self, admin_client):
+        # Its OWN boundary, not a shared one: catalog_control_id is unique per
+        # boundary, so reusing one would make the second create a duplicate.
+        if getattr(self, "_cached_boundary", None):
+            return self._cached_boundary
+        created = admin_client.post(BOUNDARIES_PATH, json=_new_boundary_payload())
+        assert created.status_code in (200, 201), created.text
+        self._cached_boundary = created.json()["data"]
+        return self._cached_boundary
+
+    def _base_path(self, admin_client):
+        return _boundary_path(self._boundary(admin_client)["id"])
+
+    def _payload(self, admin_client):
+        # A KSI validation is per (boundary, indicator), so each create needs a
+        # DIFFERENT indicator — the model enforces that uniqueness.
+        indicators = admin_client.get("/api/v1/ksi_catalog/indicators", params={"items": 100})
+        rows = indicators.json()["data"]
+        assert rows, "no KSI indicators seeded on this instance"
+
+        used = getattr(self, "_used_controls", set())
+        existing = admin_client.get(self._base_path(admin_client), params={"items": 200})
+        for row in existing.json().get("data", []):
+            used.add(row.get("catalog_control_id"))
+
+        catalog = admin_client.get("/api/v1/control_catalogs", params={"items": 100})
+        ksi = next(c for c in catalog.json()["data"] if c["source"] == "FedRAMP 20x")
+        controls = admin_client.get(f"/api/v1/control_catalogs/{ksi['id']}/controls",
+                                    params={"items": 100})
+        free = [c["id"] for c in controls.json()["data"] if c["id"] not in used]
+        assert free, "every KSI indicator on this boundary already has a validation"
+
+        used.add(free[0])
+        self._used_controls = used
+        return {"catalog_control_id": free[0], "status": "not_assessed"}
+
+    def _update_fields(self):
+        return {"status": "passed"}
 
 
 class TestIndex:

@@ -6721,7 +6721,7 @@
       "name": "HDF ↔ OSCAL Translations",
       "item": [
         {
-          "name": "SAR from HDF",
+          "name": "SAR from HDF (raw body)",
           "request": {
             "method": "POST",
             "header": [
@@ -6767,7 +6767,50 @@
           }
         },
         {
-          "name": "POA&M from HDF",
+          "name": "SAR from HDF (multipart file upload)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/oscal/sar_from_hdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "oscal",
+                "sar_from_hdf"
+              ],
+              "query": [
+                {
+                  "key": "authorization_boundary_id",
+                  "value": "{{boundary_id}}",
+                  "description": "Optional: merge boundary Evidence into OSCAL back-matter (needs evidence.read)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "An HDF results file. The same endpoint as the raw-body request above — send the document as a multipart `file` field instead of as the request body.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POA&M from HDF (raw body)",
           "request": {
             "method": "POST",
             "header": [
@@ -6813,7 +6856,50 @@
           }
         },
         {
-          "name": "POA&M from Amendments",
+          "name": "POA&M from HDF (multipart file upload)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/oscal/poam_from_hdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "oscal",
+                "poam_from_hdf"
+              ],
+              "query": [
+                {
+                  "key": "authorization_boundary_id",
+                  "value": "{{boundary_id}}",
+                  "description": "Optional: merge boundary Evidence into OSCAL back-matter (needs evidence.read)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "An HDF results file. The same endpoint as the raw-body request above — send the document as a multipart `file` field instead of as the request body.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POA&M from Amendments (raw body)",
           "request": {
             "method": "POST",
             "header": [
@@ -6859,7 +6945,50 @@
           }
         },
         {
-          "name": "Amendments from OSCAL POA&M",
+          "name": "POA&M from Amendments (multipart file upload)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/oscal/poam_from_amendments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "oscal",
+                "poam_from_amendments"
+              ],
+              "query": [
+                {
+                  "key": "authorization_boundary_id",
+                  "value": "{{boundary_id}}",
+                  "description": "Optional: merge boundary Evidence into OSCAL back-matter (needs evidence.read)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "An HDF Amendments document. The same endpoint as the raw-body request above — send the document as a multipart `file` field instead of as the request body.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Amendments from OSCAL POA&M (raw body)",
           "request": {
             "method": "POST",
             "header": [
@@ -6893,6 +7022,41 @@
                   "language": "json"
                 }
               }
+            }
+          }
+        },
+        {
+          "name": "Amendments from OSCAL POA&M (multipart file upload)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/hdf/amendments_from_oscal_poam",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hdf",
+                "amendments_from_oscal_poam"
+              ]
+            },
+            "description": "An OSCAL POA&M document. The same endpoint as the raw-body request above — send the document as a multipart `file` field instead of as the request body.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
             }
           }
         },
@@ -12227,7 +12391,7 @@
           ]
         },
         {
-          "name": "POST create",
+          "name": "POST create (multipart)",
           "request": {
             "method": "POST",
             "header": [
@@ -12264,6 +12428,45 @@
                   "value": ""
                 }
               ]
+            }
+          }
+        },
+        {
+          "name": "POST create (raw body)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{authorization_boundary_id}}/scan_runs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{authorization_boundary_id}}",
+                "scan_runs"
+              ]
+            },
+            "description": "A scanner output file. The same endpoint as the multipart request above — send the document as the raw request body instead of as a `file` field.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           }
         },

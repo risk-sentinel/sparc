@@ -16,6 +16,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 
 pytestmark = [pytest.mark.catalogs, pytest.mark.phase2]
@@ -80,6 +81,54 @@ def _create(
     response = client.post(_family_controls_path(catalog, family), json={"catalog_control": body})
     assert response.status_code in (200, 201), response.text
     return response.json().get("data") or response.json()
+
+
+# #995 — the shared matrix for this group.
+#
+# Split routing, like poam_risks: a control is CREATED family-scoped (a new
+# control has to be put somewhere) and then addressed catalog-scoped by its
+# canonical identifier, because (catalog, identifier) is unique across families
+# (#895).
+class TestCrudContract(CrudContract):
+    PARAM_KEY = "catalog_control"
+    IDENTIFIER = "identifier"
+
+    def _catalog_and_family(self, admin_client):
+        if getattr(self, "_cached", None):
+            return self._cached
+        catalogs = admin_client.get(CATALOGS, params={"items": 1})
+        catalog = catalogs.json()["data"][0]
+
+        # Reuse a family the catalog already has rather than creating one. The
+        # first version created a family per test class and never removed it,
+        # which both leaked rows and ate into the per-catalog unique code space
+        # that test_control_families depends on.
+        families = admin_client.get(
+            f"{CATALOGS}/{catalog['id']}/control_families", params={"items": 1}
+        )
+        rows = families.json()["data"]
+        assert rows, f"catalog {catalog['id']} has no control families to file a control under"
+
+        self._cached = (catalog, rows[0])
+        return self._cached
+
+    def _base_path(self, admin_client):
+        catalog, family = self._catalog_and_family(admin_client)
+        return _family_controls_path(catalog, family)
+
+    def _url(self, client, record):
+        # Addressed catalog-scoped, not family-scoped.
+        catalog, _family = self._catalog_and_family(client)
+        return _controls_path(catalog, record["identifier"])
+
+    def _payload(self, admin_client):
+        _catalog, family = self._catalog_and_family(admin_client)
+        prefix = family["code"].lower()
+        return {"control_id": f"{prefix}-{uuidlib.uuid4().int % 9000 + 1000}",
+                "title": "Contract Control"}
+
+    def _update_fields(self):
+        return {"title": f"Renamed {uuidlib.uuid4().hex[:6]}"}
 
 
 class TestIndex:

@@ -92,6 +92,89 @@ ID_VARIABLES = {
   "authorization_boundaries" => "boundary_id"
 }.freeze
 
+# Endpoints that accept a payload BOTH ways — a multipart `file` upload and a
+# raw request body — so the collection shows both rather than implying the one
+# a generator happened to pick first. Verified in the controllers: the
+# translation endpoints branch on `params[:file].respond_to?(:tempfile)` and
+# fall back to `request.raw_post`; `scan_runs#create` does the same via
+# `read_upload`.
+#
+# Endpoints that take a file ONLY (document `convert`, the ODP import pair) are
+# deliberately absent: offering a raw-body variant there would document
+# something that does not work.
+DUAL_MODE_ENDPOINTS = {
+  "POST /api/v1/oscal/sar_from_hdf" =>
+    { file: "scan.hdf.json", note: "An HDF results file." },
+  "POST /api/v1/oscal/poam_from_hdf" =>
+    { file: "scan.hdf.json", note: "An HDF results file." },
+  "POST /api/v1/oscal/poam_from_amendments" =>
+    { file: "sample.hdf-amendments.json", note: "An HDF Amendments document." },
+  "POST /api/v1/hdf/amendments_from_oscal_poam" =>
+    { file: "poam.oscal.json", note: "An OSCAL POA&M document." },
+  "POST /api/v1/authorization_boundaries/:id/scan_runs" =>
+    { file: "scan.hdf.json", note: "A scanner output file." }
+}.freeze
+
+# Adds the missing half of a dual-mode endpoint, so the collection carries a
+# JSON-body request and a multipart request side by side.
+#
+# The twin is inserted into the SAME folder object as its source. A first
+# version placed it by searching folders for a matching request name, and
+# "POST create" is not unique — a scan-run twin landed in Api Tokens.
+def add_dual_mode_variants(collection)
+  added = 0
+
+  walk = lambda do |items|
+    items.each do |entry|
+      if entry["item"]
+        walk.call(entry["item"])
+        next
+      end
+      request = entry["request"]
+      next unless request && request["method"] == "POST"
+
+      segments = request.dig("url", "path") || []
+      key = "POST " + normalize("/" + segments.map { |s| s.gsub(/\{\{[^}]+\}\}/, ":id") }.join("/"))
+      spec = DUAL_MODE_ENDPOINTS[key]
+      next unless spec
+      next if entry["name"].to_s.match?(/\((?:raw body|multipart)/)
+
+      mode = request.dig("body", "mode")
+      next unless %w[raw formdata].include?(mode)
+
+      entry["name"] = "#{entry['name']} (#{mode == 'raw' ? 'raw body' : 'multipart'})"
+
+      twin = Marshal.load(Marshal.dump(entry))
+      if mode == "raw"
+        twin["name"] = twin["name"].sub("(raw body)", "(multipart file upload)")
+        twin["request"]["header"] =
+          (twin["request"]["header"] || []).reject { |h| h["key"] == "Content-Type" }
+        twin["request"]["body"] = { "mode" => "formdata", "formdata" => [
+          { "key" => "file", "type" => "file", "src" => [] }
+        ] }
+        twin["request"]["description"] =
+          "#{spec[:note]} The same endpoint as the raw-body request above — send the " \
+          "document as a multipart `file` field instead of as the request body."
+      else
+        twin["name"] = twin["name"].sub("(multipart)", "(raw body)")
+        twin["request"]["header"] =
+          (twin["request"]["header"] || []) + [ { "key" => "Content-Type", "value" => "application/json" } ]
+        twin["request"]["body"] = { "mode" => "raw", "raw" => "{}",
+                                    "options" => { "raw" => { "language" => "json" } } }
+        twin["request"]["description"] =
+          "#{spec[:note]} The same endpoint as the multipart request above — send the " \
+          "document as the raw request body instead of as a `file` field."
+      end
+
+      items.insert(items.index(entry) + 1, twin)
+      added += 1
+    end
+  end
+
+  walk.call(collection["item"])
+  added
+end
+
 def load_routes
   raw = `#{File.join(REPO_ROOT, 'bin/api_inventory_check.rb')} --routes-json`
   abort "could not read the route surface — is a DB-connected env available?" if raw.strip.empty?
@@ -269,6 +352,9 @@ if ARGV.include?("--write")
     folder = folder_for(collection, CONTROLLER_TO_FOLDER[route[:controller]] || route[:controller].split("/").last.split("_").map(&:capitalize).join(" "))
     folder["item"] << build_request(route)
   end
+
+  dual = add_dual_mode_variants(collection)
+  warn "Added #{dual} multipart/raw-body twin(s)" if dual.positive?
 
   filled = backfill_bodies(collection, routes)
   warn "Filled #{filled} empty request body/bodies from controller permit lists" if filled.positive?

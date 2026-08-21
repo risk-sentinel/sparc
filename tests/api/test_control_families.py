@@ -74,7 +74,10 @@ class TestCrudContract(CrudContract):
         return f"/api/v1/control_catalogs/{rows[0]['id']}/control_families"
 
     def _payload(self, admin_client):
-        return {"code": f"Z{uuidlib.uuid4().hex[:2].upper()}", "name": "Contract Family"}
+        # A 2-hex suffix is 256 codes wide, and codes are unique per catalog:
+        # it collided once enough contract runs had accumulated, so the module
+        # passed alone and failed in a full run.
+        return {"code": f"Z{uuidlib.uuid4().hex[:5].upper()}", "name": "Contract Family"}
 
     def _update_fields(self):
         return {"name": f"Renamed {uuidlib.uuid4().hex[:6]}"}
