@@ -90,8 +90,11 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
   private
 
   def create_params
-    params.require(:back_matter_resource)
-          .permit(:title, :description, :href, :rel, :media_type)
+    # #1021 — was `params.require(...)` and `.permit(...)` on separate lines, so
+    # the #995 conversion's single-line pattern did not match it and this
+    # endpoint kept dropping unrecognized fields in silence.
+    permit_strictly(:back_matter_resource,
+      :title, :description, :href, :rel, :media_type)
   end
 
   def authorize_federate!

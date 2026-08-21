@@ -18,6 +18,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.admin, pytest.mark.phase2]
@@ -47,6 +48,19 @@ def role(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield record
     finally:
         admin_client.delete(f"{PATH}/{record['id']}")
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = "role"
+    IDENTIFIER = "id"
+
+    def _payload(self, admin_client):
+        return _payload()["role"]
+
+    def _update_fields(self):
+        return {"display_name": f"Renamed {uuid.uuid4().hex[:6]}"}
 
 
 class TestCreate:

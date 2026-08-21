@@ -18,6 +18,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope
 from schemas import assert_update_round_trip
 
@@ -71,6 +72,25 @@ def created_user(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield user
     finally:
         _delete(admin_client, user["id"])
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = "user"
+    IDENTIFIER = "id"
+    DESTROY_IS_SOFT_BECAUSE = (
+        "users#destroy deactivates rather than deletes, so the account stays "
+        "attached to the audit events it is the actor on"
+    )
+
+    def _payload(self, admin_client):
+        suffix = uuid.uuid4().hex[:8]
+        return {"email": f"phase2-contract-{suffix}@example.com",
+                "first_name": "Contract", "last_name": "Suite"}
+
+    def _update_fields(self):
+        return {"first_name": f"Renamed{uuid.uuid4().hex[:6]}"}
 
 
 class TestIndex:

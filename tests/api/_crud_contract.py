@@ -40,9 +40,16 @@ class CrudContract:
     # Fields sent on create that the show response is not expected to mirror
     # (write-only credentials, parent ids echoed under a different name).
     IGNORE_ON_READ_BACK: set[str] = frozenset()
-    # Some resources soft-delete and remain readable by design; those override
-    # this so the contract asserts what the resource actually promises.
-    DELETE_REMOVES_FROM_SHOW: bool = True
+    # Deletion is not one behaviour across this API, and the differences are
+    # deliberate. Declare which one applies, with the reason — the contract then
+    # asserts THAT, so a resource's actual promise is pinned rather than a
+    # generic one nobody made.
+    #
+    #   neither set  -> DELETE removes the record: gone from show and from index
+    #   SOFT         -> DELETE deactivates: the record SURVIVES and stays readable
+    #   NONE         -> there is no destroy route at all; DELETE must not route
+    DESTROY_IS_SOFT_BECAUSE: str | None = None
+    NO_DESTROY_ROUTE_BECAUSE: str | None = None
     # A few resources are deliberately open to any authenticated caller — CDEF
     # is, per its controller's design comment and #575 Path D. Set the reason
     # string to declare it. The contract then asserts the OPPOSITE direction:
@@ -193,27 +200,49 @@ class CrudContract:
             self._destroy(admin_client, record)
 
     @pytest.mark.happy
-    def test_delete_removes_it_from_show_and_from_the_index(
+    def test_delete_behaves_as_this_resource_declares(
         self, admin_client: httpx.Client
     ) -> None:
-        """Matrix check 6. A soft-delete that still lists is not deleted."""
+        """Matrix check 6, in whichever form the resource promises.
+
+        A hard delete that still lists is not deleted; a soft delete that
+        vanishes has lost the audit trail it exists to keep. Both are failures,
+        of opposite kinds, so the contract has to be told which one is intended.
+        """
         record = self._create(admin_client, self._payload(admin_client))
+        response = admin_client.delete(self._url(record))
 
-        deleted = admin_client.delete(self._url(record))
-        assert deleted.status_code in (200, 204), deleted.text
-
-        if self.DELETE_REMOVES_FROM_SHOW:
-            shown = admin_client.get(self._url(record))
-            assert shown.status_code == 404, (
-                f"deleted, but {self._url(record)} still answers {shown.status_code}"
+        if self.NO_DESTROY_ROUTE_BECAUSE:
+            assert response.status_code in (404, 405), (
+                f"{self.PATH} declares no destroy route "
+                f"({self.NO_DESTROY_ROUTE_BECAUSE}), but DELETE answered "
+                f"{response.status_code}"
             )
+            still_there = admin_client.get(self._url(record))
+            assert still_there.status_code == 200, "the record vanished anyway"
+            return
 
+        assert response.status_code in (200, 204), response.text
+        shown = admin_client.get(self._url(record))
         listing = admin_client.get(self.PATH, params={"items": 100})
         assert listing.status_code == 200, listing.text
         ids = [row.get("id") for row in listing.json()["data"]]
+
+        if self.DESTROY_IS_SOFT_BECAUSE:
+            assert shown.status_code == 200, (
+                f"{self.PATH} declares a soft delete "
+                f"({self.DESTROY_IS_SOFT_BECAUSE}), but the record is gone from "
+                f"show ({shown.status_code}) — the audit trail it exists to keep "
+                f"went with it"
+            )
+            return
+
+        assert shown.status_code == 404, (
+            f"deleted, but {self._url(record)} still answers {shown.status_code}"
+        )
         assert record["id"] not in ids, (
             f"{record['id']} was deleted but still appears in {self.PATH} — "
-            "a soft-delete that still lists is not deleted"
+            "a delete that still lists is not a delete"
         )
 
     @pytest.mark.validation

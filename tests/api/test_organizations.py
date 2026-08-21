@@ -14,6 +14,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.admin, pytest.mark.phase2]
@@ -43,6 +44,23 @@ def organization(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
     finally:
         # No DELETE by design — deactivation is the terminal state.
         admin_client.post(f"{PATH}/{record['id']}/deactivate")
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = "organization"
+    IDENTIFIER = "id"
+    NO_DESTROY_ROUTE_BECAUSE = (
+        "organizations are never hard-deleted (#1012): deactivate/reactivate "
+        "preserve the UUID so a boundary that referenced one still resolves"
+    )
+
+    def _payload(self, admin_client):
+        return _payload()["organization"]
+
+    def _update_fields(self):
+        return {"description": f"updated {uuid.uuid4().hex[:8]}"}
 
 
 class TestCreate:
