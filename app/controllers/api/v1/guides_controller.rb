@@ -9,9 +9,8 @@
 class Api::V1::GuidesController < Api::V1::BaseController
   # GET /api/v1/guides — list all guides (slug, title, summary).
   def index
-    render json: {
-      data: UserGuideLibrary.all.map { |g| { slug: g.slug, title: g.title, summary: g.summary } }
-    }
+    rows = UserGuideLibrary.all.map { |g| { slug: g.slug, title: g.title, summary: g.summary } }
+    render json: { data: rows, meta: whole_collection(rows) }
   end
 
   # GET /api/v1/guides/:slug — a single guide with rendered HTML.

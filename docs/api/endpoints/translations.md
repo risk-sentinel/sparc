@@ -152,9 +152,34 @@ Converts an HDF results document into an OSCAL POA&M via `hdf convert --from hdf
 POST /api/v1/oscal/poam_from_amendments
 ```
 
+> ### ⚠️ Currently unavailable on the bundled converter
+>
+> **hdf-cli 3.5.1 emits an OSCAL POA&M that fails the NIST OSCAL 1.1.2 schema**, so
+> this endpoint returns **`502 Bad Gateway`** rather than an invalid document — for
+> *valid* HDF Amendments input, not only for malformed input.
+>
+> Three violations, reproducible from a four-line synthetic fixture:
+>
+> ```
+> /plan-of-action-and-milestones/risks/0: missing required properties: statement
+> /plan-of-action-and-milestones/risks/0/props/0/value: does not match pattern
+> /plan-of-action-and-milestones/metadata/parties/0/name: does not match pattern
+> ```
+>
+> **Do not build a pipeline on this endpoint until the upstream converter is fixed.**
+> `sar_from_hdf` is unaffected — that path was fixed in 3.5.1; this one was not.
+>
+> Full evidence, the reproducer and the raw converter output are in
+> [`docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md`](../../dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md),
+> written so an issue can be filed against mitre/hdf-libs. Until then SPARC will not
+> return the document: it validates every OSCAL document it emits (#831, #1017), and a
+> 200 carrying invalid OSCAL is worse than an error because it propagates — the
+> consumer stores it, signs it, or submits it, and the failure surfaces somewhere with
+> no connection to this call.
+
 Converts an **HDF Amendments** document into an OSCAL POA&M via `hdf convert --from hdf-amendments --to oscal-poam`. This is the hdf-cli 3.2.0-supported replacement for the removed direct `hdf → oscal-poam` path (#663). Accepts the same optional `authorization_boundary_id` enrichment parameter as `sar_from_hdf`.
 
-**Response** `200 OK`:
+**Response** `200 OK` — *when the converter emits schema-valid OSCAL; see the warning above*:
 
 ```json
 {
@@ -163,6 +188,19 @@ Converts an **HDF Amendments** document into an OSCAL POA&M via `hdf convert --f
     "metadata": { "oscal-version": "1.1.2" },
     "poam-items": [ … ]
   }
+}
+```
+
+**Response** `502 Bad Gateway` — what the bundled converter currently produces:
+
+```json
+{
+  "error": "The translated document does not conform to the OSCAL schema and was not returned",
+  "details": [
+    "OSCAL poam validation failed:",
+    "/plan-of-action-and-milestones/risks/0: missing required properties: statement"
+  ],
+  "note": "This is a defect in the bundled hdf-libs converter, not in the submitted file."
 }
 ```
 

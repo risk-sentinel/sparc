@@ -20,9 +20,8 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
   def themes
     families = @ksi_catalog.control_families.order(:sort_order)
 
-    render json: {
-      data: families.map { |f| serialize_theme(f) }
-    }
+    rows = families.map { |f| serialize_theme(f) }
+    render json: { data: rows, meta: whole_collection(rows) }
   end
 
   # GET /api/v1/ksi_catalog/indicators
@@ -64,7 +63,10 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
     mapping = ControlMapping.find_by(source_catalog: @ksi_catalog)
 
     unless mapping
-      render json: { data: [], meta: { message: "No KSI-to-NIST mapping found" } }
+      # #1019 — the empty case used to answer with a meta shaped nothing like
+      # the populated one, so a client reading meta.count worked against a
+      # seeded instance and broke against a fresh one.
+      render json: { data: [], meta: whole_collection([], message: "No KSI-to-NIST mapping found") }
       return
     end
 

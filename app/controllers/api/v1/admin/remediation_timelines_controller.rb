@@ -9,7 +9,8 @@ class Api::V1::Admin::RemediationTimelinesController < Api::V1::BaseController
 
   # GET /api/v1/admin/remediation_timelines — the full grid (provisioned + defaults).
   def index
-    render json: { data: grid }
+    rows = grid
+    render json: { data: rows, meta: whole_collection(rows) }
   end
 
   # PUT /api/v1/admin/remediation_timelines — upsert one cell.

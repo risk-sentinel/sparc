@@ -254,8 +254,8 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
     approvable = pending.select do |r|
       BackMatterResourcePromotionService.new(resource: r, actor: current_user).can_approve?
     end
-    render json: { data: approvable.map { |r| serialize_back_matter_resource(r, detailed: true) },
-                   meta: { count: approvable.size } }
+    rows = approvable.map { |r| serialize_back_matter_resource(r, detailed: true) }
+    render json: { data: rows, meta: whole_collection(rows) }
   end
 
   private

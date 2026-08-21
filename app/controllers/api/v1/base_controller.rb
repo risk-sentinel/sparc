@@ -133,6 +133,23 @@ class Api::V1::BaseController < ActionController::API
     }
   end
 
+  # #1019 — the envelope for a collection returned WHOLE.
+  #
+  # Some collections are not paginated, and should not be: a fixed set of user
+  # guides, the KSI themes, the remediation-timeline grid, a promotion queue
+  # filtered in memory by what the caller may approve. They were returning
+  # `{data: [...]}` with no `meta` at all, or with `meta` carrying only a count,
+  # so a client could not use one pagination helper across the API — and
+  # `ksi_catalog#mappings` returned a DIFFERENT meta shape when its collection
+  # was empty than when it was populated, which breaks a client precisely in the
+  # case least likely to be tested.
+  #
+  # `page: 1, pages: 1` is not a fiction here: the whole collection is in this
+  # response, so there is exactly one page of it.
+  def whole_collection(rows, **extra)
+    { page: 1, pages: 1, count: rows.size, items: rows.size }.merge(extra)
+  end
+
   def resolve_pagination_size(default:)
     raw = params[:items].presence || params[:per_page].presence
     return default if raw.blank?

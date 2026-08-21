@@ -87,6 +87,28 @@ The **HDF ↔ OSCAL bridge** adds three stateless endpoints — `oscal/sar_from_
 > covered*, and synthesising it would produce a document that passes the schema
 > and misstates the assessment.
 
+> ### ⚠️ `poam_from_amendments` is unavailable on the bundled converter (v1.16.0)
+>
+> The same validation now applies to **every** translation path, not just
+> `sar_from_hdf` — it had been guarding one of three. With it on,
+> **`oscal/poam_from_amendments` returns `502` for valid HDF Amendments input**,
+> because hdf-cli **3.5.1** emits a POA&M that fails the NIST **OSCAL 1.1.2**
+> schema on three counts:
+>
+> - `risks[]` is missing the required `statement`
+> - `risks[].props[].value` is `""`, which OSCAL's non-empty string datatype rejects
+> - `metadata.parties[].name` is `""`, the same violation
+>
+> **Do not build a pipeline on this endpoint until the converter is fixed
+> upstream.** `sar_from_hdf` is unaffected — 3.5.1 fixed that path and not this one.
+>
+> This is not a change in what the converter produces; it is a change in whether
+> SPARC hands it to you. Before v1.16.0 the endpoint returned `200` with the
+> invalid document.
+>
+> Evidence, reproducer and raw output for the upstream report:
+> [`docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md).
+
 ### Evidence (v1.12.2)
 
 Evidence is fully manageable over the API — create a record, upload the artifact
