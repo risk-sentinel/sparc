@@ -196,13 +196,19 @@ class TestCrudContract(CrudContract):
     PATH = PATH
     PARAM_KEY = PARAM_KEY
     IDENTIFIER = "slug"
-    # The controller's design comment: "All CRUD operations are available to any
-    # authenticated user." The AWS Labs bulk-ingest flow and the catalog refresh
-    # button both depend on it (#575 Path D). Asserted rather than exempted, so
-    # gating it later is a failing test.
-    NON_ADMIN_MAY_WRITE_BECAUSE = (
-        "CDEF is intentionally open to any authenticated user (#575 Path D)"
-    )
+    # #1032 — CDEF writes now require `cdef.write`, so the default posture
+    # applies and no NON_ADMIN_MAY_WRITE_BECAUSE declaration is made.
+    #
+    # This declaration used to assert the opposite, on the strength of the
+    # controller's design comment ("All CRUD operations are available to any
+    # authenticated user") and a claim that the AWS Labs bulk-ingest flow
+    # depended on it. That claim was wrong: AWS Labs ingest runs through
+    # `AwsLabsCdefRefreshJob` -> `AwsLabsCdefImportService`, which never touches
+    # a controller and so was never subject to this authorization either way.
+    #
+    # The old declaration did its job. Its comment said "asserted rather than
+    # exempted, so gating it later is a failing test", and gating it later was
+    # a failing test.
 
     def _payload(self, admin_client):
         return _new_payload()[PARAM_KEY]
@@ -471,17 +477,26 @@ class TestCreate:
         )
 
     @pytest.mark.authz
-    def test_non_admin_can_create(self, user_client: httpx.Client) -> None:
-        """CDEF is intentionally open to any authenticated user per the
-        controller's design comment ("All CRUD operations are available
-        to any authenticated user"). The AWS Labs bulk-ingest flow and
-        the catalog refresh button both rely on this. If this ever
-        needs RBAC gating, see #575 Path D for the pattern to follow.
+    def test_non_admin_without_cdef_write_cannot_create(
+        self, user_client: httpx.Client, admin_client: httpx.Client
+    ) -> None:
+        """#1032 — CDEF writes require `cdef.write`.
+
+        This asserted the opposite until the gate landed: the API ran no
+        permission check while the web controller gated the same operations, so
+        `cdef.write` was not a permission a caller could be denied through the
+        API, only one they could route around by using it.
+
+        The count is checked as well as the status. A 403 that still created the
+        document would be worse than either.
         """
+        before = admin_client.get(PATH, params={"items": 1}).json()["meta"]["count"]
+
         response = user_client.post(PATH, json=_new_payload())
-        assert response.status_code in (200, 201), response.text
-        # Clean up the document the non-admin just created.
-        delete_doc(user_client, PATH, response.json()["data"]["slug"])
+
+        assert response.status_code == 403, response.text
+        after = admin_client.get(PATH, params={"items": 1}).json()["meta"]["count"]
+        assert after == before, "a refused create still made a document"
 
     @pytest.mark.validation
     def test_missing_name_returns_422(self, admin_client: httpx.Client) -> None:

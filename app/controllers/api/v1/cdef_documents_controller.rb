@@ -1,7 +1,11 @@
 # REST API for Component Definition (CDEF) Document management.
 #
 # All endpoints require Bearer token authentication.
-# All CRUD operations are available to any authenticated user.
+#
+# #1032 — writes require `cdef.write`, matching the web controller. They were
+# open to any authenticated user until then, so the permission existed, the web
+# enforced it, and the API did not: `cdef.write` could be routed around by using
+# it. CDEF was the only API document controller with ungated writes.
 #
 # GET    /api/v1/cdef_documents          — list (filterable)
 # GET    /api/v1/cdef_documents/:id      — show
@@ -25,12 +29,19 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :source_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm, :update_scope, :export ]
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
-  # #1031 — file ingest is gated on `cdef.write`, matching the WEB create it
-  # mirrors (`cdef_documents_controller#authorize_cdef_write!`). Note this is
-  # STRICTER than API `create`, which carries no permission gate at all —
-  # raised separately; an ungated endpoint that accepts and parses a file is not
-  # the place to reproduce that.
-  before_action :authorize_cdef_ingest!, only: [ :import ]
+  # #1032 — every write gated on `cdef.write`, the same permission and the same
+  # action list as the web controller, and the same shape as every sibling API
+  # controller (SSP/SAR/SAP/POA&M `authorize_document_write!`, Profile
+  # `authorize_profiles_write!`, catalogs `authorize_catalogs_write!`).
+  #
+  # Not listed here, and deliberately: `bulk_destroy` is admin-only, the
+  # field-import pair is gated on `converters.write` (#499), and `approve` /
+  # `reject` carry their own authority check inside DocumentApprovalService —
+  # adding `cdef.write` to those would change who can approve, which is a
+  # different decision.
+  before_action :authorize_cdef_write!, only: [ :create, :update, :destroy, :import,
+                                                :source_from_profile, :submit_for_review,
+                                                :update_scope ]
   # #716 — field import is a bulk mutation; gate it like bulk-apply (converters.write).
   before_action :authorize_bulk_apply!, only: [ :import_fields_preview, :import_fields_confirm ]
 
@@ -124,14 +135,9 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   # over the API rather than the only place a CDEF's scope can be re-pointed.
   # Body: { "scope": "global" | "boundary", "authorization_boundary_id": N }
   def update_scope
-    # Matches the web twin's `cdef.write` gate. The sibling CRUD actions here
-    # are open to any authenticated user (see the class comment) — a
-    # pre-existing asymmetry this new endpoint does not extend.
-    unless current_user&.has_permission?("cdef.write")
-      return render json: { error: "Not authorized to change this component definition's scope" },
-                    status: :forbidden
-    end
-
+    # #1032 — the inline `cdef.write` check that used to live here is now the
+    # shared before_action above. It was correct, but it was one gate plus a
+    # special case, which is how the two drift.
     CdefScopeService.apply(@cdef,
       scope: params[:scope],
       authorization_boundary_id: params[:authorization_boundary_id],
@@ -316,8 +322,9 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     profile
   end
 
-  # #1031 — see the before_action above.
-  def authorize_cdef_ingest!
+  # #1032 — the same helper name and body as the web controller's, so the two
+  # gates cannot drift apart.
+  def authorize_cdef_write!
     authorize_permission!("cdef.write")
   end
 

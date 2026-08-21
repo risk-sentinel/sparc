@@ -16,6 +16,21 @@ All endpoints require a valid Bearer token.
 Authorization: Bearer YOUR_API_TOKEN_HERE
 ```
 
+## Permissions
+
+| operation | required |
+|---|---|
+| read — `index`, `show`, `export` | any authenticated user |
+| write — `create`, `update`, `destroy`, `import`, `source_from_profile`, `submit_for_review`, `scope` | `cdef.write` |
+| bulk field import — `fields/import/preview`, `fields/import/confirm` | `converters.write` |
+| `bulk` delete | instance admin |
+| `approve`, `reject` | `cdef.approve`, or instance admin — and never the submitter |
+
+**Changed in #1032.** CDEF writes were previously available to any authenticated
+user, while the web UI gated the same operations on `cdef.write`. An integration
+whose token belongs to a user without `cdef.write` will now receive `403` where
+it previously received `201`/`200`.
+
 ## Endpoints
 
 | Method | Path | Description |

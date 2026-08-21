@@ -229,10 +229,28 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       let(:user_token) { ApiToken.generate!(user: regular_user, name: user_token_name) }
       let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
 
-      it "can create cdefs (all authenticated)" do
+      # #1032 — this used to assert "can create cdefs (all authenticated)",
+      # which encoded the defect: the API ran no permission check on its writes
+      # while the web controller gated the same actions on `cdef.write`. Both
+      # directions, because an allow-leg-only test passes against an endpoint
+      # with no guard at all — how #919 and #974 were found.
+      it "is refused without cdef.write" do
+        expect {
+          post api_v1_cdef_documents_path, params: {
+            cdef_document: { name: "User CDEF", cdef_type: "custom" }
+          }, headers: user_headers, as: :json
+        }.not_to change(CdefDocument, :count)
+
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "can create cdefs when holding cdef.write" do
+        grant_permission(regular_user, "cdef.write")
+
         post api_v1_cdef_documents_path, params: {
           cdef_document: { name: "User CDEF", cdef_type: "custom" }
         }, headers: user_headers, as: :json
+
         expect(response).to have_http_status(:created)
       end
     end
