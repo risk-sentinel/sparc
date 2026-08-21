@@ -19,6 +19,7 @@ import httpx
 import pytest
 
 from _crud_contract import CrudContract
+from _export_contract import ExportContract
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.ksi, pytest.mark.phase1]
@@ -53,6 +54,25 @@ def boundary(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
 
 
 # #995 — the shared matrix for this group.
+# #995 — the shared export contract.
+class TestExportContract(ExportContract):
+
+
+    def _export_path(self, admin_client):
+        # Its own boundary lookup: `_boundary` lives on TestCrudContract, and
+        # sharing state between two contract classes would couple them.
+        boundaries = admin_client.get(BOUNDARIES_PATH, params={"items": 1})
+        rows = boundaries.json()["data"]
+        assert rows, "no authorization boundary on this instance"
+        self._export_boundary = rows[0]
+        return f"{_boundary_path(rows[0]['id'])}/export"
+
+    def _expected_content(self, admin_client):
+        self._export_path(admin_client)
+        # The export names the boundary it is an export OF.
+        return self._export_boundary["name"]
+
+
 class TestCrudContract(CrudContract):
     PARAM_KEY = "ksi_validation"
     IDENTIFIER = "id"

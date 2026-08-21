@@ -16,6 +16,7 @@ import pytest
 
 from _crud_contract import CrudContract
 from _document_helpers import create_doc, delete_doc, make_payload
+from _export_contract import ExportContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     SarDocumentIndex,
@@ -54,6 +55,19 @@ def sar_doc(admin_client: httpx.Client, seeded_boundary_id: int) -> Iterator[dic
 # #995 — the shared matrix for this group: documented status, an INDEPENDENT
 # read after every write, gone-from-show-and-index after delete, and a refused
 # caller changing nothing.
+# #995 — the shared export contract: JSON not an error page, and the export
+# actually CONTAINS the record it claims to export.
+class TestExportContract(ExportContract):
+    def _export_path(self, admin_client):
+        docs = admin_client.get(PATH, params={"items": 1})
+        self._doc = docs.json()["data"][0]
+        return f"{PATH}/{self._doc['slug']}/export"
+
+    def _expected_content(self, admin_client):
+        self._export_path(admin_client)
+        return self._doc["name"]
+
+
 class TestCrudContract(CrudContract):
     PATH = PATH
     PARAM_KEY = PARAM_KEY

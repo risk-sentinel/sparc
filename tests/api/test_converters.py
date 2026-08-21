@@ -17,6 +17,7 @@ import httpx
 import pytest
 
 from _crud_contract import CrudContract
+from _export_contract import ExportContract
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.catalogs, pytest.mark.phase2]
@@ -50,6 +51,19 @@ def converter(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
 
 
 # #995 — the shared matrix for this group.
+# #995 — the shared export contract: JSON not an error page, and the export
+# actually CONTAINS the record it claims to export.
+class TestExportContract(ExportContract):
+    def _export_path(self, admin_client):
+        rows = admin_client.get(PATH, params={"items": 1}).json()["data"]
+        self._conv = rows[0]
+        return f"{PATH}/{self._conv['id']}/export"
+
+    def _expected_content(self, admin_client):
+        self._export_path(admin_client)
+        return self._conv["name"]
+
+
 class TestCrudContract(CrudContract):
     PATH = PATH
     PARAM_KEY = "converter"

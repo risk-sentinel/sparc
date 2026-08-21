@@ -15,6 +15,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _export_contract import ExportContract
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.baselines, pytest.mark.phase1]
@@ -46,6 +47,24 @@ def profile(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield body
     finally:
         admin_client.delete(f"{PROFILES_PATH}/{body['slug']}")
+
+
+# #995 — the shared export contract.
+class TestExportContract(ExportContract):
+    EXPORT_FORMATS = ("json", "yaml")
+
+    def _export_path(self, admin_client):
+        profiles = admin_client.get(PROFILES_PATH, params={"items": 100}).json()["data"]
+        for row in profiles:
+            params_response = admin_client.get(_path(row["slug"]))
+            if params_response.status_code == 200 and params_response.json()["data"]["parameters"]:
+                self._profile = row
+                return f"{_path(row['slug'])}/export"
+        raise AssertionError("no profile on this instance exposes tailorable parameters")
+
+    def _expected_content(self, admin_client):
+        self._export_path(admin_client)
+        return self._profile["name"]
 
 
 class TestShow:
