@@ -67,17 +67,36 @@ RSpec.describe "Api::V1 user password reset", type: :request do
 
     # The property this mode exists for. Emailing a token AND returning it would
     # defeat the point of sending it to the mailbox owner.
+    #
+    # What can leak is the PLAINTEXT token, so the plaintext is what this has to
+    # search for. Comparing against `password_reset_digest` proved nothing: the
+    # database keeps a SHA-256 and the response could not have contained it
+    # however badly the endpoint behaved.
+    #
+    # The producer is stubbed to mint a known sentinel -- the controller is left
+    # exactly as it ships -- and the mailer assertion proves the endpoint really
+    # held that sentinel, so a body without it is a result rather than a stub
+    # that quietly failed to take.
     it "never returns the token" do
+      sentinel = "SENTINEL-PLAINTEXT-#{SecureRandom.hex(8)}"
+      allow_any_instance_of(User).to receive(:issue_password_reset!) do |user|
+        user.update!(password_reset_digest: Digest::SHA256.hexdigest(sentinel),
+                     password_reset_expires_at: 1.hour.from_now)
+        sentinel
+      end
+      allow(PasswordResetMailer).to receive(:reset_link).and_call_original
+
       post path, params: { mode: "email" }, headers: admin_headers, as: :json
 
       expect(response).to have_http_status(:created)
-      body = response.body
-      digest = target.reload.password_reset_digest
-      expect(digest).to be_present, "no reset was issued, so this asserts nothing"
+      expect(PasswordResetMailer).to have_received(:reset_link).with(target, sentinel, issued_by: admin.email),
+        "the endpoint never held the sentinel, so searching the body for it would assert nothing"
 
-      expect(body).not_to include(digest)
-      expect(response.parsed_body["data"]).not_to have_key("token")
-      expect(response.parsed_body["data"]).not_to have_key("temporary_password")
+      expect(response.body).not_to include(sentinel)
+      # An exact key set, not a list of names to avoid: a token surfaced under
+      # any other key is the same leak.
+      expect(response.parsed_body["data"].keys)
+        .to match_array(%w[user_id email mode expires_at note])
     end
 
     it "issues a reset with an expiry the caller can see" do
