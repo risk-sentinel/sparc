@@ -598,6 +598,8 @@ Rails.application.routes.draw do
 
       resources :sap_documents, only: [ :index, :show, :create, :update, :destroy ] do
         collection do
+          # #1031 — ingest an assessment plan from an OSCAL file.
+          post :import
           # #844 — generate a POPULATED SAP from an SSP or profile. Without
           # this the API could only create an empty shell, leaving SAP the one
           # document in the chain with no programmatic generation path.
@@ -619,6 +621,8 @@ Rails.application.routes.draw do
       # a POA&M that fails OSCAL schema validation at export.
       resources :poam_documents, only: [ :index, :show, :create, :update, :destroy ] do
         collection do
+          # #1031 — ingest a POA&M from an OSCAL file.
+          post :import
           # #843 — build a POPULATED POA&M from a SAR's open risks. Explicit
           # action mapping per rubydre:S7875.
           post "generate", to: "poam_documents#generate", as: :generate
@@ -712,6 +716,12 @@ Rails.application.routes.draw do
         end
       end
       resources :profile_documents, only: [ :index, :show, :create, :update, :destroy ] do
+        collection do
+          # #1031 — ingest a baseline profile from an OSCAL file. A profile is
+          # normally published by NIST or FedRAMP rather than authored here, so
+          # ingest was the primary path and had no API.
+          post :import
+        end
         member do
           # #630/#632/#633 — review/approval workflow.
           post :submit_for_review, to: "profile_documents#submit_for_review"
@@ -743,6 +753,11 @@ Rails.application.routes.draw do
 
       resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ] do
         collection do
+          # #1031 — ingest a component definition FROM A FILE. `create` builds
+          # an empty shell; this is how an authored CDEF (a DISA STIG benchmark,
+          # an AWS Labs OSCAL file) enters SPARC, and it existed only in the
+          # browser until now.
+          post :import
           # #629 — admin-only bulk delete; ids[] body, partial-success result.
           delete "bulk", to: "cdef_documents#bulk_destroy"
         end

@@ -9,6 +9,7 @@ Profile documents represent security baselines and resolved control profiles der
 | `GET` | `/api/v1/profile_documents` | List profile documents (paginated, filterable) | Any authenticated user |
 | `GET` | `/api/v1/profile_documents/:slug` | Get a single profile document | Any authenticated user |
 | `POST` | `/api/v1/profile_documents` | Create a new profile document | Any authenticated user |
+| `POST` | `/api/v1/profile_documents/import` | **Ingest a profile from an OSCAL file** (JSON / XML / YAML) | `profiles.write` |
 | `PUT` | `/api/v1/profile_documents/:slug` | Update a profile document | Any authenticated user |
 | `DELETE` | `/api/v1/profile_documents/:slug` | Soft-delete a profile document | Any authenticated user |
 | `GET` | `/api/v1/profile_documents/:id/baseline_review` | Compare selected vs expected controls + ODP customization | Any authenticated user |

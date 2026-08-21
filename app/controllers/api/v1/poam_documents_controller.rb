@@ -16,7 +16,13 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
-  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :generate ]
+  # #1031 — file ingest; a POA&M is often externally authored OSCAL.
+  include DocumentFileIngestApi
+
+  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :generate, :import ]
+
+  # #1031 — DocumentFileIngestApi hook.
+  def ingest_type_key = :poam
 
   # POST /api/v1/poam_documents/generate
   #

@@ -90,6 +90,7 @@ RSpec.describe AuditEvent, type: :model do
         app/controllers/concerns/file_uploadable.rb
         app/controllers/concerns/publishable.rb
         app/controllers/api/v1/poam_subresources_controller.rb
+        app/controllers/concerns/document_file_ingest_api.rb
       ]
     end
 
@@ -108,6 +109,20 @@ RSpec.describe AuditEvent, type: :model do
       expect(expected - AuditEvent::ACTIONS).to be_empty, <<~MESSAGE
         Api::V1::PoamSubresourcesController builds its action name at runtime and
         these expansions are not in ACTIONS, so they would record NOTHING:
+
+        #{(expected - AuditEvent::ACTIONS).map { |a| "  #{a}" }.join("\n")}
+      MESSAGE
+    end
+
+    # #1031 — same treatment as the POA&M sub-resources above: the API file
+    # ingest builds "<type>_document_created" from the DocumentTypeRegistry key,
+    # and the four types that use it are enumerable, so they are enumerated.
+    it "registers every action the API file ingest can emit" do
+      expected = %w[cdef sap poam profile].map { |type| "#{type}_document_created" }
+
+      expect(expected - AuditEvent::ACTIONS).to be_empty, <<~MESSAGE
+        DocumentFileIngestApi builds its action name at runtime and these
+        expansions are not in ACTIONS, so an ingest would record NOTHING:
 
         #{(expected - AuditEvent::ACTIONS).map { |a| "  #{a}" }.join("\n")}
       MESSAGE

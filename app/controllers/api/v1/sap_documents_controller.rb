@@ -21,6 +21,8 @@
 #
 class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
   include FieldImportable
+  # #1031 — file ingest.
+  include DocumentFileIngestApi
 
   # #716 — re-declare with the FULL list: re-registering an inherited before_action
   # updates its :only conditions rather than adding a second callback, so these
@@ -29,10 +31,14 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
   before_action :set_document, only: [ :show, :update, :destroy, :export, :import_fields_preview, :import_fields_confirm ]
   before_action :authorize_document_read!, only: [ :show, :export ]
   before_action :authorize_document_write!,
-                only: [ :create, :update, :destroy, :generate, :import_fields_preview, :import_fields_confirm ]
+                only: [ :create, :update, :destroy, :generate, :import,
+                        :import_fields_preview, :import_fields_confirm ]
 
   # #716 — FieldImportable hook.
   def field_import_document = @document
+
+  # #1031 — DocumentFileIngestApi hook.
+  def ingest_type_key = :sap
 
   # POST /api/v1/sap_documents/generate
   #

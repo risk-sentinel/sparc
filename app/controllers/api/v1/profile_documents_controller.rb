@@ -23,7 +23,14 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   # gate at all). Run authorize BEFORE set_profile so a non-admin
   # without the permission gets 403, not 404 leaking existence.
   include DocumentApprovalApi
-  before_action :authorize_profiles_write!, only: [ :create, :update, :destroy, :submit_for_review, :update_controls ]
+  # #1031 — file ingest; a baseline profile is normally published by NIST or
+  # FedRAMP rather than authored here.
+  include DocumentFileIngestApi
+
+  before_action :authorize_profiles_write!, only: [ :create, :update, :destroy, :submit_for_review, :update_controls, :import ]
+
+  # #1031 — DocumentFileIngestApi hook.
+  def ingest_type_key = :profile
   before_action :set_profile, only: [ :show, :update, :destroy, :submit_for_review, :approve, :reject, :baseline_review, :update_controls ]
 
   # GET /api/v1/profile_documents

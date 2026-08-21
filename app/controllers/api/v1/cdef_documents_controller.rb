@@ -20,14 +20,25 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
   include DocumentApprovalApi
   include FieldImportable
+  # #1031 — file ingest; a CDEF is normally authored elsewhere.
+  include DocumentFileIngestApi
   before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :source_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm, :update_scope, :export ]
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
+  # #1031 — file ingest is gated on `cdef.write`, matching the WEB create it
+  # mirrors (`cdef_documents_controller#authorize_cdef_write!`). Note this is
+  # STRICTER than API `create`, which carries no permission gate at all —
+  # raised separately; an ungated endpoint that accepts and parses a file is not
+  # the place to reproduce that.
+  before_action :authorize_cdef_ingest!, only: [ :import ]
   # #716 — field import is a bulk mutation; gate it like bulk-apply (converters.write).
   before_action :authorize_bulk_apply!, only: [ :import_fields_preview, :import_fields_confirm ]
 
   # #716 — FieldImportable hook (CDEF loads into @cdef).
   def field_import_document = @cdef
+
+  # #1031 — DocumentFileIngestApi hook.
+  def ingest_type_key = :cdef
 
   # GET /api/v1/cdef_documents
   def index
@@ -303,6 +314,11 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       scope.find_by(slug: id_or_slug)
     end
     profile
+  end
+
+  # #1031 — see the before_action above.
+  def authorize_cdef_ingest!
+    authorize_permission!("cdef.write")
   end
 
   # #499 slice 3 — bulk-apply gated on converters.write (matches the

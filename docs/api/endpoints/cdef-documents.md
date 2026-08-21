@@ -23,6 +23,8 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | `GET` | `/api/v1/cdef_documents` | List all CDEFs |
 | `GET` | `/api/v1/cdef_documents/:slug` | Show a single CDEF |
 | `POST` | `/api/v1/cdef_documents` | Create a new CDEF |
+| `POST` | `/api/v1/cdef_documents/import` | **Ingest a CDEF from a file** (XCCDF / OSCAL JSON / YAML) |
+| `GET` | `/api/v1/cdef_documents/:slug/export` | Export a CDEF with its controls and their field values |
 | `PUT` | `/api/v1/cdef_documents/:slug` | Update a CDEF |
 | `DELETE` | `/api/v1/cdef_documents/:slug` | Delete a CDEF (soft-delete) |
 | `DELETE` | `/api/v1/cdef_documents/bulk` | Bulk-delete CDEFs (admin-only) |
@@ -690,3 +692,70 @@ curl -X POST "https://sparc.example.com/api/v1/cdef_documents/web-application-se
 | `404` | `Not Found` | CDEF document does not exist or has been deleted |
 | `422` | `Unprocessable Entity` | Validation failed -- missing required fields or invalid values |
 | `500` | `Internal Server Error` | Unexpected server error -- contact your administrator |
+
+## Ingesting a component definition from a file (#1031)
+
+`POST /api/v1/cdef_documents/import` is how an authored CDEF enters SPARC — a
+DISA STIG benchmark, an AWS Labs OSCAL component definition, a vendor's file.
+`POST /api/v1/cdef_documents` builds an empty shell and does not accept a file.
+
+The same endpoint exists for the other three types that had no API ingest:
+`sap_documents`, `poam_documents` and `profile_documents`. SSP and SAR use
+`convert`, which is specifically the Excel path.
+
+```bash
+curl -X POST https://sparc.example.gov/api/v1/cdef_documents/import \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@RHEL_9_STIG.xml"
+```
+
+Several files in one request:
+
+```bash
+curl -X POST https://sparc.example.gov/api/v1/cdef_documents/import \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "files[]=@component-a.json" -F "files[]=@component-b.json"
+```
+
+For the boundary-scoped types (SAP, POA&M) the boundary is required, and it is
+read **only** from the document param key — the same place the authorization
+check reads it, so the guard and the write cannot disagree:
+
+```bash
+curl -X POST https://sparc.example.gov/api/v1/sap_documents/import \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@assessment-plan.json" \
+  -F "sap_document[authorization_boundary_id]=42"
+```
+
+### Response
+
+Ingest is asynchronous: the file is attached and a `DocumentConversionJob` is
+enqueued, so the document comes back `pending`. Poll `status` for the result.
+
+```json
+{
+  "data": [
+    { "id": 118, "slug": "rhel-9-stig", "name": "RHEL_9_STIG",
+      "status": "pending", "file_type": "xccdf",
+      "original_filename": "RHEL_9_STIG.xml" }
+  ],
+  "meta": { "created": 1, "rejected": 0, "errors": [] }
+}
+```
+
+| status | meaning |
+|---|---|
+| `201 Created` | every file was accepted |
+| `207 Multi-Status` | some accepted, some rejected — see `meta.errors` |
+| `422 Unprocessable Content` | no file was accepted, or none was supplied |
+
+A partial ingest is never reported as `201`: that would tell a caller their
+rejected files succeeded.
+
+### Validation
+
+Uploads go through the same checks as the browser upload, not a parallel
+implementation — executable-signature rejection, content-type validation,
+zip-bomb rejection, and syntactic-structure validation (SI-10). A rejected file
+is named individually in `meta.errors`.
