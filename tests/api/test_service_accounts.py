@@ -17,6 +17,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.admin, pytest.mark.phase2]
@@ -71,6 +72,30 @@ def service_account(admin_client: httpx.Client, owner_id: int) -> Iterator[dict[
         yield record
     finally:
         admin_client.delete(f"{PATH}/{record['id']}")
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PARAM_KEY = "service_account"
+    IDENTIFIER = "id"
+    DESTROY_IS_SOFT_BECAUSE = (
+        "service accounts deactivate rather than delete, so the account stays "
+        "attached to the audit events it is the actor on (#1013)"
+    )
+
+    PATH = PATH
+
+    def _payload(self, admin_client):
+        # `owner_id` is a pytest fixture, not a value, so the contract resolves
+        # an owner itself — a service account must have a human accountable for
+        # it, and the API enforces that.
+        users = admin_client.get("/api/v1/users", params={"items": 100}).json()["data"]
+        human = next((u for u in users if not u.get("service_account")), None)
+        assert human, "no human user on this instance to own a service account"
+        return _payload(human["id"])["service_account"]
+
+    def _update_fields(self):
+        return {"display_name": f"Renamed {uuid.uuid4().hex[:6]}"}
 
 
 class TestCreate:
@@ -200,12 +225,25 @@ class TestIndex:
     def test_lists_only_service_accounts(
         self, admin_client: httpx.Client, service_account: dict[str, Any]
     ) -> None:
-        response = admin_client.get(PATH, params={"items": 100})
-        assert response.status_code == 200, response.text
+        # Search for the account rather than paging to it. This asserted that a
+        # freshly created account appeared in the first 100 rows, which held
+        # until the collection passed 100 — then it passed in isolation and
+        # failed in a full run, which is the worst way for a test to fail.
+        # Service accounts deactivate rather than delete, so the collection only
+        # ever grows.
+        found = admin_client.get(PATH, params={"q": service_account["email"]})
+        assert found.status_code == 200, found.text
+        assert service_account["id"] in [row["id"] for row in found.json()["data"]], (
+            f"{service_account['email']} was created but the search does not find it"
+        )
 
-        rows = response.json()["data"]
+        # The type filter is the other half: this endpoint must never return a
+        # human user, whatever the page size.
+        listing = admin_client.get(PATH, params={"items": 200})
+        assert listing.status_code == 200, listing.text
+        rows = listing.json()["data"]
+        assert rows, "no service accounts returned at all"
         assert all(row["service_account"] is True for row in rows)
-        assert service_account["id"] in [row["id"] for row in rows]
 
     @pytest.mark.happy
     def test_no_endpoint_returns_a_token_value(

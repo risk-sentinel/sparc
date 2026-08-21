@@ -19,6 +19,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.federation, pytest.mark.phase2]
@@ -52,6 +53,28 @@ def leveraged_authorization(
         yield seeded_boundary_id, record
     finally:
         admin_client.delete(f"{_path(seeded_boundary_id)}/{record['id']}")
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PARAM_KEY = "leveraged_authorization"
+    IDENTIFIER = "id"
+    NO_UPDATE_ROUTE_BECAUSE = (
+        "a leveraged authorization is re-populated from the leveraged SSP "
+        "rather than edited field by field (#1015)"
+    )
+
+    def _base_path(self, admin_client):
+        boundaries = admin_client.get("/api/v1/authorization_boundaries", params={"items": 1})
+        rows = boundaries.json()["data"]
+        assert rows, "no authorization boundary on this instance"
+        return _path(rows[0]["id"])
+
+    def _payload(self, admin_client):
+        return _payload()["leveraged_authorization"]
+
+    def _update_fields(self):
+        return {}
 
 
 class TestCreate:

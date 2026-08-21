@@ -54,6 +54,11 @@ class CrudContract:
     #   NONE         -> there is no destroy route at all; DELETE must not route
     DESTROY_IS_SOFT_BECAUSE: str | None = None
     NO_DESTROY_ROUTE_BECAUSE: str | None = None
+    # Some resources are create-and-delete with no update at all — a leveraged
+    # authorization is re-populated rather than edited, for instance. Declare
+    # the reason and the contract asserts PATCH does not route, so "there is no
+    # update here" is pinned rather than merely untested.
+    NO_UPDATE_ROUTE_BECAUSE: str | None = None
     # A few resources are deliberately open to any authenticated caller — CDEF
     # is, per its controller's design comment and #575 Path D. Set the reason
     # string to declare it. The contract then asserts the OPPOSITE direction:
@@ -199,6 +204,18 @@ class CrudContract:
         record = self._create(admin_client, self._payload(admin_client))
 
         try:
+            if self.NO_UPDATE_ROUTE_BECAUSE:
+                response = admin_client.patch(
+                    self._url(admin_client, record),
+                    json={self.PARAM_KEY: self._update_fields()},
+                )
+                assert response.status_code in (404, 405), (
+                    f"{self.PATH} declares no update route "
+                    f"({self.NO_UPDATE_ROUTE_BECAUSE}), but PATCH answered "
+                    f"{response.status_code}"
+                )
+                return
+
             before = admin_client.get(self._url(admin_client, record)).json()["data"]
             changes = self._update_fields()
 
@@ -316,6 +333,9 @@ class CrudContract:
         record = self._create(admin_client, self._payload(admin_client))
 
         try:
+            if self.NO_UPDATE_ROUTE_BECAUSE:
+                return  # no update route to test a write posture against
+
             before = admin_client.get(self._url(admin_client, record)).json()["data"]
             changes = self._update_fields()
             response = user_client.patch(
