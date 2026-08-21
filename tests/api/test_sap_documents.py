@@ -16,6 +16,7 @@ import pytest
 
 from _crud_contract import CrudContract
 from _document_helpers import create_doc, delete_doc, make_payload
+from _field_import_contract import FieldImportContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     SapDocumentIndex,
@@ -51,6 +52,54 @@ def sap_doc(admin_client: httpx.Client, seeded_boundary_id: int) -> Iterator[dic
 # #995 — the shared matrix for this group: documented status, an INDEPENDENT
 # read after every write, gone-from-show-and-index after delete, and a refused
 # caller changing nothing.
+# #995 — the shared field-import contract.
+class TestFieldImportContract(FieldImportContract):
+    PATH = PATH
+
+    def _document_slug(self, admin_client):
+        if getattr(self, "_imp_slug", None):
+            return self._imp_slug
+        docs = admin_client.get(PATH, params={"items": 20}).json()["data"]
+        for row in docs:
+            export = admin_client.get(f"{PATH}/{row['slug']}/export")
+            if export.status_code != 200:
+                continue
+            controls = export.json().get("controls") or []
+            if controls:
+                self._imp_slug = row["slug"]
+                self._imp_control = controls[0]["control_id"]
+                return self._imp_slug
+
+        # No seeded SAP carries controls, so build one rather than skip: #844's
+        # `generate` produces a POPULATED plan from an SSP. A field-import
+        # contract that quietly skips because the instance happens to hold no
+        # suitable document tests nothing at all.
+        ssps = admin_client.get("/api/v1/ssp_documents", params={"items": 20}).json()["data"]
+        for ssp in ssps:
+            generated = admin_client.post(
+                f"{PATH}/generate",
+                json={"sap_document": {"ssp_document_id": ssp["slug"]}},
+            )
+            if generated.status_code not in (200, 201):
+                continue
+            slug = generated.json()["data"]["slug"]
+            export = admin_client.get(f"{PATH}/{slug}/export")
+            controls = export.json().get("controls") or []
+            if controls:
+                self._imp_slug = slug
+                self._imp_control = controls[0]["control_id"]
+                return self._imp_slug
+
+        raise AssertionError(
+            "no SAP has controls and none could be generated from an SSP — the "
+            "field-import contract cannot run without a populated document"
+        )
+
+    def _control_and_field(self, admin_client):
+        self._document_slug(admin_client)
+        return (self._imp_control, "notes")
+
+
 class TestCrudContract(CrudContract):
     PATH = PATH
     PARAM_KEY = PARAM_KEY

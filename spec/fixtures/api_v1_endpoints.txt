@@ -1,6 +1,5 @@
 # API v1 endpoint surface snapshot (drift guard) — see spec/requests/api/v1/endpoint_coverage_spec.rb
 # Regenerate intentionally: bin/rails runner script in that spec's header. Every entry should have a request spec.
-
 DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/leveraged_authorizations/:id
 DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
@@ -74,6 +73,7 @@ GET /api/v1/cdef_coverage/runs
 GET /api/v1/cdef_coverage/runs/:id
 GET /api/v1/cdef_documents
 GET /api/v1/cdef_documents/:id
+GET /api/v1/cdef_documents/:id/export
 GET /api/v1/control_catalogs
 GET /api/v1/control_catalogs/:control_catalog_id/control_families
 GET /api/v1/control_catalogs/:control_catalog_id/control_families/:control_family_id/controls
@@ -132,6 +132,7 @@ GET /api/v1/roles
 GET /api/v1/roles/:id
 GET /api/v1/sap_documents
 GET /api/v1/sap_documents/:id
+GET /api/v1/sap_documents/:id/export
 GET /api/v1/sar_documents
 GET /api/v1/sar_documents/:id
 GET /api/v1/sar_documents/:id/export

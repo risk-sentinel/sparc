@@ -20,7 +20,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
   include DocumentApprovalApi
   include FieldImportable
-  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :source_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm, :update_scope ]
+  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :source_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm, :update_scope, :export ]
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
   # #716 — field import is a bulk mutation; gate it like bulk-apply (converters.write).
@@ -264,6 +264,23 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
     audit_log("cdef_document_deleted", subject: @cdef, metadata: { name: @cdef.name })
     render json: { data: { id: @cdef.id, slug: @cdef.slug, deleted: true } }
+  end
+
+  # GET /api/v1/cdef_documents/:id/export
+  #
+  # #1026 — the field-import endpoints WRITE control fields (notes,
+  # implementation_narrative, implementation_status, control_origin,
+  # responsible_roles, set_parameters, status_override) and until this action
+  # existed nothing in the API read them back: `show` reports `controls_count`
+  # and carries no `controls`. The write's own `applied` count was the only
+  # evidence a caller had, which is the shape #994 was filed for.
+  #
+  # Authenticated-user read, matching `show` and the web `download_json` — a
+  # CDEF is instance-global, not boundary-scoped, so there is no boundary to
+  # scope this to. `CdefDocument#to_json_data` already emitted `controls:` with
+  # each control's fields; only the route was missing.
+  def export
+    render json: JSON.parse(JsonExportService.export_cdef(@cdef))
   end
 
   private

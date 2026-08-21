@@ -87,7 +87,9 @@ class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
     id = generate_params[:sar_document_id].presence
     return boundary&.sar_document if id.nil?
 
-    readable_sars.find_by(id: id) || raise(ActiveRecord::RecordNotFound, "SAR document not found")
+    # #1025 — slug OR id, for the same reason as the SAP generator above.
+    readable_sars.find_by(slug: id) || readable_sars.find_by(id: id) ||
+      raise(ActiveRecord::RecordNotFound, "SAR document not found")
   end
 
   def readable_sars

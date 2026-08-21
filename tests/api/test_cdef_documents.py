@@ -18,6 +18,7 @@ import pytest
 from _bulk_destroy import BulkDestroyContract
 from _crud_contract import CrudContract
 from _document_helpers import create_doc, delete_doc, make_payload
+from _field_import_contract import FieldImportContract
 from _populate_from_profile import PopulateFromProfileContract
 from _review_workflow import ReviewWorkflowContract
 from conftest import assert_error_envelope, assert_paginated_envelope, published_profile
@@ -61,6 +62,81 @@ def cdef_doc(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
 # write, gone-from-show-and-index after delete, and a refused caller changing
 # nothing. Sixteen endpoints in this group, and the checks that need a real
 # record live here rather than in the whole-surface sweep.
+# #995 — the shared field-import contract. Reachable only after #1026 added
+# `GET /api/v1/cdef_documents/:slug/export`: before that, `confirm` wrote
+# control fields and `show` carried only `controls_count`, so the contract's
+# central assertion — an INDEPENDENT read confirms the write — had nothing to
+# read. Checking the `applied` count the write reports about itself would have
+# been the #994 shape.
+class TestFieldImportContract(FieldImportContract):
+    PATH = PATH
+
+    def _document_slug(self, admin_client):
+        if getattr(self, "_imp_slug", None):
+            return self._imp_slug
+
+        # Page: on this instance exactly ONE of 68 populated CDEFs offers an
+        # unambiguous control (see the note below), and it is not on page 1.
+        rows = []
+        for page in range(1, 6):
+            body = admin_client.get(PATH, params={"items": 100, "page": page}).json()
+            batch = body.get("data") or []
+            if not batch:
+                break
+            rows.extend(batch)
+
+        for row in rows:
+            export = admin_client.get(f"{PATH}/{row['slug']}/export")
+            if export.status_code != 200:
+                continue
+            controls = export.json().get("controls") or []
+
+            # Pick a control whose id is UNIQUE in this document, and skip the
+            # document if it has none.
+            #
+            # `FieldImportService#index_controls` keys controls by canonical
+            # control_id and takes "first wins" over an UNORDERED association,
+            # while every read surface orders by `row_order`. In a CDEF holding
+            # two controls with the same id those are different rows, so the
+            # import writes to one and the export shows the other — measured on
+            # `aws-elasticbeanstalk-oscal-1-2-1`, where `ca-7` resolved to
+            # control 2171 and the export presents 2168.
+            #
+            # That is its own defect and is being raised separately; addressing
+            # an ambiguous id here would test the ambiguity instead of the
+            # import. CDEF is the only type affected — 156 duplicate
+            # (document, control_id) pairs across 47 documents, plus 312 rows
+            # with a NULL control_id; SSP, SAR and SAP have none of either.
+            #
+            # It is also nearly total in practice: of 68 populated CDEFs on this
+            # instance, exactly ONE has any unambiguously addressable control.
+            # The other 67 are the AWS Labs inventory, where every control id is
+            # duplicated or NULL — so field-import cannot reliably target any
+            # control in any of them.
+            seen: dict[str, int] = {}
+            for control in controls:
+                cid = control.get("control_id")
+                if cid:
+                    seen[cid] = seen.get(cid, 0) + 1
+            unique = [cid for cid, n in seen.items() if n == 1]
+            if unique:
+                self._imp_slug = row["slug"]
+                self._imp_control = unique[0]
+                return self._imp_slug
+
+        raise AssertionError(
+            "no CDEF on this instance has a control with an unambiguous "
+            "control_id — the field-import contract needs one to address"
+        )
+
+    def _control_and_field(self, admin_client):
+        self._document_slug(admin_client)
+        # `notes` is in CdefControlField::EDITABLE_FIELDS and is not one of the
+        # parsed STIG fields, so the import CREATES the row rather than editing
+        # one. The contract handles a field that reads back as None first time.
+        return (self._imp_control, "notes")
+
+
 class TestCrudContract(CrudContract):
     PATH = PATH
     PARAM_KEY = PARAM_KEY

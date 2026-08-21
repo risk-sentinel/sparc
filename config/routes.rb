@@ -607,6 +607,11 @@ Rails.application.routes.draw do
           # #716 — bulk editable-field file import (preview → confirm).
           post "fields/import/preview", to: "sap_documents#import_fields_preview", as: :import_fields_preview
           post "fields/import/confirm", to: "sap_documents#import_fields_confirm", as: :import_fields_confirm
+          # #1026 — field import above WRITES control fields and, until this
+          # route existed, nothing in the API read them back: `show` reports
+          # `controls_count` and carries no `controls`. SSP and SAR have had
+          # this since their controllers were written.
+          get :export
         end
       end
       # #832 — risks are addressable so an incomplete one is rejected with a 422
@@ -764,6 +769,11 @@ Rails.application.routes.draw do
           # #716 — bulk editable-field file import (preview → confirm).
           post "fields/import/preview", to: "cdef_documents#import_fields_preview", as: :import_fields_preview
           post "fields/import/confirm", to: "cdef_documents#import_fields_confirm", as: :import_fields_confirm
+          # #1026 — as for SAP: the field import above WRITES control fields
+          # and nothing in the API read them back, so a caller could bulk-modify
+          # a component definition's implementations with no way to confirm
+          # what landed.
+          get :export
         end
       end
       resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ] do

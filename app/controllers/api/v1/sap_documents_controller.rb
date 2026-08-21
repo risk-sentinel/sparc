@@ -26,7 +26,8 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
   # updates its :only conditions rather than adding a second callback, so these
   # must include the parent's actions ([:show, :update, :destroy] / [:create,
   # :update, :destroy]) or they'd be dropped for SAP CRUD.
-  before_action :set_document, only: [ :show, :update, :destroy, :import_fields_preview, :import_fields_confirm ]
+  before_action :set_document, only: [ :show, :update, :destroy, :export, :import_fields_preview, :import_fields_confirm ]
+  before_action :authorize_document_read!, only: [ :show, :export ]
   before_action :authorize_document_write!,
                 only: [ :create, :update, :destroy, :generate, :import_fields_preview, :import_fields_confirm ]
 
@@ -119,6 +120,20 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
     render json: { data: serialize_document(sap.reload, detailed: true) }, status: :created
   end
 
+  # GET /api/v1/sap_documents/:id/export
+  #
+  # #1026 — the field-import endpoints below WRITE control fields, and until
+  # this action existed nothing in the API read them back: `show` reports
+  # `controls_count` and carries no `controls`. A caller could bulk-modify an
+  # assessment plan's controls and had only the write's own `applied` count as
+  # evidence, which is exactly the shape #994 was filed for.
+  #
+  # Same body as the SSP and SAR exports — `SapDocument#to_json_data` already
+  # emitted `controls:` with each control's fields; only the route was missing.
+  def export
+    render json: JSON.parse(JsonExportService.export_sap(@document))
+  end
+
   private
 
   def document_class = SapDocument
@@ -159,7 +174,12 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
     id = generate_params[:ssp_document_id].presence
     return boundary&.ssp_document if id.nil?
 
-    readable_ssps.find_by(id: id) ||
+    # #1025 — slug OR id. SSP documents are slug-addressed everywhere else, so
+    # a caller who lists them and passes the slug back was told the document did
+    # not exist. `find_by(id:)` against a slug matches nothing and raises
+    # nothing: Postgres casts the string, finds no row, and the 404 blames the
+    # document rather than the key.
+    readable_ssps.find_by(slug: id) || readable_ssps.find_by(id: id) ||
       raise(ActiveRecord::RecordNotFound, "SSP document not found")
   end
 
