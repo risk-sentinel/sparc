@@ -42,6 +42,8 @@ class SarControl < ApplicationRecord
 
   def to_hash
     {
+      # #1028 — the stable identity a field import can address unambiguously.
+      uuid: uuid,
       control_id: control_id,
       title: title,
       section: section,

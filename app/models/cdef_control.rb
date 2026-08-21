@@ -76,7 +76,15 @@ class CdefControl < ApplicationRecord
 
   def to_hash
     h = {
+      # #1028 — the addressable identity. `control_id` is the NIST reference a
+      # Converter resolved at ingest (#912): non-unique by design and NULL where
+      # nothing resolved, so it cannot be what a caller addresses by. `uuid` is
+      # exact; `source_control_id` + `source_vocabulary` are the identifier the
+      # caller actually holds (an AWS Security Hub id, a CCI, a CIS id).
+      uuid: uuid,
       control_id: control_id,
+      source_control_id: source_control_id,
+      source_vocabulary: source_vocabulary,
       title: title,
       severity: severity,
       group_id: group_id,

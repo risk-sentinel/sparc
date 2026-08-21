@@ -21,10 +21,15 @@ that matter are not the status codes:
      structurally — asserting it is what stops that quietly changing.
   4. A missing or malformed file is refused with a named reason, not counted as
      an empty import.
+  5. **THE WRITE LANDS ON THE CONTROL THE CALLER NAMED** (#1028). The key is not
+     always unique: on a CDEF, `control_id` holds the NIST reference a Converter
+     resolved at ingest, so two components implementing the same control produce
+     two rows with the same id. Addressing by `uuid` must hit that exact row and
+     leave its siblings alone.
 
 Subclass `FieldImportContract`, set `PATH`, and implement `_document_slug` and
-`_control_and_field` returning a (control_id, field_name) pair that exists on
-that document.
+`_target`, which returns the control to write: its `uuid` (how the read finds
+it), the `key` the payload addresses it by, and the `field` name.
 
 Underscore-prefixed file name signals "internal to the test suite".
 """
@@ -44,7 +49,8 @@ class FieldImportContract:
     def _document_slug(self, admin_client: httpx.Client) -> str:
         raise NotImplementedError
 
-    def _control_and_field(self, admin_client: httpx.Client) -> tuple[str, str]:
+    def _target(self, admin_client: httpx.Client) -> dict:
+        """{"uuid": ..., "key": ..., "field": ...} for the control to write."""
         raise NotImplementedError
 
     # ── helpers ──────────────────────────────────────────────────────────────
@@ -52,16 +58,16 @@ class FieldImportContract:
     def _import_path(self, admin_client: httpx.Client, action: str) -> str:
         return f"{self.PATH}/{self._document_slug(admin_client)}/fields/import/{action}"
 
-    def _payload_file(self, control_id: str, field: str, value: str):
+    def _payload_file(self, key: str, field: str, value: str):
         # A MAP of control id -> field updates, as endpoints/field-import.md
         # publishes. Not an array: `FieldImportService.parse`'s @return comment
         # describes the shape it RETURNS, which is an array of
         # {control_id:, fields:}, and reading that as the input format gets a
         # 422. The endpoint doc is the one to follow.
-        body = {"controls": {control_id: {field: value}}}
+        body = {"controls": {key: {field: value}}}
         return {"file": ("import.json", json.dumps(body).encode(), "application/json")}
 
-    def _read_field(self, admin_client: httpx.Client, control_id: str, field: str):
+    def _read_field(self, admin_client: httpx.Client, control_uuid: str, field: str):
         """Independent read of one field, via the document's EXPORT.
 
         `show` reports `controls_count` but carries no `controls` array, so the
@@ -77,7 +83,10 @@ class FieldImportContract:
         body = response.json()
         controls = body.get("controls") or body.get("data", {}).get("controls") or []
         for control in controls:
-            if str(control.get("control_id")).lower() != control_id.lower():
+            # #1028 — matched on `uuid`, not `control_id`. On a CDEF the latter
+            # names more than one row, so a read keyed on it can report a
+            # sibling's value and call the write a success.
+            if str(control.get("uuid")) != str(control_uuid):
                 continue
             for entry in control.get("fields") or []:
                 if entry.get("field_name") == field:
@@ -90,19 +99,20 @@ class FieldImportContract:
     @pytest.mark.happy
     def test_preview_writes_nothing(self, admin_client: httpx.Client) -> None:
         """The promise a preview makes, and the one its response cannot show."""
-        control_id, field = self._control_and_field(admin_client)
-        before = self._read_field(admin_client, control_id, field)
+        target = self._target(admin_client)
+        field = target["field"]
+        before = self._read_field(admin_client, target["uuid"], field)
         value = f"preview-must-not-persist-{uuid.uuid4().hex[:8]}"
 
         response = admin_client.post(
             self._import_path(admin_client, "preview"),
-            files=self._payload_file(control_id, field, value),
+            files=self._payload_file(target["key"], field, value),
         )
         assert response.status_code == 200, response.text
 
-        after = self._read_field(admin_client, control_id, field)
+        after = self._read_field(admin_client, target["uuid"], field)
         assert after == before, (
-            f"preview CHANGED {control_id}.{field}: {before!r} -> {after!r}. "
+            f"preview CHANGED {target['key']}.{field}: {before!r} -> {after!r}. "
             f"A preview that writes is not a preview, and its response looks "
             f"identical either way."
         )
@@ -117,47 +127,102 @@ class FieldImportContract:
     def test_confirm_applies_confirmed_by_an_independent_read(
         self, admin_client: httpx.Client
     ) -> None:
-        control_id, field = self._control_and_field(admin_client)
-        before = self._read_field(admin_client, control_id, field)
+        target = self._target(admin_client)
+        field = target["field"]
+        before = self._read_field(admin_client, target["uuid"], field)
         value = f"imported-{uuid.uuid4().hex[:8]}"
         assert before != value, "the value the test sets is already there"
 
         response = admin_client.post(
             self._import_path(admin_client, "confirm"),
-            files=self._payload_file(control_id, field, value),
+            files=self._payload_file(target["key"], field, value),
         )
         assert response.status_code == 200, response.text
 
-        after = self._read_field(admin_client, control_id, field)
+        after = self._read_field(admin_client, target["uuid"], field)
         assert after == value, (
             f"confirm reported {response.json().get('data', {}).get('applied')!r} applied "
-            f"but an independent read shows {control_id}.{field} is {after!r}"
+            f"but an independent read shows {target['key']}.{field} is {after!r}"
         )
+
+        # #1028 — and it says which control it wrote, so the caller can tell a
+        # sibling row was not hit instead.
+        assert response.json()["data"]["rows"][0]["resolved_uuid"] == target["uuid"]
 
     @pytest.mark.happy
     def test_preview_and_confirm_report_the_same_change(
         self, admin_client: httpx.Client
     ) -> None:
         """A preview the caller acts on must describe what confirm will do."""
-        control_id, field = self._control_and_field(admin_client)
+        target = self._target(admin_client)
+        field = target["field"]
         value = f"agreement-{uuid.uuid4().hex[:8]}"
 
         preview = admin_client.post(
             self._import_path(admin_client, "preview"),
-            files=self._payload_file(control_id, field, value),
+            files=self._payload_file(target["key"], field, value),
         )
         assert preview.status_code == 200, preview.text
         previewed = preview.json()["data"]["stats"]
 
         confirm = admin_client.post(
             self._import_path(admin_client, "confirm"),
-            files=self._payload_file(control_id, field, value),
+            files=self._payload_file(target["key"], field, value),
         )
         assert confirm.status_code == 200, confirm.text
         applied = confirm.json()["data"]["stats"]
 
         assert previewed == applied, (
             f"preview promised {previewed} and confirm did {applied}"
+        )
+
+    @pytest.mark.happy
+    def test_the_write_lands_on_the_control_named_and_not_a_sibling(
+        self, admin_client: httpx.Client
+    ) -> None:
+        """#1028 — every OTHER control's value for this field is unchanged.
+
+        The defect this replaces was not a failed write. `confirm` returned
+        `applied: 1`, a row really was written, and it was the wrong row — so
+        the only check that could see it is one that looks at the rows the
+        caller did NOT name.
+        """
+        target = self._target(admin_client)
+        field = target["field"]
+        slug = self._document_slug(admin_client)
+
+        def field_values_by_uuid() -> dict:
+            body = admin_client.get(f"{self.PATH}/{slug}/export").json()
+            controls = body.get("controls") or body.get("data", {}).get("controls") or []
+            return {
+                str(c.get("uuid")): next(
+                    (f.get("field_value") for f in (c.get("fields") or [])
+                     if f.get("field_name") == field),
+                    None,
+                )
+                for c in controls
+            }
+
+        before = field_values_by_uuid()
+        value = f"exact-row-{uuid.uuid4().hex[:8]}"
+
+        response = admin_client.post(
+            self._import_path(admin_client, "confirm"),
+            files=self._payload_file(target["key"], field, value),
+        )
+        assert response.status_code == 200, response.text
+
+        after = field_values_by_uuid()
+        assert after[target["uuid"]] == value
+
+        moved = {
+            u: (before.get(u), after.get(u))
+            for u in after
+            if u != target["uuid"] and before.get(u) != after.get(u)
+        }
+        assert not moved, (
+            f"addressing {target['key']!r} also changed {len(moved)} control(s) "
+            f"the caller never named: {moved}"
         )
 
     @pytest.mark.validation
@@ -188,10 +253,10 @@ class FieldImportContract:
     def test_both_endpoints_refuse_an_anonymous_caller(
         self, anon_client: httpx.Client, admin_client: httpx.Client
     ) -> None:
-        control_id, field = self._control_and_field(admin_client)
+        target = self._target(admin_client)
         for action in ("preview", "confirm"):
             response = anon_client.post(
                 self._import_path(admin_client, action),
-                files=self._payload_file(control_id, field, "anonymous"),
+                files=self._payload_file(target["key"], target["field"], "anonymous"),
             )
             assert response.status_code == 401, f"{action} answered {response.status_code}"

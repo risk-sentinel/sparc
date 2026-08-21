@@ -88,13 +88,21 @@ class TestFieldImportContract(FieldImportContract):
             controls = export.json().get("controls") or []
             if controls:
                 self._imp_slug = row["slug"]
-                self._imp_control = controls[0]["control_id"]
+                self._imp_control = controls[0]
+                self._imp_uuid = controls[0]["uuid"]
                 return self._imp_slug
         raise AssertionError("no SSP on this instance has controls to import fields into")
 
-    def _control_and_field(self, admin_client):
+    def _target(self, admin_client):
         self._document_slug(admin_client)
-        return (self._imp_control, "notes")
+        # This type keys directly on NIST controls and has no duplicates, so the
+        # `control_id` is a valid address — which is the common path worth
+        # covering here. CDEF exercises uuid addressing (#1028).
+        return {
+            "uuid": self._imp_uuid,
+            "key": self._imp_control["control_id"],
+            "field": "notes",
+        }
 
 
 class TestExportContract(ExportContract):

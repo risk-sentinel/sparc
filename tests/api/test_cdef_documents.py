@@ -8,6 +8,7 @@ linked to multiple boundaries via leveraged authorizations.
 
 from __future__ import annotations
 
+import json
 import uuid
 from collections.abc import Iterator
 from typing import Any
@@ -63,11 +64,17 @@ def cdef_doc(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
 # nothing. Sixteen endpoints in this group, and the checks that need a real
 # record live here rather than in the whole-surface sweep.
 # #995 — the shared field-import contract. Reachable only after #1026 added
-# `GET /api/v1/cdef_documents/:slug/export`: before that, `confirm` wrote
-# control fields and `show` carried only `controls_count`, so the contract's
-# central assertion — an INDEPENDENT read confirms the write — had nothing to
-# read. Checking the `applied` count the write reports about itself would have
-# been the #994 shape.
+# `GET /api/v1/cdef_documents/:slug/export`: before that, `confirm` wrote control
+# fields and `show` carried only `controls_count`, so the contract's central
+# assertion — an INDEPENDENT read confirms the write — had nothing to read.
+#
+# CDEF addresses by `uuid` rather than `control_id`, and that is the point of
+# #1028 rather than a convenience here. On a CDEF `control_id` holds the NIST
+# reference a Converter resolved at ingest (#912): it is non-unique by design,
+# because two components can implement the same control, and NULL where nothing
+# resolved. On this instance 67 of 68 populated CDEFs are the AWS Labs inventory,
+# where EVERY control id is duplicated or NULL — so `control_id` addresses
+# nothing reliably there, and `uuid` addresses everything.
 class TestFieldImportContract(FieldImportContract):
     PATH = PATH
 
@@ -75,66 +82,114 @@ class TestFieldImportContract(FieldImportContract):
         if getattr(self, "_imp_slug", None):
             return self._imp_slug
 
-        # Page: on this instance exactly ONE of 68 populated CDEFs offers an
-        # unambiguous control (see the note below), and it is not on page 1.
-        rows = []
-        for page in range(1, 6):
-            body = admin_client.get(PATH, params={"items": 100, "page": page}).json()
-            batch = body.get("data") or []
-            if not batch:
-                break
-            rows.extend(batch)
-
+        rows = admin_client.get(PATH, params={"items": 50}).json()["data"]
         for row in rows:
             export = admin_client.get(f"{PATH}/{row['slug']}/export")
             if export.status_code != 200:
                 continue
             controls = export.json().get("controls") or []
-
-            # Pick a control whose id is UNIQUE in this document, and skip the
-            # document if it has none.
-            #
-            # `FieldImportService#index_controls` keys controls by canonical
-            # control_id and takes "first wins" over an UNORDERED association,
-            # while every read surface orders by `row_order`. In a CDEF holding
-            # two controls with the same id those are different rows, so the
-            # import writes to one and the export shows the other — measured on
-            # `aws-elasticbeanstalk-oscal-1-2-1`, where `ca-7` resolved to
-            # control 2171 and the export presents 2168.
-            #
-            # That is its own defect and is being raised separately; addressing
-            # an ambiguous id here would test the ambiguity instead of the
-            # import. CDEF is the only type affected — 156 duplicate
-            # (document, control_id) pairs across 47 documents, plus 312 rows
-            # with a NULL control_id; SSP, SAR and SAP have none of either.
-            #
-            # It is also nearly total in practice: of 68 populated CDEFs on this
-            # instance, exactly ONE has any unambiguously addressable control.
-            # The other 67 are the AWS Labs inventory, where every control id is
-            # duplicated or NULL — so field-import cannot reliably target any
-            # control in any of them.
-            seen: dict[str, int] = {}
-            for control in controls:
-                cid = control.get("control_id")
-                if cid:
-                    seen[cid] = seen.get(cid, 0) + 1
-            unique = [cid for cid, n in seen.items() if n == 1]
-            if unique:
+            if controls:
                 self._imp_slug = row["slug"]
-                self._imp_control = unique[0]
+                self._imp_uuid = controls[0]["uuid"]
                 return self._imp_slug
 
         raise AssertionError(
-            "no CDEF on this instance has a control with an unambiguous "
-            "control_id — the field-import contract needs one to address"
+            "no CDEF on this instance carries controls — the field-import "
+            "contract cannot run without a populated document"
         )
 
-    def _control_and_field(self, admin_client):
+    def _target(self, admin_client):
         self._document_slug(admin_client)
         # `notes` is in CdefControlField::EDITABLE_FIELDS and is not one of the
-        # parsed STIG fields, so the import CREATES the row rather than editing
-        # one. The contract handles a field that reads back as None first time.
-        return (self._imp_control, "notes")
+        # parsed fields, so the import CREATES the row rather than editing one.
+        # The contract handles a field that reads back as None first time.
+        return {"uuid": self._imp_uuid, "key": self._imp_uuid, "field": "notes"}
+
+
+# #1028 — the refusal. A key naming more than one control must be refused and
+# named, never resolved silently to whichever row the database returned first.
+class TestAmbiguousControlAddressing:
+    @pytest.fixture
+    def duplicated(self, admin_client):
+        """A CDEF holding two controls that share a control_id, and that id."""
+        rows = admin_client.get(PATH, params={"items": 50}).json()["data"]
+        for row in rows:
+            export = admin_client.get(f"{PATH}/{row['slug']}/export")
+            if export.status_code != 200:
+                continue
+            seen: dict[str, list] = {}
+            for control in export.json().get("controls") or []:
+                cid = control.get("control_id")
+                if cid:
+                    seen.setdefault(cid, []).append(control)
+            for cid, controls in seen.items():
+                if len(controls) > 1:
+                    return {"slug": row["slug"], "control_id": cid, "controls": controls}
+
+        raise AssertionError(
+            "no CDEF on this instance has a duplicated control_id — the "
+            "ambiguity this asserts cannot be reached"
+        )
+
+    def _import(self, admin_client, slug, key, action, value="ambiguity-probe"):
+        body = {"controls": {key: {"notes": value}}}
+        return admin_client.post(
+            f"{PATH}/{slug}/fields/import/{action}",
+            files={"file": ("i.json", json.dumps(body).encode(), "application/json")},
+        )
+
+    @pytest.mark.validation
+    def test_an_ambiguous_control_id_is_refused_not_resolved(
+        self, admin_client, duplicated
+    ) -> None:
+        response = self._import(
+            admin_client, duplicated["slug"], duplicated["control_id"], "preview"
+        )
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert data["rows"][0]["status"] == "ambiguous", data["rows"][0]
+        assert data["stats"]["ambiguous"] == 1
+
+    @pytest.mark.validation
+    def test_the_refusal_names_every_candidate_so_it_is_actionable(
+        self, admin_client, duplicated
+    ) -> None:
+        message = self._import(
+            admin_client, duplicated["slug"], duplicated["control_id"], "preview"
+        ).json()["data"]["rows"][0]["message"]
+
+        for control in duplicated["controls"]:
+            assert control["uuid"] in message, (
+                f"candidate {control['uuid']} not named in the refusal: {message}"
+            )
+
+    @pytest.mark.validation
+    def test_confirm_writes_nothing_for_an_ambiguous_key(
+        self, admin_client, duplicated
+    ) -> None:
+        slug = duplicated["slug"]
+
+        def notes_by_uuid():
+            body = admin_client.get(f"{PATH}/{slug}/export").json()
+            return {
+                c["uuid"]: next(
+                    (f["field_value"] for f in c.get("fields") or []
+                     if f["field_name"] == "notes"),
+                    None,
+                )
+                for c in body.get("controls") or []
+            }
+
+        before = notes_by_uuid()
+        response = self._import(
+            admin_client, slug, duplicated["control_id"], "confirm",
+            value=f"must-not-be-written-{uuid.uuid4().hex[:8]}",
+        )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["applied"] == 0
+        assert notes_by_uuid() == before, "an ambiguous key wrote to a control"
 
 
 class TestCrudContract(CrudContract):
