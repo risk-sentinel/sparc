@@ -77,16 +77,26 @@ def evidence(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
 
 # #995 — this group deliberately does NOT use the shared CrudContract.
 #
-# Every way to create evidence needs something a JSON CRUD contract cannot
-# supply: an artifact needs an attached FILE (multipart), and the fileless type
-# `signed_statement` needs a nested attestation whose attester holds
-# `evidence.attest` on the boundary. The API is right to insist on both — an
+# THE LIMITATION IS THE HARNESS, NOT THE API. The API accepts multipart uploads
+# and accepts exactly what the UI accepts: `EvidenceUploadPolicy.validate!` is
+# called from BOTH app/controllers/evidences_controller.rb and
+# app/controllers/api/v1/evidences_controller.rb, so one ALLOWED_EXTENSIONS list
+# governs both surfaces and they cannot drift. Verified against the running
+# instance: .pdf .png .jpg .gif .csv .json .xml .txt .log and .html all upload
+# through POST /api/v1/evidences and return 201.
+#
+# CrudContract sends JSON, and a JSON body cannot carry a file. Creating
+# evidence needs either an attached file, or — for the fileless
+# `signed_statement` type — a nested attestation whose attester holds
+# `evidence.attest` on the boundary. Both requirements are correct: an
 # attestation with no statement and no attester is not evidence of anything.
 #
 # Bending the contract to fit would mean weakening one of them, so the matrix is
-# covered by this module's own tests instead: TestCreate exercises the file
-# path, the fileless path and the control-link requirement, and #1023's enum
-# rejection is asserted in spec/requests/api/v1/enum_value_rejection_spec.rb.
+# covered by this module's own tests instead: TestCreate exercises the multipart
+# path, the fileless path and the control-link requirement,
+# spec/requests/evidence_upload_policy_spec.rb asserts the rejection side
+# through both surfaces, and #1023's enum rejection is asserted in
+# spec/requests/api/v1/enum_value_rejection_spec.rb.
 #
 # Recorded rather than left as a silent gap: a group missing from the contract
 # should say whether that is a decision or an omission.
