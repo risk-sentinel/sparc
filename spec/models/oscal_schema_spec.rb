@@ -205,6 +205,14 @@ RSpec.describe OscalSchema, type: :model do
       expect(OscalSchema::MAPPING_VERSIONS).to match_array(one_two_line)
     end
 
+    # #1020 — the entry earns its place by naming a version we still support and
+    # can therefore still be asked to validate against.
+    it "flags 1.2.0 as defective, and only versions it actually supports" do
+      expect(OscalSchema::KNOWN_DEFECTIVE_VERSIONS).to have_key("1.2.0")
+      expect(OscalSchema::KNOWN_DEFECTIVE_VERSIONS.keys - OscalSchema::SUPPORTED_VERSIONS)
+        .to be_empty
+    end
+
     it "emits 1.1.2 by default, whatever it can validate against" do
       expect(OscalSchema::DEFAULT_VERSION).to eq("1.1.2")
       expect(OscalSchema::SUPPORTED_VERSIONS).to include(OscalSchema::DEFAULT_VERSION)

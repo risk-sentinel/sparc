@@ -30,6 +30,23 @@ class OscalSchema < ApplicationRecord
   # Versions where mapping schemas exist (introduced in 1.2.0)
   MAPPING_VERSIONS = %w[1.2.0 1.2.1 1.2.2].freeze
 
+  # #1020 — OSCAL 1.2.0 rejects documents that 1.1.x, 1.2.1 and 1.2.2 all accept,
+  # and the fault is in that release's schema rather than in the documents.
+  #
+  # 1.2.0 omits the `associated-risk` definition entirely, so `risk-uuid` inside
+  # `related-risks` has nothing to match while `additionalProperties: false`
+  # makes it a violation. 1.2.1 restores it as
+  # `oscal-poam-oscal-assessment-common:associated-risk`
+  # (`properties: [remarks, risk-uuid]`, `required: [risk-uuid]`), and 1.2.2 is
+  # identical.
+  #
+  # Confirmed against two unrelated producers: SPARC's own POA&M and SAR
+  # exporters, and hdf-cli's converter. Both emit `risk-uuid`; only 1.2.0
+  # objects. Validating against 1.2.0 therefore reports failures that are not
+  # the document's fault, which is worth knowing before anyone chases one.
+  KNOWN_DEFECTIVE_VERSIONS = { "1.2.0" => "omits the associated-risk definition; " \
+                                          "`related-risks[].risk-uuid` is rejected. Fixed in 1.2.1." }.freeze
+
   # Maps OSCAL document types to their NIST schema filename component and
   # root key. Filenames match exactly what NIST publishes as GitHub
   # release assets (verified against tags v1.1.1 / v1.1.2 / v1.1.3 /
