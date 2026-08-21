@@ -242,7 +242,13 @@ class CdefJsonParserService
       fallback_id = stig_rule ? nil : original_id
 
       attrs = {
-        control_id:     nist_id || fallback_id,
+        # #1030 — `control_id` carries the CATALOG-ADDRESSABLE control, so it
+        # joins. The mapping data is statement-level (`cm-6-b`, `pm-14-a-1`) and
+        # NIST catalogs hold controls and enhancements but never statement
+        # parts, so storing the reference verbatim matched no catalog control at
+        # all — measured at 57% of CCI resolutions. The full statement reference
+        # is not lost: it goes to the `nist_controls` field below.
+        control_id:     nist_id.present? ? ControlId.control_key(nist_id) : fallback_id,
         # #912 — a STIG-derived InSpec profile records the SV-ID as its source;
         # a plain profile records its own control name. Either way the source is
         # kept verbatim and `control_id` carries only what resolved to NIST.
@@ -309,7 +315,10 @@ class CdefJsonParserService
       # #911 — as in the XCCDF parser: unresolved means no control to name, and
       # `group_id` / `stig_id` below keep the V-ID.
       attrs = {
-        control_id:     nist_id,
+        # #1030 — see the note above: the catalog-addressable control, not the
+        # statement-level reference.
+        # `control_key(nil)` is "unknown", not nil — guard explicitly.
+        control_id:     nist_id.present? ? ControlId.control_key(nist_id) : nil,
         source_control_id: vuln_num,
         source_vocabulary: "disa_stig",
         title:          finding["rule_title"],

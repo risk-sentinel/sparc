@@ -159,6 +159,49 @@ RSpec.describe CdefXccdfParserService do
     end
   end
 
+  # #1030 — the check a status code cannot make. Ingest succeeded before this
+  # fix too; it just produced control_ids that named nothing in any catalog, so
+  # coverage and gap analysis reported zero match for every STIG-derived control
+  # and that read as "not implemented" rather than as an error.
+  describe "the resolved control ids are catalog-addressable" do
+    let(:fixture_path) { Rails.root.join("spec/fixtures/files/components/test-stig-xccdf.xml").to_s }
+    let(:document) { create(:cdef_document, file_type: "xccdf", status: "processing") }
+
+    before do
+      family = create(:control_family, code: "CM")
+      create(:catalog_control, control_id: "cm-6", control_family: family)
+      described_class.new(document, fixture_path).parse
+      document.reload
+    end
+
+    it "resolves CCI-000366 to the control itself, not to a statement of it" do
+      control = document.cdef_controls.find_by(stig_id: "SV-257777r925318_rule")
+
+      expect(control.control_id).to eq("cm-6")
+    end
+
+    it "names a control the catalog holds, for every resolved row" do
+      resolved = document.cdef_controls.where.not(control_id: nil)
+      expect(resolved).to be_any, "nothing resolved, so this asserts nothing"
+
+      dangling = resolved.reject do |control|
+        CatalogControl.exists?(control_id: control.control_id)
+      end
+
+      expect(dangling).to be_empty,
+        "these control_ids match no catalog control, so they join to nothing: " \
+        "#{dangling.map { |c| "#{c.stig_id} -> #{c.control_id}" }.inspect}"
+    end
+
+    it "keeps the statement-level reference in nist_controls" do
+      control = document.cdef_controls.find_by(stig_id: "SV-257777r925318_rule")
+      field = control.cdef_control_fields.find_by(field_name: "nist_controls")
+
+      expect(field.field_value).to eq("cm-6-b"),
+        "the statement detail was dropped rather than moved out of control_id"
+    end
+  end
+
   describe "unrecognized XML format" do
     it "raises a descriptive error" do
       xml_content = '<?xml version="1.0"?><unknown-root><child/></unknown-root>'

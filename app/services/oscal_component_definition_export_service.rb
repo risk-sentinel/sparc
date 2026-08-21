@@ -254,10 +254,23 @@ class OscalComponentDefinitionExportService
     end
 
     # #852 — resolution of WHICH id to use stays here (it is specific to CDEF
-    # field mapping); the normalisation itself is the canonical one, so a
-    # component definition writes the same identifier for a control as the SSP,
-    # SAP, SAR and POA&M exports do.
-    ControlId.canonical(raw)
+    # field mapping); the normalisation itself is shared, so a component
+    # definition writes the same identifier for a control as the SSP, SAP, SAR
+    # and POA&M exports do.
+    #
+    # #1030 — `control_key`, not `canonical`. This method prefers the
+    # `nist_controls` field, which holds the statement-level reference the CCI
+    # mapping supplies (`cm-6-b`), so the export published a statement into an
+    # OSCAL `control-id`. An implemented-requirement's `control-id` must name a
+    # control in the profile or catalog the control-implementation sources, and
+    # those hold controls and enhancements — never statement parts. Reducing
+    # here also makes the preference above moot: `nist_controls` and
+    # `control_id` now reduce to the same key.
+    #
+    # Statement-level targeting is not lost to OSCAL; it belongs in `statements`
+    # rather than in `control-id`. Emitting a properly-formed `cm-6_smt.b` there
+    # is a fidelity improvement this does not attempt.
+    ControlId.control_key(raw)
   end
 
   def build_description(control, field_map)

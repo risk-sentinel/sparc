@@ -124,13 +124,35 @@ RSpec.describe CdefJsonParserService do
       expect(document.cdef_controls.count).to be > 0
     end
 
-    it "resolves NIST control IDs from tags.nist" do
+    # #1030 — this asserted `control_id == "cm-6.b"`, the statement-level form
+    # `normalize_nist_tag` produces. NIST catalogs hold controls and
+    # enhancements, never statement parts, so `cm-6.b` matched no catalog
+    # control and the row joined to nothing.
+    it "resolves tags.nist to the catalog-addressable control" do
+      # The join this exists to make possible. Without a catalog control to
+      # match, "the id is addressable" would be an assertion about a string.
+      create(:catalog_control, control_id: "cm-6",
+                               control_family: create(:control_family, code: "CM"))
+
       service.parse
       document.reload
 
-      # SV-257777 has tags.nist: ["CM-6 b"] → normalized to "cm-6.b"
+      # SV-257777 has tags.nist: ["CM-6 b"] → the control is CM-6; the "b" says
+      # which statement of it the rule addresses.
       control = document.cdef_controls.find_by(stig_id: "SV-257777")
-      expect(control.control_id).to eq("cm-6.b")
+      expect(control.control_id).to eq("cm-6")
+      expect(CatalogControl.where(control_id: control.control_id)).to exist,
+        "control_id does not name a control any catalog holds"
+    end
+
+    it "keeps the statement-level reference it reduced" do
+      service.parse
+      document.reload
+
+      control = document.cdef_controls.find_by(stig_id: "SV-257777")
+      nist_field = control.cdef_control_fields.find_by(field_name: "nist_controls")
+      expect(nist_field.field_value).to eq("cm-6.b"),
+        "the statement detail was dropped rather than moved"
     end
 
     it "preserves original SV-ID as stig_id" do
