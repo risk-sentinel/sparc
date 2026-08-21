@@ -7,6 +7,12 @@ exercised by their own future modules — this module covers only the
 top-level POA&M document.
 """
 
+# Coverage declared for bin/api_inventory_check.rb. These endpoints are
+# exercised through shared contract mixins, which express an endpoint as a
+# URL path rather than by action name, so the inventory's string match
+# cannot see them.
+# api-inventory: covers poam_documents#import
+
 from __future__ import annotations
 
 import uuid

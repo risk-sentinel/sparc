@@ -227,12 +227,31 @@ def test_module_for(controller)
   TEST_MODULE_EXCEPTIONS[controller] || "test_#{controller.tr('/', '_')}.py"
 end
 
+# A module's text PLUS the text of every shared contract it imports.
+#
+# #995 — coverage is increasingly delivered by contract mixins
+# (`_crud_contract.py`, `_field_import_contract.py`, `_export_contract.py`), so
+# the action name a module is checked for lives in the CONTRACT file, not in the
+# module. Reading the module alone reported `import_fields_preview` as uncovered
+# on all four document types while the shared contract was exercising it six
+# ways each. A gate that under-reports its own coverage is as misleading as one
+# that over-reports it.
+def contract_texts_for(module_text)
+  module_text.to_s.scan(/^from (_\w+) import/).flatten.uniq.filter_map do |mod|
+    path = File.join(PYTESTS, "#{mod}.py")
+    File.read(path) if File.exist?(path)
+  end
+end
+
 def load_pytest_module_texts(routes)
   return {} unless Dir.exist?(PYTESTS)
 
   routes.map { |r| r[:controller] }.uniq.to_h do |ctrl|
     path = File.join(PYTESTS, test_module_for(ctrl))
-    [ ctrl, File.exist?(path) ? File.read(path) : nil ]
+    next [ ctrl, nil ] unless File.exist?(path)
+
+    text = File.read(path)
+    [ ctrl, ([ text ] + contract_texts_for(text)).join("\n") ]
   end
 end
 
@@ -242,7 +261,20 @@ def pytest_status(route, pytest_module_texts)
   text = pytest_module_texts[route[:controller]]
   return "**MISSING**" unless text  # no module for this controller
 
-  if GENERIC_ACTIONS.include?(route[:action])
+  # An explicit declaration beats every heuristic below it.
+  #
+  # #995 — contract mixins express an endpoint as a URL PATH
+  # (`fields/import/{action}`), so the action name never appears verbatim in
+  # either the module or the contract and the string match below cannot see it.
+  # Rather than deepen the guessing, a module may state what it covers:
+  #
+  #   # api-inventory: covers ssp_documents#import_fields_preview
+  #
+  # That is auditable — a wrong claim is a line someone wrote, not a coincidence
+  # of substrings.
+  if text.include?("api-inventory: covers #{route[:controller]}##{route[:action]}")
+    "yes"
+  elsif GENERIC_ACTIONS.include?(route[:action])
     "yes"
   elsif text.downcase.include?(route[:action].downcase)
     # Action name appears verbatim somewhere — test class, function

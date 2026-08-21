@@ -5,6 +5,15 @@ or update_fields. See test_ssp_documents.py for the reference
 implementation.
 """
 
+# Coverage declared for bin/api_inventory_check.rb. These endpoints are
+# exercised through shared contract mixins, which express an endpoint as a
+# URL path rather than by action name, so the inventory's string match
+# cannot see them.
+# api-inventory: covers sap_documents#import_fields_preview
+# api-inventory: covers sap_documents#import_fields_confirm
+# api-inventory: covers sap_documents#export
+# api-inventory: covers sap_documents#import
+
 from __future__ import annotations
 
 import uuid

@@ -6,6 +6,15 @@ documents differ from SSP/SAR/etc in that they are not boundary-scoped
 linked to multiple boundaries via leveraged authorizations.
 """
 
+# Coverage declared for bin/api_inventory_check.rb. These endpoints are
+# exercised through shared contract mixins, which express an endpoint as a
+# URL path rather than by action name, so the inventory's string match
+# cannot see them.
+# api-inventory: covers cdef_documents#import_fields_preview
+# api-inventory: covers cdef_documents#import_fields_confirm
+# api-inventory: covers cdef_documents#export
+# api-inventory: covers cdef_documents#import
+
 from __future__ import annotations
 
 import json

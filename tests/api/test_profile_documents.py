@@ -7,6 +7,12 @@ parameters live under their own routes covered by
 test_baseline_parameters.py.
 """
 
+# Coverage declared for bin/api_inventory_check.rb. These endpoints are
+# exercised through shared contract mixins, which express an endpoint as a
+# URL path rather than by action name, so the inventory's string match
+# cannot see them.
+# api-inventory: covers profile_documents#import
+
 from __future__ import annotations
 
 import uuid

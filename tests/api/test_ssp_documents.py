@@ -11,6 +11,13 @@ deletes it in teardown. Tests that need an existing document use the
 ``ssp_doc`` fixture which sets up + tears down once per test.
 """
 
+# Coverage declared for bin/api_inventory_check.rb. These endpoints are
+# exercised through shared contract mixins, which express an endpoint as a
+# URL path rather than by action name, so the inventory's string match
+# cannot see them.
+# api-inventory: covers ssp_documents#import_fields_preview
+# api-inventory: covers ssp_documents#import_fields_confirm
+
 from __future__ import annotations
 
 import uuid
