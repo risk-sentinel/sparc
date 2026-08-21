@@ -21,6 +21,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 
 pytestmark = [pytest.mark.boundaries, pytest.mark.phase2]
@@ -71,6 +72,30 @@ def _create(
     response = client.post(_path(boundary), json={"authorization_boundary_membership": body})
     assert response.status_code in (200, 201), response.text
     return response.json().get("data") or response.json()
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PARAM_KEY = "authorization_boundary_membership"
+    IDENTIFIER = "id"
+
+
+    def _base_path(self, admin_client):
+        boundaries = admin_client.get(BOUNDARIES, params={"items": 1})
+        rows = boundaries.json()["data"]
+        assert rows, "no authorization boundary on this instance"
+        self._boundary = rows[0]
+        return _path(rows[0])
+
+    def _payload(self, admin_client):
+        roles = admin_client.get(f"{self._base_path(admin_client)}/roles")
+        available = roles.json()["data"]["available"]
+        return {"user_name": f"Contract Person {uuid.uuid4().hex[:6]}",
+                "user_email": f"contract-{uuid.uuid4().hex[:6]}@example.gov",
+                "role": available[0]["value"]}
+
+    def _update_fields(self):
+        return {"user_name": f"Renamed {uuid.uuid4().hex[:6]}"}
 
 
 class TestRoles:

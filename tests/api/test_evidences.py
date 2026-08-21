@@ -75,6 +75,22 @@ def evidence(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
 
 # ── Auth ──────────────────────────────────────────────────────────────────
 
+# #995 — this group deliberately does NOT use the shared CrudContract.
+#
+# Every way to create evidence needs something a JSON CRUD contract cannot
+# supply: an artifact needs an attached FILE (multipart), and the fileless type
+# `signed_statement` needs a nested attestation whose attester holds
+# `evidence.attest` on the boundary. The API is right to insist on both — an
+# attestation with no statement and no attester is not evidence of anything.
+#
+# Bending the contract to fit would mean weakening one of them, so the matrix is
+# covered by this module's own tests instead: TestCreate exercises the file
+# path, the fileless path and the control-link requirement, and #1023's enum
+# rejection is asserted in spec/requests/api/v1/enum_value_rejection_spec.rb.
+#
+# Recorded rather than left as a silent gap: a group missing from the contract
+# should say whether that is a decision or an omission.
+
 class TestAuth:
     @pytest.mark.auth
     def test_index_no_token_returns_401(self, anon_client: httpx.Client) -> None:

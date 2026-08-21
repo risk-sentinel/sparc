@@ -48,6 +48,29 @@ class Api::V1::BaseController < ActionController::API
     render json: { error: "Missing required parameter: #{e.param}" }, status: :bad_request
   end
 
+  # #1023 — the same failure the handler above exists for, from a different
+  # direction. Rails ENUM assignment raises ArgumentError immediately, before
+  # validation runs, so no validation error is ever produced to render: an
+  # invalid `evidence_type` returned 500 and Rails' HTML error page, from a JSON
+  # API. `Evidence` was the only model using enums; every other constrained
+  # field uses `validates :inclusion` and already answered 422.
+  #
+  # Rescued at the base rather than in one controller so a future enum cannot
+  # reintroduce it. Rails' own message — "'bogus' is not a valid evidence_type"
+  # — is already what the caller needs.
+  #
+  # Logged at warn as well: an ArgumentError that is NOT bad input is a real
+  # bug, and turning every one of them into a quiet 422 would hide it.
+  rescue_from ArgumentError do |e|
+    Rails.logger.warn(
+      "[SPARC] ArgumentError reached the API boundary and was rendered as 422: #{e.message}"
+    )
+    render json: {
+      error: "The request contained a value this endpoint does not accept.",
+      details: [ e.message ]
+    }, status: :unprocessable_entity
+  end
+
   # #995 — a field this endpoint does not accept is refused, not discarded.
   #
   # `params.permit` drops what it does not recognise, silently and by design,
