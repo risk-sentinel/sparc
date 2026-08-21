@@ -11,6 +11,11 @@
 class FindingDisposition < ApplicationRecord
   belongs_to :authorization_boundary
   belongs_to :linked_subject, polymorphic: true, optional: true
+  # #1034 — the identities separation of duties is enforced on. `decided_by` and
+  # `approved_by` remain the human-readable provenance the export and signature
+  # hash use; these are for comparison, which names cannot do reliably.
+  belongs_to :decided_by_user,  class_name: "User", optional: true
+  belongs_to :approved_by_user, class_name: "User", optional: true
 
   before_validation :assign_uuid_if_blank
   before_validation :default_decided_at, on: :create

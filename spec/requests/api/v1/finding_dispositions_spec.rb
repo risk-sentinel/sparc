@@ -242,6 +242,111 @@ RSpec.describe "Api::V1 finding dispositions", type: :request do
       expect(response).to have_http_status(:forbidden)
     end
 
+    # #1034 — a disposition is the decision that a failing scanner finding stops
+    # counting against a boundary. One person could waive a HIGH finding and
+    # sign off on their own waiver, and the record showed a completed two-stage
+    # approval. `DocumentApprovalService` has refused self-approval since it was
+    # written; this had no equivalent.
+    describe "separation of duties" do
+      let(:decider) do
+        create(:user).tap do |u|
+          grant_permission(u, "evidence.write",    authorization_boundary: boundary)
+          grant_permission(u, "amendment.approve", authorization_boundary: boundary)
+        end
+      end
+
+      it "refuses approval by the person who decided it" do
+        set_disposition(headers: headers_for(decider))
+        expect(response).to have_http_status(:created)
+
+        post "#{path}/approve", headers: headers_for(decider), as: :json
+
+        expect(response).to have_http_status(:forbidden)
+        expect(response.parsed_body["error"]).to match(/person who decided it/i)
+      end
+
+      it "refuses rejection by the person who decided it" do
+        set_disposition(headers: headers_for(decider))
+
+        post "#{path}/reject", headers: headers_for(decider), as: :json
+
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "leaves the disposition unapproved when it refuses" do
+        set_disposition(headers: headers_for(decider))
+
+        post "#{path}/approve", headers: headers_for(decider), as: :json
+
+        get path, headers: admin_headers
+        expect(response.parsed_body["data"]["approval_status"]).to eq("draft")
+        expect(response.parsed_body["data"]["approved_by"]).to be_nil
+      end
+
+      it "allows a DIFFERENT holder of amendment.approve" do
+        set_disposition(headers: headers_for(decider))
+
+        post "#{path}/approve", headers: headers_for(approver), as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["data"]["approval_status"]).to eq("approved")
+      end
+
+      # Compared by user id, not by `decided_by`, which is a display name.
+      it "distinguishes two users who share a display name" do
+        twin = create(:user, display_name: decider.display_name)
+        grant_permission(twin, "amendment.approve", authorization_boundary: boundary)
+        set_disposition(headers: headers_for(decider))
+
+        post "#{path}/approve", headers: headers_for(twin), as: :json
+
+        expect(response).to have_http_status(:ok),
+          "the guard compared names, so a different user was mistaken for the decider"
+      end
+
+      it "records the approver identity, not only their name" do
+        set_disposition(headers: headers_for(decider))
+
+        post "#{path}/approve", headers: headers_for(approver), as: :json
+
+        expect(FindingDisposition.last.approved_by_user_id).to eq(approver.id)
+        expect(FindingDisposition.last.decided_by_user_id).to eq(decider.id)
+      end
+
+      # Mirrors DocumentApprovalService, which exempts admins. Called out on
+      # #1034 as the owner's call rather than assumed.
+      it "still permits an admin to self-approve, as documents do" do
+        set_disposition(headers: admin_headers)
+
+        post "#{path}/approve", headers: admin_headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+      end
+
+      # Every row written before the column existed has a NULL decider id and
+      # was deliberately not backfilled by matching names.
+      it "does not fire on a row whose decider identity was never recorded" do
+        set_disposition(headers: headers_for(decider))
+        FindingDisposition.last.update_columns(decided_by_user_id: nil)
+
+        post "#{path}/approve", headers: headers_for(decider), as: :json
+
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "re-opens approval when the disposition is edited" do
+        set_disposition(headers: headers_for(decider))
+        post "#{path}/approve", headers: headers_for(approver), as: :json
+        expect(response.parsed_body["data"]["approval_status"]).to eq("approved")
+
+        set_disposition(headers: headers_for(decider), reason: "Revised")
+
+        get path, headers: admin_headers
+        expect(response.parsed_body["data"]["approval_status"]).to eq("draft")
+        expect(FindingDisposition.last.approved_by_user_id).to be_nil
+      end
+    end
+
     it "scopes the approve permission to the boundary" do
       set_disposition
       elsewhere = create(:user)

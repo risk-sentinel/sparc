@@ -65,16 +65,20 @@ class HdfTriageController < ApplicationController
   # gate whether the disposition suppresses a finding during aggregation/export.
   def approve_disposition
     disp = @boundary.finding_dispositions.find_by!(uuid: params[:disposition_uuid])
-    FindingDispositionService.approve(disp, approved_by: actor)
+    FindingDispositionService.approve(disp, approved_by: actor, approved_by_user: current_user)
     redirect_to triage_path, success: "Approved amendment for #{disp.control_id}."
+  rescue FindingDispositionService::SeparationOfDutiesError => e
+    redirect_to triage_path, error: e.message
   rescue FindingDispositionService::DispositionError => e
     redirect_to triage_path, error: "Approval failed: #{e.message}"
   end
 
   def reject_disposition
     disp = @boundary.finding_dispositions.find_by!(uuid: params[:disposition_uuid])
-    FindingDispositionService.reject(disp, approved_by: actor)
+    FindingDispositionService.reject(disp, approved_by: actor, approved_by_user: current_user)
     redirect_to triage_path, success: "Rejected amendment for #{disp.control_id}."
+  rescue FindingDispositionService::SeparationOfDutiesError => e
+    redirect_to triage_path, error: e.message
   rescue FindingDispositionService::DispositionError => e
     redirect_to triage_path, error: "Rejection failed: #{e.message}"
   end
@@ -100,6 +104,9 @@ class HdfTriageController < ApplicationController
     subject = FindingDispositionService.resolve_subject(params[:linked_subject_type], params[:linked_subject_id])
     FindingDispositionService.new(finding).upsert(
       kind: params[:kind].to_s, reason: params[:reason].to_s, decided_by: actor,
+      # #1034 — the identity separation of duties is enforced on. Without it the
+      # guard is inert for anything decided through this screen.
+      decided_by_user: current_user,
       linked_subject: subject, expiration: params[:expiration].presence
     )
     redirect_to triage_path, success: "Disposition saved for #{finding.control_id}."

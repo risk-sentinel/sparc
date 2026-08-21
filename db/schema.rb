@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_21_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_21_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -681,11 +681,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_21_180000) do
     t.string "approval_status", default: "draft", null: false
     t.datetime "approved_at"
     t.string "approved_by"
+    t.bigint "approved_by_user_id"
     t.bigint "authorization_boundary_id", null: false
     t.string "control_id", null: false
     t.datetime "created_at", null: false
     t.datetime "decided_at", null: false
     t.string "decided_by", null: false
+    t.bigint "decided_by_user_id"
     t.datetime "expiration"
     t.string "kind", null: false
     t.bigint "linked_subject_id"
@@ -696,8 +698,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_21_180000) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.datetime "valid_until"
     t.index ["approval_status"], name: "index_finding_dispositions_on_approval_status"
+    t.index ["approved_by_user_id"], name: "index_finding_dispositions_on_approved_by_user_id"
     t.index ["authorization_boundary_id", "control_id"], name: "index_finding_dispositions_on_boundary_and_control", unique: true
     t.index ["authorization_boundary_id"], name: "index_finding_dispositions_on_authorization_boundary_id"
+    t.index ["decided_by_user_id"], name: "index_finding_dispositions_on_decided_by_user_id"
     t.index ["linked_subject_type", "linked_subject_id"], name: "idx_on_linked_subject_type_linked_subject_id_8ff38b2546"
     t.index ["uuid"], name: "index_finding_dispositions_on_uuid", unique: true
   end
@@ -1879,6 +1883,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_21_180000) do
   add_foreign_key "evidences", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "evidences", "users", column: "collected_by_user_id", on_delete: :nullify
   add_foreign_key "finding_dispositions", "authorization_boundaries"
+  add_foreign_key "finding_dispositions", "users", column: "approved_by_user_id"
+  add_foreign_key "finding_dispositions", "users", column: "decided_by_user_id"
   add_foreign_key "identities", "users", on_delete: :cascade
   add_foreign_key "ksi_validations", "authorization_boundaries"
   add_foreign_key "ksi_validations", "catalog_controls"

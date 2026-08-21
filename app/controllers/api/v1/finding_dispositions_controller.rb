@@ -33,7 +33,10 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
     disposition = FindingDispositionService.new(@finding).upsert(
       kind: params[:kind].to_s,
       reason: params[:reason].to_s,
-      decided_by: current_user&.display_name.presence || current_user&.email,
+      decided_by: actor,
+      # #1034 — the identity separation of duties is enforced on. `decided_by`
+      # above is a display name and cannot serve: two users can share one.
+      decided_by_user: current_user,
       linked_subject: subject,
       expiration: params[:expiration].presence
     )
@@ -60,7 +63,7 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
     disposition = current_disposition
     return render json: NOT_FOUND_BODY, status: :not_found if disposition.nil?
 
-    FindingDispositionService.approve(disposition, approved_by: actor)
+    FindingDispositionService.approve(disposition, approved_by: actor, approved_by_user: current_user)
     audit_log("finding_disposition_approved", subject: disposition,
               metadata: { control_id: disposition.control_id, kind: disposition.kind })
     render json: { data: serialize(disposition) }
@@ -71,10 +74,17 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
     disposition = current_disposition
     return render json: NOT_FOUND_BODY, status: :not_found if disposition.nil?
 
-    FindingDispositionService.reject(disposition, approved_by: actor)
+    FindingDispositionService.reject(disposition, approved_by: actor, approved_by_user: current_user)
     audit_log("finding_disposition_rejected", subject: disposition,
               metadata: { control_id: disposition.control_id, kind: disposition.kind })
     render json: { data: serialize(disposition) }
+  end
+
+  # #1034 — an authorization outcome, so 403 rather than the 422 a
+  # DispositionError gets. A caller who is simply the wrong person needs to know
+  # that, not that their input was malformed.
+  rescue_from FindingDispositionService::SeparationOfDutiesError do |e|
+    render json: { error: e.message }, status: :forbidden
   end
 
   private
