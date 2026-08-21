@@ -16,6 +16,7 @@ import httpx
 import pytest
 
 from _bulk_destroy import BulkDestroyContract
+from _crud_contract import CrudContract
 from _document_helpers import create_doc, delete_doc, make_payload
 from _populate_from_profile import PopulateFromProfileContract
 from _review_workflow import ReviewWorkflowContract
@@ -54,6 +55,26 @@ def cdef_doc(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield doc
     finally:
         delete_doc(admin_client, PATH, doc["slug"])
+
+
+# #995 — the shared matrix: documented status, an INDEPENDENT read after every
+# write, gone-from-show-and-index after delete, and a refused caller changing
+# nothing. Sixteen endpoints in this group, and the checks that need a real
+# record live here rather than in the whole-surface sweep.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = PARAM_KEY
+    IDENTIFIER = "slug"
+    # The controller's design comment: "All CRUD operations are available to any
+    # authenticated user." The AWS Labs bulk-ingest flow and the catalog refresh
+    # button both depend on it (#575 Path D). Asserted rather than exempted, so
+    # gating it later is a failing test.
+    NON_ADMIN_MAY_WRITE_BECAUSE = (
+        "CDEF is intentionally open to any authenticated user (#575 Path D)"
+    )
+
+    def _payload(self, admin_client):
+        return _new_payload()[PARAM_KEY]
 
 
 class TestIndex:

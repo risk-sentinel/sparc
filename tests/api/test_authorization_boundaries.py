@@ -16,6 +16,7 @@ import httpx
 import pytest
 
 from _bulk_destroy import BulkDestroyContract
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import assert_update_round_trip
 
@@ -53,6 +54,16 @@ def boundary(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield b
     finally:
         _delete(admin_client, b["id"])
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = "authorization_boundary"
+    IDENTIFIER = "id"
+
+    def _payload(self, admin_client):
+        return _new_payload()["authorization_boundary"]
 
 
 class TestBulkDestroy(BulkDestroyContract):

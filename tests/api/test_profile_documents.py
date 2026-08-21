@@ -16,6 +16,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from _document_helpers import create_doc, delete_doc, make_payload
 from _review_workflow import ReviewWorkflowContract
 from conftest import assert_error_envelope, assert_paginated_envelope, published_profile
@@ -131,6 +132,18 @@ class TestBaselineReview:
             anon_client.get(f"{PATH}/{profile_doc['slug']}/baseline_review"),
             expected_status=401,
         )
+
+
+# #995 — the shared matrix for this group: documented status, an INDEPENDENT
+# read after every write, gone-from-show-and-index after delete, and a refused
+# caller changing nothing.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = PARAM_KEY
+    IDENTIFIER = "slug"
+
+    def _payload(self, admin_client):
+        return _new_payload()[PARAM_KEY]
 
 
 class TestIndex:

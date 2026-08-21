@@ -16,6 +16,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from _document_helpers import create_doc, delete_doc, make_payload
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
@@ -47,6 +48,21 @@ def poam_doc(admin_client: httpx.Client, seeded_boundary_id: int) -> Iterator[di
         yield doc
     finally:
         delete_doc(admin_client, PATH, doc["slug"])
+
+
+# #995 — the shared matrix for this group: documented status, an INDEPENDENT
+# read after every write, gone-from-show-and-index after delete, and a refused
+# caller changing nothing.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = PARAM_KEY
+    IDENTIFIER = "slug"
+
+    def _payload(self, admin_client):
+        boundaries = admin_client.get("/api/v1/authorization_boundaries", params={"items": 1})
+        rows = boundaries.json()["data"]
+        assert rows, "no authorization boundary on this instance"
+        return _new_payload(rows[0]["id"])[PARAM_KEY]
 
 
 class TestIndex:

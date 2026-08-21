@@ -12,6 +12,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     ControlMappingIndex,
@@ -41,6 +42,26 @@ def _new_payload() -> dict[str, Any]:
 def _delete(client: httpx.Client, mapping_id: int) -> None:
     response = client.delete(f"{PATH}/{mapping_id}")
     assert response.status_code in (200, 204, 404), response.text
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = "control_mapping"
+    IDENTIFIER = "id"
+
+    def _payload(self, admin_client):
+        # A mapping is between two catalogs, so both must exist. The module's
+        # own _new_payload omits them because its other tests supply them
+        # per-test; the contract needs a self-sufficient body.
+        catalogs = admin_client.get("/api/v1/control_catalogs", params={"items": 2})
+        rows = catalogs.json()["data"]
+        assert len(rows) >= 2, "need two catalogs on this instance to map between"
+
+        body = _new_payload()["control_mapping"]
+        body["source_catalog_id"] = rows[0]["id"]
+        body["target_catalog_id"] = rows[1]["id"]
+        return body
 
 
 class TestIndex:

@@ -20,6 +20,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from _document_helpers import create_doc, delete_doc, make_payload
 from _populate_from_profile import PopulateFromProfileContract
 from conftest import assert_error_envelope, assert_paginated_envelope
@@ -79,6 +80,19 @@ class TestPopulateFromProfile(PopulateFromProfileContract):
 
 
 # ── index ──────────────────────────────────────────────────────────────────
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = PARAM_KEY
+    IDENTIFIER = "slug"
+
+    def _payload(self, admin_client):
+        boundaries = admin_client.get("/api/v1/authorization_boundaries", params={"items": 1})
+        rows = boundaries.json()["data"]
+        assert rows, "no authorization boundary on this instance to hang an SSP off"
+        return _new_payload(rows[0]["id"])[PARAM_KEY]
+
 
 class TestIndex:
     @pytest.mark.happy

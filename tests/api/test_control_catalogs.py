@@ -13,6 +13,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from _review_workflow import ReviewWorkflowContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
@@ -64,6 +65,16 @@ def catalog(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield c
     finally:
         _delete(admin_client, c["id"])
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = "control_catalog"
+    IDENTIFIER = "id"
+
+    def _payload(self, admin_client):
+        return _new_payload()["control_catalog"]
 
 
 class TestReviewWorkflow(ReviewWorkflowContract):
