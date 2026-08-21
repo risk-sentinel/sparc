@@ -118,9 +118,10 @@ class FindingDispositionService
   # the column existed. Those were not backfilled by matching names — a guess at
   # which user a name referred to is not provenance.
   #
-  # An admin may still self-approve, exactly as they may for a document. That is
-  # the established pattern; tightening it to "nobody, including admins" is a
-  # one-line change here and is the owner's call.
+  # An admin may still self-approve, exactly as they may for a document.
+  # OWNER-DECIDED 2026-08-21: "admin is global authority and has absolute reign,
+  # break-glass type of use." So the exemption is intended, not inherited by
+  # accident — do not tighten it to "nobody, including admins".
   def self.can_approve?(disposition, user)
     return false unless user
     return false if !user.admin? && disposition.decided_by_user_id.present? &&

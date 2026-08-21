@@ -313,8 +313,9 @@ RSpec.describe "Api::V1 finding dispositions", type: :request do
         expect(FindingDisposition.last.decided_by_user_id).to eq(decider.id)
       end
 
-      # Mirrors DocumentApprovalService, which exempts admins. Called out on
-      # #1034 as the owner's call rather than assumed.
+      # Mirrors DocumentApprovalService, which exempts admins. OWNER-DECIDED
+      # 2026-08-21: admin is global authority with absolute reign, a break-glass
+      # role — so this exemption is deliberate and this example pins it.
       it "still permits an admin to self-approve, as documents do" do
         set_disposition(headers: admin_headers)
 
