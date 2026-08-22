@@ -53,18 +53,29 @@ def api(base_url: str) -> Iterator[httpx.Client]:
 def target_user(api: httpx.Client) -> Iterator[dict]:
     """A throwaway local-login user to lock out and recover."""
     suffix = uuid.uuid4().hex[:8]
+    # #877 — `password` and `password_confirmation` are NOT accepted on create.
+    # SPARC issues a temporary credential itself and forces its replacement at
+    # first sign-in. This payload used to carry them: they were silently dropped
+    # and the user was created anyway, so the tests passed. Once #1021 made the
+    # endpoint REFUSE unrecognised fields instead of discarding them, creation
+    # started returning 422 and all three tests below began SKIPPING — green,
+    # and proving nothing, for as long as nobody read the skip reasons.
+    #
+    # Nothing here ever used that initial password: every test calls
+    # `password_reset` and signs in with the temporary it returns.
     payload = {
         "user": {
             "email": f"pwrecovery-{suffix}@example.gov",
             "first_name": "Password",
             "last_name": "Recovery",
-            "password": f"InitialPassword-{suffix}!",
-            "password_confirmation": f"InitialPassword-{suffix}!",
         }
     }
     resp = api.post("/api/v1/users", json=payload)
-    if resp.status_code not in (200, 201):
-        pytest.skip(f"could not create a test user ({resp.status_code}): {resp.text[:200]}")
+    # A hard failure, not a skip. Creation failing is a broken deployment or a
+    # changed contract, and silently skipping is exactly how this went unnoticed.
+    assert resp.status_code in (200, 201), (
+        f"could not create the test user ({resp.status_code}): {resp.text[:300]}"
+    )
 
     user = resp.json().get("data") or resp.json()
     try:
@@ -175,14 +186,30 @@ def test_the_temporary_password_dies_once_replaced(
         context.close()
 
 
-def test_a_suspended_user_is_not_handed_a_working_credential(
+def test_a_deactivated_user_is_not_handed_a_working_credential(
     api: httpx.Client, target_user: dict
 ) -> None:
-    """Reactivating is a deliberate act; issuing a credential must not bypass it."""
-    api.patch(f"/api/v1/users/{target_user['id']}", json={"user": {"status": "suspended"}})
+    """Reactivating is a deliberate act; issuing a credential must not bypass it.
+
+    AC-2. Deactivation rather than suspension because that is what the API can
+    actually do: `users#update` accepts only first_name, last_name,
+    display_name and email, so the `status: "suspended"` PATCH this test used to
+    send was refused and the account stayed ACTIVE. The response was never
+    checked, so the test would have failed the moment it stopped skipping — the
+    account it believed was suspended would have been issued a credential
+    correctly.
+
+    `users#destroy` is the soft delete that moves an account out of `active`,
+    and it is asserted here rather than assumed.
+    """
+    deactivated = api.delete(f"/api/v1/users/{target_user['id']}")
+    assert deactivated.status_code == 200, (
+        f"could not deactivate the user, so the refusal below would prove nothing: "
+        f"{deactivated.status_code} {deactivated.text[:200]}"
+    )
 
     resp = api.post(f"/api/v1/users/{target_user['id']}/password_reset", json={"mode": "temporary"})
 
     assert resp.status_code == 422, (
-        f"a suspended account was issued a working password ({resp.status_code})"
+        f"a deactivated account was issued a working password ({resp.status_code})"
     )

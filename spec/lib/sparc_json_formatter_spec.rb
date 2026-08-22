@@ -76,30 +76,46 @@ RSpec.describe Logging::SparcJsonFormatter do
   # in CloudWatch during an ECS deployment, where the password is then retained
   # for as long as the log group is. NIST AU-9 / IA-5(1).
   describe "credential redaction" do
-    SECRET = "Sup3r$ecret!"
+    # A LOCAL, not a constant. A constant assigned in a `describe` block is not
+    # scoped to it -- it lands on Object, where another spec file defining the
+    # same name silently wins. That is #1035: these fixtures are interpolated
+    # when the file loads, the assertion resolved `secret` when the example ran,
+    # and by then it held a different file's value, so five redaction checks
+    # searched the output for a string that had never been in the input. A local
+    # is captured by each example's closure, so the two cannot diverge.
+    #
+    # It has to be a local rather than a `let`: the value is needed at load time
+    # to build the table of examples below.
+    secret = "Sup3r$ecret!"
 
     {
-      "a connection URI"        => "could not connect: postgresql://app:#{SECRET}@db.rds:5432/prod",
-      "libpq conninfo"          => "host=db.rds user=app password=#{SECRET} sslmode=require",
-      "an inspected config"     => { adapter: "postgresql", password: SECRET }.inspect,
-      "a JSON secret payload"   => %Q({"username":"app","password":"#{SECRET}"}),
-      "a non-database URI"      => "redis://default:#{SECRET}@cache:6379/1"
+      "a connection URI"        => "could not connect: postgresql://app:#{secret}@db.rds:5432/prod",
+      "libpq conninfo"          => "host=db.rds user=app password=#{secret} sslmode=require",
+      "an inspected config"     => { adapter: "postgresql", password: secret }.inspect,
+      "a JSON secret payload"   => %Q({"username":"app","password":"#{secret}"}),
+      "a non-database URI"      => "redis://default:#{secret}@cache:6379/1"
     }.each do |label, line|
       it "redacts the secret in #{label}" do
-        expect(emit("ERROR", line)["msg"]).not_to include(SECRET)
+        # Pins the fixture to the assertion. Without this, an input that no
+        # longer carries the secret still "passes" the expectation below, which
+        # is precisely how #1035 stayed green.
+        expect(line).to include(secret),
+          "the fixture does not contain the secret being searched for, so the next line asserts nothing"
+
+        expect(emit("ERROR", line)["msg"]).not_to include(secret)
       end
     end
 
     it "redacts a password carried on an exception message" do
-      error = StandardError.new("FATAL: postgresql://app:#{SECRET}@db.rds:5432/prod refused")
+      error = StandardError.new("FATAL: postgresql://app:#{secret}@db.rds:5432/prod refused")
 
-      expect(emit("ERROR", error)["msg"]).not_to include(SECRET)
+      expect(emit("ERROR", error)["msg"]).not_to include(secret)
     end
 
     # Redaction that also destroys the diagnostic context is its own problem —
     # an operator still has to be able to tell WHICH connection failed.
     it "keeps everything that is not the secret" do
-      msg = emit("ERROR", "host=db.rds port=5432 user=app password=#{SECRET} sslmode=require")["msg"]
+      msg = emit("ERROR", "host=db.rds port=5432 user=app password=#{secret} sslmode=require")["msg"]
 
       expect(msg).to include("host=db.rds", "port=5432", "user=app", "sslmode=require")
       expect(msg).to include("[REDACTED]")
@@ -112,9 +128,9 @@ RSpec.describe Logging::SparcJsonFormatter do
       allow(ENV).to receive(:fetch).and_call_original
       allow(ENV).to receive(:fetch).with("SPARC_LOG_CREDENTIALS", "false").and_return("true")
 
-      line = "postgresql://app:#{SECRET}@db.rds:5432/prod"
+      line = "postgresql://app:#{secret}@db.rds:5432/prod"
 
-      expect(described_class.new.call("ERROR", ts, nil, line)).to include(SECRET)
+      expect(described_class.new.call("ERROR", ts, nil, line)).to include(secret)
     end
 
     it "redacts by default when the variable is unset" do

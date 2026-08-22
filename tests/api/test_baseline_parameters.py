@@ -15,6 +15,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _export_contract import ExportContract
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.baselines, pytest.mark.phase1]
@@ -48,6 +49,24 @@ def profile(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         admin_client.delete(f"{PROFILES_PATH}/{body['slug']}")
 
 
+# #995 — the shared export contract.
+class TestExportContract(ExportContract):
+    EXPORT_FORMATS = ("json", "yaml")
+
+    def _export_path(self, admin_client):
+        profiles = admin_client.get(PROFILES_PATH, params={"items": 100}).json()["data"]
+        for row in profiles:
+            params_response = admin_client.get(_path(row["slug"]))
+            if params_response.status_code == 200 and params_response.json()["data"]["parameters"]:
+                self._profile = row
+                return f"{_path(row['slug'])}/export"
+        raise AssertionError("no profile on this instance exposes tailorable parameters")
+
+    def _expected_content(self, admin_client):
+        self._export_path(admin_client)
+        return self._profile["name"]
+
+
 class TestShow:
     @pytest.mark.happy
     def test_admin_shows_parameter_schema(
@@ -72,16 +91,183 @@ class TestShow:
         )
 
 
+# Controls that carry ODPs in the NIST catalog. Three is enough to guarantee
+# parameters exist without selecting a whole baseline.
+_CONTROLS_WITH_PARAMETERS = ["ac-1", "ac-2", "ac-2.1"]
+
+
+@pytest.fixture
+def tailorable_parameter(
+    admin_client: httpx.Client,
+) -> Iterator[tuple[str, dict[str, Any]]]:
+    """A (profile_slug, parameter) pair on a profile THIS FIXTURE builds.
+
+    #1041 — this used to scan the instance for a profile that already had
+    parameters and edit that. The first non-published match was the seeded
+    review-queue fixture, the one document the demo estate keeps at
+    `approval_status: "pending_review"`. Editing a document under review
+    correctly clears that state, so every run of this suite emptied the
+    `review_queue` screen and failed a ui-smoke check in a different suite.
+
+    The fixture restored the parameter VALUE it changed; it could not restore
+    the lifecycle side effect, and it had no way to even detect the problem —
+    `approval_status` was not exposed by the API until #1041 added it.
+
+    Borrowing was never necessary. A profile with a catalog and a few
+    parameter-carrying controls selected has thousands of ODPs, and building one
+    costs two requests. The module docstring already set this standard: "Tests
+    create their own profile parent so they don't depend on seed-data."
+    """
+    suffix = uuid.uuid4().hex[:8]
+    catalogs = admin_client.get("/api/v1/control_catalogs", params={"items": 50})
+    assert catalogs.status_code == 200, catalogs.text
+    catalog = next(
+        (c for c in catalogs.json()["data"] if "800-53" in (c.get("name") or "")), None
+    )
+    assert catalog, "no NIST 800-53 catalog on this instance to source parameters from"
+
+    created = admin_client.post(
+        PROFILES_PATH,
+        json={
+            "profile_document": {
+                "name": f"phase2-tailorable-{suffix}",
+                "control_catalog_id": catalog["id"],
+                "baseline_level": "moderate",
+            }
+        },
+    )
+    assert created.status_code == 201, created.text
+    slug = created.json()["data"]["slug"]
+
+    try:
+        selected = admin_client.put(
+            f"{PROFILES_PATH}/{slug}/controls", json={"control_ids": _CONTROLS_WITH_PARAMETERS}
+        )
+        assert selected.status_code == 200, selected.text
+
+        response = admin_client.get(_path(slug))
+        assert response.status_code == 200, response.text
+        parameters = response.json().get("data", {}).get("parameters") or []
+        # A hard failure rather than a skip: the controls above are chosen
+        # BECAUSE they carry ODPs, so none coming back means the catalog or the
+        # selection broke, not that this deployment happens to lack them.
+        assert parameters, (
+            f"{_CONTROLS_WITH_PARAMETERS} selected from {catalog['name'][:40]!r} "
+            "exposed no tailorable parameters"
+        )
+
+        yield slug, parameters[0]
+    finally:
+        admin_client.delete(f"{PROFILES_PATH}/{slug}")
+
+
 class TestUpdate:
     @pytest.mark.happy
     def test_admin_updates_parameters(
+        self,
+        admin_client: httpx.Client,
+        tailorable_parameter: tuple[str, dict[str, Any]],
+    ) -> None:
+        """A tailored ODP value persists, confirmed by an independent read.
+
+        What this replaced sent ``{"parameters": {}}`` — an empty *object map*
+        — and accepted ``200 or 422``. Both halves were vacuous. The map shape
+        is the one #994's parser rejects, so the test named
+        ``test_admin_updates_parameters`` and marked ``happy`` exercised the
+        refusal path and never once verified that a parameter update persists;
+        and accepting either status meant no response could fail it.
+        """
+        slug, parameter = tailorable_parameter
+        param_id = parameter["param_id"]
+        new_value = f"sweep-{uuid.uuid4().hex[:8]}"
+        assert parameter.get("current_value") != new_value
+
+        response = admin_client.put(
+            _path(slug),
+            json={"parameters": [{"param_id": param_id, "value": new_value}]},
+        )
+        assert response.status_code == 200, response.text
+
+        result = response.json()["data"]
+        assert result["parameters_updated"] == 1, result
+        assert result["validation_errors"] == [], result
+
+        after = admin_client.get(_path(slug))
+        assert after.status_code == 200, after.text
+        persisted = {
+            row["param_id"]: row.get("current_value")
+            for row in after.json()["data"]["parameters"]
+        }
+        assert persisted[param_id] == new_value, (
+            f"{param_id} reported updated but an independent read shows "
+            f"{persisted[param_id]!r}"
+        )
+
+    @pytest.mark.authz
+    def test_published_profile_is_refused(self, admin_client: httpx.Client) -> None:
+        """A published profile cannot be edited, and says so (#1008).
+
+        The Lifecycle concern has documented "Published documents are read-only"
+        since it was written, and nothing enforced it on this path: a published
+        baseline's ODPs could be rewritten through the API, with the change
+        persisting. A published baseline is what other documents are derived
+        from and attested against.
+        """
+        listing = admin_client.get(PROFILES_PATH, params={"items": 100})
+        assert listing.status_code == 200, listing.text
+
+        published = next(
+            (
+                item
+                for item in listing.json().get("data", [])
+                if item.get("lifecycle_status") == "published"
+            ),
+            None,
+        )
+        if published is None:
+            pytest.skip("no published profile on this instance")
+
+        before = admin_client.get(_path(published["slug"]))
+        assert before.status_code == 200, before.text
+        original = before.json()["data"]["parameters"]
+        if not original:
+            pytest.skip("the published profile exposes no parameters")
+
+        param_id = original[0]["param_id"]
+        response = admin_client.put(
+            _path(published["slug"]),
+            json={"parameters": [{"param_id": param_id, "value": "must-be-refused"}]},
+        )
+        assert response.status_code == 422, response.text
+        assert "published" in response.json()["error"].lower(), response.text
+
+        after = admin_client.get(_path(published["slug"]))
+        persisted = {
+            row["param_id"]: row.get("current_value")
+            for row in after.json()["data"]["parameters"]
+        }
+        assert persisted[param_id] == original[0].get("current_value"), (
+            "the update was refused but the value changed anyway"
+        )
+
+    @pytest.mark.validation
+    def test_object_map_shape_is_refused_with_a_named_reason(
         self, admin_client: httpx.Client, profile: dict[str, Any]
     ) -> None:
-        # Sending an empty parameters map exercises the bulk-update
-        # contract without depending on which parameter ids the seed
-        # exposes.
+        """The #994 shape: an object map where an array is expected.
+
+        It must be told apart from "nothing to do" — before #994 this answered
+        ``200 {"status": "updated", "parameters_updated": 0}``.
+        """
         response = admin_client.put(_path(profile["slug"]), json={"parameters": {}})
-        assert response.status_code in (200, 422), response.text
+        assert response.status_code == 422, response.text
+
+        body = response.json()
+        assert "could not be parsed" in body["error"], body
+        assert any("ARRAY" in detail for detail in body["details"]), body
+        assert body["expected"]["parameters"] == [
+            {"param_id": "string", "value": "string"}
+        ], body
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

@@ -34,7 +34,7 @@ All error responses return a JSON object with an `error` key. Validation errors 
 | 401 | Unauthorized | Missing or invalid authentication token |
 | 403 | Forbidden | Insufficient permissions, endpoint not allowed, or CIDR blocked |
 | 404 | Not Found | Resource does not exist or has been soft-deleted |
-| 422 | Unprocessable Entity | Validation failed on the submitted data |
+| 422 | Unprocessable Entity | Validation failed on the submitted data, or the body carried a field the endpoint does not accept |
 
 ## Example Error Responses
 
@@ -102,6 +102,42 @@ Returned when submitted data fails model validations. The `details` array lists 
   ]
 }
 ```
+
+### 422 Unprocessable Entity — unrecognized fields
+
+Returned when a request body carries a field the endpoint does not accept.
+**Nothing is written.** The response names each offending field and lists what
+the endpoint does accept, so a misspelling can be corrected rather than guessed
+at.
+
+```json
+{
+  "error": "The request body contained fields this endpoint does not accept. Nothing was changed.",
+  "details": [
+    "Unrecognized field: not_a_real_column",
+    "Unrecognized field: descriptionn"
+  ],
+  "expected": ["name", "description", "version", "source", "oscal_version", "lifecycle_status"]
+}
+```
+
+Until [#995](https://github.com/risk-sentinel/sparc/issues/995) an unrecognized
+field was **discarded in silence** and the request returned `200` with the
+resource unchanged, so "nothing to do" and "I did not understand you" arrived as
+the same response. That is what let
+[#994](https://github.com/risk-sentinel/sparc/issues/994) answer
+`200 {"status": "updated"}` to a body it had never parsed.
+
+Two consequences worth knowing before you send a request:
+
+- **A field the server owns is refused, not ignored.** Evidence provenance
+  (`collected_at`, `collected_by`, `collected_by_user_id`) and an attestation's
+  `attester_name` are stamped from the authenticated account. Supplying them
+  used to be accepted and dropped; it now fails, so a caller cannot believe a
+  backdated timestamp or a substituted name took effect. Omit them and the
+  server fills them in.
+- **`id` is refused like any other field.** Echoing a resource you read back is
+  not supported — `created_at`, `updated_at` and `slug` are refused too.
 
 ## Validation Errors
 

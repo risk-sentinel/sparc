@@ -42,7 +42,15 @@ class Api::V1::UsersController < Api::V1::BaseController
     # Shared with the admin UI (Admin::UsersController#create). The service
     # applies :admin/:status only for admin actors — this action is already
     # gated by before_action :authorize_admin! (defense in depth).
-    user = UserProvisioningService.new(actor: current_user).build(params.require(:user))
+    # #1021 — permit HERE, then hand the permitted params on. This action
+    # passed `params.require(:user)` straight through, so it was the one write
+    # endpoint that still answered 201 to a body carrying a field it does not
+    # accept: the service's own `permit_base` dropped it in silence.
+    #
+    # The service keeps that internal permit as defence in depth — the web path
+    # (Admin::UsersController#create) reaches it too, and removing it would
+    # widen a different surface.
+    user = UserProvisioningService.new(actor: current_user).build(create_user_params)
 
     # #877 — same handover as the UI: SPARC issues the first credential and
     # forces its replacement at first sign-in, rather than letting the caller
@@ -160,7 +168,14 @@ class Api::V1::UsersController < Api::V1::BaseController
   # here — they flow through UserProvisioningService#apply_privileged_attributes!
   # for admin actors only, never Rails mass-assignment. (Brakeman BRAKE0105.)
   def user_self_update_params
-    params.require(:user).permit(:first_name, :last_name, :display_name, :email)
+    permit_strictly(:user, :first_name, :last_name, :display_name, :email)
+  end
+
+  # Creation additionally accepts the privileged attributes, which
+  # UserProvisioningService applies only when the actor is an admin.
+  def create_user_params
+    permit_strictly(:user, :first_name, :last_name, :display_name, :email,
+      :admin, :status)
   end
 
   def serialize_user(user, detailed: false)

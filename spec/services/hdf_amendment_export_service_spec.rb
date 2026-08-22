@@ -77,10 +77,25 @@ RSpec.describe HdfAmendmentExportService do
       expect(id1).to eq(id2)
     end
 
-    it "validates the emitted doc via hdf amend verify" do
+    # #1037 — this asserted `kind_of(String)`, which was the defect written down.
+    # `HdfRunner#with_input_path` treats a String as a PATH and hands it to the
+    # CLI unchanged, so a JSON string arrived as a filename and every call to the
+    # endpoint 422'd. The double could not notice: it verifies that the method
+    # exists and takes one argument, not what the real implementation does with
+    # it.
+    #
+    # So this now asserts the argument is something the real runner can OPEN,
+    # and that what it carries is the emitted document.
+    it "validates the emitted doc via hdf amend verify, passing it as readable content" do
       dispositioned("CVE-1")
-      expect(runner).to receive(:amend_verify).with(kind_of(String)).and_return(true)
-      service.export
+      received = nil
+      expect(runner).to receive(:amend_verify) { |arg| received = arg }.and_return(true)
+
+      doc = service.export
+
+      expect(received).to respond_to(:read),
+        "a bare String is treated as a file PATH by HdfRunner, not as content (#1037)"
+      expect(JSON.parse(received.read)).to eq(doc)
     end
 
     it "skips verification when verify: false" do

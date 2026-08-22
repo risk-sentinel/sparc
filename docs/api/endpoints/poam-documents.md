@@ -10,6 +10,7 @@ Plan of Action and Milestones (POA&M) documents track security weaknesses, plann
 | `GET` | `/api/v1/poam_documents/:slug` | Get a single POA&M document | `poam.read` |
 | `POST` | `/api/v1/poam_documents` | Create a new (empty) POA&M document | `poam.write` |
 | `POST` | `/api/v1/poam_documents/generate` | **Generate a populated POA&M** from a SAR's open risks | `poam.write` |
+| `POST` | `/api/v1/poam_documents/import` | **Ingest a POA&M from an OSCAL file** (JSON / XML / YAML) | `poam.write` |
 | `PUT` | `/api/v1/poam_documents/:slug` | Update a POA&M document | `poam.write` |
 | `DELETE` | `/api/v1/poam_documents/:slug` | Soft-delete a POA&M document | `poam.write` |
 

@@ -37,7 +37,10 @@ RSpec.describe "Api::V1::Guides", type: :request do
       get "/api/v1/guides/system-security-plans", headers: headers
 
       expect(response).to have_http_status(:ok)
-      body = response.parsed_body
+      # #1036 — wrapped in `data`, matching `index` above and every other
+      # resource read in this API. It used to come back at the top level, so a
+      # client with one response handler got nil here.
+      body = response.parsed_body["data"]
       expect(body["slug"]).to eq("system-security-plans")
       expect(body["title"]).to be_present
       expect(body["html"]).to include("<h")

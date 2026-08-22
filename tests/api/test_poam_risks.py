@@ -18,12 +18,14 @@ discovered one failed edit at a time.
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import Iterator
 from typing import Any
 
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from _document_helpers import create_doc, delete_doc, make_payload
 from conftest import assert_error_envelope
 
@@ -78,6 +80,36 @@ def risk(admin_client: httpx.Client, poam_doc: dict[str, Any]) -> Iterator[dict[
         yield created
     finally:
         admin_client.delete(f"{_RISKS}/{created['id']}")
+
+
+# #995 — the shared matrix for this nested group.
+class TestCrudContract(CrudContract):
+    PARAM_KEY = "poam_risk"
+    IDENTIFIER = "id"
+    # The API normalises a date to an ISO-8601 instant on the way out
+    # ('2027-01-01' -> '2027-01-01T00:00:00Z'), so a byte comparison would
+    # report a defect that is a serialization choice. Named rather than
+    # silently loosened for every field.
+    IGNORE_ON_READ_BACK = frozenset({"deadline"})
+
+    def _base_path(self, admin_client):
+        docs = admin_client.get("/api/v1/poam_documents", params={"items": 1})
+        rows = docs.json()["data"]
+        assert rows, "no POA&M document on this instance"
+        return f"/api/v1/poam_documents/{rows[0]['slug']}/risks"
+
+    def _payload(self, admin_client):
+        return {"title": f"contract risk {uuid.uuid4().hex[:6]}",
+                "description": "Created by the contract suite",
+                "statement": "Risk statement", "status": "open",
+                "deadline": "2027-01-01"}
+
+    def _update_fields(self):
+        return {"title": f"renamed {uuid.uuid4().hex[:6]}"}
+
+    def _url(self, client, record):
+        # Created nested under the document, addressed top-level by id (#832).
+        return f"{_RISKS}/{record['id']}"
 
 
 class TestCreate:

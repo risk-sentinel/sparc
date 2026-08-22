@@ -21,56 +21,32 @@
               <span class="sparc-sidebar-icon">&#128205;</span> <%= org.name %>
             </button>
             <div class="collapse" id="sidebarOrg<%= org.id %>">
-              <% org.authorization_boundaries.order(:name).each do |ab| %>
-                <div class="sparc-sidebar-boundary">
-                  <button class="sparc-sidebar-toggle sparc-sidebar-indent-2"
-                          data-bs-toggle="collapse" data-bs-target="#sidebarAb<%= ab.id %>" aria-expanded="false">
-                    <span class="badge rounded-pill sparc-status--<%= ab_status_variant(ab.status) %>" style="font-size: 0.55rem; vertical-align: middle;">
-                      <%= ab.status&.upcase %>
-                    </span>
-                    <%= ab.name %>
-                  </button>
-                  <div class="collapse" id="sidebarAb<%= ab.id %>">
-                    <ul class="sparc-sidebar-leaves">
-                      <li>
-                        <%= link_to profile_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
-                          <span class="sparc-sidebar-dot" style="background: #3498db;"></span> Profiles
-                        <% end %>
-                      </li>
-                      <li>
-                        <%= link_to cdef_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
-                          <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> CDEFs
-                        <% end %>
-                      </li>
-                      <li>
-                        <%= link_to ssp_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
-                          <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> SSP
-                        <% end %>
-                      </li>
-                      <li>
-                        <%# #447 — HDF Amendment triage for this boundary's scanner findings. %>
-                        <%= link_to triage_authorization_boundary_path(ab), class: "sparc-sidebar-leaf" do %>
-                          <span class="sparc-sidebar-dot" style="background: #d35400;"></span> Amendments
-                        <% end %>
-                      </li>
-                      <li>
-                        <%= link_to sap_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
-                          <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAP
-                        <% end %>
-                      </li>
-                      <li>
-                        <%= link_to sar_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
-                          <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAR
-                        <% end %>
-                      </li>
-                      <li>
-                        <%= link_to poam_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
-                          <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> POA&Ms
-                        <% end %>
-                      </li>
-                    </ul>
-                  </div>
+              <%#
+                #951 — boundaries paginate at 10 within an organization.
+                Each boundary contributes seven document links, so a ten-boundary
+                organization is already seventy leaves before the next section
+                starts. The first ten render; the rest sit behind a disclosure,
+                which reuses the collapse idiom the rest of this sidebar uses so
+                `sidebar_controller.js` persists its state like every other
+                section, with no new JavaScript and no inline handler.
+              %>
+              <% boundaries = org.authorization_boundaries.order(:name).to_a %>
+              <% shown, overflow = boundaries.first(ApplicationHelper::SIDEBAR_BOUNDARY_PAGE_SIZE), boundaries.drop(ApplicationHelper::SIDEBAR_BOUNDARY_PAGE_SIZE) %>
+              <% shown.each do |ab| %>
+                <%= render "shared/sidebar_boundary", ab: ab %>
+              <% end %>
+              <% if overflow.any? %>
+                <div class="collapse" id="sidebarOrgMore<%= org.id %>">
+                  <% overflow.each do |ab| %>
+                    <%= render "shared/sidebar_boundary", ab: ab %>
+                  <% end %>
                 </div>
+                <button class="sparc-sidebar-toggle sparc-sidebar-indent-2 sparc-sidebar-more"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#sidebarOrgMore<%= org.id %>"
+                        aria-expanded="false">
+                  <%= overflow.size %> more <%= "boundary".pluralize(overflow.size) %>
+                </button>
               <% end %>
               <% if org.authorization_boundaries.empty? %>
                 <div class="sparc-sidebar-indent-2 text-body-tertiary small py-1 ps-4">No boundaries</div>
@@ -123,8 +99,11 @@
         <span class="sparc-sidebar-icon">&#128279;</span> Resources
       </button>
       <div class="collapse" id="sidebarResources">
+        <%# #951 — the NIST OSCAL reference links nest, so this section is a few
+            rows rather than nine and Help & Guides stays reachable. %>
+        <% groups = sidebar_resource_groups %>
         <ul class="sparc-sidebar-leaves">
-          <% SparcConfig.resources.each do |resource| %>
+          <% groups[:top_level].each do |resource| %>
             <li>
               <a href="<%= resource["href"] %>" target="_blank" rel="noopener noreferrer"
                  class="sparc-sidebar-leaf">
@@ -134,6 +113,25 @@
             </li>
           <% end %>
         </ul>
+        <% if groups[:nested].any? %>
+          <button class="sparc-sidebar-toggle sparc-sidebar-indent-1"
+                  data-bs-toggle="collapse" data-bs-target="#sidebarOscalRef" aria-expanded="false">
+            <span class="sparc-sidebar-icon">&#128218;</span> OSCAL Reference
+          </button>
+          <div class="collapse" id="sidebarOscalRef">
+            <ul class="sparc-sidebar-leaves">
+              <% groups[:nested].each do |resource| %>
+                <li>
+                  <a href="<%= resource["href"] %>" target="_blank" rel="noopener noreferrer"
+                     class="sparc-sidebar-leaf sparc-sidebar-indent-2">
+                    <span class="sparc-sidebar-dot" style="background: #9b59b6;"></span>
+                    <%= resource["display_text"] %> <span style="font-size: 0.65rem;">&#8599;</span>
+                  </a>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
       </div>
     </div>
 

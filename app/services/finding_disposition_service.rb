@@ -23,6 +23,9 @@ require "digest"
 # RA-3 (risk assessment linkage), AU-10 (signature_hash provenance).
 class FindingDispositionService
   class DispositionError < StandardError; end
+  # #1034 — distinct from DispositionError so the controller can answer 403
+  # rather than 422: this is an authorization outcome, not malformed input.
+  class SeparationOfDutiesError < StandardError; end
 
   # kind => required linked_subject class name.
   LINKAGE = {
@@ -76,7 +79,7 @@ class FindingDispositionService
     raise DispositionError, "Linked #{type} ##{id} not found"
   end
 
-  def upsert(kind:, reason:, decided_by:, linked_subject: nil, expiration: nil)
+  def upsert(kind:, reason:, decided_by:, decided_by_user: nil, linked_subject: nil, expiration: nil)
     validate_kind!(kind)
     validate_severity!(kind)
     validate_linkage!(kind, linked_subject)
@@ -85,11 +88,14 @@ class FindingDispositionService
       authorization_boundary_id: @boundary.id, control_id: @finding.control_id
     )
     disposition.assign_attributes(
-      kind: kind, reason: reason, decided_by: decided_by,
+      kind: kind, reason: reason, decided_by: decided_by, decided_by_user: decided_by_user,
       linked_subject: linked_subject, expiration: expiration, decided_at: Time.current
     )
     # Editing a disposition resets its approval; it must be re-approved.
-    disposition.assign_attributes(approval_status: "draft", approved_by: nil, approved_at: nil)
+    # #1034 — the approver identity clears with the rest of it, or an edited
+    # disposition would keep an approval that referred to its earlier content.
+    disposition.assign_attributes(approval_status: "draft", approved_by: nil,
+                                  approved_by_user: nil, approved_at: nil)
     disposition.valid_until = AmendmentValidityService.new(disposition).valid_until # #809 ODP window
     disposition.signature_hash = signature_for(disposition)
     disposition.save!
@@ -99,19 +105,60 @@ class FindingDispositionService
   end
 
   # #809 — approve/reject the amendment. Approver is bound into the signature.
-  def self.approve(disposition, approved_by:)
+  # #1034 — separation of duties, mirroring `DocumentApprovalService#can_approve?`
+  # rather than inventing a second convention:
+  #
+  #   a non-admin cannot approve a disposition they decided.
+  #
+  # Compared by user id, never by `decided_by`, which is a display name falling
+  # back to an email: two users can share one, and a user can change theirs
+  # between deciding and approving.
+  #
+  # Inert when `decided_by_user_id` is NULL, which is every row written before
+  # the column existed. Those were not backfilled by matching names — a guess at
+  # which user a name referred to is not provenance.
+  #
+  # An admin may still self-approve, exactly as they may for a document.
+  # OWNER-DECIDED 2026-08-21: "admin is global authority and has absolute reign,
+  # break-glass type of use." So the exemption is intended, not inherited by
+  # accident — do not tighten it to "nobody, including admins".
+  def self.can_approve?(disposition, user)
+    return false unless user
+    return false if !user.admin? && disposition.decided_by_user_id.present? &&
+                    disposition.decided_by_user_id == user.id
+
+    true
+  end
+
+  def self.approve(disposition, approved_by:, approved_by_user: nil)
+    guard_separation_of_duties!(disposition, approved_by_user)
     disposition.update!(
-      approval_status: "approved", approved_by: approved_by, approved_at: Time.current
+      approval_status: "approved", approved_by: approved_by,
+      approved_by_user: approved_by_user, approved_at: Time.current
     )
     disposition
   end
 
-  def self.reject(disposition, approved_by:)
+  def self.reject(disposition, approved_by:, approved_by_user: nil)
+    guard_separation_of_duties!(disposition, approved_by_user)
     disposition.update!(
-      approval_status: "rejected", approved_by: approved_by, approved_at: Time.current
+      approval_status: "rejected", approved_by: approved_by,
+      approved_by_user: approved_by_user, approved_at: Time.current
     )
     disposition
   end
+
+  # Rejecting your own disposition is the same conflict as approving it: both
+  # are the sign-off stage, and letting one through would leave the decision
+  # closed by the person who opened it.
+  def self.guard_separation_of_duties!(disposition, user)
+    return if user.nil? # caller supplied no identity; nothing to compare
+    return if can_approve?(disposition, user)
+
+    raise SeparationOfDutiesError,
+          "A disposition cannot be approved or rejected by the person who decided it"
+  end
+  private_class_method :guard_separation_of_duties!
 
   private
 

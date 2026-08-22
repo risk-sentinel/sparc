@@ -31,9 +31,23 @@ class EvidenceBrowseQuery < CollectionBrowseQuery
   facet :status, label: "Status"
   facet :source, label: "Source"
 
+  # #951 — narrowing to a boundary INCLUDES global evidence.
+  #
+  # The default narrow is `WHERE authorization_boundary_id = X`, which answers
+  # "evidence owned by this boundary". The question the boundary view actually
+  # asks is "what evidence is this boundary using", and a boundary uses
+  # leveraged evidence it does not own — an inherited control implementation, a
+  # provider's artifact — which is carried here as a NULL boundary, the same
+  # global fallback `boundary_scoped_document` applies when deciding who may
+  # see what.
+  #
+  # Excluding it made the boundary view claim a system had less evidence than
+  # it does, which for an assessment view is the wrong direction to be wrong in.
   facet :authorization_boundary_id, label: "Authorization boundary", choices: lambda { |scope|
     AuthorizationBoundary.where(id: scope.distinct.select(:authorization_boundary_id))
                          .order(:name).pluck(:name, :id)
+  }, narrow: lambda { |scope, value|
+    scope.where(authorization_boundary_id: [ value, nil ])
   }
 
   # Reached through the link table, and matched across every accepted spelling

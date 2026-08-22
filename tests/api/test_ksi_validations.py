@@ -18,6 +18,8 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
+from _export_contract import ExportContract
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.ksi, pytest.mark.phase1]
@@ -49,6 +51,78 @@ def boundary(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield body
     finally:
         admin_client.delete(f"{BOUNDARIES_PATH}/{body['id']}")
+
+
+# #995 — the shared matrix for this group.
+# #995 — the shared export contract.
+class TestExportContract(ExportContract):
+
+
+    def _export_path(self, admin_client):
+        # Its own boundary lookup: `_boundary` lives on TestCrudContract, and
+        # sharing state between two contract classes would couple them.
+        boundaries = admin_client.get(BOUNDARIES_PATH, params={"items": 1})
+        rows = boundaries.json()["data"]
+        assert rows, "no authorization boundary on this instance"
+        self._export_boundary = rows[0]
+        return f"{_boundary_path(rows[0]['id'])}/export"
+
+    def _expected_content(self, admin_client):
+        self._export_path(admin_client)
+        # The export names the boundary it is an export OF.
+        return self._export_boundary["name"]
+
+
+class TestCrudContract(CrudContract):
+    PARAM_KEY = "ksi_validation"
+    IDENTIFIER = "id"
+    # #1024 — this used to declare NON_ADMIN_MAY_WRITE_BECAUSE, pinning the
+    # behaviour where any authenticated user could record an assessment result
+    # on any boundary. That is now gated on evidence.write scoped to the
+    # boundary, so the declaration is REMOVED rather than reworded: leaving it
+    # would assert the opposite of the rule the endpoint now enforces.
+    #
+    # The contract's default closed posture is correct here, and the suite's
+    # non-admin token holds no grant on this boundary.
+
+    def _boundary(self, admin_client):
+        # Its OWN boundary, not a shared one: catalog_control_id is unique per
+        # boundary, so reusing one would make the second create a duplicate.
+        if getattr(self, "_cached_boundary", None):
+            return self._cached_boundary
+        created = admin_client.post(BOUNDARIES_PATH, json=_new_boundary_payload())
+        assert created.status_code in (200, 201), created.text
+        self._cached_boundary = created.json()["data"]
+        return self._cached_boundary
+
+    def _base_path(self, admin_client):
+        return _boundary_path(self._boundary(admin_client)["id"])
+
+    def _payload(self, admin_client):
+        # A KSI validation is per (boundary, indicator), so each create needs a
+        # DIFFERENT indicator — the model enforces that uniqueness.
+        indicators = admin_client.get("/api/v1/ksi_catalog/indicators", params={"items": 100})
+        rows = indicators.json()["data"]
+        assert rows, "no KSI indicators seeded on this instance"
+
+        used = getattr(self, "_used_controls", set())
+        existing = admin_client.get(self._base_path(admin_client), params={"items": 200})
+        for row in existing.json().get("data", []):
+            used.add(row.get("catalog_control_id"))
+
+        catalog = admin_client.get("/api/v1/control_catalogs", params={"items": 100})
+        ksi = next(c for c in catalog.json()["data"] if c["source"] == "FedRAMP 20x")
+        controls = admin_client.get(f"/api/v1/control_catalogs/{ksi['id']}/controls",
+                                    params={"items": 100})
+        free = [c["id"] for c in controls.json()["data"] if c["id"] not in used]
+        assert free, "every KSI indicator on this boundary already has a validation"
+
+        used.add(free[0])
+        self._used_controls = used
+        return {"catalog_control_id": free[0], "status": "not_assessed"}
+
+    def _update_fields(self):
+        return {"status": "passed"}
 
 
 class TestIndex:

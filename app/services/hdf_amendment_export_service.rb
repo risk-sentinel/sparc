@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "digest"
+require "stringio"
 
 # #447 — translation OUT. Database-backed port of
 # bin/sparc_findings_to_hdf_amendments.rb: emit an HDF Amendments document
@@ -48,7 +49,15 @@ class HdfAmendmentExportService
       "labels"      => { "system_id" => (@boundary.slug.presence || @boundary.uuid) },
       "overrides"   => overrides
     }
-    @runner.amend_verify(JSON.generate(doc)) if verify
+    # #1037 — wrapped in StringIO, NOT passed as a bare String. `HdfRunner`
+    # treats a String argument as a PATH and hands it to `hdf amend verify`
+    # unchanged, so generated JSON arrived at the CLI as a filename and every
+    # call failed with "failed to read amendments file: open {...}". A String is
+    # a path there on purpose — HdfOscalTranslationService passes `f.path` — so
+    # the caller is what was wrong. StringIO responds to `read` and not to
+    # `path`, which routes it through the Tempfile branch, the same way
+    # `amend_apply` already materialises in-memory content.
+    @runner.amend_verify(StringIO.new(JSON.generate(doc))) if verify
     doc
   end
 

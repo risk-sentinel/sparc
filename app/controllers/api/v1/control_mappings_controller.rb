@@ -92,7 +92,7 @@ class Api::V1::ControlMappingsController < Api::V1::BaseController
   end
 
   def mapping_params
-    params.require(:control_mapping).permit(
+    permit_strictly(:control_mapping,
       :name, :description, :status, :method_type, :matching_rationale,
       :mapping_version, :oscal_version, :source_catalog_id, :target_catalog_id
     )

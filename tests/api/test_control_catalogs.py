@@ -13,12 +13,15 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from _review_workflow import ReviewWorkflowContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     ControlCatalogIndex,
     ControlCatalogShow,
     assert_create_round_trip,
+    assert_unhandled_payload_is_not_reported_as_success,
+    assert_update_round_trip,
     validate_index_response,
     validate_show_response,
 )
@@ -62,6 +65,16 @@ def catalog(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield c
     finally:
         _delete(admin_client, c["id"])
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = "control_catalog"
+    IDENTIFIER = "id"
+
+    def _payload(self, admin_client):
+        return _new_payload()["control_catalog"]
 
 
 class TestReviewWorkflow(ReviewWorkflowContract):
@@ -163,12 +176,47 @@ class TestUpdate:
     def test_admin_updates_catalog(
         self, admin_client: httpx.Client, catalog: dict[str, Any]
     ) -> None:
-        new_desc = f"updated {uuid.uuid4().hex[:6]}"
-        response = admin_client.patch(
-            f"{PATH}/{catalog['id']}",
-            json={"control_catalog": {"description": new_desc}},
+        """The PATCH persists, confirmed by an independent read.
+
+        This asserted only ``status_code == 200`` until #995. It would have
+        passed against an endpoint that discarded the payload — which is not a
+        hypothetical failure mode here: #994's parameters endpoint answered
+        ``200 {"status": "updated"}`` to a body it never parsed.
+        """
+        assert_update_round_trip(
+            admin_client,
+            PATH,
+            catalog["id"],
+            {"description": f"updated {uuid.uuid4().hex[:6]}"},
+            "control_catalog",
+            ControlCatalogShow,
+            restore=False,  # the fixture owns this catalog and deletes it
         )
-        assert response.status_code == 200, response.text
+
+    @pytest.mark.validation
+    def test_unrecognized_fields_are_refused(
+        self, admin_client: httpx.Client, catalog: dict[str, Any]
+    ) -> None:
+        """A payload the endpoint cannot act on must not come back as success.
+
+        `params.permit` drops what it does not recognise, so before #995 a
+        controller handed the wrong key saw an empty change set and took the
+        success branch — 200, with the resource unchanged. Nothing
+        distinguished "nothing to do" from "I did not understand you".
+        """
+        response = assert_unhandled_payload_is_not_reported_as_success(
+            admin_client,
+            PATH,
+            catalog["id"],
+            {"control_catalog": {"not_a_real_column": "x", "descriptionn": "typo"}},
+            ControlCatalogShow,
+        )
+
+        assert response.status_code == 422, response.text
+        details = " ".join(response.json()["details"])
+        assert "not_a_real_column" in details
+        assert "descriptionn" in details
+        assert "description" in response.json()["expected"]
 
     @pytest.mark.authz
     def test_non_admin_returns_403(self, user_client: httpx.Client) -> None:

@@ -197,15 +197,28 @@ RSpec.describe "Api::V1::CatalogControls", type: :request do
       expect(control.guidance_data).not_to have_key("injected_key")
     end
 
-    it "drops an unenumerated attribute instead of writing it to the record" do
+    # #995 — an unenumerated attribute is refused rather than dropped, and the
+    # whole update is refused with it. Applying the recognised half of a body
+    # while discarding the rest, under a 200, is the shape that let a caller
+    # believe a re-parenting had taken.
+    it "refuses an unenumerated attribute instead of dropping it" do
       patch "#{catalog_path}/ac-2", headers: auth, params: {
         catalog_control: { title: "Renamed", control_family_id: 999_999, id: 12_345 }
       }
 
+      expect(response).to have_http_status(:unprocessable_content)
+      details = JSON.parse(response.body)["details"].join(" ")
+      expect(details).to include("control_family_id")
+      expect(control.reload.title).not_to eq("Renamed")
+      expect(control.control_family_id).to eq(family.id)
+    end
+
+    it "applies the update when only enumerated fields are sent" do
+      patch "#{catalog_path}/ac-2", headers: auth, params: { catalog_control: { title: "Renamed" } }
+
       expect(response).to have_http_status(:ok)
       expect(control.reload.title).to eq("Renamed")
       expect(control.control_family_id).to eq(family.id)
-      expect(control.id).not_to eq(12_345)
     end
 
     it "keeps the enumerated OSCAL parameter shape and drops the rest" do

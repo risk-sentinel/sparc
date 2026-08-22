@@ -1,7 +1,11 @@
 # REST API for Component Definition (CDEF) Document management.
 #
 # All endpoints require Bearer token authentication.
-# All CRUD operations are available to any authenticated user.
+#
+# #1032 — writes require `cdef.write`, matching the web controller. They were
+# open to any authenticated user until then, so the permission existed, the web
+# enforced it, and the API did not: `cdef.write` could be routed around by using
+# it. CDEF was the only API document controller with ungated writes.
 #
 # GET    /api/v1/cdef_documents          — list (filterable)
 # GET    /api/v1/cdef_documents/:id      — show
@@ -16,18 +20,38 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::CdefDocumentsController < Api::V1::BaseController
+  OSCAL_EXPORT_FORMATS = %w[oscal oscal-yaml oscal-xml].freeze
+
   include ReconciliationGate
 
   include DocumentApprovalApi
   include FieldImportable
-  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :source_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm, :update_scope ]
+  # #1031 — file ingest; a CDEF is normally authored elsewhere.
+  include DocumentFileIngestApi
+  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :source_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm, :update_scope, :export ]
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
+  # #1032 — every write gated on `cdef.write`, the same permission and the same
+  # action list as the web controller, and the same shape as every sibling API
+  # controller (SSP/SAR/SAP/POA&M `authorize_document_write!`, Profile
+  # `authorize_profiles_write!`, catalogs `authorize_catalogs_write!`).
+  #
+  # Not listed here, and deliberately: `bulk_destroy` is admin-only, the
+  # field-import pair is gated on `converters.write` (#499), and `approve` /
+  # `reject` carry their own authority check inside DocumentApprovalService —
+  # adding `cdef.write` to those would change who can approve, which is a
+  # different decision.
+  before_action :authorize_cdef_write!, only: [ :create, :update, :destroy, :import,
+                                                :source_from_profile, :submit_for_review,
+                                                :update_scope ]
   # #716 — field import is a bulk mutation; gate it like bulk-apply (converters.write).
   before_action :authorize_bulk_apply!, only: [ :import_fields_preview, :import_fields_confirm ]
 
   # #716 — FieldImportable hook (CDEF loads into @cdef).
   def field_import_document = @cdef
+
+  # #1031 — DocumentFileIngestApi hook.
+  def ingest_type_key = :cdef
 
   # GET /api/v1/cdef_documents
   def index
@@ -113,14 +137,9 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   # over the API rather than the only place a CDEF's scope can be re-pointed.
   # Body: { "scope": "global" | "boundary", "authorization_boundary_id": N }
   def update_scope
-    # Matches the web twin's `cdef.write` gate. The sibling CRUD actions here
-    # are open to any authenticated user (see the class comment) — a
-    # pre-existing asymmetry this new endpoint does not extend.
-    unless current_user&.has_permission?("cdef.write")
-      return render json: { error: "Not authorized to change this component definition's scope" },
-                    status: :forbidden
-    end
-
+    # #1032 — the inline `cdef.write` check that used to live here is now the
+    # shared before_action above. It was correct, but it was one gate plus a
+    # special case, which is how the two drift.
     CdefScopeService.apply(@cdef,
       scope: params[:scope],
       authorization_boundary_id: params[:authorization_boundary_id],
@@ -235,8 +254,21 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   # #629 — admin-only bulk delete; honors the referential-integrity guard and
   # returns a per-id partial-success result.
   def bulk_destroy
+    # #1018 — parse before deleting. `params[:ids]` used to be read straight
+    # off the request, so a misspelled key deleted nothing and answered 200
+    # with zeros: "nothing to do" and "I did not understand you" were the same
+    # response, on an endpoint whose job is deletion.
+    payload = BulkDestroyPayload.parse(params)
+    unless payload.valid?
+      return render json: {
+        error: "The request body could not be parsed as a bulk delete. Nothing was changed.",
+        details: payload.errors,
+        expected: BulkDestroyPayload::EXPECTED
+      }, status: :unprocessable_entity
+    end
+
     result = BulkDestroyService.new(
-      model_class: CdefDocument, ids: params[:ids],
+      model_class: CdefDocument, ids: payload.ids,
       user: current_user, ip_address: request.remote_ip
     ).call
     render json: {
@@ -251,6 +283,83 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
     audit_log("cdef_document_deleted", subject: @cdef, metadata: { name: @cdef.name })
     render json: { data: { id: @cdef.id, slug: @cdef.slug, deleted: true } }
+  end
+
+  # GET /api/v1/cdef_documents/:id/export
+  #
+  # #1026 — the field-import endpoints WRITE control fields (notes,
+  # implementation_narrative, implementation_status, control_origin,
+  # responsible_roles, set_parameters, status_override) and until this action
+  # existed nothing in the API read them back: `show` reports `controls_count`
+  # and carries no `controls`. The write's own `applied` count was the only
+  # evidence a caller had, which is the shape #994 was filed for.
+  #
+  # Authenticated-user read, matching `show` and the web `download_json` — a
+  # CDEF is instance-global, not boundary-scoped, so there is no boundary to
+  # scope this to. `CdefDocument#to_json_data` already emitted `controls:` with
+  # each control's fields; only the route was missing.
+  # GET /api/v1/cdef_documents/:id/export[?format=&validate=]
+  #
+  # #1029 — the OSCAL component definition, the artifact a CDEF exists to
+  # produce, could be downloaded only in a browser. The web carries five
+  # actions for it (download_oscal, download_oscal_validated,
+  # download_oscal_unvalidated, download_yaml, download_xml) because a browser
+  # download needs a distinct URL per variant. An API does not: they are one
+  # resource in three serialisations, with validation as a flag, so this is one
+  # endpoint with `format` and `validate` rather than five routes.
+  #
+  #   format=fields (default) SPARC's own control-field JSON — unchanged, so
+  #                           existing callers of this endpoint are unaffected
+  #   format=oscal            OSCAL component definition, JSON
+  #   format=oscal-yaml       the same document as YAML
+  #   format=oscal-xml        the same document as XML
+  #
+  #   validate=true (default for the OSCAL formats) validates against the NIST
+  #   schema and REFUSES a document that does not conform. The web path
+  #   degrades to a flash and a redirect; an API has to say so in the response,
+  #   so an invalid document is a 422 naming the errors rather than a file the
+  #   caller discovers is unusable later. `validate=false` is the deliberate
+  #   escape hatch and maps to `export_unvalidated`.
+  def export
+    format = params[:format].presence&.to_s || "fields"
+    return render json: JSON.parse(JsonExportService.export_cdef(@cdef)) if format == "fields"
+
+    unless OSCAL_EXPORT_FORMATS.include?(format)
+      return render json: {
+        error: "Unknown export format #{format.inspect}",
+        expected: ([ "fields" ] + OSCAL_EXPORT_FORMATS)
+      }, status: :unprocessable_entity
+    end
+
+    validate = params[:validate].to_s != "false"
+    service = OscalComponentDefinitionExportService.new(@cdef)
+    json_string = validate ? service.export : service.export_unvalidated
+
+    audit_log("cdef_document_exported", subject: @cdef,
+              metadata: { name: @cdef.name, format: format, validated: validate })
+
+    case format
+    when "oscal"      then render json: JSON.parse(json_string)
+    when "oscal-yaml" then render plain: OscalExportFormatService.to_yaml(json_string),
+                                   content_type: "application/x-yaml"
+    when "oscal-xml"  then render xml: OscalExportFormatService.to_xml(json_string, :component_definition)
+    else
+      # Unreachable: the guard above rejects anything outside
+      # OSCAL_EXPORT_FORMATS. Present so that ADDING a format to the constant
+      # and forgetting to handle it here is a named 500 in the log rather than a
+      # silent empty 204 — a `case` with no else returns nil, and Rails answers
+      # a nil render with no content, which is the least debuggable outcome.
+      raise ArgumentError, "Unhandled export format #{format.inspect}"
+    end
+  rescue OscalValidationError => e
+    # Named, and pointing at the way out. A caller who wants the document
+    # anyway can ask for it; what they must not get is a silent 500 or a file
+    # that claims to be OSCAL and is not.
+    render json: {
+      error: "The component definition does not conform to the OSCAL schema",
+      details: Array(e.message.to_s.split("\n")).first(10),
+      hint: "Re-request with validate=false to export it anyway"
+    }, status: :unprocessable_entity
   end
 
   private
@@ -273,6 +382,12 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       scope.find_by(slug: id_or_slug)
     end
     profile
+  end
+
+  # #1032 — the same helper name and body as the web controller's, so the two
+  # gates cannot drift apart.
+  def authorize_cdef_write!
+    authorize_permission!("cdef.write")
   end
 
   # #499 slice 3 — bulk-apply gated on converters.write (matches the
@@ -299,7 +414,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   end
 
   def cdef_params
-    params.require(:cdef_document).permit(
+    permit_strictly(:cdef_document,
       :name, :description, :cdef_type, :cdef_version, :benchmark_id,
       :oscal_version, :lifecycle_status, :file_type,
       # #944 — the component's own OSCAL fields. The exporter hardcoded these,
@@ -334,6 +449,21 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       data[:description] = cdef.description
       data[:oscal_version] = cdef.oscal_version
       data[:controls_count] = cdef.cdef_controls.count
+
+      # #1038 — the scope, reported so `update_scope` can be confirmed by a read
+      # instead of only by the write's own 200. Nothing in the API exposed it:
+      # not this serializer, not `show`, and the index ignores a `scope` or
+      # `authorization_boundary_id` parameter, so the only way to see whether a
+      # component definition was global or pinned to one boundary was a Rails
+      # console. Getting that wrong silently widens what every other boundary's
+      # composition includes.
+      #
+      # ADDED, never renamed: three new keys cannot break a consumer, and the
+      # shape question in #1036 is deliberately left alone.
+      boundary_id = CdefScopeService.current_boundary_id(cdef)
+      data[:globally_available] = cdef.globally_available
+      data[:authorization_boundary_id] = boundary_id
+      data[:scope] = boundary_id.present? ? "boundary" : "global"
 
       # #944 — the component's own OSCAL fields, reported so a consumer can see
       # what will be exported rather than discovering the hardcoded defaults

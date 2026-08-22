@@ -12,6 +12,21 @@ class Api::V1::BaseController < ActionController::API
 
   before_action :authenticate_api_token!
 
+  # Raised by `permit_strictly` when a request body carries fields the endpoint
+  # does not accept. Carries the offending names and what was expected, so the
+  # caller can correct the payload rather than guess which of the two failures
+  # they hit.
+  class UnrecognizedFields < StandardError
+    attr_reader :fields, :permitted
+
+    def initialize(fields, permitted)
+      @fields = fields
+      @permitted = permitted
+      super("Unrecognized fields: #{fields.join(', ')}")
+    end
+  end
+
+
   rescue_from ActiveRecord::RecordNotFound do |_e|
     render json: { error: "Not found" }, status: :not_found
   end
@@ -33,7 +48,94 @@ class Api::V1::BaseController < ActionController::API
     render json: { error: "Missing required parameter: #{e.param}" }, status: :bad_request
   end
 
+  # #1023 — the same failure the handler above exists for, from a different
+  # direction. Rails ENUM assignment raises ArgumentError immediately, before
+  # validation runs, so no validation error is ever produced to render: an
+  # invalid `evidence_type` returned 500 and Rails' HTML error page, from a JSON
+  # API. `Evidence` was the only model using enums; every other constrained
+  # field uses `validates :inclusion` and already answered 422.
+  #
+  # Rescued at the base rather than in one controller so a future enum cannot
+  # reintroduce it. Rails' own message — "'bogus' is not a valid evidence_type"
+  # — is already what the caller needs.
+  #
+  # Logged at warn as well: an ArgumentError that is NOT bad input is a real
+  # bug, and turning every one of them into a quiet 422 would hide it.
+  rescue_from ArgumentError do |e|
+    Rails.logger.warn(
+      "[SPARC] ArgumentError reached the API boundary and was rendered as 422: #{e.message}"
+    )
+    render json: {
+      error: "The request contained a value this endpoint does not accept.",
+      details: [ e.message ]
+    }, status: :unprocessable_entity
+  end
+
+  # #995 — a field this endpoint does not accept is refused, not discarded.
+  #
+  # `params.permit` drops what it does not recognise, silently and by design,
+  # and `action_on_unpermitted_parameters` is `false`, so a caller who misspells
+  # a field gets 200 and a resource that did not change. "Nothing to do" and
+  # "I did not understand you" arrive as the same response, which is the shape
+  # #994 was filed for — there it produced `200 {"status":"updated"}` for a body
+  # the endpoint had never parsed.
+  #
+  # The check lives here rather than in `config.action_controller.
+  # action_on_unpermitted_parameters` because that setting is global: flipping
+  # it to `:raise` would change how every web form is handled too, and toggling
+  # it per request is not safe across Puma's threads.
+  rescue_from UnrecognizedFields do |e|
+    render json: {
+      error: "The request body contained fields this endpoint does not accept. Nothing was changed.",
+      details: e.fields.map { |field| "Unrecognized field: #{field}" },
+      expected: e.permitted
+    }, status: :unprocessable_entity
+  end
+
   private
+
+  # Keys a client may send that are never part of a resource's attributes.
+  # `format` is a routing artefact rather than a field, so it is not the
+  # caller's mistake. `id` is deliberately NOT here: exempting it would mean a
+  # request could name a primary key and be told nothing, while the neighbouring
+  # `control_family_id` in the same body was refused. A caller echoing back a
+  # resource it read is not rescued by the exemption anyway — `created_at`,
+  # `updated_at` and `slug` are refused with or without it.
+  ALWAYS_ALLOWED_FIELDS = %w[format].freeze
+
+  # `params.require(root).permit(*filters)`, except that anything permit would
+  # have dropped is reported instead. Returns the permitted parameters, so call
+  # sites read the same as the ones they replaced.
+  # `also_accepts:` names fields the endpoint genuinely consumes OUTSIDE the
+  # permit list — read straight off the raw params by the action, the way
+  # `back_matter_resource[source]` and `federation_peer[service_token]` are.
+  # They are part of the endpoint's contract, so refusing them would be wrong;
+  # they simply are not mass-assigned. Nothing else may be sent.
+  # `nested` absorbs the hash-shaped filters (`public_metadata: {}`,
+  # `attestations_attributes: [...]`) that would otherwise be read as unknown
+  # keyword arguments once `also_accepts:` made this method take keywords.
+  def permit_strictly(root, *filters, also_accepts: [], **nested)
+    filters += [ nested ] if nested.any?
+
+    scope = params.require(root)
+    permitted = scope.permit(*filters)
+
+    submitted = scope.respond_to?(:to_unsafe_h) ? scope.to_unsafe_h.keys.map(&:to_s) : []
+    accepted  = permitted.to_h.keys.map(&:to_s)
+    unknown   = submitted - accepted - also_accepts.map(&:to_s) - ALWAYS_ALLOWED_FIELDS
+
+    raise UnrecognizedFields.new(unknown, expected_fields(filters) + also_accepts.map(&:to_s)) if unknown.any?
+
+    permitted
+  end
+
+  # The filter list rendered as names a caller can act on. A nested filter
+  # (`props: []`, `metadata: {}`) is named by its key.
+  def expected_fields(filters)
+    filters.flat_map do |filter|
+      filter.is_a?(Hash) ? filter.keys.map(&:to_s) : filter.to_s
+    end
+  end
 
   # Resolve pagination size from request params (?items=N or ?per_page=N),
   # falling back to the per-endpoint default. Clamped to a hard ceiling to
@@ -52,6 +154,23 @@ class Api::V1::BaseController < ActionController::API
         items: pagy.limit
       }
     }
+  end
+
+  # #1019 — the envelope for a collection returned WHOLE.
+  #
+  # Some collections are not paginated, and should not be: a fixed set of user
+  # guides, the KSI themes, the remediation-timeline grid, a promotion queue
+  # filtered in memory by what the caller may approve. They were returning
+  # `{data: [...]}` with no `meta` at all, or with `meta` carrying only a count,
+  # so a client could not use one pagination helper across the API — and
+  # `ksi_catalog#mappings` returned a DIFFERENT meta shape when its collection
+  # was empty than when it was populated, which breaks a client precisely in the
+  # case least likely to be tested.
+  #
+  # `page: 1, pages: 1` is not a fiction here: the whole collection is in this
+  # response, so there is exactly one page of it.
+  def whole_collection(rows, **extra)
+    { page: 1, pages: 1, count: rows.size, items: rows.size }.merge(extra)
   end
 
   def resolve_pagination_size(default:)

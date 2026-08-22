@@ -271,10 +271,22 @@ RSpec.describe "Api::V1::KsiValidations", type: :request do
     end
   end
 
-  context "as a non-admin user" do
+  # #1024 — this asserted that a non-admin with NO grant could read and create.
+  # That was true, and it was the defect: any authenticated user could record an
+  # assessment result on any boundary. A non-admin who HOLDS the boundary grant
+  # still can, which is what this now asserts; the refusal side and the
+  # wrong-boundary side live in ksi_validations_authorization_spec.rb.
+  context "as a non-admin user holding evidence.write on the boundary" do
     let(:regular_user) { create(:user) }
     let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
     let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
+
+    before do
+      role = create(:role, :authorization_boundary_scoped, name: "ksi_rw_#{SecureRandom.hex(4)}")
+      role.assign_permissions("evidence.read" => true, "evidence.write" => true)
+      role.save!
+      create(:user_role, user: regular_user, role: role, authorization_boundary: boundary)
+    end
 
     it "can read and create validations" do
       get api_v1_authorization_boundary_ksi_validations_path(authorization_boundary_id: boundary.slug),

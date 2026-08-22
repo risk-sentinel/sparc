@@ -111,7 +111,7 @@ class Api::V1::ControlFamiliesController < Api::V1::BaseController
   # accepting a loose hash would let arbitrary keys into a record the OSCAL
   # exporters read. Every field here is stated, and adding one is a decision.
   def family_params
-    params.require(:control_family).permit(:code, :name, :description, :sort_order)
+    permit_strictly(:control_family, :code, :name, :description, :sort_order)
   end
 
   def serialize_family(family, detailed: false)

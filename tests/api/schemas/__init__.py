@@ -51,6 +51,8 @@ from ._federation import (
 )
 from ._helpers import (
     assert_create_round_trip,
+    assert_unhandled_payload_is_not_reported_as_success,
+    assert_update_round_trip,
     validate_index_response,
     validate_show_response,
 )
@@ -102,6 +104,8 @@ __all__ = [
     "FederationPeerShow",
     # Helpers
     "assert_create_round_trip",
+    "assert_unhandled_payload_is_not_reported_as_success",
+    "assert_update_round_trip",
     "validate_index_response",
     "validate_show_response",
 ]

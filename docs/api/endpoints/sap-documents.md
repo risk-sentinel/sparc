@@ -10,6 +10,8 @@ Security Assessment Plan (SAP) documents define the scope, methodology, and sche
 | `GET` | `/api/v1/sap_documents/:slug` | Get a single SAP document | `sap.read` |
 | `POST` | `/api/v1/sap_documents` | Create a new (empty) SAP document | `sap.write` |
 | `POST` | `/api/v1/sap_documents/generate` | **Generate a populated SAP** from an SSP, profile, or boundary | `sap.write` |
+| `POST` | `/api/v1/sap_documents/import` | **Ingest a SAP from an OSCAL file** (JSON / XML / YAML) | `sap.write` |
+| `GET` | `/api/v1/sap_documents/:slug/export` | Export a SAP with its controls and their field values | `sap.read` |
 | `PUT` | `/api/v1/sap_documents/:slug` | Update a SAP document | `sap.write` |
 | `DELETE` | `/api/v1/sap_documents/:slug` | Soft-delete a SAP document | `sap.write` |
 

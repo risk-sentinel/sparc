@@ -98,4 +98,114 @@ RSpec.describe FieldImportService do
   it "refuses an unsupported document type" do
     expect { described_class.new(Object.new) }.to raise_error(described_class::ImportError, /not supported/)
   end
+
+  # #1028 — addressing. `control_id` on a CDEF is the NIST reference a Converter
+  # resolved at ingest (#912), not an identifier: two components can implement
+  # the same control, and it is NULL where nothing resolved. Keying on it and
+  # taking "first wins" over an unordered association wrote to a control the
+  # caller never named.
+  describe "#control addressing (CDEF)" do
+    let(:document) { create(:cdef_document) }
+
+    # Two rows, same NIST control_id and same native id, different components —
+    # the shape every AWS Labs CDEF has. `elasticbeanstalk.oscal.json` carries
+    # ElasticBeanstalk.1 twice: once under the service component, once under the
+    # AWS Config rule that implements it.
+    let!(:service_row) do
+      create(:cdef_control, cdef_document: document, control_id: "ca-7",
+                            source_control_id: "ElasticBeanstalk.1",
+                            source_vocabulary: "aws_security_hub", row_order: 0).tap do |c|
+        create(:cdef_control_field, cdef_control: c, field_name: "component",
+                                    field_value: "AWS Elastic Beanstalk")
+      end
+    end
+    let!(:rule_row) do
+      create(:cdef_control, cdef_document: document, control_id: "ca-7",
+                            source_control_id: "ElasticBeanstalk.1",
+                            source_vocabulary: "aws_security_hub", row_order: 1).tap do |c|
+        create(:cdef_control_field, cdef_control: c, field_name: "component",
+                                    field_value: "beanstalk-enhanced-health-reporting-enabled")
+      end
+    end
+
+    def payload_for(key, fields = { "notes" => "written" })
+      described_class.parse(content: { "controls" => { key => fields } }.to_json, format: "json")
+    end
+
+    def notes_on(control)
+      control.cdef_control_fields.find_by(field_name: "notes")&.field_value
+    end
+
+    it "refuses an ambiguous control_id instead of silently picking one" do
+      result = described_class.new(document).preview(payload_for("ca-7"))
+
+      row = result[:rows].sole
+      expect(row.status).to eq("ambiguous")
+      expect(result[:stats][:ambiguous]).to eq(1)
+    end
+
+    it "names every candidate so the refusal is actionable" do
+      message = described_class.new(document).preview(payload_for("ca-7"))[:rows].sole.message
+
+      expect(message).to include(service_row.uuid, rule_row.uuid)
+      expect(message).to include("AWS Elastic Beanstalk::ElasticBeanstalk.1")
+      expect(message).to include("beanstalk-enhanced-health-reporting-enabled::ElasticBeanstalk.1")
+    end
+
+    it "writes NOTHING when the key is ambiguous" do
+      described_class.new(document).apply(payload_for("ca-7"))
+
+      expect(notes_on(service_row.reload)).to be_nil
+      expect(notes_on(rule_row.reload)).to be_nil
+    end
+
+    it "addresses an exact control by uuid" do
+      result = described_class.new(document).apply(payload_for(rule_row.uuid))
+
+      expect(result[:applied]).to eq(1)
+      expect(notes_on(rule_row.reload)).to eq("written")
+      expect(notes_on(service_row.reload)).to be_nil, "the write landed on the wrong row"
+    end
+
+    it "addresses a control by component::source_control_id" do
+      key = "AWS Elastic Beanstalk::ElasticBeanstalk.1"
+      result = described_class.new(document).apply(payload_for(key))
+
+      expect(result[:applied]).to eq(1)
+      expect(notes_on(service_row.reload)).to eq("written")
+      expect(notes_on(rule_row.reload)).to be_nil, "the write landed on the wrong row"
+    end
+
+    it "reports which control a key resolved to" do
+      rows = described_class.new(document).preview(payload_for(rule_row.uuid))[:rows]
+
+      expect(rows.sole.resolved_uuid).to eq(rule_row.uuid)
+    end
+
+    it "still accepts a control_id that names exactly one control" do
+      other = create(:cdef_control, cdef_document: document, control_id: "au-2", row_order: 2)
+
+      result = described_class.new(document).apply(payload_for("AU-02"))
+
+      expect(result[:applied]).to eq(1)
+      expect(notes_on(other.reload)).to eq("written")
+    end
+
+    it "addresses by a bare source_control_id when it names exactly one control" do
+      only = create(:cdef_control, cdef_document: document, control_id: nil,
+                                   source_control_id: "ElasticBeanstalk.3",
+                                   source_vocabulary: "aws_security_hub", row_order: 3)
+
+      result = described_class.new(document).apply(payload_for("ElasticBeanstalk.3"))
+
+      expect(result[:applied]).to eq(1)
+      expect(notes_on(only.reload)).to eq("written")
+    end
+
+    it "reports an unmatched key as unknown, distinctly from ambiguous" do
+      row = described_class.new(document).preview(payload_for("no-such-control"))[:rows].sole
+
+      expect(row.status).to eq("unknown")
+    end
+  end
 end

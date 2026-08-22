@@ -128,6 +128,59 @@ RSpec.describe "HdfTriage", type: :request do
       expect(disp.reload.approval_status).to eq("rejected")
     end
 
+    # #1034 — the OTHER half of separation of duties: holding both authorities
+    # is not the same as being allowed to use them on the same disposition.
+    # This screen is where dispositions are actually triaged, so a guard that
+    # only covered the API would leave the real path open.
+    context "when one person holds both authorities on the boundary" do
+      let(:both_role) do
+        create(:role, :authorization_boundary_scoped,
+               permissions: { "evidence.read" => true, "evidence.write" => true,
+                              "amendment.approve" => true })
+      end
+      let(:triager) do
+        u = create(:user)
+        create(:user_role, user: u, role: both_role, authorization_boundary: boundary)
+        u
+      end
+      let(:poam_finding) { create(:poam_finding) }
+
+      before do
+        allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
+        sign_in_as(triager)
+        post triage_disposition_authorization_boundary_path(
+          boundary, finding_uuid: finding.uuid, kind: "poam", reason: "tracked",
+          linked_subject_type: "PoamFinding", linked_subject_id: poam_finding.id
+        )
+      end
+
+      it "records the decider identity, so the guard has something to compare" do
+        expect(boundary.finding_dispositions.find_by(control_id: "CVE-1").decided_by_user_id)
+          .to eq(triager.id)
+      end
+
+      it "refuses approval of the disposition they just set" do
+        disposition = boundary.finding_dispositions.find_by(control_id: "CVE-1")
+
+        post triage_approve_disposition_authorization_boundary_path(
+          boundary, disposition_uuid: disposition.uuid
+        )
+
+        expect(disposition.reload.approval_status).to eq("draft")
+        expect(flash[:error]).to match(/person who decided it/i)
+      end
+
+      it "refuses rejection of the disposition they just set" do
+        disposition = boundary.finding_dispositions.find_by(control_id: "CVE-1")
+
+        post triage_reject_disposition_authorization_boundary_path(
+          boundary, disposition_uuid: disposition.uuid
+        )
+
+        expect(disposition.reload.approval_status).to eq("draft")
+      end
+    end
+
     # Separation of duties: triaging and approving are distinct authorities, and
     # the enforcement has to live on the action. Hiding the button is not a
     # control — a triager can POST the route directly.

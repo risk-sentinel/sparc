@@ -68,11 +68,13 @@ RSpec.describe "Api::V1::Users", type: :request do
     it "creates a user as admin" do
       auth_headers # force-create admin user before counting
 
+      # #877/#1021 — password and password_confirmation are not accepted on
+      # create. They used to be accepted and silently overwritten; they are
+      # REFUSED now, which is what #877 always said. Their refusal has its own
+      # example below; this one is the ordinary create.
       user_params = {
         user: {
           email: "newuser@example.com",
-          password: "SecurePassword123!",
-          password_confirmation: "SecurePassword123!",
           first_name: "New",
           last_name: "User",
           display_name: "New User"
@@ -162,22 +164,39 @@ RSpec.describe "Api::V1::Users", type: :request do
     # Verified by mutation: restoring :password to
     # UserProvisioningService::BASE_ATTRIBUTES makes this example fail, and it
     # was the only one that did.
-    it "does not let a caller set the password even when none is issued" do
+    # #877 said password and password_confirmation "are no longer accepted on
+    # create". Until #1021 they were accepted and discarded, so a caller who
+    # sent one got a 201 and could reasonably believe the credential they chose
+    # was live. Refusing makes the sentence literally true.
+    it "refuses a caller-supplied password rather than discarding it" do
+      auth_headers # build the admin BEFORE the count, or it moves the count itself
+
+      expect {
+        post api_v1_users_path, params: {
+          user: {
+            email: "sso-pw@example.com",
+            first_name: "Sso",
+            last_name: "Pw",
+            password: "CallerChosen123!",
+            password_confirmation: "CallerChosen123!"
+          }
+        }, headers: auth_headers, as: :json
+      }.not_to change(User, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      details = response.parsed_body["details"].join(" ")
+      expect(details).to include("password")
+    end
+
+    it "issues no credential of its own when local login is off" do
       allow(SparcConfig).to receive(:enable_local_login?).and_return(false)
 
       post api_v1_users_path, params: {
-        user: {
-          email: "sso-pw@example.com",
-          first_name: "Sso",
-          last_name: "Pw",
-          password: "CallerChosen123!",
-          password_confirmation: "CallerChosen123!"
-        }
+        user: { email: "sso-pw@example.com", first_name: "Sso", last_name: "Pw" }
       }, headers: auth_headers, as: :json
 
       expect(response).to have_http_status(:created)
       created = User.find_by(email: "sso-pw@example.com")
-      expect(created.authenticate("CallerChosen123!")).to be_falsey
       expect(created.password_digest).to be_blank
     end
 
@@ -207,11 +226,13 @@ RSpec.describe "Api::V1::Users", type: :request do
     it "creates a user as admin" do
       auth_headers # force-create admin user before counting
 
+      # #877/#1021 — password and password_confirmation are not accepted on
+      # create. They used to be accepted and silently overwritten; they are
+      # REFUSED now, which is what #877 always said. Their refusal has its own
+      # example below; this one is the ordinary create.
       user_params = {
         user: {
           email: "newuser@example.com",
-          password: "SecurePassword123!",
-          password_confirmation: "SecurePassword123!",
           first_name: "New",
           last_name: "User",
           display_name: "New User"

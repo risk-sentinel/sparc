@@ -100,6 +100,23 @@ RSpec.describe "unmapped STIG rules", type: :model do
       expect(requirements.first["control-id"]).to eq(mapped.control_id)
     end
 
+    # #1030 — this method prefers the `nist_controls` field, which holds the
+    # statement-level reference the CCI mapping supplies, so the export used to
+    # publish `cm-6-b` into an OSCAL `control-id`. An implemented-requirement's
+    # `control-id` must name a control the sourced profile or catalog holds, and
+    # those carry controls and enhancements but never statement parts.
+    it "publishes a control, not a statement of one" do
+      expect(requirements.first["control-id"]).to eq("cm-6")
+    end
+
+    it "publishes the same id whichever field it resolved from" do
+      nist_field = mapped.cdef_control_fields.find_by(field_name: "nist_controls")
+      expect(nist_field.field_value).to eq("cm-6-b"),
+        "the statement reference should still be on the record"
+
+      expect(requirements.first["control-id"]).to eq(mapped.control_id)
+    end
+
     it "never emits a placeholder control-id" do
       # The old blank-control_id fallback produced "unknown-<row id>" — a
       # well-formed token no validator would reject, asserting an implemented

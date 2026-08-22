@@ -11,6 +11,7 @@ admin client. Each test owns its created user and deletes on teardown.
 
 from __future__ import annotations
 
+import os
 import uuid
 from collections.abc import Iterator
 from typing import Any
@@ -18,7 +19,9 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope
+from schemas import assert_update_round_trip
 
 pytestmark = [pytest.mark.users, pytest.mark.phase1]
 
@@ -70,6 +73,32 @@ def created_user(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield user
     finally:
         _delete(admin_client, user["id"])
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = "user"
+    IDENTIFIER = "id"
+    # `users#index` orders by email and this instance holds 1300+ of them, so a
+    # freshly created `phase2-contract-<hex>@example.com` lands on page 1 only
+    # when its address happens to sort early. Paging to it is a coin toss, which
+    # is why the index check failed intermittently rather than never. Search for
+    # it instead, exactly as `_crud_contract.py` says to.
+    INDEX_SEARCH_PARAM = "email"
+    INDEX_SEARCH_FIELD = "email"
+    DESTROY_IS_SOFT_BECAUSE = (
+        "users#destroy deactivates rather than deletes, so the account stays "
+        "attached to the audit events it is the actor on"
+    )
+
+    def _payload(self, admin_client):
+        suffix = uuid.uuid4().hex[:8]
+        return {"email": f"phase2-contract-{suffix}@example.com",
+                "first_name": "Contract", "last_name": "Suite"}
+
+    def _update_fields(self):
+        return {"first_name": f"Renamed{uuid.uuid4().hex[:6]}"}
 
 
 class TestIndex:
@@ -159,12 +188,20 @@ class TestUpdate:
     def test_admin_updates_user(
         self, admin_client: httpx.Client, created_user: dict[str, Any]
     ) -> None:
-        new_first = f"updated-{uuid.uuid4().hex[:6]}"
-        response = admin_client.patch(
-            f"{PATH}/{created_user['id']}",
-            json={"user": {"first_name": new_first}},
+        """The PATCH persists, confirmed by an independent read.
+
+        This asserted only a status code until #995 — it would have passed
+        against an endpoint that discarded the payload entirely, which is
+        exactly what #994 did.
+        """
+        assert_update_round_trip(
+            admin_client,
+            PATH,
+            created_user["id"],
+            {"first_name": f"updated-{uuid.uuid4().hex[:6]}"},
+            "user",
+            restore=False,  # the fixture owns this user and deletes it
         )
-        assert response.status_code == 200, response.text
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
@@ -183,3 +220,203 @@ class TestDestroy:
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
         assert_error_envelope(anon_client.delete(f"{PATH}/0"), expected_status=401)
+
+
+# api-inventory: covers users#password_reset
+#
+# POST /api/v1/users/:id/password_reset (#841) — the one endpoint that MINTS a
+# credential. It had rspec coverage but none here, so nothing exercised it
+# against a running instance.
+#
+# Two delivery modes, because deployments differ. `temporary` (the default)
+# returns a password for an admin to hand over out of band, and forces its
+# replacement at next sign-in so the credential the admin necessarily saw does
+# not survive. `email` sends a one-time link and returns NOTHING, because the
+# point is that only the mailbox owner sees it.
+RESET_PATH = "{base}/{user_id}/password_reset"
+
+
+def _reset_path(user_id: int) -> str:
+    return RESET_PATH.format(base=PATH, user_id=user_id)
+
+
+@pytest.fixture
+def target_user(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
+    """A throwaway active user to reset.
+
+    Its own user, never a seeded one: this endpoint replaces a real credential,
+    and doing that to an account another test signs in as would be a race with
+    teeth.
+    """
+    user = _create(admin_client)
+    try:
+        yield user
+    finally:
+        admin_client.delete(f"{PATH}/{user['id']}")
+
+
+@pytest.mark.happy
+class TestPasswordResetTemporaryMode:
+    def test_issues_a_temporary_password_and_forces_its_replacement(
+        self, admin_client: httpx.Client, target_user: dict[str, Any]
+    ) -> None:
+        response = admin_client.post(_reset_path(target_user["id"]), json={})
+
+        assert response.status_code == 201, response.text
+        data = response.json()["data"]
+        assert data["mode"] == "temporary"
+        assert data["temporary_password"], "no credential to hand over"
+        assert data["must_change_at_next_login"] is True, (
+            "the password the admin has just seen would otherwise survive"
+        )
+
+    def test_the_response_carries_exactly_the_documented_keys(
+        self, admin_client: httpx.Client, target_user: dict[str, Any]
+    ) -> None:
+        """An exact key set, not a list of names to avoid.
+
+        This endpoint mints credentials, so anything it returns beyond what it
+        promises is a leak — under any key, including one nobody thought to
+        check for.
+        """
+        data = admin_client.post(_reset_path(target_user["id"]), json={}).json()["data"]
+
+        assert set(data) == {
+            "user_id",
+            "email",
+            "mode",
+            "temporary_password",
+            "must_change_at_next_login",
+            "note",
+        }, data
+
+    def test_it_names_the_user_it_reset(
+        self, admin_client: httpx.Client, target_user: dict[str, Any]
+    ) -> None:
+        """An admin resetting the wrong account would otherwise find out from
+        the user."""
+        data = admin_client.post(_reset_path(target_user["id"]), json={}).json()["data"]
+
+        assert data["user_id"] == target_user["id"]
+        assert data["email"] == target_user["email"]
+
+    def test_a_second_reset_issues_a_different_password(
+        self, admin_client: httpx.Client, target_user: dict[str, Any]
+    ) -> None:
+        """Each reset mints a fresh credential. A repeated value would mean the
+        old one still works after it was supposedly replaced."""
+        first = admin_client.post(_reset_path(target_user["id"]), json={}).json()["data"]
+        second = admin_client.post(_reset_path(target_user["id"]), json={}).json()["data"]
+
+        assert first["temporary_password"] != second["temporary_password"]
+
+
+@pytest.mark.validation
+class TestPasswordResetRefusals:
+    def test_an_unknown_mode_is_refused_by_name_and_nothing_is_issued(
+        self, admin_client: httpx.Client, target_user: dict[str, Any]
+    ) -> None:
+        response = admin_client.post(
+            _reset_path(target_user["id"]), json={"mode": "carrier_pigeon"}
+        )
+
+        assert_error_envelope(response, expected_status=422)
+        assert "carrier_pigeon" in response.json()["error"], response.text
+
+    def test_email_mode_states_its_dependency_or_returns_no_credential(
+        self, admin_client: httpx.Client, target_user: dict[str, Any]
+    ) -> None:
+        """Two legitimate configurations, each asserted in full rather than
+        accepted as "either is fine".
+
+        Without SMTP the endpoint must refuse and NAME the alternative, or an
+        admin is stuck with an error and no next step. With SMTP it must return
+        no credential at all, since the token's whole purpose is that only the
+        mailbox owner sees it.
+        """
+        response = admin_client.post(_reset_path(target_user["id"]), json={"mode": "email"})
+
+        if response.status_code == 422:
+            assert "temporary" in response.json()["error"], (
+                f"refused without naming the alternative: {response.text}"
+            )
+            return
+
+        assert response.status_code == 201, response.text
+        data = response.json()["data"]
+        assert set(data) == {"user_id", "email", "mode", "expires_at", "note"}, (
+            f"email mode returned unexpected keys: {sorted(data)}"
+        )
+
+    def test_a_deactivated_user_cannot_be_reset(
+        self, admin_client: httpx.Client, target_user: dict[str, Any]
+    ) -> None:
+        """AC-2. `users#destroy` deactivates rather than deletes, and minting a
+        fresh credential for a deactivated account would undo that — the
+        account would be reachable again by whoever holds the new password.
+        """
+        deactivated = admin_client.delete(f"{PATH}/{target_user['id']}")
+        assert deactivated.status_code == 200, deactivated.text
+
+        response = admin_client.post(_reset_path(target_user["id"]), json={})
+
+        assert_error_envelope(response, expected_status=422)
+        assert "active" in response.json()["error"].lower(), response.text
+
+    def test_an_unknown_user_is_a_404(self, admin_client: httpx.Client) -> None:
+        response = admin_client.post(_reset_path(0), json={})
+
+        assert response.status_code == 404, response.text
+
+
+@pytest.mark.authz
+class TestPasswordResetAuthorization:
+    def test_a_non_admin_cannot_reset_someone_else(
+        self, user_client: httpx.Client, target_user: dict[str, Any]
+    ) -> None:
+        response = user_client.post(_reset_path(target_user["id"]), json={})
+
+        assert response.status_code == 403, response.text
+
+    def test_a_user_cannot_reset_their_own_password_with_their_own_token(
+        self, admin_client: httpx.Client, target_user: dict[str, Any]
+    ) -> None:
+        """Being the target is not authority to reset.
+
+        Minting yourself a fresh credential is exactly what an attacker holding
+        a stolen API token would try, and it would hand them a password to sign
+        in with interactively — an upgrade from token access to full account
+        access.
+        """
+        minted = admin_client.post(
+            f"{PATH}/{target_user['id']}/api_tokens",
+            json={"api_token": {"name": f"phase2-selfreset-{uuid.uuid4().hex[:8]}"}},
+        )
+        assert minted.status_code == 201, minted.text
+        token = minted.json()["data"]["token"]
+        assert token, "no plaintext token minted, so the check below would be vacuous"
+
+        # Mirrors conftest's `_build_client`: only skip verification when the
+        # target is explicitly flagged as a self-signed local proxy. Hardcoding
+        # verify=False here would silently drop TLS checking against prod.
+        with httpx.Client(
+            base_url=str(admin_client.base_url),
+            headers={"Authorization": f"Bearer {token}"},
+            verify=os.environ.get("SPARC_TEST_INSECURE_TLS") != "1",
+            timeout=30.0,
+        ) as target_client:
+            response = target_client.post(_reset_path(target_user["id"]), json={})
+
+        assert response.status_code == 403, (
+            f"a user reset their own password with their own token: {response.text}"
+        )
+
+
+@pytest.mark.auth
+class TestPasswordResetAuthentication:
+    def test_an_anonymous_caller_is_refused(
+        self, anon_client: httpx.Client, target_user: dict[str, Any]
+    ) -> None:
+        response = anon_client.post(_reset_path(target_user["id"]), json={})
+
+        assert response.status_code == 401, response.text

@@ -16,7 +16,13 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
-  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :generate ]
+  # #1031 — file ingest; a POA&M is often externally authored OSCAL.
+  include DocumentFileIngestApi
+
+  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :generate, :import ]
+
+  # #1031 — DocumentFileIngestApi hook.
+  def ingest_type_key = :poam
 
   # POST /api/v1/poam_documents/generate
   #
@@ -63,7 +69,7 @@ class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
   private
 
   def generate_params
-    @generate_params ||= params.require(:poam_document).permit(
+    @generate_params ||= permit_strictly(:poam_document,
       :name, :description, :authorization_boundary_id, :sar_document_id
     )
   end
@@ -87,7 +93,9 @@ class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
     id = generate_params[:sar_document_id].presence
     return boundary&.sar_document if id.nil?
 
-    readable_sars.find_by(id: id) || raise(ActiveRecord::RecordNotFound, "SAR document not found")
+    # #1025 — slug OR id, for the same reason as the SAP generator above.
+    readable_sars.find_by(slug: id) || readable_sars.find_by(id: id) ||
+      raise(ActiveRecord::RecordNotFound, "SAR document not found")
   end
 
   def readable_sars
@@ -114,7 +122,7 @@ class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
   def write_permission_key = "poam.write"
 
   def document_params
-    params.require(:poam_document).permit(
+    permit_strictly(:poam_document,
       :name, :description, :authorization_boundary_id,
       :poam_version, :system_id, :lifecycle_status
     )

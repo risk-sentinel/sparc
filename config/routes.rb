@@ -598,6 +598,8 @@ Rails.application.routes.draw do
 
       resources :sap_documents, only: [ :index, :show, :create, :update, :destroy ] do
         collection do
+          # #1031 — ingest an assessment plan from an OSCAL file.
+          post :import
           # #844 — generate a POPULATED SAP from an SSP or profile. Without
           # this the API could only create an empty shell, leaving SAP the one
           # document in the chain with no programmatic generation path.
@@ -607,6 +609,11 @@ Rails.application.routes.draw do
           # #716 — bulk editable-field file import (preview → confirm).
           post "fields/import/preview", to: "sap_documents#import_fields_preview", as: :import_fields_preview
           post "fields/import/confirm", to: "sap_documents#import_fields_confirm", as: :import_fields_confirm
+          # #1026 — field import above WRITES control fields and, until this
+          # route existed, nothing in the API read them back: `show` reports
+          # `controls_count` and carries no `controls`. SSP and SAR have had
+          # this since their controllers were written.
+          get :export
         end
       end
       # #832 — risks are addressable so an incomplete one is rejected with a 422
@@ -614,11 +621,29 @@ Rails.application.routes.draw do
       # a POA&M that fails OSCAL schema validation at export.
       resources :poam_documents, only: [ :index, :show, :create, :update, :destroy ] do
         collection do
+          # #1031 — ingest a POA&M from an OSCAL file.
+          post :import
           # #843 — build a POPULATED POA&M from a SAR's open risks. Explicit
           # action mapping per rubydre:S7875.
           post "generate", to: "poam_documents#generate", as: :generate
         end
         resources :risks, only: [ :index, :create ], controller: "poam_risks"
+
+        # #1010 — #832 gave risks an API and left their six siblings behind.
+        # These are the substance of a POA&M: what OSCAL exports.
+        resources :items, only: [ :index, :show, :create, :update, :destroy ],
+                  controller: "poam_items"
+        resources :observations, only: [ :index, :show, :create, :update, :destroy ],
+                  controller: "poam_observations"
+        resources :findings, only: [ :index, :show, :create, :update, :destroy ],
+                  controller: "poam_findings"
+        resources :local_components, only: [ :index, :show, :create, :update, :destroy ],
+                  controller: "poam_local_components"
+        resources :remediations, only: [ :index, :show, :create, :update, :destroy ],
+                  controller: "poam_remediations" do
+          resources :milestones, only: [ :index, :show, :create, :update, :destroy ],
+                    controller: "poam_milestones"
+        end
       end
       resources :poam_risks, only: [ :show, :update, :destroy ]
 
@@ -691,6 +716,12 @@ Rails.application.routes.draw do
         end
       end
       resources :profile_documents, only: [ :index, :show, :create, :update, :destroy ] do
+        collection do
+          # #1031 — ingest a baseline profile from an OSCAL file. A profile is
+          # normally published by NIST or FedRAMP rather than authored here, so
+          # ingest was the primary path and had no API.
+          post :import
+        end
         member do
           # #630/#632/#633 — review/approval workflow.
           post :submit_for_review, to: "profile_documents#submit_for_review"
@@ -722,6 +753,11 @@ Rails.application.routes.draw do
 
       resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ] do
         collection do
+          # #1031 — ingest a component definition FROM A FILE. `create` builds
+          # an empty shell; this is how an authored CDEF (a DISA STIG benchmark,
+          # an AWS Labs OSCAL file) enters SPARC, and it existed only in the
+          # browser until now.
+          post :import
           # #629 — admin-only bulk delete; ids[] body, partial-success result.
           delete "bulk", to: "cdef_documents#bulk_destroy"
         end
@@ -748,6 +784,11 @@ Rails.application.routes.draw do
           # #716 — bulk editable-field file import (preview → confirm).
           post "fields/import/preview", to: "cdef_documents#import_fields_preview", as: :import_fields_preview
           post "fields/import/confirm", to: "cdef_documents#import_fields_confirm", as: :import_fields_confirm
+          # #1026 — as for SAP: the field import above WRITES control fields
+          # and nothing in the API read them back, so a caller could bulk-modify
+          # a component definition's implementations with no way to confirm
+          # what landed.
+          get :export
         end
       end
       resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ] do
@@ -804,12 +845,67 @@ Rails.application.routes.draw do
       # CRUD API endpoints (#95)
       # #841 — issuing a reset is a user-facing admin function, so it has an API
       # surface too. Returns the one-time link; the token is never persisted.
+      # #1011 — converters ingest external framework mappings (CCI, AWS Config,
+      # AWS Security Hub, STIG). Every refresh and import was browser-only.
+      # The three web refresh actions collapse into one endpoint: they differ
+      # only in the converter_type they accept, and a caller already knows it.
+      resources :converters, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          post :refresh
+          get  :export
+        end
+        resources :entries, only: [ :index, :create, :destroy ],
+                  controller: "converter_entries"
+      end
+
+      # #1012 — organizations scope boundaries and documents, and membership
+      # decides who can see what. Never hard-deleted: deactivate/reactivate
+      # preserve the UUID for audit traceability, so there is no destroy.
+      resources :organizations, only: [ :index, :show, :create, :update ] do
+        member do
+          post :deactivate
+          post :reactivate
+          post "boundaries", to: "organizations#assign_boundary"
+          get  "members",    to: "organizations#members"
+          post "members",    to: "organizations#add_member"
+          delete "members/:membership_id", to: "organizations#remove_member",
+                 as: :remove_member
+        end
+      end
+
+      # #1013 — every part of a service account's lifecycle was browser-only,
+      # so provisioning automation could not provision the identity it runs as,
+      # and rotating a compromised credential needed a human.
+      resources :service_accounts, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          post :disable
+          post :enable
+          post :regenerate_token
+        end
+      end
+
+      # #1014 — roles carry the permission sets every authorization check reads,
+      # and were editable only in a browser, so an instance's RBAC configuration
+      # could not be reviewed or reproduced programmatically.
+      resources :roles, only: [ :index, :show, :create, :update, :destroy ]
+
       resources :users, only: [ :index, :show, :create, :update, :destroy ] do
         member do
           post :password_reset
         end
+        # #1016 — issuing and revoking the credential the API authenticates
+        # with was browser-only, so rotation required a human session.
+        resources :api_tokens, only: [ :index, :create, :destroy ]
       end
       resources :authorization_boundaries, only: [ :index, :show, :create, :update, :destroy ] do
+        # #1015 — a leveraged authorization records the ATO a system inherits
+        # from, and OSCAL exports it on every SSP for the boundary. It was
+        # creatable only from a browser.
+        resources :leveraged_authorizations, only: [ :index, :show, :create, :destroy ] do
+          member do
+            post :populate
+          end
+        end
         # #770 bug 6 — assign/move/clear the boundary's organization, enforcing
         # the org-admin authorization matrix (instance admin may move; org_admin
         # may attach an unassigned boundary only).

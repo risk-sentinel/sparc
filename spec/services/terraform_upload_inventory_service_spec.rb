@@ -9,7 +9,13 @@ require "rails_helper"
 # security expectations are not decoration: the whole design rests on those
 # fields never being read, so they are asserted rather than assumed.
 RSpec.describe TerraformUploadInventoryService do
-  SECRET = "SuperSecretMasterPassword-DO-NOT-RETAIN" # rubocop:disable Lint/ConstantDefinitionInBlock
+  # A `let`, not a constant. A constant assigned in a `describe` block lands on
+  # Object rather than on the group, so this one collided with the constant in
+  # spec/lib/sparc_json_formatter_spec.rb and silently overwrote it (#1035).
+  # It cannot be a local: `managed` below is a `def`, and a `def` does not close
+  # over enclosing locals -- but both are instance methods on the example group,
+  # so calling `secret` from inside it resolves.
+  let(:secret) { "SuperSecretMasterPassword-DO-NOT-RETAIN" }
 
   def upload(hash, filename)
     io = StringIO.new(JSON.generate(hash))
@@ -25,7 +31,7 @@ RSpec.describe TerraformUploadInventoryService do
     {
       "mode" => mode, "type" => type, "name" => "example",
       "instances" => Array.new(instances) do
-        { "attributes" => { "password" => SECRET, "account_id" => "123456789012",
+        { "attributes" => { "password" => secret, "account_id" => "123456789012",
                             "arn" => "arn:aws:iam::123456789012:role/secret-role" } }
       end
     }
@@ -79,7 +85,7 @@ RSpec.describe TerraformUploadInventoryService do
     it "accepts a state and a plan together" do
       plan = { "resource_changes" => [
         { "mode" => "managed", "type" => "aws_lambda_function",
-          "change" => { "actions" => [ "create" ], "after" => { "environment" => SECRET } } }
+          "change" => { "actions" => [ "create" ], "after" => { "environment" => secret } } }
       ] }
 
       inventory = described_class.call(uploads: [
@@ -140,7 +146,7 @@ RSpec.describe TerraformUploadInventoryService do
       ])
 
       serialised = inventory.to_h.to_json
-      expect(serialised).not_to include(SECRET)
+      expect(serialised).not_to include(secret)
       expect(serialised).not_to include("123456789012")
       expect(serialised).not_to include("arn:aws")
       expect(serialised).to include("aws_db_instance") # the type name IS kept
@@ -150,22 +156,22 @@ RSpec.describe TerraformUploadInventoryService do
       plan = { "resource_changes" => [
         { "mode" => "managed", "type" => "aws_secretsmanager_secret",
           "change" => { "actions" => [ "update" ],
-                        "before" => { "secret_string" => SECRET },
-                        "after" => { "secret_string" => SECRET } } }
+                        "before" => { "secret_string" => secret },
+                        "after" => { "secret_string" => secret } } }
       ] }
 
       inventory = described_class.call(uploads: [ upload(plan, "p.json") ])
 
-      expect(inventory.to_h.to_json).not_to include(SECRET)
+      expect(inventory.to_h.to_json).not_to include(secret)
       expect(inventory.service_keys).to eq([ "secretsmanager" ])
     end
 
     it "does not echo file content in a parse error" do
-      io = StringIO.new(%({"resources": [ #{SECRET.inspect} }))
+      io = StringIO.new(%({"resources": [ #{secret.inspect} }))
       io.define_singleton_method(:original_filename) { "leaky.tfstate" }
 
       expect { described_class.call(uploads: [ io ]) }
-        .to raise_error(described_class::Error) { |e| expect(e.message).not_to include(SECRET) }
+        .to raise_error(described_class::Error) { |e| expect(e.message).not_to include(secret) }
     end
   end
 end

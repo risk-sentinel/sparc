@@ -92,10 +92,25 @@ RSpec.describe "Api::V1::Attestations", type: :request do
     end
 
     # #947 — the name is a SNAPSHOT taken from the account, never client input.
-    it "snapshots the attester name from the account and ignores a supplied one" do
+    # #995 — the snapshot is unchanged; what changed is that an attempt to
+    # supply the name is now REFUSED rather than accepted and dropped. Someone
+    # trying to attest under another name is told no, instead of receiving 201
+    # and a record they may believe carries the name they sent.
+    it "refuses a client-supplied attester name" do
       spoofed = valid_params.deep_merge(attestation: { attester_name: "Someone Else" })
+
+      expect {
+        post api_v1_evidence_attestations_path(evidence_id: evidence.id),
+             params: spoofed, headers: admin_headers
+      }.not_to change(Attestation, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(JSON.parse(response.body)["details"].join(" ")).to include("attester_name")
+    end
+
+    it "snapshots the attester name from the account when none is supplied" do
       post api_v1_evidence_attestations_path(evidence_id: evidence.id),
-           params: spoofed, headers: admin_headers
+           params: valid_params, headers: admin_headers
 
       expect(response).to have_http_status(:created)
       expect(JSON.parse(response.body).dig("data", "attester_name")).to eq("API Reviewer")

@@ -123,6 +123,38 @@ RSpec.describe "Api::V1::AuthorizationBoundaries", type: :request do
       expect(AuthorizationBoundary.exists?(blocked.id)).to be(true)
     end
 
+    # #1018 — a misspelled key used to answer 200 with zeros, telling the caller
+    # the records were not there rather than that the request was malformed.
+    it "refuses a body with no `ids`, and deletes nothing" do
+      boundary = create(:authorization_boundary)
+
+      delete bulk_api_v1_authorization_boundaries_path,
+        params: { boundary_ids: [ boundary.id ] }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["details"].join).to match(/`ids` is required/)
+      expect(response.parsed_body["expected"]).to eq("ids" => [ "string-or-integer" ])
+      expect(AuthorizationBoundary.exists?(boundary.id)).to be(true)
+    end
+
+    it "refuses an `ids` that is not an array, naming what it received" do
+      delete bulk_api_v1_authorization_boundaries_path,
+        params: { ids: "1,2,3" }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["details"].join).to match(/must be an ARRAY/)
+    end
+
+    # The distinction the endpoint could not previously express: an empty list
+    # genuinely IS nothing to do, and must stay a success.
+    it "still succeeds for an empty `ids` array" do
+      delete bulk_api_v1_authorization_boundaries_path,
+        params: { ids: [] }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.dig("meta", "deleted")).to eq(0)
+    end
+
     it "returns 403 for a non-admin" do
       regular_user = create(:user)
       user_token = ApiToken.generate!(user: regular_user, name: "User Token")

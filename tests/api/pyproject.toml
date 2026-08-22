@@ -80,6 +80,8 @@ markers = [
     "attestations: tests for evidence attestations (#440)",
     "evidence: tests for evidence CRUD and control links (#756)",
     "poam_risks: tests for POA&M risk CRUD and required-field rejection (#832)",
+    "poam: tests for the POA&M sub-objects — items, observations, findings, local components, remediations, milestones (#1010)",
+    "findings: tests for scanner findings and their triage dispositions (#447, #1034)",
 ]
 
 [tool.ruff]

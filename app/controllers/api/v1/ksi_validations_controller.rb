@@ -1,7 +1,19 @@
 # REST API for KSI validation tracking within an authorization boundary.
 #
 # All endpoints require Bearer token authentication.
-# DELETE is admin-only. All other operations available to authenticated users.
+#
+# #1024 — reads require `evidence.read`, writes require `evidence.write` SCOPED
+# TO THE BOUNDARY, and DELETE remains admin-only. Until then create and update
+# required nothing beyond a valid token, on ANY boundary: `set_boundary` looked
+# the boundary up without ever checking the caller against it, so any
+# authenticated user could mark an indicator `passed` on a system they had no
+# relationship with, and the audit event recorded it as a legitimate assessment.
+#
+# It reuses the evidence permissions rather than introducing `ksi.*` keys: a KSI
+# validation IS assessment evidence, and anyone entitled to record evidence on a
+# boundary is entitled to record a validation on it. That also avoids a
+# migration in which every non-admin loses access until new grants are seeded.
+#
 # All mutations create audit events via audit_log().
 #
 # GET    /api/v1/authorization_boundaries/:id/ksi_validations           — list
@@ -13,8 +25,9 @@
 # DELETE /api/v1/authorization_boundaries/:id/ksi_validations/:id       — delete (admin)
 #
 # NIST 800-53 Controls:
-#   AC-3 Access Enforcement (Bearer token auth, boundary scoping)
-#   AC-6 Least Privilege (admin-only delete)
+#   AC-3 Access Enforcement (evidence.read / evidence.write, scoped to the
+#     boundary — the CALLER is checked against it, not only the record)
+#   AC-6 Least Privilege (admin-only delete; write requires a boundary grant)
 #   AU-12 Audit Record Generation (mutations logged via audit_log)
 #   CA-2 Assessment (KSI validation tracking)
 #   CA-7 Continuous Monitoring (validation scheduling)
@@ -23,6 +36,8 @@
 class Api::V1::KsiValidationsController < Api::V1::BaseController
   before_action :set_boundary
   before_action :set_validation, only: [ :show, :update, :destroy ]
+  before_action :authorize_ksi_read!,  only: %i[index show summary export]
+  before_action :authorize_ksi_write!, only: %i[create update]
   before_action :authorize_admin!, only: [ :destroy ]
 
   # GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations
@@ -104,6 +119,24 @@ class Api::V1::KsiValidationsController < Api::V1::BaseController
   # #574 — accept either numeric id or slug. Same rationale as #566
   # for control_catalogs / control_mappings: callers that build nested
   # URLs from the `id` returned by the parent create shouldn't 404.
+  # #1024 — mirrors Api::V1::EvidencesController. Instance admins bypass; every
+  # other caller needs the grant ON THIS BOUNDARY.
+  def authorize_ksi_read!
+    return if current_user.admin?
+    return if current_user.has_permission?("evidence.read",
+                                           authorization_boundary_id: @boundary&.id)
+
+    raise NotAuthorizedError, "Not authorized to view KSI validations for this boundary"
+  end
+
+  def authorize_ksi_write!
+    return if current_user.admin?
+    return if current_user.has_permission?("evidence.write",
+                                           authorization_boundary_id: @boundary&.id)
+
+    raise NotAuthorizedError, "Not authorized to record KSI validations for this boundary"
+  end
+
   def set_boundary
     id_or_slug = params[:authorization_boundary_id].to_s
     @boundary = if id_or_slug.match?(/\A\d+\z/)
@@ -128,7 +161,7 @@ class Api::V1::KsiValidationsController < Api::V1::BaseController
   # belongs to this boundary. Left mass-assignable deliberately: the guard
   # belongs on the model so every writer is covered, not on this one call site.
   def validation_params
-    params.require(:ksi_validation).permit(
+    permit_strictly(:ksi_validation,
       :catalog_control_id, :evidence_id, :status, :validation_method,
       :evidence_format, :last_validated_at, :next_validation_due,
       :notes, validation_metadata: {}

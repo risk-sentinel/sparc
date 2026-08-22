@@ -17,6 +17,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from conftest import assert_error_envelope
 from schemas import (
     FederationPeerIndex,
@@ -63,6 +64,22 @@ def peer(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield p
     finally:
         _delete(admin_client, p["id"])
+
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = "federation_peer"
+    IDENTIFIER = "id"
+
+    def _payload(self, admin_client):
+        return _new_payload()["federation_peer"]
+
+    def _update_fields(self):
+        # A peer has no `description`; its update permits base_url, enabled and
+        # public_metadata. The default would be refused, correctly, by #995's
+        # unrecognized-field guard.
+        return {"base_url": f"https://peer-{uuid.uuid4().hex[:8]}.example.gov"}
 
 
 class TestIndex:

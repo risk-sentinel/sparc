@@ -100,15 +100,27 @@ RSpec.describe "Api::V1::ControlFamilies", type: :request do
 
     # The safeguard: a loose hash would let arbitrary keys into a record the
     # OSCAL exporters read. Every permitted field is enumerated.
-    it "ignores fields outside the enumerated allowlist" do
+    # #995 — these fields used to be dropped in silence and the create returned
+    # 201, so a caller aiming a record at another catalog was told it had
+    # worked. They are refused now, and the record is not created at all.
+    it "refuses fields outside the enumerated allowlist" do
       post path, headers: auth, params: {
         control_family: { code: "CM", name: "Config Mgmt", control_catalog_id: 999_999, id: 12_345 }
       }
 
+      expect(response).to have_http_status(:unprocessable_content)
+      details = JSON.parse(response.body)["details"].join(" ")
+      expect(details).to include("control_catalog_id")
+      expect(details).to include("id")
+      expect(catalog.control_families.find_by(code: "CM")).to be_nil
+    end
+
+    it "creates the family when only enumerated fields are sent" do
+      post path, headers: auth, params: { control_family: { code: "CM", name: "Config Mgmt" } }
+
       expect(response).to have_http_status(:created)
       created = catalog.control_families.find_by(code: "CM")
       expect(created).to be_present
-      expect(created.id).not_to eq(12_345)
       expect(created.control_catalog_id).to eq(catalog.id)
     end
   end

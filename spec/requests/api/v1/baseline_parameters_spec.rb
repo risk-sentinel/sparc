@@ -110,6 +110,67 @@ RSpec.describe "Api::V1::BaselineParameters", type: :request do
     # `validation_errors`** — the caller told the operation succeeded while the
     # request was never parsed at all. Each asserts BOTH halves: the refusal,
     # and that nothing was written.
+    # ── #1008: published is read-only, and it was not enforced ────────────
+    #
+    # `profiles.write` answers "may this caller edit profiles". Whether THIS
+    # profile is still editable is a different question, and only the first was
+    # ever asked — so a published baseline's ODPs could be rewritten through the
+    # API, 200, with the change persisting. Both directions are asserted here
+    # because an allow-leg-only test passes against an endpoint with no guard at
+    # all, which is how #919 and #974 were found.
+    describe "editing a published profile" do
+      let(:published_profile) do
+        create(:profile_document, control_catalog: catalog, lifecycle_status: "published")
+      end
+      let(:draft_profile) do
+        create(:profile_document, control_catalog: catalog, lifecycle_status: "in_progress")
+      end
+
+      it "refuses the update and names the reason" do
+        create(:profile_control, profile_document: published_profile, control_id: "ac-1")
+
+        put api_v1_profile_document_parameters_path(published_profile),
+          params: { parameters: [ { param_id: "ac-1_prm_1", value: "ISSO" } ] },
+          headers: auth_headers,
+          as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body["error"]).to match(/published/i)
+        expect(response.parsed_body["error"]).to match(/duplicate/i)
+      end
+
+      it "leaves the value unchanged after refusing" do
+        pc = create(:profile_control, profile_document: published_profile, control_id: "ac-1")
+        pc.profile_control_fields.create!(field_name: "parameter:ac-1_prm_1", field_value: "ORIGINAL")
+
+        put api_v1_profile_document_parameters_path(published_profile),
+          params: { parameters: [ { param_id: "ac-1_prm_1", value: "REWRITTEN" } ] },
+          headers: auth_headers,
+          as: :json
+
+        expect(pc.profile_control_fields.find_by(field_name: "parameter:ac-1_prm_1").reload.field_value)
+          .to eq("ORIGINAL")
+      end
+
+      it "still allows the update on a draft profile" do
+        create(:profile_control, profile_document: draft_profile, control_id: "ac-1")
+
+        put api_v1_profile_document_parameters_path(draft_profile),
+          params: { parameters: [ { param_id: "ac-1_prm_1", value: "ISSO" } ] },
+          headers: auth_headers,
+          as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body.dig("data", "parameters_updated")).to eq(1)
+      end
+
+      it "still allows an import PREVIEW on a published profile, which writes nothing" do
+        get api_v1_profile_document_parameters_path(published_profile), headers: auth_headers
+
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
     describe "a payload the endpoint cannot parse (#994)" do
       let(:field_names) do
         ProfileControlField.joins(:profile_control)

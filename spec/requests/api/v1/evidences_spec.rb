@@ -289,11 +289,26 @@ RSpec.describe "Api::V1::Evidences", type: :request do
       expect(Attestation.last.attester_name).to eq("Dana Okafor")
     end
 
-    it "server-stamps collected_at / collected_by and ignores client-supplied values" do
-      post api_v1_evidences_path,
-           params: { evidence: valid_attributes(collected_by: "spoofed@example.com",
-                                                collected_at: 10.years.ago.iso8601) },
-           headers: admin_headers
+    # #995 — these used to be accepted and silently dropped. Under the refusal
+    # policy a caller who tries to supply provenance is TOLD it is not theirs to
+    # supply, instead of getting 201 and believing the backdated timestamp took.
+    # The stamp itself is unchanged: it is still taken from the account.
+    it "refuses client-supplied collected_at / collected_by rather than dropping them" do
+      expect {
+        post api_v1_evidences_path,
+             params: { evidence: valid_attributes(collected_by: "spoofed@example.com",
+                                                  collected_at: 10.years.ago.iso8601) },
+             headers: admin_headers
+      }.not_to change(Evidence, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      details = JSON.parse(response.body)["details"].join(" ")
+      expect(details).to include("collected_by")
+      expect(details).to include("collected_at")
+    end
+
+    it "still server-stamps collected_at / collected_by when the caller supplies neither" do
+      post api_v1_evidences_path, params: { evidence: valid_attributes }, headers: admin_headers
 
       expect(response).to have_http_status(:created)
       evidence = Evidence.find(JSON.parse(response.body)["data"]["id"])
@@ -304,12 +319,19 @@ RSpec.describe "Api::V1::Evidences", type: :request do
     # #934 — the name string alone cannot answer "what did this account
     # provide", so the FK is stamped too, and it is no more client-supplied
     # than the other two.
-    it "stamps collected_by_user_id and ignores a client-supplied one" do
+    it "refuses a client-supplied collected_by_user_id, and stamps its own" do
       other = create(:user)
 
-      post api_v1_evidences_path,
-           params: { evidence: valid_attributes(collected_by_user_id: other.id) },
-           headers: admin_headers
+      expect {
+        post api_v1_evidences_path,
+             params: { evidence: valid_attributes(collected_by_user_id: other.id) },
+             headers: admin_headers
+      }.not_to change(Evidence, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(JSON.parse(response.body)["details"].join(" ")).to include("collected_by_user_id")
+
+      post api_v1_evidences_path, params: { evidence: valid_attributes }, headers: admin_headers
 
       expect(response).to have_http_status(:created)
       evidence = Evidence.find(JSON.parse(response.body)["data"]["id"])
@@ -359,15 +381,15 @@ RSpec.describe "Api::V1::Evidences", type: :request do
     # #903 — the existing case above supplies a PAST timestamp, which the server
     # would also have produced, so it could not distinguish "ignored" from
     # "accepted". A future value can only come from the client.
-    it "ignores a client-supplied FUTURE collected_at" do
-      post api_v1_evidences_path,
-           params: { evidence: valid_attributes(collected_at: 5.years.from_now.iso8601) },
-           headers: admin_headers
+    it "refuses a client-supplied FUTURE collected_at, so nothing is stamped ahead of now" do
+      expect {
+        post api_v1_evidences_path,
+             params: { evidence: valid_attributes(collected_at: 5.years.from_now.iso8601) },
+             headers: admin_headers
+      }.not_to change(Evidence, :count)
 
-      expect(response).to have_http_status(:created)
-      evidence = Evidence.find(JSON.parse(response.body)["data"]["id"])
-      expect(evidence.collected_at).to be <= Time.current
-      expect(evidence.collected_at).to be_within(1.minute).of(Time.current)
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(JSON.parse(response.body)["details"].join(" ")).to include("collected_at")
     end
 
     it "returns a JSON 400 (not an HTML page) when the root key is absent" do

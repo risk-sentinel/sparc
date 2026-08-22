@@ -23,7 +23,14 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   # gate at all). Run authorize BEFORE set_profile so a non-admin
   # without the permission gets 403, not 404 leaking existence.
   include DocumentApprovalApi
-  before_action :authorize_profiles_write!, only: [ :create, :update, :destroy, :submit_for_review, :update_controls ]
+  # #1031 — file ingest; a baseline profile is normally published by NIST or
+  # FedRAMP rather than authored here.
+  include DocumentFileIngestApi
+
+  before_action :authorize_profiles_write!, only: [ :create, :update, :destroy, :submit_for_review, :update_controls, :import ]
+
+  # #1031 — DocumentFileIngestApi hook.
+  def ingest_type_key = :profile
   before_action :set_profile, only: [ :show, :update, :destroy, :submit_for_review, :approve, :reject, :baseline_review, :update_controls ]
 
   # GET /api/v1/profile_documents
@@ -139,7 +146,7 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   end
 
   def profile_params
-    params.require(:profile_document).permit(
+    permit_strictly(:profile_document,
       :name, :description, :baseline_level, :profile_version,
       :oscal_version, :control_catalog_id, :lifecycle_status, :file_type
     )
@@ -153,7 +160,14 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
       name: profile.name,
       status: profile.status,
       lifecycle_status: profile.lifecycle_status,
-      # #627 — content-completeness is distinct from the parse `status`.
+      # #1041 — whether the document is awaiting sign-off, which is a DIFFERENT
+      # question from `lifecycle_status` and was readable nowhere over the API.
+      # A profile can sit at `lifecycle_status: "in_progress"` while its
+      # `approval_status` is "pending_review", which is exactly the state the
+      # review queue lists — so a client could not tell a document under review
+      # from any other in-progress one, and a test could not avoid editing one.
+      # On the index, not just the detail: the review queue is a LIST.
+      approval_status: profile.approval_status,
       content_complete: profile.content_complete?,
       content_completeness_gaps: profile.content_completeness_gaps,
       file_type: profile.file_type,

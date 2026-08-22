@@ -37,7 +37,7 @@ class HdfOscalTranslationService
   # @return [Hash] OSCAL POAM document
   def hdf_to_oscal_poam(hdf_input, boundary: nil)
     oscal = @runner.convert(hdf_input, from: "hdf", to: OSCAL_POAM)
-    enrich_back_matter(oscal, boundary)
+    validate_oscal!(:poam, enrich_back_matter(oscal, boundary))
   end
 
   # HDF Amendments → OSCAL Plan of Action and Milestones
@@ -50,7 +50,7 @@ class HdfOscalTranslationService
   # @return [Hash] OSCAL POAM document
   def oscal_poam_from_hdf_amendments(amendments_input, boundary: nil)
     oscal = @runner.convert(amendments_input, from: "hdf-amendments", to: OSCAL_POAM)
-    enrich_back_matter(oscal, boundary)
+    validate_oscal!(:poam, enrich_back_matter(oscal, boundary))
   end
 
   # OSCAL POAM → HDF Amendments
@@ -71,6 +71,12 @@ class HdfOscalTranslationService
   private
 
   # #831 — never hand back OSCAL that fails NIST's own schema.
+  #
+  # #1017 — and it means EVERY emitting path. #831 added this call to
+  # `hdf_to_oscal_sar` and to neither POA&M-producing sibling, while the
+  # controller's rescue block advertised the guarantee for all three. The gap
+  # was reachable: `poam_from_amendments` returned a 200 carrying
+  # `poam-items: null`, which SPARC's own validator rejects.
   #
   # Every other OSCAL-producing path in SPARC calls
   # `OscalSchemaValidationService.validate!` and refuses to emit an invalid

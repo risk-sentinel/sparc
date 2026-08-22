@@ -89,7 +89,43 @@ RSpec.describe AuditEvent, type: :model do
         app/controllers/concerns/field_importable.rb
         app/controllers/concerns/file_uploadable.rb
         app/controllers/concerns/publishable.rb
+        app/controllers/api/v1/poam_subresources_controller.rb
+        app/controllers/concerns/document_file_ingest_api.rb
       ]
+    end
+
+    # #1010 — declaring a file "dynamic" only says the static guard cannot read
+    # it; it does not say the actions are registered. This site builds
+    # "<model>_created|updated|deleted" from six subclasses, and that set is
+    # small and enumerable, so it is enumerated rather than trusted.
+    it "registers every action the POA&M sub-resource controllers can emit" do
+      models = [ PoamItem, PoamObservation, PoamFinding,
+                 PoamLocalComponent, PoamRemediation, PoamMilestone ]
+
+      expected = models.flat_map do |model|
+        %w[created updated deleted].map { |verb| "#{model.name.underscore}_#{verb}" }
+      end
+
+      expect(expected - AuditEvent::ACTIONS).to be_empty, <<~MESSAGE
+        Api::V1::PoamSubresourcesController builds its action name at runtime and
+        these expansions are not in ACTIONS, so they would record NOTHING:
+
+        #{(expected - AuditEvent::ACTIONS).map { |a| "  #{a}" }.join("\n")}
+      MESSAGE
+    end
+
+    # #1031 — same treatment as the POA&M sub-resources above: the API file
+    # ingest builds "<type>_document_created" from the DocumentTypeRegistry key,
+    # and the four types that use it are enumerable, so they are enumerated.
+    it "registers every action the API file ingest can emit" do
+      expected = %w[cdef sap poam profile].map { |type| "#{type}_document_created" }
+
+      expect(expected - AuditEvent::ACTIONS).to be_empty, <<~MESSAGE
+        DocumentFileIngestApi builds its action name at runtime and these
+        expansions are not in ACTIONS, so an ingest would record NOTHING:
+
+        #{(expected - AuditEvent::ACTIONS).map { |a| "  #{a}" }.join("\n")}
+      MESSAGE
     end
 
     it "finds the call sites it claims to scan" do

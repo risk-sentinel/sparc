@@ -64,6 +64,44 @@ module ControlId
     )
   end
 
+  # #1030 — the catalog-addressable control a reference belongs to.
+  #
+  # NIST catalogs hold controls (`ac-2`) and enhancements (`ac-2.1`). They do
+  # NOT hold statement parts (`cm-6-b`, `ac-2.a`, `pm-14-a-1`), which are parts
+  # OF a control rather than controls. A statement reference is a real reference
+  # to a real thing — it is just not a thing `CatalogControl` holds, so storing
+  # one in a column used to join against the catalog matches nothing.
+  #
+  # Measured on `lib/data_mappings/cci_to_nist.json`: only 42.9% of CCI→NIST
+  # mappings named an id present in the catalog; 95.2% do once reduced this way.
+  #
+  # The rule is that a dot followed by DIGITS is an enhancement and is kept,
+  # while anything else — a hyphen-letter, a dot-letter, and whatever follows —
+  # is statement detail and is dropped:
+  #
+  #   ac-2        -> ac-2        (control, unchanged)
+  #   ac-2.1      -> ac-2.1      (enhancement, unchanged)
+  #   cm-6-b      -> cm-6
+  #   ac-2.a      -> ac-2
+  #   pm-14-a-1   -> pm-14
+  #   ia-5.1.a    -> ia-5.1      (enhancement kept, statement dropped)
+  #   ac-1-a-1.a  -> ac-1
+  #
+  # A hyphen followed by DIGITS never appears in the mapping data (measured:
+  # zero occurrences of `xx-N-N`), so a hyphen suffix is always a statement
+  # letter and never an enhancement written the other way. If that ever changes,
+  # `ac-2-1` would silently reduce to `ac-2` and lose the enhancement — which is
+  # what the spec asserting the measurement is there to catch.
+  #
+  # This does NOT touch `canonical`. That form is schema-validated in every
+  # OSCAL document SPARC exports, and changing it would invalidate all of them.
+  # `control_key` is a separate reduction for a separate purpose: joining.
+  def control_key(raw)
+    id = canonical(raw)
+    match = id.match(/\A(\p{L}{1,3}-\d+(?:\.\d+)?)/)
+    match ? match[1] : id
+  end
+
   # SPARC's display/sort form: family uppercase, base number zero-padded to two
   # digits, enhancement padded likewise. `AC-2` -> `AC-02`, `ac-2.1` -> `AC-02.01`.
   def padded(raw)

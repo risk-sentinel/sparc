@@ -11,6 +11,13 @@ deletes it in teardown. Tests that need an existing document use the
 ``ssp_doc`` fixture which sets up + tears down once per test.
 """
 
+# Coverage declared for bin/api_inventory_check.rb. These endpoints are
+# exercised through shared contract mixins, which express an endpoint as a
+# URL path rather than by action name, so the inventory's string match
+# cannot see them.
+# api-inventory: covers ssp_documents#import_fields_preview
+# api-inventory: covers ssp_documents#import_fields_confirm
+
 from __future__ import annotations
 
 import uuid
@@ -20,7 +27,10 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from _document_helpers import create_doc, delete_doc, make_payload
+from _export_contract import ExportContract
+from _field_import_contract import FieldImportContract
 from _populate_from_profile import PopulateFromProfileContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
@@ -67,6 +77,52 @@ def ssp_doc(admin_client: httpx.Client, seeded_boundary_id: int) -> Iterator[dic
 
 # ── populate from profile (#628) ────────────────────────────────────────────
 
+# #995 — the shared export contract: JSON not an error page, and the export
+# actually CONTAINS the record it claims to export.
+# #995 — the shared field-import contract: a preview must write NOTHING, and
+# confirm must actually apply, both confirmed by an independent read.
+class TestFieldImportContract(FieldImportContract):
+    PATH = PATH
+
+    def _document_slug(self, admin_client):
+        if getattr(self, "_imp_slug", None):
+            return self._imp_slug
+        docs = admin_client.get(PATH, params={"items": 20}).json()["data"]
+        for row in docs:
+            export = admin_client.get(f"{PATH}/{row['slug']}/export")
+            if export.status_code != 200:
+                continue
+            controls = export.json().get("controls") or []
+            if controls:
+                self._imp_slug = row["slug"]
+                self._imp_control = controls[0]
+                self._imp_uuid = controls[0]["uuid"]
+                return self._imp_slug
+        raise AssertionError("no SSP on this instance has controls to import fields into")
+
+    def _target(self, admin_client):
+        self._document_slug(admin_client)
+        # This type keys directly on NIST controls and has no duplicates, so the
+        # `control_id` is a valid address — which is the common path worth
+        # covering here. CDEF exercises uuid addressing (#1028).
+        return {
+            "uuid": self._imp_uuid,
+            "key": self._imp_control["control_id"],
+            "field": "notes",
+        }
+
+
+class TestExportContract(ExportContract):
+    def _export_path(self, admin_client):
+        docs = admin_client.get(PATH, params={"items": 1})
+        self._doc = docs.json()["data"][0]
+        return f"{PATH}/{self._doc['slug']}/export"
+
+    def _expected_content(self, admin_client):
+        self._export_path(admin_client)
+        return self._doc["name"]
+
+
 class TestPopulateFromProfile(PopulateFromProfileContract):
     """Populate an SSP from a published profile (#628). Contract lives in
     _populate_from_profile; SSPs are slug-addressed."""
@@ -79,6 +135,19 @@ class TestPopulateFromProfile(PopulateFromProfileContract):
 
 
 # ── index ──────────────────────────────────────────────────────────────────
+
+# #995 — the shared matrix for this group.
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = PARAM_KEY
+    IDENTIFIER = "slug"
+
+    def _payload(self, admin_client):
+        boundaries = admin_client.get("/api/v1/authorization_boundaries", params={"items": 1})
+        rows = boundaries.json()["data"]
+        assert rows, "no authorization boundary on this instance to hang an SSP off"
+        return _new_payload(rows[0]["id"])[PARAM_KEY]
+
 
 class TestIndex:
     @pytest.mark.happy

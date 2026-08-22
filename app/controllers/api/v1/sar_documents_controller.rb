@@ -112,7 +112,7 @@ class Api::V1::SarDocumentsController < Api::V1::DocumentBaseController
   def write_permission_key = "sar.write"
 
   def document_params
-    params.require(:sar_document).permit(
+    permit_strictly(:sar_document,
       :name, :description, :authorization_boundary_id,
       :sap_document_id, :profile_document_id, :ssp_document_id,
       :lifecycle_status

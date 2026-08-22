@@ -1,0 +1,92 @@
+<%#
+  One authorization boundary and its documents (#951).
+
+  Extracted from _sidebar.html.erb so the boundary block is written once and
+  rendered both above and below the "show more" fold, rather than duplicated.
+
+  ORDER AND MEMBERSHIP follow the NIST layers a boundary's documents actually
+  belong to — implementation, then assessment:
+
+    CDEFs -> SSP -> SAP -> Evidence -> SAR -> Amendments -> POA&Ms
+
+  Profiles are deliberately NOT here. A profile is a baseline SELECTION, not a
+  boundary document: it is chosen once and referenced by many boundaries, so
+  listing it per boundary implied a per-boundary artefact that does not exist.
+  It remains reachable from the Controls navigation, which is where the other
+  catalog-layer surfaces live.
+
+  Evidence is here for the opposite reason: it is boundary-scoped assessment
+  material that had no per-boundary entry point at all, only the unscoped list.
+%>
+<div class="sparc-sidebar-boundary">
+  <%#
+    The flex row wraps ONLY the chevron and the name. It must not wrap the
+    collapse panel below: with the panel inside it, the seven document leaves
+    became a third flex item and squeezed the name to one character per line —
+    invisible while the panel was collapsed, which is exactly when it was first
+    measured.
+  %>
+  <div class="sparc-sidebar-boundary-row">
+  <%#
+    Two controls, not one. The chevron expands the boundary's documents; the
+    NAME navigates to the boundary itself. Before this the whole row was a
+    collapse toggle, so the boundary — the record every one of those documents
+    hangs off — was the one thing in the tree you could not open.
+
+    `to_param` is the slug, so this resolves to
+    /authorization_boundaries/<slug> rather than a numeric id.
+  %>
+  <button class="sparc-sidebar-toggle sparc-sidebar-indent-2 sparc-sidebar-boundary-toggle"
+          data-bs-toggle="collapse"
+          data-bs-target="#sidebarAb<%= ab.id %>"
+          aria-expanded="false"
+          aria-label="Show documents for <%= ab.name %>">
+    <span class="badge rounded-pill sparc-status--<%= ab_status_variant(ab.status) %>" style="font-size: 0.55rem; vertical-align: middle;">
+      <%= ab.status&.upcase %>
+    </span>
+  </button>
+    <%= link_to ab.name, authorization_boundary_path(ab),
+                class: "sparc-sidebar-boundary-link",
+                title: ab.name %>
+  </div>
+  <div class="collapse" id="sidebarAb<%= ab.id %>">
+    <ul class="sparc-sidebar-leaves">
+      <li>
+        <%= link_to cdef_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
+          <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> CDEFs
+        <% end %>
+      </li>
+      <li>
+        <%= link_to ssp_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
+          <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> SSP
+        <% end %>
+      </li>
+      <li>
+        <%= link_to sap_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
+          <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAP
+        <% end %>
+      </li>
+      <li>
+        <%= link_to evidences_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
+          <span class="sparc-sidebar-dot" style="background: #16a085;"></span> Evidence
+        <% end %>
+      </li>
+      <li>
+        <%= link_to sar_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
+          <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAR
+        <% end %>
+      </li>
+      <li>
+        <%# #447 — the triage screen for this boundary's scanner findings. %>
+        <%= link_to triage_authorization_boundary_path(ab), class: "sparc-sidebar-leaf" do %>
+          <span class="sparc-sidebar-dot" style="background: #d35400;"></span> Amendments
+        <% end %>
+      </li>
+      <li>
+        <%= link_to poam_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
+          <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> POA&amp;Ms
+        <% end %>
+      </li>
+    </ul>
+  </div>
+</div>

@@ -70,8 +70,14 @@ class Api::V1::PoamRisksController < Api::V1::BaseController
 
   private
 
+  # #1010 — slug OR id. A POA&M document is slug-addressed everywhere else
+  # (`GET /api/v1/poam_documents/:slug`), so a caller who lists documents and
+  # then asks for their risks was handed a 404 for using the identifier the
+  # listing gave them. Found while building the sibling sub-resources, which
+  # accept both.
   def set_document
-    @document = PoamDocument.find(params[:poam_document_id])
+    param = params[:poam_document_id].to_s
+    @document = PoamDocument.find_by(slug: param) || PoamDocument.find(param)
     @boundary = @document.authorization_boundary
   end
 
@@ -82,7 +88,7 @@ class Api::V1::PoamRisksController < Api::V1::BaseController
   end
 
   def risk_params
-    params.require(:poam_risk).permit(
+    permit_strictly(:poam_risk,
       :uuid, :title, :description, :statement, :status,
       :deadline, :likelihood, :impact, :remarks
     )

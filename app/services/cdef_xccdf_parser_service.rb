@@ -260,7 +260,15 @@ class CdefXccdfParserService
     # This loses nothing: `rule_id`, `group_id` and `stig_id` below carry the
     # XCCDF provenance, and they are the columns lookups already use.
     attrs = {
-      control_id:     nist_id,
+      # #1030 — `control_id` carries the CATALOG-ADDRESSABLE control, so it
+      # joins. The mapping data is statement-level (`cm-6-b`, `pm-14-a-1`) and
+      # NIST catalogs hold controls and enhancements but never statement
+      # parts, so storing the reference verbatim matched no catalog control at
+      # all — measured at 57% of CCI resolutions. The full statement reference
+      # is not lost: it goes to the `nist_controls` field below.
+      # `control_key(nil)` is "unknown", not nil, so the guard stays explicit:
+      # an unresolved rule leaves the column NULL, as #911 requires.
+      control_id:     nist_id.present? ? ControlId.control_key(nist_id) : nil,
       # #912 — provenance in its own column, never rewritten. `control_id`
       # above holds only the NIST reference resolved through CCI.
       source_control_id: rule_id,

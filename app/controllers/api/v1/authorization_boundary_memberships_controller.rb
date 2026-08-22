@@ -133,7 +133,7 @@ class Api::V1::AuthorizationBoundaryMembershipsController < Api::V1::BaseControl
   # configured vocabulary — the same path the web controller takes, so the API
   # and the UI cannot disagree about what is acceptable.
   def membership_params
-    params.require(:authorization_boundary_membership).permit(:user_name, :user_email, :role)
+    permit_strictly(:authorization_boundary_membership, :user_name, :user_email, :role)
   end
 
   def serialize_membership(m)

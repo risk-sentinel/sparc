@@ -508,6 +508,11 @@ code {
   padding: 0.35rem 0;
   min-width: 220px;
   margin-top: 0.35rem !important;
+  /* #951 — measured at 800px tall with no bound, so it overflowed any viewport
+     under ~864px and left 87px of it unreachable at 777px: the items ran off
+     the bottom of the screen with nothing to scroll. */
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
 }
 
 .sparc-dropdown-menu .dropdown-item {
@@ -769,6 +774,20 @@ code {
 /* Decorative fills — solid hues for non-text elements (heatmap stacked bars,
    legend swatches). No contrast requirement; keeps the saturated palette. */
 .sparc-fill--success { background: #27ae60; }
+
+/* #951 — a warning badge takes a BLACK label, in both themes.
+   Bootstrap's `.badge` sets `color: #fff`, and nothing paired a foreground with
+   the warning background, so white sat on amber at a measured 2.19:1 — against
+   the 4.5:1 WCAG AA needs for 12.6px/700 text. The theme already recorded the
+   intent one line above the colour ("paired with black label per WCAG"); only
+   the pairing was missing.
+   Black works for both warning values this theme defines — #f39c12 (9.4:1) and
+   the lighter #f6e05e — whereas white fails on both. `.badge.bg-warning` is
+   0,2,0 and this file loads after the Bootstrap CDN link, so no !important. */
+.badge.bg-warning {
+  color: #000;
+}
+
 .sparc-fill--warning { background: #f39c12; }
 .sparc-fill--danger  { background: #e74c3c; }
 .sparc-fill--info    { background: #3498db; }
@@ -2195,15 +2214,30 @@ a.link-purple { color: var(--sparc-purple); }
 
 /* ─── Sidebar Navigation ────────────────────────────────────────────── */
 .sparc-sidebar {
-  width: 220px;
-  min-width: 220px;
-  min-height: calc(100vh - 56px);
+  /* #951 — 288px, up from the original 220px. At 220px an organization or
+     boundary name of any real length wrapped to two or three lines, which made
+     the tree taller than the names justified and pushed the sections below it
+     further down the pane. There is desktop room to spare, and `.sparc-main-content`
+     carries `min-width: 0` so the content column absorbs the difference. */
+  width: 288px;
+  min-width: 288px;
   background: var(--sparc-bg);
   border-right: 1px solid var(--sparc-border);
   color: var(--sparc-text);
   font-size: 1.05rem;
-  overflow-y: auto;
   flex-shrink: 0;
+  /* #951 — the sidebar scrolls in its OWN pane.
+     This was `min-height`, which lets the element grow with its content, so
+     `overflow-y: auto` never had anything to overflow and the whole document
+     scrolled instead. With a long organization tree that pushed the Compliance
+     Library, Resources and Help sections off the bottom of the page. A fixed
+     `height` bounds the box so the overflow engages, and `sticky` keeps it in
+     view while the main content scrolls independently. */
+  height: calc(100vh - 56px);
+  position: sticky;
+  top: 56px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .sparc-sidebar-header {
@@ -2279,6 +2313,36 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-sidebar-icon {
   font-size: 0.9rem;
   flex-shrink: 0;
+}
+
+/* #951 — a boundary row is a chevron plus a link, not one big toggle.
+   The name navigates to the boundary; the toggle only expands its documents. */
+.sparc-sidebar-boundary-row {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.sparc-sidebar-boundary-toggle {
+  flex: 0 0 auto;
+  width: auto;
+  padding-right: 0.25rem;
+}
+
+.sparc-sidebar-boundary-link {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--sparc-text);
+  text-decoration: none;
+  font-size: 1.05rem;
+  padding: 0.3rem 0.4rem 0.3rem 0;
+  overflow-wrap: anywhere;
+}
+
+.sparc-sidebar-boundary-link:hover,
+.sparc-sidebar-boundary-link:focus-visible {
+  color: var(--sparc-accent, #4da3ff);
+  text-decoration: underline;
 }
 
 .sparc-sidebar-leaves {

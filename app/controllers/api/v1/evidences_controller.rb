@@ -242,11 +242,13 @@ class Api::V1::EvidencesController < Api::V1::BaseController
     # attestation in one call exactly as the UI does. `attester_name` /
     # `attester_email` are absent deliberately: they are the snapshot the model
     # takes from the resolved account (#934), not client input.
-    params.require(:evidence).permit(
+    permit_strictly(:evidence,
       :title, :description, :evidence_type, :status,
       :source, :authorization_boundary_id, :file,
       attestations_attributes: [ :id, :attester_user_id, :role, :statement,
-                                 :attested_at, :frequency, :status ]
+                                 :attested_at, :frequency, :status ],
+      # Control links are built from these rather than mass-assigned.
+      also_accepts: %i[control_ids]
     )
   end
 

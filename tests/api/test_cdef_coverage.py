@@ -9,6 +9,10 @@ dropped — so the fixtures below deliberately carry a fake secret in
 ``instances[].attributes``, and the suite asserts it comes back in nothing.
 """
 
+# api-inventory: covers cdef_coverage#create_run
+# api-inventory: covers cdef_coverage#show_run
+# api-inventory: covers cdef_coverage#destroy_run
+
 from __future__ import annotations
 
 import io

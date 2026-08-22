@@ -154,18 +154,49 @@ class TestPoamFromHdf:
 
 class TestPoamFromAmendments:
     """hdf-cli 3.2.0 replaced the direct hdf->oscal-poam path with
-    hdf-amendments->oscal-poam (#663, upstream mitre/hdf-libs#104). This is the
-    supported way to produce an OSCAL POA&M. Note the converter is permissive
-    (it accepts any JSON object), so there is no garbage->422 case here."""
+    hdf-amendments->oscal-poam (#663, upstream mitre/hdf-libs#104).
+
+    **This path is currently unavailable on the bundled converter.** hdf-cli
+    3.5.1 emits a POA&M that fails the NIST OSCAL schema on EVERY version SPARC
+    release from 1.1.1 through 1.2.2 for VALID amendments
+    input, so SPARC refuses to return it (#1017). Newer OSCAL does not help —
+    1.2.x rejects more, not fewer. Filed upstream as mitre/hdf-libs#236;
+    evidence and reproducer in
+    docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md.
+
+    These two examples previously asserted `200`, and passed, because nothing
+    validated the output — the exact situation #831 describes: a consumer asked
+    for a document, was told it succeeded, and got something no OSCAL tool would
+    accept. They assert the refusal now. When upstream fixes the converter they
+    will fail, which is the correct way to find out.
+    """
 
     @pytest.mark.happy
-    def test_raw_body_returns_oscal_poam(self, admin_client: httpx.Client) -> None:
+    def test_raw_body_is_refused_while_the_converter_emits_invalid_oscal(
+        self, admin_client: httpx.Client
+    ) -> None:
         response = _post_raw(admin_client, POAM_FROM_AMENDMENTS_PATH, _hdf_amendments_bytes())
-        assert response.status_code == 200, response.text
-        assert "plan-of-action-and-milestones" in response.json(), response.text
+
+        assert response.status_code == 502, (
+            "expected 502 while hdf-cli 3.5.1 emits schema-invalid POA&Ms; a 200 here "
+            "means either the converter was fixed upstream (update this test and "
+            "docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md) or the validation "
+            f"guard regressed: {response.text[:300]}"
+        )
+
+        body = response.json()
+        assert "does not conform to the OSCAL schema" in body["error"], body
+        # The violations travel with the refusal, so a caller can see it is an
+        # upstream limitation rather than something wrong with their file.
+        details = " ".join(body["details"])
+        assert "poam" in details.lower(), body
+        assert "not a defect in" not in body["note"] or "converter" in body["note"], body
 
     @pytest.mark.happy
-    def test_multipart_upload_returns_oscal_poam(self, admin_client: httpx.Client) -> None:
+    def test_multipart_upload_is_refused_the_same_way(
+        self, admin_client: httpx.Client
+    ) -> None:
+        """The refusal must not depend on how the payload arrived."""
         response = admin_client.post(
             POAM_FROM_AMENDMENTS_PATH,
             files={
@@ -176,8 +207,23 @@ class TestPoamFromAmendments:
                 )
             },
         )
-        assert response.status_code == 200, response.text
-        assert "plan-of-action-and-milestones" in response.json()
+
+        assert response.status_code == 502, response.text
+        assert "does not conform to the OSCAL schema" in response.json()["error"]
+
+    @pytest.mark.validation
+    def test_non_amendments_json_is_also_refused(self, admin_client: httpx.Client) -> None:
+        """The converter accepts any JSON object and emits `poam-items: null`.
+
+        Before #1017 that came back as a 200, so a caller who submitted the
+        wrong file was told the translation succeeded.
+        """
+        response = _post_raw(
+            admin_client, POAM_FROM_AMENDMENTS_PATH, b'{"not_hdf":"at all"}'
+        )
+
+        assert response.status_code == 502, response.text
+        assert "poam-items" in " ".join(response.json()["details"]), response.text
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

@@ -5,6 +5,15 @@ or update_fields. See test_ssp_documents.py for the reference
 implementation.
 """
 
+# Coverage declared for bin/api_inventory_check.rb. These endpoints are
+# exercised through shared contract mixins, which express an endpoint as a
+# URL path rather than by action name, so the inventory's string match
+# cannot see them.
+# api-inventory: covers sap_documents#import_fields_preview
+# api-inventory: covers sap_documents#import_fields_confirm
+# api-inventory: covers sap_documents#export
+# api-inventory: covers sap_documents#import
+
 from __future__ import annotations
 
 import uuid
@@ -14,12 +23,15 @@ from typing import Any
 import httpx
 import pytest
 
+from _crud_contract import CrudContract
 from _document_helpers import create_doc, delete_doc, make_payload
+from _field_import_contract import FieldImportContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     SapDocumentIndex,
     SapDocumentShow,
     assert_create_round_trip,
+    assert_update_round_trip,
     validate_index_response,
     validate_show_response,
 )
@@ -44,6 +56,78 @@ def sap_doc(admin_client: httpx.Client, seeded_boundary_id: int) -> Iterator[dic
         yield doc
     finally:
         delete_doc(admin_client, PATH, doc["slug"])
+
+
+# #995 — the shared matrix for this group: documented status, an INDEPENDENT
+# read after every write, gone-from-show-and-index after delete, and a refused
+# caller changing nothing.
+# #995 — the shared field-import contract.
+class TestFieldImportContract(FieldImportContract):
+    PATH = PATH
+
+    def _document_slug(self, admin_client):
+        if getattr(self, "_imp_slug", None):
+            return self._imp_slug
+        docs = admin_client.get(PATH, params={"items": 20}).json()["data"]
+        for row in docs:
+            export = admin_client.get(f"{PATH}/{row['slug']}/export")
+            if export.status_code != 200:
+                continue
+            controls = export.json().get("controls") or []
+            if controls:
+                self._imp_slug = row["slug"]
+                self._imp_control = controls[0]
+                self._imp_uuid = controls[0]["uuid"]
+                return self._imp_slug
+
+        # No seeded SAP carries controls, so build one rather than skip: #844's
+        # `generate` produces a POPULATED plan from an SSP. A field-import
+        # contract that quietly skips because the instance happens to hold no
+        # suitable document tests nothing at all.
+        ssps = admin_client.get("/api/v1/ssp_documents", params={"items": 20}).json()["data"]
+        for ssp in ssps:
+            generated = admin_client.post(
+                f"{PATH}/generate",
+                json={"sap_document": {"ssp_document_id": ssp["slug"]}},
+            )
+            if generated.status_code not in (200, 201):
+                continue
+            slug = generated.json()["data"]["slug"]
+            export = admin_client.get(f"{PATH}/{slug}/export")
+            controls = export.json().get("controls") or []
+            if controls:
+                self._imp_slug = slug
+                self._imp_control = controls[0]
+                self._imp_uuid = controls[0]["uuid"]
+                return self._imp_slug
+
+        raise AssertionError(
+            "no SAP has controls and none could be generated from an SSP — the "
+            "field-import contract cannot run without a populated document"
+        )
+
+    def _target(self, admin_client):
+        self._document_slug(admin_client)
+        # This type keys directly on NIST controls and has no duplicates, so the
+        # `control_id` is a valid address — which is the common path worth
+        # covering here. CDEF exercises uuid addressing (#1028).
+        return {
+            "uuid": self._imp_uuid,
+            "key": self._imp_control["control_id"],
+            "field": "notes",
+        }
+
+
+class TestCrudContract(CrudContract):
+    PATH = PATH
+    PARAM_KEY = PARAM_KEY
+    IDENTIFIER = "slug"
+
+    def _payload(self, admin_client):
+        boundaries = admin_client.get("/api/v1/authorization_boundaries", params={"items": 1})
+        rows = boundaries.json()["data"]
+        assert rows, "no authorization boundary on this instance"
+        return _new_payload(rows[0]["id"])[PARAM_KEY]
 
 
 class TestIndex:
@@ -150,11 +234,21 @@ class TestUpdate:
     def test_admin_updates_via_patch(
         self, admin_client: httpx.Client, sap_doc: dict[str, Any]
     ) -> None:
-        response = admin_client.patch(
-            f"{PATH}/{sap_doc['slug']}",
-            json={PARAM_KEY: {"description": "patched"}},
+        """The PATCH persists, confirmed by an independent read.
+
+        This asserted only a status code until #995 — it would have passed
+        against an endpoint that discarded the payload entirely, which is
+        exactly what #994 did.
+        """
+        assert_update_round_trip(
+            admin_client,
+            PATH,
+            sap_doc["slug"],
+            {"description": f"patched {uuid.uuid4().hex[:6]}"},
+            PARAM_KEY,
+            SapDocumentShow,
+            restore=False,  # the fixture owns this document and deletes it
         )
-        assert response.status_code == 200
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

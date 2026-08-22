@@ -105,9 +105,14 @@ class Role < ApplicationRecord
   end
 
   # Bulk-set permissions from form params ({ "catalogs.read" => "1", ... })
+  # Accepts the web form's "1"/absent convention AND real booleans, so the API
+  # (#1014) can send `{"catalogs.read": true}` — the natural JSON shape — while
+  # the checkbox params the UI submits keep behaving exactly as before. An
+  # unchecked box is absent, casts to nil, and lands as false either way.
   def assign_permissions(perm_params)
+    caster = ActiveModel::Type::Boolean.new
     self.permissions = PERMISSION_KEYS.each_with_object({}) do |key, hash|
-      hash[key] = perm_params[key] == "1"
+      hash[key] = caster.cast(perm_params[key]) || false
     end
   end
 end

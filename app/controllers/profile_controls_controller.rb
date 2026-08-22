@@ -6,6 +6,10 @@ class ProfileControlsController < ApplicationController
   # (new/create/edit/update/destroy) is authoring.
   before_action :authorize_profiles_write!
   before_action :set_profile_control, only: %i[edit update update_parameters destroy]
+  # #1008 — the same unenforced rule as the API path. Both surfaces asked only
+  # whether the caller may write profiles, never whether this profile is still
+  # editable.
+  before_action :refuse_published_profile!, only: %i[create update update_parameters destroy]
 
   def new
     @profile_control = @profile_document.profile_controls.build
@@ -81,6 +85,17 @@ class ProfileControlsController < ApplicationController
   end
 
   private
+
+  # #1008 — see Api::V1::BaselineParametersController for the reasoning. Kept on
+  # both surfaces because the invariant belongs to the document, not to one
+  # client of it.
+  def refuse_published_profile!
+    return unless @profile_document.published_lifecycle?
+
+    flash[:error] = "#{@profile_document.name} is published and cannot be edited. " \
+                    "Duplicate it to create an editable draft."
+    redirect_to profile_document_path(@profile_document)
+  end
 
   def authorize_profiles_write!
     authorize_permission!("profiles.write")
