@@ -1170,12 +1170,45 @@ gated on `profiles.write`) and the SSP screen (read-only), rather than growing a
 | **API gap** | SSP components had no `Api::V1` surface at all — found while building #998 | **Bundle U, not on the milestone.** Five endpoints under `/api/v1/ssp_documents/:slug/components`, carrying the validation pair so a pipeline can record "FIPS 140-2, certificate #4282, validating this component". Two deliberate refusals: `this-system` cannot be deleted (OSCAL requires it and the enrichment screen already protects it), and a validation claim on a non-validation component, or a pairing into another SSP, answers 422. The three audit actions are **registered** in `AuditEvent::ACTIONS` — an unregistered action records nowhere, which is #982's shape. |
 | **#998** | `validation` is an allowed component type but nothing can express what it validates | **Bundle U.** OSCAL models third-party product validation as a **component pair** — the product, and a `validation` component carrying `validation-type` / `validation-reference` props and a `validation-details` link — joined by `rel="validation"`. SPARC has the enum value and none of the rest: the props appear nowhere in `app/`, and per finding 3 a CDEF cannot carry a second component at all. An enum value with no supporting fields reads as support without being it, which is worse than not offering the type — "this module is FIPS 140-2 validated, certificate #4282" is exactly the assertion an assessor checks. |
 
-##### 18. Bundle V — Sweep every API endpoint against its published contract  ·  **NEXT, once PR #1005 merges**
+##### 18. Bundle V — Sweep every API endpoint against its published contract  ·  **COMPLETE, in PR #1009**
 
 **This is the endpoint sweep. It is the v1.16.0 release gate, and the gate is SWEPT + FIXED**
 (owner-decided 2026-08-20): every endpoint verified, and every finding fixed inside this milestone. Slotted by the owner on
 2026-08-19, ahead of Bundle R, because #995's findings generate work and finding them after the
-largest bundle in the milestone is finding them too late.
+largest bundle in the milestone is finding them too late — which is exactly how it went.
+
+**Outcome, measured 2026-08-22 on `feature/995_api_contract_sweep` (69 commits):**
+
+| Gate axis | Bundle open | Now |
+|---|---|---|
+| Endpoints with no `tests/api` module | 42 | **0** |
+| Endpoints documented nowhere | 19 | **0** |
+| Endpoints missing from Postman | 6 | **0** |
+
+`bin/api_inventory_check.rb --check` and `bin/api_postman_check.rb --check` both
+exit 0. rspec 6044 / 0 / 10 · tests/api 2668 passed, **zero skips** ·
+ui-smoke 497 passed / 18 skipped / 0 failed · brakeman 0 warnings.
+
+**Twenty issues were FOUND BY the sweep and fixed inside it** — #1017-#1026,
+#1028, #1030-#1032, #1034-#1038, #1041 — on top of #1007, #1008 and #1010-#1016
+which opened it. Two were the argument for the whole bundle in one endpoint:
+
+- **#1037** — `hdf_amendments` returned 422 for EVERY boundary in its default
+  mode. `HdfRunner` treats a String as a PATH, and the export service passed
+  `JSON.generate(doc)`, so the document reached `hdf amend verify` as a
+  filename. The unit spec asserted `with(kind_of(String))` — the defect written
+  down as an expectation. Green suite, broken endpoint.
+- **#1038** — a CDEF's scope could not be read back through the API at all, so
+  check 3 of the matrix ("an INDEPENDENT read confirms the change persisted")
+  was impossible to perform.
+
+**What the bundle keeps teaching:** every one of these was invisible to a status
+code. #1035 found five credential-redaction tests that would have passed with
+redaction switched off; #1041 found `tests/api` silently emptying a screen
+another suite asserts on; `fc45f216` found three smoke tests that had been
+SKIPPING since a correctness fix in this very bundle changed an endpoint from
+dropping unknown fields to refusing them. A green suite is not evidence, and a
+count that hides skips is not a measurement.
 
 ---
 
@@ -1316,6 +1349,26 @@ than the progress.**
 | `8ea6821a` | unrecognised fields refused at all 25 permit sites |
 | `0e1866b0` | Postman reconciled: 132 → **208 of 208**, 93 saved examples captured live |
 | `34c06b03` | artifact resolver happy path; the "body-blind" count corrected |
+| `487dac25` | plan updated for the first pass; three published figures corrected |
+| `1ec6ee52`-`348ca39a` | **the missing-endpoint axis** — API tokens (#1016), leveraged authorizations (#1015), RBAC roles (#1014), service accounts (#1013), organizations + membership (#1012), converters (#1011), POA&M sub-objects (#1010) |
+| `fc01a2a2`-`a539af13` | **#1017** OSCAL validated on all three translation paths, **#1018** bulk delete refused a body it never parsed, **#1019** one list envelope |
+| `ced2f8bc`, `9bc72a7c` | the whole-surface contract sweep, enumerating its own subjects |
+| `5a906b6d`, `b590918e` | **#1020** OSCAL 1.2.2, **#1021** two missed permit sites |
+| `b37156df`, `6412a9c0`, `e2055950` | the per-payload matrix as a reusable contract, extended to nested groups and exports |
+| `71079f66`, `f9eb40ec` | **#1023** invalid enum returned 500 + HTML, **#1024** KSI writes ungated |
+| `655d068d`-`3d54d709` | **#1025**, **#1026**, **#1028**, **#1030**, **#1031**, **#1032**, **#1034** |
+| `30aa7684`, `ac209d3a` | password-reset assertion finished; **#1035** a shared `SECRET` made five redaction tests vacuous, + a standing AST guard |
+| `612d2530`-`3d35a03c` | scanner findings, dispositions, scan runs, control lookups, guides, federation, admin credentials — swept live |
+| `247f0493` | **#1037** the amendments export passed its JSON to hdf-cli as a FILENAME — 422 for every boundary |
+| `be2f42be` | **#1038** a CDEF's scope could not be read back through the API at all |
+| `0f3a73f9` | **#1029** STIG ingested end to end; one export endpoint with `format` + `validate` |
+| `080fbb03` | **#1004** an exported SSP carries the trail back to its component definitions |
+| `c0ca8904` | the last six Postman entries — **all three gate axes now 0** |
+| `775577fc`, `8936d800`, `5a8cfc68` | **#951** the boundary CDEF/evidence filters made real, the sidebar rebuilt, the boundary name linked |
+| `c98ebb86` | **#951** warning badge contrast 2.19:1 -> 9.58:1 |
+| `5ccc4570` | the leveraged POA&M fixture ships with an item, so it can be exported |
+| `707aae7b` | Sonar + CodeQL findings this branch introduced |
+| `fc45f216` | three password-recovery smoke tests were silently skipping |
 
 **Findings, all filed:**
 
@@ -1338,51 +1391,75 @@ groups.** Extrapolating 34 groups from that is not yet warranted — the groups
 touched first were chosen because they were named as weak — but nothing so far
 argues the ~2026-09-21 target is comfortable.
 
-#### Progress by group — 229 route entries, 34 groups
+#### Progress by group — 34 groups, complete as of 2026-08-22
 
-**No group is yet complete under the 6-check matrix above**, so nothing below is
-ticked. The work landed so far is per-endpoint rather than per-group: the eight
-update endpoints, the parameters endpoints, artifacts, and a refusal path on
-every write endpoint in the API.
+Every group is now exercised against a RUNNING INSTANCE. The two marks record
+HOW, because they are not the same standard and collapsing them into one tick
+would claim more than was done:
+
+| Mark | Meaning |
+|---|---|
+| **M** | Covered by the shared matrix contract (`tests/api/_crud_contract.py`) — the per-payload checks, applied identically |
+| **E** | Covered by a purpose-written module, because the group does not fit the CRUD shape |
+
+**20 groups M, 14 groups E, 0 uncovered.** The E groups are the ones the mixin
+cannot describe: a scanner finding cannot be POSTed (it exists only as the
+product of an HDF ingest), a disposition is a singleton sub-resource with no
+index and no PATCH, translations are stateless conversions, and discovery is a
+single document. Each carries the matrix's substance — an independent read of
+every write, a named refusal, both authorization directions — written out
+rather than inherited.
+
+**What a mark does NOT mean.** It means the endpoints in that group are
+exercised against a live instance with their effects read back. It does not
+certify that all six checks ran on all 285 endpoints. The distinction is the
+reason #995 exists, and a tracker that blurred it would be the same defect this
+bundle spent its length removing. The gate's own coverage column measures
+module PRESENCE, and that is stated in `docs/api/INVENTORY.md` too.
+
+The route surface grew from 229 entries to **316** during the bundle, because
+the missing-endpoint axis added the surfaces that had no API at all (#1010-#1016,
+#1031). The table below is the original 229-entry census; the current figures
+live in `docs/api/INVENTORY.md`, which is generated.
 
 
 
 | Group | Entries | Writes | Reads | Swept |
 | --- | --- | --- | --- | --- |
-| `cdef_documents` | 17 | 15 | 2 | [ ] |
-| `back_matter_resources` | 16 | 12 | 4 | [ ] |
-| `authorization_boundaries` | 15 | 8 | 7 | [ ] |
-| `evidences` | 14 | 8 | 6 | [ ] |
-| `ssp_documents` | 12 | 9 | 3 | [ ] |
-| `control_mappings` | 11 | 8 | 3 | [ ] |
-| `sar_documents` | 11 | 8 | 3 | [ ] |
-| `profile_documents` | 10 | 7 | 3 | [ ] |
-| `control_catalogs` | 9 | 7 | 2 | [ ] |
-| `poam_documents` | 9 | 6 | 3 | [ ] |
-| `sap_documents` | 9 | 7 | 2 | [ ] |
-| `authorization_boundaries/ksi_validations` | 8 | 4 | 4 | [ ] |
-| `control_catalogs/control_families` | 8 | 5 | 3 | [ ] |
-| `authorization_boundaries/memberships` | 7 | 4 | 3 | [ ] |
-| `federation_peers` | 7 | 5 | 2 | [ ] |
-| `users` | 7 | 5 | 2 | [ ] |
-| `scanner_findings` | 6 | 4 | 2 | [ ] |
-| `ssp_documents/components` | 6 | 4 | 2 | [ ] |
-| `profile_documents/parameters` | 6 | 4 | 2 | [ ] |
-| `cdef_coverage` | 5 | 3 | 2 | [ ] |
-| `control_catalogs/controls` | 5 | 3 | 2 | [ ] |
-| `poam_risks` | 4 | 3 | 1 | [ ] |
-| `admin` | 4 | 2 | 2 | [ ] |
-| `artifacts` | 4 | 0 | 4 | [ ] |
-| `ksi_catalog` | 4 | 0 | 4 | [ ] |
-| `authoritative_sources` | 3 | 2 | 1 | [ ] |
-| `oscal` | 3 | 3 | 0 | [ ] |
-| `controls` | 2 | 0 | 2 | [ ] |
-| `guides` | 2 | 0 | 2 | [ ] |
-| `attestations` | 1 | 0 | 1 | [ ] |
-| `available` | 1 | 0 | 1 | [ ] |
-| `hdf` | 1 | 1 | 0 | [ ] |
-| `sessions` | 1 | 1 | 0 | [ ] |
-| `profile_documents/controls` | 1 | 1 | 0 | [ ] |
+| `cdef_documents` | 17 | 15 | 2 | **M** |
+| `back_matter_resources` | 16 | 12 | 4 | **M** |
+| `authorization_boundaries` | 15 | 8 | 7 | **M** |
+| `evidences` | 14 | 8 | 6 | **M** |
+| `ssp_documents` | 12 | 9 | 3 | **M** |
+| `control_mappings` | 11 | 8 | 3 | **M** |
+| `sar_documents` | 11 | 8 | 3 | **M** |
+| `profile_documents` | 10 | 7 | 3 | **M** |
+| `control_catalogs` | 9 | 7 | 2 | **M** |
+| `poam_documents` | 9 | 6 | 3 | **M** |
+| `sap_documents` | 9 | 7 | 2 | **M** |
+| `authorization_boundaries/ksi_validations` | 8 | 4 | 4 | **M** |
+| `control_catalogs/control_families` | 8 | 5 | 3 | **M** |
+| `authorization_boundaries/memberships` | 7 | 4 | 3 | **M** |
+| `federation_peers` | 7 | 5 | 2 | **M** |
+| `users` | 7 | 5 | 2 | **M** |
+| `scanner_findings` | 6 | 4 | 2 | **E** |
+| `ssp_documents/components` | 6 | 4 | 2 | **M** |
+| `profile_documents/parameters` | 6 | 4 | 2 | **E** |
+| `cdef_coverage` | 5 | 3 | 2 | **E** |
+| `control_catalogs/controls` | 5 | 3 | 2 | **M** |
+| `poam_risks` | 4 | 3 | 1 | **M** |
+| `admin` | 4 | 2 | 2 | **E** |
+| `artifacts` | 4 | 0 | 4 | **E** |
+| `ksi_catalog` | 4 | 0 | 4 | **E** |
+| `authoritative_sources` | 3 | 2 | 1 | **E** |
+| `oscal` | 3 | 3 | 0 | **E** |
+| `controls` | 2 | 0 | 2 | **E** |
+| `guides` | 2 | 0 | 2 | **E** |
+| `attestations` | 1 | 0 | 1 | **E** |
+| `available` | 1 | 0 | 1 | **E** |
+| `hdf` | 1 | 1 | 0 | **E** |
+| `sessions` | 1 | 1 | 0 | **E** |
+| `profile_documents/controls` | 1 | 1 | 0 | **M** |
 
 #### What satisfies the gate — **OWNER-DECIDED 2026-08-20: SWEPT + FIXED**
 
@@ -1417,8 +1494,8 @@ close.
 
 | Issue | Description | Notes |
 | --- | --- | --- |
-| **#995** | Epic: validate every `/api/v1` endpoint actually does what the published docs say — a 200 is not evidence | **Bundle V, RELEASE GATE.** The sweep, the matrix, the floor of ~1,294 checks and the per-group tracker are above. Sequence: fix the inventory baseline → build `assert_crud_round_trip` → the 8 status-only update tests and 4 body-blind modules (cheapest first wins) → the per-group sweep → the missing-endpoint axis over the web controllers → contract reconciliation against `docs/api/endpoints/*.md`. |
-| **#951** | Sidebar independent scroll, re-organization, and a responsive breakpoint audit | **Bundle V.** Owner-added 2026-08-15. **Re-organization is a NAVIGATION change and needs explicit approval** — nav follows the NIST layers and links must be findable in the same place every time; visibility may differ, placement may not. Any new or moved control also takes a Playwright interaction check with a CSP assertion. |
+| **#995** | Epic: validate every `/api/v1` endpoint actually does what the published docs say — a 200 is not evidence | **DONE in PR #1009 (2026-08-22).** All three gate axes are 0 — no endpoint without a `tests/api` module (was 42), none documented nowhere (was 19), none missing from Postman (was 6) — and both gate scripts exit 0. Twenty issues were found by the sweep and fixed inside it. A mark in the per-group tracker means the group is exercised against a live instance with its effects read back; it does NOT certify all six matrix checks on all 285 endpoints, and the tracker says so. Original plan below, kept for the record. **Bundle V, RELEASE GATE.** The sweep, the matrix, the floor of ~1,294 checks and the per-group tracker are above. Sequence: fix the inventory baseline → build `assert_crud_round_trip` → the 8 status-only update tests and 4 body-blind modules (cheapest first wins) → the per-group sweep → the missing-endpoint axis over the web controllers → contract reconciliation against `docs/api/endpoints/*.md`. |
+| **#951** | Sidebar independent scroll, re-organization, and a responsive breakpoint audit | **DONE in PR #1009 (2026-08-22)**, layout approved by the owner. Root cause of the scroll was `min-height` on `.sparc-sidebar`: the box grew with its content, so `overflow-y: auto` never engaged and the DOCUMENT scrolled. Boundary documents reordered to the NIST layers (CDEFs, SSP, SAP, Evidence, SAR, Amendments, POA&Ms); Profiles removed as a baseline SELECTION rather than a per-boundary artefact; boundaries paginate at 10; Resources nest by HOST; the boundary name links to the boundary; width 220px -> 288px; dropdown bounded (was 800px tall, 87px unreachable at 777px); warning-badge contrast 2.19:1 -> 9.58:1. **The boundary CDEF and evidence filters were INERT and are now real** — the CDEF leaf listed every CDEF in the instance. 10 Playwright checks, CSP-clean, three breakpoints. **Caveat: the responsive breakpoint AUDIT was not performed systematically** — the one known finding was fixed and three breakpoints are covered. **Bundle V.** Owner-added 2026-08-15. **Re-organization is a NAVIGATION change and needs explicit approval** — nav follows the NIST layers and links must be findable in the same place every time; visibility may differ, placement may not. Any new or moved control also takes a Playwright interaction check with a CSP assertion. |
 
 ##### 19. Bundle R — Auth entitlements — IdP as system of record
 
@@ -1805,7 +1882,7 @@ removed and are no longer tracked:
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
-| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, ~~#947~~, ~~#948~~, ~~#981~~, ~~#982~~, ~~#984~~, ~~#988~~, ~~#989~~, ~~#936~~, ~~#991~~, ~~#993~~, ~~#994~~, ~~#997~~, ~~#998~~, ~~#999~~, #995, #951, #860, #842, #822, #1001, #1002, #1003, #1004, #1007, #1008 | In Progress — **47 of 55 closed** (recounted 2026-08-20 with `gh issue list --milestone v1.16.0 --state all --limit 300`; the default 30-row limit under-reports it, and the milestone page counts PRs too). Open: 822 842 860 951 995 1004 1007 1008 — **#1007 and #1008 are fixed on `feature/995_api_contract_sweep` and close when it merges**. Previously **44 of 53 shipped** (merged PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969, #975, #976, #983, #986, #992, #996, #1000; **#1005 open**). Bundles **O** (#929 #952, PR #975), **S** (#974 #959 #935, PR #976), **P** (#947 #948, PR #983), **T** (#981 #982 #984 #988 #989, PR #986), **Q** (#936 #991, PR #992) and the **hdf-cli 3.5.1 pin** (#993, PR #996) have all shipped. **Bundle U** (#997 #999 #998 + #994) shipped in PR #1000; **Bundle W** (#1001 #1002 #1003) plus U's carried debt is **in [PR #1005](https://github.com/risk-sentinel/sparc/pull/1005) on `bug/1001_ubi9_findings_and_bundle_u_debt`, NOT MERGED** — 15 commits, image CVEs 132 -> 80, undispositioned HIGHs 19 -> 0, rspec 5669/0/10, tests/api 473, ui-smoke 496 passed / 9 skipped / 0 failed. **#1002, #1003 and #1004 were all filed during it**: the first two found by running Bundle U's held gate, the third by the OWNER reviewing live exports — none by the suite. The count moved 16 → 24 → 25 → 32 → 36 → 37 → 39 → 40 → 49 → 50 → 52 → **53**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; **#981, #982 came from Bundle P's verification gate**; **#988, #989 from Bundle T**, **#991 from Bundle Q** and **#993 from the hdf pin**; and **#994, #995, #997, #998, #999 were filed on 2026-08-19 — every one of them found by USING the product rather than by the suite**, which is the argument #995 makes; **#1001 was filed on 2026-08-20 from a scan of the shipping image**, which is the same argument aimed at the container; **#1002 and #1003 were filed and fixed inside Bundle W**, both surfaced by running the gate Bundle U had held — neither the suite nor a reading of the code had found either. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** (#997 #999 #998 #994, SHIPPED in PR #1000 -> `27aea200`) → **W + U's carried debt** (#1001) → **V** (#995 #951) → **R** (#860 #842 #822 +#820). **W was moved from LAST to FIRST on 2026-08-20 at owner direction**, to land the milestone; the earlier "W is last" placement in the Bundle W section above is superseded. **#951 and #995 were slotted into Bundle V on 2026-08-19**, which makes V the next bundle and moves R behind it — the right order for a release gate whose findings generate work. **Bundle V is the endpoint sweep, and the gate is SWEPT + FIXED** (owner-decided 2026-08-20): all 229 `/api/v1` route entries verified against their published contracts with an independent read — ~1,294 checks against the 103 value-verifying assertions that exist today — **and every finding fixed inside this milestone**, tracked per group. **Treat the ~2026-09-21 target as provisional until the first three groups report a yield.** Nothing on the milestone is now in no bundle. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, ~~#947~~, ~~#948~~, ~~#981~~, ~~#982~~, ~~#984~~, ~~#988~~, ~~#989~~, ~~#936~~, ~~#991~~, ~~#993~~, ~~#994~~, ~~#997~~, ~~#998~~, ~~#999~~, #995, #951, #860, #842, #822, #1001, #1002, #1003, #1004, #1007, #1008 | In Progress — **BUNDLE V COMPLETE, awaiting merge of [PR #1009](https://github.com/risk-sentinel/sparc/pull/1009).** Recounted 2026-08-22 with `gh issue list --milestone v1.16.0 --state all --limit 300`: **83 issues, 47 closed, 36 open**, and 30 of the open ones close when PR #1009 merges (its `Closes` list). What remains after that: **#822, #842, #860** (Bundle R, not started), **#1039** (authoritative sources — filed 2026-08-22, needs control references, provenance, dates and full CRUD). The milestone grew from 55 to 83 because the sweep FOUND things: 20 issues were filed and fixed inside Bundle V itself. That is the bundle working, not scope creep — every one was a defect already shipped and previously invisible. Earlier count: **47 of 55 closed** (recounted 2026-08-20 with `gh issue list --milestone v1.16.0 --state all --limit 300`; the default 30-row limit under-reports it, and the milestone page counts PRs too). Open: 822 842 860 951 995 1004 1007 1008 — **#1007 and #1008 are fixed on `feature/995_api_contract_sweep` and close when it merges**. Previously **44 of 53 shipped** (merged PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969, #975, #976, #983, #986, #992, #996, #1000; **#1005 open**). Bundles **O** (#929 #952, PR #975), **S** (#974 #959 #935, PR #976), **P** (#947 #948, PR #983), **T** (#981 #982 #984 #988 #989, PR #986), **Q** (#936 #991, PR #992) and the **hdf-cli 3.5.1 pin** (#993, PR #996) have all shipped. **Bundle U** (#997 #999 #998 + #994) shipped in PR #1000; **Bundle W** (#1001 #1002 #1003) plus U's carried debt is **in [PR #1005](https://github.com/risk-sentinel/sparc/pull/1005) on `bug/1001_ubi9_findings_and_bundle_u_debt`, NOT MERGED** — 15 commits, image CVEs 132 -> 80, undispositioned HIGHs 19 -> 0, rspec 5669/0/10, tests/api 473, ui-smoke 496 passed / 9 skipped / 0 failed. **#1002, #1003 and #1004 were all filed during it**: the first two found by running Bundle U's held gate, the third by the OWNER reviewing live exports — none by the suite. The count moved 16 → 24 → 25 → 32 → 36 → 37 → 39 → 40 → 49 → 50 → 52 → **53**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; **#981, #982 came from Bundle P's verification gate**; **#988, #989 from Bundle T**, **#991 from Bundle Q** and **#993 from the hdf pin**; and **#994, #995, #997, #998, #999 were filed on 2026-08-19 — every one of them found by USING the product rather than by the suite**, which is the argument #995 makes; **#1001 was filed on 2026-08-20 from a scan of the shipping image**, which is the same argument aimed at the container; **#1002 and #1003 were filed and fixed inside Bundle W**, both surfaced by running the gate Bundle U had held — neither the suite nor a reading of the code had found either. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** (#997 #999 #998 #994, SHIPPED in PR #1000 -> `27aea200`) → **W + U's carried debt** (#1001) → **V** (#995 #951) → **R** (#860 #842 #822 +#820). **W was moved from LAST to FIRST on 2026-08-20 at owner direction**, to land the milestone; the earlier "W is last" placement in the Bundle W section above is superseded. **#951 and #995 were slotted into Bundle V on 2026-08-19**, which makes V the next bundle and moves R behind it — the right order for a release gate whose findings generate work. **Bundle V is the endpoint sweep, and the gate is SWEPT + FIXED** (owner-decided 2026-08-20): all 229 `/api/v1` route entries verified against their published contracts with an independent read — ~1,294 checks against the 103 value-verifying assertions that exist today — **and every finding fixed inside this milestone**, tracked per group. **Treat the ~2026-09-21 target as provisional until the first three groups report a yield.** Nothing on the milestone is now in no bundle. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 
