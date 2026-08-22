@@ -23,7 +23,7 @@ that had been wrong since 2026-07-18 (#995).
 - **Code:** **285 logical endpoints** across 55 controller groups (PATCH+PUT aliases collapsed) — 108 GET, 100 POST, 40 DELETE, 35 PUT, 33 PATCH
 - **Documentation:** **242 / 285** endpoints are listed in an `endpoints/*.md` page's own Endpoints table (**85%**); 24 more are mentioned only in prose
 - **Postman collection:** **279 / 285** endpoints covered (**98%**)
-- **Pytest suite:** **260 / 285** endpoints map to a `tests/api/test_*.py` module (**91%**)
+- **Pytest suite:** **262 / 285** endpoints map to a `tests/api/test_*.py` module (**92%**)
 
 > **The pytest column counts module presence, not verification.** For generic CRUD
 > actions it means only that a module for the controller exists; for the rest it means
@@ -126,7 +126,7 @@ working from the tables will not find them.
 | `POST` | `/api/v1/ssp_documents/:id/fields/import/preview` | [`field-import.md`](endpoints/field-import.md) |
 | `POST` | `/api/v1/users/:id/password_reset` | [`users.md`](endpoints/users.md) |
 
-### No pytest module — 25 endpoints across 16 controllers
+### No pytest module — 23 endpoints across 15 controllers
 
 | Controller | Endpoints | Module looked for |
 |---|---|---|
@@ -135,7 +135,6 @@ working from the tables will not find them.
 | `scan_runs` | 3 | `tests/api/test_scan_runs.py` |
 | `admin/remediation_timelines` | 2 | `tests/api/test_admin_remediation_timelines.py` |
 | `control_lookups` | 2 | `tests/api/test_control_lookups.py` |
-| `guides` | 2 | `tests/api/test_guides.py` |
 | `admin/reconciliation` | 1 | `tests/api/test_admin_reconciliation.py` |
 | `aggregations` | 1 | `tests/api/test_aggregations.py` |
 | `artifacts` | 1 | `tests/api/test_artifacts.py` |
@@ -351,8 +350,8 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition` | `finding_dispositions#create` | **MISSING** | yes | yes |
 | `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition/approve` | `finding_dispositions#approve` | **MISSING** | yes | yes |
 | `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition/reject` | `finding_dispositions#reject` | **MISSING** | yes | yes |
-| `GET` | `/api/v1/guides` | `guides#index` | **MISSING** | yes | **MISSING** |
-| `GET` | `/api/v1/guides/:slug` | `guides#show` | **MISSING** | yes | **MISSING** |
+| `GET` | `/api/v1/guides` | `guides#index` | **MISSING** | yes | yes |
+| `GET` | `/api/v1/guides/:slug` | `guides#show` | **MISSING** | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments` | `hdf_amendments#show` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package` | `hdf_packages#show` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
 | `GET` | `/api/v1/ksi_catalog/indicators` | `ksi_catalog#indicators` | [`ksi-catalog.md`](endpoints/ksi-catalog.md) | yes | yes |
