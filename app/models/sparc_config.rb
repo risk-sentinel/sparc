@@ -480,10 +480,28 @@ module SparcConfig
   # off -> authoritative is a cliff.
   def oidc_sync_mode = ENV.fetch("SPARC_OIDC_SYNC_MODE", "off")
 
-  # Refuse an `authoritative` sync that would revoke more than this proportion
-  # of the memberships it manages. The second line of defence, not the first —
-  # revocation is already scoped to source: "idp". 0 disables the guard.
-  def oidc_sync_max_revoke_pct = ENV.fetch("SPARC_OIDC_SYNC_MAX_REVOKE_PCT", "25").to_i
+  # Optional ceiling on how much one `authoritative` sync may revoke.
+  #
+  # **DISABLED by default (0), owner-decided 2026-08-22:** *"Each time a user
+  # logs in, we should process the grants and anything not in the grant would be
+  # removed."* That is the model — deterministic, and easy for an operator to
+  # reason about. The real protections are the ones that cannot be tuned away:
+  # a MISSING claim is an error, and revocation is scoped to `source: "idp"`.
+  #
+  # Kept as an opt-in for a cautious operator who wants a ceiling while they
+  # gain confidence in their claim configuration.
+  def oidc_sync_max_revoke_pct = ENV.fetch("SPARC_OIDC_SYNC_MAX_REVOKE_PCT", "0").to_i
+
+  # #860 — deactivate an account that has not signed in for this many days.
+  # 0 (the default) disables it, so an upgrade never starts deactivating people.
+  #
+  # This is the OFFBOARDING mechanism. SPARC is not told when an IdP disables
+  # someone, but a disabled account cannot authenticate — so absence of sign-in
+  # is the signal, and it covers every path at once: a leaver, a revoked IdP
+  # account, and a dormant local account are all the same observable.
+  #
+  # NIST 800-53: AC-2(3) Disable Accounts (inactivity).
+  def user_inactivity_days = ENV.fetch("SPARC_USER_INACTIVITY_DAYS", "0").to_i
 
   # #860 — instance-wide roles an IdP is permitted to grant.
   #

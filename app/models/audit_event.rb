@@ -67,6 +67,7 @@ class AuditEvent < ApplicationRecord
     user_suspended
     user_reactivated
     user_deactivated
+    user_deactivated_for_inactivity
     user_auto_deactivated
     user_deactivate_refused
     user_suspend_refused

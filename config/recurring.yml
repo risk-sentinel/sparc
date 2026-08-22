@@ -19,6 +19,13 @@ production:
   service_account_maintenance:
     class: ServiceAccountMaintenanceJob
     schedule: every day at 3am
+  # #860 — deactivate accounts that have stopped being used. No-op unless
+  # SPARC_USER_INACTIVITY_DAYS is set, so this is free for tenants that have not
+  # opted in. Daily is the right cadence: the threshold is measured in days, so
+  # a finer schedule only adds queries.
+  user_inactivity_deactivation:
+    class: DeactivateInactiveUsersJob
+    schedule: every day at 3:30am
   # #466 — refresh AWS Labs CDEF catalog. Service is gated on
   # SPARC_AWS_LABS_CDEF_ENABLED so this is a no-op for tenants that haven't
   # opted in. ETag conditional fetch makes the unchanged-tree path near-free.
