@@ -7,8 +7,14 @@
 # IdP never learns it either. Permissions stay in-app; membership comes from the
 # directory.
 #
+#   sparc:instance:{role}
 #   sparc:org:{org_slug}:{role}
 #   sparc:boundary:{org_slug}:{boundary_slug}:{role}
+#
+# The instance form is parsed unconditionally but only RESOLVES when the
+# operator has named that role in SPARC_OIDC_INSTANCE_ROLES. Parsing it always
+# is deliberate: an instance grant arriving at an instance that has not opted in
+# should be reported to an administrator, not silently discarded as noise.
 #
 # ── Why the org segment is in the boundary form ───────────────────────────
 #
@@ -40,10 +46,10 @@
 # administrator to see), while a malformed string is usually just an unrelated
 # directory group that happened to match the prefix.
 class IdpGrant
-  SCOPE_TYPES = %w[org boundary].freeze
+  SCOPE_TYPES = %w[instance org boundary].freeze
 
   # Segment counts AFTER the configured prefix is removed.
-  SEGMENTS = { "org" => 3, "boundary" => 4 }.freeze
+  SEGMENTS = { "instance" => 2, "org" => 3, "boundary" => 4 }.freeze
 
   attr_reader :raw, :scope_type, :organization_slug, :boundary_slug, :role_name, :error
 
@@ -58,6 +64,7 @@ class IdpGrant
   end
 
   def valid? = error.nil?
+  def instance_scoped? = scope_type == "instance"
   def org_scoped? = scope_type == "org"
   def boundary_scoped? = scope_type == "boundary"
 
@@ -96,7 +103,11 @@ class IdpGrant
 
     return invalid(raw, "one or more segments are empty") if segments.any?(&:blank?)
 
-    if scope_type == "org"
+    case scope_type
+    when "instance"
+      _, role_name = segments
+      new(raw: raw, scope_type: "instance", role_name: role_name)
+    when "org"
       _, organization_slug, role_name = segments
       new(raw: raw, scope_type: "org", organization_slug: organization_slug, role_name: role_name)
     else

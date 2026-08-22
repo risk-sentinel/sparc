@@ -33,13 +33,22 @@
 # an IdP sync that overwrote it would destroy the SSP's record of who holds a
 # role, replacing a deliberate statement with a directory's current opinion.
 #
-# ── Instance roles are unreachable by design ──────────────────────────────
+# ── Instance roles: opt-in, and admin stays unreachable ───────────────────
 #
-# The grant format has no instance scope. There is no string an IdP can emit
-# that grants an instance-wide role or the `users.admin` break-glass flag, so
-# the epic's "never destructive to instance roles" constraint is satisfied by
-# construction rather than by a guard that could be forgotten. Recovery is
-# therefore always possible: a misconfigured IdP cannot lock the estate out.
+# An instance grant resolves only when the operator has named that role in
+# SPARC_OIDC_INSTANCE_ROLES, which is EMPTY by default. Un-opted-in, an instance
+# grant is refused with a reason and shown to an administrator rather than
+# silently dropped — someone configured that group deliberately and deserves to
+# know it did nothing.
+#
+# `users.admin` remains unreachable no matter what the directory says: it is a
+# boolean column rather than a Role, and this resolver only ever produces
+# user_roles and organization_memberships targets. **That is what makes granting
+# instance roles from an IdP safe at all** — the break-glass account cannot be
+# conferred by a claim, and cannot be revoked by one either, so recovery from a
+# misconfigured IdP is always available through it. The epic's "the last
+# instance admin is never removable by any automated path" therefore holds by
+# construction rather than by a guard that could later be relaxed.
 class IdpGrantResolver
   # A resolved grant, or a named reason it could not be.
   #
@@ -62,10 +71,41 @@ class IdpGrantResolver
   def resolve(grant)
     return unresolved(grant, grant.error) unless grant.valid?
 
-    grant.org_scoped? ? resolve_org(grant) : resolve_boundary(grant)
+    case grant.scope_type
+    when "instance" then resolve_instance(grant)
+    when "org"      then resolve_org(grant)
+    else                 resolve_boundary(grant)
+    end
   end
 
   private
+
+  def resolve_instance(grant)
+    allowed = SparcConfig.oidc_instance_roles
+    if allowed.empty?
+      return unresolved(grant, "instance roles are not granted from the IdP on this instance; " \
+                               "set SPARC_OIDC_INSTANCE_ROLES to opt in")
+    end
+
+    unless allowed.include?(grant.role_name)
+      return unresolved(grant, "instance role #{grant.role_name.inspect} is not in " \
+                               "SPARC_OIDC_INSTANCE_ROLES (#{allowed.join(', ')})")
+    end
+
+    role = Role.find_by(name: grant.role_name)
+    return unresolved(grant, "role #{grant.role_name.inspect} not found") if role.nil?
+
+    # A boundary-scoped role with a NULL boundary fails UserRole's own
+    # validation. Catching it here names the reason for the administrator.
+    unless role.scope == "instance"
+      return unresolved(grant, "role #{grant.role_name.inspect} is #{role.scope}-scoped and " \
+                               "cannot be granted instance-wide")
+    end
+
+    # authorization_boundary stays nil — that IS what makes a user_role
+    # instance-wide.
+    Resolution.new(grant: grant, target_type: :user_role, role: role, role_name: role.name)
+  end
 
   def resolve_org(grant)
     organization = find_organization(grant.organization_slug)

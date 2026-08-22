@@ -471,6 +471,26 @@ module SparcConfig
   # directory sends every group a person belongs to and SPARC would report
   # hundreds of unrelated names as unmatched grants.
   def oidc_grants_prefix = ENV.fetch("SPARC_OIDC_GRANTS_PREFIX", "sparc:")
+
+  # #860 — instance-wide roles an IdP is permitted to grant.
+  #
+  # EMPTY BY DEFAULT, which makes an instance grant inexpressible: a claim
+  # naming an instance role is refused and reported rather than applied. An
+  # operator opts in by naming the specific roles, e.g.
+  #
+  #   SPARC_OIDC_INSTANCE_ROLES="global_viewer,policy_manager"
+  #
+  # An allowlist rather than a boolean, because "manage instance roles from the
+  # IdP" and "let a directory group confer every instance-wide authority SPARC
+  # has" are different requests, and only the first was made.
+  #
+  # `users.admin` is unreachable through this by construction — it is a boolean
+  # column, not a Role, and the sync writes only user_roles and
+  # organization_memberships. That is what keeps break-glass recovery available
+  # no matter what the directory says.
+  def oidc_instance_roles
+    ENV.fetch("SPARC_OIDC_INSTANCE_ROLES", "").split(",").map { |r| r.strip.downcase }.reject(&:empty?)
+  end
   def oidc_provider_title = ENV.fetch("SPARC_OIDC_PROVIDER_TITLE", "SSO")
   # #785 — defaults true. Only consulted on the OIDC path, so a true default is
   # inert for deployments that don't use OIDC, and security-positive for those

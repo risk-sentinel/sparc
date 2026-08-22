@@ -134,6 +134,81 @@ RSpec.describe IdpGrantResolver do
     end
   end
 
+  describe "an instance grant" do
+    let!(:instance_role) { create(:role, name: "global_viewer", scope: "instance") }
+
+    it "is REFUSED and reported when the instance has not opted in" do
+      # Empty allowlist is the default. Refused with a reason rather than
+      # dropped: someone created that directory group on purpose.
+      allow(SparcConfig).to receive(:oidc_instance_roles).and_return([])
+
+      result = resolve("sparc:instance:global_viewer")
+
+      expect(result).not_to be_resolved
+      # Pinned to THIS refusal, not merely to any mention of the variable. The
+      # not-in-the-allowlist branch below also names it, so a looser assertion
+      # passes with the opt-in gate deleted — measured, not assumed.
+      expect(result.error).to match(/not granted from the IdP on this instance/)
+    end
+
+    it "resolves to an instance-wide user_role once opted in" do
+      allow(SparcConfig).to receive(:oidc_instance_roles).and_return([ "global_viewer" ])
+
+      result = resolve("sparc:instance:global_viewer")
+
+      expect(result).to be_resolved
+      expect(result.target_type).to eq(:user_role)
+      expect(result.role).to eq(instance_role)
+      # NULL boundary is what makes a user_role instance-wide.
+      expect(result.authorization_boundary).to be_nil
+    end
+
+    it "refuses an instance role the operator did not name" do
+      # The allowlist is per role, not a blanket switch: opting in to
+      # global_viewer must not confer head_of_agency.
+      create(:role, name: "head_of_agency", scope: "instance")
+      allow(SparcConfig).to receive(:oidc_instance_roles).and_return([ "global_viewer" ])
+
+      result = resolve("sparc:instance:head_of_agency")
+
+      expect(result).not_to be_resolved
+      expect(result.error).to match(/not in SPARC_OIDC_INSTANCE_ROLES/)
+    end
+
+    it "refuses a boundary-scoped role dressed up as an instance grant" do
+      create(:role, name: "isso_alt", scope: "authorization_boundary")
+      allow(SparcConfig).to receive(:oidc_instance_roles).and_return([ "isso_alt" ])
+
+      result = resolve("sparc:instance:isso_alt")
+
+      expect(result).not_to be_resolved
+      expect(result.error).to match(/authorization_boundary-scoped/)
+    end
+
+    describe "the break-glass account stays unreachable" do
+      it "cannot confer users.admin, because admin is not a Role" do
+        # The safety property that makes instance grants acceptable at all: a
+        # claim can never produce the instance-admin boolean, so recovery from
+        # a misconfigured IdP is always available.
+        allow(SparcConfig).to receive(:oidc_instance_roles).and_return([ "admin" ])
+
+        result = resolve("sparc:instance:admin")
+
+        expect(result).not_to be_resolved
+        expect(result.error).to match(/not found/)
+        expect(Role.exists?(name: "admin")).to be(false)
+      end
+
+      it "never produces a target other than a role membership" do
+        allow(SparcConfig).to receive(:oidc_instance_roles).and_return([ "global_viewer" ])
+
+        result = resolve("sparc:instance:global_viewer")
+
+        expect(result.target_type).to eq(:user_role)
+      end
+    end
+  end
+
   describe "a malformed grant" do
     it "carries its parse error through rather than being re-diagnosed" do
       result = resolver.resolve(IdpGrant.parse("sparc:nonsense"))
