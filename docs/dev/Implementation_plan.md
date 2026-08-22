@@ -696,7 +696,7 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 17 | U — Profile fidelity: what the baseline says, and what SPARC shows | #997 #999 #998 **#994** | **Shipped** (PR #1000 → `27aea200`) |
 | 18 | **W — The CVEs the UBI9 migration hid, + Bundle U's carried debt** | **#1001** **#1002** **#1003** | **Shipped** (PR [#1005](https://github.com/risk-sentinel/sparc/pull/1005) → `ab2dbd1a`, 15 commits). Image CVEs 132 → 80, undispositioned HIGHs 19 → 0; rspec 5669/0/10, tests/api 473, ui-smoke 496 passed / 9 skipped / 0 failed. **#1002 and #1003 were filed and fixed inside it**, both surfaced by running the gate U had held |
 | 19 | **V — SWEEP every API endpoint against its published contract** | **#995** #951 **#1004** + 20 filed and fixed inside it | **Shipped — RELEASE GATE MET** (PR [#1009](https://github.com/risk-sentinel/sparc/pull/1009) → `fda3413d`, **72 commits, 32 `Closes`**, merged 2026-08-22). All three gate axes 0 (pytest 42→0, docs 19→0, Postman 6→0); both gate scripts exit 0 on 285 endpoints. Final gates: rspec **6049/0/10**, tests/api **2668 with zero skips**, ui-smoke **497 passed / 18 skipped / 0 failed**, brakeman 0. Per-group tracker in the Bundle V section |
-| 20 | R — Auth entitlements — IdP as system of record | #860 #842 #822 | **NEXT — in progress.** Five design questions answered in a memo commit before code; dry-run built first, not last |
+| 20 | R — Auth entitlements — IdP as system of record | #860 #842 #822 **+ the absolute session cap** | **IN PROGRESS.** Design memo landed (`docs/dev/860_idp_entitlements_design.md`); both open questions owner-decided; dry-run built first, not last. **The absolute session cap (`SPARC_SESSION_MAX_HOURS`, default 8) is SHIPPED in this bundle** — it is what makes "each login establishes the user's rights" true rather than approximate |
 | 21 | **X — UI consistency: the navbar, the buttons** | **#1042** **#950** | **Queued, after R** (owner, 2026-08-22: *"address 950 in milestone v1.16.0. Not this pr though"*). #1042 is what the #951 responsive sweep found — 62 pages × 5 breakpoints, and the functional categories came back EMPTY. **Layout, not function** |
 
 **One issue is unslotted: #1039** (authoritative sources need control references, provenance and
@@ -1638,6 +1638,56 @@ close.
 **NEXT, now that Bundle V has shipped** — the last substantial bundle in v1.16.0, with Bundle X (#1042 #950) behind it. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end of the release**, since it is paired with #822 so one two-ceremony TLS verification round covers both. `bundle-audit` reports no vulnerabilities against the current lock, so the deferral is schedulable rather than reactive — **if that changes, decouple #820 from #822 and take it on its own.**
 
 **#820 gained a prerequisite on 2026-08-17 (owner-decided): rebuild the dev Ruby against OpenSSL 3 FIRST, as part of the same work item.** Local Ruby links the EOL OpenSSL 1.1.1 branch while the prod image runs 3.5.5, and the openssl 4.x gem requires 3.x — so on an unmodified dev box the bump produces a **segmentation fault inside bundler itself**, leaving no working `bundle` to diagnose it with. Measurements and recovery steps are on PR #820. Recommended shape: install the OpenSSL-3-linked Ruby **alongside** rather than replacing, prove it with a full suite run, then switch — the rvm Ruby is shared with other work on the machine (InSpec profiles among it), so an in-place relink has a blast radius beyond this repo. Expect some specs to legitimately go red on OpenSSL 3 (legacy provider, stricter security level, PKCS#12 defaults); those are real differences prod already has and dev cannot currently see. Within the bundle: #860 answers the design questions, #842 needs a written answer for which of the two role systems a claim binds to, and #822 carries the PIV ceremony.
+
+**The absolute session cap rides this bundle** (owner, 2026-08-22: *"The working
+day needs to have a default max of 8 hours (user provisionable?) in this PR"*).
+It is not on the milestone as an issue of its own — it was found while verifying
+the offboarding ruling, and it belongs here because it is a precondition for the
+entitlement model rather than a neighbour of it.
+
+**Why it belongs to Bundle R and not to a later one.** The ruling is that a login
+establishes a user's rights and the session timeout bounds how long they last.
+That is only true if there is a bounded time until the *next* login, and there
+was not: `SPARC_SESSION_TIMEOUT_MINUTES` is an IDLE timeout whose clock resets on
+every request, and the codebase had no absolute limit anywhere. An active user
+was never asked to re-authenticate, so entitlements resolved at one sign-in
+stayed in force indefinitely — including after the IdP revoked them, since SPARC
+learns of IdP-side changes only at the next sign-in. Shipping the entitlement
+sync without the cap would have shipped a model whose central claim was false.
+
+**Shipped** (`415b2e29`): `SPARC_SESSION_MAX_HOURS`, default **8** — a working
+day, so a user who signs in at the start of one signs in again the next.
+Provisionable per instance; `0` disables it and restores the previous behaviour.
+Enforced in the same `before_action` as the idle check, so both limits are
+evaluated on every authenticated request. AC-12 and IA-11 in
+`component-definition-authentication.json` and the Rev 5 mapping row updated to
+describe both limits and why the idle one is insufficient alone.
+
+**Two things this cost, worth remembering rather than rediscovering:**
+
+1. **The first implementation expired a session carrying no start stamp.** That
+   logs every signed-in user out the moment the release lands, and it is not
+   confined to real upgrades — nothing outside `start_session` stamps a session,
+   so the entire request-spec suite was bounced immediately. Changed to adopt
+   and stamp on next sight, which gives the same guarantee one sign-in later
+   without the flag day.
+
+2. **An 8-hour example written the obvious way proves nothing.** The session
+   COOKIE carries its own `expire_after`, fixed at boot to 60 minutes; travel
+   further than that between requests and the integration session drops the
+   cookie, so the next request arrives with a brand new empty session — and
+   because `sign_in_as` stubs `signed_in?`, the app answers 200. The test passes
+   whether or not the cap exists, because what it expires is a session the test
+   already threw away. The spec proves the mechanism at 1 hour with every jump
+   inside the cookie's life, and asserts the default of 8 as its own fact.
+
+Mutation-checked both ways; the one that matters is refreshing `started_at` like
+`last_active_at`, which silently degrades the cap into a second idle timeout that
+can never fire for the active user it exists for. Two tests catch it.
+
+**Still open, and deliberately not decided here:** whether the cap should be
+provisionable **per user** rather than only per instance. That needs a schema
+change and a UI, so it is a separate issue if the owner wants it.
 
 | Issue | Description | Notes |
 | --- | --- | --- |
