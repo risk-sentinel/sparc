@@ -351,6 +351,22 @@ module SparcConfig
 
   def session_timeout      = ENV.fetch("SPARC_SESSION_TIMEOUT_MINUTES", "60").to_i
 
+  # #860 — the ABSOLUTE cap on a session's life, independent of activity.
+  #
+  # `session_timeout` above is an IDLE timeout: `last_active_at` is refreshed on
+  # every request, so a user who keeps working is never asked to authenticate
+  # again. That is fine for AC-11 (device lock) and insufficient for AC-12, and
+  # it is what makes "each login establishes the user's rights" only
+  # approximately true — entitlements resolved at login stay in force for as
+  # long as the session does, which without a cap is unbounded.
+  #
+  # 8 hours is a working day (owner-decided 2026-08-22), so a user who signs in
+  # at the start of one is asked again the next. Set per instance; 0 disables
+  # the cap and restores the pre-#860 behaviour for a deployment that needs it.
+  #
+  # NIST 800-53: AC-12 (session termination), IA-11 (re-authentication).
+  def session_max_hours    = ENV.fetch("SPARC_SESSION_MAX_HOURS", "8").to_i
+
   # Public visibility of the Controls layer (catalogs, baselines, mappings).
   # Default false = secure-by-default: when auth is enabled, guests neither
   # see the Controls nav nor can read those pages. Deployments that front
