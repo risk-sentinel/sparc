@@ -32,6 +32,55 @@
 - MFA enforcement via `SPARC_OIDC_FORCE_MFA` (validates ACR/amr claims)
 - Related: [Issue #33](https://github.com/risk-sentinel/sparc/issues/33) (Okta), [Issue #35](https://github.com/risk-sentinel/sparc/issues/35) (generic OIDC)
 
+#### Asking the IdP for more than the default scopes
+
+`SPARC_OIDC_SCOPES` defaults to `"openid profile email"` — enough to sign a
+person in and know who they are, and nothing more. Anything else you want in the
+token has to be requested here **and** released by the IdP; the two halves are
+configured in different places and both are required, which is the usual reason
+a claim "isn't arriving".
+
+```bash
+SPARC_OIDC_SCOPES="openid profile email groups"
+```
+
+**Setting the scope alone is not enough.** A scope is a request; the IdP decides
+what it actually puts in the token. In Okta, for example, group membership is
+not released by default — an administrator adds a claim on the application
+(**Applications → your app → Sign On → OpenID Connect ID Token**) or on the
+authorization server (**Security → API → Authorization Servers → Claims**),
+choosing a value type of *Groups* and a filter.
+
+**Use a filter.** Without one the IdP sends every group the person belongs to,
+which on a real directory is hundreds of unrelated names. A regex filter such as
+`^sparc:` keeps the token to the groups that concern SPARC. The same reasoning
+applies to any provider: release the narrowest claim that answers the question.
+
+**Verifying what actually arrived.** Sign in and check the identity record for
+the user under **Administration → Users → *the user***; SPARC stores the
+provider response on `Identity#auth_data`. That is the authoritative answer to
+"did the claim arrive", and it is faster than reading an IdP log.
+
+Order of operations, so a mistake is cheap:
+
+1. Confirm plain sign-in works **before** adding scopes. If it breaks after,
+   you know which change did it.
+2. Add the claim at the IdP, with a filter.
+3. Add the scope to `SPARC_OIDC_SCOPES` and restart.
+4. Sign in and confirm the claim arrived.
+
+> **Adding a scope the IdP does not recognise can break sign-in outright** —
+> some providers reject the whole authorization request rather than ignoring the
+> unknown scope. Change this in a test environment first. This is also why SPARC
+> does not add scopes to the default on your behalf when new features need them:
+> your login page is not a safe place for us to make assumptions.
+
+**Group-based entitlements** — having the IdP decide who holds which role in
+which boundary, rather than an administrator granting them in SPARC — is
+designed but **not yet released**. It is tracked as
+[#860](https://github.com/risk-sentinel/sparc/issues/860); until it ships,
+roles are granted inside SPARC and a `groups` claim is not consumed.
+
 ### LDAP (`SPARC_ENABLE_LDAP=true`)
 
 - `LdapAuthService` implements bind-and-search pattern:

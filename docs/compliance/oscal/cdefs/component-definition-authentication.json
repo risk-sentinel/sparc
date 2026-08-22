@@ -83,7 +83,7 @@
               {
                 "uuid": "7b5233d7-efd3-4e1f-86e6-138a79dd8305",
                 "control-id": "ac-12",
-                "description": "SPARC provides explicit session termination through the logout action. The end_session method resets the Rails session, clears session cookies, and redirects the user to the login page. All session terminations are recorded as audit events.",
+                "description": "SPARC terminates sessions on three triggers. A user may end a session explicitly through the logout action; the end_session method resets the Rails session, clears session cookies, and redirects to the login page. A session is terminated automatically after the configurable idle period (SPARC_SESSION_TIMEOUT_MINUTES, default 60). Independently of activity, a session is terminated once it reaches its ABSOLUTE lifetime (SPARC_SESSION_MAX_HOURS, default 8 hours), measured from sign-in and never reset by use. The absolute limit exists because the idle timeout alone cannot bound a continuously active session: a user who keeps working would otherwise never be required to re-authenticate, so the rights established at sign-in would remain in force indefinitely. Both limits are evaluated by check_session_timeout on every authenticated request, and the session start is stamped by start_session, which is the only writer of the session user identifier and therefore covers every authentication path. All session terminations are recorded as audit events.",
                 "remarks": "Implemented in app/controllers/concerns/authentication.rb:end_session. Tested by spec/requests/sessions_spec.rb."
               },
               {
@@ -131,7 +131,7 @@
               {
                 "uuid": "dc1f78cc-260c-4e71-b603-9c104d623f2d",
                 "control-id": "ia-11",
-                "description": "SPARC enforces re-authentication by terminating idle sessions after a configurable timeout period (SPARC_SESSION_TIMEOUT_MINUTES). When the idle threshold is exceeded, the user is redirected to the login page and must re-authenticate to regain access. The timeout is checked on every authenticated request.",
+                "description": "SPARC enforces re-authentication on two independent limits, both checked on every authenticated request. An idle session is terminated after SPARC_SESSION_TIMEOUT_MINUTES (default 60). Any session, however active, is terminated after SPARC_SESSION_MAX_HOURS (default 8) measured from sign-in, which guarantees a bounded interval between re-authentications rather than one that depends on the user pausing. In both cases the user is redirected to the login page and must re-authenticate to regain access.",
                 "remarks": "Implemented in app/controllers/concerns/authentication.rb:check_session_timeout. Tested by spec/requests/sessions_spec.rb."
               },
               {

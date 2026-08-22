@@ -261,7 +261,8 @@ approach). Enable one or more to activate the login page at `/login`.
 | --- | --- | --- | --- | --- |
 | SPARC_ENABLE_LOCAL_LOGIN | Enable email/password login | false | `true` | No |
 | SPARC_ENABLE_EMAIL_CONFIRMATION | Require email confirmation for new local accounts | false | `true` | No |
-| SPARC_SESSION_TIMEOUT_MINUTES | Inactivity timeout in minutes | 60 | `30` | No |
+| SPARC_SESSION_TIMEOUT_MINUTES | Inactivity timeout in minutes; reset by every request | 60 | `30` | No |
+| SPARC_SESSION_MAX_HOURS | Absolute session lifetime in hours, measured from sign-in and never reset by activity. `0` disables the cap | 8 | `12` | No |
 | SPARC_PUBLIC_CATALOGS | Make the Controls layer (control catalogs, baselines, mappings) publicly readable — shown in the header nav and reachable without signing in. Off = gated behind authentication (secure-by-default, #726); enable only when SPARC is fronted by your own network auth (e.g. VPN). | false | `true` | No |
 | SPARC_ADMIN_EMAIL | Email for the bootstrapped admin account | admin@sparc.local | `admin@yourorg.com` | No |
 
