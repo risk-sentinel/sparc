@@ -75,11 +75,96 @@ Order of operations, so a mistake is cheap:
 > does not add scopes to the default on your behalf when new features need them:
 > your login page is not a safe place for us to make assumptions.
 
-**Group-based entitlements** — having the IdP decide who holds which role in
-which boundary, rather than an administrator granting them in SPARC — is
-designed but **not yet released**. It is tracked as
-[#860](https://github.com/risk-sentinel/sparc/issues/860); until it ships,
-roles are granted inside SPARC and a `groups` claim is not consumed.
+#### Group-based entitlements: letting the IdP decide who holds which role
+
+SPARC can read role grants from a claim, so membership is managed where your
+people already are. Roles keep their meaning in SPARC — the IdP never learns
+what a role can *do*, only who holds it and where.
+
+**Off by default.** Set `SPARC_OIDC_SYNC_MODE` to enable it.
+
+##### The grant format
+
+A grant is a group name:
+
+```
+sparc:instance:{role}
+sparc:org:{org_slug}:{role}
+sparc:boundary:{org_slug}:{boundary_slug}:{role}
+```
+
+> **Use the SLUG, not the display name.** This is the single most common
+> mistake. A boundary named `Café & Co — Prod` has the slug `cafe-co-prod`:
+> SPARC lowercases, strips accents and punctuation, and joins words with
+> hyphens. The slug is what appears in the boundary's own URL
+> (`/authorization_boundaries/cafe-co-prod`), so read it there if in doubt.
+> Grants are matched case-insensitively, but the slug itself must be exact.
+
+##### The modes
+
+| Mode | What a login does |
+| --- | --- |
+| `off` *(default)* | Nothing. Roles are managed entirely in SPARC |
+| `bootstrap` | **Adds** grants. Never removes anything |
+| `authoritative` | Adds grants, and removes ones the claim no longer carries |
+
+Adopt in that order. `off` → `bootstrap` → `authoritative` is a ladder;
+`off` → `authoritative` is a cliff.
+
+##### What SPARC will not do
+
+- **It never creates an organization, boundary or role.** A grant naming
+  something that does not exist is recorded and surfaced, never provisioned —
+  otherwise your directory could define your estate. The user still signs in,
+  holding whatever access *did* resolve.
+- **It never removes a role an administrator granted.** Revocation is limited to
+  memberships the sync itself created, so an in-app grant survives any claim,
+  any misconfiguration, and any empty group.
+- **It never grants instance admin.** Instance Admin is not a role, so no claim
+  can confer it — which is what keeps a break-glass recovery path open no matter
+  what your directory says.
+- **A MISSING claim is an error, not "revoke everything."** If the claim name is
+  wrong or the scope was not released, SPARC changes nothing and records why.
+  Only an *empty* claim means "this person has no grants."
+
+##### Instance-wide roles
+
+Off unless you name them explicitly:
+
+```bash
+SPARC_OIDC_INSTANCE_ROLES="global_viewer,policy_manager"
+```
+
+An allowlist per role, not a switch — opting in to `global_viewer` does not
+confer `head_of_agency`.
+
+##### When a grant names something that does not exist
+
+Look under **Administration → IdP Grants**. Administrators also get a daily
+digest by email when SMTP is configured.
+
+**Nothing there needs clearing.** Create the missing organization or boundary and
+the grant resolves by itself at that user's next sign-in.
+
+##### Configuration reference
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SPARC_OIDC_SYNC_MODE` | `off` | `off` / `bootstrap` / `authoritative` |
+| `SPARC_OIDC_GRANTS_CLAIM` | `groups` | Which claim carries grants |
+| `SPARC_OIDC_GRANTS_PREFIX` | `sparc:` | Only values with this prefix are read |
+| `SPARC_OIDC_INSTANCE_ROLES` | *(empty)* | Instance roles the IdP may grant |
+| `SPARC_USER_INACTIVITY_DAYS` | `0` | Deactivate accounts idle this long. **This is offboarding** — a disabled IdP account cannot sign in |
+
+##### Offboarding
+
+SPARC is not told when your IdP disables someone. It does not need to be: a
+disabled account cannot authenticate, so `SPARC_USER_INACTIVITY_DAYS` covers a
+leaver, a revoked IdP account and a dormant local login with one rule. Removing
+someone from a group takes effect at their next sign-in, and
+`SPARC_SESSION_MAX_HOURS` bounds how long their current session can outlive that.
+
+Tracked as [#860](https://github.com/risk-sentinel/sparc/issues/860).
 
 ### LDAP (`SPARC_ENABLE_LDAP=true`)
 

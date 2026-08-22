@@ -504,7 +504,10 @@ Rails.application.routes.draw do
     resources :roles
 
     # #860 — unmatched IdP grants (read-only queue).
-    resources :idp_grants, only: [ :index ]
+    resources :idp_grants, only: [ :index ] do
+      collection { post :dismiss }
+      member { delete :restore }
+    end
     # #809 — remediation-timeline (SLA) grid: days to remediate by baseline × criticality.
     get   "remediation_timelines", to: "remediation_timelines#index", as: :remediation_timelines
     patch "remediation_timelines", to: "remediation_timelines#update"

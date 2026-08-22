@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_22_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_22_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -622,6 +622,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_22_120000) do
     t.string "version", default: "1.0.0"
     t.index ["name"], name: "index_data_migration_runs_on_name", unique: true
     t.index ["status"], name: "index_data_migration_runs_on_status"
+  end
+
+  create_table "dismissed_idp_grants", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "dismissed_by_id"
+    t.string "grant", null: false
+    t.string "reason"
+    t.datetime "updated_at", null: false
+    t.index ["dismissed_by_id"], name: "index_dismissed_idp_grants_on_dismissed_by_id"
+    t.index ["grant"], name: "index_dismissed_idp_grants_on_grant", unique: true
   end
 
   create_table "evidence_control_links", force: :cascade do |t|
@@ -1881,6 +1891,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_22_120000) do
   add_foreign_key "control_mappings", "control_catalogs", column: "source_catalog_id"
   add_foreign_key "control_mappings", "control_catalogs", column: "target_catalog_id"
   add_foreign_key "converter_entries", "converters"
+  add_foreign_key "dismissed_idp_grants", "users", column: "dismissed_by_id"
   add_foreign_key "evidence_control_links", "evidences", on_delete: :cascade
   add_foreign_key "evidences", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "evidences", "users", column: "collected_by_user_id", on_delete: :nullify

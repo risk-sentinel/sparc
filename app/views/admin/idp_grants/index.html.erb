@@ -40,16 +40,40 @@
               <th scope="col" class="text-end">Users affected</th>
               <th scope="col" class="text-end">Sign-ins</th>
               <th scope="col">Example grant</th>
+              <th scope="col" class="text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
             <% @summary.each do |row| %>
+              <% hint = @hints[row[:example_grant]] %>
               <tr>
                 <td><%= row[:reason] %></td>
                 <td class="text-end"><span class="badge bg-warning"><%= row[:affected_users] %></span></td>
                 <td class="text-end text-body-secondary"><%= row[:occurrences] %></td>
                 <td><code class="small"><%= row[:example_grant] %></code></td>
+                <td class="text-end text-nowrap">
+                  <% if hint %>
+                    <%= link_to hint.label, hint.path, class: "btn btn-outline-primary btn-sm",
+                          title: "Creates a record whose slug must be #{hint.required_slug}" %>
+                  <% end %>
+                  <%= button_to "Reject", dismiss_admin_idp_grants_path,
+                        params: { grant: row[:example_grant] },
+                        class: "btn btn-outline-secondary btn-sm d-inline-block",
+                        form: { class: "d-inline-block" },
+                        title: "Stop reporting this grant. Does not change anyone's access." %>
+                </td>
               </tr>
+              <% if hint %>
+                <tr class="table-light">
+                  <td colspan="5" class="small text-body-secondary">
+                    <i class="bi bi-info-circle" aria-hidden="true"></i>
+                    The <%= hint.kind.to_s.humanize.downcase %> must end up with the slug
+                    <code><%= hint.required_slug %></code> &mdash; that is what the grant names.
+                    Suggested name <strong><%= hint.suggested_name %></strong> produces it;
+                    a different name may not.
+                  </td>
+                </tr>
+              <% end %>
             <% end %>
           </tbody>
         </table>
@@ -78,6 +102,45 @@
                 <td><%= event.user&.email || "—" %></td>
                 <td><code class="small"><%= event.metadata["grant"] %></code></td>
                 <td class="small"><%= event.metadata["reason"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @dismissed.any? %>
+    <div class="card mt-4">
+      <div class="card-header fw-semibold">
+        Rejected grants
+        <span class="text-body-secondary fw-normal">&mdash; no longer reported</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead>
+            <tr>
+              <th scope="col">Grant</th>
+              <th scope="col">Rejected by</th>
+              <th scope="col">When</th>
+              <th scope="col">Reason</th>
+              <th scope="col" class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @dismissed.each do |dismissal| %>
+              <tr>
+                <td><code class="small"><%= dismissal.grant %></code></td>
+                <td><%= dismissal.dismissed_by&.email || "—" %></td>
+                <td class="text-nowrap text-body-secondary small">
+                  <%= dismissal.created_at.strftime("%Y-%m-%d") %>
+                </td>
+                <td class="small"><%= dismissal.reason.presence || "—" %></td>
+                <td class="text-end">
+                  <%= button_to "Restore", restore_admin_idp_grant_path(dismissal),
+                        method: :delete, class: "btn btn-outline-secondary btn-sm",
+                        title: "Report this grant again when it next arrives" %>
+                </td>
               </tr>
             <% end %>
           </tbody>

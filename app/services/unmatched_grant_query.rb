@@ -17,17 +17,35 @@ class UnmatchedGrantQuery
   # audit trail remains the complete record.
   GROUPING_LIMIT = 1000
 
-  def initialize(window:, user_id: nil)
+  def initialize(window:, user_id: nil, include_dismissed: false)
     @window = window
     @user_id = user_id
+    @include_dismissed = include_dismissed
   end
 
+  # Always a RELATION, never an Array. Callers paginate it and call `.includes`
+  # on it, and a method that silently returns an Array once some other table has
+  # a row in it is the kind of bug that only appears in production.
   def events
     scope = AuditEvent.where(action: "idp_grant_skipped")
                       .where(created_at: @window.ago..)
                       .order(created_at: :desc)
-    @user_id.present? ? scope.where(user_id: @user_id) : scope
+    scope = scope.where(user_id: @user_id) if @user_id.present?
+    return scope if @include_dismissed
+
+    dismissed = DismissedIdpGrant.dismissed_grants
+    return scope if dismissed.empty?
+
+    scope.where.not(CANONICAL_GRANT_SQL + " IN (?)", dismissed.to_a)
   end
+
+  # Mirrors IdpGrant.canonicalize (strip, then downcase) in SQL, because the
+  # grant lives in a jsonb key and filtering it in Ruby would turn this into an
+  # Array. The duplication is deliberate and guarded: a spec asserts this
+  # expression and IdpGrant.canonicalize agree on the awkward inputs, so the day
+  # one changes without the other, that spec fails rather than a dismissed grant
+  # quietly reappearing.
+  CANONICAL_GRANT_SQL = "LOWER(BTRIM(audit_events.metadata->>'grant'))"
 
   # [{ reason:, occurrences:, affected_users:, example_grant: }], worst first.
   #

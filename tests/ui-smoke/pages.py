@@ -50,6 +50,7 @@ ADMIN_PAGES = [
     ("admin_service_accounts", "/admin/service_accounts"),
     ("admin_roles", "/admin/roles"),
     ("admin_audit_logs", "/admin/audit_logs"),
+    ("admin_idp_grants", "/admin/idp_grants"),
     ("admin_authorization_boundaries", "/admin/authorization_boundaries"),
     ("admin_organizations", "/admin/organizations"),
     ("admin_data_migrations", "/admin/data_migrations"),
