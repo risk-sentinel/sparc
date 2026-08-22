@@ -122,8 +122,7 @@ class TestLifecycle:
 
     @pytest.mark.authz
     def test_non_admin_cannot_deactivate(
-        self, admin_client: httpx.Client, user_client: httpx.Client,
-        organization: dict[str, Any]
+        self, admin_client: httpx.Client, user_client: httpx.Client, organization: dict[str, Any]
     ) -> None:
         response = user_client.post(f"{PATH}/{organization['id']}/deactivate")
         assert response.status_code in (401, 403), response.text
@@ -151,9 +150,7 @@ class TestMembership:
         assert roster.status_code == 200, roster.text
         assert membership_id in [row["id"] for row in roster.json()["data"]]
 
-        removed = admin_client.delete(
-            f"{PATH}/{organization['id']}/members/{membership_id}"
-        )
+        removed = admin_client.delete(f"{PATH}/{organization['id']}/members/{membership_id}")
         assert removed.status_code == 200, removed.text
 
         after = admin_client.get(f"{PATH}/{organization['id']}/members").json()["data"]
@@ -201,11 +198,125 @@ class TestIndex:
 
         unfiltered = admin_client.get(PATH, params={"items": 200}).json()["data"]
         assert len(rows) <= len(unfiltered)
-        assert all(
-            organization["name"].lower() in (row["name"] or "").lower() for row in rows
-        ), "the search returned rows that do not match the term"
+        assert all(organization["name"].lower() in (row["name"] or "").lower() for row in rows), (
+            "the search returned rows that do not match the term"
+        )
 
     @pytest.mark.authz
     def test_non_admin_cannot_list(self, user_client: httpx.Client) -> None:
         response = user_client.get(PATH)
         assert response.status_code in (401, 403), response.text
+
+
+# api-inventory: covers organizations#assign_boundary
+class TestAssignBoundary:
+    """`POST /organizations/:id/boundaries` — put a boundary in an organization.
+
+    The organization side of the same relationship
+    `authorization_boundaries#assign_organization` writes from the other end.
+    Both are exercised, because two endpoints maintaining one association is
+    exactly where the two drift.
+    """
+
+    @pytest.fixture
+    def boundary(self, admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
+        suffix = uuid.uuid4().hex[:8]
+        response = admin_client.post(
+            "/api/v1/authorization_boundaries",
+            json={
+                "authorization_boundary": {
+                    "name": f"phase2-org-assign-{suffix}",
+                    "description": "#995 organization assignment sweep",
+                }
+            },
+        )
+        assert response.status_code in (200, 201), response.text
+        created = response.json()["data"]
+        try:
+            yield created
+        finally:
+            admin_client.delete(f"/api/v1/authorization_boundaries/{created['id']}")
+
+    @pytest.mark.happy
+    def test_assigning_is_confirmed_from_the_boundary_side(
+        self, admin_client: httpx.Client, organization: dict[str, Any], boundary: dict[str, Any]
+    ) -> None:
+        """Written through the organization, read back through the boundary.
+
+        Confirming through the same endpoint that wrote it would not show that
+        the two views of this association agree.
+        """
+        response = admin_client.post(
+            f"{PATH}/{organization['id']}/boundaries",
+            json={"authorization_boundary_id": boundary["id"]},
+        )
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert data["organization_id"] == organization["id"]
+        assert data["authorization_boundary_id"] == boundary["id"]
+
+        detail = admin_client.get(f"/api/v1/authorization_boundaries/{boundary['id']}")
+        assert detail.json()["data"]["organization"] == organization["name"], (
+            "the boundary does not report the organization it was just assigned to"
+        )
+
+    @pytest.mark.happy
+    def test_it_reports_whether_this_was_a_move(
+        self, admin_client: httpx.Client, organization: dict[str, Any], boundary: dict[str, Any]
+    ) -> None:
+        """A first assignment and a move between organizations are different
+        acts — a move takes a boundary away from another organization, and only
+        an instance admin may do it. The response distinguishes them."""
+        first = admin_client.post(
+            f"{PATH}/{organization['id']}/boundaries",
+            json={"authorization_boundary_id": boundary["id"]},
+        ).json()["data"]
+
+        assert first["moved"] is False, f"a first assignment reported as a move: {first}"
+
+        second = admin_client.post(
+            f"{PATH}/{organization['id']}/boundaries",
+            json={"authorization_boundary_id": boundary["id"]},
+        ).json()["data"]
+        assert second["moved"] is False, "re-assigning to the same organization is not a move"
+
+    @pytest.mark.validation
+    def test_an_unknown_boundary_is_refused(
+        self, admin_client: httpx.Client, organization: dict[str, Any]
+    ) -> None:
+        response = admin_client.post(
+            f"{PATH}/{organization['id']}/boundaries", json={"authorization_boundary_id": 0}
+        )
+
+        assert response.status_code == 404, response.text
+
+    @pytest.mark.authz
+    def test_a_non_admin_cannot_assign_and_nothing_moves(
+        self,
+        admin_client: httpx.Client,
+        user_client: httpx.Client,
+        organization: dict[str, Any],
+        boundary: dict[str, Any],
+    ) -> None:
+        response = user_client.post(
+            f"{PATH}/{organization['id']}/boundaries",
+            json={"authorization_boundary_id": boundary["id"]},
+        )
+
+        assert response.status_code == 403, response.text
+        detail = admin_client.get(f"/api/v1/authorization_boundaries/{boundary['id']}")
+        assert detail.json()["data"]["organization"] is None, (
+            "a refused caller still assigned the boundary"
+        )
+
+    @pytest.mark.auth
+    def test_an_anonymous_caller_is_refused(
+        self, anon_client: httpx.Client, organization: dict[str, Any], boundary: dict[str, Any]
+    ) -> None:
+        response = anon_client.post(
+            f"{PATH}/{organization['id']}/boundaries",
+            json={"authorization_boundary_id": boundary["id"]},
+        )
+
+        assert response.status_code == 401, response.text

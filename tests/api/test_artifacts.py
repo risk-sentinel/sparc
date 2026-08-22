@@ -123,9 +123,7 @@ class TestArtifactResolution:
 
 class TestArtifactResolver:
     def test_unknown_uuid_returns_404(self, admin_client: httpx.Client) -> None:
-        assert_error_envelope(
-            admin_client.get(f"{BASE}/{uuid.uuid4()}"), expected_status=404
-        )
+        assert_error_envelope(admin_client.get(f"{BASE}/{uuid.uuid4()}"), expected_status=404)
 
     def test_unknown_version_uuid_returns_404(self, admin_client: httpx.Client) -> None:
         # /api/v1/artifacts/versions/:uuid — resolve a specific content version.
@@ -135,12 +133,83 @@ class TestArtifactResolver:
 
     @pytest.mark.auth
     def test_show_requires_token(self, anon_client: httpx.Client) -> None:
-        assert_error_envelope(
-            anon_client.get(f"{BASE}/{uuid.uuid4()}"), expected_status=401
-        )
+        assert_error_envelope(anon_client.get(f"{BASE}/{uuid.uuid4()}"), expected_status=401)
 
     @pytest.mark.auth
     def test_version_requires_token(self, anon_client: httpx.Client) -> None:
         assert_error_envelope(
             anon_client.get(f"{BASE}/versions/{uuid.uuid4()}"), expected_status=401
         )
+
+
+# api-inventory: covers artifacts#freshness
+class TestFreshness:
+    """`GET /artifacts/:uuid/freshness` — when this artifact was last reviewed
+    and whether that is now overdue.
+
+    Enablement only, and the endpoint says so in its own payload: SPARC reports
+    freshness as DATA and the compliance assertion is made by the consuming
+    system. So these assert the arithmetic is self-consistent, not that any
+    particular artifact is compliant.
+    """
+
+    @pytest.mark.happy
+    def test_reports_freshness_for_a_real_artifact(
+        self, admin_client: httpx.Client, artifact: dict[str, Any]
+    ) -> None:
+        response = admin_client.get(f"{BASE}/{artifact['uuid']}/freshness")
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert data["uuid"] == artifact["uuid"]
+        assert data["title"] == "Artifact resolver fixture"
+        assert "overdue" in data and isinstance(data["overdue"], bool)
+        assert "note" in data, "the enablement-only caveat is part of the contract"
+
+    @pytest.mark.happy
+    def test_an_artifact_with_no_review_cadence_has_no_due_date(
+        self, admin_client: httpx.Client, artifact: dict[str, Any]
+    ) -> None:
+        """A due date needs a cadence, not just a last-reviewed timestamp.
+
+        The fixture carries no attestation, so nothing declares how often it
+        must be re-reviewed. `next_review_due` is therefore null and the
+        artifact cannot be overdue — inventing a due date from a default
+        interval would manufacture a finding out of an absence of data, which is
+        the opposite of what an enablement endpoint should do.
+        """
+        data = admin_client.get(f"{BASE}/{artifact['uuid']}/freshness").json()["data"]
+
+        assert data["last_reviewed_at"], "the artifact records no review at all"
+        assert data["review_frequency"] is None, data
+        assert data["next_review_due"] is None, (
+            "a due date appeared with no attestation declaring a cadence"
+        )
+        assert data["overdue"] is False, data
+        assert data["days_overdue"] == 0, data
+
+    @pytest.mark.happy
+    def test_days_overdue_agrees_with_the_overdue_flag(
+        self, admin_client: httpx.Client, artifact: dict[str, Any]
+    ) -> None:
+        """The two are computed separately, so they can disagree. A consumer
+        branching on `overdue` and displaying `days_overdue` would then show a
+        contradiction."""
+        data = admin_client.get(f"{BASE}/{artifact['uuid']}/freshness").json()["data"]
+
+        if data["overdue"]:
+            assert data["days_overdue"] > 0, data
+        else:
+            assert data["days_overdue"] == 0, data
+
+    @pytest.mark.validation
+    def test_an_unknown_uuid_is_a_json_404(self, admin_client: httpx.Client) -> None:
+        assert_error_envelope(
+            admin_client.get(f"{BASE}/{uuid.uuid4()}/freshness"), expected_status=404
+        )
+
+    @pytest.mark.auth
+    def test_an_anonymous_caller_is_refused(
+        self, anon_client: httpx.Client, artifact: dict[str, Any]
+    ) -> None:
+        assert anon_client.get(f"{BASE}/{artifact['uuid']}/freshness").status_code == 401

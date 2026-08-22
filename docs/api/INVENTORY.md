@@ -23,7 +23,7 @@ that had been wrong since 2026-07-18 (#995).
 - **Code:** **285 logical endpoints** across 55 controller groups (PATCH+PUT aliases collapsed) — 108 GET, 100 POST, 40 DELETE, 35 PUT, 33 PATCH
 - **Documentation:** **242 / 285** endpoints are listed in an `endpoints/*.md` page's own Endpoints table (**85%**); 24 more are mentioned only in prose
 - **Postman collection:** **279 / 285** endpoints covered (**98%**)
-- **Pytest suite:** **280 / 285** endpoints map to a `tests/api/test_*.py` module (**98%**)
+- **Pytest suite:** **285 / 285** endpoints map to a `tests/api/test_*.py` module (**100%**)
 
 > **The pytest column counts module presence, not verification.** For generic CRUD
 > actions it means only that a module for the controller exists; for the rest it means
@@ -126,15 +126,10 @@ working from the tables will not find them.
 | `POST` | `/api/v1/ssp_documents/:id/fields/import/preview` | [`field-import.md`](endpoints/field-import.md) |
 | `POST` | `/api/v1/users/:id/password_reset` | [`users.md`](endpoints/users.md) |
 
-### No pytest module — 5 endpoints across 5 controllers
+### No pytest module — 0 endpoints across 0 controllers
 
 | Controller | Endpoints | Module looked for |
 |---|---|---|
-| `artifacts` | 1 | `tests/api/test_artifacts.py` |
-| `authorization_boundaries` | 1 | `tests/api/test_authorization_boundaries.py` |
-| `cdef_documents` | 1 | `tests/api/test_cdef_documents.py` |
-| `organizations` | 1 | `tests/api/test_organizations.py` |
-| `poam_documents` | 1 | `tests/api/test_poam_documents.py` |
 
 ### Not in the Postman collection — 6 endpoints
 
@@ -212,7 +207,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/users/:user_id/api_tokens` | `api_tokens#create` | [`api-tokens.md`](endpoints/api-tokens.md) | yes | yes |
 | `DELETE` | `/api/v1/users/:user_id/api_tokens/:id` | `api_tokens#destroy` | [`api-tokens.md`](endpoints/api-tokens.md) | yes | yes |
 | `GET` | `/api/v1/artifacts/:uuid` | `artifacts#show` | [`artifacts.md`](endpoints/artifacts.md) | yes | yes |
-| `GET` | `/api/v1/artifacts/:uuid/freshness` | `artifacts#freshness` | **MISSING** | yes | **MISSING** |
+| `GET` | `/api/v1/artifacts/:uuid/freshness` | `artifacts#freshness` | **MISSING** | yes | yes |
 | `GET` | `/api/v1/artifacts/:uuid/versions` | `artifacts#versions` | **MISSING** | yes | yes |
 | `GET` | `/api/v1/artifacts/versions/:uuid` | `artifacts#version` | [`artifacts.md`](endpoints/artifacts.md) | yes | yes |
 | `GET` | `/api/v1/evidences/:evidence_id/attestations` | `attestations#index` | [`attestations.md`](endpoints/attestations.md) | yes | yes |
@@ -229,7 +224,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#destroy` | [`authorization-boundaries.md`](endpoints/authorization-boundaries.md) | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#show` | [`authorization-boundaries.md`](endpoints/authorization-boundaries.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#update` | [`authorization-boundaries.md`](endpoints/authorization-boundaries.md) | yes | yes |
-| `PATCH` | `/api/v1/authorization_boundaries/:id/organization` | `authorization_boundaries#assign_organization` | **MISSING** | yes | **MISSING** |
+| `PATCH` | `/api/v1/authorization_boundaries/:id/organization` | `authorization_boundaries#assign_organization` | **MISSING** | yes | yes |
 | `DELETE` | `/api/v1/authorization_boundaries/bulk` | `authorization_boundaries#bulk_destroy` | [`authorization-boundaries.md`](endpoints/authorization-boundaries.md) | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships` | `authorization_boundary_memberships#index` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | yes | yes |
 | `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships` | `authorization_boundary_memberships#create` | [`boundary-memberships.md`](endpoints/boundary-memberships.md) | yes | yes |
@@ -281,7 +276,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/cdef_documents/:id/fields/import/preview` | `cdef_documents#import_fields_preview` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/populate_from_profile` | `cdef_documents#source_from_profile` | prose only — [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/reject` | `cdef_documents#reject` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
-| `PATCH` | `/api/v1/cdef_documents/:id/scope` | `cdef_documents#update_scope` | **MISSING** | yes | **MISSING** |
+| `PATCH` | `/api/v1/cdef_documents/:id/scope` | `cdef_documents#update_scope` | **MISSING** | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/source_from_profile` | `cdef_documents#source_from_profile` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/submit_for_review` | `cdef_documents#submit_for_review` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `DELETE` | `/api/v1/cdef_documents/bulk` | `cdef_documents#bulk_destroy` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
@@ -364,7 +359,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/organizations` | `organizations#create` | [`organizations.md`](endpoints/organizations.md) | yes | yes |
 | `GET` | `/api/v1/organizations/:id` | `organizations#show` | [`organizations.md`](endpoints/organizations.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/organizations/:id` | `organizations#update` | [`organizations.md`](endpoints/organizations.md) | yes | yes |
-| `POST` | `/api/v1/organizations/:id/boundaries` | `organizations#assign_boundary` | [`organizations.md`](endpoints/organizations.md) | yes | **MISSING** |
+| `POST` | `/api/v1/organizations/:id/boundaries` | `organizations#assign_boundary` | [`organizations.md`](endpoints/organizations.md) | yes | yes |
 | `POST` | `/api/v1/organizations/:id/deactivate` | `organizations#deactivate` | [`organizations.md`](endpoints/organizations.md) | yes | yes |
 | `GET` | `/api/v1/organizations/:id/members` | `organizations#members` | [`organizations.md`](endpoints/organizations.md) | yes | yes |
 | `POST` | `/api/v1/organizations/:id/members` | `organizations#add_member` | [`organizations.md`](endpoints/organizations.md) | yes | yes |
@@ -375,7 +370,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/poam_documents/:id` | `poam_documents#destroy` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
 | `GET` | `/api/v1/poam_documents/:id` | `poam_documents#show` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/poam_documents/:id` | `poam_documents#update` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
-| `POST` | `/api/v1/poam_documents/generate` | `poam_documents#generate` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | **MISSING** |
+| `POST` | `/api/v1/poam_documents/generate` | `poam_documents#generate` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
 | `POST` | `/api/v1/poam_documents/import` | `poam_documents#import` | [`poam-documents.md`](endpoints/poam-documents.md) | **MISSING** | yes |
 | `GET` | `/api/v1/poam_documents/:poam_document_id/findings` | `poam_findings#index` | [`poam-subresources.md`](endpoints/poam-subresources.md) | yes | yes |
 | `POST` | `/api/v1/poam_documents/:poam_document_id/findings` | `poam_findings#create` | [`poam-subresources.md`](endpoints/poam-subresources.md) | yes | yes |

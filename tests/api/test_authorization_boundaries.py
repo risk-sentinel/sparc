@@ -120,9 +120,7 @@ class TestCreate:
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
-        assert_error_envelope(
-            anon_client.post(PATH, json=_new_payload()), expected_status=401
-        )
+        assert_error_envelope(anon_client.post(PATH, json=_new_payload()), expected_status=401)
 
     @pytest.mark.authz
     def test_non_admin_returns_403(self, user_client: httpx.Client) -> None:
@@ -159,9 +157,7 @@ class TestUpdate:
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
-        assert_error_envelope(
-            anon_client.patch(f"{PATH}/0", json={}), expected_status=401
-        )
+        assert_error_envelope(anon_client.patch(f"{PATH}/0", json={}), expected_status=401)
 
 
 class TestDestroy:
@@ -174,3 +170,101 @@ class TestDestroy:
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
         assert_error_envelope(anon_client.delete(f"{PATH}/0"), expected_status=401)
+
+
+# api-inventory: covers authorization_boundaries#assign_organization
+class TestAssignOrganization:
+    """`PATCH /authorization_boundaries/:id/organization` — the boundary side.
+
+    Every check reads the result back through a separate GET. The write's own
+    body cannot serve: `assign_organization` serialises the NON-detailed shape,
+    and `organization` only appears in the detailed one, so the response to the
+    call that sets the organization does not mention the organization. That is
+    an omission rather than a wrong answer, but it means the write's echo is not
+    evidence — which is the #995 rule anyway.
+    """
+
+    @pytest.fixture
+    def organization(self, admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
+        suffix = uuid.uuid4().hex[:8]
+        response = admin_client.post(
+            "/api/v1/organizations", json={"organization": {"name": f"phase2-bnd-org-{suffix}"}}
+        )
+        assert response.status_code == 201, response.text
+        yield response.json()["data"]
+
+    def _organization_of(self, admin_client: httpx.Client, boundary_id: int):
+        response = admin_client.get(f"{PATH}/{boundary_id}")
+        assert response.status_code == 200, response.text
+        return response.json()["data"].get("organization")
+
+    @pytest.mark.happy
+    def test_assigning_is_confirmed_by_an_independent_read(
+        self, admin_client: httpx.Client, boundary: dict[str, Any], organization: dict[str, Any]
+    ) -> None:
+        response = admin_client.patch(
+            f"{PATH}/{boundary['id']}/organization", json={"organization_id": organization["id"]}
+        )
+
+        assert response.status_code == 200, response.text
+        assert self._organization_of(admin_client, boundary["id"]) == organization["name"]
+
+    @pytest.mark.happy
+    def test_clearing_the_organization_is_confirmed_by_an_independent_read(
+        self, admin_client: httpx.Client, boundary: dict[str, Any], organization: dict[str, Any]
+    ) -> None:
+        """Both directions. Only asserting the assignment would pass against an
+        endpoint that could assign and never unassign."""
+        admin_client.patch(
+            f"{PATH}/{boundary['id']}/organization", json={"organization_id": organization["id"]}
+        )
+        assert self._organization_of(admin_client, boundary["id"]) == organization["name"]
+
+        response = admin_client.patch(
+            f"{PATH}/{boundary['id']}/organization", json={"organization_id": None}
+        )
+
+        assert response.status_code == 200, response.text
+        assert self._organization_of(admin_client, boundary["id"]) is None, (
+            "the boundary still belongs to an organization after being cleared"
+        )
+
+    @pytest.mark.validation
+    def test_an_unknown_organization_is_refused_and_nothing_changes(
+        self, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        response = admin_client.patch(
+            f"{PATH}/{boundary['id']}/organization", json={"organization_id": 999_999_999}
+        )
+
+        assert response.status_code == 404, response.text
+        assert self._organization_of(admin_client, boundary["id"]) is None
+
+    @pytest.mark.authz
+    def test_a_non_admin_cannot_assign_and_nothing_changes(
+        self,
+        admin_client: httpx.Client,
+        user_client: httpx.Client,
+        boundary: dict[str, Any],
+        organization: dict[str, Any],
+    ) -> None:
+        response = user_client.patch(
+            f"{PATH}/{boundary['id']}/organization", json={"organization_id": organization["id"]}
+        )
+
+        # Exactly 403, measured. Accepting "403 or 404" would not distinguish a
+        # permission gate from a boundary the caller simply cannot see.
+        assert_error_envelope(response, expected_status=403)
+        assert self._organization_of(admin_client, boundary["id"]) is None, (
+            "a refused caller still assigned the boundary to an organization"
+        )
+
+    @pytest.mark.auth
+    def test_an_anonymous_caller_is_refused(
+        self, anon_client: httpx.Client, boundary: dict[str, Any], organization: dict[str, Any]
+    ) -> None:
+        response = anon_client.patch(
+            f"{PATH}/{boundary['id']}/organization", json={"organization_id": organization["id"]}
+        )
+
+        assert response.status_code == 401, response.text
