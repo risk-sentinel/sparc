@@ -23,7 +23,7 @@ that had been wrong since 2026-07-18 (#995).
 - **Code:** **285 logical endpoints** across 55 controller groups (PATCH+PUT aliases collapsed) — 108 GET, 100 POST, 40 DELETE, 35 PUT, 33 PATCH
 - **Documentation:** **242 / 285** endpoints are listed in an `endpoints/*.md` page's own Endpoints table (**85%**); 24 more are mentioned only in prose
 - **Postman collection:** **279 / 285** endpoints covered (**98%**)
-- **Pytest suite:** **268 / 285** endpoints map to a `tests/api/test_*.py` module (**94%**)
+- **Pytest suite:** **271 / 285** endpoints map to a `tests/api/test_*.py` module (**95%**)
 
 > **The pytest column counts module presence, not verification.** For generic CRUD
 > actions it means only that a module for the controller exists; for the rest it means
@@ -126,11 +126,10 @@ working from the tables will not find them.
 | `POST` | `/api/v1/ssp_documents/:id/fields/import/preview` | [`field-import.md`](endpoints/field-import.md) |
 | `POST` | `/api/v1/users/:id/password_reset` | [`users.md`](endpoints/users.md) |
 
-### No pytest module — 17 endpoints across 13 controllers
+### No pytest module — 14 endpoints across 12 controllers
 
 | Controller | Endpoints | Module looked for |
 |---|---|---|
-| `scan_runs` | 3 | `tests/api/test_scan_runs.py` |
 | `admin/remediation_timelines` | 2 | `tests/api/test_admin_remediation_timelines.py` |
 | `control_lookups` | 2 | `tests/api/test_control_lookups.py` |
 | `admin/reconciliation` | 1 | `tests/api/test_admin_reconciliation.py` |
@@ -456,9 +455,9 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/sar_documents/:id/fields/import/preview` | `sar_documents#import_fields_preview` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | yes |
 | `PUT` | `/api/v1/sar_documents/:id/update_fields` | `sar_documents#update_fields` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
 | `POST` | `/api/v1/sar_documents/convert` | `sar_documents#convert` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs` | `scan_runs#index` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
-| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs` | `scan_runs#create` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs/:id` | `scan_runs#show` | **MISSING** | yes | **MISSING** |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs` | `scan_runs#index` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | yes |
+| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs` | `scan_runs#create` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | yes |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs/:id` | `scan_runs#show` | **MISSING** | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scanner_findings` | `scanner_findings#index` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | yes |
 | `GET` | `/api/v1/scanner_findings/:id` | `scanner_findings#show` | **MISSING** | yes | yes |
 | `GET` | `/api/v1/service_accounts` | `service_accounts#index` | [`service-accounts.md`](endpoints/service-accounts.md) | yes | yes |
