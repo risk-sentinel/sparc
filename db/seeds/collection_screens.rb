@@ -205,7 +205,33 @@ else
                                "to the leveraging system's AO (#984)."
     d.authorization_boundary = leveraged_boundary
   end
-  puts "  Leveraged POA&Ms: #{leveraged_poam.name.inspect} on #{leveraged_boundary.name.inspect}"
+  # A POA&M with NO ITEMS cannot be exported as OSCAL: the schema requires at
+  # least one entry, and `download_oscal_validated`, `download_xml` and
+  # `download_yaml` all answer a 302 back to the show page carrying
+  # `?oscal_validation_failed=1`. This fixture shipped without items and broke
+  # all three for the demo estate — the exact mistake the `date_authorized`
+  # block above documents, repeated one block later for a different required
+  # field. Caught by the ui-smoke export gate, invisible to rspec.
+  #
+  # Seeded unconditionally rather than only on create, and healed below, so an
+  # instance seeded before this fix does not keep exporting an invalid POA&M
+  # forever — the same reason the leveraged authorization is healed.
+  if leveraged_poam.poam_items.none?
+    PoamItem.create!(
+      poam_document:  leveraged_poam,
+      title:          "Upgrade platform TLS termination to 1.3",
+      description:    "DEMO/SAMPLE — an open item on the leveraged platform, so the " \
+                      "leveraging system's POA&M inheritance has a row to inherit (#984).",
+      poam_item_uuid: SecureRandom.uuid,
+      risk_status:    "open",
+      impact:         "moderate",
+      likelihood:     "low",
+      row_order:      0
+    )
+  end
+
+  puts "  Leveraged POA&Ms: #{leveraged_poam.name.inspect} on #{leveraged_boundary.name.inspect} " \
+       "(#{leveraged_poam.poam_items.count} item)"
 end
 
 # ──────────────────────────────────────────────────────────────────────────
