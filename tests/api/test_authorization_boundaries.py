@@ -191,7 +191,14 @@ class TestAssignOrganization:
             "/api/v1/organizations", json={"organization": {"name": f"phase2-bnd-org-{suffix}"}}
         )
         assert response.status_code == 201, response.text
-        yield response.json()["data"]
+        created = response.json()["data"]
+        try:
+            yield created
+        finally:
+            # Organizations are never hard-deleted — deactivate preserves the
+            # UUID for audit traceability — but an org left ACTIVE is a row the
+            # sidebar renders forever. Without this each run leaked one per test.
+            admin_client.post(f"/api/v1/organizations/{created['id']}/deactivate")
 
     def _organization_of(self, admin_client: httpx.Client, boundary_id: int):
         response = admin_client.get(f"{PATH}/{boundary_id}")
