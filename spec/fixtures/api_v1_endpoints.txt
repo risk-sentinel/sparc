@@ -90,6 +90,7 @@ GET /api/v1/converters
 GET /api/v1/converters/:converter_id/entries
 GET /api/v1/converters/:id
 GET /api/v1/converters/:id/export
+GET /api/v1/entitlement_sync
 GET /api/v1/evidences
 GET /api/v1/evidences/:evidence_id/attestations
 GET /api/v1/evidences/:evidence_id/attestations/:id
@@ -224,6 +225,7 @@ POST /api/v1/control_mappings/:control_mapping_id/entries
 POST /api/v1/converters
 POST /api/v1/converters/:converter_id/entries
 POST /api/v1/converters/:id/refresh
+POST /api/v1/entitlement_sync/preview
 POST /api/v1/evidences
 POST /api/v1/evidences/:evidence_id/attestations
 POST /api/v1/evidences/:evidence_id/control_links

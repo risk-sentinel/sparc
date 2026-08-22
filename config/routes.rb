@@ -899,6 +899,10 @@ Rails.application.routes.draw do
       # not have is recorded and surfaced, never created; this is the surfacing.
       get "idp_grants/unmatched", to: "idp_grants#unmatched"
 
+      # #860 — inspect the sync, and preview it before switching it on.
+      get "entitlement_sync", to: "entitlement_sync#show"
+      post "entitlement_sync/preview", to: "entitlement_sync#preview"
+
       resources :users, only: [ :index, :show, :create, :update, :destroy ] do
         member do
           post :password_reset

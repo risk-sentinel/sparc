@@ -5759,6 +5759,75 @@
       ]
     },
     {
+      "name": "Entitlement Sync",
+      "item": [
+        {
+          "name": "Get Sync Configuration",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/entitlement_sync",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "entitlement_sync"
+              ]
+            },
+            "description": "Current IdP entitlement sync configuration, and how many memberships the sync owns (#860).\n\nCheck grants_scope_requested first when no grants arrive: a scope is a REQUEST and the IdP decides what it releases, and the two halves are configured in different places. The commonest support case is a correctly named claim with the scope never asked for.\n\nmanaged counts only memberships the sync created (source: idp) — the only ones it can ever revoke.\n\nInstance admin only."
+          },
+          "response": []
+        },
+        {
+          "name": "Preview Sync For A User (dry run)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/entitlement_sync/preview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "entitlement_sync",
+                "preview"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preview\": {\n    \"user_id\": 1,\n    \"mode\": \"authoritative\",\n    \"grants\": [\n      \"sparc:boundary:acme:acme-prod:isso\",\n      \"sparc:org:acme:member\"\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Compute the plan for one user WITHOUT applying it (#860). Calls the same object the login path calls, so the preview cannot disagree with the run.\n\n`mode` overrides the configured mode, so you can ask what authoritative WOULD do while still running bootstrap — the dangerous question, asked safely.\n\nThe body is wrapped under `preview`, like every other Api::V1 write, and a field this endpoint does not accept is REFUSED with a 422 naming it rather than silently discarded (#995).\n\nOMITTING `grants` is not the same as sending []. Absent means the claim was not in the token, and SPARC changes nothing; an empty array means the person genuinely has no grants, which in authoritative mode revokes. Collapsing the two is how this feature de-provisions a tenant.\n\nInstance admin only. Writes nothing."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Evidence",
       "item": [
         {
