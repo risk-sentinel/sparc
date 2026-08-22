@@ -39,10 +39,31 @@ There are two, and the epic is right that they are not duplicates:
 2. **`user_roles` → `roles`** — a real FK to a permission-carrying `Role`,
    scoped to a boundary, with `source`. This is the *authorization* record.
 
-**A grant binds to `user_roles`, never to `authorization_boundary_memberships`.**
-That is the written answer #842 needs. The documentary table may not be driven
-from claims: it can name a person with no account, and overwriting it from an
-IdP would destroy SSP content that an assessor reads.
+**CORRECTION (2026-08-22, while building the resolver): there are THREE, not
+two.** This memo originally said a grant binds to `user_roles`. That is right
+for a BOUNDARY grant and wrong for an ORG grant, and the error came from
+checking `user_roles` for a boundary column and never checking it for an
+organization one. **`user_roles` has no `organization_id`** — its only scope is
+`authorization_boundary_id`, and a validation requires instance-scoped roles to
+carry a NULL boundary. An org grant cannot land there at all.
+
+| Representation | What it is |
+|---|---|
+| `user_roles → roles` | The **authorization** record. FK to a permission-carrying `Role`, boundary-scoped (or NULL for instance roles). Carries `source`. |
+| `organization_memberships.role` | A **string** from a configurable list (`OrganizationMembership.available_roles`), a different vocabulary. `org_admin` here is a real permission gate — `User#org_admin_for?`. |
+| `authorization_boundary_memberships` | **Documentary**, for the SSP. `user_name`/`user_email` strings and a nullable `user_id`, so it can name a person with no account. |
+
+**A boundary grant resolves to the first. An org grant resolves to the second.
+Nothing resolves to the third, ever** — it is content an assessor reads, and a
+sync that overwrote it would replace a deliberate statement about who holds a
+role with a directory's current opinion. That is the written answer #842 needs,
+and #707's "two role systems" is itself an undercount worth fixing on the issue.
+
+**Instance roles stay unreachable by construction:** the grant format has no
+instance scope, so there is no string an IdP can emit that grants an
+instance-wide role or the `users.admin` break-glass flag. The epic's
+"never destructive to instance roles" constraint needs no guard, and recovery
+from a misconfigured IdP is therefore always possible.
 
 ---
 
