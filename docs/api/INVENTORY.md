@@ -23,7 +23,7 @@ that had been wrong since 2026-07-18 (#995).
 - **Code:** **285 logical endpoints** across 55 controller groups (PATCH+PUT aliases collapsed) — 108 GET, 100 POST, 40 DELETE, 35 PUT, 33 PATCH
 - **Documentation:** **242 / 285** endpoints are listed in an `endpoints/*.md` page's own Endpoints table (**85%**); 24 more are mentioned only in prose
 - **Postman collection:** **279 / 285** endpoints covered (**98%**)
-- **Pytest suite:** **273 / 285** endpoints map to a `tests/api/test_*.py` module (**96%**)
+- **Pytest suite:** **279 / 285** endpoints map to a `tests/api/test_*.py` module (**98%**)
 
 > **The pytest column counts module presence, not verification.** For generic CRUD
 > actions it means only that a module for the controller exists; for the rest it means
@@ -126,18 +126,13 @@ working from the tables will not find them.
 | `POST` | `/api/v1/ssp_documents/:id/fields/import/preview` | [`field-import.md`](endpoints/field-import.md) |
 | `POST` | `/api/v1/users/:id/password_reset` | [`users.md`](endpoints/users.md) |
 
-### No pytest module — 12 endpoints across 11 controllers
+### No pytest module — 6 endpoints across 6 controllers
 
 | Controller | Endpoints | Module looked for |
 |---|---|---|
-| `admin/remediation_timelines` | 2 | `tests/api/test_admin_remediation_timelines.py` |
-| `admin/reconciliation` | 1 | `tests/api/test_admin_reconciliation.py` |
-| `aggregations` | 1 | `tests/api/test_aggregations.py` |
 | `artifacts` | 1 | `tests/api/test_artifacts.py` |
 | `authorization_boundaries` | 1 | `tests/api/test_authorization_boundaries.py` |
 | `cdef_documents` | 1 | `tests/api/test_cdef_documents.py` |
-| `hdf_amendments` | 1 | `tests/api/test_hdf_amendments.py` |
-| `hdf_packages` | 1 | `tests/api/test_hdf_packages.py` |
 | `organizations` | 1 | `tests/api/test_organizations.py` |
 | `poam_documents` | 1 | `tests/api/test_poam_documents.py` |
 | `users` | 1 | `tests/api/test_users.py` |
@@ -210,10 +205,10 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | Method | Path | Controller#action | In `endpoints/*.md` | In Postman collection | Covered by pytest |
 |--------|------|-------------------|---------------------|------------------------|-------------------|
 | `POST` | `/api/v1/admin/refresh_credentials` | `admin/credentials#refresh` | [`admin-credentials.md`](endpoints/admin-credentials.md) | yes | yes |
-| `GET` | `/api/v1/admin/reconciliation` | `admin/reconciliation#index` | **MISSING** | yes | **MISSING** |
-| `GET` | `/api/v1/admin/remediation_timelines` | `admin/remediation_timelines#index` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
-| `PUT` | `/api/v1/admin/remediation_timelines` | `admin/remediation_timelines#update` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
-| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/aggregate` | `aggregations#create` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
+| `GET` | `/api/v1/admin/reconciliation` | `admin/reconciliation#index` | **MISSING** | yes | yes |
+| `GET` | `/api/v1/admin/remediation_timelines` | `admin/remediation_timelines#index` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | yes |
+| `PUT` | `/api/v1/admin/remediation_timelines` | `admin/remediation_timelines#update` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | yes |
+| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/aggregate` | `aggregations#create` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | yes |
 | `GET` | `/api/v1/users/:user_id/api_tokens` | `api_tokens#index` | [`api-tokens.md`](endpoints/api-tokens.md) | yes | yes |
 | `POST` | `/api/v1/users/:user_id/api_tokens` | `api_tokens#create` | [`api-tokens.md`](endpoints/api-tokens.md) | yes | yes |
 | `DELETE` | `/api/v1/users/:user_id/api_tokens/:id` | `api_tokens#destroy` | [`api-tokens.md`](endpoints/api-tokens.md) | yes | yes |
@@ -348,8 +343,8 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition/reject` | `finding_dispositions#reject` | **MISSING** | yes | yes |
 | `GET` | `/api/v1/guides` | `guides#index` | **MISSING** | yes | yes |
 | `GET` | `/api/v1/guides/:slug` | `guides#show` | **MISSING** | yes | yes |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments` | `hdf_amendments#show` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package` | `hdf_packages#show` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | **MISSING** |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments` | `hdf_amendments#show` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | yes |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package` | `hdf_packages#show` | prose only — [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | yes |
 | `GET` | `/api/v1/ksi_catalog/indicators` | `ksi_catalog#indicators` | [`ksi-catalog.md`](endpoints/ksi-catalog.md) | yes | yes |
 | `GET` | `/api/v1/ksi_catalog/indicators/:id` | `ksi_catalog#show_indicator` | [`ksi-catalog.md`](endpoints/ksi-catalog.md) | yes | yes |
 | `GET` | `/api/v1/ksi_catalog/mappings` | `ksi_catalog#mappings` | [`ksi-catalog.md`](endpoints/ksi-catalog.md) | yes | yes |
