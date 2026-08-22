@@ -1690,6 +1690,39 @@ can never fire for the active user it exists for. Two tests catch it.
 provisionable **per user** rather than only per instance. That needs a schema
 change and a UI, so it is a separate issue if the owner wants it.
 
+**Instance roles ARE grantable from the IdP, opt-in — owner-decided 2026-08-22**
+(*"I'd like to see if we can include the instance roles in the IdP if at all
+possible... a nice to have which makes it easier to manage IdP"*, then *"the
+remaining instance makes sense and good framework that belongs in v1.16.0"*).
+Tracked under #860 rather than a separate issue: the epic already contemplated
+`instance-level? -> SKIP unless allowlisted`, and this is that, built.
+
+`sparc:instance:{role}`, gated by **`SPARC_OIDC_INSTANCE_ROLES`, empty by
+default** — an allowlist per role, not a blanket switch, so opting in to
+`global_viewer` does not confer `head_of_agency`. A grant arriving at an
+instance that has not opted in is refused **with a reason and surfaced**, not
+dropped: someone created that directory group deliberately.
+
+**What makes it safe is that `users.admin` is a boolean column, not a `Role`.**
+The resolver only ever produces `user_roles` and `organization_memberships`
+targets, so no claim can confer or revoke the break-glass account. Recovery from
+a misconfigured IdP is always available through it, which means the epic's
+"the last instance admin is never removable by any automated path" holds by
+construction rather than by a guard that could later be relaxed.
+
+**The natural follow-on is [#1044](https://github.com/risk-sentinel/sparc/issues/1044),
+filed to v1.16.1** at owner direction so it gets deliberate attention. An
+instance role today opens **no admin screen**: all five `authorize_admin!`
+definitions and **77 direct `current_user.admin?` checks** test the boolean, and
+none consults role permissions, so roles and instance-admin are disjoint
+systems. Making a time-boxed IdP administrator real means consolidating that
+gate first — four of the five definitions are private copies **shadowing** the
+shared concern, in `organizations`, `service_accounts`, `roles` and `api_tokens`.
+The owner's framing is the reason it is worth doing: Okta can expire a group
+membership on a timer, so elevation becomes temporary by construction rather
+than permanent `sudo` — and **#1043's absolute session cap is what makes that
+expiry bite**, since an active administrator is never idle.
+
 | Issue | Description | Notes |
 | --- | --- | --- |
 | **#860** | Epic: IdP as system of record for entitlements | Bundle I with #842. Five design questions answered in a memo commit before code. Dry-run built first, not last. |
