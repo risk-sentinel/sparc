@@ -22,7 +22,7 @@ that had been wrong since 2026-07-18 (#995).
 - **Generated:** 2026-08-22 from `bin/rails routes` on this commit
 - **Code:** **285 logical endpoints** across 55 controller groups (PATCH+PUT aliases collapsed) — 108 GET, 100 POST, 40 DELETE, 35 PUT, 33 PATCH
 - **Documentation:** **269 / 285** endpoints are listed in an `endpoints/*.md` page's own Endpoints table (**94%**); 16 more are mentioned only in prose
-- **Postman collection:** **279 / 285** endpoints covered (**98%**)
+- **Postman collection:** **285 / 285** endpoints covered (**100%**)
 - **Pytest suite:** **285 / 285** endpoints map to a `tests/api/test_*.py` module (**100%**)
 
 > **The pytest column counts module presence, not verification.** For generic CRUD
@@ -104,14 +104,10 @@ working from the tables will not find them.
 | Controller | Endpoints | Module looked for |
 |---|---|---|
 
-### Not in the Postman collection — 6 endpoints
+### Not in the Postman collection — 0 endpoints
 
 | Controller | Endpoints |
 |---|---|
-| `cdef_documents` | 2 |
-| `sap_documents` | 2 |
-| `poam_documents` | 1 |
-| `profile_documents` | 1 |
 
 <!-- END GENERATED GAPS -->
 
@@ -244,7 +240,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/cdef_documents/:id/approve` | `cdef_documents#approve` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/bulk_apply_converter/confirm` | `cdef_documents#bulk_apply_converter_confirm` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/bulk_apply_converter/preview` | `cdef_documents#bulk_apply_converter_preview` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
-| `GET` | `/api/v1/cdef_documents/:id/export` | `cdef_documents#export` | [`cdef-documents.md`](endpoints/cdef-documents.md) | **MISSING** | yes |
+| `GET` | `/api/v1/cdef_documents/:id/export` | `cdef_documents#export` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/fields/import/confirm` | `cdef_documents#import_fields_confirm` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/fields/import/preview` | `cdef_documents#import_fields_preview` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/populate_from_profile` | `cdef_documents#source_from_profile` | prose only — [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
@@ -253,7 +249,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/cdef_documents/:id/source_from_profile` | `cdef_documents#source_from_profile` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents/:id/submit_for_review` | `cdef_documents#submit_for_review` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `DELETE` | `/api/v1/cdef_documents/bulk` | `cdef_documents#bulk_destroy` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
-| `POST` | `/api/v1/cdef_documents/import` | `cdef_documents#import` | [`cdef-documents.md`](endpoints/cdef-documents.md) | **MISSING** | yes |
+| `POST` | `/api/v1/cdef_documents/import` | `cdef_documents#import` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `GET` | `/api/v1/control_catalogs` | `control_catalogs#index` | [`control-catalogs.md`](endpoints/control-catalogs.md) | yes | yes |
 | `POST` | `/api/v1/control_catalogs` | `control_catalogs#create` | [`control-catalogs.md`](endpoints/control-catalogs.md) | yes | yes |
 | `DELETE` | `/api/v1/control_catalogs/:id` | `control_catalogs#destroy` | [`control-catalogs.md`](endpoints/control-catalogs.md) | yes | yes |
@@ -344,7 +340,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/poam_documents/:id` | `poam_documents#show` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/poam_documents/:id` | `poam_documents#update` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
 | `POST` | `/api/v1/poam_documents/generate` | `poam_documents#generate` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
-| `POST` | `/api/v1/poam_documents/import` | `poam_documents#import` | [`poam-documents.md`](endpoints/poam-documents.md) | **MISSING** | yes |
+| `POST` | `/api/v1/poam_documents/import` | `poam_documents#import` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
 | `GET` | `/api/v1/poam_documents/:poam_document_id/findings` | `poam_findings#index` | [`poam-subresources.md`](endpoints/poam-subresources.md) | yes | yes |
 | `POST` | `/api/v1/poam_documents/:poam_document_id/findings` | `poam_findings#create` | [`poam-subresources.md`](endpoints/poam-subresources.md) | yes | yes |
 | `DELETE` | `/api/v1/poam_documents/:poam_document_id/findings/:id` | `poam_findings#destroy` | [`poam-subresources.md`](endpoints/poam-subresources.md) | yes | yes |
@@ -390,7 +386,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `PUT` | `/api/v1/profile_documents/:id/controls` | `profile_documents#update_controls` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `POST` | `/api/v1/profile_documents/:id/reject` | `profile_documents#reject` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `POST` | `/api/v1/profile_documents/:id/submit_for_review` | `profile_documents#submit_for_review` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
-| `POST` | `/api/v1/profile_documents/import` | `profile_documents#import` | [`profile-documents.md`](endpoints/profile-documents.md) | **MISSING** | yes |
+| `POST` | `/api/v1/profile_documents/import` | `profile_documents#import` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `GET` | `/api/v1/roles` | `roles#index` | [`roles.md`](endpoints/roles.md) | yes | yes |
 | `POST` | `/api/v1/roles` | `roles#create` | [`roles.md`](endpoints/roles.md) | yes | yes |
 | `DELETE` | `/api/v1/roles/:id` | `roles#destroy` | [`roles.md`](endpoints/roles.md) | yes | yes |
@@ -401,11 +397,11 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/sap_documents/:id` | `sap_documents#destroy` | [`sap-documents.md`](endpoints/sap-documents.md) | yes | yes |
 | `GET` | `/api/v1/sap_documents/:id` | `sap_documents#show` | [`sap-documents.md`](endpoints/sap-documents.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/sap_documents/:id` | `sap_documents#update` | [`sap-documents.md`](endpoints/sap-documents.md) | yes | yes |
-| `GET` | `/api/v1/sap_documents/:id/export` | `sap_documents#export` | [`sap-documents.md`](endpoints/sap-documents.md) | **MISSING** | yes |
+| `GET` | `/api/v1/sap_documents/:id/export` | `sap_documents#export` | [`sap-documents.md`](endpoints/sap-documents.md) | yes | yes |
 | `POST` | `/api/v1/sap_documents/:id/fields/import/confirm` | `sap_documents#import_fields_confirm` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | yes |
 | `POST` | `/api/v1/sap_documents/:id/fields/import/preview` | `sap_documents#import_fields_preview` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | yes |
 | `POST` | `/api/v1/sap_documents/generate` | `sap_documents#generate` | [`sap-documents.md`](endpoints/sap-documents.md) | yes | yes |
-| `POST` | `/api/v1/sap_documents/import` | `sap_documents#import` | [`sap-documents.md`](endpoints/sap-documents.md) | **MISSING** | yes |
+| `POST` | `/api/v1/sap_documents/import` | `sap_documents#import` | [`sap-documents.md`](endpoints/sap-documents.md) | yes | yes |
 | `GET` | `/api/v1/sar_documents` | `sar_documents#index` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
 | `POST` | `/api/v1/sar_documents` | `sar_documents#create` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
 | `DELETE` | `/api/v1/sar_documents/:id` | `sar_documents#destroy` | [`sar-documents.md`](endpoints/sar-documents.md) | yes | yes |
