@@ -397,4 +397,30 @@ module ApplicationHelper
     end
     orgs || []
   end
+
+  # How many boundaries an organization shows before the rest fold away (#951).
+  SIDEBAR_BOUNDARY_PAGE_SIZE = 10
+
+  # Sidebar: Resources, split into the ones that stay top-level and the OSCAL
+  # reference set that nests (#951).
+  #
+  # Grouped by HOST rather than by title. The shipped list happens to prefix six
+  # entries with "OSCAL", but operators add their own through `SPARC_RESOURCES`
+  # (#914), and a title-prefix rule would scatter those unpredictably — someone
+  # else's "OSCAL Notes" would be swept into the nest while a NIST link titled
+  # differently would not. The host is a fact about where the link goes.
+  #
+  # Nesting these is what stops nine external links pushing Help & Guides off
+  # the bottom of the pane.
+  OSCAL_REFERENCE_HOST = "pages.nist.gov"
+
+  def sidebar_resource_groups
+    resources = Array(SparcConfig.resources)
+    nested, top_level = resources.partition do |resource|
+      URI.parse(resource["href"].to_s).host.to_s.downcase.end_with?(OSCAL_REFERENCE_HOST)
+    rescue URI::InvalidURIError
+      false
+    end
+    { top_level: top_level, nested: nested }
+  end
 end
