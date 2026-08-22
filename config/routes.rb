@@ -889,6 +889,10 @@ Rails.application.routes.draw do
       # could not be reviewed or reproduced programmatically.
       resources :roles, only: [ :index, :show, :create, :update, :destroy ]
 
+      # #860 — the unmatched-grant queue. A grant naming something SPARC does
+      # not have is recorded and surfaced, never created; this is the surfacing.
+      get "idp_grants/unmatched", to: "idp_grants#unmatched"
+
       resources :users, only: [ :index, :show, :create, :update, :destroy ] do
         member do
           post :password_reset

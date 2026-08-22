@@ -199,6 +199,61 @@ RSpec.describe EntitlementSync do
     end
   end
 
+  describe "a user whose grants name nothing SPARC has yet" do
+    # Owner, 2026-08-22: "the user we can create but if they contain a grant we
+    # don't know about (Organization / Boundary) they could log in but only see
+    # things that are behind the auth required".
+    #
+    # That is the intended shape and it is worth pinning, because the tempting
+    # alternatives are both wrong: creating the organization would let the IdP
+    # mint tenants, and refusing the login would turn an estate that has not
+    # caught up yet into an outage for a legitimately authenticated person.
+    it "is provisioned with NO memberships, and the grants are reported" do
+      plan = sync([
+        "sparc:org:not-created-yet:member",
+        "sparc:boundary:not-created-yet:nor-this:isso"
+      ]).apply
+
+      expect(plan.unmatched.size).to eq(2)
+      expect(plan.changes).to be_empty
+
+      # No boundary and no organization membership, so nothing boundary-scoped
+      # is reachable. The account exists and can authenticate; it simply sees
+      # only what any signed-in user sees.
+      expect(user.user_roles.reload).to be_empty
+      expect(user.organization_memberships.reload).to be_empty
+      expect(user).to be_active
+    end
+
+    it "grants the part that DOES resolve and reports the rest" do
+      # A partial estate is the normal case during onboarding, not an error.
+      boundary
+      plan = sync([
+        "sparc:boundary:acme:acme-prod:isso",
+        "sparc:boundary:acme:not-created-yet:isso"
+      ]).apply
+
+      expect(plan.add.size).to eq(1)
+      expect(plan.unmatched.size).to eq(1)
+      expect(user.user_roles.reload.count).to eq(1)
+    end
+
+    it "heals on the next login once the estate catches up" do
+      # No administrator action beyond creating the boundary: the grant is
+      # re-evaluated every sign-in, which is why the unmatched queue is a view
+      # over recent refusals rather than a task list someone must clear.
+      first = sync([ "sparc:boundary:acme:acme-prod:isso" ]).apply
+      expect(first.unmatched.size).to eq(1)
+
+      boundary # the administrator creates it
+
+      second = sync([ "sparc:boundary:acme:acme-prod:isso" ]).apply
+      expect(second.unmatched).to be_empty
+      expect(second.add.size).to eq(1)
+      expect(user.user_roles.reload.count).to eq(1)
+    end
+  end
+
   describe "an unknown mode" do
     it "errors rather than guessing" do
       plan = sync([], mode: "aggressive").apply

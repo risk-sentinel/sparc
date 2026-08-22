@@ -68,6 +68,10 @@ class AuditEvent < ApplicationRecord
     user_reactivated
     user_deactivated
     user_deactivated_for_inactivity
+    idp_grant_applied
+    idp_grant_revoked
+    idp_grant_skipped
+    idp_sync_failed
     user_auto_deactivated
     user_deactivate_refused
     user_suspend_refused

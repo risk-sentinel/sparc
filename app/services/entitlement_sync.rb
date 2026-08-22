@@ -80,12 +80,50 @@ class EntitlementSync
     return plan if plan.error? || plan.blocked? || @mode == "off"
 
     ActiveRecord::Base.transaction { plan.changes.each { |change| apply_change(change) } }
+    audit!(plan)
     plan
   end
 
   private
 
   attr_reader :user, :claim_values, :claim_present, :mode, :resolver
+
+  # One event per decision, with the reason — the epic's requirement, and the
+  # granularity an assessor needs: "these rights were conferred by the IdP on
+  # this date, and these were refused because the boundary did not exist."
+  #
+  # Emitted OUTSIDE the transaction that applied the changes. An audit failure
+  # must not roll back a membership change that already succeeded, or the
+  # records and reality diverge in the direction that hides work.
+  def audit!(plan)
+    plan.changes.each do |change|
+      action = case change.action
+      when :add, :update then "idp_grant_applied"
+      when :revoke       then "idp_grant_revoked"
+      when :conflict     then "idp_grant_skipped"
+      end
+      next if action.nil? # :unchanged is not an event; nothing happened
+
+      AuditEvent.log(user: user, action: action, provider: "oidc",
+                     metadata: change_metadata(change))
+    end
+
+    plan.unmatched.each do |resolution|
+      AuditEvent.log(user: user, action: "idp_grant_skipped", provider: "oidc",
+                     metadata: { grant: resolution.raw, reason: resolution.error })
+    end
+  end
+
+  def change_metadata(change)
+    {
+      grant_action: change.action.to_s,
+      target: change.target_type.to_s,
+      role: change.role_name,
+      organization: change.organization&.slug,
+      authorization_boundary: change.authorization_boundary&.slug,
+      reason: change.reason
+    }.compact
+  end
 
   def build_plan(dry_run:)
     return plan_with(dry_run, error: "unknown sync mode #{mode.inspect}") unless MODES.include?(mode)
