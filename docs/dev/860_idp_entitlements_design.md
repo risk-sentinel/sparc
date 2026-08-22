@@ -67,6 +67,50 @@ from a misconfigured IdP is therefore always possible.
 
 ---
 
+## How instance-level roles are managed (owner question, 2026-08-22)
+
+**They are `user_roles` rows with `authorization_boundary_id: NULL`**, pointing
+at a `Role` whose `scope` is `"instance"`. Ten are seeded: `policy_manager`,
+`global_viewer`, `senior_accountable_official`, `senior_agency_official_privacy`,
+`head_of_agency`, `risk_executive`, `cio`, `chief_acquisition_officer`,
+`fedramp_pmo`, `jab`.
+
+**`users.admin` is NOT one of them.** Instance Admin is a boolean column, the
+break-glass authority, and it is deliberately outside the role system entirely.
+
+**Today they are assigned in ONE place: the admin UI**, `Admin::UsersController`
+(`role_ids`), which destroys the instance roles not in the submitted list and
+creates the rest. `Api::V1::UsersController` **reads** them — it serialises
+name, display_name and scope — but there is **no API write path for instance
+roles at all.**
+
+That is an API-first gap of the kind the standing rule exists to catch, and it
+is worth an issue of its own rather than being folded in here silently. It is
+also the reason the admin UI's destroy-then-create is safe TODAY and would stop
+being safe the moment anything else could create an instance role: the delete is
+**source-blind**, so it would remove an IdP-granted row as readily as a
+hand-made one.
+
+### They stay out of IdP reach, and that is a design choice
+
+The grant format has **no instance scope**. There is no string an IdP can emit
+that grants an instance-wide role or sets `users.admin`, so the epic's
+"never destructive to instance roles" and "the last instance admin is never
+removable by any automated path" constraints are satisfied **by construction**
+rather than by a guard someone could later relax.
+
+The epic contemplated `instance-level? → SKIP unless allowlisted`. This design
+goes further and makes it inexpressible, because instance roles are the recovery
+path: if a claim could grant or strip instance-wide authority, a single IdP
+misconfiguration could over-privilege or lock out the entire instance, and the
+way back would run through the very system that broke it.
+
+**If instance roles are wanted from the IdP later**, the shape should be an
+explicit opt-in allowlist (`SPARC_OIDC_INSTANCE_ROLES`, empty by default) that
+is **additive only** — never revoking — and that can never name `admin`. That
+keeps the recovery path intact whatever the directory says. Not built, and not
+recommended until someone asks for it.
+
 ## The five questions
 
 ### Q1 — Claim name: `groups` or a dedicated `sparc_grants`?
