@@ -343,6 +343,13 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     when "oscal-yaml" then render plain: OscalExportFormatService.to_yaml(json_string),
                                    content_type: "application/x-yaml"
     when "oscal-xml"  then render xml: OscalExportFormatService.to_xml(json_string, :component_definition)
+    else
+      # Unreachable: the guard above rejects anything outside
+      # OSCAL_EXPORT_FORMATS. Present so that ADDING a format to the constant
+      # and forgetting to handle it here is a named 500 in the log rather than a
+      # silent empty 204 — a `case` with no else returns nil, and Rails answers
+      # a nil render with no content, which is the least debuggable outcome.
+      raise ArgumentError, "Unhandled export format #{format.inspect}"
     end
   rescue OscalValidationError => e
     # Named, and pointing at the way out. A caller who wants the document

@@ -417,7 +417,12 @@ module ApplicationHelper
   def sidebar_resource_groups
     resources = Array(SparcConfig.resources)
     nested, top_level = resources.partition do |resource|
-      URI.parse(resource["href"].to_s).host.to_s.downcase.end_with?(OSCAL_REFERENCE_HOST)
+      # The host must BE the reference host or a subdomain of it. A bare
+      # `end_with?` is an incomplete check: "evilpages.nist.gov" ends with
+      # "pages.nist.gov", so a lookalike host supplied through SPARC_RESOURCES
+      # would be filed under the NIST group as though NIST published it.
+      host = URI.parse(resource["href"].to_s).host.to_s.downcase
+      host == OSCAL_REFERENCE_HOST || host.end_with?(".#{OSCAL_REFERENCE_HOST}")
     rescue URI::InvalidURIError
       false
     end

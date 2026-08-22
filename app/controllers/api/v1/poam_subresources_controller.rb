@@ -155,6 +155,12 @@ class Api::V1::PoamSubresourcesController < Api::V1::BaseController
   end
 
   # Subclasses add the few fields that are theirs alone.
-  def summary_fields(_record) = {}
-  def detail_fields(_record)  = {}
+  #
+  # The parameter is unused HERE and required everywhere else: seven subclasses
+  # override these and every one of them reads the record. Dropping it to
+  # satisfy a "unused parameter" report would break the signature the callers
+  # rely on. The leading underscore is the Ruby convention for exactly this —
+  # deliberately unused in this implementation.
+  def summary_fields(_record) = {} # NOSONAR - template method; subclasses use the record
+  def detail_fields(_record)  = {} # NOSONAR - template method; subclasses use the record
 end

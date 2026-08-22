@@ -58,6 +58,8 @@ TABLE_END     = "<!-- END GENERATED INVENTORY -->"
 # `test_foo_bar.py`, `admin/credentials` -> `test_admin_credentials.py` — so a
 # new controller with a conventionally-named module is picked up with no edit
 # here. Only genuine departures from the convention are listed.
+POAM_SUBRESOURCE_MODULE = "test_poam_subresources.py"
+
 TEST_MODULE_EXCEPTIONS = {
   # One API surface, one module: TestControlLinks lives in test_evidences.py.
   "evidence_control_links"             => "test_evidences.py",
@@ -69,14 +71,14 @@ TEST_MODULE_EXCEPTIONS = {
   # #1010/#1011 — one module per SHAPE rather than per controller. The six
   # POA&M sub-objects are one contract, and converter entries are tested
   # alongside the converter they belong to.
-  "converter_entries"                  => "test_converters.py",
-  "poam_items"                         => "test_poam_subresources.py",
-  "poam_observations"                  => "test_poam_subresources.py",
-  "poam_findings"                      => "test_poam_subresources.py",
-  "poam_local_components"              => "test_poam_subresources.py",
-  "poam_remediations"                  => "test_poam_subresources.py",
-  "poam_milestones"                    => "test_poam_subresources.py"
-}.freeze
+  "converter_entries"                  => "test_converters.py"
+}.merge(
+  # All six POA&M sub-objects map to the one module. Named once so adding a
+  # seventh is a single edit rather than another copy of the same string.
+  %w[poam_items poam_observations poam_findings
+     poam_local_components poam_remediations poam_milestones]
+    .to_h { |controller| [ controller, POAM_SUBRESOURCE_MODULE ] }
+).freeze
 
 def load_routes
   raw = `bin/rails routes 2>/dev/null`

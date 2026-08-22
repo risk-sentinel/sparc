@@ -23,7 +23,7 @@ class Api::V1::PoamFindingsController < Api::V1::PoamSubresourcesController
   def detail_fields(record)
     { implementation_statement_uuid: record.implementation_statement_uuid,
       target_data: record.try(:target_data),
-      linked_item_ids: record.poam_items.pluck(:id),
-      linked_observation_ids: record.poam_observations.pluck(:id) }
+      linked_item_ids: record.poam_items.ids,
+      linked_observation_ids: record.poam_observations.ids }
   end
 end

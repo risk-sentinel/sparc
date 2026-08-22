@@ -33,11 +33,21 @@ CONTROLLERS = File.join(REPO_ROOT, "app/controllers/api/v1")
 
 # Folder names already in the collection, so a regenerated request lands beside
 # its siblings instead of opening a near-duplicate folder.
+# Literals used in several places. Named so a rename is one edit and a typo in
+# one copy cannot silently disagree with the others.
+TRANSLATIONS_FOLDER = "HDF ↔ OSCAL Translations"
+HDF_SCAN_FIXTURE    = "scan.hdf.json"
+CONTENT_TYPE_HEADER = "Content-Type"
+JSON_CONTENT_TYPE   = "application/json"
+# A Postman path variable, e.g. `{{slug}}`, normalised to `:id` for comparison
+# against the route list.
+POSTMAN_VARIABLE = /\{\{[^}]+\}\}/
+
 CONTROLLER_TO_FOLDER = {
   "admin/credentials"                  => "Admin Credentials",
   "admin/reconciliation"               => "Admin Reconciliation",
   "admin/remediation_timelines"        => "Admin Remediation Timelines",
-  "aggregations"                       => "HDF ↔ OSCAL Translations",
+  "aggregations"                       => TRANSLATIONS_FOLDER,
   "artifacts"                          => "Artifacts",
   "attestations"                       => "Attestations",
   "attester_eligibility"               => "Attestations",
@@ -60,11 +70,11 @@ CONTROLLER_TO_FOLDER = {
   "federation_peers"                   => "Federation Peers",
   "finding_dispositions"               => "Scanner Findings",
   "guides"                             => "Guides",
-  "hdf_amendments"                     => "HDF ↔ OSCAL Translations",
-  "hdf_packages"                       => "HDF ↔ OSCAL Translations",
+  "hdf_amendments"                     => TRANSLATIONS_FOLDER,
+  "hdf_packages"                       => TRANSLATIONS_FOLDER,
   "ksi_catalog"                        => "KSI Catalog",
   "ksi_validations"                    => "KSI Validations",
-  "oscal"                              => "HDF ↔ OSCAL Translations",
+  "oscal"                              => TRANSLATIONS_FOLDER,
   "poam_documents"                     => "POA&M Documents",
   "poam_risks"                         => "POA&M Risks",
   "profile_documents"                  => "Profile Documents",
@@ -75,7 +85,7 @@ CONTROLLER_TO_FOLDER = {
   "sessions"                           => "Sessions",
   "ssp_components"                     => "SSP Components",
   "ssp_documents"                      => "SSP Documents",
-  "translations"                       => "HDF ↔ OSCAL Translations",
+  "translations"                       => TRANSLATIONS_FOLDER,
   "users"                              => "Users"
 }.freeze
 
@@ -104,15 +114,15 @@ ID_VARIABLES = {
 # something that does not work.
 DUAL_MODE_ENDPOINTS = {
   "POST /api/v1/oscal/sar_from_hdf" =>
-    { file: "scan.hdf.json", note: "An HDF results file." },
+    { file: HDF_SCAN_FIXTURE, note: "An HDF results file." },
   "POST /api/v1/oscal/poam_from_hdf" =>
-    { file: "scan.hdf.json", note: "An HDF results file." },
+    { file: HDF_SCAN_FIXTURE, note: "An HDF results file." },
   "POST /api/v1/oscal/poam_from_amendments" =>
     { file: "sample.hdf-amendments.json", note: "An HDF Amendments document." },
   "POST /api/v1/hdf/amendments_from_oscal_poam" =>
     { file: "poam.oscal.json", note: "An OSCAL POA&M document." },
   "POST /api/v1/authorization_boundaries/:id/scan_runs" =>
-    { file: "scan.hdf.json", note: "A scanner output file." }
+    { file: HDF_SCAN_FIXTURE, note: "A scanner output file." }
 }.freeze
 
 # Adds the missing half of a dual-mode endpoint, so the collection carries a
@@ -134,7 +144,7 @@ def add_dual_mode_variants(collection)
       next unless request && request["method"] == "POST"
 
       segments = request.dig("url", "path") || []
-      key = "POST " + normalize("/" + segments.map { |s| s.gsub(/\{\{[^}]+\}\}/, ":id") }.join("/"))
+      key = "POST " + normalize("/" + segments.map { |s| s.gsub(POSTMAN_VARIABLE, ":id") }.join("/"))
       spec = DUAL_MODE_ENDPOINTS[key]
       next unless spec
       next if entry["name"].to_s.match?(/\((?:raw body|multipart)/)
@@ -148,7 +158,7 @@ def add_dual_mode_variants(collection)
       if mode == "raw"
         twin["name"] = twin["name"].sub("(raw body)", "(multipart file upload)")
         twin["request"]["header"] =
-          (twin["request"]["header"] || []).reject { |h| h["key"] == "Content-Type" }
+          (twin["request"]["header"] || []).reject { |h| h["key"] == CONTENT_TYPE_HEADER }
         twin["request"]["body"] = { "mode" => "formdata", "formdata" => [
           { "key" => "file", "type" => "file", "src" => [] }
         ] }
@@ -158,7 +168,7 @@ def add_dual_mode_variants(collection)
       else
         twin["name"] = twin["name"].sub("(multipart)", "(raw body)")
         twin["request"]["header"] =
-          (twin["request"]["header"] || []) + [ { "key" => "Content-Type", "value" => "application/json" } ]
+          (twin["request"]["header"] || []) + [ { "key" => CONTENT_TYPE_HEADER, "value" => JSON_CONTENT_TYPE } ]
         twin["request"]["body"] = { "mode" => "raw", "raw" => "{}",
                                     "options" => { "raw" => { "language" => "json" } } }
         twin["request"]["description"] =
@@ -204,7 +214,7 @@ def covered_keys(collection)
   each_request(collection["item"]) do |_folder, item|
     method = item.dig("request", "method")
     segments = item.dig("request", "url", "path") || []
-    path = "/" + segments.map { |s| s.gsub(/\{\{[^}]+\}\}/, ":id") }.join("/")
+    path = "/" + segments.map { |s| s.gsub(POSTMAN_VARIABLE, ":id") }.join("/")
     keys << "#{method} #{normalize(path)}"
   end
   keys
@@ -291,7 +301,7 @@ def build_request(route)
   }
 
   if body
-    request["header"] << { "key" => "Content-Type", "value" => "application/json" }
+    request["header"] << { "key" => CONTENT_TYPE_HEADER, "value" => JSON_CONTENT_TYPE }
     request["body"] = { "mode" => "raw", "raw" => JSON.pretty_generate(body),
                         "options" => { "raw" => { "language" => "json" } } }
   end
@@ -329,7 +339,7 @@ def backfill_bodies(collection, routes)
     next if request.dig("body", "mode") == "formdata"
 
     segments = request.dig("url", "path") || []
-    key = "#{request['method']} " + normalize("/" + segments.map { |s| s.gsub(/\{\{[^}]+\}\}/, ":id") }.join("/"))
+    key = "#{request['method']} " + normalize("/" + segments.map { |s| s.gsub(POSTMAN_VARIABLE, ":id") }.join("/"))
     route = by_key[key]
     next unless route
 
@@ -337,8 +347,8 @@ def backfill_bodies(collection, routes)
     next unless body
 
     request["header"] ||= []
-    unless request["header"].any? { |h| h["key"] == "Content-Type" }
-      request["header"] << { "key" => "Content-Type", "value" => "application/json" }
+    unless request["header"].any? { |h| h["key"] == CONTENT_TYPE_HEADER }
+      request["header"] << { "key" => CONTENT_TYPE_HEADER, "value" => JSON_CONTENT_TYPE }
     end
     request["body"] = { "mode" => "raw", "raw" => JSON.pretty_generate(body),
                         "options" => { "raw" => { "language" => "json" } } }

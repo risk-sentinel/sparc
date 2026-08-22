@@ -16,7 +16,7 @@ class Api::V1::PoamObservationsController < Api::V1::PoamSubresourcesController
   end
 
   def detail_fields(record)
-    { linked_item_ids: record.poam_items.pluck(:id),
-      linked_risk_ids: record.poam_risks.pluck(:id) }
+    { linked_item_ids: record.poam_items.ids,
+      linked_risk_ids: record.poam_risks.ids }
   end
 end

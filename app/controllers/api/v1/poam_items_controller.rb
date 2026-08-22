@@ -24,6 +24,6 @@ class Api::V1::PoamItemsController < Api::V1::PoamSubresourcesController
     { likelihood: record.likelihood, impact: record.impact,
       internal_notes: record.internal_notes, closure_evidence: record.closure_evidence,
       ssp_control_statement_id: record.ssp_control_statement_id,
-      linked_risk_ids: record.poam_risks.pluck(:id) }
+      linked_risk_ids: record.poam_risks.ids }
   end
 end
