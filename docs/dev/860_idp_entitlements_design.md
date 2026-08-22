@@ -88,45 +88,61 @@ tested unit, not an inline `.downcase` at three call sites.
 
 Not an owner decision; it is a correctness rule with one right answer.
 
-### Q4 — Session revocation timing · **DECISION NEEDED**
+### Q4 — Session revocation timing · **DECIDED (owner, 2026-08-22)**
 
-**The epic's premise is half wrong, and the correction narrows the work.**
+> *"Each login should establish user capabilities/rights. We enforce the logout
+> based on the login expiration (default I think is set as 60 min)."*
 
-The epic says *"existing SPARC session remains valid until timeout."* For an
-**in-app deactivation that is not true**: `current_user` re-reads the user on
-every request with `status: "active"`, so the very next request after
-deactivation is unauthenticated. Offboarding path **C is already solved**.
+**Ruling: entitlements are established at login, and the exposure window is
+bounded by the session timeout.** No re-sync job, no SCIM, no back-channel
+logout. Option A.
 
-What is genuinely missing is different: **SPARC never finds out that the IdP
-disabled someone.** Okta disables the account, the user cannot start a *new*
-session, and their existing SPARC cookie keeps working until idle timeout
-because nothing told SPARC anything changed.
+The model is coherent and the mechanism exists. Verified rather than assumed:
 
-Three options, in ascending cost:
+- `SparcConfig.session_timeout` = `SPARC_SESSION_TIMEOUT_MINUTES`, **default 60**
+  (`sparc_config.rb:352`) — the owner's recollection is correct.
+- `check_session_timeout` is a **global `before_action`** in
+  `ApplicationController:13`, mapped to AC-11 / AC-12 / IA-11.
+- `current_user` re-reads the user every request on `status: "active"`, so an
+  in-app deactivation is immediate.
 
-| Option | What it is | Cost | Residual gap |
-|---|---|---|---|
-| **A. Document it** | Operator procedure: disabling in Okta is not offboarding; deactivate in SPARC too | ~0 | Depends on a human doing both |
-| **B. Re-sync job** | Periodic job re-reads entitlements and deactivates users the IdP no longer returns | Moderate — needs a service account with directory read | Window = the interval |
-| **C. Back-channel logout / SCIM** | Okta pushes logout or deprovisioning to SPARC | High — new endpoint, new trust relationship | Smallest |
+**One caveat, because it changes the claim SPARC can make in its own SSP: the
+60-minute timeout is an IDLE timeout, not an absolute one.** `last_active_at` is
+refreshed on every request (`authentication.rb:166`) and there is **no absolute
+session cap anywhere in the codebase.** So:
 
-**Recommendation: A now, B in v1.16.1, C only if a customer requires it.**
-The idle timeout already bounds the exposure, and option C is a second
-authenticated inbound channel — meaningful new attack surface for a gap that A
-plus the timeout largely covers. **Owner call, because it sets the offboarding
-claim SPARC can make in its own SSP.**
+- An **idle** user is bounded at 60 minutes. The ruling holds exactly as stated.
+- An **actively working** user is never forced to re-authenticate, so their
+  entitlements — and their access after an Okta-side disablement — persist for
+  as long as they keep clicking. A full working day is a single session.
 
-### Q5 — Does `bootstrap` mode earn its keep? · **DECISION NEEDED**
+"Each login establishes capabilities" bounds entitlement staleness only if there
+is a bounded time until the *next* login, and today there is not.
 
-**Recommendation: keep it**, and make it the default.
+**Recommended, small, and separable:** an absolute cap,
+`SPARC_SESSION_MAX_HOURS` (suggest 12 — a working day, so it costs a real user
+nothing), checked in the same `before_action` against a `session[:started_at]`
+set at sign-in. Roughly a dozen lines and one spec. It makes the owner's model
+literally true rather than approximately true, and it is the difference between
+"sessions expire after 60 minutes of inactivity" and "a session cannot outlive
+its entitlements by more than 12 hours" — the second is what an assessor reading
+AC-12 wants.
+
+**Owner's call whether that rides Bundle R or is filed separately; it is not a
+blocker for the entitlement work either way.**
+
+### Q5 — Does `bootstrap` mode earn its keep? · **DECIDED (owner, 2026-08-22)**
+
+**Ruling: keep it, and make it the default.** `off` → `bootstrap` → dry-run →
+`authoritative` is the adoption ladder.
 
 `bootstrap` is the ADD leg only. It costs almost nothing — the same parse and
 resolve, with the revoke branch skipped — and it is the mode a customer can turn
 on without any risk of mass de-provisioning. `off → bootstrap → dry-run →
 authoritative` is a safe adoption ladder; `off → authoritative` is a cliff.
 
-Marked as a decision because it is three modes to test and document rather than
-two, and that is a real cost the owner may not want.
+Three modes to build, test and document rather than two — accepted as the cost
+of not handing customers a cliff.
 
 ---
 
@@ -322,8 +338,9 @@ disablement, which it does not.
 
 ## Open for the owner
 
-1. **Q4** — offboarding: option A, B or C?
-2. **Q5** — keep `bootstrap`, or ship `off` + `authoritative` only?
+**Both design questions are answered; the memo is settled and implementation can
+begin.** One item is left for a decision that does not block it:
 
-Everything else above is a recommendation grounded in the schema or the
-authentication concern, and proceeds unless overruled.
+- **The absolute session cap** (`SPARC_SESSION_MAX_HOURS`, Q4 above) — in Bundle
+  R, or filed for v1.16.1? Recommended either way, because without it the
+  offboarding posture is weaker than the ruling assumes for an active user.
