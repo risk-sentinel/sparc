@@ -28,6 +28,7 @@ class CdefBrowseQuery
 
   def documents
     result = @scope
+    result = apply_boundary(result)
     result = apply_search(result)
     apply_facets(result)
   end
@@ -39,6 +40,52 @@ class CdefBrowseQuery
   end
 
   private
+
+  # #951 — "the CDEFs this boundary is using".
+  #
+  # The sidebar has linked here with `?authorization_boundary_id=` since #796,
+  # and NOTHING read it: the facets are partition/capability/checks and the
+  # default scope is every CdefDocument, so every boundary's "CDEFs" leaf listed
+  # the whole instance. Measured before the fix — unfiltered 234, with the
+  # parameter 234, with a bogus `cdef_type` 0, which is the control showing the
+  # index does narrow on a parameter it actually supports.
+  #
+  # "Using" is the union of the two ways a CDEF becomes the boundary's:
+  #
+  #   1. Linked to one of the boundary's ENVIRONMENTS (`BoundaryCdefDocument`).
+  #      This is the selection itself — `AtoPackageService` step 2 writes it,
+  #      and step 3 hands the same ids to `SspWizardService`, so it is upstream
+  #      of the SSP rather than a parallel fact.
+  #   2. Consumed by a component of the boundary's SSP.
+  #
+  # Both, because neither alone is complete. `SspWizardService` can be called
+  # without the ATO wizard, which creates SspComponents carrying a
+  # `cdef_document_id` and no BoundaryCdefDocument row; and a CDEF can be
+  # selected for an environment before the SSP materialises its components. A
+  # filter that missed either would tell someone they are not using a component
+  # definition they are using, which is worse than showing one too many.
+  #
+  # Absent the parameter the scope is untouched, so Implementation ->
+  # Component Definitions keeps listing every CDEF, which is what that screen is
+  # for: the boundary view shows what you use, the unscoped view is where you
+  # find more to add.
+  def apply_boundary(scope)
+    boundary_id = @params[:authorization_boundary_id].presence
+    return scope if boundary_id.blank?
+
+    selected_for_environments = BoundaryCdefDocument
+      .joins(:boundary)
+      .where(boundaries: { authorization_boundary_id: boundary_id })
+      .select(:cdef_document_id)
+
+    consumed_by_ssp = SspComponent
+      .joins(:ssp_document)
+      .where(ssp_documents: { authorization_boundary_id: boundary_id })
+      .where.not(cdef_document_id: nil)
+      .select(:cdef_document_id)
+
+    scope.where(id: selected_for_environments).or(scope.where(id: consumed_by_ssp))
+  end
 
   # #672 filtered on name and description only, so an obvious query like
   # `us-east` or `AC-2` returned nothing — those facts live on the component
