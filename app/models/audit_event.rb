@@ -381,7 +381,13 @@ class AuditEvent < ApplicationRecord
                             user_password_expired admin_bootstrap
                             admin_password_reset admin_webauthn_reset admin_credential_synced_from_env
                             admin_credential_rotated sparc_hash_rotated
-                            api_user_created api_user_updated api_user_deactivated],
+                            api_user_created api_user_updated api_user_deactivated
+                            user_deactivated_for_inactivity],
+    # #860 — entitlements the IdP conferred, refused or withdrew. Their own
+    # category because an assessor reading AC-2 wants to see them together:
+    # this is the record of the directory driving access.
+    "IdP Entitlements" => %w[idp_grant_applied idp_grant_revoked idp_grant_skipped
+                             idp_sync_failed],
     "Auth Boundary Admin" => %w[api_authorization_boundary_created
                                 api_authorization_boundary_updated
                                 api_authorization_boundary_deleted

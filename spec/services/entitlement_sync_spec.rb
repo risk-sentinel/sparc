@@ -125,8 +125,9 @@ RSpec.describe EntitlementSync do
       # The property that makes label-configured vocabularies work at all: the
       # grant is canonicalised and so is the configured entry.
       skip "this instance has no 'member' org role configured" if member_role.nil?
-      organization # lazy let — name it, or it is built AFTER the resolve and the
-                   # organization genuinely does not exist yet
+      # Lazy let: name it here, or it is built AFTER the resolve and the
+      # organization genuinely does not exist yet.
+      organization
 
       resolution = IdpGrantResolver.new.resolve(IdpGrant.parse("sparc:org:acme:member"))
 

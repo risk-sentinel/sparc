@@ -1,0 +1,25 @@
+<%= SparcConfig.app_name %> could not grant access that your identity provider asked for.
+
+In the last <%= @window_hours %> hours, <%= @total_users %> <%= "user".pluralize(@total_users) %> signed in carrying a grant that names something this instance does not have. They were signed in successfully and keep whatever access did resolve — nothing was created, because creating an organization or boundary from a claim would let the identity provider define the estate.
+
+<% @summary.each do |row| -%>
+--------------------------------------------------------------------------
+<%= row[:reason] %>
+  Affected users: <%= row[:affected_users] %>   Sign-ins: <%= row[:occurrences] %>
+  Example grant:  <%= row[:example_grant] %>
+<% end -%>
+--------------------------------------------------------------------------
+
+What to do:
+
+  * If the organization, boundary or role SHOULD exist, create it. The grant
+    resolves by itself at the user's next sign-in; there is nothing to clear.
+
+  * If it should not exist, the group is misnamed in your identity provider.
+    Correct it there.
+
+Full detail, including who was affected and when:
+
+  GET /api/v1/idp_grants/unmatched
+
+You are receiving this because you are an administrator of this instance.

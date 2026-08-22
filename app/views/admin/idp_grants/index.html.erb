@@ -1,0 +1,88 @@
+<% content_for :title, "IdP Grants" %>
+
+<div class="container-fluid py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <h1 class="h3 mb-1">Unmatched IdP Grants</h1>
+      <p class="text-body-secondary mb-0">
+        Access your identity provider asked for that this instance could not grant.
+      </p>
+    </div>
+
+    <%= form_with url: admin_idp_grants_path, method: :get, class: "d-flex align-items-center gap-2" do %>
+      <label for="days" class="form-label mb-0 text-nowrap">Last</label>
+      <%= select_tag :days,
+            options_for_select([ [ "7 days", 7 ], [ "30 days", 30 ], [ "90 days", 90 ], [ "1 year", 365 ] ], @window_days),
+            class: "form-select form-select-sm" %>
+      <%= submit_tag "Apply", class: "btn btn-outline-secondary btn-sm", name: nil %>
+    <% end %>
+  </div>
+
+  <% if @summary.empty? %>
+    <div class="alert alert-success d-flex align-items-center gap-2" role="status">
+      <i class="bi bi-check-circle" aria-hidden="true"></i>
+      <span>No grants were refused in the last <%= @window_days %> days.</span>
+    </div>
+  <% else %>
+    <div class="alert alert-warning" role="status">
+      Nothing here needs clearing. Create the organization, boundary or role a grant
+      names and it resolves by itself at that user's next sign-in. Nothing is ever
+      created automatically &mdash; that would let the identity provider define the estate.
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">By reason</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead>
+            <tr>
+              <th scope="col">Reason</th>
+              <th scope="col" class="text-end">Users affected</th>
+              <th scope="col" class="text-end">Sign-ins</th>
+              <th scope="col">Example grant</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @summary.each do |row| %>
+              <tr>
+                <td><%= row[:reason] %></td>
+                <td class="text-end"><span class="badge bg-warning"><%= row[:affected_users] %></span></td>
+                <td class="text-end text-body-secondary"><%= row[:occurrences] %></td>
+                <td><code class="small"><%= row[:example_grant] %></code></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header fw-semibold">
+        Recent refusals
+        <span class="text-body-secondary fw-normal">(most recent 200)</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead>
+            <tr>
+              <th scope="col">When</th>
+              <th scope="col">User</th>
+              <th scope="col">Grant</th>
+              <th scope="col">Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @events.each do |event| %>
+              <tr>
+                <td class="text-nowrap text-body-secondary small"><%= event.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+                <td><%= event.user&.email || "—" %></td>
+                <td><code class="small"><%= event.metadata["grant"] %></code></td>
+                <td class="small"><%= event.metadata["reason"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+</div>

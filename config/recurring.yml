@@ -26,6 +26,11 @@ production:
   user_inactivity_deactivation:
     class: DeactivateInactiveUsersJob
     schedule: every day at 3:30am
+  # #860 — daily digest of IdP grants that named something this instance does
+  # not have. No-op when SMTP is unconfigured or nothing was refused.
+  unmatched_grant_digest:
+    class: UnmatchedGrantDigestJob
+    schedule: every day at 7am
   # #466 — refresh AWS Labs CDEF catalog. Service is gated on
   # SPARC_AWS_LABS_CDEF_ENABLED so this is a no-op for tenants that haven't
   # opted in. ETag conditional fetch makes the unchanged-tree path near-free.

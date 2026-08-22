@@ -38,12 +38,8 @@ class Api::V1::IdpGrantsController < Api::V1::BaseController
   #   days  — how far back to look (default 30, max 365)
   #   user_id — narrow to one user
   def unmatched
-    events = AuditEvent.where(action: "idp_grant_skipped")
-                       .where(created_at: window.ago..)
-                       .order(created_at: :desc)
-    events = events.where(user_id: params[:user_id]) if params[:user_id].present?
-
-    result = paginate(events.includes(:user), items: 50)
+    query = UnmatchedGrantQuery.new(window: window, user_id: params[:user_id])
+    result = paginate(query.events.includes(:user), items: 50)
 
     render json: {
       data: result[:data].map { |event| serialize(event) },
@@ -51,7 +47,7 @@ class Api::V1::IdpGrantsController < Api::V1::BaseController
         window_days: window_days,
         # Grouped so an administrator sees "this boundary is missing and it is
         # costing four people access", not four separate incidents.
-        summary: summarize(events)
+        summary: query.summary
       )
     }
   end
@@ -78,19 +74,5 @@ class Api::V1::IdpGrantsController < Api::V1::BaseController
       organization: event.metadata["organization"],
       authorization_boundary: event.metadata["authorization_boundary"]
     }.compact
-  end
-
-  # Count DISTINCT users per reason: the same person signing in five times
-  # produces five events and one problem, and reporting five would misrepresent
-  # how widespread it is.
-  def summarize(events)
-    events.limit(1000).group_by { |e| e.metadata["reason"] }.map do |reason, group|
-      {
-        reason: reason,
-        occurrences: group.size,
-        affected_users: group.map(&:user_id).compact.uniq.size,
-        example_grant: group.first.metadata["grant"]
-      }
-    end.sort_by { |row| -row[:affected_users] }
   end
 end
