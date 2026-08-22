@@ -275,3 +275,90 @@ class TestDestroy:
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
         assert_error_envelope(anon_client.delete(f"{PATH}/anything"), expected_status=401)
+
+
+@pytest.mark.happy
+class TestApprovalStatusIsVisible:
+    """#1041 — `approval_status` is readable over the API.
+
+    Whether a document is awaiting sign-off is a DIFFERENT question from its
+    `lifecycle_status`, and it was exposed nowhere. The review queue lists
+    profiles sitting at `lifecycle_status: "in_progress"` with
+    `approval_status: "pending_review"`, so a client reading the API could not
+    tell a document under review from any other in-progress one.
+
+    That was not a cosmetic gap. `test_baseline_parameters.py` picked the first
+    non-published profile with tailorable parameters, which was the seeded
+    review-queue fixture, and editing it cleared the review state — emptying a
+    screen that a ui-smoke check in another suite asserts on. The fixture could
+    not avoid it, because the state it needed to see was invisible.
+    """
+
+    def test_the_index_reports_approval_status(self, admin_client: httpx.Client) -> None:
+        response = admin_client.get(PATH, params={"items": 25})
+
+        assert response.status_code == 200, response.text
+        rows = response.json()["data"]
+        assert rows, "no profiles on this instance"
+        # On the INDEX, not just the detail — the review queue is a list.
+        for row in rows:
+            assert "approval_status" in row, sorted(row)
+
+    def test_it_distinguishes_a_document_under_review(
+        self, admin_client: httpx.Client
+    ) -> None:
+        """The property the field exists for, asserted end to end.
+
+        A freshly created profile is not awaiting review; the same profile after
+        `submit_for_review` is. Reading `lifecycle_status` alone cannot tell
+        those apart.
+        """
+        suffix = uuid.uuid4().hex[:8]
+        # Built with a catalog and a selected control, because submit_for_review
+        # refuses a profile without them ("missing required content"). A bare
+        # profile would make this SKIP, and a skipped test proves nothing.
+        catalogs = admin_client.get("/api/v1/control_catalogs", params={"items": 50})
+        catalog = next(
+            (c for c in catalogs.json()["data"] if "800-53" in (c.get("name") or "")), None
+        )
+        assert catalog, "no NIST 800-53 catalog to base a submittable profile on"
+
+        created = admin_client.post(
+            PATH,
+            json={
+                "profile_document": {
+                    "name": f"phase2-approval-{suffix}",
+                    "control_catalog_id": catalog["id"],
+                    "baseline_level": "moderate",
+                }
+            },
+        )
+        assert created.status_code == 201, created.text
+        slug = created.json()["data"]["slug"]
+
+        try:
+            selected = admin_client.put(
+                f"{PATH}/{slug}/controls", json={"control_ids": ["ac-1"]}
+            )
+            assert selected.status_code == 200, selected.text
+
+            before = admin_client.get(f"{PATH}/{slug}").json()["data"]
+            assert before["approval_status"] != "pending_review", before
+
+            submitted = admin_client.post(f"{PATH}/{slug}/submit_for_review")
+            assert submitted.status_code == 200, (
+                f"could not submit for review, so the assertion below would not run: "
+                f"{submitted.status_code} {submitted.text[:200]}"
+            )
+
+            after = admin_client.get(f"{PATH}/{slug}").json()["data"]
+            assert after["approval_status"] == "pending_review", (
+                f"submit_for_review did not surface in approval_status: {after}"
+            )
+            # The distinction that matters: lifecycle_status did NOT move, which
+            # is exactly why it could not stand in for this.
+            assert after["lifecycle_status"] == before["lifecycle_status"], (
+                "lifecycle_status moved too, so this test is not showing what it claims"
+            )
+        finally:
+            admin_client.delete(f"{PATH}/{slug}")

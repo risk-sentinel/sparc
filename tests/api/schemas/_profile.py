@@ -23,6 +23,13 @@ class ProfileDocumentIndex(BaseModel):
     name: str
     status: str
     lifecycle_status: str
+    # #1041 — whether the document is awaiting sign-off. A different question
+    # from `lifecycle_status`: the review queue lists profiles sitting at
+    # `lifecycle_status: "in_progress"` with `approval_status: "pending_review"`,
+    # and until this was exposed no client could tell one from any other
+    # in-progress profile. Nullable — a document that has never been submitted
+    # carries no approval state.
+    approval_status: str | None = None
     file_type: str | None = None
     baseline_level: str | None = None
     oscal_version: str | None = None

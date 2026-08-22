@@ -160,7 +160,14 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
       name: profile.name,
       status: profile.status,
       lifecycle_status: profile.lifecycle_status,
-      # #627 — content-completeness is distinct from the parse `status`.
+      # #1041 — whether the document is awaiting sign-off, which is a DIFFERENT
+      # question from `lifecycle_status` and was readable nowhere over the API.
+      # A profile can sit at `lifecycle_status: "in_progress"` while its
+      # `approval_status` is "pending_review", which is exactly the state the
+      # review queue lists — so a client could not tell a document under review
+      # from any other in-progress one, and a test could not avoid editing one.
+      # On the index, not just the detail: the review queue is a LIST.
+      approval_status: profile.approval_status,
       content_complete: profile.content_complete?,
       content_completeness_gaps: profile.content_completeness_gaps,
       file_type: profile.file_type,

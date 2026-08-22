@@ -91,50 +91,74 @@ class TestShow:
         )
 
 
+# Controls that carry ODPs in the NIST catalog. Three is enough to guarantee
+# parameters exist without selecting a whole baseline.
+_CONTROLS_WITH_PARAMETERS = ["ac-1", "ac-2", "ac-2.1"]
+
+
 @pytest.fixture
 def tailorable_parameter(
     admin_client: httpx.Client,
-) -> Iterator[tuple[str, dict[str, Any]]] | None:
-    """A (profile_slug, parameter) pair on a profile that actually has ODPs.
+) -> Iterator[tuple[str, dict[str, Any]]]:
+    """A (profile_slug, parameter) pair on a profile THIS FIXTURE builds.
 
-    The module's own ``profile`` fixture creates an empty profile, which has no
-    parameters at all — nothing there can prove a parameter update persisted.
-    Parameters come from a profile's resolved catalog, so this finds a profile
-    that has some and restores whatever it changes.
+    #1041 — this used to scan the instance for a profile that already had
+    parameters and edit that. The first non-published match was the seeded
+    review-queue fixture, the one document the demo estate keeps at
+    `approval_status: "pending_review"`. Editing a document under review
+    correctly clears that state, so every run of this suite emptied the
+    `review_queue` screen and failed a ui-smoke check in a different suite.
+
+    The fixture restored the parameter VALUE it changed; it could not restore
+    the lifecycle side effect, and it had no way to even detect the problem —
+    `approval_status` was not exposed by the API until #1041 added it.
+
+    Borrowing was never necessary. A profile with a catalog and a few
+    parameter-carrying controls selected has thousands of ODPs, and building one
+    costs two requests. The module docstring already set this standard: "Tests
+    create their own profile parent so they don't depend on seed-data."
     """
-    listing = admin_client.get(PROFILES_PATH, params={"items": 100})
-    assert listing.status_code == 200, listing.text
+    suffix = uuid.uuid4().hex[:8]
+    catalogs = admin_client.get("/api/v1/control_catalogs", params={"items": 50})
+    assert catalogs.status_code == 200, catalogs.text
+    catalog = next(
+        (c for c in catalogs.json()["data"] if "800-53" in (c.get("name") or "")), None
+    )
+    assert catalog, "no NIST 800-53 catalog on this instance to source parameters from"
 
-    for item in listing.json().get("data", []):
-        slug = item.get("slug")
-        if not slug:
-            continue
-        # #1008 — a published profile is read-only, so it cannot demonstrate
-        # that an update persists. Skipping it here is the product rule, not a
-        # convenience: the refusal itself is asserted below.
-        if item.get("lifecycle_status") == "published":
-            continue
+    created = admin_client.post(
+        PROFILES_PATH,
+        json={
+            "profile_document": {
+                "name": f"phase2-tailorable-{suffix}",
+                "control_catalog_id": catalog["id"],
+                "baseline_level": "moderate",
+            }
+        },
+    )
+    assert created.status_code == 201, created.text
+    slug = created.json()["data"]["slug"]
+
+    try:
+        selected = admin_client.put(
+            f"{PROFILES_PATH}/{slug}/controls", json={"control_ids": _CONTROLS_WITH_PARAMETERS}
+        )
+        assert selected.status_code == 200, selected.text
+
         response = admin_client.get(_path(slug))
-        if response.status_code != 200:
-            continue
+        assert response.status_code == 200, response.text
         parameters = response.json().get("data", {}).get("parameters") or []
-        if parameters:
-            original = parameters[0]
-            yield slug, original
-            admin_client.put(
-                _path(slug),
-                json={
-                    "parameters": [
-                        {
-                            "param_id": original["param_id"],
-                            "value": original.get("current_value"),
-                        }
-                    ]
-                },
-            )
-            return
+        # A hard failure rather than a skip: the controls above are chosen
+        # BECAUSE they carry ODPs, so none coming back means the catalog or the
+        # selection broke, not that this deployment happens to lack them.
+        assert parameters, (
+            f"{_CONTROLS_WITH_PARAMETERS} selected from {catalog['name'][:40]!r} "
+            "exposed no tailorable parameters"
+        )
 
-    pytest.skip("no profile on this instance exposes any tailorable parameters")
+        yield slug, parameters[0]
+    finally:
+        admin_client.delete(f"{PROFILES_PATH}/{slug}")
 
 
 class TestUpdate:
