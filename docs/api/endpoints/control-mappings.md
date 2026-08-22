@@ -32,6 +32,10 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | `POST` | `/api/v1/control_mappings` | Create a new mapping (admin) |
 | `PUT` | `/api/v1/control_mappings/:id` | Update a mapping (admin) |
 | `DELETE` | `/api/v1/control_mappings/:id` | Delete a mapping (admin) |
+| `GET` | `/api/v1/control_mappings/:control_mapping_id/entries` | List the mapping's entries; `meta.unresolved` counts those whose identifiers no longer resolve |
+| `POST` | `/api/v1/control_mappings/:control_mapping_id/entries` | Add a control-to-control relationship (`mappings.write`) |
+| `PATCH`/`PUT` | `/api/v1/control_mappings/:control_mapping_id/entries/:id` | Correct an entry (`mappings.write`) |
+| `DELETE` | `/api/v1/control_mappings/:control_mapping_id/entries/:id` | Remove an entry (`mappings.write`) |
 
 ---
 
@@ -320,3 +324,43 @@ curl -X DELETE "https://sparc.example.com/api/v1/control_mappings/1" \
 | `404` | `Not Found` | Mapping does not exist |
 | `422` | `Unprocessable Entity` | Validation failed -- missing required fields or invalid catalog IDs |
 | `500` | `Internal Server Error` | Unexpected server error -- contact your administrator |
+
+---
+
+## Mapping entries (#945)
+
+The mapping SHELL had a full API; its entries had none, so the only way to add
+or remove a control-to-control relationship was the web form — and that form has
+no update, so an entry could be created and deleted but never corrected.
+
+```
+GET    /api/v1/control_mappings/:control_mapping_id/entries
+POST   /api/v1/control_mappings/:control_mapping_id/entries
+PATCH  /api/v1/control_mappings/:control_mapping_id/entries/:id
+DELETE /api/v1/control_mappings/:control_mapping_id/entries/:id
+```
+
+Writes require `mappings.write` (admins bypass). **Authorization is checked
+before the mapping is looked up**, so a caller without permission gets `403`
+rather than a `404` that would reveal whether the mapping exists.
+
+### Entry fields
+
+| Field | Notes |
+|---|---|
+| `source_control_id` / `target_control_id` | validated on the model against the mapping's own source and target catalogs |
+| `source_type` / `target_type` | the vocabulary each identifier belongs to |
+| `relationship` | how the two controls relate |
+| `matching_rationale` | why the relationship was drawn |
+| `remarks` | free text |
+| `row_order` | ordering within the mapping |
+
+Unrecognized fields are refused with `422` rather than dropped.
+
+### Reading entries
+
+The list carries `meta.unresolved` — the number of entries whose identifiers no
+longer resolve against the catalogs. Each entry also reports `resolved`
+individually. SPARC does **not** rewrite an identifier someone recorded; it
+reports that it no longer resolves, so an integrator can find entries stored
+before the identifiers were validated and correct them deliberately.

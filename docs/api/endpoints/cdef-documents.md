@@ -49,6 +49,7 @@ it previously received `201`/`200`.
 | `POST` | `/api/v1/cdef_documents/:id/submit_for_review` | Submit a CDEF for review |
 | `POST` | `/api/v1/cdef_documents/:id/approve` | Approve a CDEF under review |
 | `POST` | `/api/v1/cdef_documents/:id/reject` | Reject a CDEF under review |
+| `PATCH` | `/api/v1/cdef_documents/:id/scope` | Pin the CDEF to one authorization boundary, or return it to global |
 
 ---
 

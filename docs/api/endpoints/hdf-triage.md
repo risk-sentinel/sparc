@@ -25,6 +25,40 @@ requires admin or the `amendment.approve` permission. Instance admins bypass. Th
 `:authorization_boundary_id` segment accepts a numeric id or slug;
 finding/disposition segments use the finding **uuid**.
 
+## Endpoints
+
+Every route this page describes. The sections below give the payloads and the
+behaviour; this table is the index.
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs` | Ingest an HDF results document (multipart `file` or raw JSON body) |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs` | List a boundary's scan runs, most recent first |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs/:id` | One run by uuid, with the provenance the list omits (source filename, digest, who ingested it) |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/scanner_findings` | List findings, filterable by `status` and `severity` (severity is case-insensitive) |
+| `GET` | `/api/v1/scanner_findings/:id` | One finding by uuid, including its `raw_hdf` and current disposition |
+| `GET` | `/api/v1/scanner_findings/:scanner_finding_id/disposition` | The finding's disposition; `404` when it has none |
+| `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition` | Set or replace the disposition. Editing one RESETS its approval to `draft` |
+| `DELETE` | `/api/v1/scanner_findings/:scanner_finding_id/disposition` | Clear the disposition |
+| `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition/approve` | Approve the amendment. A non-admin cannot approve one they decided |
+| `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition/reject` | Reject the amendment |
+| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/aggregate` | Roll findings and dispositions into the boundary's SSP / SAP / SAR / POA&M. `?async=true` enqueues instead and returns `202` |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments` | Export the Amendments document for `hdf amend apply`. `?verify=false` skips validation |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package` | Download the signed package: amendments + findings + dispositions |
+| `GET` | `/api/v1/admin/remediation_timelines` | The remediation SLA table (admin) |
+| `PUT` | `/api/v1/admin/remediation_timelines` | Upsert one SLA row, keyed on baseline level x criticality (admin) |
+
+## Read a disposition
+
+```
+GET /api/v1/scanner_findings/:uuid/disposition
+```
+
+Returns the current disposition, or `404` with `{"error": "Not found"}` when the
+finding has none. The finding's own read (`GET /api/v1/scanner_findings/:uuid`)
+also carries `disposition_kind` and `disposition_approval`, which is what the
+triage screens and the amended-HDF export consume.
+
 ## Ingest a scan
 
 ```

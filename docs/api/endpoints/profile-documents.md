@@ -16,6 +16,7 @@ Profile documents represent security baselines and resolved control profiles der
 | `POST` | `/api/v1/profile_documents/:id/submit_for_review` | Submit a profile for review | Admin or `profiles.write` |
 | `POST` | `/api/v1/profile_documents/:id/approve` | Approve a profile under review | Admin or reviewer |
 | `POST` | `/api/v1/profile_documents/:id/reject` | Reject a profile under review | Admin or reviewer |
+| `PUT` | `/api/v1/profile_documents/:id/controls` | Replace the profile's selected control set | Admin or `profiles.write` |
 
 ---
 

@@ -33,6 +33,7 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | `PUT` | `/api/v1/authorization_boundaries/:id` | Update a boundary |
 | `DELETE` | `/api/v1/authorization_boundaries/:id` | Delete a boundary |
 | `DELETE` | `/api/v1/authorization_boundaries/bulk` | Bulk-delete boundaries (admin-only) |
+| `PATCH` | `/api/v1/authorization_boundaries/:id/organization` | Assign the boundary to an organization, or clear it with `organization_id: null` |
 
 ---
 

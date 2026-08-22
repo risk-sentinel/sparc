@@ -24,6 +24,8 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 |--------|------|-------------|
 | `GET` | `/api/v1/artifacts/:uuid` | Resolve an artifact's stable UUID to its current content + signed URL |
 | `GET` | `/api/v1/artifacts/versions/:uuid` | Resolve a specific retained content version by its version UUID |
+| `GET` | `/api/v1/artifacts/:uuid/versions` | List every retained content version of one artifact |
+| `GET` | `/api/v1/artifacts/:uuid/freshness` | When it was last reviewed, and whether that is now overdue |
 
 ---
 
