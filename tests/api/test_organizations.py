@@ -5,6 +5,9 @@ see what. Before #1012 creating one, assigning a boundary and managing
 membership were browser-only — found by the missing-endpoint axis of #995.
 """
 
+# api-inventory: covers organizations#add_member
+# api-inventory: covers organizations#remove_member
+
 from __future__ import annotations
 
 import uuid

@@ -23,7 +23,7 @@ that had been wrong since 2026-07-18 (#995).
 - **Code:** **285 logical endpoints** across 55 controller groups (PATCH+PUT aliases collapsed) — 108 GET, 100 POST, 40 DELETE, 35 PUT, 33 PATCH
 - **Documentation:** **242 / 285** endpoints are listed in an `endpoints/*.md` page's own Endpoints table (**85%**); 24 more are mentioned only in prose
 - **Postman collection:** **279 / 285** endpoints covered (**98%**)
-- **Pytest suite:** **262 / 285** endpoints map to a `tests/api/test_*.py` module (**92%**)
+- **Pytest suite:** **268 / 285** endpoints map to a `tests/api/test_*.py` module (**94%**)
 
 > **The pytest column counts module presence, not verification.** For generic CRUD
 > actions it means only that a module for the controller exists; for the rest it means
@@ -126,12 +126,10 @@ working from the tables will not find them.
 | `POST` | `/api/v1/ssp_documents/:id/fields/import/preview` | [`field-import.md`](endpoints/field-import.md) |
 | `POST` | `/api/v1/users/:id/password_reset` | [`users.md`](endpoints/users.md) |
 
-### No pytest module — 23 endpoints across 15 controllers
+### No pytest module — 17 endpoints across 13 controllers
 
 | Controller | Endpoints | Module looked for |
 |---|---|---|
-| `cdef_coverage` | 3 | `tests/api/test_cdef_coverage.py` |
-| `organizations` | 3 | `tests/api/test_organizations.py` |
 | `scan_runs` | 3 | `tests/api/test_scan_runs.py` |
 | `admin/remediation_timelines` | 2 | `tests/api/test_admin_remediation_timelines.py` |
 | `control_lookups` | 2 | `tests/api/test_control_lookups.py` |
@@ -142,8 +140,8 @@ working from the tables will not find them.
 | `cdef_documents` | 1 | `tests/api/test_cdef_documents.py` |
 | `hdf_amendments` | 1 | `tests/api/test_hdf_amendments.py` |
 | `hdf_packages` | 1 | `tests/api/test_hdf_packages.py` |
+| `organizations` | 1 | `tests/api/test_organizations.py` |
 | `poam_documents` | 1 | `tests/api/test_poam_documents.py` |
-| `profile_documents` | 1 | `tests/api/test_profile_documents.py` |
 | `users` | 1 | `tests/api/test_users.py` |
 
 ### Not in the Postman collection — 6 endpoints
@@ -275,9 +273,9 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `PATCH/PUT` | `/api/v1/control_catalogs/:control_catalog_id/controls/:id` | `catalog_controls#update` | [`catalog-controls.md`](endpoints/catalog-controls.md) | yes | yes |
 | `POST` | `/api/v1/cdef_coverage/analyze` | `cdef_coverage#analyze` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | yes |
 | `GET` | `/api/v1/cdef_coverage/runs` | `cdef_coverage#runs` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | yes |
-| `POST` | `/api/v1/cdef_coverage/runs` | `cdef_coverage#create_run` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | **MISSING** |
-| `DELETE` | `/api/v1/cdef_coverage/runs/:id` | `cdef_coverage#destroy_run` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | **MISSING** |
-| `GET` | `/api/v1/cdef_coverage/runs/:id` | `cdef_coverage#show_run` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | **MISSING** |
+| `POST` | `/api/v1/cdef_coverage/runs` | `cdef_coverage#create_run` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | yes |
+| `DELETE` | `/api/v1/cdef_coverage/runs/:id` | `cdef_coverage#destroy_run` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | yes |
+| `GET` | `/api/v1/cdef_coverage/runs/:id` | `cdef_coverage#show_run` | prose only — [`cdef-coverage.md`](endpoints/cdef-coverage.md) | yes | yes |
 | `GET` | `/api/v1/cdef_documents` | `cdef_documents#index` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `POST` | `/api/v1/cdef_documents` | `cdef_documents#create` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
 | `DELETE` | `/api/v1/cdef_documents/:id` | `cdef_documents#destroy` | [`cdef-documents.md`](endpoints/cdef-documents.md) | yes | yes |
@@ -377,8 +375,8 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/organizations/:id/boundaries` | `organizations#assign_boundary` | [`organizations.md`](endpoints/organizations.md) | yes | **MISSING** |
 | `POST` | `/api/v1/organizations/:id/deactivate` | `organizations#deactivate` | [`organizations.md`](endpoints/organizations.md) | yes | yes |
 | `GET` | `/api/v1/organizations/:id/members` | `organizations#members` | [`organizations.md`](endpoints/organizations.md) | yes | yes |
-| `POST` | `/api/v1/organizations/:id/members` | `organizations#add_member` | [`organizations.md`](endpoints/organizations.md) | yes | **MISSING** |
-| `DELETE` | `/api/v1/organizations/:id/members/:membership_id` | `organizations#remove_member` | [`organizations.md`](endpoints/organizations.md) | yes | **MISSING** |
+| `POST` | `/api/v1/organizations/:id/members` | `organizations#add_member` | [`organizations.md`](endpoints/organizations.md) | yes | yes |
+| `DELETE` | `/api/v1/organizations/:id/members/:membership_id` | `organizations#remove_member` | [`organizations.md`](endpoints/organizations.md) | yes | yes |
 | `POST` | `/api/v1/organizations/:id/reactivate` | `organizations#reactivate` | [`organizations.md`](endpoints/organizations.md) | yes | yes |
 | `GET` | `/api/v1/poam_documents` | `poam_documents#index` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
 | `POST` | `/api/v1/poam_documents` | `poam_documents#create` | [`poam-documents.md`](endpoints/poam-documents.md) | yes | yes |
@@ -429,7 +427,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `PATCH/PUT` | `/api/v1/profile_documents/:id` | `profile_documents#update` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `POST` | `/api/v1/profile_documents/:id/approve` | `profile_documents#approve` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `GET` | `/api/v1/profile_documents/:id/baseline_review` | `profile_documents#baseline_review` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
-| `PUT` | `/api/v1/profile_documents/:id/controls` | `profile_documents#update_controls` | **MISSING** | yes | **MISSING** |
+| `PUT` | `/api/v1/profile_documents/:id/controls` | `profile_documents#update_controls` | **MISSING** | yes | yes |
 | `POST` | `/api/v1/profile_documents/:id/reject` | `profile_documents#reject` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `POST` | `/api/v1/profile_documents/:id/submit_for_review` | `profile_documents#submit_for_review` | [`profile-documents.md`](endpoints/profile-documents.md) | yes | yes |
 | `POST` | `/api/v1/profile_documents/import` | `profile_documents#import` | [`profile-documents.md`](endpoints/profile-documents.md) | **MISSING** | yes |

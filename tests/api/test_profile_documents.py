@@ -12,6 +12,7 @@ test_baseline_parameters.py.
 # URL path rather than by action name, so the inventory's string match
 # cannot see them.
 # api-inventory: covers profile_documents#import
+# api-inventory: covers profile_documents#update_controls
 
 from __future__ import annotations
 
