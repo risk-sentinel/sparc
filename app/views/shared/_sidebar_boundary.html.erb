@@ -19,15 +19,36 @@
   material that had no per-boundary entry point at all, only the unscoped list.
 %>
 <div class="sparc-sidebar-boundary">
-  <button class="sparc-sidebar-toggle sparc-sidebar-indent-2"
+  <%#
+    The flex row wraps ONLY the chevron and the name. It must not wrap the
+    collapse panel below: with the panel inside it, the seven document leaves
+    became a third flex item and squeezed the name to one character per line —
+    invisible while the panel was collapsed, which is exactly when it was first
+    measured.
+  %>
+  <div class="sparc-sidebar-boundary-row">
+  <%#
+    Two controls, not one. The chevron expands the boundary's documents; the
+    NAME navigates to the boundary itself. Before this the whole row was a
+    collapse toggle, so the boundary — the record every one of those documents
+    hangs off — was the one thing in the tree you could not open.
+
+    `to_param` is the slug, so this resolves to
+    /authorization_boundaries/<slug> rather than a numeric id.
+  %>
+  <button class="sparc-sidebar-toggle sparc-sidebar-indent-2 sparc-sidebar-boundary-toggle"
           data-bs-toggle="collapse"
           data-bs-target="#sidebarAb<%= ab.id %>"
-          aria-expanded="false">
+          aria-expanded="false"
+          aria-label="Show documents for <%= ab.name %>">
     <span class="badge rounded-pill sparc-status--<%= ab_status_variant(ab.status) %>" style="font-size: 0.55rem; vertical-align: middle;">
       <%= ab.status&.upcase %>
     </span>
-    <%= ab.name %>
   </button>
+    <%= link_to ab.name, authorization_boundary_path(ab),
+                class: "sparc-sidebar-boundary-link",
+                title: ab.name %>
+  </div>
   <div class="collapse" id="sidebarAb<%= ab.id %>">
     <ul class="sparc-sidebar-leaves">
       <li>

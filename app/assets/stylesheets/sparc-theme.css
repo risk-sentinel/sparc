@@ -2301,6 +2301,36 @@ a.link-purple { color: var(--sparc-purple); }
   flex-shrink: 0;
 }
 
+/* #951 — a boundary row is a chevron plus a link, not one big toggle.
+   The name navigates to the boundary; the toggle only expands its documents. */
+.sparc-sidebar-boundary-row {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.sparc-sidebar-boundary-toggle {
+  flex: 0 0 auto;
+  width: auto;
+  padding-right: 0.25rem;
+}
+
+.sparc-sidebar-boundary-link {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--sparc-text);
+  text-decoration: none;
+  font-size: 1.05rem;
+  padding: 0.3rem 0.4rem 0.3rem 0;
+  overflow-wrap: anywhere;
+}
+
+.sparc-sidebar-boundary-link:hover,
+.sparc-sidebar-boundary-link:focus-visible {
+  color: var(--sparc-accent, #4da3ff);
+  text-decoration: underline;
+}
+
 .sparc-sidebar-leaves {
   list-style: none;
   margin: 0;

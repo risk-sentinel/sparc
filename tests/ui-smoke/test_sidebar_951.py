@@ -178,3 +178,80 @@ def test_the_sidebar_stays_bounded_across_breakpoints(authed_page, width, height
         f"{width}x{height}: sidebar is {measured['clientH']}px in a "
         f"{measured['viewportH']}px viewport, so the page scrolls instead of the pane"
     )
+
+
+def test_the_boundary_name_is_a_link_to_the_boundary(authed_page):
+    """The name navigates; the chevron only expands.
+
+    Before this the whole row was a collapse toggle, so the boundary — the
+    record every one of those documents hangs off — was the one thing in the
+    tree you could not open.
+    """
+    sidebar = _sidebar(authed_page)
+    toggles = sidebar.locator(
+        "button[data-bs-target^='#sidebarOrg']"
+        ":not([data-bs-target='#sidebarOrgs'])"
+        ":not([data-bs-target*='More'])"
+    )
+
+    panel_id = None
+    for i in range(toggles.count()):
+        target = toggles.nth(i).get_attribute("data-bs-target")
+        if authed_page.locator(f"{target} .sparc-sidebar-boundary-link").count():
+            toggles.nth(i).click()
+            panel_id = target
+            break
+    if panel_id is None:
+        pytest.skip("no organization on this instance has a boundary")
+
+    link = authed_page.locator(f"{panel_id} .sparc-sidebar-boundary-link").first
+    link.wait_for(state="visible")
+    href = link.get_attribute("href")
+
+    assert href.startswith("/authorization_boundaries/"), href
+    # Addressed by slug, not id — `to_param` is the slug, and a numeric URL
+    # would be a different (and less readable) contract.
+    assert not href.rstrip("/").split("/")[-1].isdigit(), f"numeric id, expected slug: {href}"
+
+    with authed_page.expect_navigation():
+        link.click()
+    assert "/authorization_boundaries/" in authed_page.url, authed_page.url
+    assert_no_csp_violations(authed_page, during="clicking a boundary name")
+
+
+def test_the_name_stays_readable_while_the_documents_are_expanded(authed_page):
+    """Regression: the flex row must wrap ONLY the chevron and the name.
+
+    With the collapse panel inside the row, the seven document leaves became a
+    third flex item and squeezed the name to one character per line — a tall
+    vertical column of letters. It was invisible while the panel was collapsed,
+    which is the state the layout was first measured in, so the check has to
+    open the panel before it measures.
+    """
+    sidebar = _sidebar(authed_page)
+    toggles = sidebar.locator(
+        "button[data-bs-target^='#sidebarOrg']"
+        ":not([data-bs-target='#sidebarOrgs'])"
+        ":not([data-bs-target*='More'])"
+    )
+
+    panel_id = None
+    for i in range(toggles.count()):
+        target = toggles.nth(i).get_attribute("data-bs-target")
+        if authed_page.locator(f"{target} .sparc-sidebar-boundary-toggle").count():
+            toggles.nth(i).click()
+            panel_id = target
+            break
+    if panel_id is None:
+        pytest.skip("no organization on this instance has a boundary")
+
+    chevron = authed_page.locator(f"{panel_id} .sparc-sidebar-boundary-toggle").first
+    chevron.wait_for(state="visible")
+    documents = chevron.get_attribute("data-bs-target")
+    chevron.click()
+    authed_page.locator(f"{documents} .sparc-sidebar-leaf").first.wait_for(state="visible")
+
+    box = authed_page.locator(f"{panel_id} .sparc-sidebar-boundary-link").first.bounding_box()
+
+    assert box["width"] > 120, f"the name column collapsed while expanded: {box}"
+    assert box["height"] < 120, f"the name is wrapping per character: {box}"
