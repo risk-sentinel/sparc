@@ -79,6 +79,13 @@ class TestCrudContract(CrudContract):
     PATH = PATH
     PARAM_KEY = "user"
     IDENTIFIER = "id"
+    # `users#index` orders by email and this instance holds 1300+ of them, so a
+    # freshly created `phase2-contract-<hex>@example.com` lands on page 1 only
+    # when its address happens to sort early. Paging to it is a coin toss, which
+    # is why the index check failed intermittently rather than never. Search for
+    # it instead, exactly as `_crud_contract.py` says to.
+    INDEX_SEARCH_PARAM = "email"
+    INDEX_SEARCH_FIELD = "email"
     DESTROY_IS_SOFT_BECAUSE = (
         "users#destroy deactivates rather than deletes, so the account stays "
         "attached to the audit events it is the actor on"
