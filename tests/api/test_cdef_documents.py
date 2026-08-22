@@ -174,17 +174,14 @@ class TestAmbiguousControlAddressing:
             )
 
     @pytest.mark.validation
-    def test_confirm_writes_nothing_for_an_ambiguous_key(
-        self, admin_client, duplicated
-    ) -> None:
+    def test_confirm_writes_nothing_for_an_ambiguous_key(self, admin_client, duplicated) -> None:
         slug = duplicated["slug"]
 
         def notes_by_uuid():
             body = admin_client.get(f"{PATH}/{slug}/export").json()
             return {
                 c["uuid"]: next(
-                    (f["field_value"] for f in c.get("fields") or []
-                     if f["field_name"] == "notes"),
+                    (f["field_value"] for f in c.get("fields") or [] if f["field_name"] == "notes"),
                     None,
                 )
                 for c in body.get("controls") or []
@@ -192,7 +189,10 @@ class TestAmbiguousControlAddressing:
 
         before = notes_by_uuid()
         response = self._import(
-            admin_client, slug, duplicated["control_id"], "confirm",
+            admin_client,
+            slug,
+            duplicated["control_id"],
+            "confirm",
             value=f"must-not-be-written-{uuid.uuid4().hex[:8]}",
         )
 
@@ -266,9 +266,7 @@ class TestBrowse:
     @pytest.mark.happy
     def test_facets_are_echoed_back(self, admin_client: httpx.Client) -> None:
         """A paginating consumer can tell what produced the result set."""
-        response = admin_client.get(
-            PATH, params={"partition": "aws-us-gov", "capability": "MFA"}
-        )
+        response = admin_client.get(PATH, params={"partition": "aws-us-gov", "capability": "MFA"})
         assert response.status_code == 200, response.text
         assert response.json()["meta"]["facets"] == {
             "partition": "aws-us-gov",
@@ -302,9 +300,7 @@ class TestBrowse:
         # to keep its own aws-us-gov -> "AWS GovCloud" table.
         assert components["partitions"] == []
 
-    def test_component_details_are_detail_only(
-        self, admin_client: httpx.Client, cdef_doc
-    ) -> None:
+    def test_component_details_are_detail_only(self, admin_client: httpx.Client, cdef_doc) -> None:
         """On a list this would be a row multiplier for no benefit."""
         index_row = next(
             d
@@ -420,9 +416,7 @@ class TestBulkApplyConverter:
     def test_confirm_non_admin_forbidden(
         self, user_client: httpx.Client, cdef_doc: dict[str, Any]
     ) -> None:
-        resp = user_client.post(
-            f"{PATH}/{cdef_doc['slug']}/bulk_apply_converter/confirm", json={}
-        )
+        resp = user_client.post(f"{PATH}/{cdef_doc['slug']}/bulk_apply_converter/confirm", json={})
         assert resp.status_code in (401, 403), resp.text
 
     @pytest.mark.auth
@@ -430,9 +424,7 @@ class TestBulkApplyConverter:
         self, anon_client: httpx.Client, cdef_doc: dict[str, Any]
     ) -> None:
         assert_error_envelope(
-            anon_client.post(
-                f"{PATH}/{cdef_doc['slug']}/bulk_apply_converter/preview", json={}
-            ),
+            anon_client.post(f"{PATH}/{cdef_doc['slug']}/bulk_apply_converter/preview", json={}),
             expected_status=401,
         )
 
@@ -451,9 +443,7 @@ class TestCreate:
         Catches persistence drops and show-serializer omissions that the
         index/show schema validation alone can't surface.
         """
-        assert_create_round_trip(
-            admin_client, PATH, _new_payload(), PARAM_KEY, CdefDocumentShow
-        )
+        assert_create_round_trip(admin_client, PATH, _new_payload(), PARAM_KEY, CdefDocumentShow)
 
     @pytest.mark.happy
     def test_create_round_trip_rich_payload(self, admin_client: httpx.Client) -> None:
@@ -475,15 +465,11 @@ class TestCreate:
                 "benchmark_id": f"BENCH-{suffix}",
             },
         )
-        assert_create_round_trip(
-            admin_client, PATH, payload, PARAM_KEY, CdefDocumentShow
-        )
+        assert_create_round_trip(admin_client, PATH, payload, PARAM_KEY, CdefDocumentShow)
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
-        assert_error_envelope(
-            anon_client.post(PATH, json=_new_payload()), expected_status=401
-        )
+        assert_error_envelope(anon_client.post(PATH, json=_new_payload()), expected_status=401)
 
     @pytest.mark.authz
     def test_non_admin_without_cdef_write_cannot_create(
@@ -548,9 +534,7 @@ class TestUpdate:
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
-        assert_error_envelope(
-            anon_client.put(f"{PATH}/anything", json={}), expected_status=401
-        )
+        assert_error_envelope(anon_client.put(f"{PATH}/anything", json={}), expected_status=401)
 
 
 class TestDestroy:
@@ -564,3 +548,145 @@ class TestDestroy:
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
         assert_error_envelope(anon_client.delete(f"{PATH}/anything"), expected_status=401)
+
+
+# api-inventory: covers cdef_documents#update_scope
+class TestUpdateScope:
+    """`PATCH /cdef_documents/:slug/scope` — global, or pinned to one boundary.
+
+    Every assertion here confirms the change through an INDEPENDENT read rather
+    than the write's own body. That was impossible until #1038: the scope was
+    not exposed anywhere in the API — not on the write, not on `show`, and the
+    index ignores a `scope` parameter — so the only way to see it was a Rails
+    console. Getting it wrong silently widens what every other boundary's
+    composition includes, which is why it is worth reading back.
+    """
+
+    @pytest.fixture
+    def scoped_cdef(self, admin_client: httpx.Client):
+        suffix = uuid.uuid4().hex[:8]
+        created = admin_client.post(
+            "/api/v1/cdef_documents",
+            json={"cdef_document": {"name": f"phase2-scope-{suffix}"}},
+        )
+        assert created.status_code == 201, created.text
+        cdef = created.json()["data"]
+
+        boundary = admin_client.post(
+            "/api/v1/authorization_boundaries",
+            json={
+                "authorization_boundary": {
+                    "name": f"phase2-scope-bnd-{suffix}",
+                    "description": "#995 CDEF scope sweep",
+                }
+            },
+        )
+        assert boundary.status_code in (200, 201), boundary.text
+        try:
+            yield {"cdef": cdef, "boundary": boundary.json()["data"]}
+        finally:
+            admin_client.delete(f"/api/v1/cdef_documents/{cdef['slug']}")
+            admin_client.delete(f"/api/v1/authorization_boundaries/{boundary.json()['data']['id']}")
+
+    def _read_scope(self, admin_client: httpx.Client, slug: str) -> dict[str, Any]:
+        response = admin_client.get(f"/api/v1/cdef_documents/{slug}")
+        assert response.status_code == 200, response.text
+        return response.json()["data"]
+
+    @pytest.mark.happy
+    def test_pinning_to_a_boundary_is_confirmed_by_an_independent_read(
+        self, admin_client: httpx.Client, scoped_cdef
+    ) -> None:
+        slug = scoped_cdef["cdef"]["slug"]
+        boundary_id = scoped_cdef["boundary"]["id"]
+
+        written = admin_client.patch(
+            f"/api/v1/cdef_documents/{slug}/scope",
+            json={"scope": "boundary", "authorization_boundary_id": boundary_id},
+        )
+        assert written.status_code == 200, written.text
+
+        data = self._read_scope(admin_client, slug)
+        assert data["scope"] == "boundary", data
+        assert data["authorization_boundary_id"] == boundary_id, data
+        assert data["globally_available"] is False, (
+            "a boundary-pinned CDEF is still offered to every other boundary"
+        )
+
+    @pytest.mark.happy
+    def test_returning_to_global_is_confirmed_by_an_independent_read(
+        self, admin_client: httpx.Client, scoped_cdef
+    ) -> None:
+        """Both directions. Only asserting the pin would pass against a service
+        that pinned and could never unpin."""
+        slug = scoped_cdef["cdef"]["slug"]
+        admin_client.patch(
+            f"/api/v1/cdef_documents/{slug}/scope",
+            json={"scope": "boundary", "authorization_boundary_id": scoped_cdef["boundary"]["id"]},
+        )
+
+        written = admin_client.patch(
+            f"/api/v1/cdef_documents/{slug}/scope", json={"scope": "global"}
+        )
+        assert written.status_code == 200, written.text
+
+        data = self._read_scope(admin_client, slug)
+        assert data["scope"] == "global", data
+        assert data["authorization_boundary_id"] is None, (
+            "the CDEF is global but still records a boundary"
+        )
+        assert data["globally_available"] is True, data
+
+    @pytest.mark.validation
+    def test_an_unknown_scope_is_refused_by_name(
+        self, admin_client: httpx.Client, scoped_cdef
+    ) -> None:
+        response = admin_client.patch(
+            f"/api/v1/cdef_documents/{scoped_cdef['cdef']['slug']}/scope",
+            json={"scope": "nonsense"},
+        )
+
+        assert response.status_code == 422, response.text
+        assert "nonsense" in response.json()["error"], response.text
+
+    @pytest.mark.validation
+    def test_boundary_scope_without_a_boundary_is_refused(
+        self, admin_client: httpx.Client, scoped_cdef
+    ) -> None:
+        """`CdefScopeService` raises rather than half-applying: a
+        boundary-scoped CDEF with no boundary would be visible to nobody."""
+        response = admin_client.patch(
+            f"/api/v1/cdef_documents/{scoped_cdef['cdef']['slug']}/scope",
+            json={"scope": "boundary"},
+        )
+
+        assert response.status_code == 422, response.text
+        assert self._read_scope(admin_client, scoped_cdef["cdef"]["slug"])["scope"] == "global", (
+            "a refused scope change was applied anyway"
+        )
+
+    @pytest.mark.authz
+    def test_a_non_admin_without_cdef_write_is_refused(
+        self, admin_client: httpx.Client, user_client: httpx.Client, scoped_cdef
+    ) -> None:
+        """#1032 gated CDEF writes behind `cdef.write`; scope is a write."""
+        slug = scoped_cdef["cdef"]["slug"]
+
+        response = user_client.patch(
+            f"/api/v1/cdef_documents/{slug}/scope",
+            json={"scope": "boundary", "authorization_boundary_id": scoped_cdef["boundary"]["id"]},
+        )
+
+        assert response.status_code == 403, response.text
+        assert self._read_scope(admin_client, slug)["scope"] == "global", (
+            "a refused caller changed the scope anyway"
+        )
+
+    @pytest.mark.auth
+    def test_an_anonymous_caller_is_refused(self, anon_client: httpx.Client, scoped_cdef) -> None:
+        response = anon_client.patch(
+            f"/api/v1/cdef_documents/{scoped_cdef['cdef']['slug']}/scope",
+            json={"scope": "global"},
+        )
+
+        assert response.status_code == 401, response.text

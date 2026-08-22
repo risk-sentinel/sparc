@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -145,5 +145,13 @@ class CdefDocumentShow(CdefDocumentIndex):
     control_implementation_source: str | None = None
     control_implementation_description: str | None = None
     oscal_metadata: dict = Field(default_factory=dict)
+    # #1038 — the scope, added so `update_scope` can be confirmed by a read.
+    # Nothing in the API exposed whether a component definition was global or
+    # pinned to one boundary, so the write could only be checked by its own 200.
+    # `scope` is derived: "boundary" when a boundary id is recorded, else
+    # "global". DETAIL only, matching `description` and the #944 fields.
+    scope: Literal["global", "boundary"]
+    authorization_boundary_id: int | None = None
+    globally_available: bool
     back_matter_resources: list[BackMatterResource] = Field(default_factory=list)
     component_details: list[ComponentDetail] = Field(default_factory=list)

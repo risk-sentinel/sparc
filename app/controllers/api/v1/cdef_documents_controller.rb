@@ -388,6 +388,21 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       data[:oscal_version] = cdef.oscal_version
       data[:controls_count] = cdef.cdef_controls.count
 
+      # #1038 — the scope, reported so `update_scope` can be confirmed by a read
+      # instead of only by the write's own 200. Nothing in the API exposed it:
+      # not this serializer, not `show`, and the index ignores a `scope` or
+      # `authorization_boundary_id` parameter, so the only way to see whether a
+      # component definition was global or pinned to one boundary was a Rails
+      # console. Getting that wrong silently widens what every other boundary's
+      # composition includes.
+      #
+      # ADDED, never renamed: three new keys cannot break a consumer, and the
+      # shape question in #1036 is deliberately left alone.
+      boundary_id = CdefScopeService.current_boundary_id(cdef)
+      data[:globally_available] = cdef.globally_available
+      data[:authorization_boundary_id] = boundary_id
+      data[:scope] = boundary_id.present? ? "boundary" : "global"
+
       # #944 — the component's own OSCAL fields, reported so a consumer can see
       # what will be exported rather than discovering the hardcoded defaults
       # from the artifact. DETAIL only: five authoring fields on every index row
