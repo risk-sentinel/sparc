@@ -23,7 +23,7 @@ that had been wrong since 2026-07-18 (#995).
 - **Code:** **285 logical endpoints** across 55 controller groups (PATCH+PUT aliases collapsed) — 108 GET, 100 POST, 40 DELETE, 35 PUT, 33 PATCH
 - **Documentation:** **242 / 285** endpoints are listed in an `endpoints/*.md` page's own Endpoints table (**85%**); 24 more are mentioned only in prose
 - **Postman collection:** **279 / 285** endpoints covered (**98%**)
-- **Pytest suite:** **279 / 285** endpoints map to a `tests/api/test_*.py` module (**98%**)
+- **Pytest suite:** **280 / 285** endpoints map to a `tests/api/test_*.py` module (**98%**)
 
 > **The pytest column counts module presence, not verification.** For generic CRUD
 > actions it means only that a module for the controller exists; for the rest it means
@@ -126,7 +126,7 @@ working from the tables will not find them.
 | `POST` | `/api/v1/ssp_documents/:id/fields/import/preview` | [`field-import.md`](endpoints/field-import.md) |
 | `POST` | `/api/v1/users/:id/password_reset` | [`users.md`](endpoints/users.md) |
 
-### No pytest module — 6 endpoints across 6 controllers
+### No pytest module — 5 endpoints across 5 controllers
 
 | Controller | Endpoints | Module looked for |
 |---|---|---|
@@ -135,7 +135,6 @@ working from the tables will not find them.
 | `cdef_documents` | 1 | `tests/api/test_cdef_documents.py` |
 | `organizations` | 1 | `tests/api/test_organizations.py` |
 | `poam_documents` | 1 | `tests/api/test_poam_documents.py` |
-| `users` | 1 | `tests/api/test_users.py` |
 
 ### Not in the Postman collection — 6 endpoints
 
@@ -488,6 +487,6 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/users/:id` | `users#destroy` | [`users.md`](endpoints/users.md) | yes | yes |
 | `GET` | `/api/v1/users/:id` | `users#show` | [`users.md`](endpoints/users.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/users/:id` | `users#update` | [`users.md`](endpoints/users.md) | yes | yes |
-| `POST` | `/api/v1/users/:id/password_reset` | `users#password_reset` | prose only — [`users.md`](endpoints/users.md) | yes | **MISSING** |
+| `POST` | `/api/v1/users/:id/password_reset` | `users#password_reset` | prose only — [`users.md`](endpoints/users.md) | yes | yes |
 
 <!-- END GENERATED INVENTORY -->
