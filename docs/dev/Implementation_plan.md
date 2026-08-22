@@ -1680,6 +1680,12 @@ the work starts so the sweep has a target rather than a taste:
    rule uniform instead of per-variant. `btn-cancel-dark` already exists as a
    one-off workaround in exactly this shape — it generalises and then disappears.
 
+5. **Buttons, headers and the rest go in CSS, and are REUSABLE wherever
+   possible** (owner, 2026-08-22). A shared class or a shared partial, not
+   repeated markup and not inline `style=`. This is the rule that makes rules
+   1-4 hold: a colour scheme defined per function only stays consistent if
+   there is exactly one place it is defined.
+
 Everything else about the sweep is settled when the bundle starts.
 
 **"Might be missing one?" — measured, and yes: at least two.** The seven roles
@@ -1706,6 +1712,34 @@ Confirmed present, so the seven are otherwise real: Export (`Export CSV`,
 
 **33 distinct `btn-*` classes are in use in the views today** — the sweep's real
 surface, and larger than #950's recorded figure of 19 variants.
+
+### The inline-style surface is far larger than #950 records — measure before scoping
+
+#950 lists **13 inline `style=` occurrences across 6 files**, counting only
+buttons. App-wide the figure is **1,387 inline `style=` attributes across 111 of
+the view files** (14 of them on a line carrying a `btn` class). Worst offenders:
+
+| View | Inline styles |
+|---|---|
+| `sar_documents/enrich.html.erb` | 136 |
+| `authorization_boundaries/ato_wizard.html.erb` | 99 |
+| `ssp_documents/enrich.html.erb` | 97 |
+| `ssp_documents/show.html.erb` | 90 |
+| `poam_documents/show.html.erb` | 73 |
+
+**This matters beyond tidiness because of #528.** `content_security_policy.rb:26`
+still sets `policy.style_src :self, :unsafe_inline, …`, and #528 removes
+`unsafe_inline`. At that point **all 1,387 lose their styling silently** — no
+error, no failing spec, just wrong-looking pages. So #950's "land before #528"
+argument is right and its scope estimate is two orders of magnitude low.
+**Scope #950 against the measured figure, and treat the non-button inline styles
+as their own tracked slice** rather than discovering them during #528.
+
+**There is no page-header component at all** — zero views reference a
+`page-header` class, so every screen hand-rolls its heading. That is the
+"reusable wherever possible" rule's first target after buttons, and `app/views/shared/`
+already holds ~30 partials (`_boundary_header`, `_environment_header`,
+`_collection_toolbar`) showing the pattern to follow.
 
 | Issue | What |
 |---|---|
