@@ -452,7 +452,25 @@ module SparcConfig
   # trap: the fallback to oidc_client_id never fired when the variable was
   # set-but-empty, which is exactly how prod had it.
   def api_oidc_audience = ENV.fetch("SPARC_API_OIDC_AUDIENCE", nil).presence || oidc_client_id
+  # #860 — IdP entitlements.
+  #
+  # `oidc_scopes` above deliberately does NOT gain "groups". Adding a scope
+  # changes the authorization request every existing deployment sends, and a
+  # provider with no such scope defined can reject the whole request rather
+  # than ignoring it — an upgrade would become an outage on the login path.
+  # Operators opt in by setting SPARC_OIDC_SCOPES themselves.
   def oidc_scopes        = ENV.fetch("SPARC_OIDC_SCOPES", "openid profile email")
+
+  # Which claim carries the grants. `groups` is what most providers emit by
+  # default and what an evaluator will try first; a dedicated claim is better
+  # hygiene on a large tenant. Configurable because hardcoding either one makes
+  # SPARC wrong for half its deployments.
+  def oidc_grants_claim  = ENV.fetch("SPARC_OIDC_GRANTS_CLAIM", "groups")
+
+  # Only claim values starting with this are considered grants. Without it, a
+  # directory sends every group a person belongs to and SPARC would report
+  # hundreds of unrelated names as unmatched grants.
+  def oidc_grants_prefix = ENV.fetch("SPARC_OIDC_GRANTS_PREFIX", "sparc:")
   def oidc_provider_title = ENV.fetch("SPARC_OIDC_PROVIDER_TITLE", "SSO")
   # #785 — defaults true. Only consulted on the OIDC path, so a true default is
   # inert for deployments that don't use OIDC, and security-positive for those
