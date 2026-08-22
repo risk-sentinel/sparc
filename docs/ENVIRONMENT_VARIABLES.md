@@ -263,6 +263,8 @@ approach). Enable one or more to activate the login page at `/login`.
 | SPARC_ENABLE_EMAIL_CONFIRMATION | Require email confirmation for new local accounts | false | `true` | No |
 | SPARC_SESSION_TIMEOUT_MINUTES | Inactivity timeout in minutes; reset by every request | 60 | `30` | No |
 | SPARC_SESSION_MAX_HOURS | Absolute session lifetime in hours, measured from sign-in and never reset by activity. `0` disables the cap | 8 | `12` | No |
+| SPARC_PIV_OIDC_ACR_VALUES | Accepted `acr` claim values proving the IdP performed certificate-based auth. Empty = accept none | *(empty)* | `http://idmanagement.gov/ns/assurance/aal/3` | No |
+| SPARC_PIV_OIDC_AMR_VALUES | Accepted `amr` claim values, e.g. `x509,hwk`. Empty = accept none | *(empty)* | `x509,hwk` | No |
 | SPARC_USER_INACTIVITY_DAYS | Deactivate an account that has not signed in for this many days. `0` disables it. This is the offboarding mechanism — a disabled IdP account cannot sign in, so absence of sign-in is the signal | 0 | `90` | No |
 | SPARC_PUBLIC_CATALOGS | Make the Controls layer (control catalogs, baselines, mappings) publicly readable — shown in the header nav and reachable without signing in. Off = gated behind authentication (secure-by-default, #726); enable only when SPARC is fronted by your own network auth (e.g. VPN). | false | `true` | No |
 | SPARC_ADMIN_EMAIL | Email for the bootstrapped admin account | admin@sparc.local | `admin@yourorg.com` | No |

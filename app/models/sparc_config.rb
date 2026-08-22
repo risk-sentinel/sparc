@@ -345,6 +345,27 @@ module SparcConfig
     ENV.fetch("SPARC_PIV_ACCEPTED_ISSUERS", "").split(",").map(&:strip).reject(&:empty?)
   end
 
+  # #822 — IdP-mediated PIV. Accepted `acr` / `amr` claim values proving the IdP
+  # performed certificate-based authentication.
+  #
+  # BOTH EMPTY BY DEFAULT, and empty means "accept nothing" rather than "accept
+  # anything". A configuration mistake must not silently downgrade an
+  # authentication requirement; with neither set, `piv` continues to mean the
+  # forwarded client certificate and nothing else.
+  #
+  # e.g. SPARC_PIV_OIDC_AMR_VALUES="x509,hwk"
+  #      SPARC_PIV_OIDC_ACR_VALUES="http://idmanagement.gov/ns/assurance/aal/3"
+  def piv_oidc_acr_values
+    ENV.fetch("SPARC_PIV_OIDC_ACR_VALUES", "").split(",").map { |v| v.strip.downcase }.reject(&:empty?)
+  end
+
+  def piv_oidc_amr_values
+    ENV.fetch("SPARC_PIV_OIDC_AMR_VALUES", "").split(",").map { |v| v.strip.downcase }.reject(&:empty?)
+  end
+
+  # True when the operator has opted in to either claim.
+  def piv_oidc_enabled? = piv_oidc_acr_values.any? || piv_oidc_amr_values.any?
+
   def piv_accepted_policy_oids
     ENV.fetch("SPARC_PIV_ACCEPTED_POLICY_OIDS", "").split(",").map(&:strip).reject(&:empty?)
   end

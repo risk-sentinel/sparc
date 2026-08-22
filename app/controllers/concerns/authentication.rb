@@ -310,8 +310,19 @@ module Authentication
   # True if `provider` satisfies any token in the `allowed` allowlist (#805).
   # Providers carry aliases so an operator can write "oidc" / "sso" / "fido2".
   def auth_method_accepted?(provider, allowed)
-    (provider_tokens(provider) & allowed).any?
+    return true if (provider_tokens(provider) & allowed).any?
+
+    # #822 — an OIDC login can satisfy `piv` when the IdP itself performed
+    # certificate-based authentication and said so in the token. Checked here
+    # rather than by rewriting `auth_provider` to "piv", so the audit trail
+    # still records HOW the person signed in (oidc) alongside WHAT it proved.
+    allowed.include?("piv") && piv_asserted_by_idp?
   end
+
+  # Set at the OIDC callback when the token carried an accepted acr/amr value.
+  # Absent for every other provider and for any deployment that has not opted
+  # in, so this is inert unless configured.
+  def piv_asserted_by_idp? = session[:piv_assertion].present?
 
   def provider_tokens(provider)
     case provider

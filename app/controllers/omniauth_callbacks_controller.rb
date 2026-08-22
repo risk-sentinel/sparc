@@ -72,6 +72,7 @@ class OmniauthCallbacksController < ApplicationController
     identity.touch_last_used!
 
     start_session(user, ip_address: request.remote_ip, provider: auth.provider.to_s)
+    record_piv_assertion(auth)
 
     AuditEvent.log(
       user: user,
@@ -85,6 +86,29 @@ class OmniauthCallbacksController < ApplicationController
     sync_idp_entitlements(user, auth)
 
     redirect_to (session.delete(:return_to) || root_path), success: "Signed in with #{auth.provider.to_s.titleize}."
+  end
+
+  # #822 — an OIDC token can prove a smart card was used at the IdP.
+  #
+  # Recorded AFTER start_session, which resets the session: writing it before
+  # would put the assertion into a session that is then thrown away, and the
+  # requirement would silently fail for every user.
+  #
+  # The assertion is stored rather than folded into `auth_provider` so the audit
+  # trail keeps saying the person signed in with oidc, while the auth-method
+  # gate can still see that it satisfied piv. Conflating the two would lose the
+  # record of which IdP the assertion actually came from.
+  def record_piv_assertion(auth)
+    return unless auth.provider.to_s == "oidc"
+    return unless SparcConfig.piv_oidc_enabled?
+
+    assertion = PivOidcAssertion.new(auth)
+    return unless assertion.satisfied?
+
+    session[:piv_assertion] = assertion.evidence
+    AuditEvent.log(user: current_user || User.find_by(id: session[:user_id]),
+                   action: "piv_asserted_by_idp", provider: "oidc",
+                   ip_address: request.remote_ip, metadata: assertion.evidence)
   end
 
   # #860 — the login IS the sync. Entitlements are resolved from the claim on

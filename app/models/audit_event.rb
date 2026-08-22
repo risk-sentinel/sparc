@@ -74,6 +74,7 @@ class AuditEvent < ApplicationRecord
     idp_sync_failed
     idp_grant_dismissed
     idp_grant_dismissal_restored
+    piv_asserted_by_idp
     user_auto_deactivated
     user_deactivate_refused
     user_suspend_refused
@@ -390,7 +391,7 @@ class AuditEvent < ApplicationRecord
     # this is the record of the directory driving access.
     "IdP Entitlements" => %w[idp_grant_applied idp_grant_revoked idp_grant_skipped
                              idp_sync_failed idp_grant_dismissed
-                             idp_grant_dismissal_restored],
+                             idp_grant_dismissal_restored piv_asserted_by_idp],
     "Auth Boundary Admin" => %w[api_authorization_boundary_created
                                 api_authorization_boundary_updated
                                 api_authorization_boundary_deleted

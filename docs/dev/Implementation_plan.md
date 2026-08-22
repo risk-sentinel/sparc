@@ -696,7 +696,7 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 17 | U — Profile fidelity: what the baseline says, and what SPARC shows | #997 #999 #998 **#994** | **Shipped** (PR #1000 → `27aea200`) |
 | 18 | **W — The CVEs the UBI9 migration hid, + Bundle U's carried debt** | **#1001** **#1002** **#1003** | **Shipped** (PR [#1005](https://github.com/risk-sentinel/sparc/pull/1005) → `ab2dbd1a`, 15 commits). Image CVEs 132 → 80, undispositioned HIGHs 19 → 0; rspec 5669/0/10, tests/api 473, ui-smoke 496 passed / 9 skipped / 0 failed. **#1002 and #1003 were filed and fixed inside it**, both surfaced by running the gate U had held |
 | 19 | **V — SWEEP every API endpoint against its published contract** | **#995** #951 **#1004** + 20 filed and fixed inside it | **Shipped — RELEASE GATE MET** (PR [#1009](https://github.com/risk-sentinel/sparc/pull/1009) → `fda3413d`, **72 commits, 32 `Closes`**, merged 2026-08-22). All three gate axes 0 (pytest 42→0, docs 19→0, Postman 6→0); both gate scripts exit 0 on 285 endpoints. Final gates: rspec **6049/0/10**, tests/api **2668 with zero skips**, ui-smoke **497 passed / 18 skipped / 0 failed**, brakeman 0. Per-group tracker in the Bundle V section |
-| 20 | R — Auth entitlements — IdP as system of record | #860 #842 #822 **#1043** | **IN PROGRESS.** Design memo landed (`docs/dev/860_idp_entitlements_design.md`); both open questions owner-decided; dry-run built first, not last. **The absolute session cap (`SPARC_SESSION_MAX_HOURS`, default 8) is SHIPPED in this bundle** — it is what makes "each login establishes the user's rights" true rather than approximate |
+| 20 | R — Auth entitlements — IdP as system of record | **#860** **#842** **#822** **#1043** | **IN PR.** Design memo settled both open questions before code; dry-run built first, not last. Grant parsing -> resolution -> sync -> login wiring -> unmatched queue (API, screen, daily digest) -> preview endpoint, plus the absolute session cap and IdP-mediated PIV |
 | 21 | **X — UI consistency: the navbar, the buttons** | **#1042** **#950** | **Queued, after R** (owner, 2026-08-22: *"address 950 in milestone v1.16.0. Not this pr though"*). #1042 is what the #951 responsive sweep found — 62 pages × 5 breakpoints, and the functional categories came back EMPTY. **Layout, not function** |
 
 **One issue is unslotted: #1039** (authoritative sources need control references, provenance and
@@ -1723,11 +1723,61 @@ membership on a timer, so elevation becomes temporary by construction rather
 than permanent `sudo` — and **#1043's absolute session cap is what makes that
 expiry bite**, since an active administrator is never idle.
 
+### What Bundle R actually built
+
+| Piece | What it is |
+|---|---|
+| `IdpGrant` | Parse and canonicalise a grant string. No database — parsing asks "is this well formed?", resolution asks "does what it names exist?" |
+| `IdpGrantResolver` | Resolve against real records, and **never create**. Every failing spec asserts the ABSENCE of a record as well as the error |
+| `EntitlementSync` | The diff, then `dry_run` or `apply`. One code path, so a preview cannot disagree with the run |
+| `IdpClaimReader` | Decides ABSENT vs EMPTY once, on the raw payload, rather than inferring it later from an empty array that has lost the difference |
+| OIDC callback wiring | The login IS the sync. A failure there cannot deny the session |
+| `UnmatchedGrantQuery` | One reading of "what is SPARC refusing?", shared by the API, the screen and the digest so they cannot disagree |
+| Admin screen + digest | Administration → IdP Grants, with Create/Reject; daily email, no-op without SMTP |
+| Preview API | `GET/POST /api/v1/entitlement_sync` — ask what `authoritative` would do while running `bootstrap` |
+| `DeactivateInactiveUsersJob` | Offboarding. A disabled IdP account cannot sign in, so absence of sign-in is the signal |
+| Session cap (#1043) | `SPARC_SESSION_MAX_HOURS`, default 8 |
+
+**The design memo (`docs/dev/860_idp_entitlements_design.md`) was corrected twice
+by the code**, and both corrections are worth carrying forward:
+
+1. **There are THREE role representations, not the two #707 describes.**
+   `user_roles` has no `organization_id` — its only scope is
+   `authorization_boundary_id`. A boundary grant resolves to `user_roles`, an org
+   grant to `organization_memberships` (a string vocabulary where `org_admin` is
+   a real permission gate), and **nothing ever resolves to
+   `authorization_boundary_memberships`**, which is documentary SSP content an
+   assessor reads. Worth fixing on #707 itself.
+2. **"No migration" was wrong.** `organization_memberships` had no `source`
+   column, so "only rows the sync created are ever revoked" would have held for
+   boundary grants and been silently false for org grants. A safety property true
+   in one half of a feature is not a safety property.
+
+**Two guards that hold by construction rather than by a check**, which is the
+property to preserve if this is ever refactored:
+
+- **`users.admin` is unreachable from any grant.** It is a boolean column, not a
+  `Role`, and the resolver only produces `user_roles` and
+  `organization_memberships` targets. Recovery from a misconfigured IdP is
+  therefore always possible, and the epic's last-instance-admin constraint needs
+  no guard.
+- **Revocation is scoped to `source: "idp"`.** A hand-made grant survives any
+  claim, any misconfiguration, any empty group. The percentage ceiling is a
+  second line, and the owner has since turned it off by default.
+
+**A blast-radius design error the specs caught.** The percentage guard was
+per-user, so a user holding a single IdP role who legitimately left that group
+was a 100% revocation — the default 25% limit blocked every ordinary offboarding.
+The owner then ruled the ceiling off entirely: *"Each time a user logs in, we
+should process the grants and anything not in the grant would be removed."*
+The estate-wide version belongs to a bulk re-sync path that does not exist yet,
+and the code says so rather than implying this covers it.
+
 | Issue | Description | Notes |
 | --- | --- | --- |
 | **#860** | Epic: IdP as system of record for entitlements | Bundle I with #842. Five design questions answered in a memo commit before code. Dry-run built first, not last. |
 | **#842** | Map OIDC claims to organization, boundary and role | Bundle I. A **missing** claim is an error, never "revoke everything" — that failure mode is what the blast-radius guard exists for. |
-| **#822** | IdP-mediated PIV via OIDC `acr`/`amr` | Bundle G. Both auth paths stay configurable; two-ceremony verification required. |
+| **#822** | ~~IdP-mediated PIV via OIDC `acr`/`amr`~~ — **BUILT** (owner directed it into this PR) | `SPARC_PIV_OIDC_ACR_VALUES` / `SPARC_PIV_OIDC_AMR_VALUES`, both **empty by default, and empty accepts NOTHING** — the one property that matters, because every deployment that has not opted in has an empty allowlist and a wildcard there would silently downgrade PIV enforcement to nothing. The gateway-mTLS path is untouched and both stay configurable. `acr` is compared **exactly**, so `aal/2` cannot satisfy a deployment asking for `aal/3`; `amr` is a list and any accepted member is enough, but `swk` is not `x509` — accepting a soft key would reintroduce the very gap the feature closes. The session still records `oidc` as the provider so the audit trail says HOW someone signed in, with a separate `piv_asserted_by_idp` event recording WHY it counted as PIV. **The two-ceremony verification against real PIV hardware is still owed** and is the owner's to run. Paired with **#820** (openssl 3.3.0 → 4.0.2), which keeps its own prerequisite: rebuild the dev Ruby against OpenSSL 3 FIRST. |
 | **#1043** | ~~A session has no absolute lifetime, so an active user's entitlements never expire~~ — **FIXED** (`415b2e29`) | **Filed from Bundle R's own verification work**, not from the suite. `SPARC_SESSION_MAX_HOURS`, default 8. It is a precondition for #860's model rather than a neighbour of it: the ruling that a login establishes rights holds only if there is a bounded time until the next login, and an idle-only timeout gives none. Closed by this bundle's PR. |
 
 ##### 21. Bundle X — UI consistency: the navbar, the buttons  ·  **Queued, after Bundle R**
