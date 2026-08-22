@@ -774,6 +774,20 @@ code {
 /* Decorative fills — solid hues for non-text elements (heatmap stacked bars,
    legend swatches). No contrast requirement; keeps the saturated palette. */
 .sparc-fill--success { background: #27ae60; }
+
+/* #951 — a warning badge takes a BLACK label, in both themes.
+   Bootstrap's `.badge` sets `color: #fff`, and nothing paired a foreground with
+   the warning background, so white sat on amber at a measured 2.19:1 — against
+   the 4.5:1 WCAG AA needs for 12.6px/700 text. The theme already recorded the
+   intent one line above the colour ("paired with black label per WCAG"); only
+   the pairing was missing.
+   Black works for both warning values this theme defines — #f39c12 (9.4:1) and
+   the lighter #f6e05e — whereas white fails on both. `.badge.bg-warning` is
+   0,2,0 and this file loads after the Bootstrap CDN link, so no !important. */
+.badge.bg-warning {
+  color: #000;
+}
+
 .sparc-fill--warning { background: #f39c12; }
 .sparc-fill--danger  { background: #e74c3c; }
 .sparc-fill--info    { background: #3498db; }
