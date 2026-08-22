@@ -27,6 +27,8 @@ class OscalSspExportService
   IMPLEMENTATION_STATUS = "implementation-status".freeze
   STATEMENT_ID          = "statement-id".freeze
   BY_COMPONENTS         = "by-components".freeze
+  # #1004 — how a component points at the CDEF it came from.
+  COMPONENT_DEFINITION_REL = "component-definition".freeze
 
   # #958 — SPARC's own markers, parked in a statement's set_parameters_data by
   # SspJsonParserService so LeveragedAuthorization can query them. They are
@@ -345,12 +347,34 @@ class OscalSspExportService
     # links_data hold what was imported, and a validation claim is an addition
     # to that, not a substitute for it.
     props = Array(comp.props_data) + validation_props(comp)
-    links = Array(comp.links_data) + validation_links(comp)
+    links = Array(comp.links_data) + validation_links(comp) + component_definition_links(comp)
 
     entry["props"]             = props if props.present?
     entry["links"]             = links if links.present?
     entry["remarks"]           = comp.remarks if comp.remarks.present?
     entry
+  end
+
+  # #1004 — the trail back to the component definition this component came from.
+  #
+  # `ssp_components.cdef_document_id` records it and the export dropped it, so a
+  # reader of the OSCAL saw a uuid and a title and the trail stopped there: the
+  # boundary's component definitions were invisible in the package. The link
+  # resolves to a back-matter resource that `BackMatterBuilder` emits for the
+  # same CDEF, so the reference is internal to the document and resolvable
+  # without reaching back into SPARC.
+  #
+  # The href is the CDEF's OWN uuid. Per the per-subject UUID rule an export
+  # must never mint or change one, and the subject here IS that component
+  # definition — so the same CDEF yields the same resource uuid on every export,
+  # which is what makes it a citation rather than a fresh identifier each time.
+  def component_definition_links(comp)
+    return [] if comp.cdef_document_id.blank?
+
+    cdef = comp.cdef_document
+    return [] if cdef.nil?
+
+    [ { "href" => "##{cdef.uuid}", "rel" => COMPONENT_DEFINITION_REL, "text" => cdef.name } ]
   end
 
   # The certificate, on the validation component itself.

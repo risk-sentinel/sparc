@@ -22,11 +22,49 @@ class BackMatterBuilder
   end
 
   def build
-    resources = authoritative_resources + managed_resources + [ sparc_resource ]
-    { "resources" => resources }
+    resources = authoritative_resources + managed_resources +
+                component_definition_resources + [ sparc_resource ]
+    { "resources" => resources.uniq { |r| r["uuid"] } }
   end
 
   private
+
+  # #1004 — a resource for every component definition this document's components
+  # came from.
+  #
+  # `ssp_components.cdef_document_id` recorded the link and the export dropped
+  # it, so an exported SSP showed a component as a uuid and a title with no way
+  # to reach the component definition behind it: the boundary's CDEFs were
+  # invisible in the package. `OscalSspExportService` emits a matching
+  # `#<uuid>` link on each component, and this is what that link resolves to.
+  #
+  # Only the CDEFs an SSP component actually REFERENCES, not every CDEF on the
+  # boundary. That is the #959 rule this class already follows — back-matter
+  # exists to resolve references the document makes — and carrying the whole
+  # boundary would put component definitions into a document that never
+  # mentions them.
+  #
+  # The resource uuid is the CDEF's OWN uuid. An export must never mint or
+  # change a UUID, and the subject here IS that component definition, so the
+  # same CDEF resolves to the same resource on every export. A uuid regenerated
+  # per export is not a citation.
+  def component_definition_resources
+    return [] unless @document.respond_to?(:ssp_components)
+
+    cdef_ids = @document.ssp_components.where.not(cdef_document_id: nil)
+                        .distinct.pluck(:cdef_document_id)
+    return [] if cdef_ids.empty?
+
+    CdefDocument.where(id: cdef_ids).order(:id).map do |cdef|
+      resource = {
+        "uuid"  => cdef.uuid,
+        "title" => cdef.name,
+        "props" => [ { "name" => "type", "value" => "component-definition" } ]
+      }
+      resource["description"] = cdef.description if cdef.description.present?
+      resource
+    end
+  end
 
   # Authoritative resources (provider-published, highest priority) that THIS
   # document actually references. Cannot be overridden by managed resources.
