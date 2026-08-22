@@ -31,7 +31,9 @@ class TestShape:
         assert "data" in body and isinstance(body["data"], list)
         assert "meta" in body
 
-    def test_meta_carries_the_window_and_a_grouped_summary(self, admin_client: httpx.Client) -> None:
+    def test_meta_carries_the_window_and_a_grouped_summary(
+        self, admin_client: httpx.Client
+    ) -> None:
         resp = admin_client.get(PATH)
 
         meta = resp.json()["meta"]
