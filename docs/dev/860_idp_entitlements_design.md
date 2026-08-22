@@ -253,6 +253,73 @@ All four go in `docs/ENVIRONMENT_VARIABLES.md` and the wiki when the code lands.
 
 ---
 
+## Backwards compatibility — the guarantees this design makes
+
+**An existing OIDC deployment that upgrades and changes nothing must behave
+identically.** That is a hard requirement, not a goal, and it is achievable
+because every new behaviour is opt-in. The guarantees:
+
+1. **`SPARC_OIDC_SYNC_MODE` defaults to `off`.** Grants are parsed by nothing
+   and applied by nothing. Sign-in, provisioning and roles work exactly as they
+   do today.
+
+2. **The `SPARC_OIDC_SCOPES` default does NOT change.** It stays
+   `"openid profile email"` (`sparc_config.rb:439`) — deliberately *not*
+   `"… groups"`. Adding a scope by default changes the authorization request
+   every existing deployment sends, and an IdP with no `groups` scope defined
+   can reject it outright at the authorization endpoint. **That would turn an
+   upgrade into an outage on the login path**, which is the worst place to have
+   one. Operators add the scope when they choose to enable grants.
+
+3. **Only rows the sync created are ever revoked.** `user_roles.source` already
+   defaults to `"manual"`; the sync writes `"idp"` and **revocation is scoped to
+   `source: "idp"`**. A hand-made grant cannot be removed by an IdP sync even in
+   `authoritative` mode, even if the claim set is empty, even if the whole IdP
+   configuration is wrong.
+
+   This is the strongest safety property in the design and it is worth stating
+   plainly: **the blast radius is bounded by construction, not only by the
+   percentage guard.** The guard in deliverable 5 is a second line of defence
+   against a bad sync, not the first.
+
+4. **No migration.** `source` exists and is indexed; `Identity` already joins on
+   `(provider, uid)`. Nothing in the schema changes for this feature. The
+   unmatched-grant queue is a new read model over data the sync records.
+
+5. **Local login, GitHub, GitLab, LDAP, FIDO2 and PIV are untouched.** Grants
+   ride the OIDC callback only. A deployment using any other method sees no
+   change at all.
+
+6. **`off` remains a supported end state.** A customer who wants SPARC to own
+   entitlements entirely is not obliged to adopt any of this, and the
+   documentation must not read as though IdP sync is now the expected posture.
+
+**Verification: the backwards-compatibility claim gets a test, not a paragraph.**
+A spec that signs a user in through the OIDC callback with `SPARC_OIDC_SYNC_MODE`
+unset, asserting that no `user_roles` row is created, changed or removed and that
+the request the client builds carries the unchanged scope string. Both
+directions, per the standing rule — the same spec with the mode on proves the
+sync is actually wired, so the off-leg cannot pass vacuously.
+
+## Documentation this changes
+
+Public-facing, so the **wiki is canonical** and the in-repo copies are the
+technical reference. All of it lands with the code, in the same PR, and the wiki
+needs its manual `wiki/PUSH_TO_WIKI.sh` run — editing `wiki/` publishes nothing.
+
+| Document | What changes |
+|---|---|
+| `docs/OKTA_DEV_SETUP.md` | Already a 10-step Okta walkthrough. Gains the groups-as-grants convention, the regex-filtered claim, the scope, and the five-step validation ladder. The Okta section of this memo is the draft |
+| `docs/AUTHENTICATION.md` | §"OIDC / SSO" gains the sync modes; §"Roles" gains the statement that a grant binds to `user_roles` and never to the documentary boundary-membership table |
+| `docs/ENVIRONMENT_VARIABLES.md` | The four new variables, with their defaults and the note that the scopes default is deliberately unchanged |
+| `wiki/Authentication-and-MFA.md` | Operator-facing: what the modes mean and the adoption ladder |
+| `wiki/Configuration.md` | The four variables |
+| `wiki/RBAC.md` | **The two role systems, stated once, properly** — this is where #707's answer belongs so it stops being folklore |
+
+`docs/PRODUCTION_SECURITY.md` gets the offboarding posture once Q4 is decided —
+it is the document that would otherwise imply SPARC ends sessions on IdP
+disablement, which it does not.
+
 ## Open for the owner
 
 1. **Q4** — offboarding: option A, B or C?
