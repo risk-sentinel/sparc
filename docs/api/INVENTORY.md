@@ -23,7 +23,7 @@ that had been wrong since 2026-07-18 (#995).
 - **Code:** **285 logical endpoints** across 55 controller groups (PATCH+PUT aliases collapsed) — 108 GET, 100 POST, 40 DELETE, 35 PUT, 33 PATCH
 - **Documentation:** **242 / 285** endpoints are listed in an `endpoints/*.md` page's own Endpoints table (**85%**); 24 more are mentioned only in prose
 - **Postman collection:** **279 / 285** endpoints covered (**98%**)
-- **Pytest suite:** **271 / 285** endpoints map to a `tests/api/test_*.py` module (**95%**)
+- **Pytest suite:** **273 / 285** endpoints map to a `tests/api/test_*.py` module (**96%**)
 
 > **The pytest column counts module presence, not verification.** For generic CRUD
 > actions it means only that a module for the controller exists; for the rest it means
@@ -126,12 +126,11 @@ working from the tables will not find them.
 | `POST` | `/api/v1/ssp_documents/:id/fields/import/preview` | [`field-import.md`](endpoints/field-import.md) |
 | `POST` | `/api/v1/users/:id/password_reset` | [`users.md`](endpoints/users.md) |
 
-### No pytest module — 14 endpoints across 12 controllers
+### No pytest module — 12 endpoints across 11 controllers
 
 | Controller | Endpoints | Module looked for |
 |---|---|---|
 | `admin/remediation_timelines` | 2 | `tests/api/test_admin_remediation_timelines.py` |
-| `control_lookups` | 2 | `tests/api/test_control_lookups.py` |
 | `admin/reconciliation` | 1 | `tests/api/test_admin_reconciliation.py` |
 | `aggregations` | 1 | `tests/api/test_aggregations.py` |
 | `artifacts` | 1 | `tests/api/test_artifacts.py` |
@@ -306,8 +305,8 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:id` | `control_families#destroy` | [`control-families.md`](endpoints/control-families.md) | yes | yes |
 | `GET` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:id` | `control_families#show` | [`control-families.md`](endpoints/control-families.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/control_catalogs/:control_catalog_id/control_families/:id` | `control_families#update` | [`control-families.md`](endpoints/control-families.md) | yes | yes |
-| `GET` | `/api/v1/controls` | `control_lookups#index` | [`control-lookup.md`](endpoints/control-lookup.md) | yes | **MISSING** |
-| `GET` | `/api/v1/controls/resolve` | `control_lookups#resolve` | [`control-lookup.md`](endpoints/control-lookup.md) | yes | **MISSING** |
+| `GET` | `/api/v1/controls` | `control_lookups#index` | [`control-lookup.md`](endpoints/control-lookup.md) | yes | yes |
+| `GET` | `/api/v1/controls/resolve` | `control_lookups#resolve` | [`control-lookup.md`](endpoints/control-lookup.md) | yes | yes |
 | `GET` | `/api/v1/control_mappings/:control_mapping_id/entries` | `control_mapping_entries#index` | **MISSING** | yes | yes |
 | `POST` | `/api/v1/control_mappings/:control_mapping_id/entries` | `control_mapping_entries#create` | **MISSING** | yes | yes |
 | `DELETE` | `/api/v1/control_mappings/:control_mapping_id/entries/:id` | `control_mapping_entries#destroy` | **MISSING** | yes | yes |
