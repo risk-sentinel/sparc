@@ -74,7 +74,7 @@ class TestShow:
             assert response.status_code == 200, (
                 f"{row['slug']} is listed by the index but {response.status_code} on show"
             )
-            body = response.json()
+            body = response.json()["data"]
             assert body["slug"] == row["slug"]
             assert body["title"] == row["title"], (
                 f"{row['slug']}: index and show disagree about the title"
@@ -86,30 +86,29 @@ class TestShow:
         """Why `show` exists as well as `index`."""
         first = listed["data"][0]
 
-        body = admin_client.get(f"{PATH}/{first['slug']}").json()
+        body = admin_client.get(f"{PATH}/{first['slug']}").json()["data"]
 
         assert body.get("html"), f"{first['slug']} rendered no html"
         assert set(first) == {"slug", "title", "summary"}, (
             "the index now returns html too; this test's premise is stale"
         )
 
-    def test_show_is_currently_unwrapped(self, admin_client: httpx.Client, listed: dict) -> None:
-        """PINS CURRENT BEHAVIOUR, which is inconsistent — see #1036.
+    def test_show_wraps_its_payload_like_every_other_resource_read(
+        self, admin_client: httpx.Client, listed: dict
+    ) -> None:
+        """#1036 — `show` used to return the guide at the TOP LEVEL.
 
-        `index` returns `{"data": [...]}` and so does every other resource read
-        in this API, but `show` returns the guide at the top level. This asserts
-        what the endpoint does TODAY so the sweep covers it either way. It is
-        deliberately not written as the shape we would prefer: if #1036 is fixed
-        by wrapping the payload, this test is the one line that changes, and it
-        should fail loudly when that happens rather than quietly keep passing.
+        `index` wraps in `data` and so does every other resource read in this
+        API, so an integrator with one response handler got `data` everywhere
+        and nil here. The inconsistency was invisible because both guides
+        endpoints were undocumented. Resolved by wrapping, since nothing in the
+        application consumed the endpoint — the in-app Help Center is a thin
+        client of `UserGuideLibrary`, not of the API.
         """
         body = admin_client.get(f"{PATH}/{listed['data'][0]['slug']}").json()
 
-        assert "data" not in body, (
-            "guides#show now wraps its payload — #1036 is fixed; update this test "
-            "and the three Postman entries"
-        )
-        assert set(body) == {"slug", "title", "summary", "html"}, body
+        assert "data" in body, "guides#show is unwrapped again — see #1036"
+        assert set(body["data"]) == {"slug", "title", "summary", "html"}, body["data"]
 
 
 @pytest.mark.validation
