@@ -1497,7 +1497,75 @@ close.
 | **#995** | Epic: validate every `/api/v1` endpoint actually does what the published docs say — a 200 is not evidence | **DONE in PR #1009 (2026-08-22).** All three gate axes are 0 — no endpoint without a `tests/api` module (was 42), none documented nowhere (was 19), none missing from Postman (was 6) — and both gate scripts exit 0. Twenty issues were found by the sweep and fixed inside it. A mark in the per-group tracker means the group is exercised against a live instance with its effects read back; it does NOT certify all six matrix checks on all 285 endpoints, and the tracker says so. Original plan below, kept for the record. **Bundle V, RELEASE GATE.** The sweep, the matrix, the floor of ~1,294 checks and the per-group tracker are above. Sequence: fix the inventory baseline → build `assert_crud_round_trip` → the 8 status-only update tests and 4 body-blind modules (cheapest first wins) → the per-group sweep → the missing-endpoint axis over the web controllers → contract reconciliation against `docs/api/endpoints/*.md`. |
 | **#951** | Sidebar independent scroll, re-organization, and a responsive breakpoint audit | **DONE in PR #1009 (2026-08-22)**, layout approved by the owner. Root cause of the scroll was `min-height` on `.sparc-sidebar`: the box grew with its content, so `overflow-y: auto` never engaged and the DOCUMENT scrolled. Boundary documents reordered to the NIST layers (CDEFs, SSP, SAP, Evidence, SAR, Amendments, POA&Ms); Profiles removed as a baseline SELECTION rather than a per-boundary artefact; boundaries paginate at 10; Resources nest by HOST; the boundary name links to the boundary; width 220px -> 288px; dropdown bounded (was 800px tall, 87px unreachable at 777px); warning-badge contrast 2.19:1 -> 9.58:1. **The boundary CDEF and evidence filters were INERT and are now real** — the CDEF leaf listed every CDEF in the instance. 10 Playwright checks, CSP-clean, three breakpoints. **Caveat: the responsive breakpoint AUDIT was not performed systematically** — the one known finding was fixed and three breakpoints are covered. **Bundle V.** Owner-added 2026-08-15. **Re-organization is a NAVIGATION change and needs explicit approval** — nav follows the NIST layers and links must be findable in the same place every time; visibility may differ, placement may not. Any new or moved control also takes a Playwright interaction check with a CSP assertion. |
 
-##### 19. Bundle R — Auth entitlements — IdP as system of record
+##### 19. Bundle X — UI consistency: the navbar, the buttons  ·  **NEXT, not in PR #1009**
+
+Owner-added 2026-08-22, milestone v1.16.0. Two issues that are the same subject
+seen from two angles — the chrome is inconsistent, and it shows at the edges.
+
+**Deliberately NOT in PR #1009.** Both touch shared navigation and shared button
+styling, PR #1009 is under review, and a layout change dropped into a review in
+progress is how a reviewer loses their place. This section records the bundle;
+the work lands in its own PR.
+
+| Issue | What |
+|---|---|
+| **#1042** | The main navbar overflows the viewport from 992px to ~1400px, on every page |
+| **#950** | One button role, one class — and light/dark parity across all 19 variants |
+
+#### #1042 — found by the #951 audit, which is the point of audits
+
+`tests/ui-smoke/responsive_audit_951.py` sweeps **62 pages x 5 breakpoints, 310
+page loads**, looking for findings rather than confirming the one already known.
+It is committed and re-runnable, and it is the artefact #951's "responsive
+breakpoint audit recorded" acceptance criterion asks for — recorded late,
+after the issue was closed on its other criteria.
+
+**The functional categories are EMPTY**: no page fails to load at any
+breakpoint, no unreachable overlay, no unscrollable table. `UNBOUNDED_OVERLAY`
+is the functional class — it is what the nav dropdown was, 800px tall in a 777px
+viewport with 87px unreachable — and it is empty because #951 fixed it.
+
+What remains is layout. Measured:
+
+```
+992px  viewport -> document 1215px   (223px overflow, 61 of 62 pages)
+1280px viewport -> document 1328px   (48px  overflow, 61 of 62 pages)
+```
+
+**138 horizontal-overflow occurrences and 1,431 off-screen elements come down to
+one cause** — the navbar neither wraps nor collapses between 992px and roughly
+1400px. Fix the navbar and almost all of both counts go.
+
+Verified not functional rather than assumed: at 992px the rightmost nav control
+sits at 1215px, fully off-screen, and clicking it still works; at 375px the
+hamburger opens and reveals its links.
+
+One inconsistency worth resolving while in there: a `.d-none.d-lg-block` item
+appears AT 992px while the sidebar hides BELOW 992px. Both cannot be right.
+
+#### #950 — the same problem in the other direction
+
+19 button variants, no single role or class, and no light/dark parity. Split
+from #949 alongside #951 and left without a milestone, which is why it never
+surfaced in bundle planning — it was invisible to every milestone count. Now on
+v1.16.0.
+
+#### Constraints
+
+- **The navbar is shared NAVIGATION.** Placement does not change without an
+  approved layout: visibility may differ, placement may not. Any new or moved
+  control also takes a Playwright interaction check with a CSP assertion.
+- The audit script is the acceptance instrument: it must report **zero**
+  HORIZONTAL_OVERFLOW findings, with a standing assertion in
+  `test_sidebar_951.py` to keep it there.
+- Two touch-target decisions are owed rather than assumed:
+  `button.sparc-field-help` renders 16x16 against WCAG 2.2 AA 2.5.8's 24x24, and
+  ~90 inline help-guide links render 20px tall, which is ordinary body-text link
+  behaviour and arguably outside that criterion.
+
+---
+
+##### 20. Bundle R — Auth entitlements — IdP as system of record
 
 Last by owner direction. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end of the release**, since it is paired with #822 so one two-ceremony TLS verification round covers both. `bundle-audit` reports no vulnerabilities against the current lock, so the deferral is schedulable rather than reactive — **if that changes, decouple #820 from #822 and take it on its own.**
 
@@ -1509,7 +1577,7 @@ Last by owner direction. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end 
 | **#842** | Map OIDC claims to organization, boundary and role | Bundle I. A **missing** claim is an error, never "revoke everything" — that failure mode is what the blast-radius guard exists for. |
 | **#822** | IdP-mediated PIV via OIDC `acr`/`amr` | Bundle G. Both auth paths stay configurable; two-ceremony verification required. |
 
-##### 20. Bundle W — The remediation claims the UBI9 migration invalidated, + Bundle U's carried debt  ·  **IN PR #1005**
+##### 21. Bundle W — The remediation claims the UBI9 migration invalidated, + Bundle U's carried debt  ·  **IN PR #1005**
 
 **MOVED TO THE FRONT and combined with Bundle U's carried debt, by owner direction 2026-08-20**
 (superseding the same day's "placed at the END, after Bundle R"). The order is now
@@ -1882,7 +1950,7 @@ removed and are no longer tracked:
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
-| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, ~~#947~~, ~~#948~~, ~~#981~~, ~~#982~~, ~~#984~~, ~~#988~~, ~~#989~~, ~~#936~~, ~~#991~~, ~~#993~~, ~~#994~~, ~~#997~~, ~~#998~~, ~~#999~~, #995, #951, #860, #842, #822, #1001, #1002, #1003, #1004, #1007, #1008 | In Progress — **BUNDLE V COMPLETE, awaiting merge of [PR #1009](https://github.com/risk-sentinel/sparc/pull/1009).** Recounted 2026-08-22 with `gh issue list --milestone v1.16.0 --state all --limit 300`: **83 issues, 47 closed, 36 open**, and 30 of the open ones close when PR #1009 merges (its `Closes` list). What remains after that: **#822, #842, #860** (Bundle R, not started), **#1039** (authoritative sources — filed 2026-08-22, needs control references, provenance, dates and full CRUD). The milestone grew from 55 to 83 because the sweep FOUND things: 20 issues were filed and fixed inside Bundle V itself. That is the bundle working, not scope creep — every one was a defect already shipped and previously invisible. Earlier count: **47 of 55 closed** (recounted 2026-08-20 with `gh issue list --milestone v1.16.0 --state all --limit 300`; the default 30-row limit under-reports it, and the milestone page counts PRs too). Open: 822 842 860 951 995 1004 1007 1008 — **#1007 and #1008 are fixed on `feature/995_api_contract_sweep` and close when it merges**. Previously **44 of 53 shipped** (merged PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969, #975, #976, #983, #986, #992, #996, #1000; **#1005 open**). Bundles **O** (#929 #952, PR #975), **S** (#974 #959 #935, PR #976), **P** (#947 #948, PR #983), **T** (#981 #982 #984 #988 #989, PR #986), **Q** (#936 #991, PR #992) and the **hdf-cli 3.5.1 pin** (#993, PR #996) have all shipped. **Bundle U** (#997 #999 #998 + #994) shipped in PR #1000; **Bundle W** (#1001 #1002 #1003) plus U's carried debt is **in [PR #1005](https://github.com/risk-sentinel/sparc/pull/1005) on `bug/1001_ubi9_findings_and_bundle_u_debt`, NOT MERGED** — 15 commits, image CVEs 132 -> 80, undispositioned HIGHs 19 -> 0, rspec 5669/0/10, tests/api 473, ui-smoke 496 passed / 9 skipped / 0 failed. **#1002, #1003 and #1004 were all filed during it**: the first two found by running Bundle U's held gate, the third by the OWNER reviewing live exports — none by the suite. The count moved 16 → 24 → 25 → 32 → 36 → 37 → 39 → 40 → 49 → 50 → 52 → **53**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; **#981, #982 came from Bundle P's verification gate**; **#988, #989 from Bundle T**, **#991 from Bundle Q** and **#993 from the hdf pin**; and **#994, #995, #997, #998, #999 were filed on 2026-08-19 — every one of them found by USING the product rather than by the suite**, which is the argument #995 makes; **#1001 was filed on 2026-08-20 from a scan of the shipping image**, which is the same argument aimed at the container; **#1002 and #1003 were filed and fixed inside Bundle W**, both surfaced by running the gate Bundle U had held — neither the suite nor a reading of the code had found either. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** (#997 #999 #998 #994, SHIPPED in PR #1000 -> `27aea200`) → **W + U's carried debt** (#1001) → **V** (#995 #951) → **R** (#860 #842 #822 +#820). **W was moved from LAST to FIRST on 2026-08-20 at owner direction**, to land the milestone; the earlier "W is last" placement in the Bundle W section above is superseded. **#951 and #995 were slotted into Bundle V on 2026-08-19**, which makes V the next bundle and moves R behind it — the right order for a release gate whose findings generate work. **Bundle V is the endpoint sweep, and the gate is SWEPT + FIXED** (owner-decided 2026-08-20): all 229 `/api/v1` route entries verified against their published contracts with an independent read — ~1,294 checks against the 103 value-verifying assertions that exist today — **and every finding fixed inside this milestone**, tracked per group. **Treat the ~2026-09-21 target as provisional until the first three groups report a yield.** Nothing on the milestone is now in no bundle. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, ~~#880~~, ~~#879~~, ~~#845~~, ~~#954~~, ~~#955~~, ~~#956~~, ~~#958~~, ~~#941~~, ~~#942~~, ~~#945~~, ~~#946~~, ~~#957~~, ~~#944~~, ~~#963~~, ~~#939~~, ~~#929~~, ~~#952~~, ~~#974~~, ~~#935~~, ~~#959~~, ~~#947~~, ~~#948~~, ~~#981~~, ~~#982~~, ~~#984~~, ~~#988~~, ~~#989~~, ~~#936~~, ~~#991~~, ~~#993~~, ~~#994~~, ~~#997~~, ~~#998~~, ~~#999~~, #995, #951, #860, #842, #822, #1001, #1002, #1003, #1004, #1007, #1008 | In Progress — **BUNDLE V COMPLETE, awaiting merge of [PR #1009](https://github.com/risk-sentinel/sparc/pull/1009).** Recounted 2026-08-22 with `gh issue list --milestone v1.16.0 --state all --limit 300`: **83 issues, 47 closed, 36 open**, and 30 of the open ones close when PR #1009 merges (its `Closes` list). What remains after that: **#822, #842, #860** (Bundle R, not started), **#1039** (authoritative sources — filed 2026-08-22, needs control references, provenance, dates and full CRUD), and **Bundle X** — **#1042** (the navbar overflows the viewport from 992px to ~1400px on every page, found by the #951 audit) and **#950** (one button role, one class, light/dark parity across 19 variants). #950 had sat OPEN with NO MILESTONE since it was split from #949, which is why it never appeared in a bundle: it was invisible to every milestone count. Owner put it on v1.16.0 on 2026-08-22. The milestone grew from 55 to 83 because the sweep FOUND things: 20 issues were filed and fixed inside Bundle V itself. That is the bundle working, not scope creep — every one was a defect already shipped and previously invisible. Earlier count: **47 of 55 closed** (recounted 2026-08-20 with `gh issue list --milestone v1.16.0 --state all --limit 300`; the default 30-row limit under-reports it, and the milestone page counts PRs too). Open: 822 842 860 951 995 1004 1007 1008 — **#1007 and #1008 are fixed on `feature/995_api_contract_sweep` and close when it merges**. Previously **44 of 53 shipped** (merged PRs #924, #925, #931, #932, #933, #937, #938, #943, #960, #964, #969, #975, #976, #983, #986, #992, #996, #1000; **#1005 open**). Bundles **O** (#929 #952, PR #975), **S** (#974 #959 #935, PR #976), **P** (#947 #948, PR #983), **T** (#981 #982 #984 #988 #989, PR #986), **Q** (#936 #991, PR #992) and the **hdf-cli 3.5.1 pin** (#993, PR #996) have all shipped. **Bundle U** (#997 #999 #998 + #994) shipped in PR #1000; **Bundle W** (#1001 #1002 #1003) plus U's carried debt is **in [PR #1005](https://github.com/risk-sentinel/sparc/pull/1005) on `bug/1001_ubi9_findings_and_bundle_u_debt`, NOT MERGED** — 15 commits, image CVEs 132 -> 80, undispositioned HIGHs 19 -> 0, rspec 5669/0/10, tests/api 473, ui-smoke 496 passed / 9 skipped / 0 failed. **#1002, #1003 and #1004 were all filed during it**: the first two found by running Bundle U's held gate, the third by the OWNER reviewing live exports — none by the suite. The count moved 16 → 24 → 25 → 32 → 36 → 37 → 39 → 40 → 49 → 50 → 52 → **53**: #939, #941, #942 and #936 were filed during Bundle F; #944, #946, #947 + #952 came out of local review of Bundle E; **#954, #955, #956, #958 were filed and fixed inside Bundle M**, where building a real authorization exposed that the generators produce hollow documents where the importers produce complete ones; **#963 was filed and fixed inside Bundle N**; the owner added #935, #951, #959 on 2026-08-15; **#981, #982 came from Bundle P's verification gate**; **#988, #989 from Bundle T**, **#991 from Bundle Q** and **#993 from the hdf pin**; and **#994, #995, #997, #998, #999 were filed on 2026-08-19 — every one of them found by USING the product rather than by the suite**, which is the argument #995 makes; **#1001 was filed on 2026-08-20 from a scan of the shipping image**, which is the same argument aimed at the container; **#1002 and #1003 were filed and fixed inside Bundle W**, both surfaced by running the gate Bundle U had held — neither the suite nor a reading of the code had found either. **Count it, do not carry the last figure forward** — reconcile this row against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** (#997 #999 #998 #994, SHIPPED in PR #1000 -> `27aea200`) → **W + U's carried debt** (#1001) → **V** (#995 #951) → **R** (#860 #842 #822 +#820). **W was moved from LAST to FIRST on 2026-08-20 at owner direction**, to land the milestone; the earlier "W is last" placement in the Bundle W section above is superseded. **#951 and #995 were slotted into Bundle V on 2026-08-19**, which makes V the next bundle and moves R behind it — the right order for a release gate whose findings generate work. **Bundle V is the endpoint sweep, and the gate is SWEPT + FIXED** (owner-decided 2026-08-20): all 229 `/api/v1` route entries verified against their published contracts with an independent read — ~1,294 checks against the 103 value-verifying assertions that exist today — **and every finding fixed inside this milestone**, tracked per group. **Treat the ~2026-09-21 target as provisional until the first three groups report a yield.** Nothing on the milestone is now in no bundle. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 
