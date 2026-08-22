@@ -20,6 +20,8 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::CdefDocumentsController < Api::V1::BaseController
+  OSCAL_EXPORT_FORMATS = %w[oscal oscal-yaml oscal-xml].freeze
+
   include ReconciliationGate
 
   include DocumentApprovalApi
@@ -296,8 +298,61 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   # CDEF is instance-global, not boundary-scoped, so there is no boundary to
   # scope this to. `CdefDocument#to_json_data` already emitted `controls:` with
   # each control's fields; only the route was missing.
+  # GET /api/v1/cdef_documents/:id/export[?format=&validate=]
+  #
+  # #1029 — the OSCAL component definition, the artifact a CDEF exists to
+  # produce, could be downloaded only in a browser. The web carries five
+  # actions for it (download_oscal, download_oscal_validated,
+  # download_oscal_unvalidated, download_yaml, download_xml) because a browser
+  # download needs a distinct URL per variant. An API does not: they are one
+  # resource in three serialisations, with validation as a flag, so this is one
+  # endpoint with `format` and `validate` rather than five routes.
+  #
+  #   format=fields (default) SPARC's own control-field JSON — unchanged, so
+  #                           existing callers of this endpoint are unaffected
+  #   format=oscal            OSCAL component definition, JSON
+  #   format=oscal-yaml       the same document as YAML
+  #   format=oscal-xml        the same document as XML
+  #
+  #   validate=true (default for the OSCAL formats) validates against the NIST
+  #   schema and REFUSES a document that does not conform. The web path
+  #   degrades to a flash and a redirect; an API has to say so in the response,
+  #   so an invalid document is a 422 naming the errors rather than a file the
+  #   caller discovers is unusable later. `validate=false` is the deliberate
+  #   escape hatch and maps to `export_unvalidated`.
   def export
-    render json: JSON.parse(JsonExportService.export_cdef(@cdef))
+    format = params[:format].presence&.to_s || "fields"
+    return render json: JSON.parse(JsonExportService.export_cdef(@cdef)) if format == "fields"
+
+    unless OSCAL_EXPORT_FORMATS.include?(format)
+      return render json: {
+        error: "Unknown export format #{format.inspect}",
+        expected: ([ "fields" ] + OSCAL_EXPORT_FORMATS)
+      }, status: :unprocessable_entity
+    end
+
+    validate = params[:validate].to_s != "false"
+    service = OscalComponentDefinitionExportService.new(@cdef)
+    json_string = validate ? service.export : service.export_unvalidated
+
+    audit_log("cdef_document_exported", subject: @cdef,
+              metadata: { name: @cdef.name, format: format, validated: validate })
+
+    case format
+    when "oscal"      then render json: JSON.parse(json_string)
+    when "oscal-yaml" then render plain: OscalExportFormatService.to_yaml(json_string),
+                                   content_type: "application/x-yaml"
+    when "oscal-xml"  then render xml: OscalExportFormatService.to_xml(json_string, :component_definition)
+    end
+  rescue OscalValidationError => e
+    # Named, and pointing at the way out. A caller who wants the document
+    # anyway can ask for it; what they must not get is a silent 500 or a file
+    # that claims to be OSCAL and is not.
+    render json: {
+      error: "The component definition does not conform to the OSCAL schema",
+      details: Array(e.message.to_s.split("\n")).first(10),
+      hint: "Re-request with validate=false to export it anyway"
+    }, status: :unprocessable_entity
   end
 
   private

@@ -18,8 +18,10 @@ linked to multiple boundaries via leveraged authorizations.
 from __future__ import annotations
 
 import json
+import time
 import uuid
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -687,6 +689,194 @@ class TestUpdateScope:
         response = anon_client.patch(
             f"/api/v1/cdef_documents/{scoped_cdef['cdef']['slug']}/scope",
             json={"scope": "global"},
+        )
+
+        assert response.status_code == 401, response.text
+
+
+# api-inventory: covers cdef_documents#export
+#
+# #1029 — a STIG ingested end to end, entirely through the API.
+#
+# This is the coverage the issue was filed for. Every step existed and was
+# individually reachable; nothing drove the whole chain, so "SPARC ingests DISA
+# STIGs" rested on someone having done it by hand once. The CIS/SCAP half was
+# split to #1033, leaving this: upload a real XCCDF benchmark, let the
+# conversion job parse it, and get an OSCAL component definition back.
+_STIG_FIXTURE = Path(__file__).parent / "fixtures" / "sample-stig-xccdf.xml"
+
+# What the fixture declares: two rules, both citing CCI-000366, which resolves
+# to NIST CM-6. That resolution is the #1030 work, and this is the only test
+# that exercises it from a real benchmark file rather than from a fabricated
+# reference.
+STIG_RULE_IDS = ["SV-257777r925318_rule", "SV-257778r925321_rule"]
+STIG_RESOLVED_CONTROL = "cm-6"
+
+
+@pytest.mark.happy
+class TestStigEndToEnd:
+    @pytest.fixture(scope="class")
+    def ingested_stig(self, admin_client: httpx.Client):
+        """Upload the benchmark and wait for the conversion job to finish.
+
+        Ingest is asynchronous by design — `import` attaches the file, enqueues
+        DocumentConversionJob and answers `pending` — so the document is polled
+        rather than assumed ready. A test that read it immediately would be
+        asserting against a half-built record.
+        """
+        suffix = uuid.uuid4().hex[:8]
+        upload = _STIG_FIXTURE.read_bytes()
+        response = admin_client.post(
+            "/api/v1/cdef_documents/import",
+            files={"file": (f"phase2-stig-{suffix}.xml", upload, "application/xml")},
+        )
+        assert response.status_code == 201, response.text
+        body = response.json()
+        assert body["meta"]["created"] == 1, body["meta"]
+        document = body["data"][0]
+        assert document["status"] == "pending", document
+        assert document["file_type"] == "xccdf", document
+
+        slug = document["slug"]
+        for _ in range(30):
+            current = admin_client.get(f"/api/v1/cdef_documents/{slug}").json()["data"]
+            if current["status"] in ("completed", "failed"):
+                break
+            time.sleep(1)
+
+        assert current["status"] == "completed", (
+            f"the conversion job left the document {current['status']!r}: {current}"
+        )
+        try:
+            yield current
+        finally:
+            admin_client.delete(f"/api/v1/cdef_documents/{slug}")
+
+    def test_the_benchmark_is_recognised_as_a_disa_stig(self, ingested_stig) -> None:
+        """Not merely "a file was accepted" — the parser has to identify what it
+        parsed, or the STIG-specific fields below have nowhere to come from."""
+        assert ingested_stig["cdef_type"] == "disa_stig", ingested_stig
+        assert ingested_stig["benchmark_id"], ingested_stig
+        assert ingested_stig["controls_count"] == len(STIG_RULE_IDS), ingested_stig
+
+    def test_the_rules_keep_their_stig_identity_and_resolve_to_nist(
+        self, admin_client: httpx.Client, ingested_stig
+    ) -> None:
+        """The translation this product exists to perform.
+
+        A STIG rule is addressed by its own id and cites a CCI; a NIST control
+        is what an assessor asks about. Both must survive: losing the rule id
+        makes the finding untraceable to the benchmark, and losing the control
+        id makes it unanswerable.
+        """
+        exported = admin_client.get(f"/api/v1/cdef_documents/{ingested_stig['slug']}/export")
+        assert exported.status_code == 200, exported.text
+        controls = exported.json()["controls"]
+
+        assert sorted(c["source_control_id"] for c in controls) == sorted(STIG_RULE_IDS)
+        assert {c["control_id"] for c in controls} == {STIG_RESOLVED_CONTROL}, (
+            f"CCI-000366 should resolve to {STIG_RESOLVED_CONTROL}: "
+            f"{[c['control_id'] for c in controls]}"
+        )
+        for control in controls:
+            assert control["cci_references"], f"no CCI kept for {control['source_control_id']}"
+
+    def test_it_exports_as_an_oscal_component_definition(
+        self, admin_client: httpx.Client, ingested_stig
+    ) -> None:
+        """The artifact a component definition exists to produce.
+
+        Until #1029 this was reachable only in a browser: the API's `export`
+        returned SPARC's own control-field JSON and the OSCAL document had no
+        endpoint at all.
+        """
+        response = admin_client.get(
+            f"/api/v1/cdef_documents/{ingested_stig['slug']}/export", params={"format": "oscal"}
+        )
+
+        assert response.status_code == 200, response.text
+        definition = response.json()["component-definition"]
+        assert definition["uuid"], definition.keys()
+
+        requirements = [
+            requirement
+            for component in definition.get("components", [])
+            for implementation in component.get("control-implementations", [])
+            for requirement in implementation.get("implemented-requirements", [])
+        ]
+        assert len(requirements) == len(STIG_RULE_IDS), requirements
+        assert {r["control-id"] for r in requirements} == {STIG_RESOLVED_CONTROL}, requirements
+
+
+@pytest.mark.validation
+class TestExportFormats:
+    """`export` is one endpoint with `format` and `validate` (#1029).
+
+    The web carries five actions for this because a browser download needs a
+    URL per variant. They are one resource in three serialisations with
+    validation as a flag, so the API expresses them as parameters.
+    """
+
+    @pytest.fixture(scope="class")
+    def document(self, admin_client: httpx.Client):
+        suffix = uuid.uuid4().hex[:8]
+        created = admin_client.post(
+            "/api/v1/cdef_documents", json={"cdef_document": {"name": f"phase2-export-{suffix}"}}
+        )
+        assert created.status_code == 201, created.text
+        record = created.json()["data"]
+        try:
+            yield record
+        finally:
+            admin_client.delete(f"/api/v1/cdef_documents/{record['slug']}")
+
+    def test_the_default_is_unchanged(self, admin_client: httpx.Client, document) -> None:
+        """`export` predates the format parameter and callers depend on its
+        shape, so no parameter must keep meaning SPARC's control-field JSON."""
+        response = admin_client.get(f"/api/v1/cdef_documents/{document['slug']}/export")
+
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert "controls" in body and "document_name" in body, sorted(body)
+        assert "component-definition" not in body
+
+    @pytest.mark.parametrize(
+        "fmt,probe",
+        [
+            ("fields", lambda r: "controls" in r.json()),
+            ("oscal", lambda r: "component-definition" in r.json()),
+            ("oscal-yaml", lambda r: r.text.lstrip().startswith("---")),
+            ("oscal-xml", lambda r: r.text.lstrip().startswith("<?xml")),
+        ],
+    )
+    def test_each_format_returns_that_serialisation(
+        self, admin_client: httpx.Client, document, fmt, probe
+    ) -> None:
+        response = admin_client.get(
+            f"/api/v1/cdef_documents/{document['slug']}/export",
+            params={"format": fmt, "validate": "false"},
+        )
+
+        assert response.status_code == 200, response.text
+        assert probe(response), (
+            f"format={fmt} did not return that serialisation: {response.text[:120]}"
+        )
+
+    def test_an_unknown_format_is_refused_by_name(
+        self, admin_client: httpx.Client, document
+    ) -> None:
+        response = admin_client.get(
+            f"/api/v1/cdef_documents/{document['slug']}/export", params={"format": "carrier_pigeon"}
+        )
+
+        assert_error_envelope(response, expected_status=422)
+        assert "carrier_pigeon" in response.json()["error"], response.text
+        assert "oscal" in json.dumps(response.json()["expected"]), response.json()
+
+    @pytest.mark.auth
+    def test_an_anonymous_caller_is_refused(self, anon_client: httpx.Client, document) -> None:
+        response = anon_client.get(
+            f"/api/v1/cdef_documents/{document['slug']}/export", params={"format": "oscal"}
         )
 
         assert response.status_code == 401, response.text

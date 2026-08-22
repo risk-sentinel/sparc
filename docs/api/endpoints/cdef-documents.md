@@ -50,6 +50,7 @@ it previously received `201`/`200`.
 | `POST` | `/api/v1/cdef_documents/:id/approve` | Approve a CDEF under review |
 | `POST` | `/api/v1/cdef_documents/:id/reject` | Reject a CDEF under review |
 | `PATCH` | `/api/v1/cdef_documents/:id/scope` | Pin the CDEF to one authorization boundary, or return it to global |
+| `GET` | `/api/v1/cdef_documents/:id/export` | Export the CDEF — see **Export formats** below for `format` and `validate` |
 
 ---
 
@@ -775,3 +776,71 @@ Uploads go through the same checks as the browser upload, not a parallel
 implementation — executable-signature rejection, content-type validation,
 zip-bomb rejection, and syntactic-structure validation (SI-10). A rejected file
 is named individually in `meta.errors`.
+
+---
+
+## Export formats (#1029)
+
+```
+GET /api/v1/cdef_documents/:id/export[?format=&validate=]
+```
+
+One endpoint rather than five. The web carries a separate action per download
+(`download_oscal`, `download_oscal_validated`, `download_oscal_unvalidated`,
+`download_yaml`, `download_xml`) because a browser download needs its own URL;
+over the API they are one resource in three serialisations, with validation as
+a flag.
+
+| `format` | Returns |
+|---|---|
+| `fields` *(default)* | SPARC's own control-field JSON — the shape this endpoint has always returned |
+| `oscal` | OSCAL component definition, JSON |
+| `oscal-yaml` | the same document as YAML |
+| `oscal-xml` | the same document as XML |
+
+`validate` defaults to **true** for the OSCAL formats: the document is checked
+against the NIST schema and a non-conforming one is **refused**, rather than
+returned as a file the caller discovers is unusable later.
+
+```json
+{
+  "error": "The component definition does not conform to the OSCAL schema",
+  "details": ["..."],
+  "hint": "Re-request with validate=false to export it anyway"
+}
+```
+
+`validate=false` is the deliberate escape hatch and always returns the
+document. Note that a component definition with **no components** does not
+conform, so a CDEF created and never populated is refused by the default path —
+that is the check working, not a bug.
+
+An unknown `format` is refused with `422` naming it and listing what is
+accepted.
+
+### Ingesting a STIG end to end
+
+The whole chain is available over the API (#1029):
+
+```bash
+# 1. upload the benchmark — returns 201 with status "pending"
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+  -F "file=@U_RHEL_9_STIG_V2R7_Manual-xccdf.xml" \
+  https://sparc.example.com/api/v1/cdef_documents/import
+
+# 2. poll until DocumentConversionJob finishes
+curl -H "Authorization: Bearer $TOKEN" \
+  https://sparc.example.com/api/v1/cdef_documents/<slug>          # status: completed
+
+# 3. export it as OSCAL
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://sparc.example.com/api/v1/cdef_documents/<slug>/export?format=oscal"
+```
+
+Ingest is asynchronous by design — `import` attaches the file, enqueues the
+conversion job and answers `pending` — so step 2 polls rather than assuming the
+document is ready. Each STIG rule keeps its own identifier
+(`source_control_id`, e.g. `SV-257777r925318_rule`) alongside the NIST control
+its CCI resolves to (`control_id`, e.g. `cm-6`), because losing the rule id
+makes a finding untraceable to the benchmark and losing the control id makes it
+unanswerable to an assessor.
