@@ -472,6 +472,19 @@ module SparcConfig
   # hundreds of unrelated names as unmatched grants.
   def oidc_grants_prefix = ENV.fetch("SPARC_OIDC_GRANTS_PREFIX", "sparc:")
 
+  # off | bootstrap | authoritative. `off` by default, so an existing
+  # deployment that upgrades and changes nothing behaves identically.
+  #
+  # `bootstrap` performs the ADD leg only. It is kept (owner-decided) because
+  # off -> bootstrap -> dry-run -> authoritative is an adoption ladder, where
+  # off -> authoritative is a cliff.
+  def oidc_sync_mode = ENV.fetch("SPARC_OIDC_SYNC_MODE", "off")
+
+  # Refuse an `authoritative` sync that would revoke more than this proportion
+  # of the memberships it manages. The second line of defence, not the first —
+  # revocation is already scoped to source: "idp". 0 disables the guard.
+  def oidc_sync_max_revoke_pct = ENV.fetch("SPARC_OIDC_SYNC_MAX_REVOKE_PCT", "25").to_i
+
   # #860 — instance-wide roles an IdP is permitted to grant.
   #
   # EMPTY BY DEFAULT, which makes an instance grant inexpressible: a claim
