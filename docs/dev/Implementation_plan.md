@@ -654,9 +654,11 @@ Backlog / gated:
 
 ### Phase 16: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
 
-**Goal:** Close the v1.16.0 milestone (**86 issues — 79 closed, 7 open, re-measured 2026-08-22**, after Bundle W and Bundle V both merged; 15 originally scoped, and the rest filed as the work found them — #939, #941, #942, #936 during Bundle F; #944, #946, #947, #952 in local review of Bundle E; #845 to make the test data real; #954–#958 inside Bundle M; #963 inside Bundle N; #935, #951, #959 added by the owner on 2026-08-15; #981, #982, #984 from the Bundle P verification gate; #988, #989 inside Bundle T; #991 inside Bundle Q; #993 by the hdf-cli 3.5.1 pin; #994, #995, #997, #998, #999 on 2026-08-19; #1001–#1003 from scanning the shipping image; **#1004 from the owner reading a live OSCAL export**; and **twenty more filed and fixed inside Bundle V's own sweep**). The count has moved **ten** times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
+**Goal:** Close the v1.16.0 milestone (**86 issues — 83 closed, 3 open, re-measured 2026-08-23**, after Bundle R merged; 15 originally scoped, and the rest filed as the work found them — #939, #941, #942, #936 during Bundle F; #944, #946, #947, #952 in local review of Bundle E; #845 to make the test data real; #954–#958 inside Bundle M; #963 inside Bundle N; #935, #951, #959 added by the owner on 2026-08-15; #981, #982, #984 from the Bundle P verification gate; #988, #989 inside Bundle T; #991 inside Bundle Q; #993 by the hdf-cli 3.5.1 pin; #994, #995, #997, #998, #999 on 2026-08-19; #1001–#1003 from scanning the shipping image; **#1004 from the owner reading a live OSCAL export**; and **twenty more filed and fixed inside Bundle V's own sweep**). The count has moved **ten** times; **measure it rather than carrying the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all`, which is how #945 and #948 were found after being missed by every prior pass.
 
-**Open (7):** #860 #842 #822 **#1043** (**Bundle R, in progress**) · #1042 #950 (**Bundle X**) · **#1039** (unslotted).
+**Open (3):** #1042 #950 **#1039** — all three are **Bundle X**, the last bundle. #1039 was slotted
+into it by the owner on 2026-08-23. Bundle R shipped 2026-08-23 (PR #1045 → `a41764a7`), closing
+#860, #842, #822 and #1043.
 
 **The release gate was Bundle V, and it is MET** (PR #1009 → `fda3413d`, merged 2026-08-22).
 Every `/api/v1` endpoint was swept against its published contract — send a payload, parse the
@@ -696,12 +698,15 @@ not the letter. Every milestone issue belongs to exactly one bundle.
 | 17 | U — Profile fidelity: what the baseline says, and what SPARC shows | #997 #999 #998 **#994** | **Shipped** (PR #1000 → `27aea200`) |
 | 18 | **W — The CVEs the UBI9 migration hid, + Bundle U's carried debt** | **#1001** **#1002** **#1003** | **Shipped** (PR [#1005](https://github.com/risk-sentinel/sparc/pull/1005) → `ab2dbd1a`, 15 commits). Image CVEs 132 → 80, undispositioned HIGHs 19 → 0; rspec 5669/0/10, tests/api 473, ui-smoke 496 passed / 9 skipped / 0 failed. **#1002 and #1003 were filed and fixed inside it**, both surfaced by running the gate U had held |
 | 19 | **V — SWEEP every API endpoint against its published contract** | **#995** #951 **#1004** + 20 filed and fixed inside it | **Shipped — RELEASE GATE MET** (PR [#1009](https://github.com/risk-sentinel/sparc/pull/1009) → `fda3413d`, **72 commits, 32 `Closes`**, merged 2026-08-22). All three gate axes 0 (pytest 42→0, docs 19→0, Postman 6→0); both gate scripts exit 0 on 285 endpoints. Final gates: rspec **6049/0/10**, tests/api **2668 with zero skips**, ui-smoke **497 passed / 18 skipped / 0 failed**, brakeman 0. Per-group tracker in the Bundle V section |
-| 20 | R — Auth entitlements — IdP as system of record | **#860** **#842** **#822** **#1043** | **IN PR.** Design memo settled both open questions before code; dry-run built first, not last. Grant parsing -> resolution -> sync -> login wiring -> unmatched queue (API, screen, daily digest) -> preview endpoint, plus the absolute session cap and IdP-mediated PIV |
-| 21 | **X — UI consistency: the navbar, the buttons** | **#1042** **#950** | **Queued, after R** (owner, 2026-08-22: *"address 950 in milestone v1.16.0. Not this pr though"*). #1042 is what the #951 responsive sweep found — 62 pages × 5 breakpoints, and the functional categories came back EMPTY. **Layout, not function** |
+| 20 | R — Auth entitlements — IdP as system of record | **#860** **#842** **#822** **#1043** | **Shipped** (PR [#1045](https://github.com/risk-sentinel/sparc/pull/1045) → `a41764a7`, **25 commits**, merged 2026-08-23). Design memo settled both open questions before code; dry-run built first, not last. Grant parsing → resolution → sync → login wiring → unmatched queue (API, screen, daily digest) → preview endpoint, plus the absolute session cap and IdP-mediated PIV. Final gates: rspec **6187/0/10**, tests/api **2704 passed / 2 skipped**, ui-smoke **508 passed / 0 failed / 15 skipped**, both API gates 0 at **288 endpoints** |
+| 21 | **X — UI consistency, authoritative-source CRUD, and the dependency lane** | **#1042** **#950** **#1039** | **THE LAST BUNDLE — in progress.** #1042 is what the #951 responsive sweep found — 62 pages × 5 breakpoints, and the functional categories came back EMPTY: **layout, not function**. #950 is buttons + the missing shared page-header, scoped by the owner 2026-08-23. **#1039 was slotted here** the same day (owner: *"mostly UI … a true gap in managing the required data. APIs are unknown and must ride the bundle X"*). Carries the **VERSION bump to 1.16.0** and the **dependency lane**, including a live `mail` advisory no Dependabot PR covers |
 
-**One issue is unslotted: #1039** (authoritative sources need control references, provenance and
-full CRUD), filed 2026-08-21 at owner direction — the owner's call whether it rides Bundle R, Bundle
-X, or waits for v1.16.1. Everything else is slotted. #935 and #959 went into **Bundle S** on
+**#1039 is no longer unslotted — it rides Bundle X** (owner, 2026-08-23). The reasoning is that
+the gap is a management gap rather than a modelling one: *"1039 is mostly UI as the fields should
+all exist but have no way of being updated in the UI in CRUD and a true gap in managing the
+required data. APIs are unknown and must ride the bundle X."* That is measurably right for three
+of its four asks and **wrong for one** — see the Bundle X section, where the surface is measured.
+Everything is now slotted. #935 and #959 went into **Bundle S** on
 2026-08-17, #997 #998 #999 #994 into **Bundle U**, and **#995 and #951 into Bundle V on 2026-08-19
 at owner direction**; **#1004 was slotted into Bundle V on 2026-08-21** rather than waiting, because
 the back-matter work it needed was already open in that branch. **W was then moved from LAST to FIRST on 2026-08-20**, combined with Bundle
@@ -715,10 +720,10 @@ swallow-and-continue rescue patterns — raised out of #939, **due 2026-09-06**;
 11 log-and-continue in services/jobs, and 17 files combining a transaction with a rescue, which
 is the candidate set for the #963 shape).
 
-**Milestone re-measured 2026-08-22, after Bundle W and Bundle V both merged: 86 issues,
-79 closed / 7 open.** The 7 open: **#822 #842 #860 #1043** (Bundle R, in progress) ·
-**#1042 #950** (Bundle X) · **#1039** (unslotted). #1043 was filed from Bundle R's own
-verification work — the eleventh time the count has moved, and the reason it is measured. Bundle S closed #935, #959 and #974; Bundle P closed #947 and #948;
+**Milestone re-measured 2026-08-23, after Bundle R merged: 86 issues, 83 closed / 3 open**
+(`gh issue list --milestone v1.16.0 --state all --limit 300` → 83 CLOSED, 3 OPEN). The 3 open:
+**#1042 #950 #1039**, all Bundle X. #1043 was filed from Bundle R's own
+verification work — the eleventh time the count has moved, and the reason it is measured. Bundle R closed #860, #842, #822 and #1043; Bundle S closed #935, #959 and #974; Bundle P closed #947 and #948;
 Bundle T closed #981, #982, #984, #988 and #989; Bundle Q closed #936 and #991; the hdf pin closed
 #993; Bundle U closed #994, #997, #998 and #999; Bundle W closed #1001, #1002 and #1003; and
 **Bundle V closed 32 — #995, #951, #1004, #1036 and the twenty-odd its own sweep filed.**
@@ -1634,11 +1639,22 @@ close.
 | **#995** | Epic: validate every `/api/v1` endpoint actually does what the published docs say — a 200 is not evidence | **DONE in PR #1009 (2026-08-22).** All three gate axes are 0 — no endpoint without a `tests/api` module (was 42), none documented nowhere (was 19), none missing from Postman (was 6) — and both gate scripts exit 0. Twenty issues were found by the sweep and fixed inside it. A mark in the per-group tracker means the group is exercised against a live instance with its effects read back; it does NOT certify all six matrix checks on all 285 endpoints, and the tracker says so. Original plan below, kept for the record. **Bundle V, RELEASE GATE.** The sweep, the matrix, the floor of ~1,294 checks and the per-group tracker are above. Sequence: fix the inventory baseline → build `assert_crud_round_trip` → the 8 status-only update tests and 4 body-blind modules (cheapest first wins) → the per-group sweep → the missing-endpoint axis over the web controllers → contract reconciliation against `docs/api/endpoints/*.md`. |
 | **#951** | Sidebar independent scroll, re-organization, and a responsive breakpoint audit | **DONE in PR #1009 (2026-08-22)**, layout approved by the owner. Root cause of the scroll was `min-height` on `.sparc-sidebar`: the box grew with its content, so `overflow-y: auto` never engaged and the DOCUMENT scrolled. Boundary documents reordered to the NIST layers (CDEFs, SSP, SAP, Evidence, SAR, Amendments, POA&Ms); Profiles removed as a baseline SELECTION rather than a per-boundary artefact; boundaries paginate at 10; Resources nest by HOST; the boundary name links to the boundary; width 220px -> 288px; dropdown bounded (was 800px tall, 87px unreachable at 777px); warning-badge contrast 2.19:1 -> 9.58:1. **The boundary CDEF and evidence filters were INERT and are now real** — the CDEF leaf listed every CDEF in the instance. 10 Playwright checks, CSP-clean, three breakpoints. **Caveat: the responsive breakpoint AUDIT was not performed systematically** — the one known finding was fixed and three breakpoints are covered. **Bundle V.** Owner-added 2026-08-15. **Re-organization is a NAVIGATION change and needs explicit approval** — nav follows the NIST layers and links must be findable in the same place every time; visibility may differ, placement may not. Any new or moved control also takes a Playwright interaction check with a CSP assertion. |
 
-##### 20. Bundle R — Auth entitlements — IdP as system of record  ·  **NEXT — in progress**
+##### 20. Bundle R — Auth entitlements — IdP as system of record  ·  **SHIPPED 2026-08-23**
 
-**NEXT, now that Bundle V has shipped** — the last substantial bundle in v1.16.0, with Bundle X (#1042 #950) behind it. **This moves #820 (openssl 3.3.0 → 4.0.2) to the end of the release**, since it is paired with #822 so one two-ceremony TLS verification round covers both. `bundle-audit` reports no vulnerabilities against the current lock, so the deferral is schedulable rather than reactive — **if that changes, decouple #820 from #822 and take it on its own.**
+**SHIPPED** as PR [#1045](https://github.com/risk-sentinel/sparc/pull/1045) → `a41764a7`, 25
+commits, merged 2026-08-23. #860, #842, #822 and #1043 closed. Bundle X (#1042 #950 #1039) is
+what remains.
 
-**#820 gained a prerequisite on 2026-08-17 (owner-decided): rebuild the dev Ruby against OpenSSL 3 FIRST, as part of the same work item.** Local Ruby links the EOL OpenSSL 1.1.1 branch while the prod image runs 3.5.5, and the openssl 4.x gem requires 3.x — so on an unmodified dev box the bump produces a **segmentation fault inside bundler itself**, leaving no working `bundle` to diagnose it with. Measurements and recovery steps are on PR #820. Recommended shape: install the OpenSSL-3-linked Ruby **alongside** rather than replacing, prove it with a full suite run, then switch — the rvm Ruby is shared with other work on the machine (InSpec profiles among it), so an in-place relink has a blast radius beyond this repo. Expect some specs to legitimately go red on OpenSSL 3 (legacy provider, stricter security level, PKCS#12 defaults); those are real differences prod already has and dev cannot currently see. Within the bundle: #860 answers the design questions, #842 needs a written answer for which of the two role systems a claim binds to, and #822 carries the PIV ceremony.
+**#820 (openssl 3.3.0 → 4.0.2) did NOT ride this bundle, and has moved to v1.16.1** (owner-decided
+2026-08-23). It was paired with #822 so one two-ceremony TLS round would cover both; #822 shipped
+without it because its own gateway-mTLS proof was deferred to AWS anyway, so the pairing bought
+nothing. The standing condition on the deferral was *"`bundle-audit` reports no vulnerabilities
+against the current lock, so this is schedulable rather than reactive — if that changes, decouple
+#820 and take it on its own."* **That condition has now failed, but not on `openssl`** — the live
+advisory is `mail` 2.9.0, which is unrelated to the openssl gem and is taken in Bundle X's
+dependency lane. So #820's deferral still stands on its own terms.
+
+**#820's prerequisite, decided 2026-08-17 and unchanged: rebuild the dev Ruby against OpenSSL 3 FIRST, as part of the same work item.** Local Ruby links the EOL OpenSSL 1.1.1 branch while the prod image runs 3.5.5, and the openssl 4.x gem requires 3.x — so on an unmodified dev box the bump produces a **segmentation fault inside bundler itself**, leaving no working `bundle` to diagnose it with. Measurements and recovery steps are on PR #820. Recommended shape: install the OpenSSL-3-linked Ruby **alongside** rather than replacing, prove it with a full suite run, then switch — the rvm Ruby is shared with other work on the machine (InSpec profiles among it), so an in-place relink has a blast radius beyond this repo. Expect some specs to legitimately go red on OpenSSL 3 (legacy provider, stricter security level, PKCS#12 defaults); those are real differences prod already has and dev cannot currently see. Within the bundle: #860 answers the design questions, #842 needs a written answer for which of the two role systems a claim binds to, and #822 carries the PIV ceremony.
 
 **The absolute session cap rides this bundle as [#1043](https://github.com/risk-sentinel/sparc/issues/1043)**
 (owner, 2026-08-22: *"The working day needs to have a default max of 8 hours
@@ -1780,119 +1796,78 @@ and the code says so rather than implying this covers it.
 | **#822** | ~~IdP-mediated PIV via OIDC `acr`/`amr`~~ — **BUILT** (owner directed it into this PR) | `SPARC_PIV_OIDC_ACR_VALUES` / `SPARC_PIV_OIDC_AMR_VALUES`, both **empty by default, and empty accepts NOTHING** — the one property that matters, because every deployment that has not opted in has an empty allowlist and a wildcard there would silently downgrade PIV enforcement to nothing. The gateway-mTLS path is untouched and both stay configurable. `acr` is compared **exactly**, so `aal/2` cannot satisfy a deployment asking for `aal/3`; `amr` is a list and any accepted member is enough, but `swk` is not `x509` — accepting a soft key would reintroduce the very gap the feature closes. The session still records `oidc` as the provider so the audit trail says HOW someone signed in, with a separate `piv_asserted_by_idp` event recording WHY it counted as PIV. **The two-ceremony verification against real PIV hardware is still owed** and is the owner's to run. Paired with **#820** (openssl 3.3.0 → 4.0.2), which keeps its own prerequisite: rebuild the dev Ruby against OpenSSL 3 FIRST. |
 | **#1043** | ~~A session has no absolute lifetime, so an active user's entitlements never expire~~ — **FIXED** (`415b2e29`) | **Filed from Bundle R's own verification work**, not from the suite. `SPARC_SESSION_MAX_HOURS`, default 8. It is a precondition for #860's model rather than a neighbour of it: the ruling that a login establishes rights holds only if there is a bounded time until the next login, and an idle-only timeout gives none. Closed by this bundle's PR. |
 
-##### 21. Bundle X — UI consistency: the navbar, the buttons  ·  **Queued, after Bundle R**
+##### 21. Bundle X — UI consistency, authoritative-source CRUD, the dependency lane  ·  **THE LAST BUNDLE — in progress**
 
-Owner-added 2026-08-22, milestone v1.16.0. Two issues that are the same subject
-seen from two angles — the chrome is inconsistent, and it shows at the edges.
-
-**Deliberately kept OUT of PR #1009** (owner, 2026-08-22: *"address 950 in
-milestone v1.16.0. Not this pr though"*). Both touch shared navigation and
-shared button styling, and a layout change dropped into a review in progress is
-how a reviewer loses their place. PR #1009 has since merged; **Bundle X follows
-Bundle R** and lands in its own PR.
-
-**#950 carries a real risk worth restating before it starts:** it touches shared
-CSS that every screen depends on, and there is **no visual-regression harness**.
-PR #943 is the proof — a completely green suite alongside a visibly broken
-drawer header. Land it in slices (mechanical inline-style removal, then role
-consolidation, then dark/light parity), and verify contrast with
-`tests/ui-smoke/_contrast_probe.py` rather than by eye.
-
-**OWNER DIRECTION, 2026-08-22 — the design rules #950 implements.** Recorded before
-the work starts so the sweep has a target rather than a taste:
-
-1. **One colour scheme per FUNCTION, across light and dark.** Every button that
-   does the same job looks the same everywhere: **Create, Edit, Export, Import,
-   View, Update, wizard/guide.**
-2. **Symmetrical text and height.** Equal-height rows by construction, so a
-   wrapped label cannot skew a row.
-3. **a11y / WCAG compliant** — verified by `tests/ui-smoke/_contrast_probe.py`
-   and the axe pass, not by eye.
-4. **Dark mode carries NO fill — outline and text only.** This is the rule that
-   settles the half-done dark palette: today 5 of 9 filled variants carry a
-   `[data-bs-theme="dark"]` rule and all 6 outline variants carry none, so
-   contrast is right by accident in places. An outline-only dark mode makes the
-   rule uniform instead of per-variant. `btn-cancel-dark` already exists as a
-   one-off workaround in exactly this shape — it generalises and then disappears.
-
-5. **Buttons, headers and the rest go in CSS, and are REUSABLE wherever
-   possible** (owner, 2026-08-22). A shared class or a shared partial, not
-   repeated markup and not inline `style=`. This is the rule that makes rules
-   1-4 hold: a colour scheme defined per function only stays consistent if
-   there is exactly one place it is defined.
-
-Everything else about the sweep is settled when the bundle starts.
-
-**"Might be missing one?" — measured, and yes: at least two.** The seven roles
-above cover the CRUD verbs, but the view inventory shows two more that carry
-distinct meaning and today have no consistent treatment:
-
-| Missing role | Evidence in the views |
-|---|---|
-| **Cancel / Back** (secondary dismiss) | **the single most common button in the app** — 55 `Cancel`, plus `Back`, `Back to Profiles`, `Back to Assessment Results`. Already has an ad-hoc `btn-cancel-dark` variant |
-| **Destructive** (Delete / Remove / Archive) | 20+ distinct confirm strings — `Delete '#{doc.name}'? This cannot be undone.` and siblings |
-
-A third is arguable rather than missing: **Approve / Reject** is a workflow
-DECISION pair (`Approve '#{doc.name}'?`, `Reject`), not an Update — if it folds
-into Update it loses the pairing, so decide it explicitly rather than by default.
-
-**One consequence of rule 4 worth catching early:** an outline-only dark mode
-strips the red fill from destructive buttons, so "this is destructive" would be
-carried by **colour alone** — a WCAG 1.4.1 failure. Destructive needs a
-non-colour signal (icon plus an explicit verb in the label) in both modes.
-
-Confirmed present, so the seven are otherwise real: Export (`Export CSV`,
-`Export JSON`, `Export OSCAL`, `Download ATO Package`), Import (`Upload File`,
-`Upload and Process`, `Import STIG`), wizard/guide (`Create from Wizard`).
-
-**33 distinct `btn-*` classes are in use in the views today** — the sweep's real
-surface, and larger than #950's recorded figure of 19 variants.
-
-### The inline-style surface is far larger than #950 records — measure before scoping
-
-#950 lists **13 inline `style=` occurrences across 6 files**, counting only
-buttons. App-wide the figure is **1,387 inline `style=` attributes across 111 of
-the view files** (14 of them on a line carrying a `btn` class). Worst offenders:
-
-| View | Inline styles |
-|---|---|
-| `sar_documents/enrich.html.erb` | 136 |
-| `authorization_boundaries/ato_wizard.html.erb` | 99 |
-| `ssp_documents/enrich.html.erb` | 97 |
-| `ssp_documents/show.html.erb` | 90 |
-| `poam_documents/show.html.erb` | 73 |
-
-**This matters beyond tidiness because of #528.** `content_security_policy.rb:26`
-still sets `policy.style_src :self, :unsafe_inline, …`, and #528 removes
-`unsafe_inline`. At that point **all 1,387 lose their styling silently** — no
-error, no failing spec, just wrong-looking pages. So #950's "land before #528"
-argument is right and its scope estimate is two orders of magnitude low.
-**Scope #950 against the measured figure, and treat the non-button inline styles
-as their own tracked slice** rather than discovering them during #528.
-
-**There is no page-header component at all** — zero views reference a
-`page-header` class, so every screen hand-rolls its heading. That is the
-"reusable wherever possible" rule's first target after buttons, and `app/views/shared/`
-already holds ~30 partials (`_boundary_header`, `_environment_header`,
-`_collection_toolbar`) showing the pattern to follow.
+Branch `feature/1042_bundle_x_ui_consistency`, cut from `main` at `a41764a7`.
+**After this the v1.16.0 milestone closes and the release is cut**, so this
+bundle also carries the **VERSION bump** and the **dependency lane**.
 
 | Issue | What |
 |---|---|
 | **#1042** | The main navbar overflows the viewport from 992px to ~1400px, on every page |
-| **#950** | One button role, one class — and light/dark parity across all 19 variants |
+| **#950** | One button role, one class — and light/dark parity |
+| **#1039** | Authoritative sources need control references, provenance, dates and full CRUD |
+| — | **Dependency lane** — one live advisory, plus currency. See the Dependency lane section below |
+| — | **VERSION 1.15.5 → 1.16.0** |
 
-#### #1042 — found by the #951 audit, which is the point of audits
+**Deliberately kept OUT of PR #1009** (owner, 2026-08-22: *"address 950 in
+milestone v1.16.0. Not this pr though"*). Both #1042 and #950 touch shared
+navigation and shared button styling, and a layout change dropped into a review
+in progress is how a reviewer loses their place. #1009 and #1045 have both
+merged; Bundle X lands in its own PR.
 
-`tests/ui-smoke/responsive_audit_951.py` sweeps **62 pages x 5 breakpoints, 310
+###### Owner decisions, 2026-08-23 — taken before scoping, not during
+
+1. **#1039 rides Bundle X**, not v1.16.1: *"1039 is mostly UI as the fields
+   should all exist but have no way of being updated in the UI in CRUD and a
+   true gap in managing the required data. APIs are unknown and must ride the
+   bundle X."* That is right for three of its four asks and **wrong for one** —
+   measured below.
+2. **#820 (openssl 3.3.0 → 4.0.2) slips to v1.16.1.** The dev-Ruby-against-
+   OpenSSL-3 rebuild is unchanged as its prerequisite, and it is a multi-hour
+   cross-repo toolchain job that does not belong bolted onto a CSS bundle days
+   before a tag.
+3. **PR #1006 folds in whole** — all five action bumps across the four workflow
+   files, `astral-sh/setup-uv` 9.0.0 → **10.0.1** major included. Workflow edits
+   were approved explicitly for this bundle; the branch's own CI run is the gate.
+4. **#950 is scoped to buttons plus a shared page-header component.** NOT the
+   full 1,399-site inline-style sweep — see the CSP finding below, which removes
+   the deadline that scope rested on.
+
+###### Landing order — slices, because there is no visual-regression harness
+
+The one real risk restated: **#950 touches shared CSS that every screen depends
+on, and there is no visual-regression harness.** PR #943 is the proof — a
+completely green suite alongside a visibly broken drawer header. A sweep across
+47 view files has that failure mode 47 times over, so it lands in slices, each
+verified on the screen before the next starts.
+
+| # | Slice | Why here |
+|---|---|---|
+| 1 | **Dependency lane** — `mail` 2.9.1 first, then currency, then #1006 | A live advisory leads. Doing it first also means the whole bundle is built and tested on the gems that will ship, rather than re-running the gates after a late bump |
+| 2 | **#1042 navbar** | Self-contained, one partial, and it is the bundle's only NAVIGATION change — get the approved layout settled while there is time to iterate |
+| 3 | **#950a** — the seven role classes in CSS, no view changes yet | Defines the vocabulary before anything consumes it. Contrast-probed before a single view is edited |
+| 4 | **#950b** — sweep the 47 view files onto the role classes | Mechanical once 3 is proven. Removes the ~14 button-adjacent inline styles as it goes |
+| 5 | **#950c** — `shared/_page_header` and the screens that adopt it | The largest reuse target after buttons; **zero views reference a page-header class today** |
+| 6 | **#1039** — API first, then the screens | [[feedback_api_first]]. The API gap is smaller than the issue records; the UI gap is larger |
+| 7 | **VERSION + wiki + release-notes obligations** | Last, so the number lands on a finished bundle |
+
+###### #1042 — found by the #951 audit, which is the point of audits
+
+`tests/ui-smoke/responsive_audit_951.py` sweeps **62 pages × 5 breakpoints, 310
 page loads**, looking for findings rather than confirming the one already known.
 It is committed and re-runnable, and it is the artefact #951's "responsive
-breakpoint audit recorded" acceptance criterion asks for — recorded late,
-after the issue was closed on its other criteria.
+breakpoint audit recorded" acceptance criterion asks for.
 
-**The functional categories are EMPTY**: no page fails to load at any
-breakpoint, no unreachable overlay, no unscrollable table. `UNBOUNDED_OVERLAY`
-is the functional class — it is what the nav dropdown was, 800px tall in a 777px
-viewport with 87px unreachable — and it is empty because #951 fixed it.
+**The functional categories are EMPTY**: `PAGE_ERROR` 0, `UNBOUNDED_OVERLAY` 0,
+`UNSCROLLABLE_TABLE` 0. No page fails to load at any breakpoint, no unreachable
+overlay, no unscrollable table. `UNBOUNDED_OVERLAY` is the functional class — it
+is what the nav dropdown was, 800px tall in a 777px viewport with 87px
+unreachable — and it is empty because #951 fixed it. **This is layout, not
+function**, and the owner asked directly: at 992px the rightmost nav control
+sits at 1215px, fully off-screen, **and clicking it still works**; at 375px the
+hamburger opens and reveals its links. The pages are ugly at these widths, not
+broken.
 
 What remains is layout. Measured:
 
@@ -1905,32 +1880,237 @@ What remains is layout. Measured:
 one cause** — the navbar neither wraps nor collapses between 992px and roughly
 1400px. Fix the navbar and almost all of both counts go.
 
-Verified not functional rather than assumed: at 992px the rightmost nav control
-sits at 1215px, fully off-screen, and clicking it still works; at 375px the
-hamburger opens and reveals its links.
+**The mechanism, measured in `app/views/shared/_main_nav.html.erb` (291 lines):**
+the bar is `navbar-expand-lg`, so it expands to its full horizontal form at
+**≥992px** — and **five `li.nav-item.d-none.d-lg-block` items appear at exactly
+the same breakpoint**, and `sparc-theme.css:662` brings the sidebar back at
+`min-width: 992px` too. So 992px is where the navbar stops collapsing, five
+extra items appear, and the sidebar reclaims width — all at once. That is the
+223px.
 
-One inconsistency worth resolving while in there: a `.d-none.d-lg-block` item
-appears AT 992px while the sidebar hides BELOW 992px. Both cannot be right.
+Fix candidates, in preference order — **the choice is an approved-layout
+decision, not an implementation detail**:
 
-#### #950 — the same problem in the other direction
+1. `navbar-expand-xl` + `d-none d-xl-block` on the five — move the whole
+   transition to 1200px, where there is room. Smallest diff, no items lost.
+2. Keep `-lg` but let the bar wrap (`flex-wrap`) between 992 and 1400.
+3. Demote some of the five into the existing overflow menu — **this changes
+   placement, and placement does not change without approval.**
 
-19 button variants, no single role or class, and no light/dark parity. Split
-from #949 alongside #951 and left without a milestone, which is why it never
-surfaced in bundle planning — it was invisible to every milestone count. Now on
-v1.16.0.
+The `.d-none.d-lg-block`-appears-at-992 / sidebar-hides-below-992 conflict is
+the same breakpoint seen from both sides; option 1 resolves it by construction.
 
-#### Constraints
+###### #950 — measured 2026-08-23, and larger than the issue records
 
-- **The navbar is shared NAVIGATION.** Placement does not change without an
-  approved layout: visibility may differ, placement may not. Any new or moved
-  control also takes a Playwright interaction check with a CSP assertion.
-- The audit script is the acceptance instrument: it must report **zero**
-  HORIZONTAL_OVERFLOW findings, with a standing assertion in
-  `test_sidebar_951.py` to keep it there.
-- Two touch-target decisions are owed rather than assumed:
-  `button.sparc-field-help` renders 16x16 against WCAG 2.2 AA 2.5.8's 24x24, and
-  ~90 inline help-guide links render 20px tall, which is ordinary body-text link
-  behaviour and arguably outside that criterion.
+| | #950 records | Measured on `main` |
+|---|---|---|
+| Distinct `btn-*` classes in views | 19 | **34** |
+| View files carrying a `btn` class | 46 | **47** |
+| Inline `style=` (buttons only) | 13 | ~14 |
+| Inline `style=` (app-wide) | not counted | **1,399 across 112 files** |
+| Views referencing a page-header class | not counted | **0** |
+| `[data-bs-theme="dark"]` rules in the theme CSS | 5 of 9 filled variants | **51 rules**, and **all 6 outline variants still carry none** |
+
+The 34: `btn-action` `btn-action-row` `btn-cancel-dark` `btn-clear-filter`
+`btn-close` `btn-close-sm` `btn-danger` `btn-dark` `btn-edit` `btn-enrich`
+`btn-enrich-sm` `btn-ghost` `btn-ghost-muted` `btn-group` `btn-header-edit`
+`btn-lg` `btn-link` `btn-oscal` `btn-outline-*` (6) `btn-primary` `btn-save`
+`btn-secondary` `btn-sm` `btn-sparc-orange` `btn-sparc-purple` `btn-success`
+`btn-warning`.
+
+**OWNER DESIGN RULES, given 2026-08-22 — these are the specification:**
+
+1. **One colour scheme per FUNCTION**, light and dark.
+2. **Symmetrical text and height** — equal-height rows by construction.
+3. **a11y / WCAG compliant**, verified by `tests/ui-smoke/_contrast_probe.py`
+   and axe, **not by eye**.
+4. **Dark mode carries NO fill — outline and text only.** This is the rule that
+   settles the half-done dark palette rather than patching variant by variant.
+   `btn-cancel-dark` already exists as a one-off in exactly this shape.
+5. **Buttons, headers and the rest go in CSS and are REUSABLE wherever
+   possible** — a shared class or partial, never repeated markup, never inline
+   `style=`. This is what makes rule 1 hold: a scheme defined per function only
+   stays consistent if there is exactly one place it is defined.
+
+**The owner asked "might be missing one?" — measured, and two were missing.**
+The roster is **seven**, not five:
+
+| Role | Evidence |
+|---|---|
+| Create | `Create from Wizard`, `New …` |
+| Edit | `btn-edit`, `btn-header-edit` |
+| Export | `Export CSV`, `Export JSON`, `Export OSCAL`, `Download ATO Package` |
+| Import | `Upload File`, `Upload and Process`, `Import STIG` |
+| View | `View` (the only action `_item_actions` currently offers) |
+| Update | `btn-save` |
+| Wizard / guide | `Create from Wizard` |
+| **Cancel / Back** *(added)* | **the most common button in the app** — **79** `Cancel` occurrences across the views, plus a **25**-strong `Back to …` family |
+| **Destructive** *(added)* | **49 distinct** Delete/Remove/Archive confirm strings (`data-turbo-confirm=` / `confirm:`) |
+
+**Approve / Reject is deliberately NOT folded into Update.** It is a workflow
+DECISION pair — the two halves are meaningful only together, and giving them
+Update's scheme loses the pairing. Left as an explicit owed decision below
+rather than settled by default.
+
+**The trap inside rule 4, to raise before implementing rather than after:**
+outline-only dark mode strips the red fill from destructive buttons, so "this is
+destructive" ends up carried by **colour alone** — a **WCAG 1.4.1** failure, and
+rule 3 forbids it. Destructive therefore needs a non-colour cue — icon plus an
+explicit verb in the label — in **both** modes. Rules 3 and 4 conflict on
+exactly one role, and this is the resolution.
+
+###### The CSP deadline behind the inline-style sweep does not exist — this changed the scope
+
+The standing argument in this plan was that #950 must land before **#528**,
+because #528 removes `unsafe_inline` from `style_src` and all 1,399 inline
+styles would then lose their styling silently — no error, no failing spec, just
+wrong pages.
+
+**Measured 2026-08-23: #528 is CLOSED** (COMPLETED, 2026-07-09), and so is its
+parent epic **#650**. #528's own closing comment records that it shipped items 2
+and 3 (inline handlers → Stimulus, CSP report-uri) and left **item 1
+(`style-src 'unsafe-inline'`) and item 4 (Trusted Types) open**, saying *"Keeping
+this issue open to track those two."* It was then closed anyway.
+`config/initializers/content_security_policy.rb:26` still reads
+`policy.style_src :self, :unsafe_inline, "https://cdn.jsdelivr.net"`, and a
+search of every issue, open or closed, finds **no successor tracking either
+item**.
+
+Two consequences, and they point in opposite directions:
+
+- **For #950's scope, the pressure is off.** Nothing is about to break those
+  1,399 inline styles, so sweeping them is tidiness on a release-week branch
+  with no visual-regression harness. **Owner-decided: buttons + page-header
+  only.** The remaining ~1,385 stay recorded here as measured backlog.
+- **The CSP hardening tail was dropped silently, which is worth its own issue.**
+  `style-src 'unsafe-inline'` and Trusted Types are real remaining hardening,
+  and right now nothing tracks them. **Raised, not filed** — filing is the
+  owner's call.
+
+Worst offenders, kept for whoever picks that up:
+
+| View | Inline styles |
+|---|---|
+| `sar_documents/enrich.html.erb` | 136 |
+| `authorization_boundaries/ato_wizard.html.erb` | 99 |
+| `ssp_documents/enrich.html.erb` | 97 |
+| `ssp_documents/show.html.erb` | 90 |
+| `poam_documents/show.html.erb` | 73 |
+| `cdef_documents/show.html.erb` | 47 |
+| `control_families/show.html.erb` | 43 |
+
+###### #1039 — the surface measured, and one claim that did not survive it
+
+There is **no `AuthoritativeSource` model**. An authoritative source *is* a
+`BackMatterResource`; `authoritative_sources` is a filtered view over that table
+plus its own create path. That is why the CRUD picture is asymmetric, and it is
+the single most important thing to know before scoping this.
+
+**Routes today:**
+
+```
+web  resources :authoritative_sources, only: %i[index show new create]
+api  resource  :authoritative_sources, only: [:create]  + export/import   # SINGULAR `resource`
+api  resources :back_matter_resources, only: [:index, :show, :create, :update, :destroy]
+       member: link, unlink, promote, approve_promotion, reject_promotion, archive, restore, changes
+```
+
+The API path is a **singular `resource`**, which is the mechanical reason it has
+no index and no show — not an omission in a list somewhere.
+
+**The owner's read — "the fields should all exist" — is right for three of the
+four asks and wrong for one:**
+
+| #1039 asks for | Measured on `main` | Verdict |
+|---|---|---|
+| **Control references** | `control_back_matter_links` table + association exist, **and the API already sets them**: `POST/DELETE /api/v1/back_matter_resources/:id/link\|unlink`, accepting 6 linkable types (`CatalogControl` `CdefControl` `ProfileControl` `SspControl` `SarControl` `SapControl`) | **Exists in the API. Absent from the authoritative-sources path and from every screen.** UI + route exposure only |
+| **Created / last-updated dates** | `created_at` / `updated_at` on the table, already emitted by `serialize_back_matter_resource` | **Exists.** Contract + screen exposure only |
+| **Full CRUD** | Full CRUD exists at `/api/v1/back_matter_resources`. The web path has **no edit, no update, no destroy**; `_item_actions.html.erb` offers exactly one action, `View`. Web `resource_params` permits only `title description href rel media_type` — **`organization_id` is not even settable** | **Web CRUD genuinely missing.** API needs the authoritative-sources path widened, not new machinery |
+| **"Provided by" — organization, team, person** | `organization_id` exists on `back_matter_resources`. `organizations` carries a single `contact_person` + `contact_email`. **There is no `teams` table anywhere in the schema, and no per-source person field** | **DOES NOT EXIST.** This one is a migration, not a UI gap |
+
+So three quarters of #1039 is exposure work — routes and screens over machinery
+that already exists — and one quarter is a schema decision. **Settle "provided
+by" before writing the migration**, because there are three defensible shapes
+and they are not interchangeable:
+
+1. **Free-text `provided_by_team` + `provided_by_contact` on the resource** —
+   one migration, no new model, honest about the fact that the provider is often
+   an external body SPARC does not otherwise model. Recommended.
+2. **A `teams` table** — correct if teams are going to be first-class elsewhere,
+   far too much to introduce in the last bundle of a release.
+3. **Lean on `organizations.contact_person`** — no migration, but it makes every
+   source from one organization share one contact, which is not what an assessor
+   is asking.
+
+**Deletion needs a decision too, and the default is wrong.** Back-matter
+resources participate in federation (`federated_from_instance`, `original_uuid`)
+and promotion (`promotion_status`, `approved_by_user_id`), so a hard delete
+strands a federated copy on a peer. `superseded_by_id` and `archived_at` already
+exist on the table, and `archive`/`restore` are already API members —
+**supersede/archive is almost certainly the intended mechanism, and `destroy`
+should map to it** rather than to `DELETE`.
+
+Also owed, from the issue's own scope notes: whether control references are set
+inline on create or through a nested route (as `evidences` does with
+`control_links`) — settle it so the two do not diverge.
+
+`POST /api/v1/authoritative_sources` is already covered by `tests/api` from the
+#995 sweep; **every new route takes the same treatment**, and
+`docs/api/endpoints/authoritative-sources.md` needs its Endpoints table extended.
+
+###### VERSION — 1.15.5 → 1.16.0, in THIS PR
+
+Owner-decided 2026-08-22: *"v1.16.0 won't be done until the next bundle is
+done."* It is `1.15.5` at **`app/models/sparc_config.rb:22`**, and
+`spec/docs/wiki_currency_spec.rb` asserts the wiki's
+`| Current Version | **v1.15.5** |` row matches — **so both move together or that
+spec fails.**
+
+###### Gates and traps this bundle must meet
+
+- **This bundle is mostly CSS, so the Propshaft trap is the likeliest one to
+  bite.** A CSS-only change still needs `docker compose restart web` (Propshaft
+  caches at boot), and **in the UBI9 prod image a restart is NOT enough**: run
+  `assets:precompile` after `docker cp` of JS/CSS, with
+  `rm -f public/assets/.manifest.json` first or it silently no-ops.
+- **Verify contrast with `tests/ui-smoke/_contrast_probe.py`, not by eye.**
+- The audit script is #1042's acceptance instrument: it must report **zero**
+  `HORIZONTAL_OVERFLOW` findings, with a standing assertion in
+  `test_sidebar_951.py` to keep it there. Re-run with:
+  `SPARC_SMOKE_BASE_URL=https://localhost:3443 SPARC_SMOKE_SA_TOKEN=<token> SPARC_SMOKE_INSECURE_TLS=1 uv run python responsive_audit_951.py`
+- **The navbar is shared NAVIGATION.** Visibility may differ, placement may not,
+  without an approved layout. Any new or moved control also takes a Playwright
+  interaction check with a CSP assertion.
+- **Any new page or nav entry** gets registered in `tests/ui-smoke/pages.py`
+  **and needs an a11y baseline** captured with `UPDATE_A11Y_BASELINE=1` —
+  otherwise the a11y check silently SKIPS for that page. #1039's edit screens
+  are new pages.
+- **`Test plan checklist` fails on ANY unchecked box**, and `Required Checks
+  Passed` then fails solely because of it. Owner-run and post-merge items go in
+  a `<!-- pr-checklist:skip -->` block.
+- **ui-smoke DEFAULTS TO PRODUCTION** — always set `SPARC_SMOKE_BASE_URL`, and
+  read the skip reasons rather than the pass count.
+- Full suite always: rspec, `tests/api`, ui-smoke, rubocop, ruff, brakeman, both
+  API gate scripts, and a browser pass at **:3443**.
+
+###### Decisions still owed by the owner
+
+1. **#1042's fix shape** — `navbar-expand-xl` (recommended), wrap, or demote
+   items into the overflow menu. The third changes placement and needs an
+   approved layout.
+2. **Approve / Reject** — its own role pair, or folded into Update? Folding
+   loses the pairing.
+3. **#1039 "provided by"** — free-text on the resource (recommended), a `teams`
+   table, or lean on `organizations.contact_person`.
+4. **#1039 delete semantics** — confirm `destroy` maps to supersede/archive
+   rather than a hard delete.
+5. **Two touch-target calls**, surfaced by the #951 audit and deliberately not
+   taken unilaterally (WCAG 2.2 AA §2.5.8 wants 24×24): `button.sparc-field-help`
+   renders **16×16**, and roughly **90 inline help-guide links** render 20px
+   tall — which is ordinary body-text link behaviour and arguably outside the
+   criterion. Both are density-vs-AA judgement calls, not bugs.
+6. **Whether to file the CSP tail** — `style-src 'unsafe-inline'` and Trusted
+   Types are untracked since #528 closed over them. Raised here, not filed.
 
 ---
 
@@ -2060,47 +2240,145 @@ a customer.
 
 ---
 
-#### Dependency lane (open Dependabot PRs)
+#### Dependency lane (open Dependabot PRs) — **rides Bundle X**
 
-Judged by **running `bundle-audit`, not by reading diffs** — it reports **no vulnerabilities**
-against the current lock (advisory DB `6bda08e`, 2026-08-11). **None of these closes a CVE**, which
-is what makes them schedulable around the feature work rather than reactive to it.
+Judged by **running `bundle-audit`, not by reading diffs**. Re-run 2026-08-23 against `main`
+(`a41764a7`) with advisory DB `8cfcc07`, 2026-08-22:
 
-| PR | Bump | Slot | Why there |
+```
+Name: mail
+Version: 2.9.0
+GHSA: GHSA-mvxr-6m87-mv2q
+Criticality: Medium
+Title: Email address spoofing via malformed RFC 2047 encoded-words in mail
+Solution: update to '>= 2.9.1'
+Vulnerabilities found!            # exit 1
+```
+
+**This section's previous standing claim — "no vulnerabilities against the current lock" — is now
+FALSE, and it went false without any Dependabot PR appearing.** `mail` is **transitive**
+(`actionmailer`, `actionmailbox` and `omniauth_openid_connect` all require it, at `>= 2.8.0`), it
+has **no line in the Gemfile**, and so Dependabot had nothing to open a PR against. This is the
+**exact shape** the #886 note below already warned about — *"auto-close is reliable for direct
+dependencies, not for a transitive security PR"* — recurring on the other side: not an orphan PR
+left open, but a live advisory with **no PR at all**. `mail >= 2.8.0` already admits 2.9.1, so the
+fix is `bundle update mail` and nothing else moves.
+
+**The lesson to carry: `bundle-audit` is the gate, the Dependabot PR list is not.** An empty
+dependency queue is not evidence of a clean lock.
+
+| Item | Bump | Slot | Why there |
 |---|---|---|---|
-| **#923** | `actions-updates` — `github/codeql-action` (init/analyze/upload-sarif), `dorny/paths-filter` | **BEFORE #919** | The one that impacts the sweep. #919's premise is that CodeQL/Brakeman/Semgrep **cannot** detect missing authorization, and it touches 16 controllers while adding a structural spec. If the CodeQL engine changes mid-sweep, a new alert is ambiguous — engine or our change? Fix the scanner baseline first. CI-only; its own run is the gate. |
-| **#922** | `minor-updates` — `aws-sdk-s3` 1.228.2→1.229.0, aws-sdk-core/rds/partitions, io-console, rbs, reline | **AFTER #925** | `aws-sdk-s3` sits directly under ActiveStorage presigned-URL generation, which is exactly what #894's new spec pins (`disposition=attachment` on the emitted URL). Good interaction — the pin catches a regression — but the pin must land first. **Specific check: re-run `spec/security/user_content_disposition_spec.rb`.** |
-| **#921** | `erb` 6.0.6→6.0.7 (patch) | **AFTER #925**, batch with #922 | Low risk. `erb` is one of the default-gem shadows showing as a residual UBI9 High, so it may reduce scanner-audit noise at release time. |
-| **#820** | `openssl` 3.3.0→**4.0.2** (major) | **WITH Bundle G (#822)** — and **gated on the dev-toolchain rebuild** (owner-decided 2026-08-17: same work item, toolchain first) | Blast radius is 8 files: `piv_auth_service`, `federation_bundle_signing_service`, `sparc_http`, `sparc_key_derivation`, `ldap_auth_service`, `authoritative_source_fetch_service`, `cdef_bulk_apply_service`, `hdf_package_service` — PIV cert parsing, federation HMAC, outbound TLS, LDAP. #822 already requires the **two-ceremony** TLS proof, so pairing them means one verification round covers both. Also needs the Gemfile constraint change `~> 3.3` → `~> 4.0`; `~> 3.3` forbids 4.x today. |
+| **(no PR)** | **`mail` 2.9.0 → 2.9.1** — transitive | **FIRST, ahead of everything** | The only live advisory. Medium, email-address spoofing via malformed RFC 2047 encoded-words. **Reachable, not theoretical: SPARC has 5 mailers** — `password_reset_mailer.reset_link`, `idp_grant_mailer.unmatched_grants_digest` (Bundle R), `service_account_mailer` (4 expiry/inactivity notices) and `document_parse_mailer`. An advisory about spoofing the apparent sender under a *password-reset* mailer is the combination worth taking first. `bundle update mail`; no Gemfile change |
+| **#971** | `brakeman` 8.0.5 → 8.0.6 (patch group) | With the lane | Dev/CI only. Carries *"fix command injection false positives"*, so it may **reduce** brakeman noise at the release gate rather than add it. Take the bump directly; the PR is behind `main` |
+| **#972** | `minor-updates` group — `solid_queue`, `bootsnap`, `selenium-webdriver`, `axe-core-rspec`, `simplecov` | With the lane, **but at LATEST, not at the PR's versions** | See the solid_queue note below — the PR is a week stale and offers 1.6.0 where 1.7.0 has since shipped |
+| **#1006** | `actions-updates` group — `github/codeql-action` (init/analyze/upload-sarif) 4.37.6 → 4.37.7, `docker/setup-buildx-action` 4.2.0 → 4.3.0, **`astral-sh/setup-uv` 9.0.0 → 10.0.1 (MAJOR)** | With the lane, **whole** | **Workflow edits approved by the owner for this bundle specifically** (2026-08-23), all five, major included. CI-only across 4 workflow files; the branch's own CI run is the gate. `setup-uv` drives the `uv run` path that `tests/ui-smoke` and `tests/api` depend on, so **a green ui-smoke run on this branch is what proves the major**, not the diff |
+| **#820** | `openssl` 3.3.0 → **4.0.2** (major) | **MOVED OUT — v1.16.1** | Owner-decided 2026-08-23. Unchanged prerequisite: rebuild the dev Ruby against OpenSSL 3 first, as one work item. On this box `openssl-4.0.2` **segfaults inside bundler itself**, leaving no working `bundle` to recover with. Details in the Bundle R section above |
 
-**Closed 2026-08-11:** ~~#886 `activestorage` 8.1.3→8.1.3.1~~ — already in the image on `main`.
-Worth recording *why it lingered*, because the same shape will recur: `activestorage` is **not a
-direct Gemfile entry** (transitive via `rails`), so when #889 cherry-picked the Rails 8.1.3.1 bump
-+ `image_processing` removal, the branch diff became empty but Dependabot had **no manifest line to
-reconcile against** and left the orphan open. Auto-close is reliable for direct dependencies, not
-for a transitive security PR whose requirement is satisfied by a different gem's bump. **Check
-transitive security PRs by hand after any framework bump.**
+##### Take the gems at LATEST, not at the Dependabot PRs' versions
+
+The owner's direction is *"might as well fold them in for the most up-to-date gems if possible."*
+The bundler PRs are 6 days stale and one of them is already behind:
+
+| Gem | On `main` | PR #972 / #971 offers | **Latest on rubygems (2026-08-23)** |
+|---|---|---|---|
+| `solid_queue` | 1.5.1 | 1.6.0 | **1.7.0** |
+| `bootsnap` | 1.24.6 | 1.25.0 | 1.25.0 |
+| `selenium-webdriver` | 4.46.0 | 4.47.0 | 4.47.0 |
+| `axe-core-rspec` | 4.12.0 | 4.13.0 | 4.13.0 |
+| `simplecov` | 1.0.3 | 1.1.1 | 1.1.1 |
+| `brakeman` | 8.0.5 | 8.0.6 | 8.0.6 |
+| `mail` (transitive) | **2.9.0** | *(no PR)* | **2.9.1 — the advisory fix** |
+
+So four of the six land at latest either way; **`solid_queue` is the one that does not**, and
+PR #972 would additionally re-pin it to `~> 1.6.0`, which forbids 1.7.0.
+
+**`solid_queue` needs a Gemfile decision, not just a lockfile bump.** The pin reads:
+
+```ruby
+gem "solid_queue", "~> 1.5.0"   # 1.6.0 is a minor bump on the prod job backend — review separately
+```
+
+The comment is a standing instruction to review rather than a pin to carry forward, and this is
+that review. **1.6.0's headline is an opt-in fiber execution mode** — it requires `fibers:` in the
+worker config *and* `config.active_support.isolation_level = :fiber`; SPARC sets neither, so the
+new path is unreachable. The rest is bug fixes, including *"roll back transactions leaked by killed
+job threads in tests."* **Recommended: `~> 1.7` (not `~> 1.7.0`)**, so patch *and* future minor
+fixes arrive without another pin edit — the `~> 1.5.0` form is what let this one go stale in the
+first place. `solid_queue` is the **production job backend** (`AwsLabsCdefRefreshJob`,
+`DocumentConversionJob`, the unmatched-grant digest), so the proof is a **job actually running in
+the UBI9 prod image**, not a green rspec.
+
+##### Prove the audit has teeth — both directions
+
+A "No vulnerabilities found" after the bump means nothing unless the same invocation reports the
+known-bad lock. Run it both ways and record both:
+
+```bash
+export PATH="$HOME/.rvm/rubies/ruby-3.4.4/bin:$HOME/.rvm/gems/ruby-3.4.4/bin:$PATH"
+export GEM_HOME="$HOME/.rvm/gems/ruby-3.4.4"
+export GEM_PATH="$HOME/.rvm/gems/ruby-3.4.4:$HOME/.rvm/gems/ruby-3.4.4@global"
+(cd ~/.local/share/ruby-advisory-db && git pull)
+bundle-audit check --database ~/.local/share/ruby-advisory-db   # --database every run, NOT --update
+```
+
+RED leg: the `a41764a7` lockfile reports GHSA-mvxr-6m87-mv2q, exit 1. GREEN leg: the post-bump
+lockfile reports none, exit 0. **Both legs go in the PR body.** Note `rvm use` needs
+`unset -f rvm` first or the shell silently stays on system ruby 2.6 — and a `bundle-audit` run on
+2.6 produces no output at all, which reads exactly like success.
+
+##### Closed 2026-08-11 — kept because the shape recurs
+
+~~#886 `activestorage` 8.1.3 → 8.1.3.1~~ — already in the image on `main`. Worth recording *why it
+lingered*: `activestorage` is **not a direct Gemfile entry** (transitive via `rails`), so when #889
+cherry-picked the Rails 8.1.3.1 bump + `image_processing` removal, the branch diff became empty but
+Dependabot had **no manifest line to reconcile against** and left the orphan open. Auto-close is
+reliable for direct dependencies, not for a transitive security PR whose requirement is satisfied
+by a different gem's bump. **Check transitive security PRs by hand after any framework bump** — and,
+as `mail` now shows, check for transitive advisories that never got a PR at all.
 
 > **#820 is not stale, it is pending a decision.** `dependabot.yml` deliberately keeps majors as
 > individual PRs ("higher review needed", no major group), so an unmerged major sitting alone is
 > the config working as intended — not neglect.
 
-**Owner decisions still owed:**
+**Owner decisions still owed** — all six are Bundle X's, and they are listed with their
+context in the Bundle X section above. Summarised here so the release PR has one place to check:
 
-1. **#919 roster posture** — admin-only vs delegable to ISSM/ISSO/SO, and whether to delete or
-   seed `authorization_boundaries.manage_members` (defined, documented in `wiki/RBAC.md`, granted
-   to 0 of 29 roles, enforced by 0 code). Triage memo lands first; build waits on the ruling.
-2. **#860 × 5 open questions** — claim name, grant string format, slug canonicalization, session-
-   revocation timing, whether `bootstrap` mode earns its keep.
-3. **14-day fallback** — a coherent hardening-only v1.16.0 (A+B+C = 6 issues) was available around
-   2026-08-21. Not taken; recorded because the option recurs if the date starts to bind.
+1. **#1042's fix shape** — `navbar-expand-xl` (recommended), wrap, or demote nav items into the
+   overflow menu. The third changes NAVIGATION placement and needs an approved layout.
+2. **#950 — Approve / Reject**: its own workflow-decision role pair, or folded into Update?
+3. **#1039 — "provided by"**: free-text `provided_by_team` / `provided_by_contact` on the resource
+   (recommended), a new `teams` table, or lean on `organizations.contact_person`. **This is the
+   one part of #1039 that is a migration rather than a UI gap.**
+4. **#1039 — delete semantics**: confirm `destroy` maps to supersede/archive rather than a hard
+   delete, which would strand a federated copy on a peer.
+5. **Two touch-target calls** — `button.sparc-field-help` at 16×16 and ~90 help-guide links at
+   20px, against WCAG 2.2 AA §2.5.8's 24×24. Density-vs-AA judgement calls, not bugs.
+6. **Whether to file the CSP tail** — `style-src 'unsafe-inline'` and Trusted Types have been
+   untracked since #528 was closed over them on 2026-07-09. **Raised, not filed.**
+
+**Decided and closed out, kept for the record:** #919's roster posture and #860's five open
+questions were both settled and shipped (Bundles C and R). The **14-day fallback** — a coherent
+hardening-only v1.16.0 of A+B+C — was available around 2026-08-21 and not taken; recorded because
+the option recurs if the date starts to bind. It no longer binds: 83 of 86 are closed.
 
 **Release-notes obligations accumulated so far** (the release PR must carry these):
 
 - #914 extend-by-default is a **behaviour change on upgrade** — leads the notes.
 - #909 legacy banner variables **scheduled for removal in v1.18.0**, with the reasoning.
-- If **#820** lands, `openssl` moves **3.x → 4.x** (a major, with the Gemfile constraint widened).
-  Call it out explicitly — it sits under PIV, federation signing, outbound TLS and LDAP.
+- **#820 does NOT land in v1.16.0** — `openssl` stays on the 3.x line, deferred to v1.16.1 with
+  its dev-toolchain prerequisite. Say so plainly rather than leaving readers to infer it from
+  silence; it sits under PIV, federation signing, outbound TLS and LDAP.
+- **A transitive security fix ships with no Dependabot PR behind it**: `mail` 2.9.0 → 2.9.1,
+  GHSA-mvxr-6m87-mv2q (Medium, email-address spoofing via malformed RFC 2047 encoded-words).
+- **`solid_queue` moves 1.5.1 → 1.7.0 on the production job backend**, and its Gemfile pin widens
+  from `~> 1.5.0` to `~> 1.7`. The new fiber execution mode is opt-in and SPARC does not enable it.
+- **`astral-sh/setup-uv` takes a major** (9 → 10) in CI. No runtime effect; it changes how the
+  ui-smoke and API suites bootstrap their toolchain.
+- **Button styling changes app-wide** (#950) — seven roles, one class each, and dark mode goes
+  outline-only with no fill. Every screen looks slightly different; nothing moves.
+- **The main navbar's breakpoint changes** (#1042). Visibility differs between 992px and ~1400px;
+  placement does not.
 - **#919/#707 — the backfill grants permissions to every existing boundary roster member the
   moment it runs.** The intended repair for a roster that granted nothing, but a live
   authorization change across every boundary at once, not gradual. This should lead the notes.
@@ -2181,7 +2459,7 @@ removed and are no longer tracked:
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
-| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | **86 issues — 79 closed, 7 open.** Open: **#860 #842 #822 #1043** (Bundle R) · **#1042 #950** (Bundle X) · **#1039** (unslotted). The full closed list is the milestone itself — do not maintain a second copy here | In Progress — **the release gate is MET.** Bundle V merged 2026-08-22 as [PR #1009](https://github.com/risk-sentinel/sparc/pull/1009) → `fda3413d` (72 commits, 32 `Closes`), closing #995, #951, #1004, #1036 and the twenty issues its own sweep filed and fixed. Bundle W merged as [PR #1005](https://github.com/risk-sentinel/sparc/pull/1005) → `ab2dbd1a`. **Remaining: Bundle R** (#860 #842 #822, auth entitlements — next, in progress) **then Bundle X** (#1042 #950, UI consistency), plus unslotted **#1039**. **#950 had sat OPEN with NO MILESTONE** since it was split from #949, which is why it never appeared in a bundle — it was invisible to every milestone count; the owner put it on v1.16.0 on 2026-08-22. **The milestone grew 53 → 85 because the sweep FOUND things**, not through scope creep: every one was a defect already shipped and previously invisible. **Count it, do not carry the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all --limit 300` (the default 30-row limit under-reports it, and the milestone page counts PRs too). That is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** → **W** → **V** → **R** → **X**. Target tag ~2026-09-21, provisional. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | **86 issues — 83 closed, 3 open, measured 2026-08-23.** Open: **#1042 #950 #1039**, all in **Bundle X, the LAST bundle**. The full closed list is the milestone itself — do not maintain a second copy here | In Progress — **the release gate is MET.** Bundle R merged 2026-08-23 as [PR #1045](https://github.com/risk-sentinel/sparc/pull/1045) → `a41764a7` (25 commits), closing #860, #842, #822 and #1043. Bundle V merged 2026-08-22 as [PR #1009](https://github.com/risk-sentinel/sparc/pull/1009) → `fda3413d` (72 commits, 32 `Closes`). Bundle W merged as [PR #1005](https://github.com/risk-sentinel/sparc/pull/1005) → `ab2dbd1a`. **Remaining: Bundle X only** — #1042 navbar overflow, #950 button roles + a shared page-header, and **#1039**, which the owner slotted into Bundle X on 2026-08-23 rather than deferring it. Bundle X also carries the **VERSION bump 1.15.5 → 1.16.0** and the **dependency lane**, which is no longer routine: `bundle-audit` on `a41764a7` is **RED** — `mail` 2.9.0, GHSA-mvxr-6m87-mv2q — a **transitive** advisory with **no Dependabot PR behind it**, so an empty dependency queue was not evidence of a clean lock. **#820 (openssl 4.x) moved OUT to v1.16.1**, its dev-toolchain prerequisite unchanged. **#950 had sat OPEN with NO MILESTONE** since it was split from #949, which is why it never appeared in a bundle — it was invisible to every milestone count; the owner put it on v1.16.0 on 2026-08-22. **The milestone grew 53 → 86 because the sweep FOUND things**, not through scope creep: every one was a defect already shipped and previously invisible. **Count it, do not carry the last figure forward** — reconcile against `gh issue list --milestone v1.16.0 --state all --limit 300` (the default 30-row limit under-reports it, and the milestone page counts PRs too). That is how #945 and #948 were found after being missed by every prior pass. Order set by the owner: **#939 pulled forward** → **O** → **S** → **P** → **T** → **Q** → **hdf pin** → **U** → **W** → **V** → **R** → **X**. Target tag ~2026-09-21, provisional. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 
