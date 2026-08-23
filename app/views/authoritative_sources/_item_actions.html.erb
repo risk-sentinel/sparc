@@ -2,10 +2,31 @@
   Actions on one authoritative source, shared by the table row and the card
   (#888 §4) so an action cannot exist in one view and not the other.
 
+  #1039 — this offered only "View" while the surface was create-only. Edit and
+  Archive are gated on the same permission pair the controller enforces, via
+  `can_write_sources?`, so a button never renders for someone the controller
+  will then redirect.
+
   Locals: resource — the BackMatterResource
 %>
 <% resource = local_assigns[:resource] %>
 
 <div class="d-flex flex-wrap gap-1 align-items-center">
-  <%= link_to "View", authoritative_source_path(resource), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
+  <%= link_to "View", authoritative_source_path(resource),
+        class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
+
+  <% if can_write_sources? %>
+    <% if resource.archived? %>
+      <%= button_to "Restore", restore_authoritative_source_path(resource), method: :post,
+            class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
+    <% else %>
+      <%= link_to "Edit", edit_authoritative_source_path(resource),
+            class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
+      <%# Archive, not Delete. A label must not promise something the system
+          deliberately does not do. %>
+      <%= button_to "Archive", authoritative_source_path(resource), method: :delete,
+            class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
+            form: { data: { turbo_confirm: "Archive #{resource.title}? It stays citable where already used, and can be restored." } } %>
+    <% end %>
+  <% end %>
 </div>

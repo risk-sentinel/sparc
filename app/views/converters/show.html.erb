@@ -29,11 +29,13 @@
           Refresh from AWS docs
         </button>
       <% end %>
-      <%= link_to "Export JSON", export_converter_path(@converter), class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
-            <%# The background/color here were the OLD colour system and defeated
-                the role class, rendering solid purple against the tinted set.
-                Removed as a scoped exception to the v1.16.1 inline freeze,
-                owner-approved 2026-08-23; font-size is layout and stays. %>
+      <%# The inline background/color that used to sit on this link were the old
+          colour system: they overrode the role class and rendered solid purple
+          against the tinted set (reported broken during the #950 sweep). Only
+          those two colour declarations were dropped; font-size is layout and stays.
+          The wider inline-style audit remains deferred to v1.16.1. %>
+      <%= link_to "Export JSON", export_converter_path(@converter),
+            class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
             style: "font-size: 0.8rem;" %>
       <%= link_to "Back", converters_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
     </div>

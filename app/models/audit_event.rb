@@ -134,6 +134,11 @@ class AuditEvent < ApplicationRecord
     control_resource_linked
     control_resource_unlinked
     authoritative_source_created
+    authoritative_source_updated
+    authoritative_source_archived
+    authoritative_source_restored
+    authoritative_source_control_linked
+    authoritative_source_control_unlinked
     data_migration_completed
     sap_document_boundary_attached
     sap_document_created
@@ -532,6 +537,11 @@ class AuditEvent < ApplicationRecord
                             ksi_validation_deleted],
     "Data Migrations" => %w[data_migration_completed],
     "Authoritative Sources" => %w[authoritative_source_created
+                                  authoritative_source_updated
+                                  authoritative_source_archived
+                                  authoritative_source_restored
+                                  authoritative_source_control_linked
+                                  authoritative_source_control_unlinked
                                   authoritative_sources_import authoritative_sources_export]
   }.freeze
 

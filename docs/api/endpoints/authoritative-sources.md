@@ -8,6 +8,12 @@ Bundles are exchanged as **HMAC-SHA256-signed envelopes** keyed off a per-peer `
 
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
+| `GET` | `/api/v1/authoritative_sources` | List sources visible to the caller. Archived are excluded unless `include_archived=true` | authenticated |
+| `GET` | `/api/v1/authoritative_sources/:id` | One source, with provenance, control references and dates | authenticated |
+| `POST` | `/api/v1/authoritative_sources` | Add a library source (#646) | authenticated |
+| `PATCH` | `/api/v1/authoritative_sources/:id` | Update a source | `back_matter.write` |
+| `DELETE` | `/api/v1/authoritative_sources/:id` | **ARCHIVES — does not delete.** Returns the archived record, not `204` | `back_matter.write` |
+| `POST` | `/api/v1/authoritative_sources/:id/restore` | Un-archive a source | `back_matter.write` |
 | `GET` | `/api/v1/authoritative_sources/export` | Build and return a signed bundle of this instance's authoritative resources for the calling peer | `back_matter.federate` permission |
 | `POST` | `/api/v1/authoritative_sources/import` | Verify and ingest a signed bundle from a configured peer | `back_matter.federate` permission |
 
@@ -62,6 +68,39 @@ The decoded `payload` is:
 Builds a signed envelope for the named peer.
 
 #### Query Parameters
+
+## `DELETE` archives — read this before integrating
+
+**A `DELETE` on this path does not delete anything.** It sets `archived_at` and
+returns the archived record with `"archived": true`, rather than a bare `204`.
+
+That is deliberate. These are back-matter resources: they participate in
+federation (`federated_from_instance`, `original_uuid`) and in promotion, so a
+hard delete strands a federated copy on a peer with nothing to reconcile
+against. A reference already cited by a document also stays citable — archiving
+takes it out of the picker, not out of history.
+
+A client that treats `DELETE` as destructive will be wrong about this endpoint,
+which is why it is stated here rather than left to be discovered. Use
+`POST /:id/restore` to reverse it, and `?include_archived=true` on the index to
+see archived rows.
+
+## Provenance fields (#1039)
+
+`provided_by_team` and `provided_by_contact` are free text. `provided_by_contact`
+holds an **email or a phone number** and is deliberately not validated as
+either: an external provider's contact is frequently neither, and a validation
+that rejects a real answer is worse than none. `organization_id` /
+`organization_name` carry the organization where one is set.
+
+`created_at` and `updated_at` are part of this contract, not incidental — for a
+source whose whole value is being authoritative, "is this current?" is the
+difference between a citation and a guess.
+
+Both fields are accepted on `POST` as well as `PATCH`/`PUT`. The strict
+allowlist originally knew them only on update, so a create that sent the pair —
+which is exactly what the web form submits on first save — was rejected whole
+with `Unrecognized field`.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|

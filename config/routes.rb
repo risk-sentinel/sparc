@@ -534,7 +534,18 @@ Rails.application.routes.draw do
   # ── Authoritative back-matter library (#372) ───────────────────────────
   # #646 — any authenticated user can add a source (org/boundary-scoped by
   # default; instance-wide via the existing promotion approval).
-  resources :authoritative_sources, only: %i[index show new create]
+  # #1039 — full lifecycle. `destroy` ARCHIVES rather than deleting: these are
+  # back-matter resources that participate in federation
+  # (federated_from_instance, original_uuid) and promotion, so a hard delete
+  # strands a federated copy on a peer. `restore` is the way back, and it has to
+  # be reachable or archive is a one-way door with extra steps.
+  resources :authoritative_sources, only: %i[index show new create edit update destroy] do
+    member do
+      post :restore
+      post :link_control
+      delete :unlink_control
+    end
+  end
 
   resources :promotion_queue, only: %i[index] do
     member do
@@ -829,9 +840,25 @@ Rails.application.routes.draw do
       # Federation: signed bundle export/import for cross-instance
       # authoritative source sharing (#372). The peer is identified by name
       # via the `peer` query/body param.
-      resource :authoritative_sources, only: [ :create ], controller: "authoritative_sources" do
-        get  :export,  on: :collection
-        post :import,  on: :collection
+      # #1039 — was a SINGULAR `resource`, which is the mechanical reason this
+      # path had no index and no show: Rails does not generate them for a
+      # singular resource. Now plural with full CRUD, so the API matches every
+      # other resource in the system rather than being create-only.
+      #
+      # DELETE archives rather than deleting, for the same federation reason as
+      # the web path, and returns the archived record instead of a bare 204 so a
+      # client can tell what happened. A DELETE that does not delete is exactly
+      # the contract surprise the #995 sweep exists to catch, so it is
+      # documented on the endpoint page.
+      resources :authoritative_sources, only: [ :index, :show, :create, :update, :destroy ],
+                                        controller: "authoritative_sources" do
+        member do
+          post :restore
+        end
+        collection do
+          get  :export
+          post :import
+        end
       end
 
       resources :federation_peers, only: [ :index, :show, :create, :update, :destroy ] do

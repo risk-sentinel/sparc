@@ -1,5 +1,6 @@
 # API v1 endpoint surface snapshot (drift guard) — see spec/requests/api/v1/endpoint_coverage_spec.rb
 # Regenerate intentionally: bin/rails runner script in that spec's header. Every entry should have a request spec.
+DELETE /api/v1/authoritative_sources/:id
 DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/leveraged_authorizations/:id
 DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
@@ -47,6 +48,8 @@ GET /api/v1/artifacts/:uuid/freshness
 GET /api/v1/artifacts/:uuid/versions
 GET /api/v1/artifacts/versions/:uuid
 GET /api/v1/attestations/eligible
+GET /api/v1/authoritative_sources
+GET /api/v1/authoritative_sources/:id
 GET /api/v1/authoritative_sources/export
 GET /api/v1/authorization_boundaries
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments
@@ -150,6 +153,7 @@ GET /api/v1/ssp_documents/:ssp_document_id/components/:id
 GET /api/v1/users
 GET /api/v1/users/:id
 GET /api/v1/users/:user_id/api_tokens
+PATCH /api/v1/authoritative_sources/:id
 PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
 PATCH /api/v1/authorization_boundaries/:id
@@ -185,6 +189,7 @@ PATCH /api/v1/ssp_documents/:ssp_document_id/components/:id
 PATCH /api/v1/users/:id
 POST /api/v1/admin/refresh_credentials
 POST /api/v1/authoritative_sources
+POST /api/v1/authoritative_sources/:id/restore
 POST /api/v1/authoritative_sources/import
 POST /api/v1/authorization_boundaries
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/aggregate
@@ -285,6 +290,7 @@ POST /api/v1/users
 POST /api/v1/users/:id/password_reset
 POST /api/v1/users/:user_id/api_tokens
 PUT /api/v1/admin/remediation_timelines
+PUT /api/v1/authoritative_sources/:id
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
 PUT /api/v1/authorization_boundaries/:id

@@ -1,0 +1,23 @@
+<%# #1039 — a typo in an href used to be permanent: the surface was create-only. %>
+<div class="container" style="max-width: 900px;">
+  <div class="mb-3">
+    <h1 class="h3 fw-semibold mb-1">Edit Authoritative Source</h1>
+    <p class="text-body-secondary mb-0">Update the reference, its provenance, and which controls it supports.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <%= render "form",
+            form_url: authoritative_source_path(@resource),
+            form_method: :patch,
+            submit_label: "Save changes" %>
+    </div>
+  </div>
+
+  <%# The page promised "which controls it supports" but offered no way to set
+      them — linking lived only on `show`. Same partial, so the two screens
+      cannot drift apart. %>
+  <div class="mt-3">
+    <%= render "control_references", resource: @resource, return_to: "edit" %>
+  </div>
+</div>

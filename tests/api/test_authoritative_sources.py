@@ -44,6 +44,7 @@ EXPORT_PATH = "/api/v1/authoritative_sources/export"
 IMPORT_PATH = "/api/v1/authoritative_sources/import"
 CREATE_PATH = "/api/v1/authoritative_sources"
 PEERS_PATH = "/api/v1/federation_peers"
+INDEX_PATH = "/api/v1/authoritative_sources"
 
 
 def _decode_payload(envelope: dict[str, Any]) -> dict[str, Any]:
@@ -287,3 +288,117 @@ class TestAuthentication:
             anon_client.post(CREATE_PATH, json={"back_matter_resource": {"title": "nope"}}),
             expected_status=401,
         )
+
+
+class TestLifecycle:
+    """#1039 — index, show, update and the archiving DELETE.
+
+    This path was declared as a SINGULAR `resource`, which is the mechanical
+    reason it had no index and no show: Rails does not generate them for one.
+    Every assertion here reads the result back through an INDEPENDENT request,
+    because a response echoing what was sent proves nothing about what was
+    stored.
+    """
+
+    def _make(self, admin_client: httpx.Client) -> dict[str, Any]:
+        title = f"phase2-lifecycle-{uuid.uuid4().hex[:8]}"
+        created = admin_client.post(
+            CREATE_PATH,
+            json={
+                "back_matter_resource": {
+                    "title": title,
+                    "href": "https://csrc.nist.gov/",
+                    "rel": "reference",
+                }
+            },
+        )
+        assert created.status_code == 201, created.text
+        return created.json()["data"]
+
+    def test_index_lists_the_source_that_was_just_created(
+        self, admin_client: httpx.Client
+    ) -> None:
+        made = self._make(admin_client)
+
+        listed = admin_client.get(INDEX_PATH)
+        assert listed.status_code == 200, listed.text
+        assert made["id"] in [row["id"] for row in listed.json()["data"]]
+
+    def test_show_carries_provenance_and_dates(self, admin_client: httpx.Client) -> None:
+        made = self._make(admin_client)
+
+        admin_client.patch(
+            f"{INDEX_PATH}/{made['id']}",
+            json={
+                "back_matter_resource": {
+                    "provided_by_team": "Platform Security",
+                    "provided_by_contact": "soc@agency.gov",
+                }
+            },
+        )
+
+        # Independent read — not the PATCH response.
+        got = admin_client.get(f"{INDEX_PATH}/{made['id']}")
+        assert got.status_code == 200, got.text
+        data = got.json()["data"]
+        assert data["provided_by_team"] == "Platform Security"
+        assert data["provided_by_contact"] == "soc@agency.gov"
+        assert data["created_at"], "created_at is part of the contract"
+        assert data["updated_at"], "updated_at is part of the contract"
+
+    def test_delete_ARCHIVES_and_the_record_survives(
+        self, admin_client: httpx.Client
+    ) -> None:
+        """A DELETE that does not delete is the contract surprise #995 exists to
+        catch, so it is asserted rather than assumed."""
+        made = self._make(admin_client)
+
+        removed = admin_client.delete(f"{INDEX_PATH}/{made['id']}")
+        assert removed.status_code == 200, removed.text
+        assert removed.json()["archived"] is True
+
+        # The record is still THERE — a hard delete would strand a federated
+        # copy on a peer.
+        still = admin_client.get(f"{INDEX_PATH}/{made['id']}")
+        assert still.status_code == 200, "an archived source must remain readable"
+        assert still.json()["data"]["archived"] is True
+
+        # ...and it drops out of the default index, but not with include_archived.
+        default = admin_client.get(INDEX_PATH)
+        assert made["id"] not in [r["id"] for r in default.json()["data"]]
+
+        including = admin_client.get(INDEX_PATH, params={"include_archived": "true"})
+        assert made["id"] in [r["id"] for r in including.json()["data"]]
+
+    def test_restore_returns_an_archived_source_to_active(
+        self, admin_client: httpx.Client
+    ) -> None:
+        made = self._make(admin_client)
+        admin_client.delete(f"{INDEX_PATH}/{made['id']}")
+
+        restored = admin_client.post(f"{INDEX_PATH}/{made['id']}/restore")
+        assert restored.status_code == 200, restored.text
+        assert restored.json()["archived"] is False
+
+        listed = admin_client.get(INDEX_PATH)
+        assert made["id"] in [r["id"] for r in listed.json()["data"]]
+
+    def test_lifecycle_refuses_an_anonymous_caller(
+        self, admin_client: httpx.Client, anon_client: httpx.Client
+    ) -> None:
+        made = self._make(admin_client)
+
+        for call in (
+            lambda: anon_client.get(INDEX_PATH),
+            lambda: anon_client.get(f"{INDEX_PATH}/{made['id']}"),
+            lambda: anon_client.patch(
+                f"{INDEX_PATH}/{made['id']}",
+                json={"back_matter_resource": {"title": "nope"}},
+            ),
+            lambda: anon_client.delete(f"{INDEX_PATH}/{made['id']}"),
+            lambda: anon_client.post(f"{INDEX_PATH}/{made['id']}/restore"),
+        ):
+            assert_error_envelope(call(), expected_status=401)
+
+        # and nothing changed
+        assert admin_client.get(f"{INDEX_PATH}/{made['id']}").json()["data"]["archived"] is False

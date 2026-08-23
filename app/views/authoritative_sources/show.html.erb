@@ -5,7 +5,25 @@
         <h2 class="mb-1"><%= @resource.title %></h2>
         <div class="small text-body-secondary"><code><%= @resource.uuid %></code></div>
       </div>
-      <%= link_to "← Back", authoritative_sources_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
+      <div class="sparc-action-row">
+        <%# #1039 — the surface used to be create-only, so a typo in an href was
+            permanent. Archive rather than Delete: these resources participate in
+            federation and promotion, and a hard delete strands a federated copy
+            on a peer. The label says what actually happens. %>
+        <% if can_write_sources? %>
+          <% if @resource.archived? %>
+            <%= button_to "Restore", restore_authoritative_source_path(@resource), method: :post,
+                  class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
+          <% else %>
+            <%= link_to "Edit", edit_authoritative_source_path(@resource),
+                  class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
+            <%= button_to "Archive", authoritative_source_path(@resource), method: :delete,
+                  class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
+                  form: { data: { turbo_confirm: "Archive this source? It stays citable where already used, and can be restored." } } %>
+          <% end %>
+        <% end %>
+        <%= link_to "← Back", authoritative_sources_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
+      </div>
     </div>
 
     <div class="row g-3 mb-3">
@@ -35,6 +53,30 @@
       <p><%= simple_format(@resource.description) %></p>
     <% end %>
 
+    <%# ── Provided by, and when (#1039) ──────────────────────────────────
+        `created_at` / `updated_at` were on the table and already serialized by
+        the API, but never shown here — and for a source whose whole value is
+        being authoritative, "is this current?" is the difference between a
+        citation and a guess. %>
+    <dl class="row g-2 mb-3 border-top pt-3">
+      <dt class="col-sm-3">Provided by</dt>
+      <dd class="col-sm-9">
+        <% provider = [ @resource.organization&.name, @resource.provided_by_team ].compact_blank %>
+        <%= provider.any? ? provider.join(" · ") : content_tag(:span, "Not recorded", class: "text-body-secondary") %>
+      </dd>
+
+      <dt class="col-sm-3">Contact</dt>
+      <dd class="col-sm-9">
+        <%= @resource.provided_by_contact.presence || content_tag(:span, "Not recorded", class: "text-body-secondary") %>
+      </dd>
+
+      <dt class="col-sm-3">Added</dt>
+      <dd class="col-sm-9"><%= @resource.created_at&.to_fs(:long) || "—" %></dd>
+
+      <dt class="col-sm-3">Last updated</dt>
+      <dd class="col-sm-9"><%= @resource.updated_at&.to_fs(:long) || "—" %></dd>
+    </dl>
+
     <% if @resource.federated? %>
       <div class="alert alert-info">
         <strong>Federated:</strong> imported from
@@ -52,6 +94,8 @@
     <% end %>
   </div>
 </div>
+
+<%= render "control_references", resource: @resource %>
 
 <div class="card">
   <div class="card-body">
