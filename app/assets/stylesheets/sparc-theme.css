@@ -2928,12 +2928,18 @@ a.link-purple { color: var(--sparc-purple); }
    in the same row, and they are separated by label and icon. That is the same
    resolution WCAG 1.4.1 forces on destroy (below): colour is never the only cue.
 
-   RULE 3 vs RULE 4 CONFLICT ON DESTROY. Outline-only dark mode strips the red
-   fill, leaving "this is destructive" carried by colour alone — a WCAG 1.4.1
-   failure. Destroy therefore REQUIRES a non-colour cue in both themes: an icon
-   plus an explicit verb in the label. `.sparc-action--destroy` reserves space
-   for that icon; a bare `.sparc-action--destroy` with no icon is a bug, and
-   test_button_roles_950.py asserts it. */
+   RULE 3 vs RULE 4 ON DESTROY — the conflict is real but already resolved.
+   Outline-only dark mode strips the red fill, so "this is destructive" would be
+   carried by colour alone: a WCAG 1.4.1 failure, which rule 3 forbids. The cue
+   that saves it is the LABEL. Measured across every destroy button in the app:
+   Delete x20, Remove x8, Deactivate x3, Revoke x1, Remove Avatar x1 — all 33
+   lead with an explicit destructive verb, none rely on colour. So 1.4.1 is
+   satisfied by text and no icon is required.
+
+   The rule to keep, because it is what makes that true: a destroy button's
+   label must NAME the destruction. `.sparc-action--destroy` on a button
+   labelled "OK" or "Continue" would be a 1.4.1 failure in dark mode, and
+   nothing in CSS can catch it. */
 
 .sparc-action {
   /* Rule 2 — symmetrical text and height, by construction rather than by
@@ -3056,6 +3062,26 @@ a.link-purple { color: var(--sparc-purple); }
 /* The non-colour cue rule 3 requires on destroy. Reserved by the class so a
    caller cannot silently omit it. */
 .sparc-action--destroy .sparc-action-icon { flex: 0 0 auto; }
+
+/* SIZE — the one axis that is NOT a role.
+   121 of the 235 role-carrying buttons in the views are `btn-sm`, so a single
+   size would resize half the app. Rule 2 ("symmetrical text and height") is
+   about a ROW being uniform, not about every button in the app being one size:
+   a button inside a table row legitimately differs from a page-header button.
+   Two sizes, both keeping the role's colour scheme, so size and role stay
+   independent and a caller cannot invent a third mechanism -- which is what
+   `btn-sm` + `btn-lg` + bespoke padding had already become. */
+.sparc-action--sm {
+  min-height: 1.85rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.sparc-action--lg {
+  min-height: 2.75rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+}
 
 /* Rows of mixed roles line up without a wrapper forcing it (rule 2). */
 .sparc-action-row {

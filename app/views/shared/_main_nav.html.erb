@@ -35,12 +35,126 @@
           <a href="#" class="navbar-brand d-flex align-items-center" data-action="click->video-easter-egg#play">
             <%= image_tag "sparc_logo.png", alt: "SPARC", class: "sparc-navbar-logo" %>
           </a>
-          <span class="badge text-bg-dark" style="font-size: 0.65rem;">v<%= SparcConfig::VERSION %></span>
+          <span class="badge text-bg-dark d-none d-sm-inline-block" style="font-size: 0.65rem;">v<%= SparcConfig::VERSION %></span>
         </div>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <%# ── Persistent controls (#1042) — the SECOND tier ──────────────────
+           Two independent tiers, which is the whole point:
+
+             >=1400px  everything on one bar
+             <1400px   the nav LINKS collapse into the hamburger; these three
+                       keep their own space on the right
+             <576px    the version badge hides to buy back width, and the
+                       toggler is pinned right so it cannot wrap to the left
+
+           These sit OUTSIDE #navbarNav deliberately. Anything inside the
+           collapse is unreachable until the hamburger is opened, and #880
+           built the help drawer precisely so a mid-task lookup costs nothing.
+           `flex-shrink-0` + `ms-auto` keep them out of the links' flex run,
+           which is what stopped them being squashed. The username already
+           hides at xl, so the group self-shrinks 284px -> 158px and becomes
+           three icons. Measured: zero horizontal overflow 1440 -> 320.
+
+           Owner-approved placement change, 2026-08-23 (variant D). %>
+        <%# Everything here is a BOOTSTRAP utility — no new custom CSS. The badge
+           carries `d-none d-sm-inline-block` and the toggler `ms-auto`; between
+           them the bar stays one row down to 360px and the toggler stays on the
+           right edge even at 320px where it does wrap. A hand-rolled media query
+           was tried first and was WORSE: it left the toggler on the left at 320.
+           Keeping this in Bootstrap means it cannot collide with sparc-theme.css,
+           which loads last and silently wins ties. %>
+        <div class="d-flex align-items-center ms-auto order-xxl-last">
+  <ul class="navbar-nav flex-row align-items-center gap-1 flex-shrink-0 sparc-nav-persistent">
+          <%# ── Contextual Help (#784) — deep-links to the guide for this screen ──
+              #870: help must never replace the current page. Operators reach for
+              it BECAUSE they are mid-task, so navigating away abandons a
+              part-filled form to answer a question about that same form.
+
+              #880 keeps that property and drops the tab switch with it: the
+              click opens the guide in an in-page drawer over this screen. The
+              href and target stay exactly as #870 left them, deliberately — if
+              the Stimulus controller never connects, this is still a working
+              link to the guide in a new tab, which is the old behaviour rather
+              than a dead control. rel=noopener keeps that tab from touching
+              this one. %>
+          <% if !SparcConfig.any_auth_enabled? || signed_in? %>
+            <li class="nav-item">
+              <%= link_to contextual_help_path, class: "nav-link sparc-nav-btn",
+                    target: "_blank", rel: "noopener noreferrer",
+                    title: "Help & User Guides",
+                    data: { action: "click->help-drawer#open" },
+                    aria: { label: "Help and user guides" } do %>&#10067;<% end %>
+            </li>
+          <% end %>
+
+          <%# ── Separator ── %>
+          <li class="nav-item d-none d-xxl-block">
+            <span class="sparc-nav-separator"></span>
+          </li>
+
+          <%# ── Theme toggle ── %>
+          <li class="nav-item" data-controller="theme">
+            <button class="btn btn-outline-light btn-sm sparc-nav-theme-btn"
+                    data-theme-target="icon"
+                    data-action="theme#toggle"
+                    title="Toggle light/dark mode">&#127769;</button>
+          </li>
+
+          <%# ── User menu / Login ── %>
+          <% if SparcConfig.any_auth_enabled? %>
+            <% if signed_in? %>
+              <li class="nav-item dropdown">
+                <button type="button" class="nav-link dropdown-toggle d-flex align-items-center gap-2 sparc-nav-user" data-bs-toggle="dropdown" aria-expanded="false">
+                  <span class="sparc-avatar">
+                    <%= safe_avatar_tag(current_user, alt: current_user.initials) %>
+                  </span>
+                  <span class="d-none d-xl-inline"><%= current_user.display_label %></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end sparc-dropdown-menu">
+                  <li class="px-3 py-2">
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="sparc-avatar sparc-avatar-md">
+                        <%= safe_avatar_tag(current_user, alt: current_user.initials) %>
+                      </span>
+                      <div>
+                        <div class="fw-semibold small"><%= current_user.display_label %></div>
+                        <div class="text-body-secondary" style="font-size: 0.75rem;"><%= current_user.email %></div>
+                      </div>
+                    </div>
+                  </li>
+                  <li><hr class="dropdown-divider"></li>
+                  <% if current_user.admin? %>
+                    <li><h6 class="dropdown-header">Administration</h6></li>
+                    <li><%= link_to "Users", admin_users_path, class: "dropdown-item" %></li>
+                    <li><%= link_to "Roles", admin_roles_path, class: "dropdown-item" %></li>
+                    <li><%= link_to "Service Accounts", admin_service_accounts_path, class: "dropdown-item" %></li>
+                    <li><%= link_to "Auth Boundaries", admin_authorization_boundaries_path, class: "dropdown-item" %></li>
+                    <li><%= link_to "Organizations", admin_organizations_path, class: "dropdown-item" %></li>
+                    <li><%= link_to "Remediation Timelines", admin_remediation_timelines_path, class: "dropdown-item" %></li>
+                    <li><%= link_to "IdP Grants", admin_idp_grants_path, class: "dropdown-item" %></li>
+                    <li><%= link_to "Audit Log", admin_audit_logs_path, class: "dropdown-item" %></li>
+                    <li><hr class="dropdown-divider"></li>
+                  <% end %>
+                  <li><%= link_to "Profile", edit_profile_path, class: "dropdown-item" %></li>
+                  <li><%= link_to "Change Password", edit_password_path, class: "dropdown-item" %></li>
+                  <% if SparcConfig.fido2_enabled? %>
+                    <li><%= link_to "Security Keys", webauthn_credentials_path, class: "dropdown-item" %></li>
+                  <% end %>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><%= button_to "Sign Out", logout_path, method: :delete, class: "dropdown-item" %></li>
+                </ul>
+              </li>
+            <% else %>
+              <li class="nav-item">
+                <%= link_to "Login", login_path, class: "btn btn-outline-info btn-sm fw-semibold" %>
+              </li>
+            <% end %>
+          <% end %>
+        </ul>
+        <button class="navbar-toggler ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
+        </div>
+        <div class="collapse navbar-collapse order-xxl-1" id="navbarNav">
           <%# ── About (left-aligned, next to logo) ── %>
           <ul class="navbar-nav me-auto align-items-center gap-1 ms-3">
             <li class="nav-item">
@@ -199,91 +313,6 @@
               </li>
             <% end %>
 
-            <%# ── Contextual Help (#784) — deep-links to the guide for this screen ──
-                #870: help must never replace the current page. Operators reach for
-                it BECAUSE they are mid-task, so navigating away abandons a
-                part-filled form to answer a question about that same form.
-
-                #880 keeps that property and drops the tab switch with it: the
-                click opens the guide in an in-page drawer over this screen. The
-                href and target stay exactly as #870 left them, deliberately — if
-                the Stimulus controller never connects, this is still a working
-                link to the guide in a new tab, which is the old behaviour rather
-                than a dead control. rel=noopener keeps that tab from touching
-                this one. %>
-            <% if !SparcConfig.any_auth_enabled? || signed_in? %>
-              <li class="nav-item">
-                <%= link_to contextual_help_path, class: "nav-link sparc-nav-btn",
-                      target: "_blank", rel: "noopener noreferrer",
-                      title: "Help & User Guides",
-                      data: { action: "click->help-drawer#open" },
-                      aria: { label: "Help and user guides" } do %>&#10067;<% end %>
-              </li>
-            <% end %>
-
-            <%# ── Separator ── %>
-            <li class="nav-item d-none d-xxl-block">
-              <span class="sparc-nav-separator"></span>
-            </li>
-
-            <%# ── Theme toggle ── %>
-            <li class="nav-item" data-controller="theme">
-              <button class="btn btn-outline-light btn-sm sparc-nav-theme-btn"
-                      data-theme-target="icon"
-                      data-action="theme#toggle"
-                      title="Toggle light/dark mode">&#127769;</button>
-            </li>
-
-            <%# ── User menu / Login ── %>
-            <% if SparcConfig.any_auth_enabled? %>
-              <% if signed_in? %>
-                <li class="nav-item dropdown">
-                  <button type="button" class="nav-link dropdown-toggle d-flex align-items-center gap-2 sparc-nav-user" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span class="sparc-avatar">
-                      <%= safe_avatar_tag(current_user, alt: current_user.initials) %>
-                    </span>
-                    <span class="d-none d-xl-inline"><%= current_user.display_label %></span>
-                  </button>
-                  <ul class="dropdown-menu dropdown-menu-end sparc-dropdown-menu">
-                    <li class="px-3 py-2">
-                      <div class="d-flex align-items-center gap-2">
-                        <span class="sparc-avatar sparc-avatar-md">
-                          <%= safe_avatar_tag(current_user, alt: current_user.initials) %>
-                        </span>
-                        <div>
-                          <div class="fw-semibold small"><%= current_user.display_label %></div>
-                          <div class="text-body-secondary" style="font-size: 0.75rem;"><%= current_user.email %></div>
-                        </div>
-                      </div>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <% if current_user.admin? %>
-                      <li><h6 class="dropdown-header">Administration</h6></li>
-                      <li><%= link_to "Users", admin_users_path, class: "dropdown-item" %></li>
-                      <li><%= link_to "Roles", admin_roles_path, class: "dropdown-item" %></li>
-                      <li><%= link_to "Service Accounts", admin_service_accounts_path, class: "dropdown-item" %></li>
-                      <li><%= link_to "Auth Boundaries", admin_authorization_boundaries_path, class: "dropdown-item" %></li>
-                      <li><%= link_to "Organizations", admin_organizations_path, class: "dropdown-item" %></li>
-                      <li><%= link_to "Remediation Timelines", admin_remediation_timelines_path, class: "dropdown-item" %></li>
-                      <li><%= link_to "IdP Grants", admin_idp_grants_path, class: "dropdown-item" %></li>
-                      <li><%= link_to "Audit Log", admin_audit_logs_path, class: "dropdown-item" %></li>
-                      <li><hr class="dropdown-divider"></li>
-                    <% end %>
-                    <li><%= link_to "Profile", edit_profile_path, class: "dropdown-item" %></li>
-                    <li><%= link_to "Change Password", edit_password_path, class: "dropdown-item" %></li>
-                    <% if SparcConfig.fido2_enabled? %>
-                      <li><%= link_to "Security Keys", webauthn_credentials_path, class: "dropdown-item" %></li>
-                    <% end %>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><%= button_to "Sign Out", logout_path, method: :delete, class: "dropdown-item" %></li>
-                  </ul>
-                </li>
-              <% else %>
-                <li class="nav-item">
-                  <%= link_to "Login", login_path, class: "btn btn-outline-info btn-sm fw-semibold" %>
-                </li>
-              <% end %>
-            <% end %>
 
           </ul>
         </div>
