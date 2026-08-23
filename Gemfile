@@ -77,7 +77,14 @@ gem "tzinfo-data"
 
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
-gem "solid_queue", "~> 1.5.0"   # 1.6.0 is a minor bump on the prod job backend — review separately
+# Reviewed 2026-08-23 (Bundle X). The `~> 1.5.0` pin carried a standing note to
+# review 1.6.0 separately; this is that review. 1.6.0's headline is an OPT-IN
+# fiber execution mode — it needs `fibers:` in the worker config AND
+# `config.active_support.isolation_level = :fiber`, and SPARC sets neither, so
+# the new path is unreachable here. The rest is bug fixes. Widened to `~> 1.7`
+# rather than `~> 1.7.0` so patch and future minor fixes arrive without another
+# pin edit — the three-digit form is exactly what let this pin go stale.
+gem "solid_queue", "~> 1.7"
 gem "solid_cable"
 
 # Reduces boot times through caching; required in config/boot.rb
