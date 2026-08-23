@@ -1844,7 +1844,7 @@ verified on the screen before the next starts.
 
 | # | Slice | Why here |
 |---|---|---|
-| 1 | **Dependency lane** — `mail` 2.9.1 first, then currency, then #1006 | A live advisory leads. Doing it first also means the whole bundle is built and tested on the gems that will ship, rather than re-running the gates after a late bump |
+| 1 | **Dependency lane** — `mail` 2.9.1 first, then currency, then #1006, **then the audit-gate fix** | A live advisory leads. Doing it first also means the whole bundle is built and tested on the gems that will ship, rather than re-running the gates after a late bump. The gate fix lands **last in the slice**, so it is proved RED against the pre-bump lockfile and green against the post-bump one |
 | 2 | **#1042 navbar** | Self-contained, one partial, and it is the bundle's only NAVIGATION change — get the approved layout settled while there is time to iterate |
 | 3 | **#950a** — the seven role classes in CSS, no view changes yet | Defines the vocabulary before anything consumes it. Contrast-probed before a single view is edited |
 | 4 | **#950b** — sweep the 47 view files onto the role classes | Mechanical once 3 is proven. Removes the ~14 button-adjacent inline styles as it goes |
@@ -1888,17 +1888,26 @@ the same breakpoint**, and `sparc-theme.css:662` brings the sidebar back at
 extra items appear, and the sidebar reclaims width — all at once. That is the
 223px.
 
-Fix candidates, in preference order — **the choice is an approved-layout
-decision, not an implementation detail**:
+**OWNER-DECIDED 2026-08-23 — `navbar-expand-xl` + `d-none d-xl-block`.** Move
+the whole transition to 1200px, where there is room.
 
-1. `navbar-expand-xl` + `d-none d-xl-block` on the five — move the whole
-   transition to 1200px, where there is room. Smallest diff, no items lost.
-2. Keep `-lg` but let the bar wrap (`flex-wrap`) between 992 and 1400.
-3. Demote some of the five into the existing overflow menu — **this changes
-   placement, and placement does not change without approval.**
+The five are **About, Resources, OSCAL, Help (`?`)** and a separator — so four
+real controls. Between 992px and 1200px they move into the hamburger, which
+already works and already holds them at 375px. **Nothing is lost and nothing
+moves**: visibility differs between 992 and 1200, placement does not, so this
+stays inside [[feedback_no_navigation_changes_without_approval]] rather than
+needing a new approved layout.
 
-The `.d-none.d-lg-block`-appears-at-992 / sidebar-hides-below-992 conflict is
-the same breakpoint seen from both sides; option 1 resolves it by construction.
+It also resolves the `.d-none.d-lg-block`-appears-at-992 /
+sidebar-hides-below-992 conflict **by construction** rather than by picking a
+side — the nav items move to `-xl` and the sidebar keeps `-lg`, so they no
+longer collide.
+
+Rejected, with reasons recorded so they are not re-proposed: **wrap
+(`flex-wrap`)** keeps everything visible but makes the `sticky-top` header two
+rows tall on every laptop-width page, spending vertical space on every screen to
+solve a horizontal problem; **demoting items into the overflow menu** changes
+the placement of controls users already know and would need an approved layout.
 
 ###### #950 — measured 2026-08-23, and larger than the issue records
 
@@ -2029,30 +2038,63 @@ four asks and wrong for one:**
 | **"Provided by" — organization, team, person** | `organization_id` exists on `back_matter_resources`. `organizations` carries a single `contact_person` + `contact_email`. **There is no `teams` table anywhere in the schema, and no per-source person field** | **DOES NOT EXIST.** This one is a migration, not a UI gap |
 
 So three quarters of #1039 is exposure work — routes and screens over machinery
-that already exists — and one quarter is a schema decision. **Settle "provided
-by" before writing the migration**, because there are three defensible shapes
-and they are not interchangeable:
+that already exists — and one quarter is a schema decision. **OWNER-DECIDED 2026-08-23 — free-text on the resource.** Add
+**`provided_by_team`** and **`provided_by_contact`** (strings) to
+`back_matter_resources`, alongside the existing `organization_id`. One
+migration, no new model, honest about the fact that the provider is often an
+external body — NIST, a CSP, another agency — that SPARC does not otherwise
+model and should not have to.
 
-1. **Free-text `provided_by_team` + `provided_by_contact` on the resource** —
-   one migration, no new model, honest about the fact that the provider is often
-   an external body SPARC does not otherwise model. Recommended.
-2. **A `teams` table** — correct if teams are going to be first-class elsewhere,
-   far too much to introduce in the last bundle of a release.
-3. **Lean on `organizations.contact_person`** — no migration, but it makes every
-   source from one organization share one contact, which is not what an assessor
-   is asking.
+**`provided_by_contact` holds an email OR a phone number, and the form field
+"ghosts" the recommended format as placeholder text in the cell that collects
+it** (owner: *"contact is an email/phone and should 'ghost' the recommended
+information in the cell collecting the data"*). So the input carries a
+`placeholder` showing the expected shape rather than relying on a separate label
+or help text to explain it; same treatment for `provided_by_team`. The field is
+deliberately **not** validated as an email — a phone number is equally valid,
+and an external provider's contact is often in neither form. Placeholder text is
+a hint, not a constraint, and must not be mistaken for one: it disappears the
+moment the user types, so it cannot carry information the reader needs after the
+fact.
 
-**Deletion needs a decision too, and the default is wrong.** Back-matter
-resources participate in federation (`federated_from_instance`, `original_uuid`)
-and promotion (`promotion_status`, `approved_by_user_id`), so a hard delete
-strands a federated copy on a peer. `superseded_by_id` and `archived_at` already
-exist on the table, and `archive`/`restore` are already API members —
-**supersede/archive is almost certainly the intended mechanism, and `destroy`
-should map to it** rather than to `DELETE`.
+Rejected, recorded so they are not re-proposed: **a `teams` table** — a new
+first-class domain concept with its own RBAC and API surface, far too much for
+the last bundle of a release; **leaning on `organizations.contact_person`** — no
+migration, but every source from one organization would share one contact, which
+is not what an assessor asking *"who do I ask about THIS reference"* needs.
 
-Also owed, from the issue's own scope notes: whether control references are set
-inline on create or through a nested route (as `evidences` does with
-`control_links`) — settle it so the two do not diverge.
+**OWNER-DECIDED 2026-08-23 — `destroy` maps to archive/supersede, never a hard
+delete.** Back-matter resources participate in federation
+(`federated_from_instance`, `original_uuid`) and promotion (`promotion_status`,
+`approved_by_user_id`), so a hard delete strands a federated copy on a peer.
+`superseded_by_id` and `archived_at` already exist on the table and
+`archive`/`restore` are already API members, so this reuses the mechanism rather
+than inventing one.
+
+Consequences to build to, rather than discover later:
+
+- The web action and its confirm string say **"Archive"**, not "Delete" — a
+  label must not promise something the system deliberately does not do.
+- `DELETE /api/v1/authoritative_sources/:id` soft-deletes and **returns the
+  archived record** rather than 204-with-nothing, so a client can tell what
+  happened. Document it on the endpoint page: **a DELETE that does not delete is
+  exactly the kind of contract surprise the #995 sweep exists to catch.**
+- A reference already cited by a document **stays citable**. That is the point —
+  archiving removes it from the picker, not from history.
+- **Restore must be reachable from the UI**, or archive is a one-way door with
+  extra steps.
+- `visible_resources` already scopes to `BackMatterResource.active`, so archived
+  rows should drop out of the index for free — **verify that, do not assume it**,
+  and confirm the archived record is still reachable at its `show` URL.
+
+On whether control references are set inline on create or through a nested
+route: **follow the `evidences` precedent and use the nested route.** The issue
+raised it as an open choice, but it is not really one — `evidences` already does
+this with `control_links`, and the API already has `link`/`unlink` members on
+`back_matter_resources` doing exactly the same job. Inventing an inline-on-create
+variant would give SPARC two ways to attach a control to a thing, which is the
+divergence the scope note was worried about. **Recorded as settled by precedent
+rather than left owed**; flag it if the precedent turns out not to fit.
 
 `POST /api/v1/authoritative_sources` is already covered by `tests/api` from the
 #995 sweep; **every new route takes the same treatment**, and
@@ -2093,24 +2135,31 @@ spec fails.**
 - Full suite always: rspec, `tests/api`, ui-smoke, rubocop, ruff, brakeman, both
   API gate scripts, and a browser pass at **:3443**.
 
-###### Decisions still owed by the owner
+###### Decisions still owed by the owner — **2 of 6 remain**
 
-1. **#1042's fix shape** — `navbar-expand-xl` (recommended), wrap, or demote
-   items into the overflow menu. The third changes placement and needs an
-   approved layout.
-2. **Approve / Reject** — its own role pair, or folded into Update? Folding
-   loses the pairing.
-3. **#1039 "provided by"** — free-text on the resource (recommended), a `teams`
-   table, or lean on `organizations.contact_person`.
-4. **#1039 delete semantics** — confirm `destroy` maps to supersede/archive
-   rather than a hard delete.
-5. **Two touch-target calls**, surfaced by the #951 audit and deliberately not
+1. **Approve / Reject** — its own workflow-decision role pair, or folded into
+   Update? Folding loses the pairing. **Not blocking**: it can be settled during
+   slice 3, when the role classes are written.
+2. **Two touch-target calls**, surfaced by the #951 audit and deliberately not
    taken unilaterally (WCAG 2.2 AA §2.5.8 wants 24×24): `button.sparc-field-help`
    renders **16×16**, and roughly **90 inline help-guide links** render 20px
    tall — which is ordinary body-text link behaviour and arguably outside the
-   criterion. Both are density-vs-AA judgement calls, not bugs.
-6. **Whether to file the CSP tail** — `style-src 'unsafe-inline'` and Trusted
-   Types are untracked since #528 closed over them. Raised here, not filed.
+   criterion. Both are density-vs-AA judgement calls, not bugs. **Not blocking**
+   either; nothing in slices 1–7 depends on the answer.
+
+**Settled 2026-08-23** — recorded in place above, not repeated here:
+**#1042's fix shape** (`navbar-expand-xl` + `d-none d-xl-block`) ·
+**#1039 "provided by"** (free-text `provided_by_team` / `provided_by_contact`,
+placeholder-ghosted, no email validation) · **#1039 delete semantics**
+(`destroy` → archive/supersede) · **the audit-gate fix** (drop
+`continue-on-error`, add an ignore register, add a local pre-PR step).
+
+**The CSP tail is FILED as [#1047](https://github.com/risk-sentinel/sparc/issues/1047),
+milestone v1.16.1** — `style-src 'unsafe-inline'` plus Trusted Types, the tail
+#528 closed over on 2026-07-09. The owner's read: *"CSP tail is not going to be
+easy and needs to be filed and will likely need to ride v1.16.1 milestone."*
+That is the right size for it — the flip is one line, but surviving it is 1,399
+edits with no visual-regression harness to catch a silent break.
 
 ---
 
@@ -2267,6 +2316,87 @@ fix is `bundle update mail` and nothing else moves.
 **The lesson to carry: `bundle-audit` is the gate, the Dependabot PR list is not.** An empty
 dependency queue is not evidence of a clean lock.
 
+##### Why nobody caught it — CI found it 85 times and reported success
+
+The owner's question on 2026-08-23 was *"how do we build the audit into our
+ceremony, since CI on the PR missed it as well as us during development."*
+**Measured, and the premise needs correcting: CI did not miss it.**
+
+| | |
+|---|---|
+| Advisory published | 2026-07-01 |
+| Entered `ruby-advisory-db` (`cfa8518`) | 2026-08-18 ~00:24 UTC |
+| **First CI run to report it** | **2026-08-18T21:42**, run `32189123058` |
+| Green `security.yml` runs carrying it since | **85** |
+| …of which push-to-`main` merges | **8** |
+| Those merges include | **Bundle V (PR #1009)** and **Bundle R (PR #1045)** |
+
+The `bundler-audit-json` artifact from the Bundle R merge run (`32611703559`,
+`main`, conclusion **success**) contains exactly one result:
+
+```json
+{ "type": "unpatched_gem",
+  "gem": { "name": "mail", "version": "2.9.0" },
+  "advisory": { "id": "GHSA-mvxr-6m87-mv2q", "criticality": "medium",
+                "patched_versions": [">= 2.9.1"] } }
+```
+
+**The scanner worked, the advisory DB refresh worked, the weekly cron worked.
+The finding was written to a 90-day artifact on the merge commit and the
+workflow reported success.**
+
+**Two independent causes, either sufficient on its own:**
+
+1. **`security.yml:340` — `continue-on-error: true`** on the check step, so it
+   cannot fail its job whatever it finds.
+2. **Nothing reads the JSON.** It is downloaded at line ~1022 only to be `cp`'d
+   into the archive at line 1325. The one severity gate, line 1341, is
+   `if: env.FAIL_ON_SEVERITY != 'none'` — and `FAIL_ON_SEVERITY` **defaults to
+   `'none'`** (line 54), so it is off on every trigger except a manual dispatch
+   that sets it. That gate also reads HDF results, not bundler-audit.
+
+**State this fairly: it is a deliberate posture, not sloppiness.** The comment at
+line 879 says `continue-on-error` is there *"to ensure all three scans run and
+artifacts are"* produced — `security.yml` is an evidence-collection workflow
+feeding the HDF/OSCAL archive, with an opt-in threshold gate. **~30 steps carry
+the same flag.** The gap is that the opt-in gate was never turned on and no
+human ceremony reads the artifacts it produces. **This is a scan-to-decision
+gap, not a scan gap** — and it is worth noting it applies to every scanner in
+that workflow, not only bundler-audit. **Not proposed for a blanket fix here:**
+that is shared CI infrastructure, and approval to close this hole is not
+approval to restyle the workflow ([[feedback_plan_before_shared_infrastructure]]).
+
+**And our own side of it, stated plainly:** the recorded practice was *run
+`bundle-audit` when assessing a dependency PR*. No PR appeared for `mail` —
+there could not be one, it has no manifest line — so the trigger never fired.
+The practice was conditioned on the wrong event.
+
+###### OWNER-APPROVED FIX 2026-08-23 — fail the job, and add a local pre-PR step
+
+Workflow edits approved for this bundle. Both halves, because each covers the
+other's blind spot: CI cannot be forgotten, and the local step gives the signal
+during development rather than at PR time.
+
+1. **Remove `continue-on-error: true` from `security.yml:340`.** Any advisory
+   then turns the PR red. The upload step already carries `if: always()`, so
+   **the artifact is still produced on failure** and the HDF/archive path is
+   unaffected — verify that rather than assuming it.
+2. **Add a documented ignore register for accepted risk** — `bundle-audit check
+   --ignore GHSA-…` with each entry justified in-repo, mirroring the discipline
+   the CVE register already uses ([[project_cve_register_rebased_on_container]]).
+   Without it, the first accepted-risk advisory turns the whole gate off again.
+3. **Add `bundle-audit` to the local pre-PR gate**, alongside rubocop, brakeman
+   and the suites — see the host recipe above, and note the ruby-2.6 trap: a
+   `bundle-audit` invocation on system ruby produces **no output at all**, which
+   reads exactly like success ([[feedback_run_it_dont_reason_about_it]]).
+
+**Prove the gate has teeth before trusting it** ([[feedback_prove_tests_have_teeth]]):
+it must go **RED on the pre-bump lockfile** and green after. A gate that has only
+ever been observed green is not known to work — which is the whole lesson here.
+
+**Whether this takes its own issue is the owner's call.** The fix is authorised;
+raising it rather than filing, per [[feedback_dont_file_issues_unprompted]].
+
 | Item | Bump | Slot | Why there |
 |---|---|---|---|
 | **(no PR)** | **`mail` 2.9.0 → 2.9.1** — transitive | **FIRST, ahead of everything** | The only live advisory. Medium, email-address spoofing via malformed RFC 2047 encoded-words. **Reachable, not theoretical: SPARC has 5 mailers** — `password_reset_mailer.reset_link`, `idp_grant_mailer.unmatched_grants_digest` (Bundle R), `service_account_mailer` (4 expiry/inactivity notices) and `document_parse_mailer`. An advisory about spoofing the apparent sender under a *password-reset* mailer is the combination worth taking first. `bundle update mail`; no Gemfile change |
@@ -2341,21 +2471,24 @@ as `mail` now shows, check for transitive advisories that never got a PR at all.
 > individual PRs ("higher review needed", no major group), so an unmerged major sitting alone is
 > the config working as intended — not neglect.
 
-**Owner decisions still owed** — all six are Bundle X's, and they are listed with their
-context in the Bundle X section above. Summarised here so the release PR has one place to check:
+**Owner decisions still owed — 2 of 6 remain, neither blocking.** Full context in the
+Bundle X section above; summarised here so the release PR has one place to check:
 
-1. **#1042's fix shape** — `navbar-expand-xl` (recommended), wrap, or demote nav items into the
-   overflow menu. The third changes NAVIGATION placement and needs an approved layout.
-2. **#950 — Approve / Reject**: its own workflow-decision role pair, or folded into Update?
-3. **#1039 — "provided by"**: free-text `provided_by_team` / `provided_by_contact` on the resource
-   (recommended), a new `teams` table, or lean on `organizations.contact_person`. **This is the
-   one part of #1039 that is a migration rather than a UI gap.**
-4. **#1039 — delete semantics**: confirm `destroy` maps to supersede/archive rather than a hard
-   delete, which would strand a federated copy on a peer.
-5. **Two touch-target calls** — `button.sparc-field-help` at 16×16 and ~90 help-guide links at
+1. **#950 — Approve / Reject**: its own workflow-decision role pair, or folded into Update?
+   Settle it during slice 3, when the role classes are written.
+2. **Two touch-target calls** — `button.sparc-field-help` at 16×16 and ~90 help-guide links at
    20px, against WCAG 2.2 AA §2.5.8's 24×24. Density-vs-AA judgement calls, not bugs.
-6. **Whether to file the CSP tail** — `style-src 'unsafe-inline'` and Trusted Types have been
-   untracked since #528 was closed over them on 2026-07-09. **Raised, not filed.**
+
+**Settled 2026-08-23:** #1042's fix shape (`navbar-expand-xl` + `d-none d-xl-block`) · #1039's
+"provided by" (free-text on the resource, placeholder-ghosted, not email-validated) · #1039's
+delete semantics (`destroy` → archive/supersede) · the audit-gate fix (drop `continue-on-error`
+from `security.yml:340`, add an ignore register, add a local pre-PR step).
+
+**The CSP tail is FILED as [#1047](https://github.com/risk-sentinel/sparc/issues/1047) on
+milestone v1.16.1** — so **v1.16.1 now holds 5 issues**: #1022, #1033, #1040, #1044, #1047.
+**#820 is a PR, not an issue, and is deliberately left OFF the milestone** — attaching a PR to a
+milestone pollutes every count read off the milestone page, which is a trap this plan has already
+been caught by. It is deferred to the v1.16.1 *timeframe*, tracked here and on the PR itself.
 
 **Decided and closed out, kept for the record:** #919's roster posture and #860's five open
 questions were both settled and shipped (Bundles C and R). The **14-day fallback** — a coherent
