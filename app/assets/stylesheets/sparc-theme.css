@@ -2894,59 +2894,39 @@ a.link-purple { color: var(--sparc-purple); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   #950 — ONE BUTTON ROLE, ONE CLASS
+   #950 — THE BUTTON SYSTEM
    ═══════════════════════════════════════════════════════════════════════
 
-   Owner design rules (2026-08-22), which this block implements:
+   Reference, with every role rendered in both themes and the audit behind it:
+   docs/dev/design/button_schema.html
 
-     1. One colour scheme per FUNCTION, light and dark.
-     2. Symmetrical text and height — equal-height rows by construction.
-     3. a11y / WCAG compliant, verified by measurement, not by eye.
-     4. Dark mode carries NO fill — outline and text only.
-     5. Buttons go in CSS and are REUSABLE — one place per function.
+   TWO AXES, not one colour per verb.
+     INTENT    what kind of action it is      (7)
+     EMPHASIS  how loud it should be          (solid / outline / ghost)
+   A role is a pairing, so a role costs no new colour. That matters: the audit
+   found ~13 real clusters across 455 labelled buttons, and one-hue-per-verb
+   runs out around nine.
 
-   WHY A NEW PREFIX RATHER THAN REDEFINING `.btn-*`
-   The app has 34 distinct `btn-*` classes across 47 view files, and the same
-   function is styled four different ways in different places: Cancel is
-   `btn-secondary` 46 times and `btn-outline-secondary` 32 times; Destroy splits
-   almost evenly, `btn-outline-danger` 15 / `btn-danger` 14; Create splits
-   `btn-success` 13 / `btn-primary` 11. Redefining the Bootstrap classes would
-   restyle all 216 of those buttons at once with no way to land it in slices.
-   `.sparc-action` is additive: nothing renders it until a view opts in.
+   LIGHT  every role is a 20% tint of its own intent over white. NO opaque
+          fills. Emphasis is the border — solid 2px, outline 1px, ghost faint.
+   DARK   no fill at all: transparent, 1px border, coloured label. Ghost keeps
+          a 50% edge so it is not mistaken for body text.
 
-   THESE BUILD ON THE #599 AA-VERIFIED TOKENS, they do not re-derive colour.
-   Every `--sparc-*` token here was already measured against its surface during
-   the #599 sweep; the role classes only decide WHICH verified token each
-   function gets, and whether it fills or outlines.
+   WHY PALE TINT AND NOT SOLID. Mixing an opaque fill with a tinted one inside
+   one theme is what made the first attempt look broken — four roles shouting
+   beside nine whispering. Owner-decided 2026-08-23: pick ONE fill treatment
+   per theme. Tint strength was settled by rendering a ladder at 11/16/20/26/32%
+   and looking: 11% of a dark neutral over white is #eaeaeb, which sits 4% from
+   the #f5f5f5 page and is invisible. 20% is the first step that reads as a body.
 
-   RULE 1 CANNOT BE LITERAL IN DARK MODE, and that is deliberate. Rule 4 removes
-   fill, so dark mode has only hue to separate roles — and there are 8 AA-verified
-   hues for 9 roles. Two pairs therefore share a hue in dark:
-       update / view      (primary blue)
-       import / export    (info teal)
-   Each pair is one action and its read-only counterpart, they never sit adjacent
-   in the same row, and they are separated by label and icon. That is the same
-   resolution WCAG 1.4.1 forces on destroy (below): colour is never the only cue.
-
-   RULE 3 vs RULE 4 ON DESTROY — the conflict is real but already resolved.
-   Outline-only dark mode strips the red fill, so "this is destructive" would be
-   carried by colour alone: a WCAG 1.4.1 failure, which rule 3 forbids. The cue
-   that saves it is the LABEL. Measured across every destroy button in the app:
-   Delete x20, Remove x8, Deactivate x3, Revoke x1, Remove Avatar x1 — all 33
-   lead with an explicit destructive verb, none rely on colour. So 1.4.1 is
-   satisfied by text and no icon is required.
-
-   The rule to keep, because it is what makes that true: a destroy button's
-   label must NAME the destruction. `.sparc-action--destroy` on a button
-   labelled "OK" or "Continue" would be a 1.4.1 failure in dark mode, and
-   nothing in CSS can catch it. */
+   These build on the #599 AA-verified tokens. Only `accent`, the dark `danger`
+   and the darkened light `neutral` are new, and all three were measured.
+   spec/quality/button_role_contrast_spec.rb parses THIS FILE and asserts 4.5:1
+   for every role on every surface in both themes — it reads the stylesheet
+   rather than a copied table, so the two cannot drift. */
 
 .sparc-action {
-  /* Rule 2 — symmetrical text and height, by construction rather than by
-     each caller remembering. Fixed line-height + equal padding means a row of
-     mixed roles aligns without a wrapper having to force it. */
-  --sparc-action-fg: var(--sparc-primary);
-  --sparc-action-bg: transparent;
+  --sparc-action-c: var(--sparc-i-neutral);
 
   display: inline-flex;
   align-items: center;
@@ -2954,139 +2934,134 @@ a.link-purple { color: var(--sparc-purple); }
   gap: 0.4rem;
   min-height: 2.25rem;
   padding: 0.4rem 0.9rem;
-  border: 1px solid var(--sparc-action-fg);
+  border: 1px solid transparent;
   border-radius: 0.375rem;
-  background: var(--sparc-action-bg);
-  color: var(--sparc-action-fg);
+  background: transparent;
+  color: var(--sparc-action-ink, var(--sparc-action-c));
   font-size: 0.9rem;
   font-weight: 500;
   line-height: 1.25;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.12s ease-in-out, color 0.12s ease-in-out;
+  transition: background-color 0.12s ease-in-out, border-color 0.12s ease-in-out;
 }
 
-.sparc-action:hover,
-.sparc-action:focus {
-  background: var(--sparc-action-fg);
-  color: var(--sparc-action-on-fill, #fff);
-  text-decoration: none;
+/* ── intents ───────────────────────────────────────────────────────────
+   Light and dark values live on :root / [data-bs-theme="dark"] below, so a
+   role never hard-codes a literal — a literal in a base rule opts that role
+   out of the theme switch entirely, which is how `edit` once rendered a dark
+   orange on a dark surface at 2.90:1. */
+:root,
+[data-bs-theme="light"] {
+  /* The TINT and the BORDER use these. */
+  --sparc-i-neutral:  #3f4749;
+  --sparc-i-primary:  #1f6fa5;
+  --sparc-i-positive: #19743f;
+  --sparc-i-info:     #0c6e80;
+  --sparc-i-caution:  #8a6300;
+  --sparc-i-danger:   #c0392b;
+  --sparc-i-accent:   #8e44ad;
+
+  /* The LABEL uses these — measured, and NOT the same values.
+     A label sits on a 20% tint OF ITSELF, and that pair is far tighter than
+     the same colour on the page: `primary` on #f5f5f5 is 5.42:1 but on its own
+     tint #d2e2ed it is only 4.09:1. SIX of the seven intents failed AA that
+     way; only `neutral` passed, because it is nearly black.
+
+     Darkening the label 2-4% in lightness clears 4.5:1 on both the 20% (solid,
+     outline) and 12% (ghost) tints while leaving the tint itself — the thing
+     that was actually approved by eye — untouched. */
+  --sparc-i-neutral-ink:  #3f4749;   /* 6.79 on its tint — unchanged */
+  --sparc-i-primary-ink:  #1d6698;   /* 4.65 / ghost 5.24 */
+  --sparc-i-positive-ink: #176c3a;   /* 4.84 / 5.45 */
+  --sparc-i-info-ink:     #0c6a7b;   /* 4.65 / 5.27 */
+  --sparc-i-caution-ink:  #805c00;   /* 4.63 / 5.17 */
+  --sparc-i-danger-ink:   #af3427;   /* 4.62 / 5.24 */
+  --sparc-i-accent-ink:   #8841a6;   /* 4.68 / 5.28 */
 }
 
-/* Filled roles in LIGHT only — the actions that COMMIT something.
-   Dark mode strips every one of these back to outline (rule 4), below. */
-.sparc-action--create,
-.sparc-action--update,
-.sparc-action--import,
-.sparc-action--destroy {
-  background: var(--sparc-action-fg);
-  color: var(--sparc-action-on-fill, #fff);
+[data-bs-theme="dark"] {
+  --sparc-i-neutral:  #b0bec5;
+  --sparc-i-primary:  #5dade2;
+  --sparc-i-positive: #2ecc71;
+  --sparc-i-info:     #5bc8da;
+  --sparc-i-caution:  #f6e05e;
+  --sparc-i-danger:   #f48a87;
+  --sparc-i-accent:   #c683df;
+
+  /* Dark has no tint to sit on — the label is on the surface itself, which
+     every intent already clears at 5.09-10.39:1. Ink == the token. */
+  --sparc-i-neutral-ink:  #b0bec5;
+  --sparc-i-primary-ink:  #5dade2;
+  --sparc-i-positive-ink: #2ecc71;
+  --sparc-i-info-ink:     #5bc8da;
+  --sparc-i-caution-ink:  #f6e05e;
+  --sparc-i-danger-ink:   #f48a87;
+  --sparc-i-accent-ink:   #c683df;
 }
 
-.sparc-action--create:hover,
-.sparc-action--update:hover,
-.sparc-action--import:hover,
-.sparc-action--destroy:hover,
-.sparc-action--create:focus,
-.sparc-action--update:focus,
-.sparc-action--import:focus,
-.sparc-action--destroy:focus {
-  background: var(--sparc-action-hover, var(--sparc-action-fg));
-  color: var(--sparc-action-on-fill, #fff);
+.sparc-action--neutral  { --sparc-action-c: var(--sparc-i-neutral);  --sparc-action-ink: var(--sparc-i-neutral-ink); }
+.sparc-action--primary  { --sparc-action-c: var(--sparc-i-primary);  --sparc-action-ink: var(--sparc-i-primary-ink); }
+.sparc-action--positive { --sparc-action-c: var(--sparc-i-positive);  --sparc-action-ink: var(--sparc-i-positive-ink); }
+.sparc-action--info     { --sparc-action-c: var(--sparc-i-info);  --sparc-action-ink: var(--sparc-i-info-ink); }
+.sparc-action--caution  { --sparc-action-c: var(--sparc-i-caution);  --sparc-action-ink: var(--sparc-i-caution-ink); }
+.sparc-action--danger   { --sparc-action-c: var(--sparc-i-danger);  --sparc-action-ink: var(--sparc-i-danger-ink); }
+.sparc-action--accent   { --sparc-action-c: var(--sparc-i-accent);  --sparc-action-ink: var(--sparc-i-accent-ink); }
+
+/* ── emphasis, LIGHT ─────────────────────────────────────────────────── */
+.sparc-action--solid {
+  background: color-mix(in srgb, var(--sparc-action-c) 20%, #fff);
+  border-color: var(--sparc-action-c);
+  border-width: 2px;
 }
 
-/* One hue per function. Plurality-led where the app already had a majority
-   (create -> success 13/27, edit -> outline-primary 10/28, cancel -> secondary
-   78/84, destroy -> danger 29/29) so the sweep in slice 4 changes as few
-   buttons as possible. */
-.sparc-action--create  { --sparc-action-fg: var(--sparc-success);   --sparc-action-hover: var(--sparc-success-hover); }
-.sparc-action--update  { --sparc-action-fg: var(--sparc-primary);   --sparc-action-hover: var(--sparc-primary-hover); }
-.sparc-action--import  { --sparc-action-fg: var(--sparc-info); }
-.sparc-action--export  { --sparc-action-fg: var(--sparc-info); }
-.sparc-action--view    { --sparc-action-fg: var(--sparc-primary); }
-.sparc-action--edit    { --sparc-action-fg: #ac5309; }  /* light-only value; dark restores the token below */
-.sparc-action--wizard  { --sparc-action-fg: var(--sparc-purple);    --sparc-action-hover: var(--sparc-purple-hover); }
-.sparc-action--cancel  { --sparc-action-fg: var(--sparc-secondary); --sparc-action-hover: var(--sparc-secondary-hover); }
-.sparc-action--destroy { --sparc-action-fg: var(--sparc-danger);    --sparc-action-hover: var(--sparc-danger-hover); }
+.sparc-action--outline {
+  background: color-mix(in srgb, var(--sparc-action-c) 20%, #fff);
+  border-color: var(--sparc-action-c);
+}
 
-/* RULE 4 — dark mode carries NO fill. This single block is what makes the rule
-   hold for every role at once, rather than the variant-by-variant patching that
-   left 5 of 9 filled variants with a dark rule and all 6 outline variants with
-   none. Adding a tenth role inherits it for free. */
-[data-bs-theme="dark"] .sparc-action,
-[data-bs-theme="dark"] .sparc-action--create,
-[data-bs-theme="dark"] .sparc-action--update,
-[data-bs-theme="dark"] .sparc-action--import,
-[data-bs-theme="dark"] .sparc-action--destroy {
+.sparc-action--ghost {
+  background: color-mix(in srgb, var(--sparc-action-c) 12%, #fff);
+  border-color: color-mix(in srgb, var(--sparc-action-c) 34%, transparent);
+}
+
+.sparc-action--solid:hover,
+.sparc-action--outline:hover { background: color-mix(in srgb, var(--sparc-action-c) 32%, #fff); }
+.sparc-action--ghost:hover   { background: color-mix(in srgb, var(--sparc-action-c) 22%, #fff); }
+
+/* ── emphasis, DARK — no fill anywhere ───────────────────────────────── */
+[data-bs-theme="dark"] .sparc-action--solid,
+[data-bs-theme="dark"] .sparc-action--outline {
   background: transparent;
-  color: var(--sparc-action-fg);
+  border-width: 1px;
+  border-color: var(--sparc-action-c);
 }
 
-/* Hover in dark stays fill-free: tint the surface instead, and keep the label
-   the role hue so contrast is the resting ratio, already measured. */
-[data-bs-theme="dark"] .sparc-action:hover,
-[data-bs-theme="dark"] .sparc-action:focus {
-  background: var(--sparc-surface-alt);
-  color: var(--sparc-action-fg);
+[data-bs-theme="dark"] .sparc-action--ghost {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--sparc-action-c) 50%, transparent);
 }
 
-/* ── AA corrections, measured not eyeballed ────────────────────────────
-   Three of the nine roles failed WCAG 2.1 AA 4.5:1 on the raw tokens. All
-   three are scoped to the role, NOT fixed by moving the global --sparc-*
-   token, because those tokens are used elsewhere and were verified for their
-   own surfaces during #599.
-
-     edit / light      --sparc-orange #b6580a on #f5f5f5 = 4.39  FAIL
-                       -> #ac5309 = 4.82 body / 5.26 card
-     destroy / dark    --sparc-danger #ef5350 on #252d3a = 3.98  FAIL
-                       -> #f48a87 = 6.41 / 5.83
-     wizard / dark     --sparc-purple #bb6bd9 on #252d3a = 4.10  FAIL
-                       -> #c683df = 5.60 / 5.09
-
-   The destroy value is not new: `[data-bs-theme="dark"] .btn-outline-danger`
-   above already carries #f48a87 for exactly this reason, measured during #599.
-   Reused rather than re-derived, so the two cannot drift apart.
-
-   Each was chosen with margin rather than at the 4.5 line — the first passing
-   candidate for edit was #b1560a at 4.58, which leaves nothing for a future
-   surface tweak. */
-[data-bs-theme="dark"] .sparc-action--destroy { --sparc-action-fg: #f48a87; }
-[data-bs-theme="dark"] .sparc-action--wizard  { --sparc-action-fg: #c683df; }
-/* edit's base value is the LIGHT correction (#ac5309), which is a dark orange
-   and measures 2.90:1 on the dark surface — so dark must be given the token
-   back explicitly. Hardcoding a literal in the base rule opts that role out of
-   the theme switch entirely; that is the trap, and it is why the AA check reads
-   this stylesheet instead of a table someone maintains by hand. */
-[data-bs-theme="dark"] .sparc-action--edit    { --sparc-action-fg: var(--sparc-orange); }
-
-/* The non-colour cue rule 3 requires on destroy. Reserved by the class so a
-   caller cannot silently omit it. */
-.sparc-action--destroy .sparc-action-icon { flex: 0 0 auto; }
-
-/* SIZE — the one axis that is NOT a role.
-   121 of the 235 role-carrying buttons in the views are `btn-sm`, so a single
-   size would resize half the app. Rule 2 ("symmetrical text and height") is
-   about a ROW being uniform, not about every button in the app being one size:
-   a button inside a table row legitimately differs from a page-header button.
-   Two sizes, both keeping the role's colour scheme, so size and role stay
-   independent and a caller cannot invent a third mechanism -- which is what
-   `btn-sm` + `btn-lg` + bespoke padding had already become. */
-.sparc-action--sm {
-  min-height: 1.85rem;
-  padding: 0.25rem 0.6rem;
-  font-size: 0.8rem;
+[data-bs-theme="dark"] .sparc-action--solid:hover,
+[data-bs-theme="dark"] .sparc-action--outline:hover,
+[data-bs-theme="dark"] .sparc-action--ghost:hover {
+  background: color-mix(in srgb, var(--sparc-action-c) 14%, transparent);
+  border-color: var(--sparc-action-c);
 }
 
-.sparc-action--lg {
-  min-height: 2.75rem;
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
+/* ── focus, disabled, size ───────────────────────────────────────────── */
+.sparc-action:focus-visible {
+  outline: 2px solid var(--sparc-action-c);
+  outline-offset: 2px;
 }
 
-/* Rows of mixed roles line up without a wrapper forcing it (rule 2). */
-.sparc-action-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  gap: 0.5rem;
-}
+.sparc-action[disabled],
+.sparc-action.is-disabled { opacity: 0.45; pointer-events: none; }
+
+/* 121 of the app's buttons are `btn-sm` today, so one size would resize half
+   the app. Size is an axis of its own, never a role. */
+.sparc-action--sm { min-height: 1.85rem; padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+.sparc-action--lg { min-height: 2.75rem; padding: 0.6rem 1.2rem; font-size: 1rem; }
+
+/* Rows of mixed roles line up without a wrapper forcing it. */
+.sparc-action-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.5rem; }

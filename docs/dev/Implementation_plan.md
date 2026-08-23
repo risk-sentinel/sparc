@@ -2107,6 +2107,108 @@ rather than left owed**; flag it if the precedent turns out not to fit.
 #995 sweep; **every new route takes the same treatment**, and
 `docs/api/endpoints/authoritative-sources.md` needs its Endpoints table extended.
 
+
+###### #950 IMPLEMENTATION PLAN — settled 2026-08-23
+
+The schema is agreed and persisted at `docs/dev/design/button_schema.html`
+(published copy: artifact `c3f0af3e`). **Ten roles from seven intents; light is
+all pale tint, dark carries no fill.** This section is how it gets into the app.
+
+**The governing lesson from the first attempt: a half-swept app is worse than
+either end state.** 223 buttons were swept, 274 Bootstrap variants were left,
+and one card row rendered `View` and `Delete` as outlines beside a filled
+`Copy` and `Export OSCAL`. Before the sweep the app was consistently wrong;
+during it, it was incoherent. **Every slice below therefore has to leave the app
+in a self-consistent state**, which is the reason the order is what it is.
+
+####### What the first attempt got wrong, so the transformer is not rebuilt the same way
+
+| Gap | Size | Why it was missed |
+|---|---|---|
+| Raw HTML `<button>` / `<a class="btn">` | **123 in 42 files** | the transformer only matched `link_to` / `button_to` / `submit_tag` / `button_tag`. `Export OSCAL` is a raw `<button class="btn btn-success dropdown-toggle">`, which is exactly why it stayed green |
+| Labels leading with a glyph | **30** | the role regexes were `^`-anchored, so `＋ New Catalog`, `↑ Import from File`, `+ Add Item` and `&#8592; Back` never matched |
+| Labels outside the roster | ~115 | now covered by the ten roles; the residue is genuine and gets counted, not forced |
+| A match spanning two calls | latent | `.{0,500}?` with `re.S` paired one label with a **later** call's class. Sweeping `wizard` would have written `sparc-action--wizard` onto a **Cancel** button. Fixed by forbidding a match to cross another call — keep that guard |
+
+**20 `sparc-btn-ghost` buttons stay out of the sweep.** They are `color: white`
+on a translucent fill, built for banner surfaces that are dark in *both* themes
+(the #974 trap). A role class also sets `color` at equal specificity and
+`sparc-theme.css` loads last, so a role class would win and paint a dark label
+onto a dark banner. Ghost is a contextual variant, not a role.
+
+####### SCOPE — owner-decided 2026-08-23, mid-implementation
+
+*"Get the button colouring consistent, audit, decide on implementing any other
+changes on this or move any other changes in buttons/layout to v1.16.1."*
+
+So this bundle does **colour consistency and nothing else**, then an audit, then
+a decision. Slices 1-3 below are in scope. **4-7 are candidates, not
+commitments** — they get decided after the audit, and the default for anything
+that is not colour is **v1.16.1**.
+
+**Do NOT touch inline `style=` in this bundle.** Owner, same message: *"be
+careful on css and inline as some of that was intentional before and we are
+going to do an in-line audit in v1.16.1."* The sweep changes button CLASS
+attributes only. Nothing in slices 1-3 removes an inline style, and the earlier
+claim that this work reduces the `unsafe-inline` surface is **withdrawn for this
+bundle** — it is true of the eventual inline audit, not of a class rename.
+
+####### AA CORRECTION — found during slice 1, after the schema was approved
+
+The pale-tint model puts the label on a 20% tint **of itself**, and that pair is
+much tighter than the same colour on the page. `primary` is 5.42:1 on #f5f5f5
+but only **4.09:1** on its own tint. **Six of the seven intents failed AA** that
+way; `neutral` passed only because it is nearly black.
+
+    primary 4.09 · positive 4.35 · info 4.40 · accent 4.39
+    caution 4.13 · danger 4.00        (neutral 6.79 PASS)
+
+Fixed by splitting the token in two: the **tint and border** keep the approved
+value, and a separate **`-ink` token** carries the label 2-4% darker. Every
+intent now clears 4.62-4.84 on the 20% tint and 5.17-5.45 on the 12% ghost
+tint, and the thing that was approved by eye — the tint — is unchanged.
+
+**The lesson worth keeping: approving a colour by eye approves the FILL, not
+the pair.** Contrast is a property of two colours together, so a schema signed
+off visually still has to be measured against every surface the label actually
+lands on.
+
+####### Slices, in landing order
+
+Each is independently verifiable and leaves the app coherent.
+
+| # | Slice | Scope | Done when |
+|---|---|---|---|
+| **1** | **Replace the CSS vocabulary** | rewrite the `.sparc-action` block: 7 intents, 3 emphasis, 10 roles, pale-tint light / no-fill dark. **Rewrite `spec/quality/button_role_contrast_spec.rb`** — it currently asserts *nine* roles and a *filled-light* model, so it WILL fail and must move in lockstep | spec green, mutation-proved RED, **zero view changes** |
+| **2** | **Fix the transformer** | add raw-HTML `<button>`/`<a>` matching and glyph-tolerant label rules; keep the call-scoped guard and the ghost exclusion | dry run reports ≥95% of 455 buttons mapped, **0 mis-pairings** on a call-scoped audit |
+| **3** | **Sweep, one role at a time** | order: `Cancel/Utility` (111) → `Create/Approve` (64) → `Destroy/Reject` (40) → `Edit` (32) → `Export/Run` (24) → `View` (20) → `Import` (15) → `Update/Save` (10) → `Overwrite` (6) → `Wizard` (2) | after each role: `docker cp` + restart, a11y suite green, and the role's own screens eyeballed at 1280 and 375 |
+| **4** | **Dropdowns** | the 5 `dropdown-toggle` buttons → split-button treatment, intent inherited from the action | each renders correctly open and closed, in both themes |
+| **5** | **The residue** | whatever the transformer could not classify, listed individually and either assigned or left with a written reason | the count is published, not rounded away |
+| **6** | **The 62px row** | `d-flex gap-2 flex-shrink-0` in `home/index`, `profile_documents/show`, `cdef_documents/show` — the dashboard's 992px overflow | responsive audit reports 0 findings above 375px |
+| **7** | **Style guide** | fold the schema into the wiki as the button reference, linking `docs/dev/design/button_schema.html` | wiki page published via `PUSH_TO_WIKI.sh` |
+
+####### Gates
+
+- **rspec full suite** after slice 1 and at the end. `spec/quality/button_role_contrast_spec.rb` is the standing AA check and must be mutation-proved again after the rewrite — green proves nothing until it has been seen RED.
+- **`tests/ui-smoke` with `SPARC_SMOKE_PUBLIC_CATALOGS=0`.** Its absence produced 5 ERRORs I initially misread as regressions.
+- **Never restart the container while a suite runs.** A mid-run `docker compose restart` produced 38 `HTTP 502` failures that had nothing to do with the change under test.
+- **After any `app/assets/**` edit**: `docker cp`, then `rm -f public/assets/.manifest.json` and `assets:precompile` **as `-u root`** — without root the `rm` is denied, precompile fails, and the app serves the OLD stylesheet with no error. Confirm by fetching the fingerprinted asset and grepping for the new class, not by the restart succeeding.
+- **Verify by rendering, not by reasoning.** Screenshot the section and read it back. Every design miss in this bundle survived a code-level check and died within a minute of being looked at.
+
+####### Risk, stated plainly
+
+There is **no visual-regression harness**, and PR #943 is the proof of what that
+costs: a completely green suite beside a visibly broken drawer header. The
+mitigations are the per-role slicing above, the a11y sweep after each, and
+looking at the screens. That is weaker than a real harness and should be said
+out loud rather than implied.
+
+**Security posture is unchanged or improved.** Every role is a CLASS; the sweep
+removes inline `style=` rather than adding it, which moves toward
+[#1047](https://github.com/risk-sentinel/sparc/issues/1047) (dropping
+`style-src 'unsafe-inline'`) instead of against it. No new inline handlers, no
+CSP directive changes.
+
 ###### VERSION — 1.15.5 → 1.16.0, in THIS PR
 
 Owner-decided 2026-08-22: *"v1.16.0 won't be done until the next bundle is
