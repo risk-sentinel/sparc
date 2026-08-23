@@ -101,8 +101,9 @@ class EntitlementSync
       when :add, :update then "idp_grant_applied"
       when :revoke       then "idp_grant_revoked"
       when :conflict     then "idp_grant_skipped"
+      else                    nil # :unchanged — nothing happened, so nothing to record
       end
-      next if action.nil? # :unchanged is not an event; nothing happened
+      next if action.nil?
 
       AuditEvent.log(user: user, action: action, provider: "oidc",
                      metadata: change_metadata(change))

@@ -200,6 +200,48 @@ RSpec.describe EntitlementSync do
     end
   end
 
+  describe "what gets audited" do
+    it "records an event per applied grant" do
+      boundary
+
+      expect {
+        sync([ "sparc:boundary:acme:acme-prod:isso" ], mode: "bootstrap").apply
+      }.to change { AuditEvent.where(action: "idp_grant_applied").count }.by(1)
+    end
+
+    it "records an event per revoked grant" do
+      user.user_roles.create!(role: isso, authorization_boundary: boundary, source: "idp")
+
+      expect {
+        sync([], present: true).apply
+      }.to change { AuditEvent.where(action: "idp_grant_revoked").count }.by(1)
+    end
+
+    it "records an event per unmatched grant, with the reason" do
+      expect {
+        sync([ "sparc:org:nope:member" ], mode: "bootstrap").apply
+      }.to change { AuditEvent.where(action: "idp_grant_skipped").count }.by(1)
+
+      expect(AuditEvent.where(action: "idp_grant_skipped").last.metadata["reason"]).to match(/not found/)
+    end
+
+    it "records NOTHING for a membership that was already held" do
+      # The case statement's default branch. Nothing happened, so nothing
+      # should be recorded — an audit trail that logs non-events buries the
+      # real ones, and an assessor reading it cannot tell which grants actually
+      # conferred access.
+      #
+      # Added because a mutation proved this branch untested: making :unchanged
+      # emit an event produced no failure at all.
+      user.user_roles.create!(role: isso, authorization_boundary: boundary, source: "manual")
+
+      expect {
+        plan = sync([ "sparc:boundary:acme:acme-prod:isso" ]).apply
+        expect(plan.unchanged.size).to eq(1)
+      }.not_to change(AuditEvent, :count)
+    end
+  end
+
   describe "a user whose grants name nothing SPARC has yet" do
     # Owner, 2026-08-22: "the user we can create but if they contain a grant we
     # don't know about (Organization / Boundary) they could log in but only see

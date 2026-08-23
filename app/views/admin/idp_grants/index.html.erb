@@ -19,12 +19,12 @@
   </div>
 
   <% if @summary.empty? %>
-    <div class="alert alert-success d-flex align-items-center gap-2" role="status">
+    <div class="alert alert-success d-flex align-items-center gap-2">
       <i class="bi bi-check-circle" aria-hidden="true"></i>
       <span>No grants were refused in the last <%= @window_days %> days.</span>
     </div>
   <% else %>
-    <div class="alert alert-warning" role="status">
+    <div class="alert alert-warning">
       Nothing here needs clearing. Create the organization, boundary or role a grant
       names and it resolves by itself at that user's next sign-in. Nothing is ever
       created automatically &mdash; that would let the identity provider define the estate.
