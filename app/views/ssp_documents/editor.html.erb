@@ -42,7 +42,7 @@
                     <!-- Options will be populated dynamically -->
                 </select>
                 <div class="nav-buttons">
-                    <button class="nav-btn" id="prevBtn" data-ssp-editor-target="prevBtn" data-action="ssp-editor#navigatePrev">⬅️ Previous</button>
+                    <button class="sparc-action sparc-action--neutral sparc-action--ghost nav-btn" id="prevBtn" data-ssp-editor-target="prevBtn" data-action="ssp-editor#navigatePrev">⬅️ Previous</button>
                     <button class="nav-btn" id="nextBtn" data-ssp-editor-target="nextBtn" data-action="ssp-editor#navigateNext">Next ➡️</button>
                 </div>
             </div>
@@ -80,10 +80,10 @@
         </table>
         
         <div class="button-container" id="actionButtons" style="display: none;" data-ssp-editor-target="actionButtons">
-            <button class="reset-btn" data-action="ssp-editor#resetCurrentRecord">🔄 Reset Current</button>
-            <button class="save-btn" data-action="ssp-editor#saveCurrentRecord">💾 Save Current</button>
-            <button class="save-all-btn" data-action="ssp-editor#saveAllRecords">💾 Save All Changes</button>
-            <button class="export-btn" data-action="ssp-editor#exportJSON">📥 Export JSON</button>
+            <button class="sparc-action sparc-action--neutral sparc-action--ghost reset-btn" data-action="ssp-editor#resetCurrentRecord">🔄 Reset Current</button>
+            <button class="sparc-action sparc-action--primary sparc-action--solid save-btn" data-action="ssp-editor#saveCurrentRecord">💾 Save Current</button>
+            <button class="sparc-action sparc-action--primary sparc-action--solid save-all-btn" data-action="ssp-editor#saveAllRecords">💾 Save All Changes</button>
+            <button class="sparc-action sparc-action--info sparc-action--outline export-btn" data-action="ssp-editor#exportJSON">📥 Export JSON</button>
         </div>
     </div>
 </body>

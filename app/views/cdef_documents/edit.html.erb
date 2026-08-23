@@ -25,8 +25,8 @@
         <%= render "component_fields", f: f %>
 
         <div class="d-flex gap-2 mt-4">
-          <%= f.submit "Save changes", class: "btn btn-primary" %>
-          <%= link_to "Cancel", cdef_document_path(@cdef_document), class: "btn btn-outline-secondary" %>
+          <%= f.submit "Save changes", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+          <%= link_to "Cancel", cdef_document_path(@cdef_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
         </div>
       <% end %>
     </div>

@@ -19,7 +19,7 @@
             the feature flag is off — no point teasing operators with a
             button that would just flash an error. %>
         <% if can_write_converters? && SparcConfig.aws_labs_cdef_enabled? %>
-          <button type="button" class="btn btn-outline-secondary sparc-btn-action"
+          <button type="button" class="sparc-action sparc-action--caution sparc-action--solid"
                   data-bs-toggle="modal" data-bs-target="#refreshAwsLabsModal">
             Refresh from AWS Labs
           </button>
@@ -28,16 +28,14 @@
             is the boundary screen (that is where the question is asked), but
             someone standing in the CDEF library asking "what are we missing?"
             should not have to go find a boundary first. %>
-        <%# Two lines deliberately: the label is far longer than its
-            neighbours, and wrapping it keeps the row's width sane. The <br>
-            lives inside a <span> because the button is a flex container —
-            a bare <br> between text nodes would not break the line there. %>
-        <%= link_to new_cdef_coverage_path,
-              class: "btn btn-sparc-purple sparc-btn-action" do %>
-          <span>Terraform-CDEF<br>Wizard</span>
-        <% end %>
-        <%= link_to "Create New", select_profile_cdef_documents_path, class: "btn btn-primary sparc-btn-action" %>
-        <%= link_to "Upload File", new_cdef_document_path, class: "btn btn-success sparc-btn-action" %>
+        <%# The wizard role (#950). The label used to wrap onto two lines via a
+            <span><br></span> because it is far longer than its neighbours —
+            but `.sparc-action` is `white-space: nowrap`, and a wrapped button
+            stretched the whole row to 52px. One line, shorter label. %>
+        <%= link_to "Terraform Wizard", new_cdef_coverage_path,
+              class: "sparc-action sparc-action--accent sparc-action--outline" %>
+        <%= link_to "Create New", select_profile_cdef_documents_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
+        <%= link_to "Upload File", new_cdef_document_path, class: "sparc-action sparc-action--info sparc-action--solid" %>
       </div>
     <% end %>
   </div>
@@ -63,9 +61,9 @@
               The job runs asynchronously; new rows appear once the worker processes them.</p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-bs-dismiss="modal">Cancel</button>
             <%= button_to "Refresh Now", refresh_aws_labs_cdef_documents_path,
-                  method: :post, class: "btn btn-warning btn-sm fw-semibold",
+                  method: :post, class: "sparc-action sparc-action--caution sparc-action--solid sparc-action--sm fw-semibold",
                   form: { style: "display: inline;" } %>
           </div>
         </div>
@@ -78,7 +76,7 @@
   <% if can_bulk_delete? && @cdef_documents.any? %>
     <div class="mb-2" data-bulk-select-target="bar" hidden>
       <%= form_with url: bulk_destroy_cdef_documents_path, method: :delete, id: "cdefBulkForm" do %>
-        <button type="submit" class="btn btn-danger btn-sm" data-bulk-select-target="submit"
+        <button type="submit" class="sparc-action sparc-action--danger sparc-action--outline sparc-action--sm" data-bulk-select-target="submit"
                 data-turbo-confirm="Delete the selected component definitions? This cannot be undone.">
           Delete (<span data-bulk-select-target="count">0</span> selected)
         </button>

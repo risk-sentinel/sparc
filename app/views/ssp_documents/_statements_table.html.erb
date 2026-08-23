@@ -71,13 +71,13 @@
               <td>
                 <%= link_to "Edit",
                             ssp_document_path(ssp_document, statement_id: stmt.id, anchor: "stmt-#{stmt.id}"),
-                            class: "btn btn-outline-primary btn-sm",
+                            class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm",
                             style: "font-size: 0.7rem; padding: 0.15rem 0.45rem;" %>
                 <% if %i[overridden_cdef overridden_leveraged].include?(stmt.source_kind) %>
                   <%= button_to "Reset",
                         reset_inherited_statement_ssp_document_path(ssp_document, statement_id: stmt.id),
                         method: :post,
-                        class: "btn btn-outline-warning btn-sm",
+                        class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm",
                         style: "font-size: 0.7rem; padding: 0.15rem 0.45rem;",
                         form: { data: { turbo_confirm: "Discard your override and reset to the source prose?" },
                                 style: "display: inline;" } %>

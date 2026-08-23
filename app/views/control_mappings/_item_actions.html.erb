@@ -7,10 +7,10 @@
 <% mapping = local_assigns[:mapping] %>
 
 <div class="d-flex flex-wrap gap-1 align-items-center">
-  <%= link_to "View", control_mapping_path(mapping), class: "btn btn-sm btn-outline-primary" %>
+  <%= link_to "View", control_mapping_path(mapping), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
   <% if can_write_mappings? %>
     <%= button_to "Delete", control_mapping_path(mapping), method: :delete,
-          class: "btn btn-sm btn-outline-danger",
+          class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
           data: { turbo_confirm: "Delete mapping '#{mapping.name}'?" } %>
   <% end %>
 </div>

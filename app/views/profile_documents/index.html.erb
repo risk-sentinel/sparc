@@ -13,9 +13,9 @@
     <h2>Baselines / Profiles</h2>
     <% if signed_in? %>
       <div style="display: inline-flex; gap: 0.5rem;">
-        <%= link_to "Upload New", new_profile_document_path, class: "btn btn-success" %>
-        <%= link_to "Create from Catalog", select_catalog_profile_documents_path, class: "btn btn-primary" %>
-        <%= link_to "Create from Profile", select_profile_profile_documents_path, class: "btn btn-outline-primary" %>
+        <%= link_to "Upload New", new_profile_document_path, class: "sparc-action sparc-action--info sparc-action--solid" %>
+        <%= link_to "Create from Catalog", select_catalog_profile_documents_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
+        <%= link_to "Create from Profile", select_profile_profile_documents_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
       </div>
     <% end %>
   </div>

@@ -7,9 +7,9 @@
 <% evidence = local_assigns[:evidence] %>
 
 <div class="d-flex flex-wrap gap-1 align-items-center">
-  <%= link_to "View", evidence, class: "btn btn-primary btn-sm" %>
-  <%= link_to "Edit", edit_evidence_path(evidence), class: "btn btn-sm btn-sparc-orange" %>
+  <%= link_to "View", evidence, class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
+  <%= link_to "Edit", edit_evidence_path(evidence), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
   <%= button_to "Delete", evidence, method: :delete,
       form: { data: { turbo_confirm: "Delete evidence '#{evidence.title}'?" } },
-      class: "btn btn-danger btn-sm" %>
+      class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm" %>
 </div>

@@ -4,7 +4,7 @@
     <h1 class="h3 fw-bold mb-0"><%= @converter.name %></h1>
     <div style="display: inline-flex; gap: 0.5rem; align-items: center;">
       <% if can_write_converters? %>
-        <%= link_to "Edit", edit_converter_path(@converter), class: "btn btn-primary btn-sm" %>
+        <%= link_to "Edit", edit_converter_path(@converter), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
       <% end %>
       <% if @converter.converter_type == "cci_to_nist" && can_write_converters? %>
         <button type="button" class="btn btn-warning btn-sm fw-semibold"
@@ -29,9 +29,13 @@
           Refresh from AWS docs
         </button>
       <% end %>
-      <%= link_to "Export JSON", export_converter_path(@converter), class: "btn btn-sm",
-            style: "background: #8e44ad; color: white; font-size: 0.8rem;" %>
-      <%= link_to "Back", converters_path, class: "btn btn-secondary btn-sm" %>
+      <%= link_to "Export JSON", export_converter_path(@converter), class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+            <%# The background/color here were the OLD colour system and defeated
+                the role class, rendering solid purple against the tinted set.
+                Removed as a scoped exception to the v1.16.1 inline freeze,
+                owner-approved 2026-08-23; font-size is layout and stays. %>
+            style: "font-size: 0.8rem;" %>
+      <%= link_to "Back", converters_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
     </div>
   </div>
 
@@ -53,9 +57,9 @@
             </ul>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-bs-dismiss="modal">Cancel</button>
             <%= button_to "Refresh Now", refresh_cci_converter_path(@converter),
-                  method: :post, class: "btn btn-warning btn-sm fw-semibold",
+                  method: :post, class: "sparc-action sparc-action--caution sparc-action--solid sparc-action--sm fw-semibold",
                   form: { style: "display: inline;" } %>
           </div>
         </div>
@@ -84,9 +88,9 @@
             </ul>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-bs-dismiss="modal">Cancel</button>
             <%= button_to "Refresh Now", refresh_aws_config_converter_path(@converter),
-                  method: :post, class: "btn btn-warning btn-sm fw-semibold",
+                  method: :post, class: "sparc-action sparc-action--caution sparc-action--solid sparc-action--sm fw-semibold",
                   form: { style: "display: inline;" } %>
           </div>
         </div>
@@ -115,9 +119,9 @@
             </ul>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-bs-dismiss="modal">Cancel</button>
             <%= button_to "Refresh Now", refresh_aws_security_hub_converter_path(@converter),
-                  method: :post, class: "btn btn-warning btn-sm fw-semibold",
+                  method: :post, class: "sparc-action sparc-action--caution sparc-action--solid sparc-action--sm fw-semibold",
                   form: { style: "display: inline;" } %>
           </div>
         </div>
@@ -254,7 +258,7 @@
                placeholder="Search source, target, category, remarks..."
                data-converter-search-target="searchInput"
                data-action="input->converter-search#filter">
-        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="converter-search#clear">Clear</button>
+        <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="converter-search#clear">Clear</button>
       </div>
     </div>
 
@@ -291,7 +295,7 @@
               <% if can_write_converters? %>
                 <td class="text-end">
                   <%= button_to "Remove", converter_entry_path(@converter, entry),
-                        method: :delete, class: "btn btn-outline-danger btn-sm",
+                        method: :delete, class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
                         style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
                         form: { data: { turbo_confirm: "Remove this entry?" }, style: "display: inline;" } %>
                 </td>
@@ -326,7 +330,7 @@
                           placeholder: "Remarks (optional)" %>
                   </div>
                   <div class="col-md-2">
-                    <%= f.submit "Add Entry", class: "btn btn-sm btn-success w-100" %>
+                    <%= f.submit "Add Entry", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm w-100" %>
                   </div>
                 <% end %>
               </td>

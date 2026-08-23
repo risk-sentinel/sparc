@@ -70,7 +70,7 @@
             <span class="sparc-version-badge">v<%= @profile_document.profile_version %></span>
           <% end %>
           <% if signed_in? && !@profile_document.published_lifecycle? %>
-            <button type="button" data-action="doc-meta#toggle" class="sparc-btn-header-edit">Edit</button>
+            <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
           <% end %>
         </div>
       </div>
@@ -84,8 +84,8 @@
                     class: "sparc-input-dark sparc-input-dark-lg" %>
               <%= f.text_field :profile_version, value: @profile_document.profile_version, placeholder: "Version",
                     class: "sparc-input-dark sparc-input-dark-sm" %>
-              <%= f.submit "Save", class: "sparc-btn-save" %>
-              <button type="button" data-action="doc-meta#toggle" class="sparc-btn-cancel-dark">Cancel</button>
+              <%= f.submit "Save", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+              <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--neutral sparc-action--ghost">Cancel</button>
             </div>
           <% end %>
         </div>
@@ -127,15 +127,15 @@
       <% if signed_in? %>
         <% if @profile_document.published_lifecycle? %>
           <%= button_to "Create Editable Copy", copy_profile_document_path(@profile_document), method: :post,
-                class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Create an editable copy of this published profile?" } } %>
+                class: "sparc-action sparc-action--positive sparc-action--solid", form: { data: { turbo_confirm: "Create an editable copy of this published profile?" } } %>
         <% else %>
           <%= button_to "Copy", copy_profile_document_path(@profile_document), method: :post,
-                class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Duplicate this profile?" } } %>
+                class: "sparc-action sparc-action--info sparc-action--outline", form: { data: { turbo_confirm: "Duplicate this profile?" } } %>
           <%= link_to "+ Add Control", new_profile_document_profile_control_path(@profile_document),
-                class: "sparc-btn-oscal" %>
+                class: "sparc-action sparc-action--positive sparc-action--solid" %>
           <% if @profile_document.control_catalog.present? %>
             <%= link_to "Manage Controls", manage_controls_profile_document_path(@profile_document),
-                  class: "sparc-btn-oscal" %>
+                  class: "sparc-action sparc-action--neutral sparc-action--outline" %>
           <% end %>
           <% if @profile_document.control_catalog.present? %>
             <%= render "shared/publish_button", document: @profile_document,
@@ -159,7 +159,7 @@
             document_type: "Profile",
             extra_items: resolved_catalog_item %>
       <%= link_to "&#8592; Back".html_safe, profile_documents_path,
-            class: "sparc-btn-ghost-muted" %>
+            class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   </div>
 
@@ -215,8 +215,8 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <span class="form-label fw-semibold mb-0"><%= @total_controls %> controls in this profile</span>
     <div class="d-flex gap-1">
-      <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#expandAll">Expand All</button>
-      <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#collapseAll">Collapse All</button>
+      <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="family-toggle#expandAll">Expand All</button>
+      <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="family-toggle#collapseAll">Collapse All</button>
     </div>
   </div>
 
@@ -262,11 +262,11 @@
               <% if signed_in? && !@profile_document.published_lifecycle? %>
                 <div class="d-flex flex-shrink-0" style="gap: 0.35rem;">
                   <%= link_to "Edit", edit_profile_document_profile_control_path(@profile_document, control),
-                        class: "btn btn-primary btn-sm" %>
+                        class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
                   <%= button_to "Delete", profile_document_profile_control_path(@profile_document, control),
                         method: :delete,
                         form: { data: { turbo_confirm: "Remove #{control.display_id} from this profile?" } },
-                        class: "btn btn-danger btn-sm" %>
+                        class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm" %>
                 </div>
               <% end %>
             </div>

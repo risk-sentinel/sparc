@@ -2941,6 +2941,11 @@ a.link-purple { color: var(--sparc-purple); }
   font-size: 0.9rem;
   font-weight: 500;
   line-height: 1.25;
+  /* A button label is one line. Bootstrap's `.btn` carried this implicitly for
+     years and dropping it made '＋ Batch Add' and '↑ Import / Refresh' break
+     onto three lines inside a narrow flex parent, so they rendered tall and
+     thin beside their siblings. */
+  white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
   transition: background-color 0.12s ease-in-out, border-color 0.12s ease-in-out;

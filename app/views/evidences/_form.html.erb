@@ -224,12 +224,12 @@
             every save meant a full round-trip back to this form each time. This
             keeps the user here, carrying the boundary and type forward. %>
         <% unless @evidence.persisted? %>
-          <%= f.submit "Save and add another", name: "commit_and_new", class: "btn btn-outline-primary" %>
+          <%= f.submit "Save and add another", name: "commit_and_new", class: "sparc-action sparc-action--positive sparc-action--solid" %>
         <% end %>
         <% if @evidence.persisted? %>
-          <%= link_to "Cancel", evidence_path(@evidence), class: "btn btn-outline-secondary" %>
+          <%= link_to "Cancel", evidence_path(@evidence), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
         <% else %>
-          <%= link_to "Cancel", evidences_path, class: "btn btn-outline-secondary" %>
+          <%= link_to "Cancel", evidences_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
         <% end %>
       </div>
     <% end %>

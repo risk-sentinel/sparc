@@ -14,7 +14,7 @@
       <%= select_tag :days,
             options_for_select([ [ "7 days", 7 ], [ "30 days", 30 ], [ "90 days", 90 ], [ "1 year", 365 ] ], @window_days),
             class: "form-select form-select-sm" %>
-      <%= submit_tag "Apply", class: "btn btn-outline-secondary btn-sm", name: nil %>
+      <%= submit_tag "Apply", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm", name: nil %>
     <% end %>
   </div>
 
@@ -58,7 +58,7 @@
                   <% end %>
                   <%= button_to "Reject", dismiss_admin_idp_grants_path,
                         params: { grant: row[:example_grant] },
-                        class: "btn btn-outline-secondary btn-sm d-inline-block",
+                        class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm d-inline-block",
                         form: { class: "d-inline-block" },
                         title: "Stop reporting this grant. Does not change anyone's access." %>
                 </td>
@@ -138,7 +138,7 @@
                 <td class="small"><%= dismissal.reason.presence || "—" %></td>
                 <td class="text-end">
                   <%= button_to "Restore", restore_admin_idp_grant_path(dismissal),
-                        method: :delete, class: "btn btn-outline-secondary btn-sm",
+                        method: :delete, class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm",
                         title: "Report this grant again when it next arrives" %>
                 </td>
               </tr>

@@ -1,7 +1,7 @@
 <div class="card" data-controller="family-selector" data-family-selector-catalog-url-value="/control_catalogs">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Create Profile from Catalog</h2>
-    <%= link_to "Back to Profiles", profile_documents_path, class: "btn btn-secondary" %>
+    <%= link_to "Back to Profiles", profile_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
   </div>
 
   <% if @catalogs.any? %>
@@ -29,10 +29,10 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
           <span class="form-label fw-semibold mb-0">Select Controls</span>
           <div class="d-flex gap-1 flex-wrap">
-            <button type="button" class="btn btn-sm btn-outline-primary" data-action="click->family-selector#selectAll">Select All</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="click->family-selector#deselectAll">Deselect All</button>
-            <button type="button" class="btn btn-sm btn-outline-info" data-action="click->family-selector#expandAll">Expand All</button>
-            <button type="button" class="btn btn-sm btn-outline-info" data-action="click->family-selector#collapseAll">Collapse All</button>
+            <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="click->family-selector#selectAll">Select All</button>
+            <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="click->family-selector#deselectAll">Deselect All</button>
+            <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="click->family-selector#expandAll">Expand All</button>
+            <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="click->family-selector#collapseAll">Collapse All</button>
           </div>
         </div>
 
@@ -47,7 +47,7 @@
       </div>
 
       <div class="mt-4">
-        <%= f.submit "Create Profile", class: "btn btn-success btn-lg" %>
+        <%= f.submit "Create Profile", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--lg" %>
       </div>
     <% end %>
   <% else %>

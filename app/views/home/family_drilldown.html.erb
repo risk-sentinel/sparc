@@ -1,6 +1,6 @@
 <div class="d-flex align-items-center justify-content-between mb-3">
   <h2><%= @family %> Family Controls</h2>
-  <%= link_to "&larr; Back to Dashboard".html_safe, root_path, class: "btn btn-outline-secondary btn-sm" %>
+  <%= link_to "&larr; Back to Dashboard".html_safe, root_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
 </div>
 
 <p class="text-body-secondary mb-4">
@@ -32,7 +32,7 @@
             </td>
             <td><%= control.ssp_document.name %></td>
             <td class="text-end">
-              <%= link_to "View", ssp_document_path(control.ssp_document), class: "btn btn-sm btn-outline-primary" %>
+              <%= link_to "View", ssp_document_path(control.ssp_document), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
             </td>
           </tr>
         <% end %>

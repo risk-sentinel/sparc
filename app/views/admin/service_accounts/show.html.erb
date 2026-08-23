@@ -5,14 +5,14 @@
       <p class="text-muted mb-0"><%= @service_account.email %></p>
     </div>
     <div class="d-flex gap-2">
-      <%= link_to "Edit", edit_admin_service_account_path(@service_account), class: "btn btn-outline-primary" %>
+      <%= link_to "Edit", edit_admin_service_account_path(@service_account), class: "sparc-action sparc-action--primary sparc-action--outline" %>
       <% if @service_account.disabled? %>
-        <%= button_to "Enable", enable_admin_service_account_path(@service_account), method: :patch, class: "btn btn-success" %>
+        <%= button_to "Enable", enable_admin_service_account_path(@service_account), method: :patch, class: "sparc-action sparc-action--positive sparc-action--solid" %>
       <% else %>
-        <%= button_to "Disable", disable_admin_service_account_path(@service_account), method: :patch, class: "btn btn-warning", data: { turbo_confirm: "Disable this service account? It will no longer be able to authenticate." } %>
+        <%= button_to "Disable", disable_admin_service_account_path(@service_account), method: :patch, class: "sparc-action sparc-action--danger sparc-action--outline", data: { turbo_confirm: "Disable this service account? It will no longer be able to authenticate." } %>
       <% end %>
-      <%= button_to "Delete", admin_service_account_path(@service_account), method: :delete, class: "btn btn-danger", data: { turbo_confirm: "Permanently deactivate this service account?" } %>
-      <%= link_to "Back", admin_service_accounts_path, class: "btn btn-outline-secondary" %>
+      <%= button_to "Delete", admin_service_account_path(@service_account), method: :delete, class: "sparc-action sparc-action--danger sparc-action--outline", data: { turbo_confirm: "Permanently deactivate this service account?" } %>
+      <%= link_to "Back", admin_service_accounts_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   </div>
 
@@ -59,7 +59,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0">API Tokens</h5>
           <%= button_to "Regenerate Token", regenerate_token_admin_service_account_path(@service_account),
-                method: :post, class: "btn btn-sm btn-warning",
+                method: :post, class: "sparc-action sparc-action--caution sparc-action--solid sparc-action--sm",
                 data: { turbo_confirm: "Regenerate token? The current token will be permanently revoked." } %>
         </div>
         <div class="card-body">

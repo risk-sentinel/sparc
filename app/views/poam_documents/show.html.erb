@@ -57,7 +57,7 @@
           <% if @poam_document.poam_version.present? %>
             <span class="sparc-version-badge">v<%= @poam_document.poam_version %></span>
           <% end %>
-          <button type="button" data-action="doc-meta#toggle" class="sparc-btn-header-edit">Edit</button>
+          <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
         </div>
       </div>
 
@@ -66,20 +66,20 @@
         <%= form_with model: @poam_document, url: update_metadata_poam_document_path(@poam_document), method: :patch, local: true, class: "d-flex align-items-center gap-2 flex-wrap" do |f| %>
           <%= f.text_field :name, value: @poam_document.name, class: "sparc-input-dark sparc-input-dark-lg", placeholder: "Document name" %>
           <%= f.text_field :poam_version, value: @poam_document.poam_version, class: "sparc-input-dark sparc-input-dark-sm", placeholder: "Version" %>
-          <%= f.submit "Save", class: "sparc-btn-save" %>
-          <button type="button" data-action="doc-meta#toggle" class="sparc-btn-cancel-dark">Cancel</button>
+          <%= f.submit "Save", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+          <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--neutral sparc-action--ghost">Cancel</button>
         <% end %>
       </div>
     </div>
 
     <%# ── Action buttons ── %>
     <div class="d-flex gap-2 flex-wrap">
-      <%= link_to "+ Add Item", new_poam_document_poam_item_path(@poam_document), class: "sparc-btn-oscal" %>
-      <%= link_to "+ Add Risk", new_poam_document_poam_risk_path(@poam_document), class: "sparc-btn-oscal" %>
-      <%= link_to "+ Add Remediation", new_poam_document_poam_remediation_path(@poam_document), class: "sparc-btn-oscal" %>
-      <%= link_to "+ Add Observation", new_poam_document_poam_observation_path(@poam_document), class: "sparc-btn-oscal" %>
-      <%= link_to "+ Add Finding", new_poam_document_poam_finding_path(@poam_document), class: "sparc-btn-oscal" %>
-      <%= link_to "+ Add Component", new_poam_document_poam_local_component_path(@poam_document), class: "sparc-btn-oscal" %>
+      <%= link_to "+ Add Item", new_poam_document_poam_item_path(@poam_document), class: "sparc-action sparc-action--positive sparc-action--solid" %>
+      <%= link_to "+ Add Risk", new_poam_document_poam_risk_path(@poam_document), class: "sparc-action sparc-action--positive sparc-action--solid" %>
+      <%= link_to "+ Add Remediation", new_poam_document_poam_remediation_path(@poam_document), class: "sparc-action sparc-action--positive sparc-action--solid" %>
+      <%= link_to "+ Add Observation", new_poam_document_poam_observation_path(@poam_document), class: "sparc-action sparc-action--positive sparc-action--solid" %>
+      <%= link_to "+ Add Finding", new_poam_document_poam_finding_path(@poam_document), class: "sparc-action sparc-action--positive sparc-action--solid" %>
+      <%= link_to "+ Add Component", new_poam_document_poam_local_component_path(@poam_document), class: "sparc-action sparc-action--positive sparc-action--solid" %>
       <% if signed_in? && @poam_document.draft? %>
         <%= render "shared/publish_button", document: @poam_document,
               publish_path: publish_poam_document_path(@poam_document),
@@ -96,9 +96,9 @@
       <% if @poam_document.authorization_boundary %>
         <%= link_to "Amendments",
               triage_authorization_boundary_path(@poam_document.authorization_boundary),
-              class: "sparc-btn-oscal" %>
+              class: "sparc-action sparc-action--neutral sparc-action--outline" %>
       <% end %>
-      <%= link_to "&#8592; All POA&Ms".html_safe, poam_documents_path, class: "sparc-btn-ghost-muted" %>
+      <%= link_to "&#8592; All POA&Ms".html_safe, poam_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   </div>
 
@@ -193,7 +193,7 @@
       </div>
     </div>
     <%= link_to "+ Add First Item", new_poam_document_poam_item_path(@poam_document),
-                class: "btn btn-warning btn-sm" %>
+                class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
   </div>
 <% end %>
 
@@ -250,9 +250,9 @@
         <% end %>
       </div>
       <div class="d-flex flex-shrink-0" style="gap: 0.35rem;">
-        <button type="button" data-action="inline-edit#toggle" data-inline-edit-id-param="<%= item.id %>" id="edit-btn-<%= item.id %>" class="sparc-btn-edit">Edit</button>
+        <button type="button" data-action="inline-edit#toggle" data-inline-edit-id-param="<%= item.id %>" id="edit-btn-<%= item.id %>" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
         <%= link_to "Full Edit", edit_poam_document_poam_item_path(@poam_document, item), class: "bg-body-secondary text-body-secondary rounded", style: "text-decoration: none; border: 1px solid var(--bs-border-color); padding: 0.3rem 0.7rem; font-size: 0.78rem;" %>
-        <%= button_to "Delete", poam_document_poam_item_path(@poam_document, item), method: :delete, data: { turbo_confirm: "Remove \"#{item.title}\"?" }, class: "btn btn-danger", style: "padding: 0.3rem 0.7rem; font-size: 0.78rem;" %>
+        <%= button_to "Delete", poam_document_poam_item_path(@poam_document, item), method: :delete, data: { turbo_confirm: "Remove \"#{item.title}\"?" }, class: "sparc-action sparc-action--danger sparc-action--outline", style: "padding: 0.3rem 0.7rem; font-size: 0.78rem;" %>
       </div>
     </div>
 
@@ -414,8 +414,8 @@
           </div>
 
           <div class="d-flex gap-2">
-            <%= f.submit "Save Changes", class: "btn btn-success", style: "padding: 0.35rem 0.9rem; font-size: 0.82rem;" %>
-            <button type="button" data-action="inline-edit#toggle" data-inline-edit-id-param="<%= item.id %>" class="btn btn-secondary" style="padding: 0.35rem 0.9rem; font-size: 0.82rem;">Cancel</button>
+            <%= f.submit "Save Changes", class: "sparc-action sparc-action--primary sparc-action--solid", style: "padding: 0.35rem 0.9rem; font-size: 0.82rem;" %>
+            <button type="button" data-action="inline-edit#toggle" data-inline-edit-id-param="<%= item.id %>" class="sparc-action sparc-action--neutral sparc-action--ghost" style="padding: 0.35rem 0.9rem; font-size: 0.82rem;">Cancel</button>
           </div>
         <% end %>
       </div>

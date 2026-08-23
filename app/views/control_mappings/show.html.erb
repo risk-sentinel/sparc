@@ -4,21 +4,21 @@
     <h1 class="h3 fw-bold mb-0"><%= @control_mapping.name %></h1>
     <div class="d-flex gap-2">
       <% if can_write_mappings? %>
-        <%= link_to "Edit", edit_control_mapping_path(@control_mapping), class: "btn btn-sm btn-outline-primary" %>
+        <%= link_to "Edit", edit_control_mapping_path(@control_mapping), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
         <% if @control_mapping.status == "draft" || @control_mapping.status == "not-complete" %>
           <%= button_to "Publish", publish_control_mapping_path(@control_mapping),
-                method: :patch, class: "btn btn-sm btn-success",
+                method: :patch, class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm",
                 data: { turbo_confirm: "Publish this mapping? It will be marked as complete." } %>
         <% end %>
         <% if @control_mapping.status == "complete" %>
           <%= button_to "Deprecate", deprecate_control_mapping_path(@control_mapping),
-                method: :patch, class: "btn btn-sm btn-outline-warning",
+                method: :patch, class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
                 data: { turbo_confirm: "Deprecate this mapping?" } %>
         <% end %>
       <% end %>
       <%= link_to "Export OSCAL", download_oscal_control_mapping_path(@control_mapping),
-            class: "btn btn-sm btn-outline-info" %>
-      <%= link_to "Back", control_mappings_path, class: "btn btn-sm btn-outline-secondary" %>
+            class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm" %>
+      <%= link_to "Back", control_mappings_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
     </div>
   </div>
 
@@ -144,7 +144,7 @@
               <% if can_write_mappings? %>
                 <td class="text-end">
                   <%= button_to "Remove", control_mapping_entry_path(@control_mapping, entry),
-                        method: :delete, class: "btn btn-sm btn-outline-danger",
+                        method: :delete, class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
                         data: { turbo_confirm: "Remove this mapping entry?" } %>
                 </td>
               <% end %>
@@ -209,7 +209,7 @@
                           placeholder: "Remarks (optional)" %>
                   </div>
                   <div class="col-md-2">
-                    <%= f.submit "Add Entry", class: "btn btn-sm btn-success w-100" %>
+                    <%= f.submit "Add Entry", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm w-100" %>
                   </div>
                 <% end %>
               </td>

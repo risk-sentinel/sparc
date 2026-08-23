@@ -20,8 +20,8 @@
         </p>
       </div>
       <div class="d-flex gap-2">
-        <%= link_to "Edit", edit_evidence_path(@evidence), class: "btn btn-sparc-orange" %>
-        <%= link_to "Attest", new_evidence_attestation_path(@evidence), class: "btn btn-success" %>
+        <%= link_to "Edit", edit_evidence_path(@evidence), class: "sparc-action sparc-action--primary sparc-action--outline" %>
+        <%= link_to "Attest", new_evidence_attestation_path(@evidence), class: "sparc-action sparc-action--primary sparc-action--solid" %>
         <%= link_to "All Evidence", evidences_path, class: "btn btn-primary" %>
       </div>
     </div>
@@ -60,7 +60,7 @@
             </tbody>
           </table>
           <div class="d-flex gap-2">
-            <%= link_to "Download File", rails_blob_path(@evidence.file, disposition: "attachment"), class: "btn btn-outline-primary btn-sm" %>
+            <%= link_to "Download File", rails_blob_path(@evidence.file, disposition: "attachment"), class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm" %>
           </div>
         <% else %>
           <p class="text-body-tertiary fst-italic">No file attached</p>
@@ -91,7 +91,7 @@
     <div class="mb-4">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <h6 class="fw-semibold mb-0">Attestations <span class="badge bg-secondary"><%= @attestations.size %></span></h6>
-        <%= link_to "+ Add Attestation", new_evidence_attestation_path(@evidence), class: "btn btn-outline-success btn-sm" %>
+        <%= link_to "+ Add Attestation", new_evidence_attestation_path(@evidence), class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
       </div>
       <% if @attestations.any? %>
         <table class="table table-sm table-hover">
@@ -127,7 +127,7 @@
                 <td>
                   <%= button_to "Remove", evidence_attestation_path(@evidence, att), method: :delete,
                       form: { data: { turbo_confirm: "Remove this attestation?" } },
-                      class: "btn btn-outline-danger btn-sm" %>
+                      class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm" %>
                 </td>
               </tr>
             <% end %>

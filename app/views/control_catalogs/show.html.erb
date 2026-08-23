@@ -48,9 +48,9 @@
     <div class="d-flex gap-2">
       <% if can_write_catalogs? %>
         <%= link_to "↑ Import / Refresh", import_control_catalogs_path,
-              class: "btn btn-sparc-purple fw-semibold", style: "font-size: 0.875rem;" %>
-        <%= link_to "Edit Catalog", edit_control_catalog_path(@control_catalog), class: "btn btn-sparc-orange" %>
-        <%= link_to "＋ Add Family", new_control_catalog_control_family_path(@control_catalog), class: "btn btn-success" %>
+              class: "sparc-action sparc-action--info sparc-action--solid fw-semibold", style: "font-size: 0.875rem;" %>
+        <%= link_to "Edit Catalog", edit_control_catalog_path(@control_catalog), class: "sparc-action sparc-action--primary sparc-action--outline" %>
+        <%= link_to "＋ Add Family", new_control_catalog_control_family_path(@control_catalog), class: "sparc-action sparc-action--positive sparc-action--solid" %>
       <% end %>
       <% if signed_in? && @control_catalog.draft? %>
         <%= render "shared/publish_button", document: @control_catalog,
@@ -66,7 +66,7 @@
               fallback_json_path: download_oscal_unvalidated_control_catalog_path(@control_catalog),
               document_type: "Catalog" %>
       <% end %>
-      <%= link_to "← All Catalogs", control_catalogs_path, class: "btn btn-primary" %>
+      <%= link_to "← All Catalogs", control_catalogs_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   </div>
 
@@ -94,12 +94,12 @@
             <td class="text-center"><%= family.catalog_controls.size %></td>
             <td>
               <div class="d-flex gap-2">
-                <%= link_to "View", family, class: "btn btn-primary btn-sm" %>
+                <%= link_to "View", family, class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
                 <% if can_write_catalogs? %>
-                  <%= link_to "Edit", edit_control_family_path(family), class: "btn btn-sm btn-sparc-orange" %>
+                  <%= link_to "Edit", edit_control_family_path(family), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
                   <%= button_to "Delete", family, method: :delete,
                       form: { data: { turbo_confirm: "Delete family #{family.code}? This removes all its controls." } },
-                      class: "btn btn-danger btn-sm" %>
+                      class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm" %>
                 <% end %>
               </div>
             </td>

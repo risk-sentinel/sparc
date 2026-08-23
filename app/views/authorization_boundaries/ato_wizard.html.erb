@@ -415,8 +415,8 @@
           details you provided. You can edit individual artifacts after the package is built.
         </p>
         <div class="d-flex gap-3">
-          <%= f.submit "Build ATO Package", class: "btn btn-success" %>
-          <%= link_to "Cancel", authorization_boundary_path(@authorization_boundary), class: "btn btn-secondary" %>
+          <%= f.submit "Build ATO Package", class: "sparc-action sparc-action--info sparc-action--outline" %>
+          <%= link_to "Cancel", authorization_boundary_path(@authorization_boundary), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
         </div>
       </div>
     </details>

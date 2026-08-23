@@ -12,9 +12,9 @@
     <%= render "shared/boundary_picker", param_key: :ssp_document %>
 
     <div class="d-flex gap-3">
-      <%= f.submit "Upload and Convert", class: "btn btn-success" %>
+      <%= f.submit "Upload and Convert", class: "sparc-action sparc-action--info sparc-action--solid" %>
       <%= link_to "or Create from Wizard", wizard_ssp_documents_path, class: "text-body-secondary", style: "align-self: center; font-size: 0.88rem;" %>
-      <%= link_to "Cancel", ssp_documents_path, class: "btn btn-secondary" %>
+      <%= link_to "Cancel", ssp_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   <% end %>
 </div>

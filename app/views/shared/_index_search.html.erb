@@ -32,7 +32,7 @@
         <%# Clears the search only — the surrounding filters stay, which is what
             "clear the thing next to me" means. Clear-all lives with the chips. %>
         <%= link_to "Clear", url_for(request.query_parameters.except("q", "page")),
-                    class: "btn btn-outline-secondary" %>
+                    class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
       <% end %>
     </div>
   <% end %>

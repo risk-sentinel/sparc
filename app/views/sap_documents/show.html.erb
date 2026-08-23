@@ -50,7 +50,7 @@
           <span class="sparc-tag-outline sparc-status--<%= type_variant %>">
             <%= @sap_document.assessment_type&.titleize || "Initial" %>
           </span>
-          <button type="button" data-action="doc-meta#toggle" class="sparc-btn-header-edit">Edit</button>
+          <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
         </div>
       </div>
 
@@ -62,8 +62,8 @@
                   class: "sparc-input-dark sparc-input-dark-lg" %>
             <%= f.text_field :sap_version, value: @sap_document.sap_version, placeholder: "Version",
                   class: "sparc-input-dark sparc-input-dark-sm" %>
-            <%= f.submit "Save", class: "sparc-btn-save" %>
-            <button type="button" data-action="doc-meta#toggle" class="sparc-btn-cancel-dark">Cancel</button>
+            <%= f.submit "Save", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+            <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--neutral sparc-action--ghost">Cancel</button>
           </div>
         <% end %>
       </div>
@@ -103,7 +103,7 @@
             fallback_json_path: download_oscal_unvalidated_sap_document_path(@sap_document),
             document_type: "Assessment Plan" %>
       <%= link_to "&#8592; Back".html_safe, sap_documents_path,
-            class: "sparc-btn-ghost-muted" %>
+            class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   </div>
 
@@ -254,8 +254,8 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <span class="form-label fw-semibold mb-0"><%= @total_controls %> controls</span>
     <div class="d-flex gap-1">
-      <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#expandAll">Expand All</button>
-      <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#collapseAll">Collapse All</button>
+      <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="family-toggle#expandAll">Expand All</button>
+      <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="family-toggle#collapseAll">Collapse All</button>
     </div>
   </div>
 
@@ -333,7 +333,7 @@
         </div>
         <div class="d-flex flex-shrink-0" style="gap: 0.35rem;">
           <%= link_to "Edit", sap_document_path(@sap_document, control_id: control.id),
-                class: "btn btn-primary btn-sm" %>
+                class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
         </div>
       </div>
 
@@ -470,8 +470,8 @@
           <%= f.text_area :test_case, value: @control.test_case, rows: 3, class: "form-control", name: "sap_control[test_case]" %>
         </div>
         <div class="d-flex gap-2">
-          <%= f.submit "Save Changes", class: "btn btn-success" %>
-          <%= link_to "Cancel", sap_document_path(@sap_document), class: "btn btn-secondary" %>
+          <%= f.submit "Save Changes", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+          <%= link_to "Cancel", sap_document_path(@sap_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
         </div>
       <% end %>
     </div>
@@ -517,8 +517,8 @@
                 placeholder: "Findings, evidence references, or notes for this objective" %>
         </div>
         <div class="d-flex gap-2">
-          <%= f.submit "Save Objective", class: "btn btn-success" %>
-          <%= link_to "Cancel", sap_document_path(@sap_document), class: "btn btn-secondary" %>
+          <%= f.submit "Save Objective", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+          <%= link_to "Cancel", sap_document_path(@sap_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
         </div>
       <% end %>
     </div>

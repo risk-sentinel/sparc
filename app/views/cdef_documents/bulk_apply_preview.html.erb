@@ -15,7 +15,7 @@
       </div>
     </div>
     <%= link_to "← Pick a different converter",
-          bulk_apply_cdef_document_path(@cdef_document), class: "sparc-btn-ghost-muted" %>
+          bulk_apply_cdef_document_path(@cdef_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
   </div>
 
   <div class="sparc-card p-3 mb-4 d-flex gap-4">
@@ -35,7 +35,7 @@
       Nothing to add — the CDEF already has every control this converter maps to.
     </div>
     <%= link_to "Back to CDEF", cdef_document_path(@cdef_document),
-          class: "sparc-btn-ghost" %>
+          class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
   <% else %>
     <%= form_with url: bulk_apply_confirm_cdef_document_path(@cdef_document),
                   method: :post, local: true do |f| %>
@@ -93,9 +93,9 @@
       </div>
 
       <div class="d-flex gap-2">
-        <%= f.submit "Confirm & Apply", class: "sparc-btn-primary",
+        <%= f.submit "Confirm & Apply", class: "sparc-action sparc-action--positive sparc-action--solid",
               data: { turbo_confirm: "Add #{@result.stats[:ready]} ready control(s) to this CDEF? Disambiguation picks above will also be applied." } %>
-        <%= link_to "Cancel", cdef_document_path(@cdef_document), class: "sparc-btn-ghost" %>
+        <%= link_to "Cancel", cdef_document_path(@cdef_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
       </div>
     <% end %>
   <% end %>

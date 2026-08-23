@@ -12,10 +12,10 @@
     <%= render "shared/boundary_picker", param_key: :sar_document %>
 
     <div class="d-flex gap-3 align-items-center">
-      <%= f.submit "Upload and Convert", class: "btn btn-success" %>
+      <%= f.submit "Upload and Convert", class: "sparc-action sparc-action--info sparc-action--solid" %>
       <%= link_to "or Create from Wizard", wizard_sar_documents_path,
             style: "color: var(--bs-link-color); font-size: 0.9rem;" %>
-      <%= link_to "Cancel", sar_documents_path, class: "btn btn-secondary" %>
+      <%= link_to "Cancel", sar_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   <% end %>
 </div>

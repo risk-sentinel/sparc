@@ -15,19 +15,19 @@
       </div>
     </div>
     <div class="d-flex gap-2">
-      <%= link_to "Edit", edit_admin_organization_path(@organization), class: "btn btn-sm btn-outline-primary" %>
+      <%= link_to "Edit", edit_admin_organization_path(@organization), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
       <% if @organization.active? %>
         <%= button_to "Deactivate", deactivate_admin_organization_path(@organization),
               method: :patch,
-              class: "btn btn-sm btn-outline-warning",
+              class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
               data: { turbo_confirm: "Deactivate #{@organization.name}? The organization will be marked inactive but preserved for audit purposes." } %>
       <% else %>
         <%= button_to "Reactivate", reactivate_admin_organization_path(@organization),
               method: :patch,
-              class: "btn btn-sm btn-outline-success",
+              class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm",
               data: { turbo_confirm: "Reactivate #{@organization.name}?" } %>
       <% end %>
-      <%= link_to "Back to Organizations", admin_organizations_path, class: "btn btn-sm btn-outline-secondary" %>
+      <%= link_to "Back to Organizations", admin_organizations_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
     </div>
   </div>
 
@@ -97,7 +97,7 @@
                 <span class="badge text-bg-<%= badge_class %>"><%= ab.status.capitalize %></span>
               </td>
               <td class="text-end">
-                <%= link_to "View", authorization_boundary_path(ab), class: "btn btn-sm btn-outline-primary" %>
+                <%= link_to "View", authorization_boundary_path(ab), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
               </td>
             </tr>
           <% end %>
@@ -160,7 +160,7 @@
           </select>
         </div>
         <div class="col-md-3">
-          <button type="submit" class="btn btn-primary w-100 fw-semibold">Assign</button>
+          <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid w-100 fw-semibold">Assign</button>
         </div>
       <% end %>
     </div>
@@ -193,7 +193,7 @@
               <td class="text-end">
                 <%= button_to "Remove", remove_member_admin_organization_path(@organization, membership_id: m.id),
                       method: :delete,
-                      class: "btn btn-sm btn-outline-danger",
+                      class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
                       data: { turbo_confirm: "Remove #{m.user.display_label} from #{@organization.name}?" } %>
               </td>
             </tr>

@@ -243,7 +243,7 @@
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="fw-semibold mb-0">Edit OSCAL Metadata</h6>
         <% if signed_in? && document.draft? %>
-          <button type="button" class="btn btn-outline-primary btn-sm" data-action="oscal-metadata#prefill">
+          <button type="button" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" data-action="oscal-metadata#prefill">
             Pre-fill from my profile
           </button>
         <% end %>
@@ -307,7 +307,7 @@
               <div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button></div>
             </div>
           </template>
-          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" data-action="oscal-metadata#addRole">+ Add Role</button>
+          <button type="button" class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm mt-1" data-action="oscal-metadata#addRole">+ Add Role</button>
         </div>
 
         <%# ── Structured Parties Editor ── %>
@@ -342,7 +342,7 @@
               <div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button></div>
             </div>
           </template>
-          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" data-action="oscal-metadata#addParty">+ Add Party</button>
+          <button type="button" class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm mt-1" data-action="oscal-metadata#addParty">+ Add Party</button>
         </div>
 
         <%# ── Structured Revisions Editor ── %>
@@ -378,7 +378,7 @@
               <div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button></div>
             </div>
           </template>
-          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" data-action="oscal-metadata#addRevision">+ Add Revision</button>
+          <button type="button" class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm mt-1" data-action="oscal-metadata#addRevision">+ Add Revision</button>
         </div>
 
         <%# ── Remarks Editor ── %>
@@ -418,7 +418,7 @@
         <input type="hidden" id="merged-metadata-extra" data-oscal-metadata-target="mergedJson" name="<%= param_key %>[metadata_extra_json]">
 
         <div class="d-flex gap-2">
-          <%= f.submit "Save Metadata", class: "btn btn-primary btn-sm" %>
+          <%= f.submit "Save Metadata", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
         </div>
       <% end %>
     </div>

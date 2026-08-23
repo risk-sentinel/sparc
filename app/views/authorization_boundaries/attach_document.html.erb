@@ -17,7 +17,7 @@
   <h2>Add a <%= type_label %></h2>
   <%= link_to "Back to #{@authorization_boundary.name}",
         authorization_boundary_path(@authorization_boundary),
-        class: "btn btn-outline-primary btn-sm" %>
+        class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
 </div>
 
 <p class="text-body-secondary">
@@ -52,7 +52,7 @@
                       method: :patch,
                       params: { authorization_boundary_id: @authorization_boundary.id,
                                 return_to: "boundary" },
-                      class: "btn btn-success btn-sm",
+                      class: "sparc-action sparc-action--info sparc-action--solid sparc-action--sm",
                       form: { style: "display: inline;" } %>
               </td>
             </tr>
@@ -78,6 +78,6 @@
         <%= @authorization_boundary.name %> is pre-selected on the upload form.
       </p>
     </div>
-    <%= link_to "Upload", new_path, class: "btn btn-success btn-sm" %>
+    <%= link_to "Upload", new_path, class: "sparc-action sparc-action--info sparc-action--solid sparc-action--sm" %>
   </div>
 </div>

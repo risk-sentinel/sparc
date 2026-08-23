@@ -2,7 +2,7 @@
   <h1 class="h3 fw-bold mb-0">Role Management</h1>
   <div class="d-flex gap-2">
     <span class="badge text-bg-secondary align-self-center"><%= @roles.count %> roles</span>
-    <%= link_to "New Role", new_admin_role_path, class: "btn btn-sm btn-primary" %>
+    <%= link_to "New Role", new_admin_role_path, class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
   </div>
 </div>
 
@@ -34,8 +34,8 @@
             <td><%= role.user_roles.count %></td>
             <td><%= role.sort_order %></td>
             <td class="text-end">
-              <%= link_to "View", admin_role_path(role), class: "btn btn-sm btn-outline-primary" %>
-              <%= link_to "Edit", edit_admin_role_path(role), class: "btn btn-sm btn-outline-secondary" %>
+              <%= link_to "View", admin_role_path(role), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
+              <%= link_to "Edit", edit_admin_role_path(role), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
             </td>
           </tr>
         <% end %>

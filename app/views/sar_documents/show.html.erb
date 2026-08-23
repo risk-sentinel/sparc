@@ -60,7 +60,7 @@
           <% if @sar_document.sar_version.present? %>
             <span class="sparc-version-badge">v<%= @sar_document.sar_version %></span>
           <% end %>
-          <button type="button" data-action="doc-meta#toggle" class="sparc-btn-header-edit">Edit</button>
+          <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
         </div>
       </div>
 
@@ -71,8 +71,8 @@
                   class: "sparc-input-dark sparc-input-dark-lg" %>
             <%= f.text_field :sar_version, value: @sar_document.sar_version, placeholder: "Version",
                   class: "sparc-input-dark sparc-input-dark-sm" %>
-            <%= f.submit "Save", class: "sparc-btn-save" %>
-            <button type="button" data-action="doc-meta#toggle" class="sparc-btn-cancel-dark">Cancel</button>
+            <%= f.submit "Save", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+            <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--neutral sparc-action--ghost">Cancel</button>
           </div>
         <% end %>
       </div>
@@ -116,10 +116,10 @@
             document_type: "SAR" %>
       <% unless @sar_document.enriched? %>
         <%= link_to "&#x2728; Enrich".html_safe, enrich_sar_document_path(@sar_document),
-              class: "sparc-btn-enrich" %>
+              class: "sparc-action sparc-action--info sparc-action--outline" %>
       <% end %>
       <%= link_to "&#8592; Back".html_safe, sar_documents_path,
-            class: "sparc-btn-ghost-muted" %>
+            class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   </div>
 
@@ -213,7 +213,7 @@
     <% if active_env %> &bull; Env: <strong><%= active_env %></strong><% end %>
   </span>
   <%= link_to "&#x2715; Clear All".html_safe, sar_document_path(@sar_document),
-        class: "sparc-btn-clear-filter" %>
+        class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
 </div>
 <% end %>
 
@@ -388,7 +388,7 @@
                 data-action="inline-edit#toggle"
                 data-inline-edit-id-param="<%= control.id %>"
                 id="edit-btn-<%= control.id %>"
-                class="sparc-btn-edit">
+                class="sparc-action sparc-action--primary sparc-action--outline">
           Edit
         </button>
       </div>
@@ -548,7 +548,7 @@
             <% end %>
 
             <div class="d-flex gap-2 mt-3">
-              <%= f.submit "Save Changes", class: "sparc-btn-save", style: "padding: 0.5rem 1.25rem; font-size: 0.875rem;" %>
+              <%= f.submit "Save Changes", class: "sparc-action sparc-action--primary sparc-action--solid", style: "padding: 0.5rem 1.25rem; font-size: 0.875rem;" %>
               <button type="button"
                       data-action="inline-edit#toggle"
                       data-inline-edit-id-param="<%= control.id %>"
@@ -614,8 +614,8 @@
                 placeholder: "Findings, evidence references, or notes for this objective" %>
         </div>
         <div class="d-flex gap-2">
-          <%= f.submit "Save Objective", class: "btn btn-success" %>
-          <%= link_to "Cancel", sar_document_path(@sar_document), class: "btn btn-secondary" %>
+          <%= f.submit "Save Objective", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+          <%= link_to "Cancel", sar_document_path(@sar_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
         </div>
       <% end %>
     </div>

@@ -8,7 +8,7 @@
 <% catalog = local_assigns[:catalog] %>
 
 <div class="d-flex flex-wrap gap-1 align-items-center">
-  <%= link_to "View", catalog, class: "btn btn-sm btn-primary" %>
+  <%= link_to "View", catalog, class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
   <%= render "shared/oscal_export_dropdown",
         validate_path: validate_oscal_export_control_catalog_path(catalog),
         download_json_path: download_oscal_validated_control_catalog_path(catalog),
@@ -17,9 +17,9 @@
         fallback_json_path: download_oscal_unvalidated_control_catalog_path(catalog),
         document_type: "Catalog" %>
   <% if can_write_catalogs? %>
-    <%= link_to "Edit", edit_control_catalog_path(catalog), class: "btn btn-sm btn-warning" %>
+    <%= link_to "Edit", edit_control_catalog_path(catalog), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
     <%= button_to "Delete", catalog, method: :delete,
         form: { data: { turbo_confirm: "Delete '#{catalog.name}'? This will remove all families and controls." } },
-        class: "btn btn-sm btn-danger" %>
+        class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm" %>
   <% end %>
 </div>
