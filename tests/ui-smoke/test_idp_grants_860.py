@@ -67,8 +67,15 @@ def test_the_window_filter_works(authed_page):
         pytest.skip("window filter not rendered")
 
     select.first.select_option("7")
-    authed_page.locator("input[type='submit']").first.click()
-    authed_page.wait_for_load_state("load")
+    # Scoped to the form that OWNS the select. `input[type=submit]`.first
+    # matches the navigation's own search button, which submits somewhere else
+    # entirely — the page then looks unchanged and the assertion reads as a
+    # broken filter rather than a mis-aimed click.
+    # wait_for_load_state("load") is not enough here: it can return from the
+    # PREVIOUS page's load event, so the assertion runs before the navigation
+    # lands and reads as a broken filter. Wait for the URL itself.
+    authed_page.locator("form:has(select[name='days']) input[type='submit']").first.click()
+    authed_page.wait_for_url("**/admin/idp_grants?*", timeout=10000)
 
     assert "days=7" in authed_page.url, authed_page.url
     assert_no_csp_violations(authed_page, during="changing the window")
