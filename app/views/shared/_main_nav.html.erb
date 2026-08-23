@@ -29,7 +29,7 @@
 <% show_boundary_docs      = !SparcConfig.any_auth_enabled? || signed_in? %>
 <% show_controls_reference = controls_publicly_accessible? %>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <nav class="navbar navbar-expand-xxl navbar-dark bg-dark sticky-top">
       <div class="container-fluid">
         <div class="d-flex align-items-center gap-2">
           <a href="#" class="navbar-brand d-flex align-items-center" data-action="click->video-easter-egg#play">
@@ -43,7 +43,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <%# ── About (left-aligned, next to logo) ── %>
           <ul class="navbar-nav me-auto align-items-center gap-1 ms-3">
-            <li class="nav-item d-none d-lg-block">
+            <li class="nav-item">
               <%= link_to "About", about_path, class: "nav-link sparc-nav-btn" %>
             </li>
           </ul>
@@ -187,13 +187,13 @@
             <% end %>
 
             <%# ── Resources ── %>
-            <li class="nav-item d-none d-lg-block">
+            <li class="nav-item">
               <%= link_to "Resources", about_resources_path, class: "nav-link sparc-nav-btn" %>
             </li>
 
             <%# ── OSCAL Overview ── also behind a session. %>
             <% if !SparcConfig.any_auth_enabled? || signed_in? %>
-              <li class="nav-item d-none d-lg-block">
+              <li class="nav-item">
                 <%= link_to "OSCAL", oscal_overview_path, class: "nav-link sparc-nav-btn",
                       title: "OSCAL Document Relationship Overview" %>
               </li>
@@ -212,7 +212,7 @@
                 than a dead control. rel=noopener keeps that tab from touching
                 this one. %>
             <% if !SparcConfig.any_auth_enabled? || signed_in? %>
-              <li class="nav-item d-none d-lg-block">
+              <li class="nav-item">
                 <%= link_to contextual_help_path, class: "nav-link sparc-nav-btn",
                       target: "_blank", rel: "noopener noreferrer",
                       title: "Help & User Guides",
@@ -222,7 +222,7 @@
             <% end %>
 
             <%# ── Separator ── %>
-            <li class="nav-item d-none d-lg-block">
+            <li class="nav-item d-none d-xxl-block">
               <span class="sparc-nav-separator"></span>
             </li>
 

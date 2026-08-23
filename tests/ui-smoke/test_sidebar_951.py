@@ -255,3 +255,112 @@ def test_the_name_stays_readable_while_the_documents_are_expanded(authed_page):
 
     assert box["width"] > 120, f"the name column collapsed while expanded: {box}"
     assert box["height"] < 120, f"the name is wrapping per character: {box}"
+
+
+# ── #1042 — the navbar breakpoint ────────────────────────────────────────
+#
+# The #951 responsive audit (responsive_audit_951.py, 63 pages x 5 breakpoints)
+# found the main navbar overflowing the viewport from 992px to ~1400px on every
+# page: 992px -> a 1215px document, 1280px -> a 1328px document, 61 of 62 pages
+# each time. 138 horizontal-overflow occurrences and 1,431 off-screen elements
+# came down to that one cause.
+#
+# Four things fired at 992px at once — `navbar-expand-lg` stopped collapsing,
+# five `d-none d-lg-block` items appeared, `.sparc-navbar-logo` grew 44px -> 52px
+# (sparc-theme.css:662), and the sidebar returned (sparc-theme.css:2256).
+#
+# The fix moves the navbar's transition to `-xxl` (>=1400px), which is where the
+# expanded bar demonstrably fits — 1440px never overflowed in any audit run. An
+# intermediate `-xl` (>=1200px) was tried first and measured INSUFFICIENT: it
+# cleared 992px but left 1280px overflowing on 62 pages, because 1200 sits
+# inside the broken range rather than past it. These assertions pin the
+# breakpoint that actually broke, so that mistake cannot come back silently.
+
+NAV_COLLAPSE = "#navbarNav"
+
+
+# The audit allows SLACK_PX = 4 for sub-pixel rounding and scrollbar gutters.
+# Match it, so this check and the acceptance instrument cannot disagree.
+SLACK_PX = 4
+
+
+@pytest.mark.parametrize("width,height", [(992, 768), (1280, 800), (1440, 900)])
+def test_the_navbar_does_not_overflow_the_viewport(authed_page, width, height):
+    """#1042 — the navbar must not extend past the viewport at any width.
+
+    Scoped to the navbar rather than to `document.scrollWidth` deliberately.
+    The audit named this exact element — "div#navbarNav.collapse.navbar-collapse
+    extends to 1328px (viewport 1280px)", 63 pages — so it is the thing #1042
+    fixed and the thing that must stay fixed.
+
+    A document-wide assertion was tried first and rejected: `/` carries an
+    unrelated 62px overflow at 992px from a `d-flex.gap-2.flex-shrink-0` row of
+    action buttons that `flex-shrink-0` stops from shrinking. Asserting
+    document width here would fail on that instead, which would make this check
+    about someone else's defect and get it weakened or deleted the first time it
+    fired.
+    """
+    record_csp(authed_page)
+    authed_page.set_viewport_size({"width": width, "height": height})
+    authed_page.goto("/")
+
+    measured = authed_page.locator(NAV_COLLAPSE).first.evaluate(
+        "el => ({ right: Math.round(el.getBoundingClientRect().right),"
+        "         viewport: window.innerWidth })"
+    )
+    assert measured["right"] <= measured["viewport"] + SLACK_PX, (
+        f"{width}x{height}: the navbar extends to {measured['right']}px in a "
+        f"{measured['viewport']}px viewport. This is #1042 — check that the bar "
+        "is still `navbar-expand-xxl` and the items still `d-none d-xxl-block`."
+    )
+    assert_no_csp_violations(authed_page)
+
+
+def test_the_nav_items_are_reachable_below_the_expand_breakpoint(authed_page):
+    """The other direction: hiding the items must not LOSE them.
+
+    Below 1400px the bar collapses, so About/Resources/OSCAL/Help live behind
+    the toggler. If this passed while the items were simply gone, the overflow
+    assertion above would be satisfied by deleting the navigation.
+    """
+    record_csp(authed_page)
+    authed_page.set_viewport_size({"width": 1280, "height": 777})
+    authed_page.goto("/")
+
+    collapse = authed_page.locator(NAV_COLLAPSE)
+    assert collapse.count() == 1, "the navbar collapse container is missing entirely"
+
+    toggler = authed_page.locator("button.navbar-toggler")
+    assert toggler.count() == 1 and toggler.first.is_visible(), (
+        "at 1280px the bar is collapsed, so the toggler must be visible — "
+        "without it the nav items are unreachable, not merely hidden"
+    )
+
+    toggler.first.click()
+    authed_page.wait_for_timeout(400)  # Bootstrap collapse transition
+
+    about = collapse.locator("a.nav-link", has_text="About").first
+    assert about.is_visible(), (
+        "after opening the toggler the nav items must be visible; "
+        "hidden-and-unreachable is a regression, not a fix"
+    )
+    assert_no_csp_violations(authed_page)
+
+
+def test_the_nav_items_are_in_the_bar_at_the_expand_breakpoint(authed_page):
+    """And above it, they are back in the bar without a click.
+
+    Pins the breakpoint from the other side: if someone moves the navbar to a
+    breakpoint wider than 1400px, the items stop appearing at 1440 and this
+    fails.
+    """
+    record_csp(authed_page)
+    authed_page.set_viewport_size({"width": 1440, "height": 900})
+    authed_page.goto("/")
+
+    about = authed_page.locator(f"{NAV_COLLAPSE} a.nav-link", has_text="About").first
+    assert about.is_visible(), (
+        "at 1440px the bar is expanded, so About should be visible without "
+        "opening a toggler"
+    )
+    assert_no_csp_violations(authed_page)
