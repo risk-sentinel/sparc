@@ -302,6 +302,7 @@
     "color-contrast::.text-muted > code:nth-child(1)",
     "color-contrast::.text-muted > code:nth-child(2)"
   ],
+  "admin_idp_grants": [],
   "admin_organizations": [
     "color-contrast::.btn-outline-primary",
     "select-name::select"

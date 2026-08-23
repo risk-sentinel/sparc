@@ -68,7 +68,8 @@ The admin account has the `admin` flag set (not a role), granting access to the 
 |----------|-------------|---------|
 | `SPARC_ENABLE_LOCAL_LOGIN` | Enable email/password login | `false` |
 | `SPARC_ENABLE_USER_REGISTRATION` | Allow self-service account creation | `false` |
-| `SPARC_SESSION_TIMEOUT_MINUTES` | Inactivity timeout in minutes | `60` |
+| `SPARC_SESSION_TIMEOUT_MINUTES` | **Idle** timeout in minutes — reset by every request | `60` |
+| `SPARC_SESSION_MAX_HOURS` | **Absolute** session lifetime in hours, measured from sign-in and never reset by activity. `0` disables it | `8` |
 | `SPARC_ADMIN_EMAIL` | Email for bootstrapped admin account | `admin@sparc.local` |
 
 Password policy follows NIST 800-63B: 12-character minimum, no complexity rules.
@@ -196,6 +197,28 @@ audited). Trust of *which CA to accept* still belongs at the gateway.
 See **`docs/PIV_IDENTITY_MAPPING.md`** for the full identity-mapping contract
 (including the non-DoD private-CA `subject_cn` + pattern case) and the mTLS
 gateway requirements.
+
+### Two session limits, and why there are two
+
+`SPARC_SESSION_TIMEOUT_MINUTES` is an **idle** timeout: the clock resets on
+every request. It answers "this desk has been unattended" (AC-11).
+
+`SPARC_SESSION_MAX_HOURS` is an **absolute** limit measured from sign-in that
+nothing resets. It answers a question the idle timeout cannot: *how long can a
+session outlive the decisions made when it started?* A user who keeps working is
+never idle, so without an absolute limit they are never asked to authenticate
+again — and the rights established at sign-in stay in force for as long as they
+keep clicking.
+
+That matters most when an identity provider is the source of those rights. SPARC
+learns about an IdP-side change at the next sign-in, so the interval between
+sign-ins is the window in which a revoked entitlement is still honoured. The
+default of 8 hours is a working day: someone who signs in at the start of one
+signs in again the next.
+
+Set `SPARC_SESSION_MAX_HOURS=0` to disable the cap and return to idle-only
+behaviour. Both limits are evaluated on every authenticated request, and either
+one expiring ends the session.
 
 ## Enforcing strong authentication
 

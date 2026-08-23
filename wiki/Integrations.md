@@ -32,6 +32,140 @@
 - MFA enforcement via `SPARC_OIDC_FORCE_MFA` (validates ACR/amr claims)
 - Related: [Issue #33](https://github.com/risk-sentinel/sparc/issues/33) (Okta), [Issue #35](https://github.com/risk-sentinel/sparc/issues/35) (generic OIDC)
 
+#### Asking the IdP for more than the default scopes
+
+`SPARC_OIDC_SCOPES` defaults to `"openid profile email"` — enough to sign a
+person in and know who they are, and nothing more. Anything else you want in the
+token has to be requested here **and** released by the IdP; the two halves are
+configured in different places and both are required, which is the usual reason
+a claim "isn't arriving".
+
+```bash
+SPARC_OIDC_SCOPES="openid profile email groups"
+```
+
+**Setting the scope alone is not enough.** A scope is a request; the IdP decides
+what it actually puts in the token. In Okta, for example, group membership is
+not released by default — an administrator adds a claim on the application
+(**Applications → your app → Sign On → OpenID Connect ID Token**) or on the
+authorization server (**Security → API → Authorization Servers → Claims**),
+choosing a value type of *Groups* and a filter.
+
+**Use a filter.** Without one the IdP sends every group the person belongs to,
+which on a real directory is hundreds of unrelated names. A regex filter such as
+`^sparc:` keeps the token to the groups that concern SPARC. The same reasoning
+applies to any provider: release the narrowest claim that answers the question.
+
+**Verifying what actually arrived.** Sign in and check the identity record for
+the user under **Administration → Users → *the user***; SPARC stores the
+provider response on `Identity#auth_data`. That is the authoritative answer to
+"did the claim arrive", and it is faster than reading an IdP log.
+
+Order of operations, so a mistake is cheap:
+
+1. Confirm plain sign-in works **before** adding scopes. If it breaks after,
+   you know which change did it.
+2. Add the claim at the IdP, with a filter.
+3. Add the scope to `SPARC_OIDC_SCOPES` and restart.
+4. Sign in and confirm the claim arrived.
+
+> **Adding a scope the IdP does not recognise can break sign-in outright** —
+> some providers reject the whole authorization request rather than ignoring the
+> unknown scope. Change this in a test environment first. This is also why SPARC
+> does not add scopes to the default on your behalf when new features need them:
+> your login page is not a safe place for us to make assumptions.
+
+#### Group-based entitlements: letting the IdP decide who holds which role
+
+SPARC can read role grants from a claim, so membership is managed where your
+people already are. Roles keep their meaning in SPARC — the IdP never learns
+what a role can *do*, only who holds it and where.
+
+**Off by default.** Set `SPARC_OIDC_SYNC_MODE` to enable it.
+
+##### The grant format
+
+A grant is a group name:
+
+```
+sparc:instance:{role}
+sparc:org:{org_slug}:{role}
+sparc:boundary:{org_slug}:{boundary_slug}:{role}
+```
+
+> **Use the SLUG, not the display name.** This is the single most common
+> mistake. A boundary named `Café & Co — Prod` has the slug `cafe-co-prod`:
+> SPARC lowercases, strips accents and punctuation, and joins words with
+> hyphens. The slug is what appears in the boundary's own URL
+> (`/authorization_boundaries/cafe-co-prod`), so read it there if in doubt.
+> Grants are matched case-insensitively, but the slug itself must be exact.
+
+##### The modes
+
+| Mode | What a login does |
+| --- | --- |
+| `off` *(default)* | Nothing. Roles are managed entirely in SPARC |
+| `bootstrap` | **Adds** grants. Never removes anything |
+| `authoritative` | Adds grants, and removes ones the claim no longer carries |
+
+Adopt in that order. `off` → `bootstrap` → `authoritative` is a ladder;
+`off` → `authoritative` is a cliff.
+
+##### What SPARC will not do
+
+- **It never creates an organization, boundary or role.** A grant naming
+  something that does not exist is recorded and surfaced, never provisioned —
+  otherwise your directory could define your estate. The user still signs in,
+  holding whatever access *did* resolve.
+- **It never removes a role an administrator granted.** Revocation is limited to
+  memberships the sync itself created, so an in-app grant survives any claim,
+  any misconfiguration, and any empty group.
+- **It never grants instance admin.** Instance Admin is not a role, so no claim
+  can confer it — which is what keeps a break-glass recovery path open no matter
+  what your directory says.
+- **A MISSING claim is an error, not "revoke everything."** If the claim name is
+  wrong or the scope was not released, SPARC changes nothing and records why.
+  Only an *empty* claim means "this person has no grants."
+
+##### Instance-wide roles
+
+Off unless you name them explicitly:
+
+```bash
+SPARC_OIDC_INSTANCE_ROLES="global_viewer,policy_manager"
+```
+
+An allowlist per role, not a switch — opting in to `global_viewer` does not
+confer `head_of_agency`.
+
+##### When a grant names something that does not exist
+
+Look under **Administration → IdP Grants**. Administrators also get a daily
+digest by email when SMTP is configured.
+
+**Nothing there needs clearing.** Create the missing organization or boundary and
+the grant resolves by itself at that user's next sign-in.
+
+##### Configuration reference
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SPARC_OIDC_SYNC_MODE` | `off` | `off` / `bootstrap` / `authoritative` |
+| `SPARC_OIDC_GRANTS_CLAIM` | `groups` | Which claim carries grants |
+| `SPARC_OIDC_GRANTS_PREFIX` | `sparc:` | Only values with this prefix are read |
+| `SPARC_OIDC_INSTANCE_ROLES` | *(empty)* | Instance roles the IdP may grant |
+| `SPARC_USER_INACTIVITY_DAYS` | `0` | Deactivate accounts idle this long. **This is offboarding** — a disabled IdP account cannot sign in |
+
+##### Offboarding
+
+SPARC is not told when your IdP disables someone. It does not need to be: a
+disabled account cannot authenticate, so `SPARC_USER_INACTIVITY_DAYS` covers a
+leaver, a revoked IdP account and a dormant local login with one rule. Removing
+someone from a group takes effect at their next sign-in, and
+`SPARC_SESSION_MAX_HOURS` bounds how long their current session can outlive that.
+
+Tracked as [#860](https://github.com/risk-sentinel/sparc/issues/860).
+
 ### LDAP (`SPARC_ENABLE_LDAP=true`)
 
 - `LdapAuthService` implements bind-and-search pattern:

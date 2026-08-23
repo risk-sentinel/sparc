@@ -1,0 +1,50 @@
+<h2><%= SparcConfig.app_name %> could not grant access your identity provider asked for</h2>
+
+<p>
+  In the last <%= @window_hours %> hours,
+  <strong><%= @total_users %> <%= "user".pluralize(@total_users) %></strong>
+  signed in carrying a grant that names something this instance does not have.
+</p>
+
+<p>
+  They were signed in successfully and keep whatever access did resolve.
+  Nothing was created — creating an organization or boundary from a claim would
+  let the identity provider define the estate.
+</p>
+
+<table style="border-collapse: collapse; border: 1px solid #999;">
+  <thead>
+    <tr>
+      <th style="text-align: left; padding: 8px; border: 1px solid #999;">Reason</th>
+      <th style="text-align: right; padding: 8px; border: 1px solid #999;">Users</th>
+      <th style="text-align: right; padding: 8px; border: 1px solid #999;">Sign-ins</th>
+      <th style="text-align: left; padding: 8px; border: 1px solid #999;">Example grant</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @summary.each do |row| %>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #999;"><%= row[:reason] %></td>
+        <td style="text-align: right; padding: 8px; border: 1px solid #999;"><%= row[:affected_users] %></td>
+        <td style="text-align: right; padding: 8px; border: 1px solid #999;"><%= row[:occurrences] %></td>
+        <td style="padding: 8px; border: 1px solid #999;"><code><%= row[:example_grant] %></code></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<h3>What to do</h3>
+<ul>
+  <li>
+    If the organization, boundary or role <strong>should</strong> exist, create it.
+    The grant resolves by itself at the user's next sign-in — there is nothing to clear.
+  </li>
+  <li>
+    If it should not, the group is misnamed in your identity provider. Correct it there.
+  </li>
+</ul>
+
+<p>Full detail, including who was affected and when, is in the admin area under
+   <strong>IdP Grants</strong>.</p>
+
+<p><small>You are receiving this because you are an administrator of this instance.</small></p>

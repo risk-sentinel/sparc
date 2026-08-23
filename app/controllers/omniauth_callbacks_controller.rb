@@ -72,6 +72,7 @@ class OmniauthCallbacksController < ApplicationController
     identity.touch_last_used!
 
     start_session(user, ip_address: request.remote_ip, provider: auth.provider.to_s)
+    record_piv_assertion(auth)
 
     AuditEvent.log(
       user: user,
@@ -82,7 +83,88 @@ class OmniauthCallbacksController < ApplicationController
       metadata: { uid: auth.uid }
     )
 
+    sync_idp_entitlements(user, auth)
+
     redirect_to (session.delete(:return_to) || root_path), success: "Signed in with #{auth.provider.to_s.titleize}."
+  end
+
+  # #822 — an OIDC token can prove a smart card was used at the IdP.
+  #
+  # Recorded AFTER start_session, which resets the session: writing it before
+  # would put the assertion into a session that is then thrown away, and the
+  # requirement would silently fail for every user.
+  #
+  # The assertion is stored rather than folded into `auth_provider` so the audit
+  # trail keeps saying the person signed in with oidc, while the auth-method
+  # gate can still see that it satisfied piv. Conflating the two would lose the
+  # record of which IdP the assertion actually came from.
+  def record_piv_assertion(auth)
+    return unless auth.provider.to_s == "oidc"
+    return unless SparcConfig.piv_oidc_enabled?
+
+    assertion = PivOidcAssertion.new(auth)
+    return unless assertion.satisfied?
+
+    session[:piv_assertion] = assertion.evidence
+    AuditEvent.log(user: current_user || User.find_by(id: session[:user_id]),
+                   action: "piv_asserted_by_idp", provider: "oidc",
+                   ip_address: request.remote_ip, metadata: assertion.evidence)
+  end
+
+  # #860 — the login IS the sync. Entitlements are resolved from the claim on
+  # every sign-in, which is what makes "a login establishes the user's rights"
+  # true, and what bounds how long a revoked entitlement is still honoured
+  # (together with the absolute session cap, #1043).
+  #
+  # Runs AFTER start_session on purpose. Sign-in has already succeeded by this
+  # point, and a failure here must not undo it.
+  def sync_idp_entitlements(user, auth)
+    # OIDC only. GitHub and GitLab carry no grants claim, and asking them for
+    # one would report every user as having an absent claim on every login.
+    return unless auth.provider.to_s == "oidc"
+    return if SparcConfig.oidc_sync_mode == "off"
+
+    claims = IdpClaimReader.new(auth).read
+    plan = EntitlementSync.new(user: user, claim_values: claims.values,
+                               claim_present: claims.present?).apply
+
+    Rails.logger.info("[EntitlementSync] #{user.email}: #{plan.summary}")
+    log_sync_problem(user, plan) if plan.error? || plan.blocked?
+    warn_about_unmatched(plan)
+  rescue StandardError => e
+    # A sync failure must not deny a user their session: they authenticated
+    # successfully, and refusing the login would turn an entitlement bug into an
+    # outage. They keep the entitlements they already had — stale, not elevated,
+    # because nothing was applied.
+    #
+    # Recorded rather than swallowed. A silent rescue here would hide the exact
+    # misconfiguration this feature is most likely to hit.
+    Rails.logger.error("[EntitlementSync] #{user.email}: #{e.class}: #{e.message}")
+    AuditEvent.log(user: user, action: "idp_sync_failed", provider: "oidc",
+                   ip_address: request.remote_ip,
+                   metadata: { error: e.class.name, message: e.message })
+  end
+
+  # A user whose grants name something SPARC does not have signs in with the
+  # access that DID resolve — which may be none at all. Landing in an empty
+  # SPARC with no explanation reads as a broken product, so say something.
+  #
+  # Deliberately vague: the grant strings name organizations and boundaries the
+  # user may have no business knowing exist, and "sparc:boundary:acme:acme-prod:isso
+  # was refused" tells an attacker the estate's shape. The detail goes to the
+  # administrator, through the audit trail and the unmatched-grant queue.
+  def warn_about_unmatched(plan)
+    return if plan.unmatched.empty?
+
+    flash[:warning] = "Some of your access could not be granted yet. " \
+                      "An administrator has been notified."
+  end
+
+  def log_sync_problem(user, plan)
+    reason = plan.error || plan.blocked_reason
+    Rails.logger.warn("[EntitlementSync] #{user.email}: #{reason}")
+    AuditEvent.log(user: user, action: "idp_sync_failed", provider: "oidc",
+                   ip_address: request.remote_ip, metadata: { reason: reason })
   end
 
   # GET /auth/failure

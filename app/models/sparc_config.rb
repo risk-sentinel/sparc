@@ -345,11 +345,48 @@ module SparcConfig
     ENV.fetch("SPARC_PIV_ACCEPTED_ISSUERS", "").split(",").map(&:strip).reject(&:empty?)
   end
 
+  # #822 — IdP-mediated PIV. Accepted `acr` / `amr` claim values proving the IdP
+  # performed certificate-based authentication.
+  #
+  # BOTH EMPTY BY DEFAULT, and empty means "accept nothing" rather than "accept
+  # anything". A configuration mistake must not silently downgrade an
+  # authentication requirement; with neither set, `piv` continues to mean the
+  # forwarded client certificate and nothing else.
+  #
+  # e.g. SPARC_PIV_OIDC_AMR_VALUES="x509,hwk"
+  #      SPARC_PIV_OIDC_ACR_VALUES="http://idmanagement.gov/ns/assurance/aal/3"
+  def piv_oidc_acr_values
+    ENV.fetch("SPARC_PIV_OIDC_ACR_VALUES", "").split(",").map { |v| v.strip.downcase }.reject(&:empty?)
+  end
+
+  def piv_oidc_amr_values
+    ENV.fetch("SPARC_PIV_OIDC_AMR_VALUES", "").split(",").map { |v| v.strip.downcase }.reject(&:empty?)
+  end
+
+  # True when the operator has opted in to either claim.
+  def piv_oidc_enabled? = piv_oidc_acr_values.any? || piv_oidc_amr_values.any?
+
   def piv_accepted_policy_oids
     ENV.fetch("SPARC_PIV_ACCEPTED_POLICY_OIDS", "").split(",").map(&:strip).reject(&:empty?)
   end
 
   def session_timeout      = ENV.fetch("SPARC_SESSION_TIMEOUT_MINUTES", "60").to_i
+
+  # #860 — the ABSOLUTE cap on a session's life, independent of activity.
+  #
+  # `session_timeout` above is an IDLE timeout: `last_active_at` is refreshed on
+  # every request, so a user who keeps working is never asked to authenticate
+  # again. That is fine for AC-11 (device lock) and insufficient for AC-12, and
+  # it is what makes "each login establishes the user's rights" only
+  # approximately true — entitlements resolved at login stay in force for as
+  # long as the session does, which without a cap is unbounded.
+  #
+  # 8 hours is a working day (owner-decided 2026-08-22), so a user who signs in
+  # at the start of one is asked again the next. Set per instance; 0 disables
+  # the cap and restores the pre-#860 behaviour for a deployment that needs it.
+  #
+  # NIST 800-53: AC-12 (session termination), IA-11 (re-authentication).
+  def session_max_hours    = ENV.fetch("SPARC_SESSION_MAX_HOURS", "8").to_i
 
   # Public visibility of the Controls layer (catalogs, baselines, mappings).
   # Default false = secure-by-default: when auth is enabled, guests neither
@@ -436,7 +473,76 @@ module SparcConfig
   # trap: the fallback to oidc_client_id never fired when the variable was
   # set-but-empty, which is exactly how prod had it.
   def api_oidc_audience = ENV.fetch("SPARC_API_OIDC_AUDIENCE", nil).presence || oidc_client_id
+  # #860 — IdP entitlements.
+  #
+  # `oidc_scopes` above deliberately does NOT gain "groups". Adding a scope
+  # changes the authorization request every existing deployment sends, and a
+  # provider with no such scope defined can reject the whole request rather
+  # than ignoring it — an upgrade would become an outage on the login path.
+  # Operators opt in by setting SPARC_OIDC_SCOPES themselves.
   def oidc_scopes        = ENV.fetch("SPARC_OIDC_SCOPES", "openid profile email")
+
+  # Which claim carries the grants. `groups` is what most providers emit by
+  # default and what an evaluator will try first; a dedicated claim is better
+  # hygiene on a large tenant. Configurable because hardcoding either one makes
+  # SPARC wrong for half its deployments.
+  def oidc_grants_claim  = ENV.fetch("SPARC_OIDC_GRANTS_CLAIM", "groups")
+
+  # Only claim values starting with this are considered grants. Without it, a
+  # directory sends every group a person belongs to and SPARC would report
+  # hundreds of unrelated names as unmatched grants.
+  def oidc_grants_prefix = ENV.fetch("SPARC_OIDC_GRANTS_PREFIX", "sparc:")
+
+  # off | bootstrap | authoritative. `off` by default, so an existing
+  # deployment that upgrades and changes nothing behaves identically.
+  #
+  # `bootstrap` performs the ADD leg only. It is kept (owner-decided) because
+  # off -> bootstrap -> dry-run -> authoritative is an adoption ladder, where
+  # off -> authoritative is a cliff.
+  def oidc_sync_mode = ENV.fetch("SPARC_OIDC_SYNC_MODE", "off")
+
+  # Optional ceiling on how much one `authoritative` sync may revoke.
+  #
+  # **DISABLED by default (0), owner-decided 2026-08-22:** *"Each time a user
+  # logs in, we should process the grants and anything not in the grant would be
+  # removed."* That is the model — deterministic, and easy for an operator to
+  # reason about. The real protections are the ones that cannot be tuned away:
+  # a MISSING claim is an error, and revocation is scoped to `source: "idp"`.
+  #
+  # Kept as an opt-in for a cautious operator who wants a ceiling while they
+  # gain confidence in their claim configuration.
+  def oidc_sync_max_revoke_pct = ENV.fetch("SPARC_OIDC_SYNC_MAX_REVOKE_PCT", "0").to_i
+
+  # #860 — deactivate an account that has not signed in for this many days.
+  # 0 (the default) disables it, so an upgrade never starts deactivating people.
+  #
+  # This is the OFFBOARDING mechanism. SPARC is not told when an IdP disables
+  # someone, but a disabled account cannot authenticate — so absence of sign-in
+  # is the signal, and it covers every path at once: a leaver, a revoked IdP
+  # account, and a dormant local account are all the same observable.
+  #
+  # NIST 800-53: AC-2(3) Disable Accounts (inactivity).
+  def user_inactivity_days = ENV.fetch("SPARC_USER_INACTIVITY_DAYS", "0").to_i
+
+  # #860 — instance-wide roles an IdP is permitted to grant.
+  #
+  # EMPTY BY DEFAULT, which makes an instance grant inexpressible: a claim
+  # naming an instance role is refused and reported rather than applied. An
+  # operator opts in by naming the specific roles, e.g.
+  #
+  #   SPARC_OIDC_INSTANCE_ROLES="global_viewer,policy_manager"
+  #
+  # An allowlist rather than a boolean, because "manage instance roles from the
+  # IdP" and "let a directory group confer every instance-wide authority SPARC
+  # has" are different requests, and only the first was made.
+  #
+  # `users.admin` is unreachable through this by construction — it is a boolean
+  # column, not a Role, and the sync writes only user_roles and
+  # organization_memberships. That is what keeps break-glass recovery available
+  # no matter what the directory says.
+  def oidc_instance_roles
+    ENV.fetch("SPARC_OIDC_INSTANCE_ROLES", "").split(",").map { |r| r.strip.downcase }.reject(&:empty?)
+  end
   def oidc_provider_title = ENV.fetch("SPARC_OIDC_PROVIDER_TITLE", "SSO")
   # #785 — defaults true. Only consulted on the OIDC path, so a true default is
   # inert for deployments that don't use OIDC, and security-positive for those

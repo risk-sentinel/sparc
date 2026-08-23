@@ -502,6 +502,12 @@ Rails.application.routes.draw do
       end
     end
     resources :roles
+
+    # #860 — unmatched IdP grants (read-only queue).
+    resources :idp_grants, only: [ :index ] do
+      collection { post :dismiss }
+      member { delete :restore }
+    end
     # #809 — remediation-timeline (SLA) grid: days to remediate by baseline × criticality.
     get   "remediation_timelines", to: "remediation_timelines#index", as: :remediation_timelines
     patch "remediation_timelines", to: "remediation_timelines#update"
@@ -888,6 +894,14 @@ Rails.application.routes.draw do
       # and were editable only in a browser, so an instance's RBAC configuration
       # could not be reviewed or reproduced programmatically.
       resources :roles, only: [ :index, :show, :create, :update, :destroy ]
+
+      # #860 — the unmatched-grant queue. A grant naming something SPARC does
+      # not have is recorded and surfaced, never created; this is the surfacing.
+      get "idp_grants/unmatched", to: "idp_grants#unmatched"
+
+      # #860 — inspect the sync, and preview it before switching it on.
+      get "entitlement_sync", to: "entitlement_sync#show"
+      post "entitlement_sync/preview", to: "entitlement_sync#preview"
 
       resources :users, only: [ :index, :show, :create, :update, :destroy ] do
         member do

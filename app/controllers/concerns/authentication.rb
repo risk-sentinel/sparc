@@ -134,6 +134,12 @@ module Authentication
     reset_session
     session[:user_id] = user.id
     session[:last_active_at] = Time.current.to_i
+    # #860 — when this session began, for the absolute cap in
+    # check_session_timeout. Set here because start_session is the ONLY writer
+    # of session[:user_id] in the app: local, LDAP, OIDC, PIV, WebAuthn,
+    # registration and the API cookie bridge all funnel through it, so every
+    # session gets a start stamp without seven separate changes.
+    session[:started_at] = Time.current.to_i
     session[:auth_provider] = provider.to_s
     user.record_sign_in!(ip_address: ip_address)
   end
@@ -146,15 +152,24 @@ module Authentication
 
   # ── Session Timeout ───────────────────────────────────────────────────
 
-  # Check if the session has timed out based on SPARC_SESSION_TIMEOUT_MINUTES.
-  # Called as a before_action.
+  # Two independent limits, both enforced here as a before_action:
+  #
+  #   IDLE      SPARC_SESSION_TIMEOUT_MINUTES (default 60) — time since the last
+  #             request. Refreshed on every request.
+  #   ABSOLUTE  SPARC_SESSION_MAX_HOURS (default 8) — time since sign-in, which
+  #             nothing refreshes. #860.
+  #
+  # The absolute cap is what makes "each login establishes the user's rights"
+  # true rather than approximate. Without it an active user is never asked to
+  # authenticate again, so entitlements resolved at one login stay in force
+  # indefinitely — including after the IdP has revoked them, since SPARC learns
+  # about IdP-side changes only at the next sign-in.
+  #
+  # NIST 800-53: AC-11 (idle), AC-12 (absolute), IA-11 (re-authentication).
   def check_session_timeout
     return unless signed_in?
 
-    last_active = session[:last_active_at]
-    timeout = SparcConfig.session_timeout.minutes
-
-    if last_active && Time.at(last_active) < timeout.ago
+    if session_expired?
       end_session
       # 303 See Other so the browser issues a fresh GET to /login (not a Turbo
       # visit that could reuse a cached snapshot), landing on the login page
@@ -164,7 +179,48 @@ module Authentication
                   warning: "Your session has expired. Please sign in again."
     else
       session[:last_active_at] = Time.current.to_i
+      # #860 — adopt a session that predates the absolute cap. See
+      # max_age_expired? for why this grandfathers rather than expires.
+      session[:started_at] ||= Time.current.to_i
     end
+  end
+
+  # True when either limit is exceeded.
+  def session_expired?
+    idle_expired? || max_age_expired?
+  end
+
+  def idle_expired?
+    last_active = session[:last_active_at]
+    last_active.present? && Time.at(last_active) < SparcConfig.session_timeout.minutes.ago
+  end
+
+  # #860 — the absolute cap. Two deliberate behaviours:
+  #
+  # 1. `SPARC_SESSION_MAX_HOURS=0` disables it, restoring the idle-only
+  #    behaviour for a deployment that needs long-lived sessions.
+  #
+  # 2. A session carrying NO `started_at` is ADOPTED rather than expired: it is
+  #    stamped on the next request and capped from that moment. Those are
+  #    sessions established before this shipped.
+  #
+  #    Expiring them instead was the first implementation and it was wrong in
+  #    two ways. It forces every signed-in user to re-authenticate the moment
+  #    the release lands — an availability cost paid by everyone for a control
+  #    nobody had yet violated. And it is not confined to real upgrades: nothing
+  #    outside start_session stamps the session, so any caller holding a session
+  #    it did not create through that path is logged straight back out.
+  #
+  #    Adoption bounds a pre-existing session to `max_hours` from the upgrade,
+  #    which is the same guarantee one sign-in later, without the flag day.
+  def max_age_expired?
+    max_hours = SparcConfig.session_max_hours
+    return false if max_hours <= 0
+
+    started_at = session[:started_at]
+    return false if started_at.blank?
+
+    Time.at(started_at) < max_hours.hours.ago
   end
 
   # ── Password Reset Check ──────────────────────────────────────────────
@@ -254,8 +310,19 @@ module Authentication
   # True if `provider` satisfies any token in the `allowed` allowlist (#805).
   # Providers carry aliases so an operator can write "oidc" / "sso" / "fido2".
   def auth_method_accepted?(provider, allowed)
-    (provider_tokens(provider) & allowed).any?
+    return true if (provider_tokens(provider) & allowed).any?
+
+    # #822 — an OIDC login can satisfy `piv` when the IdP itself performed
+    # certificate-based authentication and said so in the token. Checked here
+    # rather than by rewriting `auth_provider` to "piv", so the audit trail
+    # still records HOW the person signed in (oidc) alongside WHAT it proved.
+    allowed.include?("piv") && piv_asserted_by_idp?
   end
+
+  # Set at the OIDC callback when the token carried an accepted acr/amr value.
+  # Absent for every other provider and for any deployment that has not opted
+  # in, so this is inert unless configured.
+  def piv_asserted_by_idp? = session[:piv_assertion].present?
 
   def provider_tokens(provider)
     case provider

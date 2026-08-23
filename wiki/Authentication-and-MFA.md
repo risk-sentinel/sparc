@@ -119,6 +119,59 @@ carries shape-only diagnostics (`cert_bytes`, `cert_has_pem_markers`,
 
 ---
 
+## PIV enforced at the identity provider (#822)
+
+SPARC's `piv` requirement has always meant a gateway terminated mTLS and
+forwarded the client certificate. That path is unchanged. It can now **also** be
+satisfied by an OIDC token showing the identity provider itself performed
+certificate-based authentication — Okta Smart Card, Entra CBA.
+
+### Why an operator would choose it
+
+Gateway mTLS on a shared `:443` listener prompts **every** user for a client
+certificate, because the TLS `CertificateRequest` happens before HTTP exists and
+cannot be scoped to a path. It also rests on an issuer-DN filter, which cannot
+distinguish a hardware-bound PIV credential from an exportable soft certificate
+issued by the same CA. An IdP doing CBA enforces chain validation, revocation
+and hardware assurance, and states the result in the token.
+
+Both remain configurable, because CAC-direct and no-IdP deployments still need
+the gateway path.
+
+### Enabling it
+
+```bash
+SPARC_REQUIRE_AUTH_METHODS="piv"
+SPARC_PIV_OIDC_AMR_VALUES="x509,hwk"
+# or, if your IdP asserts an assurance level instead:
+SPARC_PIV_OIDC_ACR_VALUES="http://idmanagement.gov/ns/assurance/aal/3"
+```
+
+In Okta this pairs with an authentication policy on the SPARC application that
+requires the smart-card / certificate factor.
+
+> **Empty means accept NOTHING, never accept anything.** With neither variable
+> set, `piv` continues to mean the forwarded certificate and nothing else. A
+> configuration mistake must not silently downgrade an authentication
+> requirement, so there is no wildcard and no default value.
+
+### What is and is not checked
+
+- `amr` is a **list** of methods the IdP used; any one matching an accepted value
+  is enough.
+- `acr` is compared **exactly**. Prefix matching would accept
+  `.../assurance/aal/2` for a deployment that asked for `aal/3`.
+- Both are matched case-insensitively and trimmed.
+- **`swk` (soft key) is not `x509`.** Accepting it would reintroduce the
+  soft-certificate gap this exists to close — list only what you mean.
+
+### What it records
+
+The session still records `oidc` as the provider, so the audit trail says how
+the person signed in. A separate `piv_asserted_by_idp` event records the claim
+and value that satisfied the requirement, which is what an assessor asks for
+when they want to know *why* SPARC accepted a login as PIV.
+
 ## Compliance
 
 | Control | How SPARC meets it |

@@ -102,7 +102,11 @@ All auth features default to **disabled**. Enable one or more to activate `/logi
 | `SPARC_FIDO2_ENABLED` | `false` | Enable FIDO2/WebAuthn security-key sign-in (passwordless; key + PIN = app-native MFA). Adds a **Security Keys** enrollment page + a "Sign in with a security key" option (#779) |
 | `SPARC_ENABLE_PIV` | `false` | Enable PIV / CAC smart-card sign-in (cert + PIN → NIST IA-2(12)). The mTLS + DoD-PKI validation happen at the proxy/ALB; SPARC consumes the forwarded validated cert and fails closed. Only enable behind a correctly-configured mTLS gateway (#779) |
 | `SPARC_ENABLE_USER_REGISTRATION` | `false` | Allow self-service registration (usually `false` in prod) |
-| `SPARC_SESSION_TIMEOUT_MINUTES` | `60` | Session inactivity timeout (minutes) |
+| `SPARC_SESSION_TIMEOUT_MINUTES` | `60` | Session **inactivity** timeout (minutes). Reset by every request |
+| `SPARC_SESSION_MAX_HOURS` | `8` | **Absolute** session lifetime (hours), measured from sign-in and never reset by activity. A working day, so someone who signs in at the start of one signs in again the next. `0` disables the cap |
+| `SPARC_PIV_OIDC_ACR_VALUES` | *(empty)* | Accepted `acr` values proving the IdP did certificate-based auth. **Empty accepts none** |
+| `SPARC_PIV_OIDC_AMR_VALUES` | *(empty)* | Accepted `amr` values, e.g. `x509,hwk`. **Empty accepts none** |
+| `SPARC_USER_INACTIVITY_DAYS` | `0` | Deactivate an account that has not signed in for this many days. `0` disables it. Runs daily. The last active administrator is never deactivated |
 | `SPARC_ADMIN_EMAIL` | `admin@sparc.local` | Email for the bootstrapped admin account |
 | `SPARC_PUBLIC_CATALOGS` | `false` | Make the Controls layer publicly readable without signing in — control catalogs (and their families and controls), baselines, mappings, component definitions, converters, and the OSCAL downloads for each. **Read only**, and the web UI only: no write, no converter export or refresh, and `/api/v1` still requires a Bearer token. Boundary documents (SSP, SAP, SAR, POA&M, evidence) are never public. Secure-by-default off; enable only when SPARC is fronted by your own network auth (e.g. VPN) |
 
