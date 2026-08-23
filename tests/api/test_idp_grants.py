@@ -69,8 +69,11 @@ class TestWindow:
         assert admin_client.get(PATH, params={"days": 0}).json()["meta"]["window_days"] == 1
 
     def test_a_narrower_window_cannot_return_more(self, admin_client: httpx.Client) -> None:
-        wide = admin_client.get(PATH, params={"days": 365}).json()["meta"]["total_count"]
-        narrow = admin_client.get(PATH, params={"days": 1}).json()["meta"]["total_count"]
+        # `count`, not `total_count` — the shared paginate envelope is
+        # {page, pages, count, items}. Assumed the wrong key when this was
+        # written; the live suite caught it and the docs were wrong too.
+        wide = admin_client.get(PATH, params={"days": 365}).json()["meta"]["count"]
+        narrow = admin_client.get(PATH, params={"days": 1}).json()["meta"]["count"]
 
         assert narrow <= wide, "a one-day window returned more than a one-year window"
 

@@ -74,8 +74,10 @@ information.
     }
   ],
   "meta": {
-    "current_page": 1,
-    "total_count": 1,
+    "page": 1,
+    "pages": 1,
+    "count": 1,
+    "items": 50,
     "window_days": 30,
     "summary": [
       {
