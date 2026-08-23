@@ -1844,7 +1844,7 @@ verified on the screen before the next starts.
 
 | # | Slice | Why here |
 |---|---|---|
-| 1 | **Dependency lane** — `mail` 2.9.1 first, then currency, then #1006, **then the audit-gate fix** | A live advisory leads. Doing it first also means the whole bundle is built and tested on the gems that will ship, rather than re-running the gates after a late bump. The gate fix lands **last in the slice**, so it is proved RED against the pre-bump lockfile and green against the post-bump one |
+| 1 | **Dependency lane** — `mail` 2.9.1 first, then currency, then #1006, plus `bundle-audit` in the **local** pre-PR gate | A live advisory leads. Doing it first also means the whole bundle is built and tested on the gems that will ship, rather than re-running the gates after a late bump. **No `security.yml` edit for the gate** — that is [#1048](https://github.com/risk-sentinel/sparc/issues/1048) on `ci.v0.0.1` |
 | 2 | **#1042 navbar** | Self-contained, one partial, and it is the bundle's only NAVIGATION change — get the approved layout settled while there is time to iterate |
 | 3 | **#950a** — the seven role classes in CSS, no view changes yet | Defines the vocabulary before anything consumes it. Contrast-probed before a single view is edited |
 | 4 | **#950b** — sweep the 47 view files onto the role classes | Mechanical once 3 is proven. Removes the ~14 button-adjacent inline styles as it goes |
@@ -2151,8 +2151,10 @@ spec fails.**
 **#1042's fix shape** (`navbar-expand-xl` + `d-none d-xl-block`) ·
 **#1039 "provided by"** (free-text `provided_by_team` / `provided_by_contact`,
 placeholder-ghosted, no email validation) · **#1039 delete semantics**
-(`destroy` → archive/supersede) · **the audit-gate fix** (drop
-`continue-on-error`, add an ignore register, add a local pre-PR step).
+(`destroy` → archive/supersede) · **the audit gate** — Bundle X fixes the
+`mail` finding and adds `bundle-audit` to the LOCAL pre-PR gate only; the
+systemic threshold-gate work is
+**[#1048](https://github.com/risk-sentinel/sparc/issues/1048)** on `ci.v0.0.1`.
 
 **The CSP tail is FILED as [#1047](https://github.com/risk-sentinel/sparc/issues/1047),
 milestone v1.16.1** — `style-src 'unsafe-inline'` plus Trusted Types, the tail
@@ -2345,57 +2347,89 @@ The `bundler-audit-json` artifact from the Bundle R merge run (`32611703559`,
 The finding was written to a 90-day artifact on the merge commit and the
 workflow reported success.**
 
-**Two independent causes, either sufficient on its own:**
+**Why the job went green — one design working as intended, and one hole in it:**
 
 1. **`security.yml:340` — `continue-on-error: true`** on the check step, so it
-   cannot fail its job whatever it finds.
-2. **Nothing reads the JSON.** It is downloaded at line ~1022 only to be `cp`'d
-   into the archive at line 1325. The one severity gate, line 1341, is
-   `if: env.FAIL_ON_SEVERITY != 'none'` — and `FAIL_ON_SEVERITY` **defaults to
-   `'none'`** (line 54), so it is off on every trigger except a manual dispatch
-   that sets it. That gate also reads HDF results, not bundler-audit.
+   cannot fail its job whatever it finds. **This is by design and is not the
+   defect** — see below.
+2. **Nothing ever assesses the JSON.** It is downloaded at line ~1022 only to be
+   `cp`'d into the archive at line 1325. **This is the defect.**
+3. A contributing detail: the `Evaluate severity threshold` step at line 1341 is
+   `if: env.FAIL_ON_SEVERITY != 'none'`, and `FAIL_ON_SEVERITY` **defaults to
+   `'none'`** (line 54) — so it is inert on every trigger except a manual
+   dispatch that sets it. It also reads HDF results, not bundler-audit. **Two
+   gates with different rules** is its own problem, carried into #1048.
 
-**State this fairly: it is a deliberate posture, not sloppiness.** The comment at
-line 879 says `continue-on-error` is there *"to ensure all three scans run and
-artifacts are"* produced — `security.yml` is an evidence-collection workflow
-feeding the HDF/OSCAL archive, with an opt-in threshold gate. **~30 steps carry
-the same flag.** The gap is that the opt-in gate was never turned on and no
-human ceremony reads the artifacts it produces. **This is a scan-to-decision
-gap, not a scan gap** — and it is worth noting it applies to every scanner in
-that workflow, not only bundler-audit. **Not proposed for a blanket fix here:**
-that is shared CI infrastructure, and approval to close this hole is not
-approval to restyle the workflow ([[feedback_plan_before_shared_infrastructure]]).
+**The posture is deliberate and CORRECT — do not "fix" it by making the step
+fail.** `continue-on-error` at line 340 exists so scans run to completion and
+produce artifacts; assessment happens **downstream**, in a threshold gate. That
+architecture is already built and already merge-blocking: **`security_gate`
+(#244)** amends each HDF from `docs/compliance/sparc-findings.yml` and runs
+`saf validate threshold -T docs/compliance/threshold.yml`, failing the build on
+violation. **This is exactly the scan → artifact → assess model, and it works.**
+
+**The real defect is narrower and sharper: `bundler-audit-results.json` is the
+ONE artifact that never enters it.** `normalize_hdf` runs **12
+`saf convert … 2hdf` calls** — gitleaks, brakeman, codeql, semgrep, trivy-fs,
+trivy-container, three SBOMs and three grype scans. bundler-audit is downloaded
+at ~line 1022 **purely to be `cp`'d into the archive zip at line 1325.** It never
+becomes HDF, so it never reaches `security_gate`, so no threshold is ever
+applied to it.
+
+**And plumbing it in would not have been sufficient**, which is the part worth
+keeping: `threshold.yml` sets the global residual band at `medium: max: 20`, and
+this finding is a **Medium**. It needs a per-scanner band of its own, as
+`brakeman`, `gitleaks`, `codeql` and the trivy scanners already have.
+
+Measured, not assumed: `@mitre/saf` **1.6.0** — the version the workflow pins —
+offers `dependency_track2hdf`, `snyk2hdf` and `zap2hdf`, but **no bundler-audit
+converter**. So closing this needs a converter written, not a line of YAML.
 
 **And our own side of it, stated plainly:** the recorded practice was *run
 `bundle-audit` when assessing a dependency PR*. No PR appeared for `mail` —
 there could not be one, it has no manifest line — so the trigger never fired.
 The practice was conditioned on the wrong event.
 
-###### OWNER-APPROVED FIX 2026-08-23 — fail the job, and add a local pre-PR step
+###### OWNER-DECIDED 2026-08-23 — fix the finding here, fix the GATE in its own issue
 
-Workflow edits approved for this bundle. Both halves, because each covers the
-other's blind spot: CI cannot be forgotten, and the local step gives the signal
-during development rather than at PR time.
+**Superseding an earlier recommendation in this plan to drop
+`continue-on-error`.** The owner's correction, and it is right: *"we probably
+need a different way so that the scans occur, generate artifacts, and then the
+artifacts are 'assessed' for thresholding. This is exactly why HDF thresholding
+and blocking occurs. Let's just fix the offending issue on this, file an issue
+in the existing ci milestone to review generated artifacts in a threshold gate
+so that this doesn't happen next time."*
 
-1. **Remove `continue-on-error: true` from `security.yml:340`.** Any advisory
-   then turns the PR red. The upload step already carries `if: always()`, so
-   **the artifact is still produced on failure** and the HDF/archive path is
-   unaffected — verify that rather than assuming it.
-2. **Add a documented ignore register for accepted risk** — `bundle-audit check
-   --ignore GHSA-…` with each entry justified in-repo, mirroring the discipline
-   the CVE register already uses ([[project_cve_register_rebased_on_container]]).
-   Without it, the first accepted-risk advisory turns the whole gate off again.
-3. **Add `bundle-audit` to the local pre-PR gate**, alongside rubocop, brakeman
-   and the suites — see the host recipe above, and note the ruby-2.6 trap: a
-   `bundle-audit` invocation on system ruby produces **no output at all**, which
-   reads exactly like success ([[feedback_run_it_dont_reason_about_it]]).
+Making the step fail would have traded a working evidence-collection design for
+a blunt instrument — and it would have bypassed `sparc-findings.yml`, so an
+accepted advisory would have had no way to be dispositioned except by turning
+the check off. **Recorded because the wrong fix was plausible**: it closes the
+observed symptom while removing the mechanism that makes dispositions auditable.
 
-**Prove the gate has teeth before trusting it** ([[feedback_prove_tests_have_teeth]]):
-it must go **RED on the pre-bump lockfile** and green after. A gate that has only
-ever been observed green is not known to work — which is the whole lesson here.
+**So Bundle X does two things and no more:**
 
-**Whether this takes its own issue is the owner's call.** The fix is authorised;
-raising it rather than filing, per [[feedback_dont_file_issues_unprompted]].
+1. **Fix the finding** — `bundle update mail` → 2.9.1, in slice 1. No workflow
+   edit for the gate.
+2. **Add `bundle-audit` to the LOCAL pre-PR gate.** Cheap, no CI change, and it
+   moves the signal to development time. Note the ruby-2.6 trap: `bundle-audit`
+   on system ruby produces **no output at all**, which reads exactly like
+   success ([[feedback_run_it_dont_reason_about_it]]).
+
+**The systemic fix is [#1048](https://github.com/risk-sentinel/sparc/issues/1048),
+milestone `ci.v0.0.1`** — convert bundler-audit to HDF so it reaches
+`security_gate`, give it a per-scanner threshold band, resolve the second inert
+gate (`FAIL_ON_SEVERITY` defaults to `'none'`), and — the deliverable that
+actually stops recurrence — **audit every artifact `security.yml` produces
+against what `security_gate` assesses.** That orphan was found by accident while
+chasing one advisory; the systematic question has never been asked.
+
+**#1048 must prove the gate RED before it is trusted green**
+([[feedback_prove_tests_have_teeth]]): validate against the pre-bump lockfile,
+confirm the build fails, then against the fixed one. **A gate only ever observed
+green is not known to work** — which is the whole lesson here.
+
+**`security.yml` is NOT edited by Bundle X for this.** The only workflow edits in
+this bundle are PR #1006's five action bumps.
 
 | Item | Bump | Slot | Why there |
 |---|---|---|---|
@@ -2481,8 +2515,10 @@ Bundle X section above; summarised here so the release PR has one place to check
 
 **Settled 2026-08-23:** #1042's fix shape (`navbar-expand-xl` + `d-none d-xl-block`) · #1039's
 "provided by" (free-text on the resource, placeholder-ghosted, not email-validated) · #1039's
-delete semantics (`destroy` → archive/supersede) · the audit-gate fix (drop `continue-on-error`
-from `security.yml:340`, add an ignore register, add a local pre-PR step).
+delete semantics (`destroy` → archive/supersede) · **the audit gate — fix the `mail` finding in
+Bundle X, add `bundle-audit` to the LOCAL pre-PR gate, and track the systemic threshold-gate work
+as [#1048](https://github.com/risk-sentinel/sparc/issues/1048) on `ci.v0.0.1`. `security.yml` is
+NOT edited by Bundle X for this.**
 
 **The CSP tail is FILED as [#1047](https://github.com/risk-sentinel/sparc/issues/1047) on
 milestone v1.16.1** — so **v1.16.1 now holds 5 issues**: #1022, #1033, #1040, #1044, #1047.
