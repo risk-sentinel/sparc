@@ -2892,3 +2892,175 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-control-picker__chip--unresolved .sparc-control-picker__chip-id {
   color: var(--sparc-danger);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   #950 — ONE BUTTON ROLE, ONE CLASS
+   ═══════════════════════════════════════════════════════════════════════
+
+   Owner design rules (2026-08-22), which this block implements:
+
+     1. One colour scheme per FUNCTION, light and dark.
+     2. Symmetrical text and height — equal-height rows by construction.
+     3. a11y / WCAG compliant, verified by measurement, not by eye.
+     4. Dark mode carries NO fill — outline and text only.
+     5. Buttons go in CSS and are REUSABLE — one place per function.
+
+   WHY A NEW PREFIX RATHER THAN REDEFINING `.btn-*`
+   The app has 34 distinct `btn-*` classes across 47 view files, and the same
+   function is styled four different ways in different places: Cancel is
+   `btn-secondary` 46 times and `btn-outline-secondary` 32 times; Destroy splits
+   almost evenly, `btn-outline-danger` 15 / `btn-danger` 14; Create splits
+   `btn-success` 13 / `btn-primary` 11. Redefining the Bootstrap classes would
+   restyle all 216 of those buttons at once with no way to land it in slices.
+   `.sparc-action` is additive: nothing renders it until a view opts in.
+
+   THESE BUILD ON THE #599 AA-VERIFIED TOKENS, they do not re-derive colour.
+   Every `--sparc-*` token here was already measured against its surface during
+   the #599 sweep; the role classes only decide WHICH verified token each
+   function gets, and whether it fills or outlines.
+
+   RULE 1 CANNOT BE LITERAL IN DARK MODE, and that is deliberate. Rule 4 removes
+   fill, so dark mode has only hue to separate roles — and there are 8 AA-verified
+   hues for 9 roles. Two pairs therefore share a hue in dark:
+       update / view      (primary blue)
+       import / export    (info teal)
+   Each pair is one action and its read-only counterpart, they never sit adjacent
+   in the same row, and they are separated by label and icon. That is the same
+   resolution WCAG 1.4.1 forces on destroy (below): colour is never the only cue.
+
+   RULE 3 vs RULE 4 CONFLICT ON DESTROY. Outline-only dark mode strips the red
+   fill, leaving "this is destructive" carried by colour alone — a WCAG 1.4.1
+   failure. Destroy therefore REQUIRES a non-colour cue in both themes: an icon
+   plus an explicit verb in the label. `.sparc-action--destroy` reserves space
+   for that icon; a bare `.sparc-action--destroy` with no icon is a bug, and
+   test_button_roles_950.py asserts it. */
+
+.sparc-action {
+  /* Rule 2 — symmetrical text and height, by construction rather than by
+     each caller remembering. Fixed line-height + equal padding means a row of
+     mixed roles aligns without a wrapper having to force it. */
+  --sparc-action-fg: var(--sparc-primary);
+  --sparc-action-bg: transparent;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--sparc-action-fg);
+  border-radius: 0.375rem;
+  background: var(--sparc-action-bg);
+  color: var(--sparc-action-fg);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.25;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.12s ease-in-out, color 0.12s ease-in-out;
+}
+
+.sparc-action:hover,
+.sparc-action:focus {
+  background: var(--sparc-action-fg);
+  color: var(--sparc-action-on-fill, #fff);
+  text-decoration: none;
+}
+
+/* Filled roles in LIGHT only — the actions that COMMIT something.
+   Dark mode strips every one of these back to outline (rule 4), below. */
+.sparc-action--create,
+.sparc-action--update,
+.sparc-action--import,
+.sparc-action--destroy {
+  background: var(--sparc-action-fg);
+  color: var(--sparc-action-on-fill, #fff);
+}
+
+.sparc-action--create:hover,
+.sparc-action--update:hover,
+.sparc-action--import:hover,
+.sparc-action--destroy:hover,
+.sparc-action--create:focus,
+.sparc-action--update:focus,
+.sparc-action--import:focus,
+.sparc-action--destroy:focus {
+  background: var(--sparc-action-hover, var(--sparc-action-fg));
+  color: var(--sparc-action-on-fill, #fff);
+}
+
+/* One hue per function. Plurality-led where the app already had a majority
+   (create -> success 13/27, edit -> outline-primary 10/28, cancel -> secondary
+   78/84, destroy -> danger 29/29) so the sweep in slice 4 changes as few
+   buttons as possible. */
+.sparc-action--create  { --sparc-action-fg: var(--sparc-success);   --sparc-action-hover: var(--sparc-success-hover); }
+.sparc-action--update  { --sparc-action-fg: var(--sparc-primary);   --sparc-action-hover: var(--sparc-primary-hover); }
+.sparc-action--import  { --sparc-action-fg: var(--sparc-info); }
+.sparc-action--export  { --sparc-action-fg: var(--sparc-info); }
+.sparc-action--view    { --sparc-action-fg: var(--sparc-primary); }
+.sparc-action--edit    { --sparc-action-fg: #ac5309; }  /* light-only value; dark restores the token below */
+.sparc-action--wizard  { --sparc-action-fg: var(--sparc-purple);    --sparc-action-hover: var(--sparc-purple-hover); }
+.sparc-action--cancel  { --sparc-action-fg: var(--sparc-secondary); --sparc-action-hover: var(--sparc-secondary-hover); }
+.sparc-action--destroy { --sparc-action-fg: var(--sparc-danger);    --sparc-action-hover: var(--sparc-danger-hover); }
+
+/* RULE 4 — dark mode carries NO fill. This single block is what makes the rule
+   hold for every role at once, rather than the variant-by-variant patching that
+   left 5 of 9 filled variants with a dark rule and all 6 outline variants with
+   none. Adding a tenth role inherits it for free. */
+[data-bs-theme="dark"] .sparc-action,
+[data-bs-theme="dark"] .sparc-action--create,
+[data-bs-theme="dark"] .sparc-action--update,
+[data-bs-theme="dark"] .sparc-action--import,
+[data-bs-theme="dark"] .sparc-action--destroy {
+  background: transparent;
+  color: var(--sparc-action-fg);
+}
+
+/* Hover in dark stays fill-free: tint the surface instead, and keep the label
+   the role hue so contrast is the resting ratio, already measured. */
+[data-bs-theme="dark"] .sparc-action:hover,
+[data-bs-theme="dark"] .sparc-action:focus {
+  background: var(--sparc-surface-alt);
+  color: var(--sparc-action-fg);
+}
+
+/* ── AA corrections, measured not eyeballed ────────────────────────────
+   Three of the nine roles failed WCAG 2.1 AA 4.5:1 on the raw tokens. All
+   three are scoped to the role, NOT fixed by moving the global --sparc-*
+   token, because those tokens are used elsewhere and were verified for their
+   own surfaces during #599.
+
+     edit / light      --sparc-orange #b6580a on #f5f5f5 = 4.39  FAIL
+                       -> #ac5309 = 4.82 body / 5.26 card
+     destroy / dark    --sparc-danger #ef5350 on #252d3a = 3.98  FAIL
+                       -> #f48a87 = 6.41 / 5.83
+     wizard / dark     --sparc-purple #bb6bd9 on #252d3a = 4.10  FAIL
+                       -> #c683df = 5.60 / 5.09
+
+   The destroy value is not new: `[data-bs-theme="dark"] .btn-outline-danger`
+   above already carries #f48a87 for exactly this reason, measured during #599.
+   Reused rather than re-derived, so the two cannot drift apart.
+
+   Each was chosen with margin rather than at the 4.5 line — the first passing
+   candidate for edit was #b1560a at 4.58, which leaves nothing for a future
+   surface tweak. */
+[data-bs-theme="dark"] .sparc-action--destroy { --sparc-action-fg: #f48a87; }
+[data-bs-theme="dark"] .sparc-action--wizard  { --sparc-action-fg: #c683df; }
+/* edit's base value is the LIGHT correction (#ac5309), which is a dark orange
+   and measures 2.90:1 on the dark surface — so dark must be given the token
+   back explicitly. Hardcoding a literal in the base rule opts that role out of
+   the theme switch entirely; that is the trap, and it is why the AA check reads
+   this stylesheet instead of a table someone maintains by hand. */
+[data-bs-theme="dark"] .sparc-action--edit    { --sparc-action-fg: var(--sparc-orange); }
+
+/* The non-colour cue rule 3 requires on destroy. Reserved by the class so a
+   caller cannot silently omit it. */
+.sparc-action--destroy .sparc-action-icon { flex: 0 0 auto; }
+
+/* Rows of mixed roles line up without a wrapper forcing it (rule 2). */
+.sparc-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+}

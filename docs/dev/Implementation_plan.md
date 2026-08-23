@@ -1882,11 +1882,17 @@ one cause** — the navbar neither wraps nor collapses between 992px and roughly
 
 **The mechanism, measured in `app/views/shared/_main_nav.html.erb` (291 lines):**
 the bar is `navbar-expand-lg`, so it expands to its full horizontal form at
-**≥992px** — and **five `li.nav-item.d-none.d-lg-block` items appear at exactly
-the same breakpoint**, and `sparc-theme.css:662` brings the sidebar back at
-`min-width: 992px` too. So 992px is where the navbar stops collapsing, five
-extra items appear, and the sidebar reclaims width — all at once. That is the
-223px.
+**≥992px**; **five `li.nav-item.d-none.d-lg-block` items appear at exactly the
+same breakpoint**; `sparc-theme.css:2256` brings the sidebar back
+(`.sparc-sidebar { display: none }` below `991.98px`); and
+`sparc-theme.css:662` grows `.sparc-navbar-logo` from 44px to **52px** at
+`min-width: 992px`. So 992px is where the navbar stops collapsing, five extra
+items appear, the logo grows, and the sidebar reclaims width — **four things at
+one breakpoint**. That is the 223px.
+
+Note line 245 already carries `d-none d-xl-inline` on the user display label —
+someone had already found 992px too tight for one element and moved it alone.
+This fix generalises that judgement rather than introducing a new one.
 
 **OWNER-DECIDED 2026-08-23 — `navbar-expand-xl` + `d-none d-xl-block`.** Move
 the whole transition to 1200px, where there is room.
@@ -1942,17 +1948,18 @@ The 34: `btn-action` `btn-action-row` `btn-cancel-dark` `btn-clear-filter`
    stays consistent if there is exactly one place it is defined.
 
 **The owner asked "might be missing one?" — measured, and two were missing.**
-The roster is **seven**, not five:
+The owner's list is **seven** (Create, Edit, Export, Import, View, Update,
+wizard/guide); with Cancel/Back and Destructive the roster is **NINE**:
 
 | Role | Evidence |
 |---|---|
-| Create | `Create from Wizard`, `New …` |
+| Create | `New …`, `Add …` — makes a new record from an empty form |
 | Edit | `btn-edit`, `btn-header-edit` |
 | Export | `Export CSV`, `Export JSON`, `Export OSCAL`, `Download ATO Package` |
 | Import | `Upload File`, `Upload and Process`, `Import STIG` |
 | View | `View` (the only action `_item_actions` currently offers) |
 | Update | `btn-save` |
-| Wizard / guide | `Create from Wizard` |
+| Wizard / guide | `Create from Wizard`, the ATO wizard — a multi-step guided flow, distinct from Create because it is a *process* entry point, not a form |
 | **Cancel / Back** *(added)* | **the most common button in the app** — **79** `Cancel` occurrences across the views, plus a **25**-strong `Back to …` family |
 | **Destructive** *(added)* | **49 distinct** Delete/Remove/Archive confirm strings (`data-turbo-confirm=` / `confirm:`) |
 
