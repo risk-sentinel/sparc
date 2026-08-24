@@ -504,14 +504,16 @@ exactly as it did before.
 | SPARC_OIDC_GRANTS_CLAIM | Which OIDC claim carries the grants | `groups` | `sparc_grants` | No |
 | SPARC_OIDC_GRANTS_PREFIX | Prefix that marks a directory group as a SPARC grant, so unrelated groups in the same claim are ignored | `sparc:` | `acme-sparc:` | No |
 | SPARC_OIDC_INSTANCE_ROLES | Allowlist of instance-wide roles the IdP may confer. An allowlist rather than a boolean: "manage instance roles from the IdP" and "let a directory group confer every instance-wide authority SPARC has" are different requests, and only the first was made | (empty) | `global_viewer,policy_manager` | No |
-| SPARC_OIDC_SYNC_MAX_REVOKE_PCT | Optional ceiling on how much a single `authoritative` sync may revoke. **Disabled (0) by default** — the model is deterministic: each sign-in processes the grants and anything absent is removed. Kept as an opt-in for an operator who wants a ceiling while gaining confidence in their claim configuration | `0` (disabled) | `25` | No |
 
-> **The protections that matter here cannot be tuned away.** A *missing* grants
-> claim is an error rather than an empty grant list — so a misconfigured IdP
-> cannot silently strip everyone — and revocation is scoped to grants whose
+> **The model is deterministic: the user gets what the IdP sends.** Every sign-in
+> processes the grants claim — a grant that has appeared is gained, a grant that
+> is no longer there is lost. There is no ceiling, no partial application and
+> nothing to tune.
+>
+> **The two protections cannot be tuned away, which is the point.** A *missing*
+> grants claim is an error rather than an empty grant list, so a misconfigured
+> IdP cannot silently strip everyone; and revocation is scoped to grants whose
 > `source` is `idp`, so anything granted inside SPARC is never touched by a sync.
-> `SPARC_OIDC_SYNC_MAX_REVOKE_PCT` is a comfort ceiling on top of those, not the
-> thing keeping you safe.
 
 Offboarding is handled by inactivity rather than by a signal from the IdP: SPARC
 is never told when an account is disabled, but a disabled account cannot

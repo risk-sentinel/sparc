@@ -154,7 +154,6 @@ the grant resolves by itself at that user's next sign-in.
 | `SPARC_OIDC_GRANTS_CLAIM` | `groups` | Which claim carries grants |
 | `SPARC_OIDC_GRANTS_PREFIX` | `sparc:` | Only values with this prefix are read |
 | `SPARC_OIDC_INSTANCE_ROLES` | *(empty)* | Instance roles the IdP may grant |
-| `SPARC_OIDC_SYNC_MAX_REVOKE_PCT` | `0` *(disabled)* | Optional ceiling on how much one `authoritative` sync may revoke |
 | `SPARC_SESSION_MAX_HOURS` | `8` | Absolute session lifetime, so a long-lived session cannot outlive its entitlements |
 | `SPARC_USER_INACTIVITY_DAYS` | `0` | Deactivate accounts idle this long. **This is offboarding** — a disabled IdP account cannot sign in |
 
@@ -168,10 +167,11 @@ ceiling and it is not the thing protecting you:
 - **Revocation is scoped to grants whose source is the IdP.** Anything granted
   inside SPARC — by an admin, or by the bootstrap account — is never touched by
   a sync, whatever the claim says.
-- `SPARC_OIDC_SYNC_MAX_REVOKE_PCT` sits on top of those two as a comfort ceiling
-  while you gain confidence in your claim configuration. It is **disabled by
-  default** on purpose: the model is meant to be deterministic — each sign-in
-  processes the grants, and anything absent is removed.
+There is no third protection and no ceiling to tune. **The user gets what the
+IdP sends**: a grant that has appeared is gained, a grant that is gone is lost,
+every sign-in. That is deliberate — a threshold that silently declines to apply
+part of a sync leaves SPARC and the IdP disagreeing about who holds what, which
+is the state this feature exists to prevent.
 
 Start at `bootstrap`, which performs the ADD leg only, and move to
 `authoritative` once the claim looks right. `off → bootstrap → authoritative` is
