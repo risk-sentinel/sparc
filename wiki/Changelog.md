@@ -4,7 +4,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
-## v1.16.0 -- API Parity, IdP Entitlements, OSCAL Fidelity (2026-08-23)
+## v1.16.0 -- API Parity, IdP Entitlements, OSCAL Fidelity (2026-08-24)
 
 The largest release on the v1.x line: **86 issues**. The through-line: **a green result is not evidence.** Endpoints answered `200` to payloads they never parsed. Tests asserted against constants they had already overwritten. A scan ran, found a live advisory, and reported success. This release went looking for the gap between what SPARC reported and what it did, and closed it.
 
