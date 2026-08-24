@@ -1,0 +1,15 @@
+# Default band — applied to any HDF with no scanner-specific file.
+#
+# Deliberately conservative: a scanner nobody has made a decision about yet
+# still cannot introduce a critical, and a build cannot pass while a converter
+# is erroring. Give a scanner its own file rather than loosening this one.
+failed:
+  critical:
+    max: 0
+  high:
+    max: 5
+  medium:
+    max: 20
+error:
+  total:
+    max: 0

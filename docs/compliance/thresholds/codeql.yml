@@ -1,0 +1,16 @@
+# CodeQL — semantic SAST.
+#
+# Zero tolerance for critical/high. Lows ungated.
+#
+# Measured 2026-08-24 on main@a8991ae7: 0 critical, 0 high, 2 low
+# (rb/csrf-protection-disabled in Api::V1::SessionsController — token auth does
+# not use session CSRF; rb/clear-text-storage-sensitive-data on the audit
+# cert_header). Both are low and are left visible rather than suppressed.
+failed:
+  critical:
+    max: 0
+  high:
+    max: 0
+error:
+  total:
+    max: 0

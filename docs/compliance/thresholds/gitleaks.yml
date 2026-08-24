@@ -1,0 +1,22 @@
+# Gitleaks — secrets in the working tree and history.
+#
+# Zero tolerance at every severity. A secret is either real (remediate + rotate)
+# or a throwaway test credential, and issue_rules.md requires the latter to be
+# cleared explicitly with an inline `# gitleaks:allow` or a `.gitleaks.toml`
+# allowlist entry. "Tolerated at low severity" is not a category we want.
+#
+# Measured 2026-08-24 on main@a8991ae7: 1 low — an uncleared throwaway
+# `signing_secret` in tests/api/test_authoritative_sources.py, now carrying
+# `# gitleaks:allow`. Residual: 0.
+failed:
+  critical:
+    max: 0
+  high:
+    max: 0
+  medium:
+    max: 0
+  low:
+    max: 0
+error:
+  total:
+    max: 0

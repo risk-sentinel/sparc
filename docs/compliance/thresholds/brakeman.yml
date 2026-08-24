@@ -1,0 +1,21 @@
+# Brakeman — Rails SAST.
+#
+# Zero tolerance for critical/high: mass-assignment, SQLi and XSS surfaces are
+# not safe to defer. Lows are ungated (informational; currently BRAKE0016,
+# "parameter value used in file name" in HelpController).
+#
+# Measured 2026-08-24 on main@a8991ae7: 1 high, 1 low.
+# The high (BRAKE0105, mass assignment of :admin in
+# Admin::ServiceAccountsController) is dispositioned in config/brakeman.ignore
+# with a current justification — the controller is gated by
+# `before_action :authorize_admin!` and per-SA admin opt-in is the documented
+# AC-6 design, not an accident. See #987.
+# Residual after that entry: 0 critical, 0 high.
+failed:
+  critical:
+    max: 0
+  high:
+    max: 0
+error:
+  total:
+    max: 0

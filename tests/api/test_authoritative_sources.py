@@ -70,8 +70,8 @@ def peer(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
                 "base_url": f"https://phase2-selfloop-{suffix}.example.gov",
                 # Disabled so no background sync fires at this fabricated URL.
                 "enabled": False,
-                "service_token": "phase2-selfloop-token",
-                "signing_secret": "phase2-selfloop-signing-secret-32-chars",
+                "service_token": "phase2-selfloop-token",  # gitleaks:allow
+                "signing_secret": "phase2-selfloop-signing-secret-32-chars",  # gitleaks:allow
             }
         },
     )

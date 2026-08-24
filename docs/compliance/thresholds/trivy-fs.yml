@@ -1,0 +1,16 @@
+# Trivy filesystem scan — Dockerfile and manifest misconfiguration.
+#
+# Zero tolerance for critical/high. Mediums ungated.
+#
+# Measured 2026-08-24 on main@a8991ae7: 1 medium (DS-0013, "RUN should not be
+# used to change directory" at Dockerfile:143 — a style finding about using
+# WORKDIR instead of `cd`). DS-0002 is suppressed in .trivyignore with a
+# recorded justification.
+failed:
+  critical:
+    max: 0
+  high:
+    max: 0
+error:
+  total:
+    max: 0

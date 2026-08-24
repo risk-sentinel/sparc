@@ -1,0 +1,28 @@
+# Trivy container image scan — the GATING container signal.
+#
+# Source: trivy-container-results.sarif, i.e. `trivy image --severity
+# CRITICAL,HIGH`, which applies Trivy's own vendor-preferred severity.
+#
+# This is deliberately NOT the CycloneDX SBOM (see trivy-container-sbom.yml and
+# #1064). For the same image on the same run, the two disagree completely:
+# the SARIF reports 4 critical/high findings, the SBOM path reports 28, because
+# `cyclonedx_sbom2hdf` takes the maximum rating across up to seven sources and
+# so promotes Red Hat "low"/"medium" ratings to NVD "critical" on a Red Hat
+# image. 45 of 74 findings differed. Red Hat's rating is the one that describes
+# a UBI9 image.
+#
+# Measured 2026-08-24 on main@a8991ae7 — the 4 raw findings are all shadowed
+# Ruby default gems (vulnerable copy on disk, patched copy loaded by Bundler):
+#   CVE-2026-27820  zlib   CRITICAL  -> notApplicable (approved deviation)
+#   CVE-2026-41316  erb    HIGH      -> notApplicable (approved deviation)
+#   CVE-2025-24294  resolv HIGH      -> dispositioned in this bundle (#1065)
+#   CVE-2025-61594  uri    HIGH      -> dispositioned in this bundle (#1065)
+# Residual after amendments: 0 critical, 0 high.
+failed:
+  critical:
+    max: 0
+  high:
+    max: 0
+error:
+  total:
+    max: 0
