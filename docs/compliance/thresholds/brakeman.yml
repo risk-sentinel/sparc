@@ -1,5 +1,26 @@
 # Brakeman — Rails SAST.
 #
+# DECISION (#987): the Brakeman SCAN step keeps `continue-on-error: true`; the
+# BLOCKING happens here.
+#
+# The question #987 asked was whether to drop `continue-on-error` and/or add
+# `--exit-on-warn`. The answer is neither, and the reason is architectural
+# rather than a preference: this pipeline is "scans run to completion → produce
+# artifacts → artifacts are assessed against a threshold". A scan step that
+# fails on its own findings short-circuits that, and specifically bypasses the
+# docs/compliance/sparc-findings.yml disposition layer — an accepted finding
+# would then have no way to pass except by switching the check off.
+#
+# Note this only became a real choice once #1048 made the gate run at all.
+# Before that, `continue-on-error` was not the reason Brakeman could not fail a
+# build; nothing could, because security_gate never assessed anything.
+#
+# The gate is meaningful rather than permanently red because
+# bin/sarif_drop_suppressed.rb honours SARIF `suppressions` first, so this band
+# is applied to NEW findings — the "no new warnings" posture #987 asked about —
+# while reviewed entries in config/brakeman.ignore stay suppressed. A dead
+# ignore entry is caught by spec/scripts/brakeman_ignore_drift_spec.rb.
+#
 # Zero tolerance for critical/high: mass-assignment, SQLi and XSS surfaces are
 # not safe to defer. Lows are ungated (informational; currently BRAKE0016,
 # "parameter value used in file name" in HelpController).
