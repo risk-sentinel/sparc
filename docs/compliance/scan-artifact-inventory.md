@@ -75,6 +75,7 @@ Recorded so the same shapes are recognisable next time.
 | 8 | Amendment overrides keyed only on `cve_id` | #1001 re-keyed entries to GHSA ids (what grype reports) with the CVE in `also_known_as`, and nothing read that field. Gating on trivy's CVE-keyed output would have made dispositioned findings resurface as new. |
 | 9 | `Evaluate severity threshold` was a second, weaker gate | `FAIL_ON_SEVERITY` defaults to `none`, so it was inert on every trigger but a manual dispatch — and when it ran it ignored dispositions entirely. Removed. |
 | 10 | `cyclonedx_sbom2hdf` takes max-of-all-sources severity | On a Red Hat image it promotes Red Hat "low"/"medium" to NVD "critical": 45 of 74 findings disagreed. Tracked as #1064. |
+| 12 | SARIF cannot express "critical" | `level` is error/warning/note only, so trivy's CRITICAL and HIGH both arrive as impact 0.7. `trivy-container.yml`'s `critical.max` is inert; the `high` band carries the whole posture. Measured on CVE-2026-27820, tagged CRITICAL by Trivy, impact 0.7 in the HDF. |
 | 11 | `anchoregrype2hdf` caps impact at 0.5 | No grype finding can reach a high or critical band, whatever its real severity. Tracked as #1064. |
 
 ---

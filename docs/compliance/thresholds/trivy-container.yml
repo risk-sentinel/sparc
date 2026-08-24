@@ -35,9 +35,25 @@
 #
 # DO NOT raise this to accommodate a new finding. A third undispositioned high
 # means the band is being used to hide something. Close #1065 and set it to 0.
+# CAVEAT — SARIF cannot express "critical" (measured, not assumed).
+#
+# SARIF 2.1.0's `level` enum is error/warning/note only, so `trivy image
+# --format sarif` emits BOTH critical and high as `level: error`, and
+# `sarif2hdf` maps every one of them to impact 0.7 — the HIGH bucket. Verified
+# on the real artifact: CVE-2026-27820 is tagged CRITICAL by Trivy and arrives
+# in the HDF at impact 0.7, identical to the three highs beside it.
+#
+# So `critical.max` below can never fire on this scanner, and everything lands
+# in `high`. That is not a hole: the scan is `--severity CRITICAL,HIGH`, so any
+# NEW finding of either severity pushes the count past the baseline and fails
+# the gate. What is lost is the ability to hold criticals to a tighter band than
+# highs — one bucket, one number.
+#
+# `critical.max: 0` is kept because it costs nothing and would start working if
+# the conversion ever preserved severity. Do not read it as active policy.
 failed:
   critical:
-    max: 0
+    max: 0   # inert on this scanner — see the CAVEAT above
   high:
     max: 2   # BASELINE — resolv + uri, undispositioned. Target 0 via #1065.
 error:
