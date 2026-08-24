@@ -64,29 +64,26 @@ SPARC_SMOKE_PUBLIC_CATALOGS=0 uv run pytest --browser chromium
 # flip SPARC_PUBLIC_CATALOGS in .env, then:
 docker compose -f docker-compose.ubi9.yaml up -d --force-recreate web
 
-# PURGE DANGLING BLOBS AGAIN — see the warning below
-docker exec sparc-ubi9-web-1 bin/rails runner '
-  ids = []
-  ActiveStorage::Attachment.includes(:blob).find_each do |a|
-    b = a.blob; next if b.nil?
-    ok = (ActiveStorage::Blob.service.exist?(b.key) rescue false)
-    ids << a.id unless ok
-  end
-  ActiveStorage::Attachment.where(id: ids).find_each { |a| a.purge rescue a.destroy }
-  puts "purged #{ids.size}"'
-
 # ceremony 2 — published
 SPARC_SMOKE_PUBLIC_CATALOGS=1 uv run pytest --browser chromium
 ```
 
-> **A recreate destroys local ActiveStorage blobs.** This stack runs
+> **A recreate still destroys local ActiveStorage blobs** — this stack runs
 > `SPARC_ALLOW_LOCAL_STORAGE=true` with no persistent volume, so
 > `--force-recreate` wipes the files while the `active_storage_attachments`
-> rows survive. Every attachment then dangles, the admin avatar 404s on every
-> authenticated page, and one missing subresource fails every navigation and
-> collection test. Measured: **123 failures / 328 × HTTP 404**, twice, from
-> exactly this cause. It looks like a broad regression and is nothing of the
-> kind — purge after EVERY recreate, not once at the start.
+> rows survive. **You no longer have to purge them (#1056).**
+>
+> SPARC used to render an `<img>` for a dangling attachment, so the admin
+> avatar 404'd on every authenticated page and one missing subresource failed
+> every navigation and collection test — measured at **123 failures / 328 ×
+> HTTP 404** twice, and **130 / 521** a third time. It read as a broad
+> regression and was nothing of the kind.
+>
+> `safe_avatar_tag` now checks the storage service and falls back to initials,
+> so a missing file renders initials instead of a broken image. The suite runs
+> **through** that state rather than needing the data hand-repaired first. If
+> you see avatar 404s again, that is a real regression — do not purge to make
+> it go away.
 
 Report both numbers. A single total hides which posture was actually proven.
 
