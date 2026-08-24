@@ -154,7 +154,28 @@ the grant resolves by itself at that user's next sign-in.
 | `SPARC_OIDC_GRANTS_CLAIM` | `groups` | Which claim carries grants |
 | `SPARC_OIDC_GRANTS_PREFIX` | `sparc:` | Only values with this prefix are read |
 | `SPARC_OIDC_INSTANCE_ROLES` | *(empty)* | Instance roles the IdP may grant |
+| `SPARC_OIDC_SYNC_MAX_REVOKE_PCT` | `0` *(disabled)* | Optional ceiling on how much one `authoritative` sync may revoke |
+| `SPARC_SESSION_MAX_HOURS` | `8` | Absolute session lifetime, so a long-lived session cannot outlive its entitlements |
 | `SPARC_USER_INACTIVITY_DAYS` | `0` | Deactivate accounts idle this long. **This is offboarding** — a disabled IdP account cannot sign in |
+
+##### What keeps a misconfigured claim from stripping everyone
+
+Worth stating plainly, because the reflex is to reach for the percentage
+ceiling and it is not the thing protecting you:
+
+- **A missing grants claim is an error, not an empty grant list.** An IdP that
+  stops sending the claim fails the sync rather than revoking everything.
+- **Revocation is scoped to grants whose source is the IdP.** Anything granted
+  inside SPARC — by an admin, or by the bootstrap account — is never touched by
+  a sync, whatever the claim says.
+- `SPARC_OIDC_SYNC_MAX_REVOKE_PCT` sits on top of those two as a comfort ceiling
+  while you gain confidence in your claim configuration. It is **disabled by
+  default** on purpose: the model is meant to be deterministic — each sign-in
+  processes the grants, and anything absent is removed.
+
+Start at `bootstrap`, which performs the ADD leg only, and move to
+`authoritative` once the claim looks right. `off → bootstrap → authoritative` is
+an adoption ladder; `off → authoritative` is a cliff.
 
 ##### Offboarding
 

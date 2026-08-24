@@ -1,7 +1,17 @@
 # #860 — IdP as system of record for entitlements: design memo
 
-**Status: for owner review. No code until the five questions below are answered.**
-Bundle R, milestone v1.16.0, with #842 and #822.
+> **HISTORICAL — this shipped.** All five questions were answered by the owner and
+> Bundle R merged as [PR #1045](https://github.com/risk-sentinel/sparc/pull/1045),
+> released in **v1.16.0** (2026-08-24). The memo is kept because the reasoning
+> behind the decisions is still the best record of *why* the design is shaped
+> this way — not because anything here is outstanding.
+>
+> **For how to configure it, read the wiki:**
+> [Integrations → IdP-mediated entitlements](https://github.com/risk-sentinel/sparc/wiki/Integrations)
+> and `docs/ENVIRONMENT_VARIABLES.md`. Those are kept current; this is not.
+
+*Original status line, for the record:* **for owner review. No code until the
+five questions below are answered.** Bundle R, milestone v1.16.0, with #842 and #822.
 
 The epic (#860) sets the model; this memo answers its open questions against
 what the codebase actually is, and adds the Okta console procedure needed to

@@ -488,6 +488,38 @@ an Okta-specific configuration guide.
 | SPARC_OIDC_PROVIDER_TITLE | Display name shown on login button and tab | SSO | `Corporate Login (Okta)` | No |
 | SPARC_OIDC_FORCE_MFA | Enforce MFA via ACR/amr claim validation (if IdP supports it) | false | `true` | No |
 
+#### IdP-mediated entitlements (#860, v1.16.0)
+
+Shipped in v1.16.0 and previously undocumented here. These make the IdP the
+system of record for who holds what in SPARC: a grant claim maps to
+organizations, boundaries and roles, so an SSO user arrives provisioned rather
+than waiting on a manual grant.
+
+**`off` by default.** A deployment that upgrades and changes nothing behaves
+exactly as it did before.
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_OIDC_SYNC_MODE | `off` / `bootstrap` / `authoritative`. `bootstrap` performs the ADD leg only; `authoritative` also revokes what the claim no longer carries. `bootstrap` exists because `off → bootstrap → authoritative` is an adoption ladder and `off → authoritative` is a cliff | `off` | `authoritative` | No |
+| SPARC_OIDC_GRANTS_CLAIM | Which OIDC claim carries the grants | `groups` | `sparc_grants` | No |
+| SPARC_OIDC_GRANTS_PREFIX | Prefix that marks a directory group as a SPARC grant, so unrelated groups in the same claim are ignored | `sparc:` | `acme-sparc:` | No |
+| SPARC_OIDC_INSTANCE_ROLES | Allowlist of instance-wide roles the IdP may confer. An allowlist rather than a boolean: "manage instance roles from the IdP" and "let a directory group confer every instance-wide authority SPARC has" are different requests, and only the first was made | (empty) | `global_viewer,policy_manager` | No |
+| SPARC_OIDC_SYNC_MAX_REVOKE_PCT | Optional ceiling on how much a single `authoritative` sync may revoke. **Disabled (0) by default** — the model is deterministic: each sign-in processes the grants and anything absent is removed. Kept as an opt-in for an operator who wants a ceiling while gaining confidence in their claim configuration | `0` (disabled) | `25` | No |
+
+> **The protections that matter here cannot be tuned away.** A *missing* grants
+> claim is an error rather than an empty grant list — so a misconfigured IdP
+> cannot silently strip everyone — and revocation is scoped to grants whose
+> `source` is `idp`, so anything granted inside SPARC is never touched by a sync.
+> `SPARC_OIDC_SYNC_MAX_REVOKE_PCT` is a comfort ceiling on top of those, not the
+> thing keeping you safe.
+
+Offboarding is handled by inactivity rather than by a signal from the IdP: SPARC
+is never told when an account is disabled, but a disabled account cannot
+authenticate, so absence of sign-in covers a leaver, a revoked IdP account and a
+dormant local account in one mechanism. See `SPARC_SESSION_MAX_HOURS` for the
+absolute session lifetime that stops a long-lived session outliving its
+entitlements.
+
 ### LDAP
 
 | Variable | Description | Default | Example | Required? |
