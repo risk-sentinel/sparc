@@ -222,7 +222,7 @@ schema.oscal_mappings      # => { "status" => { "target" => "prop", ... } }
 
 ## 2. OSCAL Export & Validation
 
-SPARC provides full OSCAL v1.1.2 export in three formats (JSON, YAML, XML) for all document types, with schema validation against the official NIST JSON schemas and XSD schemas.
+SPARC provides full OSCAL export in three formats (JSON, YAML, XML) for all document types, with schema validation against the official NIST JSON and XSD schemas. **The version written and validated against is 1.2.2** as of v1.16.0; a document carrying its own `oscal-version` is validated against that one instead.
 
 ### Export Services
 
@@ -243,7 +243,7 @@ Each document type has a dedicated OSCAL export service:
 
 **File:** `app/services/oscal_ssp_export_service.rb`
 
-Builds a complete OSCAL v1.1.2 System Security Plan JSON document. The top-level structure includes:
+Builds a complete OSCAL System Security Plan JSON document (1.2.2 by default). The top-level structure includes:
 
 - **metadata** -- title, version, oscal-version, last-modified, roles, parties, revisions.
 - **import-profile** -- reference to the baseline profile.
@@ -288,7 +288,7 @@ Each document controller provides `download_yaml` and `download_xml` actions tha
 
 **File:** `app/services/oscal_schema_validation_service.rb`
 
-Validates OSCAL JSON against the official NIST v1.1.2 JSON schemas using the `json_schemer` gem (Draft 2020-12 support), and validates OSCAL XML against XSD schemas using `Nokogiri::XML::Schema`. Supports all eight OSCAL model types:
+Validates OSCAL JSON against the official NIST JSON schemas — 1.2.2 by default, and any of 1.1.1 through 1.2.2 on request — using the `json_schemer` gem (Draft 2020-12 support), and validates OSCAL XML against XSD schemas using `Nokogiri::XML::Schema`. Supports all eight OSCAL model types:
 
 ```ruby
 SCHEMA_MAP = {
@@ -315,7 +315,7 @@ Schema files are cached after first load. An internal `preprocess_schema` step r
 
 **Directory:** `lib/oscal_xsd_schemas/`
 
-XML exports are validated against NIST OSCAL v1.1.2 XSD schemas using `Nokogiri::XML::Schema`. Seven XSD schema files are stored locally:
+XML exports are validated against NIST OSCAL **v1.2.1** XSD schemas using `Nokogiri::XML::Schema` (the XSD set has not yet followed the JSON set to 1.2.2). Seven XSD schema files are stored locally:
 
 | Schema File | OSCAL Model |
 |---|---|

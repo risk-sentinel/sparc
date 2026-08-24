@@ -154,7 +154,28 @@ the grant resolves by itself at that user's next sign-in.
 | `SPARC_OIDC_GRANTS_CLAIM` | `groups` | Which claim carries grants |
 | `SPARC_OIDC_GRANTS_PREFIX` | `sparc:` | Only values with this prefix are read |
 | `SPARC_OIDC_INSTANCE_ROLES` | *(empty)* | Instance roles the IdP may grant |
+| `SPARC_SESSION_MAX_HOURS` | `8` | Absolute session lifetime, so a long-lived session cannot outlive its entitlements |
 | `SPARC_USER_INACTIVITY_DAYS` | `0` | Deactivate accounts idle this long. **This is offboarding** — a disabled IdP account cannot sign in |
+
+##### What keeps a misconfigured claim from stripping everyone
+
+Worth stating plainly, because the reflex is to reach for the percentage
+ceiling and it is not the thing protecting you:
+
+- **A missing grants claim is an error, not an empty grant list.** An IdP that
+  stops sending the claim fails the sync rather than revoking everything.
+- **Revocation is scoped to grants whose source is the IdP.** Anything granted
+  inside SPARC — by an admin, or by the bootstrap account — is never touched by
+  a sync, whatever the claim says.
+There is no third protection and no ceiling to tune. **The user gets what the
+IdP sends**: a grant that has appeared is gained, a grant that is gone is lost,
+every sign-in. That is deliberate — a threshold that silently declines to apply
+part of a sync leaves SPARC and the IdP disagreeing about who holds what, which
+is the state this feature exists to prevent.
+
+Start at `bootstrap`, which performs the ADD leg only, and move to
+`authoritative` once the claim looks right. `off → bootstrap → authoritative` is
+an adoption ladder; `off → authoritative` is a cliff.
 
 ##### Offboarding
 
@@ -242,7 +263,7 @@ container image published by this repo's CI:
 
 ### Standards Support
 
-- NIST OSCAL v1.1.2 schema compliance
+- NIST OSCAL schema compliance — **1.2.2** as of v1.16.0
 - 8 OSCAL model types supported: catalog, profile, component-definition, SSP, assessment-plan, assessment-results, POA&M, mapping
 
 ### Import Formats
