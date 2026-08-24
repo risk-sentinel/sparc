@@ -1,7 +1,7 @@
 <div class="card">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Create SAR from Existing SSP</h2>
-    <%= link_to "Back to Assessment Results", sar_documents_path, class: "btn btn-secondary" %>
+    <%= link_to "Back to Assessment Results", sar_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
   </div>
 
   <p class="text-body-secondary mb-4">
@@ -47,7 +47,7 @@
                   <%= f.text_field :sar_name, class: "form-control form-control-sm",
                         placeholder: "SAR from #{ssp.name}" %>
                 </div>
-                <%= f.submit "Create SAR", class: "btn btn-success btn-sm" %>
+                <%= f.submit "Create SAR", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
               <% end %>
             </div>
           </div>

@@ -49,7 +49,7 @@
             </span>
           <% end %>
           <% if signed_in? && !@cdef_document.aws_labs_source? %>
-            <button type="button" data-action="doc-meta#toggle" class="sparc-btn-header-edit">Edit</button>
+            <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
           <% end %>
         </div>
       </div>
@@ -75,7 +75,7 @@
             <%= button_to "Copy for editing",
                   copy_cdef_document_path(@cdef_document),
                   method: :post,
-                  class: "btn btn-primary btn-sm ms-3",
+                  class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm ms-3",
                   form: { class: "mb-0" } %>
           <% end %>
         </div>
@@ -89,8 +89,8 @@
                     class: "sparc-input-dark sparc-input-dark-lg" %>
               <%= f.text_field :cdef_version, value: @cdef_document.cdef_version, placeholder: "Version",
                     class: "sparc-input-dark sparc-input-dark-sm" %>
-              <%= f.submit "Save", class: "sparc-btn-save" %>
-              <button type="button" data-action="doc-meta#toggle" class="sparc-btn-cancel-dark">Cancel</button>
+              <%= f.submit "Save", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+              <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--neutral sparc-action--ghost">Cancel</button>
             </div>
           <% end %>
         </div>
@@ -114,22 +114,25 @@
             !@cdef_document.published_lifecycle? &&
             (current_user.admin? || current_user.has_permission?("cdef.write")) %>
         <%= link_to "Edit", edit_cdef_document_path(@cdef_document),
-              class: "sparc-btn-ghost", data: { testid: "edit-cdef" } %>
+              class: "sparc-action sparc-action--primary sparc-action--outline", data: { testid: "edit-cdef" } %>
       <% end %>
       <% if signed_in? %>
         <% if @cdef_document.published_lifecycle? %>
           <%= button_to "Create Editable Copy", copy_cdef_document_path(@cdef_document), method: :post,
-                class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Create an editable copy of this published component definition?" } } %>
+                class: "sparc-action sparc-action--positive sparc-action--solid", form: { data: { turbo_confirm: "Create an editable copy of this published component definition?" } } %>
         <% else %>
           <%= button_to "Copy", copy_cdef_document_path(@cdef_document), method: :post,
-                class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
+                class: "sparc-action sparc-action--info sparc-action--outline", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
         <% end %>
       <% end %>
       <%# #499 slice 5 — bulk-apply Converter (editable clones only). %>
       <% if signed_in? && !@cdef_document.aws_labs_source? &&
             (current_user.admin? || current_user.has_permission?("converters.write")) %>
+        <%# `update`, not `overwrite`: bulk_apply_preview stands between this and
+            any change, so it applies reviewed edits rather than replacing rows
+            unseen. The verb is mid-label, which is why the sweep missed it. %>
         <%= link_to "Bulk Apply Converter", bulk_apply_cdef_document_path(@cdef_document),
-              class: "sparc-btn-ghost" %>
+              class: "sparc-action sparc-action--primary sparc-action--solid" %>
       <% end %>
       <% if signed_in? && @cdef_document.draft? %>
         <%= render "shared/publish_button", document: @cdef_document,
@@ -144,7 +147,7 @@
             fallback_json_path: download_oscal_unvalidated_cdef_document_path(@cdef_document),
             document_type: "Component Definition" %>
       <%= link_to "&#8592; Back".html_safe, cdef_documents_path,
-            class: "sparc-btn-ghost-muted" %>
+            class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   </div>
 
@@ -271,7 +274,7 @@
       <% if signed_in? %>
         <%= link_to "Populate from Profile",
               select_profile_source_cdef_document_path(@cdef_document),
-              class: "btn btn-success" %>
+              class: "sparc-action sparc-action--primary sparc-action--solid" %>
       <% end %>
     </div>
   </div>
@@ -415,8 +418,8 @@
                           <input type="text" id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-control form-control-sm" value="<%= field.field_value %>" style="font-size: 0.82rem;">
                         <% end %>
                         <div class="mt-1 d-flex gap-1">
-                          <button type="button" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" data-action="cdef-control#saveField" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Save</button>
-                          <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" data-action="cdef-control#toggleFieldEdit" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Cancel</button>
+                          <button type="button" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" data-action="cdef-control#saveField" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Save</button>
+                          <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" data-action="cdef-control#toggleFieldEdit" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Cancel</button>
                         </div>
                       </div>
                     <% end %>
@@ -470,12 +473,12 @@
                     <input type="text" id="ref-media-<%= control.control_id %>" class="form-control form-control-sm" placeholder="application/pdf">
                   </div>
                   <div class="col-md-4 d-flex gap-1">
-                    <button type="button" class="btn btn-sm btn-success" data-action="cdef-control#create" data-cdef-control-control-id-param="<%= control.control_id %>">Create & Link</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-action="cdef-control#toggleAddRef" data-cdef-control-id-param="<%= control.control_id %>">Cancel</button>
+                    <button type="button" class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" data-action="cdef-control#create" data-cdef-control-control-id-param="<%= control.control_id %>">Create & Link</button>
+                    <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="cdef-control#toggleAddRef" data-cdef-control-id-param="<%= control.control_id %>">Cancel</button>
                   </div>
                 </div>
               </div>
-              <button type="button" class="btn btn-sm btn-outline-primary" id="add-ref-btn-<%= control.control_id %>" data-action="cdef-control#toggleAddRef" data-cdef-control-id-param="<%= control.control_id %>" style="font-size: 0.75rem;">
+              <button type="button" class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" id="add-ref-btn-<%= control.control_id %>" data-action="cdef-control#toggleAddRef" data-cdef-control-id-param="<%= control.control_id %>" style="font-size: 0.75rem;">
                 + Add Reference
               </button>
             <% end %>
@@ -520,8 +523,8 @@
         </div>
 
         <div class="d-flex gap-2">
-          <%= f.submit "Save Statement", class: "btn btn-success" %>
-          <%= link_to "Cancel", cdef_document_path(@cdef_document), class: "btn btn-secondary" %>
+          <%= f.submit "Save Statement", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+          <%= link_to "Cancel", cdef_document_path(@cdef_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
         </div>
       <% end %>
     </div>
@@ -558,7 +561,7 @@
               scope:     @cdef_document.globally_available? ? "global" : "boundary" %>
         <%# The picker submits under cdef_document[...]; this action reads the
             flat names, so mirror them across. %>
-        <button type="submit" class="btn btn-primary btn-sm">Update Scope</button>
+        <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm">Update Scope</button>
       <% end %>
     </div>
   </div>

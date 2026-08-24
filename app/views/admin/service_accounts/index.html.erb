@@ -19,7 +19,7 @@
   <%= form_tag admin_service_accounts_path, method: :get, class: "mb-4" do %>
     <div class="input-group" style="max-width: 400px;">
       <%= text_field_tag :q, params[:q], class: "form-control", placeholder: "Search by name or email..." %>
-      <button type="submit" class="btn btn-outline-secondary">Search</button>
+      <button type="submit" class="sparc-action sparc-action--neutral sparc-action--ghost">Search</button>
     </div>
   <% end %>
 
@@ -73,7 +73,7 @@
                 <% end %>
               </td>
               <td>
-                <%= link_to "View", admin_service_account_path(sa), class: "btn btn-sm btn-primary" %>
+                <%= link_to "View", admin_service_account_path(sa), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
               </td>
             </tr>
           <% end %>

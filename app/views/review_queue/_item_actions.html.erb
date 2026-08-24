@@ -18,11 +18,11 @@
   <span class="small text-body-secondary">No actions available</span>
 <% else %>
 <div class="d-flex flex-wrap gap-1 align-items-center">
-  <%= button_to "Approve", approve_path, method: :post, class: "btn btn-success btn-sm",
+  <%= button_to "Approve", approve_path, method: :post, class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm",
         form: { data: { turbo_confirm: "Approve '#{doc.name}'?" }, style: "display:inline;" } %>
   <%= form_with url: reject_path, method: :post, class: "d-inline" do |f| %>
     <%= f.text_field :reason, placeholder: "Reason", class: "form-control form-control-sm d-inline-block", style: "width: 11rem;", required: true %>
-    <%= f.submit "Reject", class: "btn btn-danger btn-sm" %>
+    <%= f.submit "Reject", class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm" %>
   <% end %>
 </div>
 <% end %>

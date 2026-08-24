@@ -11,7 +11,11 @@
        data-publish-modal-csrf-token-value="<%= form_authenticity_token %>"
        style="display: inline;">
 
-    <button type="button" class="btn btn-warning btn-sm fw-semibold"
+    <%# No size modifier: this button is dropped into a caller's row and must
+        match its neighbours. Baking --sm into a shared partial made Publish
+        visibly smaller than the buttons beside it. The modal's own buttons
+        below keep --sm, which is right for a dialog footer. %>
+    <button type="button" class="sparc-action sparc-action--positive sparc-action--solid fw-semibold"
             data-action="click->publish-modal#open">
       Publish
     </button>
@@ -93,8 +97,8 @@
           Full Metadata Editor ↓
         </a>
         <div class="d-flex gap-2">
-          <button type="button" class="btn btn-sm btn-secondary" data-action="click->publish-modal#close">Cancel</button>
-          <button type="button" class="btn btn-sm btn-warning fw-semibold"
+          <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="click->publish-modal#close">Cancel</button>
+          <button type="button" class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm fw-semibold"
                   data-publish-modal-target="publishBtn"
                   data-action="click->publish-modal#confirmPublish">
             Confirm & Publish

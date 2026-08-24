@@ -7,6 +7,13 @@ Rails.application.routes.draw do
   # control ids contain dots (1478 of 2447 distinct ids), and Rails would
   # otherwise read `/controls/ac-19.4.b.1` as id `ac-19.4.b` with format `1`,
   # silently resolving the PARENT control.
+  # #716 — the bulk editable-field import pair (preview -> confirm). Four
+  # document types draw an identical pair of paths; naming them once means a
+  # change to the route shape cannot reach three of them and quietly miss the
+  # fourth. The `to:` differs per type and stays inline.
+  field_import_preview = "fields/import/preview"
+  field_import_confirm = "fields/import/confirm"
+
   control_member       = "controls/:id"
   control_member_opts  = { constraints: { id: /[^\/]+/ }, format: false }
 
@@ -534,7 +541,18 @@ Rails.application.routes.draw do
   # ── Authoritative back-matter library (#372) ───────────────────────────
   # #646 — any authenticated user can add a source (org/boundary-scoped by
   # default; instance-wide via the existing promotion approval).
-  resources :authoritative_sources, only: %i[index show new create]
+  # #1039 — full lifecycle. `destroy` ARCHIVES rather than deleting: these are
+  # back-matter resources that participate in federation
+  # (federated_from_instance, original_uuid) and promotion, so a hard delete
+  # strands a federated copy on a peer. `restore` is the way back, and it has to
+  # be reachable or archive is a one-way door with extra steps.
+  resources :authoritative_sources, only: %i[index show new create edit update destroy] do
+    member do
+      post :restore
+      post :link_control
+      delete :unlink_control
+    end
+  end
 
   resources :promotion_queue, only: %i[index] do
     member do
@@ -584,8 +602,8 @@ Rails.application.routes.draw do
           # #628 — populate an existing empty SSP from a published profile.
           post :populate_from_profile
           # #716 — bulk editable-field file import (preview → confirm).
-          post "fields/import/preview", to: "ssp_documents#import_fields_preview", as: :import_fields_preview
-          post "fields/import/confirm", to: "ssp_documents#import_fields_confirm", as: :import_fields_confirm
+          post field_import_preview, to: "ssp_documents#import_fields_preview", as: :import_fields_preview
+          post field_import_confirm, to: "ssp_documents#import_fields_confirm", as: :import_fields_confirm
         end
       end
 
@@ -597,8 +615,8 @@ Rails.application.routes.draw do
           put :update_fields
           get :export
           # #716 — bulk editable-field file import (preview → confirm).
-          post "fields/import/preview", to: "sar_documents#import_fields_preview", as: :import_fields_preview
-          post "fields/import/confirm", to: "sar_documents#import_fields_confirm", as: :import_fields_confirm
+          post field_import_preview, to: "sar_documents#import_fields_preview", as: :import_fields_preview
+          post field_import_confirm, to: "sar_documents#import_fields_confirm", as: :import_fields_confirm
         end
       end
 
@@ -613,8 +631,8 @@ Rails.application.routes.draw do
         end
         member do
           # #716 — bulk editable-field file import (preview → confirm).
-          post "fields/import/preview", to: "sap_documents#import_fields_preview", as: :import_fields_preview
-          post "fields/import/confirm", to: "sap_documents#import_fields_confirm", as: :import_fields_confirm
+          post field_import_preview, to: "sap_documents#import_fields_preview", as: :import_fields_preview
+          post field_import_confirm, to: "sap_documents#import_fields_confirm", as: :import_fields_confirm
           # #1026 — field import above WRITES control fields and, until this
           # route existed, nothing in the API read them back: `show` reports
           # `controls_count` and carries no `controls`. SSP and SAR have had
@@ -788,8 +806,8 @@ Rails.application.routes.draw do
           post :approve, to: "cdef_documents#approve"
           post :reject, to: "cdef_documents#reject"
           # #716 — bulk editable-field file import (preview → confirm).
-          post "fields/import/preview", to: "cdef_documents#import_fields_preview", as: :import_fields_preview
-          post "fields/import/confirm", to: "cdef_documents#import_fields_confirm", as: :import_fields_confirm
+          post field_import_preview, to: "cdef_documents#import_fields_preview", as: :import_fields_preview
+          post field_import_confirm, to: "cdef_documents#import_fields_confirm", as: :import_fields_confirm
           # #1026 — as for SAP: the field import above WRITES control fields
           # and nothing in the API read them back, so a caller could bulk-modify
           # a component definition's implementations with no way to confirm
@@ -829,9 +847,25 @@ Rails.application.routes.draw do
       # Federation: signed bundle export/import for cross-instance
       # authoritative source sharing (#372). The peer is identified by name
       # via the `peer` query/body param.
-      resource :authoritative_sources, only: [ :create ], controller: "authoritative_sources" do
-        get  :export,  on: :collection
-        post :import,  on: :collection
+      # #1039 — was a SINGULAR `resource`, which is the mechanical reason this
+      # path had no index and no show: Rails does not generate them for a
+      # singular resource. Now plural with full CRUD, so the API matches every
+      # other resource in the system rather than being create-only.
+      #
+      # DELETE archives rather than deleting, for the same federation reason as
+      # the web path, and returns the archived record instead of a bare 204 so a
+      # client can tell what happened. A DELETE that does not delete is exactly
+      # the contract surprise the #995 sweep exists to catch, so it is
+      # documented on the endpoint page.
+      resources :authoritative_sources, only: [ :index, :show, :create, :update, :destroy ],
+                                        controller: "authoritative_sources" do
+        member do
+          post :restore
+        end
+        collection do
+          get  :export
+          post :import
+        end
       end
 
       resources :federation_peers, only: [ :index, :show, :create, :update, :destroy ] do

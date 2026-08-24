@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_22_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_23_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -183,6 +183,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_22_160000) do
     t.bigint "promoted_from_authorization_boundary_id"
     t.bigint "promoted_from_organization_id"
     t.string "promotion_status", default: "none", null: false
+    t.string "provided_by_contact"
+    t.string "provided_by_team"
     t.text "rejection_reason"
     t.string "rel", default: "reference", null: false
     t.jsonb "resource_data", default: {}, null: false

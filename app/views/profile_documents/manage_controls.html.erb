@@ -11,7 +11,7 @@
         <strong><%= @profile_document.name %></strong> &mdash; Source: <%= @catalog.name %>
       </p>
     </div>
-    <%= link_to "Back to Profile", profile_document_path(@profile_document), class: "btn btn-secondary" %>
+    <%= link_to "Back to Profile", profile_document_path(@profile_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
   </div>
 
   <%= form_with url: update_controls_profile_document_path(@profile_document), method: :patch, local: true do |f| %>
@@ -30,10 +30,10 @@
         <span data-family-selector-target="selectedCount"><%= @existing_control_ids.size %></span> controls selected
       </span>
       <div class="d-flex gap-1 flex-wrap">
-        <button type="button" class="btn btn-sm btn-outline-primary" data-action="click->family-selector#selectAll">Select All</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="click->family-selector#deselectAll">Deselect All</button>
-        <button type="button" class="btn btn-sm btn-outline-info" data-action="click->family-selector#expandAll">Expand All</button>
-        <button type="button" class="btn btn-sm btn-outline-info" data-action="click->family-selector#collapseAll">Collapse All</button>
+        <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="click->family-selector#selectAll">Select All</button>
+        <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="click->family-selector#deselectAll">Deselect All</button>
+        <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="click->family-selector#expandAll">Expand All</button>
+        <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="click->family-selector#collapseAll">Collapse All</button>
       </div>
     </div>
 
@@ -83,8 +83,8 @@
     </div>
 
     <div class="mt-4 d-flex gap-2">
-      <%= f.submit "Update Controls", class: "btn btn-success btn-lg" %>
-      <%= link_to "Cancel", profile_document_path(@profile_document), class: "btn btn-secondary btn-lg" %>
+      <%= f.submit "Update Controls", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--lg" %>
+      <%= link_to "Cancel", profile_document_path(@profile_document), class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--lg" %>
     </div>
   <% end %>
 </div>

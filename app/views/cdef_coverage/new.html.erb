@@ -41,7 +41,7 @@
       <div class="d-flex gap-3 mt-3">
         <%= f.submit "Analyze coverage", class: "btn btn-success" %>
         <%= link_to "Cancel", (@boundary ? authorization_boundary_path(@boundary) : cdef_documents_path),
-              class: "btn btn-secondary" %>
+              class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
       </div>
     <% end %>
   </div>

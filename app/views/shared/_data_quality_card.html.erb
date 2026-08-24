@@ -35,7 +35,7 @@
           <span class="text-body-secondary small">Last checked: <%= Time.parse(last_validated).strftime("%b %d, %Y %H:%M") rescue last_validated %></span>
         <% end %>
         <%= button_to "Re-validate", revalidate_path, method: :patch,
-            class: "btn btn-sm btn-outline-secondary",
+            class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
             data: { turbo_confirm: "Re-run quality validation on this catalog?" },
             form: { style: "display: inline;" } %>
       </div>

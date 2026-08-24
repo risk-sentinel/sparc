@@ -10,9 +10,9 @@
 <% size = local_assigns.fetch(:compact, false) ? "padding: 0.2rem 0.5rem; font-size: 0.75rem;" : "padding: 0.25rem 0.6rem; font-size: 0.78rem;" %>
 
 <div class="d-flex flex-wrap gap-1 align-items-center">
-  <%= link_to "View", sar_document_path(doc), class: "btn btn-primary btn-sm", style: size %>
+  <%= link_to "View", sar_document_path(doc), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm", style: size %>
   <% unless doc.enriched? %>
-    <%= link_to "Enrich", enrich_sar_document_path(doc), class: "sparc-btn-enrich-sm" %>
+    <%= link_to "Enrich", enrich_sar_document_path(doc), class: "sparc-action sparc-action--info sparc-action--outline" %>
   <% end %>
   <% if doc.completed? %>
     <%# #451 A1: shared partial routes dropdown clicks through the
@@ -29,7 +29,7 @@
           document_type: "SAR" %>
   <% end %>
   <%= button_to "Delete", sar_document_path(doc), method: :delete,
-        class: "btn btn-danger btn-sm",
+        class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
         style: size,
         form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." }, style: "display: inline;" } %>
 </div>

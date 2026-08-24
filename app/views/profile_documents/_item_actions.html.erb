@@ -8,12 +8,12 @@
 <% doc = local_assigns[:doc] %>
 
 <div class="d-flex flex-wrap gap-1 align-items-center">
-  <%= link_to "View", profile_document_path(doc), class: "btn btn-primary btn-sm", style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;" %>
+  <%= link_to "View", profile_document_path(doc), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm", style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;" %>
   <% if signed_in? && doc.completed? %>
     <%# btn-primary (#1f6fa5) gives white-on-button 5.78:1 — AA-compliant.
         The old inline #2980b9 was ~4.3:1 and failed WCAG AA (#668). %>
     <%= button_to "Copy", copy_profile_document_path(doc), method: :post,
-          class: "btn btn-sm btn-primary", style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
+          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm", style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
           form: { data: { turbo_confirm: "Duplicate this profile?" }, style: "display: inline;" } %>
   <% end %>
   <% if doc.completed? %>
@@ -29,7 +29,7 @@
   <% end %>
   <% if signed_in? %>
     <%= button_to "Delete", profile_document_path(doc), method: :delete,
-          class: "btn btn-danger btn-sm",
+          class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
           style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
           form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." }, style: "display: inline;" } %>
   <% end %>

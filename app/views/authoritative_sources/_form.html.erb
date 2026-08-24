@@ -1,0 +1,109 @@
+<%# The FORM only — shared by new and edit (#1039). One definition so the two
+    screens cannot drift; the fields previously existed only on `new`, and an
+    `edit` that reimplemented them would be a second copy to keep in step.
+    The page supplies its own heading and card. Locals: form_url, form_method,
+    submit_label. %>
+<% if @resource.errors.any? %>
+  <div class="alert alert-danger">
+    <ul class="mb-0">
+      <% @resource.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: @resource, url: form_url, method: form_method, local: true do |f| %>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <%= f.label :title, class: "form-label fw-semibold" %>
+      <span class="text-danger">*</span>
+      <%= f.text_field :title, class: "form-control", required: true,
+            placeholder: "e.g. Organizational Access Control Policy" %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :href, "URL / Href", class: "form-label fw-semibold" %>
+      <%= f.text_field :href, class: "form-control", placeholder: "https://..." %>
+    </div>
+
+    <div class="col-12">
+      <%= f.label :description, class: "form-label fw-semibold" %>
+      <%= f.text_area :description, class: "form-control", rows: 2,
+            placeholder: "Short description of what this reference is." %>
+    </div>
+
+    <div class="col-md-4">
+      <%= f.label :rel, "Relationship", class: "form-label fw-semibold" %>
+      <%= f.select :rel,
+            options_for_select(BackMatterResource::REL_VALUES.map { |r| [ r, r ] }, "reference"),
+            {}, class: "form-select" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :media_type, class: "form-label fw-semibold" %>
+      <%= f.select :media_type, BackMatterResource::MEDIA_TYPE_OPTIONS,
+            { include_blank: "— select —" }, class: "form-select" %>
+    </div>
+  </div>
+
+  <hr class="my-4">
+
+  <%# ── Provided by (#1039) ────────────────────────────────────────────
+      "Who gave us this, and who do I ask about it" is an assessment
+      question, and for an inherited or leveraged source it is the
+      provenance that makes the reference trustworthy.
+
+      Free text rather than a `teams` table: the provider is very often an
+      external body — NIST, a CSP, another agency — that SPARC does not
+      otherwise model. `organizations.contact_person` was the alternative
+      and is worse, because every source from one organization would then
+      share a single contact.
+
+      The contact is deliberately NOT validated as an email: a phone number
+      is equally valid and an external provider's contact is frequently
+      neither. The expected shape is ghosted as placeholder text instead —
+      a hint, not a constraint. %>
+  <fieldset>
+    <legend class="h6 fw-semibold">Provided by</legend>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <%= f.label :organization_id, "Organization", class: "form-label fw-semibold" %>
+        <%= f.collection_select :organization_id, Organization.order(:name), :id, :name,
+              { include_blank: "— none —" }, class: "form-select" %>
+      </div>
+      <div class="col-md-4">
+        <%= f.label :provided_by_team, "Team", class: "form-label fw-semibold" %>
+        <%= f.text_field :provided_by_team, class: "form-control",
+              placeholder: "e.g. Platform Security Engineering" %>
+      </div>
+      <div class="col-md-4">
+        <%= f.label :provided_by_contact, "Contact", class: "form-label fw-semibold" %>
+        <%= f.text_field :provided_by_contact, class: "form-control",
+              placeholder: "e.g. soc@agency.gov or +1 555 0100" %>
+        <div class="form-text">Email or phone — whichever the provider actually answers on.</div>
+      </div>
+    </div>
+  </fieldset>
+
+  <hr class="my-4">
+
+  <%# ── Availability (#646) ── %>
+  <fieldset>
+    <legend class="form-label fw-semibold">Availability</legend>
+    <div class="form-check">
+      <%= check_box_tag :instance_wide, "1", false, class: "form-check-input", id: "instance_wide" %>
+      <%= label_tag :instance_wide, "Make available instance-wide (all organizations)", class: "form-check-label" %>
+    </div>
+    <div class="form-text">
+      Leave unchecked to limit this source to your organization/boundary.
+      Checking it requests instance-wide availability — applied immediately if
+      you have promotion authority (instance admin, policy manager, or an
+      authorizing-official role), otherwise submitted to the
+      <strong>promotion queue</strong> for approval.
+    </div>
+  </fieldset>
+
+  <div class="d-flex gap-2 mt-4">
+    <%= f.submit submit_label, class: "sparc-action sparc-action--positive sparc-action--solid" %>
+    <%= link_to "Cancel", authoritative_sources_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
+  </div>
+<% end %>

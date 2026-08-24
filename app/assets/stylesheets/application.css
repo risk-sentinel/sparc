@@ -91,13 +91,31 @@ body {
   margin-bottom: 2rem;
 }
 
-/* ── Gradient headers on show pages ────────────────────── */
+/* ── Gradient headers ────────────────────────────────────
+   NO negative horizontal margin. It used to bleed -1rem to cancel a parent's
+   padding, from a design where this sat flush on top of the card below it —
+   hence the top-only `border-radius` still below.
+
+   Every current usage contradicts that. All four (home/index,
+   shared/_section_summary, poam_documents/show, sap_documents/show) render it
+   as a STANDALONE rounded card with its own bottom margin and an inline
+   `border-radius` on all corners. So the bleed made this one card 12px wider
+   per side than every sibling card, running flush to the sidebar on the left
+   and to the window edge on the right — which is what read as "trimmed".
+
+   Measured on /control_catalogs at 1465px before the fix:
+       container  288 -> 1465
+       hero       288 -> 1465   (full bleed, no gutter either side)
+       first card 300 -> 1453   (inset by the container's 12px padding)
+
+   Aligning it with its siblings is the fix; matching the bleed to the gutter
+   only corrected a 4px overhang and left the 12px asymmetry in place. */
 .sparc-gradient-header {
   background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
   color: white;
   padding: 1.5rem 2rem;
   border-radius: 0.5rem 0.5rem 0 0;
-  margin: -1rem -1rem 1.5rem -1rem;
+  margin: 0 0 1.5rem;
 }
 
 /* Dark dashboard header (SSP/SAR show pages) */

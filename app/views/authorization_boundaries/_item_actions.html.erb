@@ -8,9 +8,9 @@
 <% authorization_boundary = local_assigns[:authorization_boundary] %>
 
 <div class="d-flex flex-wrap gap-1 align-items-center">
-  <%= link_to "View", authorization_boundary_path(authorization_boundary), class: "btn btn-primary btn-sm" %>
-  <%= link_to "Edit", edit_authorization_boundary_path(authorization_boundary), class: "btn btn-secondary btn-sm" %>
+  <%= link_to "View", authorization_boundary_path(authorization_boundary), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
+  <%= link_to "Edit", edit_authorization_boundary_path(authorization_boundary), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
   <%= button_to "Delete", authorization_boundary_path(authorization_boundary), method: :delete,
-        class: "btn btn-danger btn-sm",
+        class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
         form: { data: { turbo_confirm: "Delete '#{authorization_boundary.name}'? This cannot be undone." }, style: "display: inline;" } %>
 </div>

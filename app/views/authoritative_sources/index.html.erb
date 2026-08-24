@@ -12,7 +12,7 @@
       <div class="d-flex align-items-center gap-2">
         <span class="badge text-bg-secondary"><%= @total %> total</span>
         <%= link_to "+ Add source", new_authoritative_source_path,
-                    class: "btn btn-primary btn-sm text-nowrap" %>
+                    class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm text-nowrap" %>
       </div>
     </div>
 
@@ -46,7 +46,7 @@
           drops the search — one control instead of two that did nearly the
           same thing. text-nowrap stops "Filter" wrapping at narrow widths. %>
       <div class="col-md-2 d-flex gap-2">
-        <%= f.submit "Filter", class: "btn btn-primary flex-fill text-nowrap" %>
+        <%= f.submit "Filter", class: "sparc-action sparc-action--neutral sparc-action--ghost flex-fill text-nowrap" %>
       </div>
     <% end %>
 

@@ -123,6 +123,14 @@ class BackMatterResource < ApplicationRecord
     where(organization_id: org_id).or(where(globally_available: true))
   }
   scope :pending_promotion, -> { where(promotion_status: "pending_review") }
+  # The control types a back-matter resource may be linked to. Defined ONCE:
+  # this list was inline in Api::V1::BackMatterResourcesController#link, and a
+  # second copy in the web controller would have been the third place the same
+  # value lived. #1039.
+  LINKABLE_CONTROL_TYPES = %w[
+    CatalogControl CdefControl ProfileControl SspControl SarControl SapControl
+  ].freeze
+
   scope :active,   -> { where(archived_at: nil) }
   scope :archived, -> { where.not(archived_at: nil) }
   scope :federated, -> { where.not(federated_from_instance: nil) }
@@ -160,6 +168,16 @@ class BackMatterResource < ApplicationRecord
     resource["remarks"] = remarks if remarks.present?
 
     resource
+  end
+
+  # `/authoritative_sources/2500/edit` told a reader nothing; every sibling
+  # surface in the app puts a human-readable token in the path. This is the
+  # `id-slug` form, so `find` still resolves it — "2500-nist-sp-800-53".to_i
+  # is 2500 — and nothing that looks the record up has to change. The API keeps
+  # emitting the numeric `id` in JSON; only the path segment gains the slug.
+  def to_param
+    slug = title.to_s.parameterize
+    slug.present? ? "#{id}-#{slug}" : id.to_s
   end
 
   private

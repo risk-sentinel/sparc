@@ -7,14 +7,14 @@
   </div>
   <div class="d-flex gap-2">
     <%= button_to "Aggregate into documents", triage_aggregate_authorization_boundary_path(@boundary),
-          method: :post, class: "btn btn-outline-primary btn-sm",
+          method: :post, class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm",
           form: { data: { turbo_confirm: "Aggregate current findings into this boundary's SSP, SAP, SAR and POA&M?" } } %>
     <%= link_to "Download Package", triage_package_authorization_boundary_path(@boundary),
-          class: "btn btn-outline-dark btn-sm", data: { turbo: false } %>
+          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm", data: { turbo: false } %>
     <%= link_to "Download Amendments", triage_amendments_authorization_boundary_path(@boundary),
-          class: "btn btn-outline-success btn-sm", data: { turbo: false } %>
+          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm", data: { turbo: false } %>
     <%= link_to "Back to Boundary", authorization_boundary_path(@boundary),
-          class: "btn btn-outline-primary btn-sm" %>
+          class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
   </div>
 </div>
 
@@ -50,7 +50,7 @@
                     class: "form-select form-select-sm" %>
             </div>
           </div>
-          <%= f.submit "Upload & Ingest", class: "btn btn-primary btn-sm" %>
+          <%= f.submit "Upload & Ingest", class: "sparc-action sparc-action--info sparc-action--solid sparc-action--sm" %>
           <span class="text-muted small ms-2">HDF results JSON or a saf-convert bundle.</span>
         <% end %>
       </div>
@@ -115,7 +115,7 @@
     <%= label_tag :include_history, "Include history", class: "form-check-label small" %>
   </div>
   <div class="col-auto">
-    <%= f.submit "Filter", class: "btn btn-outline-secondary btn-sm" %>
+    <%= f.submit "Filter", class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
   </div>
 <% end %>
 
@@ -160,12 +160,12 @@
                 <div class="mt-1">
                   <% if @can_approve && disp.approval_status == "draft" %>
                     <%= button_to "Approve", triage_approve_disposition_authorization_boundary_path(@boundary, disposition_uuid: disp.uuid),
-                          method: :post, class: "btn btn-success btn-sm py-0", form: { data: { turbo: false }, class: "d-inline" } %>
+                          method: :post, class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm py-0", form: { data: { turbo: false }, class: "d-inline" } %>
                     <%= button_to "Reject", triage_reject_disposition_authorization_boundary_path(@boundary, disposition_uuid: disp.uuid),
-                          method: :post, class: "btn btn-outline-danger btn-sm py-0", form: { data: { turbo: false }, class: "d-inline" } %>
+                          method: :post, class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm py-0", form: { data: { turbo: false }, class: "d-inline" } %>
                   <% end %>
                   <%= button_to "Clear", triage_clear_disposition_authorization_boundary_path(@boundary, control_id: finding.control_id),
-                        method: :delete, class: "btn btn-link btn-sm p-0 ms-1", data: { turbo: false } %>
+                        method: :delete, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm p-0 ms-1", data: { turbo: false } %>
                 </div>
               <% else %>
                 <span class="text-muted small">—</span>
@@ -204,7 +204,7 @@
                     <%= label_tag :expiration, "Expiration (waiver / operational)", class: "form-label small mb-0" %>
                     <%= date_field_tag :expiration, disp&.expiration&.to_date, class: "form-control form-control-sm" %>
                   </div>
-                  <%= f.submit "Save disposition", class: "btn btn-primary btn-sm" %>
+                  <%= f.submit "Save disposition", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
                 <% end %>
               </details>
             </td>

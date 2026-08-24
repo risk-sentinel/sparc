@@ -49,7 +49,7 @@
 
   <div class="d-flex justify-content-between mt-4">
     <%= link_to "Cancel", peer.persisted? ? federation_peer_path(peer) : federation_peers_path,
-                class: "btn btn-outline-secondary" %>
+                class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     <%= f.submit (peer.persisted? ? "Save" : "Create Peer"), class: "btn btn-primary" %>
   </div>
 <% end %>

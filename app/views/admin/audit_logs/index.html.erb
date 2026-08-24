@@ -3,7 +3,7 @@
   <div class="d-flex align-items-center gap-2">
     <span class="badge text-bg-secondary"><%= @pagy.count %> events</span>
     <%= link_to "Export CSV", admin_audit_logs_path(request.query_parameters.merge(format: :csv)),
-        class: "btn btn-sm btn-outline-success" %>
+        class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm" %>
   </div>
 </div>
 
@@ -56,10 +56,10 @@
       </div>
       <div class="row g-2 mt-1">
         <div class="col-md-2">
-          <button type="submit" class="btn btn-sm btn-primary w-100">Filter</button>
+          <button type="submit" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm w-100">Filter</button>
         </div>
         <div class="col-md-2">
-          <%= link_to "Clear", admin_audit_logs_path, class: "btn btn-sm btn-outline-secondary w-100" %>
+          <%= link_to "Clear", admin_audit_logs_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm w-100" %>
         </div>
       </div>
     <% end %>
@@ -114,7 +114,7 @@
             </td>
             <td class="small text-body-secondary"><%= event.ip_address || "&mdash;".html_safe %></td>
             <td>
-              <%= link_to "Details", admin_audit_log_path(event), class: "btn btn-sm btn-outline-primary" %>
+              <%= link_to "Details", admin_audit_log_path(event), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
             </td>
           </tr>
         <% end %>

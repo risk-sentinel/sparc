@@ -2,7 +2,7 @@
   <h1 class="h3 fw-bold mb-0">Authorization Boundary Administration</h1>
   <div class="d-flex align-items-center gap-2">
     <span class="badge text-bg-secondary"><%= @authorization_boundaries.count %> auth boundaries</span>
-    <%= link_to "New Auth Boundary", new_admin_authorization_boundary_path, class: "btn btn-sm btn-success fw-semibold" %>
+    <%= link_to "New Auth Boundary", new_admin_authorization_boundary_path, class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm fw-semibold" %>
   </div>
 </div>
 
@@ -41,7 +41,7 @@
             </td>
             <td><%= authorization_boundary.user_roles.count %></td>
             <td class="text-end">
-              <%= link_to "Manage", admin_authorization_boundary_path(authorization_boundary), class: "btn btn-sm btn-outline-primary" %>
+              <%= link_to "Manage", admin_authorization_boundary_path(authorization_boundary), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
             </td>
           </tr>
         <% end %>

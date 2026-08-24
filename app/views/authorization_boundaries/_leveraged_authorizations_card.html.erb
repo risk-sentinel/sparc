@@ -7,7 +7,7 @@
       <h4 class="mb-0">Leveraged Authorizations</h4>
       <%= link_to "Add Leveraged Authorization",
             new_authorization_boundary_leveraged_authorization_path(boundary),
-            class: "btn btn-success btn-sm" %>
+            class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
     </div>
 
     <% outgoing = boundary.leveraging_relationships.includes(:leveraged_boundary).to_a %>
@@ -48,13 +48,13 @@
                   <%= button_to "Resync",
                         populate_authorization_boundary_leveraged_authorization_path(boundary, la),
                         method: :post,
-                        class: "btn btn-outline-primary btn-sm",
+                        class: "sparc-action sparc-action--caution sparc-action--solid sparc-action--sm",
                         form: { style: "display: inline;" } %>
                 <% end %>
                 <%= button_to "Remove",
                       authorization_boundary_leveraged_authorization_path(boundary, la),
                       method: :delete,
-                      class: "btn btn-outline-danger btn-sm",
+                      class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
                       form: { data: { turbo_confirm: "Remove this leveraged authorization?" },
                               style: "display: inline;" } %>
               </td>

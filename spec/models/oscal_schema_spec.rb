@@ -213,8 +213,8 @@ RSpec.describe OscalSchema, type: :model do
         .to be_empty
     end
 
-    it "emits 1.1.2 by default, whatever it can validate against" do
-      expect(OscalSchema::DEFAULT_VERSION).to eq("1.1.2")
+    it "emits 1.2.2 by default, whatever it can validate against" do
+      expect(OscalSchema::DEFAULT_VERSION).to eq("1.2.2")
       expect(OscalSchema::SUPPORTED_VERSIONS).to include(OscalSchema::DEFAULT_VERSION)
     end
 

@@ -2,7 +2,7 @@
   <h1 class="h3 fw-bold mb-0">Organization Management</h1>
   <div class="d-flex align-items-center gap-2">
     <span class="badge text-bg-secondary"><%= @pagy.count %> organizations</span>
-    <%= link_to "New Organization", new_admin_organization_path, class: "btn btn-sm btn-success fw-semibold" %>
+    <%= link_to "New Organization", new_admin_organization_path, class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm fw-semibold" %>
   </div>
 </div>
 
@@ -24,10 +24,10 @@
         </select>
       </div>
       <div class="col-md-2">
-        <button type="submit" class="btn btn-sm btn-primary w-100">Search</button>
+        <button type="submit" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm w-100">Search</button>
       </div>
       <div class="col-md-2">
-        <%= link_to "Clear", admin_organizations_path, class: "btn btn-sm btn-outline-secondary w-100" %>
+        <%= link_to "Clear", admin_organizations_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm w-100" %>
       </div>
     <% end %>
   </div>
@@ -67,7 +67,7 @@
               <% end %>
             </td>
             <td class="text-end">
-              <%= link_to "Manage", admin_organization_path(org), class: "btn btn-sm btn-outline-primary" %>
+              <%= link_to "Manage", admin_organization_path(org), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
             </td>
           </tr>
         <% end %>

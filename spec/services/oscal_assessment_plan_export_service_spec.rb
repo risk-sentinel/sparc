@@ -50,7 +50,7 @@ RSpec.describe OscalAssessmentPlanExportService do
       expect(data).to have_key("assessment-plan")
       plan = data["assessment-plan"]
       expect(plan["metadata"]["title"]).to eq("FY26 Assessment Plan")
-      expect(plan["metadata"]["oscal-version"]).to eq("1.1.2")
+      expect(plan["metadata"]["oscal-version"]).to eq("1.2.2")
     end
 
     it "includes reviewed-controls with all control IDs" do

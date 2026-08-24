@@ -428,4 +428,13 @@ module ApplicationHelper
     end
     { top_level: top_level, nested: nested }
   end
+
+  # #1039 — one definition of "may this user change authoritative sources".
+  # The controller guards with the same pair; a view that reimplemented the
+  # check would be a second copy to keep in step, and the failure mode is a
+  # button that renders and then 302s.
+  def can_write_sources?
+    return false unless current_user
+    current_user.admin? || current_user.has_permission?("back_matter.write")
+  end
 end

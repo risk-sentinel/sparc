@@ -7,7 +7,7 @@
 <div class="card" style="overflow: hidden;">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Authorization Boundaries</h2>
-    <%= link_to "New Authorization Boundary", new_authorization_boundary_path, class: "btn btn-primary" %>
+    <%= link_to "New Authorization Boundary", new_authorization_boundary_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
   </div>
 
   <div data-controller="bulk-select">
@@ -21,7 +21,7 @@
   <% if can_bulk_delete? && @authorization_boundaries.any? %>
     <div class="mb-2" data-bulk-select-target="bar" hidden>
       <%= form_with url: bulk_destroy_authorization_boundaries_path, method: :delete, id: "abBulkForm" do %>
-        <button type="submit" class="btn btn-danger btn-sm" data-bulk-select-target="submit"
+        <button type="submit" class="sparc-action sparc-action--danger sparc-action--outline sparc-action--sm" data-bulk-select-target="submit"
                 data-turbo-confirm="Delete the selected authorization boundaries? This cannot be undone.">
           Delete (<span data-bulk-select-target="count">0</span> selected)
         </button>

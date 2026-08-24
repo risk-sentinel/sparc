@@ -130,8 +130,8 @@
     </div>
 
     <div class="d-flex gap-3">
-      <%= f.submit "Generate Assessment Plan", class: "btn btn-success" %>
-      <%= link_to "Cancel", sap_documents_path, class: "btn btn-secondary" %>
+      <%= f.submit "Generate Assessment Plan", class: "sparc-action sparc-action--info sparc-action--outline" %>
+      <%= link_to "Cancel", sap_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   <% end %>
 </div>
@@ -152,7 +152,7 @@
       hint: "Upload an OSCAL Assessment Plan in JSON, XML, or YAML format." %>
     <%= render "shared/boundary_picker", param_key: :sap_document %>
     <div class="d-flex gap-3">
-      <%= f.submit "Upload and Process", class: "btn btn-primary" %>
+      <%= f.submit "Upload and Process", class: "sparc-action sparc-action--info sparc-action--solid" %>
     </div>
   <% end %>
 </div>

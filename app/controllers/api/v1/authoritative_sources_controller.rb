@@ -22,6 +22,59 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
   # user may add a source (org/boundary-scoped by default).
   before_action :authorize_federate!, only: %i[export import]
   before_action :set_peer, only: %i[export import]
+  before_action :set_source, only: %i[show update destroy restore]
+  before_action :authorize_write!, only: %i[update destroy restore]
+
+  # GET /api/v1/authoritative_sources
+  #
+  # #1039 — this path had NO index and NO show, because it was declared as a
+  # SINGULAR `resource` and Rails does not generate them for one. Scoped the
+  # same way the web screen scopes: globally-available plus the caller's own
+  # organizations, everything for an instance admin.
+  def index
+    scope = visible_sources
+    scope = scope.where(archived_at: nil) unless ActiveModel::Type::Boolean.new.cast(params[:include_archived])
+    render json: { data: scope.order(:title).map { |r| serialize_back_matter_resource(r, detailed: true) } }
+  end
+
+  # GET /api/v1/authoritative_sources/:id
+  def show
+    render json: { data: serialize_back_matter_resource(@source, detailed: true) }
+  end
+
+  # PATCH /api/v1/authoritative_sources/:id
+  def update
+    if @source.update(update_params)
+      audit_log("authoritative_source_updated", subject: @source,
+                metadata: { title: @source.title })
+      render json: { data: serialize_back_matter_resource(@source, detailed: true) }
+    else
+      render json: { error: "Update failed", details: @source.errors.full_messages },
+             status: :unprocessable_entity
+    end
+  end
+
+  # DELETE /api/v1/authoritative_sources/:id
+  #
+  # ARCHIVES. These resources participate in federation and promotion, so a
+  # hard delete strands a federated copy on a peer. Returns the archived record
+  # rather than a bare 204 so a client can tell what actually happened — a
+  # DELETE that does not delete is the kind of contract surprise #995 exists to
+  # catch, and it is written on the endpoint page.
+  def destroy
+    @source.update!(archived_at: Time.current)
+    audit_log("authoritative_source_archived", subject: @source,
+              metadata: { title: @source.title })
+    render json: { data: serialize_back_matter_resource(@source, detailed: true), archived: true }
+  end
+
+  # POST /api/v1/authoritative_sources/:id/restore
+  def restore
+    @source.update!(archived_at: nil)
+    audit_log("authoritative_source_restored", subject: @source,
+              metadata: { title: @source.title })
+    render json: { data: serialize_back_matter_resource(@source, detailed: true), archived: false }
+  end
 
   # POST /api/v1/authoritative_sources
   #
@@ -77,7 +130,7 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
       render json: {
         data: {
           bundle_uuid: result.bundle_uuid,
-          imported:    result.imported.map { |r| serialize_back_matter_resource(r) },
+          imported:    result.imported.map { |r| serialize_back_matter_resource(r, detailed: true) },
           skipped:     result.skipped,
           errors:      result.errors
         }
@@ -89,12 +142,49 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
 
   private
 
+  def set_source
+    @source = BackMatterResource.find(params[:id])
+    return if current_user.admin?
+    return if @source.globally_available? ||
+              current_user.organizations.ids.include?(@source.organization_id)
+
+    raise NotAuthorizedError, "Not authorized for that authoritative source"
+  end
+
+  def visible_sources
+    return BackMatterResource.all if current_user.admin?
+
+    org_ids = current_user.organizations.ids
+    if org_ids.any?
+      BackMatterResource.where("globally_available = ? OR organization_id IN (?)", true, org_ids)
+    else
+      BackMatterResource.where(globally_available: true)
+    end
+  end
+
+  def authorize_write!
+    return if current_user.admin?
+    return if current_user.has_permission?("back_matter.write")
+
+    raise NotAuthorizedError, "Not authorized to change authoritative sources"
+  end
+
+  def update_params
+    permit_strictly(:back_matter_resource,
+      :title, :description, :href, :rel, :media_type,
+      :organization_id, :provided_by_team, :provided_by_contact)
+  end
+
   def create_params
     # #1021 — was `params.require(...)` and `.permit(...)` on separate lines, so
     # the #995 conversion's single-line pattern did not match it and this
     # endpoint kept dropping unrecognized fields in silence.
+    # The provenance pair (#1039) has to be accepted on create as well as
+    # update: the web form submits both on the very first save, and a strict
+    # allowlist that knows them only on `update` rejects the create outright.
     permit_strictly(:back_matter_resource,
-      :title, :description, :href, :rel, :media_type)
+      :title, :description, :href, :rel, :media_type,
+      :provided_by_team, :provided_by_contact)
   end
 
   def authorize_federate!

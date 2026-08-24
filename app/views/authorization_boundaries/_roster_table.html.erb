@@ -39,9 +39,9 @@
             <td>
               <% if p.source == :membership %>
                 <div class="d-flex gap-1">
-                  <%= link_to "Edit", edit_authorization_boundary_membership_path(boundary, p.membership), class: "btn btn-outline-secondary btn-sm" %>
+                  <%= link_to "Edit", edit_authorization_boundary_membership_path(boundary, p.membership), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
                   <%= button_to "Remove", authorization_boundary_membership_path(boundary, p.membership), method: :delete,
-                        class: "btn btn-outline-danger btn-sm",
+                        class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
                         form: { data: { turbo_confirm: "Remove this member? This cannot be undone." }, style: "display: inline;" } %>
                 </div>
               <% else %>

@@ -63,7 +63,7 @@
                 </td>
                 <% if is_draft && signed_in? %>
                   <td class="text-nowrap">
-                    <button class="btn btn-sm btn-outline-primary"
+                    <button class="sparc-action sparc-action--primary sparc-action--outline sparc-action--sm"
                             type="button"
                             data-action="oscal-back-matter#toggleEdit"
                             data-oscal-back-matter-resource-id-param="<%= resource.id %>"
@@ -73,7 +73,7 @@
                     <%= button_to "Delete",
                           [document, resource],
                           method: :delete,
-                          class: "btn btn-sm btn-outline-danger",
+                          class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
                           data: { turbo_confirm: "Remove back-matter resource \"#{resource.title}\"?" } %>
                   </td>
                 <% end %>
@@ -99,8 +99,8 @@
                         <%= f.text_field :media_type, class: "form-control form-control-sm", placeholder: "application/pdf" %>
                       </div>
                       <div class="col-md-3">
-                        <%= f.submit "Save", class: "btn btn-sm btn-primary" %>
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                        <%= f.submit "Save", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
+                        <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm"
                                 data-action="oscal-back-matter#toggleEdit"
                                 data-oscal-back-matter-resource-id-param="<%= resource.id %>">
                           Cancel
@@ -219,7 +219,7 @@
               </label>
             </div>
             <div>
-              <%= f.submit "Add Resource", class: "btn btn-sm btn-success" %>
+              <%= f.submit "Add Resource", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
             </div>
           </div>
         <% end %>

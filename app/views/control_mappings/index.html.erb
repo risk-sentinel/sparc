@@ -9,7 +9,7 @@
     <h2>Control Mappings</h2>
     <% if can_write_mappings? %>
       <div class="d-flex gap-2">
-        <%= link_to "New Mapping", new_control_mapping_path, class: "btn btn-primary" %>
+        <%= link_to "New Mapping", new_control_mapping_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
       </div>
     <% end %>
   </div>
@@ -84,7 +84,7 @@
     <div class="text-center text-body-secondary p-4">
       <p>No control mappings found.</p>
       <% if can_write_mappings? %>
-        <%= link_to "Create your first mapping", new_control_mapping_path, class: "btn btn-success" %>
+        <%= link_to "Create your first mapping", new_control_mapping_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
       <% end %>
     </div>
   <% end %>

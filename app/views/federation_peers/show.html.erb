@@ -7,11 +7,11 @@
       </div>
       <div class="d-flex gap-2">
         <%= button_to "Pull now", sync_federation_peer_path(@peer), method: :post,
-                      class: "btn btn-primary",
+                      class: "sparc-action sparc-action--info sparc-action--outline",
                       form: { style: "display:inline-block;" } %>
-        <%= link_to "Edit", edit_federation_peer_path(@peer), class: "btn btn-outline-secondary" %>
+        <%= link_to "Edit", edit_federation_peer_path(@peer), class: "sparc-action sparc-action--primary sparc-action--outline" %>
         <%= button_to "Delete", federation_peer_path(@peer), method: :delete,
-                      class: "btn btn-outline-danger",
+                      class: "sparc-action sparc-action--danger sparc-action--outline",
                       form: { style: "display:inline-block;",
                               data: { turbo_confirm: "Remove peer #{@peer.name}? Imported resources are kept." } } %>
       </div>

@@ -229,7 +229,11 @@ RSpec.describe "CdefDocuments collection view", type: :request do
       it "clears only the search, leaving the surrounding filters in place" do
         get cdef_documents_path(q: "iam", partition: "aws-us-gov")
 
-        clear = response.body[/<a[^>]*class="btn btn-outline-secondary"[^>]*>\s*Clear\s*<\/a>/m].to_s
+        # Located by its LABEL, not its class. This previously matched
+        # `class="btn btn-outline-secondary"` verbatim, which coupled a claim
+        # about query-string handling to a presentational class — so the #950
+        # button sweep broke it while the behaviour it asserts was untouched.
+        clear = response.body[/<a[^>]*>\s*Clear\s*<\/a>/m].to_s
         expect(clear).to include("partition=aws-us-gov")
         expect(clear).not_to include("q=iam")
       end

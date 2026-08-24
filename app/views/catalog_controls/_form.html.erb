@@ -162,8 +162,8 @@
 
   <%# ── Submit ── %>
   <div class="d-flex gap-3" style="margin-top: 0.5rem;">
-    <%= f.submit "Save Control", class: "btn btn-success" %>
-    <%= link_to "Cancel", control_family, class: "btn btn-secondary" %>
+    <%= f.submit "Save Control", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+    <%= link_to "Cancel", control_family, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
   </div>
 <% end %>
 
@@ -202,7 +202,7 @@
                     <%= button_to "Unlink",
                           catalog_control_control_back_matter_link_path(catalog_control, link_record),
                           method: :delete,
-                          class: "btn btn-sm btn-outline-danger",
+                          class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
                           data: { turbo_confirm: "Unlink \"#{resource.title}\"?" } %>
                   <% end %>
                 </td>
@@ -225,7 +225,7 @@
                 <% end %>
               </select>
             </div>
-            <button type="submit" class="btn btn-sm btn-outline-primary">Link</button>
+            <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm">Link</button>
           <% end %>
         </div>
       <% end %>

@@ -7,7 +7,7 @@
           <%= pluralize(@runs.size, "saved analysis", plural: "saved analyses") %>
         </p>
       </div>
-      <%= link_to "New analysis", new_cdef_coverage_path, class: "btn btn-success" %>
+      <%= link_to "New analysis", new_cdef_coverage_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
     </div>
 
     <% if @runs.any? %>

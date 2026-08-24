@@ -7,11 +7,11 @@
 <% converter = local_assigns[:converter] %>
 
 <div class="d-flex flex-wrap gap-1 align-items-center">
-  <%= link_to "View", converter_path(converter), class: "btn btn-primary btn-sm",
+  <%= link_to "View", converter_path(converter), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm",
         style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;" %>
   <% if can_write_converters? %>
     <%= button_to "Delete", converter_path(converter), method: :delete,
-          class: "btn btn-danger btn-sm",
+          class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
           style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
           form: { data: { turbo_confirm: "Delete converter '#{converter.name}'?" }, style: "display: inline;" } %>
   <% end %>

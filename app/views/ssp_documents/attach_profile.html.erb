@@ -1,7 +1,7 @@
 <div class="card">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Populate "<%= @ssp_document.name %>" from a Published Profile</h2>
-    <%= link_to "Back to System Security Plan", ssp_document_path(@ssp_document), class: "btn btn-secondary" %>
+    <%= link_to "Back to System Security Plan", ssp_document_path(@ssp_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
   </div>
 
   <p class="text-body-secondary mb-4">
@@ -43,7 +43,7 @@
 
               <%= form_with url: populate_from_profile_ssp_document_path(@ssp_document), method: :post, local: true do |f| %>
                 <%= f.hidden_field :source_profile_id, value: profile.slug %>
-                <%= f.submit "Populate from this Profile", class: "btn btn-success btn-sm" %>
+                <%= f.submit "Populate from this Profile", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
               <% end %>
             </div>
           </div>

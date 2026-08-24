@@ -103,8 +103,8 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
     linkable_type = params[:linkable_type]
     linkable_id = params[:linkable_id]
 
-    unless %w[CatalogControl CdefControl ProfileControl SspControl SarControl SapControl].include?(linkable_type)
-      render json: { error: "Invalid linkable_type. Must be one of: CatalogControl, CdefControl, ProfileControl, SspControl, SarControl, SapControl" },
+    unless BackMatterResource::LINKABLE_CONTROL_TYPES.include?(linkable_type)
+      render json: { error: "Invalid linkable_type. Must be one of: #{BackMatterResource::LINKABLE_CONTROL_TYPES.join(', ')}" },
              status: :unprocessable_entity
       return
     end

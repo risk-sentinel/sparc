@@ -1,7 +1,7 @@
 <div class="card">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Create SSP from Published Profile</h2>
-    <%= link_to "Back to System Security Plans", ssp_documents_path, class: "btn btn-secondary" %>
+    <%= link_to "Back to System Security Plans", ssp_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
   </div>
 
   <p class="text-body-secondary mb-4">
@@ -56,7 +56,7 @@
                         class: "form-select form-select-sm",
                         "aria-label": "Authorization Boundary" %>
                 </div>
-                <%= f.submit "Create SSP", class: "btn btn-success btn-sm" %>
+                <%= f.submit "Create SSP", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
               <% end %>
             </div>
           </div>

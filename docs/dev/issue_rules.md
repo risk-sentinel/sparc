@@ -215,7 +215,42 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
 10. **Run full test suite before commit** — `bundle exec rspec` (full suite,
     not targeted specs). Targeted specs during development are fine, but the
     full suite **must pass** before pushing. Also run `bundle exec rubocop`
-    on modified files.
+    on modified files, and `bundle-audit` (below).
+
+    **`bundle-audit` runs on every PR that touches `Gemfile` / `Gemfile.lock`,
+    not only at release time.** It was previously listed only under the
+    release-time scanner-findings refresh, and that cadence is what let
+    GHSA-mvxr-6m87-mv2q (`mail` 2.9.0) sit on `main` for five days:
+
+    ```bash
+    # host, ruby 3.4.4 — `rvm use` silently leaves you on system ruby 2.6,
+    # and bundle-audit on 2.6 prints NOTHING, which reads exactly like success
+    export PATH="$HOME/.rvm/rubies/ruby-3.4.4/bin:$HOME/.rvm/gems/ruby-3.4.4/bin:$PATH"
+    export GEM_HOME="$HOME/.rvm/gems/ruby-3.4.4"
+    export GEM_PATH="$HOME/.rvm/gems/ruby-3.4.4:$HOME/.rvm/gems/ruby-3.4.4@global"
+    ruby -v                                   # MUST print 3.4.4 before continuing
+    (cd ~/.local/share/ruby-advisory-db && git pull)
+    bundle-audit check --database ~/.local/share/ruby-advisory-db
+    ```
+
+    Pass `--database` on every run; without it bundler-audit looks in the
+    default path and tries to `git clone`. Record the advisory-DB commit in the
+    PR body so the result is reproducible, and where a bump fixes an advisory,
+    record **both legs** — the pre-bump lockfile reporting it and the post-bump
+    lockfile clean. A green audit means nothing unless the same invocation has
+    been shown reporting the known-bad lockfile.
+
+    **Do not treat a green CI run as this check.** `security.yml` runs
+    bundler-audit and uploads `bundler-audit-results.json`, but that artifact is
+    the one scan output never converted to HDF, so it reaches no threshold gate
+    and the workflow passes regardless of what it found — 85 green runs carried
+    the `mail` advisory, 8 of them merges to `main`. Tracked as **#1048**; until
+    that lands, **the local run is the only gate.**
+
+    **Transitive advisories get no Dependabot PR.** `mail` is required by
+    `actionmailer`/`actionmailbox`/`omniauth_openid_connect` and has no Gemfile
+    line, so Dependabot had no manifest entry to open a PR against. An empty or
+    routine-looking dependency queue is not evidence of a clean lock.
 11. **Local smoke + API check** (application-code changes only — skip for
     CI-only or docs-only work) — boot the **production UBI9 image**
     (`docker compose -f docker-compose.ubi9.yaml up --build -d`, which builds

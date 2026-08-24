@@ -28,9 +28,9 @@
   <div class="d-flex justify-content-between align-items-center">
     <%= f.submit organization.persisted? ? "Save Changes" : "Create Organization", class: "btn btn-primary fw-semibold" %>
     <% if organization.persisted? %>
-      <%= link_to "Cancel", admin_organization_path(organization), class: "btn btn-outline-secondary" %>
+      <%= link_to "Cancel", admin_organization_path(organization), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     <% else %>
-      <%= link_to "Cancel", admin_organizations_path, class: "btn btn-outline-secondary" %>
+      <%= link_to "Cancel", admin_organizations_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     <% end %>
   </div>
 <% end %>

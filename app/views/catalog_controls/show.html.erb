@@ -22,10 +22,10 @@
       <% end %>
     </div>
     <div class="d-flex gap-2">
-      <%= link_to "Back to #{@control_family.code}", control_catalog_family_path(@control_catalog.url_id, @control_family.code.downcase), class: "btn btn-secondary" %>
+      <%= link_to "Back to #{@control_family.code}", control_catalog_family_path(@control_catalog.url_id, @control_family.code.downcase), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
       <% if can_write_catalogs? %>
         <%= link_to "Edit", control_catalog_edit_control_path(@control_catalog.url_id, @catalog_control),
-              class: "btn btn-sparc-orange" %>
+              class: "sparc-action sparc-action--primary sparc-action--outline" %>
       <% end %>
     </div>
   </div>

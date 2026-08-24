@@ -1,0 +1,291 @@
+<title>SPARC Button Schema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* ── page chrome ─────────────────────────────────────────────────── */
+:root{--ground:#f4f6f9;--panel:#fff;--edge:#dbe1ea;--edge-soft:#eaeff5;--ink:#1b2430;--ink-soft:#5a6879;--ink-faint:#8492a4;--accent:#1f6fa5;--ok:#19743f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ground:#111721;--panel:#18202b;--edge:#2a3441;--edge-soft:#222b37;--ink:#e7edf5;--ink-soft:#a3b0c0;--ink-faint:#7c8a9c;--accent:#5dade2;--ok:#4ade80}}
+:root[data-theme="dark"]{--ground:#111721;--panel:#18202b;--edge:#2a3441;--edge-soft:#222b37;--ink:#e7edf5;--ink-soft:#a3b0c0;--ink-faint:#7c8a9c;--accent:#5dade2;--ok:#4ade80}
+*{box-sizing:border-box}
+body{margin:0;padding:40px 26px 80px;background:var(--ground);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:15px;line-height:1.55}
+.wrap{max-width:1220px;margin:0 auto;display:flex;flex-direction:column;gap:34px}
+h1{font-size:28px;font-weight:600;letter-spacing:-.015em;margin:0 0 8px;text-wrap:balance}
+h2{font-size:19px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
+.lede{margin:0;color:var(--ink-soft);max-width:70ch}
+.note{margin:6px 0 0;color:var(--ink-soft);font-size:14px;max-width:82ch}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.87em}
+code{color:var(--accent)}
+section{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:22px}
+.hd{margin:0 0 18px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:860px){.pair{grid-template-columns:1fr}}
+.mode{border:1px solid var(--edge);border-radius:10px;overflow:hidden}
+.mode-h{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:8px 14px;border-bottom:1px solid var(--edge);color:var(--ink-faint)}
+.stage{padding:20px 16px}
+tbl{display:block}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-weight:500;color:var(--ink-faint);font-size:11px;letter-spacing:.07em;text-transform:uppercase;padding:0 10px 8px;border-bottom:1px solid var(--edge-soft)}
+td{padding:9px 10px;border-bottom:1px solid var(--edge-soft);vertical-align:middle}
+td.n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+.swatch{width:15px;height:15px;border-radius:4px;display:inline-block;vertical-align:-2px;margin-right:7px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grp{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+.grp:last-child{margin-bottom:0}
+.grp-l{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.card-demo{border-radius:10px;padding:15px}
+.card-demo h4{margin:0 0 3px;font-size:15px}
+.card-demo p{margin:0 0 13px;font-size:13px;opacity:.75}
+
+/* ── PROPOSED BUTTON SYSTEM ──────────────────────────────────────────
+   Two axes, not one hue per verb:
+     INTENT    what kind of thing this is   (7 values)
+     EMPHASIS  how loud it should be        (solid / outline / ghost)
+   A role is a pairing of the two. Adding a role costs no new colour. */
+.stage{--i-neutral:#3f4749;--i-primary:#1f6fa5;--i-positive:#19743f;--i-info:#0c6e80;--i-caution:#8a6300;--i-danger:#c0392b;--i-accent:#8e44ad;
+  --surface:#ffffff;--surface-2:#f5f5f5;--txt:#1b2430;--on-solid:#fff;--bd-soft:#dbe1ea;
+  background:var(--surface-2);color:var(--txt)}
+.stage[data-mode="dark"]{--i-neutral:#b0bec5;--i-primary:#5dade2;--i-positive:#2ecc71;--i-info:#5bc8da;--i-caution:#f6e05e;--i-danger:#f48a87;--i-accent:#c683df;
+  --surface:#252d3a;--surface-2:#1e2632;--txt:#e7edf5;--on-solid:#fff;--bd-soft:#2a3441}
+.card-demo{background:var(--surface);color:var(--txt);border:1px solid var(--bd-soft)}
+
+.b{--c:var(--i-neutral);display:inline-flex;align-items:center;justify-content:center;gap:.4rem;
+  min-height:2.25rem;padding:.4rem .9rem;border-radius:.375rem;border:1px solid transparent;
+  font:500 .9rem/1.25 "IBM Plex Sans",system-ui,sans-serif;text-decoration:none;cursor:pointer;
+  background:transparent;color:var(--c);transition:background-color .12s,border-color .12s}
+.b--sm{min-height:1.85rem;padding:.25rem .6rem;font-size:.8rem}
+/* emphasis, LIGHT.
+   `outline` sits on the page surface rather than being a bare hairline — a 1px
+   border on the body grey has presence next to a saturated fill; a border alone
+   does not. `ghost` stays borderless: Cancel is the most common button in the
+   app at ~90 sites and is meant to be the quietest thing in the row. */
+.b.solid{background:color-mix(in srgb,var(--c) 20%,#fff);color:var(--c);
+         border-color:var(--c);border-width:2px}
+/* outline and ghost carry a TINTED BODY drawn from their own intent, so they
+   read as members of the same family as the solids rather than as text that
+   happens to sit in a row of buttons. A white surface + hairline border was
+   tried first and was not enough: beside four saturated fills it still read as
+   unfinished. Tint keeps them quieter than solid without making them weightless.
+
+   The STRENGTH was picked by rendering a ladder and looking at it, not by taste.
+   An 11% mix of a dark neutral into white lands on #eaeaeb, which sits 4% away
+   from the #f5f5f5 page and is mathematically present but invisible. 20% is the
+   first step where View and Cancel read as bodies rather than as labels. */
+.b.outline{border-color:var(--c);background:color-mix(in srgb,var(--c) 20%,#fff)}
+.b.ghost{border-color:color-mix(in srgb,var(--c) 34%,transparent);
+         background:color-mix(in srgb,var(--c) 12%,#fff)}
+/* quiet="bordered" — Cancel/Utility get an edge too, if ghost reads too faint */
+[data-quiet="bordered"] .b.ghost{border-color:color-mix(in srgb,var(--c) 45%,transparent);background:var(--surface)}
+.b.ghost:hover{background:color-mix(in srgb,var(--c) 22%,#fff)}
+.b.outline:hover{background:color-mix(in srgb,var(--c) 32%,#fff)}
+.b.solid:hover{background:color-mix(in srgb,var(--c) 32%,#fff);filter:none}
+.b:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.b[disabled],.b.is-disabled{opacity:.45;pointer-events:none}
+/* DARK, default: SOLID IN LIGHT, OUTLINE IN DARK. Owner-chosen after seeing
+   all three rendered. A solid role in dark is drawn exactly as an outline
+   role — 1px border, transparent ground, coloured label. */
+[data-mode="dark"] .b.solid,
+[data-mode="dark"] .b.outline{background:transparent!important;color:var(--c);border:1px solid var(--c)}
+[data-mode="dark"] .b.solid:hover,
+[data-mode="dark"] .b.outline:hover{background:color-mix(in srgb,var(--c) 14%,transparent);filter:none}
+/* Ghost in dark needs a real edge. With no fill anywhere in dark, a borderless
+   ghost is indistinguishable from body text — and Cancel is ~90 sites, so it is
+   the button most often seen. A 50% intent border reads as a control without
+   competing with the 1px solid borders around it. */
+[data-mode="dark"] .b.ghost{border-color:color-mix(in srgb,var(--c) 50%,transparent);
+                            background:transparent}
+[data-mode="dark"] .b.ghost:hover{border-color:var(--c);
+                            background:color-mix(in srgb,var(--c) 12%,transparent)}
+/* fill="both" — solid survives into dark, with a BLACK label (white is ~2:1) */
+[data-fill="opaque"] .b.solid{background:var(--c);color:var(--on-solid);border-width:1px}
+[data-fill="both"][data-mode="dark"] .b.solid{background:var(--c);color:#000;border-color:var(--c)}
+[data-fill="both"][data-mode="dark"] .b.solid:hover{filter:brightness(1.1)}
+/* fill="weight" — outline in dark, but 2px so emphasis still reads */
+[data-fill="weight"][data-mode="dark"] .b.solid{border-width:2px}
+/* .is-hover mirrors the real :hover rules per emphasis. The states demo used
+   to paint one 12% tint inline on every swatch, which is right for outline and
+   ghost but WIPES a solid's fill — so "hover" rendered paler than "default"
+   and the row misrepresented the system it was documenting. */
+.b.solid.is-hover{background:color-mix(in srgb,var(--c) 32%,#fff);filter:none}
+.b.outline.is-hover{background:color-mix(in srgb,var(--c) 32%,#fff)}
+.b.ghost.is-hover{background:color-mix(in srgb,var(--c) 22%,#fff)}
+[data-mode="dark"] .b.solid.is-hover,
+[data-mode="dark"] .b.outline.is-hover{background:color-mix(in srgb,var(--c) 14%,transparent);filter:none}
+[data-fill="both"][data-mode="dark"] .b.solid.is-hover{background:var(--c);filter:brightness(1.1)}
+/* intents */
+.i-neutral{--c:var(--i-neutral)}.i-primary{--c:var(--i-primary)}.i-positive{--c:var(--i-positive)}
+.i-info{--c:var(--i-info)}.i-caution{--c:var(--i-caution)}.i-danger{--c:var(--i-danger)}.i-accent{--c:var(--i-accent)}
+/* dropdowns */
+.split{display:inline-flex}
+.split .b:first-child{border-top-right-radius:0;border-bottom-right-radius:0}
+.split .b:last-child{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-1px;padding-inline:.55rem}
+.caret{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor}
+.menu{margin-top:6px;min-width:190px;background:var(--surface);border:1px solid var(--bd-soft);border-radius:.5rem;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.menu a{display:block;padding:7px 10px;border-radius:.3rem;color:var(--txt);text-decoration:none;font-size:.85rem}
+.menu a:hover{background:color-mix(in srgb,var(--i-primary) 14%,transparent)}
+.menu hr{border:0;border-top:1px solid var(--bd-soft);margin:6px 2px}
+</style>
+<div class="wrap">
+<header>
+  <h1>SPARC Button Schema</h1>
+  <p class="lede">A proposal for the 455 buttons across 227 distinct labels currently rendered by 21 different <code>btn-*</code> variants. Two axes instead of one colour per verb — <strong>ten roles built from seven intents</strong> — shown in both themes with every state.</p>
+</header>
+<div id="out"></div>
+</div>
+<script>
+const INTENTS=[["neutral","#5d6a6c","#b0bec5","structural — no opinion"],["primary","#1f6fa5","#5dade2","the main path"],
+ ["positive","#19743f","#2ecc71","brings something into being"],["info","#0c6e80","#5bc8da","moves data across a boundary"],
+ ["caution","#8a6300","#f6e05e","overwrites data already in the system"],["danger","#c0392b","#f48a87","destroys or refuses"],
+ ["accent","#8e44ad","#c683df","guided / multi-step"]];
+const ROLES=[
+ ["Cancel / Utility","neutral","ghost",111,"Cancel ×72, Back ×10, Clear ×6, Expand/Collapse All ×6, Search ×3"],
+ ["View","neutral","outline",20,"View ×20"],
+ ["Edit","primary","outline",32,"Edit ×32"],
+ ["Update / Save","primary","solid",10,"Save, Apply, Submit"],
+ ["Create / Approve","positive","solid",64,"Create New, New …, Add …, Approve ×3, Promote, Publish"],
+ ["Import","info","solid",15,"Upload File ×4, Import STIG"],
+ ["Export / Run","info","outline",18,"Export CSV/JSON/OSCAL, Copy ×4, Download, Convert, Enrich ×3"],
+ ["Overwrite","caution","solid",6,"Refresh Now ×4, Regenerate Token, Refresh Inherited — all already btn-warning"],
+ ["Wizard","accent","outline",2,"Create from Wizard, ATO wizard"],
+ ["Destroy / Reject","danger","outline",40,"Delete ×20, Remove ×8, Deactivate ×3, Reject ×3, Deny"]];
+const out=document.getElementById("out");
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+function stage(mode,inner,fill,quiet){return `<div class="mode"><div class="mode-h">${mode} mode</div><div class="stage" data-mode="${mode}"${fill?` data-fill="${fill}"`:""}${quiet?` data-quiet="${quiet}"`:""}>${inner}</div></div>`;}
+function btn(role){const [n,i,e]=role;return `<a href="#" class="b i-${i} ${e}">${esc(n.split(" / ")[0])}</a>`;}
+
+/* 0 — the fill question */
+const SOLIDS=[["Create","positive"],["Update","primary"],["Approve","positive"],["Import","info"]];
+function solidRow(){let r=`<div class="row">`;
+  for(const [l,i] of SOLIDS) r+=`<a href="#" class="b i-${i} solid">${l}</a>`;
+  r+=`<a href="#" class="b i-neutral outline">View</a><a href="#" class="b i-neutral ghost">Cancel</a></div>`;
+  return r;}
+const OPTS=[
+ ["","Solid light, outline dark","Chosen. The primary action announces itself on a light ground; dark carries no fill at all, so the ink stays quiet on a dark screen. A solid role in dark is drawn exactly as an outline role.","chosen"],
+ ["weight","Solid light, 2px outline dark","Same, except a solid role keeps a 2px border in dark. Costs nothing and is the only thing separating Update from Edit, or Import from Export, once the fill is gone — see the note below.","if needed"],
+ ["both","Fill in both themes","Solid survives into dark with a BLACK label (white measures ~2:1 and fails; black is 8.5–10.7:1). Most emphatic, least restful on a dark screen.","alt"]];
+let s0="";
+for(const [fill,title,desc,tag] of OPTS){
+  s0+=`<div style="margin-bottom:20px"><div class="row" style="gap:10px;margin-bottom:8px">
+    <strong style="font-size:15px">${title}</strong>
+    <span class="mono" style="font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid ${tag==="recommended"?"var(--ok)":tag==="rejected"?"#b6580a":"var(--ink-faint)"};color:${tag==="recommended"?"var(--ok)":tag==="rejected"?"#b6580a":"var(--ink-faint)"}">${tag}</span></div>
+    <p class="note" style="margin:0 0 10px">${desc}</p>
+    <div class="pair">${stage("light",solidRow(),fill)}${stage("dark",solidRow(),fill)}</div></div>`;
+}
+out.insertAdjacentHTML("beforeend",`<section><div class="hd"><h2>0 · Does solid keep its fill?</h2>
+<p class="note">Create, Update, Approve and Import are the four roles that carry a fill. The question is whether light and dark agree. All three options below are AA-clean; the difference is how loudly the primary action speaks.</p></div>${s0}
+<p class="note"><strong>Everything below is drawn with the chosen option — solid light, outline dark.</strong></p>
+<p class="note" style="border-left:3px solid #b6580a;padding-left:12px;margin-top:14px"><strong>One consequence worth deciding.</strong> With no fill in dark, emphasis disappears and only intent colour separates roles — so <code>Update</code> (primary·solid) renders identically to <code>Edit</code> (primary·outline), and <code>Import</code> (info·solid) identically to <code>Export</code> and <code>Run</code> (info·outline). Their labels still differ, which satisfies WCAG 1.4.1, but the visual hierarchy is gone in dark. The 2px option above restores it for free.</p></section>`);
+
+/* 1 — the two axes */
+let s1="";
+for(const m of ["light","dark"]){
+  let g="";
+  for(const emph of ["solid","outline","ghost"]){
+    g+=`<div class="grp"><div class="grp-l">${emph}</div><div class="row">`;
+    for(const [name] of INTENTS) g+=`<a href="#" class="b i-${name} ${emph}">${name}</a>`;
+    g+=`</div></div>`;
+  }
+  s1+=stage(m,g);
+}
+out.insertAdjacentHTML("beforeend",`<section><div class="hd"><h2>1 · Two axes</h2>
+<p class="note"><strong>Intent</strong> says what kind of thing an action is; <strong>emphasis</strong> says how loud it should be. A role is a pairing of the two, so a fourteenth role costs no new colour — which is what one-hue-per-verb could not do past about nine.</p>
+<p class="note"><strong>Light mode is all pale tint.</strong> Every role is a 20% mix of its own intent over white, so no button is an opaque block shouting next to a tinted one. Emphasis is carried by the border instead: solid 2px, outline 1px, ghost a faint edge.</p>
+<p class="note"><strong>Dark mode carries no fill at all</strong> — solid and outline are drawn the same, and only intent colour separates them. Ghost stays borderless.</p></div>
+<div class="pair">${s1}</div></section>`);
+
+/* 2 — the palette, with measured contrast */
+/* Read the tokens off the rendered CSS rather than repeating them here. The
+   table previously carried its own copy and drifted the moment the light
+   neutral was darkened — it documented #5d6a6c while the buttons rendered
+   #3f4749. Same failure as one class defined in two files. */
+function tok(mode,name){
+  const probe=document.createElement('div');
+  probe.className='stage'; probe.dataset.mode=mode;
+  probe.style.cssText='position:absolute;visibility:hidden';
+  document.body.appendChild(probe);
+  const v=getComputedStyle(probe).getPropertyValue('--i-'+name).trim();
+  probe.remove(); return v;
+}
+let rows="";
+for(const [n,,,why] of INTENTS){
+  const l=tok('light',n), d=tok('dark',n);
+  rows+=`<tr><td><span class="swatch" style="background:${l}"></span><strong>${n}</strong></td>
+  <td style="color:var(--ink-soft)">${why}</td><td class="n">${l}</td><td class="n">${d}</td></tr>`;
+}
+out.insertAdjacentHTML("beforeend",`<section><div class="hd"><h2>2 · Intent palette</h2>
+<p class="note">Values below are read from the live stylesheet at render time, not transcribed — so this table cannot disagree with the buttons above it. Seven intents, all reusing the AA-verified tokens from the #599 sweep — only <em>accent</em>, the dark <em>danger</em> and the darkened light <em>neutral</em> are new, and all three were measured. Every intent clears WCAG AA 4.5:1 in all three jobs it does: white-on-solid, coloured text on light, coloured text on dark.</p></div>
+<table><thead><tr><th>intent</th><th>when</th><th>light</th><th>dark</th></tr></thead><tbody>${rows}</tbody></table></section>`);
+
+/* 3 — the roles */
+let r3="";
+for(const m of ["light","dark"]){
+  let g="";
+  for(const role of ROLES){
+    g+=`<div class="row" style="margin-bottom:9px">${btn(role)}<span style="font-size:12px;opacity:.6" class="mono">${role[1]} · ${role[2]} · ${role[3]}×</span></div>`;
+  }
+  r3+=stage(m,g);
+}
+let rrows="";
+for(const [n,i,e,c,ev] of ROLES)
+  rrows+=`<tr><td><strong>${esc(n)}</strong></td><td class="n">${i}</td><td class="n">${e}</td><td class="n">${c}</td><td style="color:var(--ink-soft)">${esc(ev)}</td></tr>`;
+out.insertAdjacentHTML("beforeend",`<section><div class="hd"><h2>3 · Ten roles</h2>
+<p class="note">Counts are measured from the views, and the assignments follow the plurality already in the app wherever one existed — so the sweep changes as few buttons as it can. Cancel is the single most common button in SPARC at ~90 sites and is deliberately the quietest.</p>
+<p class="note"><strong>Overwrite is the role that justifies <code>caution</code>.</strong> It covers the actions that REPLACE data already in the system: the four <code>Refresh Now</code> buttons re-ingest and supersede rows — <em>"when source_sha changes for an existing source_url, mark the prior row superseded and create a new one"</em> — and <code>Regenerate Token</code> runs <code>api_tokens.destroy_all</code>. The app already signals every one of them with <code>btn-warning</code>, so this reads the existing intent rather than inventing one. It is deliberately NOT Run: converting or enriching adds, it does not overwrite.</p>
+<p class="note"><strong>This was thirteen roles until four pairs were found to render identically.</strong> Approve already resolved to the same <code>positive·solid</code> as Create, and Reject to the same <code>danger·outline</code> as Destroy — so they were two names for one button. The same held for Cancel/Utility and Export/Run. Collapsing them changes nothing visually and removes four entries from the vocabulary: a role that cannot be told apart from another role is not a role.</p></div>
+<div class="pair">${r3}</div>
+<table style="margin-top:18px"><thead><tr><th>role</th><th>intent</th><th>emphasis</th><th>count</th><th>evidence</th></tr></thead><tbody>${rrows}</tbody></table></section>`);
+
+/* 4 — states */
+let s4="";
+for(const m of ["light","dark"]){
+  let g="";
+  for(const [lbl,i,e] of [["Save","primary","solid"],["Export OSCAL","info","outline"],["Cancel","neutral","ghost"],["Delete","danger","outline"]]){
+    g+=`<div class="grp"><div class="grp-l">${lbl} — ${i} ${e}</div><div class="row">
+      <a href="#" class="b i-${i} ${e}">${lbl}</a>
+      <a href="#" class="b i-${i} ${e} is-hover">${lbl}</a>
+      <a href="#" class="b i-${i} ${e}" style="outline:2px solid var(--c);outline-offset:2px">${lbl}</a>
+      <span class="b i-${i} ${e} is-disabled">${lbl}</span>
+      <a href="#" class="b b--sm i-${i} ${e}">${lbl}</a>
+    </div><div style="font-size:11.5px;opacity:.55" class="mono">default · hover · focus · disabled · small</div></div>`;
+  }
+  s4+=stage(m,g);
+}
+out.insertAdjacentHTML("beforeend",`<section><div class="hd"><h2>4 · States</h2>
+<p class="note">Focus is a 2px ring in the intent colour, never a colour change alone. Disabled drops to 45% opacity and is not a separate palette entry. <code>--sm</code> is the only size modifier: 121 of the app’s buttons are <code>btn-sm</code> today, so a single size would resize half the app.</p></div>
+<div class="pair">${s4}</div></section>`);
+
+/* 5 — dropdowns */
+let s5="";
+for(const m of ["light","dark"]){
+  const g=`<div class="grp"><div class="grp-l">split — default action + menu</div>
+    <div class="row"><span class="split"><a href="#" class="b i-info outline">Export OSCAL</a><a href="#" class="b i-info outline" aria-label="More export options"><span class="caret"></span></a></span></div></div>
+   <div class="grp"><div class="grp-l">toggle — menu only</div>
+    <div class="row"><a href="#" class="b i-neutral outline">Actions <span class="caret"></span></a></div></div>
+   <div class="grp"><div class="grp-l">open menu</div>
+    <div class="menu"><a href="#">Export as OSCAL JSON</a><a href="#">Export as OSCAL XML</a><hr><a href="#">Download SSP package</a></div></div>`;
+  s5+=stage(m,g);
+}
+out.insertAdjacentHTML("beforeend",`<section><div class="hd"><h2>5 · Dropdowns</h2>
+<p class="note">Five dropdown toggles exist today and every one is raw <code>&lt;button class="btn btn-success dropdown-toggle"&gt;</code> — solid green in both themes, which is why <em>Export OSCAL</em> still reads as filled in dark. A dropdown is not its own intent: it takes the intent of the action it performs and adds a caret.</p></div>
+<div class="pair">${s5}</div></section>`);
+
+/* 6 — in context */
+let s6="";
+for(const m of ["light","dark"]){
+  const g=`<div class="card-demo">
+    <h4>NIST SP 800-53 Rev 5</h4><p>Version 5.2.0 · 20 families · 2,318 controls</p>
+    <div class="row">
+      <a href="#" class="b b--sm i-neutral outline">View</a>
+      <span class="split"><a href="#" class="b b--sm i-info outline">Export OSCAL</a><a href="#" class="b b--sm i-info outline"><span class="caret"></span></a></span>
+      <a href="#" class="b b--sm i-primary outline">Edit</a>
+      <a href="#" class="b b--sm i-danger outline">Delete</a>
+    </div></div>
+   <div style="height:14px"></div>
+   <div class="card-demo"><h4>Control Catalogs</h4><p>Manage NIST and custom control catalogs</p>
+    <div class="row"><a href="#" class="b i-info solid">Import from File</a><a href="#" class="b i-positive solid">New Catalog</a></div></div>`;
+  s6+=stage(m,g);
+}
+out.insertAdjacentHTML("beforeend",`<section><div class="hd"><h2>6 · In context</h2>
+<p class="note">The two rows you flagged. The card action row now reads as one system — no filled button shouting next to three outlines. The page header keeps two solids because both genuinely commit something, and they are separated by intent rather than by both being green.</p></div>
+<div class="pair">${s6}</div></section>`);
+</script>

@@ -94,8 +94,8 @@
     <%= f.hidden_field :status, value: "completed" %>
 
     <div class="d-flex gap-3">
-      <%= f.submit "Create POA&M", class: "btn btn-success" %>
-      <%= link_to "Cancel", poam_documents_path, class: "btn btn-secondary" %>
+      <%= f.submit "Create POA&M", class: "sparc-action sparc-action--positive sparc-action--solid" %>
+      <%= link_to "Cancel", poam_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   <% end %>
 </div>
@@ -118,7 +118,7 @@
     <%= render "shared/boundary_picker", param_key: :poam_document %>
 
     <div class="d-flex gap-3">
-      <%= f.submit "Upload and Process", class: "btn btn-primary" %>
+      <%= f.submit "Upload and Process", class: "sparc-action sparc-action--info sparc-action--solid" %>
     </div>
   <% end %>
 </div>

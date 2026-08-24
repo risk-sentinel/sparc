@@ -63,6 +63,33 @@
   --sparc-text-muted: #666666;
   --sparc-text-faint: #6a6a6a;
   --sparc-focus: #1f6fa5;
+
+  /* ── button intents (#950) ── */
+  /* The TINT and the BORDER use these. */
+  --sparc-i-neutral:  #3f4749;
+  --sparc-i-primary:  #1f6fa5;
+  --sparc-i-positive: #19743f;
+  --sparc-i-info:     #0c6e80;
+  --sparc-i-caution:  #8a6300;
+  --sparc-i-danger:   #c0392b;
+  --sparc-i-accent:   #8e44ad;
+
+  /* The LABEL uses these — measured, and NOT the same values.
+     A label sits on a 20% tint OF ITSELF, and that pair is far tighter than
+     the same colour on the page: `primary` on #f5f5f5 is 5.42:1 but on its own
+     tint #d2e2ed it is only 4.09:1. SIX of the seven intents failed AA that
+     way; only `neutral` passed, because it is nearly black.
+
+     Darkening the label 2-4% in lightness clears 4.5:1 on both the 20% (solid,
+     outline) and 12% (ghost) tints while leaving the tint itself — the thing
+     that was actually approved by eye — untouched. */
+  --sparc-i-neutral-ink:  #3f4749;   /* 6.79 on its tint — unchanged */
+  --sparc-i-primary-ink:  #1d6698;   /* 4.65 / ghost 5.24 */
+  --sparc-i-positive-ink: #176c3a;   /* 4.84 / 5.45 */
+  --sparc-i-info-ink:     #0c6a7b;   /* 4.65 / 5.27 */
+  --sparc-i-caution-ink:  #805c00;   /* 4.63 / 5.17 */
+  --sparc-i-danger-ink:   #af3427;   /* 4.62 / 5.24 */
+  --sparc-i-accent-ink:   #8841a6;   /* 4.68 / 5.28 */
 }
 
 [data-bs-theme="dark"] {
@@ -114,6 +141,25 @@
   --sparc-text-muted: #94a3b8;
   --sparc-text-faint: #94a3b8;
   --sparc-focus: #5dade2;
+
+  /* ── button intents (#950) ── */
+  --sparc-i-neutral:  #b0bec5;
+  --sparc-i-primary:  #5dade2;
+  --sparc-i-positive: #2ecc71;
+  --sparc-i-info:     #5bc8da;
+  --sparc-i-caution:  #f6e05e;
+  --sparc-i-danger:   #f48a87;
+  --sparc-i-accent:   #c683df;
+
+  /* Dark has no tint to sit on — the label is on the surface itself, which
+     every intent already clears at 5.09-10.39:1. Ink == the token. */
+  --sparc-i-neutral-ink:  #b0bec5;
+  --sparc-i-primary-ink:  #5dade2;
+  --sparc-i-positive-ink: #2ecc71;
+  --sparc-i-info-ink:     #5bc8da;
+  --sparc-i-caution-ink:  #f6e05e;
+  --sparc-i-danger-ink:   #f48a87;
+  --sparc-i-accent-ink:   #c683df;
 }
 
 
@@ -2892,3 +2938,138 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-control-picker__chip--unresolved .sparc-control-picker__chip-id {
   color: var(--sparc-danger);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   #950 — THE BUTTON SYSTEM
+   ═══════════════════════════════════════════════════════════════════════
+
+   Reference, with every role rendered in both themes and the audit behind it:
+   docs/dev/design/button_schema.html
+
+   TWO AXES, not one colour per verb.
+     INTENT    what kind of action it is      (7)
+     EMPHASIS  how loud it should be          (solid / outline / ghost)
+   A role is a pairing, so a role costs no new colour. That matters: the audit
+   found ~13 real clusters across 455 labelled buttons, and one-hue-per-verb
+   runs out around nine.
+
+   LIGHT  every role is a 20% tint of its own intent over white. NO opaque
+          fills. Emphasis is the border — solid 2px, outline 1px, ghost faint.
+   DARK   no fill at all: transparent, 1px border, coloured label. Ghost keeps
+          a 50% edge so it is not mistaken for body text.
+
+   WHY PALE TINT AND NOT SOLID. Mixing an opaque fill with a tinted one inside
+   one theme is what made the first attempt look broken — four roles shouting
+   beside nine whispering. Owner-decided 2026-08-23: pick ONE fill treatment
+   per theme. Tint strength was settled by rendering a ladder at 11/16/20/26/32%
+   and looking: 11% of a dark neutral over white is #eaeaeb, which sits 4% from
+   the #f5f5f5 page and is invisible. 20% is the first step that reads as a body.
+
+   These build on the #599 AA-verified tokens. Only `accent`, the dark `danger`
+   and the darkened light `neutral` are new, and all three were measured.
+   spec/quality/button_role_contrast_spec.rb parses THIS FILE and asserts 4.5:1
+   for every role on every surface in both themes — it reads the stylesheet
+   rather than a copied table, so the two cannot drift. */
+
+.sparc-action {
+  --sparc-action-c: var(--sparc-i-neutral);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--sparc-action-ink, var(--sparc-action-c));
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.25;
+  /* A button label is one line. Bootstrap's `.btn` carried this implicitly for
+     years and dropping it made '＋ Batch Add' and '↑ Import / Refresh' break
+     onto three lines inside a narrow flex parent, so they rendered tall and
+     thin beside their siblings. */
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.12s ease-in-out, border-color 0.12s ease-in-out;
+}
+
+/* ── intents ───────────────────────────────────────────────────────────
+   The intent tokens these rules read are declared with the rest of the theme
+   tokens, in the :root / [data-bs-theme="dark"] blocks at the top of this
+   file — deliberately NOT reopened here. Reopening a selector 2,900 lines
+   from its first use is how a redeclaration hides: the later one silently
+   wins and nothing says so.
+
+   A role never hard-codes a literal, because a literal in a base rule opts
+   that role out of the theme switch entirely — which is how `edit` once
+   rendered a dark orange on a dark surface at 2.90:1. */
+
+.sparc-action--neutral  { --sparc-action-c: var(--sparc-i-neutral);  --sparc-action-ink: var(--sparc-i-neutral-ink); }
+.sparc-action--primary  { --sparc-action-c: var(--sparc-i-primary);  --sparc-action-ink: var(--sparc-i-primary-ink); }
+.sparc-action--positive { --sparc-action-c: var(--sparc-i-positive);  --sparc-action-ink: var(--sparc-i-positive-ink); }
+.sparc-action--info     { --sparc-action-c: var(--sparc-i-info);  --sparc-action-ink: var(--sparc-i-info-ink); }
+.sparc-action--caution  { --sparc-action-c: var(--sparc-i-caution);  --sparc-action-ink: var(--sparc-i-caution-ink); }
+.sparc-action--danger   { --sparc-action-c: var(--sparc-i-danger);  --sparc-action-ink: var(--sparc-i-danger-ink); }
+.sparc-action--accent   { --sparc-action-c: var(--sparc-i-accent);  --sparc-action-ink: var(--sparc-i-accent-ink); }
+
+/* ── emphasis, LIGHT ─────────────────────────────────────────────────── */
+.sparc-action--solid {
+  background: color-mix(in srgb, var(--sparc-action-c) 20%, #fff);
+  border-color: var(--sparc-action-c);
+  border-width: 2px;
+}
+
+.sparc-action--outline {
+  background: color-mix(in srgb, var(--sparc-action-c) 20%, #fff);
+  border-color: var(--sparc-action-c);
+}
+
+.sparc-action--ghost {
+  background: color-mix(in srgb, var(--sparc-action-c) 12%, #fff);
+  border-color: color-mix(in srgb, var(--sparc-action-c) 34%, transparent);
+}
+
+.sparc-action--solid:hover,
+.sparc-action--outline:hover { background: color-mix(in srgb, var(--sparc-action-c) 32%, #fff); }
+.sparc-action--ghost:hover   { background: color-mix(in srgb, var(--sparc-action-c) 22%, #fff); }
+
+/* ── emphasis, DARK — no fill anywhere ───────────────────────────────── */
+[data-bs-theme="dark"] .sparc-action--solid,
+[data-bs-theme="dark"] .sparc-action--outline {
+  background: transparent;
+  border-width: 1px;
+  border-color: var(--sparc-action-c);
+}
+
+[data-bs-theme="dark"] .sparc-action--ghost {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--sparc-action-c) 50%, transparent);
+}
+
+[data-bs-theme="dark"] .sparc-action--solid:hover,
+[data-bs-theme="dark"] .sparc-action--outline:hover,
+[data-bs-theme="dark"] .sparc-action--ghost:hover {
+  background: color-mix(in srgb, var(--sparc-action-c) 14%, transparent);
+  border-color: var(--sparc-action-c);
+}
+
+/* ── focus, disabled, size ───────────────────────────────────────────── */
+.sparc-action:focus-visible {
+  outline: 2px solid var(--sparc-action-c);
+  outline-offset: 2px;
+}
+
+.sparc-action[disabled],
+.sparc-action.is-disabled { opacity: 0.45; pointer-events: none; }
+
+/* 121 of the app's buttons are `btn-sm` today, so one size would resize half
+   the app. Size is an axis of its own, never a role. */
+.sparc-action--sm { min-height: 1.85rem; padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+.sparc-action--lg { min-height: 2.75rem; padding: 0.6rem 1.2rem; font-size: 1rem; }
+
+/* Rows of mixed roles line up without a wrapper forcing it. */
+.sparc-action-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.5rem; }

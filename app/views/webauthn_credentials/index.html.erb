@@ -29,7 +29,7 @@
               </small>
             </div>
             <%= button_to "Remove", webauthn_credential_path(credential), method: :delete,
-                  class: "btn btn-outline-danger btn-sm",
+                  class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
                   form: { data: { turbo_confirm: "Remove this security key? You will no longer be able to sign in with it." } } %>
           </li>
         <% end %>
@@ -48,7 +48,7 @@
                maxlength="60" data-webauthn-target="nickname">
         <div class="form-text">A label to help you recognize this key later.</div>
       </div>
-      <button type="button" class="btn btn-primary"
+      <button type="button" class="sparc-action sparc-action--positive sparc-action--solid"
               data-webauthn-target="submit"
               data-action="webauthn#register">
         Add security key

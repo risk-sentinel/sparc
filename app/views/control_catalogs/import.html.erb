@@ -10,7 +10,7 @@
       </p>
     </div>
     <%= link_to "← All Catalogs", control_catalogs_path,
-          class: "btn bg-body-secondary text-body-secondary border small", style: "text-decoration: none; white-space: nowrap; flex-shrink: 0;" %>
+          class: "sparc-action sparc-action--neutral sparc-action--ghost bg-body-secondary text-body-secondary border small", style: "text-decoration: none; white-space: nowrap; flex-shrink: 0;" %>
   </div>
 
   <%# Upload form %>
@@ -27,7 +27,7 @@
     </div>
 
     <div class="d-flex gap-2 align-items-center mb-4">
-      <%= f.submit "Import Catalog", class: "btn btn-success fw-semibold" %>
+      <%= f.submit "Import Catalog", class: "sparc-action sparc-action--info sparc-action--solid fw-semibold" %>
       <span class="text-body-tertiary" style="font-size: 0.8rem;">Large catalogs are processed in the background.</span>
     </div>
   <% end %>

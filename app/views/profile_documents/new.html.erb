@@ -10,8 +10,8 @@
       hint: "Upload an OSCAL Profile JSON, XML, or YAML file. Supports NIST SP 800-53 baselines (LOW, MODERATE, HIGH), FedRAMP, and custom profiles." %>
 
     <div class="d-flex gap-3">
-      <%= f.submit "Upload and Process", class: "btn btn-success" %>
-      <%= link_to "Cancel", profile_documents_path, class: "btn btn-secondary" %>
+      <%= f.submit "Upload and Process", class: "sparc-action sparc-action--info sparc-action--solid" %>
+      <%= link_to "Cancel", profile_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   <% end %>
 </div>

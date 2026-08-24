@@ -2,7 +2,7 @@
   <div class="col-lg-6">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h1 class="h3 fw-bold mb-0">Profile</h1>
-      <%= link_to "Back", root_path, class: "btn btn-sm btn-outline-secondary" %>
+      <%= link_to "Back", root_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
     </div>
 
     <div class="card" data-controller="avatar-crop" data-avatar-crop-max-size-value="2097152">
@@ -44,7 +44,7 @@
 
         <% if current_user.avatar.attached? %>
           <%= button_to "Remove Avatar", remove_avatar_profile_path, method: :delete,
-              class: "btn btn-outline-danger btn-sm",
+              class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
               data: { turbo_confirm: "Remove your avatar?" } %>
         <% end %>
 
@@ -80,8 +80,8 @@
                 </div>
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-action="click->avatar-crop#cancelCrop">Cancel</button>
-                <button type="button" class="btn btn-primary" data-action="click->avatar-crop#saveCrop">
+                <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost" data-action="click->avatar-crop#cancelCrop">Cancel</button>
+                <button type="button" class="sparc-action sparc-action--primary sparc-action--solid" data-action="click->avatar-crop#saveCrop">
                   <i class="bi bi-check-lg"></i> Save Avatar
                 </button>
               </div>

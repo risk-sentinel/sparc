@@ -1,0 +1,88 @@
+<%# ── Control references (#1039) ─────────────────────────────────────────
+    `control_back_matter_links` and the association existed; nothing on this
+    path ever set or showed them. That is the field that makes a source useful
+    during an assessment — "what do I cite for AC-2?" was unanswerable here
+    even though the model could express the answer.
+
+    Attached through a nested action, following the `evidences`/`control_links`
+    precedent rather than inventing a second way to attach a control. %>
+<div class="card mb-3">
+  <div class="card-body">
+    <h3 class="h6 fw-semibold">Control references</h3>
+    <p class="text-body-secondary small">
+      Controls this source supports. These are what an assessor cites.
+    </p>
+
+    <% links = resource.control_back_matter_links.includes(:linkable) %>
+    <% if links.any? %>
+      <ul class="list-unstyled mb-3">
+        <% links.each do |link| %>
+          <li class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+            <%# The control id is what an assessor cites, so it leads and is shown
+                in SPARC's display casing — the stored form is lowercase. The
+                class name used to lead instead, which told a reader nothing. %>
+            <% raw_id = link.linkable.try(:control_id) %>
+            <span class="fw-semibold text-nowrap">
+              <%= raw_id ? ControlId.canonical(raw_id).upcase : (link.linkable.try(:title) || "##{link.linkable_id}") %>
+            </span>
+            <%# Which catalog this control came from is the difference between an
+                unambiguous citation and a guess when Rev 4 and Rev 5 are both
+                loaded. Truncated: these names run past 80 characters and the
+                untruncated badge pushed Remove out of the card. %>
+            <% if (cat = link.linkable.try(:control_family).try(:control_catalog)) %>
+              <span class="badge text-bg-secondary text-truncate" style="max-width: 22rem;"
+                    title="<%= cat.name %>"><%= truncate(cat.name, length: 46) %></span>
+            <% end %>
+            <% unless link.linkable_type == "CatalogControl" %>
+              <span class="badge text-bg-light"><%= link.linkable_type.underscore.humanize %></span>
+            <% end %>
+            <% if can_write_sources? %>
+              <%= button_to "Remove", unlink_control_authoritative_source_path(resource, link_id: link.id),
+                    method: :delete,
+                    class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm" %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-body-secondary">No control references yet.</p>
+    <% end %>
+
+    <% if can_write_sources? %>
+      <%= form_with url: link_control_authoritative_source_path(resource), method: :post, local: true do %>
+        <div class="row g-2 align-items-end">
+          <%# The type selector used to offer SspControl/SarControl/… alongside
+              CatalogControl, but those are document-scoped and this form carries
+              no document, so picking one could never resolve. A library source
+              cites the catalog; the API still accepts every type in
+              LINKABLE_CONTROL_TYPES by id for the document-scoped callers. %>
+          <%= hidden_field_tag :linkable_type, "CatalogControl" %>
+          <div class="col-sm-5">
+            <label class="form-label fw-semibold" for="control_catalog_id">Catalog</label>
+            <%= select_tag :control_catalog_id,
+                  options_from_collection_for_select(ControlCatalog.order(:name), :id, :name),
+                  class: "form-select", id: "control_catalog_id" %>
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label fw-semibold" for="control_identifier">Control ID</label>
+            <%= text_field_tag :control_identifier, nil, class: "form-control", id: "control_identifier",
+                  placeholder: "e.g. AC-2", required: true %>
+          </div>
+          <div class="col-sm-3">
+            <%= hidden_field_tag :return_to, local_assigns[:return_to] %>
+            <%= submit_tag "Add reference",
+                  class: "sparc-action sparc-action--positive sparc-action--solid", data: { disable_with: false } %>
+          </div>
+          <%# Row-level, so it cannot push one column off the shared baseline
+              that `align-items-end` sets up. %>
+          <div class="col-12">
+            <div class="form-text mt-1">
+              Rev 4 and Rev 5 can both be loaded, so the catalog and the control id together identify the control.
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+

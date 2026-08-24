@@ -53,7 +53,7 @@
               Incomplete — needs content
             </span>
           <% end %>
-          <button type="button" data-action="doc-meta#toggle" class="sparc-btn-header-edit">Edit</button>
+          <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
         </div>
       </div>
 
@@ -64,8 +64,8 @@
                   class: "sparc-input-dark sparc-input-dark-lg" %>
             <%= f.text_field :ssp_version, value: @ssp_document.ssp_version, placeholder: "Version",
                   class: "sparc-input-dark sparc-input-dark-sm" %>
-            <%= f.submit "Save", class: "sparc-btn-save" %>
-            <button type="button" data-action="doc-meta#toggle" class="sparc-btn-cancel-dark">Cancel</button>
+            <%= f.submit "Save", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+            <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--neutral sparc-action--ghost">Cancel</button>
           </div>
         <% end %>
       </div>
@@ -93,17 +93,17 @@
             fallback_json_path: download_oscal_unvalidated_ssp_document_path(@ssp_document),
             document_type: "SSP" %>
       <%= link_to "Enrich", enrich_ssp_document_path(@ssp_document),
-            class: "sparc-btn-enrich" %>
+            class: "sparc-action sparc-action--info sparc-action--outline" %>
       <%# #398: bulk refresh inherited statements from linked CDEFs %>
       <% if signed_in? && @ssp_document.ssp_components.where.not(cdef_document_id: nil).exists? %>
         <%= button_to "Refresh Inherited",
               refresh_inherited_statements_ssp_document_path(@ssp_document),
               method: :post,
-              class: "sparc-btn-enrich",
+              class: "sparc-action sparc-action--caution sparc-action--solid",
               form: { style: "display: inline;" } %>
       <% end %>
       <%= link_to "&#8592; Back".html_safe, ssp_documents_path,
-            class: "sparc-btn-ghost-muted" %>
+            class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
   </div>
 
@@ -221,7 +221,7 @@
       <div class="fw-semibold" style="font-size: 0.88rem; color: var(--bs-body-color);">Enrich for OSCAL Compliance</div>
       <div class="text-body-secondary" style="font-size: 0.78rem;">Add system characteristics, components, and users to produce a fully valid OSCAL SSP export.</div>
     </div>
-    <%= link_to "Enrich SSP", enrich_ssp_document_path(@ssp_document), class: "btn btn-success", style: "flex-shrink: 0; font-size: 0.85rem; padding: 0.4rem 1rem;" %>
+    <%= link_to "Enrich SSP", enrich_ssp_document_path(@ssp_document), class: "sparc-action sparc-action--info sparc-action--outline", style: "flex-shrink: 0; font-size: 0.85rem; padding: 0.4rem 1rem;" %>
   </div>
 <% end %>
 
@@ -239,7 +239,7 @@
       <% if signed_in? %>
         <%= link_to "Populate from Profile",
               attach_profile_ssp_document_path(@ssp_document),
-              class: "btn btn-success" %>
+              class: "sparc-action sparc-action--primary sparc-action--solid" %>
       <% end %>
     </div>
   </div>
@@ -263,8 +263,8 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <span class="form-label fw-semibold mb-0"><%= total_controls %> controls</span>
     <div class="d-flex gap-1">
-      <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#expandAll">Expand All</button>
-      <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#collapseAll">Collapse All</button>
+      <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="family-toggle#expandAll">Expand All</button>
+      <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-action="family-toggle#collapseAll">Collapse All</button>
     </div>
   </div>
 
@@ -316,7 +316,7 @@
                 data-action="inline-edit#toggle"
                 data-inline-edit-id-param="<%= control.id %>"
                 id="edit-btn-<%= control.id %>"
-                class="sparc-btn-edit">
+                class="sparc-action sparc-action--primary sparc-action--outline">
           Edit
         </button>
       </div>
@@ -606,17 +606,17 @@
                     <input type="text" id="ssp-ref-media-<%= control.id %>" class="form-control form-control-sm" placeholder="application/pdf">
                   </div>
                   <div class="col-md-4 d-flex gap-1">
-                    <button type="button" class="btn btn-sm btn-success"
+                    <button type="button" class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm"
                             data-action="ssp-control-resource#create"
                             data-ssp-control-resource-control-id-param="<%= control.control_id %>"
                             data-ssp-control-resource-db-id-param="<%= control.id %>">Create & Link</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                    <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm"
                             data-action="ssp-control-resource#toggleAddRef"
                             data-ssp-control-resource-id-param="<%= control.id %>">Cancel</button>
                   </div>
                 </div>
               </div>
-              <button type="button" class="btn btn-sm btn-outline-primary" id="ssp-add-ref-btn-<%= control.id %>"
+              <button type="button" class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" id="ssp-add-ref-btn-<%= control.id %>"
                       data-action="ssp-control-resource#toggleAddRef"
                       data-ssp-control-resource-id-param="<%= control.id %>" style="font-size: 0.75rem;">
                 + Add Reference
@@ -625,7 +625,7 @@
 
             <div class="d-flex gap-2 mt-3">
               <%= f.submit "Save Changes",
-                    class: "sparc-btn-save", style: "padding: 0.5rem 1.25rem; font-size: 0.875rem;" %>
+                    class: "sparc-action sparc-action--primary sparc-action--solid", style: "padding: 0.5rem 1.25rem; font-size: 0.875rem;" %>
               <button type="button"
                       data-action="inline-edit#toggle"
                       data-inline-edit-id-param="<%= control.id %>"
@@ -678,8 +678,8 @@
         </div>
 
         <div class="d-flex gap-2">
-          <%= f.submit "Save Statement", class: "btn btn-success" %>
-          <%= link_to "Cancel", ssp_document_path(@ssp_document), class: "btn btn-secondary" %>
+          <%= f.submit "Save Statement", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+          <%= link_to "Cancel", ssp_document_path(@ssp_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
         </div>
       <% end %>
     </div>
