@@ -213,20 +213,23 @@ class Api::V1::BaseController < ActionController::API
       source: resource.source,
       globally_available: resource.globally_available,
       organization_id: resource.organization_id,
-      # #1039 — provenance and lifecycle are part of the CONTRACT, not extras.
-      # For a source whose whole value is being authoritative, "who provided
-      # this" and "is it current" are the questions an assessor asks. Additive
-      # keys: nothing existing changes shape.
-      organization_name: resource.organization&.name,
-      provided_by_team: resource.provided_by_team,
-      provided_by_contact: resource.provided_by_contact,
-      archived: resource.archived?,
-      archived_at: resource.archived_at&.iso8601,
       created_at: resource.created_at.iso8601,
       updated_at: resource.updated_at.iso8601
     }
 
     if detailed
+      # #1039 — provenance and lifecycle. These belong to the DETAILED shape
+      # only. They were first added to the compact block with the note "additive
+      # keys: nothing existing changes shape", which is wrong: this serializer is
+      # shared, the compact form is the one embedded in every document's
+      # `back_matter_resources` array, and its published contract forbids extra
+      # properties. Adding a key there breaks four endpoints that have nothing to
+      # do with authoritative sources.
+      data[:organization_name] = resource.organization&.name
+      data[:provided_by_team] = resource.provided_by_team
+      data[:provided_by_contact] = resource.provided_by_contact
+      data[:archived] = resource.archived?
+      data[:archived_at] = resource.archived_at&.iso8601
       data[:description] = resource.description
       data[:resource_data] = resource.resource_data
       data[:evidence_id] = resource.evidence_id

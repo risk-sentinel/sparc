@@ -31,10 +31,20 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
   # SINGULAR `resource` and Rails does not generate them for one. Scoped the
   # same way the web screen scopes: globally-available plus the caller's own
   # organizations, everything for an instance admin.
+  # Paginated, and publishing the #1019 envelope. It first returned the whole
+  # collection with no `meta`, which failed the contract sweep and — on an
+  # instance holding 978 sources — sent all of them on every call. Nothing
+  # consumes this endpoint yet (it shipped unreleased), so the shape is free to
+  # be the standard one rather than a second thing clients must special-case.
   def index
     scope = visible_sources
     scope = scope.where(archived_at: nil) unless ActiveModel::Type::Boolean.new.cast(params[:include_archived])
-    render json: { data: scope.order(:title).map { |r| serialize_back_matter_resource(r, detailed: true) } }
+
+    result = paginate(scope.order(:title))
+    render json: {
+      data: result[:data].map { |r| serialize_back_matter_resource(r, detailed: true) },
+      meta: result[:meta]
+    }
   end
 
   # GET /api/v1/authoritative_sources/:id

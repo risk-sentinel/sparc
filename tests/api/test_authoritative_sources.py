@@ -300,6 +300,31 @@ class TestLifecycle:
     stored.
     """
 
+    @staticmethod
+    def _all_listed_ids(client: httpx.Client, **params: Any) -> set[int]:
+        """Every id the index will serve, walked page by page.
+
+        The index is paginated (25 per page, ~1000 sources on a seeded
+        instance), so asserting against page 1 answers "did this sort into the
+        first 25 titles", not "is this listed". That matters most for the
+        NEGATIVE assertion — `id not in page_one` passes for any record that
+        merely sorted late, so an archived source that never left the index
+        would still look correct.
+        """
+        ids: set[int] = set()
+        page = 1
+        while True:
+            response = client.get(INDEX_PATH, params={**params, "page": page, "items": 200})
+            assert response.status_code == 200, response.text
+            body = response.json()
+            ids.update(row["id"] for row in body["data"])
+            meta = body["meta"]
+            envelope = {"page", "pages", "count", "items"}
+            assert envelope <= set(meta), f"non-standard envelope: {meta}"
+            if page >= meta["pages"]:
+                return ids
+            page += 1
+
     def _make(self, admin_client: httpx.Client) -> dict[str, Any]:
         title = f"phase2-lifecycle-{uuid.uuid4().hex[:8]}"
         created = admin_client.post(
@@ -320,9 +345,7 @@ class TestLifecycle:
     ) -> None:
         made = self._make(admin_client)
 
-        listed = admin_client.get(INDEX_PATH)
-        assert listed.status_code == 200, listed.text
-        assert made["id"] in [row["id"] for row in listed.json()["data"]]
+        assert made["id"] in self._all_listed_ids(admin_client)
 
     def test_show_carries_provenance_and_dates(self, admin_client: httpx.Client) -> None:
         made = self._make(admin_client)
@@ -364,11 +387,8 @@ class TestLifecycle:
         assert still.json()["data"]["archived"] is True
 
         # ...and it drops out of the default index, but not with include_archived.
-        default = admin_client.get(INDEX_PATH)
-        assert made["id"] not in [r["id"] for r in default.json()["data"]]
-
-        including = admin_client.get(INDEX_PATH, params={"include_archived": "true"})
-        assert made["id"] in [r["id"] for r in including.json()["data"]]
+        assert made["id"] not in self._all_listed_ids(admin_client)
+        assert made["id"] in self._all_listed_ids(admin_client, include_archived="true")
 
     def test_restore_returns_an_archived_source_to_active(
         self, admin_client: httpx.Client
@@ -380,8 +400,7 @@ class TestLifecycle:
         assert restored.status_code == 200, restored.text
         assert restored.json()["archived"] is False
 
-        listed = admin_client.get(INDEX_PATH)
-        assert made["id"] in [r["id"] for r in listed.json()["data"]]
+        assert made["id"] in self._all_listed_ids(admin_client)
 
     def test_lifecycle_refuses_an_anonymous_caller(
         self, admin_client: httpx.Client, anon_client: httpx.Client
