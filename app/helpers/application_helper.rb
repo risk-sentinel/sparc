@@ -374,16 +374,52 @@ module ApplicationHelper
   end
 
   # Safe avatar image tag — falls back to initials if blob is missing from storage
+  # #1056 — render the image only if the FILE is actually there.
+  #
+  # `attached?` and `blob.persisted?` are both DB-level: the attachment row and
+  # the blob row survive perfectly well after the underlying object is gone.
+  # SPARC then emitted an <img> for a file that 404s, and because the avatar is
+  # in the navbar that was a console error on EVERY authenticated page. It has
+  # broken the smoke suite three times (130 failures / 521 x 404 most recently)
+  # and reads as a catastrophic regression while meaning nothing.
+  #
+  # It is reachable in production, not just locally: storage migrated, a bucket
+  # restored from a backup predating the upload, a lifecycle rule expiring an
+  # object, or an operator deleting one.
   def safe_avatar_tag(user, **options)
-    if user.avatar.attached? && user.avatar.blob&.persisted?
-      begin
-        image_tag user.avatar, **options
-      rescue StandardError
-        content_tag(:span, user.initials)
-      end
-    else
+    return content_tag(:span, user.initials) unless avatar_file_present?(user)
+
+    begin
+      image_tag user.avatar, **options
+    rescue StandardError
       content_tag(:span, user.initials)
     end
+  end
+
+  # Existence is checked against the storage service, which costs a `stat` on
+  # Disk but a HEAD REQUEST on S3 — and the navbar renders the avatar twice per
+  # page. So the answer is memoized for the request and cached by blob key.
+  #
+  # Caching by key is safe in both directions: re-attaching creates a NEW blob
+  # with a new key, so a cached "missing" can never outlive the upload that
+  # fixes it.
+  def avatar_file_present?(user)
+    return false unless user.respond_to?(:avatar) && user.avatar.attached?
+
+    blob = user.avatar.blob
+    return false unless blob&.persisted? && blob.key.present?
+
+    @avatar_file_present ||= {}
+    return @avatar_file_present[blob.key] if @avatar_file_present.key?(blob.key)
+
+    @avatar_file_present[blob.key] =
+      Rails.cache.fetch("avatar_blob_present/#{blob.key}", expires_in: 5.minutes) do
+        blob.service.exist?(blob.key)
+      end
+  rescue StandardError
+    # A storage backend that cannot answer is not a reason to render a broken
+    # image — fall back to initials, which always work.
+    false
   end
 
   # Sidebar: organizations with authorization boundaries for current user
