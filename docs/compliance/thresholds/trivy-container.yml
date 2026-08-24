@@ -15,14 +15,31 @@
 # Ruby default gems (vulnerable copy on disk, patched copy loaded by Bundler):
 #   CVE-2026-27820  zlib   CRITICAL  -> notApplicable (approved deviation)
 #   CVE-2026-41316  erb    HIGH      -> notApplicable (approved deviation)
-#   CVE-2025-24294  resolv HIGH      -> dispositioned in this bundle (#1065)
-#   CVE-2025-61594  uri    HIGH      -> dispositioned in this bundle (#1065)
-# Residual after amendments: 0 critical, 0 high.
+#   CVE-2025-24294  resolv HIGH      -> UNDISPOSITIONED
+#   CVE-2025-61594  uri    HIGH      -> UNDISPOSITIONED
+# Residual after amendments: 0 critical, 2 high.
+#
+# BASELINE measured 2026-08-24 on main@a8991ae7. RATCHET: high may only ever
+# go DOWN, and the target is 0.
+#
+# The 2 are `resolv` and `uri`, the same shadowed-default-gem case as zlib and
+# erb — the vulnerable Ruby-shipped copy sits on disk while Bundler loads a
+# patched one (resolv 0.7.1, uri 1.1.1). They are NOT dispositioned, so unlike
+# zlib/erb they still count. Owner decision 2026-08-24: record the honest
+# residual now rather than write a disposition to make the number look clean.
+#
+# `uri` also had no Gemfile override at all until this bundle — the lockfile
+# carried 1.1.1 only transitively, so a resolver change could silently have
+# dropped back to a vulnerable version. That pin is in place; the disposition
+# is what remains.
+#
+# DO NOT raise this to accommodate a new finding. A third undispositioned high
+# means the band is being used to hide something. Close #1065 and set it to 0.
 failed:
   critical:
     max: 0
   high:
-    max: 0
+    max: 2   # BASELINE — resolv + uri, undispositioned. Target 0 via #1065.
 error:
   total:
     max: 0

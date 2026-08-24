@@ -38,7 +38,7 @@ present here at once:
 | `codeql-results.sarif` | `sarif2hdf` | yes | `codeql.yml` — critical/high 0 |
 | `semgrep-results.sarif` | `sarif2hdf` | yes, when the job runs | `semgrep.yml` — critical/high 0 |
 | `trivy-fs-results.sarif` | `sarif2hdf` | yes | `trivy-fs.yml` — critical/high 0 |
-| `trivy-container-results.sarif` | `sarif2hdf` | yes | `trivy-container.yml` — critical/high 0 |
+| `trivy-container-results.sarif` | `sarif2hdf` | yes | `trivy-container.yml` — critical 0, high 2 (baseline, #1065) |
 | `bundler-audit-results.json` | `bin/bundler_audit_to_hdf.rb` | yes | `bundler-audit.yml` — zero from medium up |
 | `trivy-fs-sbom.cdx.json` | `cyclonedx_sbom2hdf` | inventory only | ungated — see #1064 |
 | `trivy-container-sbom.cdx.json` | `cyclonedx_sbom2hdf` | inventory only | ungated — see #1064 |
