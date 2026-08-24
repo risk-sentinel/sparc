@@ -8,12 +8,28 @@ For deeper operational guidance see
 **What is SPARC?**
 A Rails 8.1 application for managing NIST SP 800-53 compliance documentation —
 SSPs, SARs, SAPs, POA&Ms, CDEFs, and control catalogs — with a REST API and
-OSCAL v1.1.2 import/export. SPARC is a **translation engine + UI** for OSCAL /
+OSCAL import/export. SPARC is a **translation engine + UI** for OSCAL /
 policy-as-code, not a system of record: tenant systems own the source of truth.
 
 **Which OSCAL version does SPARC target?**
-NIST OSCAL **v1.1.2**. The schemas are baked into the container so validation
-works air-gapped (no dependency on NIST GitHub availability at runtime).
+NIST OSCAL **v1.2.2** as of v1.16.0 — that is the version written into
+`metadata.oscal-version` and the one JSON exports are validated against.
+SPARC can validate against **1.1.1, 1.1.2, 1.1.3, 1.2.0, 1.2.1 and 1.2.2**, and a
+document that carries its own `oscal-version` is validated against that instead
+of the default.
+
+Every schema is baked into the container, so validation works air-gapped with no
+dependency on NIST GitHub at runtime.
+
+Two caveats worth knowing:
+
+- **XML exports are still validated against the 1.2.1 XSDs.** The JSON schema set
+  moved to 1.2.2 and the XSD set has not yet followed, so an XML export declares
+  1.2.2 while being checked against 1.2.1. The two releases are near-identical,
+  but it is a mismatch rather than a deliberate choice.
+- **1.2.0 is skipped on purpose.** That release omits the `associated-risk`
+  definition, so `related-risks[].risk-uuid` is rejected by a schema defect
+  rather than by anything wrong with the document. 1.2.1 restores it.
 
 ## Authentication
 
@@ -51,7 +67,7 @@ for AWS Labs CDEFs that `SPARC_AWS_LABS_CDEF_ENABLED=true`.
 ## OSCAL & validation
 
 **My OSCAL export was rejected.**
-Exports are validated against the NIST v1.1.2 schemas before download. CDEF
+Exports are validated against the NIST schemas before download (1.2.2 by default). CDEF
 mutations are validated **pre-commit** (v1.8.0) — an invalid result is rejected
 rather than persisted. Check the error detail for the failing JSON pointer.
 
