@@ -106,7 +106,8 @@ Documentation has three homes — put changes in the right one:
 ### Developer Docs (internal, `docs/dev/`)
 
 - `docs/dev/issue_rules.md` — **mandatory** issue process workflow, hard guardrails, compliance artifact update requirements, authentication mode coverage matrix
-- `docs/dev/Implementation_plan.md` — phased roadmap and issue tracking
+- `docs/dev/Implementation_plan.md` — **live** roadmap: current/next phases and the open-issue audit
+- `docs/dev/implemented.md` — **archive**: Phases 1–16, shipped through v1.16.0 (history, not a plan)
 - `docs/dev/Developer_Collision_Avoidance_Plan.md` — domain ownership, hot files, migration coordination
 
 ## Compliance Documentation
