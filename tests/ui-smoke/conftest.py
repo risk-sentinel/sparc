@@ -123,3 +123,128 @@ def user_authed_page(browser, user_session_cookie, base_url):
     page = ctx.new_page()
     yield page
     ctx.close()
+
+
+# ── Posture accounting (#885) ────────────────────────────────────────────────
+#
+# A posture-gated check must never SILENTLY skip. Six checks in this suite are
+# gated on a deployment posture the harness may or may not supply — PIV mTLS,
+# both-directions TLS, FIDO2, the publish-approval gate — and when the posture
+# is absent they skip. A headline of "324 passed, 12 skipped" then reads as
+# verification of things that never executed.
+#
+# That is not hypothetical: the release-grade smoke run for PR #884 was reported
+# as release verification while PIV/CAC, fail-closed TLS and FIDO2 were entirely
+# unproven.
+#
+# So the run now always ends with a named, counted UNPROVEN section, and
+# SPARC_SMOKE_REQUIRE_POSTURES turns "unproven" into a failure for a release
+# run, where the posture is supposed to be supplied.
+#
+# Mark a posture-gated module or test with:
+#     pytestmark = pytest.mark.posture("piv_mtls")
+# The marker is metadata only — the existing skipif still decides whether the
+# test runs. This records WHAT was not proven, and by which name.
+
+_POSTURE_SKIPS: dict[str, list[str]] = {}
+_POSTURE_PASSES: dict[str, list[str]] = {}
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "posture(name): the deployment posture this check proves; reported as "
+        "UNPROVEN when it skips, and failed when named in "
+        "SPARC_SMOKE_REQUIRE_POSTURES",
+    )
+
+
+def pytest_runtest_logreport(report):
+    if report.when not in ("call", "setup"):
+        return
+    postures = getattr(report, "_sparc_postures", None)
+    if not postures:
+        return
+    for name in postures:
+        if report.skipped:
+            _POSTURE_SKIPS.setdefault(name, []).append(report.nodeid)
+        elif report.passed:
+            _POSTURE_PASSES.setdefault(name, []).append(report.nodeid)
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+    # Marker lookup must happen on the ITEM; the report does not carry markers.
+    names = [m.args[0] for m in item.iter_markers(name="posture") if m.args]
+    if names:
+        report._sparc_postures = names
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    required = os.environ.get("SPARC_SMOKE_REQUIRE_POSTURES", "").strip()
+    proven = {p for p in _POSTURE_PASSES if p not in _POSTURE_SKIPS}
+    unproven = sorted(_POSTURE_SKIPS)
+
+    terminalreporter.write_sep("=", "posture accounting (#885)")
+    if proven:
+        for name in sorted(proven):
+            terminalreporter.write_line(
+                f"PROVEN    {name}: {len(_POSTURE_PASSES[name])} check(s) ran"
+            )
+    for name in unproven:
+        terminalreporter.write_line(
+            f"UNPROVEN  {name}: {len(_POSTURE_SKIPS[name])} check(s) skipped — posture not supplied"
+        )
+    if not proven and not unproven:
+        terminalreporter.write_line("no posture-gated checks collected")
+
+    terminalreporter.write_line(
+        f"postures proven: {len(proven)}    UNPROVEN: {len(unproven)}"
+    )
+
+    if not required:
+        if unproven:
+            terminalreporter.write_line(
+                "NOTE: a green run does NOT cover the UNPROVEN postures above. "
+                "Set SPARC_SMOKE_REQUIRE_POSTURES to fail instead of reporting "
+                "(release runs should)."
+            )
+        return
+
+    wanted = (
+        set(unproven) | proven
+        if required == "all"
+        else {p.strip() for p in required.split(",") if p.strip()}
+    )
+    missing = sorted(wanted & set(unproven))
+    if missing:
+        terminalreporter.write_line("")
+        terminalreporter.write_line(
+            f"FAILED: SPARC_SMOKE_REQUIRE_POSTURES demanded {sorted(wanted)} and "
+            f"these were not proven: {missing}"
+        )
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Turn a required-but-unproven posture into a non-zero exit.
+
+    Done here rather than in pytest_terminal_summary because the session exit
+    status is what a caller actually reads, and a run that skipped a posture the
+    operator explicitly demanded must not exit 0 — that is the whole defect
+    #885 describes.
+    """
+    required = os.environ.get("SPARC_SMOKE_REQUIRE_POSTURES", "").strip()
+    if not required:
+        return
+
+    unproven = set(_POSTURE_SKIPS)
+    if required == "all":
+        missing = unproven
+    else:
+        wanted = {p.strip() for p in required.split(",") if p.strip()}
+        missing = wanted & unproven
+
+    if missing and exitstatus == 0:
+        session.exitstatus = 1

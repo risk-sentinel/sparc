@@ -35,11 +35,15 @@ CERT_DIR = os.environ.get("SPARC_SMOKE_PIV_CERT_DIR")
 # (SPARC_PIV_IDENTITY_SOURCE is per-container), hence separate ceremony legs.
 MODE = os.environ.get("SPARC_SMOKE_PIV_MODE", "dod").lower()
 
-pytestmark = pytest.mark.skipif(
-    not PROXY or not CERT_DIR,
-    reason="requires a local PIV mTLS proxy (run bin/smoke-piv-setup; sets "
-    "SPARC_SMOKE_PIV_PROXY_URL + SPARC_SMOKE_PIV_CERT_DIR)",
-)
+# #885 — named so a skip is reported as UNPROVEN rather than passing quietly.
+pytestmark = [
+    pytest.mark.posture("piv_mtls"),
+    pytest.mark.skipif(
+        not PROXY or not CERT_DIR,
+        reason="requires a local PIV mTLS proxy (run bin/smoke-piv-setup; sets "
+        "SPARC_SMOKE_PIV_PROXY_URL + SPARC_SMOKE_PIV_CERT_DIR)",
+    ),
+]
 
 
 def _paths():
