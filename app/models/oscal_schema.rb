@@ -18,9 +18,23 @@ class OscalSchema < ApplicationRecord
   # finding out too late.
   SUPPORTED_VERSIONS = %w[1.1.1 1.1.2 1.1.3 1.2.0 1.2.1 1.2.2].freeze
 
-  # What SPARC EMITS. Adding a version to validate against is a different
-  # decision from changing the version we write, so this is unchanged.
-  DEFAULT_VERSION    = "1.1.2"
+  # What SPARC EMITS. #1020 added 1.2.2 to validate against and deliberately
+  # left this at 1.1.2, because adding a version to check is a different
+  # decision from changing the version we write.
+  #
+  # Owner-decided 2026-08-23: make 1.2.2 the default. The evidence for the move
+  # is that it changes nothing about which documents are exportable — every
+  # export type was validated against BOTH versions across every record in the
+  # instance (catalog, profile, ssp, component-definition, assessment-plan,
+  # assessment-results, poam) and the pass/fail set is identical: no document
+  # passes 1.1.2 and fails 1.2.2. The tightening 1.2.x introduces (non-empty
+  # `metadata.title` and sibling title fields) is already satisfied, because
+  # those titles are required by SPARC's own model validations.
+  #
+  # A document that carries its own `oscal_version` still wins — this is the
+  # fallback for documents that do not state one, and the version SPARC
+  # declares in `metadata.oscal-version` when it authors a document.
+  DEFAULT_VERSION    = "1.2.2"
 
   # OSCAL document-type strings reused as map keys + root_keys below.
   COMPONENT_DEFINITION = "component-definition".freeze

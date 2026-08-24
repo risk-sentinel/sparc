@@ -7,6 +7,13 @@ Rails.application.routes.draw do
   # control ids contain dots (1478 of 2447 distinct ids), and Rails would
   # otherwise read `/controls/ac-19.4.b.1` as id `ac-19.4.b` with format `1`,
   # silently resolving the PARENT control.
+  # #716 — the bulk editable-field import pair (preview -> confirm). Four
+  # document types draw an identical pair of paths; naming them once means a
+  # change to the route shape cannot reach three of them and quietly miss the
+  # fourth. The `to:` differs per type and stays inline.
+  field_import_preview = "fields/import/preview"
+  field_import_confirm = "fields/import/confirm"
+
   control_member       = "controls/:id"
   control_member_opts  = { constraints: { id: /[^\/]+/ }, format: false }
 
@@ -595,8 +602,8 @@ Rails.application.routes.draw do
           # #628 — populate an existing empty SSP from a published profile.
           post :populate_from_profile
           # #716 — bulk editable-field file import (preview → confirm).
-          post "fields/import/preview", to: "ssp_documents#import_fields_preview", as: :import_fields_preview
-          post "fields/import/confirm", to: "ssp_documents#import_fields_confirm", as: :import_fields_confirm
+          post field_import_preview, to: "ssp_documents#import_fields_preview", as: :import_fields_preview
+          post field_import_confirm, to: "ssp_documents#import_fields_confirm", as: :import_fields_confirm
         end
       end
 
@@ -608,8 +615,8 @@ Rails.application.routes.draw do
           put :update_fields
           get :export
           # #716 — bulk editable-field file import (preview → confirm).
-          post "fields/import/preview", to: "sar_documents#import_fields_preview", as: :import_fields_preview
-          post "fields/import/confirm", to: "sar_documents#import_fields_confirm", as: :import_fields_confirm
+          post field_import_preview, to: "sar_documents#import_fields_preview", as: :import_fields_preview
+          post field_import_confirm, to: "sar_documents#import_fields_confirm", as: :import_fields_confirm
         end
       end
 
@@ -624,8 +631,8 @@ Rails.application.routes.draw do
         end
         member do
           # #716 — bulk editable-field file import (preview → confirm).
-          post "fields/import/preview", to: "sap_documents#import_fields_preview", as: :import_fields_preview
-          post "fields/import/confirm", to: "sap_documents#import_fields_confirm", as: :import_fields_confirm
+          post field_import_preview, to: "sap_documents#import_fields_preview", as: :import_fields_preview
+          post field_import_confirm, to: "sap_documents#import_fields_confirm", as: :import_fields_confirm
           # #1026 — field import above WRITES control fields and, until this
           # route existed, nothing in the API read them back: `show` reports
           # `controls_count` and carries no `controls`. SSP and SAR have had
@@ -799,8 +806,8 @@ Rails.application.routes.draw do
           post :approve, to: "cdef_documents#approve"
           post :reject, to: "cdef_documents#reject"
           # #716 — bulk editable-field file import (preview → confirm).
-          post "fields/import/preview", to: "cdef_documents#import_fields_preview", as: :import_fields_preview
-          post "fields/import/confirm", to: "cdef_documents#import_fields_confirm", as: :import_fields_confirm
+          post field_import_preview, to: "cdef_documents#import_fields_preview", as: :import_fields_preview
+          post field_import_confirm, to: "cdef_documents#import_fields_confirm", as: :import_fields_confirm
           # #1026 — as for SAP: the field import above WRITES control fields
           # and nothing in the API read them back, so a caller could bulk-modify
           # a component definition's implementations with no way to confirm

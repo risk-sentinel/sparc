@@ -197,7 +197,7 @@ export default class ControlPickerController extends Controller {
       this.resultsTarget.appendChild(
         this.element_("div", "sparc-control-picker__empty", "No matching controls.")
       )
-      this.resultsTarget.hidden = false
+      this.setExpanded(true)
       return
     }
 
@@ -219,6 +219,11 @@ export default class ControlPickerController extends Controller {
       row.dataset.index = String(index)
       row.dataset.action = "click->control-picker#choose"
       row.setAttribute("role", "option")
+      // aria-activedescendant references an option by id, so every option needs
+      // one — without it, arrow-key navigation moves a visual highlight that no
+      // screen reader ever announces.
+      row.id = `evidence_control_option_${index}`
+      row.setAttribute("aria-selected", "false")
 
       const id = this.element_("span", "sparc-control-picker__option-id", control.display_id)
       if (control.enhancement) id.classList.add("sparc-control-picker__option-id--enhancement")
@@ -234,13 +239,33 @@ export default class ControlPickerController extends Controller {
       this.resultsTarget.appendChild(row)
     })
 
-    this.resultsTarget.hidden = false
+    this.setExpanded(true)
+  }
+
+  // Keeps the input's advertised state and the list's actual state in step.
+  // These were markup-only before, so they never changed after first render.
+  setExpanded(open) {
+    this.resultsTarget.hidden = !open
+    this.searchTarget.setAttribute("aria-expanded", open ? "true" : "false")
+    if (!open) this.searchTarget.removeAttribute("aria-activedescendant")
   }
 
   highlight() {
+    let active = null
     this.resultsTarget
       .querySelectorAll(".sparc-control-picker__option")
-      .forEach((el, i) => el.classList.toggle("is-active", i === this.activeIndex))
+      .forEach((el, i) => {
+        const on = i === this.activeIndex
+        el.classList.toggle("is-active", on)
+        el.setAttribute("aria-selected", on ? "true" : "false")
+        if (on) active = el
+      })
+
+    if (active) {
+      this.searchTarget.setAttribute("aria-activedescendant", active.id)
+    } else {
+      this.searchTarget.removeAttribute("aria-activedescendant")
+    }
   }
 
   renderChips() {
@@ -286,7 +311,7 @@ export default class ControlPickerController extends Controller {
   }
 
   closeResults() {
-    this.resultsTarget.hidden = true
+    this.setExpanded(false)
     this.resultsTarget.innerHTML = ""
     this.results = []
     this.activeIndex = -1

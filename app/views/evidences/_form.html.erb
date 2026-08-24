@@ -122,10 +122,26 @@
 
             <div class="sparc-control-picker__chips" data-control-picker-target="chips"></div>
 
+            <%# The results list already carried role="listbox" and its rows
+                role="option", but the input was never wired to it: no
+                role="combobox", no aria-controls, no aria-expanded. A screen
+                reader therefore had no way to discover that typing produced
+                results at all — the ARIA pattern was half-built, which reads to
+                a linter as "a listbox that should have been a <select>".
+
+                It cannot be a <select> or <datalist>: the options are fetched
+                from a catalog as you type and carry an id, a title and a family
+                badge. Completing the combobox pattern is the fix; replacing it
+                would remove the search. (Sonar Web:S6819 / the listbox rule.) %>
             <input type="text"
                    class="form-control"
                    id="evidence_control_search"
                    autocomplete="off"
+                   role="combobox"
+                   aria-expanded="false"
+                   aria-controls="evidence_control_results"
+                   aria-autocomplete="list"
+                   aria-haspopup="listbox"
                    aria-labelledby="evidence_control_ids_label"
                    aria-describedby="evidence_control_help"
                    placeholder="Search by identifier or title, e.g. AC-2 or &quot;account management&quot;"
@@ -133,7 +149,9 @@
                    data-action="input->control-picker#search keydown->control-picker#keydown">
 
             <div class="sparc-control-picker__results"
+                 id="evidence_control_results"
                  role="listbox"
+                 aria-label="Matching controls"
                  hidden
                  data-control-picker-target="results"></div>
 
@@ -146,8 +164,10 @@
               Pick controls from a loaded catalog. Enhancements (AC-2(1)) are
               selectable in their own right.
             </div>
-            <div class="form-text" role="status" aria-live="polite"
-                 data-control-picker-target="status"></div>
+            <%# <output> carries an implicit status role, so the explicit
+                role="status" was redundant markup for the same semantics. %>
+            <output class="form-text" aria-live="polite"
+                    data-control-picker-target="status"></output>
           </div>
         </div>
       </div>
