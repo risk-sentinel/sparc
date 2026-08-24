@@ -67,6 +67,20 @@
       ]
     },
     {
+      "checkName": "api_contract",
+      "workflow": ".github/workflows/ci.yml",
+      "workflowFilterName": "api_contract",
+      "filterPathSpec": [
+        "config/routes.rb",
+        "app/controllers/api/**",
+        "docs/api/**",
+        "tests/api/**",
+        "bin/api_inventory_check.rb",
+        "bin/api_postman_check.rb"
+      ],
+      "comment": "#1050 — guards the #995 contract result: every /api/v1 endpoint has a docs page, a Postman entry and a pytest module. Both gate scripts existed and were run by no workflow, so the guarantee was unenforced from the moment #995 closed."
+    },
+    {
       "checkName": "validate_compliance_artifacts",
       "workflow": ".github/workflows/compliance.yml",
       "workflowFilterName": "_top_level_paths",

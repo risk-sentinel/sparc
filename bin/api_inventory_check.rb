@@ -8,9 +8,9 @@
 #   - tests/api/test_*.py  (the pytest endpoint suite)
 #
 # Usage (from repo root):
-#   bin/api_inventory_check.rb            # writes summary + inventory body to stdout
+#   bin/api_inventory_check.rb            # report + EXIT 1 on drift (the gate)
 #   bin/api_inventory_check.rb --write    # splices both into docs/api/INVENTORY.md
-#   bin/api_inventory_check.rb --check    # exits 1 if MISSING rows exist
+#   bin/api_inventory_check.rb --report   # report only, always exits 0
 #
 # This is the script behind the procedure documented in
 # docs/api/SPARC-API-Review-and-Automated-Testing-Procedure.md
@@ -419,7 +419,20 @@ else
   puts table
 end
 
-if ARGV.include?("--check")
+# #1050 — enforcement is the DEFAULT; `--report` opts out.
+#
+# This used to be `if ARGV.include?("--check")`, so the obvious invocation —
+# running the script with no flags — printed its findings and exited 0. That is
+# backwards for a gate, and it misled a reader of this very repository: while
+# adding the #1039 endpoints the bare form was run, `exit=0` was read as "the
+# contract is satisfied", and re-running with `--check` exited 1 on an endpoint
+# with no tests/api coverage. The gate had been reporting that failure the
+# whole time.
+#
+# `--write` and `--routes-json` are generation modes and exit above, so they
+# never reach this. `--check` is still accepted so existing invocations and
+# documentation keep working.
+unless ARGV.include?("--report") || ARGV.include?("--write")
   doc_gaps = rows.count { |r| r[:doc] == "**MISSING**" }
   pm_gaps  = rows.count { |r| r[:postman] == "**MISSING**" }
   py_gaps  = rows.count { |r| r[:pytest] == "**MISSING**" }

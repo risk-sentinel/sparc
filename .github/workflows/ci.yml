@@ -15,6 +15,7 @@ jobs:
   # ── Path filter: skip expensive jobs on workflow-only PRs ──────
   changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.event_name == 'pull_request'
     permissions:
       contents: read
@@ -23,6 +24,7 @@ jobs:
       app_code: ${{ steps.filter.outputs.app_code }}
       yaml: ${{ steps.filter.outputs.yaml }}
       python: ${{ steps.filter.outputs.python }}
+      api_contract: ${{ steps.filter.outputs.api_contract }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,9 +51,21 @@ jobs:
             python:
               - 'tests/api/**'
               - 'tests/ui-smoke/**'
+            # #1050 — anything that can change the API surface or its three
+            # contract inputs (docs page, Postman entry, pytest module). Keep
+            # in sync with the api_contract rule in .github/required-checks.json;
+            # validate-required-checks-sync.yml fails the PR if they drift.
+            api_contract:
+              - 'config/routes.rb'
+              - 'app/controllers/api/**'
+              - 'docs/api/**'
+              - 'tests/api/**'
+              - 'bin/api_inventory_check.rb'
+              - 'bin/api_postman_check.rb'
 
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [ changes ]
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
@@ -74,6 +88,7 @@ jobs:
   # undetected. Style is advisory (relaxed preset); only real errors fail.
   yaml_lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [ changes ]
     if: always() && (needs.changes.outputs.yaml == 'true' || github.event_name != 'pull_request')
     steps:
@@ -96,6 +111,7 @@ jobs:
   # intentionally NOT gated — a large one-time reformat, tracked separately.
   python_lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [ changes ]
     if: always() && (needs.changes.outputs.python == 'true' || github.event_name != 'pull_request')
     steps:
@@ -108,8 +124,53 @@ jobs:
       - name: Lint the Python test suites
         run: ruff check --output-format github tests/api tests/ui-smoke
 
+  # ── API contract gate (#1050) ─────────────────────────────────
+  # #995 closed with all three contract axes at 0 across 285 endpoints — every
+  # /api/v1 endpoint carrying a docs page, a Postman entry and a pytest module.
+  # Nothing preserved that: both gate scripts existed, worked, and were run by
+  # NO workflow (`grep -rn 'api_inventory_check\|api_postman_check' .github/`
+  # returned nothing), so an endpoint added afterwards with none of the three
+  # was caught by a script no pipeline ran.
+  #
+  # The scripts now EXIT NON-ZERO by default (`--report` opts out); the old
+  # default printed its findings and exited 0, which reads exactly like success
+  # and did mislead a reader of this repo — see the comment in
+  # bin/api_inventory_check.rb.
+  #
+  # `bin/rails routes` boots the app but does not connect, so this job needs no
+  # postgres service — verified against an unreachable DATABASE_URL.
+  api_contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [ changes ]
+    if: always() && (needs.changes.outputs.api_contract == 'true' || github.event_name != 'pull_request')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Every /api/v1 endpoint has a doc page, a Postman entry and a pytest module
+        env:
+          RAILS_ENV: test
+          # Deliberately unreachable: `rails routes` must not need a database,
+          # and pointing at one that cannot answer proves it stays that way.
+          DATABASE_URL: postgres://unused:unused@127.0.0.1:1/unused  # gitleaks:allow
+        run: bin/api_inventory_check.rb
+
+      - name: The Postman collection covers the whole route surface
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://unused:unused@127.0.0.1:1/unused  # gitleaks:allow
+        run: bin/api_postman_check.rb
+
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [ changes ]
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
 

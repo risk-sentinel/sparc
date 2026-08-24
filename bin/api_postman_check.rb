@@ -5,9 +5,9 @@
 # /api/v1 surface.
 #
 # Usage (from repo root):
-#   bin/api_postman_check.rb           # report what the collection is missing
+#   bin/api_postman_check.rb           # report + EXIT 1 if anything is missing (the gate)
 #   bin/api_postman_check.rb --write   # add a request for every missing endpoint
-#   bin/api_postman_check.rb --check   # exit 1 if anything is missing
+#   bin/api_postman_check.rb --report  # report only, always exits 0
 #
 # #995 — the collection covered 132 of 208 endpoints while its own description
 # claimed "104 endpoints across 18 folders", and its Bulk Update Parameters body
@@ -388,4 +388,8 @@ else
   end
 end
 
-exit 1 if ARGV.include?("--check") && missing.any?
+# #1050 — enforcement is the DEFAULT; `--report` opts out, and `--write` is a
+# generation mode that must not gate. `--check` still accepted for
+# compatibility with existing invocations. The old default printed the
+# missing list and exited 0, which reads exactly like success.
+exit 1 if missing.any? && !ARGV.include?("--report") && !ARGV.include?("--write")
