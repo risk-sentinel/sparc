@@ -63,6 +63,33 @@
   --sparc-text-muted: #666666;
   --sparc-text-faint: #6a6a6a;
   --sparc-focus: #1f6fa5;
+
+  /* ── button intents (#950) ── */
+  /* The TINT and the BORDER use these. */
+  --sparc-i-neutral:  #3f4749;
+  --sparc-i-primary:  #1f6fa5;
+  --sparc-i-positive: #19743f;
+  --sparc-i-info:     #0c6e80;
+  --sparc-i-caution:  #8a6300;
+  --sparc-i-danger:   #c0392b;
+  --sparc-i-accent:   #8e44ad;
+
+  /* The LABEL uses these — measured, and NOT the same values.
+     A label sits on a 20% tint OF ITSELF, and that pair is far tighter than
+     the same colour on the page: `primary` on #f5f5f5 is 5.42:1 but on its own
+     tint #d2e2ed it is only 4.09:1. SIX of the seven intents failed AA that
+     way; only `neutral` passed, because it is nearly black.
+
+     Darkening the label 2-4% in lightness clears 4.5:1 on both the 20% (solid,
+     outline) and 12% (ghost) tints while leaving the tint itself — the thing
+     that was actually approved by eye — untouched. */
+  --sparc-i-neutral-ink:  #3f4749;   /* 6.79 on its tint — unchanged */
+  --sparc-i-primary-ink:  #1d6698;   /* 4.65 / ghost 5.24 */
+  --sparc-i-positive-ink: #176c3a;   /* 4.84 / 5.45 */
+  --sparc-i-info-ink:     #0c6a7b;   /* 4.65 / 5.27 */
+  --sparc-i-caution-ink:  #805c00;   /* 4.63 / 5.17 */
+  --sparc-i-danger-ink:   #af3427;   /* 4.62 / 5.24 */
+  --sparc-i-accent-ink:   #8841a6;   /* 4.68 / 5.28 */
 }
 
 [data-bs-theme="dark"] {
@@ -114,6 +141,25 @@
   --sparc-text-muted: #94a3b8;
   --sparc-text-faint: #94a3b8;
   --sparc-focus: #5dade2;
+
+  /* ── button intents (#950) ── */
+  --sparc-i-neutral:  #b0bec5;
+  --sparc-i-primary:  #5dade2;
+  --sparc-i-positive: #2ecc71;
+  --sparc-i-info:     #5bc8da;
+  --sparc-i-caution:  #f6e05e;
+  --sparc-i-danger:   #f48a87;
+  --sparc-i-accent:   #c683df;
+
+  /* Dark has no tint to sit on — the label is on the surface itself, which
+     every intent already clears at 5.09-10.39:1. Ink == the token. */
+  --sparc-i-neutral-ink:  #b0bec5;
+  --sparc-i-primary-ink:  #5dade2;
+  --sparc-i-positive-ink: #2ecc71;
+  --sparc-i-info-ink:     #5bc8da;
+  --sparc-i-caution-ink:  #f6e05e;
+  --sparc-i-danger-ink:   #f48a87;
+  --sparc-i-accent-ink:   #c683df;
 }
 
 
@@ -2952,58 +2998,15 @@ a.link-purple { color: var(--sparc-purple); }
 }
 
 /* ── intents ───────────────────────────────────────────────────────────
-   Light and dark values live on :root / [data-bs-theme="dark"] below, so a
-   role never hard-codes a literal — a literal in a base rule opts that role
-   out of the theme switch entirely, which is how `edit` once rendered a dark
-   orange on a dark surface at 2.90:1. */
-:root,
-[data-bs-theme="light"] {
-  /* The TINT and the BORDER use these. */
-  --sparc-i-neutral:  #3f4749;
-  --sparc-i-primary:  #1f6fa5;
-  --sparc-i-positive: #19743f;
-  --sparc-i-info:     #0c6e80;
-  --sparc-i-caution:  #8a6300;
-  --sparc-i-danger:   #c0392b;
-  --sparc-i-accent:   #8e44ad;
+   The intent tokens these rules read are declared with the rest of the theme
+   tokens, in the :root / [data-bs-theme="dark"] blocks at the top of this
+   file — deliberately NOT reopened here. Reopening a selector 2,900 lines
+   from its first use is how a redeclaration hides: the later one silently
+   wins and nothing says so.
 
-  /* The LABEL uses these — measured, and NOT the same values.
-     A label sits on a 20% tint OF ITSELF, and that pair is far tighter than
-     the same colour on the page: `primary` on #f5f5f5 is 5.42:1 but on its own
-     tint #d2e2ed it is only 4.09:1. SIX of the seven intents failed AA that
-     way; only `neutral` passed, because it is nearly black.
-
-     Darkening the label 2-4% in lightness clears 4.5:1 on both the 20% (solid,
-     outline) and 12% (ghost) tints while leaving the tint itself — the thing
-     that was actually approved by eye — untouched. */
-  --sparc-i-neutral-ink:  #3f4749;   /* 6.79 on its tint — unchanged */
-  --sparc-i-primary-ink:  #1d6698;   /* 4.65 / ghost 5.24 */
-  --sparc-i-positive-ink: #176c3a;   /* 4.84 / 5.45 */
-  --sparc-i-info-ink:     #0c6a7b;   /* 4.65 / 5.27 */
-  --sparc-i-caution-ink:  #805c00;   /* 4.63 / 5.17 */
-  --sparc-i-danger-ink:   #af3427;   /* 4.62 / 5.24 */
-  --sparc-i-accent-ink:   #8841a6;   /* 4.68 / 5.28 */
-}
-
-[data-bs-theme="dark"] {
-  --sparc-i-neutral:  #b0bec5;
-  --sparc-i-primary:  #5dade2;
-  --sparc-i-positive: #2ecc71;
-  --sparc-i-info:     #5bc8da;
-  --sparc-i-caution:  #f6e05e;
-  --sparc-i-danger:   #f48a87;
-  --sparc-i-accent:   #c683df;
-
-  /* Dark has no tint to sit on — the label is on the surface itself, which
-     every intent already clears at 5.09-10.39:1. Ink == the token. */
-  --sparc-i-neutral-ink:  #b0bec5;
-  --sparc-i-primary-ink:  #5dade2;
-  --sparc-i-positive-ink: #2ecc71;
-  --sparc-i-info-ink:     #5bc8da;
-  --sparc-i-caution-ink:  #f6e05e;
-  --sparc-i-danger-ink:   #f48a87;
-  --sparc-i-accent-ink:   #c683df;
-}
+   A role never hard-codes a literal, because a literal in a base rule opts
+   that role out of the theme switch entirely — which is how `edit` once
+   rendered a dark orange on a dark surface at 2.90:1. */
 
 .sparc-action--neutral  { --sparc-action-c: var(--sparc-i-neutral);  --sparc-action-ink: var(--sparc-i-neutral-ink); }
 .sparc-action--primary  { --sparc-action-c: var(--sparc-i-primary);  --sparc-action-ink: var(--sparc-i-primary-ink); }

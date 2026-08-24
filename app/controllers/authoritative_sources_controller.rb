@@ -12,13 +12,19 @@
 class AuthoritativeSourcesController < ApplicationController
   include CollectionViewable
   before_action :authorize_read!,  only: %i[index show]
-  before_action :set_resource,     only: %i[edit update destroy restore link_control unlink_control]
+  before_action :set_resource,     only: %i[show edit update destroy restore link_control unlink_control]
   before_action :authorize_write!, only: %i[edit update destroy restore link_control unlink_control]
 
   # #888 — the facets this screen offers; the chrome that renders them is shared.
   SOURCE_FACETS = %i[scope rel media_type].freeze
   SOURCE_FACET_LABELS = { scope: "Scope", rel: "Rel", media_type: "Media type" }.freeze
 
+  # `show` and `edit` have no method here on purpose. `set_resource` loads and
+  # authorizes the record for both, and neither action does anything further
+  # than render its template, which Rails does implicitly. `show` previously
+  # carried its own copy of `set_resource`'s body — the same find, the same two
+  # authorization guards, the same redirect — which is a second place to forget
+  # when the scoping rule changes.
   def index
     scope = visible_resources
 
@@ -47,19 +53,6 @@ class AuthoritativeSourcesController < ApplicationController
     @pagy, @resources = paginate_collection(scope.order(updated_at: :desc))
   end
 
-  def show
-    # NOT `visible_resources`: that scope is `.active`, so an archived source
-    # would 404 on the very screen that offers Restore — archive would be a
-    # one-way door. Scope is still enforced, just without the active filter.
-    @resource = BackMatterResource.find(params[:id])
-    return if current_user.admin?
-    return if @resource.globally_available? ||
-              current_user.organizations.ids.include?(@resource.organization_id)
-
-    flash[:error] = "Not authorized for that source"
-    redirect_to authoritative_sources_path
-  end
-
   def new
     @resource = BackMatterResource.new(rel: "reference")
   end
@@ -81,8 +74,6 @@ class AuthoritativeSourcesController < ApplicationController
       render :new, status: :unprocessable_entity
     end
   end
-
-  def edit; end
 
   def update
     if @resource.update(resource_params)

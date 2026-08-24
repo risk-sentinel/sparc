@@ -73,7 +73,8 @@ def test_the_contact_field_ghosts_its_expected_shape(authed_page):
     record_csp(authed_page)
     authed_page.goto(f"{INDEX}/new")
 
-    placeholder = authed_page.get_attribute("#back_matter_resource_provided_by_contact", "placeholder")
+    contact_field = "#back_matter_resource_provided_by_contact"
+    placeholder = authed_page.get_attribute(contact_field, "placeholder")
     assert placeholder, "the contact field must ghost its expected shape"
     assert "@" in placeholder and re.search(r"\d", placeholder), \
         f"the ghost should show BOTH an email and a phone shape, got {placeholder!r}"
