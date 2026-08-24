@@ -103,7 +103,10 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
       audit_log("authoritative_source_created", subject: result.resource,
                 metadata: { title: result.resource.title, availability: result.message })
       render json: {
-        data: serialize_back_matter_resource(result.resource),
+        # `detailed: true` like every other action on this controller. Without
+        # it the create response omits the provenance pair the caller just
+        # sent, which reads as the write having silently dropped them.
+        data: serialize_back_matter_resource(result.resource, detailed: true),
         message: result.message
       }, status: :created
     else

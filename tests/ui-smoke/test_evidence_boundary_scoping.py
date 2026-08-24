@@ -52,16 +52,38 @@ def _restricted_href(admin_page) -> str:
     )
 
 
+def _is_visible_to(page, title: str) -> bool:
+    """Whether `page`'s identity can find `title` at all — searched, not skimmed.
+
+    `_restricted_href` above already learned this for the admin path: the index
+    pages at 24, so "is it on the bare /evidences" answers a question about
+    ordering, not about access. The two assertions below never got the same
+    treatment, and by the time this instance held 42 evidence records the global
+    fixture had drifted to position 37 — off page one. The positive assertion
+    then failed for no reason, and, far worse, the NEGATIVE assertion passed for
+    no reason: a restricted record that merely sorted late looks identical to one
+    correctly hidden, so a genuine scoping regression would not have been caught.
+    """
+    page.goto(f"/evidences?q={quote_plus(title)}")
+    page.wait_for_load_state("networkidle")
+
+    links = page.get_by_role("link", name=title)
+    for index in range(links.count()):
+        href = links.nth(index).get_attribute("href")
+        if href and SHOW_HREF.match(href):
+            return True
+    return False
+
+
 def test_non_admin_index_hides_out_of_boundary_evidence(user_authed_page, authed_page):
     _restricted_href(authed_page)  # assert the fixtures exist (admin can see the restricted one)
 
     record_csp(user_authed_page)
-    user_authed_page.goto("/evidences")
-    user_authed_page.wait_for_load_state("networkidle")
-    body = user_authed_page.content()
 
-    assert GLOBAL_TITLE in body, "non-admin should see global (nil-boundary) evidence"
-    assert RESTRICTED_TITLE not in body, (
+    assert _is_visible_to(user_authed_page, GLOBAL_TITLE), (
+        "non-admin should see global (nil-boundary) evidence"
+    )
+    assert not _is_visible_to(user_authed_page, RESTRICTED_TITLE), (
         "#738 regression: a non-admin sees out-of-boundary evidence in the index"
     )
     assert csp_violations(user_authed_page) == [], "CSP violations on /evidences as non-admin"

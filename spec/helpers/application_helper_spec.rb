@@ -113,5 +113,4 @@ RSpec.describe ApplicationHelper, type: :helper do
       3.times { helper.safe_avatar_tag(user) }
     end
   end
-
 end
