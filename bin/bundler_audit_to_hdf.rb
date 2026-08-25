@@ -64,6 +64,12 @@ rescue JSON::ParserError => e
   abort "bundler_audit_to_hdf: #{options[:input]} is not valid JSON: #{e.message}"
 end
 
+# The scanner name, which is load-bearing rather than cosmetic: the gate
+# resolves a threshold file by the HDF's basename, so this must stay in step
+# with docs/compliance/thresholds/bundler-audit.yml and with the output
+# filename in security.yml's normalize_hdf job.
+SCANNER_NAME = "bundler-audit"
+
 # bundler-audit criticality -> HDF impact.
 #
 # HDF impact drives the severity bucket `saf validate threshold` counts against
@@ -143,13 +149,13 @@ hdf = {
   "platform" => {
     "name" => "Heimdall Tools",
     "release" => "2.13.0",
-    "target_id" => "bundler-audit"
+    "target_id" => SCANNER_NAME
   },
   "version" => "2.13.0",
   "statistics" => {},
   "profiles" => [
     {
-      "name" => "bundler-audit",
+      "name" => SCANNER_NAME,
       "version" => report["version"].to_s,
       "title" => "Ruby dependency advisories (bundler-audit)",
       "maintainer" => "SPARC",
@@ -168,7 +174,7 @@ hdf = {
   "passthrough" => {
     "auxiliary_data" => [
       {
-        "name" => "bundler-audit",
+        "name" => SCANNER_NAME,
         "data" => {
           "version" => report["version"],
           "created_at" => report["created_at"],

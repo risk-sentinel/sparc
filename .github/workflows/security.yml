@@ -1063,7 +1063,13 @@ jobs:
 
       - name: Install SAF CLI
         if: always()
-        run: npm install -g @mitre/saf@1.6.0
+        # --ignore-scripts: npm lifecycle scripts (preinstall/postinstall) from
+        # any of the ~545 transitive packages would otherwise execute arbitrary
+        # code on a runner holding this workflow's token. saf needs none of
+        # them — verified by installing with the flag and then actually running
+        # `validate threshold` and `convert sarif2hdf` against real inputs, not
+        # merely checking `saf --version`.
+        run: npm install -g --ignore-scripts @mitre/saf@1.6.0
 
       - name: Verify SAF CLI converters are available
         if: always()
@@ -1594,7 +1600,13 @@ jobs:
           node-version: '22'
 
       - name: Install SAF CLI
-        run: npm install -g @mitre/saf@1.6.0
+        # --ignore-scripts: npm lifecycle scripts (preinstall/postinstall) from
+        # any of the ~545 transitive packages would otherwise execute arbitrary
+        # code on a runner holding this workflow's token. saf needs none of
+        # them — verified by installing with the flag and then actually running
+        # `validate threshold` and `convert sarif2hdf` against real inputs, not
+        # merely checking `saf --version`.
+        run: npm install -g --ignore-scripts @mitre/saf@1.6.0
 
       - name: Validate each amended HDF against its scanner threshold
         run: |

@@ -159,13 +159,17 @@ jobs:
           RAILS_ENV: test
           # Deliberately unreachable: `rails routes` must not need a database,
           # and pointing at one that cannot answer proves it stays that way.
-          DATABASE_URL: postgres://unused:unused@127.0.0.1:1/unused  # gitleaks:allow
+          # No credential component — there is nothing to authenticate to, and a
+          # user:password pair here is a hardcoded-credential finding for no
+          # benefit (sonar secrets rule). Verified this still boots and still
+          # never connects.
+          DATABASE_URL: postgres://unused@127.0.0.1:1/unused
         run: bin/api_inventory_check.rb
 
       - name: The Postman collection covers the whole route surface
         env:
           RAILS_ENV: test
-          DATABASE_URL: postgres://unused:unused@127.0.0.1:1/unused  # gitleaks:allow
+          DATABASE_URL: postgres://unused@127.0.0.1:1/unused
         run: bin/api_postman_check.rb
 
   test:
