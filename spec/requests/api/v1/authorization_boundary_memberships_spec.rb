@@ -164,7 +164,7 @@ RSpec.describe "Api::V1::AuthorizationBoundaryMemberships", type: :request do
         }
       }.not_to change { AuthorizationBoundaryMembership.count }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("is not an available role")
     end
 
@@ -173,7 +173,7 @@ RSpec.describe "Api::V1::AuthorizationBoundaryMemberships", type: :request do
         authorization_boundary_membership: { user_name: "", role: "isso" }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

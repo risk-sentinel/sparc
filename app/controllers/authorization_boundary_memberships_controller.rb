@@ -44,7 +44,7 @@ class AuthorizationBoundaryMembershipsController < ApplicationController
     else
       flash.now[:error] = @membership.errors.full_messages.join(", ")
       load_roster
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -63,7 +63,7 @@ class AuthorizationBoundaryMembershipsController < ApplicationController
       redirect_to @authorization_boundary
     else
       flash.now[:error] = @membership.errors.full_messages.join(", ")
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

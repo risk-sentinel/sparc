@@ -74,7 +74,7 @@ class Api::V1::ControlFamiliesController < Api::V1::BaseController
     if controls.positive?
       return render json: {
         error: "Family #{code} still has #{controls} control(s). Delete them first."
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
 
     @control_family.destroy!

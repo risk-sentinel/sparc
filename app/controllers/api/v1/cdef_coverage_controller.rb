@@ -55,7 +55,7 @@ class Api::V1::CdefCoverageController < Api::V1::BaseController
     # over because the report carries no resource values (#904).
     render json: { data: report.to_h.merge(report_token: CdefCoverageReportToken.sign(report.to_h)) }
   rescue TerraformUploadInventoryService::Error => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # POST /api/v1/cdef_coverage/runs
@@ -82,7 +82,7 @@ class Api::V1::CdefCoverageController < Api::V1::BaseController
 
     render json: { data: serialize_run(run, detailed: true) }, status: :created
   rescue TerraformUploadInventoryService::Error, CdefCoverageReportToken::Error => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # GET /api/v1/cdef_coverage/runs

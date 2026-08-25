@@ -134,7 +134,7 @@ RSpec.describe "Api::V1::BaselineParameters", type: :request do
           headers: auth_headers,
           as: :json
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response.parsed_body["error"]).to match(/published/i)
         expect(response.parsed_body["error"]).to match(/duplicate/i)
       end
@@ -183,7 +183,7 @@ RSpec.describe "Api::V1::BaselineParameters", type: :request do
           baseline_parameters: { parameters: [ { param_id: "ac-1_prm_1", value: "ISSO" } ] }
         }, headers: auth_headers, as: :json
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         parsed = JSON.parse(response.body)
         expect(parsed["details"].join(" ")).to include("TOP LEVEL")
         expect(parsed["expected"]).to eq(
@@ -198,7 +198,7 @@ RSpec.describe "Api::V1::BaselineParameters", type: :request do
           parameters: { "ac-1_prm_1" => "ISSO" }
         }, headers: auth_headers, as: :json
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(JSON.parse(response.body)["details"].join(" ")).to include("must be an ARRAY")
         expect(field_names).to be_empty
       end
@@ -209,7 +209,7 @@ RSpec.describe "Api::V1::BaselineParameters", type: :request do
         put api_v1_profile_document_parameters_path(profile),
           params: { note: "no parameters here" }, headers: auth_headers
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(field_names).to be_empty
       end
 
@@ -218,7 +218,7 @@ RSpec.describe "Api::V1::BaselineParameters", type: :request do
           selections: [ { select_id: "ac-2_prm_1", selected: "removes" } ]
         }, headers: auth_headers, as: :json
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(JSON.parse(response.body)["details"].join(" ")).to include("must be an ARRAY")
         expect(field_names).to be_empty
       end
@@ -228,7 +228,7 @@ RSpec.describe "Api::V1::BaselineParameters", type: :request do
           parameters: [ { value: "ISSO" } ]
         }, headers: auth_headers, as: :json
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(JSON.parse(response.body)["details"].join(" ")).to include("missing `param_id`")
         expect(field_names).to be_empty
       end
@@ -279,7 +279,7 @@ RSpec.describe "Api::V1::BaselineParameters", type: :request do
           selections: [ { selection_id: "zz-9_odp.01", selected: [ "removes" ] } ]
         }, headers: auth_headers, as: :json
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         errors = JSON.parse(response.body)["data"]["validation_errors"]
         expect(errors.first["select_id"]).to eq("zz-9_odp.01")
         expect(errors.first["error"]).to eq("Unknown selection ID")
@@ -293,7 +293,7 @@ RSpec.describe "Api::V1::BaselineParameters", type: :request do
         ]
       }, headers: auth_headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       parsed = JSON.parse(response.body)
       expect(parsed["data"]["validation_errors"]).not_to be_empty
     end

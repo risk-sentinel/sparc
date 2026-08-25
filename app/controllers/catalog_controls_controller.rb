@@ -37,7 +37,7 @@ class CatalogControlsController < ApplicationController
       audit_log("catalog_control_created", subject: @catalog_control, metadata: { control_id: @catalog_control.control_id })
       redirect_to @control_family, notice: "Control '#{@catalog_control.control_id}' was added."
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -54,7 +54,7 @@ class CatalogControlsController < ApplicationController
       redirect_to @catalog_control.control_family, notice: "Control updated successfully."
     else
       @control_family = @catalog_control.control_family
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 
@@ -74,7 +74,7 @@ class CatalogControlsController < ApplicationController
     if controls_text.blank?
       @control_catalog = @control_family.control_catalog
       flash.now[:error] = "Please enter at least one control."
-      return render :batch_new, status: :unprocessable_entity
+      return render :batch_new, status: :unprocessable_content
     end
 
     created = 0
@@ -103,7 +103,7 @@ class CatalogControlsController < ApplicationController
     if errors.any?
       @control_catalog = @control_family.control_catalog
       flash.now[:error] = "#{created} controls added. Errors: #{errors.join('; ')}"
-      render :batch_new, status: :unprocessable_entity
+      render :batch_new, status: :unprocessable_content
     else
       audit_log("catalog_control_created", subject: @control_family, metadata: { count: created, family_id: @control_family.id })
       redirect_to @control_family, notice: "#{created} #{'control'.pluralize(created)} added successfully."

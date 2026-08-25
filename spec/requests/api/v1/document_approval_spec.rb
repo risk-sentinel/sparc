@@ -44,7 +44,7 @@ RSpec.describe "Api::V1 document approval", type: :request do
     it "blocks submitting an empty CDEF (#634)" do
       cdef = create(:cdef_document)
       post submit_for_review_api_v1_cdef_document_path(cdef), headers: admin_headers, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(cdef.reload.approval_status).to eq("draft")
     end
   end

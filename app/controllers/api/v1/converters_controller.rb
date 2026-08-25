@@ -95,7 +95,7 @@ class Api::V1::ConvertersController < Api::V1::BaseController
         error: "This converter type cannot be refreshed.",
         details: [ "converter_type '#{@converter.converter_type}' has no registered refresh service" ],
         expected: ConverterRefreshJob::SERVICE_BY_TYPE.keys
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
 
     # Re-entrancy guard, matching the web path: a second refresh while one is

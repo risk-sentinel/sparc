@@ -44,7 +44,7 @@ class Api::V1::ScanRunsController < Api::V1::BaseController
               metadata: { scanner: run.scanner, findings: run.finding_count, failed: run.failed_count })
     render json: { data: serialize(run, detailed: true) }, status: :created
   rescue HdfIngestService::IngestError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   private

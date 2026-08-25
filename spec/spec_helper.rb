@@ -15,14 +15,17 @@ if ENV["COVERAGE"]
     #   coverage/coverage.json    — JSON report for SCA tools
     coverage_dir "coverage"
 
-    add_filter "/spec/"
-    add_filter "/config/"
-    add_filter "/db/"
-    add_group "Models", "app/models"
-    add_group "Controllers", "app/controllers"
-    add_group "Services", "app/services"
-    add_group "Jobs", "app/jobs"
-    add_group "Concerns", "app/models/concerns"
+    # #927 — `add_filter`/`add_group` are deprecated delegating aliases in
+    # simplecov 1.1.1 (`skip`/`group`, same arguments, same behaviour). They
+    # emitted eight [DEPRECATION] lines at the top of every run.
+    skip "/spec/"
+    skip "/config/"
+    skip "/db/"
+    group "Models", "app/models"
+    group "Controllers", "app/controllers"
+    group "Services", "app/services"
+    group "Jobs", "app/jobs"
+    group "Concerns", "app/models/concerns"
 
     # Minimum overall line coverage. Set at 70% to lock in today's
     # measured baseline (71.17% as of 2026-05-06) with a small buffer

@@ -61,7 +61,7 @@ class ConvertersController < ApplicationController
       redirect_to @converter, flash: { success: "Converter created." }
     else
       flash.now[:error] = "Failed to create converter."
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -75,7 +75,7 @@ class ConvertersController < ApplicationController
       redirect_to @converter, flash: { success: "Converter updated." }
     else
       flash.now[:error] = "Failed to update converter."
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

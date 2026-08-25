@@ -97,10 +97,10 @@ class Api::V1::EvidencesController < Api::V1::BaseController
              location: api_v1_evidence_url(evidence.slug)
     else
       render json: { error: "Validation failed", details: evidence.errors.full_messages },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     end
   rescue FileUploadable::UploadRejectedError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # PATCH /api/v1/evidences/:id
@@ -117,10 +117,10 @@ class Api::V1::EvidencesController < Api::V1::BaseController
       render json: { data: serialize(@evidence, detailed: true) }
     else
       render json: { error: "Validation failed", details: @evidence.errors.full_messages },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     end
   rescue FileUploadable::UploadRejectedError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # DELETE /api/v1/evidences/:id

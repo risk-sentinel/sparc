@@ -258,7 +258,7 @@ RSpec.describe "Linking a profile to its source catalog", type: :request do
             params: { profile_document: { control_catalog_id: other_catalog.id } },
             headers: headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(profile.reload.control_catalog).to eq(catalog)
     end
 

@@ -242,7 +242,7 @@ RSpec.describe "Api::V1::BackMatterResources", type: :request do
 
     it "returns 422 with no reason" do
       post reject_promotion_api_v1_back_matter_resource_path(resource), headers: admin_headers
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

@@ -48,7 +48,7 @@ RSpec.describe "Api::V1::PoamRisks", type: :request do
         post "/api/v1/poam_documents/#{document.id}/risks",
              params: { poam_risk: complete_attrs.except(field) }, headers: headers, as: :json
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         details = JSON.parse(response.body)["details"].to_s
         expect(details).to match(/#{field.to_s.humanize}/i),
           "422 did not name the missing field #{field}: #{response.body}"
@@ -73,7 +73,7 @@ RSpec.describe "Api::V1::PoamRisks", type: :request do
       patch "/api/v1/poam_risks/#{risk.id}",
             params: { poam_risk: { deadline: nil } }, headers: headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(risk.reload.deadline).to be_present
     end
   end

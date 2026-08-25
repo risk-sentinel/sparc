@@ -105,7 +105,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     audit_log("cdef_document_created", subject: cdef, metadata: { name: cdef.name })
     render json: { data: serialize_cdef(cdef) }, status: :created
   rescue CdefMutationService::ValidationError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # PATCH /api/v1/cdef_documents/:id
@@ -128,7 +128,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     # #555 — return the detailed shape so callers can read-after-write.
     render json: { data: serialize_cdef(@cdef, detailed: true) }
   rescue CdefMutationService::ValidationError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # PATCH /api/v1/cdef_documents/:id/scope
@@ -150,7 +150,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
                   authorization_boundary_id: CdefScopeService.current_boundary_id(@cdef) })
     render json: { data: serialize_cdef(@cdef, detailed: true) }
   rescue ArgumentError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # POST /api/v1/cdef_documents/:id/bulk_apply_converter/preview
@@ -167,7 +167,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     if @cdef.aws_labs_source?
       return render(
         json: { error: "Cannot bulk-apply to an AWS-Labs-sourced CDEF — clone first" },
-        status: :unprocessable_entity
+        status: :unprocessable_content
       )
     end
 
@@ -196,7 +196,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       }
     }
   rescue ArgumentError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # POST /api/v1/cdef_documents/:id/bulk_apply_converter/confirm
@@ -208,7 +208,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     if @cdef.aws_labs_source?
       return render(
         json: { error: "Cannot bulk-apply to an AWS-Labs-sourced CDEF — clone first" },
-        status: :unprocessable_entity
+        status: :unprocessable_content
       )
     end
 
@@ -223,9 +223,9 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
     render json: { data: { cdef_id: @cdef.id, cdef_slug: @cdef.slug, **result } }
   rescue ArgumentError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   rescue CdefMutationService::ValidationError => e
-    render json: { error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_entity
+    render json: { error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_content
   end
 
   # POST /api/v1/cdef_documents/:id/source_from_profile
@@ -245,9 +245,9 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
               metadata: { name: @cdef.name, source_profile_id: profile.id, source_profile_name: profile.name })
     render json: { data: serialize_cdef(@cdef, detailed: true) }
   rescue ArgumentError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   rescue CdefMutationService::ValidationError => e
-    render json: { error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_entity
+    render json: { error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_content
   end
 
   # DELETE /api/v1/cdef_documents/bulk
@@ -264,7 +264,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
         error: "The request body could not be parsed as a bulk delete. Nothing was changed.",
         details: payload.errors,
         expected: BulkDestroyPayload::EXPECTED
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
 
     result = BulkDestroyService.new(
@@ -328,7 +328,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       return render json: {
         error: "Unknown export format #{format.inspect}",
         expected: ([ "fields" ] + OSCAL_EXPORT_FORMATS)
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
 
     validate = params[:validate].to_s != "false"
@@ -359,7 +359,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       error: "The component definition does not conform to the OSCAL schema",
       details: Array(e.message.to_s.split("\n")).first(10),
       hint: "Re-request with validate=false to export it anyway"
-    }, status: :unprocessable_entity
+    }, status: :unprocessable_content
   end
 
   private

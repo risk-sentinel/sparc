@@ -49,7 +49,7 @@ module Admin
         redirect_to admin_organization_path(@organization), success: "Organization created."
       else
         flash.now[:error] = @organization.errors.full_messages.to_sentence
-        render :new, status: :unprocessable_entity
+        render :new, status: :unprocessable_content
       end
     end
 
@@ -64,7 +64,7 @@ module Admin
         redirect_to admin_organization_path(@organization), success: "Organization updated."
       else
         flash.now[:error] = @organization.errors.full_messages.to_sentence
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
       end
     end
 

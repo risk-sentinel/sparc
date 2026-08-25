@@ -74,7 +74,7 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
     render json: { data: { added: result.added, removed: result.removed,
                            controls_count: @profile.profile_controls.count } }
   rescue ProfileControlSelectionService::SelectionError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # POST /api/v1/profile_documents
@@ -103,7 +103,7 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
     if @profile.rebaselining_published?(profile_params)
       render json: { error: "This profile is published and its baseline is fixed. " \
                             "Copy it to point at a different catalog." },
-             status: :unprocessable_entity
+             status: :unprocessable_content
       return
     end
 

@@ -343,7 +343,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
     it "returns 422 when the CDEF is AWS-Labs-sourced" do
       cdef.update!(import_metadata: { "source_type" => "aws_labs", "source_url" => "https://example/cdef.json" })
       post path, params: { converter_id: converter.id }, headers: auth_headers, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to include("clone first")
     end
 
@@ -426,7 +426,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       other = create(:cdef_document, name: "Other CDEF")
       post "/api/v1/cdef_documents/#{other.slug}/bulk_apply_converter/confirm",
            params: { token: token }, headers: auth_headers, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to include("CDEF mismatch")
     end
 
@@ -434,7 +434,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       token = fetch_token
       tampered = token.sub(/\.\w/, ".X")
       post confirm_path, params: { token: tampered }, headers: auth_headers, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to include("signature invalid")
     end
 
@@ -442,7 +442,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       token = fetch_token
       cdef.update!(import_metadata: { "source_type" => "aws_labs", "source_url" => "https://example/cdef.json" })
       post confirm_path, params: { token: token }, headers: auth_headers, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "returns 401 without an API token" do
@@ -518,7 +518,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       post source_from_profile_api_v1_cdef_document_path(cdef),
         params: { source_profile_id: profile.slug }, headers: auth_headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "returns 404 for an unpublished profile" do
@@ -641,7 +641,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       patch "/api/v1/cdef_documents/#{cdef.slug}",
             params: { cdef_document: { component_type: "wetware" } }, headers: auth_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(cdef.reload.component_type).to be_nil
     end
 

@@ -42,7 +42,7 @@ RSpec.describe "Passwords", type: :request do
           new_password: "NewSecurePass456!",
           new_password_confirmation: "NewSecurePass456!"
         }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
     end
 
@@ -53,7 +53,7 @@ RSpec.describe "Passwords", type: :request do
           new_password: "short",
           new_password_confirmation: "short"
         }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
     end
   end

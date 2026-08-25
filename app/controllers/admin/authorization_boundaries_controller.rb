@@ -33,7 +33,7 @@ module Admin
       else
         @organizations = Organization.active.order(:name)
         flash.now[:error] = @authorization_boundary.errors.full_messages.to_sentence
-        render :new, status: :unprocessable_entity
+        render :new, status: :unprocessable_content
       end
     end
 
@@ -49,7 +49,7 @@ module Admin
       else
         @organizations = Organization.active.order(:name)
         flash.now[:error] = @authorization_boundary.errors.full_messages.to_sentence
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
       end
     end
 

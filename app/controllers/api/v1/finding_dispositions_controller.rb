@@ -44,7 +44,7 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
               metadata: { control_id: disposition.control_id, kind: disposition.kind })
     render json: { data: serialize(disposition) }, status: :created
   rescue FindingDispositionService::DispositionError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # DELETE .../disposition

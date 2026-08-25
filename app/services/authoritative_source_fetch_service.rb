@@ -142,12 +142,12 @@ class AuthoritativeSourceFetchService
   end
 
   def missing_href_result
-    Result.new(success: false, status_code: :unprocessable_entity,
+    Result.new(success: false, status_code: :unprocessable_content,
                error: "Resource has no href to fetch")
   end
 
   def scheme_error_result
-    Result.new(success: false, status_code: :unprocessable_entity,
+    Result.new(success: false, status_code: :unprocessable_content,
                error: "Only https:// URLs are fetched (got #{@resource.href})")
   end
 
@@ -157,7 +157,7 @@ class AuthoritativeSourceFetchService
   end
 
   def size_error_result(actual)
-    Result.new(success: false, status_code: :payload_too_large,
+    Result.new(success: false, status_code: :content_too_large,
                error: "Response body #{actual} bytes exceeds #{MAX_BYTES} cap")
   end
 end

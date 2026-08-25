@@ -31,7 +31,7 @@ class Api::V1::Admin::CredentialsController < Api::V1::BaseController
   def refresh
     plaintext = params[:password].to_s
     if plaintext.empty?
-      render json: { error: "password is required" }, status: :unprocessable_entity
+      render json: { error: "password is required" }, status: :unprocessable_content
       return
     end
 

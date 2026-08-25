@@ -41,14 +41,14 @@ RSpec.describe "CDEF authoring (#944)", type: :request do
     it "refuses a component type OSCAL does not define" do
       post cdef_documents_path, params: { cdef_document: authoring_attrs(component_type: "wetware") }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(CdefDocument.where(name: "Okta Identity Platform")).to be_empty
     end
 
     it "still requires a name" do
       post cdef_documents_path, params: { cdef_document: authoring_attrs(name: "") }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     # Found by the ui-smoke run, not by this spec's first version: `status`
@@ -103,7 +103,7 @@ RSpec.describe "CDEF authoring (#944)", type: :request do
     it "refuses an invalid component type on update" do
       patch cdef_document_path(cdef), params: { cdef_document: { component_type: "wetware" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(cdef.reload.component_type).to be_nil
     end
   end

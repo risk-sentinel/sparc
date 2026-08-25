@@ -127,7 +127,7 @@ RSpec.describe "Admin::Users", type: :request do
         expect {
           post admin_users_path, params: valid_params
         }.not_to change(User, :count)
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
     end
   end

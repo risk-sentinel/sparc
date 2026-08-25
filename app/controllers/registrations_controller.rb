@@ -33,7 +33,7 @@ class RegistrationsController < ApplicationController
       redirect_to root_path, success: "Account created! Welcome to SPARC."
     else
       flash.now[:error] = @user.errors.full_messages.to_sentence
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 

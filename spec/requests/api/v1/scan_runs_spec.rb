@@ -67,14 +67,14 @@ RSpec.describe "Api::V1::ScanRuns", type: :request do
     it "returns 422 on malformed HDF content" do
       post api_v1_authorization_boundary_scan_runs_path(boundary),
            params: { file: hdf_upload("{ not json") }, headers: admin_headers
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to match(/Invalid HDF JSON/)
     end
 
     it "returns 422 when the JSON carries no controls" do
       post api_v1_authorization_boundary_scan_runs_path(boundary),
            params: { file: hdf_upload("{}") }, headers: admin_headers
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to match(/No HDF controls/)
     end
 

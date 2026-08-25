@@ -149,7 +149,7 @@ RSpec.describe "Api::V1::Translations", type: :request do
       post api_v1_sar_from_hdf_path,
            params: hdf_payload,
            headers: auth_headers.merge(json_ct)
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       body = JSON.parse(response.body)
       expect(body["error"]).to match(/translation failed/i)
       expect(body["stderr"]).to include("malformed input")
@@ -269,7 +269,7 @@ RSpec.describe "Api::V1::Translations", type: :request do
            params: poam_payload,
            headers: auth_headers.merge(json_ct)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       body = JSON.parse(response.body)
       expect(body["error"]).to eq("POA&M is missing a remediation deadline")
       expect(body["note"]).to include("risks[].deadline")

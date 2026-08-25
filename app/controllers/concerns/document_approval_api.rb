@@ -29,7 +29,7 @@ module DocumentApprovalApi
     if result.success?
       render json: { data: serialize_approval(result.document) }
     else
-      render json: { error: result.error }, status: (result.status_code || :unprocessable_entity)
+      render json: { error: result.error }, status: (result.status_code || :unprocessable_content)
     end
   end
 

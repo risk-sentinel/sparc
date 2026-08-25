@@ -45,7 +45,7 @@ class CdefCoverageController < ApplicationController
   rescue TerraformUploadInventoryService::Error => e
     @boundaries = assignable_boundaries
     flash.now[:error] = e.message
-    render :new, status: :unprocessable_entity
+    render :new, status: :unprocessable_content
   end
 
   # POST /cdef_coverage — save the analysis against a boundary.
@@ -67,7 +67,7 @@ class CdefCoverageController < ApplicationController
   rescue CdefCoverageReportToken::Error => e
     @boundaries = assignable_boundaries
     flash.now[:error] = e.message
-    render :new, status: :unprocessable_entity
+    render :new, status: :unprocessable_content
   end
 
   # GET /cdef_coverage — saved runs.

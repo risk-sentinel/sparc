@@ -96,13 +96,13 @@ class BackMatterBulkImportService
   end
 
   def too_large_result
-    Result.new(success: false, status_code: :unprocessable_entity,
+    Result.new(success: false, status_code: :unprocessable_content,
                error: "Bulk imports limited to #{MAX_ENTRIES_INLINE} entries; " \
                       "split larger batches and resubmit")
   end
 
   def empty_result
-    Result.new(success: false, status_code: :unprocessable_entity,
+    Result.new(success: false, status_code: :unprocessable_content,
                error: "No entries provided")
   end
 end

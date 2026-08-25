@@ -89,14 +89,14 @@ RSpec.describe "Evidence upload policy (#868)", type: :request do
     it "rejects #{scenario} — web UI" do
       expect { post_ui(upload(name, bytes)) }.not_to change(Evidence, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(flash.now[:error] || response.body).to match(spec[:because])
     end
 
     it "rejects #{scenario} — API" do
       expect { post_api(upload(name, bytes)) }.not_to change(Evidence, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["error"]).to match(spec[:because])
     end
   end
@@ -172,7 +172,7 @@ RSpec.describe "Evidence upload policy (#868)", type: :request do
         evidence: metadata.merge(title: "Kept on rejection", file: upload("x.pdf", "\x7fELF\x02"))
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("Kept on rejection")
     end
   end

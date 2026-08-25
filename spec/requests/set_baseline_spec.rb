@@ -49,7 +49,7 @@ RSpec.describe "Declaring a document's baseline", type: :request do
       patch set_baseline_ssp_document_path(ssp),
             params: { ssp_document: { profile_document_id: profile.id } }
 
-      expect(response).not_to have_http_status(:unprocessable_entity)
+      expect(response).not_to have_http_status(:unprocessable_content)
       expect(ssp.reload).to be_lineage_resolved
     end
 

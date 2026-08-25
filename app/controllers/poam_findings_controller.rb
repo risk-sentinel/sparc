@@ -28,7 +28,7 @@ class PoamFindingsController < ApplicationController
       flash[:success] = "Finding added"
       redirect_to poam_document_path(@poam_document)
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -42,7 +42,7 @@ class PoamFindingsController < ApplicationController
       flash[:success] = "Finding updated"
       redirect_to poam_document_path(@poam_document)
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

@@ -44,14 +44,14 @@ RSpec.describe "WebauthnCredentials", type: :request do
       credential = fake.create(challenge: other.challenge, user_verified: true)  # attests to challenge B
       post webauthn_credentials_path, params: { credential: credential }, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(user.webauthn_credentials.count).to eq(0)
     end
 
     it "rejects a create with no enrollment in progress" do
       credential = fake.create(challenge: WebAuthn::Credential.options_for_create(user: { id: user.webauthn_handle, name: user.email }).challenge)
       post webauthn_credentials_path, params: { credential: credential }, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

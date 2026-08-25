@@ -132,7 +132,7 @@ RSpec.describe "Sessions", type: :request do
     context "with invalid credentials" do
       it "renders login page with error" do
         post login_path, params: { email: "jane@example.com", password: "wrongpassword!" }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
 
       it "logs failed attempt" do
@@ -166,7 +166,7 @@ RSpec.describe "Sessions", type: :request do
 
       it "rejects login for suspended users" do
         post login_path, params: { email: "suspended@example.com", password: "SecurePassword123!" }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
     end
   end

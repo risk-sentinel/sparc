@@ -76,13 +76,13 @@ class Api::V1::TranslationsController < Api::V1::BaseController
         error: "POA&M is missing a remediation deadline",
         details: e.message,
         note: "Every poam-item needs a related risk carrying a deadline. Populate risks[].deadline in the source OSCAL POA&M. Prior to hdf-cli 3.4.1 this succeeded with a fabricated date."
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     else
       render json: {
         error: "hdf-libs translation failed",
         details: e.message,
         stderr: e.stderr.to_s.lines.first(20).join.strip
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
   end
 

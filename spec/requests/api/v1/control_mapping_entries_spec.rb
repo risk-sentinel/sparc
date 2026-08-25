@@ -50,7 +50,7 @@ RSpec.describe "Api::V1::ControlMappingEntries", type: :request do
            params: { control_mapping_entry: valid_attrs(source_control_id: "zz-99") },
            headers: auth
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["errors"]).to have_key("source_control_id")
     end
 
@@ -59,7 +59,7 @@ RSpec.describe "Api::V1::ControlMappingEntries", type: :request do
            params: { control_mapping_entry: valid_attrs(source_control_id: "a.5.1") },
            headers: auth
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "does not create the entry when it refuses" do
@@ -92,7 +92,7 @@ RSpec.describe "Api::V1::ControlMappingEntries", type: :request do
             params: { control_mapping_entry: { target_control_id: "not-a-control" } },
             headers: auth
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(entry.reload.target_control_id).to eq("a.5.1")
     end
   end
