@@ -1,0 +1,83 @@
+# Trivy container image scan — the GATING container signal.
+#
+# Source: trivy-container-results.sarif, i.e. `trivy image --severity
+# CRITICAL,HIGH`, which applies Trivy's own vendor-preferred severity.
+#
+# This is deliberately NOT the CycloneDX SBOM (see trivy-container-sbom.yml and
+# #1064). For the same image on the same run, the two disagree completely:
+# the SARIF reports 4 critical/high findings, the SBOM path reports 28, because
+# `cyclonedx_sbom2hdf` takes the maximum rating across up to seven sources and
+# so promotes Red Hat "low"/"medium" ratings to NVD "critical" on a Red Hat
+# image. 45 of 74 findings differed. Red Hat's rating is the one that describes
+# a UBI9 image.
+#
+# Measured 2026-08-24 on main@a8991ae7 — the 4 raw findings are all shadowed
+# Ruby default gems (vulnerable copy on disk, patched copy loaded by Bundler):
+#   CVE-2026-27820  zlib    CRITICAL (impact 0.7 — see CAVEAT)
+#   CVE-2026-41316  erb     HIGH
+#   CVE-2025-24294  resolv  HIGH
+#   CVE-2025-61594  uri     HIGH
+# Residual after amendments: 0 critical, 4 high.
+#
+# BASELINE measured 2026-08-24 from PR #1066 run 32787093249 — the first run in
+# which this gate ever executed. RATCHET: high may only ever go DOWN; target 0.
+#
+# WHY 4 AND NOT 2. An earlier draft of this file said 2, on the reasoning that
+# zlib and erb carry approved deviations and would be amended to notApplicable.
+# The first real run refuted that: in ALL TWELVE amended HDFs, **not one control
+# came out `notApplicable`** — every disposition in sparc-findings.yml, the two
+# `false_positive` entries included, left its finding `failed`.
+#
+# CAUSE, since established by reproduction rather than inference (it is NOT the
+# poam/deferred semantics, which was the first guess): `hdf amend apply` matches
+# `baselines[].requirements[].id` — the HDF v3 shape — while SAF's converters
+# emit v2 (`profiles[].controls[].results[]`), which has no `baselines` key at
+# all. Every override hits an early `return`, and the command still prints
+# "Merged output written" and exits 0. The same amendments document applied to a
+# v3 document sets `effectiveStatus=notApplicable` correctly, so the register and
+# the generator are fine. Filed upstream as mitre/hdf-libs#248.
+#
+# Until that is resolved, NO band in this directory can be justified by "these
+# findings are dispositioned" — every band is applied to the raw count.
+#
+# That question is NOT settled here, and the band records what was MEASURED
+# rather than what the disposition register implies. Do not lower this to 2 on
+# the assumption that amendments suppress; verify against a real run first.
+#
+# The 2 are `resolv` and `uri`, the same shadowed-default-gem case as zlib and
+# erb — the vulnerable Ruby-shipped copy sits on disk while Bundler loads a
+# patched one (resolv 0.7.1, uri 1.1.1). They are NOT dispositioned, so unlike
+# zlib/erb they still count. Owner decision 2026-08-24: record the honest
+# residual now rather than write a disposition to make the number look clean.
+#
+# `uri` also had no Gemfile override at all until this bundle — the lockfile
+# carried 1.1.1 only transitively, so a resolver change could silently have
+# dropped back to a vulnerable version. That pin is in place; the disposition
+# is what remains.
+#
+# DO NOT raise this to accommodate a new finding. A third undispositioned high
+# means the band is being used to hide something. Close #1065 and set it to 0.
+# CAVEAT — SARIF cannot express "critical" (measured, not assumed).
+#
+# SARIF 2.1.0's `level` enum is error/warning/note only, so `trivy image
+# --format sarif` emits BOTH critical and high as `level: error`, and
+# `sarif2hdf` maps every one of them to impact 0.7 — the HIGH bucket. Verified
+# on the real artifact: CVE-2026-27820 is tagged CRITICAL by Trivy and arrives
+# in the HDF at impact 0.7, identical to the three highs beside it.
+#
+# So `critical.max` below can never fire on this scanner, and everything lands
+# in `high`. That is not a hole: the scan is `--severity CRITICAL,HIGH`, so any
+# NEW finding of either severity pushes the count past the baseline and fails
+# the gate. What is lost is the ability to hold criticals to a tighter band than
+# highs — one bucket, one number.
+#
+# `critical.max: 0` is kept because it costs nothing and would start working if
+# the conversion ever preserved severity. Do not read it as active policy.
+failed:
+  critical:
+    max: 0   # inert on this scanner — see the CAVEAT above
+  high:
+    max: 4   # BASELINE — measured, all 4 shadowed default gems. Target 0.
+error:
+  total:
+    max: 0

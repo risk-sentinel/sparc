@@ -15,10 +15,14 @@ import os
 
 import pytest
 
-pytestmark = pytest.mark.skipif(
-    os.environ.get("SPARC_SMOKE_FIDO2") != "1",
-    reason="requires a FIDO2-enabled target (set SPARC_SMOKE_FIDO2=1)",
-)
+# #885 — named so a skip is reported as UNPROVEN rather than passing quietly.
+pytestmark = [
+    pytest.mark.posture("fido2"),
+    pytest.mark.skipif(
+        os.environ.get("SPARC_SMOKE_FIDO2") != "1",
+        reason="requires a FIDO2-enabled target (set SPARC_SMOKE_FIDO2=1)",
+    ),
+]
 
 
 def _add_virtual_authenticator(cdp):

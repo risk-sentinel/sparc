@@ -1,0 +1,12 @@
+# Semgrep — supplementary SAST, opt-in via the run_semgrep dispatch input.
+#
+# The job is skipped on ordinary triggers, so this file usually assesses
+# nothing. Same posture as the other SAST scanners for when it does run.
+failed:
+  critical:
+    max: 0
+  high:
+    max: 0
+error:
+  total:
+    max: 0

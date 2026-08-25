@@ -22,7 +22,7 @@
 #   deviation-requested -> status "failed"          -> counts toward threshold.yml
 #   deviation-approved  -> status "notApplicable"   -> suppressed from the residual
 #
-# That is the whole mechanic. `threshold.yml` needs no knowledge of deviations:
+# That is the whole mechanic. the threshold files need no knowledge of deviations:
 # an UNAPPROVED deviation on a CRITICAL still breaches failed.critical.max: 0
 # and turns the build red, which is the intended behaviour. An APPROVED one is
 # a signed-off risk decision and is suppressed.
@@ -318,8 +318,28 @@ def validate_review_cadence(finding, errors, severity:, disposition:, discovery:
   errors
 end
 
+# Every identifier this finding may be reported under.
+#
+# #1048 — an override matches by `requirementId`, and different scanners key
+# the SAME defect differently: grype reports GHSA ids, trivy reports CVE ids.
+# #1001 re-keyed several register entries from CVE to GHSA to match what grype
+# emits, preserving the old id in `also_known_as` — but nothing read that
+# field, so those dispositions silently stopped matching any CVE-keyed
+# scanner. That was invisible while the gate never ran; the moment the
+# container is gated on trivy's (CVE-keyed) output, previously-dispositioned
+# findings would resurface as undispositioned.
+#
+# Emitting one override per known identifier makes a disposition independent
+# of which scanner's vocabulary happens to reach the gate. Overrides are keyed
+# lookups, so ids that match nothing are inert.
+def finding_identifiers(finding)
+  ([ finding["cve_id"] ] + Array(finding["also_known_as"]))
+    .map { |id| id.to_s.strip }
+    .reject(&:empty?)
+    .uniq
+end
+
 def disposition_to_override(finding)
-  cve_id    = finding["cve_id"]
   disp      = finding["disposition"]
   severity  = severity_normalize(finding["severity"])
   rationale = finding["rationale"]
@@ -332,15 +352,16 @@ def disposition_to_override(finding)
   status = deviation_status(finding) ||
            (NOT_APPLICABLE_DISPOSITIONS.include?(disp) ? "notApplicable" : "failed")
 
-  {
+  base = {
     "type"          => DISPOSITION_TO_OVERRIDE_TYPE.fetch(disp),
-    "requirementId" => cve_id,
     "status"        => status,
     "reason"        => deviation_reason(finding, rationale),
     "appliedBy"     => identity_for(reviewer),
     "appliedAt"     => discovery.iso8601 + "T00:00:00Z",
     "expiresAt"     => next_rev.iso8601 + "T00:00:00Z"
   }
+
+  finding_identifiers(finding).map { |id| base.merge("requirementId" => id) }
 end
 
 # #865 — the deviation's risk_status decides whether the finding gates.
@@ -406,7 +427,10 @@ def main(argv)
     exit 2
   end
 
-  overrides = findings.filter_map { |f| disposition_to_override(f) }
+  # disposition_to_override returns one override PER identifier the finding is
+  # known by (cve_id + also_known_as), so this flattens rather than maps 1:1.
+  emitted = findings.filter_map { |f| disposition_to_override(f) }
+  overrides = emitted.flatten
 
   amendments = {
     "amendmentId"  => SecureRandom.uuid,
@@ -428,7 +452,9 @@ def main(argv)
   }
 
   File.write(opts[:output], JSON.pretty_generate(amendments))
-  puts "Wrote #{overrides.size} override(s) to #{opts[:output]} (skipped #{findings.size - overrides.size} remediated)"
+  aliases = overrides.size - emitted.size
+  puts "Wrote #{overrides.size} override(s) for #{emitted.size} finding(s) to #{opts[:output]} " \
+       "(#{aliases} alias key(s); skipped #{findings.size - emitted.size} remediated)"
 end
 
 main(ARGV) if __FILE__ == $PROGRAM_NAME

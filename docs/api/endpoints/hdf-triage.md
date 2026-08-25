@@ -193,5 +193,5 @@ curl -H "Authorization: Bearer $TOKEN" \
   https://sparc.example.com/api/v1/authorization_boundaries/my-system/hdf_amendments \
   > amendments.hdf.json
 hdf amend apply --results scan.hdf.json --amendments amendments.hdf.json -o amended.hdf.json
-saf validate threshold -i amended.hdf.json -F threshold.yml
+saf validate threshold -i amended.hdf.json -T threshold.yml
 ```

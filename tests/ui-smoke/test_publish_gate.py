@@ -51,6 +51,9 @@ def _readiness(page, check_path: str):
 
 
 class TestPublishGate:
+    # #885 — the approval gate is OFF by default, so this skipped on most
+    # instances and the gate was never exercised at all. Named so that shows up.
+    @pytest.mark.posture("approval_gate")
     def test_publish_modal_blocks_unapproved_when_flag_on(
         self, authed_page, draft_catalog
     ):

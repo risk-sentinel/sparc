@@ -1,0 +1,29 @@
+# bundler-audit — Ruby dependency advisories against Gemfile.lock.
+#
+# This is the band #1048 exists to create. bundler-audit's results were
+# collected for months and assessed by nothing: GHSA-mvxr-6m87-mv2q
+# (`mail` 2.9.0, MEDIUM) rode 85 green `security.yml` runs into `main`,
+# 8 of them merges, because the artifact reached no gate.
+#
+# Zero tolerance at medium and above — deliberately stricter than the container
+# band, and the reason is remediation cost, not severity. A known advisory in a
+# gem we ship is normally fixed by a version bump, so the correct response is
+# "bump it", not "waive it". Compare the container CVE posture, where the fix
+# often depends on an upstream base-image rebuild we do not control.
+#
+# A genuinely un-bumpable advisory is not blocked forever: give it a
+# disposition in docs/compliance/sparc-findings.yml like any other finding and
+# it is amended out before this band is applied.
+#
+# Measured 2026-08-24 on main@a8991ae7: 0 findings (the `mail` advisory was
+# remediated in Bundle X, v1.16.0).
+failed:
+  critical:
+    max: 0
+  high:
+    max: 0
+  medium:
+    max: 0
+error:
+  total:
+    max: 0

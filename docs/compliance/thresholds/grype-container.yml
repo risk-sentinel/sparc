@@ -1,0 +1,18 @@
+# grype-container — SCA inventory, NOT a severity gate.
+#
+# Ungated because `anchoregrype2hdf` CANNOT EXPRESS a gating severity:
+# measured 2026-08-24 on main@a8991ae7, every impact it emits caps at 0.5
+# (observed values 0.0, 0.3, 0.5 across 79 failed controls). 0.5 is the medium
+# bucket, so no grype finding can ever reach the high or critical band no
+# matter how severe it is. A band above 0.5 would be decorative; a band at
+# medium would fire on everything.
+#
+# Saying so by omitting the severity keys is more honest than publishing a
+# threshold that looks like policy and is not — the exact defect #1048 was
+# filed about. Note "ungated" cannot be written `max: -1`: saf compares
+# `count > max`, so -1 fails on a count of zero.
+#
+# Rebasing grype impact, or declaring grype inventory-only for good, is #1064.
+error:
+  total:
+    max: 0

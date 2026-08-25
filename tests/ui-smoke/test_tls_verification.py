@@ -32,10 +32,15 @@ BASE_URL = os.environ.get(
 SELF_SIGNED = os.environ.get("SPARC_SMOKE_SELF_SIGNED") == "1"
 CA_BUNDLE = os.environ.get("SPARC_SMOKE_CA_BUNDLE")
 
-pytestmark = pytest.mark.skipif(
-    not SELF_SIGNED,
-    reason="fail-closed TLS checks require a self-signed stack (set SPARC_SMOKE_SELF_SIGNED=1)",
-)
+# #885/#858 — named so a skip is reported as UNPROVEN rather than passing
+# quietly. One TLS direction does not imply the other, so both legs are marked.
+pytestmark = [
+    pytest.mark.posture("tls_fail_closed"),
+    pytest.mark.skipif(
+        not SELF_SIGNED,
+        reason="fail-closed TLS checks require a self-signed stack (set SPARC_SMOKE_SELF_SIGNED=1)",
+    ),
+]
 
 
 def test_untrusted_cert_is_rejected_when_verifying():
@@ -48,6 +53,7 @@ def test_untrusted_cert_is_rejected_when_verifying():
         httpx.get(f"{BASE_URL}/login", verify=True, timeout=10.0)
 
 
+@pytest.mark.posture("tls_trusted_accepted")
 @pytest.mark.skipif(
     not CA_BUNDLE,
     reason="positive check needs SPARC_SMOKE_CA_BUNDLE (the stack's real CA)",

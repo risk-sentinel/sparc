@@ -1,0 +1,25 @@
+# trivy-fs-sbom — SBOM inventory, NOT a severity gate.
+#
+# Ungated by deliberate decision, not by oversight. `cyclonedx_sbom2hdf`
+# resolves each vulnerability's impact by taking the MAXIMUM rating across
+# every source the SBOM carries (NVD, Red Hat, GHSA, Ubuntu, Amazon, Azure,
+# Oracle, …). On a Red Hat UBI9 image that systematically overstates severity:
+# measured 2026-08-24 on main@a8991ae7, 45 of 74 findings in
+# trivy-container-sbom disagreed with Red Hat's own rating, including two that
+# Red Hat rates low/medium and this path rates CRITICAL.
+#
+# Gating on that would fail builds on findings the OS vendor does not consider
+# critical, and would enshrine them in a ratchet. The container is gated on
+# trivy-container.yml (Trivy's vendor-preferred severity) instead.
+#
+# "Ungated" is expressed by OMITTING the severity keys. It cannot be written as
+# `max: -1`: saf compares `count > max`, so -1 fails on a count of zero. The
+# retired threshold.yml carried `low: max: -1` and `none: max: -1` for exactly
+# this reason and would have failed every scanner had it ever been applied.
+#
+# These files remain valuable as inventory and licence evidence, and are still
+# published to sparc-iac. Settling the severity-source policy so this can
+# become a real gate is #1064.
+error:
+  total:
+    max: 0

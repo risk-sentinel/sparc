@@ -129,6 +129,31 @@ releases stale. None of these block CI, so nothing catches them but this.
 
 ## 5. Tag
 
+- [ ] **Record which postures were PROVEN, not just that the run was green
+      (#885).** A posture-gated check skips when the harness does not supply the
+      posture, so "524 passed, 14 skipped" can mean PIV/CAC, fail-closed TLS and
+      FIDO2 were never exercised. That is exactly what happened on the
+      release-grade run for PR #884, which was reported as release verification
+      while six security-posture checks had not executed.
+
+      The suite now ends with a `posture accounting (#885)` section listing each
+      posture as PROVEN or UNPROVEN with a count. **Paste that section into the
+      release notes** rather than the pass/skip totals alone.
+
+      For a release run, demand them instead of reporting them — this exits
+      non-zero if any named posture was not proven:
+
+      ```bash
+      SPARC_SMOKE_REQUIRE_POSTURES=all uv run pytest        # all collected postures
+      SPARC_SMOKE_REQUIRE_POSTURES=piv_mtls,tls_fail_closed,tls_trusted_accepted,fido2,approval_gate
+      ```
+
+      Supplying a posture means setting its harness variable —
+      `SPARC_SMOKE_PIV_PROXY_URL` + `SPARC_SMOKE_PIV_CERT_DIR` (via
+      `bin/smoke-piv-setup`), `SPARC_SMOKE_SELF_SIGNED=1`,
+      `SPARC_SMOKE_CA_BUNDLE`, `SPARC_SMOKE_FIDO2=1`,
+      `SPARC_REQUIRE_DOCUMENT_APPROVAL` on the instance.
+
 - [ ] Full suite, ui-smoke and the API contract suite green against the **prod
       image**, on **both architectures**.
 - [ ] Tag and publish — **owner action**, after the release PR merges.

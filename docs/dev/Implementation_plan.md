@@ -73,11 +73,14 @@ Two things that table is saying, and they pull in opposite directions:
    because the sweeps find things. That is not scope creep — every one was a
    defect already shipped and previously invisible.
 
-**Open: 16.** Grouped into four bundles by what they share, not by label:
+**Open: 19** — measured 2026-08-24 after the CI-1 sweep, up from 16. The
+growth is the +62% discovery factor doing exactly what the table below predicts:
+CI-1 filed **#1064** and **#1065** out of its own work, and **#1061** arrived
+separately. Grouped into four bundles by what they share, not by label:
 
 | Bundle | Issues | Theme | Est. |
 | --- | --- | --- | --- |
-| **CI-1 — Gates that can actually fail** | #1048 #1050 #987 #885 | The scan→decision gap. A scan runs, produces an artifact, and nothing assesses it: bundler-audit reaches no threshold gate (#1048), neither API contract gate runs in CI and both are inert without `--check` (#1050), Brakeman is `continue-on-error` so SAST can never fail a build (#987), and posture-gated tests can silently skip rather than prove both conditions (#885). | 2d |
+| **CI-1 — Gates that can actually fail** ✅ **DONE** | #1048 #1050 #987 #885 (+#1064 #1065 filed) | The scan→decision gap. A scan runs, produces an artifact, and nothing assesses it: bundler-audit reaches no threshold gate (#1048), neither API contract gate runs in CI and both are inert without `--check` (#1050), Brakeman is `continue-on-error` so SAST can never fail a build (#987), and posture-gated tests can silently skip rather than prove both conditions (#885). | 2d |
 | **CI-2 — Evidence completeness** | #962 #977 #985 #917 #1027 #990 | This repository is **unevidenced for secrets scanning**: Gitleaks SARIF is never converted to HDF (#962) though the converter works, the emit is missing (#977), and what is filed lands where the profile cannot see it (#985). Plus SCA attestation (#917) and keeping the SonarQube HDF job self-contained (#1027). | 3d |
 | **CI-3 — Test-job fidelity** | #835 #927 #711 | The HDF translation specs do not actually run without a pinned `hdf-cli` in the test job (#835); deprecation warnings flood the log (#927); and there is no deployed API-contract runner (#711). | 2d |
 | **CI-4 — Posture and architecture coverage** | #858 #859 #965 | Release smoke runs one TLS posture and one does not imply the other (#858); **the arm64 half of every published image ships unverified** (#859) — which matters more now that `build-sign-publish` emits a multi-arch manifest on every tag; metrics collide in the bucket root (#965). | 2d |
@@ -85,6 +88,39 @@ Two things that table is saying, and they pull in opposite directions:
 **Estimate: 9 working days of bundle work.** With the +62% discovery factor
 applied to a 16-issue backlog (→ ~25 issues at 4.2/day ≈ 6 days) the two methods
 bracket **6–9 working days**. Plan **8**, target **2026-09-03**.
+
+### CI-1 — landed 2026-08-24
+
+The bundle's premise turned out to understate the problem. #1048 was filed as
+"bundler-audit is the one scan artifact that reaches no threshold gate". The
+measurement said: **no artifact reached a threshold gate**, because
+`security_gate` invoked `saf validate threshold -F amended`, and `-F` is not a
+saf flag in any released version. `saf_action` surfaced the oclif parse error as
+a *warning*, exited 0, and the next step wrote "Security gate passed" — on every
+run since #244 shipped.
+
+Ten further defects sat behind that one, each independently sufficient to keep
+the gate inert. The full list is `docs/compliance/scan-artifact-inventory.md`,
+which is the deliverable that stops this recurring: an inventory of every
+artifact `security.yml` produces against what actually assesses it.
+
+Two findings became their own issues rather than being absorbed silently:
+
+- **#1064** — the container gate would have used NVD worst-case severity on a
+  Red Hat image. `cyclonedx_sbom2hdf` takes the maximum rating across up to
+  seven sources, so Red Hat "low"/"medium" arrived as "critical": **45 of 74
+  findings disagreed**. Gating on Trivy's own SARIF instead reduced the residual
+  from 3 critical / 25 high to 0 critical / 2 high.
+- **#1065** — `resolv` and `uri` lacked the override/disposition pair every
+  other shadowed default gem has, and `uri` had no Gemfile pin at all.
+
+**What this says about the remaining estimate.** CI-1 consumed roughly what the
+plan allowed for CI-1 and CI-2 together. The cause is specific and does not
+generalise to every bundle: thresholds that have never been applied have never
+been calibrated, so turning the gate on meant measuring the real residual of
+thirteen scanners and deciding a policy for each. CI-2 through CI-4 are closer
+to the original "pipeline wiring with known shapes" description. Revised
+estimate **11 working days**, target **2026-09-08**.
 
 **Sequencing note:** CI-1 first. Everything after it is evidence that a gate
 should be able to reject, and #1050 in particular guards the #995 contract
@@ -162,9 +198,9 @@ Re-measured against the live repository, not carried forward. The plan reference
 | Closed | **248** |
 | Open, on `ci.v0.0.1` | **16** |
 | Open, on `v1.16.1` | **16** (14 audited + #1058 and #1059, filed 2026-08-24) |
-| **Open, on NO milestone** | **4** |
+| **Open, on NO milestone** | **10** (was recorded as 4 — the count was wrong) |
 
-### The four with no milestone
+### The ten with no milestone
 
 These are invisible to every milestone count, which is exactly how **#950 went
 missing** — it sat open with no milestone after being split from #949, appeared
@@ -172,12 +208,31 @@ in no bundle, and was only picked up when the owner milestoned it on 2026-08-22.
 Listing them so the same thing cannot happen quietly again. **Each needs a
 milestone or a deliberate decision to close — that call is the owner's.**
 
-| Issue | Title |
-| --- | --- |
-| **#422** | POAM Scenario B — cross-instance federated POAM visibility (carved from #415) |
-| **#531** | security(uploads): optional GuardDuty S3 tag check hook on blob serving (post-v1.7.0) |
-| **#953** | feat(dast): authenticated DAST against the two-boundary reference fixture |
-| **#980** | feat(cdef): give component definitions an authorization boundary, so they can be scoped and tiered |
+**The previous count of 4 was itself wrong.** Re-measured against the live
+repository on 2026-08-24 there are **ten**, and the six that were missing had
+been invisible for between four weeks and five months. That is the same failure
+this section exists to prevent, occurring inside the section that documents it.
+
+| Issue | Opened | Title |
+| --- | --- | --- |
+| **#422** | 2026-04-27 | POAM Scenario B — cross-instance federated POAM visibility (carved from #415) |
+| **#531** | 2026-05-23 | security(uploads): optional GuardDuty S3 tag check hook on blob serving (post-v1.7.0) |
+| **#752** | 2026-07-18 | Pre-release container smoke gate + release report — block render-broken images |
+| **#776** | 2026-07-20 | security: Go stdlib CVEs in hdf-cli (hdf-libs-owned) — needs upstream Go >= 1.26.2 rebuild |
+| **#815** | 2026-07-26 | XML fingerprinting: strict namespace/version enforcement + centralization |
+| **#838** | 2026-07-27 | chore(toolchain): emit SPARC's hdf-cli findings to consuming repos |
+| **#864** | 2026-07-29 | security(kev): make CISA KEV a first-class input to triage, gating and POA&M prioritisation |
+| **#871** | 2026-07-30 | compliance(ci): mechanize deviation approval — /approve-deviation comment |
+| **#953** | 2026-08-14 | feat(dast): authenticated DAST against the two-boundary reference fixture |
+| **#980** | 2026-08-18 | feat(cdef): give component definitions an authorization boundary, so they can be scoped and tiered |
+
+**Five of the six newly-surfaced ones are CI-pipeline work** — #752 (pre-release
+container smoke gate), #776 and #838 (hdf-cli toolchain and its findings), #864
+(KEV as a gating input) and #871 (mechanized deviation approval). They sit
+squarely alongside what `ci.v0.0.1` is doing, and #871 in particular is the
+approval mechanism CI-1 just leaned on when deciding how to disposition #1065.
+Whether they join this milestone is the owner's call, but they should not stay
+invisible while it runs.
 
 My read, offered as a starting point rather than a decision:
 
@@ -216,8 +271,8 @@ exactly one bundle, and no bundle cites an issue that is not open.
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
 | 16 | **Complete** | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | **87 issues, 87 closed. Tagged `v1.16.0` 2026-08-24** from `main` @ `75b5bb3b`. The full closed list is the milestone itself — do not maintain a second copy here | **SHIPPED.** Bundles ran #939 → O → S → P → T → Q → hdf pin → U → W → V → R → X. Bundle X merged as [PR #1049](https://github.com/risk-sentinel/sparc/pull/1049) → `9ae84a84`; [PR #1055](https://github.com/risk-sentinel/sparc/pull/1055) → `75b5bb3b` then fixed four defects Bundle X had merged, found by running the FULL suites against a built prod image. Release verification (measured, on the tagged tree): rspec **6230/0**, API **2742 passed** over TLS and again over non-TLS, ui-smoke **524 passed / 0 failed**, rubocop + brakeman + bundle-audit clean. The milestone grew **53 → 86 because the sweeps FOUND things**, not through scope creep. Wiki published and release notes carry the measured table |
-| 17 | **Next** | `ci.v0.0.1` — evidence and gates | **16 open.** CI-1 gates that can fail (#1048 #1050 #987 #885) · CI-2 evidence completeness (#962 #977 #985 #917 #1027 #990) · CI-3 test-job fidelity (#835 #927 #711) · CI-4 posture and architecture (#858 #859 #965) | Runs **BEFORE** v1.16.1 so the patch release gets real-environment soak time (owner decision, 2026-08-24). Estimated **6–9 working days**, plan 8, target **2026-09-03**. CI-1 first: everything after it is evidence a gate should be able to reject, and **#1050 guards the #995 contract result v1.16.0 just shipped — currently unenforced** |
-| 18 | Planned | v1.16.1 — the patch release | **14 open.** Y reliability + the deadline (**#968 due 2026-09-06** #1051 #1022) · Z the CSP tail (#1047 #728 #1046) · AA auth and access debt (#978 #1044) · AB onboarding and Sonar (#1040 #940 #1033 #930 #966 #836) | Estimated **14 working days**, target **~2026-09-24**. **#968 is the only dated item in either milestone and must ride the FIRST bundle** or the date moves. Do NOT plan this at v1.16.0's 4.2 issues/day — that rate came from a distribution of small sweep-found defects; #1047, #1040 and #966 are each multi-day. Re-measure after CI-2 |
+| 17 | **In progress** | `ci.v0.0.1` — evidence and gates | **19 open** (was 16; CI-1 filed #1064 #1065, #1061 arrived separately). **CI-1 DONE** (#1048 #1050 #987 #885) · CI-2 evidence completeness (#962 #977 #985 #917 #1027 #990) · CI-3 test-job fidelity (#835 #927 #711) · CI-4 posture and architecture (#858 #859 #965) · unbundled: #1061 #1064 #1065 | Runs **BEFORE** v1.16.1 so the patch release gets real-environment soak time (owner decision, 2026-08-24). **CI-1 landed 2026-08-24** and found the milestone's premise understated: `security_gate` had never assessed a single HDF, because `saf validate threshold -F` names a flag that has never existed in any released saf — oclif rejected the parse, `saf_action` reported it as a warning and exited 0, and the next step wrote "Security gate passed". Ten further defects sat behind it (inventory: `docs/compliance/scan-artifact-inventory.md`). Estimate revised **8 → 11 working days**: CI-1 alone took what the plan allowed for CI-1 and CI-2 together, because calibrating thresholds that have never once been applied is not the same work as wiring a scanner in |
+| 18 | Planned | v1.16.1 — the patch release | **17 open** (was 14; +#1058 #1059 #1063). Y reliability + the deadline (**#968 due 2026-09-06** #1051 #1022) · Z the CSP tail (#1047 #728 #1046) · AA auth and access debt (#978 #1044) · AB onboarding and Sonar (#1040 #940 #1033 #930 #966 #836) | Estimated **14 working days**, target **~2026-09-24**. **#968 is the only dated item in either milestone and must ride the FIRST bundle** or the date moves. Do NOT plan this at v1.16.0's 4.2 issues/day — that rate came from a distribution of small sweep-found defects; #1047, #1040 and #966 are each multi-day. Re-measure after CI-2 |
 
 <!-- markdownlint-enable MD013 -->
 

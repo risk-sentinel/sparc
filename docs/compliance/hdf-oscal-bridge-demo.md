@@ -106,7 +106,7 @@ hdf amend apply \
   -o /tmp/scan.amended.hdf.json
 
 # Threshold gate
-saf validate threshold -F /tmp/scan.amended.hdf.json -T threshold.yml
+saf validate threshold -i /tmp/scan.amended.hdf.json -T threshold.yml
 ```
 
 SPARC validates the generated amendments via `hdf amend verify` before

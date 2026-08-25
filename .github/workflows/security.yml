@@ -995,11 +995,21 @@ jobs:
       - grype_sbom_scan
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
-      - name: Checkout code (for OSCAL metadata)
+      - name: Checkout code (OSCAL metadata + HDF translation helpers)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             .github/oscal-metadata.json
+            bin/bundler_audit_to_hdf.rb
+            bin/sarif_drop_suppressed.rb
+          sparse-checkout-cone-mode: false
+
+      # Ruby for the two in-repo translation helpers below. Stdlib only — no
+      # bundle install, same posture as the security_gate converter step.
+      - name: Set up Ruby (translation helpers only — no bundle)
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: '3.4'
 
       - name: Download SARIF scan artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -1053,7 +1063,13 @@ jobs:
 
       - name: Install SAF CLI
         if: always()
-        run: npm install -g @mitre/saf@1.6.0
+        # --ignore-scripts: npm lifecycle scripts (preinstall/postinstall) from
+        # any of the ~545 transitive packages would otherwise execute arbitrary
+        # code on a runner holding this workflow's token. saf needs none of
+        # them — verified by installing with the flag and then actually running
+        # `validate threshold` and `convert sarif2hdf` against real inputs, not
+        # merely checking `saf --version`.
+        run: npm install -g --ignore-scripts @mitre/saf@1.6.0
 
       - name: Verify SAF CLI converters are available
         if: always()
@@ -1096,6 +1112,25 @@ jobs:
             fi
           }
 
+          # #1048 — honour SARIF `suppressions` before converting.
+          #
+          # SARIF 2.1.0 marks a dispositioned result with a `suppressions`
+          # array; Brakeman populates it from config/brakeman.ignore, including
+          # the justification. `sarif2hdf` does not read that field, so every
+          # already-reviewed finding converts to a `failed` control and reaches
+          # the gate looking brand new. Measured on main@a8991ae7: brakeman
+          # emitted 5 results, ALL 5 suppressed and 0 live, which would have
+          # blocked every build on four intentional design decisions.
+          #
+          # The UNFILTERED sarif artifacts are still uploaded (90-day retention)
+          # and archived, so this filters the gate's input, not the evidence —
+          # the same separation `hdf amend` applies to CVE dispositions.
+          for s in scan-results/*-sarif/*.sarif scan-results/*-results/*.sarif; do
+            [ -f "$s" ] || continue
+            ruby bin/sarif_drop_suppressed.rb --input "$s" || \
+              echo "::warning::suppression filter failed for $s; converting unfiltered"
+          done
+
           # SARIF → HDF
           run_convert scan-results/gitleaks-sarif/gitleaks-results.sarif \
             convert sarif2hdf -i scan-results/gitleaks-sarif/gitleaks-results.sarif -o hdf-results/gitleaks.hdf.json -w
@@ -1112,9 +1147,22 @@ jobs:
           run_convert scan-results/trivy-fs-results/trivy-fs-results.sarif \
             convert sarif2hdf -i scan-results/trivy-fs-results/trivy-fs-results.sarif -o hdf-results/trivy-fs.hdf.json -w
 
-          # Trivy Container ASFF → HDF
-          run_convert scan-results/trivy-container-results/trivy-container-asff.json \
-            convert trivy2hdf -i scan-results/trivy-container-results/trivy-container-asff.json -o hdf-results/trivy-container.hdf.json
+          # Trivy container → HDF, from the SARIF rather than the ASFF (#1048).
+          #
+          # Two reasons, both measured on main@a8991ae7:
+          #
+          #   1. `trivy2hdf` writes a DIRECTORY (hdf-results/trivy-container.
+          #      hdf.json/"Aqua Security - Trivy.json"), and the security_gate
+          #      amend loop tests `[ -f "$hdf" ]`, so the container scan was
+          #      silently skipped by the gate entirely.
+          #   2. The SARIF is `trivy image --severity CRITICAL,HIGH`, which
+          #      applies Trivy's own vendor-preferred severity. That is the
+          #      right signal for a Red Hat image — see #1064 and the comment
+          #      in docs/compliance/thresholds/trivy-container.yml, where the
+          #      SBOM path's max-of-seven-sources scoring disagreed with Red
+          #      Hat's own rating on 45 of 74 findings.
+          run_convert scan-results/trivy-container-results/trivy-container-results.sarif \
+            convert sarif2hdf -i scan-results/trivy-container-results/trivy-container-results.sarif -o hdf-results/trivy-container.hdf.json -w
 
           # CycloneDX SBOM → HDF
           run_convert scan-results/trivy-fs-results/trivy-fs-sbom.cdx.json \
@@ -1139,6 +1187,28 @@ jobs:
 
           run_convert scan-results/grype-container.json \
             convert anchoregrype2hdf -i scan-results/grype-container.json -o hdf-results/grype-container.hdf.json
+
+          # bundler-audit JSON → HDF (#1048).
+          #
+          # THE gap this issue was filed for: bundler-audit-results.json was the
+          # only one of thirteen downloaded artifacts with no conversion — it
+          # was fetched purely to be copied into the archive zip, so it reached
+          # no threshold and nothing ever assessed it. GHSA-mvxr-6m87-mv2q
+          # (`mail` 2.9.0) rode 85 green runs into main through this hole.
+          #
+          # @mitre/saf 1.6.0 (the pin above, and the latest release) has no
+          # bundler-audit converter among its 37 — verified against the pinned
+          # CLI. Hence the in-repo translator, precedent
+          # bin/sparc_findings_to_hdf_amendments.rb. Retire it if an upstream
+          # bundleraudit2hdf lands.
+          if [ -f scan-results/bundler-audit-results.json ]; then
+            ruby bin/bundler_audit_to_hdf.rb \
+              --input scan-results/bundler-audit-results.json \
+              --output hdf-results/bundler-audit.hdf.json \
+              || echo "::error::bundler-audit HDF translation failed"
+          else
+            echo "::warning::bundler-audit-results.json not found — dependency advisories will NOT be gated this run"
+          fi
 
           # Wait for all conversions to complete; track failures by index
           # so we can dump the matching log file for diagnosis.
@@ -1337,26 +1407,23 @@ jobs:
           cp all-results/sparc-combined-sbom.cdx.json combined-archive/sbom/ 2>/dev/null || true
           cd combined-archive && zip -r ../security-scan-results.zip .
 
-      - name: Evaluate severity threshold
-        if: env.FAIL_ON_SEVERITY != 'none'
-        run: |
-          echo "Checking HDF results against severity threshold: ${{ env.FAIL_ON_SEVERITY }}"
-          # SAF CLI view summary provides pass/fail counts per profile
-          # For now, fail if any HDF file contains critical/high findings
-          FAILED=0
-          for hdf_file in hdf-results/*.hdf.json; do
-            [ -f "$hdf_file" ] || continue
-            # Count failed controls — a non-zero count at threshold triggers failure
-            FAIL_COUNT=$(jq '[.profiles[]?.controls[]? | select(.results[]?.status == "failed")] | length' "$hdf_file" 2>/dev/null || echo "0")
-            if [ "$FAIL_COUNT" -gt 0 ]; then
-              echo "::warning::$(basename $hdf_file) has $FAIL_COUNT failed controls"
-              FAILED=1
-            fi
-          done
-          if [ "$FAILED" -eq 1 ]; then
-            echo "::error::Security findings exceed ${{ env.FAIL_ON_SEVERITY }} severity threshold"
-            exit 1
-          fi
+      # The `Evaluate severity threshold` step lived here and was removed in
+      # #1048. It was the second of two gates with different rules, and the
+      # weaker one:
+      #
+      #   * `if: env.FAIL_ON_SEVERITY != 'none'` with FAIL_ON_SEVERITY
+      #     defaulting to 'none' (see the env block), so it was inert on push,
+      #     pull_request and the weekly cron — every trigger except a manual
+      #     dispatch that overrode it.
+      #   * When it did run it ignored threshold.yml entirely and failed on ANY
+      #     failed control at any severity, bypassing the sparc-findings.yml
+      #     disposition layer. An accepted, documented finding had no way to
+      #     pass it except by switching the check off.
+      #
+      # security_gate is now the single place that decides what blocks a merge.
+      # FAIL_ON_SEVERITY is retained as a dispatch input only because removing a
+      # workflow_dispatch input is a breaking change for anyone scripting it;
+      # it no longer gates anything.
 
       - name: Upload combined archive
         if: always()
@@ -1403,7 +1470,7 @@ jobs:
         with:
           sparse-checkout: |
             docs/compliance/sparc-findings.yml
-            docs/compliance/threshold.yml
+            docs/compliance/thresholds/
             bin/sparc_findings_to_hdf_amendments.rb
           sparse-checkout-cone-mode: false
 
@@ -1499,16 +1566,118 @@ jobs:
           done
           ls -la amended/
 
-      - name: Validate threshold against amended HDFs
-        uses: mitre/saf_action@a19f76ed3721c14aa8a1afb8eded117d8bf16a5d # v1
+      # #1048 — this step previously read:
+      #
+      #   uses: mitre/saf_action@...
+      #   with:
+      #     command_string: 'validate threshold -F amended -T docs/compliance/threshold.yml'
+      #
+      # `saf validate threshold` HAS NO `-F` FLAG. Its flags are -i (required),
+      # -I and -T, in 1.4.21, in the 1.6.0 the action vendors, and in 1.6.0 the
+      # latest published release — so there was never a version where this
+      # worked. oclif rejected the parse, saf_action surfaced it as a *Warning*
+      # and exited 0, and the very next step wrote "Security gate passed".
+      #
+      # The gate has therefore never assessed a single HDF since #244 landed.
+      # Not "bundler-audit missed the gate" — nothing reached it.
+      #
+      # Two consequences shape the replacement below:
+      #
+      #   * saf_action is not used. It converted a hard error into a warning,
+      #     which is the whole defect; calling saf directly keeps the exit code.
+      #   * `-i` takes ONE file, and saf reads only a fixed set of threshold
+      #     paths (compliance.*, <status>.total, failed.<severity>.{min,max}).
+      #     It has no folder mode and no per-scanner sections, so the old
+      #     threshold.yml's top-level brakeman:/gitleaks:/codeql: blocks were
+      #     never parsed by anything. Hence the explicit loop, one threshold
+      #     file per scanner, in docs/compliance/thresholds/.
+      #
+      # Every file is evaluated before the job fails, so one breach does not
+      # hide the rest.
+      - name: Install SAF CLI (pinned — same version normalize_hdf uses)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
-          command_string: 'validate threshold -F amended -T docs/compliance/threshold.yml'
+          node-version: '22'
 
-      - name: Step summary on success
-        if: success()
+      - name: Install SAF CLI
+        # --ignore-scripts: npm lifecycle scripts (preinstall/postinstall) from
+        # any of the ~545 transitive packages would otherwise execute arbitrary
+        # code on a runner holding this workflow's token. saf needs none of
+        # them — verified by installing with the flag and then actually running
+        # `validate threshold` and `convert sarif2hdf` against real inputs, not
+        # merely checking `saf --version`.
+        run: npm install -g --ignore-scripts @mitre/saf@1.6.0
+
+      - name: Validate each amended HDF against its scanner threshold
         run: |
+          set -uo pipefail
+          THRESHOLD_DIR=docs/compliance/thresholds
+          FAILED=0
+          ASSESSED=0
+
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✓ Security gate passed — all amended HDFs satisfy threshold.yml" >> $GITHUB_STEP_SUMMARY
+          echo "### Threshold results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| HDF | Threshold | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
+
+          shopt -s nullglob
+          for hdf in amended/*.hdf.json; do
+            name=$(basename "$hdf" .hdf.json)
+            threshold="$THRESHOLD_DIR/$name.yml"
+            if [ ! -f "$threshold" ]; then
+              threshold="$THRESHOLD_DIR/default.yml"
+              echo "::warning::no threshold file for $name — using default.yml"
+            fi
+
+            ASSESSED=$((ASSESSED + 1))
+            # `saf validate threshold` EXITS 0 ON INPUT IT CANNOT PARSE —
+            # measured against a v3-shaped HDF and against `{"not":"hdf"}`,
+            # both of which print "Failed to convert file due to possible
+            # errors" and return 0. A rc-only check would therefore score a
+            # malformed or empty HDF as a pass, which is precisely the
+            # scan-that-cannot-fail defect this whole issue exists to remove.
+            #
+            # So a pass must be POSITIVELY asserted: saf prints "All validation
+            # tests passed" only when it actually evaluated the thresholds.
+            if saf validate threshold -i "$hdf" -T "$threshold" > "threshold-$name.log" 2>&1 \
+               && grep -q "All validation tests passed" "threshold-$name.log"; then
+              echo "| \`$name\` | \`$(basename "$threshold")\` | pass |" >> $GITHUB_STEP_SUMMARY
+            else
+              FAILED=$((FAILED + 1))
+              echo "| \`$name\` | \`$(basename "$threshold")\` | **FAIL** |" >> $GITHUB_STEP_SUMMARY
+              echo "::group::threshold breach — $name"
+              cat "threshold-$name.log"
+              echo "::endgroup::"
+              echo "::error::$name breached $(basename "$threshold")"
+            fi
+          done
+
+          # A gate that assessed nothing must not report success — that is the
+          # failure mode this whole issue is about. If the HDF artifact is
+          # missing or empty, say so and fail rather than passing vacuously.
+          if [ "$ASSESSED" -eq 0 ]; then
+            echo "::error::security_gate assessed 0 HDF files — expected at least one. Refusing to pass."
+            exit 1
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Assessed **$ASSESSED** HDF file(s); **$FAILED** breached threshold." >> $GITHUB_STEP_SUMMARY
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::error::Security gate FAILED — $FAILED of $ASSESSED amended HDFs breached their threshold"
+            exit 1
+          fi
+          echo "Security gate passed — $ASSESSED HDF file(s) satisfied their thresholds"
+
+      - name: Upload threshold logs (debug)
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: threshold-logs
+          path: threshold-*.log
+          retention-days: 30
+          if-no-files-found: ignore
 
       - name: Upload amended HDFs (debug)
         if: always()

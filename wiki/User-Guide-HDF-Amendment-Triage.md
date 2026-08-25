@@ -159,7 +159,7 @@ one override per current, non-expired disposition. Feed it to your pipeline:
 
 ```bash
 hdf amend apply --results scan.hdf.json --amendments boundary-amendments.hdf.json -o amended.hdf.json
-saf validate threshold -i amended.hdf.json -F threshold.yml
+saf validate threshold -i amended.hdf.json -T threshold.yml
 ```
 
 `hdf amend apply` sets each control's `effectiveStatus` from your dispositions, so

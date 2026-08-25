@@ -199,11 +199,11 @@ affected version, it is a **risk adjustment**, not a false positive.
 ### How a deviation gates the build
 
 The deviation's `risk_status` — **not** the disposition — decides the emitted
-HDF status. `threshold.yml` needs no knowledge of deviations:
+HDF status. the threshold files need no knowledge of deviations:
 
 | `risk_status` | HDF status | Effect |
 |---|---|---|
-| `deviation-requested` | `failed` | Counts toward `threshold.yml`. A CRITICAL breaches `failed.critical.max: 0` → **build red** |
+| `deviation-requested` | `failed` | Counts toward the scanner's threshold file. A CRITICAL breaches `failed.critical.max: 0` → **build red** |
 | `deviation-approved` | `notApplicable` | Suppressed from the residual → build green |
 
 An unapproved deviation on a critical is *supposed* to be loud. An approved one
