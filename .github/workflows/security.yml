@@ -1619,7 +1619,17 @@ jobs:
             fi
 
             ASSESSED=$((ASSESSED + 1))
-            if saf validate threshold -i "$hdf" -T "$threshold" > "threshold-$name.log" 2>&1; then
+            # `saf validate threshold` EXITS 0 ON INPUT IT CANNOT PARSE —
+            # measured against a v3-shaped HDF and against `{"not":"hdf"}`,
+            # both of which print "Failed to convert file due to possible
+            # errors" and return 0. A rc-only check would therefore score a
+            # malformed or empty HDF as a pass, which is precisely the
+            # scan-that-cannot-fail defect this whole issue exists to remove.
+            #
+            # So a pass must be POSITIVELY asserted: saf prints "All validation
+            # tests passed" only when it actually evaluated the thresholds.
+            if saf validate threshold -i "$hdf" -T "$threshold" > "threshold-$name.log" 2>&1 \
+               && grep -q "All validation tests passed" "threshold-$name.log"; then
               echo "| \`$name\` | \`$(basename "$threshold")\` | pass |" >> $GITHUB_STEP_SUMMARY
             else
               FAILED=$((FAILED + 1))
