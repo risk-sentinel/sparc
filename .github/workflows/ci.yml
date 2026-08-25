@@ -207,6 +207,60 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
+      # ── hdf-cli, so the OSCAL translation specs actually run here (#835) ──
+      #
+      # Without the binary, `HdfRunner` raises Errno::ENOENT and the #817
+      # pipeline specs skip themselves. They report NOT RUN rather than passing
+      # silently, which is honest — but it means a version-bump PR gets a green
+      # CI that proves nothing about the converter, and the hdf-cli surface is
+      # where our OSCAL translation contract actually lives. It has moved under
+      # us three times (3.2.0 dropped hdf->oscal-poam, 3.4.0 introduced an
+      # OSCAL-invalid empty prop.value, 3.4.1 added a new exit-1 path), and
+      # every one was found by hand, after the bump.
+      #
+      # BUILT FROM SOURCE, not downloaded. #835 proposed reusing the install
+      # script, which fetches a release binary — but every published hdf
+      # release including 3.5.1 is built with go1.26.5, and the GO-2026-5026
+      # fix line is go1.26.6. CI-1 made the same call for security.yml: a
+      # download cannot clear a stdlib CVE, choosing the toolchain does. Using
+      # one mechanism in both places also means one thing to reason about.
+      #
+      # The pins are DERIVED from the Dockerfile rather than restated here.
+      # There were already three copies of the version (Dockerfile, security.yml,
+      # script/dev/install-hdf.sh); a fourth is how CI-1's 3.4.1-vs-3.5.1 drift
+      # happened. script/ci/hdf_pins.sh is the only thing that reads it.
+      - name: Resolve hdf-cli pins from the Dockerfile
+        id: hdf_pins
+        run: script/ci/hdf_pins.sh --github-output
+
+      - name: Set up Go (pinned to the hdf-cli fix line)
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ steps.hdf_pins.outputs.go_fix_line }}
+
+      - name: Build hdf (mitre/hdf-libs CLI) from source
+        env:
+          HDF_LIBS_VERSION: ${{ steps.hdf_pins.outputs.hdf_libs_version }}
+          XTEXT_VERSION: ${{ steps.hdf_pins.outputs.xtext_version }}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
+            https://github.com/mitre/hdf-libs.git /tmp/hdf-src
+          cd /tmp/hdf-src/hdf-cli
+          go mod edit -require="golang.org/x/text@v${XTEXT_VERSION}"
+          go mod download golang.org/x/text
+          PKG="github.com/mitre/hdf-libs/hdf-cli/v3/cmd/hdf/cmd"
+          CGO_ENABLED=0 go build -trimpath \
+            -ldflags "-s -w -X ${PKG}.version=${HDF_LIBS_VERSION}" \
+            -o /usr/local/bin/hdf ./cmd/hdf
+          # Read the result back out of the binary rather than trusting the
+          # steps above — a drifted requirement or a changed toolchain would
+          # otherwise build clean and reintroduce the CVE silently.
+          go version -m /usr/local/bin/hdf | grep -E "golang.org/x/text[[:space:]]+v${XTEXT_VERSION}" \
+            || { echo "::error::hdf does not carry x/text v${XTEXT_VERSION}"; exit 1; }
+          hdf version | grep -q "${HDF_LIBS_VERSION}" \
+            || { echo "::error::hdf is not version ${HDF_LIBS_VERSION}"; exit 1; }
+
       - name: Run tests
         env:
           RAILS_ENV: test
@@ -214,6 +268,25 @@ jobs:
           COVERAGE: "1"
           # REDIS_URL: redis://localhost:6379/0
         run: bin/rails db:test:prepare && bundle exec rspec
+
+      # The point of installing hdf was that the translation specs stop
+      # skipping. A build that succeeds while the specs still skip would look
+      # identical to success, so assert it rather than assume it — the whole
+      # subject of this milestone.
+      - name: Assert the HDF translation specs were not skipped
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/ssp_tpr_manager_test  # gitleaks:allow
+        run: |
+          set -uo pipefail
+          command -v hdf >/dev/null || { echo "::error::hdf is not on PATH in the test job"; exit 1; }
+          out=$(bundle exec rspec spec/integration/oscal_e2e_pipeline_spec.rb 2>&1) || {
+            echo "$out" | tail -30; echo "::error::HDF pipeline specs failed"; exit 1; }
+          echo "$out" | tail -5
+          if echo "$out" | grep -q "hdf-cli not on PATH"; then
+            echo "::error::the HDF pipeline specs skipped for a missing binary even though hdf is installed"
+            exit 1
+          fi
 
       - name: Upload coverage report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
