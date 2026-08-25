@@ -73,16 +73,18 @@ Two things that table is saying, and they pull in opposite directions:
    because the sweeps find things. That is not scope creep — every one was a
    defect already shipped and previously invisible.
 
-**Open: 19** — measured 2026-08-24 after the CI-1 sweep, up from 16. The
-growth is the +62% discovery factor doing exactly what the table below predicts:
-CI-1 filed **#1064** and **#1065** out of its own work, and **#1061** arrived
-separately. Grouped into four bundles by what they share, not by label:
+**Open: 16, closed 4** — re-measured against the live repository on 2026-08-25,
+after CI-1 merged. The milestone was written as 16 open; it has since taken in
+**#1061** (slotted into CI-3 below), and CI-1 filed **#1064**, **#1065** and
+**#1067** out of its own work while closing four. So the count is flat only by
+coincidence — the +62% discovery factor is doing exactly what the table above
+predicts. Grouped into four bundles by what they share, not by label:
 
 | Bundle | Issues | Theme | Est. |
 | --- | --- | --- | --- |
-| **CI-1 — Gates that can actually fail** ✅ **DONE** | #1048 #1050 #987 #885 (+#1064 #1065 filed) | The scan→decision gap. A scan runs, produces an artifact, and nothing assesses it: bundler-audit reaches no threshold gate (#1048), neither API contract gate runs in CI and both are inert without `--check` (#1050), Brakeman is `continue-on-error` so SAST can never fail a build (#987), and posture-gated tests can silently skip rather than prove both conditions (#885). | 2d |
+| **CI-1 — Gates that can actually fail** ✅ **MERGED** (PR #1066, `cfa9ed77`) | ~~#1048~~ ~~#1050~~ ~~#987~~ ~~#885~~ (filed out of it: #1064 #1065 #1067; #1063 → v1.16.1) | The scan→decision gap. A scan runs, produces an artifact, and nothing assesses it: bundler-audit reaches no threshold gate (#1048), neither API contract gate runs in CI and both are inert without `--check` (#1050), Brakeman is `continue-on-error` so SAST can never fail a build (#987), and posture-gated tests can silently skip rather than prove both conditions (#885). | 2d |
 | **CI-2 — Evidence completeness** | #962 #977 #985 #917 #1027 #990 | This repository is **unevidenced for secrets scanning**: Gitleaks SARIF is never converted to HDF (#962) though the converter works, the emit is missing (#977), and what is filed lands where the profile cannot see it (#985). Plus SCA attestation (#917) and keeping the SonarQube HDF job self-contained (#1027). | 3d |
-| **CI-3 — Test-job fidelity** | #835 #927 #711 | The HDF translation specs do not actually run without a pinned `hdf-cli` in the test job (#835); deprecation warnings flood the log (#927); and there is no deployed API-contract runner (#711). | 2d |
+| **CI-3 — Test-job fidelity** | #835 #927 #711 **#1061** | The HDF translation specs do not actually run without a pinned `hdf-cli` in the test job (#835); deprecation warnings flood the log (#927); and there is no deployed API-contract runner (#711). **#1061** joins them: publishing the wiki is a manual step, so merging `wiki/` changes nothing a reader can see — the same shape as the rest of this bundle, a step that looks done and is not. | 2d |
 | **CI-4 — Posture and architecture coverage** | #858 #859 #965 | Release smoke runs one TLS posture and one does not imply the other (#858); **the arm64 half of every published image ships unverified** (#859) — which matters more now that `build-sign-publish` emits a multi-arch manifest on every tag; metrics collide in the bucket root (#965). | 2d |
 
 **Estimate: 9 working days of bundle work.** With the +62% discovery factor
@@ -188,16 +190,16 @@ and should be redrawn rather than defended.
 
 ---
 
-## Open work — measured 2026-08-24
+## Open work — measured 2026-08-25
 
 Re-measured against the live repository, not carried forward. The plan referenced
-**282 issues**; **248 are closed**. What remains:
+**282 issues**; **252 are closed** (248 at the 2026-08-24 audit, plus CI-1's four). What remains:
 
 | State | Count |
 | --- | --- |
-| Closed | **248** |
-| Open, on `ci.v0.0.1` | **16** |
-| Open, on `v1.16.1` | **16** (14 audited + #1058 and #1059, filed 2026-08-24) |
+| Closed | **252** (248 + CI-1's four) |
+| Open, on `ci.v0.0.1` | **16** — re-measured 2026-08-25. Flat only by coincidence: CI-1 closed #885 #987 #1048 #1050 and filed #1064 #1065 #1067; #1061 also joined |
+| Open, on `v1.16.1` | **17** (14 audited + #1058, #1059, #1063) |
 | **Open, on NO milestone** | **10** (was recorded as 4 — the count was wrong) |
 
 ### The ten with no milestone
