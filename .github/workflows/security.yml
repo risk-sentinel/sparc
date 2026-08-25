@@ -2238,19 +2238,60 @@ jobs:
           role-to-assume: ${{ secrets.SPARC_APP_CI_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # ── Pipeline metrics → the canonical per-repo prefix (#965) ──
+      #
+      # These used to be written to the BUCKET-ROOT `latest/`, a single shared
+      # namespace that every project writes into under identical file names.
+      # That is not a hypothetical collision: object versions on
+      # `latest/pipeline-performance.png` showed two producers alternating in
+      # two clear size bands minutes apart — a ~668 KB chart and a ~148 KB
+      # chart taking turns on one key. Whoever read it got whichever project
+      # ran last, with nothing in the path to say which.
+      #
+      # sparc-iac has since moved off that key (sparc-iac#655), so the writes
+      # there are ours alone today — but the path is still wrong, and the next
+      # project to add pipeline metrics collides all over again.
+      #
+      # `<boundary>/latest/<repo>/` and NOWHERE ELSE, per sparc-iac#654. The
+      # root copies are removed rather than dual-written: the whole point is
+      # that one shared namespace cannot answer "whose metrics are these", and
+      # leaving a root copy behind preserves exactly the ambiguity being fixed.
+      #
+      # Only `latest` — metrics are a rolling series, not per-run evidence, so
+      # unlike the compliance bundle above there is no dated copy.
       - name: Upload performance chart to S3
         if: github.ref == 'refs/heads/main'
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           COMPLIANCE_S3_BUCKET: ${{ secrets.COMPLIANCE_S3_BUCKET }}
+          BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY || 'sparc' }}
         run: |
+          set -euo pipefail
           BUCKET="${COMPLIANCE_S3_BUCKET}"
-          aws s3 cp docs/ci/pipeline-performance.png \
-            "s3://${BUCKET}/latest/pipeline-performance.png" \
-            --region "${AWS_REGION}"
-          aws s3 cp docs/ci/pipeline-metrics.csv \
-            "s3://${BUCKET}/latest/pipeline-metrics.csv" \
-            --region "${AWS_REGION}"
+          REPO=sparc
+          # Match the compliance step's behaviour rather than building
+          # `s3:///latest/...` and failing with an opaque S3 error.
+          if [ -z "$BUCKET" ]; then
+            echo "::warning::COMPLIANCE_S3_BUCKET not set — skipping metrics upload"
+            exit 0
+          fi
+          DEST="s3://${BUCKET}/${BOUNDARY}/latest/${REPO}"
+
+          # A 403 here most likely means SPARC_APP_CI_ARN is prefix-scoped to
+          # the old root `latest/`. sparc-iac#651 established that a
+          # canonical-only role carries no legacy grant, so the role and this
+          # path have to move together. Say so rather than leaving a bare
+          # AccessDenied for someone to trace back to a path change.
+          upload() {
+            local src="$1" name="$2"
+            aws s3 cp "$src" "${DEST}/${name}" --region "${AWS_REGION}" || {
+              echo "::error::failed writing ${DEST}/${name} — if this is AccessDenied, SPARC_APP_CI_ARN is probably still scoped to the old bucket-root latest/ prefix (see #965 and sparc-iac#651)"
+              return 1
+            }
+          }
+          upload docs/ci/pipeline-performance.png pipeline-performance.png
+          upload docs/ci/pipeline-metrics.csv     pipeline-metrics.csv
+          echo "Pipeline metrics uploaded to ${DEST}/"
 
       - name: Performance Summary
         run: |
