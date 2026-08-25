@@ -134,6 +134,16 @@ jobs:
         run: |
           set -euo pipefail
           out="$HDF_FILE"
+          # A missing token is a HARD error (#1027). Without it there is nothing
+          # to fetch, and an empty fetch converts into a valid, SCHEMA-CLEAN,
+          # zero-issue report — which then passes `hdf validate` below and is
+          # emitted as evidence that this project has no findings. Silence in the
+          # direction of "everything is fine" is the expensive one: the same
+          # shape is why `security_gate` reported success for 85 runs (#1048).
+          if [ -z "${SONAR_TOKEN:-}" ]; then
+            echo "::error::SONAR_TOKEN is empty — refusing to emit a clean-looking report built from an unauthenticated fetch"
+            exit 1
+          fi
           if [ "$TOOL" = "hdf-cli" ]; then
             args=(fetch sonarqube "$out" --url "$URL" --project-key "$KEY" --format hdf)
             [ -n "$ORG" ] && args+=(--organization "$ORG")

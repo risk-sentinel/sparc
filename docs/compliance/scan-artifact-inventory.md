@@ -1,6 +1,8 @@
 # Scan artifact inventory — what is produced, and what assesses it
 
-**Last measured: 2026-08-24, against run `32728653582` (`main` @ `a8991ae7`).**
+**Last measured: 2026-08-25, against run `32840183630` (`main` @ `cfa9ed77`)** —
+the first run with CI-1's gate live. The converter column and the two new
+sections at the end were re-measured for CI-2 (#962, #985, #990).
 
 This file exists because #1048 found an orphan by accident. `security.yml`
 produces a lot of artifacts, and until that issue nobody had asked the
@@ -33,14 +35,14 @@ present here at once:
 
 | Artifact | Converted to HDF | Assessed by `security_gate` | Band |
 | --- | --- | --- | --- |
-| `gitleaks-results.sarif` | `sarif2hdf` | yes | `gitleaks.yml` — zero tolerance, all severities |
-| `brakeman-results.sarif` | `sarif2hdf` | yes | `brakeman.yml` — critical/high 0 |
-| `codeql-results.sarif` | `sarif2hdf` | yes | `codeql.yml` — critical/high 0 |
-| `semgrep-results.sarif` | `sarif2hdf` | yes, when the job runs | `semgrep.yml` — critical/high 0 |
-| `trivy-fs-results.sarif` | `sarif2hdf` | yes | `trivy-fs.yml` — critical/high 0 |
-| `trivy-container-results.sarif` | `sarif2hdf` | yes | `trivy-container.yml` — critical 0, high 2 (baseline, #1065) |
+| `gitleaks-results.sarif` | `hdf convert --to hdf@2` | yes | `gitleaks.yml` — zero tolerance, all severities |
+| `brakeman-results.sarif` | `hdf convert --to hdf@2` | yes | `brakeman.yml` — critical/high 0 |
+| `codeql-results.sarif` | `hdf convert --to hdf@2` | yes | `codeql.yml` — critical/high 0 |
+| `semgrep-results.sarif` | `hdf convert --to hdf@2` | yes, when the job runs | `semgrep.yml` — critical/high 0 |
+| `trivy-fs-results.sarif` | `hdf convert --to hdf@2` | yes | `trivy-fs.yml` — critical/high 0 |
+| `trivy-container-results.sarif` | `hdf convert --to hdf@2` | yes | `trivy-container.yml` — critical 0, high 4 (baseline, #1065) |
 | `bundler-audit-results.json` | `bin/bundler_audit_to_hdf.rb` | yes | `bundler-audit.yml` — zero from medium up |
-| `trivy-fs-sbom.cdx.json` | `cyclonedx_sbom2hdf` | inventory only | ungated — see #1064 |
+| `trivy-fs-sbom.cdx.json` | `cyclonedx_sbom2hdf` (saf) | inventory only | ungated — see #1064 |
 | `trivy-container-sbom.cdx.json` | `cyclonedx_sbom2hdf` | inventory only | ungated — see #1064 |
 | `sbom-ruby.cdx.json` | `cyclonedx_sbom2hdf` | inventory only | ungated — see #1064 |
 | `grype-ruby.json` | `anchoregrype2hdf` | inventory only | ungated — impact caps at 0.5 |
@@ -112,6 +114,98 @@ finding count. A band cannot currently be justified by "these are
 dispositioned". Filed upstream as **mitre/hdf-libs#248**.
 
 ---
+
+## Every HDF must prove it ran — the canary control
+
+Added by CI-2 (#962, #985, #990), and the reason the converter column above
+changed.
+
+**A zero-control HDF passes every band trivially.** saf compares `count > max`,
+so against a document with no controls every count is `0` and nothing can
+breach. Measured on run `32840183630`: `gitleaks`, `brakeman` and
+`bundler-audit` were all zero-control documents sitting under all-zero bands.
+
+That makes a scanner that ran and found nothing **byte-identical** to a scanner
+that never ran. For the secrets scanner it is the highest-consequence vacuous
+pass in the pipeline: "no secrets found" and "gitleaks is broken" are the same
+green check.
+
+CI-1 hardened the gate against *assessing zero files* and against *unparseable
+input*. It did not harden it against a **parseable, valid, empty** document.
+That is the hole CI-2 closes, with three things that only work together:
+
+1. **`hdf convert` emits an execution record natively.** On a clean gitleaks
+   SARIF it produces one control, `gitleaks-no-findings` — *"gitleaks ran and
+   reported zero findings"* — where `saf convert sarif2hdf` produced an empty
+   document. It also names the scanner: `profiles[0].name` is `gitleaks`,
+   `CodeQL`, `Trivy` rather than saf's uniform `"SARIF"` (#990's finding, which
+   is what made this evidence anonymous in the bucket).
+2. **`bin/hdf_ensure_canary.rb` supplies the same** for the scanners still
+   converted by saf. It is written **only** where the scanner's input existed
+   and its conversion produced output — that pairing is what makes the canary
+   evidence rather than decoration. Writing it unconditionally would manufacture
+   the reassurance the gate exists to test, and make the assertion a tautology.
+3. **`security_gate` asserts it.** Every assessed HDF must carry either findings
+   or an execution record; zero controls fails, and unreadable JSON fails. Plus
+   `docs/compliance/expected-hdfs.txt` declares which scanners must be present
+   at all — "assessed at least one" catches the artifact vanishing wholesale,
+   but not gitleaks alone quietly dropping out while eleven others still pass.
+
+**An absent scanner is not a clean scanner, and an empty document is not a
+clean scan.**
+
+## Why the SARIF conversions moved, and why grype/cyclonedx did not
+
+`hdf convert` is the strategic CLI (owner decision, 2026-08-25); saf remains
+where hdf cannot yet do the job. Both halves are measured, not assumed.
+
+**`--to hdf@2` is a deliberate down-pin.** hdf-libs 3.5.1 emits v3
+(`baselines[]`) by default and `saf validate threshold` cannot read v3 at all,
+so an unpinned convert would take every HDF out of reach of the gate. The v2
+output is accepted by saf with `All validation tests passed`, and the finding
+counts are unchanged (codeql 2/8, trivy-container 4/4), so CI-1's calibration
+stands. The downgrade is lossy — it drops the top-level `tool` block — but
+`profiles[0].name` still carries the scanner name.
+
+> **Shelf life:** the down-pin is harmless only while **#1067** stands.
+> Amendments currently no-op, so there is no `effectiveStatus` to lose. When
+> #1067 is fixed, `--to hdf@2` would drop exactly the `effectiveStatus` that
+> suppression depends on. Re-evaluate the pin when #1067 closes.
+
+**grype and cyclonedx stay on saf.** Do not "finish the migration":
+
+- `hdf convert` **cannot read our filesystem grype scans at all** —
+  `invalid Grype JSON: cannot unmarshal string into Go struct field
+  GrypeSource.source.target`. grype's `.source.target` is an *object* when
+  `.source.type` is `image` and a plain *string* when it is `sbom-file`;
+  hdf-libs types it as a struct only. `grype-fs.json` and `grype-ruby.json` are
+  both `sbom-file`.
+- For the container scan it converts, but **not like-for-like**: impact spread
+  `0.3/0.5/0.7` via hdf against `0/0.3/0.5` via saf (whose `anchoregrype2hdf`
+  caps at 0.5), and 104 controls against 79. That is a severity and count
+  change, which belongs to **#1064** — where the whole grype/cyclonedx severity
+  question is tracked — not to a converter swap.
+
+### One trap the swap introduced, and how it is handled
+
+`hdf convert` maps SARIF `codeFlows` onto HDF `result.backtrace`. That is richer
+output, but `saf validate threshold` counts with **InSpec** semantics, where a
+backtrace means *the control errored while executing* rather than *this check
+failed*. So a correctly converted CodeQL result lands in saf's `error` bucket
+and trips `error.total.max: 0` — the band CI-1 added to catch converter
+**breakage**. Measured: 3 of codeql's 8 results carry codeFlows; no other
+scanner emits any.
+
+`security.yml` drops `backtrace` on the SARIF path only. The scoping is the
+justification: SARIF has no concept of an execution error — every SARIF result
+is a finding — so a backtrace there can only have come from a codeFlow, and
+reading it as an execution error is always wrong. For a real InSpec HDF a
+backtrace *would* mean an execution error. Verified that a genuine
+`status: "error"` still trips the band, and a genuine high finding still
+breaches its severity band.
+
+**Do not "fix" this by relaxing `error.total`.** That band is the only thing
+standing between a broken converter and a green gate.
 
 ## How to check this yourself
 

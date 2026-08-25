@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-08-19
+**Last updated:** 2026-08-25
 
 ---
 
@@ -37,17 +37,18 @@ authentication mode coverage matrix.
 
 > **Phases 1–16 have shipped and are archived in
 > [`implemented.md`](implemented.md)**, together with the per-bundle detail and
-> the original theme checklist. They were moved on 2026-08-24: 248 of the 282
-> issues this file referenced were closed, so 88% of it was history and the live
-> work was buried inside it. Nothing was deleted — look there for why a decision
-> was made.
+> the original theme checklist. They were moved on 2026-08-24 because the great
+> majority of what this file referenced was already closed, so most of it was
+> history and the live work was buried inside it. Nothing was deleted — look
+> there for why a decision was made. (The "248 of 282" figures this note used to
+> quote were stale; see *Open work* below for the measured counts.)
 >
 > **The most recent shipped phase is 16 — v1.16.0, tagged 2026-08-24.**
 
 
 ---
 
-### Phase 17: `ci.v0.0.1` — Evidence and Gates (NEXT)
+### Phase 17: `ci.v0.0.1` — Evidence and Gates (IN PROGRESS)
 
 **v1.16.0 shipped 2026-08-24** (tag `v1.16.0`, `main` @ `75b5bb3b`). Milestone
 closed **86/86**. Owner decision: **the CI milestone runs BEFORE the v1.16.1
@@ -73,23 +74,28 @@ Two things that table is saying, and they pull in opposite directions:
    because the sweeps find things. That is not scope creep — every one was a
    defect already shipped and previously invisible.
 
-**Open: 16, closed 4** — re-measured against the live repository on 2026-08-25,
-after CI-1 merged. The milestone was written as 16 open; it has since taken in
-**#1061** (slotted into CI-3 below), and CI-1 filed **#1064**, **#1065** and
-**#1067** out of its own work while closing four. So the count is flat only by
-coincidence — the +62% discovery factor is doing exactly what the table above
-predicts. Grouped into four bundles by what they share, not by label:
+**Open: 15, closed 5** — re-measured against the live repository on 2026-08-25,
+after CI-1 merged and #977 was closed as superseded. The milestone was written
+as 16 open; it has since taken in **#1061** (slotted into CI-3 below), and CI-1
+filed **#1064**, **#1065** and **#1067** out of its own work while closing four.
+
+**The near-flat count hides the churn rather than reflecting stability** — nine
+issues moved in or out to shift the total by one. The +62% discovery factor is
+doing exactly what the table above predicts: the backlog refills from the work
+itself. Do not read a steady milestone count as a milestone that is not moving.
+Grouped into four bundles by what they share, not by label:
 
 | Bundle | Issues | Theme | Est. |
 | --- | --- | --- | --- |
 | **CI-1 — Gates that can actually fail** ✅ **MERGED** (PR #1066, `cfa9ed77`) | ~~#1048~~ ~~#1050~~ ~~#987~~ ~~#885~~ (filed out of it: #1064 #1065 #1067; #1063 → v1.16.1) | The scan→decision gap. A scan runs, produces an artifact, and nothing assesses it: bundler-audit reaches no threshold gate (#1048), neither API contract gate runs in CI and both are inert without `--check` (#1050), Brakeman is `continue-on-error` so SAST can never fail a build (#987), and posture-gated tests can silently skip rather than prove both conditions (#885). | 2d |
-| **CI-2 — Evidence completeness** | #962 #977 #985 #917 #1027 #990 | This repository is **unevidenced for secrets scanning**: Gitleaks SARIF is never converted to HDF (#962) though the converter works, the emit is missing (#977), and what is filed lands where the profile cannot see it (#985). Plus SCA attestation (#917) and keeping the SonarQube HDF job self-contained (#1027). | 3d |
+| **CI-2 — Evidence completeness** 🔄 **IN REVIEW** (PR #1068) | #962 #985 #990 #1027 (~~#977~~ **closed as superseded**; **#917 → CI-4**) | Not the gap the issues described. Gitleaks **has** been converted since 2026-03-15 (#186); the real defect is that a **zero-control HDF passes every band trivially**, so a clean scan and a broken scanner are the same green check. Fixed by moving the SARIF conversions to `hdf convert` (which names the scanner and emits an execution record), an injected canary for the saf-path scanners, and a gate that asserts both the canary and the expected scanner set. | 3d |
 | **CI-3 — Test-job fidelity** | #835 #927 #711 **#1061** | The HDF translation specs do not actually run without a pinned `hdf-cli` in the test job (#835); deprecation warnings flood the log (#927); and there is no deployed API-contract runner (#711). **#1061** joins them: publishing the wiki is a manual step, so merging `wiki/` changes nothing a reader can see — the same shape as the rest of this bundle, a step that looks done and is not. | 2d |
-| **CI-4 — Posture and architecture coverage** | #858 #859 #965 | Release smoke runs one TLS posture and one does not imply the other (#858); **the arm64 half of every published image ships unverified** (#859) — which matters more now that `build-sign-publish` emits a multi-arch manifest on every tag; metrics collide in the bucket root (#965). | 2d |
+| **CI-4 — Posture and architecture coverage** | #858 #859 #965 **#917** | Release smoke runs one TLS posture and one does not imply the other (#858); **the arm64 half of every published image ships unverified** (#859) — which matters more now that `build-sign-publish` emits a multi-arch manifest on every tag; metrics collide in the bucket root (#965). **#917 moved here from CI-2** (2026-08-25): attesting SCA results with `cosign attest` is the same shape as #859 — both are about whether a consumer can verify something about a **published artifact**, and both change `build-sign-publish.yml`, so they share one pass through the build/sign/publish path and the same `cosign verify-attestation` testing surface. | 3d |
 
-**Estimate: 9 working days of bundle work.** With the +62% discovery factor
-applied to a 16-issue backlog (→ ~25 issues at 4.2/day ≈ 6 days) the two methods
-bracket **6–9 working days**. Plan **8**, target **2026-09-03**.
+**Estimate: 11 working days, target 2026-09-08.** The original figure was 8
+(bundle work bracketed 6–9 by two methods). **CI-1 superseded it** — see the
+revision under *CI-1 — landed* below, which is the number that governs. The two
+were left contradicting each other in this section until 2026-08-25.
 
 ### CI-1 — landed 2026-08-24
 
@@ -128,17 +134,86 @@ estimate **11 working days**, target **2026-09-08**.
 should be able to reject, and #1050 in particular guards the #995 contract
 result that v1.16.0 just shipped — that guarantee is currently unenforced.
 
+### CI-2 — in review 2026-08-25
+
+**The bundle's stated premise did not survive measurement, and the real defect
+was larger.**
+
+**#962 is stale.** "Gitleaks SARIF is never converted to HDF" was wrong against
+`main`: it has been converted since **2026-03-15** (`f8f3b4ab`, #186),
+`security.yml:1135`. The organisation-wide audit that filed it read the scan step
+and missed the conversion job. Only its third acceptance criterion — verify on a
+SARIF containing an actual finding — was genuinely unmet, and that is now done.
+
+**What was actually wrong.** A zero-control HDF passes every threshold band
+trivially: saf compares `count > max`, so against no controls every count is 0.
+Measured on run `32840183630`, the first run with CI-1's gate live, **gitleaks,
+brakeman and bundler-audit all reached the gate as zero-control documents sitting
+under all-zero bands**, and 5 of 12 HDFs were anonymous (`profiles[0].name` =
+`"SARIF"`). So a scanner that ran and found nothing was byte-identical to one
+that never ran — for the secrets scanner, the highest-consequence vacuous pass in
+the pipeline.
+
+This is the direct successor to CI-1. CI-1 fixed *"the gate assessed nothing"*;
+CI-2's finding is *"several of the things it now assesses cannot fail"*.
+
+The fix is three parts that only work together — `hdf convert` for scanner
+identity and a native execution record, `bin/hdf_ensure_canary.rb` for the
+scanners still on saf, and a gate that asserts both the canary and the expected
+scanner set (`docs/compliance/expected-hdfs.txt`). Detail and the measurements
+are in `docs/compliance/scan-artifact-inventory.md`.
+
+**Two scope corrections, decided by the owner 2026-08-25:**
+
+- **#977 is CLOSED as superseded** (not planned). It asked for a TruffleHog
+  emit; PR **#979** implemented exactly that and was closed 2026-08-19 with
+  *"Superseded by #985"*, because this repository is declared
+  `secrets: {tools: [gitleaks]}` and TruffleHog evidence is never read for it.
+  The gap it described is closed by this bundle via a different route: the
+  evidence was not missing, it was **empty**. Its one surviving requirement —
+  a clean scan must still emit — is now enforced for *every* scanner, not just
+  secrets.
+- **#917 moves to CI-4.** Attesting SCA results with `cosign attest` lives in
+  `build-sign-publish.yml`, not `security.yml`, and needs a predicate-format
+  decision (in-toto `vuln` vs OpenVEX vs CycloneDX-VEX). It pairs with **#859**,
+  which is the same question about the same file — can a consumer verify
+  something about a published artifact. Note for that work: hdf-libs 3.5.1 can
+  already emit `hdf-amendments → openvex` / `cyclonedx-vex` / `csaf-vex`, and
+  `sparc-findings.yml` is already the register of accepted findings *with
+  rationale* — but **#1067 means amendments currently suppress nothing**, so
+  what gets attested must be measured rather than assumed.
+
+**Two things worth carrying forward:**
+
+- **The `--to hdf@2` down-pin has a shelf life tied to #1067.** It is harmless
+  only while amendments no-op; once #1067 is fixed the down-pin would drop the
+  `effectiveStatus` suppression depends on.
+- **`hdf convert` cannot read our filesystem grype scans at all** — grype's
+  `.source.target` is an object for image scans and a string for `sbom-file`
+  scans, and hdf-libs types it as a struct only. Upstream-reportable, same class
+  as mitre/hdf-libs#248. It bounds how far the migration off saf can go today.
+
 ---
 
 ### Phase 18: `v1.16.1` — The Patch Release
 
-**Open: 14.** Runs after Phase 17, on a v1.16.0 that has had real-environment
-time behind it.
+**Open: 17** (measured 2026-08-25 — 14 audited, plus #1058, #1059 and #1063).
+Runs after Phase 17, on a v1.16.0 that has had real-environment time behind it.
 
-> **#968 carries a hard due date of 2026-09-06** — 13 days from 2026-08-24, and
-> the only dated item in either milestone. If Phase 17 runs the full 8 days
-> (→ 2026-09-03), **#968 has three days left when v1.16.1 opens.** It must ride
-> the FIRST v1.16.1 bundle, or the date has to move. Flagging it rather than
+> **#968 carries a hard due date of 2026-09-06** — the only dated item in either
+> milestone, and the two live estimates put it on opposite sides of the line:
+>
+> - On the **measured cadence** (`ci.v0.0.1` closing ~09-02), v1.16.1 opens 09-03
+>   and #968 has **three working days** — tight, and only if it rides Bundle Y.
+> - On the **standing 11-day estimate** (→ 09-08), **v1.16.1 opens after #968 is
+>   already due.**
+>
+> So this is no longer "must ride the first bundle". Either #968 is pulled
+> forward out of v1.16.1 and run alongside the CI work, or the date moves. That
+> is a decision rather than a scheduling detail, and it is the owner's. Flagging
+> it rather than quietly letting it lapse: this is the audit of
+> swallow-and-continue rescue patterns, and #963 already showed the hazard is not
+> theoretical. Flagging it rather than
 > quietly letting it lapse: this is the audit of swallow-and-continue rescue
 > patterns, and #963 already showed that hazard is not theoretical.
 
@@ -161,16 +236,30 @@ one bundle every 1.5–2 days:
 
 | Window | Work | Milestone |
 | --- | --- | --- |
-| 08-25 → 08-26 | CI-1 — gates that can fail | ci.v0.0.1 |
-| 08-27 → 08-29 | CI-2 — evidence completeness | ci.v0.0.1 |
-| 09-01 → 09-02 | CI-3 — test-job fidelity | ci.v0.0.1 |
-| 09-02 → 09-03 | CI-4 — posture and architecture | ci.v0.0.1 |
-| **09-03** | **`ci.v0.0.1` closes** | |
-| 09-04 → 09-08 | **Y — reliability (#968 due 09-06)** | v1.16.1 |
-| 09-09 → 09-12 | Z — the CSP tail | v1.16.1 |
-| 09-15 → 09-16 | AA — auth and access debt | v1.16.1 |
-| 09-17 → 09-23 | AB — onboarding and Sonar | v1.16.1 |
-| **~09-24** | **`v1.16.1` tag** | |
+| **08-24 Mon** | CI-1 — gates that can fail | ✅ **merged**, PR #1066 |
+| **08-25 Tue** | CI-2 — evidence completeness | 🔄 **in review**, PR #1068 |
+| 08-26 → 08-28 | CI-3 — test-job fidelity | ci.v0.0.1 |
+| 08-31 → 09-02 | CI-4 — posture and architecture (now carries #917) | ci.v0.0.1 |
+| **~09-02** | **`ci.v0.0.1` closes** — *on measured cadence* | |
+| 09-03 → 09-07 | **Y — reliability (#968 due 09-06)** | v1.16.1 |
+| 09-08 → 09-11 | Z — the CSP tail | v1.16.1 |
+| 09-14 → 09-15 | AA — auth and access debt | v1.16.1 |
+| 09-16 → 09-22 | AB — onboarding and Sonar | v1.16.1 |
+| **~09-23** | **`v1.16.1` tag** | |
+
+**The re-measure this section asked for is now due, and the two estimates
+disagree.** CI-1 merged 08-24 and CI-2 reached review 08-25: **two bundles in
+two working days**, against the five those two were budgeted. The standing
+estimate is **11 working days → 09-08**, revised upward after CI-1 because
+calibrating never-applied thresholds proved expensive. The measured cadence says
+**~09-02**.
+
+Both are in the table above deliberately — the dates run on the measured
+cadence, the conservative bound is 09-08. **The gap is entirely CI-3 and CI-4**,
+neither of which has been opened. CI-1 and CI-2 were both *cheaper in wall-clock
+than in difficulty* because their defects were concentrated in one file; #859
+(arm64 verification) and #711 (deployed contract runner) are not that shape.
+**Do not plan against ~09-02 without deciding that deliberately.**
 
 **Confidence.** The CI window is the firmer of the two: its issues are mostly
 pipeline wiring with known shapes. The v1.16.1 window depends almost entirely on
@@ -192,13 +281,27 @@ and should be redrawn rather than defended.
 
 ## Open work — measured 2026-08-25
 
-Re-measured against the live repository, not carried forward. The plan referenced
-**282 issues**; **252 are closed** (248 at the 2026-08-24 audit, plus CI-1's four). What remains:
+Re-measured against the live repository, not carried forward. **503 issues**;
+**461 are closed**, **42 open**. What remains:
+
+> **The closed count in this section was itself stale until 2026-08-25.** It read
+> "282 issues, 252 closed" while the repository held 503 and 460 — the open
+> figures below had been re-measured and the closed ones carried forward, in the
+> very section that exists to stop counts being carried forward. Both figures now
+> come from the same command, and the open breakdown reconciles: 15 + 17 + 10 = 42.
+>
+> ```bash
+> gh issue list --state closed --limit 1000 --json number --jq 'length'   # 461
+> gh issue list --state open   --limit 1000 --json number --jq 'length'   #  42
+> ```
+>
+> `--limit` must exceed the real count or the answer is silently truncated to the
+> limit — reading 400 back from `--limit 400` is a truncation, not a measurement.
 
 | State | Count |
 | --- | --- |
-| Closed | **252** (248 + CI-1's four) |
-| Open, on `ci.v0.0.1` | **16** — re-measured 2026-08-25. Flat only by coincidence: CI-1 closed #885 #987 #1048 #1050 and filed #1064 #1065 #1067; #1061 also joined |
+| Closed | **461** |
+| Open, on `ci.v0.0.1` | **15** — re-measured 2026-08-25 after #977 was closed as superseded. CI-1 closed #885 #987 #1048 #1050 and filed #1064 #1065 #1067; #1061 also joined |
 | Open, on `v1.16.1` | **17** (14 audited + #1058, #1059, #1063) |
 | **Open, on NO milestone** | **10** (was recorded as 4 — the count was wrong) |
 
@@ -247,9 +350,10 @@ My read, offered as a starting point rather than a decision:
 
 ### Everything else
 
-The 30 milestoned issues are bundled in Phases 17 and 18 above. Verified
-programmatically on 2026-08-24: every open issue on both milestones appears in
-exactly one bundle, and no bundle cites an issue that is not open.
+The **32** milestoned open issues (15 on `ci.v0.0.1`, 17 on `v1.16.1`) are
+bundled in Phases 17 and 18 above. Re-verified 2026-08-25 after #977 closed and
+#917 moved to CI-4: every open issue on both milestones appears in exactly one
+bundle, and no bundle cites an issue that is not open.
 
 ## Summary Timeline
 
@@ -270,25 +374,34 @@ exactly one bundle, and no bundle cites an issue that is not open.
 | 11 | 4-6 weeks | OSCAL Integrity, Enterprise & Infrastructure | #344, #346, #358, #361, #372 | **COMPLETE** |
 | 12 | Complete | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | ~~#436~~, ~~#244~~, ~~#367~~, ~~#445~~, ~~#440~~, ~~#449~~, ~~#451~~, ~~#453~~ | **COMPLETE** (carried items #433, #341, #246, #422, #413, #447 moved to Phase 14) |
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
-| 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
+| 14 | **Complete** | Pre-Public-Flip + API Test Validation + CDEF Mutations | ~~#545~~ ~~#433~~ ~~#498~~ ~~#499~~ ~~#528~~ ~~#447~~ ~~#341~~ ~~#246~~ ~~#413~~ ~~#616~~ ~~#618~~ · carried: **#531**, **#422** | **COMPLETE** — measured 2026-08-25: **11 of its 13 issues are closed**. It had been marked "In Progress" long after the fact. The two still open (#531, #422) carry **no milestone** and are already tracked in *The ten with no milestone* below — they are not Phase 14 work in flight, they are untriaged backlog. Note #528 was closed over its own undone tail; that tail is **#1047** in v1.16.1 Bundle Z |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
 | 16 | **Complete** | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | **87 issues, 87 closed. Tagged `v1.16.0` 2026-08-24** from `main` @ `75b5bb3b`. The full closed list is the milestone itself — do not maintain a second copy here | **SHIPPED.** Bundles ran #939 → O → S → P → T → Q → hdf pin → U → W → V → R → X. Bundle X merged as [PR #1049](https://github.com/risk-sentinel/sparc/pull/1049) → `9ae84a84`; [PR #1055](https://github.com/risk-sentinel/sparc/pull/1055) → `75b5bb3b` then fixed four defects Bundle X had merged, found by running the FULL suites against a built prod image. Release verification (measured, on the tagged tree): rspec **6230/0**, API **2742 passed** over TLS and again over non-TLS, ui-smoke **524 passed / 0 failed**, rubocop + brakeman + bundle-audit clean. The milestone grew **53 → 86 because the sweeps FOUND things**, not through scope creep. Wiki published and release notes carry the measured table |
-| 17 | **In progress** | `ci.v0.0.1` — evidence and gates | **19 open** (was 16; CI-1 filed #1064 #1065, #1061 arrived separately). **CI-1 DONE** (#1048 #1050 #987 #885) · CI-2 evidence completeness (#962 #977 #985 #917 #1027 #990) · CI-3 test-job fidelity (#835 #927 #711) · CI-4 posture and architecture (#858 #859 #965) · unbundled: #1061 #1064 #1065 | Runs **BEFORE** v1.16.1 so the patch release gets real-environment soak time (owner decision, 2026-08-24). **CI-1 landed 2026-08-24** and found the milestone's premise understated: `security_gate` had never assessed a single HDF, because `saf validate threshold -F` names a flag that has never existed in any released saf — oclif rejected the parse, `saf_action` reported it as a warning and exited 0, and the next step wrote "Security gate passed". Ten further defects sat behind it (inventory: `docs/compliance/scan-artifact-inventory.md`). Estimate revised **8 → 11 working days**: CI-1 alone took what the plan allowed for CI-1 and CI-2 together, because calibrating thresholds that have never once been applied is not the same work as wiring a scanner in |
-| 18 | Planned | v1.16.1 — the patch release | **17 open** (was 14; +#1058 #1059 #1063). Y reliability + the deadline (**#968 due 2026-09-06** #1051 #1022) · Z the CSP tail (#1047 #728 #1046) · AA auth and access debt (#978 #1044) · AB onboarding and Sonar (#1040 #940 #1033 #930 #966 #836) | Estimated **14 working days**, target **~2026-09-24**. **#968 is the only dated item in either milestone and must ride the FIRST bundle** or the date moves. Do NOT plan this at v1.16.0's 4.2 issues/day — that rate came from a distribution of small sweep-found defects; #1047, #1040 and #966 are each multi-day. Re-measure after CI-2 |
+| 17 | **In progress** | `ci.v0.0.1` — evidence and gates | **15 open, 5 closed** (measured 2026-08-25 with `--limit 300`, after #977 closed as superseded). **CI-1 DONE** (#1048 #1050 #987 #885) · **CI-2 IN REVIEW** (PR #1068 — #962 #985 #990 #1027; **#977 closed as superseded**) · CI-3 test-job fidelity (#835 #927 #711 #1061) · CI-4 posture and architecture (#858 #859 #965 **#917**) · unbundled: #1064 #1065 #1067 | Runs **BEFORE** v1.16.1 so the patch release gets real-environment soak time (owner decision, 2026-08-24). **CI-1 landed 2026-08-24**: `security_gate` had never assessed a single HDF, because `saf validate threshold -F` names a flag that has never existed in any released saf — oclif rejected the parse, `saf_action` reported it as a warning and exited 0, and the next step wrote "Security gate passed". Ten further defects sat behind it. **CI-2 found the successor defect**: of the 12 HDFs the gate now assesses, several had ZERO controls, and a zero-control document passes every band trivially — a clean scan and a broken scanner were the same green check. Inventory: `docs/compliance/scan-artifact-inventory.md`. Estimate revised **8 → 11 working days** |
+| 18 | Planned | v1.16.1 — the patch release | **17 open** (was 14; +#1058 #1059 #1063). Y reliability + the deadline (**#968 due 2026-09-06** #1051 #1022) · Z the CSP tail (#1047 #728 #1046) · AA auth and access debt (#978 #1044 #1059) · AB onboarding and Sonar (#1040 #940 #1033 #930 #966 #836) | Estimated **14 working days**, target **~2026-09-24**. **#968 is the only dated item in either milestone and must ride the FIRST bundle** or the date moves. Do NOT plan this at v1.16.0's 4.2 issues/day — that rate came from a distribution of small sweep-found defects; #1047, #1040 and #966 are each multi-day. Re-measure after CI-2 |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 88 (23 original + 65 ad-hoc/new — adds the v1.7.x hardening cluster #509–#553)
-**Completed (Phases 1-13):** 92 issues including the full v1.7.x sprint (17 issues across hardening + patch releases). v1.7.2 shipped 2026-05-24 (image `risksentinel/sparc:1.7.2`).
-**Remaining (Phase 14 active backlog):** 11 issues — P0: #545 (operator clicks pre-public-flip), #433 (in progress) / P1: #498, #499 (CDEF mutations chain) / P2: #528, #531, #447 (deferred) / P3: #341, #246, #413, #422 (gated)
-**Phases 1-13 and 15 complete.** Phase 14 (pre-public-flip + API test validation + CDEF mutations)
-and Phase 16 (v1.16.0) are both in progress — 14 is a carried backlog, 16 is the active milestone.
+**Measured 2026-08-25** (`gh issue list --limit 1000`): **503 issues total —
+461 closed, 42 open.** Open splits 15 on `ci.v0.0.1`, 17 on `v1.16.1`, 10 with
+no milestone.
 
-> **This document is stale between v1.9.1 and v1.15.3.** The release history from
-> v1.9.2 onward was tracked on the GitHub Releases page and the wiki Changelog
-> rather than here, so the version and issue counts below reflect v1.7.2 and have
-> not been carried forward. Phase 15 is recorded above because it is in flight;
-> backfilling the intervening releases is tracked separately. Treat
-> [GitHub Releases](https://github.com/risk-sentinel/sparc/releases) as canonical
-> for what shipped when.
-**First public release: v1.0.0** (#271). **Current version: v1.7.2** (released 2026-05-24 — pagination fix + processing-banner trap + CI workflow validator fix). Org migration to `risk-sentinel/sparc` completed 2026-05-02 (#430). **Repo flipping to public** — gated on #545 completion + `risk-sentinel/sparc-iac#281`.
+> **The per-phase totals that used to sit here were stale and are removed rather
+> than guessed at.** They read "Total issues tracked: 88", "Completed (Phases
+> 1-13): 92 issues" and **"Current version: v1.7.2"** — the last of which was
+> wrong by nine minor releases, against a repository that tagged **v1.16.0** on
+> 2026-08-24. They described a document that stopped being maintained around
+> v1.9.1 and were never reconciled.
+>
+> Phase-by-phase history lives in [`implemented.md`](implemented.md).
+> [GitHub Releases](https://github.com/risk-sentinel/sparc/releases) is canonical
+> for what shipped when, and the milestone pages are canonical for issue counts.
+> **Do not reintroduce a hand-maintained running total here** — every one of them
+> drifted, and each drifted silently in the direction of looking finished.
+
+**First public release: v1.0.0** (#271). Org migration to `risk-sentinel/sparc`
+completed 2026-05-02 (#430).
+
+> **Resolved:** `VERSION` in `app/models/sparc_config.rb` reads **1.16.0** and
+> matches the tag. Session notes had carried "still 1.15.5" forward from before
+> the release; verified against the file on 2026-08-25, it is correct.

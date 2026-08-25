@@ -28,6 +28,13 @@ name: SonarQube HDF emit
 on:
   push:
     branches: [ main ]
+  # Weekly floor (#1027). Push-to-main alone means a repository that has not
+  # merged recently carries ageing evidence, and the downstream freshness check
+  # reads "no evidence within 7 days" — a finding about merge cadence, not about
+  # the repository's actual security posture. Scheduled runs only ever fire on
+  # the default branch of this repo, so the fork-safety note above still holds.
+  schedule:
+    - cron: '30 12 * * 1'   # Mondays 12:30 UTC
   workflow_dispatch:
     inputs:
       use_saf:
