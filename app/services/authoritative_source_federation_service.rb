@@ -57,14 +57,14 @@ class AuthoritativeSourceFederationService
   def self.import_bundle(envelope, peer:, actor:)
     verification = FederationBundleSigningService.verify(envelope, peer: peer)
     unless verification.success?
-      return Result.new(success: false, status_code: :unprocessable_entity,
+      return Result.new(success: false, status_code: :unprocessable_content,
                         error: "Signature verification failed: #{verification.error}")
     end
 
     payload = verification.payload
     resources = payload["resources"]
     unless resources.is_a?(Array)
-      return Result.new(success: false, status_code: :unprocessable_entity,
+      return Result.new(success: false, status_code: :unprocessable_content,
                         error: "Bundle contains no resources array")
     end
 
@@ -205,12 +205,12 @@ class AuthoritativeSourceFederationService
   end
 
   def self.disabled_result(peer)
-    Result.new(success: false, status_code: :unprocessable_entity,
+    Result.new(success: false, status_code: :unprocessable_content,
                error: "Peer #{peer.name.inspect} is disabled")
   end
 
   def self.missing_token_result
-    Result.new(success: false, status_code: :unprocessable_entity,
+    Result.new(success: false, status_code: :unprocessable_content,
                error: "Peer has no service_token configured")
   end
 end

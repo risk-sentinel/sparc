@@ -76,7 +76,7 @@ RSpec.describe "Api::V1::CdefCoverage", type: :request do
                                          original_filename: "notes.json")
       post api_v1_cdef_coverage_analyze_path, params: { files: [ bad ] }, headers: admin_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to match(/notes\.json/)
     end
 

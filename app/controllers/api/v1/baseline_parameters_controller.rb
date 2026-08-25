@@ -60,7 +60,7 @@ class Api::V1::BaselineParametersController < Api::V1::BaseController
         error:    "The request body could not be parsed as a baseline parameter update. Nothing was changed.",
         details:  payload.errors,
         expected: BaselineParameterPayload::EXPECTED
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
 
     service = BaselineParameterService.new(@profile)
@@ -76,7 +76,7 @@ class Api::V1::BaselineParametersController < Api::V1::BaseController
       }
     )
 
-    status = result[:validation_errors].any? ? :unprocessable_entity : :ok
+    status = result[:validation_errors].any? ? :unprocessable_content : :ok
     render json: { data: result }, status: status
   end
 
@@ -98,7 +98,7 @@ class Api::V1::BaselineParametersController < Api::V1::BaseController
       }
     }
   rescue OdpImportService::ImportError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # POST /api/v1/profile_documents/:profile_document_id/parameters/import/confirm
@@ -122,10 +122,10 @@ class Api::V1::BaselineParametersController < Api::V1::BaseController
     )
 
     applied = result[:parameters_updated] + result[:selections_updated]
-    status = (applied.zero? && result[:validation_errors].any?) ? :unprocessable_entity : :ok
+    status = (applied.zero? && result[:validation_errors].any?) ? :unprocessable_content : :ok
     render json: { data: result }, status: status
   rescue OdpImportService::ImportError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # GET /api/v1/profile_documents/:profile_document_id/parameters/export
@@ -159,7 +159,7 @@ class Api::V1::BaselineParametersController < Api::V1::BaseController
     render json: {
       error: "This profile is published and cannot be edited. Duplicate it to create an editable draft.",
       details: [ "lifecycle_status is \"published\"" ]
-    }, status: :unprocessable_entity
+    }, status: :unprocessable_content
   end
 
   # #574 — accept either numeric id or slug; same rationale as the

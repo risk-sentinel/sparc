@@ -79,7 +79,7 @@ RSpec.describe "Api::V1::Admin::Credentials", type: :request do
 
     it "returns 422 when the password param is missing" do
       post path, params: {}, headers: auth_headers, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "returns 401 without a Bearer token" do

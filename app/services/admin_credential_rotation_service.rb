@@ -89,7 +89,7 @@ class AdminCredentialRotationService
 
     Result.new(success: true, version_id: @version_id)
   rescue ActiveRecord::RecordInvalid => e
-    Result.new(success: false, status_code: :unprocessable_entity,
+    Result.new(success: false, status_code: :unprocessable_content,
                error: e.record.errors.full_messages.join(", "))
   end
 
@@ -143,7 +143,7 @@ class AdminCredentialRotationService
   end
 
   def blank_result
-    Result.new(success: false, status_code: :unprocessable_entity,
+    Result.new(success: false, status_code: :unprocessable_content,
                error: "Password must be at least 8 characters")
   end
 

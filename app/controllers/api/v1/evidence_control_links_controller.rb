@@ -49,7 +49,7 @@ class Api::V1::EvidenceControlLinksController < Api::V1::BaseController
       return render json: {
         error: "Validation failed",
         details: [ "document_type must be one of: #{EvidenceControlLink::DOCUMENT_TYPES.join(', ')}" ]
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
 
     if link.save
@@ -59,7 +59,7 @@ class Api::V1::EvidenceControlLinksController < Api::V1::BaseController
       render json: { data: serialize(link, detailed: true) }, status: :created
     else
       render json: { error: "Validation failed", details: link.errors.full_messages },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     end
   end
 

@@ -83,7 +83,7 @@ class Api::V1::SspComponentsController < Api::V1::BaseController
       return render json: {
         error: "The `this-system` component describes the system itself and cannot be deleted. " \
                "Change its title or description instead."
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
 
     metadata = audit_metadata(@component)

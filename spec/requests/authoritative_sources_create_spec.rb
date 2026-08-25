@@ -74,7 +74,7 @@ RSpec.describe "Authoritative source create (#646)", type: :request do
     it "re-renders with 422 on a validation error (missing title)" do
       sign_in_as(create(:user))
       post authoritative_sources_path, params: { back_matter_resource: { title: "" } }
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

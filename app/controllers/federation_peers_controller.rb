@@ -40,7 +40,7 @@ class FederationPeersController < ApplicationController
       redirect_to federation_peer_path(@peer)
     else
       flash.now[:error] = @peer.errors.full_messages.join(", ")
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -54,7 +54,7 @@ class FederationPeersController < ApplicationController
       redirect_to federation_peer_path(@peer)
     else
       flash.now[:error] = @peer.errors.full_messages.join(", ")
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

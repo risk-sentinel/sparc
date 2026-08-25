@@ -123,7 +123,7 @@ RSpec.describe "Api::V1::Attestations", type: :request do
       post api_v1_evidence_attestations_path(evidence_id: evidence.id),
            params: params, headers: admin_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["details"].join).to match(/holds no role|does not hold/i)
     end
 
@@ -136,7 +136,7 @@ RSpec.describe "Api::V1::Attestations", type: :request do
       post api_v1_evidence_attestations_path(evidence_id: evidence.id),
            params: params, headers: admin_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["details"].join).to match(/not a role that may attest/i)
     end
 
@@ -144,7 +144,7 @@ RSpec.describe "Api::V1::Attestations", type: :request do
       bad = valid_params.deep_merge(attestation: { frequency: "fortnightly" })
       post api_v1_evidence_attestations_path(evidence_id: evidence.id),
            params: bad, headers: admin_headers
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["details"]).to include(/Frequency/i)
     end
 

@@ -17,7 +17,7 @@ class Api::V1::HdfAmendmentsController < Api::V1::BaseController
 
   rescue_from HdfRunner::Error do |e|
     render json: { error: "Amendment verification failed", details: e.message },
-           status: :unprocessable_entity
+           status: :unprocessable_content
   end
 
   # GET .../hdf_amendments

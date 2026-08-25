@@ -59,13 +59,13 @@ RSpec.describe "Api::V1 field import", type: :request do
     it "returns 422 on a malformed file" do
       post import_fields_confirm_api_v1_ssp_document_path(document.slug),
            params: { file: upload("{ not json") }, headers: admin_headers
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to match(/Invalid JSON/)
     end
 
     it "returns 422 when no file is provided" do
       post import_fields_confirm_api_v1_ssp_document_path(document.slug), headers: admin_headers
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

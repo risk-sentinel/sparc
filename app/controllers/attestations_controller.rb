@@ -33,7 +33,7 @@ class AttestationsController < ApplicationController
       audit_log("attestation_created", subject: @attestation, metadata: { evidence_id: @evidence.id })
       redirect_to evidence_path(@evidence), notice: "Attestation recorded by #{@attestation.attester_name}."
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 

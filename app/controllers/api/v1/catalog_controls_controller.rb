@@ -83,7 +83,7 @@ class Api::V1::CatalogControlsController < Api::V1::BaseController
       return render json: {
         error: "Control #{identifier} still has #{children.size} sub-part(s). Delete them first.",
         sub_parts: children.map(&:canonical_identifier)
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
 
     @catalog_control.destroy!
@@ -214,7 +214,7 @@ class Api::V1::CatalogControlsController < Api::V1::BaseController
     render json: {
       error: "Unknown baseline level(s): #{invalid.join(', ')}. " \
              "Expected one or more of #{CatalogControl::BASELINE_LEVELS.join(', ')}."
-    }, status: :unprocessable_entity
+    }, status: :unprocessable_content
     true
   end
 

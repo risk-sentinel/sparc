@@ -188,7 +188,7 @@ RSpec.describe "Api::V1::ControlCatalogs", type: :request do
       create(:profile_document, control_catalog: catalog)
 
       delete api_v1_control_catalog_path(catalog), headers: auth_headers
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     context "as a non-admin user" do

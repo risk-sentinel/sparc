@@ -23,7 +23,7 @@ class BoundariesController < ApplicationController
     else
       @cdef_documents = CdefDocument.where(status: "completed").order(:name)
       flash.now[:error] = @boundary.errors.full_messages.join(", ")
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -40,7 +40,7 @@ class BoundariesController < ApplicationController
     else
       @cdef_documents = CdefDocument.where(status: "completed").order(:name)
       flash.now[:error] = @boundary.errors.full_messages.join(", ")
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

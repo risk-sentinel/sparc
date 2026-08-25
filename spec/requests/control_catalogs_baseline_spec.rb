@@ -115,7 +115,7 @@ RSpec.describe "Control Catalogs Baseline Management", type: :request do
             params: { control_ids: [], baseline_level: "LOW", action_type: "add" },
             as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "blocks updates on published catalogs" do

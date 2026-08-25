@@ -112,7 +112,7 @@ class PoamDocumentsController < ApplicationController
       else
         flash.now[:error] = @poam_document.errors.full_messages.join(", ")
         load_ssp_options_grouped
-        render :new, status: :unprocessable_entity
+        render :new, status: :unprocessable_content
       end
     else
       handle_multi_file_upload(:poam, param_key: :poam_document)

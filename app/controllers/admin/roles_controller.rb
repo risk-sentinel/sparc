@@ -29,7 +29,7 @@ module Admin
         redirect_to admin_role_path(@role), success: "Role created."
       else
         flash.now[:error] = @role.errors.full_messages.to_sentence
-        render :new, status: :unprocessable_entity
+        render :new, status: :unprocessable_content
       end
     end
 
@@ -47,7 +47,7 @@ module Admin
         redirect_to admin_role_path(@role), success: "Role updated."
       else
         flash.now[:error] = @role.errors.full_messages.to_sentence
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
       end
     end
 

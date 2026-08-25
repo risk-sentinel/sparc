@@ -22,11 +22,11 @@ class PasswordsController < ApplicationController
         redirect_to root_path, success: "Password updated successfully."
       else
         flash.now[:error] = current_user.errors.full_messages.to_sentence
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
       end
     else
       flash.now[:error] = "Current password is incorrect."
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 end

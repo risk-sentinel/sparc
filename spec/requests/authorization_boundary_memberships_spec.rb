@@ -139,7 +139,7 @@ RSpec.describe "Authorization boundary memberships (#869)", type: :request do
              params: { authorization_boundary_membership: { user_name: "", user_email: "x@example.gov" } }
       }.not_to change { boundary.authorization_boundary_memberships.count }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("Current Personnel Roster")
       expect(response.body).to include("Existing Person")
     end
@@ -202,7 +202,7 @@ RSpec.describe "Authorization boundary memberships (#869)", type: :request do
              } }
       }.not_to change { boundary.authorization_boundary_memberships.count }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("Current Personnel Roster")
       expect(flash.now[:error]).to include("is not an available role")
     end

@@ -90,7 +90,7 @@ class ControlCatalogsController < ApplicationController
     rescue ActiveRecord::RecordInvalid => e
       @control_catalog = ControlCatalog.new(control_catalog_params)
       @control_catalog.valid?
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -103,7 +103,7 @@ class ControlCatalogsController < ApplicationController
       audit_log("control_catalog_updated", subject: @control_catalog, metadata: { name: @control_catalog.name })
       redirect_to @control_catalog, notice: "Catalog updated successfully."
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 
@@ -155,7 +155,7 @@ class ControlCatalogsController < ApplicationController
     file = params[:catalog_file]
     unless file.present?
       flash.now[:error] = "Please select a file to import."
-      return render :import, status: :unprocessable_entity
+      return render :import, status: :unprocessable_content
     end
 
     original_filename = file.original_filename
@@ -333,7 +333,7 @@ class ControlCatalogsController < ApplicationController
     bulk_action = params[:action_type].to_s.strip
 
     if control_ids.empty?
-      render json: { success: false, error: "No controls selected" }, status: :unprocessable_entity
+      render json: { success: false, error: "No controls selected" }, status: :unprocessable_content
       return
     end
 
@@ -361,7 +361,7 @@ class ControlCatalogsController < ApplicationController
       metadata: { action: bulk_action, level: level, updated_count: updated })
     render json: { success: true, updated_count: updated }
   rescue ArgumentError => e
-    render json: { success: false, error: e.message }, status: :unprocessable_entity
+    render json: { success: false, error: e.message }, status: :unprocessable_content
   end
 
   private

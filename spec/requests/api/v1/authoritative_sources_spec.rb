@@ -46,7 +46,7 @@ RSpec.describe "Api::V1::AuthoritativeSources", type: :request do
     it "returns 422 for an unknown peer name" do
       get export_api_v1_authoritative_sources_path,
           params: { peer: "no-such-peer" }, headers: admin_headers
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 
@@ -80,7 +80,7 @@ RSpec.describe "Api::V1::AuthoritativeSources", type: :request do
            params: envelope.merge(peer: peer.name),
            headers: admin_headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to match(/Signature verification failed/i)
     end
   end
@@ -139,7 +139,7 @@ RSpec.describe "Api::V1::AuthoritativeSources", type: :request do
       post api_v1_authoritative_sources_path,
            params: { back_matter_resource: { title: "" } },
            headers: admin_headers, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 end

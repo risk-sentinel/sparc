@@ -64,7 +64,7 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
       # #952 — most often a missing or unknown authorization_boundary_id. That
       # is the caller's mistake, not a server fault, so it must not be a 500.
       render json: { error: e.record.errors.full_messages.join(", ") },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     rescue StandardError => e
       render json: { error: e.message }, status: :internal_server_error
     ensure
@@ -89,7 +89,7 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
         data: @document.to_json_data
       }
     rescue StandardError => e
-      render json: { error: e.message }, status: :unprocessable_entity
+      render json: { error: e.message }, status: :unprocessable_content
     end
   end
 
@@ -104,7 +104,7 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
   # metadata-only shell gains a control basis instead of being a dead end.
   def populate_from_profile
     if @document.published_lifecycle?
-      return render(json: { error: "SSP is published and read-only" }, status: :unprocessable_entity)
+      return render(json: { error: "SSP is published and read-only" }, status: :unprocessable_content)
     end
 
     profile = find_published_profile(params[:source_profile_id])
@@ -116,7 +116,7 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
               metadata: { name: @document.name, source_profile_id: profile.id, source_profile_name: profile.name })
     render json: { data: serialize_document(@document, detailed: true) }
   rescue ArgumentError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   private

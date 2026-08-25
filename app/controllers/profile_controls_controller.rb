@@ -26,7 +26,7 @@ class ProfileControlsController < ApplicationController
       flash[:success] = "Control #{@profile_control.control_id} added to profile"
       redirect_to profile_document_path(@profile_document)
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -42,7 +42,7 @@ class ProfileControlsController < ApplicationController
       flash[:success] = "Control #{@profile_control.control_id} updated"
       redirect_to profile_document_path(@profile_document)
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

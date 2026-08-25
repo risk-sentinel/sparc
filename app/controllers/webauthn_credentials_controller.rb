@@ -40,7 +40,7 @@ class WebauthnCredentialsController < ApplicationController
   # POST /webauthn_credentials
   def create
     challenge = session.delete(:webauthn_registration_challenge)
-    return render json: { error: "No enrollment in progress. Start again." }, status: :unprocessable_entity if challenge.blank?
+    return render json: { error: "No enrollment in progress. Start again." }, status: :unprocessable_content if challenge.blank?
 
     webauthn_credential = WebAuthn::Credential.from_create(credential_param)
     webauthn_credential.verify(challenge, user_verification: true)
@@ -54,7 +54,7 @@ class WebauthnCredentialsController < ApplicationController
     audit("webauthn_key_registered", credential)
     render json: credential_json(credential), status: :created
   rescue WebAuthn::Error => e
-    render json: { error: "That security key could not be verified: #{e.message}" }, status: :unprocessable_entity
+    render json: { error: "That security key could not be verified: #{e.message}" }, status: :unprocessable_content
   end
 
   # DELETE /webauthn_credentials/:id

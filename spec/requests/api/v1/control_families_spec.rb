@@ -95,7 +95,7 @@ RSpec.describe "Api::V1::ControlFamilies", type: :request do
     it "refuses a duplicate code in the same catalog" do
       post path, headers: auth, params: { control_family: { code: "AC", name: "Dupe" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     # The safeguard: a loose hash would let arbitrary keys into a record the
@@ -154,7 +154,7 @@ RSpec.describe "Api::V1::ControlFamilies", type: :request do
         delete "#{path}/ac", headers: auth
       }.not_to change { catalog.control_families.count }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("still has 1 control")
     end
   end

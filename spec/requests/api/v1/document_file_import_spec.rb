@@ -113,7 +113,7 @@ RSpec.describe "Api::V1 document file import", type: :request do
       it "refuses a request with no file, by name" do
         post "/api/v1/#{resource}/import", headers: headers
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response.parsed_body["error"]).to match(/file/i)
       end
 
@@ -138,7 +138,7 @@ RSpec.describe "Api::V1 document file import", type: :request do
                headers: headers
         }.not_to change(model, :count)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response.parsed_body["meta"]["errors"].first["error"]).to match(/executable/i)
       end
 
@@ -151,7 +151,7 @@ RSpec.describe "Api::V1 document file import", type: :request do
              params: { file: Rack::Test::UploadedFile.new(txt.path, "text/plain") },
              headers: headers
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response.parsed_body["meta"]["errors"].first["error"]).to match(/accepted/i)
       end
 
@@ -166,7 +166,7 @@ RSpec.describe "Api::V1 document file import", type: :request do
                headers: headers
         }.not_to change(model, :count)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
     end
   end

@@ -26,7 +26,7 @@ class Api::V1::Admin::RemediationTimelinesController < Api::V1::BaseController
       render json: { data: serialize(row) }
     else
       render json: { error: "Validation failed", details: row.errors.full_messages },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     end
   end
 

@@ -101,7 +101,7 @@ RSpec.describe "Api::V1::BaselineParameters ODP import (#697)", type: :request d
 
     it "422s when no file is provided" do
       post preview_path, headers: auth_headers
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to include("multipart")
     end
   end
@@ -153,7 +153,7 @@ RSpec.describe "Api::V1::BaselineParameters ODP import (#697)", type: :request d
         params: { file: Rack::Test::UploadedFile.new(file.path, JSON_TYPE) },
         headers: auth_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     ensure
       file.close!
     end

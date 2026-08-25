@@ -120,7 +120,7 @@ RSpec.describe "Api::V1::KsiValidations", type: :request do
         params: { ksi_validation: { catalog_control_id: ksi_control.id, status: "bogus" } },
         headers: auth_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     # #851 — the actual attack path, not just the model guard. evidence_id is
@@ -138,7 +138,7 @@ RSpec.describe "Api::V1::KsiValidations", type: :request do
             headers: auth_headers
         }.not_to change(KsiValidation, :count)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(JSON.parse(response.body)["details"].join)
           .to match(/must belong to the same authorization boundary/)
       end
@@ -158,7 +158,7 @@ RSpec.describe "Api::V1::KsiValidations", type: :request do
           authorization_boundary_id: boundary.slug, id: validation.id
         ), params: { ksi_validation: { evidence_id: foreign_evidence.id } }, headers: auth_headers
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(validation.reload.evidence_id).to be_nil
       end
 

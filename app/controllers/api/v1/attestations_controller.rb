@@ -71,7 +71,7 @@ class Api::V1::AttestationsController < Api::V1::BaseController
       render json: { data: serialize(attestation, detailed: true) }, status: :created
     else
       render json: { error: "Validation failed", details: attestation.errors.full_messages },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     end
   end
 

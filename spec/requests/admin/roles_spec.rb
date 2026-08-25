@@ -86,7 +86,7 @@ RSpec.describe "Admin::Roles", type: :request do
       post admin_roles_path, params: {
         role: { name: "", display_name: "", scope: "invalid" }
       }
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

@@ -111,7 +111,7 @@ RSpec.describe "Api::V1::SapDocuments", type: :request do
           headers: auth_headers
       }.not_to change(SapDocument, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to match(/no control basis/i)
     end
 
@@ -155,7 +155,7 @@ RSpec.describe "Api::V1::SapDocuments", type: :request do
           headers: auth_headers
       }.not_to change(SapDocument, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to match(/covered no controls/i)
     end
 

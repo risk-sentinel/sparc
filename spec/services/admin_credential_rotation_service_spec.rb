@@ -40,7 +40,7 @@ RSpec.describe AdminCredentialRotationService do
     it "rejects passwords shorter than 8 characters" do
       result = described_class.apply!(plaintext: "short", actor: actor, source: "api")
       expect(result).not_to be_success
-      expect(result.status_code).to eq(:unprocessable_entity)
+      expect(result.status_code).to eq(:unprocessable_content)
     end
 
     it "returns 404 when the admin email is not present" do

@@ -76,7 +76,7 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
     audit_log("control_catalog_deleted", subject: @catalog, metadata: { name: name })
     render json: { data: { id: @catalog.id, deleted: true } }
   rescue ActiveRecord::RecordNotDestroyed => e
-    render json: { error: "Cannot delete catalog with dependencies: #{e.message}" }, status: :unprocessable_entity
+    render json: { error: "Cannot delete catalog with dependencies: #{e.message}" }, status: :unprocessable_content
   end
 
   private

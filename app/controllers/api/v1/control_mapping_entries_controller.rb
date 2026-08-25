@@ -43,7 +43,7 @@ class Api::V1::ControlMappingEntriesController < Api::V1::BaseController
       audit_log("api_mapping_entry_created", subject: entry, metadata: audit_metadata(entry))
       render json: { data: serialize_entry(entry) }, status: :created
     else
-      render json: { errors: entry.errors.to_hash(true) }, status: :unprocessable_entity
+      render json: { errors: entry.errors.to_hash(true) }, status: :unprocessable_content
     end
   end
 
@@ -52,7 +52,7 @@ class Api::V1::ControlMappingEntriesController < Api::V1::BaseController
       audit_log("api_mapping_entry_updated", subject: @entry, metadata: audit_metadata(@entry))
       render json: { data: serialize_entry(@entry) }
     else
-      render json: { errors: @entry.errors.to_hash(true) }, status: :unprocessable_entity
+      render json: { errors: @entry.errors.to_hash(true) }, status: :unprocessable_content
     end
   end
 

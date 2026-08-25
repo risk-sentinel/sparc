@@ -96,7 +96,7 @@ class BackMatterResourcePromotionService
                         error: "Promotion is not pending review")
     end
     if reason.to_s.strip.empty?
-      return Result.new(success: false, status_code: :unprocessable_entity,
+      return Result.new(success: false, status_code: :unprocessable_content,
                         error: "Rejection reason is required")
     end
 

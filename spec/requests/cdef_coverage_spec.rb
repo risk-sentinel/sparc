@@ -64,7 +64,7 @@ RSpec.describe "CdefCoverage", type: :request do
 
       post analyze_cdef_coverage_index_path, params: { files: [ bad ] }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       # Asserted on the body, not on flash[] — a flash key that is not in
       # FLASH_CLASSES renders nowhere at all, silently.
       expect(response.body).to include("notes.json")
@@ -113,7 +113,7 @@ RSpec.describe "CdefCoverage", type: :request do
         post cdef_coverage_index_path, params: { report_token: "#{token}x" }
       }.not_to change(CdefCoverageRun, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "refuses a missing token" do
@@ -121,7 +121,7 @@ RSpec.describe "CdefCoverage", type: :request do
         post cdef_coverage_index_path, params: {}
       }.not_to change(CdefCoverageRun, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

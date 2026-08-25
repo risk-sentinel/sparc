@@ -45,7 +45,7 @@ RSpec.describe "Api::V1::Admin::RemediationTimelines", type: :request do
     it "422 on an invalid cell" do
       put "/api/v1/admin/remediation_timelines",
           params: { baseline_level: "Nope", criticality: "Critical", days: 3 }, headers: admin_headers
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 end
