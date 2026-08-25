@@ -78,6 +78,39 @@ Recorded so the same shapes are recognisable next time.
 | 12 | SARIF cannot express "critical" | `level` is error/warning/note only, so trivy's CRITICAL and HIGH both arrive as impact 0.7. `trivy-container.yml`'s `critical.max` is inert; the `high` band carries the whole posture. Measured on CVE-2026-27820, tagged CRITICAL by Trivy, impact 0.7 in the HDF. |
 | 11 | `anchoregrype2hdf` caps impact at 0.5 | No grype finding can reach a high or critical band, whatever its real severity. Tracked as #1064. |
 
+| 13 | `hdf amend apply` no-ops on our HDFs | **Dispositions in `sparc-findings.yml` suppress NOTHING.** `hdf amend` matches `baselines[].requirements[].id` (HDF v3); SAF's converters emit `profiles[].controls[].results[]` (v2), which has no `baselines` key, so `applyOverrideToDoc` returns immediately for every override. It reports "Merged output written" and exits 0. Measured: 0 of 12 amended HDFs contain a single `notApplicable`. Filed upstream as **mitre/hdf-libs#248**. |
+| 14 | `saf validate threshold` exits **0** on unparseable input | Including `{"not":"hdf"}`. A rc-only gate would score a malformed HDF as a pass. `security_gate` now also requires saf's `All validation tests passed` line. |
+
+---
+
+## The disposition layer does not currently suppress anything
+
+Recorded prominently because it changes how every band in `thresholds/` should
+be read, and because it is invisible from the outside.
+
+`docs/compliance/sparc-findings.yml` → `bin/sparc_findings_to_hdf_amendments.rb`
+→ `hdf amend apply` is the mechanism by which an accepted or deferred finding is
+supposed to stop counting against a threshold. **It does not work in this
+pipeline, at three independent points:**
+
+1. `hdf amend apply` requires HDF **v3** (`baselines[].requirements[].id`,
+   setting `effectiveStatus` and appending `statusOverrides[]`). SAF's
+   converters emit **v2** (`profiles[].controls[].results[].status`), which has
+   no `baselines` key — so every override hits an early `return`. Silently.
+2. `hdf convert --from hdf@2 --to hdf` produces **schema-invalid** v3 from SAF
+   output (`descriptions: Invalid type. Expected: array, given: null`).
+3. `hdf convert --from hdf --to hdf@2` is **lossy** and drops `effectiveStatus`,
+   so even a forced round-trip cannot carry the amendment back to a v2 consumer
+   — and `saf validate threshold` reads only v2.
+
+Proved by construction: the same amendments document applied to a hand-built v3
+document sets `effectiveStatus=notApplicable` correctly. The register, the
+generator and the amendment schema are all fine; only the results shape differs.
+
+**Consequence for the threshold files:** every band is applied to the RAW
+finding count. A band cannot currently be justified by "these are
+dispositioned". Filed upstream as **mitre/hdf-libs#248**.
+
 ---
 
 ## How to check this yourself

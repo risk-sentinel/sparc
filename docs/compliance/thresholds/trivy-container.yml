@@ -28,12 +28,17 @@
 # came out `notApplicable`** — every disposition in sparc-findings.yml, the two
 # `false_positive` entries included, left its finding `failed`.
 #
-# For zlib and erb specifically the mechanism looks deliberate: `deferred` maps
-# to override type `poam`, and a POA&M is a TRACKED finding, not a suppressed
-# one, so hdf-cli keeps it `failed` regardless of the `status: notApplicable`
-# that bin/sparc_findings_to_hdf_amendments.rb writes alongside it. If that is
-# right, the deviation-approved -> notApplicable path (#865) has never taken
-# effect — invisible until now because the gate never ran.
+# CAUSE, since established by reproduction rather than inference (it is NOT the
+# poam/deferred semantics, which was the first guess): `hdf amend apply` matches
+# `baselines[].requirements[].id` — the HDF v3 shape — while SAF's converters
+# emit v2 (`profiles[].controls[].results[]`), which has no `baselines` key at
+# all. Every override hits an early `return`, and the command still prints
+# "Merged output written" and exits 0. The same amendments document applied to a
+# v3 document sets `effectiveStatus=notApplicable` correctly, so the register and
+# the generator are fine. Filed upstream as mitre/hdf-libs#248.
+#
+# Until that is resolved, NO band in this directory can be justified by "these
+# findings are dispositioned" — every band is applied to the raw count.
 #
 # That question is NOT settled here, and the band records what was MEASURED
 # rather than what the disposition register implies. Do not lower this to 2 on
