@@ -75,11 +75,15 @@ Two things that table is saying, and they pull in opposite directions:
    defect already shipped and previously invisible.
 
 **Open: 15, closed 5** — re-measured against the live repository on 2026-08-25,
-after CI-1 merged. The milestone was written as 16 open; it has since taken in
-**#1061** (slotted into CI-3 below), and CI-1 filed **#1064**, **#1065** and
-**#1067** out of its own work while closing four. So the count is flat only by
-coincidence — the +62% discovery factor is doing exactly what the table above
-predicts. Grouped into four bundles by what they share, not by label:
+after CI-1 merged and #977 was closed as superseded. The milestone was written
+as 16 open; it has since taken in **#1061** (slotted into CI-3 below), and CI-1
+filed **#1064**, **#1065** and **#1067** out of its own work while closing four.
+
+**The near-flat count hides the churn rather than reflecting stability** — nine
+issues moved in or out to shift the total by one. The +62% discovery factor is
+doing exactly what the table above predicts: the backlog refills from the work
+itself. Do not read a steady milestone count as a milestone that is not moving.
+Grouped into four bundles by what they share, not by label:
 
 | Bundle | Issues | Theme | Est. |
 | --- | --- | --- | --- |
