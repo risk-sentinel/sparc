@@ -13,14 +13,31 @@
 #
 # Measured 2026-08-24 on main@a8991ae7 — the 4 raw findings are all shadowed
 # Ruby default gems (vulnerable copy on disk, patched copy loaded by Bundler):
-#   CVE-2026-27820  zlib   CRITICAL  -> notApplicable (approved deviation)
-#   CVE-2026-41316  erb    HIGH      -> notApplicable (approved deviation)
-#   CVE-2025-24294  resolv HIGH      -> UNDISPOSITIONED
-#   CVE-2025-61594  uri    HIGH      -> UNDISPOSITIONED
-# Residual after amendments: 0 critical, 2 high.
+#   CVE-2026-27820  zlib    CRITICAL (impact 0.7 — see CAVEAT)
+#   CVE-2026-41316  erb     HIGH
+#   CVE-2025-24294  resolv  HIGH
+#   CVE-2025-61594  uri     HIGH
+# Residual after amendments: 0 critical, 4 high.
 #
-# BASELINE measured 2026-08-24 on main@a8991ae7. RATCHET: high may only ever
-# go DOWN, and the target is 0.
+# BASELINE measured 2026-08-24 from PR #1066 run 32787093249 — the first run in
+# which this gate ever executed. RATCHET: high may only ever go DOWN; target 0.
+#
+# WHY 4 AND NOT 2. An earlier draft of this file said 2, on the reasoning that
+# zlib and erb carry approved deviations and would be amended to notApplicable.
+# The first real run refuted that: in ALL TWELVE amended HDFs, **not one control
+# came out `notApplicable`** — every disposition in sparc-findings.yml, the two
+# `false_positive` entries included, left its finding `failed`.
+#
+# For zlib and erb specifically the mechanism looks deliberate: `deferred` maps
+# to override type `poam`, and a POA&M is a TRACKED finding, not a suppressed
+# one, so hdf-cli keeps it `failed` regardless of the `status: notApplicable`
+# that bin/sparc_findings_to_hdf_amendments.rb writes alongside it. If that is
+# right, the deviation-approved -> notApplicable path (#865) has never taken
+# effect — invisible until now because the gate never ran.
+#
+# That question is NOT settled here, and the band records what was MEASURED
+# rather than what the disposition register implies. Do not lower this to 2 on
+# the assumption that amendments suppress; verify against a real run first.
 #
 # The 2 are `resolv` and `uri`, the same shadowed-default-gem case as zlib and
 # erb — the vulnerable Ruby-shipped copy sits on disk while Bundler loads a
@@ -55,7 +72,7 @@ failed:
   critical:
     max: 0   # inert on this scanner — see the CAVEAT above
   high:
-    max: 2   # BASELINE — resolv + uri, undispositioned. Target 0 via #1065.
+    max: 4   # BASELINE — measured, all 4 shadowed default gems. Target 0.
 error:
   total:
     max: 0

@@ -67,6 +67,12 @@ title = "SPARC Gitleaks Configuration"
     # ── Non-secret constants / test strings flagged by generic rules ──
     '''TOKEN_PURPOSE\s*=\s*["']cdef_bulk_apply''',
     '''phase2-test-signing-secret''',
+    # #1048 — the same family of federation-peer throwaways used by the
+    # tests/api federation fixtures (phase2-selfloop-*). An inline
+    # `# gitleaks:allow` cannot clear these: gitleaks scans git HISTORY,
+    # and the value is already in commit fda3413d. Only an allowlist entry
+    # reaches a past commit.
+    '''phase2-[a-z0-9]+(-[a-z0-9]+)*-(signing-secret|token)''',
     '''token_expires_at:''',
     # Local-validation dummy SECRET_KEY_BASE (explicitly not-for-production).
     '''ubi9-local-validation-not-for-production''',
