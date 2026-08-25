@@ -1,0 +1,42 @@
+# Scanners whose HDF must reach the security gate on every run.
+#
+# WHY (#962, #985, #990)
+#
+# Before this file, `security_gate` asserted only that it assessed at least ONE
+# HDF. That catches the artifact vanishing wholesale — the CI-1 failure mode —
+# but not a single scanner quietly dropping out. If gitleaks stopped emitting
+# tomorrow, eleven other HDFs would still be assessed, the gate would report
+# "Security gate passed — 11 HDF file(s) satisfied their thresholds", and
+# nothing would say the repository had stopped being scanned for secrets.
+#
+# A scanner that is absent is not a scanner that is clean.
+#
+# Format: one HDF basename per line (matching `<name>.hdf.json` and the
+# threshold file `thresholds/<name>.yml`). Append ` optional` for scanners that
+# legitimately do not run on every trigger — those are reported when missing
+# but do not fail the gate.
+#
+# Keep this in step with the conversions in security.yml's normalize_hdf job
+# and with docs/compliance/scan-artifact-inventory.md.
+
+# ── SAST / secrets ──
+gitleaks
+brakeman
+codeql
+# Semgrep runs only under workflow_dispatch with run_semgrep=true.
+semgrep optional
+
+# ── Vulnerability scans ──
+trivy-fs
+trivy-container
+bundler-audit
+
+# ── Inventory (ungated for findings; still must be produced) ──
+# These carry only `error.total.max: 0` bands by design — see the inventory
+# doc. Being ungated for findings is NOT a reason to tolerate their absence.
+trivy-fs-sbom
+trivy-container-sbom
+sbom-ruby
+grype-ruby
+grype-fs
+grype-container

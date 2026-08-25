@@ -58,6 +58,19 @@ env:
   # job, so nothing is lost. Flip to true (or enable GHAS) once the
   # repo is public or GHAS is licensed.
   UPLOAD_TO_CODE_SCANNING: ${{ inputs.upload_to_code_scanning == '' && 'false' || inputs.upload_to_code_scanning }}
+  # hdf-cli pins (#962/#990). Two jobs build hdf from source — normalize_hdf
+  # converts with it, security_gate amends with it — so the version lives here
+  # rather than in either job. The previous single-job pin drifted to 3.4.1
+  # while the image baked 3.5.1; a second hardcoded copy is exactly how that
+  # recurs. Dockerfile carries the same ARG — grep repo-wide before changing.
+  HDF_LIBS_VERSION: '3.5.1'
+  # hdf-libs 3.5.1 pins golang.org/x/text v0.27.0 (CVE-2026-56852, HIGH).
+  # Bumped to match the image; drop when upstream ships x/text >= 0.39.0.
+  XTEXT_VERSION: '0.39.0'
+  # Every published hdf release, 3.5.1 included, is built with go1.26.5;
+  # the GO-2026-5026 fix line is go1.26.6. A download cannot clear a stdlib
+  # CVE — choosing the toolchain does.
+  HDF_GO_VERSION: '1.26.6'
   # #873 — Syft produces the container SBOM the Grype gate consumes. Pinned:
   # the gate's correctness depends on this tool emitting source-RPM (upstream=)
   # purl qualifiers, so the version is not something to float.
@@ -1081,6 +1094,50 @@ jobs:
             exit 1
           }
 
+      # ── hdf-cli, for the SARIF conversions (#962, #985, #990) ──
+      #
+      # The SARIF conversions moved off `saf convert sarif2hdf` because it
+      # discards scanner identity and emits nothing at all for a clean scan.
+      # Measured on the gitleaks artifact from run 32840183630:
+      #
+      #   saf sarif2hdf  -> profiles[0].name = "SARIF",  0 controls
+      #   hdf convert    -> profiles[0].name = "gitleaks", 1 control
+      #                     id "gitleaks-no-findings", result status "passed"
+      #
+      # Both problems, one converter. The identity comes from the SARIF's own
+      # `runs[0].tool.driver.name`, which was there all along; the canary is
+      # hdf-libs emitting an explicit "ran, found nothing" requirement instead
+      # of an empty document. See the canary assertion in security_gate — a
+      # zero-control HDF is indistinguishable from a scanner that never ran.
+      #
+      # Same source build as security_gate uses, same pins (workflow env).
+      - name: Set up Go (pinned to the hdf-cli fix line)
+        if: always()
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.HDF_GO_VERSION }}
+
+      - name: Build hdf (mitre/hdf-libs CLI) from source
+        if: always()
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
+            https://github.com/mitre/hdf-libs.git /tmp/hdf-src
+          cd /tmp/hdf-src/hdf-cli
+          go mod edit -require="golang.org/x/text@v${XTEXT_VERSION}"
+          go mod download golang.org/x/text
+          PKG="github.com/mitre/hdf-libs/hdf-cli/v3/cmd/hdf/cmd"
+          CGO_ENABLED=0 go build -trimpath \
+            -ldflags "-s -w -X ${PKG}.version=${HDF_LIBS_VERSION}" \
+            -o /usr/local/bin/hdf ./cmd/hdf
+          # Read the result back out of the binary rather than trusting the
+          # steps above — a drifted requirement or a changed toolchain would
+          # otherwise build clean and reintroduce the CVE silently.
+          go version -m /usr/local/bin/hdf | grep -E "golang.org/x/text[[:space:]]+v${XTEXT_VERSION}" \
+            || { echo "::error::hdf does not carry x/text v${XTEXT_VERSION}"; exit 1; }
+          hdf version | grep -q "${HDF_LIBS_VERSION}" \
+            || { echo "::error::hdf is not version ${HDF_LIBS_VERSION}"; exit 1; }
+
       - name: Convert all scan results to HDF (parallel)
         if: always()
         continue-on-error: true
@@ -1112,6 +1169,71 @@ jobs:
             fi
           }
 
+          # SARIF → HDF via hdf-cli (#962, #985, #990).
+          #
+          # `--to hdf@2` is a deliberate DOWN-PIN, not a default. hdf-libs 3.5.1
+          # emits v3 (`baselines[]`) by default and `saf validate threshold`
+          # cannot read v3 at all, so an unpinned convert would take every HDF
+          # out of reach of the gate CI-1 shipped. Verified on real artifacts:
+          # the v2 output is accepted by `saf validate threshold` against our
+          # own calibrated bands, and the finding counts are identical to saf's
+          # (codeql 2/8, trivy-container 4/4) — so CI-1's calibration stands.
+          #
+          # The downgrade warns that it is lossy. It drops the top-level `tool`
+          # block; `profiles[0].name` still carries the scanner name, which is
+          # what attribution needs.
+          #
+          # SHELF LIFE: this is only harmless while #1067 stands. Amendments
+          # currently no-op, so there is no `effectiveStatus` to lose. When
+          # #1067 is fixed, `--to hdf@2` would drop exactly the `effectiveStatus`
+          # that suppression depends on. Re-evaluate this pin when #1067 closes.
+          # `hdf convert` maps SARIF `codeFlows` onto HDF `result.backtrace`.
+          # That is richer output — but `saf validate threshold` counts with
+          # INSPEC semantics, where a backtrace means "this control errored
+          # while executing" rather than "this check failed". So a correctly
+          # converted CodeQL result lands in saf's `error` bucket instead of
+          # `failed`, and trips `error.total.max: 0` — the band CI-1 added to
+          # catch converter BREAKAGE. Measured 2026-08-25 on run 32840183630's
+          # codeql SARIF: 3 of 8 results carry codeFlows; dropping `backtrace`
+          # moves them from error.total 1 back to failed.medium 2, and the
+          # threshold passes. No other scanner emits codeFlows at all.
+          #
+          # Normalising here is scoped and safe: SARIF has no concept of an
+          # execution error — every SARIF result is a finding — so a backtrace
+          # on a SARIF-derived result can only have come from a codeFlow, and
+          # reading it as an execution error is always wrong. For a real InSpec
+          # HDF a backtrace WOULD mean an execution error, which is exactly why
+          # this is confined to the SARIF path.
+          #
+          # The code flow itself is not lost: the unmodified SARIF is uploaded
+          # to Code Scanning and archived with 90-day retention.
+          #
+          # Do NOT "fix" this by relaxing error.total — that band is the only
+          # thing standing between a broken converter and a green gate.
+          drop_sarif_backtrace() {
+            local f="$1"
+            jq 'if .profiles then
+                  .profiles |= map(
+                    if .controls then
+                      .controls |= map(
+                        if .results then .results |= map(del(.backtrace)) else . end)
+                    else . end)
+                else . end' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+          }
+
+          run_hdf_convert() {
+            local input="$1" output="$2"
+            if [ -f "$input" ]; then
+              local logfile="hdf-conversion-logs/conv-${#PIDS[@]}.log"
+              (
+                hdf convert "$input" --to hdf@2 -o "$output" > "$logfile" 2>&1 \
+                  && drop_sarif_backtrace "$output" >> "$logfile" 2>&1
+              ) &
+              PIDS+=($!)
+              LOGS+=("$logfile")
+            fi
+          }
+
           # #1048 — honour SARIF `suppressions` before converting.
           #
           # SARIF 2.1.0 marks a dispositioned result with a `suppressions`
@@ -1132,20 +1254,20 @@ jobs:
           done
 
           # SARIF → HDF
-          run_convert scan-results/gitleaks-sarif/gitleaks-results.sarif \
-            convert sarif2hdf -i scan-results/gitleaks-sarif/gitleaks-results.sarif -o hdf-results/gitleaks.hdf.json -w
+          run_hdf_convert scan-results/gitleaks-sarif/gitleaks-results.sarif \
+            hdf-results/gitleaks.hdf.json
 
-          run_convert scan-results/brakeman-sarif/brakeman-results.sarif \
-            convert sarif2hdf -i scan-results/brakeman-sarif/brakeman-results.sarif -o hdf-results/brakeman.hdf.json -w
+          run_hdf_convert scan-results/brakeman-sarif/brakeman-results.sarif \
+            hdf-results/brakeman.hdf.json
 
-          run_convert scan-results/codeql-sarif/codeql-results.sarif \
-            convert sarif2hdf -i scan-results/codeql-sarif/codeql-results.sarif -o hdf-results/codeql.hdf.json -w
+          run_hdf_convert scan-results/codeql-sarif/codeql-results.sarif \
+            hdf-results/codeql.hdf.json
 
-          run_convert scan-results/semgrep-sarif/semgrep-results.sarif \
-            convert sarif2hdf -i scan-results/semgrep-sarif/semgrep-results.sarif -o hdf-results/semgrep.hdf.json -w
+          run_hdf_convert scan-results/semgrep-sarif/semgrep-results.sarif \
+            hdf-results/semgrep.hdf.json
 
-          run_convert scan-results/trivy-fs-results/trivy-fs-results.sarif \
-            convert sarif2hdf -i scan-results/trivy-fs-results/trivy-fs-results.sarif -o hdf-results/trivy-fs.hdf.json -w
+          run_hdf_convert scan-results/trivy-fs-results/trivy-fs-results.sarif \
+            hdf-results/trivy-fs.hdf.json
 
           # Trivy container → HDF, from the SARIF rather than the ASFF (#1048).
           #
@@ -1161,8 +1283,8 @@ jobs:
           #      in docs/compliance/thresholds/trivy-container.yml, where the
           #      SBOM path's max-of-seven-sources scoring disagreed with Red
           #      Hat's own rating on 45 of 74 findings.
-          run_convert scan-results/trivy-container-results/trivy-container-results.sarif \
-            convert sarif2hdf -i scan-results/trivy-container-results/trivy-container-results.sarif -o hdf-results/trivy-container.hdf.json -w
+          run_hdf_convert scan-results/trivy-container-results/trivy-container-results.sarif \
+            hdf-results/trivy-container.hdf.json
 
           # CycloneDX SBOM → HDF
           run_convert scan-results/trivy-fs-results/trivy-fs-sbom.cdx.json \
@@ -1179,6 +1301,26 @@ jobs:
             convert cyclonedx_sbom2hdf -i scan-results/sbom-ruby.cdx.json -o hdf-results/sbom-ruby.hdf.json
 
           # Grype JSON → HDF (#461 — SBOM-driven SCA findings)
+          #
+          # These stay on saf DELIBERATELY. Do not "finish the migration" by
+          # swapping them to `hdf convert` — both reasons measured 2026-08-25:
+          #
+          #   1. hdf-libs CANNOT read our filesystem grype scans at all:
+          #        invalid Grype JSON: json: cannot unmarshal string into Go
+          #        struct field GrypeSource.source.target of grype_to_hdf.GrypeTarget
+          #      grype's `.source.target` is an OBJECT when `.source.type` is
+          #      "image" and a plain STRING when it is "sbom-file". hdf-libs
+          #      types it as a struct only. grype-fs.json and grype-ruby.json
+          #      are both sbom-file; only grype-container.json is an image.
+          #   2. For the container scan it converts, but it is NOT like-for-like:
+          #      impact spread 0.3/0.5/0.7 via hdf vs 0/0.3/0.5 via saf (saf's
+          #      anchoregrype2hdf caps at 0.5), and 104 controls vs 79. That is
+          #      a severity and count change — it belongs to #1064, which is
+          #      where the whole grype/cyclonedx severity question is tracked,
+          #      not to a converter swap.
+          #
+          # Consequence: these emit ZERO controls on a clean scan, so they need
+          # the injected canary below to satisfy the gate's presence assertion.
           run_convert scan-results/grype-ruby.json \
             convert anchoregrype2hdf -i scan-results/grype-ruby.json -o hdf-results/grype-ruby.hdf.json
 
@@ -1234,6 +1376,55 @@ jobs:
             done
             echo "::endgroup::"
           fi
+
+      # ── Execution records for the saf-path scanners (#962, #985, #990) ──
+      #
+      # `hdf convert` emits a `<scanner>-no-findings` control when a SARIF is
+      # clean. saf's converters emit an empty document instead — so grype,
+      # cyclonedx and bundler-audit reach the gate as zero-control files that
+      # pass every band trivially. This supplies the same execution record for
+      # them, so security_gate's canary assertion holds across all scanners.
+      #
+      # POSITIVE EVIDENCE ONLY. The canary is written only where the scanner's
+      # INPUT existed and a conversion output was produced — that pairing is
+      # what makes it evidence the scan ran. Writing it unconditionally would
+      # manufacture the reassurance the gate exists to test, and would turn the
+      # canary assertion into a tautology. If an input is absent, no HDF is
+      # written and the gate's expected-set assertion reports the scanner
+      # missing, which is the correct signal.
+      - name: Record execution for scanners that reported nothing
+        if: always()
+        run: |
+          set -uo pipefail
+          COMMIT="${{ github.sha }}"
+          REF="${{ github.ref }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # hdf-name | scanner label | the input that proves it ran
+          while IFS='|' read -r name label input; do
+            [ -n "$name" ] || continue
+            hdf="hdf-results/$name.hdf.json"
+            if [ ! -f "$input" ]; then
+              echo "::warning::$name — input $input absent; no execution record written (the gate will report it missing)"
+              continue
+            fi
+            if [ ! -f "$hdf" ]; then
+              echo "::warning::$name — input present but no HDF produced; conversion failed"
+              continue
+            fi
+            ruby bin/hdf_ensure_canary.rb \
+              --input "$hdf" --scanner "$label" \
+              --commit "$COMMIT" --ref "$REF" --run-url "$RUN_URL" \
+              || echo "::error::execution record failed for $name"
+          done <<'SCANNERS'
+          grype-ruby|grype-ruby|scan-results/grype-ruby.json
+          grype-fs|grype-fs|scan-results/grype-fs.json
+          grype-container|grype-container|scan-results/grype-container.json
+          sbom-ruby|sbom-ruby|scan-results/sbom-ruby.cdx.json
+          trivy-fs-sbom|trivy-fs-sbom|scan-results/trivy-fs-results/trivy-fs-sbom.cdx.json
+          trivy-container-sbom|trivy-container-sbom|scan-results/trivy-container-results/trivy-container-sbom.cdx.json
+          bundler-audit|bundler-audit|scan-results/bundler-audit-results.json
+          SCANNERS
 
       - name: Supplement HDF files with OSCAL metadata
         if: always()
@@ -1502,19 +1693,16 @@ jobs:
       #      clear a stdlib CVE — choosing the toolchain does.
       #
       # HDF_LIBS_VERSION lives in Dockerfile as the single ARG both surfaces
-      # follow. Grep repo-wide before changing it.
+      # follow. Grep repo-wide before changing it. The pins themselves are in
+      # this workflow's top-level `env` (#962) — normalize_hdf builds the same
+      # binary to convert with, and two hardcoded copies is how the 3.4.1/3.5.1
+      # drift above happened in the first place.
       - name: Set up Go (pinned to the hdf-cli fix line)
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: '1.26.6'
+          go-version: ${{ env.HDF_GO_VERSION }}
 
       - name: Build hdf (mitre/hdf-libs CLI) from source
-        env:
-          HDF_LIBS_VERSION: "3.5.1"
-          # hdf-libs 3.5.1 pins golang.org/x/text v0.27.0 (CVE-2026-56852,
-          # HIGH). Bumped here to match the image; drop when upstream ships
-          # x/text >= 0.39.0.
-          XTEXT_VERSION: "0.39.0"
         run: |
           set -euo pipefail
           git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
@@ -1631,6 +1819,36 @@ jobs:
             fi
 
             ASSESSED=$((ASSESSED + 1))
+
+            # CANARY ASSERTION (#962, #985, #990).
+            #
+            # A zero-control HDF passes every band trivially: saf compares
+            # `count > max`, and against no controls every count is 0. So a
+            # scanner that ran and found nothing, and a scanner that produced a
+            # broken empty document, are the same green check. Measured on run
+            # 32840183630: gitleaks, brakeman and bundler-audit were all
+            # zero-control documents satisfying all-zero bands.
+            #
+            # Every HDF must therefore carry EITHER findings OR an explicit
+            # execution record. `hdf convert` emits one natively for a clean
+            # SARIF (`<scanner>-no-findings`); bin/hdf_ensure_canary.rb supplies
+            # the same for the scanners still converted by saf.
+            #
+            # This is the check that cannot be satisfied by an empty file.
+            CONTROLS=$(jq '[.profiles[]?.controls[]?] | length' "$hdf" 2>/dev/null || echo "unreadable")
+            if [ "$CONTROLS" = "unreadable" ]; then
+              FAILED=$((FAILED + 1))
+              echo "| \`$name\` | — | **FAIL (unreadable)** |" >> $GITHUB_STEP_SUMMARY
+              echo "::error::$name is not readable as JSON — refusing to score it as a pass"
+              continue
+            fi
+            if [ "$CONTROLS" -eq 0 ]; then
+              FAILED=$((FAILED + 1))
+              echo "| \`$name\` | — | **FAIL (no canary)** |" >> $GITHUB_STEP_SUMMARY
+              echo "::error::$name has zero controls — no findings and no execution record, so it is indistinguishable from a scan that never ran"
+              continue
+            fi
+
             # `saf validate threshold` EXITS 0 ON INPUT IT CANNOT PARSE —
             # measured against a v3-shaped HDF and against `{"not":"hdf"}`,
             # both of which print "Failed to convert file due to possible
@@ -1658,6 +1876,41 @@ jobs:
           # missing or empty, say so and fail rather than passing vacuously.
           if [ "$ASSESSED" -eq 0 ]; then
             echo "::error::security_gate assessed 0 HDF files — expected at least one. Refusing to pass."
+            exit 1
+          fi
+
+          # EXPECTED-SET ASSERTION (#962).
+          #
+          # "At least one" catches the artifact vanishing wholesale, but not a
+          # single scanner dropping out. If gitleaks stopped emitting, the other
+          # eleven HDFs would still be assessed and the gate would report a pass
+          # — while the repository had silently stopped being scanned for
+          # secrets. An absent scanner is not a clean scanner.
+          MANIFEST=docs/compliance/expected-hdfs.txt
+          MISSING=0
+          if [ -f "$MANIFEST" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            while read -r entry optional _rest; do
+              case "$entry" in ''|'#'*) continue ;; esac
+              if [ -f "amended/$entry.hdf.json" ]; then
+                continue
+              fi
+              if [ "$optional" = "optional" ]; then
+                echo "::notice::$entry did not run this trigger (declared optional)"
+                echo "- \`$entry\` — not run this trigger (optional)" >> $GITHUB_STEP_SUMMARY
+              else
+                MISSING=$((MISSING + 1))
+                echo "::error::$entry is declared in $MANIFEST but produced no HDF — the scan did not reach the gate"
+                echo "- \`$entry\` — **MISSING**" >> $GITHUB_STEP_SUMMARY
+              fi
+            done < "$MANIFEST"
+          else
+            echo "::error::$MANIFEST is absent — cannot verify which scans were expected"
+            exit 1
+          fi
+
+          if [ "$MISSING" -gt 0 ]; then
+            echo "::error::security_gate: $MISSING expected scanner(s) produced no HDF. Refusing to pass."
             exit 1
           fi
 
