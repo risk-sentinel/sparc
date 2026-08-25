@@ -1015,6 +1015,8 @@ jobs:
             .github/oscal-metadata.json
             bin/bundler_audit_to_hdf.rb
             bin/sarif_drop_suppressed.rb
+            bin/hdf_ensure_canary.rb
+            Dockerfile
           sparse-checkout-cone-mode: false
 
       # Ruby for the two in-repo translation helpers below. Stdlib only — no
@@ -1121,6 +1123,22 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
+          # The Dockerfile is the single source for these pins; this workflow
+          # has to restate them because Actions cannot read a Dockerfile ARG.
+          # Assert they agree rather than trusting a comment — CI-1 found this
+          # job pinned 3.4.1 while the image baked 3.5.1, so the gate validated
+          # with a different binary than the product shipped, and the drift was
+          # invisible because both sides built cleanly.
+          for pair in "HDF_LIBS_VERSION:$HDF_LIBS_VERSION" "XTEXT_VERSION:$XTEXT_VERSION" "GO_FIX_LINE:$HDF_GO_VERSION"; do
+            arg="${pair%%:*}"; want="${pair#*:}"
+            have=$(grep -oP "^ARG ${arg}=\K.*" Dockerfile | head -1)
+            [ "$have" = "$want" ] || {
+              echo "::error::${arg} drift — workflow has '${want}', Dockerfile has '${have}'"
+              exit 1
+            }
+          done
+          echo "hdf pins agree with Dockerfile: ${HDF_LIBS_VERSION} / x-text ${XTEXT_VERSION} / go ${HDF_GO_VERSION}"
+
           git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
             https://github.com/mitre/hdf-libs.git /tmp/hdf-src
           cd /tmp/hdf-src/hdf-cli
@@ -1662,6 +1680,7 @@ jobs:
           sparse-checkout: |
             docs/compliance/sparc-findings.yml
             docs/compliance/thresholds/
+            docs/compliance/expected-hdfs.txt
             bin/sparc_findings_to_hdf_amendments.rb
           sparse-checkout-cone-mode: false
 
