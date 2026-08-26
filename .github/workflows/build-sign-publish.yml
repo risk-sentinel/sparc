@@ -361,7 +361,15 @@ jobs:
       - name: Flip the stack to published catalogs
         run: |
           set -euo pipefail
-          echo "SPARC_PUBLIC_CATALOGS=true" >> .env
+          # LEADING newline is required, not tidiness: .env.example ships with
+          # NO trailing newline and its last line is a COMMENT, so a bare
+          # `echo >>` concatenates onto it and the flag silently becomes part of
+          # that comment. The container then recreates correctly with the
+          # variable absent, and the only symptom is a posture mismatch that
+          # points at the recreate you already did.
+          printf '\nSPARC_PUBLIC_CATALOGS=true\n' >> .env
+          grep -q '^SPARC_PUBLIC_CATALOGS=true$' .env \
+            || { echo "::error::SPARC_PUBLIC_CATALOGS was not written as its own line in .env"; tail -3 .env; exit 1; }
           docker compose -f docker-compose.ubi9.yaml up -d --force-recreate web
           for i in $(seq 1 40); do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://localhost:3000/ || echo 000)
