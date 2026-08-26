@@ -160,8 +160,19 @@ jobs:
       fail-fast: true
       matrix:
         include:
+          # PINNED, and pinned to the SAME Ubuntu release on both sides.
+          # `ubuntu-latest` is a floating label — it resolves to ubuntu-24.04
+          # today (verified in run 32994759428), but when GitHub moves it the
+          # amd64 half would jump a major Ubuntu release while the arm64 half
+          # stayed on 24.04. The two architectures of one release would then be
+          # built on different host OSes with nothing to say so — the same
+          # "two builds that differ" class this gate exists to remove.
+          #
+          # The host does not supply the image's contents (it builds FROM ubi9),
+          # but it does supply buildx, the apt-installed skopeo, and Playwright's
+          # system deps — so it is part of the gate's reproducibility.
           - platform: linux/amd64
-            runner: ubuntu-latest
+            runner: ubuntu-24.04
             slug: linux-amd64
           - platform: linux/arm64
             runner: ubuntu-24.04-arm
