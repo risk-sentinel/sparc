@@ -119,28 +119,85 @@ class TestFieldImportContract(FieldImportContract):
 
 # #1028 — the refusal. A key naming more than one control must be refused and
 # named, never resolved silently to whichever row the database returned first.
+# Two components implementing the SAME control-id. Legal OSCAL — different
+# components may each address a control — and precisely the ambiguity #1028 is
+# about.
+_AMBIGUOUS_CDEF_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "sample-cdef-ambiguous-control.json"
+)
+
+
 class TestAmbiguousControlAddressing:
     @pytest.fixture
     def duplicated(self, admin_client):
-        """A CDEF holding two controls that share a control_id, and that id."""
-        rows = admin_client.get(PATH, params={"items": 50}).json()["data"]
-        for row in rows:
-            export = admin_client.get(f"{PATH}/{row['slug']}/export")
-            if export.status_code != 200:
-                continue
+        """A CDEF holding two controls that share a control_id, and that id.
+
+        CREATES the condition rather than hunting the instance for one.
+
+        The previous version scanned the first 50 CDEFs and raised if none had a
+        duplicated control_id, which made these three tests depend on ambient
+        instance data they did not produce. That passed locally — where
+        SPARC_AWS_LABS_CDEF_ENABLED=true imports 230 AWS Labs CDEFs, one of
+        which happens to duplicate an id — and ERRORED in CI, where the flag
+        defaults to false. The in-runner release gate (#711) surfaced it: 2739
+        passed, 2 skipped, 3 errors, and the 3 were these.
+
+        A contract test that only runs when unrelated seed data happens to be
+        present is not a contract test. This imports its own two-component
+        fixture, asserts the ambiguity really exists before yielding, and
+        deletes the document afterwards.
+        """
+        suffix = uuid.uuid4().hex[:8]
+        upload = _AMBIGUOUS_CDEF_FIXTURE.read_bytes()
+        response = admin_client.post(
+            f"{PATH}/import",
+            files={
+                "file": (
+                    f"ambiguity-probe-{suffix}.json",
+                    upload,
+                    "application/json",
+                )
+            },
+        )
+        assert response.status_code == 201, response.text
+        slug = response.json()["data"][0]["slug"]
+
+        try:
+            # Ingest is asynchronous — `import` attaches the file, enqueues
+            # DocumentConversionJob and answers `pending`. Reading the export
+            # immediately would assert against a half-built record.
+            current = None
+            for _ in range(30):
+                current = admin_client.get(f"{PATH}/{slug}").json()["data"]
+                if current["status"] in ("completed", "failed"):
+                    break
+                time.sleep(1)
+            assert current and current["status"] == "completed", (
+                f"the conversion job left the probe document "
+                f"{current['status'] if current else 'unknown'!r}: {current}"
+            )
+
+            export = admin_client.get(f"{PATH}/{slug}/export")
+            assert export.status_code == 200, export.text
             seen: dict[str, list] = {}
             for control in export.json().get("controls") or []:
                 cid = control.get("control_id")
                 if cid:
                     seen.setdefault(cid, []).append(control)
-            for cid, controls in seen.items():
-                if len(controls) > 1:
-                    return {"slug": row["slug"], "control_id": cid, "controls": controls}
+            ambiguous = [(cid, rows) for cid, rows in seen.items() if len(rows) > 1]
 
-        raise AssertionError(
-            "no CDEF on this instance has a duplicated control_id — the "
-            "ambiguity this asserts cannot be reached"
-        )
+            # Guards the fixture itself. If the importer ever stops producing
+            # two rows for one control-id, these tests would silently exercise
+            # an unambiguous key and pass while proving nothing.
+            assert ambiguous, (
+                f"the probe fixture no longer yields a duplicated control_id "
+                f"(got {[(c, len(r)) for c, r in seen.items()]}) — the ambiguity "
+                f"this asserts cannot be reached"
+            )
+            cid, controls = ambiguous[0]
+            yield {"slug": slug, "control_id": cid, "controls": controls}
+        finally:
+            admin_client.delete(f"{PATH}/{slug}")
 
     def _import(self, admin_client, slug, key, action, value="ambiguity-probe"):
         body = {"controls": {key: {"notes": value}}}
