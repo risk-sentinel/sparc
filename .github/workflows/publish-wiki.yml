@@ -1,0 +1,162 @@
+name: Publish wiki
+
+# #1061 — merging a change to wiki/ used to publish NOTHING.
+#
+# `wiki/` in this repo is SOURCE. What readers see is a separate git repository
+# (sparc.wiki.git), mirrored only when a human ran wiki/PUSH_TO_WIKI.sh from
+# main. That is the same shape as #1048 and #1050: a step that exists, works,
+# and is guaranteed by nothing.
+#
+# It cost us twice. On 2026-08-12 the published wiki was three releases behind —
+# 20 of 21 pages carried unpublished changes and OSCAL-End-to-End.md had NEVER
+# been published, while docs/MAP.md on main linked to its URL and 404'd. On
+# 2026-08-24 two manual pushes were needed in one day, and between each merge
+# and its push the published wiki was wrong.
+#
+# ── ON THE CREDENTIAL, because the issue got this backwards ──
+#
+# #1061 states that GITHUB_TOKEN cannot push to a wiki and that this needs a PAT
+# or GitHub App token. It also, correctly, says to confirm that before designing
+# around it. Confirmed, and it is wrong:
+#
+#   * A GitHub App CANNOT do this at all. GitHub's App permissions reference
+#     lists every grantable repository permission and the word "wiki" does not
+#     appear on it. There is no permission to grant, so the App route — which
+#     the issue preferred — is not merely awkward, it is impossible.
+#   * The BUILT-IN GITHUB_TOKEN with `contents: write` CAN push to this repo's
+#     own wiki. `contents` covers the wiki because the wiki IS repository
+#     content, which is also why no separate wiki permission exists anywhere.
+#
+# So this needs no provisioned credential: no long-lived PAT sitting in org
+# secrets of a PUBLIC repo, nothing to rotate, and the token dies with the job.
+# That removes the supply-chain concern the issue raised rather than accepting
+# it. A classic PAT with `repo`/`public_repo` also works (verified by dry-run
+# push) and is the fallback — but it is strictly worse and should not be the
+# first choice.
+#
+# Runs on push to main when wiki/ changed — NOT at tag time. The wiki changes on
+# ordinary docs PRs, not only releases (neither #1057 nor #1060 was a release),
+# so tag-time is too narrow and every-push is wasteful.
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'wiki/**'
+  # Manual re-sync, for the first run after this lands and for recovering from
+  # a wiki edited directly in the web UI (which this workflow will overwrite —
+  # see the note on authority below).
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Fork guard. `push` on a fork runs in the fork's own context, so this would
+    # not reach our wiki anyway — but the repository check makes that explicit
+    # rather than relying on a reader knowing it, and it also stops a fork
+    # burning minutes on a job that cannot do anything.
+    if: github.repository == 'risk-sentinel/sparc'
+    permissions:
+      # The ONLY permission this needs, and it is what lets it push to the wiki.
+      contents: write
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            wiki
+          sparse-checkout-cone-mode: false
+          path: source
+
+      # The wiki is a sibling git repository. Its default branch is `master`,
+      # not `main`. persist-credentials (the default) leaves the GITHUB_TOKEN in
+      # the remote config, which is what authorises the push below.
+      - name: Checkout the published wiki
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: published
+
+      # AUTHORITATIVE SYNC — the second defect #1061 names.
+      #
+      # PUSH_TO_WIKI.sh did `cp wiki/*.md "$WIKI_DIR/"`: it only ever copied
+      # INTO the wiki, so `git add -A` never saw a deletion and a page removed
+      # from source stayed published forever. That is not hypothetical —
+      # User-Guide-Trust-Store.md was deleted from source in f9b57321 (v1.15.0)
+      # and has been live and unmaintained on the wiki ever since.
+      #
+      # rsync --delete makes `wiki/` the single authority: whatever is in source
+      # is what readers get, and whatever is not is removed.
+      #
+      # CONSEQUENCE, stated because it is destructive and outward-facing: a page
+      # edited directly in the GitHub wiki web UI is OVERWRITTEN on the next
+      # push that touches wiki/. That is the intended trade — one authority, not
+      # two — but it means wiki edits must be made in `wiki/` from now on.
+      #
+      # PUSH_TO_WIKI.sh is excluded: it lives under wiki/ but is tooling, and
+      # was never published (the old script copied only *.md and images/).
+      - name: Sync source over the published wiki
+        id: sync
+        run: |
+          set -euo pipefail
+          rsync -a --delete \
+            --exclude '.git/' \
+            --exclude 'PUSH_TO_WIKI.sh' \
+            source/wiki/ published/
+
+          cd published
+          if git diff --quiet && git diff --cached --quiet && [ -z "$(git status --porcelain)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Wiki already matches source — nothing to publish."
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+          # Show the reader what is about to change, DELETIONS INCLUDED. A sync
+          # that silently removes published pages is the mirror image of the
+          # defect being fixed here.
+          git add -A
+          {
+            echo "### Wiki changes"
+            echo
+            echo '```'
+            git diff --cached --name-status
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          git diff --cached --name-status
+
+      - name: Publish
+        if: steps.sync.outputs.changed == 'true'
+        working-directory: published
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Publish wiki from ${GITHUB_SHA:0:7}
+
+          Source: ${{ github.repository }}@${GITHUB_SHA}
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          git push origin HEAD:master
+          echo "Published to ${{ github.server_url }}/${{ github.repository }}/wiki" >> "$GITHUB_STEP_SUMMARY"
+
+      # The point is that readers can see it, so verify against the REMOTE
+      # rather than trusting the push's exit code — the whole subject of this
+      # milestone. Re-fetch and confirm the wiki's head is the commit we made.
+      - name: Verify the published wiki actually moved
+        if: steps.sync.outputs.changed == 'true'
+        working-directory: published
+        run: |
+          set -euo pipefail
+          local_head=$(git rev-parse HEAD)
+          git fetch -q origin master
+          remote_head=$(git rev-parse origin/master)
+          if [ "$local_head" != "$remote_head" ]; then
+            echo "::error::wiki head is ${remote_head}, expected ${local_head} — the push reported success but readers do not have it"
+            exit 1
+          fi
+          echo "Verified: published wiki head is ${remote_head}"
