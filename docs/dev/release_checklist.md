@@ -163,6 +163,35 @@ releases stale. None of these block CI, so nothing catches them but this.
       `SPARC_SMOKE_CA_BUNDLE`, `SPARC_SMOKE_FIDO2=1`,
       `SPARC_REQUIRE_DOCUMENT_APPROVAL` on the instance.
 
+- [ ] **Name the TLS posture the run proved (#858).** A green smoke says nothing
+      about the posture it did not exercise: TLS-on covers HSTS, secure-cookie
+      flags, the proxy hop and absolute-URL generation; TLS-off is what a
+      developer and a bare `docker run` get. The run now reports
+      `transport_https` / `transport_http` in the posture accounting, so a
+      release note can state which.
+
+      > **`transport_http` is currently UNREACHABLE against the prod image, and
+      > that is expected.** `config.assume_ssl = true` is hardcoded at
+      > `config/environments/production.rb:76` — not env-configurable — so the
+      > production image always believes it is behind an SSL terminator and
+      > redirects to `https://` whatever `SPARC_APP_URL` or `FORCE_SSL` say.
+      > Measured 2026-08-26: pointing the stack at `http://localhost:3000` with
+      > a matching `SPARC_APP_URL` still answers
+      > `Location: https://localhost:3000/login`.
+      >
+      > So expect `UNPROVEN transport_http` on a release run and do **not** add
+      > it to `SPARC_SMOKE_REQUIRE_POSTURES` — it would fail every release for a
+      > posture the image cannot enter. The accounting names the gap rather than
+      > hiding it, which is the point.
+
+- [ ] **Do not fight a wall of TLS errors — the suite refuses to start on a
+      harness/target mismatch (#858).** If `SPARC_SMOKE_BASE_URL` disagrees with
+      the target's configured scheme or port, the session aborts with both
+      origins named. That replaces the v1.15.3 experience, where the same
+      mismatch produced 78 `ERR_SSL_PROTOCOL_ERROR` failures that were first
+      diagnosed as a product defect. If the TLS terminator is behind a compose
+      profile, it may simply not be running (`--profile tls`).
+
 - [ ] Full suite, ui-smoke and the API contract suite green against the **prod
       image**, on **both architectures**.
 - [ ] Tag and publish — **owner action**, after the release PR merges.

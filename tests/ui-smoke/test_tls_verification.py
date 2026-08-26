@@ -26,10 +26,12 @@ import ssl
 import httpx
 import pytest
 
+from helpers import smoke_flag
+
 BASE_URL = os.environ.get(
     "SPARC_SMOKE_BASE_URL", "https://sparc.risk-sentinel.org"
 ).rstrip("/")
-SELF_SIGNED = os.environ.get("SPARC_SMOKE_SELF_SIGNED") == "1"
+SELF_SIGNED = smoke_flag("SPARC_SMOKE_SELF_SIGNED")
 CA_BUNDLE = os.environ.get("SPARC_SMOKE_CA_BUNDLE")
 
 # #885/#858 — named so a skip is reported as UNPROVEN rather than passing

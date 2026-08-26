@@ -37,7 +37,7 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pages as page_inventory  # noqa: E402
 from conftest import _bridge_token_to_cookie, _cookie_spec  # noqa: E402
-from helpers import RESERVED_SEGMENTS  # noqa: E402
+from helpers import RESERVED_SEGMENTS, smoke_flag  # noqa: E402
 
 
 def _first_show_href(page, index_path: str, prefix: str):
@@ -68,7 +68,7 @@ def _first_show_href(page, index_path: str, prefix: str):
 
 BASE_URL = os.environ.get("SPARC_SMOKE_BASE_URL", "https://localhost:3443").rstrip("/")
 SA_TOKEN = os.environ.get("SPARC_SMOKE_SA_TOKEN")
-INSECURE_TLS = os.environ.get("SPARC_SMOKE_INSECURE_TLS") == "1"
+INSECURE_TLS = smoke_flag("SPARC_SMOKE_INSECURE_TLS")
 
 # wiki/images/, resolved relative to the repo root (two levels up from here).
 OUT_DIR = Path(__file__).resolve().parents[2] / "wiki" / "images"

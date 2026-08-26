@@ -10,12 +10,13 @@ endpoint POST /api/v1/sessions/from_token (#573).
 from __future__ import annotations
 
 import os
+import re
 from urllib.parse import urlparse
 
 import httpx
 import pytest
 
-from helpers import smoke_tls_verify
+from helpers import smoke_flag, smoke_tls_verify
 
 BASE_URL = os.environ.get(
     "SPARC_SMOKE_BASE_URL", "https://sparc.risk-sentinel.org"
@@ -37,11 +38,109 @@ def base_url() -> str:
     return BASE_URL
 
 
+# ── The harness must agree with the target before anything runs (#858) ────────
+#
+# During v1.15.3 verification this suite was pointed at http://localhost:3000
+# while the stack was configured with SPARC_APP_URL=https://localhost:3443 and
+# caddy behind an unstarted `profiles: [tls]` guard. Result: 78 failures, every
+# one `net::ERR_SSL_PROTOCOL_ERROR`.
+#
+# Those were read as a PRODUCT defect — "the app requests HTTPS subresources
+# even with FORCE_SSL=false" — and they were nothing of the kind. The app was
+# correctly emitting absolute URLs to its CONFIGURED public URL; it was being
+# served on a scheme and port it had never been told about.
+#
+# So the expensive failure here was not a missing test. It was an incoherent
+# harness that LOOKED like a product bug, and cost a diagnosis. A startup
+# assertion kills that class permanently, which is why #858 calls it the
+# highest-value item in the issue.
+#
+# The signal is deliberately narrow: SAME hostname, DIFFERENT scheme or port.
+# That is the misconfiguration signature exactly. A genuinely different host is
+# an external resource (fonts, CDN) and is none of our business.
+def _origin(url: str) -> tuple[str, str, int | None]:
+    p = urlparse(url)
+    port = p.port
+    if port is None:
+        port = {"http": 80, "https": 443}.get(p.scheme)
+    return (p.scheme, p.hostname or "", port)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _assert_harness_matches_target() -> None:
+    """Refuse to run when the target thinks it lives somewhere else."""
+    if smoke_flag("SPARC_SMOKE_SKIP_COHERENCE_CHECK"):
+        return
+
+    want = _origin(BASE_URL)
+    want_scheme, want_host, want_port = want
+    try:
+        # NOT following redirects: the redirect target is the signal. Following
+        # it is what BREAKS — under the real incident the app answers
+        # `Location: https://localhost:3000/login` while nothing terminates TLS
+        # on that port, so the follow dies with an SSL error and the cause is
+        # buried in a transport exception instead of being named.
+        resp = httpx.get(
+            BASE_URL,
+            follow_redirects=False,
+            timeout=30.0,
+            verify=smoke_tls_verify(),
+        )
+    except Exception as exc:  # noqa: BLE001 — any transport failure is fatal here
+        raise RuntimeError(
+            f"SPARC_SMOKE_BASE_URL={BASE_URL} is not reachable: {exc}\n"
+            f"The suite cannot prove anything about a target it cannot open."
+        ) from exc
+
+    mismatched = set()
+
+    # PRIMARY SIGNAL — where the target sends you.
+    # Verified against a real mis-posture: with SPARC_APP_URL=https://localhost:3443
+    # and the suite pointed at http://localhost:3000, the app answers
+    # `Location: https://localhost:3000/login` — same host and port, upgraded
+    # scheme — and following that is `ERR_SSL_PROTOCOL_ERROR` (curl exit 35),
+    # which is precisely the 78 failures of the v1.15.3 incident. Pointed at
+    # https://localhost:3443 the same app answers https://localhost:3443/login
+    # and the origins agree.
+    location = resp.headers.get("location", "")
+    if location.startswith(("http://", "https://")):
+        scheme, host, port = _origin(location)
+        if host and host == want_host and (scheme, port) != (want_scheme, want_port):
+            mismatched.add(f"{scheme}://{host}:{port}")
+
+    # SECONDARY — absolute URLs the body emits to a different scheme/port on the
+    # same host. The landing page currently uses relative URLs so this finds
+    # nothing there, but authenticated pages and mailer-style absolute links can
+    # carry them, and it costs one pass over the response.
+    for match in re.finditer(r"""["'(](https?://[^"'()\s>]+)""", resp.text):
+        scheme, host, port = _origin(match.group(1))
+        if host and host == want_host and (scheme, port) != (want_scheme, want_port):
+            mismatched.add(f"{scheme}://{host}:{port}")
+
+    if mismatched:
+        raise RuntimeError(
+            f"HARNESS/TARGET MISMATCH — refusing to run.\n"
+            f"  SPARC_SMOKE_BASE_URL : {BASE_URL}\n"
+            f"  target points at     : {', '.join(sorted(mismatched))}\n"
+            f"  (from its redirect Location and/or absolute URLs in the page)\n"
+            f"\n"
+            f"The target is configured (SPARC_APP_URL) for a different scheme or "
+            f"port than the one you pointed this suite at. Every subresource will "
+            f"fail to load and the run will report dozens of console errors that "
+            f"look like a product defect — that is #858's whole subject.\n"
+            f"\n"
+            f"Fix the harness, not the app: point SPARC_SMOKE_BASE_URL at the "
+            f"origin the target was configured with, or reconfigure SPARC_APP_URL. "
+            f"If the TLS terminator is behind a compose profile, it may simply not "
+            f"be running (`--profile tls`)."
+        )
+
+
 @pytest.fixture
 def browser_context_args(browser_context_args):
     """Resolve relative page.goto() paths against the target deployment."""
     args = {**browser_context_args, "base_url": BASE_URL}
-    if os.environ.get("SPARC_SMOKE_INSECURE_TLS") == "1":
+    if smoke_flag("SPARC_SMOKE_INSECURE_TLS"):
         args["ignore_https_errors"] = True
     return args
 
@@ -116,7 +215,7 @@ def authed_page(context, session_cookie, base_url):
 def user_authed_page(browser, user_session_cookie, base_url):
     """A second Playwright page on its own context, carrying the non-admin
     session cookie — for flows that need submitter ≠ approver in one test."""
-    insecure = os.environ.get("SPARC_SMOKE_INSECURE_TLS") == "1"
+    insecure = smoke_flag("SPARC_SMOKE_INSECURE_TLS")
     extra = {"ignore_https_errors": True} if insecure else {}
     ctx = browser.new_context(base_url=base_url, **extra)
     ctx.add_cookies([_cookie_spec(user_session_cookie, base_url)])
