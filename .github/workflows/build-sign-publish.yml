@@ -135,6 +135,89 @@ jobs:
   # ── Build and Push: multi-platform image to Docker Hub + ECR ──
 
   # ══════════════════════════════════════════════════════════════════
+  # BUILD — one runner per architecture, each building natively (#711)
+  #
+  # WHY A MATRIX, measured not guessed. The first version built both arches in
+  # one job with QEMU. It worked, and took **59m53s** — while every other step
+  # in that job totalled about four minutes. Emulated native-gem compilation was
+  # 93% of the runtime and came within 30 minutes of the job timeout.
+  #
+  # `ubuntu-24.04-arm` runners are free for public repositories, so arm64 builds
+  # natively here instead. Each job exports an OCI archive as an artifact;
+  # nothing is pushed. `verify` tests the amd64 one, and build-and-push
+  # assembles the manifest list AFTER the approval.
+  #
+  # The `docker` driver CANNOT export OCI ("OCI exporter is not supported for
+  # the docker driver"); setup-buildx-action's `docker-container` driver can.
+  build-image:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs: [ prepare ]
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            slug: linux-amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            slug: linux-arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      # Labels are applied at BUILD time, so they must be set here rather than
+      # in build-and-push — which no longer builds anything.
+      - name: Docker metadata (labels)
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+        with:
+          images: risksentinel/sparc
+          labels: |
+            org.opencontainers.image.title=SPARC
+            org.opencontainers.image.description=Systematic Policy and Regulatory Compliance
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version_stripped }}
+            org.opencontainers.image.source=https://github.com/risk-sentinel/sparc
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ needs.prepare.outputs.build_date }}
+            org.opencontainers.image.vendor=risk-sentinel
+            org.opencontainers.image.licenses=MIT
+
+      - name: Build ${{ matrix.platform }} into an OCI archive
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ matrix.platform }}
+          outputs: type=oci,dest=/tmp/sparc-${{ matrix.slug }}.tar
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          # Per-arch cache scope: one shared scope would have the two runners
+          # evicting each other's layers on every run.
+          cache-from: type=gha,scope=${{ matrix.slug }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.slug }}
+          provenance: true
+          sbom: true
+
+      # Retention 1 day: consumed within this run, and nothing needs it once the
+      # image is in Docker Hub/ECR. Expiry IS the cleanup — there is no staging
+      # registry to prune.
+      - name: Upload the ${{ matrix.platform }} image
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: image-${{ matrix.slug }}
+          path: /tmp/sparc-${{ matrix.slug }}.tar
+          retention-days: 1
+          if-no-files-found: error
+
+  # ══════════════════════════════════════════════════════════════════
   # VERIFY — the in-runner pre-release gate (#711)
   #
   # Runs BEFORE the production approval, and fails closed. If it fails, the
@@ -162,69 +245,29 @@ jobs:
   verify:
     name: Verify the image before it can be published
     runs-on: ubuntu-latest
-    needs: [ prepare ]
-    timeout-minutes: 90
+    needs: [ prepare, build-image ]
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up QEMU (multi-platform)
-        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
-
-      # setup-buildx-action creates a `docker-container` driver builder, which
-      # is REQUIRED here: the default `docker` driver cannot export OCI
-      # ("OCI exporter is not supported for the docker driver"). Verified.
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
-
-      - name: Docker metadata (labels)
-        id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
-        with:
-          images: risksentinel/sparc
-          labels: |
-            org.opencontainers.image.title=SPARC
-            org.opencontainers.image.description=Systematic Policy and Regulatory Compliance
-            org.opencontainers.image.version=${{ needs.prepare.outputs.version_stripped }}
-            org.opencontainers.image.source=https://github.com/risk-sentinel/sparc
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.created=${{ needs.prepare.outputs.build_date }}
-            org.opencontainers.image.vendor=risk-sentinel
-            org.opencontainers.image.licenses=MIT
-
-      # ONE build, BOTH arches, into an OCI archive. The archive is what
-      # build-and-push promotes, so the bytes that get tested are the bytes that
-      # get published.
-      #
-      # NOTE: arm64 is built under QEMU emulation here, which compiles native
-      # gems slowly. If this dominates the job's wall-clock, the optimisation is
-      # a matrix split across `ubuntu-latest` + `ubuntu-24.04-arm` (free for
-      # public repos) with a manifest merge. Measure before optimising.
-      - name: Build both architectures into an OCI archive
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          outputs: type=oci,dest=/tmp/sparc-oci.tar
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: true
-          sbom: true
-
       # `docker save`/`load` does NOT round-trip a multi-arch manifest. skopeo
       # selects one platform out of the OCI index. Do not "simplify" this back
       # to docker save — the arm64 half would be silently lost.
-      - name: Extract the amd64 image and load it
+      - name: Download the amd64 image built by the matrix
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: image-linux-amd64
+          path: /tmp
+
+      - name: Load the amd64 image
         run: |
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq skopeo
-          skopeo copy --override-arch amd64 --override-os linux \
-            oci-archive:/tmp/sparc-oci.tar \
+          skopeo copy \
+            oci-archive:/tmp/sparc-linux-amd64.tar \
             docker-archive:/tmp/sparc-amd64.tar:sparc-ubi9-web:latest
           docker load -i /tmp/sparc-amd64.tar
           # compose (project `sparc-ubi9`, service `web`) resolves this name, so
@@ -297,17 +340,6 @@ jobs:
       - name: Tear down
         if: always()
         run: docker compose -f docker-compose.ubi9.yaml --profile tls down -v || true
-
-      # Retention 1 day: build-and-push consumes this within the same run, and
-      # nothing needs it once the image is in Docker Hub/ECR. Expiry is the
-      # cleanup — there is no staging registry to prune.
-      - name: Upload the verified image
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: verified-image-oci
-          path: /tmp/sparc-oci.tar
-          retention-days: 1
-          if-no-files-found: error
 
   build-and-push:
     runs-on: ubuntu-latest
@@ -411,11 +443,12 @@ jobs:
       # `--all` copies the whole OCI index: both architectures AND the
       # provenance/SBOM attestation manifests buildx attached. Copying without
       # it would publish a single-arch image and silently drop arm64.
-      - name: Download the verified image
+      - name: Download both verified architectures
         if: needs.prepare.outputs.dry_run != 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: verified-image-oci
+          pattern: image-linux-*
+          merge-multiple: true
           path: /tmp
 
       - name: Promote the verified image to the registries
@@ -430,11 +463,21 @@ jobs:
             "${{ steps.meta.outputs.tags }}" \
             "${{ steps.ecr-tags.outputs.tags }}" | sed '/^$/d')
 
+          # Each arch was built on its own native runner, so there is no
+          # pre-made multi-arch index to copy. Push each arch under a transient
+          # per-arch tag, then join them into the real tag with `imagetools
+          # create`. All of it happens AFTER the approval — nothing reaches a
+          # registry before then, which is the property the artifact hand-off
+          # exists to preserve.
           FIRST=""
           while read -r tag; do
             [ -n "$tag" ] || continue
-            echo "── promoting to ${tag}"
-            skopeo copy --all oci-archive:/tmp/sparc-oci.tar "docker://${tag}"
+            echo "── promoting ${tag}"
+            for slug in linux-amd64 linux-arm64; do
+              skopeo copy "oci-archive:/tmp/sparc-${slug}.tar" "docker://${tag}-${slug}"
+            done
+            docker buildx imagetools create -t "${tag}" \
+              "${tag}-linux-amd64" "${tag}-linux-arm64"
             [ -n "$FIRST" ] || FIRST="$tag"
           done <<< "$TAGS"
 
