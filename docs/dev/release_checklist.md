@@ -100,16 +100,25 @@ releases stale. None of these block CI, so nothing catches them but this.
       `SparcConfig::VERSION`. Home.md advertised **v1.13.0 for roughly twelve
       releases** before this existed — the number lives in two files and only
       one of them gets touched during a release.
-- [ ] **PUBLISH the wiki — `./wiki/PUSH_TO_WIKI.sh`.** Editing `wiki/` changes
-      nothing a user can see; the published wiki is a **separate git repo** and
-      the mirror is a manual step. It went **three releases (15 days) behind**
-      without anyone noticing, because the source looked current in every PR.
-      Nothing in CI detects this, so it has to be done here, deliberately.
-      - Verify afterwards by reading the **published** page, not the source:
+- [ ] **Confirm the wiki published — no manual push needed (#1061).**
+      `.github/workflows/publish-wiki.yml` publishes on every push to `main`
+      that touches `wiki/`, so by the time you are here it should already be
+      live. This used to be `./wiki/PUSH_TO_WIKI.sh`, a manual step that went
+      **three releases (15 days) behind** without anyone noticing because the
+      source looked current in every PR.
+      - **Confirm, do not assume.** The job verifies the remote head moved and
+        fails if it did not, so check the run went green for the merge that
+        carried your `wiki/` change — or read the published page directly:
         `git clone --depth 1 https://github.com/risk-sentinel/sparc.wiki.git`
         and confirm the Changelog's top entry is this version.
-      - The push is **outward-facing and public** — screenshots and prose go
+      - If a `wiki/` change did NOT trigger it (the path filter is `wiki/**`),
+        run the workflow by hand via **workflow_dispatch** rather than reaching
+        for the script.
+      - The publish is **outward-facing and public** — screenshots and prose go
         live. Confirm the fixture purge above happened first.
+      - The sync is **authoritative**: a page removed from `wiki/` is removed
+        from the published wiki, and a page edited in the wiki web UI is
+        overwritten. Edit `wiki/`, never the wiki directly.
 
 ## 3. Version
 

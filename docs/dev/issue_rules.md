@@ -151,16 +151,22 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
    if a user, operator, or integrator would read it (new/changed feature, screen,
    route, env var, role/permission, config), update the relevant wiki page in the
    same PR. The wiki is the canonical public documentation and must stay current.
-     - **Editing `wiki/` publishes nothing.** The wiki a user reads is a
-       **separate git repo**, mirrored by `./wiki/PUSH_TO_WIKI.sh`, and that
-       push is a manual step that runs **at release time** (see
-       `docs/dev/release_checklist.md`) — not per PR. So a merged PR leaves the
-       published page stale by design, and the debt is only cleared by cutting
-       a release. It went **three releases and 15 days behind** exactly this
-       way: every PR looked correct, because every PR *was* correct, and
-       nothing distinguished "source updated" from "readers can see it."
-       If a doc fix must reach users before the next release, say so on the PR
-       and push the mirror deliberately.
+     - **Editing `wiki/` now publishes on merge (#1061).** The wiki a user reads
+       is a **separate git repo**, and mirroring it used to be a manual
+       `./wiki/PUSH_TO_WIKI.sh` run at release time — so a merged PR left the
+       published page stale by design and the debt cleared only at a release. It
+       went **three releases and 15 days behind** exactly that way: every PR
+       looked correct, because every PR *was* correct, and nothing distinguished
+       "source updated" from "readers can see it."
+       `.github/workflows/publish-wiki.yml` now publishes on every push to
+       `main` that touches `wiki/`, so a merged wiki change reaches readers
+       without a human step.
+       - **The sync is authoritative.** A page removed from `wiki/` is removed
+         from the published wiki, and a page edited directly in the wiki web UI
+         is **overwritten** on the next publish. Edit `wiki/`, never the wiki.
+       - `spec/docs/wiki_currency_spec.rb` still guards a different failure —
+         it pins the SOURCE's advertised version against `SparcConfig::VERSION`.
+         Publishing being automatic does not make the source correct.
    - **Functional or screen changes → update the relevant User Guide.** Any new
      or changed screen, route, workflow, field, or permission that an end user
      interacts with **must** update the matching `wiki/User-Guide-*.md` page (and

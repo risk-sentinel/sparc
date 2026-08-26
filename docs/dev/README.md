@@ -11,7 +11,7 @@ SPARC keeps public and internal documentation in separate homes:
 
 | Documentation | Home | Canonical |
 |---|---|---|
-| **Public** — product usage, configuration, architecture, API, roles, changelog | The **GitHub wiki** (source under [`wiki/`](../../wiki), mirrored via `wiki/PUSH_TO_WIKI.sh`) | ✅ Keep current |
+| **Public** — product usage, configuration, architecture, API, roles, changelog | The **GitHub wiki** (source under [`wiki/`](../../wiki), published automatically on push to `main` — #1061) | ✅ Keep current |
 | **Release notes** | [GitHub Releases](https://github.com/risk-sentinel/sparc/releases) | ✅ Single source |
 | **In-repo artifacts** — compliance findings, OSCAL CDEFs, API endpoint specs, license policy, scan outputs | `docs/compliance/`, `docs/api/`, `docs/hdf/`, `docs/ci/`, `docs/banners/` | Consumed by code/CI |
 | **Internal dev docs** — process, roadmap, coordination, engineering reference | **`docs/dev/`** (this folder) | Not public |

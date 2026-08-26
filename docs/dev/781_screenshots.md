@@ -74,7 +74,13 @@ new page added there is captured automatically.
    > regression. Clear it before a gate run:
    > `User.find(1).avatar.purge if …blob missing`.
 
-4. **Publish** to the wiki (`PUSH_TO_WIKI.sh` now also copies `wiki/images/`):
+4. **Publish** — automatic since #1061. Merging the `wiki/` change to `main`
+   triggers `.github/workflows/publish-wiki.yml`, which syncs pages *and*
+   `wiki/images/`. No manual step.
+
+   Only if you need to publish outside that flow (a re-sync after someone edited
+   the wiki in the web UI), run the workflow via **workflow_dispatch**, or
+   locally:
 
    ```bash
    ./wiki/PUSH_TO_WIKI.sh
