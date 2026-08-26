@@ -332,8 +332,17 @@ jobs:
           uv sync --locked
           uv run pytest -q
 
-      - name: UI smoke against the running image
+      # SPARC_SMOKE_PUBLIC_CATALOGS is DECLARED, not inferred. test_public_
+      # controls_974.py refuses to run without it and never skips — #885
+      # established that a posture-gated test which silently skips reports green
+      # while proving nothing, and #974 is the case that made the point: the
+      # suite passed for catalogs throughout while the CDEF library sat wide
+      # open. `0` is the truth here: SPARC_PUBLIC_CATALOGS defaults to false and
+      # neither .env.example nor the compose file overrides it.
+      - name: UI smoke against the running image (catalogs private)
         working-directory: tests/ui-smoke
+        env:
+          SPARC_SMOKE_PUBLIC_CATALOGS: "0"
         run: |
           set -euo pipefail
           . /tmp/smoke-env.sh
@@ -343,6 +352,38 @@ jobs:
           # target's configured scheme/port — both come from smoke-prep, so they
           # agree by construction.
           uv run pytest -q --browser chromium
+
+      # BOTH DIRECTIONS. A release gate that only ever proved the secure default
+      # would say nothing about the posture an operator actually opts into, and
+      # "it passed" would again mean "it passed in the one posture we happened to
+      # run". `public_catalogs?` reads ENV per call, so flipping it needs a
+      # container RECREATE rather than a restart.
+      - name: Flip the stack to published catalogs
+        run: |
+          set -euo pipefail
+          echo "SPARC_PUBLIC_CATALOGS=true" >> .env
+          docker compose -f docker-compose.ubi9.yaml up -d --force-recreate web
+          for i in $(seq 1 40); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://localhost:3000/ || echo 000)
+            if [ "$code" = "302" ]; then echo "serving again after ~$((i*5))s"; exit 0; fi
+            sleep 5
+          done
+          echo "::error::the stack did not come back after the catalogs flip"
+          docker compose -f docker-compose.ubi9.yaml logs web | tail -50
+          exit 1
+
+      - name: UI smoke — the published-catalogs posture
+        working-directory: tests/ui-smoke
+        env:
+          SPARC_SMOKE_PUBLIC_CATALOGS: "1"
+        run: |
+          set -euo pipefail
+          . /tmp/smoke-env.sh
+          # Only the posture-gated module: the rest of the suite is posture
+          # agnostic and was proven above. The declared flag is INDEPENDENTLY
+          # confirmed against the app, so a stack that failed to flip fails here
+          # rather than passing on a stale posture.
+          uv run pytest -q --browser chromium test_public_controls_974.py
 
       - name: Container logs (on failure)
         if: failure()
