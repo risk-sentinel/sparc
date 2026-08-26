@@ -1017,6 +1017,8 @@ jobs:
             bin/sarif_drop_suppressed.rb
             bin/hdf_ensure_canary.rb
             Dockerfile
+            script/ci/hdf_pins.sh
+            script/dev/install-hdf.sh
           sparse-checkout-cone-mode: false
 
       # Ruby for the two in-repo translation helpers below. Stdlib only — no
@@ -1124,20 +1126,16 @@ jobs:
         run: |
           set -euo pipefail
           # The Dockerfile is the single source for these pins; this workflow
-          # has to restate them because Actions cannot read a Dockerfile ARG.
-          # Assert they agree rather than trusting a comment — CI-1 found this
-          # job pinned 3.4.1 while the image baked 3.5.1, so the gate validated
-          # with a different binary than the product shipped, and the drift was
+          # has to restate them because Actions cannot read a Dockerfile ARG
+          # from an `env:` block, and `setup-go` needs the version before any
+          # step has run. So assert rather than derive — CI-1 found this job
+          # pinned 3.4.1 while the image baked 3.5.1, and the drift was
           # invisible because both sides built cleanly.
-          for pair in "HDF_LIBS_VERSION:$HDF_LIBS_VERSION" "XTEXT_VERSION:$XTEXT_VERSION" "GO_FIX_LINE:$HDF_GO_VERSION"; do
-            arg="${pair%%:*}"; want="${pair#*:}"
-            have=$(grep -oP "^ARG ${arg}=\K.*" Dockerfile | head -1)
-            [ "$have" = "$want" ] || {
-              echo "::error::${arg} drift — workflow has '${want}', Dockerfile has '${have}'"
-              exit 1
-            }
-          done
-          echo "hdf pins agree with Dockerfile: ${HDF_LIBS_VERSION} / x-text ${XTEXT_VERSION} / go ${HDF_GO_VERSION}"
+          #
+          # #835 moved the check into script/ci/hdf_pins.sh so ci.yml, this
+          # workflow and script/dev/install-hdf.sh are all measured against the
+          # same source by the same code.
+          GO_FIX_LINE="$HDF_GO_VERSION" script/ci/hdf_pins.sh --assert
 
           git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
             https://github.com/mitre/hdf-libs.git /tmp/hdf-src
