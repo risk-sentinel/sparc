@@ -6,6 +6,38 @@ import os
 import ssl
 from urllib.parse import urlparse
 
+_TRUTHY = {"1", "true", "yes", "on"}
+_FALSY = {"0", "false", "no", "off", ""}
+
+
+def smoke_flag(name: str, default: bool = False) -> bool:
+    """Read a SPARC_SMOKE_* boolean, accepting the usual spellings.
+
+    #858 — every one of these flags was read as ``== "1"``, so the natural
+    ``SPARC_SMOKE_INSECURE_TLS=true`` was silently treated as FALSE. Against a
+    self-signed local stack that surfaces as ``CERTIFICATE_VERIFY_FAILED``,
+    which reads like a broken certificate rather than a mistyped flag — and the
+    operator's next move is to debug the cert.
+
+    Unrecognised values RAISE rather than defaulting. A flag the runner clearly
+    meant to set, silently ignored, is the same failure in a quieter form: the
+    suite would run in the opposite posture from the one asked for and report a
+    confident green about something it never tested.
+    """
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    value = raw.strip().lower()
+    if value in _TRUTHY:
+        return True
+    if value in _FALSY:
+        return False
+    raise RuntimeError(
+        f"{name}={raw!r} is not a recognised boolean. "
+        f"Use one of {sorted(_TRUTHY)} or {sorted(_FALSY - {''})}. "
+        f"Refusing to guess: this flag changes which posture the suite proves."
+    )
+
 
 def smoke_tls_verify():
     """TLS-verification setting for the suite's raw httpx calls.
@@ -26,7 +58,7 @@ def smoke_tls_verify():
       public-CA endpoint.
     - else ``True``: default public-CA verification (e.g. a real deployment).
     """
-    if os.environ.get("SPARC_SMOKE_INSECURE_TLS") == "1":
+    if smoke_flag("SPARC_SMOKE_INSECURE_TLS"):
         return False
     ca = os.environ.get("SPARC_SMOKE_CA_BUNDLE")
     if ca:

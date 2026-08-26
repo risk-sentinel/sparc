@@ -42,7 +42,7 @@ from collections import defaultdict
 import httpx
 from playwright.sync_api import sync_playwright
 
-from helpers import smoke_tls_verify
+from helpers import smoke_flag, smoke_tls_verify
 from pages import MUST_EXIST_PAGES
 
 BASE_URL = os.environ.get("SPARC_SMOKE_BASE_URL", "https://sparc.risk-sentinel.org")
@@ -186,7 +186,7 @@ def main() -> int:
         for width, height, label in breakpoints:
             context = browser.new_context(
                 viewport={"width": width, "height": height},
-                ignore_https_errors=os.environ.get("SPARC_SMOKE_INSECURE_TLS") == "1",
+                ignore_https_errors=smoke_flag("SPARC_SMOKE_INSECURE_TLS"),
                 base_url=BASE_URL,
             )
             context.add_cookies([{

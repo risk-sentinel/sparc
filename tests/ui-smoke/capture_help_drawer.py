@@ -30,10 +30,11 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from conftest import _bridge_token_to_cookie, _cookie_spec  # noqa: E402
+from helpers import smoke_flag  # noqa: E402
 
 BASE_URL = os.environ.get("SPARC_SMOKE_BASE_URL", "https://localhost:3443").rstrip("/")
 SA_TOKEN = os.environ.get("SPARC_SMOKE_SA_TOKEN")
-INSECURE = os.environ.get("SPARC_SMOKE_INSECURE_TLS") == "1"
+INSECURE = smoke_flag("SPARC_SMOKE_INSECURE_TLS")
 
 OUT_DIR = Path(__file__).resolve().parents[2] / "wiki" / "images"
 VIEWPORT = {"width": 1440, "height": 900}
