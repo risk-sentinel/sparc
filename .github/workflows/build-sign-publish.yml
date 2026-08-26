@@ -134,6 +134,181 @@ jobs:
 
   # ── Build and Push: multi-platform image to Docker Hub + ECR ──
 
+  # ══════════════════════════════════════════════════════════════════
+  # VERIFY — the in-runner pre-release gate (#711)
+  #
+  # Runs BEFORE the production approval, and fails closed. If it fails, the
+  # workflow stops and nobody is asked to approve.
+  #
+  # WHY IT IS A SEPARATE JOB, not a step inside build-and-push: the
+  # `environment: production` gate covers a WHOLE job, so a verification step
+  # there would run AFTER the approval had already been given — which is the
+  # failure this exists to prevent.
+  #
+  # WHAT IT PROVES. Until now an image was built and started, and the only thing
+  # ever run against it was `bin/rails --version` (the dry-run path below).
+  # `security.yml` builds an image and only SCANS it. Nothing served HTTP and
+  # nothing exercised the app. That reads like verification and proves the
+  # binary loads — the same shape as #1048, #1050, #987 and #1061.
+  #
+  # WHAT IT DOES NOT PROVE. rspec is NOT run here: the prod image is built with
+  # BUNDLE_WITHOUT="development test", so the test gems are absent by design.
+  # rspec runs in ci.yml against the source. This gate exercises the shipped
+  # artifact over HTTP, which is the thing ci.yml cannot do.
+  #
+  # ARM64 IS BUILT BUT NOT EXERCISED. Owner-accepted 2026-08-26 as materially
+  # lower risk than today. Tracked as #859, and the promotion step is exactly
+  # where an arm64 leg attaches.
+  verify:
+    name: Verify the image before it can be published
+    runs-on: ubuntu-latest
+    needs: [ prepare ]
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up QEMU (multi-platform)
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
+
+      # setup-buildx-action creates a `docker-container` driver builder, which
+      # is REQUIRED here: the default `docker` driver cannot export OCI
+      # ("OCI exporter is not supported for the docker driver"). Verified.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Docker metadata (labels)
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+        with:
+          images: risksentinel/sparc
+          labels: |
+            org.opencontainers.image.title=SPARC
+            org.opencontainers.image.description=Systematic Policy and Regulatory Compliance
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version_stripped }}
+            org.opencontainers.image.source=https://github.com/risk-sentinel/sparc
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ needs.prepare.outputs.build_date }}
+            org.opencontainers.image.vendor=risk-sentinel
+            org.opencontainers.image.licenses=MIT
+
+      # ONE build, BOTH arches, into an OCI archive. The archive is what
+      # build-and-push promotes, so the bytes that get tested are the bytes that
+      # get published.
+      #
+      # NOTE: arm64 is built under QEMU emulation here, which compiles native
+      # gems slowly. If this dominates the job's wall-clock, the optimisation is
+      # a matrix split across `ubuntu-latest` + `ubuntu-24.04-arm` (free for
+      # public repos) with a manifest merge. Measure before optimising.
+      - name: Build both architectures into an OCI archive
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          outputs: type=oci,dest=/tmp/sparc-oci.tar
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      # `docker save`/`load` does NOT round-trip a multi-arch manifest. skopeo
+      # selects one platform out of the OCI index. Do not "simplify" this back
+      # to docker save — the arm64 half would be silently lost.
+      - name: Extract the amd64 image and load it
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq skopeo
+          skopeo copy --override-arch amd64 --override-os linux \
+            oci-archive:/tmp/sparc-oci.tar \
+            docker-archive:/tmp/sparc-amd64.tar:sparc-ubi9-web:latest
+          docker load -i /tmp/sparc-amd64.tar
+          # compose (project `sparc-ubi9`, service `web`) resolves this name, so
+          # `--no-build` below uses the image we just tested rather than rebuilding.
+          docker image inspect sparc-ubi9-web:latest \
+            --format 'loaded: arch={{.Architecture}} os={{.Os}}'
+
+      # `env_file: .env` is required by the compose file and .env is gitignored,
+      # so it does not exist on a runner. The example carries the auth flags the
+      # stack needs (SPARC_ENABLE_LOCAL_LOGIN etc.).
+      - name: Stand the image up
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          docker compose -f docker-compose.ubi9.yaml --profile tls up -d --no-build
+
+      # A fresh volume runs AwsLabsCdefRefreshJob on boot and imports 230 CDEFs.
+      # Measured 55-105s before it serves, so a short wait would flake on a cold
+      # cache and look like a product failure.
+      - name: Wait for the app to serve
+        run: |
+          set -uo pipefail
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://localhost:3000/ || echo 000)
+            if [ "$code" = "302" ]; then echo "serving after ~$((i*5))s"; exit 0; fi
+            sleep 5
+          done
+          echo "::error::the image never served after 300s"
+          docker compose -f docker-compose.ubi9.yaml logs web | tail -50
+          exit 1
+
+      # Mints an admin and a NON-admin token, and clears the seeded admin's
+      # must_reset_password — which otherwise 302s every authenticated request
+      # and reads as broken auth.
+      - name: Prepare the instance and mint tokens
+        run: |
+          set -euo pipefail
+          bin/smoke-prep --quiet > /tmp/smoke-env.sh
+          echo "minted $(grep -c '^export' /tmp/smoke-env.sh) exports"
+
+      - name: Set up Python tooling
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+
+      - name: API contract suite against the running image
+        working-directory: tests/api
+        run: |
+          set -euo pipefail
+          . /tmp/smoke-env.sh
+          uv sync --locked
+          uv run pytest -q
+
+      - name: UI smoke against the running image
+        working-directory: tests/ui-smoke
+        run: |
+          set -euo pipefail
+          . /tmp/smoke-env.sh
+          uv sync --locked
+          uv run playwright install --with-deps chromium
+          # #858 aborts the run if SPARC_SMOKE_BASE_URL disagrees with the
+          # target's configured scheme/port — both come from smoke-prep, so they
+          # agree by construction.
+          uv run pytest -q --browser chromium
+
+      - name: Container logs (on failure)
+        if: failure()
+        run: docker compose -f docker-compose.ubi9.yaml logs --tail=200
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.ubi9.yaml --profile tls down -v || true
+
+      # Retention 1 day: build-and-push consumes this within the same run, and
+      # nothing needs it once the image is in Docker Hub/ECR. Expiry is the
+      # cleanup — there is no staging registry to prune.
+      - name: Upload the verified image
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: verified-image-oci
+          path: /tmp/sparc-oci.tar
+          retention-days: 1
+          if-no-files-found: error
+
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
@@ -142,7 +317,7 @@ jobs:
     environment: production   # #545 item 3 — the SINGLE release approval gate (required
     # reviewers). Approving here authorizes the whole release; sign-verify-attest has no
     # separate gate and runs after this approved build.
-    needs: [ prepare ]
+    needs: [ prepare, verify ]   # #711 — cannot be approved until verify passes
     # `secrets` context is NOT allowed in step-level `if:` conditionals
     # (only in env / job.if / step.env). Map the secret presence to a
     # job-level env var so step `if:` blocks can reference it.
@@ -225,25 +400,59 @@ jobs:
           # Version tag only — no latest (ECR uses immutable tags)
           echo "tags=${ECR}:${VERSION}" >> "$GITHUB_OUTPUT"
 
-      # ── Production build: multi-platform, push to registries ──
-      - name: Build and push multi-platform image
+      # ── PROMOTE the verified image (#711) ──
+      #
+      # This job no longer BUILDS. It publishes the exact bytes the `verify` job
+      # built and exercised, so the artifact that was tested is the artifact
+      # that ships. Rebuilding here would produce a second, untested image that
+      # merely resembles the first — the "measure the artifact that ships"
+      # failure this repo has been bitten by before.
+      #
+      # `--all` copies the whole OCI index: both architectures AND the
+      # provenance/SBOM attestation manifests buildx attached. Copying without
+      # it would publish a single-arch image and silently drop arm64.
+      - name: Download the verified image
+        if: needs.prepare.outputs.dry_run != 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: verified-image-oci
+          path: /tmp
+
+      - name: Promote the verified image to the registries
         if: needs.prepare.outputs.dry_run != 'true'
         id: build
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ steps.meta.outputs.tags }}
-            ${{ steps.ecr-tags.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: true
-          sbom: true
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq skopeo
+
+          # One tag per line from metadata-action, plus the ECR tag if configured.
+          TAGS=$(printf '%s\n%s\n' \
+            "${{ steps.meta.outputs.tags }}" \
+            "${{ steps.ecr-tags.outputs.tags }}" | sed '/^$/d')
+
+          FIRST=""
+          while read -r tag; do
+            [ -n "$tag" ] || continue
+            echo "── promoting to ${tag}"
+            skopeo copy --all oci-archive:/tmp/sparc-oci.tar "docker://${tag}"
+            [ -n "$FIRST" ] || FIRST="$tag"
+          done <<< "$TAGS"
+
+          if [ -z "$FIRST" ]; then
+            echo "::error::no tags computed — refusing to report success"
+            exit 1
+          fi
+
+          # The manifest-LIST digest is what cosign signs and what
+          # sign-verify-attest consumes. Read it back from the registry rather
+          # than assuming the local one survived the copy.
+          DIGEST=$(skopeo inspect --no-tags --format '{{.Digest}}' "docker://${FIRST}")
+          case "$DIGEST" in
+            sha256:*) ;;
+            *) echo "::error::could not read a manifest digest back from ${FIRST} (got '${DIGEST}')"; exit 1 ;;
+          esac
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "Promoted verified image as ${DIGEST}"
 
       # ── Dry-run build: single-platform, local only ──
       - name: Build image (dry run)
