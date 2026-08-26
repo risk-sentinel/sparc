@@ -1,0 +1,53 @@
+{
+  "component-definition": {
+    "uuid": "11111111-2222-4333-8444-555555555555",
+    "metadata": {
+      "title": "Ambiguity probe \u2014 two components implementing one control (#1028)",
+      "last-modified": "2026-08-26T00:00:00.000Z",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2"
+    },
+    "components": [
+      {
+        "uuid": "aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa",
+        "type": "software",
+        "title": "Probe component A",
+        "description": "First of two components implementing the same control-id.",
+        "control-implementations": [
+          {
+            "uuid": "cccccccc-1111-4111-8111-cccccccccccc",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_HIGH-baseline_profile.json",
+            "description": "Probe implementation A.",
+            "implemented-requirements": [
+              {
+                "uuid": "dddddddd-1111-4111-8111-dddddddddddd",
+                "control-id": "ac-2",
+                "description": "Component A's account-management implementation."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb",
+        "type": "software",
+        "title": "Probe component B",
+        "description": "Second component implementing the SAME control-id, which is what makes the address ambiguous.",
+        "control-implementations": [
+          {
+            "uuid": "cccccccc-2222-4222-8222-cccccccccccc",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_HIGH-baseline_profile.json",
+            "description": "Probe implementation B.",
+            "implemented-requirements": [
+              {
+                "uuid": "dddddddd-2222-4222-8222-dddddddddddd",
+                "control-id": "ac-2",
+                "description": "Component B's account-management implementation."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
