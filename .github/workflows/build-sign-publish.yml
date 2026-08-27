@@ -861,6 +861,124 @@ jobs:
 
       # ── Summary ──
 
+      # ── Vulnerability attestation (#917) ──
+      #
+      # A consumer could verify WHAT is in the image (the CycloneDX attestation
+      # above) but not WHAT WAS KNOWN about it when it was built. Scan results
+      # lived only in workflow artifacts, which expire while the image does not:
+      # a year on, the SBOM is still verifiable and the vulnerability posture at
+      # build time is gone. And the allow-list reasoning — where the actual
+      # judgement lives — was discarded with the artifact.
+      #
+      # OpenVEX, not in-toto `vuln`: the decisions we need to publish are
+      # per-vulnerability status plus justification, which is what VEX models,
+      # and hdf-libs already emits it from our own register.
+      #
+      # NOTE this path is unaffected by #1067. `hdf convert --from
+      # hdf-amendments` reads the AMENDMENTS document, generated from
+      # sparc-findings.yml — not the amended HDFs, which is where the no-op
+      # lives. Measured: 16 statements for 16 register findings, 14 affected /
+      # 2 not_affected.
+      # This job installs Cosign and Syft but not grype or Go, and the steps
+      # below need both. Missing either would fail at runtime, well after the
+      # image had already been published by build-and-push.
+      - name: Checkout code (register + pin script + Gemfile)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Grype
+        uses: anchore/scan-action/download-grype@abae6f91766d0bab7c6b23e6bb95dcb4d5c11b31 # v7
+        id: grype
+
+      - name: Set up Ruby (amendments + VEX enrichment)
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: .ruby-version
+
+      # Derived from the Dockerfile, same single source as ci.yml and the
+      # security gate — not a fourth hardcoded copy of the toolchain version.
+      - name: Resolve hdf-cli pins from the Dockerfile
+        id: hdf_pins
+        run: script/ci/hdf_pins.sh --github-output
+
+      - name: Set up Go (pinned to the hdf-cli fix line)
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ steps.hdf_pins.outputs.go_fix_line }}
+
+      - name: Build hdf (mitre/hdf-libs CLI) from source
+        env:
+          HDF_LIBS_VERSION: ${{ steps.hdf_pins.outputs.hdf_libs_version }}
+          XTEXT_VERSION: ${{ steps.hdf_pins.outputs.xtext_version }}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
+            https://github.com/mitre/hdf-libs.git /tmp/hdf-src
+          cd /tmp/hdf-src/hdf-cli
+          go mod edit -require="golang.org/x/text@v${XTEXT_VERSION}"
+          go mod download golang.org/x/text
+          PKG="github.com/mitre/hdf-libs/hdf-cli/v3/cmd/hdf/cmd"
+          CGO_ENABLED=0 go build -trimpath \
+            -ldflags "-s -w -X ${PKG}.version=${HDF_LIBS_VERSION}" \
+            -o /usr/local/bin/hdf ./cmd/hdf
+
+      - name: Scan the published image for the vulnerability predicate
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.prepare.outputs.version_stripped }}"
+          grype "risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}" \
+            -o json > "sparc-vulns-${VERSION}.json"
+          # Scanner and database provenance. #917 is explicit that a scan is
+          # only meaningful relative to what was KNOWN — a finding count with no
+          # database timestamp cannot be interpreted a year later.
+          grype version -o json > "sparc-scanner-${VERSION}.json"
+
+      - name: Build the VEX predicate and carry the rationale into it
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.prepare.outputs.version_stripped }}"
+          ruby bin/sparc_findings_to_hdf_amendments.rb \
+            --input docs/compliance/sparc-findings.yml \
+            --output /tmp/amendments.hdf.json
+          hdf convert /tmp/amendments.hdf.json --from hdf-amendments \
+            --to openvex -o "sparc-vex-${VERSION}.json"
+          # hdf-libs writes the disposition but DISCARDS the reasoning — every
+          # statement comes out `"status_notes": "HDF override type: poam"` with
+          # a null justification. #917 asks for the rationale, so it is merged
+          # back from the register. Fails closed if it matches nothing.
+          ruby bin/vex_enrich_rationale.rb \
+            --vex "sparc-vex-${VERSION}.json" \
+            --findings docs/compliance/sparc-findings.yml
+
+      - name: Attest the vulnerability posture to Docker Hub
+        run: |
+          VERSION="${{ needs.prepare.outputs.version_stripped }}"
+          cosign attest --yes \
+            --predicate "sparc-vex-${VERSION}.json" \
+            --type openvex \
+            risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}
+
+      - name: Attest the vulnerability posture to ECR
+        if: env.HAS_ECR == 'true'
+        env:
+          ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.SPARC_ECR_REGISTRY }}
+        run: |
+          VERSION="${{ needs.prepare.outputs.version_stripped }}"
+          cosign attest --yes \
+            --predicate "sparc-vex-${VERSION}.json" \
+            --type openvex \
+            "${ECR_REGISTRY}@${{ needs.build-and-push.outputs.digest }}"
+
+      - name: Upload the vulnerability predicate + scan
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: vulnerability-attestation
+          path: |
+            sparc-vex-*.json
+            sparc-vulns-*.json
+            sparc-scanner-*.json
+          retention-days: 90
+          if-no-files-found: error
+
       - name: Release summary
         env:
           ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.SPARC_ECR_REGISTRY }}
