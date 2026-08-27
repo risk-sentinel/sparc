@@ -79,7 +79,7 @@ jobs:
   # ── Prepare: validate version and compute metadata ──────────
 
   prepare:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read          # checkout only — computes build metadata
     outputs:
@@ -255,7 +255,7 @@ jobs:
   # where an arm64 leg attaches.
   verify:
     name: Verify the image before it can be published
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [ prepare, build-image ]
     timeout-minutes: 30
     permissions:
@@ -401,15 +401,130 @@ jobs:
         if: always()
         run: docker compose -f docker-compose.ubi9.yaml --profile tls down -v || true
 
+  # ══════════════════════════════════════════════════════════════════
+  # VERIFY-ARM64 — prove the other half of the manifest boots (#859)
+  #
+  # Every published tag is a multi-arch manifest, and until now release
+  # verification only ever exercised amd64. The arm64 half of every tag shipped
+  # unverified — whoever pulled it (a developer on Apple Silicon, or a Graviton
+  # deployment) got the untested half.
+  #
+  # DELIBERATELY A BOOT-AND-SMOKE, NOT A SECOND FULL CEREMONY. #859 scopes it
+  # that way and it is the right depth: the suites prove application behaviour,
+  # which is architecture-independent, and what is genuinely unproven about
+  # arm64 is whether the IMAGE starts and serves — native gems, jemalloc, the
+  # hdf-cli binary. Running ui-smoke twice would add ~11 minutes to every
+  # release to re-assert things the amd64 leg already established.
+  #
+  # Runs in PARALLEL with `verify`, so this costs runner minutes rather than
+  # wall-clock.
+  #
+  # Graviton evaluation — the other half of #859 — is an infrastructure
+  # decision for the task definition and belongs in sparc-iac, not here.
+  verify-arm64:
+    name: Verify the arm64 image boots
+    runs-on: ubuntu-24.04-arm
+    needs: [ prepare, build-image ]
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download the arm64 image built by the matrix
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: image-linux-arm64
+          path: /tmp
+
+      - name: Load the arm64 image
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq skopeo
+          skopeo copy \
+            oci-archive:/tmp/sparc-linux-arm64.tar \
+            docker-archive:/tmp/sparc-arm64.tar:sparc-ubi9-web:latest
+          docker load -i /tmp/sparc-arm64.tar
+          # Assert we are actually testing arm64. Loading the wrong half of the
+          # manifest here would produce a green run that proved nothing about
+          # the architecture this job exists for.
+          arch=$(docker image inspect sparc-ubi9-web:latest --format '{{.Architecture}}')
+          [ "$arch" = "arm64" ] || { echo "::error::loaded image is ${arch}, expected arm64"; exit 1; }
+          echo "loaded arm64 image"
+
+      # The base compose file pins the web service to linux/amd64 to mirror the
+      # deployed posture; the override flips only the architecture.
+      - name: Stand the arm64 image up
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          docker compose -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml \
+            --profile tls up -d --no-build
+
+      - name: Wait for the app to serve
+        run: |
+          set -uo pipefail
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://localhost:3000/ || echo 000)
+            if [ "$code" = "302" ]; then echo "arm64 image serving after ~$((i*5))s"; exit 0; fi
+            sleep 5
+          done
+          echo "::error::the arm64 image never served after 300s"
+          docker compose -f docker-compose.ubi9.yaml logs web | tail -50
+          exit 1
+
+      # Boot-and-smoke: enough to show the arm64 build starts, routes, enforces
+      # auth, and that the native binaries it carries actually execute. These
+      # are the things that differ by architecture; behaviour is proven on amd64.
+      - name: Smoke the arm64 image
+        run: |
+          set -euo pipefail
+          fail=0
+          check() {
+            local path="$1" want="$2"
+            local got
+            got=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "http://localhost:3000${path}")
+            if [ "$got" = "$want" ]; then
+              echo "  ${path} -> ${got}"
+            else
+              echo "::error::${path} returned ${got}, expected ${want}"; fail=1
+            fi
+          }
+          check /                      302
+          check /api/v1/ssp_documents  401
+          check /api/v1/controls       401
+
+          # The native-gem and native-binary surface — the actual arm64 risk.
+          # A wrong-arch or half-built image fails here rather than at a
+          # customer's `docker run`.
+          docker compose -f docker-compose.ubi9.yaml exec -T web sh -c '
+            set -e
+            uname -m
+            hdf version | head -1
+            bundle exec ruby -e "require \"pg\"; require \"nokogiri\"; puts \"native gems load\""
+          '
+          [ "$fail" -eq 0 ] || exit 1
+
+      - name: Container logs (on failure)
+        if: failure()
+        run: docker compose -f docker-compose.ubi9.yaml logs --tail=200
+
+      - name: Tear down
+        if: always()
+        run: |
+          docker compose -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml \
+            --profile tls down -v || true
+
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write         # AWS OIDC (ECR push) + Docker Hub login
     environment: production   # #545 item 3 — the SINGLE release approval gate (required
     # reviewers). Approving here authorizes the whole release; sign-verify-attest has no
     # separate gate and runs after this approved build.
-    needs: [ prepare, verify ]   # #711 — cannot be approved until verify passes
+    needs: [ prepare, verify, verify-arm64 ]   # #711/#859 — both halves of the manifest verified before approval
     # `secrets` context is NOT allowed in step-level `if:` conditionals
     # (only in env / job.if / step.env). Map the secret presence to a
     # job-level env var so step `if:` blocks can reference it.
@@ -608,7 +723,7 @@ jobs:
   # ── Sign, Verify, and Attest ────────────────────────────────
 
   sign-verify-attest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write         # Sigstore keyless OIDC (cosign sign/verify/attest)
@@ -794,7 +909,7 @@ jobs:
   # lockstep is "part of done" — if the issue can't be filed, the release
   # FAILS loudly rather than shipping green while sparc-iac drifts behind.
   notify-consumers:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read          # files the issue via PROJECT_TOKEN, not GITHUB_TOKEN
     needs: [ prepare, build-and-push, sign-verify-attest ]

@@ -1,0 +1,33 @@
+# arm64 override for the UBI9 validation stack (#859).
+#
+# `docker-compose.ubi9.yaml` pins the web service to `platform: linux/amd64`.
+# That is right for reproducing the deployed posture — AWS Fargate defaults to
+# X86_64 when `runtime_platform` is omitted, so prod is amd64 — but it has two
+# costs this override removes.
+#
+#   1. **CI could not verify the arm64 half of a release.** Every published tag
+#      is a multi-arch manifest, and the release gate only ever exercised amd64,
+#      so whoever pulled arm64 got the untested half.
+#   2. **Local iteration on Apple Silicon pays the QEMU tax.** Every run is
+#      emulated, which is slow enough to discourage running the stack at all.
+#
+# Nothing in the image resists arm64: the UBI9 base is multi-arch, the
+# Dockerfile hardcodes no architecture, and the hdf-cli install already resolves
+# `aarch64|arm64`. Every dependency here is multi-arch too — postgres:15,
+# redis:7-alpine and caddy:2-alpine all publish arm64.
+#
+# Usage — CI, against a prebuilt arm64 image:
+#   docker compose -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml \
+#     up -d --no-build
+#
+# Usage — locally on Apple Silicon, building natively:
+#   docker compose -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml up -d --build
+#
+# NOTE: this changes only the ARCHITECTURE. It does not make the stack a
+# different posture — SPARC_APP_URL, the TLS profile and the auth flags all
+# still come from the base file and `.env`, so a run here proves the same things
+# it would on amd64, on the other half of the manifest.
+
+services:
+  web:
+    platform: linux/arm64
