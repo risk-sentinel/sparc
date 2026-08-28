@@ -8,7 +8,7 @@ SPARC (Systematic and Regulatory Compliance) is a Rails 8.1 application for mana
 
 ## Tech Stack
 
-Ruby 3.4.4, Rails 8.1.2, PostgreSQL 15, Sidekiq + Redis for background jobs, Hotwire (Turbo + Stimulus), Propshaft asset pipeline, importmap (no Node build step).
+Ruby 3.4.10, Rails 8.1.2, PostgreSQL 15, Sidekiq + Redis for background jobs, Hotwire (Turbo + Stimulus), Propshaft asset pipeline, importmap (no Node build step).
 
 ## Common Commands
 

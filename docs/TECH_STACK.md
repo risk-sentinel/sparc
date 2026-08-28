@@ -4,7 +4,7 @@
 
 | Component | Version | Purpose |
 |-----------|---------|---------|
-| Ruby | 3.4.4 | Language runtime |
+| Ruby | 3.4.10 | Language runtime |
 | Rails | 8.1.3 | Web framework |
 | PostgreSQL | 15 | Primary database |
 | Puma | 8.0.2 | Application server |

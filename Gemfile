@@ -33,13 +33,28 @@ gem "aws-sdk-s3"                    # File storage
 gem "aws-sdk-secretsmanager", "~> 1.134"  # Secrets Manager (ECS deployments)
 gem "aws-sdk-rds", "~> 1.319"           # IAM DB auth token generation
 gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
-gem "resolv", ">= 0.7.0"            # CVE-2025-24294 ReDoS fix (overrides Ruby 3.4.4 bundled 0.6.0)
-# #620 — pin patched versions of Ruby default gems so Bundler loads them instead
-# of the vulnerable versions shipped in ruby:3.4.4-slim (same pattern as resolv).
-gem "zlib", ">= 3.2.3"             # CVE-2026-27820 (overrides bundled 3.2.1)
+# #620 / #1065 — pin patched versions of Ruby DEFAULT gems so Bundler loads them
+# instead of the copy Ruby ships. Two independent layers, and both are wanted:
+#
+#   * these pins fix the code that is LOADED (Bundler resolves from /usr/local/bundle)
+#   * the RUBY_VERSION in the Dockerfile fixes the copy that sits ON DISK, which is
+#     what a scanner reports — it reads gemspecs, not what Bundler loaded
+#
+# Ruby 3.4.10 (up from 3.4.4, #1065) makes four of the five on-disk copies patched
+# at source, which is why the image's CRITICAL/HIGH residual is 0 rather than
+# dispositioned away. Versions below are what 3.4.10 ships:
+gem "resolv", ">= 0.7.0"            # CVE-2025-24294 ReDoS  — 3.4.10 ships 0.7.1, patched
+gem "zlib", ">= 3.2.3"             # CVE-2026-27820        — 3.4.10 ships 3.2.3, patched
+gem "erb", ">= 6.0.4"             # CVE-2026-41316        — 3.4.10 ships 4.0.4.1, the upstream backport
+gem "uri", ">= 1.1.1"              # CVE-2025-61594        — 3.4.10 ships 1.0.4, patched (advisory: >= 1.0.4)
+# json is the ONE default gem Ruby 3.4.10 still ships vulnerable (2.9.1; fixed
+# upstream in 2.19.9). It was invisible to #1065's original survey because that
+# was built from Trivy's CRITICAL/HIGH output and this is CVSS 3.7 LOW. The pin
+# matters on its own: json is purely TRANSITIVE here, and its binding constraints
+# (`~> 2.3`, `>= 2.16.0`) admit 2.16.0–2.19.8, every one of them vulnerable — so
+# a resolver change could legally walk back into the window. This forbids that.
+gem "json", ">= 2.19.9"            # CVE-2026-54696        — 3.4.10 ships 2.9.1, STILL VULNERABLE on disk
 gem "net-imap", ">= 0.6.4"         # CVE-2026-42257/42258 (CRITICAL) + 42245/42246 (overrides bundled 0.5.8)
-gem "erb", ">= 6.0.4"             # CVE-2026-41316 (overrides bundled 4.0.4)
-gem "uri", ">= 1.1.1"              # CVE-2025-61594 (overrides bundled 1.0.3) — #1065
 gem "oauth2", ">= 2.0.22"          # GHSA-pp92-crg2-gfv9 (bumps transitive 2.0.18)
 gem "websocket-driver", ">= 0.8.2"  # CVE-2026-54463/54464/54465 + GHSA-2x63-gw47-w4mm DoS (bumps transitive 0.8.0)
 gem "crass", ">= 1.0.7"            # GHSA-6jxj/6wmf/8vfg/wwpr ReDoS/stack-overflow (bumps transitive 1.0.6)
