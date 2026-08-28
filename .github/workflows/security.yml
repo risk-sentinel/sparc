@@ -509,6 +509,18 @@ jobs:
         run: trivy image --format sarif --output trivy-container-results.sarif --severity CRITICAL,HIGH --scanners vuln sparc:${{ github.sha }}
         continue-on-error: true
 
+      # Native JSON as well as the SARIF (#1075). SARIF carries the fixed
+      # version only inside prose in the message text; ASFF is a template and
+      # CycloneDX expresses fixes as version RANGES. Only trivy's own JSON has a
+      # plain `FixedVersion` field, which is what lets us ask "has this accepted
+      # finding become fixable?" rather than parse English.
+      #
+      # Same scanner, same image, same severity filter as the SARIF above — this
+      # is a second serialisation of one scan, not a second scan.
+      - name: Run Trivy container scan (JSON, for fixability)
+        run: trivy image --format json --output trivy-container-results.json --severity CRITICAL,HIGH --scanners vuln sparc:${{ github.sha }}
+        continue-on-error: true
+
       - name: Upload Trivy container SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
@@ -645,6 +657,7 @@ jobs:
           name: trivy-container-results
           path: |
             trivy-container-results.sarif
+            trivy-container-results.json
             trivy-container-asff.json
             trivy-container-sbom.cdx.json
           retention-days: 90
@@ -1680,6 +1693,7 @@ jobs:
             docs/compliance/thresholds/
             docs/compliance/expected-hdfs.txt
             bin/sparc_findings_to_hdf_amendments.rb
+            scripts/ci/check_fixable_dispositions.rb
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (converter only — no bundle)
@@ -1939,6 +1953,47 @@ jobs:
             exit 1
           fi
           echo "Security gate passed — $ASSESSED HDF file(s) satisfied their thresholds"
+
+      # ── Has an accepted finding become fixable? (#1075) ──
+      #
+      # `fixed_version` is recorded on every register entry and was read by
+      # nothing, so a deferral could renew on schedule with its rationale intact
+      # and now false. check_findings_freshness.rb (#778) asks "has anyone
+      # looked at this lately?", which a stale-but-fresh deferral passes.
+      #
+      # ADVISORY, deliberately. Failing a build because upstream shipped a fix
+      # nobody has evaluated yet would punish the good news. It runs with
+      # `if: always()` so it still reports when the gate above has failed — that
+      # is exactly when knowing a finding is now fixable is most useful.
+      - name: Download the container scan (fixability cross-check)
+        if: always()
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: trivy-container-results
+          path: scan/
+        continue-on-error: true
+
+      - name: Accepted findings that now have an upstream fix
+        if: always()
+        run: |
+          set -uo pipefail
+          scan=scan/trivy-container-results.json
+          if [ ! -f "$scan" ]; then
+            echo "::warning::no trivy JSON in the scan artifact — fixability cross-check skipped"
+            exit 0
+          fi
+          ruby scripts/ci/check_fixable_dispositions.rb \
+            --findings docs/compliance/sparc-findings.yml \
+            --scan "$scan" | tee /tmp/fixable.txt
+          # Surface it where a release reader looks, not only in the job log.
+          {
+            echo ""
+            echo "### Accepted findings with an upstream fix (#1075)"
+            echo ""
+            echo '```'
+            cat /tmp/fixable.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload threshold logs (debug)
         if: always()
