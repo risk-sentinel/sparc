@@ -1773,17 +1773,48 @@ jobs:
       - name: Apply amendments to each HDF
         run: |
           set -e
-          mkdir -p amended
+          mkdir -p amended amended-v3
+
+          # #1067 — amendments only apply to HDF **v3**, and only to v3 produced
+          # by `hdf convert`.
+          #
+          # Measured on hdf-libs 3.5.1: `hdf amend apply` matches
+          # baselines[].requirements[].id, which exists only in v3. Handed v2 it
+          # returns immediately for every override, prints "Merged output
+          # written" and exits 0 — which is why every band was silently a RAW
+          # count and no band could be justified by "these are dispositioned".
+          #
+          # The v2 -> v3 conversion works, but ONLY on hdf-produced input: SAF's
+          # converters write descriptions[].label as `fix`/`check` while the v3
+          # schema requires `default`, so saf-produced documents fail schema
+          # validation. Since #962 the SARIF scanners go through `hdf convert`
+          # and convert cleanly; grype and cyclonedx are still saf and cannot
+          # reach v3.
+          #
+          # So try v3 per document and fall back to v2 where it cannot get
+          # there. The fallback is visible rather than silent: the threshold
+          # step reports which path each document took.
           for hdf in hdf-results/*.hdf.json; do
             [ -f "$hdf" ] || continue
             name=$(basename "$hdf")
-            echo "Amending $name..."
-            hdf amend apply --results "$hdf" --amendments amendments.hdf.json -o "amended/$name" || {
+            if hdf convert "$hdf" --from hdf@2 --to hdf -o "amended-v3/$name.v3" 2>/dev/null \
+               && hdf amend apply --results "amended-v3/$name.v3" \
+                    --amendments amendments.hdf.json -o "amended-v3/$name" 2>/dev/null; then
+              rm -f "amended-v3/$name.v3"
+              echo "  $name: v3 — amendments APPLY"
+            else
+              rm -f "amended-v3/$name" "amended-v3/$name.v3"
+              echo "  $name: v2 only — amendments cannot apply (saf-produced)"
+            fi
+
+            # The v2 copy is produced for every document regardless: it is what
+            # saf reads for anything that could not reach v3.
+            hdf amend apply --results "$hdf" --amendments amendments.hdf.json -o "amended/$name" 2>/dev/null || {
               echo "::warning::hdf amend apply failed for $name; using raw HDF as fallback"
               cp "$hdf" "amended/$name"
             }
           done
-          ls -la amended/
+          echo "v3 (amendments effective): $(ls amended-v3 2>/dev/null | wc -l) of $(ls amended | wc -l)"
 
       # #1048 — this step previously read:
       #
@@ -1889,12 +1920,30 @@ jobs:
             #
             # So a pass must be POSITIVELY asserted: saf prints "All validation
             # tests passed" only when it actually evaluated the thresholds.
-            if saf validate threshold -i "$hdf" -T "$threshold" > "threshold-$name.log" 2>&1 \
-               && grep -q "All validation tests passed" "threshold-$name.log"; then
-              echo "| \`$name\` | \`$(basename "$threshold")\` | pass |" >> $GITHUB_STEP_SUMMARY
+            # #1067 — prefer the v3 document when one exists, because that is
+            # the only one where amendments actually took effect. saf cannot
+            # read v3 at all (and exits 0 failing to), so v3 documents are
+            # evaluated by scripts/ci/hdf_threshold_v3.rb, which implements the
+            # same band grammar and reads `effectiveStatus`.
+            #
+            # Both paths assert the SAME positive line, "All validation tests
+            # passed", so the rc-only trap CI-1 found is closed on both.
+            if [ -f "amended-v3/$name.hdf.json" ]; then
+              engine="v3"
+              ruby scripts/ci/hdf_threshold_v3.rb \
+                --input "amended-v3/$name.hdf.json" --threshold "$threshold" \
+                > "threshold-$name.log" 2>&1
+              rc=$?
+            else
+              engine="v2"
+              saf validate threshold -i "$hdf" -T "$threshold" > "threshold-$name.log" 2>&1
+              rc=$?
+            fi
+            if [ "$rc" -eq 0 ] && grep -q "All validation tests passed" "threshold-$name.log"; then
+              echo "| \`$name\` | \`$(basename "$threshold")\` | pass ($engine) |" >> $GITHUB_STEP_SUMMARY
             else
               FAILED=$((FAILED + 1))
-              echo "| \`$name\` | \`$(basename "$threshold")\` | **FAIL** |" >> $GITHUB_STEP_SUMMARY
+              echo "| \`$name\` | \`$(basename "$threshold")\` | **FAIL** ($engine) |" >> $GITHUB_STEP_SUMMARY
               echo "::group::threshold breach — $name"
               cat "threshold-$name.log"
               echo "::endgroup::"
