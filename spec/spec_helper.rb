@@ -1,3 +1,17 @@
+# Progress must be visible while the suite runs, not only after it ends.
+#
+# Ruby leaves $stdout BLOCK-buffered when it is a pipe (CI) and only $stderr
+# unbuffered. rspec's progress formatter writes single dots to stdout, so with
+# ~6239 examples — under the 8192-byte buffer — the dots flush ONCE, at exit,
+# while every warning appears instantly.
+#
+# The result is a CI log that shows all the alarming lines and none of the
+# reassuring ones. Measured on run 33171386716: 20m50s of a 23m43s job emitted
+# nothing at all, the longest gap being 12m54s. A passing run is indistinguishable
+# from a hung one, which is precisely the "did this actually run?" ambiguity this
+# milestone exists to remove.
+$stdout.sync = true
+
 if ENV["COVERAGE"]
   require "simplecov"
   require "simplecov_json_formatter"

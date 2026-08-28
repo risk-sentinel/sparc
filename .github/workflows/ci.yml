@@ -198,6 +198,32 @@ jobs:
       - name: Install packages
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config google-chrome-stable
 
+      # Remove the runner image's bundled chromedriver so Selenium Manager
+      # fetches one matching the Chrome we just installed.
+      #
+      # The two drift by construction: the ubuntu-24.04 image ships
+      # /usr/bin/chromedriver frozen at image-build time, while
+      # `google-chrome-stable` above always pulls the LATEST Chrome, and Google
+      # ships a major roughly every four weeks. Measured on run 33165766797:
+      #
+      #   chromedriver 151.0.7922.138  vs  chrome 152.0.7977.64
+      #
+      # A full major apart. chromedriver tolerates some skew, so this is a
+      # warning today and a hard failure once the gap widens — the scheduled
+      # kind of break this milestone keeps finding.
+      #
+      # Nothing pins chromedriver here (no `webdrivers` gem, nothing in CI or
+      # the spec config): Selenium Manager is meant to resolve it and would,
+      # except it defers to a driver already on PATH. Deleting the stale one is
+      # what Selenium's own warning advises. `|| true` because a future image
+      # that stops shipping it must not fail this step.
+      - name: Drop the runner's stale chromedriver (Selenium Manager resolves it)
+        run: |
+          sudo rm -f /usr/bin/chromedriver || true
+          command -v chromedriver >/dev/null \
+            && echo "::warning::a chromedriver is still on PATH at $(command -v chromedriver)" \
+            || echo "no chromedriver on PATH — Selenium Manager will fetch one matching Chrome"
+
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
