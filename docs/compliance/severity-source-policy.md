@@ -70,8 +70,13 @@ phantom criticals and twenty-two phantom highs permanently.
 | `grype-*.json` | Anchore, and see the ceiling below | **no** — inventory only |
 | `bundler-audit-results.json` | ruby-advisory-db | **yes** — `thresholds/bundler-audit.yml` |
 
-`trivy image --severity CRITICAL,HIGH` reports **4** findings for the image
-where the SBOM path reports 28. Same image, same run.
+`trivy image --severity CRITICAL,HIGH` reported **4** findings for the image
+where the SBOM path reported 28. Same image, same run.
+
+Those 4 are now **0** (#1065, measured 2026-08-28): all four were shadowed Ruby
+default gems, and Ruby 3.4.4 -> 3.4.10 ships patched copies of every one, so the
+vulnerable code left the image. The gap between the two readings is the point
+that stands, not the specific figure.
 
 ## The grype ceiling — settled
 
@@ -96,9 +101,13 @@ therefore **inert** on any SARIF-derived scanner and the `high` band carries the
 whole posture. Verified on CVE-2026-27820, tagged CRITICAL by Trivy and landing
 at 0.7.
 
-**Every band is a raw count.** Per #1067, `hdf amend apply` no-ops on the HDF v2
-shape our converters emit, so no disposition currently suppresses anything. A
-band cannot be justified by "these are dispositioned" until that is fixed.
+**Bands are no longer raw counts — #1067 fixed this.** This section used to
+warn that `hdf amend apply` no-ops on the HDF v2 shape our converters emit, so
+no disposition suppressed anything and no band could be justified by "these are
+dispositioned". Since #1067 the gate converts to v3 first and evaluates with
+`scripts/ci/hdf_threshold_v3.rb`, which reads `effectiveStatus`. Measured on
+main@daf41392: `4 requirement(s): failed=2 notApplicable=2 (amended)` — the two
+dispositioned findings genuinely suppressed. Upstream: mitre/hdf-libs#248.
 
 ## When this changes
 
