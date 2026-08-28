@@ -1694,6 +1694,7 @@ jobs:
             docs/compliance/expected-hdfs.txt
             bin/sparc_findings_to_hdf_amendments.rb
             scripts/ci/check_fixable_dispositions.rb
+            scripts/ci/hdf_threshold_v3.rb
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (converter only — no bundle)
@@ -1928,16 +1929,20 @@ jobs:
             #
             # Both paths assert the SAME positive line, "All validation tests
             # passed", so the rc-only trap CI-1 found is closed on both.
+            # The `if` wrappers are load-bearing: this step runs under
+            # `bash -e`, so a bare `cmd; rc=$?` aborts the entire loop on the
+            # first non-zero and the remaining documents are never assessed —
+            # a gate that stops at the first breach reports less than it knows.
+            # errexit is suppressed inside an `if` condition.
             if [ -f "amended-v3/$name.hdf.json" ]; then
               engine="v3"
-              ruby scripts/ci/hdf_threshold_v3.rb \
-                --input "amended-v3/$name.hdf.json" --threshold "$threshold" \
-                > "threshold-$name.log" 2>&1
-              rc=$?
+              if ruby scripts/ci/hdf_threshold_v3.rb \
+                   --input "amended-v3/$name.hdf.json" --threshold "$threshold" \
+                   > "threshold-$name.log" 2>&1; then rc=0; else rc=$?; fi
             else
               engine="v2"
-              saf validate threshold -i "$hdf" -T "$threshold" > "threshold-$name.log" 2>&1
-              rc=$?
+              if saf validate threshold -i "$hdf" -T "$threshold" \
+                   > "threshold-$name.log" 2>&1; then rc=0; else rc=$?; fi
             fi
             if [ "$rc" -eq 0 ] && grep -q "All validation tests passed" "threshold-$name.log"; then
               echo "| \`$name\` | \`$(basename "$threshold")\` | pass ($engine) |" >> $GITHUB_STEP_SUMMARY
