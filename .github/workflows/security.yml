@@ -157,7 +157,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Gitleaks SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         continue-on-error: true
         with:
@@ -198,7 +198,7 @@ jobs:
 
       - name: Upload Brakeman SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
-        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         continue-on-error: true
         with:
           sarif_file: brakeman-results.sarif
@@ -231,7 +231,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         with:
           languages: ruby
           config: |
@@ -246,7 +246,7 @@ jobs:
               - node_modules
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         with:
           output: codeql-results
           category: codeql-sast
@@ -266,7 +266,7 @@ jobs:
 
       - name: Upload CodeQL SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
-        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         continue-on-error: true
         with:
           sarif_file: codeql-results.sarif
@@ -306,7 +306,7 @@ jobs:
 
       - name: Upload Semgrep SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
-        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         continue-on-error: true
         with:
           sarif_file: semgrep-results.sarif
@@ -439,7 +439,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy FS SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         continue-on-error: true
         with:
@@ -522,7 +522,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy container SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         continue-on-error: true
         with:
@@ -866,21 +866,21 @@ jobs:
 
       - name: Upload Ruby SBOM SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-ruby.sarif') != ''
-        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         with:
           sarif_file: grype-results/grype-ruby.sarif
           category: grype-sbom-ruby
 
       - name: Upload Trivy FS SBOM SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-fs.sarif') != ''
-        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         with:
           sarif_file: grype-results/grype-fs.sarif
           category: grype-sbom-trivy-fs
 
       - name: Upload container SBOM SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-container.sarif') != ''
-        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         with:
           sarif_file: grype-results/grype-container.sarif
           # Category deliberately unchanged (#873). The SBOM behind it switched
@@ -1572,7 +1572,7 @@ jobs:
 
       - name: Generate GitHub Step Summary
         if: always() && steps.saf_args.outputs.args != ''
-        uses: mitre/saf_action@a19f76ed3721c14aa8a1afb8eded117d8bf16a5d # v1
+        uses: mitre/saf_action@e22ffa50e549272511b722d202f8fbd152167472 # v1
         continue-on-error: true
         with:
           command_string: 'view summary ${{ steps.saf_args.outputs.args }}'
