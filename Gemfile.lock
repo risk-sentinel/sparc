@@ -605,6 +605,7 @@ PLATFORMS
   arm-linux-gnu
   arm-linux-musl
   arm64-darwin-24
+  arm64-darwin-25
   x86_64-linux
   x86_64-linux-gnu
   x86_64-linux-musl
@@ -630,6 +631,7 @@ DEPENDENCIES
   faker
   importmap-rails
   jbuilder
+  json (>= 2.19.9)
   json_schemer (~> 2.3)
   jwt (~> 3.2)
   kamal

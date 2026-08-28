@@ -6,7 +6,7 @@ catalogs seeded, in about fifteen minutes.
 ## Prerequisites
 
 - **Docker + Docker Compose** (recommended path), or
-- **Ruby 3.4.4**, **PostgreSQL 15**, and (optionally) **Redis** for local development.
+- **Ruby 3.4.10**, **PostgreSQL 15**, and (optionally) **Redis** for local development.
 
 ## 1. Run with Docker (recommended)
 

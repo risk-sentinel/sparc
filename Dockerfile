@@ -5,7 +5,7 @@
 # CVE-disposition treadmill. Multi-arch (amd64 + arm64) in build-sign-publish.
 # The prior Debian image is preserved as Dockerfile_debian for rollback; see
 # docs/dev/ubi9_migration_findings.md for the migration validation + A/B evidence.
-ARG RUBY_VERSION=3.4.4
+ARG RUBY_VERSION=3.4.10
 ARG RUBY_MAJOR=3.4
 ARG JEMALLOC_VERSION=5.3.0
 ARG HDF_LIBS_VERSION=3.5.1
