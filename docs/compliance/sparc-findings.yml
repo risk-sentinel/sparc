@@ -1,39 +1,52 @@
 # SPARC finding dispositions — the register `bin/sparc_findings_to_hdf_amendments.rb`
 # turns into HDF amendments.
 #
-# ── TWO DELIBERATE ABSENCES — do not "fix" them by adding entries (#1065) ──
+# ── THE TWO DELIBERATE ABSENCES ARE RESOLVED (#1065, 2026-08-28) ──────────
 #
-# Trivy reports four CRITICAL/HIGH findings against the shipping UBI9 image, and
-# all four are the same case: a shadowed Ruby default gem, where the vulnerable
-# Ruby-shipped copy stays on disk while Bundler loads a patched one.
+# This block used to say: do NOT "fix" resolv and uri by adding entries here.
+# That instruction has been carried out to its intended conclusion, and the
+# reason it existed is now gone. Recorded rather than deleted, because the way
+# it was closed is the precedent.
 #
-#   CVE-2026-27820  zlib    3.2.1 on disk, 3.2.3 loaded   — dispositioned below
-#   CVE-2026-41316  erb     4.0.4 on disk, 6.0.7 loaded   — dispositioned below
-#   CVE-2025-24294  resolv  0.6.0 on disk, 0.7.1 loaded   — NO ENTRY, deliberately
-#   CVE-2025-61594  uri     1.0.3 on disk, 1.1.1 loaded   — NO ENTRY, deliberately
+# Trivy reported four CRITICAL/HIGH findings against the shipping UBI9 image,
+# all the same case — a shadowed Ruby default gem, where the vulnerable
+# Ruby-shipped copy stays on disk while Bundler loads a patched one:
 #
-# Reading this file, resolv and uri look like an oversight — two of four cases
-# handled and two forgotten. They are not. **Owner decision, 2026-08-24:** record
-# the honest residual rather than write a disposition to make the number look
-# clean. `docs/compliance/thresholds/trivy-container.yml` is therefore baselined
-# at `high: 4`, the MEASURED count, not the 2 an amended count would suggest.
+#   CVE-2026-27820  zlib    3.2.1 on disk  — was dispositioned below
+#   CVE-2026-41316  erb     4.0.4 on disk  — was dispositioned below
+#   CVE-2025-24294  resolv  0.6.0 on disk  — NO ENTRY, deliberately
+#   CVE-2025-61594  uri     1.0.3 on disk  — NO ENTRY, deliberately
 #
-# Adding dispositions for them would drop the apparent residual to 2 while
-# nothing about the image changed, and would need an approval that must be
-# authored by the approver, not inferred. Both alternatives were considered and
-# rejected: `risk_adjustment` needs exactly that approval, and `false_positive`
-# contradicts the reasoning recorded for zlib and erb, which are the same defect
-# class. `deviation-requested` fails the deviation gate by design.
+# The owner decision of 2026-08-24 was to record the honest residual rather than
+# write a disposition to make the number look clean, and to hold #1065 open
+# "until the residual is genuinely 0 — i.e. the shadowed copies are gone from
+# the image, not dispositioned away."
 #
-# Note this changes nothing about what the gate counts TODAY: per #1067,
-# `hdf amend apply` no-ops on the HDF v2 shape our converters emit, so NO
-# disposition in this file currently suppresses anything and every band is a raw
-# count. The zlib and erb entries below are not doing the work they appear to do
-# either. That is tracked upstream as mitre/hdf-libs#248.
+# That is exactly what happened. **Ruby 3.4.4 -> 3.4.10** ships zlib 3.2.3,
+# erb 4.0.4.1 (the upstream backport), resolv 0.7.1 and uri 1.0.4 — each at or
+# above the version its advisory patches at. The vulnerable code left the image.
+# Measured on a clean CI runner:
 #
-# #1065 stays OPEN until the residual is genuinely 0 — i.e. the shadowed copies
-# are gone from the image, not dispositioned away. At that point set
-# trivy-container.yml's `high` band to 0.
+#   main@daf41392   4 requirement(s): failed=2 notApplicable=2 (amended)
+#   PR #1078        1 requirement(s): failed=0        <- canary only
+#
+# `docs/compliance/thresholds/trivy-container.yml` is ratcheted to `high: 0`
+# accordingly. NO disposition was added for resolv or uri, then or now.
+#
+# THE ZLIB AND ERB ENTRIES BELOW ARE KEPT, deliberately. They no longer match
+# anything in the container scan — that scan now finds nothing at all — but the
+# SBOM and grype paths key on different ids and severities (see #1064), and
+# retiring a disposition that still matches elsewhere is worse than carrying an
+# inert one. Retire them only against evidence that nothing matches, not on the
+# strength of the container gate alone.
+#
+# ONE RESIDUAL REMAINS, and it is not hidden: `json`. Ruby 3.4.10 still ships
+# json 2.9.1 on disk (CVE-2026-54696, fixed upstream in 2.19.9). It carries no
+# entry here for the same reason resolv and uri never did — it is a real
+# finding, and the honest thing is to leave it visible. It does not reach the
+# CRITICAL/HIGH gate because it is CVSS 3.7 LOW. The Gemfile pins
+# `json >= 2.19.9`, so the LOADED copy is patched (2.21.2); the on-disk copy
+# waits on upstream Ruby.
 #
 findings:
 - cve_id: GHSA-q339-8rmv-2mhv
