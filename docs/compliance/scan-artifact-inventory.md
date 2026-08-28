@@ -115,6 +115,19 @@ dispositioned". Filed upstream as **mitre/hdf-libs#248**.
 
 ---
 
+## Which severity governs
+
+Settled by #1064 and written down in
+[`severity-source-policy.md`](severity-source-policy.md): **the authoritative
+severity is the one assigned by the party who ships the code we are running** —
+Red Hat for `pkg:rpm/redhat/*`, ruby-advisory-db/GHSA for gems, the Go
+vulnerability database for Go modules, NVD only as fallback.
+
+That is why the "inventory only" rows below are ungated: `cyclonedx_sbom2hdf`
+takes the MAXIMUM across up to seven sources, which on a Red Hat image
+disagreed with Red Hat's own rating on **45 of 74** findings. Read the policy
+before changing any band.
+
 ## Every HDF must prove it ran — the canary control
 
 Added by CI-2 (#962, #985, #990), and the reason the converter column above
