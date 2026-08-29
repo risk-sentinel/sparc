@@ -56,7 +56,7 @@ GEM
       activemodel (= 8.1.3.1)
       activesupport (= 8.1.3.1)
       timeout (>= 0.4.0)
-    activerecord-import (2.2.0)
+    activerecord-import (2.3.0)
       activerecord (>= 4.2)
     activestorage (8.1.3.1)
       actionpack (= 8.1.3.1)
@@ -495,7 +495,7 @@ GEM
       rubocop-performance (>= 1.24)
       rubocop-rails (>= 2.30)
     ruby-progressbar (1.13.0)
-    rubyzip (3.4.1)
+    rubyzip (3.5.0)
     safety_net_attestation (0.5.0)
       jwt (>= 2.0, < 4.0)
     securerandom (0.4.1)
@@ -657,7 +657,7 @@ DEPENDENCIES
   roo (~> 3.0.0)
   rspec-rails (~> 8.0.4)
   rubocop-rails-omakase
-  rubyzip (~> 3.4.0)
+  rubyzip (~> 3.5.0)
   selenium-webdriver
   shoulda-matchers (~> 8.0)
   sidekiq
