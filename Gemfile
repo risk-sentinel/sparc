@@ -43,7 +43,8 @@ gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 # Ruby 3.4.10 (up from 3.4.4, #1065) makes four of the five on-disk copies patched
 # at source, which is why the image's CRITICAL/HIGH residual is 0 rather than
 # dispositioned away. Versions below are what 3.4.10 ships:
-gem "resolv", ">= 0.7.0"            # CVE-2025-24294 ReDoS  — 3.4.10 ships 0.7.1, patched
+gem "resolv", ">= 0.7.2"            # CVE-2025-24294 ReDoS + CVE-2026-80212/80213 — 3.4.10 ships
+                                    # 0.7.1 on disk, which the 2026-08-29 advisories made vulnerable
 gem "zlib", ">= 3.2.3"             # CVE-2026-27820        — 3.4.10 ships 3.2.3, patched
 gem "erb", ">= 6.0.4"             # CVE-2026-41316        — 3.4.10 ships 4.0.4.1, the upstream backport
 gem "uri", ">= 1.1.1"              # CVE-2025-61594        — 3.4.10 ships 1.0.4, patched (advisory: >= 1.0.4)
