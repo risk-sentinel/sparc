@@ -84,7 +84,7 @@ gem "webauthn", "~> 3.1"                       # FIDO2/WebAuthn passwordless + 2
 # 4.x gem, whose native ext drops OpenSSL 1.1.1 support and segfaults on dev boxes
 # whose Ruby links 1.1.1 — so the pin also keeps dev/prod at the same gem. `~> 3.3`
 # still admits all 3.x security patches. (#779)
-gem "openssl", "~> 3.3"
+gem "openssl", "~> 4.0"
 
 # Bundle the IANA tz database (pure Ruby) so TZInfo needs no system zoneinfo.
 # Not just Windows/JRuby: minimal Linux base images ship no usable
