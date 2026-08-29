@@ -159,6 +159,18 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
     end
   end
 
+  # Deviations from BOTH the active and retired registers. Retirement moves a
+  # finding out of the active file, so a check reading only the active file
+  # silently narrows every time something is remediated.
+  def committed_deviations
+    %w[sparc-findings.yml sparc-findings.retired.yml].flat_map do |name|
+      register = YAML.safe_load_file(
+        Rails.root.join("docs/compliance", name), permitted_classes: [ Date ], aliases: true
+      )
+      Array(register["findings"]).filter_map { |f| f["deviation"] }
+    end
+  end
+
   describe "the committed register" do
     it "validates, and every deviation carries a type and mitigating factors" do
       out = File.join(@dir, "real.json")
@@ -173,8 +185,16 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
       register = YAML.safe_load_file(
         Rails.root.join("docs/compliance/sparc-findings.yml"), permitted_classes: [ Date ], aliases: true
       )
-      deviations = Array(register["findings"]).filter_map { |f| f["deviation"] }
-      expect(deviations).not_to be_empty
+      # BOTH registers. A deviation is the approval for accepting a risk that
+      # EXISTS, so once a finding is remediated it retires and takes its deviation
+      # with it — as all three did on 2026-08-29, leaving the active register with
+      # none. Reading only the active file would make the loop below vacuous
+      # exactly when everything has been fixed, which is the moment it is least
+      # obvious that the check stopped checking.
+      deviations = committed_deviations
+      expect(deviations).not_to be_empty,
+        "no deviation in either register — the machinery is unexercised, so the " \
+        "validation below would assert nothing"
       deviations.each do |dev|
         expect(%w[false_positive risk_adjustment operational_requirement]).to include(dev["type"])
         expect(%w[deviation-requested deviation-approved]).to include(dev["risk_status"])
@@ -184,16 +204,17 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
     end
 
     it "never claims an approval without naming approver, PR and date" do
-      register = YAML.safe_load_file(
-        Rails.root.join("docs/compliance/sparc-findings.yml"), permitted_classes: [ Date ], aliases: true
-      )
-      Array(register["findings"]).each do |f|
-        dev = f["deviation"]
-        next unless dev && dev["risk_status"] == "deviation-approved"
+      # Also both registers, and for the same reason: retiring a finding must not
+      # be a way for an approved deviation to escape this check. This example has
+      # no non-empty guard of its own, so against the active file alone it would
+      # now pass by having nothing left to look at.
+      approved = committed_deviations.select { |d| d["risk_status"] == "deviation-approved" }
+      expect(approved).not_to be_empty, "no approved deviation in either register to check"
 
+      approved.each do |dev|
         %w[approved_by approved_in approved_at].each do |field|
           expect(dev[field].to_s.strip).not_to be_empty,
-            "#{f['cve_id']} is deviation-approved but has no #{field}"
+            "a deviation-approved finding has no #{field}: #{dev.inspect}"
         end
       end
     end
