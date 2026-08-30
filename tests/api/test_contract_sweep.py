@@ -210,6 +210,77 @@ def test_every_list_endpoint_returns_the_documented_envelope(
     )
 
 
+# #1022 — endpoints that deliberately return their WHOLE collection, with the
+# reason. These are small fixed-size lists where paging would be ceremony; they
+# are named here so "does not narrow" stays a decision rather than a discovery.
+# If any of them grows, this list is the thing to revisit.
+UNPAGINATED_BY_DESIGN = {
+    "GET /api/v1/admin/remediation_timelines": "18 rows, fixed set",
+    "GET /api/v1/guides": "15 rows, fixed set",
+    "GET /api/v1/ksi_catalog/themes": "11 rows, fixed set",
+}
+
+
+@pytest.mark.happy
+def test_every_list_endpoint_actually_narrows_when_asked(
+    admin_client: httpx.Client
+) -> None:
+    """Matrix read-check 2 — the check that found #1022.
+
+    Publishing a pagination envelope and HONOURING a pagination parameter are
+    different claims, and the envelope test above only makes the first. On
+    `/api/v1/controls` — 4,054 rows, the largest collection in the API — `?items`
+    was ignored while `meta.limit` still reported 25, so the response was
+    internally consistent and wrong. Nothing in the sweep could see it.
+
+    Asserted on the ROW COUNT, because that is the claim the caller relies on.
+    """
+    narrowed, could_not_test, offenders = [], [], []
+
+    for endpoint in COLLECTION_READ_ENDPOINTS:
+        if _id(endpoint) in UNPAGINATED_BY_DESIGN:
+            could_not_test.append((_id(endpoint), "unpaginated by design"))
+            continue
+
+        baseline = admin_client.get(endpoint.path)
+        if baseline.status_code != 200:
+            could_not_test.append((_id(endpoint), f"answered {baseline.status_code}"))
+            continue
+        body = baseline.json()
+        if not isinstance(body, dict) or not isinstance(body.get("data"), list):
+            could_not_test.append((_id(endpoint), "does not return a list"))
+            continue
+        if len(body["data"]) < 2:
+            # Cannot prove narrowing on a collection that is already short.
+            could_not_test.append((_id(endpoint), f"only {len(body['data'])} row(s) to narrow"))
+            continue
+
+        narrowed_response = admin_client.get(endpoint.path, params={"items": 1})
+        if narrowed_response.status_code != 200:
+            offenders.append(f"{_id(endpoint)}: ?items=1 answered {narrowed_response.status_code}")
+            continue
+        rows = narrowed_response.json().get("data")
+        if not isinstance(rows, list) or len(rows) != 1:
+            got = len(rows) if isinstance(rows, list) else rows
+            offenders.append(
+                f"{_id(endpoint)}: ?items=1 returned {got} rows — the parameter was ignored"
+            )
+            continue
+        narrowed.append(_id(endpoint))
+
+    assert not offenders, (
+        "list endpoints that ignore ?items (the #1022 shape — the envelope may "
+        "still look correct):\n" + "\n".join(f"  {o}" for o in offenders)
+    )
+
+    # Same reasoning as the envelope check: a probe that asserts nothing passes
+    # silently, so the subject count is itself asserted.
+    assert len(narrowed) >= 5, (
+        f"only {len(narrowed)} endpoints had enough rows to prove narrowing, which is "
+        f"too few for this check to mean anything. Not tested: {could_not_test}"
+    )
+
+
 @pytest.mark.validation
 @pytest.mark.parametrize("endpoint", ALL)
 def test_every_refusal_is_a_json_error_envelope(
