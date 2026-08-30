@@ -187,6 +187,36 @@ class CdefJsonParserService
       "[CdefJsonParserService] component indexing failed for " \
       "cdef_document_id=#{@document&.id}: #{e.class}: #{e.message}"
     )
+    record_index_degradation(e)
+  end
+
+  # #968 item 3 — the partial-success contract.
+  #
+  # A swallow that only writes a log line makes a degraded import
+  # indistinguishable from a clean one: the caller marks the document
+  # `completed` either way, and nothing an operator looks at says the component
+  # browser is missing rows for it. "It is in the logs" is not a contract; it
+  # requires someone to already suspect a problem.
+  #
+  # Recorded on the DOCUMENT rather than in a service-local counter, so every
+  # import path carries it — AWS Labs refresh, org upload, YAML and XCCDF alike.
+  # `update_column` deliberately: no validations, no callbacks, one UPDATE, and
+  # it runs after the savepoint above has rolled back, so the transaction is
+  # healthy again by this point.
+  def record_index_degradation(error)
+    return unless @document&.persisted?
+
+    @document.update_column(
+      :import_metadata,
+      (@document.import_metadata || {}).merge(
+        "component_index_failed_at" => Time.current.iso8601,
+        "component_index_error"     => "#{error.class}: #{error.message}".truncate(500)
+      )
+    )
+  rescue StandardError => bookkeeping_error
+    # Never let the bookkeeping become the failure. If this cannot be written the
+    # log line above is still there.
+    Rails.logger.warn("[CdefJsonParserService] could not record index degradation: #{bookkeeping_error.class}")
   end
 
   # #393: iterate ir["statements"][] and create cdef_control_statements.

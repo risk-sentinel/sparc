@@ -62,3 +62,44 @@ RSpec.describe CdefJsonParserService, "component-index savepoint (#968)" do
     expect { CdefDocument.count }.not_to raise_error
   end
 end
+
+# #968 item 3 — the partial-success contract.
+#
+# A swallow that only writes a log line makes a degraded import
+# indistinguishable from a clean one: the document is marked completed either
+# way. These pin the fact that a failed index is now RECORDED where an operator
+# can see it.
+RSpec.describe CdefJsonParserService, "partial-success contract (#968)" do
+  let(:document) { create(:cdef_document, name: "degradation probe", status: "processing") }
+  let(:fixture)  { Rails.root.join("spec/fixtures/files/components/aws_labs/s3-cd-v1.0.0.json") }
+
+  context "when the component index fails" do
+    before do
+      allow_any_instance_of(CdefComponentIndexer).to receive(:index!)
+        .and_raise(StandardError, "indexer exploded")
+    end
+
+    it "records the degradation on the document rather than only in the log" do
+      described_class.new(document, fixture.to_s).parse
+
+      meta = document.reload.import_metadata
+      expect(meta["component_index_failed_at"]).to be_present,
+        "a degraded import is indistinguishable from a clean one — nothing an " \
+        "operator looks at says the component browser is missing rows (#968)"
+      expect(meta["component_index_error"]).to include("indexer exploded")
+    end
+
+    it "still completes the import — the swallow stays deliberate" do
+      expect { described_class.new(document, fixture.to_s).parse }.not_to raise_error
+      expect(document.reload.cdef_controls.count).to be > 0
+    end
+  end
+
+  context "when indexing succeeds" do
+    it "leaves no degradation marker" do
+      described_class.new(document, fixture.to_s).parse
+
+      expect(document.reload.import_metadata["component_index_failed_at"]).to be_nil
+    end
+  end
+end

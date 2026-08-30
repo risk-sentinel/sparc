@@ -26,13 +26,21 @@ class AwsLabsCdefImportService
   OSCAL_VERSION = "oscal-version".freeze
 
   Result = Struct.new(
-    :discovered, :imported, :skipped_unchanged, :superseded, :errors,
+    :discovered, :imported, :skipped_unchanged, :superseded, :errors, :index_degraded,
     keyword_init: true
   ) do
+    # #968 item 3 — a run that silently degrades must SAY so where an operator
+    # looks, not only in a log line. `index_degraded` counts documents that
+    # imported but whose component index failed: real rows with real controls,
+    # missing from the component browser until `cdef:reindex` repairs them.
+    # Before this they were counted as `imported` alone, and so were
+    # indistinguishable from a clean import.
     def to_s
-      "discovered=#{discovered} imported=#{imported} " \
-        "skipped_unchanged=#{skipped_unchanged} superseded=#{superseded} " \
-        "errors=#{errors.length}"
+      base = "discovered=#{discovered} imported=#{imported} " \
+             "skipped_unchanged=#{skipped_unchanged} superseded=#{superseded} " \
+             "errors=#{errors.length}"
+      base += " index_degraded=#{index_degraded}" if index_degraded.to_i.positive?
+      base
     end
   end
 
@@ -67,6 +75,7 @@ class AwsLabsCdefImportService
   end
 
   def run(force: false)
+    @run_started_at = Time.current
     unless SparcConfig.aws_labs_cdef_enabled?
       @logger.info("[AwsLabsCdefImportService] SPARC_AWS_LABS_CDEF_ENABLED=false; skipping")
       return Result.new(discovered: 0, imported: 0, skipped_unchanged: 0, superseded: 0, errors: [])
@@ -125,11 +134,24 @@ class AwsLabsCdefImportService
     errors = @fetch_errors + errors
     report_errors(errors)
 
+    # #968 item 3 — counted from the DOCUMENTS, not a local tally. The flag is
+    # written by CdefJsonParserService, which every import path goes through, so
+    # this stays correct if the refresh ever stops being the only caller.
+    # `->>` rather than the jsonb `?` operator: `?` collides with
+    # ActiveRecord's bind placeholder, and escaping it reaches Postgres as a
+    # literal backslash. `->> ... IS NOT NULL` needs no escaping and reads the
+    # same key.
+    index_degraded = CdefDocument.aws_labs_sourced
+                                 .where("import_metadata ->> 'component_index_failed_at' IS NOT NULL")
+                                 .where(updated_at: @run_started_at..)
+                                 .count
+
     Result.new(discovered: tree_entries.length,
                imported: imported,
                skipped_unchanged: skipped_unchanged,
                superseded: superseded,
-               errors: errors)
+               errors: errors,
+               index_degraded: index_degraded)
   end
 
   # #939 — a partial import used to be indistinguishable from a clean one.
