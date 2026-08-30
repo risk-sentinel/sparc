@@ -217,6 +217,15 @@ class SapJsonParserService
         resource_data: bm_hash.except("uuid", "title", "description", "rlinks")
       )
       existing_uuids << uuid
+    # #968 — DELIBERATE swallow. One malformed back-matter resource must not
+    # discard the other resources or the SAP itself, so it is skipped and the
+    # rest continue.
+    #
+    # Safe inside the caller's transaction: RecordInvalid is raised by Ruby
+    # validations BEFORE any SQL is issued, so no statement fails and the
+    # transaction is not aborted. That is why this rescue is narrow rather than
+    # `StandardError` — a database-level error would need a SAVEPOINT (see #963,
+    # and the audit in #968).
     rescue ActiveRecord::RecordInvalid => e
       Rails.logger.warn("Skipping invalid imported back-matter resource #{uuid}: #{e.message}")
     end

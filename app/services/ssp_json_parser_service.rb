@@ -590,6 +590,10 @@ class SspJsonParserService
           link.source_uuid = entry[:source_uuid]
         end
       end
+    # #968 — DELIBERATE swallow. One unresolvable inheritance link is a missing
+    # cross-reference, not a failed import, so the rest of the link pass carries
+    # on. Safe because the create above runs in its OWN savepoint (see the #963
+    # note there): the rollback is confined to this link rather than the import.
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
       Rails.logger.warn("[SspJsonParser] inheritance link skipped: #{e.message}")
     end
