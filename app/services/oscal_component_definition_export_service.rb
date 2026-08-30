@@ -116,7 +116,28 @@ class OscalComponentDefinitionExportService
     component["props"] = props if props.present?
     component["links"] = links if links.present?
 
-    component["control-implementations"] = [ build_control_implementation(controls) ]
+    # #1051 — built FROM the controls that exist, not unconditionally.
+    #
+    # OSCAL requires `implemented-requirements` to hold at least one entry, so a
+    # document with no controls exported a `control-implementations` scaffold
+    # wrapping an empty array and failed validation:
+    #
+    #   /component-definition/components/0/control-implementations/0/
+    #     implemented-requirements: array size is less than: 1
+    #
+    # That was 163 of 232 documents — 70% of the library — all of them AWS Labs
+    # service CDEFs (#466, #939) that carry no control mappings. Not caused by the
+    # 1.2.2 default (#1020): identical at 1.1.2, so it was pre-existing and simply
+    # never measured, because every per-type export spec builds a fixture WITH
+    # controls.
+    #
+    # A component with no `control-implementations` is legal OSCAL, and it is the
+    # honest export: the document genuinely maps no controls. Whether the ingest
+    # should create such documents at all is a separate question (#1051 option 2)
+    # and deliberately not decided here.
+    #
+    # Same idiom as `props`/`links` above: emit what exists.
+    component["control-implementations"] = [ build_control_implementation(controls) ] if controls.any?
     component
   end
 
