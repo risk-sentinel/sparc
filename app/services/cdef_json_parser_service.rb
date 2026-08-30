@@ -158,8 +158,30 @@ class CdefJsonParserService
     @document.update!(component_props_data: props, component_links_data: links)
   end
 
+  # #968 — the indexer runs in its OWN savepoint, exactly as the AWS Labs
+  # `reindex_components` does after #939. `parse` calls this inside
+  # `CdefMutationService.apply`, which wraps the whole mutation in a database
+  # transaction, and `CdefComponentIndexer#index!` ends in
+  # `CdefComponent.insert_all!` — a bulk INSERT that raises RecordNotUnique or
+  # StatementInvalid on a constraint.
+  #
+  # Rescuing that without `requires_new` is the #963 shape: Postgres aborts the
+  # whole transaction on the failed statement, so this swallow does not degrade
+  # one browser row, it takes the entire CDEF import down and reports success.
+  # Everything parsed after this point raises InFailedSqlTransaction naming
+  # neither the colliding component nor the real cause.
+  #
+  # This is the choke point EVERY OSCAL CDEF passes through — AWS Labs, org
+  # upload, YAML and XCCDF alike — so the blast radius is every import path, not
+  # just the corpus refresh.
+  #
+  # The swallow itself stays deliberate (see the call site: a CDEF that imports
+  # but fails to index is a degraded browser row, not a failed import, and
+  # `cdef:reindex` repairs it). The savepoint is what keeps that decision LOCAL.
   def index_components(data)
-    CdefComponentIndexer.new(@document, data).index!
+    ActiveRecord::Base.transaction(requires_new: true) do
+      CdefComponentIndexer.new(@document, data).index!
+    end
   rescue StandardError => e
     Rails.logger.warn(
       "[CdefJsonParserService] component indexing failed for " \
