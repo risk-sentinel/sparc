@@ -233,7 +233,18 @@ namespace :oscal do
       annotation = ENV["GITHUB_ACTIONS"] ? "::error::" : ""
       oscal_log "#{annotation}OSCAL XSD fetch failed (#{failures.size} entries):"
       failures.each { |f| oscal_log "  - #{f}" }
-      exit 1
+
+      # RAISE, do not `exit`. Rake turns an unhandled exception into a non-zero
+      # exit, so the CLI behaviour is identical — but `exit` inside a task that a
+      # SPEC invokes terminates the whole rspec process, taking the rest of the
+      # suite with it and reporting "0 failures" on the way out.
+      #
+      # That is not hypothetical: chaining this task into `bundle_schemas` did
+      # exactly that. `oscal_schemas_rake_spec` stubs the fetch to return JSON,
+      # this task correctly rejected it as not-XML, and the `exit 1` killed the
+      # run at whatever point the random order had reached — 6246 examples one
+      # run, 3869 the next, always "0 failures".
+      raise "OSCAL XSD fetch failed (#{failures.size} entries): #{failures.join('; ')}"
     end
   end
 
