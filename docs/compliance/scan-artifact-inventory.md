@@ -80,8 +80,9 @@ Recorded so the same shapes are recognisable next time.
 | 12 | SARIF cannot express "critical" | `level` is error/warning/note only, so trivy's CRITICAL and HIGH both arrive as impact 0.7. `trivy-container.yml`'s `critical.max` is inert; the `high` band carries the whole posture. Measured on CVE-2026-27820, tagged CRITICAL by Trivy, impact 0.7 in the HDF. |
 | 11 | `anchoregrype2hdf` caps impact at 0.5 | No grype finding can reach a high or critical band, whatever its real severity. Tracked as #1064. |
 
-| 13 | `hdf amend apply` no-ops on our HDFs | **Dispositions in `sparc-findings.yml` suppress NOTHING.** `hdf amend` matches `baselines[].requirements[].id` (HDF v3); SAF's converters emit `profiles[].controls[].results[]` (v2), which has no `baselines` key, so `applyOverrideToDoc` returns immediately for every override. It reports "Merged output written" and exits 0. Measured: 0 of 12 amended HDFs contain a single `notApplicable`. Filed upstream as **mitre/hdf-libs#248**. |
+| 13 | `hdf amend apply` no-ops on **v2** HDFs — FIXED for gated artifacts (#1067) | `hdf amend` matches `baselines[].requirements[].id` (HDF v3); SAF's converters emit v2, which has no `baselines` key, so every override returned immediately while reporting "Merged output written" and exiting 0. Since #1067 the gate converts to v3 first and evaluates with `scripts/ci/hdf_threshold_v3.rb`. Measured on `main@daf41392`: `4 requirement(s): failed=2 notApplicable=2 (amended)` — suppression genuinely working. Artifacts still on the v2 path (`*-sbom`) remain unamendable. Upstream: **mitre/hdf-libs#248**. |
 | 14 | `saf validate threshold` exits **0** on unparseable input | Including `{"not":"hdf"}`. A rc-only gate would score a malformed HDF as a pass. `security_gate` now also requires saf's `All validation tests passed` line. |
+| 15 | **trivy can report findings for files that are not in the artifact** | Measured on the UBI9 image: 68 CRITICAL/HIGH locally vs **0** in CI on the same commit. Every gemspec finding named a version NOT on disk (`activestorage-8.1.2.gemspec` where only `8.1.3.1` exists; 35 Go CVEs attributed to `thruster`, removed in #639). Reproduced on trivy **0.69.3 AND 0.74.0**, with a fresh cache dir, `--no-cache` rebuild, explicit `--platform`, a `docker save` tarball, and a flattened `docker export` rootfs. An empty directory correctly returns 0, so the target IS read. Root cause NOT established — tracked as **#1080**. Run `scripts/ci/trivy_selfcheck.rb` before treating any local scan as evidence. |
 
 ---
 
@@ -127,6 +128,40 @@ That is why the "inventory only" rows below are ungated: `cyclonedx_sbom2hdf`
 takes the MAXIMUM across up to seven sources, which on a Red Hat image
 disagreed with Red Hat's own rating on **45 of 74** findings. Read the policy
 before changing any band.
+
+## A scan must also prove it examined the right thing (#1080)
+
+The canary below proves a scan **ran**. It does not prove the scan described the
+**artifact in front of it** — and on one occasion it did not.
+
+Local trivy reported 68 CRITICAL/HIGH against the UBI9 image where CI reported
+0. Every one of the 33 gemspec findings named a package version absent from the
+image, and 35 more were attributed to a Go binary belonging to `thruster`, a gem
+removed in #639 that has no directory in the image at all. Believing that number
+would have blocked #1065 indefinitely against findings that do not exist, and
+invited a permanent false entry in `sparc-findings.yml`.
+
+`scripts/ci/trivy_selfcheck.rb` asserts the invariant the defect violates:
+
+> every reported `PkgPath` must EXIST, and the version encoded in that path must
+> EQUAL the reported `InstalledVersion`
+
+```bash
+# scan, then verify the report describes what was scanned
+CID=$(docker create sparc-ubi9-web:latest) && docker export "$CID" -o rootfs.tar
+docker rm -f "$CID" && mkdir -p rootfs && tar xf rootfs.tar -C rootfs
+
+trivy rootfs --severity CRITICAL,HIGH --scanners vuln --format json \
+  --output trivy.json rootfs
+ruby scripts/ci/trivy_selfcheck.rb --report trivy.json --root rootfs
+```
+
+It prints what is actually on disk beside each phantom, so the defect is legible
+immediately rather than costing a session to chase. `--warn-only` reports
+without failing.
+
+**Until #1080 is resolved, a local container scan is not evidence.** CI is
+authoritative.
 
 ## Every HDF must prove it ran — the canary control
 

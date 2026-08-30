@@ -23,7 +23,7 @@ gem "roo", "~> 3.0.0"              # .xlsx file parsing (MIT)
 # gem is GPL-3.0-only and incompatible with SPARC's Apache-2.0 license
 # at runtime. Legacy .xls (Excel 97-2003 binary) support was dropped;
 # .xlsx parsing via `roo` is preserved.
-gem "rubyzip", "~> 3.4.0"          # ZIP file handling
+gem "rubyzip", "~> 3.5.0"          # ZIP file handling
 gem "activerecord-import"           # Bulk imports
 gem "caxlsx", "~> 4.5"             # Excel .xlsx generation
 gem "pagy", "~> 43.6"              # Pagination
@@ -43,7 +43,10 @@ gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 # Ruby 3.4.10 (up from 3.4.4, #1065) makes four of the five on-disk copies patched
 # at source, which is why the image's CRITICAL/HIGH residual is 0 rather than
 # dispositioned away. Versions below are what 3.4.10 ships:
-gem "resolv", ">= 0.7.0"            # CVE-2025-24294 ReDoS  — 3.4.10 ships 0.7.1, patched
+# resolv: CVE-2025-24294 (ReDoS) plus CVE-2026-80212/-80213, published 2026-08-29.
+# Ruby 3.4.10 ships 0.7.1 ON DISK, which those two advisories made vulnerable, so
+# the pin below fixes the copy Bundler LOADS; the on-disk copy waits on upstream.
+gem "resolv", ">= 0.7.2"
 gem "zlib", ">= 3.2.3"             # CVE-2026-27820        — 3.4.10 ships 3.2.3, patched
 gem "erb", ">= 6.0.4"             # CVE-2026-41316        — 3.4.10 ships 4.0.4.1, the upstream backport
 gem "uri", ">= 1.1.1"              # CVE-2025-61594        — 3.4.10 ships 1.0.4, patched (advisory: >= 1.0.4)
@@ -83,7 +86,7 @@ gem "webauthn", "~> 3.1"                       # FIDO2/WebAuthn passwordless + 2
 # 4.x gem, whose native ext drops OpenSSL 1.1.1 support and segfaults on dev boxes
 # whose Ruby links 1.1.1 — so the pin also keeps dev/prod at the same gem. `~> 3.3`
 # still admits all 3.x security patches. (#779)
-gem "openssl", "~> 3.3"
+gem "openssl", "~> 4.0"
 
 # Bundle the IANA tz database (pure Ruby) so TZInfo needs no system zoneinfo.
 # Not just Windows/JRuby: minimal Linux base images ship no usable
