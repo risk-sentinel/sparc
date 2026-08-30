@@ -59,6 +59,28 @@ RSpec.describe "Api::V1::ControlLookups", type: :request do
       expect(JSON.parse(response.body)["data"].length).to eq(3)
     end
 
+    # Regression: the family filter and the paging query were each correct alone
+    # and broken together. `page_of`/`distinct_total` drop the eager-load to run
+    # a DISTINCT ON, which also dropped the join the filter's
+    # `WHERE control_families.code = ?` depends on — PG::UndefinedTable, HTTP 500.
+    # Nothing here filtered by family, so the whole suite stayed green and the
+    # API contract suite caught it against the image instead.
+    it "still paginates when a family filter is applied" do
+      other = create(:control_family, code: "AU")
+      3.times { |i| create(:catalog_control, control_family: other, control_id: "au-#{i + 1}") }
+
+      get api_v1_control_lookups_path,
+          params: { family: "AU", items: 2 }, headers: admin_headers
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["data"].length).to eq(2)
+      expect(body["data"].map { |c| c["family_code"] }.uniq).to eq([ "AU" ])
+      # the count must describe the FILTERED collection, not the table
+      expect(body.dig("meta", "total")).to eq(3)
+      expect(body.dig("meta", "pages")).to eq(2)
+    end
+
     it "still honours ?limit — the published contract for this endpoint" do
       get api_v1_control_lookups_path, params: { limit: 1 }, headers: admin_headers
 

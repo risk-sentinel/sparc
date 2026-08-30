@@ -116,7 +116,12 @@ class ControlLookupService
   # with the distinct expression; the `id` tiebreak makes the choice among
   # duplicates deterministic rather than incidental.
   def page_of(scope)
-    ids = scope.except(:includes)
+    # `left_joins` is not redundant with the stripped `includes`: the family
+    # filter adds `WHERE control_families.code = ?`, and dropping the eager-load
+    # takes the join with it, leaving the condition referencing a table no longer
+    # in the FROM clause. Measured against the UBI9 image: PG::UndefinedTable,
+    # HTTP 500, on every family-filtered request.
+    ids = scope.except(:includes).left_joins(:control_family)
                .reorder(canonical_id: :asc, id: :asc)
                .select("DISTINCT ON (catalog_controls.canonical_id) catalog_controls.id")
                .limit(resolved_limit)
@@ -135,7 +140,7 @@ class ControlLookupService
   # there was no paging; with `pages` derived from it, it would have promised 163
   # pages of which 65 are empty.
   def distinct_total(scope)
-    scope.except(:includes).distinct.count(:canonical_id)
+    scope.except(:includes).left_joins(:control_family).distinct.count(:canonical_id)
   end
 
   def filtered_scope
