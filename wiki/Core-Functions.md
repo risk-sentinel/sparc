@@ -315,7 +315,7 @@ Schema files are cached after first load. An internal `preprocess_schema` step r
 
 **Directory:** `lib/oscal_xsd_schemas/`
 
-XML exports are validated against NIST OSCAL **v1.2.1** XSD schemas using `Nokogiri::XML::Schema` (the XSD set has not yet followed the JSON set to 1.2.2). Seven XSD schema files are stored locally:
+XML exports are validated against NIST OSCAL **v1.2.2** XSD schemas using `Nokogiri::XML::Schema` — the same version the JSON set uses and the same version an export declares. The XSD set is fetched by `bin/rails oscal:bundle_xsd_schemas` (which `oscal:bundle_schemas` invokes, so the two sets cannot separate) and a spec fails if it and `DEFAULT_VERSION` disagree (#1058). Seven XSD schema files are stored locally:
 
 | Schema File | OSCAL Model |
 |---|---|

@@ -272,7 +272,7 @@ auto-detects the format via `OscalFormatDetectionService`, and
 
 | Service | Purpose |
 |---------|---------|
-| `OscalSchemaValidationService` | Validates OSCAL against NIST schemas (`json_schemer`) — **1.2.2 by default** since v1.16.0, and any of 1.1.1–1.2.2 on request; schemas are baked into the container (air-gap safe). XML is validated against the 1.2.1 XSDs |
+| `OscalSchemaValidationService` | Validates OSCAL against NIST schemas (`json_schemer`) — **1.2.2 by default** since v1.16.0, and any of 1.1.1–1.2.2 on request; schemas are baked into the container (air-gap safe). XML is validated against the **1.2.2** XSDs, fetched by `oscal:bundle_xsd_schemas` and pinned to `DEFAULT_VERSION` by a spec (#1058) |
 | `PublicationValidationService` | Pre-publish readiness checks |
 | `CatalogImportValidationService` | Validates imported catalogs before persistence |
 
