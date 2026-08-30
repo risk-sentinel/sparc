@@ -103,7 +103,21 @@ class AwsLabsCdefImportService
       when :skipped_unchanged then skipped_unchanged += 1
       else nil # import_one only returns the states above
       end
-    rescue => e
+    # #968 — the rescued list is explicit, for the same reason the fetch loop
+    # above states it: these are the ways SOMEONE ELSE'S content can be wrong.
+    # A bare `rescue =>` caught those identically to a NoMethodError in our own
+    # code, and both landed in the same `errors` array — so an operator reading
+    # `errors=39` could not tell "39 files have an upstream schema gap" from "39
+    # files hit a bug in SPARC". An unexpected class now raises and fails the
+    # run, which is the honest outcome for a bug in ours.
+    #
+    # Safe to rescue at this level: the per-candidate work runs inside
+    # `write_through_parser`'s own transaction (#939), so a failure has already
+    # rolled back cleanly, and this loop is not itself inside a transaction.
+    rescue DocumentParseError,
+           CdefMutationService::ValidationError,
+           JSON::ParserError,
+           ActiveRecord::RecordInvalid => e
       @logger.error("[AwsLabsCdefImportService] Failed to import #{candidate[:path]}: #{e.class} #{e.message}")
       errors << { path: candidate[:path], error: "#{e.class}: #{e.message}" }
     end
