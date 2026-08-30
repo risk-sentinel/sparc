@@ -286,7 +286,20 @@ class SspJsonParserService
       "raw_links"  => auth["links"] || [],
       "raw_props"  => auth["props"] || []
     )
-    la.save!
+    # #968 — the save runs in its OWN savepoint, for the same reason the
+    # statement create at `parse_statements` does. The rescue below already
+    # cited #963, but citing the rule is not applying it: without
+    # `requires_new`, a RecordNotUnique here does not skip the row, it kills the
+    # import. Postgres aborts the whole transaction on the failed statement, and
+    # `parse_control_implementation` and `link_inheritances!` — both of which run
+    # after this inside the same `parse_from_hash` transaction — then raise
+    # InFailedSqlTransaction.
+    #
+    # Not hypothetical: the comment above records exactly this happening, when
+    # the same OSCAL SSP imported into two boundaries collided on a globally
+    # unique uuid. The uuid-claiming fix removed that particular trigger; it did
+    # not make the rescue safe for any other collision.
+    ActiveRecord::Base.transaction(requires_new: true) { la.save! }
   rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
     # A leveraged-authorization row that cannot be written must not take the
     # rest of the import down with it — the same rule #963 established for
