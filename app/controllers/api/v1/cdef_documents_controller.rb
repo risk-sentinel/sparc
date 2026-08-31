@@ -437,6 +437,14 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       # A metadata-only create is `status: completed` yet content-incomplete.
       content_complete: cdef.content_complete?,
       content_completeness_gaps: cdef.content_completeness_gaps,
+      # #968 item 3 — a degraded import must be visible to whoever reads the
+      # document, not only in a log line. `index_components` swallows an indexer
+      # failure by design so a parsed document is not lost; without this the
+      # result was indistinguishable from a clean import at every surface.
+      # INDEX-level, not detail-only: the whole point is that a consumer listing
+      # documents can see which ones understate their components.
+      component_index_degraded: cdef.component_index_degraded?,
+      component_index_failed_at: cdef.component_index_failed_at,
       file_type: cdef.file_type,
       cdef_type: cdef.cdef_type,
       cdef_version: cdef.cdef_version,

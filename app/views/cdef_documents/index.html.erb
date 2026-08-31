@@ -162,6 +162,15 @@
                     Incomplete
                   </span>
                 <% end %>
+                <%# #968 item 3 — visible in the LIST as well, so a degraded row is
+                    spotted without opening each document. %>
+                <% if doc.component_index_degraded? %>
+                  <span class="badge-warn rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;"
+                        data-testid="cdef-index-degraded"
+                        title="Component index failed during import; controls are intact.">
+                    Index degraded
+                  </span>
+                <% end %>
               <% end %>
             </td>
             <td><%= doc.cdef_controls.count %></td>
