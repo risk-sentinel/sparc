@@ -109,6 +109,30 @@ class CdefDocument < ApplicationRecord
     import_metadata.is_a?(Hash) && import_metadata["component_index_failed_at"].present?
   end
 
+  # Record a component-index failure. Lives on the model because TWO ingest paths
+  # can hit it — CdefJsonParserService (upload / YAML / XCCDF) and
+  # AwsLabsCdefImportService#reindex_components (the weekly refresh) — and #968
+  # item 4 found the second one writing only a log line, which would have left
+  # every AWS Labs document silently degraded with the badge dark.
+  #
+  # `update_column` on purpose: the caller is recovering from a failed statement
+  # and must not run validations or callbacks that could raise again.
+  def record_component_index_failure!(error)
+    return false unless persisted?
+
+    update_column(
+      :import_metadata,
+      (import_metadata || {}).merge(
+        "component_index_failed_at" => Time.current.iso8601,
+        "component_index_error"     => "#{error.class}: #{error.message}".truncate(500)
+      )
+    )
+    true
+  rescue StandardError
+    # Never let the bookkeeping become the failure; the caller's log line stands.
+    false
+  end
+
   # When the index failed, as an ISO8601 string; nil when it never has.
   def component_index_failed_at
     return nil unless component_index_degraded?

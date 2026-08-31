@@ -206,17 +206,16 @@ class CdefJsonParserService
   def record_index_degradation(error)
     return unless @document&.persisted?
 
-    @document.update_column(
-      :import_metadata,
-      (@document.import_metadata || {}).merge(
-        "component_index_failed_at" => Time.current.iso8601,
-        "component_index_error"     => "#{error.class}: #{error.message}".truncate(500)
-      )
+    # The write itself lives on the model (#968 item 4): the AWS Labs refresh path
+    # needs the identical marker, and two copies of it would drift. It swallows its
+    # own failure and returns false rather than raising — the caller is already
+    # recovering from a failed statement.
+    return if @document.record_component_index_failure!(error)
+
+    Rails.logger.warn(
+      "[CdefJsonParserService] could not record index degradation for " \
+      "cdef_document_id=#{@document.id}"
     )
-  rescue StandardError => bookkeeping_error
-    # Never let the bookkeeping become the failure. If this cannot be written the
-    # log line above is still there.
-    Rails.logger.warn("[CdefJsonParserService] could not record index degradation: #{bookkeeping_error.class}")
   end
 
   # #393: iterate ir["statements"][] and create cdef_control_statements.

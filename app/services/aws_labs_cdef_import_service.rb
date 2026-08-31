@@ -446,6 +446,10 @@ class AwsLabsCdefImportService
     end
   rescue StandardError => e
     @logger.warn("[AwsLabsCdefImportService] reindex failed for #{document.id}: #{e.class}: #{e.message}")
+    # #968 item 4 — a log line is not a contract. Without this marker an AWS Labs
+    # document whose component index failed reports as a clean import at every
+    # surface, exactly the gap item 3 closed for the upload path.
+    document.record_component_index_failure!(e)
   end
 
   # Issue #491 / #494 -- Two-hop NIST enrichment.
