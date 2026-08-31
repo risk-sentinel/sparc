@@ -26,13 +26,21 @@ class AwsLabsCdefImportService
   OSCAL_VERSION = "oscal-version".freeze
 
   Result = Struct.new(
-    :discovered, :imported, :skipped_unchanged, :superseded, :errors,
+    :discovered, :imported, :skipped_unchanged, :superseded, :errors, :index_degraded,
     keyword_init: true
   ) do
+    # #968 item 3 — a run that silently degrades must SAY so where an operator
+    # looks, not only in a log line. `index_degraded` counts documents that
+    # imported but whose component index failed: real rows with real controls,
+    # missing from the component browser until `cdef:reindex` repairs them.
+    # Before this they were counted as `imported` alone, and so were
+    # indistinguishable from a clean import.
     def to_s
-      "discovered=#{discovered} imported=#{imported} " \
-        "skipped_unchanged=#{skipped_unchanged} superseded=#{superseded} " \
-        "errors=#{errors.length}"
+      base = "discovered=#{discovered} imported=#{imported} " \
+             "skipped_unchanged=#{skipped_unchanged} superseded=#{superseded} " \
+             "errors=#{errors.length}"
+      base += " index_degraded=#{index_degraded}" if index_degraded.to_i.positive?
+      base
     end
   end
 
@@ -67,6 +75,7 @@ class AwsLabsCdefImportService
   end
 
   def run(force: false)
+    @run_started_at = Time.current
     unless SparcConfig.aws_labs_cdef_enabled?
       @logger.info("[AwsLabsCdefImportService] SPARC_AWS_LABS_CDEF_ENABLED=false; skipping")
       return Result.new(discovered: 0, imported: 0, skipped_unchanged: 0, superseded: 0, errors: [])
@@ -103,7 +112,21 @@ class AwsLabsCdefImportService
       when :skipped_unchanged then skipped_unchanged += 1
       else nil # import_one only returns the states above
       end
-    rescue => e
+    # #968 — the rescued list is explicit, for the same reason the fetch loop
+    # above states it: these are the ways SOMEONE ELSE'S content can be wrong.
+    # A bare `rescue =>` caught those identically to a NoMethodError in our own
+    # code, and both landed in the same `errors` array — so an operator reading
+    # `errors=39` could not tell "39 files have an upstream schema gap" from "39
+    # files hit a bug in SPARC". An unexpected class now raises and fails the
+    # run, which is the honest outcome for a bug in ours.
+    #
+    # Safe to rescue at this level: the per-candidate work runs inside
+    # `write_through_parser`'s own transaction (#939), so a failure has already
+    # rolled back cleanly, and this loop is not itself inside a transaction.
+    rescue DocumentParseError,
+           CdefMutationService::ValidationError,
+           JSON::ParserError,
+           ActiveRecord::RecordInvalid => e
       @logger.error("[AwsLabsCdefImportService] Failed to import #{candidate[:path]}: #{e.class} #{e.message}")
       errors << { path: candidate[:path], error: "#{e.class}: #{e.message}" }
     end
@@ -111,11 +134,24 @@ class AwsLabsCdefImportService
     errors = @fetch_errors + errors
     report_errors(errors)
 
+    # #968 item 3 — counted from the DOCUMENTS, not a local tally. The flag is
+    # written by CdefJsonParserService, which every import path goes through, so
+    # this stays correct if the refresh ever stops being the only caller.
+    # `->>` rather than the jsonb `?` operator: `?` collides with
+    # ActiveRecord's bind placeholder, and escaping it reaches Postgres as a
+    # literal backslash. `->> ... IS NOT NULL` needs no escaping and reads the
+    # same key.
+    index_degraded = CdefDocument.aws_labs_sourced
+                                 .where("import_metadata ->> 'component_index_failed_at' IS NOT NULL")
+                                 .where(updated_at: @run_started_at..)
+                                 .count
+
     Result.new(discovered: tree_entries.length,
                imported: imported,
                skipped_unchanged: skipped_unchanged,
                superseded: superseded,
-               errors: errors)
+               errors: errors,
+               index_degraded: index_degraded)
   end
 
   # #939 — a partial import used to be indistinguishable from a clean one.
@@ -410,6 +446,10 @@ class AwsLabsCdefImportService
     end
   rescue StandardError => e
     @logger.warn("[AwsLabsCdefImportService] reindex failed for #{document.id}: #{e.class}: #{e.message}")
+    # #968 item 4 — a log line is not a contract. Without this marker an AWS Labs
+    # document whose component index failed reports as a clean import at every
+    # surface, exactly the gap item 3 closed for the upload path.
+    document.record_component_index_failure!(e)
   end
 
   # Issue #491 / #494 -- Two-hop NIST enrichment.

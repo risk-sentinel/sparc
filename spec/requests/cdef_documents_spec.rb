@@ -143,8 +143,21 @@ RSpec.describe "CdefDocuments", type: :request do
   end
 
   describe "GET /cdef_documents/:id/download_yaml (#451)" do
+    # #1051 — the failure is INDUCED, not inherited.
+    #
+    # This relied on `create(:cdef_document)` being unexportable: a CDEF with no
+    # controls emitted an empty `implemented-requirements` array, which OSCAL
+    # rejects. That WAS the #1051 defect, so this example asserted a bug as its
+    # own precondition and went green for the wrong reason until the exporter was
+    # fixed.
+    #
+    # The behaviour under test is the CONTROLLER's — a schema failure must
+    # redirect with a warning rather than 500. Raising from the exporter tests
+    # exactly that, and keeps working however the exporter changes.
     it "redirects with flash warning when validation fails (no 500)" do
       cdef = create(:cdef_document)
+      allow_any_instance_of(OscalComponentDefinitionExportService)
+        .to receive(:export).and_raise(OscalValidationError, "induced schema validation failure")
       get download_yaml_cdef_document_path(cdef)
       expect(response).to redirect_to(
         cdef_document_path(cdef, oscal_validation_failed: 1, oscal_format: "yaml")
@@ -161,8 +174,11 @@ RSpec.describe "CdefDocuments", type: :request do
   end
 
   describe "GET /cdef_documents/:id/download_xml (#451)" do
+    # #1051 — induced, for the same reason as the YAML sibling above.
     it "redirects with flash warning when validation fails (no 500)" do
       cdef = create(:cdef_document)
+      allow_any_instance_of(OscalComponentDefinitionExportService)
+        .to receive(:export).and_raise(OscalValidationError, "induced schema validation failure")
       get download_xml_cdef_document_path(cdef)
       expect(response).to redirect_to(
         cdef_document_path(cdef, oscal_validation_failed: 1, oscal_format: "xml")

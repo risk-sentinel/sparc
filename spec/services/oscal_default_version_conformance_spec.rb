@@ -109,6 +109,59 @@ RSpec.describe "OSCAL conformance at the default version" do
       "a validation that silently checks the wrong thing."
   end
 
+  # #1058 — the XSD half, which this gate did not cover and so did not catch.
+  #
+  # v1.16.0 moved DEFAULT_VERSION to 1.2.2 and carried `lib/oscal_schemas/` with
+  # it. `lib/oscal_xsd_schemas/` stayed at 1.2.1 for an entire release, because
+  # nothing fetched it — the files were placed by hand while the JSON set had a
+  # rake task. So every XML export declared `oscal-version: 1.2.2` and was
+  # validated by `validate_xml` against a DIFFERENT release.
+  #
+  # No export is known to have failed because of it: 1.2.1 and 1.2.2 are
+  # near-identical. That is precisely why a gate is the right answer rather than
+  # vigilance — the drift was invisible in every result it touched.
+  #
+  # `xs:schema/@version` rather than a `$id`: XSDs carry their version as an
+  # attribute on the root element, where the JSON schemas carry it in `$id`.
+  it "ships an XSD set at the default version, not merely a JSON one" do
+    mismatched = OscalSchemaValidationService::XSD_SCHEMA_MAP.filter_map do |model, file|
+      path = Rails.root.join("lib/oscal_xsd_schemas", file)
+      next "#{file} is missing" unless path.exist?
+
+      declared = Nokogiri::XML(path.read).root&.[]("version")
+      "#{file} declares #{declared || '(no version attribute)'}" unless declared == version
+    end
+
+    expect(mismatched).to be_empty,
+      "lib/oscal_xsd_schemas/ does not match DEFAULT_VERSION (#{version}): " \
+      "#{mismatched.join('; ')}. An XML export declares the default version in its " \
+      "metadata and is checked against these files, so a mismatch means `validated` " \
+      "names a different release from the one the document claims. Run " \
+      "`bin/rails oscal:bundle_xsd_schemas`."
+  end
+
+  # The JSON and XSD sets are fetched by two different code paths, so agreeing
+  # with DEFAULT_VERSION individually is not the same as agreeing with each
+  # other. This is the assertion that makes them one set rather than two.
+  it "keeps the JSON and XSD sets on the same version as each other" do
+    json_versions = OscalSchema::DOCUMENT_TYPE_MAP.filter_map do |doc_type, config|
+      next if doc_type.to_s == "mapping" && !OscalSchema::MAPPING_VERSIONS.include?(version)
+
+      id = JSON.parse(Rails.root.join("lib/oscal_schemas", config[:file]).read)["$id"].to_s
+      id[%r{/oscal/([\d.]+)/}, 1]
+    end.uniq
+
+    xsd_versions = OscalSchemaValidationService::XSD_SCHEMA_MAP.values.filter_map do |file|
+      path = Rails.root.join("lib/oscal_xsd_schemas", file)
+      Nokogiri::XML(path.read).root&.[]("version") if path.exist?
+    end.uniq
+
+    expect(json_versions).to eq(xsd_versions),
+      "the two schema sets disagree — JSON at #{json_versions.inspect}, XSD at " \
+      "#{xsd_versions.inspect}. They are fetched by different paths, so one can " \
+      "move without the other (#1058)."
+  end
+
   it "actually loads the default version rather than falling back" do
     catalog = create(:control_catalog, name: "Fallback Probe")
     family  = create(:control_family, control_catalog: catalog, code: "AC", name: "Access Control", sort_order: 1)

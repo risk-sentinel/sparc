@@ -279,6 +279,11 @@ def pytest_runtest_makereport(item, call):
     names = [m.args[0] for m in item.iter_markers(name="posture") if m.args]
     if names:
         report._sparc_postures = names
+    # #968 — stash the phase report so the navigation-diagnostics fixture can see
+    # whether the test actually failed. Extends this hook rather than declaring a
+    # second one: pytest would keep both, but a duplicate definition in the same
+    # module silently replaces the posture accounting above.
+    setattr(item, f"_smoke_rep_{report.when}", report)
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
@@ -347,3 +352,81 @@ def pytest_sessionfinish(session, exitstatus):
 
     if missing and exitstatus == 0:
         session.exitstatus = 1
+
+
+# ---------------------------------------------------------------------------
+# Navigation-timeout diagnostics (#968)
+#
+# Three separate `Timeout 30000ms exceeded` failures were seen in one session —
+# two browsers, three different pages, each passing on its own afterwards. The
+# server was never the cause: the slowest request in the whole 14-minute window
+# was 4.19s, and the page that "timed out" answered in 0.096s when asked
+# directly. Playwright was waiting on the `load` event, which never fired.
+#
+# The failure as reported names the PAGE but not the RESOURCE, so every
+# occurrence cost a manual re-run to decide whether it was real. This records
+# which requests were still in flight when the test failed — the ones that could
+# hold `load` open — so the next occurrence identifies itself.
+#
+# Diagnostics only. It changes no timeout and fails no test that would otherwise
+# pass; a test that fails still fails, with more to read.
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(autouse=True)
+def _navigation_diagnostics(request):
+    """Report in-flight requests and console errors when a browser test fails."""
+    # Only engage where a browser context is already in play — never pull one
+    # into a test that did not ask for it.
+    if "context" not in request.fixturenames:
+        yield
+        return
+
+    context = request.getfixturevalue("context")
+    inflight: dict[object, str] = {}
+    console_errors: list[str] = []
+
+    def _started(req):
+        inflight[req] = req.url
+
+    def _settled(req):
+        inflight.pop(req, None)
+
+    def _console(msg):
+        if msg.type in ("error", "warning"):
+            console_errors.append(f"{msg.type}: {msg.text}"[:200])
+
+    context.on("request", _started)
+    context.on("requestfinished", _settled)
+    context.on("requestfailed", _settled)
+    context.on("console", _console)
+
+    yield
+
+    report = getattr(request.node, "_smoke_rep_call", None)
+    if report is None or not report.failed:
+        return
+
+    pending = list(inflight.values())
+
+    # Speak up for TIMEOUT failures even when nothing is pending — "the network
+    # was idle and `load` still never fired" is itself the finding, and staying
+    # silent there would reproduce the very gap this exists to close. Ordinary
+    # assertion failures stay quiet unless there is something to show.
+    is_timeout = "Timeout" in (report.longreprtext or "")
+    if not pending and not console_errors and not is_timeout:
+        return
+
+    print("\n--- navigation diagnostics (#968) ---")
+    if pending:
+        print(f"  {len(pending)} request(s) still in flight when the test failed:")
+        for url in pending[:10]:
+            print(f"    PENDING  {url[:160]}")
+        if len(pending) > 10:
+            print(f"    ... and {len(pending) - 10} more")
+        print("  A request that never settles holds the `load` event open, which is")
+        print("  what a `Page.goto ... waiting until \"load\"` timeout is reporting.")
+    else:
+        print("  no requests were in flight — `load` was not blocked on the network")
+    for line in console_errors[:5]:
+        print(f"    CONSOLE  {line}")
+    print("--- end diagnostics ---")

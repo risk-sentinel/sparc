@@ -399,8 +399,24 @@ class SarJsonParserService
       next if stmt.blank?
       ctrl.sar_control_fields.create!(field_name: "control_text", field_value: stmt)
     end
-  rescue StandardError => e
-    Rails.logger.warn("[SarJsonParserService] catalog lookup failed: #{e.message}")
+  # #968 — DELIBERATE swallow, and now a narrow one.
+  #
+  # Control text copied from the catalog is an enrichment: a SAR without it is
+  # complete and usable, just less readable, so one bad lookup must not fail the
+  # import. That decision stands.
+  #
+  # What changed is the breadth. `rescue StandardError` also absorbed NoMethodError
+  # and friends — a bug in SPARC reported as "catalog lookup failed" and nothing
+  # else. The listed classes are the ways the DATA can be wrong; anything else
+  # raises.
+  #
+  # This runs inside `parse_from_hash`'s transaction (via
+  # synthesize_controls_from_results), so the narrowing matters twice: a
+  # transaction-aborting error is no longer swallowed here. `sar_control_fields`
+  # carries no unique index, so RecordNotUnique is not currently reachable — the
+  # narrow list keeps that true if one is ever added.
+  rescue ActiveRecord::RecordInvalid, NoMatchingPatternError, KeyError => e
+    Rails.logger.warn("[SarJsonParserService] catalog lookup failed: #{e.class}: #{e.message}")
   end
 
   def normalize_catalog_id(id)

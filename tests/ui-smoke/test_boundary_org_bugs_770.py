@@ -131,7 +131,18 @@ class TestAdminOrgAssociation:
             "associate-boundary control missing from the admin org screen"
         )
         # The fresh unassigned boundary appears as an option in the picker.
+        #
+        # Read the OPTION text, not the select's inner_text(). `inner_text()` is
+        # rendering-dependent, and Firefox does not expose <select> option text
+        # through it — measured on firefox 150: option count 2 with the right
+        # labels, `text_content()` correct, but `inner_text()` == ''. Chromium
+        # returns the options joined, so the old substring assertion passed on
+        # Chrome and could never pass on Firefox. Matching an exact option is
+        # also stricter than a substring match against the whole control.
         picker = authed_page.locator("select#assign_boundary_select")
         assert picker.count() == 1
-        assert unassigned_boundary["name"] in picker.inner_text()
+        options = [t.strip() for t in picker.locator("option").all_text_contents()]
+        assert unassigned_boundary["name"] in options, (
+            f"boundary {unassigned_boundary['name']!r} not offered; options: {options}"
+        )
         assert_no_csp_violations(authed_page, during="admin org association render")

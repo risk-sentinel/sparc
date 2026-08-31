@@ -21,23 +21,27 @@ class ControlLookupService
   # SPARC ships with (NIST Rev 4, Rev 5, FedRAMP KSI).
   OVERFETCH = 3
 
-  Result = Struct.new(:controls, :total, :limit, :profile, keyword_init: true) do
+  Result = Struct.new(:controls, :total, :limit, :page, :pages, :profile, keyword_init: true) do
     def scoped_to_profile? = profile.present?
   end
 
-  def initialize(q: nil, family: nil, limit: nil, authorization_boundary_id: nil)
+  def initialize(q: nil, family: nil, limit: nil, page: nil, authorization_boundary_id: nil)
     @q = q.presence
     @family = family.presence
     @limit = limit
+    @page = page
     @authorization_boundary_id = authorization_boundary_id.presence
   end
 
   def call
     scope = filtered_scope
+    total = distinct_total(scope)
     Result.new(
-      controls: distinct_by_identifier(scope),
-      total: scope.count,
+      controls: page_of(scope),
+      total: total,
       limit: resolved_limit,
+      page: resolved_page,
+      pages: total.zero? ? 0 : (total.to_f / resolved_limit).ceil,
       profile: scoped_profile
     )
   end
@@ -94,11 +98,49 @@ class ControlLookupService
   #
   # Over-fetches to fill the page after deduplication, bounded so a broad search
   # cannot pull the whole catalog into memory.
-  def distinct_by_identifier(scope)
-    scope.limit(resolved_limit * OVERFETCH)
-         .to_a
-         .uniq(&:canonical_identifier)
-         .first(resolved_limit)
+  # #1022 — one page of DISTINCT identifiers, deduplicated and ordered in SQL.
+  #
+  # This replaced an over-fetch-and-uniq-in-Ruby pass, which could not support
+  # `page` for two reasons:
+  #
+  #   1. `base_scope` carries NO `ORDER BY`, so the rows Postgres returned — and
+  #      therefore which duplicate `uniq` kept — were arbitrary. Paging over an
+  #      unordered result is unstable: the same page can return different rows on
+  #      two identical requests, and a row can appear on two pages or none.
+  #   2. Deduplicating AFTER the fetch means a database OFFSET does not line up
+  #      with deduplicated positions, so page N would have skipped the wrong rows.
+  #
+  # `canonical_id` is a real column and is fully backfilled (measured: 0 NULLs,
+  # and SQL DISTINCT agrees with the Ruby dedup at 2,447 of 4,054 rows), so the
+  # deduplication belongs in the query. DISTINCT ON requires the ORDER BY to lead
+  # with the distinct expression; the `id` tiebreak makes the choice among
+  # duplicates deterministic rather than incidental.
+  def page_of(scope)
+    # `left_joins` is not redundant with the stripped `includes`: the family
+    # filter adds `WHERE control_families.code = ?`, and dropping the eager-load
+    # takes the join with it, leaving the condition referencing a table no longer
+    # in the FROM clause. Measured against the UBI9 image: PG::UndefinedTable,
+    # HTTP 500, on every family-filtered request.
+    ids = scope.except(:includes).left_joins(:control_family)
+               .reorder(canonical_id: :asc, id: :asc)
+               .select("DISTINCT ON (catalog_controls.canonical_id) catalog_controls.id")
+               .limit(resolved_limit)
+               .offset((resolved_page - 1) * resolved_limit)
+               .map(&:id)
+
+    CatalogControl.includes(:control_family)
+                  .where(id: ids)
+                  .sort_by(&:canonical_identifier)
+  end
+
+  # The count of what this endpoint can actually return.
+  #
+  # `scope.count` reported 4,054 while only 2,447 distinct identifiers exist, so
+  # `meta.total` described the table rather than the collection. Harmless while
+  # there was no paging; with `pages` derived from it, it would have promised 163
+  # pages of which 65 are empty.
+  def distinct_total(scope)
+    scope.except(:includes).left_joins(:control_family).distinct.count(:canonical_id)
   end
 
   def filtered_scope
@@ -143,5 +185,11 @@ class ControlLookupService
 
   def resolved_limit
     (@limit.presence&.to_i || DEFAULT_LIMIT).clamp(1, MAX_LIMIT)
+  end
+
+  # Page 0 and negative pages are the same request as page 1; a caller cannot
+  # offset backwards past the start.
+  def resolved_page
+    [ (@page.presence&.to_i || 1), 1 ].max
   end
 end

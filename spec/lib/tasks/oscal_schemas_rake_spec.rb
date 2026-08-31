@@ -131,9 +131,20 @@ RSpec.describe "lib/tasks/oscal_schemas.rake", type: :task do
 
     let(:fake_body) { '{"$id":"http://localhost/x","type":"object"}' }
 
+    # #1058 — `bundle_schemas` now invokes `bundle_xsd_schemas`, so the stub has
+    # to serve BOTH kinds. Returning JSON for a `.xsd` URL made the XSD task
+    # correctly reject it as not-XML, which is the task working — but it meant
+    # this spec was exercising a failure path it never intended to.
+    let(:fake_xsd) do
+      %(<?xml version="1.0"?><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" ) +
+        %(version="#{OscalSchema::DEFAULT_VERSION}"><xs:element name="x"/></xs:schema>)
+    end
+
     before do
       allow(Rails).to receive(:root).and_return(Pathname.new(tmpdir))
-      allow_any_instance_of(Object).to receive(:fetch_following_redirects).and_return(fake_body)
+      allow_any_instance_of(Object).to receive(:fetch_following_redirects) do |_receiver, url|
+        url.to_s.end_with?(".xsd") ? fake_xsd : fake_body
+      end
     end
 
     it "writes manifest.json with one entry per (version × document_type)" do
