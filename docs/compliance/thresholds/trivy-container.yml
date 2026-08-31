@@ -11,52 +11,53 @@
 # image. 45 of 74 findings differed. Red Hat's rating is the one that describes
 # a UBI9 image.
 #
-# Measured 2026-08-24 on main@a8991ae7 — the 4 raw findings are all shadowed
-# Ruby default gems (vulnerable copy on disk, patched copy loaded by Bundler):
-#   CVE-2026-27820  zlib    CRITICAL (impact 0.7 — see CAVEAT)
-#   CVE-2026-41316  erb     HIGH
-#   CVE-2025-24294  resolv  HIGH
-#   CVE-2025-61594  uri     HIGH
-# Residual after amendments: 0 critical, 4 high.
+# MEASURED 0, and the band is ratcheted to match (#1065, 2026-08-28).
 #
-# BASELINE measured 2026-08-24 from PR #1066 run 32787093249 — the first run in
-# which this gate ever executed. RATCHET: high may only ever go DOWN; target 0.
+# History, because the number moving to 0 is the whole point of #1065:
 #
-# WHY 4 AND NOT 2. An earlier draft of this file said 2, on the reasoning that
-# zlib and erb carry approved deviations and would be amended to notApplicable.
-# The first real run refuted that: in ALL TWELVE amended HDFs, **not one control
-# came out `notApplicable`** — every disposition in sparc-findings.yml, the two
-# `false_positive` entries included, left its finding `failed`.
+#   main@daf41392   4 requirement(s): failed=2 notApplicable=2 (amended)
+#   PR #1078        1 requirement(s): failed=0        <- canary only
 #
-# CAUSE, since established by reproduction rather than inference (it is NOT the
-# poam/deferred semantics, which was the first guess): `hdf amend apply` matches
-# `baselines[].requirements[].id` — the HDF v3 shape — while SAF's converters
-# emit v2 (`profiles[].controls[].results[]`), which has no `baselines` key at
-# all. Every override hits an early `return`, and the command still prints
-# "Merged output written" and exits 0. The same amendments document applied to a
-# v3 document sets `effectiveStatus=notApplicable` correctly, so the register and
-# the generator are fine. Filed upstream as mitre/hdf-libs#248.
+# The four were all shadowed Ruby default gems — the vulnerable Ruby-shipped
+# copy sitting on disk while Bundler loaded a patched one:
 #
-# Until that is resolved, NO band in this directory can be justified by "these
-# findings are dispositioned" — every band is applied to the raw count.
+#   CVE-2026-27820  zlib    3.2.1 on disk
+#   CVE-2026-41316  erb     4.0.4 on disk
+#   CVE-2025-24294  resolv  0.6.0 on disk
+#   CVE-2025-61594  uri     1.0.3 on disk
 #
-# That question is NOT settled here, and the band records what was MEASURED
-# rather than what the disposition register implies. Do not lower this to 2 on
-# the assumption that amendments suppress; verify against a real run first.
+# They are gone because **Ruby itself moved**, 3.4.4 -> 3.4.10, which ships
+# zlib 3.2.3, erb 4.0.4.1 (the upstream backport), resolv 0.7.1 and uri 1.0.4 —
+# every one at or above the version its advisory patches at. The vulnerable code
+# is no longer in the image. Nothing was dispositioned to achieve this, so the
+# owner decision of 2026-08-24 (record the honest residual rather than write a
+# disposition to make the number look clean) is satisfied rather than bypassed.
 #
-# The 2 are `resolv` and `uri`, the same shadowed-default-gem case as zlib and
-# erb — the vulnerable Ruby-shipped copy sits on disk while Bundler loads a
-# patched one (resolv 0.7.1, uri 1.1.1). They are NOT dispositioned, so unlike
-# zlib/erb they still count. Owner decision 2026-08-24: record the honest
-# residual now rather than write a disposition to make the number look clean.
+# Note the two readings that made `uri` look unfixable for a while: our Gemfile
+# pins `>= 1.1.1`, but the ADVISORY patches at `>= 1.0.4`. Read the advisory,
+# not the pin, when deciding whether an upstream release closes a finding.
 #
-# `uri` also had no Gemfile override at all until this bundle — the lockfile
-# carried 1.1.1 only transitively, so a resolver change could silently have
-# dropped back to a vulnerable version. That pin is in place; the disposition
-# is what remains.
+# RATCHET: high may only ever go DOWN. It is now 0, so ANY new critical/high
+# against the image fails this gate. That is the intent. Do NOT raise it to
+# accommodate a new finding — a raise means the band is being used to hide
+# something. Fix the finding, or take a disposition through the register with a
+# real approval.
 #
-# DO NOT raise this to accommodate a new finding. A third undispositioned high
-# means the band is being used to hide something. Close #1065 and set it to 0.
+# ONE KNOWN RESIDUAL, deliberately not gated here: `json`. Ruby 3.4.10 still
+# ships json 2.9.1 on disk (CVE-2026-54696, fixed upstream in 2.19.9). It does
+# not appear in this gate because the scan is `--severity CRITICAL,HIGH` and
+# that CVE is CVSS 3.7 LOW. The Gemfile pins `json >= 2.19.9` so the LOADED copy
+# is patched (2.21.2). If a future advisory raises its severity, this band will
+# start failing — correctly, and that is the moment to act on the on-disk copy.
+#
+# AMENDMENTS NOW APPLY on this artifact (#1067). Earlier revisions of this file
+# warned that no band could be justified by "these findings are dispositioned",
+# because `hdf amend apply` matched `baselines[].requirements[].id` (HDF v3)
+# while SAF's converters emitted v2, so every override hit an early return and
+# the command still exited 0. Since #1067 the gate converts to v3 first and
+# evaluates with scripts/ci/hdf_threshold_v3.rb — main@daf41392 above shows
+# `notApplicable=2 (amended)`, which is that working. Upstream: mitre/hdf-libs#248.
+#
 # CAVEAT — SARIF cannot express "critical" (measured, not assumed).
 #
 # SARIF 2.1.0's `level` enum is error/warning/note only, so `trivy image
@@ -77,7 +78,7 @@ failed:
   critical:
     max: 0   # inert on this scanner — see the CAVEAT above
   high:
-    max: 4   # BASELINE — measured, all 4 shadowed default gems. Target 0.
+    max: 0   # RATCHETED 2026-08-28 (#1065): 4 -> 0. Ruby 3.4.10 removed all four.
 error:
   total:
     max: 0

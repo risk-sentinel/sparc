@@ -78,7 +78,7 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
       return render(json: {
         error: "No control basis. Supply ssp_document_id or profile_document_id, " \
                "or an authorization_boundary_id whose boundary has an SSP or a profile."
-      }, status: :unprocessable_entity)
+      }, status: :unprocessable_content)
     end
 
     # Rolled back when the result covers no controls. `filter_controls`
@@ -114,7 +114,7 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
                "If control_ids was supplied, check it matches the source's control " \
                "identifiers exactly — matching is case-insensitive but NOT " \
                "padding-insensitive, so \"ac-2\" does not match \"AC-02\"."
-      }, status: :unprocessable_entity)
+      }, status: :unprocessable_content)
     end
 
     audit_log("sap_document_generated", subject: sap, metadata: {

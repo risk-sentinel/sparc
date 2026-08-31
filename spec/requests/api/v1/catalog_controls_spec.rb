@@ -162,13 +162,13 @@ RSpec.describe "Api::V1::CatalogControls", type: :request do
     it "refuses a duplicate control_id in the same family" do
       post family_path, headers: auth, params: { catalog_control: { control_id: "ac-2", title: "Dupe" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "refuses a control with no control_id" do
       post family_path, headers: auth, params: { catalog_control: { title: "Nameless" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "404s when the family is not in this catalog" do
@@ -308,7 +308,7 @@ RSpec.describe "Api::V1::CatalogControls", type: :request do
         catalog_control: { baseline_impact: "LOW ,  CATASTROPHIC" }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(control.reload.baseline_impact).to eq("LOW, MODERATE, HIGH")
     end
 
@@ -317,7 +317,7 @@ RSpec.describe "Api::V1::CatalogControls", type: :request do
         catalog_control: { baseline_levels: %w[LOW CATASTROPHIC] }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("CATASTROPHIC")
       expect(control.reload.baseline_impact).to eq("LOW, MODERATE, HIGH")
     end
@@ -354,7 +354,7 @@ RSpec.describe "Api::V1::CatalogControls", type: :request do
         delete "#{catalog_path}/ac-2", headers: auth
       }.not_to change { family.catalog_controls.count }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["sub_parts"]).to eq([ "ac-2a" ])
     end
   end

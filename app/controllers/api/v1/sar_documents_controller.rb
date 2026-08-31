@@ -94,7 +94,7 @@ class Api::V1::SarDocumentsController < Api::V1::DocumentBaseController
         data: @document.to_json_data
       }
     rescue StandardError => e
-      render json: { error: e.message }, status: :unprocessable_entity
+      render json: { error: e.message }, status: :unprocessable_content
     end
   end
 

@@ -60,7 +60,7 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
       render json: { data: serialize_back_matter_resource(@source, detailed: true) }
     else
       render json: { error: "Update failed", details: @source.errors.full_messages },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     end
   end
 
@@ -110,7 +110,7 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
         message: result.message
       }, status: :created
     else
-      render json: { error: result.error }, status: :unprocessable_entity
+      render json: { error: result.error }, status: :unprocessable_content
     end
   end
 
@@ -212,7 +212,7 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
     @peer = FederationPeer.find_by(name: name)
     return if @peer
 
-    render json: { error: "Unknown peer #{name.inspect}" }, status: :unprocessable_entity
+    render json: { error: "Unknown peer #{name.inspect}" }, status: :unprocessable_content
   end
 
   def parse_since(value)

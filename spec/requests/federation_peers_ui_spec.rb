@@ -87,7 +87,7 @@ RSpec.describe "Federation Peers UI", type: :request do
       post federation_peers_path, params: {
         federation_peer: { name: "", base_url: "ftp://nope" }
       }
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("must be a valid http(s) URL")
     end
   end

@@ -143,7 +143,7 @@ RSpec.describe "Api::V1::SspComponents", type: :request do
       post api_v1_ssp_document_components_path(ssp), headers: auth_headers, as: :json,
            params: { ssp_component: { component_type: "policy" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 
@@ -190,7 +190,7 @@ RSpec.describe "Api::V1::SspComponents", type: :request do
            params: { ssp_component: { component_type: "software", title: "Module",
                                       description: "x", validation_reference: "4282" } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("validation")
     end
 
@@ -203,7 +203,7 @@ RSpec.describe "Api::V1::SspComponents", type: :request do
            params: { ssp_component: { component_type: "validation", title: "Cert",
                                       description: "x", validates_component_id: stranger.id } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     # A validation component that asserts nothing yet must be distinguishable
@@ -256,7 +256,7 @@ RSpec.describe "Api::V1::SspComponents", type: :request do
 
       delete api_v1_ssp_document_component_path(ssp, this_system.uuid), headers: auth_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(this_system.reload).to be_persisted
     end
 

@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-08-19 (v1.16.0 — bundles O/S/P/T/Q and the hdf-cli 3.5.1 pin shipped; **bundle U in progress** on `bug/997_999_998_994_profile_oscal_fidelity` — #997 #999 #998 + #994, profile fidelity and the resolved-catalog shape)
+**Last updated:** 2026-08-25 — **two lanes now run concurrently** (`ci.v0.0.1` CI work and `v1.16.1` release work, owner decision 2026-08-25, to protect #968's 09-06 due date). See *Phases 17-18* in section 2 for the lane split and the four crossings between them. CI-1 merged (PR #1066); CI-2 in review (PR #1068).
 
 ---
 
@@ -491,6 +491,91 @@ API index endpoint) — schedule both **late** and serialize index-view edits to
 
 ---
 
+### Phases 17-18 -- Two concurrent lanes: `ci.v0.0.1` and `v1.16.1` (2026-08-25)
+
+**These two milestones run in PARALLEL, by owner decision (2026-08-25)** — the CI
+lane focuses on evidence and gates while a second developer takes the release
+bundles to protect **#968's 2026-09-06 due date** and lift velocity. Every lane
+block above this one assumed sequential bundles; these two do not.
+
+The lanes are *mostly* domain-separated — CI/Infrastructure against app domains —
+but **not cleanly**, and the crossings are listed below rather than left to be
+discovered in a merge.
+
+<!-- markdownlint-disable MD013 -->
+
+#### Lane CI -- `ci.v0.0.1`, evidence and gates -- Owner: Dev E (CI/Infrastructure)
+
+| Status | Bundle / Issue | Domain | Files Modified | Collision Risk |
+| ------ | -------------- | ------ | -------------- | -------------- |
+| [x] | **CI-1** ~~#1048~~ ~~#1050~~ ~~#987~~ ~~#885~~ | CI/Infra | `security.yml`, `docs/compliance/thresholds/`, `bin/bundler_audit_to_hdf.rb`, `bin/sarif_drop_suppressed.rb` | **MERGED** PR #1066 |
+| [~] | **CI-2** #962 #985 #990 #1027 | CI/Infra + Evidence | `security.yml`, `sonarqube-hdf*.yml`, `bin/hdf_ensure_canary.rb`, `docs/compliance/expected-hdfs.txt`, `scan-artifact-inventory.md` | **IN REVIEW** PR #1068 |
+| [ ] | **CI-3** #835 #927 #711 #1061 | CI/Infra **+ app-wide sweep** | `.github/workflows/*`, `tests/api/`, `wiki/PUSH_TO_WIKI.sh` — **and #927 reaches into `app/controllers/**` and `spec/**`** | **HIGH — see hazard 1.** #927 is the only item in this lane that leaves CI/Infra |
+| [ ] | **CI-4** #858 #859 #965 #917 | CI/Infra + Container | `build-sign-publish.yml`, `ui-smoke`, bucket layout | **LOW** vs Lane REL — different files entirely. #917 partly blocked by #1067 |
+
+#### Lane REL -- `v1.16.1`, the patch release -- Owner: second developer (app domains)
+
+| Status | Bundle / Issue | Domain | Files Modified | Collision Risk |
+| ------ | -------------- | ------ | -------------- | -------------- |
+| [ ] | **Y** **#968** (due 09-06) #1051 #1022 #1058 | Jobs/Services + API + OSCAL | `app/services/**`, `app/jobs/**` (rescue audit), `oscal_component_definition_export_service.rb`, `app/controllers/api/v1/control_lookups_controller.rb` | **MEDIUM** — see hazards 1 and 2 |
+| [ ] | **Z** #1047 #728 #1046 | Transport/Session + Shared/UI | `config/initializers/content_security_policy.rb`, inline `style=` across `app/views/**` (**1,401 measured**), `config/routes.rb` | **HIGH** — view-wide, and see hazard 1 |
+| [ ] | **AA** #978 #1044 #1059 | Auth/Users + Boundary/Org | sessions, CSRF/Origin config, IdP admin path | **LOW** vs Lane CI |
+| [ ] | **AB** #1040 #940 #1033 #930 #966 #836 | Onboarding + cross-cutting | new onboarding flow, `app/models/sparc_config.rb`, Sonar backlog across many files | **MEDIUM** — `sparc_config.rb` is a known hot file |
+
+<!-- markdownlint-enable MD013 -->
+
+#### The four crossings between these lanes
+
+**1. #927 is a mechanical sweep landing on top of semantic edits. Highest risk in
+either lane.** It clears deprecation warnings, including `:unprocessable_entity`
+-> `:unprocessable_content`. Measured 2026-08-25: **281 occurrences — 163 in
+`app/`, 118 in `spec/`** (the issue says 218; it has grown). That is a repo-wide
+find-and-replace across controllers and specs, running at the same time as
+**#968** rewriting rescue blocks in `app/services`/`app/jobs` (109 rescue sites
+measured) and **#1047** touching 1,401 inline styles across `app/views`.
+
+A mechanical rename conflicting with a semantic edit in the same file is the
+worst-shaped merge conflict available: both sides look correct in isolation, and
+the resolution has to be read line by line rather than taken from either side.
+
+> **Mitigation — pick one, do not improvise:** either **(a)** sequence #927 to
+> land *after* Bundle Y and Bundle Z merge, which is what the older lane blocks
+> did with #528 and #672 for the same reason, or **(b)** run it as its own
+> single-purpose PR that touches *nothing else*, announced in advance, merged the
+> same day, with both lanes rebasing immediately. **Do not** let it sit open
+> across days while app work merges underneath it.
+
+**2. #711 and #1022 move the same baseline in opposite directions.** #711 builds a
+deployed API-contract runner over `tests/api/` (60 test modules, ~2,744
+assertions); #1022 changes `/api/v1/controls` — `app/controllers/api/v1/
+control_lookups_controller.rb`, via `ControlLookupService` — to honour
+`?items`/`?per_page` instead of returning all 4,054 rows.
+
+Whoever lands second rebaselines against the other's change. **Land #1022 first**:
+the contract runner should be built against the endpoint's *final* shape, not
+taught a pagination contract that is about to change under it.
+
+**3. #835 must reuse CI-2's hdf-cli pin mechanism, not add a fourth copy.** PR
+#1068 lifted `HDF_LIBS_VERSION` / `XTEXT_VERSION` / `GO_FIX_LINE` into
+`security.yml`'s workflow-level `env` and made the build **fail if they disagree
+with the Dockerfile ARGs**. #835 installs pinned hdf-cli in the *test* job.
+
+Reuse that pattern. CI-1 found this exact drift — the gate pinned 3.4.1 while the
+image baked 3.5.1, both sides built cleanly, and the gate validated with a
+different binary than the product shipped. A fourth hardcoded `3.5.1` recreates
+it. `Dockerfile` is the single source; anything that cannot read a Dockerfile ARG
+must assert against it.
+
+**4. #1067 partially blocks #917.** #917 wants to attest allow-list decisions
+*with their rationale*. The rationale lives in
+`docs/compliance/sparc-findings.yml` — but `hdf amend apply` currently no-ops on
+the HDF v2 shape our converters emit, so **nothing is suppressed and no
+disposition is reflected**. A predicate built from amendments today would attest
+a raw finding set while appearing to attest a triaged one. Measure what actually
+lands in the predicate; do not assume it carries the dispositions.
+
+---
+
 ## 3. Branching Strategy
 
 ### Branch Naming Convention
@@ -620,6 +705,9 @@ These files are touched by multiple issues. Extra care required.
 | `lib/xml_security.rb` | #511, future XML-related upload work, #341 (XML fingerprinting) | **LOW** — single funnel by design. Extend with new methods rather than modifying existing call paths. |
 | `app/controllers/concerns/file_uploadable.rb` | #509, #510, #511, #341 | **MEDIUM** — every upload entrypoint depends on it. Test changes through `tests/api/` + parser specs together. |
 | `app/controllers/api/v1/base_controller.rb` | Every paginated index (#549, future API work) | **LOW** — additive helpers. Pagination override clamp at `MAX_PAGINATION_LIMIT = 200` (#549). |
+| **`app/controllers/**` + `spec/**` — the `:unprocessable_entity` rename** | #927 (CI-3), against #968 (Bundle Y) and #1047 (Bundle Z) running concurrently | **HIGHEST RISK while two lanes run.** Measured 2026-08-25: **281 occurrences, 163 in `app/` and 118 in `spec/`** (the issue still says 218). A mechanical find-and-replace across controllers and specs, colliding with semantic edits to the same files — both sides look correct in isolation and the merge must be read line by line. **Either sequence it after Bundles Y and Z merge, or run it as a single-purpose same-day PR with both lanes rebasing immediately.** Never leave it open across days. Same reasoning that put #528 and #672 last in their sprints. |
+| `app/controllers/api/v1/control_lookups_controller.rb` + `ControlLookupService` | #1022 (Bundle Y, pagination), #711 (CI-3, deployed contract runner) | **MEDIUM, ordering-sensitive.** `/api/v1/controls` returns all 4,054 rows because it ignores `?items`/`?per_page`; #1022 fixes that while #711 builds a contract runner over `tests/api/` (60 modules, ~2,744 assertions) that asserts the current shape. **Land #1022 first** — build the runner against the endpoint's final contract rather than teaching it one that is about to change. |
+| hdf-cli pins: `Dockerfile` ARGs vs `.github/workflows/security.yml` `env` | #835 (CI-3), CI-2 (PR #1068), CI-1 | **MEDIUM and historically bitten.** CI-1 found the gate pinned `HDF_LIBS_VERSION` 3.4.1 while the image baked 3.5.1 — both sides built cleanly and the gate validated with a different binary than the product shipped. PR #1068 lifted the pins to workflow-level `env` and made the build **fail if they disagree with the Dockerfile ARGs**. **#835 must reuse that assertion, not add a fourth hardcoded copy.** Actions cannot read a Dockerfile ARG, so anything restating a pin must assert against it. |
 | `.github/CODEOWNERS` | Phase 13/14 hardening (#545/#546) | **LOW** — meta-rule changes go through `sparc-admin` team review per the file's own rule. |
 
 <!-- markdownlint-enable MD013 -->

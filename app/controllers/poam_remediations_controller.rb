@@ -33,7 +33,7 @@ class PoamRemediationsController < ApplicationController
       redirect_to poam_document_path(@poam_document)
     else
       load_risk_options
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -49,7 +49,7 @@ class PoamRemediationsController < ApplicationController
       redirect_to poam_document_path(@poam_document)
     else
       load_risk_options
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

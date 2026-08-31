@@ -80,7 +80,7 @@ class Api::V1::RolesController < Api::V1::BaseController
       return render json: {
         error: "Cannot delete a role that is assigned to users. Remove all assignments first.",
         details: [ "#{@role.user_roles.count} assignment(s) remain" ]
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
 
     audit_log("role_deleted", subject: @role,

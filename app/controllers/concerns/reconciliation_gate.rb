@@ -77,7 +77,7 @@ module ReconciliationGate
     if request.format.json? || request.path.start_with?("/api/")
       render json: { error: reconciliation_error_message(document),
                      reconciliation: document.reconciliation },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     else
       redirect_back fallback_location: main_app.root_path,
                     alert: reconciliation_error_message(document)

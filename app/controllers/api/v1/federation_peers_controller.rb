@@ -40,7 +40,7 @@ class Api::V1::FederationPeersController < Api::V1::BaseController
       render json: { data: serialize_peer(@peer, detailed: true) }, status: :created
     else
       render json: { error: "Validation failed", details: @peer.errors.full_messages },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     end
   end
 
@@ -53,7 +53,7 @@ class Api::V1::FederationPeersController < Api::V1::BaseController
       render json: { data: serialize_peer(@peer, detailed: true) }
     else
       render json: { error: "Validation failed", details: @peer.errors.full_messages },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     end
   end
 

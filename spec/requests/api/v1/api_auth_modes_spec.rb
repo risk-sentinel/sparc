@@ -105,7 +105,7 @@ RSpec.describe "API Auth Modes", type: :request do
 
     it "rejects service accounts from logging in via web UI" do
       post login_path, params: { email: service_user.email, password: service_user.password || "anything" }
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("Service accounts cannot log in via the web interface")
     end
   end

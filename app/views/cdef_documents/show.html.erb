@@ -48,6 +48,17 @@
               Incomplete — needs content
             </span>
           <% end %>
+          <%# #968 item 3 — a degraded component index is swallowed by design so a
+              parsed document is not lost, but it must not read as a clean import.
+              Distinct from "Incomplete": the content IS there, the component
+              index that summarises it is not. %>
+          <% if @cdef_document.component_index_degraded? %>
+            <span class="badge bg-warning text-dark"
+                  data-testid="cdef-index-degraded"
+                  title="The component index failed during import on <%= @cdef_document.component_index_failed_at %>. Controls are intact; component-derived views may understate this document. Re-import to rebuild it.">
+              Component index degraded
+            </span>
+          <% end %>
           <% if signed_in? && !@cdef_document.aws_labs_source? %>
             <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
           <% end %>

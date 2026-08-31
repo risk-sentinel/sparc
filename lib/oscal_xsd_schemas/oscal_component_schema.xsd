@@ -4,11 +4,11 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             elementFormDefault="qualified"
             targetNamespace="http://csrc.nist.gov/ns/oscal/1.0"
-            version="1.2.1">
+            version="1.2.2">
    <xs:annotation>
       <xs:appinfo>
          <m:schema-name>OSCAL Component Definition Model</m:schema-name>
-         <m:schema-version>1.2.1</m:schema-version>
+         <m:schema-version>1.2.2</m:schema-version>
          <m:short-name>oscal-component-definition</m:short-name>
          <m:remarks>
             <p>The OSCAL Component Definition Model can be used to describe the implementation of controls in a <code>component</code> or a set of components grouped as a <code>capability</code>. A component can be either a <em>technical component</em>, or a <em>documentary component</em>.</p>

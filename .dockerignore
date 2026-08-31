@@ -71,3 +71,42 @@
 # data-migration tasks inside the container. Slimming the image further means
 # relocating those fixtures out of spec/ first — worth doing, but it is a
 # behaviour change and does not belong in this commit.
+
+# ── Non-runtime content must not ship (#1080) ────────────────────────────────
+#
+# `docs/hdf/` is GITIGNORED — its files are local-only scan output. But
+# `.dockerignore` did not exclude it, so `COPY . .` baked a developer's own
+# 556 KB CycloneDX SBOM into their locally-built image, and **Trivy's image scan
+# parses SBOM files it
+# finds on the filesystem and merges their components as installed packages** —
+# so the scanner reported that SBOM's 381 stale components as if they were
+# installed. Measured on the shipping image: 471 packages reported against 303
+# real gemspecs. 105 phantoms, 100 of them the same gem at an older version
+# (actioncable 8.1.2 beside the real 8.1.3.1), plus 35 "Go CVEs" attributed to
+# `thruster` — a gem REMOVED in #639 that the March SBOM still lists.
+#
+# That is the whole of #1080, and it is a LOCAL-BUILD defect: CI never had these
+# files (they are gitignored), which is why CI correctly reported 0 while local
+# reported 68. Proven by control: scanning the same image with
+# `--skip-files rails/docs/hdf/trivy-container-local.cdx.json` drops 471 gems to
+# 237, and every phantom — both erb versions, rack 3.2.5, actioncable 8.1.2, the
+# thruster gobinary target — disappears.
+#
+# It survived every cache clear, an explicit --platform, a --no-cache rebuild and
+# even flattening the image to one layer, because the file is genuinely in the
+# artifact. An empty directory scanned clean because it had no SBOM in it.
+#
+# THE GENERAL RULE: .dockerignore must exclude what .gitignore excludes, or a
+# local-only artifact silently changes what a locally-built image contains — and
+# local scans stop matching CI.
+#
+# Neither directory is read at runtime (verified: the `docs/` mentions in app/
+# are comments). Excluding them removes ~35 MB and stops the scanner ingesting
+# our own stale evidence as fact.
+#
+# NOT excluding /spec/ here despite its 64 MB: lib/tasks/profile_backfill.rake
+# and lib/tasks/catalog_oscal_id_migration.rake read
+# spec/fixtures/files/catalogs/NIST_SP-800-53_rev4_catalog.json, so a blanket
+# exclusion would break those data migrations. Tracked separately.
+/docs/
+/tests/

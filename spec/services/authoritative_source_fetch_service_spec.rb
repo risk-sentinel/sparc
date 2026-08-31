@@ -138,7 +138,7 @@ RSpec.describe AuthoritativeSourceFetchService do
       result = described_class.call(resource: resource, actor: actor)
 
       expect(result).not_to be_success
-      expect(result.status_code).to eq(:payload_too_large)
+      expect(result.status_code).to eq(:content_too_large)
     end
 
     it "translates network errors into a result, not an exception" do

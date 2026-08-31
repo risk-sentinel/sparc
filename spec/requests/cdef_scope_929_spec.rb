@@ -100,7 +100,7 @@ RSpec.describe "CDEF scope re-assignment (#929)", type: :request do
             params: { scope: "boundary" },
             headers: token_headers(writer)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "requires a token" do

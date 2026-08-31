@@ -9,6 +9,8 @@ require Rails.root.join("lib/db_url/config")
 # The point is rotation: DATABASE_URL is rendered at deploy time and therefore
 # PINS the password, so a Secrets Manager rotation does not take effect until
 # the next redeploy. Reading the secret at boot means a restart is enough.
+require "stringio"
+
 RSpec.describe DbUrl, "DB_CREDENTIALS (#834)" do
   # DbUrl caches its parse keyed on the raw value, so tests must not leak state
   # into each other through that cache or through ENV.
@@ -33,6 +35,18 @@ RSpec.describe DbUrl, "DB_CREDENTIALS (#834)" do
       "host" => "rds.internal", "port" => 5432, "dbname" => "sparc_prod",
       "username" => "sparc_app", "password" => "s3cret"
     }.merge(overrides).to_json
+  end
+
+  # Capture rather than re-invoke: DbUrl memoises, so a second call emits
+  # nothing and any assertion made against it is vacuous.
+  def capture_stderr
+    buffer = StringIO.new
+    original = $stderr
+    $stderr = buffer
+    yield
+    buffer.string
+  ensure
+    $stderr = original
   end
 
   describe "as the connection source" do
@@ -205,7 +219,10 @@ RSpec.describe DbUrl, "DB_CREDENTIALS (#834)" do
       ENV["SPARC_DB_HOST"] = "fallback.host"
       ENV["DB_CREDENTIALS"] = "{not json"
 
-      expect { DbUrl.host }.not_to raise_error
+      # Capture the warning rather than let it leak. It is deliberately
+      # provoked here, so asserting it both silences the run and gives the
+      # example a check it previously lacked.
+      expect { DbUrl.host }.to output(/DB_CREDENTIALS is not valid JSON/).to_stderr
       expect(DbUrl.host).to eq("fallback.host")
     end
 
@@ -213,6 +230,7 @@ RSpec.describe DbUrl, "DB_CREDENTIALS (#834)" do
       ENV["SPARC_DB_HOST"] = "fallback.host"
       ENV["DB_CREDENTIALS"] = '["a", "b"]'
 
+      expect { DbUrl.host }.to output(/DB_CREDENTIALS/).to_stderr
       expect(DbUrl.host).to eq("fallback.host")
     end
 
@@ -222,6 +240,7 @@ RSpec.describe DbUrl, "DB_CREDENTIALS (#834)" do
       ENV["DATABASE_URL"] = "postgres://url_user:url_pass@url.host:5432/url_db"
       set_credentials("host" => "   ")
 
+      expect { DbUrl.host }.to output(/DB_CREDENTIALS/).to_stderr
       expect(DbUrl.host).to eq("url.host")
       expect(DbUrl.username).to eq("url_user"),
         "a blank host must not leave the OTHER secret fields in play — that is a blended credential"
@@ -231,6 +250,7 @@ RSpec.describe DbUrl, "DB_CREDENTIALS (#834)" do
       ENV["DATABASE_URL"] = "postgres://url_user:url_pass@url.host:5432/url_db"
       ENV["DB_CREDENTIALS"] = { "host" => "rds.internal", "dbname" => "sparc_prod" }.to_json
 
+      expect { DbUrl.username }.to output(/DB_CREDENTIALS/).to_stderr
       expect(DbUrl.username).to eq("url_user")
       expect(DbUrl.password).to eq("url_pass")
     end
@@ -247,8 +267,18 @@ RSpec.describe DbUrl, "DB_CREDENTIALS (#834)" do
       secret = ENV.fetch("DB_CREDENTIALS")
       ENV["DB_CREDENTIALS"] = "{not json, but the password is s3cret"
 
-      expect { DbUrl.host }.to output(/DB_CREDENTIALS is not valid JSON/).to_stderr
-      expect { DbUrl.host }.not_to output(/s3cret/).to_stderr
+      # Assert BOTH conditions against the SAME captured output.
+      #
+      # These were two separate `expect { DbUrl.host }` blocks, and the second
+      # was vacuous: DbUrl memoises, so the warning fires only on the FIRST
+      # call and the second emitted nothing at all. "never echoes the secret"
+      # therefore passed no matter what the warning contained — the one
+      # assertion in this file that must have teeth had none.
+      warning = capture_stderr { DbUrl.host }
+
+      expect(warning).to match(/DB_CREDENTIALS is not valid JSON/)
+      expect(warning).not_to include("s3cret"),
+        "the warning echoed the secret it exists to withhold"
 
       expect(secret).to include("s3cret") # guards the assertion above being vacuous
     end

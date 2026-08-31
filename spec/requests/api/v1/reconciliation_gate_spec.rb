@@ -45,7 +45,7 @@ RSpec.describe "Api::V1 reconciliation gate", type: :request do
       put api_v1_ssp_document_path(ssp), params: { ssp_document: { name: "Edited" } },
           headers: auth_headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(ssp.reload.name).to eq("Legacy SSP"), "the refused write must not partially apply"
     end
 
@@ -101,7 +101,7 @@ RSpec.describe "Api::V1 reconciliation gate", type: :request do
           params: { ssp_document: { name: "Edited", profile_document_id: "" } },
           headers: auth_headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(ssp.reload.name).to eq("Legacy SSP")
     end
   end

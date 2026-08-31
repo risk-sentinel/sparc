@@ -73,7 +73,7 @@ RSpec.describe "Registrations", type: :request do
         post register_path, params: {
           user: valid_params[:user].merge(password: "short", password_confirmation: "short")
         }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(User.count).to eq(0)
       end
 
@@ -81,13 +81,13 @@ RSpec.describe "Registrations", type: :request do
         post register_path, params: {
           user: valid_params[:user].merge(password_confirmation: "DifferentPassword!")
         }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
 
       it "rejects duplicate emails" do
         create(:user, email: "newuser@example.com")
         post register_path, params: valid_params
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
     end
 

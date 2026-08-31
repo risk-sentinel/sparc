@@ -58,7 +58,7 @@ class ControlMappingsController < ApplicationController
     else
       load_catalogs
       flash.now[:error] = "Failed to create control mapping."
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -73,7 +73,7 @@ class ControlMappingsController < ApplicationController
     else
       load_catalogs
       flash.now[:error] = "Failed to update control mapping."
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

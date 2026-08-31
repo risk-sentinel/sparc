@@ -71,7 +71,7 @@ class AuthoritativeSourcesController < ApplicationController
       redirect_to authoritative_sources_path
     else
       @resource = result.resource
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 

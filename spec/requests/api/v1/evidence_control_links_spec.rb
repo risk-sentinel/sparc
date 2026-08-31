@@ -77,7 +77,7 @@ RSpec.describe "Api::V1::EvidenceControlLinks", type: :request do
       post api_v1_evidence_control_links_path(evidence_id: evidence.id),
            params: { control_link: { control_id: "" } }, headers: admin_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to eq("Validation failed")
     end
 
@@ -86,7 +86,7 @@ RSpec.describe "Api::V1::EvidenceControlLinks", type: :request do
            params: { control_link: { control_id: "AC-2", document_type: "Kernel", document_id: 1 } },
            headers: admin_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["details"].join(" ")).to match(/document_type must be one of/)
     end
 
@@ -96,7 +96,7 @@ RSpec.describe "Api::V1::EvidenceControlLinks", type: :request do
       post api_v1_evidence_control_links_path(evidence_id: evidence.id),
            params: { control_link: { control_id: "AC-2" } }, headers: admin_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     # The #756 headline: a document-scoped link is what drives OSCAL output.

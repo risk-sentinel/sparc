@@ -28,6 +28,123 @@ RSpec.describe "Api::V1::ControlLookups", type: :request do
     end
   end
 
+  # #1022 — the API-wide pagination convention must actually NARROW here.
+  #
+  # This is the largest collection in the API (4,054 controls) and it accepted
+  # only its own `?limit`. A caller using `?items` — which every other index
+  # honours — got 25 rows and an envelope reporting `limit: 25`, so the response
+  # looked like a correct answer rather than an ignored parameter.
+  #
+  # Asserting on the ROW COUNT, not on the envelope: the envelope was already
+  # self-consistent while the parameter was being dropped, which is precisely how
+  # this survived the #995 sweep.
+  describe "GET /api/v1/controls — pagination convention (#1022)" do
+    before do
+      catalog = create(:control_catalog)
+      family  = create(:control_family, control_catalog: catalog)
+      5.times { |i| create(:catalog_control, control_family: family, control_id: "ac-#{i + 1}") }
+    end
+
+    it "narrows on ?items, like every other index" do
+      get api_v1_control_lookups_path, params: { items: 2 }, headers: admin_headers
+
+      body = JSON.parse(response.body)
+      expect(body["data"].length).to eq(2)
+      expect(body.dig("meta", "limit")).to eq(2)
+    end
+
+    it "narrows on ?per_page too" do
+      get api_v1_control_lookups_path, params: { per_page: 3 }, headers: admin_headers
+
+      expect(JSON.parse(response.body)["data"].length).to eq(3)
+    end
+
+    # Regression: the family filter and the paging query were each correct alone
+    # and broken together. `page_of`/`distinct_total` drop the eager-load to run
+    # a DISTINCT ON, which also dropped the join the filter's
+    # `WHERE control_families.code = ?` depends on — PG::UndefinedTable, HTTP 500.
+    # Nothing here filtered by family, so the whole suite stayed green and the
+    # API contract suite caught it against the image instead.
+    it "still paginates when a family filter is applied" do
+      other = create(:control_family, code: "AU")
+      3.times { |i| create(:catalog_control, control_family: other, control_id: "au-#{i + 1}") }
+
+      get api_v1_control_lookups_path,
+          params: { family: "AU", items: 2 }, headers: admin_headers
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["data"].length).to eq(2)
+      expect(body["data"].map { |c| c["family_code"] }.uniq).to eq([ "AU" ])
+      # the count must describe the FILTERED collection, not the table
+      expect(body.dig("meta", "total")).to eq(3)
+      expect(body.dig("meta", "pages")).to eq(2)
+    end
+
+    it "still honours ?limit — the published contract for this endpoint" do
+      get api_v1_control_lookups_path, params: { limit: 1 }, headers: admin_headers
+
+      expect(JSON.parse(response.body)["data"].length).to eq(1)
+    end
+
+    it "prefers ?limit when both are given, so existing callers do not change" do
+      get api_v1_control_lookups_path, params: { limit: 1, items: 4 }, headers: admin_headers
+
+      expect(JSON.parse(response.body)["data"].length).to eq(1)
+    end
+
+    it "offers ?page, so rows past the first page are reachable" do
+      get api_v1_control_lookups_path, params: { items: 2, page: 2 }, headers: admin_headers
+
+      body = JSON.parse(response.body)
+      expect(body.dig("meta", "page")).to eq(2)
+      expect(body.dig("meta", "pages")).to be >= 2
+      expect(body["data"].length).to eq(2)
+    end
+
+    it "returns disjoint rows across pages" do
+      get api_v1_control_lookups_path, params: { items: 2, page: 1 }, headers: admin_headers
+      first = JSON.parse(response.body)["data"].map { |c| c["id"] || c["control_id"] }
+      get api_v1_control_lookups_path, params: { items: 2, page: 2 }, headers: admin_headers
+      second = JSON.parse(response.body)["data"].map { |c| c["id"] || c["control_id"] }
+
+      expect(first & second).to be_empty,
+        "a row appeared on two pages — paging over an unordered scope is unstable (#1022)"
+    end
+
+    it "returns the SAME page on two identical requests" do
+      2.times.map do
+        get api_v1_control_lookups_path, params: { items: 3, page: 2 }, headers: admin_headers
+        JSON.parse(response.body)["data"].map { |c| c["id"] || c["control_id"] }
+      end => [ first, second ]
+
+      expect(first).to eq(second),
+        "the same request returned different rows — the scope has no deterministic order"
+    end
+
+    it "counts DISTINCT identifiers, not table rows" do
+      get api_v1_control_lookups_path, params: { items: 1 }, headers: admin_headers
+
+      body = JSON.parse(response.body)
+      # 5 controls created above, all distinct identifiers.
+      expect(body.dig("meta", "total")).to eq(5)
+      expect(body.dig("meta", "pages")).to eq(5)
+    end
+
+    it "treats page 0 and negative pages as page 1" do
+      get api_v1_control_lookups_path, params: { items: 2, page: 0 }, headers: admin_headers
+      expect(JSON.parse(response.body).dig("meta", "page")).to eq(1)
+    end
+
+    it "cannot be used to request the whole table" do
+      get api_v1_control_lookups_path, params: { items: 999_999 }, headers: admin_headers
+
+      # ControlLookupService clamps to MAX_LIMIT; the point is that a caller
+      # cannot turn the convention into an unbounded query (#549).
+      expect(JSON.parse(response.body)["data"].length).to be <= 100
+    end
+  end
+
   describe "GET /api/v1/controls" do
     it "searches across catalogs" do
       ensure_control("ac-2")

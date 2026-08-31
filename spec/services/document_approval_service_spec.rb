@@ -96,7 +96,7 @@ RSpec.describe DocumentApprovalService do
       result = described_class.new(document: catalog, actor: approver).reject!(reason: " ")
 
       expect(result).not_to be_success
-      expect(result.status_code).to eq(:unprocessable_entity)
+      expect(result.status_code).to eq(:unprocessable_content)
     end
 
     it "lets a rejected document be resubmitted" do

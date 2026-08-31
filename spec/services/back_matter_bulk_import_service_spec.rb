@@ -52,7 +52,7 @@ RSpec.describe BackMatterBulkImportService do
   it "rejects empty input" do
     result = described_class.new(entries: [], actor: actor, organization: org).call
     expect(result).not_to be_success
-    expect(result.status_code).to eq(:unprocessable_entity)
+    expect(result.status_code).to eq(:unprocessable_content)
   end
 
   it "rejects oversize batches" do

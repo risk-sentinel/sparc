@@ -94,6 +94,51 @@ class CdefDocument < ApplicationRecord
     import_metadata.is_a?(Hash) && import_metadata["source_type"] == "aws_labs"
   end
 
+  # #968 item 3 — the partial-success contract.
+  #
+  # `CdefJsonParserService#index_components` runs inside a SAVEPOINT and, when the
+  # component indexer fails, records the failure in import_metadata and lets the
+  # import finish. That is deliberate: a broken index must not lose a document that
+  # parsed correctly. But until this predicate existed the only trace was a log
+  # line, so a degraded import was indistinguishable from a clean one at every
+  # surface a person actually looks at — API, index, show page.
+  #
+  # Degraded means: the document is present and its controls are intact, but its
+  # component index is stale or missing, so component-derived views understate it.
+  def component_index_degraded?
+    import_metadata.is_a?(Hash) && import_metadata["component_index_failed_at"].present?
+  end
+
+  # Record a component-index failure. Lives on the model because TWO ingest paths
+  # can hit it — CdefJsonParserService (upload / YAML / XCCDF) and
+  # AwsLabsCdefImportService#reindex_components (the weekly refresh) — and #968
+  # item 4 found the second one writing only a log line, which would have left
+  # every AWS Labs document silently degraded with the badge dark.
+  #
+  # `update_column` on purpose: the caller is recovering from a failed statement
+  # and must not run validations or callbacks that could raise again.
+  def record_component_index_failure!(error)
+    return false unless persisted?
+
+    update_column(
+      :import_metadata,
+      (import_metadata || {}).merge(
+        "component_index_failed_at" => Time.current.iso8601,
+        "component_index_error"     => "#{error.class}: #{error.message}".truncate(500)
+      )
+    )
+    true
+  rescue StandardError
+    # Never let the bookkeeping become the failure; the caller's log line stands.
+    false
+  end
+
+  # When the index failed, as an ISO8601 string; nil when it never has.
+  def component_index_failed_at
+    return nil unless component_index_degraded?
+    import_metadata["component_index_failed_at"]
+  end
+
   # Issue #466 — AWS-sourced CDEFs are read-only. Controllers should check
   # this before applying field/statement/metadata edits and redirect users
   # to the clone action when false.

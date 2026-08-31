@@ -121,7 +121,7 @@ class CdefDocumentsController < ApplicationController
                   flash: { success: "Component definition updated." }
     else
       flash.now[:error] = @cdef_document.errors.full_messages.join(", ")
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 
@@ -274,7 +274,7 @@ class CdefDocumentsController < ApplicationController
     end
   rescue ArgumentError, ActiveRecord::RecordNotFound, CdefMutationService::ValidationError => e
     respond_to do |format|
-      format.json { render json: { success: false, error: e.message }, status: :unprocessable_entity }
+      format.json { render json: { success: false, error: e.message }, status: :unprocessable_content }
       format.html do
         flash[:error] = e.message
         redirect_to cdef_document_path(@cdef_document)
@@ -524,9 +524,9 @@ class CdefDocumentsController < ApplicationController
               metadata: { control_id: params[:control_id], title: resource.title })
     render json: { success: true, resource: { id: resource.id, uuid: resource.uuid, title: resource.title, href: resource.href } }
   rescue ActiveRecord::RecordInvalid => e
-    render json: { success: false, error: e.record.errors.full_messages.join(", ") }, status: :unprocessable_entity
+    render json: { success: false, error: e.record.errors.full_messages.join(", ") }, status: :unprocessable_content
   rescue CdefMutationService::ValidationError => e
-    render json: { success: false, error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_entity
+    render json: { success: false, error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_content
   end
 
   def link_control_resource
@@ -539,7 +539,7 @@ class CdefDocumentsController < ApplicationController
                 metadata: { control_id: params[:control_id], resource_uuid: resource.uuid })
       render json: { success: true, resource: { id: resource.id, uuid: resource.uuid, title: resource.title } }
     else
-      render json: { success: false, error: link.errors.full_messages.join(", ") }, status: :unprocessable_entity
+      render json: { success: false, error: link.errors.full_messages.join(", ") }, status: :unprocessable_content
     end
   end
 
@@ -668,7 +668,7 @@ class CdefDocumentsController < ApplicationController
                   flash: { success: "Component definition created. Add controls to it next." }
     else
       flash.now[:error] = @cdef_document.errors.full_messages.join(", ")
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 

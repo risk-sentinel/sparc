@@ -21,12 +21,8 @@ of the default.
 Every schema is baked into the container, so validation works air-gapped with no
 dependency on NIST GitHub at runtime.
 
-Two caveats worth knowing:
+One caveat worth knowing:
 
-- **XML exports are still validated against the 1.2.1 XSDs.** The JSON schema set
-  moved to 1.2.2 and the XSD set has not yet followed, so an XML export declares
-  1.2.2 while being checked against 1.2.1. The two releases are near-identical,
-  but it is a mismatch rather than a deliberate choice.
 - **1.2.0 is skipped on purpose.** That release omits the `associated-risk`
   definition, so `related-risks[].risk-uuid` is rejected by a schema defect
   rather than by anything wrong with the document. 1.2.1 restores it.

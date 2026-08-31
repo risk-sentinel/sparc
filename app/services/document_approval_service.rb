@@ -44,7 +44,7 @@ class DocumentApprovalService
       return conflict("Document is already #{@document.approval_status}")
     end
     if @document.respond_to?(:content_complete?) && !@document.content_complete?
-      return Result.new(success: false, status_code: :unprocessable_entity,
+      return Result.new(success: false, status_code: :unprocessable_content,
                         error: "Cannot submit for review — missing required content: " \
                                "#{@document.content_completeness_gaps.join('; ')}")
     end
@@ -67,7 +67,7 @@ class DocumentApprovalService
     return forbidden unless can_approve?
     return conflict("Document is not pending review") unless @document.approval_pending?
     if reason.to_s.strip.empty?
-      return Result.new(success: false, status_code: :unprocessable_entity,
+      return Result.new(success: false, status_code: :unprocessable_content,
                         error: "Rejection reason is required")
     end
 

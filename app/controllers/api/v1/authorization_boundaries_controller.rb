@@ -95,7 +95,7 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
         error: "The request body could not be parsed as a bulk delete. Nothing was changed.",
         details: payload.errors,
         expected: BulkDestroyPayload::EXPECTED
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
 
     result = BulkDestroyService.new(
@@ -119,7 +119,7 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
     else
       audit_log("authorization_boundary_delete_blocked", subject: @boundary,
                 metadata: { name: name, reason: @boundary.errors.full_messages.join(", ") })
-      render json: { error: @boundary.errors.full_messages.join(", ") }, status: :unprocessable_entity
+      render json: { error: @boundary.errors.full_messages.join(", ") }, status: :unprocessable_content
     end
   end
 

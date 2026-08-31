@@ -25,7 +25,7 @@ class LeveragedAuthorizationsController < ApplicationController
                   notice: "Leveraged authorization created."
     else
       @candidate_boundaries = candidate_boundaries
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 

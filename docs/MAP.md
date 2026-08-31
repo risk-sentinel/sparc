@@ -9,7 +9,8 @@ CDEFs, and control catalogs — with a REST API and OSCAL v1.1.2 import/export.
 > The wiki is the canonical, kept-current home for product usage, configuration,
 > architecture, RBAC, screens, integrations, and the changelog. **When you change
 > something public-facing, update the wiki** (source under [`wiki/`](../wiki),
-> mirrored via `wiki/PUSH_TO_WIKI.sh`).
+> published automatically by `.github/workflows/publish-wiki.yml` on every push
+> to `main` that touches `wiki/` — #1061).
 >
 > This page indexes what lives **in the repo** under `docs/`: technical reference
 > that ships next to the code, artifacts consumed by CI, and internal dev notes.

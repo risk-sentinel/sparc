@@ -15,7 +15,7 @@ module FieldImportable
     result = FieldImportService.new(field_import_document).preview(field_import_payload)
     render json: { data: { rows: result[:rows].map(&:to_h), stats: result[:stats] } }
   rescue FieldImportService::ImportError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   # POST .../fields/import/confirm — atomic apply with partial-success + audit.
@@ -26,7 +26,7 @@ module FieldImportable
               metadata: { applied: result[:applied], stats: result[:stats] })
     render json: { data: result }
   rescue FieldImportService::ImportError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   private

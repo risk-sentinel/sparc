@@ -50,25 +50,39 @@ RSpec.describe "Api::V1 CDEF export formats", type: :request do
 
   describe "format=oscal" do
     it "returns the OSCAL component definition" do
-      # validate: false here on purpose. A component definition with no
-      # components does not conform to the OSCAL schema, so the validating
-      # path correctly refuses an empty document — see the example below. The
-      # validating happy path is exercised in tests/api against a real STIG
-      # benchmark, which has components to export.
+      # #1051 — the note here used to say "a component definition with no
+      # components does not conform", which was a misdiagnosis: the exporter
+      # always emits exactly one component, built from the
+      # cdef_documents.component_* columns. What made this document
+      # non-conformant was an empty `implemented-requirements` array on a CDEF
+      # with no CONTROLS. `validate: false` is kept so this example tests the
+      # flag rather than the document.
       get path, params: { format: "oscal", validate: "false" }, headers: headers
 
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body).to have_key("component-definition")
     end
 
-    it "refuses an EMPTY component definition, because it is not valid OSCAL" do
-      # Not a contrived case: a CDEF created through the API and never
-      # populated is exactly this, and exporting it as though it were a
-      # conformant artifact is how an invalid document reaches a consumer.
+    # #1051 — this example asserted the OPPOSITE, and was right about the
+    # behaviour while wrong about the reason. An unpopulated CDEF was refused
+    # because the exporter emitted `control-implementations` wrapping an EMPTY
+    # `implemented-requirements` array, which OSCAL forbids. That was our defect,
+    # not a property of the document: a component with no control-implementations
+    # is legal OSCAL, and 162 of 229 documents were unexportable because of it.
+    #
+    # The refusal path this covered is still covered, and better, by the example
+    # below — which raises from the exporter rather than depending on a real
+    # document being broken. So this pins the corrected behaviour instead of
+    # being deleted.
+    it "exports an unpopulated CDEF, because that IS valid OSCAL" do
       get path, params: { format: "oscal" }, headers: headers
 
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(response.parsed_body["hint"]).to match(/validate=false/)
+      expect(response).to have_http_status(:ok)
+      component = response.parsed_body.dig("component-definition", "components", 0)
+      expect(component).to be_present
+      expect(component).not_to have_key("control-implementations"),
+        "a CDEF with no controls must omit control-implementations rather than " \
+        "claim an empty one (#1051)"
     end
 
     it "validates by default, and refuses a document that does not conform" do

@@ -42,7 +42,7 @@ RSpec.describe "Api::V1 profile controls", type: :request do
   it "422 when the profile has no linked catalog" do
     orphan = create(:profile_document, control_catalog: nil)
     put path(orphan), params: { control_ids: [ "ac-1" ] }, headers: admin_headers
-    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response).to have_http_status(:unprocessable_content)
     expect(JSON.parse(response.body)["error"]).to match(/no source catalog/)
   end
 

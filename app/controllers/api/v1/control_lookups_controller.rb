@@ -35,6 +35,12 @@ class Api::V1::ControlLookupsController < Api::V1::BaseController
       meta: {
         total: result.total,
         limit: result.limit,
+        # #1022 — `page`/`pages` so reaching rows 26+ does not require a
+        # different paging model from every other index. `total`/`limit` stay:
+        # they are the published contract (docs/api/endpoints/control-lookup.md)
+        # and callers are written against them.
+        page: result.page,
+        pages: result.pages,
         # Lets a client say "showing this system's baseline" rather than
         # implying it searched everything.
         scoped_to_profile: result.scoped_to_profile?,
@@ -71,8 +77,30 @@ class Api::V1::ControlLookupsController < Api::V1::BaseController
     ControlLookupService.new(
       q: params[:q],
       family: params[:family],
-      limit: params[:limit],
+      limit: page_size,
+      page: params[:page],
       authorization_boundary_id: params[:authorization_boundary_id]
     )
+  end
+
+  # #1022 — honour the API-wide pagination convention as well as this endpoint's
+  # own `?limit`.
+  #
+  # This is the largest collection in the API (4,054 controls) and it ignored
+  # `?items` / `?per_page`, which every other index accepts. A caller using the
+  # convention got 25 rows and NO indication their limit was dropped — the
+  # envelope still reported `limit: 25`, so the response looked like a correct
+  # answer to a different question.
+  #
+  # `limit` wins when both are given: it is the published contract for this
+  # endpoint (docs/api/endpoints/control-lookup.md) and callers are written
+  # against it. `items` before `per_page` matches
+  # `BaseController#resolve_pagination_size`, so the precedence is the same one
+  # every other endpoint uses.
+  #
+  # No cap needed here: ControlLookupService#resolved_limit already clamps to
+  # 1..MAX_LIMIT, so `?items=999999` cannot reach the query.
+  def page_size
+    params[:limit].presence || params[:items].presence || params[:per_page].presence
   end
 end

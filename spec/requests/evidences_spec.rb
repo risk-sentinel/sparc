@@ -135,7 +135,7 @@ RSpec.describe "Evidences", type: :request do
         post evidences_path, params: { evidence: metadata.merge(file: exe) }
       }.not_to change(Evidence, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include('data-flash-key="error"')
       expect(response.body).to include("alert-danger")
       # The metadata the user typed survives the rejection.
@@ -223,7 +223,7 @@ RSpec.describe "Evidences", type: :request do
         }
       }.not_to change(Evidence, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("is required for Screenshot evidence")
     end
 
@@ -234,7 +234,7 @@ RSpec.describe "Evidences", type: :request do
         }
       }.not_to change(Evidence, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("An attestation needs a statement and an attester")
     end
 
@@ -247,7 +247,7 @@ RSpec.describe "Evidences", type: :request do
         post evidences_path, params: { evidence: payload }
       }.not_to change(Evidence, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 
@@ -262,7 +262,7 @@ RSpec.describe "Evidences", type: :request do
         }
       }.not_to change(Evidence, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("Link at least one control")
     end
 
@@ -279,7 +279,7 @@ RSpec.describe "Evidences", type: :request do
         evidence: { title: "Retitled", control_ids: "" }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(legacy.reload.title).not_to eq("Retitled")
     end
   end

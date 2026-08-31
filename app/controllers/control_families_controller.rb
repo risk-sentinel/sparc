@@ -24,7 +24,7 @@ class ControlFamiliesController < ApplicationController
       audit_log("control_family_created", subject: @control_family, metadata: { code: @control_family.code, name: @control_family.name })
       redirect_to @control_family, notice: "Family '#{@control_family.code} - #{@control_family.name}' was created."
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -38,7 +38,7 @@ class ControlFamiliesController < ApplicationController
       redirect_to @control_family, notice: "Family updated successfully."
     else
       @control_catalog = @control_family.control_catalog
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

@@ -38,17 +38,36 @@ HDF_SAMPLE = {
 
 
 def _open_triage(page, base_url):
-    """Boundary show page -> click 'HDF Triage'. Returns False if no boundary."""
+    """Boundary show page -> click 'HDF Triage'.
+
+    Returns False ONLY when there is genuinely no boundary to triage. A missing
+    button on a boundary that DOES exist raises, because those two are not the
+    same thing and must not both present as a skip.
+
+    History: this located the header button by `a.btn`. #950 (Bundle X, v1.16.0)
+    renamed 489 buttons from `.btn` to `sparc-action--*` and missed this one, so
+    `a.btn` matched nothing, this returned False, and all four checks in this file
+    SKIPPED — reporting green — from v1.16.0 until 2026-08-29. Keying on the
+    DESTINATION fixes the immediate break; raising instead of returning False is
+    what stops the next rename from hiding itself the same way.
+    """
     # prefix has NO trailing slash — first_show_href appends its own.
     href = first_show_href(page, "/authorization_boundaries", "/authorization_boundaries")
     if not href:
         return False
     page.goto(f"{base_url}{href}", wait_until="networkidle")
-    # The header button (class .btn) — distinct from the sidebar "Amendments"
-    # leaf links (.sparc-sidebar-leaf), which also read "Amendments".
-    link = page.locator("a.btn", has_text="Amendments")
-    if link.count() == 0:
-        return False
+    # An href is what the button is FOR; a class is how it looks this quarter.
+    # Excluding .sparc-sidebar-leaf keeps the original intent — the header
+    # button, not the sidebar leaves, which carry the same destination and text.
+    link = page.locator('a[href$="/triage"]:not(.sparc-sidebar-leaf)').filter(
+        has_text="Amendments"
+    )
+    assert link.count() > 0, (
+        f"boundary {href} exists but its header 'Amendments' link was not found. "
+        "This is a BROKEN LOCATOR, not an empty deployment — if the button was "
+        "restyled, fix the selector rather than letting this degrade to a skip "
+        "(see #950)."
+    )
     link.first.click()
     # Turbo navigation — wait for the URL + heading rather than a content snapshot.
     page.wait_for_url("**/triage", timeout=10000)

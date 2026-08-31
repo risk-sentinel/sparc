@@ -82,7 +82,7 @@ RSpec.describe "ControlFamilies", type: :request do
         }
       }.not_to change(ControlFamily, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "rejects blank name" do
@@ -92,7 +92,7 @@ RSpec.describe "ControlFamilies", type: :request do
         }
       }.not_to change(ControlFamily, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "rejects invalid code format" do
@@ -102,7 +102,7 @@ RSpec.describe "ControlFamilies", type: :request do
         }
       }.not_to change(ControlFamily, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

@@ -70,7 +70,7 @@ class Api::V1::EntitlementSyncController < Api::V1::BaseController
       return render json: {
         error: "Unknown sync mode #{mode.inspect}",
         expected: EntitlementSync::MODES
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
 
     # `grants` absent entirely means "the claim was not in the token", which is

@@ -68,7 +68,7 @@ module Admin
       else
         @instance_roles = Role.where(scope: "instance").sorted
         flash.now[:error] = @user.errors.full_messages.to_sentence
-        render :new, status: :unprocessable_entity
+        render :new, status: :unprocessable_content
       end
     end
 
@@ -92,7 +92,7 @@ module Admin
         @available_authorization_boundaries = AuthorizationBoundary.order(:name)
         @available_authorization_boundary_roles = Role.where(scope: "authorization_boundary").sorted
         flash.now[:error] = @user.errors.full_messages.to_sentence
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
       end
     end
 

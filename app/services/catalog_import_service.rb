@@ -91,14 +91,10 @@ class CatalogImportService
     catalog.update!(catalog_content_digest: digest, lifecycle_status: "published")
     derive_framework!(catalog)
 
-    # #393: populate catalog_control_parts from the freshly imported
-    # guidance_data["parts"]. Best-effort -- failures don't block import
-    # since the migration backfill can re-run later.
-    begin
-      CatalogPartExtractorService.backfill_catalog_parts!(catalog)
-    rescue StandardError => e
-      Rails.logger.warn("[CatalogImportService] catalog parts backfill skipped for ##{catalog.id}: #{e.message}")
-    end
+      # #393: populate catalog_control_parts from the freshly imported
+      # guidance_data["parts"]. Best-effort -- failures don't block import
+      # since the migration backfill can re-run later.
+      backfill_parts_best_effort(catalog)
 
     stats
   end
@@ -1129,5 +1125,33 @@ class CatalogImportService
         child.text
       end
     end.join.gsub(/\s+/, " ").strip
+  end
+
+  # Best-effort: a parts failure must not fail an otherwise good catalog import,
+  # because the migration backfill can re-run later.
+  #
+  # #968 item 4 — but "best-effort" must still leave a trace an operator can find.
+  # This previously wrote only a log line, so the catalog imported as clean while
+  # control guidance parts were missing, and the gap surfaced only when somebody
+  # noticed parts absent from a control page. Extracted from the inline block so
+  # the contract can be asserted directly rather than through a whole import.
+  def backfill_parts_best_effort(catalog)
+    CatalogPartExtractorService.backfill_catalog_parts!(catalog)
+    true
+  rescue StandardError => e
+    Rails.logger.warn("[CatalogImportService] catalog parts backfill skipped for ##{catalog.id}: #{e.message}")
+    begin
+      catalog.update_column(
+        :metadata_extra,
+        (catalog.metadata_extra || {}).merge(
+          "catalog_parts_backfill_failed_at" => Time.current.iso8601,
+          "catalog_parts_backfill_error"     => "#{e.class}: #{e.message}".truncate(500)
+        )
+      )
+    rescue StandardError
+      # The bookkeeping must never become the failure; the log line stands.
+      nil
+    end
+    false
   end
 end

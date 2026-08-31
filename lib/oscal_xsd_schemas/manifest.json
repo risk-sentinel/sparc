@@ -1,0 +1,62 @@
+{
+  "generated_at": "2026-08-30T20:10:49Z",
+  "default_version": "1.2.2",
+  "schemas": [
+    {
+      "version": "1.2.2",
+      "model": "assessment_plan",
+      "file": "oscal_assessment-plan_schema.xsd",
+      "sha256": "87cf6669841fed6e2089ae59bc08042cedea840e2208964265b180794077dabd",
+      "source_url": "https://github.com/usnistgov/OSCAL/releases/download/v1.2.2/oscal_assessment-plan_schema.xsd",
+      "size": 327875
+    },
+    {
+      "version": "1.2.2",
+      "model": "assessment_results",
+      "file": "oscal_assessment-results_schema.xsd",
+      "sha256": "9031929e6735a5f17720cc59084286e8e4803f10491ef05ca35f8fee0ae70da5",
+      "source_url": "https://github.com/usnistgov/OSCAL/releases/download/v1.2.2/oscal_assessment-results_schema.xsd",
+      "size": 347498
+    },
+    {
+      "version": "1.2.2",
+      "model": "catalog",
+      "file": "oscal_catalog_schema.xsd",
+      "sha256": "a5d537f4c93c4978c53d44770a4865c3864ee4a6e93a01996683208b1b70fcd8",
+      "source_url": "https://github.com/usnistgov/OSCAL/releases/download/v1.2.2/oscal_catalog_schema.xsd",
+      "size": 115340
+    },
+    {
+      "version": "1.2.2",
+      "model": "component_definition",
+      "file": "oscal_component_schema.xsd",
+      "sha256": "fb0b69aae3aadb8b2f1056ede997a3d8cd9c4dedb1087cee6d119baf3b4cff53",
+      "source_url": "https://github.com/usnistgov/OSCAL/releases/download/v1.2.2/oscal_component_schema.xsd",
+      "size": 174249
+    },
+    {
+      "version": "1.2.2",
+      "model": "poam",
+      "file": "oscal_poam_schema.xsd",
+      "sha256": "68b9e807f0a5073f016555ae16062b76a08e8560e583d8dd0b38b1344a3b187c",
+      "source_url": "https://github.com/usnistgov/OSCAL/releases/download/v1.2.2/oscal_poam_schema.xsd",
+      "size": 334182
+    },
+    {
+      "version": "1.2.2",
+      "model": "profile",
+      "file": "oscal_profile_schema.xsd",
+      "sha256": "fccb12b1c93f2cc7921d6a40eeda69a72129f7624c450c629e4edb415e06131b",
+      "source_url": "https://github.com/usnistgov/OSCAL/releases/download/v1.2.2/oscal_profile_schema.xsd",
+      "size": 138464
+    },
+    {
+      "version": "1.2.2",
+      "model": "ssp",
+      "file": "oscal_ssp_schema.xsd",
+      "sha256": "49b6b85b2429806befe87a22910c63ddf17625a283b2fc92747cad7a1535f376",
+      "source_url": "https://github.com/usnistgov/OSCAL/releases/download/v1.2.2/oscal_ssp_schema.xsd",
+      "size": 241958
+    }
+  ]
+}

@@ -18,8 +18,13 @@
 # this reason and would have failed every scanner had it ever been applied.
 #
 # These files remain valuable as inventory and licence evidence, and are still
-# published to sparc-iac. Settling the severity-source policy so this can
-# become a real gate is #1064.
+# published to sparc-iac.
+#
+# The severity-source policy is now SETTLED (#1064) and written down in
+# docs/compliance/severity-source-policy.md: the authoritative severity is the
+# one assigned by whoever ships the code we run — Red Hat for RPMs, the ecosystem
+# advisory data for gems and Go modules. Max-of-all-sources is not that, so this
+# path stays inventory-only rather than becoming a gate.
 error:
   total:
     max: 0

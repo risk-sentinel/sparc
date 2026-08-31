@@ -80,7 +80,7 @@ class EvidencesController < ApplicationController
         redirect_to after_create_path(@evidence), flash: { success: upload_success_notice(@evidence) }
       end
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   rescue EvidenceUploadPolicy::Error => e
     reject_upload(e, :new)
@@ -106,7 +106,7 @@ class EvidencesController < ApplicationController
         redirect_to @evidence, flash: { success: "Evidence updated successfully." }
       end
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   rescue EvidenceUploadPolicy::Error => e
     reject_upload(e, :edit)
@@ -163,7 +163,7 @@ class EvidencesController < ApplicationController
               metadata: { reason: error.message, filename: uploaded_file.try(:original_filename) })
     flash.now[:error] = error.message
     @evidence ||= Evidence.new(evidence_params)
-    render template, status: :unprocessable_entity
+    render template, status: :unprocessable_content
   end
 
   # #902 — the user chose a file and the record saved without one. Rare, but it

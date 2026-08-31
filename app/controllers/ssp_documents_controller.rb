@@ -609,7 +609,7 @@ class SspDocumentsController < ApplicationController
                 metadata: { control_id: params[:control_id], title: resource.title })
       render json: { success: true, resource: { id: resource.id, uuid: resource.uuid, title: resource.title, href: resource.href } }
     else
-      render json: { success: false, error: resource.errors.full_messages.join(", ") }, status: :unprocessable_entity
+      render json: { success: false, error: resource.errors.full_messages.join(", ") }, status: :unprocessable_content
     end
   end
 
@@ -623,7 +623,7 @@ class SspDocumentsController < ApplicationController
                 metadata: { control_id: params[:control_id], resource_uuid: resource.uuid })
       render json: { success: true, resource: { id: resource.id, uuid: resource.uuid, title: resource.title } }
     else
-      render json: { success: false, error: link.errors.full_messages.join(", ") }, status: :unprocessable_entity
+      render json: { success: false, error: link.errors.full_messages.join(", ") }, status: :unprocessable_content
     end
   end
 

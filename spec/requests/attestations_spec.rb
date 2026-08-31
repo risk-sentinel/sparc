@@ -86,7 +86,7 @@ RSpec.describe "Attestations", type: :request do
 
       expect { post_attestation(attester_user_id: outsider.id) }
         .not_to change(Attestation, :count)
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     # The free-text field #947 removed must not come back through the params.

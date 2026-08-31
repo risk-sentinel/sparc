@@ -79,7 +79,7 @@ jobs:
   # ── Prepare: validate version and compute metadata ──────────
 
   prepare:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read          # checkout only — computes build metadata
     outputs:
@@ -134,15 +134,397 @@ jobs:
 
   # ── Build and Push: multi-platform image to Docker Hub + ECR ──
 
+  # ══════════════════════════════════════════════════════════════════
+  # BUILD — one runner per architecture, each building natively (#711)
+  #
+  # WHY A MATRIX, measured not guessed. The first version built both arches in
+  # one job with QEMU. It worked, and took **59m53s** — while every other step
+  # in that job totalled about four minutes. Emulated native-gem compilation was
+  # 93% of the runtime and came within 30 minutes of the job timeout.
+  #
+  # `ubuntu-24.04-arm` runners are free for public repositories, so arm64 builds
+  # natively here instead. Each job exports an OCI archive as an artifact;
+  # nothing is pushed. `verify` tests the amd64 one, and build-and-push
+  # assembles the manifest list AFTER the approval.
+  #
+  # The `docker` driver CANNOT export OCI ("OCI exporter is not supported for
+  # the docker driver"); setup-buildx-action's `docker-container` driver can.
+  build-image:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs: [ prepare ]
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          # PINNED, and pinned to the SAME Ubuntu release on both sides.
+          # `ubuntu-latest` is a floating label — it resolves to ubuntu-24.04
+          # today (verified in run 32994759428), but when GitHub moves it the
+          # amd64 half would jump a major Ubuntu release while the arm64 half
+          # stayed on 24.04. The two architectures of one release would then be
+          # built on different host OSes with nothing to say so — the same
+          # "two builds that differ" class this gate exists to remove.
+          #
+          # The host does not supply the image's contents (it builds FROM ubi9),
+          # but it does supply buildx, the apt-installed skopeo, and Playwright's
+          # system deps — so it is part of the gate's reproducibility.
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+            slug: linux-amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            slug: linux-arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      # Labels are applied at BUILD time, so they must be set here rather than
+      # in build-and-push — which no longer builds anything.
+      - name: Docker metadata (labels)
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+        with:
+          images: risksentinel/sparc
+          labels: |
+            org.opencontainers.image.title=SPARC
+            org.opencontainers.image.description=Systematic Policy and Regulatory Compliance
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version_stripped }}
+            org.opencontainers.image.source=https://github.com/risk-sentinel/sparc
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ needs.prepare.outputs.build_date }}
+            org.opencontainers.image.vendor=risk-sentinel
+            org.opencontainers.image.licenses=MIT
+
+      - name: Build ${{ matrix.platform }} into an OCI archive
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ matrix.platform }}
+          outputs: type=oci,dest=/tmp/sparc-${{ matrix.slug }}.tar
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          # Per-arch cache scope: one shared scope would have the two runners
+          # evicting each other's layers on every run.
+          cache-from: type=gha,scope=${{ matrix.slug }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.slug }}
+          provenance: true
+          sbom: true
+
+      # Retention 1 day: consumed within this run, and nothing needs it once the
+      # image is in Docker Hub/ECR. Expiry IS the cleanup — there is no staging
+      # registry to prune.
+      - name: Upload the ${{ matrix.platform }} image
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: image-${{ matrix.slug }}
+          path: /tmp/sparc-${{ matrix.slug }}.tar
+          retention-days: 1
+          if-no-files-found: error
+
+  # ══════════════════════════════════════════════════════════════════
+  # VERIFY — the in-runner pre-release gate (#711)
+  #
+  # Runs BEFORE the production approval, and fails closed. If it fails, the
+  # workflow stops and nobody is asked to approve.
+  #
+  # WHY IT IS A SEPARATE JOB, not a step inside build-and-push: the
+  # `environment: production` gate covers a WHOLE job, so a verification step
+  # there would run AFTER the approval had already been given — which is the
+  # failure this exists to prevent.
+  #
+  # WHAT IT PROVES. Until now an image was built and started, and the only thing
+  # ever run against it was `bin/rails --version` (the dry-run path below).
+  # `security.yml` builds an image and only SCANS it. Nothing served HTTP and
+  # nothing exercised the app. That reads like verification and proves the
+  # binary loads — the same shape as #1048, #1050, #987 and #1061.
+  #
+  # WHAT IT DOES NOT PROVE. rspec is NOT run here: the prod image is built with
+  # BUNDLE_WITHOUT="development test", so the test gems are absent by design.
+  # rspec runs in ci.yml against the source. This gate exercises the shipped
+  # artifact over HTTP, which is the thing ci.yml cannot do.
+  #
+  # ARM64 IS BUILT BUT NOT EXERCISED. Owner-accepted 2026-08-26 as materially
+  # lower risk than today. Tracked as #859, and the promotion step is exactly
+  # where an arm64 leg attaches.
+  verify:
+    name: Verify the image before it can be published
+    runs-on: ubuntu-24.04
+    needs: [ prepare, build-image ]
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # `docker save`/`load` does NOT round-trip a multi-arch manifest. skopeo
+      # selects one platform out of the OCI index. Do not "simplify" this back
+      # to docker save — the arm64 half would be silently lost.
+      - name: Download the amd64 image built by the matrix
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: image-linux-amd64
+          path: /tmp
+
+      - name: Load the amd64 image
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq skopeo
+          skopeo copy \
+            oci-archive:/tmp/sparc-linux-amd64.tar \
+            docker-archive:/tmp/sparc-amd64.tar:sparc-ubi9-web:latest
+          docker load -i /tmp/sparc-amd64.tar
+          # compose (project `sparc-ubi9`, service `web`) resolves this name, so
+          # `--no-build` below uses the image we just tested rather than rebuilding.
+          docker image inspect sparc-ubi9-web:latest \
+            --format 'loaded: arch={{.Architecture}} os={{.Os}}'
+
+      # `env_file: .env` is required by the compose file and .env is gitignored,
+      # so it does not exist on a runner. The example carries the auth flags the
+      # stack needs (SPARC_ENABLE_LOCAL_LOGIN etc.).
+      - name: Stand the image up
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          docker compose -f docker-compose.ubi9.yaml --profile tls up -d --no-build
+
+      # A fresh volume runs AwsLabsCdefRefreshJob on boot and imports 230 CDEFs.
+      # Measured 55-105s before it serves, so a short wait would flake on a cold
+      # cache and look like a product failure.
+      - name: Wait for the app to serve
+        run: |
+          set -uo pipefail
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://localhost:3000/ || echo 000)
+            if [ "$code" = "302" ]; then echo "serving after ~$((i*5))s"; exit 0; fi
+            sleep 5
+          done
+          echo "::error::the image never served after 300s"
+          docker compose -f docker-compose.ubi9.yaml logs web | tail -50
+          exit 1
+
+      # Mints an admin and a NON-admin token, and clears the seeded admin's
+      # must_reset_password — which otherwise 302s every authenticated request
+      # and reads as broken auth.
+      - name: Prepare the instance and mint tokens
+        run: |
+          set -euo pipefail
+          bin/smoke-prep --quiet > /tmp/smoke-env.sh
+          echo "minted $(grep -c '^export' /tmp/smoke-env.sh) exports"
+
+      - name: Set up Python tooling
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+
+      - name: API contract suite against the running image
+        working-directory: tests/api
+        run: |
+          set -euo pipefail
+          . /tmp/smoke-env.sh
+          uv sync --locked
+          uv run pytest -q
+
+      # SPARC_SMOKE_PUBLIC_CATALOGS is DECLARED, not inferred. test_public_
+      # controls_974.py refuses to run without it and never skips — #885
+      # established that a posture-gated test which silently skips reports green
+      # while proving nothing, and #974 is the case that made the point: the
+      # suite passed for catalogs throughout while the CDEF library sat wide
+      # open. `0` is the truth here: SPARC_PUBLIC_CATALOGS defaults to false and
+      # neither .env.example nor the compose file overrides it.
+      - name: UI smoke against the running image (catalogs private)
+        working-directory: tests/ui-smoke
+        env:
+          SPARC_SMOKE_PUBLIC_CATALOGS: "0"
+        run: |
+          set -euo pipefail
+          . /tmp/smoke-env.sh
+          uv sync --locked
+          uv run playwright install --with-deps chromium
+          # #858 aborts the run if SPARC_SMOKE_BASE_URL disagrees with the
+          # target's configured scheme/port — both come from smoke-prep, so they
+          # agree by construction.
+          uv run pytest -q --browser chromium
+
+      # BOTH DIRECTIONS. A release gate that only ever proved the secure default
+      # would say nothing about the posture an operator actually opts into, and
+      # "it passed" would again mean "it passed in the one posture we happened to
+      # run". `public_catalogs?` reads ENV per call, so flipping it needs a
+      # container RECREATE rather than a restart.
+      - name: Flip the stack to published catalogs
+        run: |
+          set -euo pipefail
+          # LEADING newline is required, not tidiness: .env.example ships with
+          # NO trailing newline and its last line is a COMMENT, so a bare
+          # `echo >>` concatenates onto it and the flag silently becomes part of
+          # that comment. The container then recreates correctly with the
+          # variable absent, and the only symptom is a posture mismatch that
+          # points at the recreate you already did.
+          printf '\nSPARC_PUBLIC_CATALOGS=true\n' >> .env
+          grep -q '^SPARC_PUBLIC_CATALOGS=true$' .env \
+            || { echo "::error::SPARC_PUBLIC_CATALOGS was not written as its own line in .env"; tail -3 .env; exit 1; }
+          docker compose -f docker-compose.ubi9.yaml up -d --force-recreate web
+          for i in $(seq 1 40); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://localhost:3000/ || echo 000)
+            if [ "$code" = "302" ]; then echo "serving again after ~$((i*5))s"; exit 0; fi
+            sleep 5
+          done
+          echo "::error::the stack did not come back after the catalogs flip"
+          docker compose -f docker-compose.ubi9.yaml logs web | tail -50
+          exit 1
+
+      - name: UI smoke — the published-catalogs posture
+        working-directory: tests/ui-smoke
+        env:
+          SPARC_SMOKE_PUBLIC_CATALOGS: "1"
+        run: |
+          set -euo pipefail
+          . /tmp/smoke-env.sh
+          # Only the posture-gated module: the rest of the suite is posture
+          # agnostic and was proven above. The declared flag is INDEPENDENTLY
+          # confirmed against the app, so a stack that failed to flip fails here
+          # rather than passing on a stale posture.
+          uv run pytest -q --browser chromium test_public_controls_974.py
+
+      - name: Container logs (on failure)
+        if: failure()
+        run: docker compose -f docker-compose.ubi9.yaml logs --tail=200
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.ubi9.yaml --profile tls down -v || true
+
+  # ══════════════════════════════════════════════════════════════════
+  # VERIFY-ARM64 — prove the other half of the manifest boots (#859)
+  #
+  # Every published tag is a multi-arch manifest, and until now release
+  # verification only ever exercised amd64. The arm64 half of every tag shipped
+  # unverified — whoever pulled it (a developer on Apple Silicon, or a Graviton
+  # deployment) got the untested half.
+  #
+  # DELIBERATELY A BOOT-AND-SMOKE, NOT A SECOND FULL CEREMONY. #859 scopes it
+  # that way and it is the right depth: the suites prove application behaviour,
+  # which is architecture-independent, and what is genuinely unproven about
+  # arm64 is whether the IMAGE starts and serves — native gems, jemalloc, the
+  # hdf-cli binary. Running ui-smoke twice would add ~11 minutes to every
+  # release to re-assert things the amd64 leg already established.
+  #
+  # Runs in PARALLEL with `verify`, so this costs runner minutes rather than
+  # wall-clock.
+  #
+  # Graviton evaluation — the other half of #859 — is an infrastructure
+  # decision for the task definition and belongs in sparc-iac, not here.
+  verify-arm64:
+    name: Verify the arm64 image boots
+    runs-on: ubuntu-24.04-arm
+    needs: [ prepare, build-image ]
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download the arm64 image built by the matrix
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: image-linux-arm64
+          path: /tmp
+
+      - name: Load the arm64 image
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq skopeo
+          skopeo copy \
+            oci-archive:/tmp/sparc-linux-arm64.tar \
+            docker-archive:/tmp/sparc-arm64.tar:sparc-ubi9-web:latest
+          docker load -i /tmp/sparc-arm64.tar
+          # Assert we are actually testing arm64. Loading the wrong half of the
+          # manifest here would produce a green run that proved nothing about
+          # the architecture this job exists for.
+          arch=$(docker image inspect sparc-ubi9-web:latest --format '{{.Architecture}}')
+          [ "$arch" = "arm64" ] || { echo "::error::loaded image is ${arch}, expected arm64"; exit 1; }
+          echo "loaded arm64 image"
+
+      # The base compose file pins the web service to linux/amd64 to mirror the
+      # deployed posture; the override flips only the architecture.
+      - name: Stand the arm64 image up
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          docker compose -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml \
+            --profile tls up -d --no-build
+
+      - name: Wait for the app to serve
+        run: |
+          set -uo pipefail
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://localhost:3000/ || echo 000)
+            if [ "$code" = "302" ]; then echo "arm64 image serving after ~$((i*5))s"; exit 0; fi
+            sleep 5
+          done
+          echo "::error::the arm64 image never served after 300s"
+          docker compose -f docker-compose.ubi9.yaml logs web | tail -50
+          exit 1
+
+      # Boot-and-smoke: enough to show the arm64 build starts, routes, enforces
+      # auth, and that the native binaries it carries actually execute. These
+      # are the things that differ by architecture; behaviour is proven on amd64.
+      - name: Smoke the arm64 image
+        run: |
+          set -euo pipefail
+          fail=0
+          check() {
+            local path="$1" want="$2"
+            local got
+            got=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "http://localhost:3000${path}")
+            if [ "$got" = "$want" ]; then
+              echo "  ${path} -> ${got}"
+            else
+              echo "::error::${path} returned ${got}, expected ${want}"; fail=1
+            fi
+          }
+          check /                      302
+          check /api/v1/ssp_documents  401
+          check /api/v1/controls       401
+
+          # The native-gem and native-binary surface — the actual arm64 risk.
+          # A wrong-arch or half-built image fails here rather than at a
+          # customer's `docker run`.
+          docker compose -f docker-compose.ubi9.yaml exec -T web sh -c '
+            set -e
+            uname -m
+            hdf version | head -1
+            bundle exec ruby -e "require \"pg\"; require \"nokogiri\"; puts \"native gems load\""
+          '
+          [ "$fail" -eq 0 ] || exit 1
+
+      - name: Container logs (on failure)
+        if: failure()
+        run: docker compose -f docker-compose.ubi9.yaml logs --tail=200
+
+      - name: Tear down
+        if: always()
+        run: |
+          docker compose -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml \
+            --profile tls down -v || true
+
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write         # AWS OIDC (ECR push) + Docker Hub login
     environment: production   # #545 item 3 — the SINGLE release approval gate (required
     # reviewers). Approving here authorizes the whole release; sign-verify-attest has no
     # separate gate and runs after this approved build.
-    needs: [ prepare ]
+    needs: [ prepare, verify, verify-arm64 ]   # #711/#859 — both halves of the manifest verified before approval
     # `secrets` context is NOT allowed in step-level `if:` conditionals
     # (only in env / job.if / step.env). Map the secret presence to a
     # job-level env var so step `if:` blocks can reference it.
@@ -225,25 +607,70 @@ jobs:
           # Version tag only — no latest (ECR uses immutable tags)
           echo "tags=${ECR}:${VERSION}" >> "$GITHUB_OUTPUT"
 
-      # ── Production build: multi-platform, push to registries ──
-      - name: Build and push multi-platform image
+      # ── PROMOTE the verified image (#711) ──
+      #
+      # This job no longer BUILDS. It publishes the exact bytes the `verify` job
+      # built and exercised, so the artifact that was tested is the artifact
+      # that ships. Rebuilding here would produce a second, untested image that
+      # merely resembles the first — the "measure the artifact that ships"
+      # failure this repo has been bitten by before.
+      #
+      # `--all` copies the whole OCI index: both architectures AND the
+      # provenance/SBOM attestation manifests buildx attached. Copying without
+      # it would publish a single-arch image and silently drop arm64.
+      - name: Download both verified architectures
+        if: needs.prepare.outputs.dry_run != 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: image-linux-*
+          merge-multiple: true
+          path: /tmp
+
+      - name: Promote the verified image to the registries
         if: needs.prepare.outputs.dry_run != 'true'
         id: build
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ steps.meta.outputs.tags }}
-            ${{ steps.ecr-tags.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: true
-          sbom: true
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq skopeo
+
+          # One tag per line from metadata-action, plus the ECR tag if configured.
+          TAGS=$(printf '%s\n%s\n' \
+            "${{ steps.meta.outputs.tags }}" \
+            "${{ steps.ecr-tags.outputs.tags }}" | sed '/^$/d')
+
+          # Each arch was built on its own native runner, so there is no
+          # pre-made multi-arch index to copy. Push each arch under a transient
+          # per-arch tag, then join them into the real tag with `imagetools
+          # create`. All of it happens AFTER the approval — nothing reaches a
+          # registry before then, which is the property the artifact hand-off
+          # exists to preserve.
+          FIRST=""
+          while read -r tag; do
+            [ -n "$tag" ] || continue
+            echo "── promoting ${tag}"
+            for slug in linux-amd64 linux-arm64; do
+              skopeo copy "oci-archive:/tmp/sparc-${slug}.tar" "docker://${tag}-${slug}"
+            done
+            docker buildx imagetools create -t "${tag}" \
+              "${tag}-linux-amd64" "${tag}-linux-arm64"
+            [ -n "$FIRST" ] || FIRST="$tag"
+          done <<< "$TAGS"
+
+          if [ -z "$FIRST" ]; then
+            echo "::error::no tags computed — refusing to report success"
+            exit 1
+          fi
+
+          # The manifest-LIST digest is what cosign signs and what
+          # sign-verify-attest consumes. Read it back from the registry rather
+          # than assuming the local one survived the copy.
+          DIGEST=$(skopeo inspect --no-tags --format '{{.Digest}}' "docker://${FIRST}")
+          case "$DIGEST" in
+            sha256:*) ;;
+            *) echo "::error::could not read a manifest digest back from ${FIRST} (got '${DIGEST}')"; exit 1 ;;
+          esac
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "Promoted verified image as ${DIGEST}"
 
       # ── Dry-run build: single-platform, local only ──
       - name: Build image (dry run)
@@ -296,7 +723,7 @@ jobs:
   # ── Sign, Verify, and Attest ────────────────────────────────
 
   sign-verify-attest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write         # Sigstore keyless OIDC (cosign sign/verify/attest)
@@ -434,6 +861,124 @@ jobs:
 
       # ── Summary ──
 
+      # ── Vulnerability attestation (#917) ──
+      #
+      # A consumer could verify WHAT is in the image (the CycloneDX attestation
+      # above) but not WHAT WAS KNOWN about it when it was built. Scan results
+      # lived only in workflow artifacts, which expire while the image does not:
+      # a year on, the SBOM is still verifiable and the vulnerability posture at
+      # build time is gone. And the allow-list reasoning — where the actual
+      # judgement lives — was discarded with the artifact.
+      #
+      # OpenVEX, not in-toto `vuln`: the decisions we need to publish are
+      # per-vulnerability status plus justification, which is what VEX models,
+      # and hdf-libs already emits it from our own register.
+      #
+      # NOTE this path is unaffected by #1067. `hdf convert --from
+      # hdf-amendments` reads the AMENDMENTS document, generated from
+      # sparc-findings.yml — not the amended HDFs, which is where the no-op
+      # lives. Measured: 16 statements for 16 register findings, 14 affected /
+      # 2 not_affected.
+      # This job installs Cosign and Syft but not grype or Go, and the steps
+      # below need both. Missing either would fail at runtime, well after the
+      # image had already been published by build-and-push.
+      - name: Checkout code (register + pin script + Gemfile)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Grype
+        uses: anchore/scan-action/download-grype@abae6f91766d0bab7c6b23e6bb95dcb4d5c11b31 # v7
+        id: grype
+
+      - name: Set up Ruby (amendments + VEX enrichment)
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: .ruby-version
+
+      # Derived from the Dockerfile, same single source as ci.yml and the
+      # security gate — not a fourth hardcoded copy of the toolchain version.
+      - name: Resolve hdf-cli pins from the Dockerfile
+        id: hdf_pins
+        run: script/ci/hdf_pins.sh --github-output
+
+      - name: Set up Go (pinned to the hdf-cli fix line)
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ steps.hdf_pins.outputs.go_fix_line }}
+
+      - name: Build hdf (mitre/hdf-libs CLI) from source
+        env:
+          HDF_LIBS_VERSION: ${{ steps.hdf_pins.outputs.hdf_libs_version }}
+          XTEXT_VERSION: ${{ steps.hdf_pins.outputs.xtext_version }}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
+            https://github.com/mitre/hdf-libs.git /tmp/hdf-src
+          cd /tmp/hdf-src/hdf-cli
+          go mod edit -require="golang.org/x/text@v${XTEXT_VERSION}"
+          go mod download golang.org/x/text
+          PKG="github.com/mitre/hdf-libs/hdf-cli/v3/cmd/hdf/cmd"
+          CGO_ENABLED=0 go build -trimpath \
+            -ldflags "-s -w -X ${PKG}.version=${HDF_LIBS_VERSION}" \
+            -o /usr/local/bin/hdf ./cmd/hdf
+
+      - name: Scan the published image for the vulnerability predicate
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.prepare.outputs.version_stripped }}"
+          grype "risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}" \
+            -o json > "sparc-vulns-${VERSION}.json"
+          # Scanner and database provenance. #917 is explicit that a scan is
+          # only meaningful relative to what was KNOWN — a finding count with no
+          # database timestamp cannot be interpreted a year later.
+          grype version -o json > "sparc-scanner-${VERSION}.json"
+
+      - name: Build the VEX predicate and carry the rationale into it
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.prepare.outputs.version_stripped }}"
+          ruby bin/sparc_findings_to_hdf_amendments.rb \
+            --input docs/compliance/sparc-findings.yml \
+            --output /tmp/amendments.hdf.json
+          hdf convert /tmp/amendments.hdf.json --from hdf-amendments \
+            --to openvex -o "sparc-vex-${VERSION}.json"
+          # hdf-libs writes the disposition but DISCARDS the reasoning — every
+          # statement comes out `"status_notes": "HDF override type: poam"` with
+          # a null justification. #917 asks for the rationale, so it is merged
+          # back from the register. Fails closed if it matches nothing.
+          ruby bin/vex_enrich_rationale.rb \
+            --vex "sparc-vex-${VERSION}.json" \
+            --findings docs/compliance/sparc-findings.yml
+
+      - name: Attest the vulnerability posture to Docker Hub
+        run: |
+          VERSION="${{ needs.prepare.outputs.version_stripped }}"
+          cosign attest --yes \
+            --predicate "sparc-vex-${VERSION}.json" \
+            --type openvex \
+            risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}
+
+      - name: Attest the vulnerability posture to ECR
+        if: env.HAS_ECR == 'true'
+        env:
+          ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.SPARC_ECR_REGISTRY }}
+        run: |
+          VERSION="${{ needs.prepare.outputs.version_stripped }}"
+          cosign attest --yes \
+            --predicate "sparc-vex-${VERSION}.json" \
+            --type openvex \
+            "${ECR_REGISTRY}@${{ needs.build-and-push.outputs.digest }}"
+
+      - name: Upload the vulnerability predicate + scan
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: vulnerability-attestation
+          path: |
+            sparc-vex-*.json
+            sparc-vulns-*.json
+            sparc-scanner-*.json
+          retention-days: 90
+          if-no-files-found: error
+
       - name: Release summary
         env:
           ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.SPARC_ECR_REGISTRY }}
@@ -482,7 +1027,7 @@ jobs:
   # lockstep is "part of done" — if the issue can't be filed, the release
   # FAILS loudly rather than shipping green while sparc-iac drifts behind.
   notify-consumers:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read          # files the issue via PROJECT_TOKEN, not GITHUB_TOKEN
     needs: [ prepare, build-and-push, sign-verify-attest ]

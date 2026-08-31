@@ -133,6 +133,119 @@ namespace :oscal do
       failures.each { |f| oscal_log "  - #{f}" }
       exit 1
     end
+
+    # #1058 — the XSD set follows the JSON set, always. It was possible to move
+    # DEFAULT_VERSION and carry only the JSON half, which is exactly what happened
+    # in v1.16.0: XML exports declared 1.2.2 and were validated against 1.2.1 XSDs
+    # for an entire release. Invoking it here means the two sets cannot separate
+    # again without someone deliberately removing this line.
+    Rake::Task["oscal:bundle_xsd_schemas"].invoke
+  end
+
+  # #1058 — the XSD set is fetched, not placed by hand.
+  #
+  # v1.16.0 moved DEFAULT_VERSION to 1.2.2 and `bundle_schemas` carried the JSON
+  # set with it. The XSDs did not follow, because nothing fetched them: they had
+  # been copied in by hand and no task iterated them. So XML exports declared
+  # `oscal-version: 1.2.2` while `validate_xml` checked them against 1.2.1 —
+  # "validated" naming a different release from the one the document claims.
+  #
+  # A hand-maintained set beside an automated one drifts again the next time the
+  # version moves, whoever moves it. That was the actual defect; this task is the
+  # fix, and `bundle_schemas` invokes it so the two sets cannot separate.
+  #
+  # Derived from `OscalSchemaValidationService::XSD_SCHEMA_MAP` rather than
+  # DOCUMENT_TYPE_MAP: that map is the set the validator actually loads. NIST
+  # also publishes an `oscal_mapping_schema.xsd`, but nothing here validates
+  # mapping XML, and fetching a file no code reads would be inventory rather than
+  # coverage.
+  #
+  # Single flat directory, not versioned like the JSON bundle: `validate_xml`
+  # resolves one file per model with no version in the path, so the set on disk
+  # IS the DEFAULT_VERSION set by construction.
+  desc "Fetch the OSCAL XSD set for DEFAULT_VERSION into lib/oscal_xsd_schemas/ (#1058)"
+  task bundle_xsd_schemas: :environment do
+    require "net/http"
+    require "digest"
+    require "fileutils"
+
+    version = OscalSchema::DEFAULT_VERSION
+    xsd_dir = Rails.root.join("lib", "oscal_xsd_schemas")
+    FileUtils.mkdir_p(xsd_dir)
+
+    entries  = []
+    failures = []
+
+    oscal_log "Fetching OSCAL XSD schemas for v#{version}"
+
+    OscalSchemaValidationService::XSD_SCHEMA_MAP.each do |model, file|
+      label = "#{model} v#{version}"
+      url   = format(OscalSchema::NIST_SCHEMA_URL_TEMPLATE, version: version, file: file)
+
+      body =
+        begin
+          fetch_following_redirects(url)
+        rescue StandardError => e
+          failures << "#{label}: #{e.message}"
+          oscal_log "  ✗ #{label}: #{e.message}"
+          nil
+        end
+
+      if body.nil?
+        failures << "#{label}: empty body from #{url}" unless failures.last&.include?(label)
+        next
+      end
+
+      # A redirect to an HTML error page is still a 200 with a body. An XSD that
+      # does not parse must not be written over a working one.
+      begin
+        Nokogiri::XML(body) { |c| c.strict }
+      rescue Nokogiri::XML::SyntaxError => e
+        failures << "#{label}: not well-formed XML — #{e.message}"
+        oscal_log "  ✗ #{label}: not well-formed XML"
+        next
+      end
+
+      File.write(xsd_dir.join(file), body)
+      sha256 = Digest::SHA256.hexdigest(body)
+      entries << {
+        "version"    => version,
+        "model"      => model.to_s,
+        "file"       => file,
+        "sha256"     => sha256,
+        "source_url" => url,
+        "size"       => body.bytesize
+      }
+      oscal_log "  ✓ #{label} → #{file} (#{body.bytesize} bytes, sha256:#{sha256[0..15]}…)"
+    end
+
+    manifest = {
+      "generated_at"    => Time.now.utc.iso8601,
+      "default_version" => version,
+      "schemas"         => entries.sort_by { |e| e["model"] }
+    }
+    File.write(xsd_dir.join("manifest.json"), JSON.pretty_generate(manifest) + "\n")
+
+    oscal_log ""
+    oscal_log "XSD set written to lib/oscal_xsd_schemas/ (#{entries.size} schemas, v#{version})"
+
+    if failures.any?
+      annotation = ENV["GITHUB_ACTIONS"] ? "::error::" : ""
+      oscal_log "#{annotation}OSCAL XSD fetch failed (#{failures.size} entries):"
+      failures.each { |f| oscal_log "  - #{f}" }
+
+      # RAISE, do not `exit`. Rake turns an unhandled exception into a non-zero
+      # exit, so the CLI behaviour is identical — but `exit` inside a task that a
+      # SPEC invokes terminates the whole rspec process, taking the rest of the
+      # suite with it and reporting "0 failures" on the way out.
+      #
+      # That is not hypothetical: chaining this task into `bundle_schemas` did
+      # exactly that. `oscal_schemas_rake_spec` stubs the fetch to return JSON,
+      # this task correctly rejected it as not-XML, and the `exit 1` killed the
+      # run at whatever point the random order had reached — 6246 examples one
+      # run, 3869 the next, always "0 failures".
+      raise "OSCAL XSD fetch failed (#{failures.size} entries): #{failures.join('; ')}"
+    end
   end
 
   desc "Seed OSCAL JSON schemas — bundle (offline) → NIST GitHub → disk fallback (#453)"

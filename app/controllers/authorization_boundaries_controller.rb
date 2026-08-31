@@ -74,7 +74,7 @@ class AuthorizationBoundariesController < ApplicationController
       redirect_to @authorization_boundary
     else
       flash.now[:error] = @authorization_boundary.errors.full_messages.join(", ")
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -96,7 +96,7 @@ class AuthorizationBoundariesController < ApplicationController
       redirect_to @authorization_boundary
     else
       flash.now[:error] = @authorization_boundary.errors.full_messages.join(", ")
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

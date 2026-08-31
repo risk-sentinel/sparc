@@ -54,7 +54,7 @@ RSpec.describe "Api::V1::HdfAmendments", type: :request do
       HdfRunner::Error.new("schema mismatch", command: "hdf amend verify", exit_code: 1, stderr: "bad")
     )
     get path, headers: admin_headers
-    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response).to have_http_status(:unprocessable_content)
     expect(JSON.parse(response.body)["error"]).to match(/verification failed/i)
   end
 

@@ -73,7 +73,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
       render json: { data: serialize_back_matter_resource(@resource, detailed: true) }, status: :created
     else
       render json: { error: "Validation failed", details: @resource.errors.full_messages },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     end
   end
 
@@ -85,7 +85,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
       render json: { data: serialize_back_matter_resource(@resource, detailed: true) }
     else
       render json: { error: "Validation failed", details: @resource.errors.full_messages },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     end
   end
 
@@ -105,7 +105,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
 
     unless BackMatterResource::LINKABLE_CONTROL_TYPES.include?(linkable_type)
       render json: { error: "Invalid linkable_type. Must be one of: #{BackMatterResource::LINKABLE_CONTROL_TYPES.join(', ')}" },
-             status: :unprocessable_entity
+             status: :unprocessable_content
       return
     end
 
@@ -118,7 +118,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
       render json: { data: serialize_back_matter_resource(@resource, detailed: true) }
     else
       render json: { error: "Link failed", details: link.errors.full_messages },
-             status: :unprocessable_entity
+             status: :unprocessable_content
     end
   end
 

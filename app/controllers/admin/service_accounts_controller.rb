@@ -68,7 +68,7 @@ module Admin
         redirect_to admin_service_account_path(@service_account), notice: "Service account created. Copy the API token now — it won't be shown again."
       else
         @human_users = User.human_users.active.order(:email)
-        render :new, status: :unprocessable_entity
+        render :new, status: :unprocessable_content
       end
     end
 
@@ -89,7 +89,7 @@ module Admin
         redirect_to admin_service_account_path(@service_account), notice: "Service account updated."
       else
         @human_users = User.human_users.active.order(:email)
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
       end
     end
 

@@ -179,7 +179,7 @@ RSpec.describe BackMatterResourcePromotionService do
       result = described_class.new(resource: resource, actor: admin).reject!(reason: "  ")
 
       expect(result).not_to be_success
-      expect(result.status_code).to eq(:unprocessable_entity)
+      expect(result.status_code).to eq(:unprocessable_content)
     end
 
     it "rejects when not pending_review" do

@@ -30,7 +30,7 @@ class PoamMilestonesController < ApplicationController
       flash[:success] = "Milestone added"
       redirect_to poam_document_path(@poam_document)
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -45,7 +45,7 @@ class PoamMilestonesController < ApplicationController
       flash[:success] = "Milestone updated"
       redirect_to poam_document_path(@poam_document)
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

@@ -5,7 +5,7 @@
 # CVE-disposition treadmill. Multi-arch (amd64 + arm64) in build-sign-publish.
 # The prior Debian image is preserved as Dockerfile_debian for rollback; see
 # docs/dev/ubi9_migration_findings.md for the migration validation + A/B evidence.
-ARG RUBY_VERSION=3.4.4
+ARG RUBY_VERSION=3.4.10
 ARG RUBY_MAJOR=3.4
 ARG JEMALLOC_VERSION=5.3.0
 ARG HDF_LIBS_VERSION=3.5.1
@@ -38,7 +38,17 @@ ARG HDF_LIBS_VERSION=3.5.1
 # NOTE the header's "Iron Bank / DISA-aligned" is a description of the UBI9
 # LINEAGE, not the source: this pulls Red Hat's PUBLIC registry, not
 # registry1.dso.mil. Nothing here holds Iron Bank pull credentials.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:8eb2830d0936237fc13a1f2f7e45aecf90d69043380ad167fad0343632937f41
+#
+# Bumped 2026-08-27 for two HIGH sqlite-libs CVEs the release gate caught. This
+# is the first finding the #711 in-runner gate blocked on its own PR, which is
+# what it was built for: nothing in that branch touched the image, and the
+# container simply acquired two new HIGHs against CI-1's measured `high: 4`
+# baseline (6 received, 4 allowed).
+#   sqlite-libs  3.34.1-10.el9_8 -> 3.34.1-11.el9_8   CVE-2026-11822/-11824
+# Measured with `rpm -q` on both digests, per the practice above. The bump is
+# surgical: 109 packages before and after, nothing added or removed, and
+# sqlite-libs is the ONLY version change — so the blast radius is the fix.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:580752f96d36c4132bffd30f9c34865bf4bd87f6aa161c969d117f21732e50f7
 
 # ── hdf-builder: hdf-cli compiled from source, toolchain pinned (#1001) ──────
 # This used to be a release-tarball download (script/dev/install-hdf.sh, then

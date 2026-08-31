@@ -39,7 +39,7 @@ module DocumentFileIngestApi
     uploads = ingest_uploads
     if uploads.empty?
       return render json: { error: "No file provided (multipart field :file, or :files[] for several)" },
-                    status: :unprocessable_entity
+                    status: :unprocessable_content
     end
 
     created = []
@@ -136,7 +136,7 @@ module DocumentFileIngestApi
   # not, 422 when none were. A partial ingest reported as 201 would tell a caller
   # their rejected files succeeded.
   def ingest_status(created, errors)
-    return :unprocessable_entity if created.empty?
+    return :unprocessable_content if created.empty?
     return :multi_status if errors.any?
 
     :created

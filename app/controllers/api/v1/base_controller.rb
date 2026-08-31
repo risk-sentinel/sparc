@@ -32,7 +32,7 @@ class Api::V1::BaseController < ActionController::API
   end
 
   rescue_from ActiveRecord::RecordInvalid do |e|
-    render json: { error: e.message, details: e.record&.errors&.full_messages }, status: :unprocessable_entity
+    render json: { error: e.message, details: e.record&.errors&.full_messages }, status: :unprocessable_content
   end
 
   rescue_from NotAuthorizedError do |_e|
@@ -68,7 +68,7 @@ class Api::V1::BaseController < ActionController::API
     render json: {
       error: "The request contained a value this endpoint does not accept.",
       details: [ e.message ]
-    }, status: :unprocessable_entity
+    }, status: :unprocessable_content
   end
 
   # #995 — a field this endpoint does not accept is refused, not discarded.
@@ -89,7 +89,7 @@ class Api::V1::BaseController < ActionController::API
       error: "The request body contained fields this endpoint does not accept. Nothing was changed.",
       details: e.fields.map { |field| "Unrecognized field: #{field}" },
       expected: e.permitted
-    }, status: :unprocessable_entity
+    }, status: :unprocessable_content
   end
 
   private

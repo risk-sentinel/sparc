@@ -140,7 +140,7 @@ class SessionsController < ApplicationController
       )
 
       flash.now[:error] = "Service accounts cannot log in via the web interface. Use API tokens instead."
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
       return
     end
 
@@ -156,7 +156,7 @@ class SessionsController < ApplicationController
       )
 
       flash.now[:error] = "Your account has been deactivated. Contact an administrator."
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
       return
     end
 
@@ -189,7 +189,7 @@ class SessionsController < ApplicationController
       )
 
       flash.now[:error] = "Invalid email or password."
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -258,7 +258,7 @@ class SessionsController < ApplicationController
       )
 
       flash.now[:error] = "Invalid LDAP credentials."
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 end

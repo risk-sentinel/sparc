@@ -4,11 +4,11 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             elementFormDefault="qualified"
             targetNamespace="http://csrc.nist.gov/ns/oscal/1.0"
-            version="1.2.1">
+            version="1.2.2">
    <xs:annotation>
       <xs:appinfo>
          <m:schema-name>OSCAL Profile Model</m:schema-name>
-         <m:schema-version>1.2.1</m:schema-version>
+         <m:schema-version>1.2.2</m:schema-version>
          <m:short-name>oscal-profile</m:short-name>
          <m:remarks>
             <p>In OSCAL a profile represents a set of selected <a href="https://pages.nist.gov/OSCAL/concepts/terminology/#control">controls</a> from one or more control catalogs. Such a set of controls can be referenced by an OSCAL <a href="https://pages.nist.gov/OSCAL/concepts/layer/implementation/ssp/">system security plan</a> (SSP) to establish a control <a href="https://pages.nist.gov/OSCAL/concepts/terminology/#baseline">baseline</a>. This effective set of controls is produced from an OSCAL profile using a deterministic, predictable process called <a href="https://pages.nist.gov/OSCAL/concepts/processing/profile-resolution/">profile resolution</a>.</p>

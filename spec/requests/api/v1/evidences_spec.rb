@@ -245,7 +245,7 @@ RSpec.describe "Api::V1::Evidences", type: :request do
              params: { evidence: valid_attributes(file: nil) }, headers: admin_headers
       }.not_to change(Evidence, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["details"].join).to match(/is required for Artifact evidence/i)
     end
 
@@ -255,7 +255,7 @@ RSpec.describe "Api::V1::Evidences", type: :request do
              params: { evidence: valid_attributes(control_ids: "") }, headers: admin_headers
       }.not_to change(Evidence, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["details"].join).to match(/Link at least one control/i)
     end
 
@@ -404,7 +404,7 @@ RSpec.describe "Api::V1::Evidences", type: :request do
       post api_v1_evidences_path, params: { evidence: { title: "No source or description" } },
            headers: admin_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       parsed = JSON.parse(response.body)
       expect(parsed["error"]).to eq("Validation failed")
       expect(parsed["details"].join(" ")).to match(/Description|Source/)
@@ -465,7 +465,7 @@ RSpec.describe "Api::V1::Evidences", type: :request do
                headers: admin_headers
         }.not_to change(Evidence, :count)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(JSON.parse(response.body)["error"]).to match(/Executable content is not permitted/)
       end
     end
@@ -490,7 +490,7 @@ RSpec.describe "Api::V1::Evidences", type: :request do
       patch api_v1_evidence_path(evidence.id), params: { evidence: { title: "" } },
             headers: admin_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

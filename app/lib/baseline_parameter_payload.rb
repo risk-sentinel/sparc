@@ -16,7 +16,7 @@
 # empty arrays. Both update loops then iterated zero times, `validation_errors`
 # stayed empty, and the controller's
 #
-#   status = result[:validation_errors].any? ? :unprocessable_entity : :ok
+#   status = result[:validation_errors].any? ? :unprocessable_content : :ok
 #
 # therefore answered **200 with `parameters_updated: 0`**. The caller was told
 # the operation succeeded and nothing had happened.
