@@ -3268,3 +3268,47 @@ a.link-purple { color: var(--sparc-purple); }
 
 /* The same notice, sitting closer to what follows it. */
 .sparc-enrich-notice--tight { margin-bottom: 1rem; }
+
+/* #1047 — components of the SSP enrich screen. */
+
+/* SSP enrich's item card. IDENTICAL IN ROLE to .sparc-enrich-item-card (SAR
+   enrich) but built from different tokens: --bs-border-color #828b97 vs
+   --sparc-border-soft #c4c8cf, --bs-body-bg #f5f5f5 vs --sparc-surface #ffffff.
+   Preserved exactly here; unification is a separate, deliberate commit. */
+.sparc-enrich-item-card-alt { border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg); }
+
+/* Padded body inside a section whose container is flush. */
+.sparc-enrich-section-body { padding: 0.75rem 1rem; }
+
+/* Looser gutters on an existing field grid. */
+.sparc-field-grid-gap-roomy { gap: 0.75rem 1.25rem; }
+
+/* A full-width grid cell separated by a rule. */
+.sparc-field-grid-span-divided { margin-bottom: 0; grid-column: 1 / -1; border-top: 1px solid var(--bs-border-color); padding-top: 0.5rem; margin-top: 0.35rem; }
+
+/* Compact caption above a control. */
+.sparc-enrich-field-caption-sm { font-size: 0.75rem; margin-bottom: 0.35rem; }
+
+/* Normal weight inside a bolder run. */
+.sparc-fw-400 { font-weight: 400; }
+
+/* #1047 — the wizard vocabulary, shared by ato_wizard, ssp wizard and sar
+   wizard. Named once here so the later wizard slices reuse rather than repeat. */
+
+/* A wizard step's clickable <summary>. 15 uses across three screens. */
+.sparc-wizard-step-summary { cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none; }
+
+/* The numbered circle on a wizard step. Same 15 uses, same three screens. */
+.sparc-wizard-step-number { border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
+
+/* A selectable option row inside a wizard step. */
+.sparc-wizard-option { padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; cursor: pointer; }
+
+/* A wizard step's body, hidden until its step is opened. */
+.sparc-wizard-step-panel { display: none; margin-top: 0.75rem; }
+
+/* A 16px inline icon/checkbox glyph. */
+.sparc-icon-16 { width: 16px; height: 16px; }
+
+/* Explanatory line under a wizard step heading. */
+.sparc-wizard-step-hint { font-size: 0.88rem; margin-bottom: 0.75rem; }

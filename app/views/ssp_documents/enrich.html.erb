@@ -2,7 +2,7 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <h2>Enrich SSP: <%= @ssp_document.name %></h2>
-      <p class="text-body-secondary" style="margin: 0;">
+      <p class="text-body-secondary sparc-m-0">
         Add system characteristics, components, and users to uplift this SSP for OSCAL-compliant export.
       </p>
     </div>
@@ -10,7 +10,7 @@
   </div>
 
   <%# ── #737: import components/users/back matter from canonical SPARC sources ── %>
-  <div class="card bg-body-tertiary border-0 mb-3" style="padding: 0.75rem 1rem;">
+  <div class="card bg-body-tertiary border-0 mb-3 sparc-enrich-section-body">
     <div class="fw-semibold small text-body-secondary mb-2">Import from canonical sources</div>
 
     <%# System users from authorization-boundary members %>
@@ -28,7 +28,7 @@
     <% if @boundary_cdefs.any? || @org_cdefs.any? %>
       <%= form_with url: import_cdef_components_ssp_document_path(@ssp_document), method: :post do %>
         <details<%= " open".html_safe if @ssp_document.ssp_components.where.not(component_type: "this-system").none? %>>
-          <summary class="small fw-semibold" style="cursor: pointer;">Import system components from component definitions (<%= @boundary_cdefs.size + @org_cdefs.size %>)</summary>
+          <summary class="small fw-semibold sparc-cursor-pointer">Import system components from component definitions (<%= @boundary_cdefs.size + @org_cdefs.size %>)</summary>
           <div class="mt-2 ms-2">
             <% if @boundary_cdefs.any? %>
               <div class="small text-body-secondary">Boundary component definitions (suggested)</div>
@@ -61,7 +61,7 @@
     <% if @reusable_back_matter.any? %>
       <%= form_with url: import_back_matter_ssp_document_path(@ssp_document), method: :post do %>
         <details>
-          <summary class="small fw-semibold" style="cursor: pointer;">Link existing back matter (<%= @reusable_back_matter.size %> reusable)</summary>
+          <summary class="small fw-semibold sparc-cursor-pointer">Link existing back matter (<%= @reusable_back_matter.size %> reusable)</summary>
           <div class="mt-2 ms-2">
             <div class="small text-body-secondary">Globally-available / reusable resources</div>
             <% @reusable_back_matter.each do |r| %>
@@ -81,12 +81,12 @@
   <%= form_with model: @ssp_document, url: update_enrich_ssp_document_path(@ssp_document), method: :patch, local: true, html: { data: { controller: "ssp-enrich" } } do |f| %>
 
     <%# ── System Information ── %>
-    <details open class="mb-3 sparc-enrich-section" style="padding: 0; overflow: hidden;">
-      <summary class="bg-body-secondary sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; list-style: none; user-select: none;">
+    <details open class="mb-3 sparc-enrich-section">
+      <summary class="bg-body-secondary sparc-enrich-section-header">
         System Information
       </summary>
-      <div style="padding: 1rem 1.25rem;">
-        <div class="row row-cols-1 row-cols-md-2 g-3" style="gap: 0.75rem 1.25rem;">
+      <div class="sparc-p-1r-125r">
+        <div class="row row-cols-1 row-cols-md-2 g-3 sparc-field-grid-gap-roomy">
           <div class="form-group">
             <%= f.label :description, "Description" %>
             <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "System description..." %>
@@ -115,11 +115,11 @@
     </details>
 
     <%# ── Security Levels ── %>
-    <details class="mb-3 sparc-enrich-section" style="padding: 0; overflow: hidden;">
-      <summary class="bg-body-secondary sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; list-style: none; user-select: none;">
+    <details class="mb-3 sparc-enrich-section">
+      <summary class="bg-body-secondary sparc-enrich-section-header">
         Security Levels
       </summary>
-      <div style="padding: 1rem 1.25rem;">
+      <div class="sparc-p-1r-125r">
         <div class="row row-cols-1 row-cols-md-2 g-3">
           <div class="form-group">
             <%= f.label :security_sensitivity_level, "Security Sensitivity Level" %>
@@ -154,11 +154,11 @@
     </details>
 
     <%# ── Authorization Boundary ── %>
-    <details class="mb-3 sparc-enrich-section" style="padding: 0; overflow: hidden;">
-      <summary class="bg-body-secondary sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; list-style: none; user-select: none;">
+    <details class="mb-3 sparc-enrich-section">
+      <summary class="bg-body-secondary sparc-enrich-section-header">
         Boundaries & Architecture
       </summary>
-      <div style="padding: 1rem 1.25rem;">
+      <div class="sparc-p-1r-125r">
         <div class="form-group">
           <%= f.label :authorization_boundary_description, "Authorization Boundary" %>
           <%= f.text_area :authorization_boundary_description, class: "form-control", rows: 3,
@@ -178,35 +178,35 @@
     </details>
 
     <%# ── Information Types ── %>
-    <details class="mb-3 sparc-enrich-section" style="padding: 0; overflow: hidden;">
-      <summary class="bg-body-secondary sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; list-style: none; user-select: none;">
+    <details class="mb-3 sparc-enrich-section">
+      <summary class="bg-body-secondary sparc-enrich-section-header">
         Information Types (<%= @info_types.count %>)
       </summary>
-      <div style="padding: 1rem 1.25rem;" id="info-types-container" data-ssp-enrich-target="infoTypesContainer">
+      <div class="sparc-p-1r-125r" id="info-types-container" data-ssp-enrich-target="infoTypesContainer">
         <% @info_types.each_with_index do |it, idx| %>
-          <div class="info-type-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
+          <div class="info-type-entry sparc-enrich-item-card-alt">
             <input type="hidden" name="ssp_document[information_types][][id]" value="<%= it.id %>">
             <div class="row row-cols-1 row-cols-md-2 g-2">
-              <div class="form-group" style="margin-bottom: 0.25rem;">
-                <div style="font-size: 0.75rem;">Title</div>
-                <input type="text" name="ssp_document[information_types][][title]" value="<%= it.title %>" aria-label="Information Type Title" class="form-control" style="font-size: 0.85rem;">
+              <div class="form-group sparc-mb-025">
+                <div class="sparc-fs-075">Title</div>
+                <input type="text" name="ssp_document[information_types][][title]" value="<%= it.title %>" aria-label="Information Type Title" class="form-control sparc-fs-085">
               </div>
-              <div class="form-group" style="margin-bottom: 0.25rem;">
-                <div style="font-size: 0.75rem;">Description</div>
-                <input type="text" name="ssp_document[information_types][][description]" value="<%= it.description %>" aria-label="Information Type Description" class="form-control" style="font-size: 0.85rem;">
+              <div class="form-group sparc-mb-025">
+                <div class="sparc-fs-075">Description</div>
+                <input type="text" name="ssp_document[information_types][][description]" value="<%= it.description %>" aria-label="Information Type Description" class="form-control sparc-fs-085">
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <div style="font-size: 0.75rem;">Confidentiality (Base)</div>
-                <select name="ssp_document[information_types][][confidentiality_impact_base]" aria-label="Confidentiality (Base)" class="form-control" style="font-size: 0.85rem;">
+              <div class="form-group sparc-mb-0">
+                <div class="sparc-fs-075">Confidentiality (Base)</div>
+                <select name="ssp_document[information_types][][confidentiality_impact_base]" aria-label="Confidentiality (Base)" class="form-control sparc-fs-085">
                   <option value="">--</option>
                   <% %w[fips-199-low fips-199-moderate fips-199-high].each do |v| %>
                     <option value="<%= v %>" <%= "selected" if it.confidentiality_impact_base == v %>><%= v.split("-").last.capitalize %></option>
                   <% end %>
                 </select>
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <div style="font-size: 0.75rem;">Integrity (Base)</div>
-                <select name="ssp_document[information_types][][integrity_impact_base]" aria-label="Integrity (Base)" class="form-control" style="font-size: 0.85rem;">
+              <div class="form-group sparc-mb-0">
+                <div class="sparc-fs-075">Integrity (Base)</div>
+                <select name="ssp_document[information_types][][integrity_impact_base]" aria-label="Integrity (Base)" class="form-control sparc-fs-085">
                   <option value="">--</option>
                   <% %w[fips-199-low fips-199-moderate fips-199-high].each do |v| %>
                     <option value="<%= v %>" <%= "selected" if it.integrity_impact_base == v %>><%= v.split("-").last.capitalize %></option>
@@ -217,28 +217,28 @@
           </div>
         <% end %>
         <template data-ssp-enrich-target="infoTypeTemplate">
-          <div class="info-type-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
+          <div class="info-type-entry sparc-enrich-item-card-alt">
             <div class="row row-cols-1 row-cols-md-2 g-2">
-              <div class="form-group" style="margin-bottom: 0.25rem;">
-                <div style="font-size: 0.75rem;">Title</div>
-                <input type="text" name="ssp_document[information_types][][title]" aria-label="Information Type Title" class="form-control" style="font-size: 0.85rem;" placeholder="Information Type">
+              <div class="form-group sparc-mb-025">
+                <div class="sparc-fs-075">Title</div>
+                <input type="text" name="ssp_document[information_types][][title]" aria-label="Information Type Title" class="form-control sparc-fs-085" placeholder="Information Type">
               </div>
-              <div class="form-group" style="margin-bottom: 0.25rem;">
-                <div style="font-size: 0.75rem;">Description</div>
-                <input type="text" name="ssp_document[information_types][][description]" aria-label="Information Type Description" class="form-control" style="font-size: 0.85rem;" placeholder="Description">
+              <div class="form-group sparc-mb-025">
+                <div class="sparc-fs-075">Description</div>
+                <input type="text" name="ssp_document[information_types][][description]" aria-label="Information Type Description" class="form-control sparc-fs-085" placeholder="Description">
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <div style="font-size: 0.75rem;">Confidentiality (Base)</div>
-                <select name="ssp_document[information_types][][confidentiality_impact_base]" aria-label="Confidentiality (Base)" class="form-control" style="font-size: 0.85rem;">
+              <div class="form-group sparc-mb-0">
+                <div class="sparc-fs-075">Confidentiality (Base)</div>
+                <select name="ssp_document[information_types][][confidentiality_impact_base]" aria-label="Confidentiality (Base)" class="form-control sparc-fs-085">
                   <option value="">--</option>
                   <option value="fips-199-low">Low</option>
                   <option value="fips-199-moderate">Moderate</option>
                   <option value="fips-199-high">High</option>
                 </select>
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <div style="font-size: 0.75rem;">Integrity (Base)</div>
-                <select name="ssp_document[information_types][][integrity_impact_base]" aria-label="Integrity (Base)" class="form-control" style="font-size: 0.85rem;">
+              <div class="form-group sparc-mb-0">
+                <div class="sparc-fs-075">Integrity (Base)</div>
+                <select name="ssp_document[information_types][][integrity_impact_base]" aria-label="Integrity (Base)" class="form-control sparc-fs-085">
                   <option value="">--</option>
                   <option value="fips-199-low">Low</option>
                   <option value="fips-199-moderate">Moderate</option>
@@ -248,37 +248,37 @@
             </div>
           </div>
         </template>
-        <button type="button" data-action="ssp-enrich#addInfoType" class="sparc-action sparc-action--positive sparc-action--solid" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; margin-top: 0.5rem;">
+        <button type="button" data-action="ssp-enrich#addInfoType" class="sparc-action sparc-action--positive sparc-action--solid sparc-enrich-item-action">
           + Add Information Type
         </button>
       </div>
     </details>
 
     <%# ── Components ── %>
-    <details class="mb-3 sparc-enrich-section" style="padding: 0; overflow: hidden;">
-      <summary class="bg-body-secondary sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; list-style: none; user-select: none;">
+    <details class="mb-3 sparc-enrich-section">
+      <summary class="bg-body-secondary sparc-enrich-section-header">
         Components (<%= @components.count %>)
       </summary>
-      <div style="padding: 1rem 1.25rem;" id="components-container" data-ssp-enrich-target="componentsContainer">
+      <div class="sparc-p-1r-125r" id="components-container" data-ssp-enrich-target="componentsContainer">
         <% @components.reject { |c| c.component_type == "this-system" }.each_with_index do |comp, comp_idx| %>
-          <div class="component-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
+          <div class="component-entry sparc-enrich-item-card-alt">
             <input type="hidden" name="ssp_document[components][][id]" value="<%= comp.id %>">
             <div class="row row-cols-1 row-cols-md-2 g-2">
-              <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label for="ssp-component-<%= comp_idx %>-title" style="font-size: 0.75rem;">Title</label>
-                <input type="text" id="ssp-component-<%= comp_idx %>-title" name="ssp_document[components][][title]" value="<%= comp.title %>" class="form-control" style="font-size: 0.85rem;">
+              <div class="form-group sparc-mb-025">
+                <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-title">Title</label>
+                <input type="text" id="ssp-component-<%= comp_idx %>-title" name="ssp_document[components][][title]" value="<%= comp.title %>" class="form-control sparc-fs-085">
               </div>
-              <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label for="ssp-component-<%= comp_idx %>-type" style="font-size: 0.75rem;">Type</label>
-                <select id="ssp-component-<%= comp_idx %>-type" name="ssp_document[components][][component_type]" class="form-control" style="font-size: 0.85rem;">
+              <div class="form-group sparc-mb-025">
+                <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-type">Type</label>
+                <select id="ssp-component-<%= comp_idx %>-type" name="ssp_document[components][][component_type]" class="form-control sparc-fs-085">
                   <% SspComponent::COMPONENT_TYPES.reject { |t| t == "this-system" }.each do |t| %>
                     <option value="<%= t %>" <%= "selected" if comp.component_type == t %>><%= t.titleize %></option>
                   <% end %>
                 </select>
               </div>
-              <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
-                <label for="ssp-component-<%= comp_idx %>-description" style="font-size: 0.75rem;">Description</label>
-                <input type="text" id="ssp-component-<%= comp_idx %>-description" name="ssp_document[components][][description]" value="<%= comp.description %>" class="form-control" style="font-size: 0.85rem;">
+              <div class="form-group sparc-field-grid-span">
+                <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-description">Description</label>
+                <input type="text" id="ssp-component-<%= comp_idx %>-description" name="ssp_document[components][][description]" value="<%= comp.description %>" class="form-control sparc-fs-085">
               </div>
 
               <%# ── #998: what this validation validates ────────────────────
@@ -288,27 +288,27 @@
                   a component already typed `validation`: the fields mean
                   nothing anywhere else, and the model refuses them there. %>
               <% if comp.validation? %>
-                <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1; border-top: 1px solid var(--bs-border-color); padding-top: 0.5rem; margin-top: 0.35rem;">
-                  <div class="fw-semibold" style="font-size: 0.75rem; margin-bottom: 0.35rem;">
+                <div class="form-group sparc-field-grid-span-divided">
+                  <div class="fw-semibold sparc-enrich-field-caption-sm">
                     Validation
-                    <span class="text-body-tertiary" style="font-weight: 400;">— the certificate this component asserts, and the product it is about</span>
+                    <span class="text-body-tertiary sparc-fw-400">— the certificate this component asserts, and the product it is about</span>
                   </div>
                   <div class="row row-cols-1 row-cols-md-2 g-2">
                     <div class="form-group">
-                      <label for="ssp-component-<%= comp_idx %>-validation-type" style="font-size: 0.75rem;">Validation type</label>
-                      <input type="text" id="ssp-component-<%= comp_idx %>-validation-type" name="ssp_document[components][][validation_type]" value="<%= comp.validation_type %>" class="form-control" style="font-size: 0.85rem;" placeholder="e.g. fips-140-2">
+                      <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-validation-type">Validation type</label>
+                      <input type="text" id="ssp-component-<%= comp_idx %>-validation-type" name="ssp_document[components][][validation_type]" value="<%= comp.validation_type %>" class="form-control sparc-fs-085" placeholder="e.g. fips-140-2">
                     </div>
                     <div class="form-group">
-                      <label for="ssp-component-<%= comp_idx %>-validation-reference" style="font-size: 0.75rem;">Certificate reference</label>
-                      <input type="text" id="ssp-component-<%= comp_idx %>-validation-reference" name="ssp_document[components][][validation_reference]" value="<%= comp.validation_reference %>" class="form-control" style="font-size: 0.85rem;" placeholder="e.g. 4282">
+                      <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-validation-reference">Certificate reference</label>
+                      <input type="text" id="ssp-component-<%= comp_idx %>-validation-reference" name="ssp_document[components][][validation_reference]" value="<%= comp.validation_reference %>" class="form-control sparc-fs-085" placeholder="e.g. 4282">
                     </div>
                     <div class="form-group">
-                      <label for="ssp-component-<%= comp_idx %>-validation-details" style="font-size: 0.75rem;">Authoritative record (URL)</label>
-                      <input type="url" id="ssp-component-<%= comp_idx %>-validation-details" name="ssp_document[components][][validation_details_href]" value="<%= comp.validation_details_href %>" class="form-control" style="font-size: 0.85rem;" placeholder="https://…">
+                      <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-validation-details">Authoritative record (URL)</label>
+                      <input type="url" id="ssp-component-<%= comp_idx %>-validation-details" name="ssp_document[components][][validation_details_href]" value="<%= comp.validation_details_href %>" class="form-control sparc-fs-085" placeholder="https://…">
                     </div>
                     <div class="form-group">
-                      <label for="ssp-component-<%= comp_idx %>-validates" style="font-size: 0.75rem;">Validates which component</label>
-                      <select id="ssp-component-<%= comp_idx %>-validates" name="ssp_document[components][][validates_component_id]" class="form-control" style="font-size: 0.85rem;">
+                      <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-validates">Validates which component</label>
+                      <select id="ssp-component-<%= comp_idx %>-validates" name="ssp_document[components][][validates_component_id]" class="form-control sparc-fs-085">
                         <option value="">— not linked to a product —</option>
                         <% @components.reject { |other| other.id == comp.id || other.validation? }.each do |other| %>
                           <option value="<%= other.id %>" <%= "selected" if comp.validates_component_id == other.id %>><%= other.title %></option>
@@ -322,15 +322,15 @@
           </div>
         <% end %>
         <template data-ssp-enrich-target="componentTemplate">
-          <div class="component-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
+          <div class="component-entry sparc-enrich-item-card-alt">
             <div class="row row-cols-1 row-cols-md-2 g-2">
-              <div class="form-group" style="margin-bottom: 0.25rem;">
-                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Title</span>
-                <input type="text" name="ssp_document[components][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Component name" aria-label="Component Title">
+              <div class="form-group sparc-mb-025">
+                <span class="sparc-field-label">Title</span>
+                <input type="text" name="ssp_document[components][][title]" class="form-control sparc-fs-085" placeholder="Component name" aria-label="Component Title">
               </div>
-              <div class="form-group" style="margin-bottom: 0.25rem;">
-                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Type</span>
-                <select name="ssp_document[components][][component_type]" class="form-control" style="font-size: 0.85rem;" aria-label="Component Type">
+              <div class="form-group sparc-mb-025">
+                <span class="sparc-field-label">Type</span>
+                <select name="ssp_document[components][][component_type]" class="form-control sparc-fs-085" aria-label="Component Type">
                   <option value="software">Software</option>
                   <option value="hardware">Hardware</option>
                   <option value="service">Service</option>
@@ -342,55 +342,55 @@
                   <option value="validation">Validation</option>
                 </select>
               </div>
-              <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
-                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Description</span>
-                <input type="text" name="ssp_document[components][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Component description" aria-label="Component Description">
+              <div class="form-group sparc-field-grid-span">
+                <span class="sparc-field-label">Description</span>
+                <input type="text" name="ssp_document[components][][description]" class="form-control sparc-fs-085" placeholder="Component description" aria-label="Component Description">
               </div>
             </div>
           </div>
         </template>
-        <button type="button" data-action="ssp-enrich#addComponent" class="sparc-action sparc-action--positive sparc-action--solid" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; margin-top: 0.5rem;">
+        <button type="button" data-action="ssp-enrich#addComponent" class="sparc-action sparc-action--positive sparc-action--solid sparc-enrich-item-action">
           + Add Component
         </button>
       </div>
     </details>
 
     <%# ── Users ── %>
-    <details class="mb-3 sparc-enrich-section" style="padding: 0; overflow: hidden;">
-      <summary class="bg-body-secondary sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; list-style: none; user-select: none;">
+    <details class="mb-3 sparc-enrich-section">
+      <summary class="bg-body-secondary sparc-enrich-section-header">
         System Users (<%= @users.count %>)
       </summary>
-      <div style="padding: 1rem 1.25rem;" id="users-container" data-ssp-enrich-target="usersContainer">
+      <div class="sparc-p-1r-125r" id="users-container" data-ssp-enrich-target="usersContainer">
         <% @users.each_with_index do |user, user_idx| %>
-          <div class="user-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
+          <div class="user-entry sparc-enrich-item-card-alt">
             <input type="hidden" name="ssp_document[users][][id]" value="<%= user.id %>">
             <div class="row row-cols-1 row-cols-md-2 g-2">
-              <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label for="ssp-user-<%= user_idx %>-title" style="font-size: 0.75rem;">Title</label>
-                <input type="text" id="ssp-user-<%= user_idx %>-title" name="ssp_document[users][][title]" value="<%= user.title %>" class="form-control" style="font-size: 0.85rem;">
+              <div class="form-group sparc-mb-025">
+                <label class="sparc-fs-075" for="ssp-user-<%= user_idx %>-title">Title</label>
+                <input type="text" id="ssp-user-<%= user_idx %>-title" name="ssp_document[users][][title]" value="<%= user.title %>" class="form-control sparc-fs-085">
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="ssp-user-<%= user_idx %>-description" style="font-size: 0.75rem;">Description</label>
-                <input type="text" id="ssp-user-<%= user_idx %>-description" name="ssp_document[users][][description]" value="<%= user.description %>" class="form-control" style="font-size: 0.85rem;">
+              <div class="form-group sparc-mb-0">
+                <label class="sparc-fs-075" for="ssp-user-<%= user_idx %>-description">Description</label>
+                <input type="text" id="ssp-user-<%= user_idx %>-description" name="ssp_document[users][][description]" value="<%= user.description %>" class="form-control sparc-fs-085">
               </div>
             </div>
           </div>
         <% end %>
         <template data-ssp-enrich-target="userTemplate">
-          <div class="user-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
+          <div class="user-entry sparc-enrich-item-card-alt">
             <div class="row row-cols-1 row-cols-md-2 g-2">
-              <div class="form-group" style="margin-bottom: 0.25rem;">
-                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Title</span>
-                <input type="text" name="ssp_document[users][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="User title" aria-label="User Title">
+              <div class="form-group sparc-mb-025">
+                <span class="sparc-field-label">Title</span>
+                <input type="text" name="ssp_document[users][][title]" class="form-control sparc-fs-085" placeholder="User title" aria-label="User Title">
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Description</span>
-                <input type="text" name="ssp_document[users][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Description" aria-label="User Description">
+              <div class="form-group sparc-mb-0">
+                <span class="sparc-field-label">Description</span>
+                <input type="text" name="ssp_document[users][][description]" class="form-control sparc-fs-085" placeholder="Description" aria-label="User Description">
               </div>
             </div>
           </div>
         </template>
-        <button type="button" data-action="ssp-enrich#addUser" class="sparc-action sparc-action--positive sparc-action--solid" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; margin-top: 0.5rem;">
+        <button type="button" data-action="ssp-enrich#addUser" class="sparc-action sparc-action--positive sparc-action--solid sparc-enrich-item-action">
           + Add User
         </button>
       </div>
