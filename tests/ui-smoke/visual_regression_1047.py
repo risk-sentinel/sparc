@@ -26,6 +26,17 @@ surface — and diffs a later capture against it.
 
 A BASELINE IS ONLY VALID AGAINST THE DATA IT WAS CAPTURED ON.
 
+RUNNING `tests/api` INVALIDATES THE BASELINE FOR EVERY SCREEN. The left sidebar
+renders the organization list on every page (shared/_sidebar.html.erb:17), and
+the API contract suite creates organizations — 45 of them in one run. Measured:
+26 screens "changed" by a near-identical 0.609%, every one of them in the same
+region, bbox (0, 595, 574, 1072) — the sidebar. Nothing about the CSS had moved.
+
+So: capture the baseline AFTER any API-suite run, and do not run `tests/api`
+between a baseline and the capture it will be compared against. Two captures
+with no data change between them compare clean (measured: 69 unchanged), which
+is the check to run when a diff looks suspiciously uniform.
+
 Show-page URLs are document SLUGS, not stable identifiers — `/cdef_documents/
 aws-elasticbeanstalk-oscal-1-2-1` exists because of what was seeded. Re-seed the
 instance, point at a different deployment, or let the API suite create records,
@@ -83,7 +94,13 @@ PIXEL_TOLERANCE = 16
 # They are EXCLUDED from the gate and REPORTED as unprotected on every run. A
 # quiet exclusion would read as "72 screens verified" while two of them were
 # never checked — the same lie as a skip with no reason.
-VOLATILE = {"admin_audit_logs", "admin_users"}
+#   admin_service_accounts  5.36% changed, same page height, differences spread
+#                           over every row: the page renders
+#                           `time_ago_in_words(last_token.last_used_at) ago`
+#                           (admin/service_accounts/index.html.erb:70), and the
+#                           capture itself authenticates with that token, so it
+#                           changes its own "N minutes ago" on every run.
+VOLATILE = {"admin_audit_logs", "admin_users", "admin_service_accounts"}
 
 # The resolved URL of every captured screen, written beside the baseline. Show
 # pages are DISCOVERED at runtime (`_first_show_href` takes the first row of an
@@ -171,7 +188,9 @@ def _capture(out_dir: Path, pin_from: Path | None = None) -> int:
 def _compare(base_dir: Path, after_dir: Path, threshold: float) -> int:
     from PIL import Image, ImageChops
 
-    base_pngs = sorted(base_dir.glob("*.png"))
+    # Skip our own diff output: it is written beside the captures, and on the
+    # next comparison every DIFF_*.png was picked up as a screen in its own right.
+    base_pngs = sorted(p for p in base_dir.glob("*.png") if not p.name.startswith("DIFF_"))
     if not base_pngs:
         print(f"No baseline images in {base_dir} — capture one first.")
         return 2
@@ -207,9 +226,11 @@ def _compare(base_dir: Path, after_dir: Path, threshold: float) -> int:
         changed = mask.histogram()[255]
         ratio = changed / (bi.size[0] * bi.size[1])
         if ratio > threshold:
-            out = after_dir / f"DIFF_{b.stem}.png"
+            diff_dir = after_dir / "_diffs"
+            diff_dir.mkdir(exist_ok=True)
+            out = diff_dir / f"DIFF_{b.stem}.png"
             ImageChops.invert(diff).save(out)
-            regressions.append((b.name, ratio, out.name))
+            regressions.append((b.name, ratio, str(out.relative_to(after_dir))))
         else:
             clean += 1
 
