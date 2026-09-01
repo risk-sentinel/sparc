@@ -32,7 +32,7 @@ class PoamDocument < ApplicationRecord
               mode:     :any,
               controls: :poam_items,
               message:  { label:   "SSP",
-                          remedy:  "PATCH /api/v1/poam_documents/:id { ssp_document_id }",
+                          remedy:  "Set the system security plan these findings relate to.",
                           options: "/api/v1/ssp_documents" }
 
   # #395 P2: inherit ssp_document_id from the boundary's SSP when not

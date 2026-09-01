@@ -36,7 +36,7 @@ class SapDocument < ApplicationRecord
               key:      :ssp,
               controls: :sap_controls,
               message:  { label:   "SSP",
-                          remedy:  "PATCH /api/v1/sap_documents/:id { ssp_document_id }",
+                          remedy:  "Set the system security plan this assessment plan covers.",
                           options: "/api/v1/ssp_documents" }
   belongs_to :profile_document, optional: true
   include ControlMembership

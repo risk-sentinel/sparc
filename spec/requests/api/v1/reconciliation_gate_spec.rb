@@ -62,7 +62,11 @@ RSpec.describe "Api::V1 reconciliation gate", type: :request do
 
       issue = reconciliation["issues"].first
       expect(issue["code"]).to eq("missing_profile_source")
-      expect(issue["remedy"]).to include("profile_document_id")
+      # `remedy` is prose for the screen; `options` is the machine-readable half
+      # an integrator uses. Both travel in the 422 body — only `remedy` is ever
+      # rendered, which is why it must not be an endpoint.
+      expect(issue["remedy"]).to eq("Choose the profile whose baseline these controls were selected from.")
+      expect(issue["remedy"]).not_to match(%r{/api/})
       expect(issue["options"]).to eq("/api/v1/profile_documents")
     end
 
@@ -70,7 +74,7 @@ RSpec.describe "Api::V1 reconciliation gate", type: :request do
       put api_v1_ssp_document_path(ssp), params: { ssp_document: { name: "Edited" } },
           headers: auth_headers, as: :json
 
-      expect(JSON.parse(response.body)["error"]).to include("profile_document_id")
+      expect(JSON.parse(response.body)["error"]).to include("Choose the profile")
     end
 
     # The exit. Without this the gate would make an unresolved document

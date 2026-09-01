@@ -35,7 +35,7 @@ class CdefDocument < ApplicationRecord
               key:      :profile,
               controls: :cdef_controls,
               message:  { label:   "profile",
-                          remedy:  "PATCH /api/v1/cdef_documents/:id { profile_document_id }",
+                          remedy:  "Choose the profile this component definition was authored against.",
                           options: "/api/v1/profile_documents" }
   include ControlMembership
   membership_within controls: :cdef_controls, baseline: :profile_document,

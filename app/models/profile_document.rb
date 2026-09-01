@@ -21,7 +21,7 @@ class ProfileDocument < ApplicationRecord
               key:      :catalog,
               controls: :profile_controls,
               message:  { label:   "catalog",
-                          remedy:  "PATCH /api/v1/profile_documents/:id { control_catalog_id }",
+                          remedy:  "Choose the control catalog this profile draws its controls from.",
                           options: "/api/v1/control_catalogs" }
   include AttachmentSizeLimit
   include ControlMembership
