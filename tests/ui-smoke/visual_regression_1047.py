@@ -24,6 +24,20 @@ surface — and diffs a later capture against it.
     visual_regression_1047.py --capture tmp/visual/after
     visual_regression_1047.py --compare tmp/visual/baseline tmp/visual/after
 
+A BASELINE IS ONLY VALID AGAINST THE DATA IT WAS CAPTURED ON.
+
+Show-page URLs are document SLUGS, not stable identifiers — `/cdef_documents/
+aws-elasticbeanstalk-oscal-1-2-1` exists because of what was seeded. Re-seed the
+instance, point at a different deployment, or let the API suite create records,
+and those URLs move. Comparing across two data sets does not measure styling; it
+measures the data, which is how four screens first "changed" here with no code
+change at all.
+
+So: capture the baseline and the after-run against the SAME instance with the
+SAME data, and re-baseline whenever the data changes. `--pin-from` replays the
+baseline's resolved URLs and reports DATA DRIFT loudly if any of them no longer
+resolve, rather than quietly discovering a different record.
+
 Deliberately reuses `capture_screenshots.py`'s building blocks (the token ->
 cookie bridge, the settle logic, the page inventory) rather than reimplementing
 them, so a page that moves moves for both.
@@ -86,6 +100,7 @@ def _capture(out_dir: Path, pin_from: Path | None = None) -> int:
 
     # Reuse the baseline's resolved URLs when comparing against it.
     pinned: dict[str, str] = {}
+    drifted: list[tuple[str, str]] = []
     if pin_from and (pin_from / MANIFEST).exists():
         pinned = json.loads((pin_from / MANIFEST).read_text())
         print(f"  pinned to {len(pinned)} URL(s) from {pin_from / MANIFEST}")
@@ -124,7 +139,14 @@ def _capture(out_dir: Path, pin_from: Path | None = None) -> int:
                 skipped += 1
                 continue
             resolved[label] = href
-            ok, fail = (ok + 1, fail) if cap._shoot(page, label, href, out_dir) else (ok, fail + 1)
+            if cap._shoot(page, label, href, out_dir):
+                ok += 1
+            else:
+                fail += 1
+                # A pinned URL that no longer resolves is DATA DRIFT, not a
+                # transient capture failure, and the two need different fixes.
+                if label in pinned:
+                    drifted.append((label, href))
 
         browser.close()
 
@@ -135,6 +157,14 @@ def _capture(out_dir: Path, pin_from: Path | None = None) -> int:
     # screen, and the sweep could break it unseen. Say so rather than imply cover.
     if skipped:
         print(f"NOTE: {skipped} screen(s) are NOT covered by this baseline.")
+
+    if drifted:
+        print(f"\nDATA DRIFT: {len(drifted)} pinned URL(s) no longer resolve on this instance:")
+        for label, href in drifted:
+            print(f"  {label:32s} {href}")
+        print("The baseline was captured against different data, so a comparison would\n"
+              "measure the DATA, not the styling. Re-capture the baseline against this\n"
+              "instance before sweeping — do not compare across data sets.")
     return 1 if fail else 0
 
 
