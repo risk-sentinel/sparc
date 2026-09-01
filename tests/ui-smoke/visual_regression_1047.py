@@ -64,6 +64,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
+import urllib.request
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
@@ -110,8 +112,62 @@ VOLATILE = {"admin_audit_logs", "admin_users", "admin_service_accounts"}
 # renderings of one. Pinning the URLs is what makes the comparison honest.
 MANIFEST = "_manifest.json"
 
+# Screens the sweep touches that `pages.py` does not list.
+#
+# Measured before Phase 2: of the 675 inline styles in the top 14 files, 369 sat
+# on screens the harness could not see — including sar/ssp `enrich` (233 between
+# them) and the ATO wizard (99), the three largest concentrations in the whole
+# sweep. Converting those with no baseline would have been exactly the silent
+# breakage this harness exists to prevent.
+#
+# Kept HERE rather than added to `pages.py`, because that file is the canonical
+# inventory shared with the smoke suite and widening it changes what ui-smoke
+# asserts. This list serves the sweep only.
+EXTRA_STATIC = [
+    ("ssp_wizard_new", "/ssp_documents/wizard"),
+    ("catalog_import", "/control_catalogs/import"),
+    ("stig_parser", "/converters/stig_parser"),
+]
 
-def _capture(out_dir: Path, pin_from: Path | None = None) -> int:
+# Member routes hung off a document that is discovered at runtime: the show URL
+# comes from the manifest, and the suffix is appended.
+EXTRA_FROM_SHOW = [
+    ("sar_enrich", "sar_show", "/enrich"),
+    ("ssp_enrich", "ssp_show", "/enrich"),
+    ("ato_wizard", "authorization_boundary_show", "/ato_wizard"),
+]
+
+
+def _wait_until_serving(timeout: int = 180) -> bool:
+    """Block until the stack answers, instead of guessing a sleep.
+
+    A `--force-recreate` can take well over 30s to boot, and capturing early does
+    not fail cleanly: the cookie bridge gets a 502 and the run dies with an
+    AssertionError traceback after capturing nothing. Measured once as 75 screens
+    reported MISSING for what was purely a readiness race.
+    """
+    import ssl
+
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(f"{cap.BASE_URL}/login", timeout=10, context=ctx) as r:
+                if r.status == 200:
+                    return True
+        except Exception:  # noqa: BLE001 — any failure means "not ready yet"
+            pass
+        time.sleep(3)
+    return False
+
+
+def _capture(out_dir: Path, pin_from: Path | None = None, only: set[str] | None = None) -> int:
+    if not _wait_until_serving():
+        print(f"{cap.BASE_URL} is not serving after 180s — not capturing. "
+              "A capture against a half-booted stack reports every screen as MISSING.")
+        return 2
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"Capturing {cap.BASE_URL} -> {out_dir}")
 
@@ -122,6 +178,10 @@ def _capture(out_dir: Path, pin_from: Path | None = None) -> int:
         pinned = json.loads((pin_from / MANIFEST).read_text())
         print(f"  pinned to {len(pinned)} URL(s) from {pin_from / MANIFEST}")
     resolved: dict[str, str] = {}
+    # #1087 navigation timeouts hit a different screen each run, so a whole
+    # 3-minute recapture to recover one page is waste. `--only` retries by label
+    # and MERGES into the existing directory.
+    want = (lambda label: label in only) if only else (lambda label: True)
 
     ok = fail = skipped = 0
     with sync_playwright() as p:
@@ -136,6 +196,8 @@ def _capture(out_dir: Path, pin_from: Path | None = None) -> int:
         page = ctx.new_page()
 
         for label, path in page_inventory.PUBLIC_PAGES:
+            if not want(label):
+                continue
             ok, fail = (ok + 1, fail) if cap._shoot(page, label, path, out_dir) else (ok, fail + 1)
 
         if not cap.SA_TOKEN:
@@ -147,9 +209,13 @@ def _capture(out_dir: Path, pin_from: Path | None = None) -> int:
         ctx.add_cookies([cap._cookie_spec(cap._bridge_token_to_cookie(cap.SA_TOKEN), cap.BASE_URL)])
 
         for label, path in page_inventory.MUST_EXIST_PAGES:
+            if not want(label):
+                continue
             ok, fail = (ok + 1, fail) if cap._shoot(page, label, path, out_dir) else (ok, fail + 1)
 
         for label, index_path, _regex in page_inventory.SHOW_PAGES:
+            if not want(label):
+                continue
             href = pinned.get(label) or cap._first_show_href(page, index_path, index_path)
             if not href:
                 print(f"  – {label:32s} no record on this deployment — skipped")
@@ -165,9 +231,36 @@ def _capture(out_dir: Path, pin_from: Path | None = None) -> int:
                 if label in pinned:
                     drifted.append((label, href))
 
+        for label, path in EXTRA_STATIC:
+            if not want(label):
+                continue
+            resolved[label] = path
+            ok, fail = (ok + 1, fail) if cap._shoot(page, label, path, out_dir) else (ok, fail + 1)
+
+        for label, from_label, suffix in EXTRA_FROM_SHOW:
+            if not want(label):
+                continue
+            base = pinned.get(label) or resolved.get(from_label) or pinned.get(from_label)
+            if not base:
+                print(f"  – {label:32s} needs {from_label}, which was not captured — skipped")
+                skipped += 1
+                continue
+            href = base if base.endswith(suffix) else base + suffix
+            resolved[label] = href
+            if cap._shoot(page, label, href, out_dir):
+                ok += 1
+            else:
+                fail += 1
+                if label in pinned:
+                    drifted.append((label, href))
+
         browser.close()
 
-    (out_dir / MANIFEST).write_text(json.dumps(resolved, indent=2, sort_keys=True))
+    merged = {}
+    if (out_dir / MANIFEST).exists():
+        merged = json.loads((out_dir / MANIFEST).read_text())
+    merged.update(resolved)
+    (out_dir / MANIFEST).write_text(json.dumps(merged, indent=2, sort_keys=True))
 
     print(f"\nCaptured {ok}, failed {fail}, {skipped} show-page(s) absent -> {out_dir}")
     # A skipped show-page is not a pass: it means the baseline does not cover that
@@ -241,6 +334,12 @@ def _compare(base_dir: Path, after_dir: Path, threshold: float) -> int:
         print(f"  CHANGED {ratio:7.3%}  {name}   (diff image: {out})")
     for name, bs, as_ in resized:
         print(f"  RESIZED        {name}   {bs} -> {as_}")
+    if resized:
+        print("  NOTE: a RESIZED screen is not yet a regression. A page whose assets stall")
+        print("        (see #1087) screenshots SHORT, and reads here as a height change.")
+        print("        Measured: help_administration captured 16266, 10092, 16266, 16266 —")
+        print("        one short shot among four. Re-capture with")
+        print("        `--only <label>` before believing it.")
     for name in missing:
         print(f"  MISSING        {name}   — not captured in the 'after' run")
     for name in sorted(skipped_volatile):
@@ -261,12 +360,17 @@ def main() -> int:
                     help="reuse the resolved URLs recorded in BASELINE_DIR/_manifest.json, so a "
                          "runtime-discovered show page is captured for the SAME record as the "
                          "baseline instead of whatever now sits first in the index")
+    ap.add_argument("--only", metavar="LABEL", nargs="+",
+                    help="capture only these labels, merging into an existing directory "
+                         "(use to retry a screen lost to a #1087 navigation timeout)")
     ap.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD,
                     help=f"changed-pixel share that fails a screen (default {DEFAULT_THRESHOLD})")
     args = ap.parse_args()
 
     if args.capture:
-        return _capture(Path(args.capture), Path(args.pin_from) if args.pin_from else None)
+        return _capture(Path(args.capture),
+                        Path(args.pin_from) if args.pin_from else None,
+                        set(args.only) if args.only else None)
     if args.compare:
         return _compare(Path(args.compare[0]), Path(args.compare[1]), args.threshold)
     ap.print_help()

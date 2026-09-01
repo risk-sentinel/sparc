@@ -1838,19 +1838,57 @@ a.link-purple { color: var(--sparc-purple); }
 
 /* ── Enrich page sections ──────────────────────────────────────── */
 
+/* #1047 — `padding: 1.25rem` was overridden by ALL 11 call sites with
+   `padding: 0; overflow: hidden`, so the authored value was never what shipped.
+   The inline styles WERE the real design; they are now the rule. The two genuine
+   variants below are modifiers rather than more overrides. */
 .sparc-enrich-section {
   border: 1px solid var(--bs-border-color);
   border-radius: 8px;
-  padding: 1.25rem;
+  padding: 0;
+  overflow: hidden;
   margin-bottom: 1.5rem;
   background: var(--sparc-surface);
 }
 
+/* 5 of the 11 sections sit closer together than the default. */
+.sparc-enrich-section--tight { margin-bottom: 1rem; }
+
+/* #1047 — every use is a <summary>, and every one carried the same four
+   declarations inline. They belong here. */
 .sparc-enrich-section-header {
   font-size: 1rem;
   font-weight: 700;
   margin-bottom: 0.75rem;
   color: var(--bs-body-color);
+  cursor: pointer;
+  padding: 0.85rem 1rem;
+  list-style: none;
+  user-select: none;
+}
+
+/* 5 of the 11 headers sit on the alternate surface. */
+.sparc-enrich-section-header--alt { background: var(--sparc-surface-alt); }
+
+/* A field label inside an enrich grid — 19 uses across the SAR and SSP enrich
+   screens, previously repeated inline in full each time. */
+.sparc-field-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* The two-column field grid those labels sit in, and a cell that spans it. */
+.sparc-field-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.sparc-field-grid-span {
+  margin-bottom: 0;
+  grid-column: 1 / -1;
 }
 
 .sparc-enrich-field-label {
@@ -3073,3 +3111,160 @@ a.link-purple { color: var(--sparc-purple); }
 
 /* Rows of mixed roles line up without a wrapper forcing it. */
 .sparc-action-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.5rem; }
+
+/* ==========================================================================
+   #1047 utility layer — the replacement for inline `style=`
+
+   `style-src 'unsafe-inline'` is being removed, at which point every inline
+   style attribute STOPS APPLYING silently: no console error, no exception, no
+   failing spec, just a page that renders wrong. These classes are where those
+   declarations go instead.
+
+   Generated from the 66 single-declaration values used 3+ times across
+   app/views (646 of the 1,361 static attributes). A value used once or twice
+   is deliberately NOT here — a utility with one caller is an inline style with
+   extra steps; those become component classes in their own file's slice.
+
+   VALUES ARE PRESERVED EXACTLY. The near-duplicate font scale
+   (0.75/0.78/0.82/0.85/0.88rem) is left alone on purpose: collapsing it would
+   change how pages look, and that is a design decision, not something to slip
+   into a security sweep. Consolidating the scale is a separate, deliberate pass.
+
+   Last in the file so that, at equal specificity, these win — an inline style
+   previously outranked every rule here, and a conversion must not lose a
+   specificity battle it used to win. `!important` is deliberately NOT used;
+   where a conversion does lose, the visual diff catches it and it is fixed at
+   the call site.
+
+   Guarded by spec/views/inline_style_ratchet_spec.rb, which fails if the inline
+   count rises.
+   ========================================================================== */
+
+.sparc-fs-085 { font-size: 0.85rem; }  /* 68x */
+.sparc-ws-nowrap { white-space: nowrap; }  /* 62x */
+.sparc-fs-075 { font-size: 0.75rem; }  /* 38x */
+.sparc-fs-088 { font-size: 0.88rem; }  /* 35x */
+.sparc-mb-025 { margin-bottom: 0.25rem; }  /* 31x */
+.sparc-p-1r-125r { padding: 1rem 1.25rem; }  /* 26x */
+.sparc-cursor-pointer { cursor: pointer; }  /* 23x */
+.sparc-d-none { display: none; }  /* 18x */
+.sparc-of-hidden { overflow: hidden; }  /* 18x */
+.sparc-fs-082 { font-size: 0.82rem; }  /* 16x */
+.sparc-mb-0 { margin-bottom: 0; }  /* 16x */
+.sparc-color-primary { color: var(--sparc-primary); }  /* 15x */
+.sparc-mt-05 { margin-top: 0.5rem; }  /* 13x */
+.sparc-mb-05 { margin-bottom: 0.5rem; }  /* 12x */
+.sparc-fs-065 { font-size: 0.65rem; }  /* 11x */
+.sparc-fs-078 { font-size: 0.78rem; }  /* 11x */
+.sparc-p-04-0 { padding: 0.4rem 0; }  /* 10x */
+.sparc-fs-1r { font-size: 1rem; }  /* 9x */
+.sparc-m-0 { margin: 0; }  /* 9x */
+.sparc-mb-075 { margin-bottom: 0.75rem; }  /* 9x */
+.sparc-mb-035 { margin-bottom: 0.35rem; }  /* 8x */
+.sparc-w-10pct { width: 10%; }  /* 8x */
+.sparc-mt-035 { margin-top: 0.35rem; }  /* 7x */
+.sparc-ta-left { text-align: left; }  /* 7x */
+.sparc-w-14pct { width: 14%; }  /* 7x */
+.sparc-fs-072 { font-size: 0.72rem; }  /* 6x */
+.sparc-mt-04 { margin-top: 0.4rem; }  /* 6x */
+.sparc-ofx-auto { overflow-x: auto; }  /* 6x */
+.sparc-p-03-05 { padding: 0.3rem 0.5rem; }  /* 6x */
+.sparc-fs-07 { font-size: 0.7rem; }  /* 5x */
+.sparc-fs-25r { font-size: 2.5rem; }  /* 5x */
+.sparc-gap-1r { gap: 1rem; }  /* 5x */
+.sparc-mb-02 { margin-bottom: 0.2rem; }  /* 5x */
+.sparc-w-12pct { width: 12%; }  /* 5x */
+.sparc-bl-4px-solid-f39c12 { border-left: 4px solid #f39c12; }  /* 4x */
+.sparc-color-bs-primary { color: var(--bs-primary); }  /* 4x */
+.sparc-flex-1 { flex: 1; }  /* 4x */
+.sparc-flex-1-1-140px { flex: 1 1 140px; }  /* 4x */
+.sparc-flex-1-1-160px { flex: 1 1 160px; }  /* 4x */
+.sparc-fs-068 { font-size: 0.68rem; }  /* 4x */
+.sparc-fs-08 { font-size: 0.8rem; }  /* 4x */
+.sparc-mb-04 { margin-bottom: 0.4rem; }  /* 4x */
+.sparc-minw-68px { min-width: 68px; }  /* 4x */
+.sparc-minw-80px { min-width: 80px; }  /* 4x */
+.sparc-mt-03 { margin-top: 0.3rem; }  /* 4x */
+.sparc-mt-125r { margin-top: 1.25rem; }  /* 4x */
+.sparc-p-0 { padding: 0; }  /* 4x */
+.sparc-w-6pct { width: 6%; }  /* 4x */
+.sparc-bg-27ae60 { background: #27ae60; }  /* 3x */
+.sparc-bg-9b59b6 { background: #9b59b6; }  /* 3x */
+.sparc-bg-e67e22 { background: #e67e22; }  /* 3x */
+.sparc-color-dc3545 { color: #dc3545; }  /* 3x */
+.sparc-color-white { color: white; }  /* 3x */
+.sparc-fs-0875 { font-size: 0.875rem; }  /* 3x */
+.sparc-fs-095 { font-size: 0.95rem; }  /* 3x */
+.sparc-gap-035 { gap: 0.35rem; }  /* 3x */
+.sparc-maxw-200px { max-width: 200px; }  /* 3x */
+.sparc-maxw-400px { max-width: 400px; }  /* 3x */
+.sparc-mb-125r { margin-bottom: 1.25rem; }  /* 3x */
+.sparc-minh-80px { min-height: 80px; }  /* 3x */
+.sparc-mt-085 { margin-top: 0.85rem; }  /* 3x */
+.sparc-table-layout-fixed { table-layout: fixed; }  /* 3x */
+.sparc-w-18pct { width: 18%; }  /* 3x */
+.sparc-w-22pct { width: 22%; }  /* 3x */
+.sparc-w-28pct { width: 28%; }  /* 3x */
+.sparc-w-8pct { width: 8%; }  /* 3x */
+
+/* #1047 — components of the enrich screens (SAR/SSP).
+   Named for the role each played inline. A component class with a single
+   use is normal; a UTILITY with a single use is not, which is why these are
+   here rather than in the generated utility block. */
+
+/* One result/finding row inside an enrich section. */
+.sparc-enrich-item-card { border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface); }
+
+/* The small add/remove action under an item card. */
+.sparc-enrich-item-action { font-size: 0.8rem; padding: 0.35rem 0.75rem; margin-top: 0.5rem; }
+
+/* Title on the left, actions on the right. */
+.sparc-enrich-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+
+/* Sub-heading under the enrich title. */
+.sparc-enrich-subtitle { color: var(--sparc-text-muted); margin: 0; }
+
+/* Two-column grid with looser gutters. */
+.sparc-field-grid-2-roomy { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem; }
+
+/* Spans the field grid without clearing margin. */
+.sparc-field-grid-span-only { grid-column: 1 / -1; }
+
+/* Explanatory line under a section header. */
+.sparc-enrich-section-hint { color: var(--sparc-text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
+
+/* Faint helper text under a field. */
+.sparc-enrich-field-hint { font-size: 0.72rem; color: var(--sparc-text-faint); margin-top: 0.5rem; }
+
+/* Caption above a compact control. */
+.sparc-enrich-field-caption { font-size: 0.7rem; margin-bottom: 0.35rem; }
+
+/* Inline reference chip. NOTE: hard-coded colours, not tokens — flagged for #1088. */
+.sparc-enrich-ref-chip { background: rgba(52,152,219,0.15); color: #2980b9; border: 1px solid rgba(52,152,219,0.3); font-weight: 500; }
+
+/* <code> that should not carry the code background. */
+.sparc-code-plain { background: transparent; color: inherit; }
+
+/* Advisory notice panel. NOTE: hard-coded colours — flagged for #1088. */
+.sparc-enrich-notice { background: rgba(243,156,18,0.08); border: 1px solid rgba(243,156,18,0.3); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+
+/* Icon plus text inside a notice. */
+.sparc-enrich-notice-body { display: flex; align-items: center; gap: 0.75rem; }
+
+/* The notice's leading glyph. */
+.sparc-enrich-notice-icon { font-size: 1.2rem; }
+
+/* First line of a notice. */
+.sparc-enrich-notice-title { font-weight: 600; font-size: 0.9rem; color: var(--bs-body-color); }
+
+/* Second line of a notice. */
+.sparc-enrich-notice-detail { font-size: 0.78rem; color: var(--sparc-text-muted); margin-top: 0.15rem; }
+
+/* Checkbox and its label on one line. */
+.sparc-enrich-inline-check { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; cursor: pointer; white-space: nowrap; }
+
+/* The row of buttons at the foot of a section. */
+.sparc-enrich-actions { display: flex; gap: 1rem; margin-top: 1rem; }
+
+/* The same notice, sitting closer to what follows it. */
+.sparc-enrich-notice--tight { margin-bottom: 1rem; }

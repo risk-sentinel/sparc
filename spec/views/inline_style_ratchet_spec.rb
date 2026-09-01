@@ -23,10 +23,11 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   #
   # Measured 2026-09-01 on the Bundle Z branch point: 1,403 attributes across
   # 115 files, of which 1,361 are static (no ERB interpolation) and 42 are
-  # dynamic. The static ones become theme utilities; the dynamic ones become
+  # dynamic. Phase 2 slice 1 took sar_documents/enrich.html.erb from 136 to 0,
+  # verified against all 78 baseline screens with zero pixels changed. The static ones become theme utilities; the dynamic ones become
   # data-* attributes applied by a Stimulus controller, because a style set from
   # JavaScript is not what `style-src` blocks.
-  let(:ceiling) { 1_403 }
+  let(:ceiling) { 1267 }
 
   def inline_styles
     Dir.glob(view_root.join("**/*.erb")).flat_map do |path|
