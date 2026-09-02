@@ -1871,8 +1871,21 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-enrich-section-header--alt { background: var(--sparc-surface-alt); }
 
 /* A field label inside an enrich grid — 19 uses across the SAR and SSP enrich
-   screens, previously repeated inline in full each time. */
-.sparc-field-label {
+   screens, previously repeated inline in full each time.
+
+   NAMED `-enrich-` DELIBERATELY: `.sparc-field-label` was already taken (see
+   ~L1309) by the `<th scope="row">` rule for key/value tables. Reusing the name
+   put a second, later block on the same selector, and the cascade handed these
+   four declarations to every `<th>` on the document show screens — 2,456
+   elements across ssp/sap/sar/profile/cdef show. `display: block` dropped those
+   cells out of table layout, collapsing the 26% label column to as little as
+   40px, and `font-weight: 600` undid the `font-weight: 400` the original rule
+   sets specifically so the `<th>` reads as a label rather than a heading.
+
+   `.sparc-enrich-field-label` is NOT the name to use either — it is already
+   defined below with a different look (uppercase, 0.8rem, letter-spaced), so
+   that name would have moved the collision rather than removed it. */
+.sparc-enrich-grid-label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
