@@ -3351,3 +3351,17 @@ a.link-purple { color: var(--sparc-purple); }
 
 /* Explanatory line under a wizard step heading. */
 .sparc-wizard-step-hint { font-size: 0.88rem; margin-bottom: 0.75rem; }
+
+/* The step container itself — a <details> with a rounded border. `overflow`
+   clips the summary's background to that radius; without it the header square
+   corners overhang the rounding. 8 uses on ato_wizard alone. */
+.sparc-wizard-step { overflow: hidden; }
+
+/* A step's content area. Distinct from `-panel` above, which is the
+   JS-toggled region: this is the padding box that wraps it. */
+.sparc-wizard-step-body { padding: 1rem 1.25rem; }
+
+/* A note under a field inside a step. Deliberately a named class and not a
+   `margin-top` utility: it has ONE caller, and the utility layer's own rule is
+   that a value used once or twice is an inline style with extra steps. */
+.sparc-wizard-field-note { margin-top: 0.3rem; }

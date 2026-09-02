@@ -27,7 +27,7 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # verified against all 78 baseline screens with zero pixels changed. The static ones become theme utilities; the dynamic ones become
   # data-* attributes applied by a Stimulus controller, because a style set from
   # JavaScript is not what `style-src` blocks.
-  let(:ceiling) { 1169 }
+  let(:ceiling) { 1070 }
 
   def inline_styles
     Dir.glob(view_root.join("**/*.erb")).flat_map do |path|
