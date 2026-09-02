@@ -155,7 +155,7 @@
       <tr>
         <th>Status</th>
         <% @heatmap_impacts.each do |imp| %>
-          <th class="text-center" style="min-width: 80px;"><%= imp.capitalize %></th>
+          <th class="text-center" style="min-width: 80px;"><%= RiskRating.level_label(imp) %></th>
         <% end %>
       </tr>
     </thead>

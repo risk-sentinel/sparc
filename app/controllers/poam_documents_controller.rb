@@ -30,7 +30,6 @@ class PoamDocumentsController < ApplicationController
   before_action :authorize_document_write!, only: [ :create, :update, :destroy, :update_metadata, :publish, :attach_boundary ]
 
   RISK_STATUS_ORDER = %w[open investigating remediating deviation-requested deviation-approved closed].freeze
-  IMPACT_ORDER      = %w[high medium low].freeze
 
   def index
     scope = boundary_scoped_relation(PoamDocument).order(created_at: :desc)
@@ -339,9 +338,20 @@ class PoamDocumentsController < ApplicationController
 
     statuses = RISK_STATUS_ORDER.select { |s| data.key?(s) } +
                (data.keys - RISK_STATUS_ORDER).sort
+
+    # THE COLUMNS ARE THE SCALE, NOT THE DATA (#1095).
+    #
+    # This used to intersect an ordering list with the impact values actually
+    # present, so a tier with no rows simply had no column — and an empty tier
+    # became indistinguishable from a tier that does not exist. On a risk heat
+    # map that is backwards: "no highs" is a finding, and it should be readable
+    # as an empty column rather than inferred from an absence.
+    #
+    # Unrecognised values are still appended rather than dropped, so a legacy or
+    # imported spelling (e.g. a pre-#1090 "medium" that no migration reached)
+    # stays visible instead of silently vanishing from the picture.
     all_impacts = data.values.flat_map(&:keys).uniq
-    impacts = IMPACT_ORDER.select { |i| all_impacts.include?(i) } +
-              (all_impacts - IMPACT_ORDER).sort
+    impacts = RiskRating::LEVELS + (all_impacts - RiskRating::LEVELS).sort
 
     [ data, statuses, impacts ]
   end

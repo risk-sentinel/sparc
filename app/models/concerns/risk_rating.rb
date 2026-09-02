@@ -77,8 +77,17 @@ module RiskRating
   # export together. See #1090.
   LEVELS = %w[very-low low moderate high very-high].freeze
 
+  # The human spelling of a stored token: "very-low" -> "Very Low".
+  #
+  # A method rather than a second literal list, because anywhere that renders a
+  # level needs this and `capitalize` is subtly wrong for the hyphenated ones —
+  # the POA&M heat map's headers read "Very-low" until #1095.
+  def self.level_label(value)
+    value.to_s.tr("-", " ").split.map(&:capitalize).join(" ")
+  end
+
   # For `options_for_select`: [label, value].
-  LEVEL_OPTIONS = LEVELS.map { |v| [ v.tr("-", " ").split.map(&:capitalize).join(" "), v ] }.freeze
+  LEVEL_OPTIONS = LEVELS.map { |v| [ level_label(v), v ] }.freeze
 
   # What the old three-level vocabulary maps to.
   LEGACY_LEVELS = { "medium" => "moderate" }.freeze
