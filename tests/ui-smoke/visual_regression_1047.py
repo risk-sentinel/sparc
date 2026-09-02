@@ -64,6 +64,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import time
 import urllib.request
 from pathlib import Path
@@ -89,11 +90,122 @@ def _settle_and_expand(page):
 
 cap._settle = _settle_and_expand
 
+# `cap._shoot` navigates and screenshots in one call, so there is no seam to
+# measure the page at before it shoots. Rather than fork the whole thing, this
+# reuses its navigation guards verbatim and replaces only the screenshot step.
+# capture_screenshots.py itself is left alone: it owns the PUBLIC wiki images
+# (#781), whose reader wants a picture of a screen, not a pixel gate.
+_ORIGINAL_SHOOT = cap._shoot
+
+
+def _navigate(page, label: str, path: str) -> bool:
+    """cap._shoot's guards — nav error, HTTP error, silent bounce to /login."""
+    try:
+        resp = page.goto(f"{cap.BASE_URL}{path}", wait_until="domcontentloaded", timeout=30000)
+    except Exception as e:  # noqa: BLE001
+        print(f"  ✗ {label:32s} {path}  navigation error: {type(e).__name__}")
+        return False
+    status = resp.status if resp else None
+    if status and status >= 400:
+        print(f"  ✗ {label:32s} {path}  HTTP {status}")
+        return False
+    if "/login" in page.url and path != "/login":
+        print(f"  ✗ {label:32s} {path}  bounced to /login (auth?)")
+        return False
+    cap._settle(page)  # the wrapper above — settles, then expands disclosures
+    return True
+
+
+def _shoot_bounded(page, label: str, path: str, out_dir: Path) -> bool:
+    """Whole-page where it fits; banded where it does not. Never both."""
+    if not _navigate(page, label, path):
+        return False
+
+    dims = page.evaluate("() => ({w: document.documentElement.scrollWidth,"
+                         "        h: document.documentElement.scrollHeight})")
+    device_px = dims["w"] * dims["h"] * cap.DEVICE_SCALE ** 2
+    crop = cap.CROP_HEIGHTS.get(label)
+
+    # A cropped screen is deliberately a fixed-height shot, so it can never be
+    # over budget and must not be banded.
+    if crop or device_px <= MAX_DEVICE_PIXELS:
+        dest = out_dir / f"{label}.png"
+        # Leave no bands behind from a previous run in which this page was
+        # taller, or the stale ones compare as if they were still current.
+        for old in out_dir.glob(f"{label}{BAND_SEP}*.png"):
+            old.unlink()
+        if crop:
+            page.set_viewport_size({"width": cap.VIEWPORT["width"], "height": crop})
+            page.screenshot(path=str(dest), full_page=False)
+            page.set_viewport_size(cap.VIEWPORT)
+        else:
+            page.screenshot(path=str(dest), full_page=True)
+        print(f"  ✓ {label:32s} {path}  -> {dest.name} ({dest.stat().st_size // 1024} KB)")
+        return True
+
+    for old in out_dir.glob(f"{label}{BAND_SEP}*.png"):
+        old.unlink()
+    stale = out_dir / f"{label}.png"
+    if stale.exists():
+        stale.unlink()  # the same page fitted whole on a previous run
+
+    bands = math.ceil(dims["h"] / BAND_CSS_HEIGHT)
+    for i in range(bands):
+        y = i * BAND_CSS_HEIGHT
+        dest = out_dir / f"{label}{BAND_SEP}{i:03d}.png"
+        page.screenshot(
+            path=str(dest), full_page=True,
+            clip={"x": 0, "y": y, "width": dims["w"],
+                  "height": min(BAND_CSS_HEIGHT, dims["h"] - y)},
+        )
+    print(f"  ✓ {label:32s} {path}  -> {bands} bands  "
+          f"({dims['w']}x{dims['h']} css = {device_px / 1e6:,.0f}M device px, "
+          f"over the {MAX_DEVICE_PIXELS / 1e6:,.0f}M ceiling)")
+    return True
+
+
+cap._shoot = _shoot_bounded
+
 # A page is FAILED when more than this share of its pixels differ. Antialiasing
 # and font hinting move a handful of pixels between runs even with nothing
 # changed, so an exact-match gate would cry wolf every time; this is low enough
 # that a missing padding or a collapsed layout is far above it.
 DEFAULT_THRESHOLD = 0.005  # 0.5% of pixels
+
+# ---------------------------------------------------------------- size ceiling
+#
+# Chrome cannot allocate a bitmap for an arbitrarily tall page, and expanding
+# every <details> walks straight into that. Measured on the seeded estate:
+#
+#   ssp_show   1907 x 258,994 css px   768 <details>   = 1,976M device px
+#
+# at which Chrome dies on a fatal Skia assertion —
+# `SkBitmap.cpp:252 assertf(this->tryAllocPixels(...)) [w:3814 h:518034]`.
+#
+# That kills the BROWSER, not just the screenshot, so the run does not lose one
+# screen — it loses every screen after it. The first expanded run captured 64 of
+# ~78 and then aborted at the FIRST show page, which is where both enrich
+# screens live. A gate that dies partway through is worse than a blind one,
+# because the 64 it did write still look like a clean result.
+#
+# So: a page whose full-page bitmap would exceed this budget is captured in
+# horizontal BANDS instead. Coverage stays 100% — every pixel of the page is in
+# exactly one band — while no single allocation gets near the ceiling.
+#
+# Bands rather than one shot per <details>: ssp_show has 768 of them, so
+# per-element capture would mean 768 screenshots for one screen. Bands are
+# deterministic, bounded, and cover the gaps BETWEEN sections as well.
+MAX_DEVICE_PIXELS = 200_000_000
+
+# One band, in CSS px. At the 1440 viewport and DEVICE_SCALE 2 that is a
+# 2880x16000 bitmap (~184 MB) — comfortably inside the ceiling.
+BAND_CSS_HEIGHT = 8000
+
+# Marks a banded capture: `ssp_show__band007.png`. `_compare` matches captures by
+# filename, so bands compare band-for-band with no special casing, and a page
+# that changed HEIGHT enough to change its band count surfaces as MISSING —
+# which is a real signal, not noise.
+BAND_SEP = "__band"
 
 # Per-pixel intensity delta (0-255) below which a difference is treated as
 # rendering noise rather than a change. Measured: two captures of identical code
@@ -332,8 +444,12 @@ def _compare(base_dir: Path, after_dir: Path, threshold: float) -> int:
 
     regressions, clean, missing, resized, skipped_volatile = [], 0, [], [], []
     for b in base_pngs:
-        if b.stem in VOLATILE:
-            skipped_volatile.append(b.stem)
+        # A banded screen is many files but one screen, so the VOLATILE list has
+        # to be matched on the SCREEN, not the file — otherwise a volatile page
+        # that grew past the size ceiling would quietly start being gated.
+        screen = b.stem.split(BAND_SEP)[0]
+        if screen in VOLATILE:
+            skipped_volatile.append(screen)
             continue
         a = after_dir / b.name
         if not a.exists():
@@ -369,9 +485,15 @@ def _compare(base_dir: Path, after_dir: Path, threshold: float) -> int:
         else:
             clean += 1
 
+    screens = {p.stem.split(BAND_SEP)[0] for p in base_pngs}
+    banded = sorted({p.stem.split(BAND_SEP)[0] for p in base_pngs if BAND_SEP in p.stem})
     print(f"\n{'=' * 66}")
-    print(f"visual regression: {len(base_pngs)} baseline screen(s), threshold {threshold:.3%}")
+    print(f"visual regression: {len(screens)} baseline screen(s) in {len(base_pngs)} image(s), "
+          f"threshold {threshold:.3%}")
     print(f"  unchanged      : {clean}")
+    for name in banded:
+        n = sum(1 for p in base_pngs if p.stem.split(BAND_SEP)[0] == name)
+        print(f"  BANDED         {name}   captured in {n} bands (too tall to shoot whole)")
     for name, ratio, out in sorted(regressions, key=lambda r: -r[1]):
         print(f"  CHANGED {ratio:7.3%}  {name}   (diff image: {out})")
     for name, bs, as_ in resized:
