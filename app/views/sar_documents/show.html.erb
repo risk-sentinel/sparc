@@ -118,10 +118,23 @@
             download_xml_path: download_xml_sar_document_path(@sar_document),
             fallback_json_path: download_oscal_unvalidated_sar_document_path(@sar_document),
             document_type: "SAR" %>
-      <% unless @sar_document.enriched? %>
-        <%= link_to "&#x2728; Enrich".html_safe, enrich_sar_document_path(@sar_document),
-              class: "sparc-action sparc-action--info sparc-action--outline" %>
-      <% end %>
+      <%# #1093 — this used to be wrapped in `unless @sar_document.enriched?`, so
+          the only route to /enrich disappeared the moment the document WAS
+          enriched. The screen was reachable exactly once, and after the first
+          save the only way back was to type the URL. That is backwards for a
+          screen whose whole purpose is iterative: #1090 had just added
+          Statement, Impact and Likelihood to that form, and no already-enriched
+          SAR could reach them.
+
+          ssp_documents/show has offered a route in BOTH states all along — an
+          Enrich action in the bar and an Edit link into the same screen once
+          enriched. SAR had the first half and not the second.
+
+          SAME PLACEMENT, same action bar, same position. Only the visibility and
+          the label change with state. %>
+      <%= link_to (@sar_document.enriched? ? "&#9998; Edit Enrichment" : "&#x2728; Enrich").html_safe,
+            enrich_sar_document_path(@sar_document),
+            class: "sparc-action sparc-action--info sparc-action--outline" %>
       <%= link_to "&#8592; Back".html_safe, sar_documents_path,
             class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
