@@ -15,6 +15,17 @@ RSpec.describe "bin/lib/ca-trust.sh" do
   # status:}. SSL_CERT_FILE is echoed from inside the same shell so we capture
   # the exported value.
   def run_setup(env)
+    # `Open3.capture3(env, ...)` MERGES into the parent environment rather than
+    # replacing it, so an ambient SSL_CERT_FILE was inherited by the subshell and
+    # echoed straight back — and every `eq("")` assertion below then failed
+    # against whatever the developer's shell happened to export. The local
+    # toolchain sets it because rvm's ruby ships no CA bundle, so this spec went
+    # red for a reason that has nothing to do with ca-trust.sh.
+    #
+    # nil tells Open3 to UNSET the variable in the child, which is what "the
+    # script did not export one" has to mean if the assertion is to be about the
+    # script. A spec must declare the posture it asserts, never inherit it.
+    env = { "SSL_CERT_FILE" => nil }.merge(env)
     script = <<~BASH
       set -euo pipefail
       source #{lib.shellescape}
