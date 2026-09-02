@@ -285,6 +285,8 @@
                 </select>
               </div>
             </div>
+            <%= render "shared/risk_oscal_collections",
+                  param_base: "sar_document[risks][]", risk: risk %>
           </div>
         <% end %>
         <template data-sar-enrich-target="riskTemplate">
@@ -310,6 +312,8 @@
                 <input type="text" name="sar_document[risks][][description]" class="form-control sparc-fs-085" placeholder="Risk description" aria-label="Risk Description">
               </div>
             </div>
+            <%= render "shared/risk_oscal_collections",
+                  param_base: "sar_document[risks][]", risk: nil %>
           </div>
         </template>
         <button type="button" data-action="sar-enrich#addRisk" class="sparc-action sparc-action--positive sparc-action--solid sparc-enrich-item-action">

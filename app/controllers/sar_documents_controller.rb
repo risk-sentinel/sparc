@@ -1,4 +1,5 @@
 class SarDocumentsController < ApplicationController
+  include RiskCollectionParams
   include ReconciliationGate
   # #911 layer 2 — refuse an edit until the document names the baseline
   # its controls descend from. `set_baseline` is deliberately absent.
@@ -643,17 +644,23 @@ class SarDocumentsController < ApplicationController
       # rating; none of the three could be entered before, so every SAR risk
       # in the estate carried a blank rating and the exporter had nothing to
       # put in `characterizations`.
+      # #1092 — the OSCAL collections the form now offers. Shapes come from
+      # RiskCollectionParams so the form and Api::V1 accept the same thing.
       r_params = r_params.permit(:id, :sar_result_id, :title, :description, :status,
-                                 :statement, :impact, :likelihood)
+                                 :statement, :impact, :likelihood, :collections_present,
+                                 threat_ids_data: RiskCollectionParams::THREAT_IDS,
+                                 mitigating_factors_data: RiskCollectionParams::MITIGATING_FACTORS)
       result = if r_params[:sar_result_id].present?
         @sar_document.sar_results.find_by(id: r_params[:sar_result_id]) || default_result
       else
         default_result
       end
 
+      attrs = normalise_risk_collections(r_params)
+
       if r_params[:id].present?
         record = SarRisk.find_by(id: r_params[:id])
-        record&.update!(r_params.except(:id, :sar_result_id))
+        record&.update!(attrs.except(:id, :sar_result_id, :collections_present))
       else
         result.sar_risks.create!(
           uuid: SecureRandom.uuid,
@@ -662,10 +669,47 @@ class SarDocumentsController < ApplicationController
           statement: r_params[:statement].presence || NO_DESCRIPTION,
           impact: r_params[:impact].presence,
           likelihood: r_params[:likelihood].presence,
-          status: r_params[:status].presence || "open"
+          status: r_params[:status].presence || "open",
+          threat_ids_data: attrs[:threat_ids_data] || [],
+          mitigating_factors_data: attrs[:mitigating_factors_data] || []
         )
       end
     end
+  end
+
+  # #1092 — two things the raw params cannot express on their own.
+  #
+  # DELETION. An absent key means "unchanged" to `update!`, so removing the last
+  # threat-id row would silently leave the old value in place — the same trap
+  # Rails solves for checkboxes with a hidden field. The form emits
+  # `collections_present`, so an absent collection alongside it means EMPTY
+  # rather than untouched.
+  #
+  # UUIDs. OSCAL requires one on every mitigating-factor, and it is not the
+  # operator's business to type it. A row cloned from the <template> carries
+  # none (a template cannot mint a distinct id per clone), so it is assigned
+  # here. An existing factor keeps the uuid it already had.
+  def normalise_risk_collections(r_params)
+    attrs = r_params.to_h.symbolize_keys
+
+    if attrs[:collections_present].present?
+      attrs[:threat_ids_data] ||= []
+      attrs[:mitigating_factors_data] ||= []
+    end
+
+    if attrs[:threat_ids_data]
+      attrs[:threat_ids_data] = Array(attrs[:threat_ids_data]).map { |t| t.to_h.stringify_keys }
+                                    .reject { |t| t["system"].blank? && t["id"].blank? }
+    end
+
+    if attrs[:mitigating_factors_data]
+      attrs[:mitigating_factors_data] =
+        Array(attrs[:mitigating_factors_data]).map { |f| f.to_h.stringify_keys }
+             .reject { |f| f["description"].blank? }
+             .map { |f| f.merge("uuid" => f["uuid"].presence || SecureRandom.uuid) }
+    end
+
+    attrs
   end
 
   def auto_generate_from_excel
