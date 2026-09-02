@@ -21,6 +21,20 @@ RSpec.describe FileUploadable do
     tmp.binmode
     tmp.write(bytes)
     tmp.flush
+    # RETAIN the Tempfile for the life of the example. Only `path` — a String —
+    # escapes below, so without this the object becomes unreachable the moment
+    # this method returns, and Tempfile's finalizer UNLINKS the file. Any later
+    # `IO.binread(path)` in the code under test then raises Errno::ENOENT.
+    #
+    # That makes the failure a GC race: seed 39280 passed the whole suite, seed
+    # 56487 failed "passes a valid XML document" with ENOENT on
+    # file_uploadable.rb:175. Proven directly — an unretained Tempfile reports
+    # exists=true before `GC.start` and exists=false after, while a retained one
+    # survives both.
+    #
+    # The ivar is per-example (RSpec builds a fresh instance each time), so the
+    # files are still collected and unlinked once the example ends.
+    (@retained_uploads ||= []) << tmp
     instance_double("ActionDispatch::Http::UploadedFile",
                     original_filename: filename,
                     path: tmp.path)
