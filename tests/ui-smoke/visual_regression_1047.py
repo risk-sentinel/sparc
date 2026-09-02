@@ -65,6 +65,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import time
 import urllib.request
 from pathlib import Path
@@ -516,6 +517,236 @@ def _compare(base_dir: Path, after_dir: Path, threshold: float) -> int:
     return 1 if failed else 0
 
 
+# ---------------------------------------------------------------- cascade check
+#
+# A pixel diff is the WRONG instrument for a lost cascade, and #1047 proved it.
+# `.sparc-fs-085` lost to application.css's `.form-group input[type="text"], ...`
+# — 0,2,1 against a utility's 0,1,0 — and 638 converted form controls rendered
+# at 16px where the inline style had given 13.6px. The pixel gate did not catch
+# it: on sar_enrich the 632 wrong elements hid behind a legitimate height change
+# from #1090, and on ssp_enrich the entire defect was 11px on a 2,971px page.
+# A conversion that loses the cascade WITHOUT changing height moves no pixels at
+# all and is invisible to a diff by construction.
+#
+# So this asks the question structurally instead: for every single-class
+# `.sparc-*` utility matching an element on a real page, did its declaration
+# actually WIN? An inline style outranked everything; a class does not, and that
+# is precisely what the sweep trades away.
+
+# An override is fine when a MODIFIER beats its own base — `.sparc-action` and
+# `.sparc-action--solid` are one component, and the modifier winning is the
+# design. That is matched structurally (winner starts with loser + `-`), not
+# listed, so new modifiers do not need registering.
+#
+# These are the cross-class overrides measured as deliberate or pre-existing.
+# Each is a class that predates the sweep, so none of them is a conversion that
+# lost something it used to hold. Anything NOT here and not a modifier fails.
+# EMPTY, and that is the measured state, not an oversight. Scoping the check to
+# the utility layer removed every entry this once held: `.sparc-sidebar-toggle`,
+# `.sparc-nav-btn` and `.sparc-dropdown-header` are pre-existing components, not
+# conversions, so they are out of scope rather than excused. A run over 74
+# screens reports 0 accepted overrides and one real finding.
+#
+# Add an entry only with a measurement attached, and prefer fixing the conversion
+# — every line here is a declaration the inline style used to win and no longer
+# does, which is the exact regression this sweep is supposed to avoid.
+ACCEPTED_OVERRIDES: set[tuple[str, str]] = set()
+
+_CASCADE_JS = r"""(swept) => {
+  const spec = (sel) => {
+    const s = sel.replace(/::[\w-]+/g, ' ');
+    return [(s.match(/#[\w-]+/g) || []).length,
+            (s.match(/\.[\w-]+/g) || []).length + (s.match(/\[[^\]]+\]/g) || []).length
+              + (s.match(/:(?!:)[\w-]+/g) || []).length,
+            (s.replace(/[#.][\w-]+/g, ' ').replace(/\[[^\]]+\]/g, ' ')
+              .match(/(^|[\s>+~(,])([a-zA-Z][\w-]*)/g) || []).length];
+  };
+  const cmp = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+
+  const all = [];
+  let sheetIdx = 0;
+  for (const ss of document.styleSheets) {
+    let rules; try { rules = ss.cssRules } catch (e) { sheetIdx++; continue }
+    let i = 0;
+    for (const r of rules) {
+      if (r.selectorText && r.style)
+        all.push({sel: r.selectorText, style: r.style, order: sheetIdx * 1e6 + i,
+                  sparc: (ss.href || '').includes('sparc-theme'), spec: spec(r.selectorText)});
+      i++;
+    }
+    sheetIdx++;
+  }
+  // Only rules declaring a property a utility also declares can ever compete.
+  const byProp = {};
+  for (const r of all) for (const p of r.style) (byProp[p] = byProp[p] || []).push(r);
+
+  const utilities = all.filter(r => r.sparc && /^\.sparc-[\w-]+$/.test(r.sel)
+                                    && swept.includes(r.sel.slice(1)));
+  const lost = {};
+  for (const el of document.querySelectorAll('[class*="sparc-"]')) {
+    for (const r of utilities) {
+      let m; try { m = el.matches(r.sel) } catch (e) { continue }
+      if (!m) continue;
+      for (const prop of r.style) {
+        if (r.style.getPropertyPriority(prop)) continue;   // !important already wins
+        for (const o of (byProp[prop] || [])) {
+          if (o === r) continue;
+          let om; try { om = el.matches(o.sel) } catch (e) { continue }
+          if (!om) continue;
+          const d = cmp(o.spec, r.spec);
+          if (o.style.getPropertyPriority(prop) || d > 0 || (d === 0 && o.order > r.order)) {
+            // NUL-separated: selectors contain spaces, so a space key is ambiguous.
+            const k = r.sel + '\x00' + prop + '\x00' + o.sel;
+            lost[k] = (lost[k] || 0) + 1;
+            break;
+          }
+        }
+      }
+    }
+  }
+  return lost;
+}"""
+
+
+THEME_CSS = Path(__file__).resolve().parents[2] / "app/assets/stylesheets/sparc-theme.css"
+UTILITY_MARKER = "#1047 utility layer"
+
+
+def _swept_utilities() -> list[str]:
+    """The classes this sweep created to stand in for inline `style=`.
+
+    Scoped to the #1047 utility layer on purpose, not to every `.sparc-*` rule.
+    Run against the whole theme this check reports 51,690 overrides across 118
+    rules — `.sparc-edit-label` losing `color` to `.form-group label`,
+    `.sparc-status-pill` losing to `.sparc-status--success`,
+    `.sparc-card-detail-toggle` losing to `.sparc-family-group summary`. Every
+    one of those is pre-existing component CSS being overridden the way it was
+    designed to be. A gate that loud is a gate nobody reads, and it would have
+    buried the one finding that mattered.
+
+    The question worth asking is narrower: a declaration that used to be an
+    inline style outranked EVERYTHING, and after conversion it is a single class
+    that outranks very little. Those declarations all live below the marker.
+    """
+    text = THEME_CSS.read_text()
+    if UTILITY_MARKER not in text:
+        raise SystemExit(
+            f"{THEME_CSS}: the '{UTILITY_MARKER}' marker is gone, so swept classes can no "
+            "longer be told from pre-existing ones. Restore it rather than widening the check."
+        )
+    tail = text[text.index(UTILITY_MARKER):]
+    return sorted({m.group(1) for m in re.finditer(r"^\.(sparc-[\w-]+)\s*\{", tail, re.M)})
+
+
+def _same_component(loser: str, winner: str) -> bool:
+    """True when the winning rule is a STATE or MODIFIER of the losing class.
+
+    `.sparc-action` losing to `.sparc-action--solid`, or `.sparc-action--solid`
+    losing to `.sparc-action--solid:hover`, is not a lost cascade — it is the
+    component working. Only an override by an UNRELATED selector means a
+    conversion gave up something the inline style used to hold.
+
+    Matching on a bare string prefix is not enough: the first pass accepted
+    `--solid` but rejected `:hover`, and 9,009 of the 9,647 findings were hover
+    states beating their own base. A check that noisy would have been switched
+    off, which is the same as not having it.
+    """
+    base = loser.lstrip(".")
+    for part in winner.split(","):
+        part = re.sub(r"\[[^\]]*\]", "", part)          # attribute selectors
+        part = re.sub(r"::?[\w-]+(\([^)]*\))?", "", part)  # :hover, ::before, :not(...)
+        for token in re.findall(r"\.([\w-]+)", part):
+            if token == base or token.startswith(base + "-"):
+                return True
+    return False
+
+
+def _check_cascade(pin_from: Path | None) -> int:
+    """Fail when a converted utility declaration is overridden on a real page."""
+    if not _wait_until_serving():
+        print(f"{cap.BASE_URL} is not serving — not checking.")
+        return 2
+    pinned = {}
+    if pin_from and (pin_from / MANIFEST).exists():
+        pinned = json.loads((pin_from / MANIFEST).read_text())
+
+    swept = _swept_utilities()
+    print(f"cascade check: {len(swept)} swept utility class(es) from "
+          f"{THEME_CSS.name}'s '{UTILITY_MARKER}'")
+
+    findings: dict[tuple, int] = {}
+    checked = 0
+    with sync_playwright() as p:
+        browser = p.chromium.launch(channel="chrome", headless=True)
+        ctx = browser.new_context(base_url=cap.BASE_URL, viewport=cap.VIEWPORT,
+                                  device_scale_factor=cap.DEVICE_SCALE, color_scheme="light",
+                                  ignore_https_errors=cap.INSECURE_TLS)
+        page = ctx.new_page()
+        if not cap.SA_TOKEN:
+            print("SPARC_SMOKE_SA_TOKEN not set — the converted screens are all authenticated.")
+            browser.close()
+            return 2
+        ctx.add_cookies([cap._cookie_spec(cap._bridge_token_to_cookie(cap.SA_TOKEN), cap.BASE_URL)])
+
+        targets = list(page_inventory.MUST_EXIST_PAGES)
+        for label, index_path, _rx in page_inventory.SHOW_PAGES:
+            href = pinned.get(label) or cap._first_show_href(page, index_path, index_path)
+            if href:
+                targets.append((label, href))
+        for label, from_label, suffix in EXTRA_FROM_SHOW:
+            # The manifest stores the DERIVED url under the derived label, so it
+            # is already `/sar_documents/<slug>/enrich`. Appending the suffix to
+            # that gave `/enrich/enrich`, a 404 — and because the enrich screens
+            # are the only ones carrying the converted form controls, the check
+            # skipped every element it existed to inspect and reported PASS.
+            # Only the FROM label's url needs the suffix.
+            pinned_self = pinned.get(label)
+            if pinned_self:
+                targets.append((label, pinned_self))
+                continue
+            base = pinned.get(from_label) or next(
+                (h for lbl, h in targets if lbl == from_label), None)
+            if base:
+                targets.append((label, base.rstrip("/") + suffix))
+
+        unreachable = []
+        for label, path in targets:
+            if not _navigate(page, label, path):
+                # NOT a silent skip. A screen that could not be loaded has not
+                # been shown to be clean, and a doubled `/enrich/enrich` url
+                # once made this check 404 on the only screens carrying the
+                # converted form controls — and still print PASS.
+                unreachable.append((label, path))
+                continue
+            checked += 1
+            for key, n in page.evaluate(_CASCADE_JS, swept).items():
+                loser, prop, winner = key.split("\x00")
+                findings[(loser, prop, winner)] = findings.get((loser, prop, winner), 0) + n
+        browser.close()
+
+    accepted, real = [], []
+    for (loser, prop, winner), n in findings.items():
+        if _same_component(loser, winner) or (loser, prop) in ACCEPTED_OVERRIDES:
+            accepted.append((loser, prop, winner, n))
+        else:
+            real.append((loser, prop, winner, n))
+
+    print(f"\n{'=' * 66}")
+    print(f"cascade check: {checked} screen(s)")
+    for label, path in unreachable:
+        print(f"  UNREACHABLE    {label}   {path}")
+    print(f"  accepted overrides (modifier-over-base or pre-existing): "
+          f"{sum(n for *_, n in accepted)} in {len(accepted)} rule(s)")
+    for loser, prop, winner, n in sorted(real, key=lambda r: -r[3]):
+        print(f"  LOST {n:>6} x  {loser} {{ {prop} }}\n"
+              f"               to  {winner[:88]}")
+    ok = not real and not unreachable
+    print(f"\n{'PASS' if ok else 'FAIL'}: {sum(n for *_, n in real)} overridden "
+          f"declaration(s) in {len(real)} rule(s), "
+          f"{len(unreachable)} screen(s) unreachable\n{'=' * 66}")
+    return 0 if ok else 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Visual regression for the #1047 inline-style sweep")
     ap.add_argument("--capture", metavar="DIR", help="capture every pages.py screen into DIR")
@@ -529,8 +760,14 @@ def main() -> int:
                          "(use to retry a screen lost to a #1087 navigation timeout)")
     ap.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD,
                     help=f"changed-pixel share that fails a screen (default {DEFAULT_THRESHOLD})")
+    ap.add_argument("--check-cascade", action="store_true",
+                    help="ask the CSSOM whether each converted .sparc-* utility declaration "
+                         "actually WON on a real page. A conversion that loses the cascade "
+                         "without changing height moves no pixels, so --compare cannot see it")
     args = ap.parse_args()
 
+    if args.check_cascade:
+        return _check_cascade(Path(args.pin_from) if args.pin_from else None)
     if args.capture:
         return _capture(Path(args.capture),
                         Path(args.pin_from) if args.pin_from else None,

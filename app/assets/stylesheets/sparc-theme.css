@@ -3145,32 +3145,58 @@ a.link-purple { color: var(--sparc-purple); }
 
    Last in the file so that, at equal specificity, these win — an inline style
    previously outranked every rule here, and a conversion must not lose a
-   specificity battle it used to win. `!important` is deliberately NOT used;
-   where a conversion does lose, the visual diff catches it and it is fixed at
-   the call site.
+   specificity battle it used to win.
+
+   THE FONT-SIZE UTILITIES CARRY `!important`, AND THE PARAGRAPH THAT USED TO
+   SIT HERE WAS WRONG. It said `!important` was unnecessary because "where a
+   conversion does lose, the visual diff catches it and it is fixed at the call
+   site". The visual diff did NOT catch it. `.sparc-fs-085` loses to
+   `application.css`'s `.form-group input[type="text"], ...` rule — 0,2,1
+   against a utility's 0,1,0 — so 638 converted form controls across the two
+   swept screens rendered at 16px where the inline style had given them 13.6px.
+   Being last in the file cannot help against higher specificity; only equal
+   specificity is decided by order.
+
+   It survived because a pixel diff is the wrong instrument for this failure:
+   on sar_enrich the 632 wrong elements were masked by a legitimate height
+   change from #1090, and on ssp_enrich the whole defect surfaced as 11px of
+   growth on a 2,971px page — under any sane threshold. A conversion that loses
+   the cascade at the SAME rendered height would not move a single pixel.
+
+   So the check is now structural, not visual: the gate asks the CSSOM whether
+   a converted declaration actually won on a real page
+   (tests/ui-smoke/visual_regression_1047.py --check-cascade). Measured there:
+   15,133 utility declarations hold and the overrides that remain are
+   deliberate — a modifier beating its base (`.sparc-action--neutral`), or
+   pre-existing classes that predate this sweep.
+
+   `!important` on a single-purpose utility is the one place it is correct, and
+   it is what Bootstrap's own utility API does. It is scoped to the font-size
+   utilities: they are the layer measured to lose. Do not spray it across the
+   rest without the same evidence.
 
    Guarded by spec/views/inline_style_ratchet_spec.rb, which fails if the inline
    count rises.
    ========================================================================== */
 
-.sparc-fs-085 { font-size: 0.85rem; }  /* 68x */
+.sparc-fs-085 { font-size: 0.85rem !important; }  /* 68x */
 .sparc-ws-nowrap { white-space: nowrap; }  /* 62x */
-.sparc-fs-075 { font-size: 0.75rem; }  /* 38x */
-.sparc-fs-088 { font-size: 0.88rem; }  /* 35x */
+.sparc-fs-075 { font-size: 0.75rem !important; }  /* 38x */
+.sparc-fs-088 { font-size: 0.88rem !important; }  /* 35x */
 .sparc-mb-025 { margin-bottom: 0.25rem; }  /* 31x */
 .sparc-p-1r-125r { padding: 1rem 1.25rem; }  /* 26x */
 .sparc-cursor-pointer { cursor: pointer; }  /* 23x */
 .sparc-d-none { display: none; }  /* 18x */
 .sparc-of-hidden { overflow: hidden; }  /* 18x */
-.sparc-fs-082 { font-size: 0.82rem; }  /* 16x */
+.sparc-fs-082 { font-size: 0.82rem !important; }  /* 16x */
 .sparc-mb-0 { margin-bottom: 0; }  /* 16x */
 .sparc-color-primary { color: var(--sparc-primary); }  /* 15x */
 .sparc-mt-05 { margin-top: 0.5rem; }  /* 13x */
 .sparc-mb-05 { margin-bottom: 0.5rem; }  /* 12x */
-.sparc-fs-065 { font-size: 0.65rem; }  /* 11x */
-.sparc-fs-078 { font-size: 0.78rem; }  /* 11x */
+.sparc-fs-065 { font-size: 0.65rem !important; }  /* 11x */
+.sparc-fs-078 { font-size: 0.78rem !important; }  /* 11x */
 .sparc-p-04-0 { padding: 0.4rem 0; }  /* 10x */
-.sparc-fs-1r { font-size: 1rem; }  /* 9x */
+.sparc-fs-1r { font-size: 1rem !important; }  /* 9x */
 .sparc-m-0 { margin: 0; }  /* 9x */
 .sparc-mb-075 { margin-bottom: 0.75rem; }  /* 9x */
 .sparc-mb-035 { margin-bottom: 0.35rem; }  /* 8x */
@@ -3178,12 +3204,12 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-mt-035 { margin-top: 0.35rem; }  /* 7x */
 .sparc-ta-left { text-align: left; }  /* 7x */
 .sparc-w-14pct { width: 14%; }  /* 7x */
-.sparc-fs-072 { font-size: 0.72rem; }  /* 6x */
+.sparc-fs-072 { font-size: 0.72rem !important; }  /* 6x */
 .sparc-mt-04 { margin-top: 0.4rem; }  /* 6x */
 .sparc-ofx-auto { overflow-x: auto; }  /* 6x */
 .sparc-p-03-05 { padding: 0.3rem 0.5rem; }  /* 6x */
-.sparc-fs-07 { font-size: 0.7rem; }  /* 5x */
-.sparc-fs-25r { font-size: 2.5rem; }  /* 5x */
+.sparc-fs-07 { font-size: 0.7rem !important; }  /* 5x */
+.sparc-fs-25r { font-size: 2.5rem !important; }  /* 5x */
 .sparc-gap-1r { gap: 1rem; }  /* 5x */
 .sparc-mb-02 { margin-bottom: 0.2rem; }  /* 5x */
 .sparc-w-12pct { width: 12%; }  /* 5x */
@@ -3192,8 +3218,8 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-flex-1 { flex: 1; }  /* 4x */
 .sparc-flex-1-1-140px { flex: 1 1 140px; }  /* 4x */
 .sparc-flex-1-1-160px { flex: 1 1 160px; }  /* 4x */
-.sparc-fs-068 { font-size: 0.68rem; }  /* 4x */
-.sparc-fs-08 { font-size: 0.8rem; }  /* 4x */
+.sparc-fs-068 { font-size: 0.68rem !important; }  /* 4x */
+.sparc-fs-08 { font-size: 0.8rem !important; }  /* 4x */
 .sparc-mb-04 { margin-bottom: 0.4rem; }  /* 4x */
 .sparc-minw-68px { min-width: 68px; }  /* 4x */
 .sparc-minw-80px { min-width: 80px; }  /* 4x */
@@ -3206,8 +3232,8 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-bg-e67e22 { background: #e67e22; }  /* 3x */
 .sparc-color-dc3545 { color: #dc3545; }  /* 3x */
 .sparc-color-white { color: white; }  /* 3x */
-.sparc-fs-0875 { font-size: 0.875rem; }  /* 3x */
-.sparc-fs-095 { font-size: 0.95rem; }  /* 3x */
+.sparc-fs-0875 { font-size: 0.875rem !important; }  /* 3x */
+.sparc-fs-095 { font-size: 0.95rem !important; }  /* 3x */
 .sparc-gap-035 { gap: 0.35rem; }  /* 3x */
 .sparc-maxw-200px { max-width: 200px; }  /* 3x */
 .sparc-maxw-400px { max-width: 400px; }  /* 3x */
