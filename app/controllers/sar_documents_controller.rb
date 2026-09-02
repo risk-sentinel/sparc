@@ -90,9 +90,20 @@ class SarDocumentsController < ApplicationController
     filtered = base_filtered
 
     if params[:family].present?
+      # UPCASE THE PARAMETER, not just the column (#1094). Both sides of this OR
+      # require the VALUE to already be uppercase: `control_family` is stored
+      # uppercase ("AC", "AT", ...) and the fallback upcases the column but not
+      # what it is compared against. `control_id` is stored LOWERCASE ("ac-1"),
+      # so a lowercase family is the natural thing to type or to build from an id
+      # — and it returned "0 of 150 controls" while reporting that as the answer.
+      # Every family tile already links uppercase, so only hand-typed, bookmarked
+      # and API-built URLs were affected, silently.
+      #
+      # Matches ControlLookupService:159 and Api::V1::CatalogControls:124, which
+      # both normalise with `.to_s.upcase`; this was the one site that did not.
       filtered = filtered.where(
         "control_family = :family OR (control_family IS NULL AND UPPER(SPLIT_PART(control_id, '-', 1)) = :family)",
-        family: params[:family]
+        family: params[:family].to_s.upcase
       )
     end
 

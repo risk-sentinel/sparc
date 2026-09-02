@@ -34,7 +34,11 @@
 
   # Active filter tracking
   active_section = params[:section]
-  active_family  = params[:family]
+  # Normalised the same way the query normalises it (#1094), so the chip, the
+  # active-tile highlight and the result set all agree on what is being filtered.
+  # Read raw, `?family=ac` returned 12 controls while the summary chip still read
+  # "Family: ac" and no family tile highlighted, because the tiles are uppercase.
+  active_family  = params[:family].presence&.upcase
   active_status  = params[:status]
   active_asset   = params[:asset]
   active_env     = params[:environment]
