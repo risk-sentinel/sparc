@@ -213,6 +213,7 @@ module ApplicationHelper
     COLOR_RED       => "red",
     COLOR_GRAY      => "gray",
     COLOR_GRAY_DARK => "slate",
+    "#2ecc71"       => "emerald",
     "#9b59b6"       => "purple",
     "#8e44ad"       => "violet",
     "#bdc3c7"       => "silver"

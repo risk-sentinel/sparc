@@ -27,7 +27,39 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # verified against all 78 baseline screens with zero pixels changed. The static ones become theme utilities; the dynamic ones become
   # data-* attributes applied by a Stimulus controller, because a style set from
   # JavaScript is not what `style-src` blocks.
-  let(:ceiling) { 1070 }
+  let(:ceiling) { 980 }
+
+  # A SECOND guard, learned the hard way in slice 4.
+  #
+  # The conversion is "delete the style attribute, add a class", and the codemod
+  # that does it merges into an existing `class="..."` when one sits immediately
+  # before the `style=`. On a MULTI-LINE tag it often does not:
+  #
+  #     <div class="control-card"
+  #          data-family="..."
+  #          style="border-left: 4px solid <%= c %>;">
+  #
+  # ...leaves the element with TWO class attributes. The browser honours the
+  # FIRST and silently ignores the second, so the converted styling never
+  # applies — the exact silent-failure mode this whole sweep exists to avoid,
+  # reintroduced by the fix for it. Three were produced in one slice.
+  #
+  # ERB is masked before scanning: `value="<%= x %>"` contains `>`, so a naive
+  # tag regex truncates mid-tag. That is the same trap that made an earlier
+  # codemod skip 28 of 136 attributes.
+  it "never leaves an element with two class attributes" do
+    offenders = Dir.glob(view_root.join("**/*.erb")).flat_map do |path|
+      masked = File.read(path).gsub(/<%.*?%>/m, "ERB")
+      masked.scan(/<[a-zA-Z][^>]*>/)
+            .select { |tag| tag.scan(/\bclass=/).size > 1 }
+            .map { |tag| "#{path.sub(Rails.root.to_s + '/', '')}: #{tag.split.join(' ')[0, 110]}" }
+    end
+
+    expect(offenders).to be_empty, lambda {
+      "#{offenders.size} element(s) carry two class attributes; the browser uses the " \
+      "first and drops the second:\n  " + offenders.join("\n  ")
+    }
+  end
 
   def inline_styles
     Dir.glob(view_root.join("**/*.erb")).flat_map do |path|

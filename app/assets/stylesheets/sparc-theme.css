@@ -3361,6 +3361,80 @@ a.link-purple { color: var(--sparc-purple); }
    JS-toggled region: this is the padding box that wraps it. */
 .sparc-wizard-step-body { padding: 1rem 1.25rem; }
 
+/* ==========================================================================
+   #1047 slice 4 — the SSP show screen's vocabulary.
+
+   90 attributes, and 30 of them already had an exact class from earlier slices,
+   which is the point of doing these in order. What is left splits in two:
+
+   ATOMICS, added because the same declarations recur across the whole show-screen
+   family still to be converted (poam_show 72, cdef_show 47, sar_show 39,
+   sap_show 33). Measured over every remaining view before minting any of them.
+
+   COMPONENTS, for the multi-property blocks that are a THING on the page — a
+   summary card, a context panel, the modal. A utility per declaration would have
+   meant ~110 new classes and would have described the CSS rather than the screen.
+
+   Two inline styles are simply DELETED rather than converted: `<th
+   class="sparc-field-label" style="font-weight: 400; text-align: left;">`
+   restates what .sparc-field-label already declares, so removing it is provably
+   a no-op.
+   ========================================================================== */
+
+/* -- atomics ------------------------------------------------------------- */
+.sparc-color-body { color: var(--bs-body-color); }
+.sparc-color-tertiary { color: var(--bs-tertiary-color); }
+.sparc-color-secondary { color: var(--bs-secondary-color); }
+.sparc-color-purple { color: var(--sparc-purple); }
+.sparc-lh-15 { line-height: 1.5; }
+.sparc-fw-500 { font-weight: 500; }
+.sparc-fw-600 { font-weight: 600; }
+.sparc-fs-084 { font-size: 0.84rem !important; }
+.sparc-fs-064 { font-size: 0.64rem !important; }
+.sparc-fs-05 { font-size: 0.5rem !important; }
+.sparc-mt-01 { margin-top: 0.1rem; }
+.sparc-mt-025 { margin-top: 0.25rem; }
+.sparc-ml-01 { margin-left: 0.1rem; }
+.sparc-mb-06 { margin-bottom: 0.6rem; }
+.sparc-flex-shrink-0 { flex-shrink: 0; }
+.sparc-minw-0 { min-width: 0; }
+.sparc-gap-15r { gap: 1.5rem; }
+.sparc-gap-045 { gap: 0.45rem; }
+.sparc-divider-top { border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
+.sparc-divider-top-mt { margin-top: 0.75rem; border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
+
+/* -- the summary strip --------------------------------------------------- */
+.sparc-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+.sparc-summary-card { background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 1rem; }
+.sparc-card-eyebrow { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bs-tertiary-color); }
+.sparc-card-more { font-size: 0.75rem; color: var(--bs-tertiary-color); margin-top: 0.25rem; }
+.sparc-score-cell { text-align: center; min-width: 80px; flex-shrink: 0; }
+.sparc-enrich-cta { background: rgba(241,196,15,0.08); border: 1px solid rgba(241,196,15,0.25); padding: 0.85rem 1.25rem; }
+
+/* -- inherited / baseline context blocks --------------------------------- */
+/* MODIFIERS, so they must sit after .sparc-ctx-header and .sparc-edit-label:
+   same specificity (0,1,0), so source order is what makes them win. */
+.sparc-ctx-header--violet { color: var(--sparc-purple); background: rgba(142,68,173,0.06); border: 1px solid rgba(142,68,173,0.18); }
+.sparc-ctx-header--blue { font-size: 0.8rem; background: rgba(52,152,219,0.06); border: 1px solid rgba(52,152,219,0.18); }
+.sparc-ctx-header--purple { font-size: 0.8rem; background: rgba(155,89,182,0.06); border: 1px solid rgba(155,89,182,0.18); }
+.sparc-ctx-panel--blue { margin-top: 0.5rem; padding: 0.85rem 1rem; background: rgba(52,152,219,0.04); border: 1px solid rgba(52,152,219,0.12); border-radius: 0 0 6px 6px; }
+.sparc-ctx-panel--purple { margin-top: 0.5rem; padding: 0.85rem 1rem; background: rgba(155,89,182,0.04); border: 1px solid rgba(155,89,182,0.12); border-radius: 0 0 6px 6px; }
+.sparc-ctx-panel--params { margin-top: 0.5rem; padding: 0.75rem; background: rgba(155,89,182,0.04); border: 1px solid rgba(155,89,182,0.15); border-radius: 5px; }
+.sparc-inherited-card { margin-bottom: 0.6rem; padding: 0.75rem 1rem; background: var(--bs-secondary-bg); border-left: 3px solid #8e44ad; border-radius: 0 6px 6px 0; }
+.sparc-edit-label--block { color: var(--bs-tertiary-color); display: block; margin-bottom: 0.5rem; font-weight: 600; }
+.sparc-edit-label--param { font-size: 0.68rem; letter-spacing: 0.07em; color: var(--sparc-purple); margin-bottom: 0.2rem; }
+
+/* -- the inline editor --------------------------------------------------- */
+.sparc-detail-toggle { font-size: 0.8rem; color: var(--bs-tertiary-color); cursor: pointer; padding: 0.35rem 0; user-select: none; }
+.sparc-detail-toggle--purple { font-size: 0.8rem; font-weight: 600; color: var(--sparc-purple); cursor: pointer; padding: 0.35rem 0; user-select: none; }
+.sparc-edit-panel { display: none; margin-top: 0.75rem; border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
+.sparc-btn-cancel { background: var(--bs-secondary-bg); color: var(--bs-secondary-color); border: 1px solid var(--bs-border-color); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem; }
+
+/* -- the statement modal -------------------------------------------------- */
+.sparc-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+.sparc-modal-dialog { padding: 2rem; max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.sparc-modal-eyebrow { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
 /* #1047 — DECORATIVE ACCENT COLOUR, as a class instead of an interpolated hex.
    `style="border-left: 3px solid <%= ssp_status_color(status) %>"` cannot
    survive removing `style-src 'unsafe-inline'`: a `style=` attribute is blocked
@@ -3373,6 +3447,7 @@ a.link-purple { color: var(--sparc-purple); }
    AA-tuned set for text on a filled chip; reusing it here would have quietly
    restyled every accent. */
 .sparc-accent--green  { --sparc-accent: #27ae60; }
+.sparc-accent--emerald { --sparc-accent: #2ecc71; }  /* NOT COLOR_GREEN — a distinct green used for score/completion */
 .sparc-accent--blue   { --sparc-accent: #3498db; }
 .sparc-accent--orange { --sparc-accent: #f39c12; }
 .sparc-accent--red    { --sparc-accent: #e74c3c; }
