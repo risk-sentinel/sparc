@@ -3361,6 +3361,40 @@ a.link-purple { color: var(--sparc-purple); }
    JS-toggled region: this is the padding box that wraps it. */
 .sparc-wizard-step-body { padding: 1rem 1.25rem; }
 
+/* #1047 — DECORATIVE ACCENT COLOUR, as a class instead of an interpolated hex.
+   `style="border-left: 3px solid <%= ssp_status_color(status) %>"` cannot
+   survive removing `style-src 'unsafe-inline'`: a `style=` attribute is blocked
+   whatever is in it, including a custom property.
+
+   These carry the EXACT hexes the *_color helpers already return
+   (ApplicationHelper::ACCENT_TOKENS maps hex -> token), so the rendered colour
+   is unchanged — the value is the same, only the delivery differs. They are
+   deliberately NOT the `.sparc-status--*` badge palette, which is a different,
+   AA-tuned set for text on a filled chip; reusing it here would have quietly
+   restyled every accent. */
+.sparc-accent--green  { --sparc-accent: #27ae60; }
+.sparc-accent--blue   { --sparc-accent: #3498db; }
+.sparc-accent--orange { --sparc-accent: #f39c12; }
+.sparc-accent--red    { --sparc-accent: #e74c3c; }
+.sparc-accent--gray   { --sparc-accent: #95a5a6; }
+.sparc-accent--slate  { --sparc-accent: #7f8c8d; }
+.sparc-accent--purple { --sparc-accent: #9b59b6; }
+.sparc-accent--violet { --sparc-accent: #8e44ad; }
+.sparc-accent--silver { --sparc-accent: #bdc3c7; }
+
+/* The shapes that consume it. */
+.sparc-border-l-3 { border-left: 3px solid var(--sparc-accent); }
+.sparc-border-l-4 { border-left: 4px solid var(--sparc-accent); }
+.sparc-accent-text { color: var(--sparc-accent); }
+.sparc-accent-bg { background: var(--sparc-accent); }
+
+/* A progress bar whose width is a continuous value. The width itself cannot be
+   a class, so it is set from `data-bar-pct-value` by the `bar` Stimulus
+   controller through the CSSOM, which CSP does not govern — `style-src` covers
+   `style=` attributes in markup and <style> blocks, not element.style writes.
+   Same technique #650 used to replace this screen's inline onclick handlers. */
+.sparc-bar-fill { width: 0; }
+
 /* A note under a field inside a step. Deliberately a named class and not a
    `margin-top` utility: it has ONE caller, and the utility layer's own rule is
    that a value used once or twice is an inline style with extra steps. */
