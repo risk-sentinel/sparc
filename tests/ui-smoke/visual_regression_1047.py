@@ -74,6 +74,21 @@ from playwright.sync_api import sync_playwright
 import capture_screenshots as cap
 import pages as page_inventory
 
+# Reveal collapsed content before every shot. `_shoot` settles the page and then
+# screenshots; expanding between those two is exactly where this belongs, and
+# wrapping keeps the crop/auth/error handling in one place instead of forking it.
+_ORIGINAL_SETTLE = cap._settle
+
+
+def _settle_and_expand(page):
+    _ORIGINAL_SETTLE(page)
+    opened = _expand_disclosures(page)
+    if opened:
+        page.wait_for_timeout(250)
+
+
+cap._settle = _settle_and_expand
+
 # A page is FAILED when more than this share of its pixels differ. Antialiasing
 # and font hinting move a handful of pixels between runs even with nothing
 # changed, so an exact-match gate would cry wolf every time; this is low enough
@@ -161,6 +176,27 @@ def _wait_until_serving(timeout: int = 180) -> bool:
             pass
         time.sleep(3)
     return False
+
+
+def _expand_disclosures(page) -> int:
+    """Open every <details> before the screenshot.
+
+    The enrich screens put four of their five sections in a COLLAPSED <details>,
+    so a screenshot saw only the first one. Slices 1 and 2 of #1047 converted 233
+    inline styles across those two screens and the gate reported "0 changed
+    pixels" — for the ~20% it could actually see. A safety net that cannot see
+    the markup being changed is not a safety net.
+
+    Native <details>, not a click: clicking a <summary> can navigate or toggle
+    Stimulus state, and the point here is to reveal DOM, not to exercise it.
+    """
+    try:
+        return page.evaluate(
+            "() => { const d = [...document.querySelectorAll('details:not([open])')];"
+            "        d.forEach(x => x.open = true); return d.length; }"
+        )
+    except Exception:  # noqa: BLE001 — a page with no details, or an early nav
+        return 0
 
 
 def _capture(out_dir: Path, pin_from: Path | None = None, only: set[str] | None = None) -> int:
@@ -280,6 +316,12 @@ def _capture(out_dir: Path, pin_from: Path | None = None, only: set[str] | None 
 
 def _compare(base_dir: Path, after_dir: Path, threshold: float) -> int:
     from PIL import Image, ImageChops
+
+    # These are OUR OWN full-page screenshots, not untrusted input. Expanding
+    # every <details> makes the enrich screens ~66,000px tall, which trips
+    # Pillow's decompression-bomb guard (default ~179M pixels) and made it refuse
+    # to open a capture it had just written.
+    Image.MAX_IMAGE_PIXELS = None
 
     # Skip our own diff output: it is written beside the captures, and on the
     # next comparison every DIFF_*.png was picked up as a screen in its own right.
