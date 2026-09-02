@@ -628,7 +628,12 @@ class SarDocumentsController < ApplicationController
     return unless default_result
 
     incoming.each do |r_params|
-      r_params = r_params.permit(:id, :sar_result_id, :title, :description, :status)
+      # #1090 — statement is OSCAL-required and impact/likelihood are the
+      # rating; none of the three could be entered before, so every SAR risk
+      # in the estate carried a blank rating and the exporter had nothing to
+      # put in `characterizations`.
+      r_params = r_params.permit(:id, :sar_result_id, :title, :description, :status,
+                                 :statement, :impact, :likelihood)
       result = if r_params[:sar_result_id].present?
         @sar_document.sar_results.find_by(id: r_params[:sar_result_id]) || default_result
       else
@@ -643,6 +648,9 @@ class SarDocumentsController < ApplicationController
           uuid: SecureRandom.uuid,
           title: r_params[:title].presence || "Risk",
           description: r_params[:description].presence || NO_DESCRIPTION,
+          statement: r_params[:statement].presence || NO_DESCRIPTION,
+          impact: r_params[:impact].presence,
+          likelihood: r_params[:likelihood].presence,
           status: r_params[:status].presence || "open"
         )
       end

@@ -65,7 +65,11 @@ RSpec.describe "Api::V1::PoamDocuments", type: :request do
     # returning an error would discard it over source data the assessor still
     # has to fix. The omissions are reported so the caller can act on them.
     it "returns 201 AND reports risks it could not convert" do
-      create(:sar_risk, sar_result: sar_result, title: "No statement", statement: nil)
+      # An incomplete risk reaches the estate through INGEST or predates the
+      # #1090 validations; it can no longer be AUTHORED. Built the way it really
+      # occurs, so this still exercises the generator's skip path.
+      build(:sar_risk, sar_result: sar_result, title: "No statement", statement: nil)
+        .tap { |r| r.save(validate: false) }
 
       post generate_api_v1_poam_documents_path,
         params: { poam_document: { sar_document_id: sar.id } }, headers: auth_headers

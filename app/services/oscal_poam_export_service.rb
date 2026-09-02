@@ -148,7 +148,7 @@ class OscalPoamExportService
         "status"              => risk.status,
         "origins"             => risk.origins_data.presence,
         "threat-ids"          => risk.threat_ids_data.presence,
-        "characterizations"   => risk.characterizations_data.presence,
+        "characterizations"   => risk.characterizations_for_export,
         "mitigating-factors"  => risk.mitigating_factors_data.presence,
         "deadline"            => risk.deadline&.iso8601,
         "remediations"        => build_remediations(risk),

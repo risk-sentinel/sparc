@@ -1,4 +1,6 @@
 class PoamRisk < ApplicationRecord
+  include RiskRating
+
   belongs_to :poam_document
 
   has_many :poam_remediations, dependent: :delete_all

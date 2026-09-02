@@ -258,6 +258,32 @@
                 <label class="sparc-fs-075" for="sar-risk-<%= idx %>-description">Description</label>
                 <input type="text" id="sar-risk-<%= idx %>-description" name="sar_document[risks][][description]" value="<%= risk.description %>" class="form-control sparc-fs-085" aria-label="Risk Description">
               </div>
+              <%# #1090 — OSCAL requires a statement on a risk, and the rating is what
+                  an assessor actually reads. Neither could be entered here before: the
+                  form offered title, description and status only, so `impact` and
+                  `likelihood` sat blank on every SAR risk in the estate. %>
+              <div class="form-group sparc-field-grid-span">
+                <label class="sparc-fs-075" for="sar-risk-<%= idx %>-statement">Statement</label>
+                <input type="text" id="sar-risk-<%= idx %>-statement" name="sar_document[risks][][statement]" value="<%= risk.statement %>" class="form-control sparc-fs-085" aria-label="Risk Statement" placeholder="What could happen, and to what">
+              </div>
+              <div class="form-group sparc-mb-025">
+                <label class="sparc-fs-075" for="sar-risk-<%= idx %>-impact">Impact</label>
+                <select id="sar-risk-<%= idx %>-impact" name="sar_document[risks][][impact]" class="form-control sparc-fs-085" aria-label="Risk Impact">
+                  <option value="">&mdash; Select &mdash;</option>
+                  <% RiskRating::LEVEL_OPTIONS.each do |level_label, level_value| %>
+                    <option value="<%= level_value %>" <%= 'selected' if risk.impact == level_value %>><%= level_label %></option>
+                  <% end %>
+                </select>
+              </div>
+              <div class="form-group sparc-mb-025">
+                <label class="sparc-fs-075" for="sar-risk-<%= idx %>-likelihood">Likelihood</label>
+                <select id="sar-risk-<%= idx %>-likelihood" name="sar_document[risks][][likelihood]" class="form-control sparc-fs-085" aria-label="Risk Likelihood">
+                  <option value="">&mdash; Select &mdash;</option>
+                  <% RiskRating::LEVEL_OPTIONS.each do |level_label, level_value| %>
+                    <option value="<%= level_value %>" <%= 'selected' if risk.likelihood == level_value %>><%= level_label %></option>
+                  <% end %>
+                </select>
+              </div>
             </div>
           </div>
         <% end %>

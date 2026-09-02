@@ -611,6 +611,11 @@ Rails.application.routes.draw do
         collection do
           post :convert
         end
+        # #1090 — SAR risks had no API at all: POA&M has eight sub-resource
+        # controllers and SAR had none, so a risk was reachable only through the
+        # HTML enrich form, which permitted title/description/status and nothing
+        # else. The OSCAL rating (impact/likelihood) could not be set anywhere.
+        resources :risks, only: [ :index, :create ], controller: "sar_risks"
         member do
           put :update_fields
           get :export
@@ -670,6 +675,7 @@ Rails.application.routes.draw do
         end
       end
       resources :poam_risks, only: [ :show, :update, :destroy ]
+      resources :sar_risks, only: [ :show, :update, :destroy ]
 
       # Evidence CRUD (#756 — file upload + Control/CDEF association) plus
       # attestations (#440 — periodic-review records + CMS schema export).

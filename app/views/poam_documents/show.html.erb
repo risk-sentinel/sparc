@@ -16,13 +16,24 @@
   closed_count = @status_counts.select { |s, _| s.to_s.downcase == "closed" }.values.sum
   other_count  = @total_items - open_count - closed_count
 
-  impact_colors = { "high" => "#e74c3c", "medium" => "#f39c12", "low" => "#3498db" }
+  # #1090 — ONE scale for impact AND likelihood, five levels. Was three, keyed
+  # "medium", and applied to impact only: likelihood rendered as an unstyled
+  # neutral chip, so the two halves of a rating did not look like one rating.
+  # `medium` is kept as a legacy key so rows that predate the data migration
+  # still colour correctly instead of falling back to grey.
+  level_colors = {
+    "very-low" => "#5dade2", "low" => "#3498db", "moderate" => "#f39c12",
+    "high" => "#e74c3c", "very-high" => "#c0392b", "medium" => "#f39c12"
+  }
   status_colors = {
     "open" => "#e74c3c", "investigating" => "#e67e22", "remediating" => "#f39c12",
     "deviation-requested" => "#d35400", "deviation-approved" => "#f39c12", "closed" => "#27ae60"
   }
   # WORM (#599 Round 3): semantic variant keys for .sparc-status--<variant>
-  impact_variants = { "high" => "danger", "medium" => "warning", "low" => "info" }
+  level_variants = {
+    "very-low" => "info", "low" => "info", "moderate" => "warning",
+    "high" => "orange", "very-high" => "danger", "medium" => "warning"
+  }
   status_variants = {
     "open" => "danger", "investigating" => "orange", "remediating" => "warning",
     "deviation-requested" => "orange", "deviation-approved" => "warning", "closed" => "success"
@@ -157,7 +168,7 @@
           </td>
           <% @heatmap_impacts.each do |imp| %>
             <% count = @heatmap_data.dig(status, imp) || 0 %>
-            <% icv = impact_variants[imp] || "neutral" %>
+            <% icv = level_variants[imp] || "neutral" %>
             <td class="text-center">
               <% if count > 0 %>
                 <%= link_to count, poam_document_path(@poam_document, risk_status: status, impact: imp),
@@ -216,9 +227,9 @@
 <% @items.each_with_index do |item, idx| %>
   <%
     sc = status_colors[item.risk_status] || "#7f8c8d"
-    ic = impact_colors[item.impact] || "#7f8c8d"
+    ic = level_colors[item.impact] || "#7f8c8d"
     scv = status_variants[item.risk_status] || "neutral"
-    icv = impact_variants[item.impact] || "neutral"
+    icv = level_variants[item.impact] || "neutral"
     risks = item.poam_risks
     observations = item.poam_observations
     findings = item.poam_findings
@@ -265,7 +276,7 @@
         <span class="sparc-tag-outline sparc-status--<%= icv %>">Impact: <%= item.impact %></span>
       <% end %>
       <% if item.likelihood.present? %>
-        <span class="sparc-tag-outline bg-body-secondary text-body-secondary" style="border: 1px solid var(--bs-border-color);">Likelihood: <%= item.likelihood %></span>
+        <span class="sparc-tag-outline sparc-status--<%= level_variants[item.likelihood] || "neutral" %>">Likelihood: <%= item.likelihood %></span>
       <% end %>
       <% if item.deadline.present? %>
         <span class="sparc-tag-outline bg-body-secondary text-body-secondary" style="border: 1px solid var(--bs-border-color);">Deadline: <%= item.deadline.strftime("%Y-%m-%d") %></span>

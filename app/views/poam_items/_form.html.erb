@@ -35,7 +35,7 @@
     <div class="col">
       <div class="form-group">
         <%= f.label :risk_level, "Risk Level", class: "fw-semibold" %>
-        <%= f.select :risk_level, options_for_select([["High", "high"], ["Medium", "medium"], ["Low", "low"]], poam_item.risk_level), { include_blank: "— Select —" }, class: "form-control" %>
+        <%= f.select :risk_level, options_for_select(RiskRating::LEVEL_OPTIONS, poam_item.risk_level), { include_blank: "— Select —" }, class: "form-control" %>
       </div>
     </div>
   </div>
@@ -44,14 +44,14 @@
     <div class="col">
       <div class="form-group">
         <%= f.label :likelihood, "Likelihood", class: "fw-semibold" %>
-        <%= f.select :likelihood, options_for_select([["High", "high"], ["Medium", "medium"], ["Low", "low"]], poam_item.likelihood), { include_blank: "— Select —" }, class: "form-control" %>
+        <%= f.select :likelihood, options_for_select(RiskRating::LEVEL_OPTIONS, poam_item.likelihood), { include_blank: "— Select —" }, class: "form-control" %>
       </div>
     </div>
 
     <div class="col">
       <div class="form-group">
         <%= f.label :impact, "Impact", class: "fw-semibold" %>
-        <%= f.select :impact, options_for_select([["High", "high"], ["Medium", "medium"], ["Low", "low"]], poam_item.impact), { include_blank: "— Select —" }, class: "form-control" %>
+        <%= f.select :impact, options_for_select(RiskRating::LEVEL_OPTIONS, poam_item.impact), { include_blank: "— Select —" }, class: "form-control" %>
       </div>
     </div>
 
