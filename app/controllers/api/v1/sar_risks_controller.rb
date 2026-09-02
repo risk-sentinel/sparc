@@ -30,6 +30,8 @@
 #   AU-12 (audit record generation), CA-2 (control assessments)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class Api::V1::SarRisksController < Api::V1::BaseController
+  include RiskCollectionParams
+
   before_action :set_document, only: %i[index create]
   before_action :set_risk,     only: %i[show update destroy]
   before_action :authorize_read!,  only: %i[index show]
@@ -103,10 +105,15 @@ class Api::V1::SarRisksController < Api::V1::BaseController
     end
   end
 
+  # #1092 — the OSCAL collections are permitted here as SHAPES, not blobs; see
+  # RiskCollectionParams. `remediations_data` is SAR-only: POA&M models responses
+  # as real `poam_remediations` rows with their own controller.
   def risk_params
     permit_strictly(:sar_risk,
       :uuid, :title, :description, :statement, :status,
-      :deadline, :likelihood, :impact, :remarks
+      :deadline, :likelihood, :impact, :remarks,
+      **risk_collection_filters,
+      remediations_data: RiskCollectionParams::REMEDIATIONS
     )
   end
 
@@ -133,6 +140,14 @@ class Api::V1::SarRisksController < Api::V1::BaseController
       data[:description] = risk.description
       data[:statement] = risk.statement
       data[:remarks] = risk.remarks
+      # #1092 — round-trip visibility: a client that can WRITE these must be
+      # able to read back what it wrote, and an integrator needs to see what
+      # arrived on import before deciding what to amend.
+      data[:threat_ids] = risk.threat_ids_data
+      data[:mitigating_factors] = risk.mitigating_factors_data
+      data[:origins] = risk.origins_data
+      data[:risk_log] = risk.risk_log_data
+      data[:remediations] = risk.remediations_data
       # The rating as it will actually be EXPORTED, so a client can see the
       # facets rather than infer them from impact/likelihood.
       data[:characterizations] = risk.characterizations_for_export
