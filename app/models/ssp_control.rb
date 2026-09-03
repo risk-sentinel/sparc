@@ -1,5 +1,6 @@
 class SspControl < ApplicationRecord
   include ControlIdentifiable
+  include ControlOrdering
   canonicalises_control_id :control_id
 
   belongs_to :ssp_document

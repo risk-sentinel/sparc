@@ -1,4 +1,5 @@
 class CatalogControl < ApplicationRecord
+  include ControlOrdering
   belongs_to :control_family
   has_many :ksi_validations, dependent: :destroy
   has_many :catalog_control_parts, dependent: :delete_all

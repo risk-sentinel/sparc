@@ -280,7 +280,7 @@
       </summary>
 
       <div class="mt-2">
-  <% family_controls.sort_by { |c| c.control_id.gsub(/\d+/) { |n| n.rjust(3, "0") } }.each do |control| %>
+  <% family_controls.sort_by { |c| SspControl.control_sort_key(c.control_id) }.each do |control| %>
     <%
       field_map   = control.ssp_control_fields.index_by(&:field_name)
       status_val  = field_map["status"]&.field_value.presence || "(Unknown)"
