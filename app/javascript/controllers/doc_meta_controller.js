@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { isVisible, setVisible } from "controllers/visibility"
 
 // Toggles a document's OSCAL "doc meta" panel between its read view and its
 // edit form (#647, epic #650). Replaces the inline onclick="toggleDocMeta()"
@@ -27,23 +28,14 @@ import { Controller } from "@hotwired/stimulus"
 // legacy `style="display: none;"` while the sweep works through them, so this
 // has to handle both — it clears any inline display it finds, which migrates
 // each panel the first time it is used.
-const HIDDEN = "sparc-d-none"
-
 export default class DocMetaController extends Controller {
   static targets = ["view", "edit"]
 
   toggle() {
     if (!this.hasViewTarget || !this.hasEditTarget) return
 
-    const editing = window.getComputedStyle(this.editTarget).display !== "none"
-    this.#setVisible(this.viewTarget, editing)
-    this.#setVisible(this.editTarget, !editing)
-  }
-
-  #setVisible(el, visible) {
-    el.classList.toggle(HIDDEN, !visible)
-    // Drop a legacy inline `display` so the class is what decides from now on.
-    // Left in place it would keep winning, and the panel would never move.
-    el.style.removeProperty("display")
+    const editing = isVisible(this.editTarget)
+    setVisible(this.viewTarget, editing)
+    setVisible(this.editTarget, !editing)
   }
 }
