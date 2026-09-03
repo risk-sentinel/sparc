@@ -109,4 +109,66 @@ RSpec.describe "scripts/ci/trivy_selfcheck.rb (#1080)" do
     _out, status = Open3.capture2e("ruby", script)
     expect(status.exitstatus).to eq(2)
   end
+
+  # ── The --image path (2026-09-03) ────────────────────────────────────────
+  #
+  # Every example above uses --root, which resolves existence with File.exist?
+  # in Ruby. CI uses --image, which pipes the paths into a `while read` loop in
+  # a container — a completely different implementation that nothing exercised.
+  #
+  # It was wrong. `paths.join("\n")` has no trailing newline, `read` returns
+  # non-zero at EOF without its delimiter, and the LAST path was therefore never
+  # tested and reported as a phantom. With a single-finding report that is 100%
+  # of findings: a real, present-on-disk gemspec was called a phantom, and the
+  # whole security workflow cascaded off one false failure.
+  describe "the --image path feeds every path to the shell (#1080 regression)" do
+    # The REAL loop, read out of the script — not a copy that could drift.
+    let(:shell_loop) do
+      src = File.read(script)
+      m = src.match(/^\s*script = '(?<body>.*?)'$/m)
+      raise "could not extract the shell loop from #{script}" if m.nil?
+
+      m[:body]
+    end
+
+    def probe(payload, existing_paths)
+      Dir.mktmpdir("selfcheck-shell-") do |root|
+        existing_paths.each do |rel|
+          FileUtils.mkdir_p(File.dirname(File.join(root, rel)))
+          File.write(File.join(root, rel), "x")
+        end
+        # `cd root` so the loop's "/$p" resolves inside the fixture, mirroring
+        # what "/$p" means inside the scanned image.
+        out, _st = Open3.capture2e("sh", "-c", "cd #{root} && #{shell_loop.sub('"/$p"', '"./$p"')}",
+                                   stdin_data: payload)
+        out.split("\n").map(&:strip).reject(&:empty?)
+      end
+    end
+
+    let(:paths) { [ "a/one.gemspec", "b/two.gemspec", "c/three.gemspec" ] }
+
+    it "loses the last path when the payload is not newline-terminated" do
+      # Documents the shell semantics the bug depended on, so a future change to
+      # the loop cannot quietly reintroduce the same truncation.
+      expect(probe(paths.join("\n"), paths)).to eq(paths[0..-2])
+    end
+
+    it "returns every path when the payload is newline-terminated" do
+      expect(probe(paths.join("\n") + "\n", paths)).to eq(paths)
+    end
+
+    it "returns a lone path, which is the case that broke CI" do
+      one = [ "usr/local/lib/ruby/gems/3.4.0/specifications/default/resolv-0.7.1.gemspec" ]
+      expect(probe(one.join("\n") + "\n", one)).to eq(one)
+      expect(probe(one.join("\n"), one)).to be_empty
+    end
+
+    it "terminates the payload it actually sends to docker" do
+      # The call site, not just the semantics. This is the line that regressed.
+      src = File.read(script)
+      expect(src).to match(/stdin_data:\s*paths\.join\("\\n"\)\s*\+\s*"\\n"/),
+        "paths_present_in_image must send a newline-terminated payload, or the " \
+        "last path is silently dropped and reported as a phantom"
+    end
+  end
 end
