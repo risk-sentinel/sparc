@@ -2,6 +2,25 @@
 require "rubygems"
 require "bundler/setup"
 
-ARGV.unshift("--ensure-latest")
-
+# NO `--ensure-latest`.
+#
+# The Rails-generated binstub unshifts it unconditionally. That flag makes
+# Brakeman query rubygems.org for the newest release before scanning, and
+# brakeman 8.0.6 crashes outright when the API answers with nothing:
+#
+#   brakeman.rb:427:in 'Brakeman.ensure_latest':
+#     undefined method 'date' for nil (NoMethodError)
+#       release_date = latest.date.to_date
+#
+# It took the whole security workflow down on 2026-09-03. Brakeman exited 1
+# before writing brakeman-results.sarif, `if-no-files-found: warn` meant no
+# artifact was uploaded, no HDF was produced, and security_gate refused to pass
+# on a scanner declared in docs/compliance/expected-hdfs.txt. The scan job
+# itself still reported success, because the step is `continue-on-error: true`
+# — correctly so: the SCAN is not the gate, the manifest and threshold are, and
+# they are what caught this.
+#
+# A security scan must not depend on an outbound call to a package registry to
+# produce its findings. Whether the pinned Brakeman is the newest release is a
+# DEPENDENCY question, and Dependabot already answers it against Gemfile.lock.
 load Gem.bin_path("brakeman", "brakeman")

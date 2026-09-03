@@ -45,7 +45,10 @@ gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 # dispositioned away. Versions below are what 3.4.10 ships:
 # resolv: CVE-2025-24294 (ReDoS) plus CVE-2026-80212/-80213, published 2026-08-29.
 # Ruby 3.4.10 ships 0.7.1 ON DISK, which those two advisories made vulnerable, so
-# the pin below fixes the copy Bundler LOADS; the on-disk copy waits on upstream.
+# the pin below fixes the copy Bundler LOADS. The on-disk copy no longer "waits on
+# upstream": there is no newer Ruby to move to, so bin/prune-shadowed-gems.rb now
+# DELETES the shadowed default copy — gemspec and code — because this pin proves
+# the bundle carries a complete replacement. Removed, not dispositioned (#1065).
 gem "resolv", ">= 0.7.2"
 gem "zlib", ">= 3.2.3"             # CVE-2026-27820        — 3.4.10 ships 3.2.3, patched
 gem "erb", ">= 6.0.4"             # CVE-2026-41316        — 3.4.10 ships 4.0.4.1, the upstream backport
