@@ -550,7 +550,29 @@ def _compare(base_dir: Path, after_dir: Path, threshold: float) -> int:
 # Add an entry only with a measurement attached, and prefer fixing the conversion
 # — every line here is a declaration the inline style used to win and no longer
 # does, which is the exact regression this sweep is supposed to avoid.
-ACCEPTED_OVERRIDES: set[tuple[str, str]] = set()
+ACCEPTED_OVERRIDES: set[tuple[str, str]] = {
+    # Slice 4. All three are `cursor`, and all three were MEASURED on the running
+    # image before being written down: the computed value is `pointer` in every
+    # case, identical to what the inline style produced, because the rule that
+    # wins sets the same value —
+    #
+    #   .sparc-detail-toggle / --purple  lose to `.sparc-family-group summary`
+    #                                    (0,1,1 beats 0,1,0), which is
+    #                                    `cursor: pointer` (sparc-theme.css:1974)
+    #   .sparc-btn-cancel                loses to Bootstrap's button reset,
+    #                                    `[type="button"]:not(:disabled)`, also
+    #                                    `cursor: pointer`
+    #
+    # The declaration is kept rather than deleted: it is what makes the component
+    # correct on a <summary> or <button> that is NOT inside those ancestors.
+    #
+    # Note a pixel diff can never see `cursor` at all — this is exactly the class
+    # of change --check-cascade exists to catch, and the reason the entries are
+    # justified by a computed-style measurement rather than by a screenshot.
+    (".sparc-detail-toggle", "cursor"),
+    (".sparc-detail-toggle--purple", "cursor"),
+    (".sparc-btn-cancel", "cursor"),
+}
 
 _CASCADE_JS = r"""(swept) => {
   const spec = (sel) => {
