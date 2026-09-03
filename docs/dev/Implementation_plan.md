@@ -398,12 +398,14 @@ The six Bundle Z folded in (#1090 #1092 #1093 #1094 #1095 #1096) are **not** on
 the milestone — they are in the unmilestoned table above and are being closed by
 the bundle's PR rather than by a milestone decision.
 
-**#1046 is NOT addressed by this PR.** Commit `8ebc7298` removes the duplicate
-family heatmap from the SAR and SAP screens and cites `(#1046)` in its subject;
-that reference is wrong. #1046 is `research(sonar): revisit S7875 — explicit
-route action mapping, 213 occurrences in config/routes.rb`, which is untouched.
-The heatmap removal is owner-review work carrying no issue. The PR body must not
-use a closing keyword for #1046.
+**#1046 is NOT addressed by this PR.** The commit that removes the duplicate
+family heatmap from the SAR and SAP screens originally cited `(#1046)` in its
+subject. That reference was wrong — #1046 is `research(sonar): revisit S7875 —
+explicit route action mapping, 213 occurrences in config/routes.rb`, which this
+branch does not touch — and the subject was corrected before the branch was
+pushed, so no cross-reference reaches the issue. The heatmap removal is
+owner-review work carrying no issue, and the PR body uses no closing keyword for
+#1046.
 
 ## Summary Timeline
 
