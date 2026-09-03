@@ -28,22 +28,21 @@
 <details class="sparc-enrich-section sparc-enrich-section--tight">
   <summary class="sparc-fs-08 sparc-cursor-pointer">
     Threat IDs and Mitigating Factors
-    <span class="text-body-secondary">(OSCAL <code class="sparc-code-plain">threat-ids</code>, <code class="sparc-code-plain">mitigating-factors</code>)</span>
   </summary>
 
   <div class="sparc-enrich-section-body">
     <div data-controller="oscal-repeater" class="sparc-mb-025">
       <span class="sparc-enrich-grid-label">Threat IDs</span>
-      <p class="sparc-enrich-field-hint">The threat this risk realises, named in someone else's scheme — a system URI and the identifier within it.</p>
+      <p class="sparc-enrich-field-hint">The threat this risk realises, as it is named in a published threat catalogue. Give the catalogue's address and the threat's identifier inside it &mdash; for example <code class="sparc-code-plain">https://attack.mitre.org</code> and <code class="sparc-code-plain">T1078</code>, or <code class="sparc-code-plain">https://cve.mitre.org</code> and <code class="sparc-code-plain">CVE-2026-80212</code>.</p>
 
       <template data-oscal-repeater-target="template">
         <div class="repeater-row d-flex gap-2 mb-2">
           <input type="text" name="<%= param_base %>[threat_ids_data][][system]"
                  class="form-control form-control-sm sparc-fs-085"
-                 placeholder="system (URI)" aria-label="Threat ID system">
+                 placeholder="https://attack.mitre.org" aria-label="Threat ID system">
           <input type="text" name="<%= param_base %>[threat_ids_data][][id]"
                  class="form-control form-control-sm sparc-fs-085"
-                 placeholder="id" aria-label="Threat ID">
+                 placeholder="T1078" aria-label="Threat ID">
           <button type="button" data-action="click->oscal-repeater#remove"
                   class="sparc-action sparc-action--danger sparc-action--outline"
                   aria-label="Remove threat ID">&times;</button>
@@ -56,11 +55,11 @@
             <input type="text" name="<%= param_base %>[threat_ids_data][][system]"
                    value="<%= threat["system"] %>"
                    class="form-control form-control-sm sparc-fs-085"
-                   placeholder="system (URI)" aria-label="Threat ID system">
+                   placeholder="https://attack.mitre.org" aria-label="Threat ID system">
             <input type="text" name="<%= param_base %>[threat_ids_data][][id]"
                    value="<%= threat["id"] %>"
                    class="form-control form-control-sm sparc-fs-085"
-                   placeholder="id" aria-label="Threat ID">
+                   placeholder="T1078" aria-label="Threat ID">
             <button type="button" data-action="click->oscal-repeater#remove"
                     class="sparc-action sparc-action--danger sparc-action--outline"
                     aria-label="Remove threat ID">&times;</button>
@@ -74,13 +73,13 @@
 
     <div data-controller="oscal-repeater">
       <span class="sparc-enrich-grid-label">Mitigating Factors</span>
-      <p class="sparc-enrich-field-hint">What already reduces this risk. An assessor writes these; they are exported as <code class="sparc-code-plain">mitigating-factors</code>.</p>
+      <p class="sparc-enrich-field-hint">Anything already in place that reduces this risk &mdash; a compensating control, a network restriction, a manual check.</p>
 
       <template data-oscal-repeater-target="template">
         <div class="repeater-row d-flex gap-2 mb-2">
           <input type="text" name="<%= param_base %>[mitigating_factors_data][][description]"
                  class="form-control form-control-sm sparc-fs-085 sparc-flex-1"
-                 placeholder="What reduces this risk" aria-label="Mitigating factor description">
+                 placeholder="e.g. egress restricted to an allowlisted proxy" aria-label="Mitigating factor description">
           <button type="button" data-action="click->oscal-repeater#remove"
                   class="sparc-action sparc-action--danger sparc-action--outline"
                   aria-label="Remove mitigating factor">&times;</button>
@@ -99,7 +98,7 @@
             <input type="text" name="<%= param_base %>[mitigating_factors_data][][description]"
                    value="<%= factor["description"] %>"
                    class="form-control form-control-sm sparc-fs-085 sparc-flex-1"
-                   placeholder="What reduces this risk" aria-label="Mitigating factor description">
+                   placeholder="e.g. egress restricted to an allowlisted proxy" aria-label="Mitigating factor description">
             <button type="button" data-action="click->oscal-repeater#remove"
                     class="sparc-action sparc-action--danger sparc-action--outline"
                     aria-label="Remove mitigating factor">&times;</button>
