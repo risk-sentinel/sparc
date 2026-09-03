@@ -99,7 +99,9 @@ Enrichment adds the OSCAL metadata an SSP needs beyond control narratives.
 The SSP detail page (`/ssp_documents/:id`) is where the real work happens.
 
 1. Use the **compliance heatmap** or **status chips** to jump to the controls
-   you need — chips filter the control cards by status.
+   you need — chips filter the control cards by status. Controls are listed in
+   **NIST catalog order** — family, then base number, then enhancement (AC-1,
+   AC-2, AC-2(1), AC-3 … AC-17, AC-18).
 2. Expand a **control card** to see its stated requirement, catalog guidance, and
    any inherited/provider statements.
    - **What This Baseline Requires** shows the control language with the

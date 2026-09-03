@@ -220,9 +220,13 @@ cadence predicted.
 | Bundle | Issues | Theme | Est. |
 | --- | --- | --- | --- |
 | **Y — Reliability, and the deadline** | **#968** (due 09-06) #1051 #1022 **#1058** | The rescue-pattern audit (54 sites, 11 log-and-continue in services/jobs, 17 combining a transaction with a rescue). Alongside it the two correctness defects the release run surfaced: 163 of 232 CDEFs export schema-invalid OSCAL (#1051) and `/api/v1/controls` ignores `?items`/`?per_page` so 4,054 rows come back whole (#1022). | 3d |
-| **Z — The CSP tail** ⏳ **IN FLIGHT** | #1047 #728 #1046 · folded in: ~~#1090~~ ~~#1093~~ ~~#1094~~ ~~#1095~~ ~~#1096~~ · **#1047 sweep: 1,403 → 980 (423 done, 30%)** — slices: sar_enrich 136, ssp_enrich 97, ato_wizard 99, ssp_show 90 | **#528 was closed with two of its four items explicitly undone.** Removing `style-src 'unsafe-inline'` means 1,399 inline styles, and Trusted Types has to be settled rather than deferred again. #728 (30 contrast findings vs our WCAG AA gate) and #1046 (S7875, 213 route occurrences) are the same surface. **Largest single item in either milestone.**
+| **Z — The CSP tail** ⏳ **IN REVIEW** | #1047 #728 #1046 · folded in: ~~#1090~~ ~~#1092~~ ~~#1093~~ ~~#1094~~ ~~#1095~~ ~~#1096~~ · **#1047 sweep: 1,403 → 980 (423 done, 30%)** — slices: sar_enrich 136, ssp_enrich 97, ato_wizard 99, ssp_show 90 · plus owner-review work carrying no issue: NIST control ordering, and the duplicate family heatmap on SAR/SAP | **#528 was closed with two of its four items explicitly undone.** Removing `style-src 'unsafe-inline'` means 1,399 inline styles, and Trusted Types has to be settled rather than deferred again. #728 (30 contrast findings vs our WCAG AA gate) and #1046 (S7875, 213 route occurrences) are the same surface. **Largest single item in either milestone.**
 
-**Sweep progress, measured by `spec/views/inline_style_ratchet_spec.rb`:** 1,403 at the branch point → **980**. Four slices done (sar_enrich 136, ssp_enrich 97, ato_wizard 99, ssp_show 90). Slice 4 was the first to convert DYNAMIC styles — 41 remain repo-wide, in three shapes: enumerable status COLOUR and indent DEPTH become classes, and the ~8 continuous percentage widths go through a Stimulus controller writing `element.style.width`, which `style-src` does not govern. Each is verified by a full-surface pixel A/B against a baseline captured on the *previous* image, plus `--check-cascade`; slice 3 came back byte-identical on the screen it rewrote. Two defects were found by re-verifying slices 1-2 and are fixed: a duplicate `.sparc-field-label` that restyled 2,456 `<th>`s across five screens, and the utility layer losing the cascade to `application.css` on 638 form controls. Largest files remaining: `ssp_documents/show` 90, `poam_documents/show` 72, `cdef_documents/show` 47. | 4d |
+**Sweep progress, measured by `spec/views/inline_style_ratchet_spec.rb`:** 1,403 at the branch point → **980**. Four slices done (sar_enrich 136, ssp_enrich 97, ato_wizard 99, ssp_show 90). Slice 4 was the first to convert DYNAMIC styles — 41 remain repo-wide, in three shapes: enumerable status COLOUR and indent DEPTH become classes, and the ~8 continuous percentage widths go through a Stimulus controller writing `element.style.width`, which `style-src` does not govern. Each is verified by a full-surface pixel A/B against a baseline captured on the *previous* image, plus `--check-cascade`; slice 3 came back byte-identical on the screen it rewrote. Two defects were found by re-verifying slices 1-2 and are fixed: a duplicate `.sparc-field-label` that restyled 2,456 `<th>`s across five screens, and the utility layer losing the cascade to `application.css` on 638 form controls. Largest files remaining, re-measured 2026-09-03: `poam_documents/show` 72, `cdef_documents/show` 47, `control_families/show` 43, `sar_documents/show` 39. | 4d |
+
+**The PR is a verified INCREMENT; #1047 does not close on it.** #1047's deliverable is the removal of `style-src 'unsafe-inline'`, which is one line and is only safe at a count of **zero** — removing it at 980 breaks 980 places silently, with no console error and no failing spec. **#728 and #1046 are not started** and stay in the bundle. Measured cost of the remaining sweep: the next four doc-show files hold **83 distinct new declarations**, nearly all used once, i.e. per-screen component design for each and roughly a slice-4 of work per file, with ~110 files left.
+
+**Two failure modes the pixel gate cannot see, both found by the owner's page-by-page review rather than by the harness.** Converting `style="display: none"` to a class **inverts** any controller that decides state by reading `element.style.display` — the attribute is now empty, the read returns "visible", and the first click hides the panel it was meant to reveal. It shipped in the SSP control **Edit** button and the doc-meta Edit toggle, and was latent in three more controllers on views the sweep had not reached. Separately, `.sparc-edit-panel` baked `display: none` **into a component class**, so removing `.sparc-d-none` could not reveal it: **hiding is a state and belongs to `.sparc-d-none`; a component class carries layout only.** Neither defect exists until someone clicks, so a byte-identical screenshot proves nothing about them. The same blind spot covers `cursor` — 449 elements changed rule in slice 4 with an unchanged computed value.
 | **AA — Auth and access debt** | #978 #1044 **#1059** **#1082** | Signing in over plain HTTP on a prod-mode container fails **silently** on a CSRF Origin mismatch (#978) — a support call that looks like broken auth. #1044 adds a time-boxed instance administrator via the IdP, distinct from the break-glass account, which is the natural follow-on from Bundle R. **#1082** consolidates enable-vs-require: `SPARC_REQUIRE_AUTH_METHODS` does not imply enablement, so requiring a method that is not enabled locks every non-break-glass user out at request time rather than failing at boot. | 3d |
 | **AB — Onboarding, and the Sonar backlog** | #1040 #940 #1033 #930 #966 #836 | The guided boundary onboarding flow (#1040) is a feature, not a fix — it takes a team from "a pile of Word documents" to a boundary SPARC can work with, and carries the platform axis that makes CDEF recommendation possible. #966 triages 281 SonarCloud findings including 2 Blockers. | 5d |
 
@@ -284,10 +288,10 @@ and should be redrawn rather than defended.
 
 ---
 
-## Open work — measured 2026-09-02
+## Open work — measured 2026-09-03
 
-Re-measured against the live repository, not carried forward. **516 issues**;
-**482 are closed**, **34 open**. What remains:
+Re-measured against the live repository, not carried forward. **521 issues**;
+**482 are closed**, **39 open**. What remains:
 
 > **The closed count in this section was itself stale until 2026-08-25.** It read
 > "282 issues, 252 closed" while the repository held 503 and 460 — the open
@@ -296,8 +300,8 @@ Re-measured against the live repository, not carried forward. **516 issues**;
 > come from the same command, and the open breakdown reconciles: 15 + 17 + 10 = 42.
 >
 > ```bash
-> gh issue list --state closed --limit 1000 --json number --jq 'length'   # 482
-> gh issue list --state open   --limit 1000 --json number --jq 'length'   #  34
+> gh issue list --state closed --limit 2000 --json number --jq 'length'   # 482
+> gh issue list --state open   --limit 2000 --json number --jq 'length'   #  39
 > ```
 >
 > `--limit` must exceed the real count or the answer is silently truncated to the
@@ -308,11 +312,11 @@ Re-measured against the live repository, not carried forward. **516 issues**;
 | Closed | **482** |
 | Open, on `ci.v0.0.1` | **0** — the milestone closed 2026-08-30 at 30/30 |
 | Open, on `v1.16.1` | **14** |
-| **Open, on NO milestone** | **20** (was 10) — see below; the ten new ones were all filed out of Bundle Y and Z |
+| **Open, on NO milestone** | **25** (was 10 on 2026-08-25) — see below; all fifteen new ones were filed out of Bundle Y and Bundle Z |
 
-The reconciliation: 14 + 20 = 34, and 482 + 34 = 516.
+The reconciliation: 14 + 25 = 39, and 482 + 39 = 521.
 
-### The twenty with no milestone
+### The twenty-five with no milestone
 
 These are invisible to every milestone count, which is exactly how **#950 went
 missing** — it sat open with no milestone after being split from #949, appeared
@@ -320,11 +324,16 @@ in no bundle, and was only picked up when the owner milestoned it on 2026-08-22.
 Listing them so the same thing cannot happen quietly again. **Each needs a
 milestone or a deliberate decision to close — that call is the owner's.**
 
-**The count has doubled since 2026-08-25, and that is the discovery factor
-working as documented rather than a backlog going unattended.** Ten of the
-twenty were filed out of Bundle Y and Bundle Z, and five of those came from
-re-verifying Bundle Z's own already-merged slices. The +62% figure this plan
-applies to milestone sizing is visible here in the raw.
+**The count has more than doubled since 2026-08-25, and that is the discovery
+factor working as documented rather than a backlog going unattended.** Fifteen of
+the twenty-five were filed out of Bundle Y and Bundle Z; five of those came from
+re-verifying Bundle Z's own already-merged slices, and three more (#1099 #1100
+#1101) from the owner's page-by-page review of the Bundle Z container. The +62%
+figure this plan applies to milestone sizing is visible here in the raw.
+
+Re-measured 2026-09-03 with `gh issue list --state open --limit 300`, filtering
+on a null milestone — never off this file, and never off a milestone page, which
+counts PRs too.
 
 | Issue | Opened | Title |
 | --- | --- | --- |
@@ -343,11 +352,16 @@ applies to milestone sizing is visible here in the raw.
 | **#1089** | 2026-09-01 | design(cdef): a CDEF belongs_to ONE profile — it should be usable by many |
 | **#1090** | 2026-09-01 | bug(oscal): a SAR risk cannot be rated, and the rating never reaches the export — **fixed in Bundle Z** |
 | **#1091** | 2026-09-01 | feat(oscal): let the risk naming system be user-defined, with the vocabulary following it |
-| **#1092** | 2026-09-02 | bug(oscal): risk mitigating-factors, threat-ids, risk-log and origins are exported but cannot be authored |
+| **#1092** | 2026-09-02 | bug(oscal): risk mitigating-factors, threat-ids, risk-log and origins are exported but cannot be authored — **fixed in Bundle Z** |
 | **#1093** | 2026-09-02 | bug(ui): the SAR Enrich link is hidden once enriched — **fixed in Bundle Z** |
 | **#1094** | 2026-09-02 | bug(ui): the SAR family filter is case-sensitive — **fixed in Bundle Z** |
 | **#1095** | 2026-09-02 | bug(poam): heat map columns come from the data, IMPACT_ORDER is stale — **fixed in Bundle Z** |
 | **#1096** | 2026-09-02 | chore(docs): capture wiki screenshots per section — **fixed in Bundle Z** |
+| **#1097** | 2026-09-02 | docs(tls): custom-CA trust has no guidance for images DERIVED from the published one |
+| **#1098** | 2026-09-02 | docs+ux(oidc): discovery is an outbound call — surface HTTPS_PROXY/NO_PROXY in the OIDC docs and in the failure message |
+| **#1099** | 2026-09-03 | design(oscal): findings and risks are unrelated in SPARC, but OSCAL relates them (`finding.related-risks`) |
+| **#1100** | 2026-09-03 | design(ssp): control sub-parts are aggregated, so an assessor cannot respond per part (ac-1a, ac-1a.1, ...) |
+| **#1101** | 2026-09-03 | feat(ato): the wizard re-asks for the boundary's already-settled profile/CDEFs and does not default the SSP/SAP/SAR/POA&M |
 
 **#1087 is worth a decision sooner than the rest.** It is the only one that
 degrades the gate itself: every page's `load` event waits on cdn.jsdelivr.net,
@@ -360,8 +374,12 @@ the approval mechanism CI-1 leaned on when dispositioning #1065.
 
 My read, offered as a starting point rather than a decision:
 
-- **#1092** is the direct continuation of #1090 and the largest of the new ones —
-  it is API-and-UI work across both risk models, not a defect fix.
+- **#1099, #1100 and #1101 are DESIGN questions, not defects**, and they are the
+  three most consequential things the owner's review produced. #1099 (findings
+  and risks are unrelated in SPARC where OSCAL relates them n:m through
+  `finding.related-risks`) and #1100 (control sub-parts are aggregated, so an
+  assessor cannot respond per part) both change the data model; neither belongs
+  in a bundle until it is decided.
 - **#980** (CDEFs need an authorization boundary) is the closest to live work — it
   sits beside #1040's platform axis in Bundle AB, and shipping that flow without it
   may be awkward.
@@ -376,9 +394,16 @@ on 2026-08-30) are bundled in Phase 18 above. Re-verified 2026-09-02: every open
 issue on the milestone appears in exactly one bundle, and no bundle cites an
 issue that is not open.
 
-The five Bundle Z folded in (#1090 #1093 #1094 #1095 #1096) are **not** on the
-milestone — they are in the unmilestoned table above and are being closed by the
-bundle's PR rather than by a milestone decision.
+The six Bundle Z folded in (#1090 #1092 #1093 #1094 #1095 #1096) are **not** on
+the milestone — they are in the unmilestoned table above and are being closed by
+the bundle's PR rather than by a milestone decision.
+
+**#1046 is NOT addressed by this PR.** Commit `8ebc7298` removes the duplicate
+family heatmap from the SAR and SAP screens and cites `(#1046)` in its subject;
+that reference is wrong. #1046 is `research(sonar): revisit S7875 — explicit
+route action mapping, 213 occurrences in config/routes.rb`, which is untouched.
+The heatmap removal is owner-review work carrying no issue. The PR body must not
+use a closing keyword for #1046.
 
 ## Summary Timeline
 
@@ -399,24 +424,26 @@ bundle's PR rather than by a milestone decision.
 | 11 | 4-6 weeks | OSCAL Integrity, Enterprise & Infrastructure | #344, #346, #358, #361, #372 | **COMPLETE** |
 | 12 | Complete | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | ~~#436~~, ~~#244~~, ~~#367~~, ~~#445~~, ~~#440~~, ~~#449~~, ~~#451~~, ~~#453~~ | **COMPLETE** (carried items #433, #341, #246, #422, #413, #447 moved to Phase 14) |
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
-| 14 | **Complete** | Pre-Public-Flip + API Test Validation + CDEF Mutations | ~~#545~~ ~~#433~~ ~~#498~~ ~~#499~~ ~~#528~~ ~~#447~~ ~~#341~~ ~~#246~~ ~~#413~~ ~~#616~~ ~~#618~~ · carried: **#531**, **#422** | **COMPLETE** — measured 2026-08-25: **11 of its 13 issues are closed**. It had been marked "In Progress" long after the fact. The two still open (#531, #422) carry **no milestone** and are already tracked in *The twenty with no milestone* below — they are not Phase 14 work in flight, they are untriaged backlog. Note #528 was closed over its own undone tail; that tail is **#1047** in v1.16.1 Bundle Z |
+| 14 | **Complete** | Pre-Public-Flip + API Test Validation + CDEF Mutations | ~~#545~~ ~~#433~~ ~~#498~~ ~~#499~~ ~~#528~~ ~~#447~~ ~~#341~~ ~~#246~~ ~~#413~~ ~~#616~~ ~~#618~~ · carried: **#531**, **#422** | **COMPLETE** — measured 2026-08-25: **11 of its 13 issues are closed**. It had been marked "In Progress" long after the fact. The two still open (#531, #422) carry **no milestone** and are already tracked in *The twenty-five with no milestone* below — they are not Phase 14 work in flight, they are untriaged backlog. Note #528 was closed over its own undone tail; that tail is **#1047** in v1.16.1 Bundle Z |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
 | 16 | **Complete** | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | **87 issues, 87 closed. Tagged `v1.16.0` 2026-08-24** from `main` @ `75b5bb3b`. The full closed list is the milestone itself — do not maintain a second copy here | **SHIPPED.** Bundles ran #939 → O → S → P → T → Q → hdf pin → U → W → V → R → X. Bundle X merged as [PR #1049](https://github.com/risk-sentinel/sparc/pull/1049) → `9ae84a84`; [PR #1055](https://github.com/risk-sentinel/sparc/pull/1055) → `75b5bb3b` then fixed four defects Bundle X had merged, found by running the FULL suites against a built prod image. Release verification (measured, on the tagged tree): rspec **6230/0**, API **2742 passed** over TLS and again over non-TLS, ui-smoke **524 passed / 0 failed**, rubocop + brakeman + bundle-audit clean. The milestone grew **53 → 86 because the sweeps FOUND things**, not through scope creep. Wiki published and release notes carry the measured table |
 | 17 | **Complete** | `ci.v0.0.1` — evidence and gates | **0 open, 30 closed** (measured 2026-08-30, `--limit 300`). CI-1 #1048 #1050 #987 #885 · CI-2 #962 #985 #990 #1027 · CI-3 #835 #927 #711 #1061 · CI-4 #858 #859 #965 #917 · filed and closed out of it: #1064 #1065 #1067 #1080 | Closed **2026-08-30**, three working days ahead of the ~09-02 the cadence predicted. **CI-1**: `security_gate` had never assessed a single HDF — `saf validate threshold -F` names a flag that has never existed in any released saf, oclif rejected the parse, `saf_action` reported a warning and exited 0, and the next step wrote "Security gate passed". **CI-2**: several of the 12 HDFs had ZERO controls, and a zero-control document passes every band trivially — a clean scan and a broken scanner were the same green check. **#1080** closed the milestone by finding that local scans disagreed with CI 68-to-0 because `.dockerignore` did not exclude gitignored local scan output: `COPY . .` baked a developer's own CycloneDX SBOM into the image and Trivy parsed it back as installed packages. CI was correct throughout. Inventory: `docs/compliance/scan-artifact-inventory.md`. Estimated 8 → revised 11 → **actual ~7 working days** |
-| 18 | **In progress** | v1.16.1 — the patch release | **14 open** on the milestone (measured 2026-09-02, `--limit 1000`). Bundle Y merged; **Bundle Z is in flight** and has folded in five spot-check issues (#1090 #1093 #1094 #1095 #1096), four of them found by re-verifying its own slices. Y reliability + the deadline (**#968 due 2026-09-06** #1051 #1022) · Z the CSP tail (#1047 #728 #1046) · AA auth and access debt (#978 #1044 #1059) · AB onboarding and Sonar (#1040 #940 #1033 #930 #966 #836) | Estimated **14 working days**, target **~2026-09-24**. **#968 is the only dated item in either milestone and must ride the FIRST bundle** or the date moves. Do NOT plan this at v1.16.0's 4.2 issues/day — that rate came from a distribution of small sweep-found defects; #1047, #1040 and #966 are each multi-day. Re-measure after CI-2 |
+| 18 | **In progress** | v1.16.1 — the patch release | **14 open** on the milestone (re-measured 2026-09-03, `--limit 300`). Bundle Y merged; **Bundle Z is in review** as a verified increment — #1047 stays open, #728 and #1046 are not started — and has folded in six spot-check issues (#1090 #1092 #1093 #1094 #1095 #1096), four of them found by re-verifying its own slices and three more design questions (#1099 #1100 #1101) filed out of the owner's page-by-page container review. Y reliability + the deadline (**#968 due 2026-09-06** #1051 #1022) · Z the CSP tail (#1047 #728 #1046) · AA auth and access debt (#978 #1044 #1059) · AB onboarding and Sonar (#1040 #940 #1033 #930 #966 #836) | Estimated **14 working days**, target **~2026-09-24**. **#968 is the only dated item in either milestone and must ride the FIRST bundle** or the date moves. Do NOT plan this at v1.16.0's 4.2 issues/day — that rate came from a distribution of small sweep-found defects; #1047, #1040 and #966 are each multi-day. Re-measure after CI-2 |
 
 <!-- markdownlint-enable MD013 -->
 
-**Measured 2026-09-02** (`gh issue list --limit 1000`): **516 issues total —
-482 closed, 34 open.** Open splits **14** on `v1.16.1`, **0** on `ci.v0.0.1`
-(closed 2026-08-30 at 30/30), and **20** with no milestone.
+**Re-measured 2026-09-03** (`gh issue list --state all --limit 2000`): **521
+issues total — 482 closed, 39 open.** Open splits **14** on `v1.16.1`, **0** on
+`ci.v0.0.1` (closed 2026-08-30 at 30/30), and **25** with no milestone.
+14 + 25 = 39, and 482 + 39 = 521. All five opened since 2026-09-02
+(#1097 #1098 #1099 #1100 #1101) are unmilestoned; nothing closed in between.
 
 > This footer previously read "503 issues total — 478 closed, 28 open", which
 > does not add up (478 + 28 = 506), carried two different measurement dates in
 > one sentence, and ended on a dangling "no milestone." fragment. It is the same
 > drift the box further up warns about, in the paragraph that reports the
 > measurement. Both figures now come from one command on one date, and the split
-> reconciles: 14 + 20 = 34, 482 + 34 = 516.
+> reconciles.
 
 > **The per-phase totals that used to sit here were stale and are removed rather
 > than guessed at.** They read "Total issues tracked: 88", "Completed (Phases

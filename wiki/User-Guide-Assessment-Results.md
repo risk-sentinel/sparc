@@ -28,7 +28,7 @@ authentication and a role with SAR permissions — see [RBAC](RBAC).
 
 ![A Security Assessment Results detail view showing findings, observations, and control assessment outcomes](images/sar_show.png)
 
-*A Security Security Assessment Results (SAR) detail view.*
+*A Security Assessment Results (SAR) detail view.*
 
 ## At a glance
 
@@ -73,10 +73,11 @@ SSPs.
 The SAR detail page (`/sar_documents/:id`) is built for high-volume result
 entry.
 
-1. Use the **status chips**, **results heatmap**, or the **filter bar** to focus
-   the control list. Filters (all combinable) are **section**, **family**,
-   **status**, **asset**, and **environment**; an active-filter banner shows
-   "Showing X of Y controls" with **Clear All**.
+1. Use the **status chips**, the **Results by Control Family** heatmap, or the
+   **filter bar** to focus the control list. Filters (all combinable) are
+   **section**, **family**, **status**, **asset**, and **environment**; an
+   active-filter banner shows "Showing X of Y controls" with **Clear All**.
+   Clicking a family tile filters the list to that family.
 2. Expand a **control card** to see its assessment context (subject, control
    status, responsibility, impact, control text, and the SSP implementation).
 3. Click **Edit** on the card and set:
@@ -87,11 +88,53 @@ entry.
 4. Save. The **pass-rate** percentage and progress bar at the top update. Control
    cards are paginated (50 per page), and filters persist across pages.
 
+Controls are listed in **NIST catalog order** — family, then base number, then
+enhancement (AC-1, AC-2, AC-2(1), AC-3 … AC-17, AC-18), not the order they
+arrived in from the source spreadsheet. The ordering is applied by the query, so
+it holds across page boundaries rather than only within the page you are looking
+at.
+
 ## How to enrich a SAR
 
-Click **Enrich** (`/sar_documents/:id/enrich`) to add OSCAL assessment metadata:
-**results**, **observations**, **findings**, and **risks**. Enrichment is what
+Enrichment adds the OSCAL assessment metadata that per-control results do not
+carry: **results**, **observations**, **findings**, and **risks**. It is what
 makes the OSCAL export complete and lets findings map cleanly into a POA&M.
+
+Open it from the SAR detail page's action bar (`/sar_documents/:id/enrich`). The
+button is there in **both** states and always in the same place — it reads
+**Enrich** on a SAR that has not been enriched yet, and **Edit Enrichment** once
+it has. Enrichment is iterative; you are expected to come back to it.
+
+Each section expands independently, so you can work on risks without scrolling
+past results.
+
+### What a risk records
+
+A risk is the assessor's judgement about a weakness, and SPARC captures it the
+way OSCAL does:
+
+| Field | What to put in it |
+|---|---|
+| **Title** / **Description** | What the risk is, in your own words. |
+| **Statement** | What could happen, and to what. OSCAL requires it on every risk. |
+| **Status** | `Open`, `Investigating`, `Remediating`, `Deviation Requested`, `Deviation Approved`, `Closed` — the six values the OSCAL `risk-status` vocabulary defines, and the only six. |
+| **Impact** / **Likelihood** | The rating, on the five-level scale NIST SP 800-30 and FedRAMP use: **Very Low, Low, Moderate, High, Very High**. Both are exported as OSCAL risk *characterization facets*, so a rating chosen here reaches the artifact. |
+| **Threat IDs** | The threat this risk realises, as a published catalogue names it — the catalogue's address plus the identifier inside it, e.g. `https://attack.mitre.org` + `T1078`, or `https://cve.mitre.org` + `CVE-2026-80212`. |
+| **Mitigating Factors** | Anything already in place that reduces the risk — a compensating control, a network restriction, a manual check. |
+
+**Threat IDs** and **Mitigating Factors** live under a collapsed *Threat IDs and
+Mitigating Factors* heading inside the risk card you are already editing. Each is
+a repeatable row: **+ Add** appends one, **×** removes one, and removing the last
+row and saving clears the collection. You do not manage OSCAL identifiers by
+hand — SPARC assigns and preserves them.
+
+Two further OSCAL collections a risk can carry — **origins** (attribution for a
+rating) and the append-only **risk log** — are authorable through
+[the API](API-Reference) rather than this form. Origins are written by SPARC for
+the ratings it produces, and a risk log is history rather than something to type;
+the endpoints exist for an integrator migrating an existing risk register.
+
+Saving the form updates the **Download OSCAL** output immediately.
 
 ## How to export a SAR
 
@@ -120,6 +163,7 @@ On the detail page use **Download OSCAL** (the `assessment-results` document) or
 | SAR stuck on the processing spinner | Async parse running or failed | Wait for auto-refresh; on a failure banner, check the file and re-upload |
 | Wizard shows no SAP to pick | No saved SAP exists | Create the SAP first ([Assessment Plans](User-Guide-Assessment-Plans)) |
 | Filters hide controls you expect | An active filter is applied | Use **Clear All** in the active-filter banner |
+| A risk rated **Medium** now reads **Moderate** | The rating scale moved to the five NIST SP 800-30 / FedRAMP levels, and existing `medium` ratings were migrated | Nothing to do — the rating is unchanged, only its spelling |
 | Findings don't carry into a POA&M | SAR not enriched with findings/risks | Enrich the SAR, then generate/populate the POA&M |
 | Can't edit result cards | View-only role | Request SAR write permission ([RBAC](RBAC)) |
 

@@ -78,7 +78,10 @@ button that opens a nested form.
 - **Item** (`.../poam_items/new`) — the core POA&M line: risk ID, finding source,
   status, impact level, remediation plan, scheduled completion date, milestones.
 - **Risk** (`.../poam_risks/new`) — OSCAL `risk`: title, description, statement,
-  status, deadline, threat/characterization.
+  status, deadline, and the **impact** and **likelihood** rating. Both are rated
+  on the five-level scale NIST SP 800-30 and FedRAMP use — **Very Low, Low,
+  Moderate, High, Very High** — and both are exported as OSCAL risk
+  *characterization facets*, so a rating chosen here reaches the artifact.
 - **Remediation** (`.../poam_remediations/new`) — OSCAL `response`: lifecycle,
   title, description, remarks. **Milestones** are nested under a remediation
   (`.../poam_remediations/:id/poam_milestones/new`) with title, description, and
@@ -97,7 +100,14 @@ section.
 ## How to filter and review
 
 On the detail page, use the **risk status** and **impact level** filters and the
-**risk heatmap** to focus on the items that matter. Items are paginated.
+**Risk Status × Impact** heat map to focus on the items that matter. Items are
+paginated.
+
+The heat map always shows **all five impact tiers**, whether or not any risk sits
+in one. An empty column reads as "no risks at this level", which is itself a
+finding — before, a tier with no rows had no column at all, and "none at High"
+was indistinguishable from "High isn't part of the scale". A tier with no risks
+shows a dash.
 
 ## How to publish and export
 
@@ -137,6 +147,7 @@ leveraged relationship on your boundary first (see
 | Leveraged POA&Ms are empty | No leveraged authorization recorded / populated | Record and **Populate** the leveraged authorization on the boundary |
 | OSCAL export fails validation | Missing required item/risk fields | Fill the flagged fields, then use the validated export |
 | Can't edit entities | View-only role | Request POA&M write permission ([RBAC](RBAC)) |
+| A risk rated **Medium** now reads **Moderate** | The rating scale moved to the five NIST SP 800-30 / FedRAMP levels, and existing `medium` ratings were migrated | Nothing to do — the rating is unchanged, only its spelling |
 
 ---
 

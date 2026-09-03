@@ -518,13 +518,19 @@ discovered in a merge.
 | Status | Bundle / Issue | Domain | Files Modified | Collision Risk |
 | ------ | -------------- | ------ | -------------- | -------------- |
 | [ ] | **Y** **#968** (due 09-06) #1051 #1022 #1058 | Jobs/Services + API + OSCAL | `app/services/**`, `app/jobs/**` (rescue audit), `oscal_component_definition_export_service.rb`, `app/controllers/api/v1/control_lookups_controller.rb` | **MEDIUM** — see hazards 1 and 2 |
-| [ ] | **Z** #1047 #728 #1046 | Transport/Session + Shared/UI | `config/initializers/content_security_policy.rb`, inline `style=` across `app/views/**` (**1,401 measured**), `config/routes.rb` | **HIGH** — view-wide, and see hazard 1 |
+| [~] | **Z** #1047 #728 #1046 (+ #1090 #1092 #1093 #1094 #1095 #1096 folded) | Transport/Session + Shared/UI + SAR/POAM + API | inline `style=` across `app/views/**` (**1,403 → 980**), `app/assets/stylesheets/sparc-theme.css`, 7 Stimulus controllers, `app/models/concerns/{control_ordering,risk_rating}.rb`, `app/controllers/concerns/risk_collection_params.rb`, SAR/SAP/POA&M controllers + views, `api/v1/{sar,poam}_risks_controller.rb`, a data migration | **HIGH** — view-wide and now model-wide; see hazard 1 and section 14 |
 | [ ] | **AA** #978 #1044 #1059 | Auth/Users + Boundary/Org | sessions, CSRF/Origin config, IdP admin path | **LOW** vs Lane CI |
 | [ ] | **AB** #1040 #940 #1033 #930 #966 #836 | Onboarding + cross-cutting | new onboarding flow, `app/models/sparc_config.rb`, Sonar backlog across many files | **MEDIUM** — `sparc_config.rb` is a known hot file |
 
 <!-- markdownlint-enable MD013 -->
 
 #### The four crossings between these lanes
+
+> **Bundle Z status (2026-09-03).** In review as a **verified increment**, not a
+> close of #1047 — see section 14. #728 and #1046's route work are **not started**
+> and stay in the bundle. The measured sweep is at **980 of 1,403** and
+> `style-src 'unsafe-inline'` is **still in the policy**; it comes out only when
+> the count reaches zero, because at 980 removing it breaks 980 places silently.
 
 **1. #927 is a mechanical sweep landing on top of semantic edits. Highest risk in
 either lane.** It clears deprecation warnings, including `:unprocessable_entity`
@@ -1107,6 +1113,36 @@ authorization boundary. Inherit it from the source document where there is one;
 otherwise take it from the caller and surface a picker. A path that does neither
 now fails validation at `create!`, which is the intended outcome -- it used to
 produce a document visible to every signed-in user.
+
+---
+
+## 14. Bundle Z (v1.16.1) -- the CSP inline-style sweep and its fallout
+
+The sweep itself is view-wide, and the owner review that ran alongside it pulled
+in ordering and risk-authoring work that reaches models and the API. **82 files
+across 37 commits.** Coordinate before editing any of these.
+
+<!-- markdownlint-disable MD013 -->
+
+| Hot file | Why it is hot | Domain |
+| --- | --- | --- |
+| `app/views/**` (111 files still carrying `style=`) | The sweep is 30% done and continues in later PRs. **Any new view work should not add an inline `style=`** — `spec/views/inline_style_ratchet_spec.rb` fails the build if the count rises, and the ceiling is currently 980 | Shared -- 2-dev review |
+| `app/assets/stylesheets/sparc-theme.css` | Every converted declaration lands here as a `sparc-`-prefixed utility or component class. Two branches sweeping different screens will both append to it | Shared |
+| `app/javascript/controllers/visibility.js` | `isVisible()` now asks `getComputedStyle`, never `element.style.display`. **A controller that reads `.style.display` is broken the moment its view is swept** — the attribute is empty and the read inverts. Five controllers were fixed for exactly this | Shared |
+| `app/models/concerns/control_ordering.rb` (new) | `in_control_order`, included by `ssp_control`, `sar_control`, `sap_control`, `cdef_control`, `catalog_control`. **Built per model** — `ssp_controls` and `catalog_controls` have no `control_family` column and a shared literal raises `StatementInvalid` | Shared -- 2-dev review |
+| `app/models/concerns/risk_rating.rb` | `LEVELS` is the single source of the five-level scale. Seven copies of `high/medium/low` existed before it; a new literal list is a regression, not a convenience | Shared |
+| `app/controllers/concerns/risk_collection_params.rb` (new) | The OSCAL collection shapes shared by `Api::V1::SarRisks` and `Api::V1::PoamRisks`. Keys are **hyphenated** because the stored JSON is OSCAL as it arrived | API (v1) |
+| `db/migrate/*_normalise_risk_levels.rb` | Migrates `medium` to `moderate` on both risk tables. A branch adding a risk migration must sequence after it | Shared (DB) |
+| `app/views/{sar,sap}_documents/show.html.erb` | Lost the duplicate objective-rollup heatmap, and `build_objective_status_heatmap` went with it in both controllers | SAR / POAM-SAP |
+| `tests/ui-smoke/visual_regression_1047.py` (new) | The per-screen pixel gate for the sweep. **It cannot see the failure modes that matter most** — a pixel diff is blind to a broken JS toggle, and to a `cursor` rule change with an unchanged computed value | Shared |
+
+<!-- markdownlint-enable MD013 -->
+
+**Rule for anyone touching a view while this sweep is open:** put the declaration
+in `sparc-theme.css` as a `sparc-`-prefixed class. If the value is computed, pass
+it as a `data-*` attribute and set it from a Stimulus controller — a style set
+from JavaScript is not what `style-src` blocks. And before converting any
+`display: none`, grep the controllers for a reader of `.style.display`.
 
 ---
 

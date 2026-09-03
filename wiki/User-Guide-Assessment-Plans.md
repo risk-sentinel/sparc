@@ -79,6 +79,10 @@ how controls are distributed across assessment methods — a quick way to confir
 coverage before the assessment starts. Edit the document metadata inline via the
 edit toggle.
 
+Within each family, controls are listed in **NIST catalog order** — base number
+then enhancement (AC-1, AC-2, AC-2(1), AC-3 … AC-17, AC-18) — rather than the
+order they arrived in from the source document.
+
 ## How to export an assessment plan
 
 On the detail page use **Export OSCAL** (validated / unvalidated) or **JSON**.
