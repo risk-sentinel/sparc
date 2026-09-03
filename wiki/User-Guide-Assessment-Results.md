@@ -122,6 +122,10 @@ way OSCAL does:
 | **Threat IDs** | The threat this risk realises, as a published catalogue names it — the catalogue's address plus the identifier inside it, e.g. `https://attack.mitre.org` + `T1078`, or `https://cve.mitre.org` + `CVE-2026-80212`. |
 | **Mitigating Factors** | Anything already in place that reduces the risk — a compensating control, a network restriction, a manual check. |
 
+![A risk card on the SAR Enrich screen, with title, status, description, statement, impact and likelihood, and the expanded Threat IDs and Mitigating Factors section below them](images/sar-enrich-risk-collections.png)
+
+*A risk card on the Enrich screen, with its Threat IDs and Mitigating Factors expanded.*
+
 **Threat IDs** and **Mitigating Factors** live under a collapsed *Threat IDs and
 Mitigating Factors* heading inside the risk card you are already editing. Each is
 a repeatable row: **+ Add** appends one, **×** removes one, and removing the last
