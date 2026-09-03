@@ -255,22 +255,6 @@
      },
      legend_items: [["Passed", "#27ae60"], ["Failed", "#e74c3c"], ["Not Satisfied", "#f39c12"], ["Not Specified", "#95a5a6"]] %>
 
-<%# ── ASSESSMENT STATUS (OBJECTIVE ROLLUP) HEATMAP ─────────────── %>
-<% if @status_heatmap_data.present? && @status_heatmap_families.any? %>
-  <%= render "shared/heatmap",
-       heatmap_data: @status_heatmap_data,
-       heatmap_families: @status_heatmap_families,
-       heatmap_statuses: @status_heatmap_statuses,
-       title: "Assessment Status by Control Family (Objective Rollup)",
-       variant_helper: :sar_objective_status_variant,
-       filter_key: "objective-status",
-       show_percentage: false,
-       legend_items: [
-         ["Failed", "#e74c3c"], ["In Progress", "#f39c12"],
-         ["Pending", "#95a5a6"], ["Passing", "#27ae60"],
-         ["N/A", "#7f8c8d"], ["Not Assessed", "#bdc3c7"]
-       ] %>
-<% end %>
 
 <%# ── NEEDS RE-ASSOCIATION BANNER ──────────────────────────────── %>
 <% if @needs_reassociation %>

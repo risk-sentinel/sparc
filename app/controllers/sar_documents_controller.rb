@@ -121,18 +121,18 @@ class SarDocumentsController < ApplicationController
     # firing a query per row.
     @pagy, @controls = pagy(
       :offset,
-      filtered.order(:row_order).includes(:sar_control_fields, :sar_control_objectives),
+      # NIST control order, not arrival order (ControlOrdering). `row_order` is
+      # assigned sequentially at import from the source spreadsheet's order, so
+      # this list read ac-1, ac-14, ac-17, ... ac-2, ac-3. It has to be ordered
+      # in SQL rather than in the view, because the list is PAGINATED and
+      # sorting the fetched page leaves the page boundaries wrong.
+      filtered.in_control_order.includes(:sar_control_fields, :sar_control_objectives),
       limit: CONTROLS_PER_PAGE
     )
 
     # Catalog guidance lookup (only for the current page)
     normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
     @catalog_guidance = CatalogControl.where(control_id: normalized_ids).index_by(&:control_id)
-
-    # Objective rollup heatmap -- built from full base_filtered scope, not
-    # the paginated subset, so the family aggregates are correct.
-    @status_heatmap_data, @status_heatmap_families, @status_heatmap_statuses =
-      build_objective_status_heatmap(base_filtered)
 
     # Totals for display
     @total_controls = controls_scope.count
@@ -938,26 +938,4 @@ class SarDocumentsController < ApplicationController
   end
 
   OBJECTIVE_STATUS_ORDER = %w[failed in-progress pending passing not_applicable not_assessed].freeze
-
-  # Builds an objective rollup heatmap for SAR. Counts each control once
-  # under its rolled-up objective status (failed > in-progress > pending >
-  # passing > not_assessed). Independent of cached_result so users can see
-  # both the OSCAL-level result and the per-objective progress at a glance.
-  def build_objective_status_heatmap(scope)
-    data = {}
-    scope.where.not(control_id: [ nil, "" ])
-         .includes(:sar_control_objectives).find_each(batch_size: 500) do |ctrl|
-      family = ctrl.control_family.presence || ctrl.control_id.to_s.split("-").first.upcase
-      next if family.blank?
-      data[family] ||= Hash.new(0)
-      data[family][ctrl.objective_status_rollup] += 1
-    end
-
-    families = data.keys.sort
-    all_statuses = data.values.flat_map(&:keys).uniq
-    ordered = OBJECTIVE_STATUS_ORDER.select { |s| all_statuses.include?(s) }
-    ordered += (all_statuses - OBJECTIVE_STATUS_ORDER).sort
-
-    [ data, families, ordered ]
-  end
 end

@@ -70,8 +70,6 @@ class SapDocumentsController < ApplicationController
 
     # Status (objective rollup) heatmap by family. Independent of the methods
     # heatmap so users can see assessment progress separately from coverage.
-    @status_heatmap_data, @status_heatmap_families, @status_heatmap_statuses =
-      build_objective_status_heatmap(@controls)
 
     # Group controls by family for collapsible display
     @controls_by_family = @controls.group_by { |c|
@@ -591,21 +589,4 @@ class SapDocumentsController < ApplicationController
   # control once under its rolled-up status. Controls without objectives
   # land in the "not_assessed" bucket.
   STATUS_ORDER = %w[failed in-progress pending passing not_applicable not_assessed].freeze
-
-  def build_objective_status_heatmap(controls)
-    data = {}
-    controls.each do |ctrl|
-      family = ctrl.control_family.presence || ctrl.control_id.to_s.split("-").first.upcase
-      next if family.blank?
-      data[family] ||= Hash.new(0)
-      data[family][ctrl.objective_status_rollup] += 1
-    end
-
-    families = data.keys.sort
-    all_statuses = data.values.flat_map(&:keys).uniq
-    ordered = STATUS_ORDER.select { |s| all_statuses.include?(s) }
-    ordered += (all_statuses - STATUS_ORDER).sort
-
-    [ data, families, ordered ]
-  end
 end
