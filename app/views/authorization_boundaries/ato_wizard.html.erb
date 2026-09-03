@@ -61,7 +61,7 @@
           </label>
         </div>
 
-        <div id="profile_select_existing_panel" class="sparc-wizard-step-panel">
+        <div id="profile_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
           <% if @profiles.any? %>
             <div class="form-group">
               <label for="profile_document_id">Profile</label>
@@ -105,7 +105,7 @@
           </label>
         </div>
 
-        <div id="cdef_select_panel" class="sparc-wizard-step-panel">
+        <div id="cdef_select_panel" class="sparc-wizard-step-panel sparc-d-none">
           <% if @cdefs.any? %>
             <p class="text-body-secondary sparc-wizard-step-hint">
               Select CDEFs to include as components in the ATO package.
@@ -162,7 +162,7 @@
           </label>
         </div>
 
-        <div id="ssp_create_new_panel" class="sparc-wizard-step-panel">
+        <div id="ssp_create_new_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="ssp_name">SSP Name <span class="sparc-required">*</span></label>
             <%= text_field_tag :ssp_name, nil, class: "form-control", placeholder: "e.g., My System SSP" %>
@@ -210,7 +210,7 @@
           </div>
         </div>
 
-        <div id="ssp_select_existing_panel" class="sparc-wizard-step-panel">
+        <div id="ssp_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="ssp_document_id">Existing SSP</label>
             <%= select_tag :ssp_document_id,
@@ -250,7 +250,7 @@
           </label>
         </div>
 
-        <div id="sap_create_new_panel" class="sparc-wizard-step-panel">
+        <div id="sap_create_new_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="sap_name">SAP Name <span class="sparc-required">*</span></label>
             <%= text_field_tag :sap_name, nil, class: "form-control", placeholder: "e.g., Annual Security Assessment Plan" %>
@@ -278,7 +278,7 @@
           </div>
         </div>
 
-        <div id="sap_select_existing_panel" class="sparc-wizard-step-panel">
+        <div id="sap_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="sap_document_id">Existing SAP</label>
             <%= select_tag :sap_document_id,
@@ -318,7 +318,7 @@
           </label>
         </div>
 
-        <div id="sar_create_new_panel" class="sparc-wizard-step-panel">
+        <div id="sar_create_new_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="sar_name">SAR Name <span class="sparc-required">*</span></label>
             <%= text_field_tag :sar_name, nil, class: "form-control", placeholder: "e.g., Annual Assessment Results" %>
@@ -339,7 +339,7 @@
           </div>
         </div>
 
-        <div id="sar_select_existing_panel" class="sparc-wizard-step-panel">
+        <div id="sar_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="sar_document_id">Existing SAR</label>
             <%= select_tag :sar_document_id,
@@ -379,7 +379,7 @@
           </label>
         </div>
 
-        <div id="poam_create_new_panel" class="sparc-wizard-step-panel">
+        <div id="poam_create_new_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="poam_name">POA&amp;M Name <span class="sparc-required">*</span></label>
             <%= text_field_tag :poam_name, nil, class: "form-control", placeholder: "e.g., FY2026 Plan of Action & Milestones" %>
@@ -390,7 +390,7 @@
           </div>
         </div>
 
-        <div id="poam_select_existing_panel" class="sparc-wizard-step-panel">
+        <div id="poam_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="poam_document_id">Existing POA&amp;M</label>
             <%= select_tag :poam_document_id,

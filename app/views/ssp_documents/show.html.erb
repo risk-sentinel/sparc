@@ -463,7 +463,7 @@
         </div>
 
         <%# ── Edit form ── %>
-        <div id="edit-<%= control.id %>" class="sparc-edit-panel">
+        <div id="edit-<%= control.id %>" class="sparc-divider-top-mt sparc-d-none">
           <%= form_with url: ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
             <%= hidden_field_tag :control_id, control.control_id %>
 

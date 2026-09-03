@@ -3344,7 +3344,7 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-wizard-option { padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; cursor: pointer; }
 
 /* A wizard step's body, hidden until its step is opened. */
-.sparc-wizard-step-panel { display: none; margin-top: 0.75rem; }
+.sparc-wizard-step-panel { margin-top: 0.75rem; }  /* state lives in .sparc-d-none — see above */
 
 /* A 16px inline icon/checkbox glyph. */
 .sparc-icon-16 { width: 16px; height: 16px; }
@@ -3427,7 +3427,14 @@ a.link-purple { color: var(--sparc-purple); }
 /* -- the inline editor --------------------------------------------------- */
 .sparc-detail-toggle { font-size: 0.8rem; color: var(--bs-tertiary-color); cursor: pointer; padding: 0.35rem 0; user-select: none; }
 .sparc-detail-toggle--purple { font-size: 0.8rem; font-weight: 600; color: var(--sparc-purple); cursor: pointer; padding: 0.35rem 0; user-select: none; }
-.sparc-edit-panel { display: none; margin-top: 0.75rem; border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
+/* #1047 — `.sparc-edit-panel` is GONE, and the reason is worth keeping.
+   It was `display: none` plus the divider layout, i.e. a component class that
+   baked in VISIBILITY STATE. `controllers/visibility` reveals things by removing
+   `.sparc-d-none`, which could not touch a `display: none` living in a different
+   class, so the SSP control Edit button hid both panels and showed nothing.
+   Hiding is a state and belongs to `.sparc-d-none`; a component class carries
+   layout only. The markup uses `sparc-divider-top-mt sparc-d-none`, which is the
+   same declarations without the trap. */
 .sparc-btn-cancel { background: var(--bs-secondary-bg); color: var(--bs-secondary-color); border: 1px solid var(--bs-border-color); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem; }
 
 /* -- the statement modal -------------------------------------------------- */
