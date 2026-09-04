@@ -9,23 +9,23 @@
   <div class="card-body">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <div class="d-flex align-items-center gap-3" style="margin-bottom: 0.5rem;">
-        <span class="fw-bold bg-body-secondary rounded" style="font-family: monospace; font-size: 1.5rem; padding: 0.3rem 0.8rem;">
+      <div class="d-flex align-items-center gap-3 sparc-mb-05">
+        <span class="fw-bold bg-body-secondary rounded sparc-mono sparc-fs-15r sparc-p-03-08">
           <%= @control_family.code %>
         </span>
-        <h2 style="margin: 0;"><%= @control_family.name %></h2>
+        <h2 class="sparc-m-0"><%= @control_family.name %></h2>
       </div>
       <p class="text-body-secondary">
         Catalog: <%= link_to @control_catalog.name, @control_catalog, class: "text-primary" %> &nbsp;|&nbsp;
         Controls: <strong><%= @catalog_controls.size %></strong>
       </p>
       <% if @control_family.description.present? %>
-        <p class="text-body-secondary" style="margin-top: 0.5rem;"><%= @control_family.description %></p>
+        <p class="text-body-secondary sparc-mt-05"><%= @control_family.description %></p>
       <% end %>
     </div>
     <div class="d-flex gap-2">
       <% if can_edit_baselines %>
-        <button type="button" class="sparc-action sparc-action--neutral sparc-action--outline fw-semibold" style="font-size: 0.875rem;"
+        <button type="button" class="sparc-action sparc-action--neutral sparc-action--outline fw-semibold sparc-fs-0875"
                 data-action="click->baseline-editor#toggleEdit"
                 data-baseline-editor-target="editToggle">Manage Baselines</button>
       <% end %>
@@ -40,21 +40,21 @@
 
   <%# ── Bulk toolbar (hidden by default, shown in edit mode) ── %>
   <% if can_edit_baselines %>
-    <div data-baseline-editor-target="bulkToolbar" style="display: none; margin-bottom: 1rem; padding: 0.75rem 1rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.375rem;">
+    <div class="sparc-d-none sparc-bulk-toolbar" data-baseline-editor-target="bulkToolbar">
       <div class="d-flex align-items-center gap-3 flex-wrap">
         <label class="form-check mb-0">
           <input type="checkbox" class="form-check-input" data-baseline-editor-target="selectAll" data-action="change->baseline-editor#toggleSelectAll">
-          <span class="form-check-label fw-semibold" style="font-size: 0.85rem;">Select All</span>
+          <span class="form-check-label fw-semibold sparc-fs-085">Select All</span>
         </label>
-        <span class="text-body-secondary" style="font-size: 0.85rem;" data-baseline-editor-target="bulkCount">0 selected</span>
+        <span class="text-body-secondary sparc-fs-085" data-baseline-editor-target="bulkCount">0 selected</span>
         <div class="vr"></div>
-        <select class="form-select form-select-sm" style="width: auto;" data-baseline-editor-target="bulkLevel" aria-label="Baseline level">
+        <select class="form-select form-select-sm sparc-w-auto" data-baseline-editor-target="bulkLevel" aria-label="Baseline level">
           <option value="">Level...</option>
           <option value="LOW">LOW</option>
           <option value="MODERATE">MODERATE</option>
           <option value="HIGH">HIGH</option>
         </select>
-        <select class="form-select form-select-sm" style="width: auto;" data-baseline-editor-target="bulkAction" aria-label="Bulk action">
+        <select class="form-select form-select-sm sparc-w-auto" data-baseline-editor-target="bulkAction" aria-label="Bulk action">
           <option value="add">Add Level</option>
           <option value="remove">Remove Level</option>
           <option value="set">Set to Only This Level</option>
@@ -82,24 +82,24 @@
       <thead>
         <tr>
           <% if can_edit_baselines %>
-            <th style="width: 40px; display: none;" data-baseline-checkbox-cell></th>
+            <th class="sparc-d-none sparc-w-40px" data-baseline-checkbox-cell></th>
           <% end %>
-          <th style="width: 150px;">Control ID</th>
+          <th class="sparc-w-150px">Control ID</th>
           <th>Title / Statement</th>
-          <th class="text-center" style="width: 60px;">Priority</th>
-          <th style="width: 200px;">Baseline Impact</th>
-          <% if can_write_catalogs? %><th style="width: 130px;">Actions</th><% end %>
+          <th class="text-center sparc-w-60px">Priority</th>
+          <th class="sparc-w-200px">Baseline Impact</th>
+          <% if can_write_catalogs? %><th class="sparc-w-130px">Actions</th><% end %>
         </tr>
       </thead>
       <tbody>
         <% @catalog_controls.sort_by { |c| CatalogControl.control_sort_key(c.control_id) }.each do |control| %>
           <% depth      = ctrl_depth.call(control.control_id) %>
           <% stmt_text  = control.guidance_data["statement"].presence %>
-          <tr style="<%= depth > 0 ? "background: #fafbfc;" : "" %>" data-control-db-id="<%= control.id %>">
+          <tr class="<%= "sparc-row-nested" if depth > 0 %>" data-control-db-id="<%= control.id %>">
 
             <%# ── Checkbox column (edit mode only) ── %>
             <% if can_edit_baselines %>
-              <td style="vertical-align: top; padding-top: 0.55rem; display: none;" data-baseline-checkbox-cell>
+              <td class="sparc-d-none sparc-tree-cell" data-baseline-checkbox-cell>
                 <% if depth == 0 %>
                   <input type="checkbox" class="form-check-input" value="<%= control.id %>"
                          aria-label="Select control <%= control.control_id %>"
@@ -110,14 +110,11 @@
             <% end %>
 
             <%# ── Control ID column ── %>
-            <td style="padding-left: <%= 0.5 + depth * 1.1 %>rem; vertical-align: top; padding-top: 0.55rem;">
+            <td class="sparc-tree-cell sparc-tree-d<%= [depth, 7].min %>">
               <% if depth > 0 %>
-                <span style="color: var(--bs-border-color); margin-right: 0.25rem; font-size: 0.75rem;">&#x2514;</span>
+                <span class="sparc-color-border sparc-fs-075 sparc-mr-025">&#x2514;</span>
               <% end %>
-              <span style="font-family: monospace;
-                           font-weight: <%= depth == 0 ? 700 : 500 %>;
-                           color: <%= depth == 0 ? "#2c3e50" : "#666" %>;
-                           font-size: <%= depth == 0 ? "0.95rem" : "0.85rem" %>;">
+              <span class="sparc-control-name <%= "sparc-control-name--nested" if depth > 0 %>">
                 <%# #881 — the control id links to the control's own page, which
                     is also how a sub-part becomes addressable at all. %>
                 <%= link_to control.display_id,
@@ -127,42 +124,42 @@
             </td>
 
             <%# ── Title / Statement column ── %>
-            <td style="vertical-align: top;">
+            <td class="sparc-va-top">
               <% if depth == 0 %>
                 <%# Base control: show title prominently, then statement below %>
                 <div class="fw-semibold small">
                   <%= control.title.presence || "<em style='color:#aaa; font-weight:400;'>No title</em>".html_safe %>
                   <% if control.params_present? %>
-                    <span class="badge rounded-pill text-bg-info" style="font-size: 0.68rem; font-weight: 500; margin-left: 0.4rem; vertical-align: middle;"
+                    <span class="badge rounded-pill text-bg-info sparc-fs-068 sparc-fw-500 sparc-ml-04 sparc-va-middle"
                           title="<%= control.params_list.size %> parameter(s) requiring organization-defined values">
                       <%= control.params_list.size %> param<%= control.params_list.size == 1 ? "" : "s" %>
                     </span>
                   <% end %>
                 </div>
                 <% if stmt_text.present? %>
-                  <div class="text-body-secondary" style="margin-top: 0.3rem; font-size: 0.8rem; line-height: 1.4;">
+                  <div class="text-body-secondary sparc-fs-08 sparc-lh-14 sparc-mt-03">
                     <%= truncate(stmt_text, length: 200) %>
                   </div>
                 <% end %>
                 <% if control.params_present? %>
-                  <details style="margin-top: 0.4rem;">
-                    <summary class="text-primary" style="font-size: 0.78rem; cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 0.3rem;">
-                      <span class="card-arrow" style="font-size: 0.6rem;">&#9658;</span> View parameters
+                  <details class="sparc-mt-04">
+                    <summary class="text-primary sparc-items-center sparc-cursor-pointer sparc-d-inline-flex sparc-fs-078 sparc-gap-03 sparc-list-none">
+                      <span class="card-arrow sparc-fs-06">&#9658;</span> View parameters
                     </summary>
-                    <table class="table table-sm mb-0" style="font-size: 0.78rem; margin-top: 0.3rem; background: transparent;">
+                    <table class="table table-sm mb-0 sparc-bg-transparent sparc-fs-078 sparc-mt-03">
                       <thead>
                         <tr>
-                          <th style="width: 25%; padding: 0.2rem 0.4rem; border-bottom-width: 1px;">Param ID</th>
-                          <th style="width: 40%; padding: 0.2rem 0.4rem; border-bottom-width: 1px;">Label</th>
-                          <th style="padding: 0.2rem 0.4rem; border-bottom-width: 1px;">Constraint / Choices</th>
+                          <th class="sparc-bbw-1 sparc-p-02-04 sparc-w-25pct">Param ID</th>
+                          <th class="sparc-bbw-1 sparc-p-02-04 sparc-w-40pct">Label</th>
+                          <th class="sparc-bbw-1 sparc-p-02-04">Constraint / Choices</th>
                         </tr>
                       </thead>
                       <tbody>
                         <% control.params_list.each do |param| %>
                           <tr>
-                            <td style="padding: 0.2rem 0.4rem; font-family: monospace; color: var(--bs-primary);"><%= param["id"] %></td>
-                            <td style="padding: 0.2rem 0.4rem;"><%= param["label"] %></td>
-                            <td style="padding: 0.2rem 0.4rem;">
+                            <td class="sparc-color-bs-primary sparc-mono sparc-p-02-04"><%= param["id"] %></td>
+                            <td class="sparc-p-02-04"><%= param["label"] %></td>
+                            <td class="sparc-p-02-04">
                               <% if param.dig("select", "choice").present? %>
                                 <span class="text-body-secondary">Select <%= param.dig("select", "how-many") || "one" %>:</span>
                                 <%= param["select"]["choice"].join("; ") %>
@@ -181,9 +178,9 @@
               <% else %>
                 <%# Sub-part: show statement prose as the primary content %>
                 <% if stmt_text.present? %>
-                  <span class="text-body-secondary" style="font-size: 0.875rem;"><%= truncate(stmt_text, length: 150) %></span>
+                  <span class="text-body-secondary sparc-fs-0875"><%= truncate(stmt_text, length: 150) %></span>
                 <% else %>
-                  <span class="text-body-tertiary" style="font-size: 0.85rem; font-style: italic;"><%= control.title.presence || "No statement" %></span>
+                  <span class="text-body-tertiary sparc-fs-085 sparc-fst-italic"><%= control.title.presence || "No statement" %></span>
                 <% end %>
               <% end %>
 
@@ -192,18 +189,18 @@
             </td>
 
             <%# ── Priority column ── %>
-            <td class="text-center" style="vertical-align: top; padding-top: 0.55rem;">
+            <td class="text-center sparc-tree-cell">
               <% if control.priority.present? %>
-                <span class="bg-body-secondary rounded fw-semibold" style="padding: 0.2rem 0.5rem; font-size: 0.82rem;">
+                <span class="bg-body-secondary rounded fw-semibold sparc-fs-082 sparc-p-02-05">
                   <%= control.priority %>
                 </span>
               <% else %>
-                <span style="color: var(--bs-tertiary-color);">—</span>
+                <span class="sparc-color-tertiary">—</span>
               <% end %>
             </td>
 
             <%# ── Baseline Impact column ── %>
-            <td style="vertical-align: top; padding-top: 0.55rem;">
+            <td class="sparc-tree-cell">
               <%# View mode: badges %>
               <span data-baseline-view data-baseline-badges>
                 <%= render "shared/baseline_badges", baseline_impact: control.baseline_impact %>
@@ -211,10 +208,10 @@
 
               <%# Edit mode: inline checkboxes (top-level only) %>
               <% if can_edit_baselines && depth == 0 %>
-                <span data-baseline-edit style="display: none;">
+                <span class="sparc-d-none" data-baseline-edit>
                   <% %w[LOW MODERATE HIGH].each do |level| %>
-                    <label class="form-check form-check-inline mb-0" style="font-size: 0.78rem;">
-                      <input type="checkbox" class="form-check-input" style="margin-top: 0.15rem;"
+                    <label class="form-check form-check-inline mb-0 sparc-fs-078">
+                      <input type="checkbox" class="form-check-input sparc-mt-015"
                              data-baseline-level="<%= level %>"
                              data-action="change->baseline-editor#inlineToggle"
                              <%= "checked" if control.has_baseline_level?(level) %>>
@@ -227,7 +224,7 @@
 
             <%# ── Actions column ── %>
             <% if can_write_catalogs? %>
-              <td style="vertical-align: top; padding-top: 0.45rem;">
+              <td class="sparc-pt-045 sparc-va-top">
                 <div class="d-flex flex-wrap gap-1">
                   <%# #881 — readable, catalog-scoped URLs; `control` renders as its
                       canonical id (ac-19.4.b.1) via CatalogControl#to_param. %>

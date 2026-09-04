@@ -265,6 +265,31 @@ EXTRA_FROM_SHOW = [
     ("ato_wizard", "authorization_boundary_show", "/ato_wizard"),
 ]
 
+# Screens reached by FOLLOWING A LINK on a discovered show page, rather than by
+# appending a suffix to it.
+#
+# Control families are the case that forced this. They hang off a catalog, so
+# there is no `/control_families` index for SHOW_PAGES' one-hop discovery to
+# work from — and the consequence was not a loud failure but SILENCE: the screen
+# simply was not in the inventory, so the gate captured 78 screens and none of
+# them was this one. A slice converting it would have been "verified" by a diff
+# that never looked at it.
+LINK_FROM_SHOW = [
+    ("control_family_show", "control_catalog_show", "/control_families/"),
+]
+
+
+def _follow_link(page, base_url, from_href, needle):
+    """First href on `from_href` containing `needle`, ignoring new/edit routes."""
+    resp = page.goto(f"{base_url}{from_href}", wait_until="domcontentloaded", timeout=30000)
+    if not (resp and resp.status < 400):
+        return None
+    for h in page.eval_on_selector_all(
+            "a[href]", "els => els.map(e => e.getAttribute('href'))"):
+        if h and needle in h and "/new" not in h and "/edit" not in h:
+            return h
+    return None
+
 
 def _wait_until_serving(timeout: int = 180) -> bool:
     """Block until the stack answers, instead of guessing a sleep.
@@ -402,6 +427,23 @@ def _capture(out_dir: Path, pin_from: Path | None = None, only: set[str] | None 
                 fail += 1
                 if label in pinned:
                     drifted.append((label, href))
+
+        for label, from_label, needle in LINK_FROM_SHOW:
+            if not want(label):
+                continue
+            href = pinned.get(label)
+            if not href:
+                base = resolved.get(from_label) or pinned.get(from_label)
+                href = _follow_link(page, cap.BASE_URL, base, needle) if base else None
+            if not href:
+                print(f"  – {label:32s} no link matching {needle!r} from {from_label} — skipped")
+                skipped += 1
+                continue
+            resolved[label] = href
+            if cap._shoot(page, label, href, out_dir):
+                ok += 1
+            else:
+                fail += 1
 
         browser.close()
 
@@ -715,6 +757,15 @@ def _check_cascade(pin_from: Path | None) -> int:
             href = pinned.get(label) or cap._first_show_href(page, index_path, index_path)
             if href:
                 targets.append((label, href))
+        for label, from_label, needle in LINK_FROM_SHOW:
+            href = pinned.get(label)
+            if not href:
+                base = pinned.get(from_label) or next(
+                    (h for lbl, h in targets if lbl == from_label), None)
+                href = _follow_link(page, cap.BASE_URL, base, needle) if base else None
+            if href:
+                targets.append((label, href))
+
         for label, from_label, suffix in EXTRA_FROM_SHOW:
             # The manifest stores the DERIVED url under the derived label, so it
             # is already `/sar_documents/<slug>/enrich`. Appending the suffix to

@@ -21,6 +21,12 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
 
   # Lower this with every slice. Never raise it.
   #
+  # Slice 8 took control_families/show.html.erb from 43 to 0, and needed three
+  # things done FIRST rather than as part of the conversion: the screen was
+  # absent from the visual gate entirely (LINK_FROM_SHOW now reaches it),
+  # `baseline_editor` revealed elements by writing an EMPTY inline display —
+  # which a class cannot be overridden by — and nothing clicked the toggle.
+  #
   # Slice 7 took sar_documents/show.html.erb from 39 to 0, and found a codemod
   # blind spot worth writing down: a tag regex of `<tag[^>]*?>` truncates on a
   # literal `>` INSIDE an attribute value, and Stimulus actions contain one —
@@ -45,7 +51,7 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # verified against all 78 baseline screens with zero pixels changed. The static ones become theme utilities; the dynamic ones become
   # data-* attributes applied by a Stimulus controller, because a style set from
   # JavaScript is not what `style-src` blocks.
-  let(:ceiling) { 822 }
+  let(:ceiling) { 779 }
 
   # A SECOND guard, learned the hard way in slice 4.
   #
