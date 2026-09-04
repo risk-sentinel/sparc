@@ -199,8 +199,14 @@
                 <td>
                   <% link_record = catalog_control.control_back_matter_links.find_by(back_matter_resource: resource) %>
                   <% if link_record %>
+                    <%# `catalog_controls` is nested under `control_families` with
+                        `shallow: true`, so its member routes collapse — DELETE is
+                        `control_back_matter_link_path(:id)`, NOT the nested
+                        two-argument form. The nested name only exists on the
+                        PROFILE side, whose `profile_controls` is not shallow, and
+                        that is the helper this line was copied from (#371). %>
                     <%= button_to "Unlink",
-                          catalog_control_control_back_matter_link_path(catalog_control, link_record),
+                          control_back_matter_link_path(link_record),
                           method: :delete,
                           class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
                           data: { turbo_confirm: "Unlink \"#{resource.title}\"?" } %>
