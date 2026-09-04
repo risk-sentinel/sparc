@@ -21,6 +21,11 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
 
   # Lower this with every slice. Never raise it.
   #
+  # Slice 6 took cdef_documents/show.html.erb from 47 to 0, reusing the modal
+  # trio (.sparc-modal-overlay/-dialog/-eyebrow) that already existed rather
+  # than minting duplicates, and routing all five DYNAMIC styles through the
+  # vocabulary: three accents, one .sparc-accent-bg, two widths on bar.
+  #
   # Slice 5 took poam_documents/show.html.erb from 72 to 0 — the largest file
   # remaining — using the accent vocabulary slice 4 established rather than
   # restating hexes: the item card's status border and all six hero tiles now
@@ -32,7 +37,7 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # verified against all 78 baseline screens with zero pixels changed. The static ones become theme utilities; the dynamic ones become
   # data-* attributes applied by a Stimulus controller, because a style set from
   # JavaScript is not what `style-src` blocks.
-  let(:ceiling) { 908 }
+  let(:ceiling) { 861 }
 
   # A SECOND guard, learned the hard way in slice 4.
   #

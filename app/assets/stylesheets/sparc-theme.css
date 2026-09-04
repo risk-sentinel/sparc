@@ -3405,6 +3405,14 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-prewrap { white-space: pre-wrap; }
 .sparc-border-default { border: 1px solid var(--bs-border-color); }
 .sparc-p-035-09 { padding: 0.35rem 0.9rem; }
+.sparc-tt-capitalize { text-transform: capitalize; }
+.sparc-p-015-05 { padding: 0.15rem 0.5rem; }
+.sparc-p-01-045 { padding: 0.1rem 0.45rem; }
+.sparc-gap-03 { gap: 0.3rem; }
+.sparc-maxw-600 { max-width: 600px; }
+.sparc-h-12r { height: 1.2rem; }
+.sparc-mono { font-family: monospace; }
+.sparc-color-white-45 { color: rgba(255, 255, 255, 0.45); }
 .sparc-gap-15r { gap: 1.5rem; }
 .sparc-gap-045 { gap: 0.45rem; }
 .sparc-divider-top { border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
@@ -3574,3 +3582,25 @@ a.link-purple { color: var(--sparc-purple); }
 }
 .sparc-poam-note--roomy { padding: 0.4rem 0.6rem; }
 .sparc-poam-note--tight { padding: 0.3rem 0.5rem; }
+
+
+/* ==========================================================================
+   #1047 slice 6 — components of the CDEF show screen.
+   ========================================================================== */
+
+/* Tinted callouts. Same rule as slice 5's tiles: the colour is NOT restated,
+   it is read from the `.sparc-accent--*` class on the element. Three alpha
+   pairs, because the screen genuinely used three — the soft pair serves both
+   the purple and the green callout, which differed only in hue. */
+.sparc-cdef-callout {
+  background: color-mix(in srgb, var(--sparc-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sparc-accent) 35%, transparent);
+}
+.sparc-cdef-tint-soft {
+  background: color-mix(in srgb, var(--sparc-accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sparc-accent) 20%, transparent);
+}
+.sparc-cdef-tint {
+  background: color-mix(in srgb, var(--sparc-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sparc-accent) 25%, transparent);
+}

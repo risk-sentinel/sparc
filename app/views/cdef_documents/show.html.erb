@@ -93,7 +93,7 @@
       <% end %>
 
       <% if signed_in? %>
-        <div id="doc-meta-edit" data-doc-meta-target="edit" style="display: none;">
+        <div class="sparc-d-none" id="doc-meta-edit" data-doc-meta-target="edit">
           <%= form_with url: update_metadata_cdef_document_path(@cdef_document), method: :patch, local: true do |f| %>
             <div class="d-flex gap-2 align-items-center flex-wrap">
               <%= f.text_field :name, value: @cdef_document.name,
@@ -110,11 +110,11 @@
       <div class="sparc-header-meta">
         <%= @cdef_document.original_filename %>
         &nbsp;&bull;&nbsp;
-        <span class="fw-semibold" style="color: <%= type_color %>;"><%= @cdef_document.cdef_type&.upcase&.tr("_", " ") || "Unknown" %></span>
+        <span class="fw-semibold sparc-accent-text <%= accent_class(type_color) %>"><%= @cdef_document.cdef_type&.upcase&.tr("_", " ") || "Unknown" %></span>
         &nbsp;&bull;&nbsp; <%= @total_controls %> controls
       </div>
       <% if @cdef_document.description.present? %>
-        <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; max-width: 600px;"><%= truncate(@cdef_document.description, length: 200) %></div>
+        <div class="sparc-color-white-45 sparc-fs-082 sparc-mt-04 sparc-maxw-600"><%= truncate(@cdef_document.description, length: 200) %></div>
       <% end %>
     </div>
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
@@ -163,26 +163,26 @@
   </div>
 
   <div class="d-flex align-items-center gap-4 flex-wrap">
-    <div class="text-center flex-shrink-0" style="min-width: 80px;">
-      <div class="sparc-score" style="color: white;"><%= @total_controls %></div>
+    <div class="text-center flex-shrink-0 sparc-minw-80px">
+      <div class="sparc-score sparc-color-white"><%= @total_controls %></div>
       <div class="sparc-score-label">Total Controls</div>
     </div>
 
     <div class="sparc-divider-v"></div>
 
-    <div class="d-flex flex-wrap gap-2" style="flex: 1;">
-      <% [["high", high_count, "#e74c3c"], ["medium", medium_count, "#f39c12"], ["low", low_count, "#3498db"], ["info", info_count, "#95a5a6"]].each do |sev, count, color| %>
+    <div class="d-flex flex-wrap gap-2 sparc-flex-1">
+      <% [["high", high_count], ["medium", medium_count], ["low", low_count], ["info", info_count]].each do |sev, count| %>
         <% next if count == 0 %>
-        <div class="summary-chip sparc-summary-chip"
+        <div class="summary-chip sparc-summary-chip sparc-border-l-3 <%= accent_class(cdef_severity_color(sev)) %>"
              data-filter-value="<%= sev %>"
              data-action="click->heatmap-chip#apply keydown.enter->heatmap-chip#apply keydown.space->heatmap-chip#apply"
              data-heatmap-chip-filter-param="<%= sev %>"
              role="button"
              tabindex="0"
              title="Click to filter: <%= sev %>"
-             style="border-left: 3px solid <%= color %>;">
+             >
           <div class="sparc-chip-count"><%= count %></div>
-          <div class="sparc-chip-label" style="text-transform: capitalize;"><%= sev %></div>
+          <div class="sparc-chip-label sparc-tt-capitalize"><%= sev %></div>
         </div>
       <% end %>
     </div>
@@ -190,9 +190,12 @@
 
   <div class="mt-3">
     <div class="sparc-progress-bar">
-      <% [["high", high_count, "#e74c3c"], ["medium", medium_count, "#f39c12"], ["low", low_count, "#3498db"], ["info", info_count, "#95a5a6"]].each do |sev, count, color| %>
+      <% [["high", high_count], ["medium", medium_count], ["low", low_count], ["info", info_count]].each do |sev, count| %>
         <% next if count == 0 %>
-        <div style="width: <%= (count * 100.0 / [severity_total, 1].max).round(3) %>%; background: <%= color %>;" title="<%= sev.capitalize %>: <%= count %>"></div>
+        <div class="sparc-bar-fill sparc-accent-bg <%= accent_class(cdef_severity_color(sev)) %>"
+             data-controller="bar"
+             data-bar-pct-value="<%= (count * 100.0 / [severity_total, 1].max).round(3) %>"
+             title="<%= sev.capitalize %>: <%= count %>"></div>
       <% end %>
     </div>
   </div>
@@ -215,7 +218,7 @@
      variant_helper: :cdef_severity_variant,
      filter_key: "severity",
      show_percentage: false,
-     legend_items: [["High", "#e74c3c"], ["Medium", "#f39c12"], ["Low", "#3498db"], ["Info", "#95a5a6"]] %>
+     legend_items: %w[high medium low info].map { |s| [s.capitalize, cdef_severity_color(s)] } %>
 
 <%# ── BASELINE COVERAGE (if linked to profile) ──────────────────── %>
 <% if @gap_analysis.present? %>
@@ -223,15 +226,16 @@
     <div class="card-body">
       <h5 class="fw-bold mb-3" id="baseline-coverage-heading">Baseline Coverage</h5>
       <div class="d-flex align-items-center gap-3 mb-2">
-        <div class="progress flex-grow-1" style="height: 1.2rem;">
+        <div class="progress flex-grow-1 sparc-h-12r">
           <%# role="progressbar" takes no accessible name from its contents, so the
               percentage rendered inside it is invisible to a screen reader — the
               control announced as "progress bar" with no name and no value. Named
               from the heading it sits under, and given the value attributes so the
               figure is announced rather than only drawn (WCAG 2.1 A/AA,
               axe rule `aria-progressbar-name`). %>
-          <div class="progress-bar <%= @gap_analysis[:coverage_pct] == 100.0 ? 'bg-success' : @gap_analysis[:coverage_pct] >= 80 ? 'bg-warning' : 'bg-danger' %>"
-               style="width: <%= @gap_analysis[:coverage_pct] %>%"
+          <div class="progress-bar sparc-bar-fill <%= @gap_analysis[:coverage_pct] == 100.0 ? 'bg-success' : @gap_analysis[:coverage_pct] >= 80 ? 'bg-warning' : 'bg-danger' %>"
+               data-controller="bar"
+               data-bar-pct-value="<%= @gap_analysis[:coverage_pct] %>"
                role="progressbar"
                aria-labelledby="baseline-coverage-heading"
                aria-valuenow="<%= @gap_analysis[:coverage_pct] %>"
@@ -241,7 +245,7 @@
           </div>
         </div>
       </div>
-      <div class="d-flex gap-4" style="font-size: 0.85rem;">
+      <div class="d-flex gap-4 sparc-fs-085">
         <span class="text-success fw-semibold"><%= @gap_analysis[:covered].size %> covered</span>
         <% if @gap_analysis[:missing].any? %>
           <span class="text-danger fw-semibold"><%= @gap_analysis[:missing].size %> missing</span>
@@ -254,10 +258,10 @@
 
       <% if @missing_controls&.any? %>
         <details class="mt-2">
-          <summary class="text-danger" style="font-size: 0.85rem; cursor: pointer;">
+          <summary class="text-danger sparc-cursor-pointer sparc-fs-085">
             Show <%= @missing_controls.size %> missing control(s)
           </summary>
-          <div class="mt-2" style="font-size: 0.82rem;">
+          <div class="mt-2 sparc-fs-082">
             <% @missing_controls.each do |mc| %>
               <div class="d-flex align-items-center gap-2 py-1 border-bottom">
                 <code class="fw-bold"><%= mc[:id] %></code>
@@ -297,8 +301,7 @@
     <%
       field_map    = control.cdef_control_fields.index_by(&:field_name)
       sev_val      = control.severity.presence || "(Unknown)"
-      sev_colors_map = { "high" => "#e74c3c", "medium" => "#f39c12", "low" => "#3498db", "info" => "#95a5a6" }
-      sev_color    = sev_colors_map[sev_val] || "#7f8c8d"
+      sev_color    = cdef_severity_color(sev_val)
       sev_variant  = cdef_severity_variant(sev_val)
       # #911 — `"".split("-").first` is nil, so the unguarded `.upcase` that was
       # here raised NoMethodError and 500'd this whole page for any CDEF holding
@@ -310,31 +313,30 @@
       description  = field_map["description"]&.field_value.presence
       cci_refs     = field_map["cci_refs"]&.field_value.presence
     %>
-    <div class="control-card"
+    <div class="control-card sparc-border-l-4 <%= accent_class(sev_color) %>"
          data-family="<%= family_code %>"
-         data-severity="<%= sev_val %>"
-         style="border-left: 4px solid <%= sev_color %>;">
+         data-severity="<%= sev_val %>">
 
       <%# ── Card header ── %>
-      <div class="d-flex justify-content-between align-items-start" style="gap: 1rem;">
-        <div style="min-width: 0; flex: 1;">
-          <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.2rem;">
+      <div class="d-flex justify-content-between align-items-start sparc-gap-1r">
+        <div class="sparc-flex-1 sparc-minw-0">
+          <div class="d-flex align-items-center gap-2 flex-wrap sparc-mb-02">
             <%# #911 — an unmapped STIG rule leads with its own identifier and
                 says so, rather than showing a bare dash where a control would be. %>
             <span class="sparc-ctrl-id">
               <%= control.control_id.presence || control.provenance_id.presence || "&mdash;".html_safe %>
             </span>
             <% if control.unmapped_stig_rule? %>
-              <span class="sparc-tag-outline fw-semibold" style="background: rgba(243,156,18,0.10); border: 1px solid rgba(243,156,18,0.35);"
+              <span class="sparc-tag-outline fw-semibold sparc-cdef-callout sparc-accent--orange"
                     title="This STIG rule resolved to no NIST control through its CCI references.">
                 Unmapped
               </span>
             <% end %>
-            <span class="sparc-status-pill sparc-status--<%= sev_variant %>" style="text-transform: capitalize;">
+            <span class="sparc-status-pill sparc-status--<%= sev_variant %> sparc-tt-capitalize">
               <%= sev_val %>
             </span>
             <% if control.stig_id.present? && control.stig_id != control.control_id && !control.unmapped_stig_rule? %>
-              <span class="sparc-tag-outline fw-semibold text-body-secondary" style="background: rgba(155,89,182,0.08); border: 1px solid rgba(155,89,182,0.2);">
+              <span class="sparc-tag-outline fw-semibold text-body-secondary sparc-cdef-tint-soft sparc-accent--purple">
                 <%= control.stig_id %>
               </span>
             <% end %>
@@ -344,11 +346,11 @@
               </span>
             <% end %>
             <% if cci_refs.present? %>
-              <span class="sparc-tag-outline fw-semibold text-body-secondary" style="background: rgba(39,174,96,0.08); border: 1px solid rgba(39,174,96,0.2); color: var(--bs-secondary-color);">
+              <span class="sparc-tag-outline fw-semibold text-body-secondary sparc-cdef-tint-soft sparc-accent--green sparc-color-secondary">
                 CCI (<%= cci_refs.split(",").map(&:strip).size %>)
               </span>
             <% end %>
-            <span class="sparc-ctrl-family" style="margin-left: 0.1rem;"><%= family_code %></span>
+            <span class="sparc-ctrl-family sparc-ml-01"><%= family_code %></span>
           </div>
           <% if control.title.present? %>
             <div class="sparc-ctrl-title"><%= control.title %></div>
@@ -357,7 +359,7 @@
       </div>
 
       <%# ── Card body: collapsed by default ── %>
-      <details class="card-details" style="margin-top: 0.35rem;">
+      <details class="card-details sparc-mt-035">
         <summary class="sparc-card-detail-toggle d-flex align-items-center gap-1">
           <span class="card-arrow sparc-card-arrow">&#9658;</span>
           <span class="sparc-card-detail-separator"></span>
@@ -367,8 +369,8 @@
           <%# Description block %>
           <% if description.present? %>
             <div class="sparc-statement-block">
-              <div class="sparc-statement-label" style="color: var(--bs-primary);">Description</div>
-              <div style="font-size: 0.84rem; color: var(--bs-body-color); line-height: 1.5;"><%= description %></div>
+              <div class="sparc-statement-label sparc-color-bs-primary">Description</div>
+              <div class="sparc-color-body sparc-fs-084 sparc-lh-15"><%= description %></div>
             </div>
           <% end %>
 
@@ -399,38 +401,38 @@
                     <%# Display mode %>
                     <div id="field-display-<%= control.control_id %>-<%= field.field_name %>">
                       <% if field.field_name == "severity" %>
-                        <span class="sparc-status-pill sparc-status--<%= cdef_severity_variant(field.field_value) %>" style="font-size: 0.75rem; font-weight: 600; text-transform: capitalize;"><%= field.field_value %></span>
+                        <span class="sparc-status-pill sparc-status--<%= cdef_severity_variant(field.field_value) %> sparc-fs-075 sparc-fw-600 sparc-tt-capitalize"><%= field.field_value %></span>
                       <% elsif field.field_name == "cci_refs" %>
-                        <div class="d-flex flex-wrap" style="gap: 0.3rem;">
+                        <div class="d-flex flex-wrap sparc-gap-03">
                           <% field.field_value.to_s.split(",").map(&:strip).each do |cci| %>
-                            <span class="rounded fw-semibold" style="background: rgba(39,174,96,0.1); border: 1px solid rgba(39,174,96,0.25); color: #27ae60; padding: 0.1rem 0.45rem; font-size: 0.72rem; font-family: monospace;"><%= cci %></span>
+                            <span class="rounded fw-semibold sparc-cdef-tint sparc-accent--green sparc-accent-text sparc-mono sparc-fs-072 sparc-p-01-045"><%= cci %></span>
                           <% end %>
                         </div>
                       <% elsif field.field_value.present? %>
-                        <div style="white-space: pre-wrap;"><%= field.field_value %></div>
+                        <div class="sparc-prewrap"><%= field.field_value %></div>
                       <% else %>
-                        <span class="text-body-tertiary fst-italic" style="font-size: 0.82rem;">Click &#x270E; to add</span>
+                        <span class="text-body-tertiary fst-italic sparc-fs-082">Click &#x270E; to add</span>
                       <% end %>
                     </div>
 
                     <%# Edit mode (hidden by default) %>
                     <% if field.editable && !@cdef_document.published_lifecycle? %>
-                      <div id="field-edit-<%= control.control_id %>-<%= field.field_name %>" style="display: none;">
+                      <div class="sparc-d-none" id="field-edit-<%= control.control_id %>-<%= field.field_name %>">
                         <% if field.select_field? %>
-                          <select id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-select form-select-sm" style="font-size: 0.82rem;">
+                          <select id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-select form-select-sm sparc-fs-082">
                             <option value="">-- Select --</option>
                             <% field.select_options&.each do |label, value| %>
                               <option value="<%= value %>" <%= 'selected' if field.field_value == value %>><%= label %></option>
                             <% end %>
                           </select>
                         <% elsif %w[implementation_narrative notes].include?(field.field_name) %>
-                          <textarea id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-control form-control-sm" rows="3" style="font-size: 0.82rem;"><%= field.field_value %></textarea>
+                          <textarea id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-control form-control-sm sparc-fs-082" rows="3"><%= field.field_value %></textarea>
                         <% else %>
-                          <input type="text" id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-control form-control-sm" value="<%= field.field_value %>" style="font-size: 0.82rem;">
+                          <input type="text" id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-control form-control-sm sparc-fs-082" value="<%= field.field_value %>">
                         <% end %>
                         <div class="mt-1 d-flex gap-1">
-                          <button type="button" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" data-action="cdef-control#saveField" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Save</button>
-                          <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" data-action="cdef-control#toggleFieldEdit" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Cancel</button>
+                          <button type="button" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm sparc-fs-075 sparc-p-015-05" data-action="cdef-control#saveField" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Save</button>
+                          <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm sparc-fs-075 sparc-p-015-05" data-action="cdef-control#toggleFieldEdit" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Cancel</button>
                         </div>
                       </div>
                     <% end %>
@@ -448,13 +450,13 @@
           <div class="mt-3" id="control-refs-<%= control.control_id %>">
             <h6 class="fw-semibold small">
               References
-              <span class="badge bg-secondary" style="font-size: 0.65rem;"><%= ctrl_resources.size %></span>
+              <span class="badge bg-secondary sparc-fs-065"><%= ctrl_resources.size %></span>
             </h6>
             <% if ctrl_resources.any? %>
               <div class="d-flex flex-wrap gap-2 mb-2" id="refs-list-<%= control.control_id %>">
                 <% ctrl_resources.each do |resource| %>
                   <% link_record = control.control_back_matter_links.find_by(back_matter_resource: resource) %>
-                  <span class="badge bg-body-secondary text-body d-inline-flex align-items-center gap-1" style="font-size: 0.78rem; font-weight: 500;">
+                  <span class="badge bg-body-secondary text-body d-inline-flex align-items-center gap-1 sparc-fs-078 sparc-fw-500">
                     <%# #897 — safe_external_url, not .href (a stored javascript: scheme survives ERB escaping). %>
                     <% if (safe_href = safe_external_url(resource.href)) %>
                       <a href="<%= safe_href %>" target="_blank" rel="noopener noreferrer" class="text-decoration-none"><%= resource.title %></a>
@@ -463,7 +465,7 @@
                     <% end %>
                     <code class="small text-body-tertiary ms-1">#<%= resource.uuid.truncate(12) %></code>
                     <% if !@cdef_document.published_lifecycle? && link_record %>
-                      <button type="button" class="btn-close btn-close-sm ms-1" style="font-size: 0.5rem;"
+                      <button type="button" class="btn-close btn-close-sm ms-1 sparc-fs-05"
                               data-action="cdef-control#unlink" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-link-id-param="<%= link_record.id %>"
                               title="Unlink"></button>
                     <% end %>
@@ -472,7 +474,7 @@
               </div>
             <% end %>
             <% if !@cdef_document.published_lifecycle? %>
-              <div id="add-ref-<%= control.control_id %>" style="display: none;" class="mb-2">
+              <div id="add-ref-<%= control.control_id %>" class="mb-2 sparc-d-none">
                 <div class="row g-2 align-items-end">
                   <div class="col-md-3">
                     <input type="text" id="ref-title-<%= control.control_id %>" class="form-control form-control-sm" placeholder="Title *">
@@ -489,7 +491,7 @@
                   </div>
                 </div>
               </div>
-              <button type="button" class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" id="add-ref-btn-<%= control.control_id %>" data-action="cdef-control#toggleAddRef" data-cdef-control-id-param="<%= control.control_id %>" style="font-size: 0.75rem;">
+              <button type="button" class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm sparc-fs-075" id="add-ref-btn-<%= control.control_id %>" data-action="cdef-control#toggleAddRef" data-cdef-control-id-param="<%= control.control_id %>">
                 + Add Reference
               </button>
             <% end %>
@@ -504,15 +506,15 @@
 <%# ── #393: CDEF statement edit modal (deep-linked via ?statement_id=N) ── %>
 <% if @editing_statement %>
   <% stmt = @editing_statement %>
-  <div id="editStatementModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;">
-    <div class="bg-body rounded-3" style="padding: 2rem; max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+  <div class="sparc-modal-overlay" id="editStatementModal">
+    <div class="bg-body rounded-3 sparc-modal-dialog">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <div class="text-body-tertiary" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;">
+          <div class="text-body-tertiary sparc-modal-eyebrow">
             Component Implementation Statement (read-only references from catalog)
           </div>
-          <h3 style="margin: 0;"><%= stmt.label.presence || stmt.statement_id %></h3>
-          <code class="text-body-secondary" style="font-size: 0.78rem;"><%= stmt.statement_id %></code>
+          <h3 class="sparc-m-0"><%= stmt.label.presence || stmt.statement_id %></h3>
+          <code class="text-body-secondary sparc-fs-078"><%= stmt.statement_id %></code>
         </div>
         <%= link_to "&times;".html_safe, cdef_document_path(@cdef_document),
               class: "text-body-secondary", style: "font-size: 1.5rem; text-decoration: none; line-height: 1;" %>
