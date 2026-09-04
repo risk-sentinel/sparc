@@ -21,13 +21,18 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
 
   # Lower this with every slice. Never raise it.
   #
+  # Slice 5 took poam_documents/show.html.erb from 72 to 0 — the largest file
+  # remaining — using the accent vocabulary slice 4 established rather than
+  # restating hexes: the item card's status border and all six hero tiles now
+  # read `var(--sparc-accent)` from a `.sparc-accent--*` class.
+  #
   # Measured 2026-09-01 on the Bundle Z branch point: 1,403 attributes across
   # 115 files, of which 1,361 are static (no ERB interpolation) and 42 are
   # dynamic. Phase 2 slice 1 took sar_documents/enrich.html.erb from 136 to 0,
   # verified against all 78 baseline screens with zero pixels changed. The static ones become theme utilities; the dynamic ones become
   # data-* attributes applied by a Stimulus controller, because a style set from
   # JavaScript is not what `style-src` blocks.
-  let(:ceiling) { 980 }
+  let(:ceiling) { 908 }
 
   # A SECOND guard, learned the hard way in slice 4.
   #

@@ -17,8 +17,16 @@ RSpec.describe "POA&M risk heat map levels (#1095)", type: :request do
 
   before { sign_in_as(user) }
 
+  # The exact <th> the heat map renders. It pins the markup deliberately — every
+  # example below is about WHICH columns exist and how they are spelled, so a
+  # substring match on the label alone would pass on any stray mention of "High".
+  #
+  # `min-width: 80px` moved out of a `style=` attribute and into
+  # `.sparc-poam-th-narrow` in the #1047 sweep (slice 5). Same cell, same width,
+  # different delivery — and the three examples that broke here are the sweep's
+  # net working: a view-only change is supposed to fail a spec that pins markup.
   def header_for(label)
-    %(<th class="text-center" style="min-width: 80px;">#{label}</th>)
+    %(<th class="text-center sparc-poam-th-narrow">#{label}</th>)
   end
 
   # One item, one tier populated. Everything else must still get a column.

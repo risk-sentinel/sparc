@@ -3398,6 +3398,13 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-mb-06 { margin-bottom: 0.6rem; }
 .sparc-flex-shrink-0 { flex-shrink: 0; }
 .sparc-minw-0 { min-width: 0; }
+.sparc-mb-03 { margin-bottom: 0.3rem; }
+.sparc-mt-02 { margin-top: 0.2rem; }
+.sparc-ml-auto { margin-left: auto; }
+.sparc-fs-15r { font-size: 1.5rem !important; }
+.sparc-prewrap { white-space: pre-wrap; }
+.sparc-border-default { border: 1px solid var(--bs-border-color); }
+.sparc-p-035-09 { padding: 0.35rem 0.9rem; }
 .sparc-gap-15r { gap: 1.5rem; }
 .sparc-gap-045 { gap: 0.45rem; }
 .sparc-divider-top { border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
@@ -3463,6 +3470,8 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-accent--purple { --sparc-accent: #9b59b6; }
 .sparc-accent--violet { --sparc-accent: #8e44ad; }
 .sparc-accent--silver { --sparc-accent: #bdc3c7; }
+.sparc-accent--carrot  { --sparc-accent: #e67e22; }  /* POA&M risk_status: investigating */
+.sparc-accent--pumpkin { --sparc-accent: #d35400; }  /* POA&M risk_status: deviation-requested */
 
 /* The shapes that consume it. */
 .sparc-border-l-3 { border-left: 3px solid var(--sparc-accent); }
@@ -3481,3 +3490,87 @@ a.link-purple { color: var(--sparc-purple); }
    `margin-top` utility: it has ONE caller, and the utility layer's own rule is
    that a value used once or twice is an inline style with extra steps. */
 .sparc-wizard-field-note { margin-top: 0.3rem; }
+
+
+/* ==========================================================================
+   #1047 slice 5 — components of the POA&M show screen.
+
+   Same rule as the enrich components above: a COMPONENT with one use is
+   normal, a UTILITY with one use is an inline style with extra steps. These
+   are named for the role each played inline.
+   ========================================================================== */
+
+/* The gradient hero. `color: white` is restated from .sparc-gradient-header,
+   which is always present on the same element — kept so the class is
+   self-sufficient and the conversion is provably identical either way. */
+.sparc-poam-hero { border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; color: white; }
+
+/* The count tiles under the hero title. */
+.sparc-poam-hero-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.75rem; }
+
+/* Tile tint, DERIVED from the accent the element already carries rather than
+   restated as rgba. Every one of the six inline colours was an accent-token
+   colour (#e74c3c #f39c12 #27ae60 #3498db #9b59b6 #e67e22), so the tile takes
+   a `.sparc-accent--*` class and this reads it — the same shape the #950
+   button system uses with `var(--sparc-action-c)`.
+
+   `color-mix(... N%, transparent)` is equivalent to the rgba it replaces:
+   mixing with transparent scales alpha to N% and leaves the channels, so
+   15% of #e74c3c IS rgba(231,76,60,0.15). Sits on top of .sparc-hero-tile,
+   whose own rgba(255,255,255,0.15) background it overrides. */
+.sparc-hero-tile--tinted {
+  background: color-mix(in srgb, var(--sparc-accent) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sparc-accent) 30%, transparent);
+}
+
+/* The items table, which scrolls horizontally inside its card. */
+.sparc-poam-table { min-width: 400px; }
+.sparc-poam-th-narrow { min-width: 80px; }
+
+/* Advisory banners above the item list. */
+/* Padding only. The amber left border is `.sparc-border-l-4` +
+   `.sparc-accent--orange` (#f39c12), not a restated hex. */
+.sparc-poam-banner { padding: 1rem 1.25rem; }
+.sparc-poam-banner-tight { padding: 0.75rem 1.25rem; }
+.sparc-tag--warning-subtle { background: var(--bs-warning-bg-subtle); color: var(--bs-warning-text-emphasis); }
+.sparc-tag--danger-subtle  { background: var(--bs-danger-bg-subtle);  color: var(--bs-danger-text-emphasis); }
+
+/* One POA&M item card. Padding only — the left border is
+   `.sparc-border-l-4` reading `var(--sparc-accent)`, set by
+   `accent_class(sc)`, which is the vocabulary slice 4 established for exactly
+   this case. Nothing here restates a hex.
+
+   Two of the six risk_status colours had no token, and `accent_class` FAILS
+   SOFT to slate, so using it unextended would have silently greyed
+   `investigating` (#e67e22) and `deviation-requested` (#d35400). Both are added
+   to ACCENT_TOKENS and to the accent list above rather than worked around. */
+.sparc-poam-item-card { padding: 1.25rem 1.5rem; }
+
+/* Item card internals. */
+.sparc-poam-item-title { margin: 0; font-size: 1.05rem; }
+.sparc-poam-item-desc { font-size: 0.88rem; margin: 0 0 0.4rem 0; white-space: pre-wrap; }
+.sparc-mono-600 { font-family: monospace; font-weight: 600; }
+
+/* A quoted block (remediation plan, comments) inside an item. */
+.sparc-poam-quote { border-left: 3px solid var(--bs-border-color); padding: 0.4rem 0.7rem; }
+.sparc-poam-quote-body { white-space: pre-wrap; margin-top: 0.2rem; }
+.sparc-poam-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* The collapsible child-entity sections (risks, observations, findings). */
+.sparc-poam-summary { cursor: pointer; font-size: 0.82rem; margin-bottom: 0.75rem; user-select: none; }
+
+/* A child entity rendered as a sub-card. Two paddings, one border. */
+.sparc-poam-subcard { border: 1px solid var(--bs-border-color); padding: 0.6rem 0.8rem; }
+.sparc-poam-subcard--tight { border: 1px solid var(--bs-border-color); padding: 0.5rem 0.8rem; }
+
+/* An italic quoted line inside a sub-card. */
+.sparc-poam-subquote { font-size: 0.8rem; font-style: italic; margin-bottom: 0.3rem; padding-left: 0.5rem; border-left: 2px solid var(--bs-border-color); }
+
+/* Faint tinted notes nested inside a risk sub-card. Tint derived from the
+   accent class on the element, as above; the two differ only in padding. */
+.sparc-poam-note {
+  background: color-mix(in srgb, var(--sparc-accent) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sparc-accent) 15%, transparent);
+}
+.sparc-poam-note--roomy { padding: 0.4rem 0.6rem; }
+.sparc-poam-note--tight { padding: 0.3rem 0.5rem; }

@@ -216,7 +216,11 @@ module ApplicationHelper
     "#2ecc71"       => "emerald",
     "#9b59b6"       => "purple",
     "#8e44ad"       => "violet",
-    "#bdc3c7"       => "silver"
+    "#bdc3c7"       => "silver",
+    # POA&M risk_status uses two oranges the other status maps do not: without
+    # these, accent_class falls back to slate and silently greys them.
+    "#e67e22"       => "carrot",
+    "#d35400"       => "pumpkin"
   }.freeze
 
   # `accent_class(ssp_status_color(status))` -> "sparc-accent--green".
