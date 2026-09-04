@@ -74,11 +74,11 @@ findings:
     Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the
     image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
     SEVERITY CORRECTED MEDIUM -> LOW: MEDIUM was the grading of the DEBIAN artifact this entry used to
-    describe, which is not in the image. LOW is how grype 0.114.0 grades the artifact that IS present.'
+    describe, which is not in the image. LOW is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
+  next_review_date: '2026-09-25'
   superseded_debian_finding: dirmngr 2.2.40-1.1+deb12u2 (removed with the Debian base image)
 - cve_id: CVE-2025-68972
   package: gnupg2
@@ -93,11 +93,11 @@ findings:
     2.3.3-5.el9_7 [rpm]. Rewritten to describe what the image actually contains; discovery_date is the
     date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8).
     Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the
-    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
+    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
+  next_review_date: '2026-09-25'
   superseded_debian_finding: dirmngr 2.2.40-1.1+deb12u2 (removed with the Debian base image)
 - cve_id: CVE-2023-50495
   package: ncurses-base/ncurses-libs
@@ -114,11 +114,11 @@ findings:
     RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
     the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
     SEVERITY CORRECTED MEDIUM -> LOW: MEDIUM was the grading of the DEBIAN artifact this entry used to
-    describe, which is not in the image. LOW is how grype 0.114.0 grades the artifact that IS present.'
+    describe, which is not in the image. LOW is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
+  next_review_date: '2026-09-25'
   superseded_debian_finding: libncursesw6 6.4-4 (removed with the Debian base image)
 - cve_id: CVE-2026-4105
   package: systemd-libs
@@ -133,11 +133,11 @@ findings:
     252-67.el9_8.4 [rpm]. Rewritten to describe what the image actually contains; discovery_date is the
     date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8).
     Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the
-    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
+    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
+  next_review_date: '2026-09-25'
   superseded_debian_finding: libsystemd0 252.39-1~deb12u1 (removed with the Debian base image)
 - cve_id: CVE-2026-27171
   package: zlib
@@ -154,11 +154,11 @@ findings:
     (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until
     this is fixed or documented as having no upstream fix (owner, 2026-08-20). SEVERITY CORRECTED MEDIUM
     -> LOW: MEDIUM was the grading of the DEBIAN artifact this entry used to describe, which is not in
-    the image. LOW is how grype 0.114.0 grades the artifact that IS present.'
+    the image. LOW is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
+  next_review_date: '2026-09-25'
   superseded_debian_finding: zlib1g 1:1.2.13.dfsg-1 (removed with the Debian base image)
 - cve_id: CVE-2022-3219
   package: gnupg2
@@ -173,11 +173,11 @@ findings:
     2.3.3-5.el9_7 [rpm]. Rewritten to describe what the image actually contains; discovery_date is the
     date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8).
     Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the
-    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
+    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
+  next_review_date: '2026-09-25'
   superseded_debian_finding: dirmngr 2.2.40-1.1+deb12u2 (removed with the Debian base image)
 - cve_id: CVE-2022-27943
   package: libgcc/libstdc++
@@ -192,11 +192,11 @@ findings:
     11.5.0-14.el9 [rpm]; libstdc++ 11.5.0-14.el9 [rpm]. Rewritten to describe what the image actually
     contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
     RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
+    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
+  next_review_date: '2026-09-25'
   superseded_debian_finding: gcc-12-base 12.2.0-14+deb12u1 (removed with the Debian base image)
 - cve_id: CVE-2026-22185
   package: openldap
@@ -213,11 +213,11 @@ findings:
     none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image
     is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). SEVERITY
     CORRECTED LOW -> MEDIUM: LOW was the grading of the DEBIAN artifact this entry used to describe, which
-    is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present.'
+    is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
+  next_review_date: '2026-09-25'
   superseded_debian_finding: libldap-2.5-0 2.5.13+dfsg-5 (removed with the Debian base image)
 - cve_id: CVE-2025-70873
   package: sqlite-libs
@@ -232,11 +232,11 @@ findings:
     3.34.1-10.el9_8 [rpm]. Rewritten to describe what the image actually contains; discovery_date is the
     date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8).
     Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the
-    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).'
+    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
+  next_review_date: '2026-09-25'
   superseded_debian_finding: libsqlite3-0 3.40.1-2+deb12u2 (removed with the Debian base image)
 - cve_id: CVE-2026-27456
   package: libblkid/libmount/libsmartcols/libuuid
@@ -254,11 +254,11 @@ findings:
     Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until this is fixed
     or documented as having no upstream fix (owner, 2026-08-20). SEVERITY CORRECTED INFORMATIONAL -> MEDIUM:
     INFORMATIONAL was the grading of the DEBIAN artifact this entry used to describe, which is not in
-    the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present.'
+    the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
+  next_review_date: '2026-09-25'
   superseded_debian_finding: bsdutils 1:2.38.1-5+deb12u3 (removed with the Debian base image)
 - cve_id: CVE-2026-34743
   package: xz-libs
@@ -275,11 +275,11 @@ findings:
     (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until
     this is fixed or documented as having no upstream fix (owner, 2026-08-20). SEVERITY CORRECTED INFORMATIONAL
     -> MEDIUM: INFORMATIONAL was the grading of the DEBIAN artifact this entry used to describe, which
-    is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present.'
+    is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-09-03'
+  next_review_date: '2026-09-25'
   superseded_debian_finding: liblzma5 5.4.1-1 (removed with the Debian base image)
 - cve_id: CVE-2026-53613
   package: libblkid/libmount/libsmartcols/libuuid
