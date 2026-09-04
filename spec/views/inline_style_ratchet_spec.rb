@@ -21,6 +21,14 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
 
   # Lower this with every slice. Never raise it.
   #
+  # Slice 7 took sar_documents/show.html.erb from 39 to 0, and found a codemod
+  # blind spot worth writing down: a tag regex of `<tag[^>]*?>` truncates on a
+  # literal `>` INSIDE an attribute value, and Stimulus actions contain one —
+  # `data-action="change->nav-select#go"`. The `<select>` carrying it was
+  # silently skipped, and only the repo-wide count disagreeing with the expected
+  # drop revealed it. Five more elements repo-wide have an action arrow before a
+  # `style=`; mask attribute VALUES, not just ERB, before scanning tags.
+  #
   # Slice 6 took cdef_documents/show.html.erb from 47 to 0, reusing the modal
   # trio (.sparc-modal-overlay/-dialog/-eyebrow) that already existed rather
   # than minting duplicates, and routing all five DYNAMIC styles through the
@@ -37,7 +45,7 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # verified against all 78 baseline screens with zero pixels changed. The static ones become theme utilities; the dynamic ones become
   # data-* attributes applied by a Stimulus controller, because a style set from
   # JavaScript is not what `style-src` blocks.
-  let(:ceiling) { 861 }
+  let(:ceiling) { 822 }
 
   # A SECOND guard, learned the hard way in slice 4.
   #

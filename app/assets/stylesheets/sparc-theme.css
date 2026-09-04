@@ -3413,6 +3413,8 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-h-12r { height: 1.2rem; }
 .sparc-mono { font-family: monospace; }
 .sparc-color-white-45 { color: rgba(255, 255, 255, 0.45); }
+.sparc-minw-6r { min-width: 6rem; }
+.sparc-p-085-1r { padding: 0.85rem 1rem; }
 .sparc-gap-15r { gap: 1.5rem; }
 .sparc-gap-045 { gap: 0.45rem; }
 .sparc-divider-top { border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
@@ -3604,3 +3606,43 @@ a.link-purple { color: var(--sparc-purple); }
   background: color-mix(in srgb, var(--sparc-accent) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--sparc-accent) 25%, transparent);
 }
+
+
+/* ==========================================================================
+   #1047 slice 7 — components of the SAR show screen.
+   ========================================================================== */
+
+/* The objective modal is NARROWER and shorter than the one on the CDEF screen.
+   A modifier rather than a second dialog: the shared shape stays in
+   .sparc-modal-dialog, and only the two values that actually differ live here.
+   Declared after it so equal specificity resolves this way. */
+.sparc-modal-dialog--narrow { max-width: 600px; max-height: 80vh; }
+
+/* Section eyebrow above the assessment metadata. Wider tracking than
+   .sparc-modal-eyebrow (0.08em vs 0.04em), which is why it is not that class. */
+.sparc-sar-eyebrow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color); white-space: nowrap; }
+
+/* The section jump control in the header. */
+.sparc-nav-select-control { padding: 0.35rem 0.6rem; border-radius: 6px; border: 1px solid var(--bs-border-color); background: var(--bs-secondary-bg); color: var(--bs-body-color); font-size: 0.82rem; cursor: pointer; min-width: 180px; max-width: 360px; }
+
+/* A row-header cell that should read as a label, not a heading. */
+.sparc-th-plain { font-weight: 400; text-align: left; }
+
+/* Undo the inherited label treatment for an inline value. */
+.sparc-label-reset { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.sparc-label-reset--sm { font-weight: 400; font-size: 0.7rem; text-transform: none; letter-spacing: 0; margin-left: 0.4rem; }
+
+/* The per-control objective panel, revealed by the inline editor. `display:
+   none` is NOT baked in here — it is state, and belongs to .sparc-d-none, which
+   is what setVisible() toggles. Baking it into a component class is the defect
+   that hid both edit panels on the document show pages. */
+.sparc-objective-panel { margin-top: 0.75rem; border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
+
+/* A quiet <summary> that does not look like a button. */
+.sparc-details-summary { font-size: 0.8rem; color: var(--bs-tertiary-color); cursor: pointer; padding: 0.35rem 0; user-select: none; }
+
+/* An unstyled-looking button inside the modal. */
+.sparc-btn-plain { background: var(--bs-secondary-bg); color: var(--bs-secondary-color); border: 1px solid var(--bs-border-color); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem; }
+
+/* The pass-rate score tile in the header. */
+.sparc-score-tile { text-align: center; min-width: 80px; flex-shrink: 0; }
