@@ -293,7 +293,7 @@
 
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
 <div id="controlsContainer">
-  <% @controls.each do |control| %>
+  <% @controls.sort_by { |c| CdefControl.control_sort_key(c.control_id) }.each do |control| %>
     <%
       field_map    = control.cdef_control_fields.index_by(&:field_name)
       sev_val      = control.severity.presence || "(Unknown)"

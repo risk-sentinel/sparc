@@ -59,7 +59,7 @@ class SspDocument < ApplicationRecord
               href:     :import_profile_href,
               controls: :ssp_controls,
               message:  { label:   "profile",
-                          remedy:  "PATCH /api/v1/ssp_documents/:id { profile_document_id }",
+                          remedy:  "Choose the profile whose baseline these controls were selected from.",
                           options: "/api/v1/profile_documents" }
   has_many :sar_documents, dependent: :nullify
   has_many :ssp_document_cdef_documents, dependent: :delete_all

@@ -20,6 +20,8 @@
 #   AU-12 (audit record generation), CA-5 (plan of action and milestones)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class Api::V1::PoamRisksController < Api::V1::BaseController
+  include RiskCollectionParams
+
   before_action :set_document, only: %i[index create]
   before_action :set_risk,     only: %i[show update destroy]
   before_action :authorize_read!,  only: %i[index show]
@@ -90,7 +92,10 @@ class Api::V1::PoamRisksController < Api::V1::BaseController
   def risk_params
     permit_strictly(:poam_risk,
       :uuid, :title, :description, :statement, :status,
-      :deadline, :likelihood, :impact, :remarks
+      :deadline, :likelihood, :impact, :remarks,
+      # #1092 — see RiskCollectionParams. No `remediations_data` here: POA&M
+      # responses are real rows (`poam_remediations`), not jsonb.
+      **risk_collection_filters
     )
   end
 
@@ -117,6 +122,13 @@ class Api::V1::PoamRisksController < Api::V1::BaseController
       data[:description] = risk.description
       data[:statement] = risk.statement
       data[:remarks] = risk.remarks
+      # #1092 — round-trip visibility: a client that can WRITE these must be
+      # able to read back what it wrote, and an integrator needs to see what
+      # arrived on import before deciding what to amend.
+      data[:threat_ids] = risk.threat_ids_data
+      data[:mitigating_factors] = risk.mitigating_factors_data
+      data[:origins] = risk.origins_data
+      data[:risk_log] = risk.risk_log_data
       data[:created_at] = risk.created_at.iso8601
       data[:updated_at] = risk.updated_at.iso8601
     end

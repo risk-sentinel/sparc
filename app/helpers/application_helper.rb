@@ -192,6 +192,40 @@ module ApplicationHelper
     LABEL_NOT_APPLICABLE        => "#bdc3c7"
   }.freeze
 
+  # #1047 — a decorative colour delivered as a CLASS instead of an interpolated
+  # `style=`, which does not survive removing `style-src 'unsafe-inline'`.
+  #
+  # KEYED ON THE HEX, not on the status. Keying it on the semantic variant would
+  # have been tidier and would have changed what renders: `*_status_color` falls
+  # back to COLOR_GRAY_DARK (#7f8c8d) for an unrecognised status, while
+  # `*_status_variant` falls back to "neutral", which is COLOR_GRAY (#95a5a6).
+  # Same input, different colour — a silent shade change on exactly the rows
+  # whose data is unexpected. Taking the hex the existing helper already returned
+  # makes the mapping exact by construction: the colour cannot drift, because it
+  # is the same value, only delivered differently.
+  #
+  # An unmapped hex falls back to `slate`, which IS COLOR_GRAY_DARK, so an
+  # unrecognised colour degrades to the same grey the helpers already use.
+  ACCENT_TOKENS = {
+    COLOR_GREEN     => "green",
+    COLOR_BLUE      => "blue",
+    COLOR_ORANGE    => "orange",
+    COLOR_RED       => "red",
+    COLOR_GRAY      => "gray",
+    COLOR_GRAY_DARK => "slate",
+    "#2ecc71"       => "emerald",
+    "#9b59b6"       => "purple",
+    "#8e44ad"       => "violet",
+    "#bdc3c7"       => "silver"
+  }.freeze
+
+  # `accent_class(ssp_status_color(status))` -> "sparc-accent--green".
+  # Pair with .sparc-border-l-3 / -4 / .sparc-accent-text / .sparc-accent-bg,
+  # which read `var(--sparc-accent)`.
+  def accent_class(hex)
+    "sparc-accent--#{ACCENT_TOKENS[hex] || 'slate'}"
+  end
+
   def ssp_status_color(status, _count = 0)
     SSP_STATUS_COLORS[status] || COLOR_GRAY_DARK
   end

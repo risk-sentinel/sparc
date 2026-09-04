@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { isVisible } from "controllers/visibility"
 
 // Stimulus controller for the smart publication modal.
 //
@@ -241,7 +242,7 @@ export default class PublishModalController extends Controller {
       formData.append("authenticity_token", this.csrfTokenValue)
 
       // Gather inline fixes if the fix fields are visible
-      if (this.fixFieldsTarget.style.display !== "none") {
+      if (isVisible(this.fixFieldsTarget)) {  // #1047 — computed, not the attribute
         const creatorName = this.hasCreatorNameTarget ? this.creatorNameTarget.value.trim() : ""
         const contactName = this.hasContactNameTarget ? this.contactNameTarget.value.trim() : ""
         const contactEmail = this.hasContactEmailTarget ? this.contactEmailTarget.value.trim() : ""

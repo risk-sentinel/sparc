@@ -8,12 +8,12 @@
   <%= form_with url: create_ato_package_authorization_boundary_path(@authorization_boundary), method: :post, local: true, data: { controller: "ato-wizard" } do |f| %>
 
     <%# ── Step 1: Confirm Authorization Boundary ── %>
-    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span class="sparc-status--info" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">1</span>
+    <details open class="mb-3 border rounded-3 sparc-wizard-step">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
+        <span class="sparc-status--info sparc-wizard-step-number">1</span>
         Confirm Authorization Boundary
       </summary>
-      <div style="padding: 1rem 1.25rem;">
+      <div class="sparc-wizard-step-body">
         <div class="mb-2">
           <strong>Name:</strong> <%= @authorization_boundary.name %>
         </div>
@@ -27,7 +27,7 @@
           <strong>Members:</strong> <%= @memberships.count %>
         </div>
         <% if @missing_roles.any? %>
-          <div class="alert alert-warning mt-3" style="font-size: 0.88rem;">
+          <div class="alert alert-warning mt-3 sparc-fs-088">
             <strong>Missing Roles:</strong> The following roles have not been assigned:
             <ul class="mb-0 mt-1">
               <% @missing_roles.each do |role| %>
@@ -40,28 +40,28 @@
     </details>
 
     <%# ── Step 2: Select Baseline / Profile ── %>
-    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span class="sparc-status--success" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">2</span>
+    <details open class="mb-3 border rounded-3 sparc-wizard-step">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
+        <span class="sparc-status--success sparc-wizard-step-number">2</span>
         Select Baseline / Profile
       </summary>
-      <div style="padding: 1rem 1.25rem;">
+      <div class="sparc-wizard-step-body">
         <%= hidden_field_tag :profile_mode, "skip", id: "profile_mode" %>
 
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="profile_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="profile" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing Profile</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="profile_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="profile" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Select Existing Profile</span>
           </label>
         </div>
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="profile_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="profile" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="profile_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="profile" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Skip</span>
           </label>
         </div>
 
-        <div id="profile_select_existing_panel" style="display: none; margin-top: 0.75rem;">
+        <div id="profile_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
           <% if @profiles.any? %>
             <div class="form-group">
               <label for="profile_document_id">Profile</label>
@@ -71,12 +71,12 @@
                     class: "form-control" %>
             </div>
           <% else %>
-            <p class="sparc-heading-danger" style="font-size: 0.88rem;">
+            <p class="sparc-heading-danger sparc-fs-088">
               No completed profiles found. Please
               <%= link_to "upload a Profile", new_profile_document_path %> first.
             </p>
           <% end %>
-          <small class="text-body-secondary d-block" style="margin-top: 0.3rem;">
+          <small class="text-body-secondary d-block sparc-wizard-field-note">
             Controls from this profile will feed into SSP, SAP, and SAR creation.
           </small>
         </div>
@@ -84,38 +84,38 @@
     </details>
 
     <%# ── Step 3: Select Components (CDEFs) ── %>
-    <details class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span class="sparc-status--orange" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">3</span>
+    <details class="mb-3 border rounded-3 sparc-wizard-step">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
+        <span class="sparc-status--orange sparc-wizard-step-number">3</span>
         Select Components (CDEFs)
       </summary>
-      <div style="padding: 1rem 1.25rem;">
+      <div class="sparc-wizard-step-body">
         <%= hidden_field_tag :cdef_mode, "skip", id: "cdef_mode" %>
 
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="cdef_radio" value="select" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="cdef" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Select Components</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="cdef_radio" value="select" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="cdef" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Select Components</span>
           </label>
         </div>
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="cdef_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="cdef" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="cdef_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="cdef" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Skip</span>
           </label>
         </div>
 
-        <div id="cdef_select_panel" style="display: none; margin-top: 0.75rem;">
+        <div id="cdef_select_panel" class="sparc-wizard-step-panel sparc-d-none">
           <% if @cdefs.any? %>
-            <p class="text-body-secondary" style="font-size: 0.88rem; margin-bottom: 0.75rem;">
+            <p class="text-body-secondary sparc-wizard-step-hint">
               Select CDEFs to include as components in the ATO package.
             </p>
             <% @cdefs.each do |cdef| %>
-              <label class="d-flex align-items-center gap-2 border rounded-2 bg-body" style="padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; cursor: pointer;" for="cdef_document_id_<%= cdef.id %>">
+              <label class="d-flex align-items-center gap-2 border rounded-2 bg-body sparc-wizard-option" for="cdef_document_id_<%= cdef.id %>">
                 <%= check_box_tag "cdef_document_ids[]", cdef.id, false, id: "cdef_document_id_#{cdef.id}", style: "width: 16px; height: 16px;", "aria-label": "Include component #{cdef.name}" %>
                 <div>
-                  <div class="fw-semibold" style="font-size: 0.88rem;"><%= cdef.name %></div>
-                  <div class="text-body-secondary" style="font-size: 0.75rem;">
+                  <div class="fw-semibold sparc-fs-088"><%= cdef.name %></div>
+                  <div class="text-body-secondary sparc-fs-075">
                     <%= cdef.cdef_controls.count %> controls
                     <% if cdef.description.present? %>
                       &mdash; <%= truncate(cdef.description, length: 80) %>
@@ -125,7 +125,7 @@
               </label>
             <% end %>
           <% else %>
-            <p class="text-body-secondary" style="font-size: 0.88rem;">
+            <p class="text-body-secondary sparc-fs-088">
               No completed CDEFs found. You can
               <%= link_to "upload a CDEF", new_cdef_document_path %> first, or skip this step.
             </p>
@@ -135,34 +135,34 @@
     </details>
 
     <%# ── Step 4: System Security Plan (SSP) ── %>
-    <details class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span class="sparc-status--danger" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">4</span>
+    <details class="mb-3 border rounded-3 sparc-wizard-step">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
+        <span class="sparc-status--danger sparc-wizard-step-number">4</span>
         System Security Plan (SSP)
       </summary>
-      <div style="padding: 1rem 1.25rem;">
+      <div class="sparc-wizard-step-body">
         <%= hidden_field_tag :ssp_mode, "skip", id: "ssp_mode" %>
 
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="ssp_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="ssp" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Create New SSP</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="ssp_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="ssp" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Create New SSP</span>
           </label>
         </div>
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="ssp_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="ssp" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing SSP</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="ssp_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="ssp" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Select Existing SSP</span>
           </label>
         </div>
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="ssp_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="ssp" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="ssp_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="ssp" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Skip</span>
           </label>
         </div>
 
-        <div id="ssp_create_new_panel" style="display: none; margin-top: 0.75rem;">
+        <div id="ssp_create_new_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="ssp_name">SSP Name <span class="sparc-required">*</span></label>
             <%= text_field_tag :ssp_name, nil, class: "form-control", placeholder: "e.g., My System SSP" %>
@@ -210,7 +210,7 @@
           </div>
         </div>
 
-        <div id="ssp_select_existing_panel" style="display: none; margin-top: 0.75rem;">
+        <div id="ssp_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="ssp_document_id">Existing SSP</label>
             <%= select_tag :ssp_document_id,
@@ -223,34 +223,34 @@
     </details>
 
     <%# ── Step 5: Security Assessment Plan (SAP) ── %>
-    <details class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span class="sparc-status--purple" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">5</span>
+    <details class="mb-3 border rounded-3 sparc-wizard-step">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
+        <span class="sparc-status--purple sparc-wizard-step-number">5</span>
         Security Assessment Plan (SAP)
       </summary>
-      <div style="padding: 1rem 1.25rem;">
+      <div class="sparc-wizard-step-body">
         <%= hidden_field_tag :sap_mode, "skip", id: "sap_mode" %>
 
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="sap_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sap" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Create New SAP</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="sap_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sap" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Create New SAP</span>
           </label>
         </div>
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="sap_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sap" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing SAP</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="sap_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sap" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Select Existing SAP</span>
           </label>
         </div>
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="sap_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sap" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="sap_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sap" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Skip</span>
           </label>
         </div>
 
-        <div id="sap_create_new_panel" style="display: none; margin-top: 0.75rem;">
+        <div id="sap_create_new_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="sap_name">SAP Name <span class="sparc-required">*</span></label>
             <%= text_field_tag :sap_name, nil, class: "form-control", placeholder: "e.g., Annual Security Assessment Plan" %>
@@ -278,7 +278,7 @@
           </div>
         </div>
 
-        <div id="sap_select_existing_panel" style="display: none; margin-top: 0.75rem;">
+        <div id="sap_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="sap_document_id">Existing SAP</label>
             <%= select_tag :sap_document_id,
@@ -291,34 +291,34 @@
     </details>
 
     <%# ── Step 6: Security Assessment Results (SAR) ── %>
-    <details class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span class="sparc-status--info" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">6</span>
+    <details class="mb-3 border rounded-3 sparc-wizard-step">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
+        <span class="sparc-status--info sparc-wizard-step-number">6</span>
         Security Assessment Results (SAR)
       </summary>
-      <div style="padding: 1rem 1.25rem;">
+      <div class="sparc-wizard-step-body">
         <%= hidden_field_tag :sar_mode, "skip", id: "sar_mode" %>
 
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="sar_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sar" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Create New SAR</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="sar_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sar" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Create New SAR</span>
           </label>
         </div>
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="sar_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sar" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing SAR</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="sar_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sar" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Select Existing SAR</span>
           </label>
         </div>
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="sar_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sar" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="sar_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sar" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Skip</span>
           </label>
         </div>
 
-        <div id="sar_create_new_panel" style="display: none; margin-top: 0.75rem;">
+        <div id="sar_create_new_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="sar_name">SAR Name <span class="sparc-required">*</span></label>
             <%= text_field_tag :sar_name, nil, class: "form-control", placeholder: "e.g., Annual Assessment Results" %>
@@ -339,7 +339,7 @@
           </div>
         </div>
 
-        <div id="sar_select_existing_panel" style="display: none; margin-top: 0.75rem;">
+        <div id="sar_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="sar_document_id">Existing SAR</label>
             <%= select_tag :sar_document_id,
@@ -352,34 +352,34 @@
     </details>
 
     <%# ── Step 7: Plan of Action & Milestones (POA&M) ── %>
-    <details class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span class="sparc-status--neutral" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">7</span>
+    <details class="mb-3 border rounded-3 sparc-wizard-step">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
+        <span class="sparc-status--neutral sparc-wizard-step-number">7</span>
         Plan of Action &amp; Milestones (POA&amp;M)
       </summary>
-      <div style="padding: 1rem 1.25rem;">
+      <div class="sparc-wizard-step-body">
         <%= hidden_field_tag :poam_mode, "skip", id: "poam_mode" %>
 
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="poam_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="poam" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Create New POA&amp;M</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="poam_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="poam" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Create New POA&amp;M</span>
           </label>
         </div>
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="poam_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="poam" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing POA&amp;M</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="poam_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="poam" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Select Existing POA&amp;M</span>
           </label>
         </div>
         <div class="mb-2">
-          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="poam_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="poam" style="width: 16px; height: 16px;">
-            <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
+          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+            <input type="radio" name="poam_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="poam" class="sparc-icon-16">
+            <span class="fw-semibold sparc-fs-088">Skip</span>
           </label>
         </div>
 
-        <div id="poam_create_new_panel" style="display: none; margin-top: 0.75rem;">
+        <div id="poam_create_new_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="poam_name">POA&amp;M Name <span class="sparc-required">*</span></label>
             <%= text_field_tag :poam_name, nil, class: "form-control", placeholder: "e.g., FY2026 Plan of Action & Milestones" %>
@@ -390,7 +390,7 @@
           </div>
         </div>
 
-        <div id="poam_select_existing_panel" style="display: none; margin-top: 0.75rem;">
+        <div id="poam_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
             <label for="poam_document_id">Existing POA&amp;M</label>
             <%= select_tag :poam_document_id,
@@ -403,13 +403,13 @@
     </details>
 
     <%# ── Step 8: Review & Submit ── %>
-    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span class="sparc-status--purple" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">8</span>
+    <details open class="mb-3 border rounded-3 sparc-wizard-step">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
+        <span class="sparc-status--purple sparc-wizard-step-number">8</span>
         Review &amp; Submit
       </summary>
-      <div style="padding: 1rem 1.25rem;">
-        <p class="text-body-secondary mb-3" style="font-size: 0.88rem;">
+      <div class="sparc-wizard-step-body">
+        <p class="text-body-secondary mb-3 sparc-fs-088">
           Review your selections above, then click "Build ATO Package" to assemble the Authority to Operate package.
           Selected artifacts will be linked to this authorization boundary. New artifacts will be created with the
           details you provided. You can edit individual artifacts after the package is built.

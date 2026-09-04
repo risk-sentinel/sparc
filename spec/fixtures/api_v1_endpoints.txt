@@ -35,6 +35,7 @@ DELETE /api/v1/profile_documents/:id
 DELETE /api/v1/roles/:id
 DELETE /api/v1/sap_documents/:id
 DELETE /api/v1/sar_documents/:id
+DELETE /api/v1/sar_risks/:id
 DELETE /api/v1/scanner_findings/:scanner_finding_id/disposition
 DELETE /api/v1/service_accounts/:id
 DELETE /api/v1/ssp_documents/:id
@@ -141,6 +142,8 @@ GET /api/v1/sap_documents/:id/export
 GET /api/v1/sar_documents
 GET /api/v1/sar_documents/:id
 GET /api/v1/sar_documents/:id/export
+GET /api/v1/sar_documents/:sar_document_id/risks
+GET /api/v1/sar_risks/:id
 GET /api/v1/scanner_findings/:id
 GET /api/v1/scanner_findings/:scanner_finding_id/disposition
 GET /api/v1/service_accounts
@@ -183,6 +186,7 @@ PATCH /api/v1/profile_documents/:profile_document_id/parameters
 PATCH /api/v1/roles/:id
 PATCH /api/v1/sap_documents/:id
 PATCH /api/v1/sar_documents/:id
+PATCH /api/v1/sar_risks/:id
 PATCH /api/v1/service_accounts/:id
 PATCH /api/v1/ssp_documents/:id
 PATCH /api/v1/ssp_documents/:ssp_document_id/components/:id
@@ -271,6 +275,7 @@ POST /api/v1/sap_documents/import
 POST /api/v1/sar_documents
 POST /api/v1/sar_documents/:id/fields/import/confirm
 POST /api/v1/sar_documents/:id/fields/import/preview
+POST /api/v1/sar_documents/:sar_document_id/risks
 POST /api/v1/sar_documents/convert
 POST /api/v1/scanner_findings/:scanner_finding_id/disposition
 POST /api/v1/scanner_findings/:scanner_finding_id/disposition/approve
@@ -320,6 +325,7 @@ PUT /api/v1/roles/:id
 PUT /api/v1/sap_documents/:id
 PUT /api/v1/sar_documents/:id
 PUT /api/v1/sar_documents/:id/update_fields
+PUT /api/v1/sar_risks/:id
 PUT /api/v1/service_accounts/:id
 PUT /api/v1/ssp_documents/:id
 PUT /api/v1/ssp_documents/:id/update_fields

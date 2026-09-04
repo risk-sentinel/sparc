@@ -43,6 +43,14 @@
 # something. Fix the finding, or take a disposition through the register with a
 # real approval.
 #
+# 2026-09-03 — CVE-2026-80212/-80213 put a HIGH back on `resolv 0.7.1`, the very
+# version that closed the four above. There was no Ruby to move to this time, so
+# the band was NOT raised and nothing was dispositioned: bin/prune-shadowed-gems.rb
+# gained a measured allowlist and now removes the shadowed DEFAULT copy, gemspec
+# and code together, because the Gemfile's `resolv >= 0.7.2` pin means Bundler
+# already loads a complete replacement. The residual is 0 because the vulnerable
+# code left the image — the same standard #1065 was held to.
+#
 # ONE KNOWN RESIDUAL, deliberately not gated here: `json`. Ruby 3.4.10 still
 # ships json 2.9.1 on disk (CVE-2026-54696, fixed upstream in 2.19.9). It does
 # not appear in this gate because the scan is `--severity CRITICAL,HIGH` and

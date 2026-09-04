@@ -32,7 +32,7 @@
 #     lineage_via :profile_document,
 #                 href:    :import_profile_href,
 #                 label:   "profile",
-#                 remedy:  "PATCH /api/v1/ssp_documents/:id { profile_document_id }",
+#                 remedy:  "Choose the profile whose baseline these controls were selected from.",
 #                 options: "/api/v1/profile_documents"
 #   end
 #
@@ -81,9 +81,20 @@ module CatalogLineage
     #   references. Until it has some, there is nothing to reconcile.
     # @param message [Hash] what a human and an integrator are told:
     #   `label:` the prose name of the baseline ("assessment plan"),
-    #   `remedy:` the action that fixes it, `options:` where to find candidates.
+    #   `remedy:` what a PERSON should do, in plain language, and
+    #   `options:` where to find candidates.
     #   Grouped because the three are one concern — the reported wording — and
     #   splitting them pushed this signature past a readable arity.
+    #
+    #   **A remedy NEVER contains an API endpoint.** It is rendered in the
+    #   product UI, where an endpoint is noise to the compliance officer reading
+    #   it and an affordance they cannot use. Integrators read the API reference,
+    #   not a banner. Every remedy here used to BE the call — the UI told a user
+    #   to "PATCH /api/v1/sar_documents/:id { sap_document_id }" — and the banner
+    #   partial had already stripped the "API:" prefix and <code> styling saying
+    #   "API affordances do not belong in the product UI", but the strings
+    #   themselves were left, so it shipped anyway. Guarded by
+    #   spec/models/lineage_remedy_wording_spec.rb.
     def lineage_via(*associations, key:, message:, controls: nil,
                     href: nil, traceable_via: [], mode: :all)
       self.lineage_control_association = controls if controls

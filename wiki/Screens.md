@@ -526,7 +526,9 @@ Summary tiles. Lists all assessment plans. "Create New" button, "Upload" for JSO
 | **Controller** | `SapDocumentsController#show` |
 | **Auth** | Required |
 
-Controls organized by family with assessment method heatmap. Editable metadata via inline toggle. Export buttons: OSCAL (validated/unvalidated), JSON.
+Controls organized by family, in NIST catalog order within each family, with the assessment method heatmap. Editable metadata via inline toggle. Export buttons: OSCAL (validated/unvalidated), JSON.
+
+As on the SAR (#1046), the duplicate "Assessment Status by Control Family (Objective Rollup)" heatmap was removed; the method heatmap is the only family grid on this screen.
 
 #### SAR List
 
@@ -566,9 +568,9 @@ Summary tiles: total SARs, total controls, pass/fail counts. Table listing all a
 
 4. **Active filter banner**: Shows current filter state ("Showing X of Y controls") with a "Clear All" link.
 
-5. **Results heatmap** -- interactive grid by family, color-coded by result status. Server-side link mode for family/status filtering via URL parameters.
+5. **Results by Control Family heatmap** -- interactive grid by family, color-coded by result status. Server-side link mode for family/status filtering via URL parameters. `family` is matched case-insensitively, so a hand-typed or API-built `?family=ac` filters the same as the uppercase link the tiles emit. This is the screen's only family heatmap; a second "Assessment Status by Control Family (Objective Rollup)" block was removed in #1046 — both bound to the same control list, so clicking a tile in the lower one hid every control.
 
-6. **Control cards** (paginated, 50 per page):
+6. **Control cards** (paginated, 50 per page), listed in NIST catalog order -- family, base number, enhancement number, then raw id -- ordered in SQL (`ControlOrdering#in_control_order`) so the ordering holds across page boundaries:
    - Control ID, asset tag, environment tag, result pill, working status outline badge, family code
    - Control title
    - Collapsible details with:
@@ -578,7 +580,7 @@ Summary tiles: total SARs, total controls, pass/fail counts. Table listing all a
 
 **Filter parameters** (all combinable): `section`, `family`, `status`, `asset`, `environment`. Pagination preserved across filters.
 
-Export buttons: Download JSON, Download OSCAL, Enrich (if not enriched), Back.
+Export buttons: Download JSON, Download OSCAL, Back, and the enrichment action -- **Enrich** before the document is enriched, **Edit Enrichment** after, in the same position either way. It is never absent (#1093); enrichment is iterative and the screen serves in both states.
 
 #### SAR Wizard
 
@@ -598,7 +600,18 @@ SAP selector and assessment date configuration.
 | **Controller** | `SarDocumentsController#enrich`, `#update_enrich` |
 | **Auth** | Required |
 
-Form for adding OSCAL assessment result metadata: results, observations, findings, and risks.
+Form for adding OSCAL assessment result metadata: results, observations, findings, and risks. Each section is an independently collapsible `<details>` block.
+
+**Risk card fields**: title, status (the six OSCAL `risk-status` values), description, statement, impact and likelihood (five levels -- `very-low`, `low`, `moderate`, `high`, `very-high` -- from `RiskRating::LEVELS`, exported as characterization facets).
+
+**Threat IDs and Mitigating Factors** (#1092) -- a nested collapsible inside each risk card, rendered by `shared/_risk_oscal_collections`. Both are repeatable rows with **+ Add** / **x** controls driven by the `oscal-repeater` Stimulus controller:
+
+- **Threat ID** -- `system` (the threat catalogue's address, e.g. `https://attack.mitre.org`) and `id` (the identifier within it, e.g. `T1078`).
+- **Mitigating Factor** -- a free-text `description`; its OSCAL `uuid` rides along in a hidden field and is preserved rather than regenerated per render.
+
+A hidden `collections_present` marker distinguishes "the form rendered these and they are now empty" from "unchanged", so removing the last row and saving clears the collection instead of silently keeping the old value.
+
+`origins` and `risk-log` are deliberately **not** on this form; they are authorable through `Api::V1` only (see [API Reference](API-Reference)).
 
 #### Evidence List
 
@@ -688,7 +701,7 @@ Summary tiles with document and item counts. Lists all POA&M documents with name
 | **Controller** | `PoamDocumentsController#show` |
 | **Auth** | Required |
 
-Items displayed with pagination. Filter options for risk status and impact level. Heatmap visualization of risk distribution. Editable metadata via inline toggle. Publish/publish-check actions. Export buttons: OSCAL (validated/unvalidated), JSON, YAML, XML. Sections for each child-entity type (items, risks, remediations, observations, findings, local components) with "New" buttons linking to the nested forms below. Nested back-matter resource management.
+Items displayed with pagination. Filter options for risk status and impact level. **Risk Status x Impact** heat map: its columns come from `RiskRating::LEVELS`, so all five impact tiers are always drawn and a tier with no risks renders an empty column with a dash rather than disappearing (#1095). An unrecognised legacy value is appended as an extra column rather than dropped. Editable metadata via inline toggle. Publish/publish-check actions. Export buttons: OSCAL (validated/unvalidated), JSON, YAML, XML. Sections for each child-entity type (items, risks, remediations, observations, findings, local components) with "New" buttons linking to the nested forms below. Nested back-matter resource management.
 
 #### POA&M Item Create / Edit
 
@@ -708,7 +721,7 @@ Form fields: risk ID, finding source, status, impact level, remediation plan, sc
 | **Controller** | `PoamRisksController#new`, `#edit` |
 | **Auth** | Required |
 
-OSCAL `risk` form: title, description, statement, status, deadline, threat/characterization fields.
+OSCAL `risk` form: title, description, statement, status, deadline, threat/characterization fields, and the impact/likelihood rating on the five-level `RiskRating::LEVELS` scale (`very-low`, `low`, `moderate`, `high`, `very-high`), exported as characterization facets.
 
 #### POA&M Remediation Create / Edit (with nested Milestones)
 

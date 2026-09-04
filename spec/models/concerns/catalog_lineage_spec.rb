@@ -82,7 +82,11 @@ RSpec.describe CatalogLineage, type: :model do
 
       expect(issue[:code]).to eq("missing_profile_source")
       expect(issue[:message]).to include("cannot be traced to a catalog")
-      expect(issue[:remedy]).to include("profile_document_id")
+      # The remedy is rendered in the product UI, so it reads as guidance to a
+      # person. It used to be the raw API call. `options` still carries the
+      # endpoint for integrators — that one is never rendered on a screen.
+      expect(issue[:remedy]).to eq("Choose the profile whose baseline these controls were selected from.")
+      expect(issue[:remedy]).not_to match(%r{/api/|PATCH|POST})
       expect(issue[:options]).to eq("/api/v1/profile_documents")
     end
 

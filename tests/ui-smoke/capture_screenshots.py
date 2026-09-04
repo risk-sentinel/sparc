@@ -28,6 +28,7 @@ Output: PNGs under ``wiki/images/<page-label>.png``, one per captured screen.
 from __future__ import annotations
 
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -71,7 +72,14 @@ SA_TOKEN = os.environ.get("SPARC_SMOKE_SA_TOKEN")
 INSECURE_TLS = smoke_flag("SPARC_SMOKE_INSECURE_TLS")
 
 # wiki/images/, resolved relative to the repo root (two levels up from here).
-OUT_DIR = Path(__file__).resolve().parents[2] / "wiki" / "images"
+# Defaults to the PUBLIC wiki image set, which is what the #781 flow publishes.
+# Overridable so a run can be pointed somewhere disposable — verifying the
+# per-section mode (#1096) should not scatter files through wiki/images/ that
+# then have to be picked back out of a git status.
+OUT_DIR = Path(
+    os.environ.get("SPARC_SMOKE_IMAGE_DIR")
+    or Path(__file__).resolve().parents[2] / "wiki" / "images"
+)
 
 # Deterministic viewport. 1440x900 is a common laptop width; 2x device scale
 # gives retina-crisp text on the wiki. color_scheme=light per #781 (light only).
@@ -116,6 +124,129 @@ def _settle(page) -> None:
     page.wait_for_timeout(700)
 
 
+# ── Per-section capture (#1096) ──────────────────────────────────────────────
+#
+# A whole-screen image stopped being legible. Expanding disclosures — which the
+# #1047 pixel gate must do to see what it is verifying — takes ssp_show to
+# 1907x258,994 css px, and even a page nobody expands runs to 47,000. That is
+# fine for a diff and useless to a reader.
+#
+# The two audiences want different things from the same screens, so they get
+# different modes rather than a compromise: the gate keeps whole-page (banded
+# where necessary) in visual_regression_1047.py, and the WIKI images can be
+# captured a section at a time.
+#
+# Sections are the page's own `<details>` blocks, which is what the enrich and
+# show screens are actually built from, so the unit is the one a reader already
+# perceives. Named from the summary text, not a hand-maintained list, so a new
+# section cannot be silently missed.
+SECTION_MODE = False
+
+# A section can itself be enormous — "Findings (150)" measures 28,758 css px on
+# the demo estate. Per-section alone does not solve legibility; a cap does. The
+# image shows the top of the section, which is the representative part, exactly
+# as CROP_HEIGHTS already does for whole pages.
+SECTION_MAX_CSS_HEIGHT = 1600
+
+# Below this a "section" is a collapsed stub or an empty block, and an image of
+# it tells a reader nothing.
+SECTION_MIN_CSS_HEIGHT = 60
+
+# A summary that slugs shorter than this is a disclosure arrow, not a name.
+# Measured: sar_show has 53 TOP-LEVEL <details>, of which 51 are per-control
+# cards whose summary is just an arrow glyph. Images of those are worthless to a
+# reader and would bury the two sections that do have names.
+SECTION_MIN_SLUG = 3
+
+# Hard bound on how many images one page can produce, so this cannot quietly
+# become the whole-inventory dump the --sections guard exists to prevent.
+# Whatever is dropped is REPORTED — a silent cap reads as "captured everything".
+SECTION_MAX_COUNT = 20
+
+
+def _section_slug(text: str) -> str:
+    """First nameable line of a summary, slugified; "" when there is none.
+
+    Summary text carries the disclosure glyph and often several lines, e.g.
+    "\u25bc\\nResults by Control Family\\n\u2014 click ...", so the first MEANINGFUL line is
+    the name. An empty return is the signal to skip the section — see
+    SECTION_MIN_SLUG.
+    """
+    for line in (text or "").splitlines():
+        cleaned = re.sub(r"\(.*?\)", "", line).strip().lower()
+        slug = re.sub(r"[^a-z0-9]+", "-", cleaned).strip("-")
+        if len(slug) >= SECTION_MIN_SLUG:
+            return slug[:60]
+    return ""
+
+
+def _shoot_sections(page, label: str, out_dir: Path) -> bool:
+    """One image per `<details>` section, capped in height. Assumes navigated."""
+    # TOP-LEVEL only. ssp_show has 768 <details> but 20 top-level ones (the
+    # control families); capturing the nested per-control disclosures would
+    # produce hundreds of images of a single row.
+    sections = page.query_selector_all("details:not(details details)")
+    if not sections:
+        print(f"  – {label:32s} no <details> sections — nothing to capture per-section")
+        return False
+
+    written = 0
+    unnamed = 0
+    over_cap = 0
+    seen: dict[str, int] = {}
+    for el in sections:
+        try:
+            el.evaluate("e => { e.open = true }")
+        except Exception:  # noqa: BLE001 — a detached node between query and use
+            continue
+    page.wait_for_timeout(300)
+
+    for el in sections:
+        try:
+            summary = el.query_selector("summary")
+            name = _section_slug(summary.inner_text() if summary else "")
+            if not name:
+                unnamed += 1
+                continue
+            if written >= SECTION_MAX_COUNT:
+                over_cap += 1
+                continue
+            # PAGE coordinates, not viewport ones. `bounding_box()` is relative
+            # to the viewport and shifts with scroll, so `clip` silently landed
+            # outside the image and every section failed. `clip` with
+            # `full_page=True` is document-space, which is what this needs.
+            box = el.evaluate(
+                "e => { const r = e.getBoundingClientRect();"
+                "       return {x: r.x + window.scrollX, y: r.y + window.scrollY,"
+                "               width: r.width, height: r.height}; }"
+            )
+            if not box or box["height"] < SECTION_MIN_CSS_HEIGHT:
+                continue
+            # Disambiguate repeats rather than overwriting them silently.
+            seen[name] = seen.get(name, 0) + 1
+            suffix = "" if seen[name] == 1 else f"-{seen[name]}"
+            dest = out_dir / f"{label}--{name}{suffix}.png"
+            page.screenshot(
+                path=str(dest), full_page=True,
+                clip={"x": box["x"], "y": box["y"], "width": box["width"],
+                      "height": min(box["height"], SECTION_MAX_CSS_HEIGHT)},
+            )
+            capped = " (capped)" if box["height"] > SECTION_MAX_CSS_HEIGHT else ""
+            h = int(min(box["height"], SECTION_MAX_CSS_HEIGHT))
+            print(f"  ✓ {label:32s} -> {dest.name} "
+                  f"({int(box['width'])}x{h}{capped})")
+            written += 1
+        except Exception as e:  # noqa: BLE001
+            print(f"  ✗ {label:32s} section capture failed: {type(e).__name__}: {e}")
+
+    if unnamed:
+        print(f"    ({unnamed} section(s) skipped: summary is a disclosure arrow, no name)")
+    if over_cap:
+        print(f"    ({over_cap} section(s) NOT captured: over the "
+              f"SECTION_MAX_COUNT={SECTION_MAX_COUNT} cap)")
+    return written > 0
+
+
 def _shoot(page, label: str, path: str, out_dir: Path) -> bool:
     dest = out_dir / f"{label}.png"
     try:
@@ -131,6 +262,8 @@ def _shoot(page, label: str, path: str, out_dir: Path) -> bool:
         print(f"  ✗ {label:32s} {path}  bounced to /login (auth?)")
         return False
     _settle(page)
+    if SECTION_MODE:
+        return _shoot_sections(page, label, out_dir)
     crop = CROP_HEIGHTS.get(label)
     if crop:
         page.set_viewport_size({"width": VIEWPORT["width"], "height": crop})
@@ -144,12 +277,31 @@ def _shoot(page, label: str, path: str, out_dir: Path) -> bool:
 
 
 def main() -> int:
+    global SECTION_MODE
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    args = list(sys.argv[1:])
+    if "--sections" in args:
+        SECTION_MODE = True
+        args.remove("--sections")
     # Optional label filter: `python capture_screenshots.py about about_api`
     # re-captures only those pages (leaving the rest untouched).
-    only = set(sys.argv[1:])
+    only = set(args)
+
+    # `--sections` REQUIRES labels. Run across the whole inventory it would write
+    # hundreds of files into wiki/images/, which is the PUBLIC wiki's image set —
+    # a mess to undo and easy to publish by accident. Per-section capture is a
+    # deliberate act for a screen someone is documenting.
+    if SECTION_MODE and not only:
+        print("--sections needs one or more page labels, e.g.\n"
+              "    uv run python capture_screenshots.py --sections sar_show ssp_show\n"
+              "Running it across every page would write hundreds of images into "
+              f"{OUT_DIR}.")
+        return 2
+
     keep = (lambda label: label in only) if only else (lambda label: True)
-    print(f"Capturing screenshots from {BASE_URL} -> {OUT_DIR}"
+    mode = "per-section" if SECTION_MODE else "whole-page"
+    print(f"Capturing screenshots ({mode}) from {BASE_URL} -> {OUT_DIR}"
           + (f"  [only: {', '.join(sorted(only))}]" if only else ""))
 
     ok = 0

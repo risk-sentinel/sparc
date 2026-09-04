@@ -34,6 +34,14 @@ dependencies = [
 dev = [
     "ruff>=0.4",
 ]
+# #1047 — visual regression for the inline-style sweep. Removing
+# `style-src 'unsafe-inline'` means 1,400 attributes stop applying SILENTLY:
+# no console error, no exception, no failing spec, just pages that render
+# wrong. An OPTIONAL extra rather than a core dependency, so the smoke suite
+# itself gains no new install weight:  uv sync --extra visual
+visual = [
+    "pillow>=10",
+]
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

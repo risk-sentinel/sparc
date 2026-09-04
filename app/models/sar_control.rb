@@ -1,5 +1,6 @@
 class SarControl < ApplicationRecord
   include ControlIdentifiable
+  include ControlOrdering
   canonicalises_control_id :control_id
 
   IN_PROGRESS = "in-progress".freeze

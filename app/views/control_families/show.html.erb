@@ -92,7 +92,7 @@
         </tr>
       </thead>
       <tbody>
-        <% @catalog_controls.each do |control| %>
+        <% @catalog_controls.sort_by { |c| CatalogControl.control_sort_key(c.control_id) }.each do |control| %>
           <% depth      = ctrl_depth.call(control.control_id) %>
           <% stmt_text  = control.guidance_data["statement"].presence %>
           <tr style="<%= depth > 0 ? "background: #fafbfc;" : "" %>" data-control-db-id="<%= control.id %>">

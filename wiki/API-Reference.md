@@ -47,6 +47,20 @@ discovery. Common verbs include `convert`, `update_fields`, and `export`.
 > validates. Full details in
 > [`docs/api/endpoints/ssp-components.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/ssp-components.md).
 
+> **New: SAR risks.** `/api/v1/sar_documents/:slug/risks` is full CRUD over the
+> risks an assessment identified. SAR risks previously had **no API at all** —
+> POA&M has eight sub-resource controllers and SAR had none, so a risk was
+> reachable only through the enrich screen, which accepted `title`,
+> `description` and `status` and nothing else. The endpoints carry the OSCAL
+> rating (`impact`, `likelihood`, on the five-level `very-low` … `very-high`
+> scale, exported as characterization facets), the required `statement`, and the
+> collections a risk holds: `threat_ids`, `mitigating_factors`, `origins` and
+> `risk_log`. `origins` and `risk_log` are **API-only** — they
+> are attribution and append-only history rather than things to type into a
+> form, and exist for an integrator migrating an existing risk register. Full
+> details in
+> [`docs/api/endpoints/sar-risks.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/sar-risks.md).
+
 > **Breaking: `POST /api/v1/users` no longer takes a password (v1.15.4).**
 > `password` and `password_confirmation` are no longer permitted attributes.
 > SPARC generates the initial credential itself, returns it **once** as

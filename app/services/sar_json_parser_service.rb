@@ -163,8 +163,23 @@ class SarJsonParserService
     risks.each_with_object({}) do |risk, map|
       next unless risk["uuid"].present?
 
-      record = sar_result.sar_risks.create!(
-        uuid:                    risk["uuid"],
+      # #1090 — INGEST PRESERVES WHAT THE FILE SAID.
+      #
+      # SarRisk now validates OSCAL's required fields, which is right for
+      # AUTHORING: the API and the enrich form must refuse to create a risk that
+      # cannot export. It is wrong for INGEST. A file whose risk omits a
+      # statement is imperfect OSCAL, and #968 settled that SPARC does not lose a
+      # document over a part of it — the alternative here would be failing the
+      # entire import, or inventing a statement, and #832 already ruled out
+      # synthesising compliance content.
+      #
+      # So the row is stored as-found and reports itself incomplete:
+      # `missing_required_fields` surfaces it on every API response, and
+      # PoamGeneratorService SKIPS it rather than converting it. A uuid is the one
+      # thing supplied when absent, because it is an identifier rather than
+      # content.
+      record = sar_result.sar_risks.new(
+        uuid:                    risk["uuid"].presence || SecureRandom.uuid,
         title:                   risk["title"],
         description:             extract_text(risk["description"]),
         statement:               extract_text(risk["statement"]),
@@ -182,6 +197,7 @@ class SarJsonParserService
         links_data:              risk["links"] || [],
         remarks:                 extract_text(risk["remarks"])
       )
+      record.save(validate: false)
 
       (risk["related-observations"] || []).each do |ro|
         obs_record = obs_map[ro["observation-uuid"]]

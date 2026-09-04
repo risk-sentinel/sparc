@@ -1,4 +1,5 @@
 class SarDocumentsController < ApplicationController
+  include RiskCollectionParams
   include ReconciliationGate
   # #911 layer 2 — refuse an edit until the document names the baseline
   # its controls descend from. `set_baseline` is deliberately absent.
@@ -90,9 +91,20 @@ class SarDocumentsController < ApplicationController
     filtered = base_filtered
 
     if params[:family].present?
+      # UPCASE THE PARAMETER, not just the column (#1094). Both sides of this OR
+      # require the VALUE to already be uppercase: `control_family` is stored
+      # uppercase ("AC", "AT", ...) and the fallback upcases the column but not
+      # what it is compared against. `control_id` is stored LOWERCASE ("ac-1"),
+      # so a lowercase family is the natural thing to type or to build from an id
+      # — and it returned "0 of 150 controls" while reporting that as the answer.
+      # Every family tile already links uppercase, so only hand-typed, bookmarked
+      # and API-built URLs were affected, silently.
+      #
+      # Matches ControlLookupService:159 and Api::V1::CatalogControls:124, which
+      # both normalise with `.to_s.upcase`; this was the one site that did not.
       filtered = filtered.where(
         "control_family = :family OR (control_family IS NULL AND UPPER(SPLIT_PART(control_id, '-', 1)) = :family)",
-        family: params[:family]
+        family: params[:family].to_s.upcase
       )
     end
 
@@ -109,18 +121,18 @@ class SarDocumentsController < ApplicationController
     # firing a query per row.
     @pagy, @controls = pagy(
       :offset,
-      filtered.order(:row_order).includes(:sar_control_fields, :sar_control_objectives),
+      # NIST control order, not arrival order (ControlOrdering). `row_order` is
+      # assigned sequentially at import from the source spreadsheet's order, so
+      # this list read ac-1, ac-14, ac-17, ... ac-2, ac-3. It has to be ordered
+      # in SQL rather than in the view, because the list is PAGINATED and
+      # sorting the fetched page leaves the page boundaries wrong.
+      filtered.in_control_order.includes(:sar_control_fields, :sar_control_objectives),
       limit: CONTROLS_PER_PAGE
     )
 
     # Catalog guidance lookup (only for the current page)
     normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
     @catalog_guidance = CatalogControl.where(control_id: normalized_ids).index_by(&:control_id)
-
-    # Objective rollup heatmap -- built from full base_filtered scope, not
-    # the paginated subset, so the family aggregates are correct.
-    @status_heatmap_data, @status_heatmap_families, @status_heatmap_statuses =
-      build_objective_status_heatmap(base_filtered)
 
     # Totals for display
     @total_controls = controls_scope.count
@@ -628,25 +640,76 @@ class SarDocumentsController < ApplicationController
     return unless default_result
 
     incoming.each do |r_params|
-      r_params = r_params.permit(:id, :sar_result_id, :title, :description, :status)
+      # #1090 — statement is OSCAL-required and impact/likelihood are the
+      # rating; none of the three could be entered before, so every SAR risk
+      # in the estate carried a blank rating and the exporter had nothing to
+      # put in `characterizations`.
+      # #1092 — the OSCAL collections the form now offers. Shapes come from
+      # RiskCollectionParams so the form and Api::V1 accept the same thing.
+      r_params = r_params.permit(:id, :sar_result_id, :title, :description, :status,
+                                 :statement, :impact, :likelihood, :collections_present,
+                                 threat_ids_data: RiskCollectionParams::THREAT_IDS,
+                                 mitigating_factors_data: RiskCollectionParams::MITIGATING_FACTORS)
       result = if r_params[:sar_result_id].present?
         @sar_document.sar_results.find_by(id: r_params[:sar_result_id]) || default_result
       else
         default_result
       end
 
+      attrs = normalise_risk_collections(r_params)
+
       if r_params[:id].present?
         record = SarRisk.find_by(id: r_params[:id])
-        record&.update!(r_params.except(:id, :sar_result_id))
+        record&.update!(attrs.except(:id, :sar_result_id, :collections_present))
       else
         result.sar_risks.create!(
           uuid: SecureRandom.uuid,
           title: r_params[:title].presence || "Risk",
           description: r_params[:description].presence || NO_DESCRIPTION,
-          status: r_params[:status].presence || "open"
+          statement: r_params[:statement].presence || NO_DESCRIPTION,
+          impact: r_params[:impact].presence,
+          likelihood: r_params[:likelihood].presence,
+          status: r_params[:status].presence || "open",
+          threat_ids_data: attrs[:threat_ids_data] || [],
+          mitigating_factors_data: attrs[:mitigating_factors_data] || []
         )
       end
     end
+  end
+
+  # #1092 — two things the raw params cannot express on their own.
+  #
+  # DELETION. An absent key means "unchanged" to `update!`, so removing the last
+  # threat-id row would silently leave the old value in place — the same trap
+  # Rails solves for checkboxes with a hidden field. The form emits
+  # `collections_present`, so an absent collection alongside it means EMPTY
+  # rather than untouched.
+  #
+  # UUIDs. OSCAL requires one on every mitigating-factor, and it is not the
+  # operator's business to type it. A row cloned from the <template> carries
+  # none (a template cannot mint a distinct id per clone), so it is assigned
+  # here. An existing factor keeps the uuid it already had.
+  def normalise_risk_collections(r_params)
+    attrs = r_params.to_h.symbolize_keys
+
+    if attrs[:collections_present].present?
+      attrs[:threat_ids_data] ||= []
+      attrs[:mitigating_factors_data] ||= []
+    end
+
+    if attrs[:threat_ids_data]
+      attrs[:threat_ids_data] = Array(attrs[:threat_ids_data]).map { |t| t.to_h.stringify_keys }
+                                    .reject { |t| t["system"].blank? && t["id"].blank? }
+    end
+
+    if attrs[:mitigating_factors_data]
+      attrs[:mitigating_factors_data] =
+        Array(attrs[:mitigating_factors_data]).map { |f| f.to_h.stringify_keys }
+             .reject { |f| f["description"].blank? }
+             .map { |f| f.merge("uuid" => f["uuid"].presence || SecureRandom.uuid) }
+    end
+
+    attrs
   end
 
   def auto_generate_from_excel
@@ -875,26 +938,4 @@ class SarDocumentsController < ApplicationController
   end
 
   OBJECTIVE_STATUS_ORDER = %w[failed in-progress pending passing not_applicable not_assessed].freeze
-
-  # Builds an objective rollup heatmap for SAR. Counts each control once
-  # under its rolled-up objective status (failed > in-progress > pending >
-  # passing > not_assessed). Independent of cached_result so users can see
-  # both the OSCAL-level result and the per-objective progress at a glance.
-  def build_objective_status_heatmap(scope)
-    data = {}
-    scope.where.not(control_id: [ nil, "" ])
-         .includes(:sar_control_objectives).find_each(batch_size: 500) do |ctrl|
-      family = ctrl.control_family.presence || ctrl.control_id.to_s.split("-").first.upcase
-      next if family.blank?
-      data[family] ||= Hash.new(0)
-      data[family][ctrl.objective_status_rollup] += 1
-    end
-
-    families = data.keys.sort
-    all_statuses = data.values.flat_map(&:keys).uniq
-    ordered = OBJECTIVE_STATUS_ORDER.select { |s| all_statuses.include?(s) }
-    ordered += (all_statuses - OBJECTIVE_STATUS_ORDER).sort
-
-    [ data, families, ordered ]
-  end
 end

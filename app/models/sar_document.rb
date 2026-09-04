@@ -55,7 +55,7 @@ class SarDocument < ApplicationRecord
               traceable_via: :ssp_document,
               controls:      :sar_controls,
               message:       { label:   "assessment plan",
-                               remedy:  "PATCH /api/v1/sar_documents/:id { sap_document_id }",
+                               remedy:  "Set the assessment plan this assessment reports results for.",
                                options: "/api/v1/sap_documents" }
   include ControlMembership
   membership_within controls: :sar_controls, baseline: :sap_document,

@@ -13,6 +13,7 @@ class CdefControl < ApplicationRecord
   #
   # `source_control_id` is NEVER canonicalised. That is the point of it.
   include ControlIdentifiable
+  include ControlOrdering
   canonicalises_control_id :control_id
 
   # Framework the source identifier came from. Recorded at import rather than

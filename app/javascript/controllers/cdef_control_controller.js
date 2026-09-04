@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { isVisible, setVisible } from "controllers/visibility"
 
 // Inline field editing + per-control back-matter resource linking on the CDEF
 // show page (#647, epic #650). Replaces inline onclick handlers (toggleFieldEdit
@@ -17,9 +18,10 @@ export default class CdefControlController extends Controller {
     const display = document.getElementById(`field-display-${controlId}-${fieldName}`)
     const edit = document.getElementById(`field-edit-${controlId}-${fieldName}`)
     if (!edit) return
-    const editing = edit.style.display !== "none"
-    display.style.display = editing ? "" : "none"
-    edit.style.display = editing ? "none" : ""
+    // #1047 — computed, not the style attribute; see controllers/visibility.
+    const editing = isVisible(edit)
+    setVisible(display, editing)
+    setVisible(edit, !editing)
     if (!editing) {
       const input = document.getElementById(`field-input-${controlId}-${fieldName}`)
       if (input) input.focus()
@@ -58,9 +60,10 @@ export default class CdefControlController extends Controller {
     const form = document.getElementById(`add-ref-${id}`)
     const btn = document.getElementById(`add-ref-btn-${id}`)
     if (!form || !btn) return
-    const visible = form.style.display !== "none"
-    form.style.display = visible ? "none" : ""
-    btn.style.display = visible ? "" : "none"
+    // #1047 — computed, not the style attribute; see controllers/visibility.
+    const visible = isVisible(form)
+    setVisible(form, !visible)
+    setVisible(btn, visible)
     if (!visible) {
       const title = document.getElementById(`ref-title-${id}`)
       if (title) title.focus()

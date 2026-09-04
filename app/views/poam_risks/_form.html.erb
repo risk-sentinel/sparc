@@ -43,14 +43,14 @@
     <div class="col">
       <%= f.label :impact, class: "fw-semibold" %>
       <%= f.select :impact,
-            options_for_select([ [ "High", "high" ], [ "Medium", "medium" ], [ "Low", "low" ] ],
+            options_for_select(RiskRating::LEVEL_OPTIONS,
                                poam_risk.impact),
             { include_blank: "— Select —" }, class: "form-control" %>
     </div>
     <div class="col">
       <%= f.label :likelihood, class: "fw-semibold" %>
       <%= f.select :likelihood,
-            options_for_select([ [ "High", "high" ], [ "Medium", "medium" ], [ "Low", "low" ] ],
+            options_for_select(RiskRating::LEVEL_OPTIONS,
                                poam_risk.likelihood),
             { include_blank: "— Select —" }, class: "form-control" %>
     </div>

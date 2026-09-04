@@ -84,7 +84,7 @@ RSpec.describe PoamGeneratorService do
       # but it must not vanish either. Excluding it at the scoping stage would
       # be a silent omission; letting it reach the required-field check means
       # the author is told which risk is incomplete and why.
-      create(:sar_risk, sar_result: result_record, title: "No status", status: nil)
+      build(:sar_risk, sar_result: result_record, title: "No status", status: nil).tap { |r| r.save(validate: false) }
 
       result = generate
       expect(result.created_risks).to eq(0)
@@ -103,7 +103,7 @@ RSpec.describe PoamGeneratorService do
   # The core rule.
   describe "never synthesising required content" do
     it "SKIPS a risk with no statement instead of inventing one" do
-      create(:sar_risk, sar_result: result_record, title: "Has no statement", statement: nil)
+      build(:sar_risk, sar_result: result_record, title: "Has no statement", statement: nil).tap { |r| r.save(validate: false) }
 
       result = generate
 
@@ -115,7 +115,7 @@ RSpec.describe PoamGeneratorService do
     end
 
     it "names every missing field, not just the first" do
-      create(:sar_risk, sar_result: result_record, statement: nil, description: nil)
+      build(:sar_risk, sar_result: result_record, statement: nil, description: nil).tap { |r| r.save(validate: false) }
 
       expect(generate.skipped.first[:reason]).to match(/description/).and match(/statement/)
     end
@@ -123,7 +123,7 @@ RSpec.describe PoamGeneratorService do
     it "leaves NO partial graph behind for a rejected risk" do
       # Checked before writing anything. Relying on validation to fail mid-build
       # would roll back the whole transaction and lose the convertible risks too.
-      create(:sar_risk, sar_result: result_record, statement: nil)
+      build(:sar_risk, sar_result: result_record, statement: nil).tap { |r| r.save(validate: false) }
 
       result = generate
       expect(result.poam_document.poam_items).to be_empty
@@ -132,7 +132,7 @@ RSpec.describe PoamGeneratorService do
 
     it "still converts the good risks alongside a rejected one" do
       create(:sar_risk, sar_result: result_record, title: "Convertible", impact: "High")
-      create(:sar_risk, sar_result: result_record, title: "Incomplete", statement: nil)
+      build(:sar_risk, sar_result: result_record, title: "Incomplete", statement: nil).tap { |r| r.save(validate: false) }
 
       result = generate
       expect(result.created_risks).to eq(1)
@@ -282,7 +282,7 @@ RSpec.describe PoamGeneratorService do
     end
 
     it "stays 'started' when every source risk was rejected" do
-      create(:sar_risk, sar_result: result_record, statement: nil)
+      build(:sar_risk, sar_result: result_record, statement: nil).tap { |r| r.save(validate: false) }
 
       result = generate
       expect(result.created_items).to eq(0)

@@ -94,7 +94,8 @@ upload a file someone else authored, generate one from a published profile, or
 1. Click **Create New** and either drop a file into **Upload Component
    Definition**, or pick a baseline under **Create from Published Profile**.
 2. The detail page (`/cdef_documents/:id`) shows the component's controls
-   organized by family, with a **severity heatmap**.
+   organized by family, with a **severity heatmap**. Within each family,
+   controls are in **NIST catalog order** — base number then enhancement.
 
 ## How to edit a component definition
 

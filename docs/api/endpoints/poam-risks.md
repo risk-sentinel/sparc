@@ -143,6 +143,32 @@ which reports every incomplete risk grouped by document, with the exact fields e
 
 `open`, `investigating`, `remediating`, `deviation-requested`, `deviation-approved`, `closed`
 
+## The OSCAL collections (#1092)
+
+A POA&M risk carries four collections beyond its scalar fields. All four are
+stored as `jsonb` and emitted by the exporter, and until #1092 none of them could
+be authored through any surface — measured on the demo estate, 0 of 18 POA&M
+risks carried any.
+
+| Write attribute | Read attribute | OSCAL |
+|-----------------|----------------|-------|
+| `threat_ids_data` | `threat_ids` | `threat-ids[]` |
+| `mitigating_factors_data` | `mitigating_factors` | `mitigating-factors[]` |
+| `origins_data` | `origins` | `origins[]` |
+| `risk_log_data` | `risk_log` | `risk-log` |
+
+The write name carries the `_data` suffix and the read name does not.
+
+There is **no `remediations_data` here** — a POA&M models responses as real
+`poam_remediations` rows with their own endpoints (see
+[poam-subresources.md](poam-subresources.md)), not as jsonb on the risk. That is
+the one place the POA&M and SAR risk shapes deliberately differ.
+
+The accepted key shapes, the hyphenated-key rule, and the difference between a
+top-level `422` and a silently-dropped nested key are identical to the SAR side
+and documented once, in
+[sar-risks.md § The OSCAL collections](sar-risks.md#the-oscal-collections-1092).
+
 ## NIST 800-53 controls
 
 `IA-2` (token authentication), `AC-3` / `AC-6` (boundary-scoped RBAC), `AU-12` (audit record generation), `CA-5` (plan of action and milestones).

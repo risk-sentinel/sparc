@@ -1,0 +1,113 @@
+<%# #1092 — the OSCAL collections a risk carries, as repeatable rows.
+
+    Locals:
+      param_base : the risk's param prefix, e.g. "sar_document[risks][]"
+      risk       : the SarRisk, or nil when rendering the add-risk template
+
+    NESTED REPEATABLES INSIDE AN EMPTY-BRACKET ARRAY WORK. `sar_document[risks][]
+    [threat_ids_data][][id]` groups correctly per risk — verified against
+    Rack::Utils.parse_nested_query, including the case that looked most likely to
+    break it: a risk with NO threat-ids sitting between two that have them still
+    gets none, and the following risk keeps its own. So these belong in the risk
+    card the operator is already editing rather than on a screen of their own.
+
+    `collections_present` is the marker that makes DELETION possible. An absent
+    key means "unchanged" to `update!`, so without it removing the last row would
+    silently leave the old value in place — the classic Rails checkbox problem.
+    The controller reads the marker as "the form rendered these, so absent means
+    empty".
+
+    origins and risk-log are deliberately NOT here. `origins` is attribution
+    SPARC writes for its own ratings (RiskRating#characterizations_for_export)
+    and `risk-log` is an append-only history; both are authorable through
+    Api::V1 for an integrator migrating a register, neither is something to type
+    into a form. No inline `style=` — this file is inside the #1047 sweep.
+%>
+<input type="hidden" name="<%= param_base %>[collections_present]" value="1">
+
+<details class="sparc-enrich-section sparc-enrich-section--tight">
+  <summary class="sparc-fs-08 sparc-cursor-pointer">
+    Threat IDs and Mitigating Factors
+  </summary>
+
+  <div class="sparc-enrich-section-body">
+    <div data-controller="oscal-repeater" class="sparc-mb-025">
+      <span class="sparc-enrich-grid-label">Threat IDs</span>
+      <p class="sparc-enrich-field-hint">The threat this risk realises, as it is named in a published threat catalogue. Give the catalogue's address and the threat's identifier inside it &mdash; for example <code class="sparc-code-plain">https://attack.mitre.org</code> and <code class="sparc-code-plain">T1078</code>, or <code class="sparc-code-plain">https://cve.mitre.org</code> and <code class="sparc-code-plain">CVE-2026-80212</code>.</p>
+
+      <template data-oscal-repeater-target="template">
+        <div class="repeater-row d-flex gap-2 mb-2">
+          <input type="text" name="<%= param_base %>[threat_ids_data][][system]"
+                 class="form-control form-control-sm sparc-fs-085"
+                 placeholder="https://attack.mitre.org" aria-label="Threat ID system">
+          <input type="text" name="<%= param_base %>[threat_ids_data][][id]"
+                 class="form-control form-control-sm sparc-fs-085"
+                 placeholder="T1078" aria-label="Threat ID">
+          <button type="button" data-action="click->oscal-repeater#remove"
+                  class="sparc-action sparc-action--danger sparc-action--outline"
+                  aria-label="Remove threat ID">&times;</button>
+        </div>
+      </template>
+
+      <div data-oscal-repeater-target="rows">
+        <% Array(risk&.threat_ids_data).each do |threat| %>
+          <div class="repeater-row d-flex gap-2 mb-2">
+            <input type="text" name="<%= param_base %>[threat_ids_data][][system]"
+                   value="<%= threat["system"] %>"
+                   class="form-control form-control-sm sparc-fs-085"
+                   placeholder="https://attack.mitre.org" aria-label="Threat ID system">
+            <input type="text" name="<%= param_base %>[threat_ids_data][][id]"
+                   value="<%= threat["id"] %>"
+                   class="form-control form-control-sm sparc-fs-085"
+                   placeholder="T1078" aria-label="Threat ID">
+            <button type="button" data-action="click->oscal-repeater#remove"
+                    class="sparc-action sparc-action--danger sparc-action--outline"
+                    aria-label="Remove threat ID">&times;</button>
+          </div>
+        <% end %>
+      </div>
+
+      <button type="button" data-action="click->oscal-repeater#add"
+              class="sparc-action sparc-action--positive sparc-action--solid sparc-enrich-item-action">+ Add threat ID</button>
+    </div>
+
+    <div data-controller="oscal-repeater">
+      <span class="sparc-enrich-grid-label">Mitigating Factors</span>
+      <p class="sparc-enrich-field-hint">Anything already in place that reduces this risk &mdash; a compensating control, a network restriction, a manual check.</p>
+
+      <template data-oscal-repeater-target="template">
+        <div class="repeater-row d-flex gap-2 mb-2">
+          <input type="text" name="<%= param_base %>[mitigating_factors_data][][description]"
+                 class="form-control form-control-sm sparc-fs-085 sparc-flex-1"
+                 placeholder="e.g. egress restricted to an allowlisted proxy" aria-label="Mitigating factor description">
+          <button type="button" data-action="click->oscal-repeater#remove"
+                  class="sparc-action sparc-action--danger sparc-action--outline"
+                  aria-label="Remove mitigating factor">&times;</button>
+        </div>
+      </template>
+
+      <div data-oscal-repeater-target="rows">
+        <% Array(risk&.mitigating_factors_data).each do |factor| %>
+          <div class="repeater-row d-flex gap-2 mb-2">
+            <%# The uuid is REQUIRED by OSCAL and is not the operator's business,
+                so it rides along rather than being typed. A factor that arrived
+                without one gets a stable replacement rather than a new one on
+                every render. %>
+            <input type="hidden" name="<%= param_base %>[mitigating_factors_data][][uuid]"
+                   value="<%= factor["uuid"].presence || SecureRandom.uuid %>">
+            <input type="text" name="<%= param_base %>[mitigating_factors_data][][description]"
+                   value="<%= factor["description"] %>"
+                   class="form-control form-control-sm sparc-fs-085 sparc-flex-1"
+                   placeholder="e.g. egress restricted to an allowlisted proxy" aria-label="Mitigating factor description">
+            <button type="button" data-action="click->oscal-repeater#remove"
+                    class="sparc-action sparc-action--danger sparc-action--outline"
+                    aria-label="Remove mitigating factor">&times;</button>
+          </div>
+        <% end %>
+      </div>
+
+      <button type="button" data-action="click->oscal-repeater#add"
+              class="sparc-action sparc-action--positive sparc-action--solid sparc-enrich-item-action">+ Add mitigating factor</button>
+    </div>
+  </div>
+</details>

@@ -105,8 +105,22 @@ def paths_present_in_image(image, paths)
   # command exit 1 and look like a docker failure. Same shape as the CI-1 gate
   # loop that errexit killed. `exit 0` makes the success signal explicit.
   script = 'while IFS= read -r p; do if [ -e "/$p" ]; then printf "%s\n" "$p"; fi; done; exit 0'
+  # THE TRAILING NEWLINE IS LOAD-BEARING. `read` returns non-zero when it reaches
+  # EOF without seeing its delimiter, so with `paths.join("\n")` the LAST path is
+  # read into `p` and then the loop condition fails before the body runs — the
+  # path is never tested and is reported as a phantom.
+  #
+  # It cost a full CI cascade on 2026-09-03. Trivy's DB had just added a resolv
+  # advisory, which made the report carry EXACTLY ONE gemspec finding; the one
+  # path was the last path, so 100% of findings were dropped and a real,
+  # present-on-disk file was called phantom. trivy_container_scan failed, never
+  # uploaded syft-container-sbom, and grype_sbom_scan / normalize_hdf /
+  # bundle_results / security_gate all failed behind it.
+  #
+  # The bug survived because the spec only ever exercised --root, which resolves
+  # existence with File.exist? in Ruby and never runs this loop at all.
   out, err, status = Open3.capture3("docker", "run", "--rm", "-i", "--entrypoint", "sh",
-                                    image, "-c", script, stdin_data: paths.join("\n"))
+                                    image, "-c", script, stdin_data: paths.join("\n") + "\n")
   unless status.success?
     warn "trivy_selfcheck: could not inspect #{image}: #{err.strip}"
     exit 2

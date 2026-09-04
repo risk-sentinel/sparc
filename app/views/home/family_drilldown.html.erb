@@ -20,7 +20,7 @@
         </tr>
       </thead>
       <tbody>
-        <% @controls.each do |control| %>
+        <% @controls.sort_by { |c| CatalogControl.control_sort_key(c.control_id) }.each do |control| %>
           <% status_field = control.ssp_control_fields.find { |f| f.field_name == "status" } %>
           <% status = status_field&.field_value.presence || "(Unknown)" %>
           <tr>
