@@ -56,6 +56,13 @@
   --sparc-purple: #8e44ad;        /* already passes white-text AA */
   --sparc-purple-hover: #7d3c98;
   --sparc-orange: #b6580a;
+  /* Dark navy surfaces. Untokenised until now and hand-written 25 times across
+     both stylesheets and the views — the header gradients, the filter banner,
+     the code blocks on the import screen and the control-id text all picked the
+     same two values independently. Named so there is one place to change them. */
+  --sparc-ink: #2c3e50;        /* the navy: headers, control ids, gradient end */
+  --sparc-ink-deep: #1a252f;   /* the deeper navy: gradient start, code blocks */
+  --sparc-on-dark-muted: rgba(255, 255, 255, 0.75);  /* body text ON a dark surface */
   --sparc-surface: #ffffff;
   --sparc-surface-alt: #f8f9fa;
   --sparc-border: #828b97;
@@ -211,21 +218,21 @@
 /* Gradient overlays on cards — must override card background */
 .card.sparc-gradient-header,
 .sparc-gradient-header {
-  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%) !important;
+  background: linear-gradient(135deg, var(--sparc-ink) 0%, #3498db 100%) !important;
   color: white;
   border-color: transparent;
 }
 
 .card.sparc-dashboard-header,
 .sparc-dashboard-header {
-  background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%) !important;
+  background: linear-gradient(135deg, var(--sparc-ink-deep) 0%, var(--sparc-ink) 100%) !important;
   color: white;
   border-color: transparent;
 }
 
 .card.sparc-processing-banner,
 .sparc-processing-banner {
-  background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%) !important;
+  background: linear-gradient(135deg, var(--sparc-ink-deep) 0%, var(--sparc-ink) 100%) !important;
   color: white;
   border-color: transparent;
 }
@@ -1577,7 +1584,7 @@ a.link-purple { color: var(--sparc-purple); }
 /* ── Filter banner ─────────────────────────────────────────────── */
 
 .sparc-filter-banner {
-  background: #1a252f;
+  background: var(--sparc-ink-deep);
   color: white;
   padding: 0.6rem 1rem;
   border-radius: 8px;
@@ -1621,7 +1628,7 @@ a.link-purple { color: var(--sparc-purple); }
 }
 .sparc-pill-filter:hover { text-decoration: none; }
 .sparc-pill-filter.active {
-  background: #2c3e50;
+  background: var(--sparc-ink);
   color: white;
   font-weight: 600;
 }
@@ -3415,6 +3422,17 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-color-white-45 { color: rgba(255, 255, 255, 0.45); }
 .sparc-minw-6r { min-width: 6rem; }
 .sparc-p-085-1r { padding: 0.85rem 1rem; }
+.sparc-p-1r { padding: 1rem; }
+.sparc-p-065-075 { padding: 0.65rem 0.75rem; }
+.sparc-m-0-0-065 { margin: 0 0 0.65rem; }
+.sparc-m-0-0-035 { margin: 0 0 0.35rem; }
+.sparc-m-0-0-1r { margin: 0 0 1rem; }
+.sparc-mx-auto { margin: 0 auto; }
+.sparc-maxw-760 { max-width: 760px; }
+.sparc-pt-15r { padding-top: 1.5rem; }
+.sparc-td-none { text-decoration: none; }
+.sparc-lh-16 { line-height: 1.6; }
+.sparc-color-warning-fg { color: var(--sparc-warning-fg); }
 /* !important on the table-cell utilities below is REQUIRED, not stylistic.
    Bootstrap's `.table > :not(caption) > * > *` is (0,1,1); a single utility
    class is (0,1,0) and loses, so the converted cells rendered at Bootstrap's
@@ -3714,9 +3732,32 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-row-nested { background: #fafbfc; }
 
 /* The control id itself: heavier and darker at the root, lighter when nested. */
-.sparc-control-name { font-family: monospace; font-weight: 700; color: #2c3e50; font-size: 0.95rem; }
+.sparc-control-name { font-family: monospace; font-weight: 700; color: var(--sparc-ink); font-size: 0.95rem; }
 .sparc-control-name--nested { font-weight: 500; color: #666; font-size: 0.85rem; }
 
 /* The bulk-edit toolbar revealed by the baseline editor. Visibility is NOT
    baked in — it is state, and belongs to .sparc-d-none via setVisible(). */
 .sparc-bulk-toolbar { margin-bottom: 1rem; padding: 0.75rem 1rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.375rem; }
+
+
+/* ==========================================================================
+   #1047 slice 9 — components of the catalog import screen.
+   ========================================================================== */
+
+/* A fenced example block. Four identical copies were inline on this screen,
+   each restating the same navy and the same translucent white. Both now come
+   from tokens: `--sparc-ink-deep` is the one the header gradients and the
+   filter banner already use, it just had no name until this slice. */
+.sparc-code-block {
+  background: var(--sparc-ink-deep);
+  color: var(--sparc-on-dark-muted);
+  padding: 0.65rem 0.75rem;
+  font-family: monospace;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+/* The step cards down the import page, keyed by the accent they already carry. */
+.sparc-import-step { border-left: 3px solid var(--sparc-accent); }
+.sparc-import-note { background: color-mix(in srgb, var(--sparc-accent) 8%, transparent); }

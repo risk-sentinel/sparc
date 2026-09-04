@@ -21,6 +21,12 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
 
   # Lower this with every slice. Never raise it.
   #
+  # Slice 9 took control_catalogs/import.html.erb from 34 to 0 and introduced the
+  # first SURFACE tokens: --sparc-ink / --sparc-ink-deep. Those two navies were
+  # hand-written 25 times across both stylesheets and the views with no name;
+  # the gradients, the filter banner, the control-id text and this screen's code
+  # blocks had each picked them independently.
+  #
   # Slice 8 took control_families/show.html.erb from 43 to 0, and needed three
   # things done FIRST rather than as part of the conversion: the screen was
   # absent from the visual gate entirely (LINK_FROM_SHOW now reaches it),
@@ -51,7 +57,7 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # verified against all 78 baseline screens with zero pixels changed. The static ones become theme utilities; the dynamic ones become
   # data-* attributes applied by a Stimulus controller, because a style set from
   # JavaScript is not what `style-src` blocks.
-  let(:ceiling) { 779 }
+  let(:ceiling) { 745 }
 
   # A SECOND guard, learned the hard way in slice 4.
   #
