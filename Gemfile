@@ -31,7 +31,7 @@ gem "sidekiq"                       # Background jobs
 gem "redis", "~> 6.0"              # For Sidekiq
 gem "aws-sdk-s3"                    # File storage
 gem "aws-sdk-secretsmanager", "~> 1.134"  # Secrets Manager (ECS deployments)
-gem "aws-sdk-rds", "~> 1.319"           # IAM DB auth token generation
+gem "aws-sdk-rds", "~> 1.321"           # IAM DB auth token generation
 gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 # #620 / #1065 — pin patched versions of Ruby DEFAULT gems so Bundler loads them
 # instead of the copy Ruby ships. Two independent layers, and both are wanted:
