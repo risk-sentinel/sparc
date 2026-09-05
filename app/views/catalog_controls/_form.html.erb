@@ -2,7 +2,7 @@
   <% if catalog_control.errors.any? %>
     <div class="flash error mb-4">
       <strong><%= pluralize(catalog_control.errors.count, "error") %>:</strong>
-      <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
+      <ul class="sparc-mt-05 sparc-ml-15r">
         <% catalog_control.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
         <% end %>
@@ -12,10 +12,10 @@
 
   <%# ── Identity row ── %>
   <div class="row g-3">
-    <div class="col-auto" style="width: 160px;">
+    <div class="col-auto sparc-w-160px">
       <div class="form-group">
         <%= f.label :control_id, "Control ID *" %>
-        <%= f.text_field :control_id, class: "form-control fw-semibold", placeholder: "e.g. AC-01", style: "font-family: monospace;" %>
+        <%= f.text_field :control_id, class: "form-control fw-semibold sparc-monospace", placeholder: "e.g. AC-01" %>
       </div>
     </div>
     <div class="col">
@@ -29,7 +29,7 @@
   <%# ── Statement (primary guidance_data field) ── %>
   <div class="form-group">
     <label for="catalog_control_guidance_data_statement" class="fw-semibold">Statement</label>
-    <p class="text-body-tertiary" style="font-size: 0.82rem; margin: 0.15rem 0 0.4rem;">
+    <p class="text-body-tertiary sparc-fs-082 sparc-m-015-0-04">
       The formal control requirement text. For parent controls, this is the lead-in sentence;
       for sub-parts (AC-01a, AC-01a.1 …) this is the specific requirement prose.
     </p>
@@ -53,7 +53,7 @@
     <div class="col">
       <div class="form-group">
         <span class="fw-semibold">Baseline Impact</span>
-        <div class="d-flex gap-3 mt-1" style="padding-top: 0.35rem;">
+        <div class="d-flex gap-3 mt-1 sparc-pt-035">
           <% CatalogControl::BASELINE_LEVELS.each do |level| %>
             <label class="form-check mb-0">
               <input type="checkbox" class="form-check-input" name="catalog_control[baseline_levels][]"
@@ -69,41 +69,40 @@
 
   <%# ── Parameters (editable labels, populated from OSCAL import) ── %>
   <% if catalog_control.params_present? %>
-    <details class="border rounded" style="margin-bottom: 1.25rem; padding: 0;" open>
-      <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2" style="padding: 0.65rem 1rem; cursor: pointer; list-style: none;">
+    <details class="border rounded sparc-mb-125r sparc-p-0" open>
+      <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2 sparc-form-section-summary">
         <span>&#9656;</span> OSCAL Parameters
-        <span class="badge rounded-pill text-bg-info" style="font-size: 0.7rem; font-weight: 500;">
+        <span class="badge rounded-pill text-bg-info sparc-fs-07 sparc-fw-500">
           <%= catalog_control.params_list.size %> param<%= catalog_control.params_list.size == 1 ? "" : "s" %>
         </span>
       </summary>
       <div class="p-3">
-        <p class="text-body-tertiary" style="font-size: 0.78rem; margin-bottom: 0.75rem;">
+        <p class="text-body-tertiary sparc-fs-078 sparc-mb-075">
           Parameters referenced by the control statement via <code>{{ insert: param, &lt;id&gt; }}</code>.
           Edit the <strong>Label</strong> to customize organization-specific values.
           Param IDs and structural constraints are read-only.
         </p>
-        <table class="table table-sm mb-0" style="font-size: 0.82rem;">
+        <table class="table table-sm mb-0 sparc-fs-082">
           <thead>
             <tr>
-              <th style="width: 22%; padding: 0.3rem 0.5rem;">Param ID</th>
-              <th style="width: 40%; padding: 0.3rem 0.5rem;">Label</th>
-              <th style="padding: 0.3rem 0.5rem;">Constraint / Choices</th>
+              <th class="sparc-w-22pct sparc-p-03-05">Param ID</th>
+              <th class="sparc-w-40pct sparc-p-03-05">Label</th>
+              <th class="sparc-p-03-05">Constraint / Choices</th>
             </tr>
           </thead>
           <tbody>
             <% catalog_control.params_list.each do |param| %>
               <tr>
-                <td style="padding: 0.3rem 0.5rem; font-family: monospace; color: var(--bs-primary);">
+                <td class="sparc-p-03-05 sparc-monospace sparc-color-bs-primary">
                   <%= param["id"] %>
                 </td>
-                <td style="padding: 0.3rem 0.5rem;">
+                <td class="sparc-p-03-05">
                   <%= text_field_tag "catalog_control[params_labels][#{param['id']}]",
                       param["label"],
-                      class: "form-control form-control-sm",
-                      style: "font-size: 0.82rem;",
+                      class: "form-control form-control-sm sparc-fs-082",
                       placeholder: "Organization-defined value..." %>
                 </td>
-                <td style="padding: 0.3rem 0.5rem;">
+                <td class="sparc-p-03-05">
                   <% if param.dig("select", "choice").present? %>
                     <span class="text-body-secondary">Select <%= param.dig("select", "how-many") || "one" %>:</span>
                     <%= param["select"]["choice"].join("; ") %>
@@ -135,25 +134,24 @@
     ]
     has_extra = extra_fields.any? { |key, *| gd[key].present? }
   %>
-  <details <%= "open" if has_extra %> class="border rounded" style="margin-bottom: 1.25rem; padding: 0;">
-    <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2" style="padding: 0.65rem 1rem; cursor: pointer; list-style: none;">
+  <details <%= "open" if has_extra %> class="border rounded sparc-mb-125r sparc-p-0">
+    <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2 sparc-form-section-summary">
       <span>&#9656;</span> Additional Guidance Fields
       <% if has_extra %>
-        <span class="text-body-tertiary" style="font-size: 0.75rem; font-weight: 400; margin-left: 0.25rem;">(populated)</span>
+        <span class="text-body-tertiary sparc-fs-075 sparc-fw-400 sparc-ml-025">(populated)</span>
       <% end %>
     </summary>
     <div class="d-flex flex-column gap-2 p-3">
       <% extra_fields.each do |key, label, rows, placeholder| %>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label for="catalog_control_guidance_data_<%= key %>" class="fw-semibold text-body-secondary" style="font-size: 0.88rem;">
+        <div class="form-group sparc-mb-0">
+          <label for="catalog_control_guidance_data_<%= key %>" class="fw-semibold text-body-secondary sparc-fs-088">
             <%= label %>
           </label>
           <%= text_area_tag "catalog_control[guidance_data][#{key}]",
               gd[key],
               id: "catalog_control_guidance_data_#{key}",
-              class: "form-control",
+              class: "form-control sparc-fs-088",
               rows: rows,
-              style: "font-size: 0.88rem;",
               placeholder: placeholder %>
         </div>
       <% end %>
@@ -161,7 +159,7 @@
   </details>
 
   <%# ── Submit ── %>
-  <div class="d-flex gap-3" style="margin-top: 0.5rem;">
+  <div class="d-flex gap-3 sparc-mt-05">
     <%= f.submit "Save Control", class: "sparc-action sparc-action--primary sparc-action--solid" %>
     <%= link_to "Cancel", control_family, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
   </div>
@@ -171,22 +169,22 @@
 <% if !catalog_control.new_record? %>
   <% linked = defined?(@linked_resources) ? @linked_resources : catalog_control.back_matter_resources.order(:title) %>
   <% available = defined?(@available_resources) ? @available_resources : [] %>
-  <details class="border rounded mt-4" style="padding: 0;" <%= "open" if linked.any? %>>
-    <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2" style="padding: 0.65rem 1rem; cursor: pointer; list-style: none;">
+  <details class="border rounded mt-4 sparc-p-0" <%= "open" if linked.any? %>>
+    <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2 sparc-form-section-summary">
       <span>&#9656;</span> Back-Matter References
-      <span class="badge rounded-pill text-bg-info" style="font-size: 0.7rem; font-weight: 500;">
+      <span class="badge rounded-pill text-bg-info sparc-fs-07 sparc-fw-500">
         <%= linked.size %>
       </span>
     </summary>
     <div class="p-3">
-      <p class="text-body-tertiary" style="font-size: 0.78rem; margin-bottom: 0.75rem;">
+      <p class="text-body-tertiary sparc-fs-078 sparc-mb-075">
         Link back-matter resources (policies, evidence, external references) to this control.
         Linked resources appear as <code>href="#uuid"</code> references in OSCAL exports.
       </p>
 
       <%# ── Currently linked ── %>
       <% if linked.any? %>
-        <table class="table table-sm mb-3" style="font-size: 0.82rem;">
+        <table class="table table-sm mb-3 sparc-fs-082">
           <thead>
             <tr><th>Title</th><th>UUID</th><th>Href</th><th></th></tr>
           </thead>

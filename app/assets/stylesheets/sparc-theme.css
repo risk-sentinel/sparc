@@ -3226,7 +3226,6 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-fs-072 { font-size: 0.72rem !important; }  /* 6x */
 .sparc-mt-04 { margin-top: 0.4rem; }  /* 6x */
 .sparc-ofx-auto { overflow-x: auto; }  /* 6x */
-.sparc-p-03-05 { padding: 0.3rem 0.5rem; }  /* 6x */
 .sparc-fs-07 { font-size: 0.7rem !important; }  /* 5x */
 .sparc-fs-25r { font-size: 2.5rem !important; }  /* 5x */
 .sparc-gap-1r { gap: 1rem; }  /* 5x */
@@ -3461,6 +3460,12 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-p-02-04 { padding: 0.2rem 0.4rem !important; }
 .sparc-p-02-05 { padding: 0.2rem 0.5rem !important; }
 .sparc-p-03-08 { padding: 0.3rem 0.8rem !important; }
+/* Moved here from the plain utility block on 2026-09-05. Slice 11 put it on six
+   <th>/<td> inside a .table and the cells rendered at Bootstrap's padding, not
+   0.3/0.5rem — the catalog control edit form came out 219 CSS px taller. Same
+   (0,1,1)-beats-(0,1,0) trade as its neighbours above; it only ever escaped
+   because until slice 11 nothing had used it on a table cell. */
+.sparc-p-03-05 { padding: 0.3rem 0.5rem !important; }
 .sparc-bbw-1 { border-bottom-width: 1px !important; }
 .sparc-w-auto { width: auto; }
 .sparc-w-40px { width: 40px; }
@@ -3492,6 +3497,11 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-p-03-07 { padding: 0.3rem 0.7rem; }
 .sparc-p-04-1r { padding: 0.4rem 1rem; }
 .sparc-p-05-125r { padding: 0.5rem 1.25rem; }
+.sparc-ml-025 { margin-left: 0.25rem; }
+.sparc-m-015-0-04 { margin: 0.15rem 0 0.4rem; }
+.sparc-ml-15r { margin-left: 1.5rem; }
+.sparc-pt-035 { padding-top: 0.35rem; }
+.sparc-w-160px { width: 160px; }
 .sparc-gap-15r { gap: 1.5rem; }
 .sparc-gap-045 { gap: 0.45rem; }
 .sparc-divider-top { border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
@@ -3734,6 +3744,13 @@ a.link-purple { color: var(--sparc-purple); }
 
 /* A quiet <summary> that does not look like a button. */
 .sparc-details-summary { font-size: 0.8rem; color: var(--bs-tertiary-color); cursor: pointer; padding: 0.35rem 0; user-select: none; }
+
+/* The header of a collapsible section inside a form. Written out three times in
+   catalog_controls/_form alone, identically each time. NOT .sparc-details-summary
+   (0.35rem 0, tertiary text) or .sparc-section-summary (0.7rem 1rem, 0.95rem) —
+   this is a third size that was already in use, so it gets its own name rather
+   than a nudge to either of theirs, which would be an appearance change. */
+.sparc-form-section-summary { padding: 0.65rem 1rem; cursor: pointer; list-style: none; }
 
 /* An unstyled-looking button inside the modal. */
 .sparc-btn-plain { background: var(--bs-secondary-bg); color: var(--bs-secondary-color); border: 1px solid var(--bs-border-color); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem; }

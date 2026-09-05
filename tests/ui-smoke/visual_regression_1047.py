@@ -278,6 +278,37 @@ LINK_FROM_SHOW = [
     ("control_family_show", "control_catalog_show", "/control_families/"),
 ]
 
+# Screens reached by following an EDIT link, which `_follow_link` deliberately
+# skips — on an index the first `/edit` or `/new` href is usually not the screen
+# wanted.
+#
+# The catalog CONTROL edit form is only reachable that way, and it had NO visual
+# coverage AT ALL until 2026-09-05. That matters twice over: it is the screen the
+# owner reported broken (it 500'd once a control had linked back-matter, fixed in
+# `330dabe4`), and slice 11 of the #1047 sweep rewrote 29 inline styles in the
+# partial it renders. Without this entry that slice would have been "verified" by
+# a full-surface diff that never rendered the screen it changed — the same
+# silence that hid control_family_show until slice 8.
+#
+# (label, from_label, needle, tail) — the href must contain `needle` AND end
+# with `tail`, because `control_family_show` also carries an "Edit Family" link
+# and that is a different screen.
+EDIT_FROM_SHOW = [
+    ("catalog_control_edit", "control_family_show", "/controls/", "/edit"),
+]
+
+
+def _follow_edit_link(page, base_url, from_href, needle, tail):
+    """First href on `from_href` containing `needle` and ending with `tail`."""
+    resp = page.goto(f"{base_url}{from_href}", wait_until="domcontentloaded", timeout=30000)
+    if not (resp and resp.status < 400):
+        return None
+    for h in page.eval_on_selector_all(
+            "a[href]", "els => els.map(e => e.getAttribute('href'))"):
+        if h and needle in h and h.endswith(tail):
+            return h
+    return None
+
 
 def _follow_link(page, base_url, from_href, needle):
     """First href on `from_href` containing `needle`, ignoring new/edit routes."""
@@ -437,6 +468,24 @@ def _capture(out_dir: Path, pin_from: Path | None = None, only: set[str] | None 
                 href = _follow_link(page, cap.BASE_URL, base, needle) if base else None
             if not href:
                 print(f"  – {label:32s} no link matching {needle!r} from {from_label} — skipped")
+                skipped += 1
+                continue
+            resolved[label] = href
+            if cap._shoot(page, label, href, out_dir):
+                ok += 1
+            else:
+                fail += 1
+
+        for label, from_label, needle, tail in EDIT_FROM_SHOW:
+            if not want(label):
+                continue
+            href = pinned.get(label)
+            if not href:
+                base = resolved.get(from_label) or pinned.get(from_label)
+                href = _follow_edit_link(page, cap.BASE_URL, base, needle, tail) if base else None
+            if not href:
+                print(f"  – {label:32s} no {tail!r} link matching {needle!r} "
+                      f"from {from_label} — skipped")
                 skipped += 1
                 continue
             resolved[label] = href
@@ -763,6 +812,15 @@ def _check_cascade(pin_from: Path | None) -> int:
                 base = pinned.get(from_label) or next(
                     (h for lbl, h in targets if lbl == from_label), None)
                 href = _follow_link(page, cap.BASE_URL, base, needle) if base else None
+            if href:
+                targets.append((label, href))
+
+        for label, from_label, needle, tail in EDIT_FROM_SHOW:
+            href = pinned.get(label)
+            if not href:
+                base = pinned.get(from_label) or next(
+                    (h for lbl, h in targets if lbl == from_label), None)
+                href = _follow_edit_link(page, cap.BASE_URL, base, needle, tail) if base else None
             if href:
                 targets.append((label, href))
 
