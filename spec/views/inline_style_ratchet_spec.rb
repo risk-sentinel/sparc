@@ -57,7 +57,15 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # verified against all 78 baseline screens with zero pixels changed. The static ones become theme utilities; the dynamic ones become
   # data-* attributes applied by a Stimulus controller, because a style set from
   # JavaScript is not what `style-src` blocks.
-  let(:ceiling) { 745 }
+  # 858, NOT 745. The number ROSE on 2026-09-05 without a single inline style
+  # being added, because the count was wrong: see STYLE_FORMS below. 745 was
+  # never the number of inline styles in this repository, it was the number of
+  # them written in one particular syntax.
+  #
+  # This is the ONE circumstance in which the ceiling may go up — a correction
+  # to what is being counted, never a regression in what is being guarded. Any
+  # later increase is a rot-back and must be rejected.
+  let(:ceiling) { 858 }
 
   # A SECOND guard, learned the hard way in slice 4.
   #
@@ -91,9 +99,32 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
     }
   end
 
+  # Every way an inline style reaches the browser, not just the one shape the
+  # sweep happened to start with.
+  #
+  # This counted `style="..."` ONLY until 2026-09-05, and that hid 113 inline
+  # styles from every measurement in the sweep — including 33 sitting in eight
+  # files whose own commits said they were "at 0". Rails helpers take the style
+  # as a keyword argument and it reaches the page as an attribute like any
+  # other, so `style-src 'unsafe-inline'` is exactly as load-bearing for it:
+  #
+  #     <%= link_to "x", path, style: "font-size: 1.5rem;" %>
+  #     # => <a href="..." style="font-size: 1.5rem;">x</a>
+  #
+  # A ratchet that cannot see a form of the thing it guards is not a weaker
+  # ratchet, it is a false one: it reports zero and the directive still breaks
+  # the page.
+  STYLE_FORMS = [
+    /style="[^"]*"/,      # <div style="...">
+    /style='[^']*'/,      # <div style='...'>
+    /style:\s*"[^"]*"/,   # link_to ..., style: "..."
+    /style:\s*'[^']*'/    # link_to ..., style: '...'
+  ].freeze
+
   def inline_styles
     Dir.glob(view_root.join("**/*.erb")).flat_map do |path|
-      File.read(path).scan(/style="[^"]*"/).map { |m| [ path, m ] }
+      src = File.read(path)
+      STYLE_FORMS.flat_map { |re| src.scan(re).map { |m| [ path, m ] } }
     end
   end
 
