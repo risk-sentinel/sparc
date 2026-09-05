@@ -3548,6 +3548,71 @@ a.link-purple { color: var(--sparc-purple); }
 }
 
 .sparc-minh-60px { min-height: 60px; }
+
+/* ── #1047 slices 25-39 — the last of the >=10 files ────────────────────── */
+
+/* A publish/confirm modal and its backdrop. Hidden state is .sparc-d-none, set
+   by publish_modal_controller through setVisible — NOT baked in here, which is
+   the mistake .sparc-edit-panel made. */
+.sparc-modal-backdrop {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5); z-index: 1040;
+}
+.sparc-modal-centered {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 1050;
+  /* `white`, not var(--bs-body-bg): the inline style said `white` and this
+     conversion is pixel-preserving. It is WRONG IN DARK MODE — a white panel
+     with themed text on it — and that is a pre-existing defect, flagged for the
+     screen-by-screen review rather than fixed inside a mechanical change. */
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.25);
+  width: 520px; max-width: 95vw; max-height: 85vh; overflow-y: auto;
+}
+.sparc-modal-fixfields { border-top: 1px solid var(--bs-border-color); padding-top: 1rem; }
+/* The modal's header and footer bars: a divider, padding, and space-between.
+   #dee2e6 was Bootstrap 4's hard-coded border grey; --bs-border-color is the
+   themed equivalent and follows dark mode, which the literal did not. */
+.sparc-modal-bar-top {
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--bs-border-color);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.sparc-modal-bar-bottom {
+  padding: 0.75rem 1.25rem; border-top: 1px solid var(--bs-border-color);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.sparc-modal-body { padding: 1.25rem; }
+.sparc-m-0-fw-600 { margin: 0; font-weight: 600; }
+.sparc-fs-09 { font-size: 0.9rem !important; }
+
+/* A colour swatch/dot. Size and shape here, colour from the accent. */
+.sparc-swatch-dot {
+  display: inline-block; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--sparc-accent);
+}
+.sparc-badge-num { width: 32px; height: 32px; line-height: 24px; }
+.sparc-ml-035 { margin-left: 0.35rem; }
+.sparc-mr-035 { margin-right: 0.35rem; }
+.sparc-p-025-075 { padding: 0.25rem 0.75rem; }
+.sparc-pl-125r { padding-left: 1.25rem; }
+.sparc-ls-008 { letter-spacing: 0.08rem; }
+.sparc-logo-300 { height: 300px; width: auto; }
+.sparc-w-4pct { width: 4%; }
+.sparc-mb-015 { margin-bottom: 0.15rem; }
+.sparc-mb-1r { margin-bottom: 1rem; }
+
+/* A scrollable code/pre surface. */
+.sparc-surface-scroll { background: var(--sparc-surface-alt); overflow-x: auto; }
+
+.sparc-w-20pct { width: 20%; }
+.sparc-p-04-0-only { padding: 0.4rem 0; }
+.sparc-fs-25rem { font-size: 2.5rem !important; }
+.sparc-fs-11r { font-size: 1.1rem !important; }
+.sparc-hr-plain { border: none; margin: 1.5rem 0; }
+.sparc-maxw-700 { max-width: 700px; margin: 0 auto; }
+.sparc-maxw-1100 { max-width: 1100px; }
+.sparc-gap-06 { gap: 0.6rem; }
 .sparc-th-eyebrow-row { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color); }
 
 /* ==========================================================================
@@ -3753,6 +3818,10 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-accent--silver { --sparc-accent: #bdc3c7; }
 .sparc-accent--carrot  { --sparc-accent: #e67e22; }  /* POA&M risk_status: investigating */
 .sparc-accent--pumpkin { --sparc-accent: #d35400; }  /* POA&M risk_status: deviation-requested */
+/* #1047 slice 25 — the sidebar dots used two colours ACCENT_TOKENS did not
+   name, so accent_class would have failed soft and greyed them silently. */
+.sparc-accent--teal  { --sparc-accent: #16a085; }
+.sparc-accent--ocean { --sparc-accent: #2980b9; }
 
 /* The shapes that consume it. */
 .sparc-border-l-3 { border-left: 3px solid var(--sparc-accent); }

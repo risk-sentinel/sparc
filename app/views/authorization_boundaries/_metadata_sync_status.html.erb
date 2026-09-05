@@ -9,23 +9,23 @@
   docs = boundary.linked_documents
   service = BoundaryMetadataSyncService.new(boundary)
 %>
-<div class="sparc-card" style="margin-top: 1.25rem; padding: 1rem 1.25rem;">
-  <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">
+<div class="sparc-card sparc-mt-125r sparc-p-1r-125r">
+  <h3 class="sparc-fs-1r sparc-mb-075">
     Document Metadata Sync
-    <span class="text-body-secondary" style="font-weight: 400; font-size: 0.8rem;">
+    <span class="text-body-secondary sparc-fw-400 sparc-fs-08">
       (boundary is the source of truth for system-level metadata)
     </span>
   </h3>
 
   <% if docs.empty? %>
-    <p class="text-body-secondary" style="font-size: 0.875rem;">No linked documents yet.</p>
+    <p class="text-body-secondary sparc-fs-0875">No linked documents yet.</p>
   <% else %>
-    <table class="table table-sm" style="font-size: 0.85rem; margin-bottom: 0;">
+    <table class="table table-sm sparc-fs-085 sparc-mb-0">
       <thead>
-        <tr style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color);">
-          <th style="width: 18%;">Document</th>
-          <th style="width: 18%;">Type</th>
-          <th style="width: 14%;">Status</th>
+        <tr class="sparc-th-eyebrow-row sparc-fs-072">
+          <th class="sparc-w-18pct">Document</th>
+          <th class="sparc-w-18pct">Type</th>
+          <th class="sparc-w-14pct">Status</th>
           <th>Notes</th>
         </tr>
       </thead>
@@ -44,13 +44,13 @@
             <td><%= doc.respond_to?(:name) ? doc.name : doc.to_s %></td>
             <td class="text-body-secondary"><%= doc.class.name.underscore.humanize %></td>
             <td>
-              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: <%= dot_color %>; margin-right: 0.35rem;"></span>
+              <span class="sparc-swatch-dot sparc-mr-035 <%= accent_class(dot_color) %>"></span>
               <%= status.to_s.humanize %>
             </td>
             <td class="text-body-secondary">
               <% if status == :drift %>
                 <%= pluralize(drift.size, "field") %> differ:
-                <code style="font-size: 0.72rem;"><%= drift.keys.join(", ") %></code>
+                <code class="sparc-fs-072"><%= drift.keys.join(", ") %></code>
               <% elsif status == :missing_fk %>
                 Document has no authorization_boundary_id (orphaned)
               <% else %>

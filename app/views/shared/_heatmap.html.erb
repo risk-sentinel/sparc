@@ -39,7 +39,7 @@
   fam_url        = local_assigns[:family_url_builder]
 %>
 <% if heatmap_families.any? %>
-<details id="heatmapSection" open style="margin-bottom: 1.5rem;"
+<details id="heatmapSection" open class="sparc-mb-15r"
          data-controller="heatmap"
          data-heatmap-filter-key-value="<%= fkey %>"
          data-heatmap-initial-family-value="<%= init_family %>"
@@ -91,7 +91,7 @@
              <% else %>
                data-action="click->heatmap#filterByCard"
              <% end %>>
-          <div class="d-flex justify-content-between align-items-baseline" style="margin-bottom: 0.15rem;">
+          <div class="d-flex justify-content-between align-items-baseline sparc-mb-015">
             <% if mode == :server && doc && p_helper %>
               <%= link_to family,
                     send(p_helper, doc,

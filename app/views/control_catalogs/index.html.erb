@@ -14,12 +14,12 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <h2>Control Catalogs</h2>
-      <p class="text-body-secondary" style="margin-top: 0.5rem;">Manage NIST and custom control catalogs</p>
+      <p class="text-body-secondary sparc-mt-05">Manage NIST and custom control catalogs</p>
     </div>
     <% if can_write_catalogs? %>
       <div class="d-flex flex-wrap gap-2">
         <%= link_to "↑ Import from File", import_control_catalogs_path,
-              class: "sparc-action sparc-action--info sparc-action--solid fw-semibold", style: "font-size: 0.875rem; white-space: nowrap;" %>
+              class: "sparc-action sparc-action--info sparc-action--solid fw-semibold sparc-fs-0875 sparc-ws-nowrap" %>
         <%= link_to "＋ New Catalog", new_control_catalog_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
       </div>
     <% end %>
@@ -48,38 +48,38 @@
     <table class="table table-hover">
       <thead>
         <tr>
-          <th style="white-space: nowrap;">Name</th>
-          <th style="white-space: nowrap;">Version</th>
-          <th style="white-space: nowrap;">Source</th>
-          <th style="white-space: nowrap;">Status</th>
-          <th style="white-space: nowrap;">Families</th>
-          <th style="white-space: nowrap;">Controls</th>
-          <th style="white-space: nowrap;">Actions</th>
+          <th class="sparc-ws-nowrap">Name</th>
+          <th class="sparc-ws-nowrap">Version</th>
+          <th class="sparc-ws-nowrap">Source</th>
+          <th class="sparc-ws-nowrap">Status</th>
+          <th class="sparc-ws-nowrap">Families</th>
+          <th class="sparc-ws-nowrap">Controls</th>
+          <th class="sparc-ws-nowrap">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% @control_catalogs.each do |catalog| %>
           <tr>
             <td>
-              <strong><%= link_to catalog.name, catalog, class: "text-primary", style: "text-decoration: none;" %></strong>
+              <strong><%= link_to catalog.name, catalog, class: "text-primary sparc-td-none" %></strong>
               <% if catalog.original_filename.present? %>
                 <% ext = File.extname(catalog.original_filename).delete(".").upcase %>
                 <% ext_variant = { "JSON" => "info", "XML" => "success", "YAML" => "purple", "YML" => "purple" }[ext] || "neutral" %>
-                <span class="badge sparc-status--<%= ext_variant %>" style="font-size: 0.65rem; vertical-align: middle; margin-left: 0.35rem;"><%= ext %></span>
+                <span class="badge sparc-status--<%= ext_variant %> sparc-fs-065 sparc-va-middle sparc-ml-035"><%= ext %></span>
               <% end %>
             </td>
             <td><%= catalog.version.presence || "—" %></td>
             <td><%= catalog.source.presence || "—" %></td>
-            <td style="white-space: nowrap;">
+            <td class="sparc-ws-nowrap">
               <% if catalog.processing? || catalog.pending? || catalog.failed? %>
-                <span class="<%= catalog.completed? ? 'badge-ok' : catalog.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                <span class="<%= catalog.completed? ? 'badge-ok' : catalog.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold sparc-p-02-06 sparc-fs-085">
                   <%= catalog.status %>
                 </span>
                 <% if catalog.processing? && catalog.metadata_extra&.dig("processing_message").present? %>
-                  <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= catalog.metadata_extra["processing_message"] %></span>
+                  <br><span class="text-body-secondary sparc-fs-072 sparc-ws-normal"><%= catalog.metadata_extra["processing_message"] %></span>
                 <% end %>
               <% else %>
-                <span class="<%= catalog.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;">
+                <span class="<%= catalog.lifecycle_badge_class %> rounded fw-semibold sparc-p-025-075">
                   <%= catalog.lifecycle_label %>
                 </span>
               <% end %>
@@ -95,7 +95,7 @@
     </table>
   <% else %>
     <div class="text-center text-body-secondary p-4">
-      <p style="font-size: 1.1rem;" class="mb-3">No control catalogs yet.</p>
+      <p class="sparc-fs-11r mb-3">No control catalogs yet.</p>
       <% if can_write_catalogs? %>
         <%= link_to "Create your first catalog", new_control_catalog_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
         <p class="mt-3 small">Or run <code>bin/rails db:seed</code> to load the NIST SP 800-53 Rev 5 catalog.</p>

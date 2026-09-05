@@ -1,7 +1,7 @@
 <%# Persistent left sidebar — visible on all authenticated pages %>
 <nav class="sparc-sidebar" data-controller="sidebar">
   <div class="sparc-sidebar-header">
-    <span class="fw-bold text-body-secondary text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08rem;">
+    <span class="fw-bold text-body-secondary text-uppercase sparc-fs-07 sparc-ls-008">
       Navigation
     </span>
   </div>
@@ -70,23 +70,23 @@
         <ul class="sparc-sidebar-leaves">
           <li>
             <%= link_to authoritative_sources_path, class: "sparc-sidebar-leaf" do %>
-              <span class="sparc-sidebar-dot" style="background: #16a085;"></span> Authoritative Sources
+              <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--teal"></span> Authoritative Sources
             <% end %>
           </li>
           <li>
             <%= link_to promotion_queue_index_path, class: "sparc-sidebar-leaf" do %>
-              <span class="sparc-sidebar-dot" style="background: #f39c12;"></span> Promotion Queue
+              <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--orange"></span> Promotion Queue
             <% end %>
           </li>
           <li>
             <%= link_to leveraged_poam_documents_path, class: "sparc-sidebar-leaf" do %>
-              <span class="sparc-sidebar-dot" style="background: #8e44ad;"></span> Leveraged POA&amp;Ms
+              <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--violet"></span> Leveraged POA&amp;Ms
             <% end %>
           </li>
           <% if current_user&.admin? %>
             <li>
               <%= link_to federation_peers_path, class: "sparc-sidebar-leaf" do %>
-                <span class="sparc-sidebar-dot" style="background: #2980b9;"></span> Federation Peers
+                <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--ocean"></span> Federation Peers
               <% end %>
             </li>
           <% end %>
@@ -107,8 +107,8 @@
             <li>
               <a href="<%= resource["href"] %>" target="_blank" rel="noopener noreferrer"
                  class="sparc-sidebar-leaf">
-                <span class="sparc-sidebar-dot" style="background: #9b59b6;"></span>
-                <%= resource["display_text"] %> <span style="font-size: 0.65rem;">&#8599;</span>
+                <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--purple"></span>
+                <%= resource["display_text"] %> <span class="sparc-fs-065">&#8599;</span>
               </a>
             </li>
           <% end %>
@@ -124,8 +124,8 @@
                 <li>
                   <a href="<%= resource["href"] %>" target="_blank" rel="noopener noreferrer"
                      class="sparc-sidebar-leaf sparc-sidebar-indent-2">
-                    <span class="sparc-sidebar-dot" style="background: #9b59b6;"></span>
-                    <%= resource["display_text"] %> <span style="font-size: 0.65rem;">&#8599;</span>
+                    <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--purple"></span>
+                    <%= resource["display_text"] %> <span class="sparc-fs-065">&#8599;</span>
                   </a>
                 </li>
               <% end %>
@@ -151,12 +151,12 @@
             <%= link_to help_guide_path("getting-oriented"), class: "sparc-sidebar-leaf",
                   target: "_blank", rel: "noopener noreferrer",
                   aria: { label: "Getting Oriented guide, opens in a new tab" } do %>
-              <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> Getting Oriented
+              <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--green"></span> Getting Oriented
             <% end %>
           </li>
           <li>
             <%= link_to help_path, class: "sparc-sidebar-leaf" do %>
-              <span class="sparc-sidebar-dot" style="background: #3498db;"></span> Help Center
+              <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--blue"></span> Help Center
             <% end %>
           </li>
           <% sidebar_help_guides.each do |guide| %>
@@ -165,7 +165,7 @@
               <%= link_to help_guide_path(guide.slug), class: "sparc-sidebar-leaf",
                     target: "_blank", rel: "noopener noreferrer",
                     aria: { label: "#{guide.title} guide, opens in a new tab" } do %>
-                <span class="sparc-sidebar-dot" style="background: #9b59b6;"></span> <%= guide.title %>
+                <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--purple"></span> <%= guide.title %>
               <% end %>
             </li>
           <% end %>

@@ -160,6 +160,8 @@ module ApplicationHelper
   COLOR_GRAY_DARK = "#7f8c8d".freeze  # default fallback
   COLOR_PURPLE    = "#9b59b6".freeze  # multiple / composite
   COLOR_VIOLET    = "#8e44ad".freeze  # continuous / deep purple
+  COLOR_TEAL      = "#16a085".freeze  # authoritative sources
+  COLOR_OCEAN     = "#2980b9".freeze  # federation peers
 
   LABEL_NONE           = "(None)".freeze
   LABEL_NOT_APPLICABLE = "Not Applicable".freeze
@@ -221,6 +223,8 @@ module ApplicationHelper
     "#2ecc71"       => "emerald",
     COLOR_PURPLE    => "purple",
     COLOR_VIOLET    => "violet",
+    COLOR_TEAL      => "teal",
+    COLOR_OCEAN     => "ocean",
     "#bdc3c7"       => "silver",
     # POA&M risk_status uses two oranges the other status maps do not: without
     # these, accent_class falls back to slate and silently greys them.
