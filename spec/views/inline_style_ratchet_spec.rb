@@ -65,7 +65,7 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # This is the ONE circumstance in which the ceiling may go up — a correction
   # to what is being counted, never a regression in what is being guarded. Any
   # later increase is a rot-back and must be rejected.
-  let(:ceiling) { 858 }
+  let(:ceiling) { 790 }
 
   # A SECOND guard, learned the hard way in slice 4.
   #
@@ -85,11 +85,24 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # ERB is masked before scanning: `value="<%= x %>"` contains `>`, so a naive
   # tag regex truncates mid-tag. That is the same trap that made an earlier
   # codemod skip 28 of 136 attributes.
+  #
+  # Masking ERB is NOT enough, and this guard missed a live defect on
+  # 2026-09-05 because of it. A Stimulus action is plain markup containing a
+  # literal `>`:
+  #
+  #     data-action="click->heatmap-chip#apply"
+  #
+  # `<[a-zA-Z][^>]*>` ends the "tag" at that arrow, so a second class= further
+  # down the element is never seen. A summary chip on the SAP screen carried two
+  # class attributes and this spec reported clean. TAG_SCAN steps over quoted
+  # attribute values instead of stopping at the first `>`.
+  TAG_SCAN = %r{<[a-zA-Z][^\s>]*(?:\s+(?:[^\s=>]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)\s*)*/?>}m
+
   it "never leaves an element with two class attributes" do
     offenders = Dir.glob(view_root.join("**/*.erb")).flat_map do |path|
       masked = File.read(path).gsub(/<%.*?%>/m, "ERB")
-      masked.scan(/<[a-zA-Z][^>]*>/)
-            .select { |tag| tag.scan(/\bclass=/).size > 1 }
+      masked.scan(TAG_SCAN)
+            .select { |tag| tag.scan(/(?:\A|\s)class\s*=/).size > 1 }
             .map { |tag| "#{path.sub(Rails.root.to_s + '/', '')}: #{tag.split.join(' ')[0, 110]}" }
     end
 
@@ -120,6 +133,36 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
     /style:\s*"[^"]*"/,   # link_to ..., style: "..."
     /style:\s*'[^']*'/    # link_to ..., style: '...'
   ].freeze
+
+  # The SAME defect in the HELPER form, which the guard above cannot see.
+  #
+  # `link_to "x", path, class: "a", role: "button", class: "b"` is valid Ruby:
+  # the last key wins and "a" is SILENTLY DROPPED. It is the exact failure the
+  # two-class-attribute guard exists for, and this sweep produced one on
+  # 2026-09-05 — a heat-map badge that would have lost `sparc-heatmap-badge`
+  # and its status colour with nothing to report it. Ruby emits a warning at
+  # compile time; nothing in the suite was reading it.
+  it "never passes class: twice to the same helper call" do
+    offenders = Dir.glob(view_root.join("**/*.erb")).flat_map do |path|
+      rel = path.sub(Rails.root.to_s + "/", "")
+      # An ERB expression tag, flattened, then scanned for two class: keys.
+      File.read(path).scan(/<%=.*?%>/m).filter_map do |tag|
+        # Only TOP-LEVEL keys count. `button_to ..., class: "a", form: { class: "b" }`
+        # is correct and common: the second belongs to the generated <form>, not
+        # the button. Strip balanced brace groups until none are left, so nested
+        # hashes (and arrays of hashes, as `badges: [ { ... } ]`) drop out.
+        flat = tag.dup
+        flat = flat.sub(/\{[^{}]*\}/, "") while flat.match?(/\{[^{}]*\}/)
+        next unless flat.scan(/(?:^|[\s,(])class:\s/).size > 1
+        "#{rel}: #{tag.split.join(' ')[0, 120]}"
+      end
+    end
+
+    expect(offenders).to be_empty, lambda {
+      "#{offenders.size} helper call(s) pass class: twice; Ruby keeps the LAST " \
+      "and drops the first silently:\n  " + offenders.join("\n  ")
+    }
+  end
 
   def inline_styles
     Dir.glob(view_root.join("**/*.erb")).flat_map do |path|

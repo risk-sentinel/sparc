@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-09-05
+**Last updated:** 2026-09-05 (second pass — the sweep count was measuring one syntax)
 
 ---
 
@@ -248,7 +248,7 @@ kept as a record of a call that worked rather than as live guidance.
 | Bundle | Issues | Theme | Est. |
 | --- | --- | --- | --- |
 | **Y — Reliability, and the deadline** ✅ **SHIPPED 2026-08-31** | ~~#968~~ ~~#1051~~ ~~#1022~~ ~~#1058~~ | The rescue-pattern audit (54 sites, 11 log-and-continue in services/jobs, 17 combining a transaction with a rescue). Alongside it the two correctness defects the release run surfaced: 163 of 232 CDEFs export schema-invalid OSCAL (#1051) and `/api/v1/controls` ignores `?items`/`?per_page` so 4,054 rows come back whole (#1022). **All four closed 2026-08-31 — one working day against a 3d estimate**, because the rescue-pattern audit found the 54 sites concentrated in a handful of shapes rather than needing 54 separate decisions. | 3d → **1d** |
-| **Z — The CSP tail** ⏳ **IN FLIGHT** (increment merged as PR #1102) | #1047 #728 #1046 · folded in: ~~#1090~~ ~~#1092~~ ~~#1093~~ ~~#1094~~ ~~#1095~~ ~~#1096~~ · **#1047 sweep: 1,403 → 745 (658 done, 47%)** — slices: sar_enrich 136, ssp_enrich 97, ato_wizard 99, ssp_show 90, poam_show 72, cdef_show 47, sar_show 39, control_families 43, catalog_import 34 · plus owner-review work carrying no issue: NIST control ordering, the duplicate family heatmap on SAR/SAP, and the three defects the owner's page-by-page review found (see below) | **#528 was closed with two of its four items explicitly undone.** Removing `style-src 'unsafe-inline'` means 1,399 inline styles, and Trusted Types has to be settled rather than deferred again. #728 (30 contrast findings vs our WCAG AA gate) and #1046 (S7875, 213 route occurrences) are the same surface. **Largest single item in either milestone.** | **4d est.; on day 4 at 47%** |
+| **Z — The CSP tail** ⏳ **IN FLIGHT** (increment merged as PR #1102) | #1047 #728 #1046 · folded in: ~~#1090~~ ~~#1092~~ ~~#1093~~ ~~#1094~~ ~~#1095~~ ~~#1096~~ · **#1047 sweep: 1,516 → 790 (726 done, 48%)** — ten slices plus a leftovers pass; the 1,403/745/47% published earlier counted only `style="..."` and missed 113 helper-form styles · plus owner-review work carrying no issue: NIST control ordering, the duplicate family heatmap on SAR/SAP, and the three defects the owner's page-by-page review found (see below) | **#528 was closed with two of its four items explicitly undone.** Removing `style-src 'unsafe-inline'` means 1,399 inline styles, and Trusted Types has to be settled rather than deferred again. #728 (30 contrast findings vs our WCAG AA gate) and #1046 (S7875, 213 route occurrences) are the same surface. **Largest single item in either milestone.** | **4d est.; on day 4 at 48%** |
 | **AA — Auth and access debt** | #978 #1044 **#1059** **#1082** | Signing in over plain HTTP on a prod-mode container fails **silently** on a CSRF Origin mismatch (#978) — a support call that looks like broken auth. #1044 adds a time-boxed instance administrator via the IdP, distinct from the break-glass account, which is the natural follow-on from Bundle R. **#1082** consolidates enable-vs-require: `SPARC_REQUIRE_AUTH_METHODS` does not imply enablement, so requiring a method that is not enabled locks every non-break-glass user out at request time rather than failing at boot. | 3d |
 | **AB — Onboarding, and the Sonar backlog** | #1040 #940 #1033 #930 #966 #836 | The guided boundary onboarding flow (#1040) is a feature, not a fix — it takes a team from "a pile of Word documents" to a boundary SPARC can work with, and carries the platform axis that makes CDEF recommendation possible. #966 triages 281 SonarCloud findings including 2 Blockers — note that **#1104, filed 2026-09-04, measures ~40 findings standing on `main`**; the two figures are not in conflict but nobody has reconciled them, and #966 should be re-scoped against a live measurement before it is planned rather than against its own filing text. | 5d |
 | **AC — Coverage and conformance** ⚠️ **NEW, and NOT YET SEQUENCED** | **#1063** **#1106** | Two open issues on this milestone appear in **no bundle**, which this file previously asserted could not happen. **#1063** is per-endpoint `tests/api` and per-screen ui-smoke both-direction coverage — filed out of CI-1 and moved here. **#1106** was filed 2026-09-03 out of Bundle Z's `implementation-status` defect and asks the same question of all seven exports: are the namespaces, vocabularies and constraints right, not merely the schema version. Both are audits over a surface the other bundles are actively changing, so they are cheapest **last** — but that is an argument, not a decision, and the owner has not made one. | est. TBD |
@@ -257,39 +257,54 @@ kept as a record of a call that worked rather than as live guidance.
 
 #### Bundle Z — the detail the table cannot hold
 
-**Sweep progress, measured by `spec/views/inline_style_ratchet_spec.rb`:**
-1,403 at the branch point → **745** (re-measured 2026-09-05 by running the
-ratchet's own count, not read off this file). **Nine slices done**, 658
-declarations, **47%**: sar_enrich 136, ssp_enrich 97, ato_wizard 99, ssp_show
-90, poam_show 72, cdef_show 47, control_families 43, sar_show 39,
-catalog_import 34. Slice 4 was the first to convert DYNAMIC styles — 41 remain
-repo-wide, in three shapes: enumerable status COLOUR and indent DEPTH become
-classes, and the ~8 continuous percentage widths go through a Stimulus
-controller writing `element.style.width`, which `style-src` does not govern.
-Each is verified by a full-surface pixel A/B against a baseline captured on the
-*previous* image, plus `--check-cascade`; slice 3 came back byte-identical on
-the screen it rewrote. Two defects were found by re-verifying slices 1-2 and
-are fixed: a duplicate `.sparc-field-label` that restyled 2,456 `<th>`s across
-five screens, and the utility layer losing the cascade to `application.css` on
-638 form controls. **Largest files remaining, re-measured 2026-09-05** — 745
-declarations across **106 files**: `sap_documents/show` 33,
-`catalog_controls/_form` 26, `converters/stig_parser` 25,
-`ssp_documents/wizard` 24, `home/index` 23, `profile_controls/_form` 22. **The
-distribution has flattened, and that changes the remaining cost.** Slices 1–4
-averaged 105 declarations per file; the tail averages **7**.
-`sap_documents/show` is the last file above 30. So the remaining 53% is not
-four more slices — it is ~100 files, most of which need a per-screen judgement
-about whether an existing token fits before any conversion happens, and the
-per-file overhead (visual baseline, cascade check) stops amortising.
-**`converters/stig_parser` is blocked**: `converter_search_controller` reveals
-by writing an EMPTY inline `display`, which a class cannot override, so it must
-move to `setVisible` first — the same defect class as `baseline_editor` in
-slice 8 and `heatmap_controller`. | 4d |
+**Sweep progress — every figure this file has published was counting ONE
+SYNTAX.** The ratchet matched `style="..."` and nothing else, but Rails helpers
+take the style as a keyword (`link_to "x", path, style: "..."`) and it reaches
+the browser as an ordinary attribute, so `style-src 'unsafe-inline'` is exactly
+as load-bearing for it. **113 inline styles were invisible to every measurement
+in this bundle, and 33 of them sat in eight files whose own commits said "to
+0"** — every slice but one left some behind.
+
+| | published | actual |
+| --- | --- | --- |
+| branch point (`dc739d50`) | 1,403 | **1,516** |
+| after slice 9 | 745 | **858** |
+| now | — | **790** |
+
+**The sweep was at 43%, not the 47% published on 2026-09-04. It is now 48%**,
+after a leftovers pass that took all eight of those files to a TRUE zero and
+slice 10 (`sap_documents/show`, 35). Ten slices: sar_enrich 136, ssp_enrich 97,
+ato_wizard 99, ssp_show 90, poam_show 72, cdef_show 47, control_families 43,
+sar_show 39, sap_show 35, catalog_import 34, plus 33 helper-form leftovers.
+Slice 4 was the first to convert DYNAMIC styles — **20 remain** repo-wide
+(re-measured 2026-09-05; the 769 others are static), in three shapes:
+enumerable status COLOUR and indent DEPTH become classes, and the ~8 continuous
+percentage widths go through a Stimulus controller writing
+`element.style.width`, which `style-src` does not govern. Each is verified by a
+full-surface pixel A/B against a baseline captured on the *previous* image,
+plus `--check-cascade`; slice 3 came back byte-identical on the screen it
+rewrote. Two defects were found by re-verifying slices 1-2 and are fixed: a
+duplicate `.sparc-field-label` that restyled 2,456 `<th>`s across five screens,
+and the utility layer losing the cascade to `application.css` on 638 form
+controls. **Largest files remaining, re-measured 2026-09-05 on the corrected
+count** — 790 declarations across **127 files**, mean **6.2**:
+`catalog_controls/_form` 29, `converters/stig_parser` 25,
+`ssp_documents/wizard` 25, `home/index` 23, `profile_controls/_form` 23,
+`profile_documents/show` 21. **The distribution has flattened, and that changes
+the remaining cost.** Slices 1–4 averaged 105 declarations per file; only
+**eight files now hold 20 or more**, and **78 hold five or fewer**. So the
+remaining 52% is not four more slices — it is **127 files**, most of which need
+a per-screen judgement about whether an existing token fits before any
+conversion happens, and the per-file overhead (visual baseline, cascade check)
+stops amortising. **`converters/stig_parser` is blocked**:
+`converter_search_controller` reveals by writing an EMPTY inline `display`,
+which a class cannot override, so it must move to `setVisible` first — the same
+defect class as `baseline_editor` in slice 8 and `heatmap_controller`.
 
 **PR #1102 was a verified INCREMENT and merged 2026-09-03; #1047 did NOT close
 on it, and the branch continues.** #1047's deliverable is the removal of
 `style-src 'unsafe-inline'`, which is one line and is only safe at a count of
-**zero** — removing it at 745 breaks 745 places silently, with no console error
+**zero** — removing it at 790 breaks 790 places silently, with no console error
 and no failing spec. **#728 and #1046 are still not started** and stay in the
 bundle.
 
@@ -333,7 +348,7 @@ small defects found in sweeps. Do **not** plan this milestone at 4.2 issues/day
 — that rate was earned on a different size distribution.
 
 **Re-measured after Bundle Y, as this section asked for.** Y estimated 3d and
-took **1**. Z estimated 4d and is on its **fourth working day at 47% of #1047's
+took **1**. Z estimated 4d and is on its **fourth working day at 48% of #1047's
 sweep**, having also absorbed the four-layer #1100 chain and three owner-review
 defects that are not CSP work at all. The two errors point opposite ways and do
 not cancel: **the small-defect bundles keep landing faster than estimated, and
@@ -355,15 +370,15 @@ one bundle every 1.5–2 days:
 | 08-26 → 08-29 | CI-3 + CI-4, and the unbundled tail (#1064 #1065 #1067 #1080) | ✅ ci.v0.0.1 |
 | **08-30 Sun** | **`ci.v0.0.1` closes — 22 issues, 0 open** *(recorded here as 30/30 until 2026-09-05; that was the milestone page counting its 8 PRs)*, three days ahead of the ~09-02 predicted | ✅ |
 | **08-31 Mon** | **Y — reliability. All four closed in ONE day** against 3d; **#968 met its 09-06 date, closing on the first of the five working days allotted** | ✅ v1.16.1 |
-| **09-01 → now** | **Z — the CSP tail. IN FLIGHT.** Increment merged 09-03 as PR #1102; sweep 1,403 → **745 (47%)**; absorbed the #1100 statement chain and three owner-review defects | 🔄 v1.16.1 |
+| **09-01 → now** | **Z — the CSP tail. IN FLIGHT.** Increment merged 09-03 as PR #1102; sweep 1,516 → **790 (48%)** on the corrected count; absorbed the #1100 statement chain and three owner-review defects | 🔄 v1.16.1 |
 | 09-08 → 09-12 | AA — auth and access debt (carries #1082) | v1.16.1 |
 | 09-15 → 09-19 | AB — onboarding and Sonar | v1.16.1 |
 | *unsequenced* | **AC — #1063, #1106** — no owner decision yet on where these land | v1.16.1 |
 | **~09-22, and soft** | **`v1.16.1` tag** | |
 
 **These dates are projected from the assumption that Z finishes this week, and
-that assumption is not measured.** Z is at 47% of #1047 with the flat tail
-still ahead of it (~100 files averaging 7 declarations each). If the remaining
+that assumption is not measured.** Z is at 48% of #1047 with the flat tail
+still ahead of it (127 files averaging 6.2 declarations each). If the remaining
 sweep costs per-file what the tail's shape suggests rather than per-declaration
 what the head cost, Z runs past this week and every row below it moves. **The
 tag date is the least reliable figure in this file** and should be redrawn from
@@ -391,7 +406,7 @@ cadence note warns about. ~~**Re-measure after Bundle Y.**~~
 
 **Re-measured 2026-08-31 / 2026-09-05, and the caution was half right.** Bundle
 Y — four issues, 3d estimate — closed in **one day**. Bundle Z is on day four
-of a 4d estimate at **47%** of its single large item. The distribution argument
+of a 4d estimate at **48%** of its single large item. The distribution argument
 predicted both bundles would run long; instead the small-defect bundle ran
 *shorter* and the large single item is running long on its own. **What governs
 this milestone's date is #1047 and nothing else**, so the useful re-measure is
@@ -610,7 +625,7 @@ owner-review work carrying no issue, and the PR body uses no closing keyword for
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
 | 16 | **Complete** | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | **87 issues, 87 closed. Tagged `v1.16.0` 2026-08-24** from `main` @ `75b5bb3b`. The full closed list is the milestone itself — do not maintain a second copy here | **SHIPPED.** Bundles ran #939 → O → S → P → T → Q → hdf pin → U → W → V → R → X. Bundle X merged as [PR #1049](https://github.com/risk-sentinel/sparc/pull/1049) → `9ae84a84`; [PR #1055](https://github.com/risk-sentinel/sparc/pull/1055) → `75b5bb3b` then fixed four defects Bundle X had merged, found by running the FULL suites against a built prod image. Release verification (measured, on the tagged tree): rspec **6230/0**, API **2742 passed** over TLS and again over non-TLS, ui-smoke **524 passed / 0 failed**, rubocop + brakeman + bundle-audit clean. The milestone grew **53 → 86 because the sweeps FOUND things**, not through scope creep. Wiki published and release notes carry the measured table |
 | 17 | **Complete** | `ci.v0.0.1` — evidence and gates | **0 open, 22 closed** — re-measured 2026-09-05 with `gh issue list --milestone ci.v0.0.1`. This row read **30 closed** until then; that is the milestone **page's** number and it counts the milestone's **8 PRs** alongside its issues. CI-1 #1048 #1050 #987 #885 · CI-2 #962 #985 #990 #1027 · CI-3 #835 #927 #711 #1061 · CI-4 #858 #859 #965 #917 · filed and closed out of it: #1064 #1065 #1067 #1080 | Closed **2026-08-30**, three working days ahead of the ~09-02 the cadence predicted. **CI-1**: `security_gate` had never assessed a single HDF — `saf validate threshold -F` names a flag that has never existed in any released saf, oclif rejected the parse, `saf_action` reported a warning and exited 0, and the next step wrote "Security gate passed". **CI-2**: several of the 12 HDFs had ZERO controls, and a zero-control document passes every band trivially — a clean scan and a broken scanner were the same green check. **#1080** closed the milestone by finding that local scans disagreed with CI 68-to-0 because `.dockerignore` did not exclude gitignored local scan output: `COPY . .` baked a developer's own CycloneDX SBOM into the image and Trivy parsed it back as installed packages. CI was correct throughout. Inventory: `docs/compliance/scan-artifact-inventory.md`. Estimated 8 → revised 11 → **actual ~7 working days** |
-| 18 | **In progress** | v1.16.1 — the patch release | **15 open, 4 closed** on the milestone (re-measured 2026-09-05, `gh issue list --milestone v1.16.1 --state all --limit 300`). **Y SHIPPED 2026-08-31** — all four (#968 #1051 #1022 #1058) closed in ONE day against a 3d estimate, and **#968 met its 09-06 due date, closing on the first of the five working days allotted**. **Z IS IN FLIGHT**: a verified increment merged 09-03 as [PR #1102](https://github.com/risk-sentinel/sparc/pull/1102) and the branch continues — #1047 stays open at **745 of 1,403 inline styles remaining (47% swept, 9 slices)**, #728 and #1046 are still not started. Z has folded in six spot-check issues (#1090 #1092 #1093 #1094 #1095 #1096, all now closed) and filed four more out of its own work (#1103 #1104 #1105 #1106). Bundles: ~~Y~~ · Z the CSP tail (#1047 #728 #1046) · AA auth and access debt (#978 #1044 #1059 #1082) · AB onboarding and Sonar (#1040 #940 #1033 #930 #966 #836) · **AC #1063 #1106 — unsequenced, no owner decision** | Estimated **14 working days**, target **~2026-09-22 and soft**. **Re-measured after Y, as the plan required:** Y ran 3d → **1d**; Z is on day four of 4d at 47% of its single large item, having also absorbed the four-layer #1100 statement chain and three owner-review defects that are not CSP work. **#1047 alone governs this milestone's date** — re-measure it by RUNNING `spec/views/inline_style_ratchet_spec.rb`, never by reading the figure out of this file, which was stale within two days last time |
+| 18 | **In progress** | v1.16.1 — the patch release | **15 open, 4 closed** on the milestone (re-measured 2026-09-05, `gh issue list --milestone v1.16.1 --state all --limit 300`). **Y SHIPPED 2026-08-31** — all four (#968 #1051 #1022 #1058) closed in ONE day against a 3d estimate, and **#968 met its 09-06 due date, closing on the first of the five working days allotted**. **Z IS IN FLIGHT**: a verified increment merged 09-03 as [PR #1102](https://github.com/risk-sentinel/sparc/pull/1102) and the branch continues — #1047 stays open at **790 of 1,516 remaining (48% swept, 10 slices)** — the ratchet was counting one syntax and missed 113, #728 and #1046 are still not started. Z has folded in six spot-check issues (#1090 #1092 #1093 #1094 #1095 #1096, all now closed) and filed four more out of its own work (#1103 #1104 #1105 #1106). Bundles: ~~Y~~ · Z the CSP tail (#1047 #728 #1046) · AA auth and access debt (#978 #1044 #1059 #1082) · AB onboarding and Sonar (#1040 #940 #1033 #930 #966 #836) · **AC #1063 #1106 — unsequenced, no owner decision** | Estimated **14 working days**, target **~2026-09-22 and soft**. **Re-measured after Y, as the plan required:** Y ran 3d → **1d**; Z is on day four of 4d at 48% of its single large item, having also absorbed the four-layer #1100 statement chain and three owner-review defects that are not CSP work. **#1047 alone governs this milestone's date** — re-measure it by RUNNING `spec/views/inline_style_ratchet_spec.rb`, never by reading the figure out of this file, which was stale within two days last time |
 
 <!-- markdownlint-enable MD013 -->
 
