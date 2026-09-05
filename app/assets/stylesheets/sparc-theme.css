@@ -3460,6 +3460,14 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-p-035-085 { padding: 0.35rem 0.85rem; }
 .sparc-fs-22r { font-size: 2.2rem !important; }
 
+/* ── #1047 slice 16 — the profile document screen ───────────────────────── */
+.sparc-color-white-50 { color: rgba(255, 255, 255, 0.5); }
+.sparc-ml-02 { margin-left: 0.2rem; }
+.sparc-fs-066 { font-size: 0.66rem !important; }
+/* A link on the gradient header: readable on the dark band, underlined so it
+   reads as a link without relying on colour alone. */
+.sparc-header-link { color: rgba(255, 255, 255, 0.8); text-decoration: underline; }
+
 /* ==========================================================================
    #1047 slice 4 — the SSP show screen's vocabulary.
 
