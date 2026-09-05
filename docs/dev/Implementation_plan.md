@@ -400,8 +400,8 @@ estimate of 11 working days → 09-08. **Actual: ~7 working days.** The
 conservative bound was wrong by more than the cadence was.
 
 Worth recording *why*, because the same reasoning will be applied to v1.16.1:
-the gap was said to be "entirely CI-3 and CI-4", on the grounds that #859 and #711
-were not the concentrated-in-one-file shape that made CI-1 and CI-2 cheap.
+the gap was said to be "entirely CI-3 and CI-4", on the grounds that #859 and
+#711 were not the concentrated-in-one-file shape that made CI-1 and CI-2 cheap.
 That held — those were the expensive bundles — but the milestone still landed
 early because four issues filed *out of* the work (#1064 #1065 #1067 #1080)
 turned out to share one root cause each rather than needing separate
@@ -556,25 +556,24 @@ My read, offered as a starting point rather than a decision:
 
 - **#1099, #1100 and #1101 are DESIGN questions, not defects**, and they are the
   three most consequential things the owner's review produced. #1099 (findings
-  and risks are unrelated in SPARC where OSCAL relates them n:m through
-  `finding.related-risks`) and #1100 (control sub-parts are aggregated, so an
-  assessor cannot respond per part) both change the data model; neither belongs
-  in a bundle until it is decided.
-  **#1100 was decided by implementing it, which is a departure worth naming.**
-  The owner's instruction was *fix now, then proceed*, so the data-model change
-  shipped on the Bundle Z branch rather than waiting for a bundle: catalog parts
-  are now stored, and an SSP carries one statement per addressable part. It is
-  still listed here as open because the design question — what
-  `implemented-requirement.statements` should contain for a control the catalog
-  gives no statement, and whether the flat fallback for pre-existing documents is
-  the right compromise — is the owner's to confirm on review. **#1099 and #1101
-  are untouched.**
-- **#980** (CDEFs need an authorization boundary) is the closest to live work — it
-  sits beside #1040's platform axis in Bundle AB, and shipping that flow without it
-  may be awkward.
-- **#953** (authenticated DAST against the two-boundary fixture) belongs with the CI
-  milestone if it belongs anywhere — the fixture it needs (#845) already shipped.
-- **#422** and **#531** have been open longest and may simply be closeable.
+and risks are unrelated in SPARC where OSCAL relates them n:m through
+`finding.related-risks`) and #1100 (control sub-parts are aggregated, so an
+assessor cannot respond per part) both change the data model; neither belongs
+in a bundle until it is decided.   **#1100 was decided by implementing it,
+which is a departure worth naming.**   The owner's instruction was *fix now,
+then proceed*, so the data-model change   shipped on the Bundle Z branch rather
+than waiting for a bundle: catalog parts   are now stored, and an SSP carries
+one statement per addressable part. It is   still listed here as open because
+the design question — what   `implemented-requirement.statements` should
+contain for a control the catalog   gives no statement, and whether the flat
+fallback for pre-existing documents is   the right compromise — is the owner's
+to confirm on review. **#1099 and #1101   are untouched.** - **#980** (CDEFs
+need an authorization boundary) is the closest to live work — it   sits beside
+#1040's platform axis in Bundle AB, and shipping that flow without it   may be
+awkward. - **#953** (authenticated DAST against the two-boundary fixture)
+belongs with the CI   milestone if it belongs anywhere — the fixture it needs
+(#845) already shipped. - **#422** and **#531** have been open longest and may
+simply be closeable.
 
 ### Everything else
 
@@ -586,13 +585,13 @@ paragraph asserted on 2026-09-02 that "every open issue on the milestone appears
 in exactly one bundle". By 09-05 that was false in both directions:
 
 - **#1063** and **#1106** were on the milestone and in **no bundle** — #1106
-  because it was filed and milestoned on 09-03, after the check; #1063 because it
-  moved here from CI-1 and was never picked up by a bundle. Both are now in a new
-  **AC** row in Phase 18, marked unsequenced, because putting them somewhere is
-  not the same as the owner deciding where they go.
-- **Bundle Y's four issues are all closed**, so the "no bundle cites an issue
-  that is not open" half now needs reading as "no *open* bundle does" — Y is
-  struck through and kept as a record.
+  because it was filed and milestoned on 09-03, after the check; #1063 because
+it   moved here from CI-1 and was never picked up by a bundle. Both are now in
+a new   **AC** row in Phase 18, marked unsequenced, because putting them
+somewhere is   not the same as the owner deciding where they go. - **Bundle Y's
+four issues are all closed**, so the "no bundle cites an issue   that is not
+open" half now needs reading as "no *open* bundle does" — Y is   struck through
+and kept as a record.
 
 **The check is only worth anything if it is re-run.** It passed on 09-02 and was
 wrong within a day, because a milestone gains issues from the work in flight.
