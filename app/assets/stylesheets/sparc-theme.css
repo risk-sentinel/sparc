@@ -3384,6 +3384,28 @@ a.link-purple { color: var(--sparc-purple); }
    container, this is one clickable option inside it. */
 .sparc-wizard-option-row { padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; cursor: pointer; }
 
+/* ── #1047 slice 13 — the STIG parser screen ────────────────────────────── */
+
+/* A column/section eyebrow: small, uppercase, tracked, tertiary.
+   THREE near-identical eyebrows now exist and they differ for no recorded
+   reason — .sparc-card-eyebrow (0.65rem / 0.1em), .sparc-sar-eyebrow
+   (0.72rem / 0.08em / nowrap) and this (0.7rem / 0.08em). Converting to any
+   ONE of them would change appearance, so this keeps the value it had and the
+   three-way split is flagged for the screen-by-screen review rather than
+   silently resolved here. */
+.sparc-eyebrow { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color); }
+
+.sparc-mb-15r { margin-bottom: 1.5rem; }
+.sparc-tt-uppercase { text-transform: uppercase; }
+.sparc-ls-015 { letter-spacing: 0.15em; }
+.sparc-color-danger { color: var(--sparc-danger); }
+.sparc-color-warning { color: var(--sparc-warning); }
+.sparc-minw-200px { min-width: 200px; }
+.sparc-flex-1-1-250px { flex: 1 1 250px; }
+/* The checkbox tint. Not a colour utility — accent-color styles the control
+   itself, and no `color` rule reaches it. */
+.sparc-accent-primary { accent-color: var(--sparc-primary); }
+
 /* ==========================================================================
    #1047 slice 4 — the SSP show screen's vocabulary.
 

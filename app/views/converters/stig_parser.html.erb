@@ -2,14 +2,14 @@
      data-action="dropzone:fileSelected@window->stig-parser#handleFile">
 
 <%# ── Header ── %>
-<div class="sparc-dashboard-header" style="margin-bottom: 1.5rem;">
+<div class="sparc-dashboard-header sparc-mb-15r">
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
     <div>
       <div class="d-flex align-items-baseline gap-2">
-        <span style="font-family: monospace; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sparc-primary);">XCCDF</span>
+        <span class="sparc-mono sparc-fs-07 sparc-ls-015 sparc-tt-uppercase sparc-color-primary">XCCDF</span>
         <h1 class="h3 fw-bold mb-0">STIG Parser</h1>
       </div>
-      <p class="text-body-secondary mb-0" style="font-size: 0.88rem; margin-top: 0.35rem;">
+      <p class="text-body-secondary mb-0 sparc-fs-088 sparc-mt-035">
         Analyze DISA STIG XCCDF XML files client-side. Preview SV/V-IDs, severities, CCIs, and resolved NIST controls before importing.
       </p>
     </div>
@@ -51,14 +51,12 @@
 </div>
 
 <%# ── Loading Indicator ── %>
-<div class="text-center text-primary mb-3 d-none" data-stig-parser-target="loading"
-     style="font-family: monospace; font-size: 0.88rem;">
+<div class="text-center text-primary mb-3 d-none sparc-mono sparc-fs-088" data-stig-parser-target="loading">
   Parsing STIG&hellip;
 </div>
 
 <%# ── Error Message ── %>
-<div class="alert alert-danger d-none" data-stig-parser-target="errorMessage"
-     style="font-family: monospace; font-size: 0.85rem;"></div>
+<div class="alert alert-danger d-none sparc-mono sparc-fs-085" data-stig-parser-target="errorMessage"></div>
 
 <%# ── Results Section ── %>
 <div class="d-none" data-stig-parser-target="resultsSection">
@@ -66,8 +64,8 @@
   <%# Benchmark title + stats %>
   <div class="card mb-3">
     <div class="card-body">
-      <div style="font-family: monospace; font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sparc-primary); margin-bottom: 0.25rem;">Benchmark</div>
-      <div class="fw-semibold mb-3" data-stig-parser-target="benchmarkTitle" style="font-size: 1rem;"></div>
+      <div class="sparc-mono sparc-fs-068 sparc-ls-015 sparc-tt-uppercase sparc-color-primary sparc-mb-025">Benchmark</div>
+      <div class="fw-semibold mb-3 sparc-fs-1r" data-stig-parser-target="benchmarkTitle"></div>
 
       <div class="sparc-stig-stats">
         <div class="sparc-stig-stat">
@@ -75,19 +73,19 @@
           <div class="sparc-stig-stat__label">Total Rules</div>
         </div>
         <div class="sparc-stig-stat">
-          <div class="sparc-stig-stat__value" style="color: var(--sparc-danger);" data-stig-parser-target="summaryHigh">0</div>
+          <div class="sparc-stig-stat__value sparc-color-danger" data-stig-parser-target="summaryHigh">0</div>
           <div class="sparc-stig-stat__label">High</div>
         </div>
         <div class="sparc-stig-stat">
-          <div class="sparc-stig-stat__value" style="color: var(--sparc-warning);" data-stig-parser-target="summaryMedium">0</div>
+          <div class="sparc-stig-stat__value sparc-color-warning" data-stig-parser-target="summaryMedium">0</div>
           <div class="sparc-stig-stat__label">Medium</div>
         </div>
         <div class="sparc-stig-stat">
-          <div class="sparc-stig-stat__value" style="color: var(--sparc-primary);" data-stig-parser-target="summaryLow">0</div>
+          <div class="sparc-stig-stat__value sparc-color-primary" data-stig-parser-target="summaryLow">0</div>
           <div class="sparc-stig-stat__label">Low</div>
         </div>
         <div class="sparc-stig-stat">
-          <div class="sparc-stig-stat__value" style="color: var(--sparc-primary);" data-stig-parser-target="summaryCci">0</div>
+          <div class="sparc-stig-stat__value sparc-color-primary" data-stig-parser-target="summaryCci">0</div>
           <div class="sparc-stig-stat__label">With CCI</div>
         </div>
       </div>
@@ -98,8 +96,7 @@
   <div class="d-flex gap-2 flex-wrap mb-3 align-items-center">
     <input type="text" placeholder="Search V-ID, SV-ID, CCI, NIST, title&hellip;"
            aria-label="Search rules"
-           class="form-control form-control-sm"
-           style="flex: 1 1 250px; min-width: 200px; font-family: monospace; font-size: 0.82rem;"
+           class="form-control form-control-sm sparc-flex-1-1-250px sparc-minw-200px sparc-mono sparc-fs-082"
            data-stig-parser-target="searchInput"
            data-action="input->stig-parser#search">
 
@@ -113,43 +110,40 @@
       </button>
     <% end %>
 
-    <label class="d-flex align-items-center gap-1" style="cursor: pointer; font-size: 0.82rem; color: var(--bs-secondary-color);">
+    <label class="d-flex align-items-center gap-1 sparc-cursor-pointer sparc-fs-082 sparc-color-secondary">
       <input type="checkbox"
              data-stig-parser-target="cciToggle"
              data-action="change->stig-parser#filterByCci"
-             style="accent-color: var(--sparc-primary);">
+             class="sparc-accent-primary">
       CCI only
     </label>
 
     <div class="ms-auto d-flex gap-2">
-      <button type="button" class="btn btn-sm btn-outline-primary"
-              data-action="click->stig-parser#exportCsv"
-              style="font-family: monospace; font-size: 0.75rem;">
+      <button type="button" class="btn btn-sm btn-outline-primary sparc-mono sparc-fs-075"
+              data-action="click->stig-parser#exportCsv">
         &#11015; CSV
       </button>
-      <button type="button" class="btn btn-sm btn-outline-primary"
-              data-action="click->stig-parser#exportJson"
-              style="font-family: monospace; font-size: 0.75rem;">
+      <button type="button" class="btn btn-sm btn-outline-primary sparc-mono sparc-fs-075"
+              data-action="click->stig-parser#exportJson">
         &#11015; JSON
       </button>
     </div>
   </div>
 
   <%# Result count %>
-  <div class="text-body-tertiary mb-2" data-stig-parser-target="resultCount"
-       style="font-family: monospace; font-size: 0.75rem;"></div>
+  <div class="text-body-tertiary mb-2 sparc-mono sparc-fs-075" data-stig-parser-target="resultCount"></div>
 
   <%# Table %>
   <div class="table-responsive">
-    <table class="table table-hover sparc-stig-table" style="font-size: 0.82rem;">
+    <table class="table table-hover sparc-stig-table sparc-fs-082">
       <thead>
         <tr>
-          <th style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color);">SEV</th>
-          <th style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color);">V-ID</th>
-          <th style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color);">SV-ID</th>
-          <th style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color);">CCIs</th>
-          <th style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color);">NIST Controls</th>
-          <th style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color);">Title</th>
+          <th class="sparc-eyebrow">SEV</th>
+          <th class="sparc-eyebrow">V-ID</th>
+          <th class="sparc-eyebrow">SV-ID</th>
+          <th class="sparc-eyebrow">CCIs</th>
+          <th class="sparc-eyebrow">NIST Controls</th>
+          <th class="sparc-eyebrow">Title</th>
         </tr>
       </thead>
       <tbody data-stig-parser-target="tableBody"></tbody>
@@ -161,7 +155,7 @@
     <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
       <div>
         <h6 class="fw-semibold mb-1">Import to SPARC</h6>
-        <p class="text-body-secondary mb-0" style="font-size: 0.85rem;">
+        <p class="text-body-secondary mb-0 sparc-fs-085">
           Creates or extends the STIG &rarr; NIST converter with SV/V-ID mappings resolved via CCI.
         </p>
       </div>
