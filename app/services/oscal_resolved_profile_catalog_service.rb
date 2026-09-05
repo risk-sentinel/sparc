@@ -251,6 +251,37 @@ class OscalResolvedProfileCatalogService
     )
   end
 
+  # The stored statement parts, rebuilt into the nested shape OSCAL expects.
+  #
+  # Returns [] when the catalog has no stored parts, so the caller can fall back
+  # to the flattened prose rather than emit a control with no statement at all.
+  def statement_part_tree(catalog_control, resolver)
+    rows = catalog_control.catalog_control_parts
+                          .where(part_name: %w[statement item])
+                          .order(:row_order)
+                          .to_a
+    return [] if rows.empty?
+
+    nodes = rows.to_h do |row|
+      node = { "id" => row.part_id, "name" => row.part_name }
+      node["prose"] = resolver.resolve_text(row.prose) if row.prose.present?
+      node["props"] = [ { "name" => "label", "value" => row.label } ] if row.label.present?
+      [ row.part_id, node ]
+    end
+
+    roots = []
+    rows.each do |row|
+      node   = nodes[row.part_id]
+      parent = row.parent_part_id.present? && nodes[row.parent_part_id]
+      if parent
+        (parent["parts"] ||= []) << node
+      else
+        roots << node
+      end
+    end
+    roots
+  end
+
   def build_control_props(catalog_control, profile_control)
     props = []
     props << { "name" => "label", "value" => catalog_control.display_id }
@@ -281,7 +312,26 @@ class OscalResolvedProfileCatalogService
     # substituted parameter can itself reference others.
     resolver = parameter_resolver(catalog_control, profile_control)
 
-    if guidance["statement"].present?
+    # #1100 — emit the statement TREE, not one flattened blob.
+    #
+    # This used to emit a single part carrying `guidance["statement"]`, which is
+    # every sub-part concatenated into one string. A resolved profile that says
+    # a control has one statement is not just terse — it is what made every SSP
+    # generated from it carry one implementation statement for a control that
+    # NIST divides into nine.
+    #
+    # `catalog_control_parts` now holds the tree as NIST ships it, with NIST's
+    # own ids (ac-1_smt.a, ac-1_smt.a.1.a) and parent linkage. Parameters are
+    # resolved PER PART, so `{{ insert: param, ac-01_odp.03 }}` is substituted
+    # in the sub-part that actually contains it rather than in a blob.
+    #
+    # The flat form remains the fallback for a catalog imported before parts
+    # were stored and not yet re-imported. It is worse, and it is better than
+    # emitting nothing.
+    statement_parts = statement_part_tree(catalog_control, resolver)
+    if statement_parts.present?
+      parts.concat(statement_parts)
+    elsif guidance["statement"].present?
       parts << {
         "id"    => "#{catalog_control.control_id}_smt",
         "name"  => "statement",

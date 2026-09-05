@@ -176,9 +176,19 @@ class CatalogPartExtractorService
     parent_assoc = (klass == SspControlStatement) ? :ssp_controls : :cdef_controls
 
     @document.public_send(parent_assoc).includes(association_name).find_each do |control|
-      next if control.public_send(association_name).any?
+      # ADDITIVE, not all-or-nothing. This used to skip any control that already
+      # had statements — and after #1100 every existing document has exactly
+      # one (`<control-id>_smt`), so the whole backfill would no-op on precisely
+      # the documents that need it.
+      #
+      # Existing rows are LEFT ALONE. A statement may already carry
+      # implementation_prose an author wrote, and replacing it to tidy the shape
+      # would destroy the content this feature exists to hold.
+      existing = control.public_send(association_name).map(&:statement_id).to_set
 
       self.class.parts_for_control(catalog, control.control_id).each do |part|
+        next if existing.include?(part[:part_id])
+
         rows << {
           parent_fk            => control.id,
           uuid:                   OscalUuidService.derived(control.uuid, namespace_tag, part[:part_id]),
