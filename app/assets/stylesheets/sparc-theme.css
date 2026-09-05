@@ -1633,6 +1633,18 @@ a.link-purple { color: var(--sparc-purple); }
   font-weight: 600;
 }
 
+/* The SAR environment row is this same control, hand-written inline three lines
+   above a row that already used the component — including a literal #2c3e50
+   where .active reads var(--sparc-ink). It differs only in these three values,
+   and only because nobody compared them. Kept so this conversion is
+   pixel-identical; unified in the commit that follows, where a visual diff can
+   attribute the change. */
+.sparc-pill-filter--tight {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  background: var(--bs-secondary-bg);
+}
+
 
 /* ── Processing state ──────────────────────────────────────────── */
 
@@ -3420,6 +3432,7 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-h-12r { height: 1.2rem; }
 .sparc-mono { font-family: monospace; }
 .sparc-color-white-45 { color: rgba(255, 255, 255, 0.45); }
+.sparc-color-white-70 { color: rgba(255, 255, 255, 0.7); }
 .sparc-minw-6r { min-width: 6rem; }
 .sparc-p-085-1r { padding: 0.85rem 1rem; }
 .sparc-p-1r { padding: 1rem; }
@@ -3468,6 +3481,17 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-fs-06 { font-size: 0.6rem; }
 .sparc-bg-transparent { background: transparent; }
 .sparc-fst-italic { font-style: italic; }
+
+/* ── #1047 slice 10 — the HELPER-form leftovers ───────────────────────────
+   Every one of these was already in the repo as `style: "..."` passed to a
+   Rails helper, which the ratchet could not see until this bundle taught it
+   to. They are not new declarations; they are the ones the previous nine
+   slices walked past. */
+.sparc-d-inline { display: inline; }
+.sparc-minw-28px { min-width: 28px; }
+.sparc-p-03-07 { padding: 0.3rem 0.7rem; }
+.sparc-p-04-1r { padding: 0.4rem 1rem; }
+.sparc-p-05-125r { padding: 0.5rem 1.25rem; }
 .sparc-gap-15r { gap: 1.5rem; }
 .sparc-gap-045 { gap: 0.45rem; }
 .sparc-divider-top { border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
@@ -3511,6 +3535,19 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; }
 .sparc-modal-dialog { padding: 2rem; max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
 .sparc-modal-eyebrow { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
+/* The dismiss × every one of these modals carries. Written out longhand five
+   times across four screens, always identically — a component, not three
+   utilities repeated. */
+.sparc-modal-close { font-size: 1.5rem; text-decoration: none; line-height: 1; }
+
+/* A statement block carrying a failure. The SAP screen restated #e74c3c three
+   times at three different alphas; this derives all three from the accent the
+   element already carries, so it follows the token rather than a copy of it. */
+.sparc-statement-block--danger {
+  background: color-mix(in srgb, var(--sparc-accent) 7%, transparent);
+  border-color: color-mix(in srgb, var(--sparc-accent) 20%, transparent);
+  border-left: 3px solid var(--sparc-accent);
+}
 
 /* #1047 — DECORATIVE ACCENT COLOUR, as a class instead of an interpolated hex.
    `style="border-left: 3px solid <%= ssp_status_color(status) %>"` cannot
@@ -3563,10 +3600,14 @@ a.link-purple { color: var(--sparc-purple); }
    are named for the role each played inline.
    ========================================================================== */
 
-/* The gradient hero. `color: white` is restated from .sparc-gradient-header,
-   which is always present on the same element — kept so the class is
-   self-sufficient and the conversion is provably identical either way. */
-.sparc-poam-hero { border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; }
+/* The document hero band — the rounded, padded gradient panel at the top of a
+   document screen. `color: white` comes from .sparc-gradient-header, which is
+   always on the same element.
+
+   Named .sparc-poam-hero until 2026-09-05, when the SAP screen turned out to
+   have hand-written the same three declarations: it was never a POA&M thing,
+   it just took the name of the first screen to use it. */
+.sparc-doc-hero { border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; }
 
 /* The count tiles under the hero title. */
 .sparc-poam-hero-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.75rem; }

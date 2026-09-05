@@ -100,7 +100,7 @@
               refresh_inherited_statements_ssp_document_path(@ssp_document),
               method: :post,
               class: "sparc-action sparc-action--caution sparc-action--solid",
-              form: { style: "display: inline;" } %>
+              form: { class: "sparc-d-inline" } %>
       <% end %>
       <%= link_to "&#8592; Back".html_safe, ssp_documents_path,
             class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
@@ -159,7 +159,7 @@
       <div class="d-flex justify-content-between align-items-center sparc-mb-05">
         <span class="sparc-card-eyebrow">System Characteristics</span>
         <% if signed_in? && @ssp_document.draft? %>
-          <%= link_to enrich_ssp_document_path(@ssp_document), style: "font-size: 0.72rem; color: var(--bs-tertiary-color); text-decoration: none;" do %>&#9998; Edit<% end %>
+          <%= link_to enrich_ssp_document_path(@ssp_document), class: "sparc-fs-072 sparc-color-tertiary sparc-td-none" do %>&#9998; Edit<% end %>
         <% end %>
       </div>
       <% if @ssp_document.description.present? %>
@@ -180,7 +180,7 @@
       <div class="d-flex justify-content-between align-items-center sparc-mb-05">
         <span class="sparc-card-eyebrow">Components (<%= @components.count %>)</span>
         <% if signed_in? && @ssp_document.draft? %>
-          <%= link_to enrich_ssp_document_path(@ssp_document, anchor: "components"), style: "font-size: 0.72rem; color: var(--bs-tertiary-color); text-decoration: none;" do %>&#9998; Edit<% end %>
+          <%= link_to enrich_ssp_document_path(@ssp_document, anchor: "components"), class: "sparc-fs-072 sparc-color-tertiary sparc-td-none" do %>&#9998; Edit<% end %>
         <% end %>
       </div>
       <% @components.first(5).each do |comp| %>
@@ -199,7 +199,7 @@
       <div class="d-flex justify-content-between align-items-center sparc-mb-05">
         <span class="sparc-card-eyebrow">Users (<%= @users.count %>)</span>
         <% if signed_in? && @ssp_document.draft? %>
-          <%= link_to enrich_ssp_document_path(@ssp_document, anchor: "users"), style: "font-size: 0.72rem; color: var(--bs-tertiary-color); text-decoration: none;" do %>&#9998; Edit<% end %>
+          <%= link_to enrich_ssp_document_path(@ssp_document, anchor: "users"), class: "sparc-fs-072 sparc-color-tertiary sparc-td-none" do %>&#9998; Edit<% end %>
         <% end %>
       </div>
       <% @users.first(5).each do |user| %>
@@ -222,7 +222,7 @@
       <div class="fw-semibold sparc-fs-088 sparc-color-body">Enrich for OSCAL Compliance</div>
       <div class="text-body-secondary sparc-fs-078">Add system characteristics, components, and users to produce a fully valid OSCAL SSP export.</div>
     </div>
-    <%= link_to "Enrich SSP", enrich_ssp_document_path(@ssp_document), class: "sparc-action sparc-action--info sparc-action--outline", style: "flex-shrink: 0; font-size: 0.85rem; padding: 0.4rem 1rem;" %>
+    <%= link_to "Enrich SSP", enrich_ssp_document_path(@ssp_document), class: "sparc-action sparc-action--info sparc-action--outline sparc-flex-shrink-0 sparc-fs-085 sparc-p-04-1r" %>
   </div>
 <% end %>
 
@@ -514,31 +514,25 @@
                 <% if fname == "status" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::VALID_STATUSES, fval),
-                        include_blank: "— select —", class: "form-control", id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        include_blank: "— select —", class: "form-control sparc-fs-0875", id: field_id %>
                 <% elsif fname == "control_application" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::CONTROL_APPLICATION_VALUES, fval),
-                        include_blank: "— select —", class: "form-control", id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        include_blank: "— select —", class: "form-control sparc-fs-0875", id: field_id %>
                 <% elsif fname == "coverage_level" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::COVERAGE_LEVEL_VALUES, fval),
-                        include_blank: "— select —", class: "form-control", id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        include_blank: "— select —", class: "form-control sparc-fs-0875", id: field_id %>
                 <% elsif fname == "control_type" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::CONTROL_TYPE_VALUES, fval),
-                        include_blank: "— select —", class: "form-control", id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        include_blank: "— select —", class: "form-control sparc-fs-0875", id: field_id %>
                 <% elsif fname == "expected_completion" %>
                   <%= text_field_tag "fields[#{fname}]", fval,
-                        class: "form-control", placeholder: "YYYY-MM-DD", id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        class: "form-control sparc-fs-0875", placeholder: "YYYY-MM-DD", id: field_id %>
                 <% else %>
                   <%= text_area_tag "fields[#{fname}]", fval,
-                        class: "form-control", rows: 3, id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        class: "form-control sparc-fs-0875", rows: 3, id: field_id %>
                 <% end %>
               </div>
             <% end %>
@@ -656,7 +650,7 @@
 
             <div class="d-flex gap-2 mt-3">
               <%= f.submit "Save Changes",
-                    class: "sparc-action sparc-action--primary sparc-action--solid", style: "padding: 0.5rem 1.25rem; font-size: 0.875rem;" %>
+                    class: "sparc-action sparc-action--primary sparc-action--solid sparc-p-05-125r sparc-fs-0875" %>
               <button type="button"
                       data-action="inline-edit#toggle"
                       data-inline-edit-id-param="<%= control.id %>"
@@ -690,7 +684,7 @@
           <code class="text-body-secondary sparc-fs-078"><%= stmt.statement_id %></code>
         </div>
         <%= link_to "&times;".html_safe, ssp_document_path(@ssp_document),
-              class: "text-body-secondary", style: "font-size: 1.5rem; text-decoration: none; line-height: 1;" %>
+              class: "text-body-secondary sparc-modal-close" %>
       </div>
 
       <%= form_with url: update_statement_ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>

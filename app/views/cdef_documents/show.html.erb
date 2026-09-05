@@ -517,7 +517,7 @@
           <code class="text-body-secondary sparc-fs-078"><%= stmt.statement_id %></code>
         </div>
         <%= link_to "&times;".html_safe, cdef_document_path(@cdef_document),
-              class: "text-body-secondary", style: "font-size: 1.5rem; text-decoration: none; line-height: 1;" %>
+              class: "text-body-secondary sparc-modal-close" %>
       </div>
 
       <%= form_with url: update_statement_cdef_document_path(@cdef_document), method: :patch, local: true do |f| %>

@@ -152,8 +152,7 @@
         <% next if count == 0 %>
         <% chip_active = active_status == status && active_family.blank? %>
         <%= link_to sar_document_path(@sar_document, filter_params.except(:page).merge(chip_active ? { status: nil } : { status: status, family: nil })),
-              class: "sparc-summary-chip#{' active' if chip_active}",
-              style: "border-left: 3px solid #{sar_status_color(status)};" do %>
+              class: "sparc-summary-chip#{' active' if chip_active} sparc-border-l-3 #{accent_class(sar_status_color(status))}" do %>
           <div class="sparc-chip-count"><%= count %></div>
           <div class="sparc-chip-label"><%= status %></div>
         <% end %>
@@ -195,11 +194,11 @@
     <span class="sparc-sar-eyebrow sparc-minw-6r">&#x1F30D; Environment</span>
     <% all_active = active_env.blank? %>
     <%= link_to "All", sar_document_path(@sar_document, filter_params.except(:page, :environment)),
-          style: "padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--bs-border-color); background: #{all_active ? '#2c3e50' : 'var(--bs-secondary-bg)'}; color: #{all_active ? 'white' : 'var(--bs-body-color)'}; font-size: 0.78rem; cursor: pointer; font-weight: #{all_active ? '600' : '400'}; text-decoration: none;" %>
+          class: "sparc-pill-filter sparc-pill-filter--tight#{' active' if all_active}" %>
     <% @environments.each do |env| %>
       <% is_active = active_env == env %>
       <%= link_to env, sar_document_path(@sar_document, filter_params.except(:page).merge(is_active ? { environment: nil } : { environment: env })),
-            style: "padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--bs-border-color); background: #{is_active ? '#2c3e50' : 'var(--bs-secondary-bg)'}; color: #{is_active ? 'white' : 'var(--bs-body-color)'}; font-size: 0.78rem; cursor: pointer; font-weight: #{is_active ? '600' : '400'}; text-decoration: none;" %>
+            class: "sparc-pill-filter sparc-pill-filter--tight#{' active' if is_active}" %>
     <% end %>
   </div>
   <% end %>
@@ -513,17 +512,14 @@
                 <% if fname == "result" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SarControlField::RESULT_VALUES, fval),
-                        include_blank: "&mdash; select &mdash;".html_safe, class: "form-control", id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        include_blank: "&mdash; select &mdash;".html_safe, class: "form-control sparc-fs-0875", id: field_id %>
                 <% elsif fname == "working_status" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SarControlField::WORKING_STATUS_VALUES, fval),
-                        include_blank: "&mdash; select &mdash;".html_safe, class: "form-control", id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        include_blank: "&mdash; select &mdash;".html_safe, class: "form-control sparc-fs-0875", id: field_id %>
                 <% else %>
                   <%= text_area_tag "fields[#{fname}]", fval,
-                        class: "form-control", rows: 3, id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        class: "form-control sparc-fs-0875", rows: 3, id: field_id %>
                 <% end %>
               </div>
             <% end %>
@@ -551,7 +547,7 @@
             <% end %>
 
             <div class="d-flex gap-2 mt-3">
-              <%= f.submit "Save Changes", class: "sparc-action sparc-action--primary sparc-action--solid", style: "padding: 0.5rem 1.25rem; font-size: 0.875rem;" %>
+              <%= f.submit "Save Changes", class: "sparc-action sparc-action--primary sparc-action--solid sparc-p-05-125r sparc-fs-0875" %>
               <button class="sparc-btn-cancel" type="button"
                       data-action="inline-edit#toggle"
                       data-inline-edit-id-param="<%= control.id %>">
@@ -589,7 +585,7 @@
           <h3 class="sparc-m-0"><%= obj.label.presence || obj.objective_id %></h3>
         </div>
         <%= link_to "&times;".html_safe, sar_document_path(@sar_document),
-              class: "text-body-secondary", style: "font-size: 1.5rem; text-decoration: none; line-height: 1;" %>
+              class: "text-body-secondary sparc-modal-close" %>
       </div>
 
       <% if obj.prose.present? %>

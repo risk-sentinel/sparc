@@ -32,7 +32,7 @@
       <% if can_write_catalogs? %>
         <%= link_to "Edit Family", edit_control_family_path(@control_family), class: "sparc-action sparc-action--primary sparc-action--outline" %>
         <%= link_to "＋ Add Control", new_control_family_catalog_control_path(@control_family), class: "sparc-action sparc-action--positive sparc-action--solid" %>
-        <%= link_to "＋ Batch Add", batch_new_control_family_catalog_controls_path(@control_family), class: "sparc-action sparc-action--positive sparc-action--solid fw-semibold", style: "font-size: 0.875rem;" %>
+        <%= link_to "＋ Batch Add", batch_new_control_family_catalog_controls_path(@control_family), class: "sparc-action sparc-action--positive sparc-action--solid fw-semibold sparc-fs-0875" %>
       <% end %>
       <%= link_to "← Back to Catalog", @control_catalog, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>

@@ -158,6 +158,8 @@ module ApplicationHelper
   COLOR_RED       = "#e74c3c".freeze  # failure / not-implemented
   COLOR_GRAY      = "#95a5a6".freeze  # not-applicable / none
   COLOR_GRAY_DARK = "#7f8c8d".freeze  # default fallback
+  COLOR_PURPLE    = "#9b59b6".freeze  # multiple / composite
+  COLOR_VIOLET    = "#8e44ad".freeze  # continuous / deep purple
 
   LABEL_NONE           = "(None)".freeze
   LABEL_NOT_APPLICABLE = "Not Applicable".freeze
@@ -213,9 +215,12 @@ module ApplicationHelper
     COLOR_RED       => "red",
     COLOR_GRAY      => "gray",
     COLOR_GRAY_DARK => "slate",
+    # The four literals below have no COLOR_* constant because nothing outside
+    # this map names them — this IS their definition site. The rest read as
+    # constants because other code refers to those colours by name.
     "#2ecc71"       => "emerald",
-    "#9b59b6"       => "purple",
-    "#8e44ad"       => "violet",
+    COLOR_PURPLE    => "purple",
+    COLOR_VIOLET    => "violet",
     "#bdc3c7"       => "silver",
     # POA&M risk_status uses two oranges the other status maps do not: without
     # these, accent_class falls back to slate and silently greys them.
@@ -300,7 +305,7 @@ module ApplicationHelper
     "examine"   => COLOR_BLUE,
     "interview" => COLOR_ORANGE,
     "test"      => COLOR_RED,
-    "multiple"  => "#9b59b6",
+    "multiple"  => COLOR_PURPLE,
     LABEL_NONE    => COLOR_GRAY
   }.freeze
 
