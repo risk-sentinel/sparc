@@ -3561,11 +3561,19 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-modal-centered {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
   z-index: 1050;
-  /* `white`, not var(--bs-body-bg): the inline style said `white` and this
-     conversion is pixel-preserving. It is WRONG IN DARK MODE — a white panel
-     with themed text on it — and that is a pre-existing defect, flagged for the
-     screen-by-screen review rather than fixed inside a mechanical change. */
-  background: white;
+  /* Was a literal `white`, carried in from the inline style. That is a real AA
+     failure in dark mode — themed body text lands on a white panel at 1.23:1,
+     near-invisible:
+
+         #e2e8f0 on #ffffff    1.23:1   (needs 4.5)
+         #a6b4c6 on #ffffff    2.11:1
+         #e2e8f0 on #1e2632   12.36:1   with the token
+
+     --sparc-surface is #ffffff in light, so this is byte-identical to the
+     literal there and changes only the theme that was broken. Not --bs-body-bg
+     (#f5f5f5 light — that would grey the panel); --sparc-surface is the same
+     token .sparc-card uses. */
+  background: var(--sparc-surface);
   border-radius: 0.5rem;
   box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.25);
   width: 520px; max-width: 95vw; max-height: 85vh; overflow-y: auto;

@@ -301,12 +301,21 @@ stops amortising. **`converters/stig_parser` is blocked**:
 which a class cannot override, so it must move to `setVisible` first — the same
 defect class as `baseline_editor` in slice 8 and `heatmap_controller`.
 
-**PR #1102 was a verified INCREMENT and merged 2026-09-03; #1047 did NOT close
-on it, and the branch continues.** #1047's deliverable is the removal of
-`style-src 'unsafe-inline'`, which is one line and is only safe at a count of
-**zero** — removing it at 790 breaks 790 places silently, with no console error
-and no failing spec. **#728 and #1046 are still not started** and stay in the
-bundle.
+**OWNER-DECIDED 2026-09-05: #1047 CLOSES with this bundle's PR.** Its scope is
+the sweep of every view file holding **ten or more** inline styles — 1,262 of
+1,516, **83%** — which is done. The remaining **254 across 94 files**, none
+holding ten, are **#1109 on v1.17.1**, and that issue also owns the deliverable
+#1047 was originally written around: removing `style-src 'unsafe-inline'`, which
+is binary and cannot happen at 254.
+
+The decision is sound because the delta is now MEASURED rather than estimated —
+every remaining file is named with its count in #1109, the method is written
+down, and the guards that make the work safe are in the suite. What #1047 cannot
+do is deliver the directive removal, so that moved rather than being quietly
+dropped.
+
+*(Superseded, kept for the record:)* PR #1102 was a verified INCREMENT and
+merged 2026-09-03; #1047 did NOT close
 
 **Bundle Z has taken in work that is not the sweep, and that is where its time
 has gone.** Since the increment merged, the branch has also carried: the SSP
