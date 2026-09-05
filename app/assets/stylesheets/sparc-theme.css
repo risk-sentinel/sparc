@@ -3468,6 +3468,20 @@ a.link-purple { color: var(--sparc-purple); }
    reads as a link without relying on colour alone. */
 .sparc-header-link { color: rgba(255, 255, 255, 0.8); text-decoration: underline; }
 
+/* ── #1047 slice 17 — the profile index table ───────────────────────────── */
+.sparc-w-7pct { width: 7%; }
+.sparc-w-9pct { width: 9%; }
+.sparc-w-17pct { width: 17%; }
+.sparc-w-100pct { width: 100%; }
+.sparc-gap-05 { gap: 0.5rem; }
+/* Truncate to one line with an ellipsis. overflow+white-space are here too:
+   text-overflow does nothing without both, so splitting them into three
+   utilities would let a caller apply one and get no truncation at all. */
+.sparc-text-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* On a badge <span>, not a table cell — no !important needed, Bootstrap's cell
+   rule does not reach it. */
+.sparc-p-02-06 { padding: 0.2rem 0.6rem; }
+
 /* ==========================================================================
    #1047 slice 4 — the SSP show screen's vocabulary.
 

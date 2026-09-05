@@ -12,7 +12,7 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Baselines / Profiles</h2>
     <% if signed_in? %>
-      <div style="display: inline-flex; gap: 0.5rem;">
+      <div class="sparc-d-inline-flex sparc-gap-05">
         <%= link_to "Upload New", new_profile_document_path, class: "sparc-action sparc-action--info sparc-action--solid" %>
         <%= link_to "Create from Catalog", select_catalog_profile_documents_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
         <%= link_to "Create from Profile", select_profile_profile_documents_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
@@ -35,57 +35,57 @@
       <% end %>
     </div>
   <% elsif @profile_documents.any? %>
-    <table class="table table-hover" style="table-layout: fixed; width: 100%;">
+    <table class="table table-hover sparc-table-layout-fixed sparc-w-100pct">
       <thead>
         <tr>
-          <th style="width: 22%;">Name</th>
-          <th style="width: 9%;">Baseline</th>
-          <th style="width: 8%; white-space: nowrap;">Version</th>
-          <th style="width: 10%; white-space: nowrap;">Status</th>
-          <th style="width: 18%; white-space: nowrap;">Source Catalog</th>
-          <th style="width: 7%; white-space: nowrap;">Controls</th>
-          <th style="width: 9%; white-space: nowrap;">Created</th>
-          <th style="width: 17%;" class="text-end">Actions</th>
+          <th class="sparc-w-22pct">Name</th>
+          <th class="sparc-w-9pct">Baseline</th>
+          <th class="sparc-w-8pct sparc-ws-nowrap">Version</th>
+          <th class="sparc-w-10pct sparc-ws-nowrap">Status</th>
+          <th class="sparc-w-18pct sparc-ws-nowrap">Source Catalog</th>
+          <th class="sparc-w-7pct sparc-ws-nowrap">Controls</th>
+          <th class="sparc-w-9pct sparc-ws-nowrap">Created</th>
+          <th class="text-end sparc-w-17pct">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% @profile_documents.each do |doc| %>
           <tr>
-            <td><strong><%= link_to doc.name, profile_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
+            <td><strong><%= link_to doc.name, profile_document_path(doc), class: "text-primary sparc-td-none" %></strong></td>
             <td>
               <% level_variants = { "LOW" => "success", "MODERATE" => "warning", "HIGH" => "danger" } %>
               <span class="sparc-status sparc-status--<%= level_variants[doc.baseline_level] || 'neutral' %>">
                 <%= doc.baseline_level || "Custom" %>
               </span>
             </td>
-            <td class="small text-body-secondary" style="white-space: nowrap;"><%= doc.profile_version.presence || "—" %></td>
-            <td style="white-space: nowrap;">
+            <td class="small text-body-secondary sparc-ws-nowrap"><%= doc.profile_version.presence || "—" %></td>
+            <td class="sparc-ws-nowrap">
               <% if doc.pending? || doc.processing? || doc.failed? %>
-                <span class="<%= doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.78rem;">
+                <span class="<%= doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold sparc-p-02-06 sparc-fs-078">
                   <%= doc.status.titleize %>
                 </span>
                 <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
-                  <br><span class="text-body-secondary" style="font-size: 0.72rem;"><%= doc.metadata_extra["processing_message"] %></span>
+                  <br><span class="text-body-secondary sparc-fs-072"><%= doc.metadata_extra["processing_message"] %></span>
                 <% end %>
               <% else %>
-                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.78rem; white-space: nowrap;">
+                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold sparc-p-02-06 sparc-fs-078 sparc-ws-nowrap">
                   <%= doc.lifecycle_label %>
                 </span>
               <% end %>
             </td>
-            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= doc.control_catalog&.name %>">
+            <td class="sparc-text-ellipsis" title="<%= doc.control_catalog&.name %>">
               <% if doc.control_catalog.present? %>
                 <%= doc.control_catalog.name %>
                 <% if doc.control_catalog.short_digest.present? %>
-                  <br><span class="text-body-secondary" style="font-size: 0.72rem;"><%= doc.control_catalog.short_digest %></span>
+                  <br><span class="text-body-secondary sparc-fs-072"><%= doc.control_catalog.short_digest %></span>
                 <% end %>
               <% else %>
                 <span class="text-body-tertiary">&mdash;</span>
               <% end %>
             </td>
             <td><%= doc.profile_controls.count %></td>
-            <td style="white-space: nowrap; font-size: 0.85rem;"><%= doc.created_at.strftime("%Y-%m-%d") %></td>
-            <td class="text-end" style="white-space: nowrap;">
+            <td class="sparc-ws-nowrap sparc-fs-085"><%= doc.created_at.strftime("%Y-%m-%d") %></td>
+            <td class="text-end sparc-ws-nowrap">
               <%= render "profile_documents/item_actions", doc: doc %>
             </td>
           </tr>
