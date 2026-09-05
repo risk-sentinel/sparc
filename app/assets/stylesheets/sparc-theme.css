@@ -3525,6 +3525,12 @@ a.link-purple { color: var(--sparc-purple); }
    the same table four times. */
 .sparc-ws-normal { white-space: normal; }
 .sparc-maxw-280px { max-width: 280px; }
+
+/* ── #1047 slice 20 — the two objectives tables ─────────────────────────── */
+/* sar/sap `_objectives_table` are each other's copy, and both are copies of
+   ssp `_statements_table`: same info block, same depth indent, same note, same
+   eyebrow row. Slice 18 named all of those; only this width was new. */
+.sparc-w-11pct { width: 11%; }
 .sparc-th-eyebrow-row { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color); }
 
 /* ==========================================================================
