@@ -3379,6 +3379,11 @@ a.link-purple { color: var(--sparc-purple); }
    JS-toggled region: this is the padding box that wraps it. */
 .sparc-wizard-step-body { padding: 1rem 1.25rem; }
 
+/* A selectable row inside a wizard step — the CDEF import list on the SSP
+   wizard. Its own thing rather than .sparc-wizard-step-body: that is the step's
+   container, this is one clickable option inside it. */
+.sparc-wizard-option-row { padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; cursor: pointer; }
+
 /* ==========================================================================
    #1047 slice 4 — the SSP show screen's vocabulary.
 
