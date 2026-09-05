@@ -30,21 +30,21 @@
     <table class="table table-hover">
       <thead>
         <tr>
-          <th style="white-space: nowrap;">Name</th>
-          <th style="white-space: nowrap;">Type</th>
-          <th style="white-space: nowrap;">SSP</th>
-          <th style="white-space: nowrap;">Version</th>
-          <th style="white-space: nowrap;">Status</th>
-          <th style="white-space: nowrap;">Controls</th>
-          <th style="white-space: nowrap;">Schedule</th>
-          <th style="white-space: nowrap;">Created</th>
-          <th style="white-space: nowrap;">Actions</th>
+          <th class="sparc-ws-nowrap">Name</th>
+          <th class="sparc-ws-nowrap">Type</th>
+          <th class="sparc-ws-nowrap">SSP</th>
+          <th class="sparc-ws-nowrap">Version</th>
+          <th class="sparc-ws-nowrap">Status</th>
+          <th class="sparc-ws-nowrap">Controls</th>
+          <th class="sparc-ws-nowrap">Schedule</th>
+          <th class="sparc-ws-nowrap">Created</th>
+          <th class="sparc-ws-nowrap">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% records.each do |doc| %>
           <tr>
-            <td><strong><%= link_to doc.name, sap_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
+            <td><strong><%= link_to doc.name, sap_document_path(doc), class: "text-primary sparc-td-none" %></strong></td>
             <td>
               <% type_variants = { "initial" => "info", "annual" => "success", "continuous" => "purple", "ad-hoc" => "warning" } %>
               <span class="sparc-status sparc-status--<%= type_variants[doc.assessment_type] || 'neutral' %>">
@@ -53,22 +53,22 @@
             </td>
             <td class="small text-body-secondary"><%= doc.ssp_document&.name || "—" %></td>
             <td class="small text-body-secondary"><%= doc.sap_version.presence || "—" %></td>
-            <td style="white-space: nowrap;">
+            <td class="sparc-ws-nowrap">
               <% if doc.processing? || doc.pending? || doc.failed? %>
-                <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold sparc-p-02-06 sparc-fs-085">
                   <%= doc.status %>
                 </span>
                 <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
-                  <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= doc.metadata_extra["processing_message"] %></span>
+                  <br><span class="text-body-secondary sparc-fs-072 sparc-ws-normal"><%= doc.metadata_extra["processing_message"] %></span>
                 <% end %>
               <% else %>
-                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold sparc-p-02-06 sparc-fs-085">
                   <%= doc.lifecycle_label %>
                 </span>
               <% end %>
             </td>
             <td><%= doc.sap_controls.count %></td>
-            <td class="text-body-secondary" style="font-size: 0.82rem; white-space: nowrap;">
+            <td class="text-body-secondary sparc-fs-082 sparc-ws-nowrap">
               <% if doc.assessment_start.present? %>
                 <%= doc.assessment_start.strftime("%Y-%m-%d") %>
                 <% if doc.assessment_end.present? %>
@@ -78,7 +78,7 @@
                 —
               <% end %>
             </td>
-            <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td class="sparc-ws-nowrap"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
             <td>
               <%= render "sap_documents/item_actions", doc: doc %>
             </td>

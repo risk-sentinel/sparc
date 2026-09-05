@@ -3488,10 +3488,10 @@ a.link-purple { color: var(--sparc-purple); }
 /* ── #1047 slice 18 — the SSP statements table ──────────────────────────── */
 
 /* An informational statement block. Sibling of .sparc-statement-block--danger,
-   and the two use DIFFERENT alphas — 4%/18% here, 7%/20% there. Neither was
-   chosen against the other; both are preserved so this conversion is
-   pixel-identical, and the mismatch is flagged for the screen-by-screen review
-   rather than averaged away inside a mechanical change. */
+   and the two use DIFFERENT alphas on purpose — 4%/18% here, 7%/20% there.
+   OWNER-DECIDED 2026-09-05: the info/danger difference is INTENTIONAL. The
+   danger block is meant to sit heavier on the page than the informational one.
+   Do not converge them. */
 .sparc-statement-block--info {
   background: color-mix(in srgb, var(--sparc-accent) 4%, transparent);
   border-color: color-mix(in srgb, var(--sparc-accent) 18%, transparent);
@@ -3518,6 +3518,13 @@ a.link-purple { color: var(--sparc-purple); }
 
 .sparc-p-015-045 { padding: 0.15rem 0.45rem; }
 .sparc-mt-075 { margin-top: 0.75rem; }
+
+/* ── #1047 slice 19 — the four document collection tables ───────────────── */
+/* 62 declarations across ssp/sap/sar/poam `_collection`, and only EIGHT
+   distinct — 40 of them a single `white-space: nowrap`. The four partials are
+   the same table four times. */
+.sparc-ws-normal { white-space: normal; }
+.sparc-maxw-280px { max-width: 280px; }
 .sparc-th-eyebrow-row { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color); }
 
 /* ==========================================================================

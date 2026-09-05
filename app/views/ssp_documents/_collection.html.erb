@@ -30,20 +30,20 @@
     <table class="table table-hover">
       <thead>
         <tr>
-          <th style="white-space: nowrap;">Name</th>
-          <th style="white-space: nowrap;">Source</th>
-          <th style="white-space: nowrap;">Version</th>
-          <th style="white-space: nowrap;">Status</th>
-          <th style="white-space: nowrap;">OSCAL</th>
-          <th style="white-space: nowrap;">Controls</th>
-          <th style="white-space: nowrap;">Created</th>
-          <th style="white-space: nowrap;">Actions</th>
+          <th class="sparc-ws-nowrap">Name</th>
+          <th class="sparc-ws-nowrap">Source</th>
+          <th class="sparc-ws-nowrap">Version</th>
+          <th class="sparc-ws-nowrap">Status</th>
+          <th class="sparc-ws-nowrap">OSCAL</th>
+          <th class="sparc-ws-nowrap">Controls</th>
+          <th class="sparc-ws-nowrap">Created</th>
+          <th class="sparc-ws-nowrap">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% records.each do |doc| %>
           <tr>
-            <td><strong><%= link_to doc.name, ssp_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
+            <td><strong><%= link_to doc.name, ssp_document_path(doc), class: "text-primary sparc-td-none" %></strong></td>
             <td>
               <%# #946 — one mapping, in the helper. A second copy here rendered
                   "Import" with spreadsheet styling for profile- and SSP-generated
@@ -55,22 +55,22 @@
                 <span class="text-body-tertiary">&mdash;</span>
               <% end %>
             </td>
-            <td class="text-body-secondary" style="font-size: 0.85rem;"><%= doc.ssp_version.presence || "\u2014" %></td>
-            <td style="white-space: nowrap;">
+            <td class="text-body-secondary sparc-fs-085"><%= doc.ssp_version.presence || "\u2014" %></td>
+            <td class="sparc-ws-nowrap">
               <% if doc.processing? || doc.pending? || doc.failed? %>
-                <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold sparc-p-02-06 sparc-fs-085">
                   <%= doc.status %>
                 </span>
                 <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
-                  <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= doc.metadata_extra["processing_message"] %></span>
+                  <br><span class="text-body-secondary sparc-fs-072 sparc-ws-normal"><%= doc.metadata_extra["processing_message"] %></span>
                 <% end %>
               <% else %>
-                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold sparc-p-02-06 sparc-fs-085">
                   <%= doc.lifecycle_label %>
                 </span>
                 <%# #627 — flag content-incomplete drafts (distinct from parse status). %>
                 <% if !doc.published_lifecycle? && !doc.content_complete? %>
-                  <span class="badge-warn rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;"
+                  <span class="badge-warn rounded fw-semibold sparc-p-02-06 sparc-fs-085"
                         title="<%= doc.content_completeness_gaps.join('; ') %>">
                     Incomplete
                   </span>
@@ -85,9 +85,9 @@
               <% end %>
             </td>
             <td><%= doc.ssp_controls.count %></td>
-            <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td class="sparc-ws-nowrap"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
             <td>
-              <div style="max-width: 280px;">
+              <div class="sparc-maxw-280px">
                 <%= render "ssp_documents/item_actions", doc: doc %>
               </div>
             </td>
