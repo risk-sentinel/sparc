@@ -2986,13 +2986,16 @@ a.link-purple { color: var(--sparc-purple); }
 }
 
 .sparc-control-picker__empty,
+/* One rule, not two. This was declared twice in adjacent blocks with
+   NON-overlapping properties, so the cascade already merged them and the
+   rendered result is unchanged — but a second declaration of a live class is
+   how `.sparc-field-label` silently restyled 2,456 cells across five screens
+   earlier in this bundle. Merged 2026-09-05, and a spec now fails on any
+   duplicate. */
 .sparc-control-picker__scope {
   padding: 0.45rem 0.6rem;
   font-size: 0.78rem;
   color: var(--bs-secondary-color);
-}
-
-.sparc-control-picker__scope {
   border-bottom: 1px solid var(--bs-border-color);
   font-weight: 600;
 }
@@ -3481,6 +3484,41 @@ a.link-purple { color: var(--sparc-purple); }
 /* On a badge <span>, not a table cell — no !important needed, Bootstrap's cell
    rule does not reach it. */
 .sparc-p-02-06 { padding: 0.2rem 0.6rem; }
+
+/* ── #1047 slice 18 — the SSP statements table ──────────────────────────── */
+
+/* An informational statement block. Sibling of .sparc-statement-block--danger,
+   and the two use DIFFERENT alphas — 4%/18% here, 7%/20% there. Neither was
+   chosen against the other; both are preserved so this conversion is
+   pixel-identical, and the mismatch is flagged for the screen-by-screen review
+   rather than averaged away inside a mechanical change. */
+.sparc-statement-block--info {
+  background: color-mix(in srgb, var(--sparc-accent) 4%, transparent);
+  border-color: color-mix(in srgb, var(--sparc-accent) 18%, transparent);
+  border-left: 3px solid var(--sparc-accent);
+}
+
+/* Statement nesting. `depth` is 0 or 1 today (a statement either has a parent
+   or does not), but #1100 stores a real tree — ac-1_smt.a.1.a is three levels
+   down — so the ERB clamps and these go to 3. If the table ever renders the
+   full tree, extend the ladder rather than reintroducing a computed
+   padding-left. */
+.sparc-stmt-d0 { padding-left: 0; }
+.sparc-stmt-d1 { padding-left: 0.75rem; }
+.sparc-stmt-d2 { padding-left: 1.5rem; }
+.sparc-stmt-d3 { padding-left: 2.25rem; }
+
+/* A quoted sub-note under a statement row. */
+.sparc-stmt-note {
+  font-size: 0.75rem;
+  margin-top: 0.2rem;
+  padding-left: 0.4rem;
+  border-left: 2px solid var(--bs-border-color);
+}
+
+.sparc-p-015-045 { padding: 0.15rem 0.45rem; }
+.sparc-mt-075 { margin-top: 0.75rem; }
+.sparc-th-eyebrow-row { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color); }
 
 /* ==========================================================================
    #1047 slice 4 — the SSP show screen's vocabulary.

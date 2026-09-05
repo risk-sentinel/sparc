@@ -65,7 +65,7 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # This is the ONE circumstance in which the ceiling may go up — a correction
   # to what is being counted, never a regression in what is being guarded. Any
   # later increase is a rot-back and must be rejected.
-  let(:ceiling) { 624 }
+  let(:ceiling) { 604 }
 
   # A SECOND guard, learned the hard way in slice 4.
   #
@@ -161,6 +161,29 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
     expect(offenders).to be_empty, lambda {
       "#{offenders.size} helper call(s) pass class: twice; Ruby keeps the LAST " \
       "and drops the first silently:\n  " + offenders.join("\n  ")
+    }
+  end
+
+  # A class defined TWICE is how slice 1 restyled five screens it never touched.
+  #
+  # `.sparc-field-label` was re-declared 1,900 lines below its original with a
+  # different padding, and the later one won on 2,456 <th> elements across five
+  # screens — a screen the slice did not open, changed by a name collision. A
+  # duplicate is not always harmful (an identical redeclaration is merely dead),
+  # but it is never intended, and the sweep adds classes fast enough that
+  # noticing by eye has already failed twice.
+  it "never defines the same sparc- class twice in the theme" do
+    css = File.read(Rails.root.join("app/assets/stylesheets/sparc-theme.css"))
+
+    # Only single-selector rules at the start of a line — enough to catch a
+    # redeclaration without misreading grouped or descendant selectors.
+    names = css.scan(/^\.(sparc-[a-zA-Z0-9_-]+)\s*\{/).flatten
+    dupes = names.tally.select { |_, n| n > 1 }
+
+    expect(dupes).to be_empty, lambda {
+      "#{dupes.size} sparc- class(es) are defined more than once; the LAST one " \
+      "wins everywhere the class is used:\n  " +
+        dupes.map { |name, n| ".#{name} (#{n}x)" }.join("\n  ")
     }
   end
 
