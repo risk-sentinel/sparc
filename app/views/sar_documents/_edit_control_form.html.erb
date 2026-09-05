@@ -23,18 +23,18 @@
   <%= hidden_field_tag :sar_control_id, control.id %>
 
   <% if any_ctx %>
-    <div style="background: var(--bs-secondary-bg); border: 1px solid var(--bs-border-color); border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem;">
-      <div style="padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--bs-border-color); font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bs-tertiary-color);">
+    <div class="sparc-ctx-readonly">
+      <div class="sparc-ctx-readonly-head">
         Assessment Context
-        <span style="font-weight: 400; font-size: 0.7rem; text-transform: none; letter-spacing: 0; margin-left: 0.4rem;">(read-only reference)</span>
+        <span class="sparc-ctx-readonly-note">(read-only reference)</span>
       </div>
-      <table style="width: 100%; border-collapse: collapse;">
+      <table class="sparc-ctx-readonly-table">
         <% ctx_rows.each do |lbl, val| %>
           <tr class="sparc-divider-top">
-            <th scope="row" style="width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem; font-weight: 400; text-align: left; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-tertiary-color); vertical-align: top; white-space: nowrap;">
+            <th scope="row" class="sparc-ctx-readonly-th">
               <%= lbl %>
             </th>
-            <td style="padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem; color: <%= val.present? ? "var(--bs-secondary-color)" : "var(--bs-tertiary-color)" %>; vertical-align: top; white-space: pre-wrap;">
+            <td class="sparc-ctx-readonly-td<%= " sparc-ctx-readonly-td--empty" if val.blank? %>">
               <%= val.present? ? val : "&mdash;".html_safe %>
             </td>
           </tr>
@@ -47,9 +47,9 @@
     <% field = field_map[fname] %>
     <% fval  = field&.field_value.to_s %>
     <div class="form-group">
-      <label for="sar-control-field-<%= fname %>" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-secondary-color);">
+      <label for="sar-control-field-<%= fname %>" class="sparc-field-label-upper">
         <%= fname.tr("_", " ") %>
-        <span class="sparc-heading-implementation" style="font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
+        <span class="sparc-heading-implementation sparc-inline-note">(editable)</span>
       </label>
       <% if fname == "result" %>
         <%= select_tag "fields[#{fname}]",
@@ -71,6 +71,6 @@
 
   <div class="d-flex gap-2 mt-3">
     <%= f.submit "Save Changes",
-          style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.5rem 1.25rem; font-size: 0.875rem; cursor: pointer;" %>
+          class: "sparc-action sparc-action--positive sparc-action--solid sparc-p-05-125r sparc-fs-0875" %>
   </div>
 <% end %>

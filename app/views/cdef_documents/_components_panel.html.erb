@@ -24,7 +24,7 @@
     <strong>Upstream notice</strong>
     <details class="sparc-mt-035">
       <summary class="sparc-cursor-pointer"><%= truncate(disclaimer, length: 160) %></summary>
-      <p class="small mb-0" style="margin-top: 0.5rem; white-space: pre-wrap;"><%= disclaimer %></p>
+      <p class="small mb-0 sparc-mt-05 sparc-prewrap"><%= disclaimer %></p>
     </details>
   </div>
 <% end %>
@@ -51,7 +51,7 @@
               <p class="sparc-item-card__desc sparc-item-card__desc--full"><%= component.description %></p>
             <% end %>
             <% if component.purpose.present? %>
-              <p class="small text-body-secondary" style="margin: -0.2rem 0 0;">
+              <p class="small text-body-secondary sparc-m-neg02-0-0">
                 <strong>Purpose:</strong> <%= component.purpose %>
               </p>
             <% end %>
@@ -170,7 +170,7 @@
            }.each do |label, value| %>
           <% next if value.blank? %>
           <dt class="col-sm-3 text-body-secondary fw-normal"><%= label %></dt>
-          <dd class="col-sm-9" style="word-break: break-all;"><%= value %></dd>
+          <dd class="col-sm-9 sparc-break-all"><%= value %></dd>
         <% end %>
       </dl>
 

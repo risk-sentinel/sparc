@@ -65,7 +65,7 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # This is the ONE circumstance in which the ceiling may go up — a correction
   # to what is being counted, never a regression in what is being guarded. Any
   # later increase is a rot-back and must be rejected.
-  let(:ceiling) { 275 }
+  let(:ceiling) { 254 }
 
   # A SECOND guard, learned the hard way in slice 4.
   #

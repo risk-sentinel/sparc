@@ -51,12 +51,11 @@
     <span class="sparc-section-hint">&mdash; click a badge to filter</span>
   </summary>
 
-  <div style="padding: 1rem 0 0.5rem;">
+  <div class="sparc-p-1r-0-05">
     <%# ── Filter banner (Stimulus-managed) ── %>
     <% if mode == :stimulus %>
       <div data-heatmap-target="banner"
-           class="sparc-filter-banner d-flex align-items-center justify-content-between"
-           style="display: none; gap: 0.75rem;">
+           class="sparc-filter-banner d-flex align-items-center justify-content-between sparc-d-none sparc-gap-075">
         <span data-heatmap-target="bannerLabel" class="sparc-filter-text"></span>
         <button data-action="heatmap#clear" class="sparc-action sparc-action--neutral sparc-action--ghost"
                 aria-label="Clear Filter">
@@ -113,16 +112,18 @@
                  aria-label="Filter by family <%= family %>"><%= family %></a>
             <% end %>
             <% if show_pct %>
-              <span class="<%= family_pct >= 80 ? 'sparc-pct-good' : family_pct >= 50 ? 'sparc-pct-mid' : 'sparc-pct-low' %>" style="font-size: 0.72rem; font-weight: 700;"><%= family_pct %>%</span>
+              <span class="<%= family_pct >= 80 ? 'sparc-pct-good' : family_pct >= 50 ? 'sparc-pct-mid' : 'sparc-pct-low' %> sparc-fs-072 sparc-fw-700"><%= family_pct %>%</span>
             <% end %>
           </div>
-          <div style="font-size: 0.62rem; color: var(--bs-tertiary-color); margin-bottom: 0.55rem;"><%= family_total %> controls</div>
+          <div class="sparc-fs-062 sparc-color-tertiary sparc-mb-055"><%= family_total %> controls</div>
 
           <%# ── Stacked progress bar ── %>
           <div class="sparc-heatmap-bar d-flex">
             <% heatmap_statuses.each do |s| %>
               <% next if (family_data[s] || 0) == 0 %>
-              <div class="sparc-fill--<%= send(variant_helper, s) %>" style="width: <%= ((family_data[s] || 0) * 100.0 / [family_total, 1].max).round(3) %>%;"></div>
+              <div class="sparc-fill--<%= send(variant_helper, s) %> sparc-bar-fill"
+                   data-controller="bar"
+                   data-bar-pct-value="<%= ((family_data[s] || 0) * 100.0 / [family_total, 1].max).round(3) %>"></div>
             <% end %>
           </div>
 
@@ -140,11 +141,12 @@
                           cell_active ? { family: nil, status: nil } : { family: family, status: s }
                         )),
                       title: "#{family} / #{s}: #{count}",
-                      class: "sparc-heatmap-badge sparc-status--#{send(variant_helper, s)}",
+                      class: "sparc-heatmap-badge sparc-status--#{send(variant_helper, s)} " \
+                             "#{'sparc-heatmap-cell--dim' if !cell_active && has_any_filter} " \
+                             "#{'sparc-heatmap-cell--active' if cell_active}",
                       role: "button",
                       "aria-label": "#{family} #{s}: #{count} controls",
-                      "aria-pressed": cell_active ? "true" : "false",
-                      style: "opacity: #{cell_active ? '1' : (has_any_filter ? '0.35' : '1')}; #{'outline: 2px solid #2c3e50;' if cell_active}" %>
+                      "aria-pressed": cell_active ? "true" : "false" %>
               <% else %>
                 <div class="sparc-heatmap-badge sparc-status--<%= send(variant_helper, s) %>"
                      data-heatmap-target="badge"
@@ -175,11 +177,11 @@
 
     <%# ── Legend ── %>
     <% if legends.present? %>
-      <div class="d-flex flex-wrap align-items-center mt-3" style="gap: 0.6rem; padding: 0.5rem 0;">
+      <div class="d-flex flex-wrap align-items-center mt-3 sparc-gap-06 sparc-p-05-0">
         <span class="sparc-legend-label">Legend:</span>
         <% legends.each do |lbl, col| %>
           <span class="sparc-legend-item">
-            <span class="sparc-legend-dot" style="background: <%= col %>;"></span>
+            <span class="sparc-legend-dot sparc-accent-bg <%= accent_class(col) %>"></span>
             <%= lbl %>
           </span>
         <% end %>

@@ -3586,6 +3586,60 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-m-0-fw-600 { margin: 0; font-weight: 600; }
 .sparc-fs-09 { font-size: 0.9rem !important; }
 
+/* ── #1047 — the tail of the >=10 files ─────────────────────────────────── */
+
+/* The SAR read-only "Assessment Context" panel. */
+.sparc-ctx-readonly {
+  background: var(--bs-secondary-bg); border: 1px solid var(--bs-border-color);
+  border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem;
+}
+.sparc-ctx-readonly-head {
+  padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--bs-border-color);
+  font-size: 0.63rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--bs-tertiary-color);
+}
+.sparc-ctx-readonly-note {
+  font-weight: 400; font-size: 0.7rem; text-transform: none;
+  letter-spacing: 0; margin-left: 0.4rem;
+}
+.sparc-ctx-readonly-table { width: 100%; border-collapse: collapse; }
+.sparc-ctx-readonly-th {
+  width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem;
+  font-weight: 400; text-align: left; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--bs-tertiary-color); vertical-align: top;
+  white-space: nowrap;
+}
+/* The value is tertiary when EMPTY and secondary when present — a state, so it
+   is a modifier rather than an interpolated colour. */
+.sparc-ctx-readonly-td {
+  padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem;
+  vertical-align: top; white-space: pre-wrap;
+  color: var(--bs-secondary-color);
+}
+.sparc-ctx-readonly-td--empty { color: var(--bs-tertiary-color); }
+
+.sparc-field-label-upper {
+  font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--bs-secondary-color);
+}
+.sparc-inline-note { font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+/* Heat-map cell emphasis. `opacity` and the active outline were interpolated
+   per cell; both are two-state, so they are classes. */
+.sparc-heatmap-cell--dim { opacity: 0.35; }
+.sparc-heatmap-cell--active { outline: 2px solid var(--sparc-ink); }
+
+.sparc-p-1r-0-05 { padding: 1rem 0 0.5rem; }
+.sparc-p-05-0 { padding: 0.5rem 0; }
+.sparc-fs-062 { font-size: 0.62rem !important; }
+.sparc-fs-063 { font-size: 0.63rem !important; }
+.sparc-mb-055 { margin-bottom: 0.55rem; }
+.sparc-fw-700 { font-weight: 700; }
+.sparc-gap-075 { gap: 0.75rem; }
+.sparc-m-neg02-0-0 { margin: -0.2rem 0 0; }
+.sparc-break-all { word-break: break-all; }
+.sparc-w-35pct { width: 35%; }
+
 /* A colour swatch/dot. Size and shape here, colour from the accent. */
 .sparc-swatch-dot {
   display: inline-block; width: 10px; height: 10px;
