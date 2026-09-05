@@ -3406,6 +3406,23 @@ a.link-purple { color: var(--sparc-purple); }
    itself, and no `color` rule reaches it. */
 .sparc-accent-primary { accent-color: var(--sparc-primary); }
 
+/* ── #1047 slice 14 — the profile control form ──────────────────────────── */
+
+/* A validation-error box above a form. Bootstrap's subtle danger tokens rather
+   than a restated colour, so it follows the theme in both light and dark. */
+.sparc-form-error-box {
+  background: var(--bs-danger-bg-subtle);
+  border: 1px solid var(--bs-danger-border-subtle);
+  padding: 0.75rem;
+}
+.sparc-form-error-text { color: var(--bs-danger-text-emphasis); font-size: 0.85rem; margin: 0.2rem 0; }
+
+/* A clickable parameter choice in the profile form's value picker. */
+.sparc-param-choice { cursor: pointer; font-size: 0.72rem; font-weight: 500; margin: 0.1rem 0; }
+
+.sparc-w-30pct { width: 30%; }
+.sparc-editable-note { color: var(--bs-success); font-size: 0.75rem; font-weight: 400; }
+
 /* ==========================================================================
    #1047 slice 4 — the SSP show screen's vocabulary.
 
