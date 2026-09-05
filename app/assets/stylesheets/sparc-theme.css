@@ -3531,6 +3531,23 @@ a.link-purple { color: var(--sparc-purple); }
    ssp `_statements_table`: same info block, same depth indent, same note, same
    eyebrow row. Slice 18 named all of those; only this width was new. */
 .sparc-w-11pct { width: 11%; }
+
+/* ── #1047 slices 21-24 ─────────────────────────────────────────────────── */
+
+/* A shrink-to-fit table column — a checkbox or icon cell. `width: 1%` is the
+   long-standing trick for it; named so nobody has to recognise it. */
+.sparc-w-1pct { width: 1%; }
+
+/* One of the three "how do you want to start" cards on the SAP new screen.
+   They were three copies of one rule differing only in the left border colour,
+   which now comes from the accent the card carries. */
+.sparc-choice-card {
+  border: 1px solid var(--bs-border-color);
+  border-left: 4px solid var(--sparc-accent);
+  padding: 1.25rem;
+}
+
+.sparc-minh-60px { min-height: 60px; }
 .sparc-th-eyebrow-row { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color); }
 
 /* ==========================================================================

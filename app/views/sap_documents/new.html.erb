@@ -8,8 +8,8 @@
   <%= form_with model: @sap_document, local: true do |f| %>
 
     <%# ── Step 1: Plan Metadata ── %>
-    <div class="bg-body-secondary rounded-3 mb-4" style="border: 1px solid var(--bs-border-color); border-left: 4px solid #3498db; padding: 1.25rem;">
-      <h3 class="mb-3 sparc-heading-controls" style="font-size: 1rem;">Step 1: Plan Details</h3>
+    <div class="bg-body-secondary rounded-3 mb-4 sparc-choice-card sparc-accent--blue">
+      <h3 class="mb-3 sparc-heading-controls sparc-fs-1r">Step 1: Plan Details</h3>
 
       <div class="form-group">
         <label for="sap_document_name">Plan Name</label>
@@ -28,7 +28,7 @@
         <div class="col">
           <div class="form-group">
             <label for="sap_document_description">Description</label>
-            <%= f.text_area :description, rows: 2, placeholder: "Brief description of the assessment scope and objectives", class: "form-control", style: "min-height: 60px;" %>
+            <%= f.text_area :description, rows: 2, placeholder: "Brief description of the assessment scope and objectives", class: "form-control sparc-minh-60px" %>
           </div>
         </div>
       </div>
@@ -50,9 +50,9 @@
     </div>
 
     <%# ── Step 2: Source Documents ── %>
-    <div class="bg-body-secondary rounded-3 mb-4" style="border: 1px solid var(--bs-border-color); border-left: 4px solid #27ae60; padding: 1.25rem;">
-      <h3 class="mb-3 sparc-heading-implementation" style="font-size: 1rem;">Step 2: Select Source Documents</h3>
-      <p class="text-body-secondary mb-3" style="font-size: 0.85rem;">
+    <div class="bg-body-secondary rounded-3 mb-4 sparc-choice-card sparc-accent--green">
+      <h3 class="mb-3 sparc-heading-implementation sparc-fs-1r">Step 2: Select Source Documents</h3>
+      <p class="text-body-secondary mb-3 sparc-fs-085">
         Controls will be pulled from the selected SSP. If no SSP is selected, controls will be pulled from the selected Profile/Baseline.
       </p>
 
@@ -96,9 +96,9 @@
     </div>
 
     <%# ── Step 3: Assessment Methods ── %>
-    <div class="bg-body-secondary rounded-3 mb-4" style="border: 1px solid var(--bs-border-color); border-left: 4px solid #8e44ad; padding: 1.25rem;">
-      <h3 class="mb-3 sparc-heading-enterprise" style="font-size: 1rem;">Step 3: Default Assessment Methods</h3>
-      <p class="text-body-secondary mb-3" style="font-size: 0.85rem;">
+    <div class="bg-body-secondary rounded-3 mb-4 sparc-choice-card sparc-accent--violet">
+      <h3 class="mb-3 sparc-heading-enterprise sparc-fs-1r">Step 3: Default Assessment Methods</h3>
+      <p class="text-body-secondary mb-3 sparc-fs-085">
         Methods are auto-assigned based on control family heuristics (technical controls default to <strong>Test</strong>,
         personnel/physical to <strong>Interview</strong>, policy to <strong>Examine</strong>).
         You can override individual controls after the plan is created.
@@ -107,23 +107,23 @@
       <div class="row row-cols-1 row-cols-md-3 g-3">
         <div class="col">
           <div class="bg-body border rounded-3 p-3 text-center">
-            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#128269;</div>
-            <div class="fw-bold" style="margin-bottom: 0.25rem;">Examine</div>
-            <div class="text-body-secondary" style="font-size: 0.78rem;">Review documentation, policies, procedures, and artifacts</div>
+            <div class="sparc-fs-15r sparc-mb-05">&#128269;</div>
+            <div class="fw-bold sparc-mb-025">Examine</div>
+            <div class="text-body-secondary sparc-fs-078">Review documentation, policies, procedures, and artifacts</div>
           </div>
         </div>
         <div class="col">
           <div class="bg-body border rounded-3 p-3 text-center">
-            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#128483;</div>
-            <div class="fw-bold" style="margin-bottom: 0.25rem;">Interview</div>
-            <div class="text-body-secondary" style="font-size: 0.78rem;">Discuss with personnel responsible for control implementation</div>
+            <div class="sparc-fs-15r sparc-mb-05">&#128483;</div>
+            <div class="fw-bold sparc-mb-025">Interview</div>
+            <div class="text-body-secondary sparc-fs-078">Discuss with personnel responsible for control implementation</div>
           </div>
         </div>
         <div class="col">
           <div class="bg-body border rounded-3 p-3 text-center">
-            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#9881;</div>
-            <div class="fw-bold" style="margin-bottom: 0.25rem;">Test</div>
-            <div class="text-body-secondary" style="font-size: 0.78rem;">Execute automated or manual procedures to validate implementation</div>
+            <div class="sparc-fs-15r sparc-mb-05">&#9881;</div>
+            <div class="fw-bold sparc-mb-025">Test</div>
+            <div class="text-body-secondary sparc-fs-078">Execute automated or manual procedures to validate implementation</div>
           </div>
         </div>
       </div>
