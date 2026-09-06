@@ -22,9 +22,9 @@
 <% if disclaimer.present? %>
   <div class="alert alert-warning mb-4" role="note">
     <strong>Upstream notice</strong>
-    <details style="margin-top: 0.35rem;">
-      <summary style="cursor: pointer;"><%= truncate(disclaimer, length: 160) %></summary>
-      <p class="small mb-0" style="margin-top: 0.5rem; white-space: pre-wrap;"><%= disclaimer %></p>
+    <details class="sparc-mt-035">
+      <summary class="sparc-cursor-pointer"><%= truncate(disclaimer, length: 160) %></summary>
+      <p class="small mb-0 sparc-mt-05 sparc-prewrap"><%= disclaimer %></p>
     </details>
   </div>
 <% end %>
@@ -51,7 +51,7 @@
               <p class="sparc-item-card__desc sparc-item-card__desc--full"><%= component.description %></p>
             <% end %>
             <% if component.purpose.present? %>
-              <p class="small text-body-secondary" style="margin: -0.2rem 0 0;">
+              <p class="small text-body-secondary sparc-m-neg02-0-0">
                 <strong>Purpose:</strong> <%= component.purpose %>
               </p>
             <% end %>
@@ -106,7 +106,7 @@
             <% if component.native_control_ids.any? %>
               <details>
                 <summary class="small">Asserted controls (<%= component.native_control_ids.size %>)</summary>
-                <p class="small text-body-secondary" style="margin-top: 0.4rem;">
+                <p class="small text-body-secondary sparc-mt-04">
                   <%= component.native_control_ids.join(", ") %>
                 </p>
               </details>
@@ -120,7 +120,7 @@
                     — <%= component.mapping_directness == :direct ? "direct" : "inferred via Config Rule" %>
                   <% end %>
                 </summary>
-                <p class="small text-body-secondary" style="margin-top: 0.4rem;">
+                <p class="small text-body-secondary sparc-mt-04">
                   <%= component.enriched_control_ids.join(", ") %>
                 </p>
               </details>
@@ -129,7 +129,7 @@
             <% if component.region_ids.any? %>
               <details>
                 <summary class="small">Regions (<%= component.region_ids.size %>)</summary>
-                <p class="small text-body-secondary" style="margin-top: 0.4rem;">
+                <p class="small text-body-secondary sparc-mt-04">
                   <%= component.region_ids.join(", ") %>
                 </p>
               </details>
@@ -138,7 +138,7 @@
             <% if component.check_ids.any? %>
               <details>
                 <summary class="small">Automated checks (<%= component.check_ids.size %>)</summary>
-                <p class="small text-body-secondary" style="margin-top: 0.4rem;">
+                <p class="small text-body-secondary sparc-mt-04">
                   <%= component.check_ids.join(", ") %>
                 </p>
               </details>
@@ -170,12 +170,12 @@
            }.each do |label, value| %>
           <% next if value.blank? %>
           <dt class="col-sm-3 text-body-secondary fw-normal"><%= label %></dt>
-          <dd class="col-sm-9" style="word-break: break-all;"><%= value %></dd>
+          <dd class="col-sm-9 sparc-break-all"><%= value %></dd>
         <% end %>
       </dl>
 
       <% if links.any? %>
-        <div style="margin-top: 0.75rem;">
+        <div class="sparc-mt-075">
           <% links.each do |link| %>
             <% next if link["href"].blank? %>
             <%= link_to link["text"].presence || link["rel"].presence || link["href"],

@@ -4,7 +4,7 @@
   [@member_count, "Members"]
 ] %>
 
-<div class="card" style="overflow: hidden;">
+<div class="card sparc-of-hidden">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Authorization Boundaries</h2>
     <%= link_to "New Authorization Boundary", new_authorization_boundary_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
@@ -46,15 +46,15 @@
       <% end %>
     </div>
   <% elsif @authorization_boundaries.any? %>
-    <table class="table table-hover" style="table-layout: fixed;">
+    <table class="table table-hover sparc-table-layout-fixed">
       <colgroup>
-        <% if can_bulk_delete? %><col style="width: 4%;"><% end %>
-        <col style="width: 22%;">
-        <col style="width: 30%;">
-        <col style="width: 10%;">
-        <col style="width: 10%;">
-        <col style="width: 10%;">
-        <col style="width: 18%;">
+        <% if can_bulk_delete? %><col class="sparc-w-4pct"><% end %>
+        <col class="sparc-w-22pct">
+        <col class="sparc-w-30pct">
+        <col class="sparc-w-10pct">
+        <col class="sparc-w-10pct">
+        <col class="sparc-w-10pct">
+        <col class="sparc-w-18pct">
       </colgroup>
       <thead>
         <tr>
@@ -75,10 +75,10 @@
             <% if can_bulk_delete? %>
               <td><%= render "authorization_boundaries/bulk_checkbox", boundary: authorization_boundary %></td>
             <% end %>
-            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= authorization_boundary.name %>">
+            <td class="sparc-text-ellipsis" title="<%= authorization_boundary.name %>">
               <%= link_to authorization_boundary.name, authorization_boundary_path(authorization_boundary) %>
             </td>
-            <td class="text-body-secondary" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <td class="text-body-secondary sparc-text-ellipsis">
               <%= authorization_boundary.description.presence || "—" %>
             </td>
             <td>
@@ -88,7 +88,7 @@
                                when "draft" then "badge-warn"
                                else "badge-warn"
                                end %>
-              <span class="<%= badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+              <span class="<%= badge_class %> rounded fw-semibold sparc-p-02-06 sparc-fs-085">
                 <%= authorization_boundary.status.titleize %>
               </span>
             </td>

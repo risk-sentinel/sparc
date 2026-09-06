@@ -30,36 +30,36 @@
     <table class="table table-hover">
       <thead>
         <tr>
-          <th style="white-space: nowrap;">Name</th>
-          <th style="white-space: nowrap;">Version</th>
-          <th style="white-space: nowrap;">Status</th>
-          <th style="white-space: nowrap;">Items</th>
-          <th style="white-space: nowrap;">Entities</th>
-          <th style="white-space: nowrap;">Created</th>
-          <th style="white-space: nowrap;">Actions</th>
+          <th class="sparc-ws-nowrap">Name</th>
+          <th class="sparc-ws-nowrap">Version</th>
+          <th class="sparc-ws-nowrap">Status</th>
+          <th class="sparc-ws-nowrap">Items</th>
+          <th class="sparc-ws-nowrap">Entities</th>
+          <th class="sparc-ws-nowrap">Created</th>
+          <th class="sparc-ws-nowrap">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% records.each do |doc| %>
           <tr>
-            <td><strong><%= link_to doc.name, poam_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
+            <td><strong><%= link_to doc.name, poam_document_path(doc), class: "text-primary sparc-td-none" %></strong></td>
             <td class="small text-body-secondary"><%= doc.poam_version.presence || "—" %></td>
-            <td style="white-space: nowrap;">
+            <td class="sparc-ws-nowrap">
               <% if doc.processing? || doc.pending? || doc.failed? %>
-                <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold sparc-p-02-06 sparc-fs-085">
                   <%= doc.status %>
                 </span>
                 <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
-                  <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= doc.metadata_extra["processing_message"] %></span>
+                  <br><span class="text-body-secondary sparc-fs-072 sparc-ws-normal"><%= doc.metadata_extra["processing_message"] %></span>
                 <% end %>
               <% else %>
-                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold sparc-p-02-06 sparc-fs-085">
                   <%= doc.lifecycle_label %>
                 </span>
               <% end %>
             </td>
             <td><%= doc.poam_items.count %></td>
-            <td style="font-size: 0.8rem;">
+            <td class="sparc-fs-08">
               <% if doc.completed? %>
                 <span class="text-primary" title="Risks"><%= doc.poam_risks.count %>R</span>
                 <span class="sparc-heading-enterprise" title="Observations"><%= doc.poam_observations.count %>O</span>
@@ -68,7 +68,7 @@
                 <span class="text-body-tertiary">—</span>
               <% end %>
             </td>
-            <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td class="sparc-ws-nowrap"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
             <td>
               <%= render "poam_documents/item_actions", doc: doc %>
             </td>

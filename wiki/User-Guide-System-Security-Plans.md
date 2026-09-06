@@ -123,6 +123,34 @@ The SSP detail page (`/ssp_documents/:id`) is where the real work happens.
 4. Save the card. The **compliance percentage** and progress bar at the top
    update as you go.
 
+### Answering a control statement by statement
+
+NIST divides most controls into lettered **statements** — `ac-1a`, `ac-1a.1`,
+`ac-1b` and so on — and an assessor is expected to see how the system satisfies
+**each one**, not the control as a whole. AC-1 alone has nine.
+
+The **Statements** table on a control card lists them individually, indented to
+show nesting, each with its own response and its own responsible roles. Write
+against the statement you are answering rather than describing the whole control
+in one box, and the export will say exactly which requirement each response
+covers.
+
+A few things worth knowing:
+
+- **Parameter values are substituted per statement.** If `ac-1a.1` carries
+  `{{ insert: param, ac-01_odp.03 }}`, the value appears in that statement's
+  text — not in a single block of prose for the whole control.
+- **Some controls have no statements.** About thirty base controls in Rev 5.2.0
+  carry only guidance, and those show no Statements table. That is the catalog's
+  shape, not a missing row.
+- **Existing plans were filled in automatically.** A plan written before this
+  gained one row per statement, and anything already written was kept — no
+  response was replaced or discarded.
+- **The export follows.** The OSCAL `system-security-plan` now emits one
+  `statement` per addressable part under each `implemented-requirement`, each
+  carrying its own `by-components`, instead of one statement standing for the
+  whole control.
+
 For heads-down editing, open the dedicated **Editor**
 (`/ssp_documents/:id/editor`), which updates control fields inline via Turbo
 Frames without full page reloads.
@@ -198,6 +226,8 @@ one component and cannot carry a pair. See
 | Compliance score seems stuck | Control edits not saved | Re-open the control card, set the status, and save |
 | Can't edit control cards | View-only role | Request SSP write permission ([RBAC](RBAC)) |
 | **What This Baseline Requires** shows no panel on a control | The SSP has no linked baseline, or its catalog carries no statement for that control | Link the SSP to its baseline, or check the control in the catalog |
+| A control shows no **Statements** table | That control genuinely has no statements — roughly thirty Rev 5.2.0 base controls carry only guidance | Nothing to fix; answer the control on the card itself |
+| Statements appear for some controls but not others in an older plan | The catalog was imported before SPARC stored the statement tree | Re-import the catalog, then re-open the SSP |
 | A parameter value on the SSP looks wrong | It comes from the baseline, not the SSP | Change it on the baseline, then re-open the SSP |
 
 ---

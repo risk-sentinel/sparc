@@ -14,8 +14,9 @@
   p3_count = @priority_counts["P3"].to_i
   none_count = @priority_counts[nil].to_i + (@priority_counts.reject { |k, _| %w[P1 P2 P3].include?(k) || k.nil? }.values.sum)
 
-  level_colors = { "LOW" => "#27ae60", "MODERATE" => "#f39c12", "HIGH" => "#e74c3c" }
-  level_color  = level_colors[@profile_document.baseline_level] || "#7f8c8d"
+  level_colors = { "LOW" => ApplicationHelper::COLOR_GREEN, "MODERATE" => ApplicationHelper::COLOR_ORANGE,
+                   "HIGH" => ApplicationHelper::COLOR_RED }
+  level_color  = level_colors[@profile_document.baseline_level] || ApplicationHelper::COLOR_GRAY_DARK
 %>
 
 <div data-controller="doc-meta family-toggle heatmap-chip"
@@ -77,7 +78,7 @@
 
       <% if signed_in? && !@profile_document.published_lifecycle? %>
         <%# ── Edit mode (hidden) ── %>
-        <div id="doc-meta-edit" data-doc-meta-target="edit" style="display: none;">
+        <div id="doc-meta-edit" data-doc-meta-target="edit" class="sparc-d-none">
           <%= form_with url: update_metadata_profile_document_path(@profile_document), method: :patch, local: true do |f| %>
             <div class="d-flex gap-2 align-items-center flex-wrap">
               <%= f.text_field :name, value: @profile_document.name,
@@ -94,33 +95,33 @@
       <div class="sparc-header-meta">
         <%= @profile_document.original_filename %>
         &nbsp;&bull;&nbsp;
-        <span class="fw-semibold" style="color: <%= level_color %>;"><%= @profile_document.baseline_level || "Custom" %></span>
+        <span class="fw-semibold sparc-accent-text <%= accent_class(level_color) %>"><%= @profile_document.baseline_level || "Custom" %></span>
         &nbsp;&bull;&nbsp; <%= @total_controls %> controls
         &nbsp;&bull;&nbsp;
         <% if @profile_document.control_catalog.present? %>
           Source: <span class="fw-semibold"><%= @profile_document.control_catalog.name %></span>
           <% if @profile_document.control_catalog.short_digest.present? %>
-            <code style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-left: 0.2rem;"><%= @profile_document.control_catalog.short_digest %></code>
+            <code class="sparc-fs-075 sparc-color-white-50 sparc-ml-02"><%= @profile_document.control_catalog.short_digest %></code>
           <% end %>
         <% else %>
           <%# #928 — an unlinked profile said nothing at all here, so the state
               that blocks publishing was invisible until the publish button
               failed to appear. Name it where the source normally goes. %>
-          <span class="fw-semibold" style="color: #f39c12;">No source catalog</span>
+          <span class="fw-semibold sparc-accent-text sparc-accent--orange">No source catalog</span>
         <% end %>
         <% if @profile_document.source_profile.present? %>
           &nbsp;&bull;&nbsp;
           Derived from: <%= link_to @profile_document.source_profile.name,
                                     profile_document_path(@profile_document.source_profile),
-                                    style: "color: rgba(255,255,255,0.8); text-decoration: underline;" %>
+                                    class: "sparc-header-link" %>
         <% end %>
         &nbsp;&bull;&nbsp;
-        <span class="<%= @profile_document.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.15rem 0.5rem; font-size: 0.78rem;">
+        <span class="<%= @profile_document.lifecycle_badge_class %> rounded fw-semibold sparc-p-015-05 sparc-fs-078">
           <%= @profile_document.lifecycle_label %>
         </span>
       </div>
       <% if @profile_document.description.present? %>
-        <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; max-width: 600px;"><%= truncate(@profile_document.description, length: 200) %></div>
+        <div class="sparc-fs-082 sparc-color-white-45 sparc-mt-04 sparc-maxw-600"><%= truncate(@profile_document.description, length: 200) %></div>
       <% end %>
     </div>
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
@@ -164,24 +165,23 @@
   </div>
 
   <div class="d-flex align-items-center gap-4 flex-wrap">
-    <div class="text-center flex-shrink-0" style="min-width: 80px;">
-      <div class="sparc-score" style="color: white;"><%= @total_controls %></div>
+    <div class="text-center flex-shrink-0 sparc-minw-80px">
+      <div class="sparc-score sparc-color-white"><%= @total_controls %></div>
       <div class="sparc-score-label">Selected Controls</div>
     </div>
 
     <div class="sparc-divider-v"></div>
 
-    <div class="d-flex flex-wrap gap-2" style="flex: 1;">
+    <div class="d-flex flex-wrap gap-2 sparc-flex-1">
       <% [["P1", p1_count, "#e74c3c"], ["P2", p2_count, "#f39c12"], ["P3", p3_count, "#3498db"], ["None", none_count, "#95a5a6"]].each do |pri, count, color| %>
         <% next if count == 0 %>
-        <div class="summary-chip sparc-summary-chip"
+        <div class="summary-chip sparc-summary-chip sparc-border-l-3 <%= accent_class(color) %>"
              data-filter-value="<%= pri %>"
              data-action="click->heatmap-chip#apply keydown.enter->heatmap-chip#apply keydown.space->heatmap-chip#apply"
              data-heatmap-chip-filter-param="<%= pri %>"
              role="button"
              tabindex="0"
-             title="Click to filter: <%= pri %>"
-             style="border-left: 3px solid <%= color %>;">
+             title="Click to filter: <%= pri %>">
           <div class="sparc-chip-count"><%= count %></div>
           <div class="sparc-chip-label"><%= pri %></div>
         </div>
@@ -193,7 +193,10 @@
     <div class="sparc-progress-bar">
       <% [["P1", p1_count, "#e74c3c"], ["P2", p2_count, "#f39c12"], ["P3", p3_count, "#3498db"], ["None", none_count, "#95a5a6"]].each do |pri, count, color| %>
         <% next if count == 0 %>
-        <div style="width: <%= (count * 100.0 / [priority_total, 1].max).round(3) %>%; background: <%= color %>;" title="<%= pri %>: <%= count %>"></div>
+        <div class="sparc-bar-fill sparc-accent-bg <%= accent_class(color) %>"
+             data-controller="bar"
+             data-bar-pct-value="<%= (count * 100.0 / [priority_total, 1].max).round(3) %>"
+             title="<%= pri %>: <%= count %>"></div>
       <% end %>
     </div>
   </div>
@@ -235,19 +238,19 @@
           <%
             field_map    = control.profile_control_fields.index_by(&:field_name)
             pri_val      = control.priority.presence || "(None)"
-            pri_colors_map = { "P1" => "#e74c3c", "P2" => "#f39c12", "P3" => "#3498db" }
-            pri_color    = pri_colors_map[pri_val] || "#95a5a6"
+            pri_colors_map = { "P1" => ApplicationHelper::COLOR_RED, "P2" => ApplicationHelper::COLOR_ORANGE,
+                               "P3" => ApplicationHelper::COLOR_BLUE }
+            pri_color    = pri_colors_map[pri_val] || ApplicationHelper::COLOR_GRAY
             pri_variant  = profile_priority_variant(pri_val)
           %>
-          <div class="control-card"
+          <div class="control-card sparc-border-l-4 <%= accent_class(pri_color) %>"
                data-family="<%= family_code %>"
-               data-priority="<%= pri_val %>"
-               style="border-left: 4px solid <%= pri_color %>;">
+               data-priority="<%= pri_val %>">
 
             <%# ── Card header ── %>
-            <div class="d-flex justify-content-between align-items-start" style="gap: 1rem;">
-              <div style="min-width: 0; flex: 1;">
-                <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.2rem;">
+            <div class="d-flex justify-content-between align-items-start sparc-gap-1r">
+              <div class="sparc-minw-0 sparc-flex-1">
+                <div class="d-flex align-items-center gap-2 flex-wrap sparc-mb-02">
                   <span class="sparc-ctrl-id">
                     <%= control.display_id.presence || "&mdash;".html_safe %>
                   </span>
@@ -260,7 +263,7 @@
                 <% end %>
               </div>
               <% if signed_in? && !@profile_document.published_lifecycle? %>
-                <div class="d-flex flex-shrink-0" style="gap: 0.35rem;">
+                <div class="d-flex flex-shrink-0 sparc-gap-035">
                   <%= link_to "Edit", edit_profile_document_profile_control_path(@profile_document, control),
                         class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
                   <%= button_to "Delete", profile_document_profile_control_path(@profile_document, control),
@@ -287,17 +290,17 @@
             <% prop_fields  = field_map.select { |k, _| k.start_with?("prop:") } %>
             <% has_details  = detail&.any? || prop_fields.any? || sub_parts&.any? %>
             <% if has_details %>
-              <details class="card-details" style="margin-top: 0.35rem;">
+              <details class="card-details sparc-mt-035">
                 <%# #997 — the toggle used to be a bare arrow, so nothing said
                     there was anything behind it. It is now labelled with what
                     it opens, which is the difference between a screen that
                     holds the baseline and one that shows it. %>
                 <summary class="sparc-card-detail-toggle d-flex align-items-center gap-1">
                   <span class="card-arrow sparc-card-arrow">&#9658;</span>
-                  <span style="font-size: 0.78rem;">
+                  <span class="sparc-fs-078">
                     <%= detail&.any? ? "What this baseline requires" : "Details" %>
                     <% if detail&.parameters&.any? %>
-                      <span class="badge rounded-pill text-bg-info" style="font-size: 0.66rem;">
+                      <span class="badge rounded-pill text-bg-info sparc-fs-066">
                         <%= detail.parameters.size %> param<%= "s" unless detail.parameters.size == 1 %>
                       </span>
                     <% end %>
@@ -318,7 +321,7 @@
                     <table class="sparc-field-table">
                       <% prop_fields.each do |fname, field| %>
                         <tr>
-                          <th scope="row" class="sparc-field-label" style="width: 30%;">
+                          <th scope="row" class="sparc-field-label sparc-w-30pct">
                             <%= fname.delete_prefix("prop:").tr("_", " ") %>
                           </th>
                           <td class="sparc-field-value">

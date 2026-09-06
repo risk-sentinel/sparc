@@ -5,9 +5,9 @@
 
     <%# ── Hero Section ── %>
     <div class="text-center mb-4">
-      <%= image_tag "sparc_logo.png", alt: "SPARC", style: "height: 300px; width: auto;" %>
+      <%= image_tag "sparc_logo.png", alt: "SPARC", class: "sparc-logo-300" %>
       <h1 class="h2 fw-bold mt-3">About SPARC</h1>
-      <p class="text-body-secondary" style="max-width: 700px; margin: 0 auto;">
+      <p class="text-body-secondary sparc-maxw-700">
         Systematic Policy and Regulatory Compliance &mdash; a platform for authoring,
         validating, and managing OSCAL-based compliance artifacts with automation.
       </p>
@@ -17,7 +17,7 @@
 
     <%# ── Section 1: What is SPARC? ── %>
     <section class="mb-5">
-      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">What is SPARC?</h2>
+      <h2 class="h4 fw-bold mb-3 sparc-color-primary">What is SPARC?</h2>
       <p>
         SPARC helps organizations centralize, track, and operationalize NIST SP 800-53 security controls
         across the full Risk Management Framework (RMF) lifecycle. It bridges the gap between manual
@@ -34,7 +34,7 @@
 
     <%# ── Section 2: OSCAL Framework Layers ── %>
     <section class="mb-5">
-      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">OSCAL Framework Layers</h2>
+      <h2 class="h4 fw-bold mb-3 sparc-color-primary">OSCAL Framework Layers</h2>
       <p>
         The Open Security Controls Assessment Language (OSCAL) is a NIST-developed standard for
         expressing security controls, assessment plans, and compliance results in machine-readable
@@ -43,7 +43,7 @@
 
       <div class="row g-3 my-3">
         <div class="col-md-6">
-          <div class="card h-100" style="border-left: 4px solid #3498db;">
+          <div class="card h-100 sparc-border-l-4 sparc-accent--blue">
             <div class="card-body">
               <h5 class="fw-bold sparc-heading-controls">Controls Layer</h5>
               <p class="mb-1"><strong>Catalogs</strong> &mdash; complete sets of security controls (e.g., NIST SP 800-53 Rev 5)</p>
@@ -53,7 +53,7 @@
           </div>
         </div>
         <div class="col-md-6">
-          <div class="card h-100" style="border-left: 4px solid #27ae60;">
+          <div class="card h-100 sparc-border-l-4 sparc-accent--green">
             <div class="card-body">
               <h5 class="fw-bold sparc-heading-implementation">Implementation Layer</h5>
               <p class="mb-1"><strong>System Security Plans (SSPs)</strong> &mdash; describe how controls are implemented in a system</p>
@@ -62,7 +62,7 @@
           </div>
         </div>
         <div class="col-md-6">
-          <div class="card h-100" style="border-left: 4px solid #e67e22;">
+          <div class="card h-100 sparc-border-l-4 sparc-accent--carrot">
             <div class="card-body">
               <h5 class="fw-bold sparc-heading-assessment">Assessment Layer</h5>
               <p class="mb-1"><strong>Assessment Plans (SAPs)</strong> &mdash; define how security controls will be tested</p>
@@ -73,7 +73,7 @@
           </div>
         </div>
         <div class="col-md-6">
-          <div class="card h-100" style="border-left: 4px solid #9b59b6;">
+          <div class="card h-100 sparc-border-l-4 sparc-accent--purple">
             <div class="card-body">
               <h5 class="fw-bold sparc-heading-enterprise">Enterprise Layer</h5>
               <p class="mb-1"><strong>Organizations</strong> &mdash; top-level organizational units</p>
@@ -92,7 +92,7 @@
 
     <%# ── Section 3: FedRAMP 20x and OSCAL ── %>
     <section class="mb-5">
-      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">FedRAMP 20x and OSCAL</h2>
+      <h2 class="h4 fw-bold mb-3 sparc-color-primary">FedRAMP 20x and OSCAL</h2>
       <p>
         FedRAMP 20x is an initiative to modernize cloud security authorizations through automation
         and machine-readable compliance. Instead of narrative-heavy documentation reviewed manually,
@@ -113,7 +113,7 @@
 
     <%# ── Section 4: SPARC and the Authoritative Layer ── %>
     <section class="mb-5">
-      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">The Authoritative Layer</h2>
+      <h2 class="h4 fw-bold mb-3 sparc-color-primary">The Authoritative Layer</h2>
       <p>
         In compliance workflows, the <strong>authoritative layer</strong> is the single source of truth
         for security controls, implementations, and evidence. SPARC serves as this authoritative layer by:
@@ -133,7 +133,7 @@
 
     <%# ── Section 5: Automated Validations with MITRE SAF ── %>
     <section class="mb-5">
-      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Automated Validations with MITRE SAF</h2>
+      <h2 class="h4 fw-bold mb-3 sparc-color-primary">Automated Validations with MITRE SAF</h2>
       <p>
         SPARC integrates with the
         <a href="https://saf.mitre.org/" target="_blank" rel="noopener noreferrer" class="text-primary">MITRE Security Automation Framework (SAF)</a>
@@ -153,7 +153,7 @@
 
     <%# ── Section 6: Control Mappings and Converters ── %>
     <section class="mb-5">
-      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Control Mappings and Converters</h2>
+      <h2 class="h4 fw-bold mb-3 sparc-color-primary">Control Mappings and Converters</h2>
       <p>
         SPARC provides cross-framework control mapping using OSCAL's native mapping schema,
         enabling organizations to maintain compliance across multiple standards simultaneously:
@@ -193,12 +193,12 @@
 
     <%# ── Section 7: Get Started ── %>
     <section>
-      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Get Started</h2>
+      <h2 class="h4 fw-bold mb-3 sparc-color-primary">Get Started</h2>
       <div class="row g-3">
         <div class="col-md-4">
           <div class="card h-100 text-center">
             <div class="card-body">
-              <div style="font-size: 2.5rem;">&#128214;</div>
+              <div class="sparc-fs-25rem">&#128214;</div>
               <h5 class="fw-bold mt-2">API Documentation</h5>
               <p class="small text-body-secondary">REST API reference with configurable auth modes (local, OIDC, hybrid) for flexible deployment scenarios.</p>
               <%= link_to "View API Docs", about_api_path, class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
@@ -208,7 +208,7 @@
         <div class="col-md-4">
           <div class="card h-100 text-center">
             <div class="card-body">
-              <div style="font-size: 2.5rem;">&#128640;</div>
+              <div class="sparc-fs-25rem">&#128640;</div>
               <h5 class="fw-bold mt-2">Quick-Start Guide</h5>
               <p class="small text-body-secondary">Get up and running with SPARC in minutes &mdash; from installation to your first SSP.</p>
               <%= link_to "Quick Start", about_quickstart_path, class: "btn btn-success btn-sm" %>
@@ -218,7 +218,7 @@
         <div class="col-md-4">
           <div class="card h-100 text-center">
             <div class="card-body">
-              <div style="font-size: 2.5rem;">&#128187;</div>
+              <div class="sparc-fs-25rem">&#128187;</div>
               <h5 class="fw-bold mt-2">Source Code</h5>
               <p class="small text-body-secondary">SPARC is open source. Explore the codebase, file issues, and contribute.</p>
               <a href="https://github.com/risk-sentinel/sparc" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">GitHub Repo</a>

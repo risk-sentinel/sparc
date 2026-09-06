@@ -21,13 +21,51 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
 
   # Lower this with every slice. Never raise it.
   #
+  # Slice 9 took control_catalogs/import.html.erb from 34 to 0 and introduced the
+  # first SURFACE tokens: --sparc-ink / --sparc-ink-deep. Those two navies were
+  # hand-written 25 times across both stylesheets and the views with no name;
+  # the gradients, the filter banner, the control-id text and this screen's code
+  # blocks had each picked them independently.
+  #
+  # Slice 8 took control_families/show.html.erb from 43 to 0, and needed three
+  # things done FIRST rather than as part of the conversion: the screen was
+  # absent from the visual gate entirely (LINK_FROM_SHOW now reaches it),
+  # `baseline_editor` revealed elements by writing an EMPTY inline display —
+  # which a class cannot be overridden by — and nothing clicked the toggle.
+  #
+  # Slice 7 took sar_documents/show.html.erb from 39 to 0, and found a codemod
+  # blind spot worth writing down: a tag regex of `<tag[^>]*?>` truncates on a
+  # literal `>` INSIDE an attribute value, and Stimulus actions contain one —
+  # `data-action="change->nav-select#go"`. The `<select>` carrying it was
+  # silently skipped, and only the repo-wide count disagreeing with the expected
+  # drop revealed it. Five more elements repo-wide have an action arrow before a
+  # `style=`; mask attribute VALUES, not just ERB, before scanning tags.
+  #
+  # Slice 6 took cdef_documents/show.html.erb from 47 to 0, reusing the modal
+  # trio (.sparc-modal-overlay/-dialog/-eyebrow) that already existed rather
+  # than minting duplicates, and routing all five DYNAMIC styles through the
+  # vocabulary: three accents, one .sparc-accent-bg, two widths on bar.
+  #
+  # Slice 5 took poam_documents/show.html.erb from 72 to 0 — the largest file
+  # remaining — using the accent vocabulary slice 4 established rather than
+  # restating hexes: the item card's status border and all six hero tiles now
+  # read `var(--sparc-accent)` from a `.sparc-accent--*` class.
+  #
   # Measured 2026-09-01 on the Bundle Z branch point: 1,403 attributes across
   # 115 files, of which 1,361 are static (no ERB interpolation) and 42 are
   # dynamic. Phase 2 slice 1 took sar_documents/enrich.html.erb from 136 to 0,
   # verified against all 78 baseline screens with zero pixels changed. The static ones become theme utilities; the dynamic ones become
   # data-* attributes applied by a Stimulus controller, because a style set from
   # JavaScript is not what `style-src` blocks.
-  let(:ceiling) { 980 }
+  # 858, NOT 745. The number ROSE on 2026-09-05 without a single inline style
+  # being added, because the count was wrong: see STYLE_FORMS below. 745 was
+  # never the number of inline styles in this repository, it was the number of
+  # them written in one particular syntax.
+  #
+  # This is the ONE circumstance in which the ceiling may go up — a correction
+  # to what is being counted, never a regression in what is being guarded. Any
+  # later increase is a rot-back and must be rejected.
+  let(:ceiling) { 254 }
 
   # A SECOND guard, learned the hard way in slice 4.
   #
@@ -47,11 +85,24 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # ERB is masked before scanning: `value="<%= x %>"` contains `>`, so a naive
   # tag regex truncates mid-tag. That is the same trap that made an earlier
   # codemod skip 28 of 136 attributes.
+  #
+  # Masking ERB is NOT enough, and this guard missed a live defect on
+  # 2026-09-05 because of it. A Stimulus action is plain markup containing a
+  # literal `>`:
+  #
+  #     data-action="click->heatmap-chip#apply"
+  #
+  # `<[a-zA-Z][^>]*>` ends the "tag" at that arrow, so a second class= further
+  # down the element is never seen. A summary chip on the SAP screen carried two
+  # class attributes and this spec reported clean. TAG_SCAN steps over quoted
+  # attribute values instead of stopping at the first `>`.
+  TAG_SCAN = %r{<[a-zA-Z][^\s>]*(?:\s+(?:[^\s=>]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)\s*)*/?>}m
+
   it "never leaves an element with two class attributes" do
     offenders = Dir.glob(view_root.join("**/*.erb")).flat_map do |path|
       masked = File.read(path).gsub(/<%.*?%>/m, "ERB")
-      masked.scan(/<[a-zA-Z][^>]*>/)
-            .select { |tag| tag.scan(/\bclass=/).size > 1 }
+      masked.scan(TAG_SCAN)
+            .select { |tag| tag.scan(/(?:\A|\s)class\s*=/).size > 1 }
             .map { |tag| "#{path.sub(Rails.root.to_s + '/', '')}: #{tag.split.join(' ')[0, 110]}" }
     end
 
@@ -61,9 +112,85 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
     }
   end
 
+  # Every way an inline style reaches the browser, not just the one shape the
+  # sweep happened to start with.
+  #
+  # This counted `style="..."` ONLY until 2026-09-05, and that hid 113 inline
+  # styles from every measurement in the sweep — including 33 sitting in eight
+  # files whose own commits said they were "at 0". Rails helpers take the style
+  # as a keyword argument and it reaches the page as an attribute like any
+  # other, so `style-src 'unsafe-inline'` is exactly as load-bearing for it:
+  #
+  #     <%= link_to "x", path, style: "font-size: 1.5rem;" %>
+  #     # => <a href="..." style="font-size: 1.5rem;">x</a>
+  #
+  # A ratchet that cannot see a form of the thing it guards is not a weaker
+  # ratchet, it is a false one: it reports zero and the directive still breaks
+  # the page.
+  STYLE_FORMS = [
+    /style="[^"]*"/,      # <div style="...">
+    /style='[^']*'/,      # <div style='...'>
+    /style:\s*"[^"]*"/,   # link_to ..., style: "..."
+    /style:\s*'[^']*'/    # link_to ..., style: '...'
+  ].freeze
+
+  # The SAME defect in the HELPER form, which the guard above cannot see.
+  #
+  # `link_to "x", path, class: "a", role: "button", class: "b"` is valid Ruby:
+  # the last key wins and "a" is SILENTLY DROPPED. It is the exact failure the
+  # two-class-attribute guard exists for, and this sweep produced one on
+  # 2026-09-05 — a heat-map badge that would have lost `sparc-heatmap-badge`
+  # and its status colour with nothing to report it. Ruby emits a warning at
+  # compile time; nothing in the suite was reading it.
+  it "never passes class: twice to the same helper call" do
+    offenders = Dir.glob(view_root.join("**/*.erb")).flat_map do |path|
+      rel = path.sub(Rails.root.to_s + "/", "")
+      # An ERB expression tag, flattened, then scanned for two class: keys.
+      File.read(path).scan(/<%=.*?%>/m).filter_map do |tag|
+        # Only TOP-LEVEL keys count. `button_to ..., class: "a", form: { class: "b" }`
+        # is correct and common: the second belongs to the generated <form>, not
+        # the button. Strip balanced brace groups until none are left, so nested
+        # hashes (and arrays of hashes, as `badges: [ { ... } ]`) drop out.
+        flat = tag.dup
+        flat = flat.sub(/\{[^{}]*\}/, "") while flat.match?(/\{[^{}]*\}/)
+        next unless flat.scan(/(?:^|[\s,(])class:\s/).size > 1
+        "#{rel}: #{tag.split.join(' ')[0, 120]}"
+      end
+    end
+
+    expect(offenders).to be_empty, lambda {
+      "#{offenders.size} helper call(s) pass class: twice; Ruby keeps the LAST " \
+      "and drops the first silently:\n  " + offenders.join("\n  ")
+    }
+  end
+
+  # A class defined TWICE is how slice 1 restyled five screens it never touched.
+  #
+  # `.sparc-field-label` was re-declared 1,900 lines below its original with a
+  # different padding, and the later one won on 2,456 <th> elements across five
+  # screens — a screen the slice did not open, changed by a name collision. A
+  # duplicate is not always harmful (an identical redeclaration is merely dead),
+  # but it is never intended, and the sweep adds classes fast enough that
+  # noticing by eye has already failed twice.
+  it "never defines the same sparc- class twice in the theme" do
+    css = File.read(Rails.root.join("app/assets/stylesheets/sparc-theme.css"))
+
+    # Only single-selector rules at the start of a line — enough to catch a
+    # redeclaration without misreading grouped or descendant selectors.
+    names = css.scan(/^\.(sparc-[a-zA-Z0-9_-]+)\s*\{/).flatten
+    dupes = names.tally.select { |_, n| n > 1 }
+
+    expect(dupes).to be_empty, lambda {
+      "#{dupes.size} sparc- class(es) are defined more than once; the LAST one " \
+      "wins everywhere the class is used:\n  " +
+        dupes.map { |name, n| ".#{name} (#{n}x)" }.join("\n  ")
+    }
+  end
+
   def inline_styles
     Dir.glob(view_root.join("**/*.erb")).flat_map do |path|
-      File.read(path).scan(/style="[^"]*"/).map { |m| [ path, m ] }
+      src = File.read(path)
+      STYLE_FORMS.flat_map { |re| src.scan(re).map { |m| [ path, m ] } }
     end
   end
 

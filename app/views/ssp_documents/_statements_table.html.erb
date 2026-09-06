@@ -9,78 +9,76 @@
 %>
 
 <% if statements.any? %>
-  <div class="sparc-statement-block" style="background: rgba(52,152,219,0.04); border-color: rgba(52,152,219,0.18); border-left: 3px solid #3498db; margin-top: 0.75rem;">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2" style="margin-bottom: 0.4rem;">
+  <div class="sparc-statement-block sparc-statement-block--info sparc-accent--blue sparc-mt-075">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 sparc-mb-04">
       <div class="sparc-statement-label sparc-heading-controls">
         Implementation Statements
-        <span class="text-body-secondary" style="font-weight: 400; font-size: 0.7rem;">
+        <span class="text-body-secondary sparc-fw-400 sparc-fs-07">
           (<%= pluralize(statements.size, "statement") %>)
         </span>
       </div>
     </div>
 
     <div class="table-responsive">
-      <table class="table table-sm table-hover" style="font-size: 0.82rem; margin-bottom: 0;">
+      <table class="table table-sm table-hover sparc-fs-082 sparc-mb-0">
         <thead>
-          <tr style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color);">
-            <th style="width: 12%;">Statement</th>
+          <tr class="sparc-th-eyebrow-row">
+            <th class="sparc-w-12pct">Statement</th>
             <th>Implementation</th>
-            <th style="width: 14%;">Responsible Roles</th>
-            <th style="width: 6%;"></th>
+            <th class="sparc-w-14pct">Responsible Roles</th>
+            <th class="sparc-w-6pct"></th>
           </tr>
         </thead>
         <tbody>
           <% statements.each do |stmt| %>
-            <% depth = stmt.parent_statement_id.present? ? 1 : 0 %>
+            <% depth = [ stmt.parent_statement_id.present? ? 1 : 0, 3 ].min %>
             <tr id="stmt-<%= stmt.id %>" data-statement-id="<%= stmt.statement_id %>">
               <td>
-                <code style="font-size: 0.78rem; padding-left: <%= depth * 0.75 %>rem;">
+                <code class="sparc-fs-078 sparc-stmt-d<%= depth %>">
                   <%= stmt.label.presence || stmt.statement_id %>
                 </code>
                 <%# #396 + #398: inheritance source badge %>
                 <% case stmt.source_kind
                    when :cdef %>
-                  <span class="badge bg-info text-dark" style="font-size: 0.65rem;" title="Implementation inherited from a CDEF">CDEF</span>
+                  <span class="badge bg-info text-dark sparc-fs-065" title="Implementation inherited from a CDEF">CDEF</span>
                 <% when :leveraged %>
-                  <span class="badge bg-primary" style="font-size: 0.65rem;" title="Inherited via a leveraged authorization">Leveraged</span>
+                  <span class="badge bg-primary sparc-fs-065" title="Inherited via a leveraged authorization">Leveraged</span>
                 <% when :responsibility %>
                   <%# #956 — the leveraged system hands this back to us. It is
                       the opposite of an inherited implementation, and the one
                       the reader actually has to act on. %>
-                  <span class="badge bg-danger" style="font-size: 0.65rem;" title="The leveraged system requires this system to implement the control itself">Your responsibility</span>
+                  <span class="badge bg-danger sparc-fs-065" title="The leveraged system requires this system to implement the control itself">Your responsibility</span>
                 <% when :overridden_responsibility %>
-                  <span class="badge bg-success" style="font-size: 0.65rem;" title="A customer responsibility this system has implemented">Responsibility met</span>
+                  <span class="badge bg-success sparc-fs-065" title="A customer responsibility this system has implemented">Responsibility met</span>
                 <% when :overridden_cdef, :overridden_leveraged %>
-                  <span class="badge bg-warning text-dark" style="font-size: 0.65rem;" title="Inherited but edited locally">Overridden</span>
+                  <span class="badge bg-warning text-dark sparc-fs-065" title="Inherited but edited locally">Overridden</span>
                 <% end %>
               </td>
-              <td style="padding-left: <%= depth * 0.75 %>rem;">
+              <td class="sparc-stmt-d<%= depth %>">
                 <%= stmt.implementation_prose.presence ||
                     content_tag(:span, "(unset \u2014 click Edit to add implementation)",
                                 class: "text-body-tertiary fst-italic") %>
                 <% if stmt.remarks.present? %>
-                  <div class="text-body-secondary" style="font-size: 0.75rem; margin-top: 0.2rem; padding-left: 0.4rem; border-left: 2px solid var(--bs-border-color);">
+                  <div class="text-body-secondary sparc-stmt-note">
                     <%= stmt.remarks %>
                   </div>
                 <% end %>
               </td>
-              <td class="text-body-secondary" style="font-size: 0.78rem;">
+              <td class="text-body-secondary sparc-fs-078">
                 <% role_ids = Array(stmt.responsible_roles_data).flat_map { |r| Array(r.is_a?(Hash) ? r["role-id"] : r) } %>
                 <%= role_ids.any? ? role_ids.join(", ") : "\u2014" %>
               </td>
               <td>
                 <%= link_to "Edit",
                             ssp_document_path(ssp_document, statement_id: stmt.id, anchor: "stmt-#{stmt.id}"),
-                            class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm",
-                            style: "font-size: 0.7rem; padding: 0.15rem 0.45rem;" %>
+                            class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm sparc-fs-07 sparc-p-015-045" %>
                 <% if %i[overridden_cdef overridden_leveraged].include?(stmt.source_kind) %>
                   <%= button_to "Reset",
                         reset_inherited_statement_ssp_document_path(ssp_document, statement_id: stmt.id),
                         method: :post,
-                        class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm",
-                        style: "font-size: 0.7rem; padding: 0.15rem 0.45rem;",
+                        class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm sparc-fs-07 sparc-p-015-045",
                         form: { data: { turbo_confirm: "Discard your override and reset to the source prose?" },
-                                style: "display: inline;" } %>
+                                class: "sparc-d-inline" } %>
                 <% end %>
               </td>
             </tr>

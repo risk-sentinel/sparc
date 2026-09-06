@@ -55,7 +55,7 @@
 <%= render "shared/reconciliation_banner", document: @poam_document %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
-<div class="sparc-gradient-header" style="border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; color: white;">
+<div class="sparc-gradient-header sparc-doc-hero">
 
   <div class="d-flex justify-content-between align-items-start mb-4 gap-3 flex-wrap">
     <div>
@@ -73,7 +73,7 @@
       </div>
 
       <%# ── Edit mode (hidden) ── %>
-      <div id="doc-meta-edit" data-doc-meta-target="edit" style="display: none;">
+      <div class="sparc-d-none" id="doc-meta-edit" data-doc-meta-target="edit">
         <%= form_with model: @poam_document, url: update_metadata_poam_document_path(@poam_document), method: :patch, local: true, class: "d-flex align-items-center gap-2 flex-wrap" do |f| %>
           <%= f.text_field :name, value: @poam_document.name, class: "sparc-input-dark sparc-input-dark-lg", placeholder: "Document name" %>
           <%= f.text_field :poam_version, value: @poam_document.poam_version, class: "sparc-input-dark sparc-input-dark-sm", placeholder: "Version" %>
@@ -114,32 +114,32 @@
   </div>
 
   <%# ── Summary stats ── %>
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.75rem;">
+  <div class="sparc-poam-hero-tiles">
     <div class="sparc-hero-tile rounded-3">
       <div class="sparc-hero-tile-count"><%= @total_items %></div>
       <div class="sparc-hero-tile-label">Total Items</div>
     </div>
-    <div class="sparc-hero-tile rounded-3" style="background: rgba(231,76,60,0.15); border: 1px solid rgba(231,76,60,0.3);">
+    <div class="sparc-hero-tile rounded-3 sparc-hero-tile--tinted sparc-accent--red">
       <div class="sparc-hero-tile-count sparc-heading-danger"><%= open_count %></div>
       <div class="sparc-hero-tile-label">Open</div>
     </div>
-    <div class="sparc-hero-tile rounded-3" style="background: rgba(243,156,18,0.15); border: 1px solid rgba(243,156,18,0.3);">
+    <div class="sparc-hero-tile rounded-3 sparc-hero-tile--tinted sparc-accent--orange">
       <div class="sparc-hero-tile-count sparc-heading-assessment"><%= other_count %></div>
       <div class="sparc-hero-tile-label">In Progress</div>
     </div>
-    <div class="sparc-hero-tile rounded-3" style="background: rgba(39,174,96,0.15); border: 1px solid rgba(39,174,96,0.3);">
+    <div class="sparc-hero-tile rounded-3 sparc-hero-tile--tinted sparc-accent--green">
       <div class="sparc-hero-tile-count sparc-heading-implementation"><%= closed_count %></div>
       <div class="sparc-hero-tile-label">Closed</div>
     </div>
-    <div class="sparc-hero-tile rounded-3" style="background: rgba(52,152,219,0.15); border: 1px solid rgba(52,152,219,0.3);">
+    <div class="sparc-hero-tile rounded-3 sparc-hero-tile--tinted sparc-accent--blue">
       <div class="sparc-hero-tile-count sparc-heading-controls"><%= @risk_count %></div>
       <div class="sparc-hero-tile-label">Risks</div>
     </div>
-    <div class="sparc-hero-tile rounded-3" style="background: rgba(155,89,182,0.15); border: 1px solid rgba(155,89,182,0.3);">
+    <div class="sparc-hero-tile rounded-3 sparc-hero-tile--tinted sparc-accent--purple">
       <div class="sparc-hero-tile-count sparc-heading-enterprise"><%= @observation_count %></div>
       <div class="sparc-hero-tile-label">Observations</div>
     </div>
-    <div class="sparc-hero-tile rounded-3" style="background: rgba(230,126,34,0.15); border: 1px solid rgba(230,126,34,0.3);">
+    <div class="sparc-hero-tile rounded-3 sparc-hero-tile--tinted sparc-accent--carrot">
       <div class="sparc-hero-tile-count sparc-heading-assessment"><%= @finding_count %></div>
       <div class="sparc-hero-tile-label">Findings</div>
     </div>
@@ -148,14 +148,14 @@
 
 <%# ── HEATMAP ────────────────────────────────────────────────────── %>
 <% if @heatmap_data.any? %>
-<div class="card" style="overflow-x: auto;">
+<div class="card sparc-ofx-auto">
   <h3 class="mb-3">Risk Status x Impact</h3>
-  <table class="table table-hover" style="min-width: 400px;">
+  <table class="table table-hover sparc-poam-table">
     <thead>
       <tr>
         <th>Status</th>
         <% @heatmap_impacts.each do |imp| %>
-          <th class="text-center" style="min-width: 80px;"><%= RiskRating.level_label(imp) %></th>
+          <th class="text-center sparc-poam-th-narrow"><%= RiskRating.level_label(imp) %></th>
         <% end %>
       </tr>
     </thead>
@@ -172,10 +172,9 @@
             <td class="text-center">
               <% if count > 0 %>
                 <%= link_to count, poam_document_path(@poam_document, risk_status: status, impact: imp),
-                      class: "sparc-heatmap-badge sparc-status--#{icv}",
+                      class: "sparc-heatmap-badge sparc-status--#{icv} sparc-minw-28px",
                       role: "button",
-                      "aria-label": "#{status} #{imp}: #{count} items",
-                      style: "min-width: 28px;" %>
+                      "aria-label": "#{status} #{imp}: #{count} items" %>
               <% else %>
                 <span class="text-body-tertiary">—</span>
               <% end %>
@@ -194,11 +193,11 @@
      (OSCAL schema requires poam-items to contain ≥1 entry); this banner
      prompts the user before they hit that error. %>
 <% if @total_items.to_i.zero? && !@poam_document.published_lifecycle? %>
-  <div class="card d-flex align-items-center gap-3" style="border-left: 4px solid #f39c12; padding: 1rem 1.25rem;">
-    <span style="font-size: 1.5rem;">&#9888;</span>
+  <div class="card d-flex align-items-center gap-3 sparc-poam-banner sparc-border-l-4 sparc-accent--orange">
+    <span class="sparc-fs-15r">&#9888;</span>
     <div class="flex-grow-1">
-      <div class="fw-semibold sparc-heading-assessment" style="font-size: 0.95rem;">Add at least one POA&amp;M item before publishing</div>
-      <div class="text-body-secondary" style="font-size: 0.85rem;">
+      <div class="fw-semibold sparc-heading-assessment sparc-fs-095">Add at least one POA&amp;M item before publishing</div>
+      <div class="text-body-secondary sparc-fs-085">
         OSCAL schema requires the <code>poam-items</code> array to contain at least one entry.
         Publishing now will fail schema validation.
       </div>
@@ -210,16 +209,16 @@
 
 <%# ── ACTIVE FILTERS ─────────────────────────────────────────────── %>
 <% if has_filters %>
-  <div class="card d-flex align-items-center gap-3 flex-wrap" style="padding: 0.75rem 1.25rem;">
-    <span class="fw-semibold" style="font-size: 0.85rem;">Filters:</span>
+  <div class="card d-flex align-items-center gap-3 flex-wrap sparc-poam-banner-tight">
+    <span class="fw-semibold sparc-fs-085">Filters:</span>
     <% if active_status.present? %>
-      <span class="sparc-tag-outline" style="background: var(--bs-warning-bg-subtle); color: var(--bs-warning-text-emphasis);">Status: <%= active_status %></span>
+      <span class="sparc-tag-outline sparc-tag--warning-subtle">Status: <%= active_status %></span>
     <% end %>
     <% if active_impact.present? %>
-      <span class="sparc-tag-outline" style="background: var(--bs-danger-bg-subtle); color: var(--bs-danger-text-emphasis);">Impact: <%= active_impact %></span>
+      <span class="sparc-tag-outline sparc-tag--danger-subtle">Impact: <%= active_impact %></span>
     <% end %>
-    <%= link_to "Clear Filters", poam_document_path(@poam_document), class: "text-primary", style: "font-size: 0.85rem;" %>
-    <span class="text-body-secondary" style="margin-left: auto; font-size: 0.85rem;">Showing <%= @filtered_count %> of <%= @total_items %> items</span>
+    <%= link_to "Clear Filters", poam_document_path(@poam_document), class: "text-primary sparc-fs-085" %>
+    <span class="text-body-secondary sparc-ml-auto sparc-fs-085">Showing <%= @filtered_count %> of <%= @total_items %> items</span>
   </div>
 <% end %>
 
@@ -235,40 +234,39 @@
     findings = item.poam_findings
     related_controls = item.related_control_ids
   %>
-  <div class="card" style="border-left: 4px solid <%= sc %>; padding: 1.25rem 1.5rem;">
+  <div class="card sparc-poam-item-card sparc-border-l-4 <%= accent_class(sc) %>">
 
     <%# ── Card header ── %>
-    <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap" style="margin-bottom: 0.75rem;">
-      <div style="flex: 1;">
-        <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.35rem;">
-          <span class="text-body-tertiary fw-semibold" style="font-size: 0.7rem;">#<%= idx + 1 %></span>
-          <h3 style="margin: 0; font-size: 1.05rem;"><%= item.title %></h3>
+    <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap sparc-mb-075">
+      <div class="sparc-flex-1">
+        <div class="d-flex align-items-center gap-2 flex-wrap sparc-mb-035">
+          <span class="text-body-tertiary fw-semibold sparc-fs-07">#<%= idx + 1 %></span>
+          <h3 class="sparc-poam-item-title"><%= item.title %></h3>
           <% related_controls.each do |cid| %>
-            <span class="sparc-tag-outline sparc-status--info" title="NIST 800-53 control referenced in this item"
-                  style="font-family: monospace; font-weight: 600;">
+            <span class="sparc-tag-outline sparc-status--info sparc-mono-600" title="NIST 800-53 control referenced in this item">
               <%= cid.upcase %>
             </span>
           <% end %>
         </div>
         <% if item.description.present? %>
-          <p class="text-body-secondary" style="font-size: 0.88rem; margin: 0 0 0.4rem 0; white-space: pre-wrap;"><%= item.description %></p>
+          <p class="text-body-secondary sparc-poam-item-desc"><%= item.description %></p>
         <% end %>
         <% if item.remarks.present? %>
-          <div class="bg-body-tertiary rounded" style="border-left: 3px solid var(--bs-border-color); padding: 0.4rem 0.7rem; margin-top: 0.4rem; font-size: 0.82rem;">
-            <span class="text-body-tertiary fw-semibold" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;">Remarks</span>
-            <div style="white-space: pre-wrap; margin-top: 0.2rem;"><%= item.remarks %></div>
+          <div class="bg-body-tertiary rounded sparc-poam-quote sparc-mt-04 sparc-fs-082">
+            <span class="text-body-tertiary fw-semibold sparc-poam-label">Remarks</span>
+            <div class="sparc-poam-quote-body"><%= item.remarks %></div>
           </div>
         <% end %>
       </div>
-      <div class="d-flex flex-shrink-0" style="gap: 0.35rem;">
+      <div class="d-flex flex-shrink-0 sparc-gap-035">
         <button type="button" data-action="inline-edit#toggle" data-inline-edit-id-param="<%= item.id %>" id="edit-btn-<%= item.id %>" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
-        <%= link_to "Full Edit", edit_poam_document_poam_item_path(@poam_document, item), class: "bg-body-secondary text-body-secondary rounded", style: "text-decoration: none; border: 1px solid var(--bs-border-color); padding: 0.3rem 0.7rem; font-size: 0.78rem;" %>
-        <%= button_to "Delete", poam_document_poam_item_path(@poam_document, item), method: :delete, data: { turbo_confirm: "Remove \"#{item.title}\"?" }, class: "sparc-action sparc-action--danger sparc-action--outline", style: "padding: 0.3rem 0.7rem; font-size: 0.78rem;" %>
+        <%= link_to "Full Edit", edit_poam_document_poam_item_path(@poam_document, item), class: "bg-body-secondary text-body-secondary rounded sparc-td-none sparc-border-default sparc-p-03-07 sparc-fs-078" %>
+        <%= button_to "Delete", poam_document_poam_item_path(@poam_document, item), method: :delete, data: { turbo_confirm: "Remove \"#{item.title}\"?" }, class: "sparc-action sparc-action--danger sparc-action--outline sparc-p-03-07 sparc-fs-078" %>
       </div>
     </div>
 
     <%# ── Status/risk badges ── %>
-    <div class="d-flex gap-2 flex-wrap" style="margin-bottom: 0.75rem;">
+    <div class="d-flex gap-2 flex-wrap sparc-mb-075">
       <% if item.risk_status.present? %>
         <span class="sparc-tag-outline sparc-status--<%= scv %>"><%= item.risk_status %></span>
       <% end %>
@@ -279,7 +277,7 @@
         <span class="sparc-tag-outline sparc-status--<%= level_variants[item.likelihood] || "neutral" %>">Likelihood: <%= item.likelihood %></span>
       <% end %>
       <% if item.deadline.present? %>
-        <span class="sparc-tag-outline bg-body-secondary text-body-secondary" style="border: 1px solid var(--bs-border-color);">Deadline: <%= item.deadline.strftime("%Y-%m-%d") %></span>
+        <span class="sparc-tag-outline bg-body-secondary text-body-secondary sparc-border-default">Deadline: <%= item.deadline.strftime("%Y-%m-%d") %></span>
       <% end %>
       <% if risks.any? %>
         <span class="sparc-tag-outline sparc-status--info"><%= pluralize(risks.size, "risk") %></span>
@@ -294,7 +292,7 @@
 
     <%# ── Expandable details section ── %>
     <details id="details-<%= item.id %>" class="card-details">
-      <summary class="text-primary fw-semibold" style="cursor: pointer; font-size: 0.82rem; margin-bottom: 0.75rem; user-select: none;">
+      <summary class="text-primary fw-semibold sparc-poam-summary">
         Show Details
       </summary>
 
@@ -302,42 +300,42 @@
       <div id="view-<%= item.id %>">
         <%# ── Related risks ── %>
         <% if risks.any? %>
-          <div style="margin-bottom: 0.75rem;">
+          <div class="sparc-mb-075">
             <div class="sparc-statement-label">Related Risks</div>
             <% risks.each do |risk| %>
-              <div class="bg-body-secondary rounded" style="border: 1px solid var(--bs-border-color); padding: 0.6rem 0.8rem; margin-bottom: 0.4rem;">
-                <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.3rem;">
+              <div class="bg-body-secondary rounded sparc-poam-subcard sparc-mb-04">
+                <div class="d-flex align-items-center gap-2 flex-wrap sparc-mb-03">
                   <% rscv = status_variants[risk.status] || "neutral" %>
                   <span class="sparc-tag-outline sparc-status--<%= rscv %>"><%= risk.status %></span>
-                  <span class="fw-semibold" style="font-size: 0.88rem; color: var(--bs-body-color);"><%= risk.title %></span>
+                  <span class="fw-semibold sparc-fs-088 sparc-color-body"><%= risk.title %></span>
                 </div>
                 <% if risk.description.present? %>
-                  <div class="text-body-secondary" style="font-size: 0.82rem; margin-bottom: 0.3rem;"><%= truncate(risk.description, length: 300) %></div>
+                  <div class="text-body-secondary sparc-fs-082 sparc-mb-03"><%= truncate(risk.description, length: 300) %></div>
                 <% end %>
                 <% if risk.statement.present? %>
-                  <div class="text-body-secondary" style="font-size: 0.8rem; font-style: italic; margin-bottom: 0.3rem; padding-left: 0.5rem; border-left: 2px solid var(--bs-border-color);"><%= truncate(risk.statement, length: 200) %></div>
+                  <div class="text-body-secondary sparc-poam-subquote"><%= truncate(risk.statement, length: 200) %></div>
                 <% end %>
 
                 <%# ── Remediations + Milestones ── %>
                 <% risk.poam_remediations.each do |rem| %>
-                  <div class="rounded mt-2" style="padding: 0.4rem 0.6rem; background: rgba(52,152,219,0.06); border: 1px solid rgba(52,152,219,0.15);">
+                  <div class="rounded mt-2 sparc-poam-note sparc-poam-note--roomy sparc-accent--blue">
                     <div class="sparc-statement-label sparc-heading-controls">
                       Remediation: <%= rem.lifecycle %>
                     </div>
-                    <div class="fw-semibold" style="font-size: 0.82rem; color: var(--bs-body-color);"><%= rem.title %></div>
+                    <div class="fw-semibold sparc-fs-082 sparc-color-body"><%= rem.title %></div>
                     <% if rem.description.present? %>
-                      <div class="text-body-secondary" style="font-size: 0.8rem;"><%= truncate(rem.description, length: 200) %></div>
+                      <div class="text-body-secondary sparc-fs-08"><%= truncate(rem.description, length: 200) %></div>
                     <% end %>
 
                     <% rem.poam_milestones.each do |ms| %>
-                      <div class="rounded mt-1" style="padding: 0.3rem 0.5rem; background: rgba(39,174,96,0.06); border: 1px solid rgba(39,174,96,0.15);">
+                      <div class="rounded mt-1 sparc-poam-note sparc-poam-note--tight sparc-accent--green">
                         <div class="sparc-statement-label sparc-heading-implementation">
                           Milestone
                           <% if ms.due_date.present? %>
-                            <span class="text-body-secondary" style="font-weight: 400;">&middot; Due: <%= ms.due_date.strftime("%Y-%m-%d") %></span>
+                            <span class="text-body-secondary sparc-fw-400">&middot; Due: <%= ms.due_date.strftime("%Y-%m-%d") %></span>
                           <% end %>
                         </div>
-                        <div style="font-size: 0.8rem; color: var(--bs-body-color);"><%= ms.title %></div>
+                        <div class="sparc-fs-08 sparc-color-body"><%= ms.title %></div>
                       </div>
                     <% end %>
                   </div>
@@ -349,15 +347,15 @@
 
         <%# ── Related observations ── %>
         <% if observations.any? %>
-          <div style="margin-bottom: 0.75rem;">
+          <div class="sparc-mb-075">
             <div class="sparc-statement-label">Related Observations</div>
             <% observations.each do |obs| %>
-              <div class="bg-body-secondary rounded" style="border: 1px solid var(--bs-border-color); padding: 0.5rem 0.8rem; margin-bottom: 0.4rem;">
-                <div class="fw-semibold" style="font-size: 0.88rem; color: var(--bs-body-color);"><%= obs.title %></div>
+              <div class="bg-body-secondary rounded sparc-poam-subcard--tight sparc-mb-04">
+                <div class="fw-semibold sparc-fs-088 sparc-color-body"><%= obs.title %></div>
                 <% if obs.description.present? %>
-                  <div class="text-body-secondary" style="font-size: 0.82rem;"><%= truncate(obs.description, length: 200) %></div>
+                  <div class="text-body-secondary sparc-fs-082"><%= truncate(obs.description, length: 200) %></div>
                 <% end %>
-                <div class="text-body-tertiary" style="font-size: 0.72rem; margin-top: 0.2rem;">
+                <div class="text-body-tertiary sparc-fs-072 sparc-mt-02">
                   <% if obs.collected.present? %>Collected: <%= obs.collected.strftime("%Y-%m-%d") %><% end %>
                   <% if obs.methods_data.present? %>&middot; Methods: <%= obs.methods_data.join(", ") %><% end %>
                 </div>
@@ -368,13 +366,13 @@
 
         <%# ── Related findings ── %>
         <% if findings.any? %>
-          <div style="margin-bottom: 0.75rem;">
+          <div class="sparc-mb-075">
             <div class="sparc-statement-label">Related Findings</div>
             <% findings.each do |finding| %>
-              <div class="bg-body-secondary rounded" style="border: 1px solid var(--bs-border-color); padding: 0.5rem 0.8rem; margin-bottom: 0.4rem;">
-                <div class="fw-semibold" style="font-size: 0.88rem; color: var(--bs-body-color);"><%= finding.title %></div>
+              <div class="bg-body-secondary rounded sparc-poam-subcard--tight sparc-mb-04">
+                <div class="fw-semibold sparc-fs-088 sparc-color-body"><%= finding.title %></div>
                 <% if finding.description.present? %>
-                  <div class="text-body-secondary" style="font-size: 0.82rem;"><%= truncate(finding.description, length: 200) %></div>
+                  <div class="text-body-secondary sparc-fs-082"><%= truncate(finding.description, length: 200) %></div>
                 <% end %>
               </div>
             <% end %>
@@ -383,50 +381,50 @@
 
         <%# ── Internal Notes / Closure Evidence (read-only) ── %>
         <% if item.internal_notes.present? %>
-          <div class="bg-body-secondary rounded" style="border: 1px solid var(--bs-border-color); padding: 0.6rem 0.8rem; margin-bottom: 0.5rem;">
+          <div class="bg-body-secondary rounded sparc-poam-subcard sparc-mb-05">
             <div class="sparc-statement-label">Internal Notes</div>
-            <div style="font-size: 0.85rem; white-space: pre-wrap; color: var(--bs-body-color);"><%= item.internal_notes %></div>
+            <div class="sparc-fs-085 sparc-prewrap sparc-color-body"><%= item.internal_notes %></div>
           </div>
         <% end %>
         <% if item.closure_evidence.present? %>
-          <div class="bg-body-secondary rounded" style="border: 1px solid var(--bs-border-color); padding: 0.6rem 0.8rem; margin-bottom: 0.5rem;">
+          <div class="bg-body-secondary rounded sparc-poam-subcard sparc-mb-05">
             <div class="sparc-statement-label">Closure Evidence</div>
-            <div style="font-size: 0.85rem; white-space: pre-wrap; color: var(--bs-body-color);"><%= item.closure_evidence %></div>
+            <div class="sparc-fs-085 sparc-prewrap sparc-color-body"><%= item.closure_evidence %></div>
           </div>
         <% end %>
       </div>
 
       <%# ══════ EDIT MODE (hidden initially) ══════ %>
-      <div id="edit-<%= item.id %>" style="display: none;">
+      <div class="sparc-d-none" id="edit-<%= item.id %>">
         <%= form_with url: poam_document_path(@poam_document), method: :patch, local: true do |f| %>
           <%= hidden_field_tag :poam_item_id, item.id %>
 
-          <div class="row row-cols-1 row-cols-md-2 g-3" style="margin-bottom: 0.75rem;">
+          <div class="row row-cols-1 row-cols-md-2 g-3 sparc-mb-075">
             <div class="col">
-              <div class="form-group" style="margin-bottom: 0;">
-                <label class="fw-semibold" style="font-size: 0.82rem;" for="fields-risk-status-<%= item.id %>">Risk Status</label>
+              <div class="form-group sparc-mb-0">
+                <label class="fw-semibold sparc-fs-082" for="fields-risk-status-<%= item.id %>">Risk Status</label>
                 <%= select_tag "fields[risk_status]",
                       options_for_select(risk_status_options, item.risk_status),
                       include_blank: "— Select —",
                       id: "fields-risk-status-#{item.id}",
-                      class: "form-control", style: "font-size: 0.88rem;" %>
+                      class: "form-control sparc-fs-088" %>
               </div>
             </div>
           </div>
 
-          <div class="form-group" style="margin-bottom: 0.75rem;">
-            <label class="fw-semibold" style="font-size: 0.82rem;" for="fields-internal-notes-<%= item.id %>">Internal Notes</label>
-            <textarea id="fields-internal-notes-<%= item.id %>" name="fields[internal_notes]" class="form-control" rows="3" style="font-size: 0.88rem;" placeholder="Internal tracking notes..."><%= item.internal_notes %></textarea>
+          <div class="form-group sparc-mb-075">
+            <label class="fw-semibold sparc-fs-082" for="fields-internal-notes-<%= item.id %>">Internal Notes</label>
+            <textarea id="fields-internal-notes-<%= item.id %>" name="fields[internal_notes]" class="form-control sparc-fs-088" rows="3" placeholder="Internal tracking notes..."><%= item.internal_notes %></textarea>
           </div>
 
-          <div class="form-group" style="margin-bottom: 0.75rem;">
-            <label class="fw-semibold" style="font-size: 0.82rem;" for="fields-closure-evidence-<%= item.id %>">Closure Evidence</label>
-            <textarea id="fields-closure-evidence-<%= item.id %>" name="fields[closure_evidence]" class="form-control" rows="3" style="font-size: 0.88rem;" placeholder="Evidence or documentation for closure..."><%= item.closure_evidence %></textarea>
+          <div class="form-group sparc-mb-075">
+            <label class="fw-semibold sparc-fs-082" for="fields-closure-evidence-<%= item.id %>">Closure Evidence</label>
+            <textarea id="fields-closure-evidence-<%= item.id %>" name="fields[closure_evidence]" class="form-control sparc-fs-088" rows="3" placeholder="Evidence or documentation for closure..."><%= item.closure_evidence %></textarea>
           </div>
 
           <div class="d-flex gap-2">
-            <%= f.submit "Save Changes", class: "sparc-action sparc-action--primary sparc-action--solid", style: "padding: 0.35rem 0.9rem; font-size: 0.82rem;" %>
-            <button type="button" data-action="inline-edit#toggle" data-inline-edit-id-param="<%= item.id %>" class="sparc-action sparc-action--neutral sparc-action--ghost" style="padding: 0.35rem 0.9rem; font-size: 0.82rem;">Cancel</button>
+            <%= f.submit "Save Changes", class: "sparc-action sparc-action--primary sparc-action--solid sparc-p-035-09 sparc-fs-082" %>
+            <button type="button" data-action="inline-edit#toggle" data-inline-edit-id-param="<%= item.id %>" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-p-035-09 sparc-fs-082">Cancel</button>
           </div>
         <% end %>
       </div>

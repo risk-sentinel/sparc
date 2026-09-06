@@ -28,7 +28,21 @@
 class CatalogPartExtractorService
   REASSOCIATION_FLAG  = "statements_backfill_status".freeze
   REASSOCIATION_VALUE = "needs_reassociation".freeze
-  DEFAULT_PART_NAMES  = %w[statement].freeze
+  DEFAULT_PART_NAMES  = %w[statement item].freeze
+
+  # `item` is not decoration. NIST names a control's statement part
+  # "statement" and every one of its SUB-PARTS "item":
+  #
+  #     ac-1_smt        name="statement"
+  #       ac-1_smt.a    name="item"
+  #         ac-1_smt.a.1  name="item"
+  #
+  # Walking only "statement" therefore captures the CONTAINER and none of the
+  # requirements inside it — measured on the shipped Rev 5 catalog, ac-1 yields
+  # 1 part instead of 10. That is one half of why every SSP carried exactly one
+  # implementation statement per control (#1100); the other half is that the
+  # importer never stored the parts at all.
+  CATALOG_PART_NAMES = %w[statement item guidance assessment-objective assessment-method].freeze
 
   # Pure: returns parts of the requested types for a single control.
   def self.parts_for_control(catalog_json, control_id, part_names: DEFAULT_PART_NAMES)
@@ -88,7 +102,7 @@ class CatalogPartExtractorService
   def self.backfill_catalog_parts!(catalog)
     rows = []
     now = Time.current
-    part_names = %w[statement guidance assessment-objective assessment-method]
+    part_names = CATALOG_PART_NAMES
 
     # Build the in-memory catalog hash to walk. The catalog is already in
     # the DB, but we walk via the OSCAL-style structure. ControlCatalog
@@ -99,6 +113,7 @@ class CatalogPartExtractorService
       # guidance_data may carry the parts payload; fallback to empty.
       parts_hash = parts_from_guidance_data(cc.guidance_data)
       next if parts_hash.empty?
+
 
       control_node = { "id" => cc.control_id, "parts" => parts_hash }
       acc = []
@@ -161,9 +176,19 @@ class CatalogPartExtractorService
     parent_assoc = (klass == SspControlStatement) ? :ssp_controls : :cdef_controls
 
     @document.public_send(parent_assoc).includes(association_name).find_each do |control|
-      next if control.public_send(association_name).any?
+      # ADDITIVE, not all-or-nothing. This used to skip any control that already
+      # had statements — and after #1100 every existing document has exactly
+      # one (`<control-id>_smt`), so the whole backfill would no-op on precisely
+      # the documents that need it.
+      #
+      # Existing rows are LEFT ALONE. A statement may already carry
+      # implementation_prose an author wrote, and replacing it to tidy the shape
+      # would destroy the content this feature exists to hold.
+      existing = control.public_send(association_name).map(&:statement_id).to_set
 
       self.class.parts_for_control(catalog, control.control_id).each do |part|
+        next if existing.include?(part[:part_id])
+
         rows << {
           parent_fk            => control.id,
           uuid:                   OscalUuidService.derived(control.uuid, namespace_tag, part[:part_id]),

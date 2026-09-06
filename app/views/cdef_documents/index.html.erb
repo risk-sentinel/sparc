@@ -8,7 +8,7 @@
   <div data-controller="auto-refresh" data-auto-refresh-interval-value="10000" hidden></div>
 <% end %>
 
-<div class="card" style="overflow-x: auto;">
+<div class="card sparc-ofx-auto">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Component Definitions</h2>
     <% if signed_in? %>
@@ -64,7 +64,7 @@
             <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-bs-dismiss="modal">Cancel</button>
             <%= button_to "Refresh Now", refresh_aws_labs_cdef_documents_path,
                   method: :post, class: "sparc-action sparc-action--caution sparc-action--solid sparc-action--sm fw-semibold",
-                  form: { style: "display: inline;" } %>
+                  form: { class: "sparc-d-inline" } %>
           </div>
         </div>
       </div>
@@ -118,15 +118,15 @@
       <thead>
         <tr>
           <% if can_bulk_delete? %>
-            <th style="width: 1%;"><input type="checkbox" data-bulk-select-target="selectAll" data-action="bulk-select#toggleAll" aria-label="Select all"></th>
+            <th class="sparc-w-1pct"><input type="checkbox" data-bulk-select-target="selectAll" data-action="bulk-select#toggleAll" aria-label="Select all"></th>
           <% end %>
-          <th style="white-space: nowrap;">Name</th>
-          <th style="white-space: nowrap;">Type</th>
-          <th style="white-space: nowrap;">Version</th>
-          <th style="white-space: nowrap;">Status</th>
-          <th style="white-space: nowrap;">Controls</th>
-          <th style="white-space: nowrap;">Created</th>
-          <th style="white-space: nowrap;">Actions</th>
+          <th class="sparc-ws-nowrap">Name</th>
+          <th class="sparc-ws-nowrap">Type</th>
+          <th class="sparc-ws-nowrap">Version</th>
+          <th class="sparc-ws-nowrap">Status</th>
+          <th class="sparc-ws-nowrap">Controls</th>
+          <th class="sparc-ws-nowrap">Created</th>
+          <th class="sparc-ws-nowrap">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -135,7 +135,7 @@
             <% if can_bulk_delete? %>
               <td><%= render "cdef_documents/bulk_checkbox", doc: doc %></td>
             <% end %>
-            <td><strong><%= link_to cdef_display_name(doc), cdef_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
+            <td><strong><%= link_to cdef_display_name(doc), cdef_document_path(doc), class: "text-primary sparc-td-none" %></strong></td>
             <td>
               <% type_variants = { "disa_stig" => "danger", "scap" => "info", "cis" => "warning", "custom" => "neutral" } %>
               <span class="sparc-status sparc-status--<%= type_variants[doc.cdef_type] || 'neutral' %>">
@@ -143,21 +143,21 @@
               </span>
             </td>
             <td class="small text-body-secondary"><%= doc.cdef_version.presence || "—" %></td>
-            <td style="white-space: nowrap;">
+            <td class="sparc-ws-nowrap">
               <% if doc.processing? || doc.pending? || doc.failed? %>
-                <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold sparc-p-02-06 sparc-fs-085">
                   <%= doc.status %>
                 </span>
                 <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
-                  <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= doc.metadata_extra["processing_message"] %></span>
+                  <br><span class="text-body-secondary sparc-fs-072 sparc-ws-normal"><%= doc.metadata_extra["processing_message"] %></span>
                 <% end %>
               <% else %>
-                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold sparc-p-02-06 sparc-fs-085">
                   <%= doc.lifecycle_label %>
                 </span>
                 <%# #628 — flag content-incomplete drafts (distinct from parse status). %>
                 <% if !doc.published_lifecycle? && !doc.content_complete? %>
-                  <span class="badge-warn rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;"
+                  <span class="badge-warn rounded fw-semibold sparc-p-02-06 sparc-fs-085"
                         title="<%= doc.content_completeness_gaps.join('; ') %>">
                     Incomplete
                   </span>
@@ -165,7 +165,7 @@
                 <%# #968 item 3 — visible in the LIST as well, so a degraded row is
                     spotted without opening each document. %>
                 <% if doc.component_index_degraded? %>
-                  <span class="badge-warn rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;"
+                  <span class="badge-warn rounded fw-semibold sparc-p-02-06 sparc-fs-085"
                         data-testid="cdef-index-degraded"
                         title="Component index failed during import; controls are intact.">
                     Index degraded
@@ -174,9 +174,9 @@
               <% end %>
             </td>
             <td><%= doc.cdef_controls.count %></td>
-            <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td class="sparc-ws-nowrap"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
             <td>
-              <div style="max-width: 280px;">
+              <div class="sparc-maxw-280px">
                 <%= render "cdef_documents/item_actions", doc: doc %>
               </div>
             </td>

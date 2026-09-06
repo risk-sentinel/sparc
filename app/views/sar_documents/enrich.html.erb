@@ -6,7 +6,7 @@
         Add OSCAL metadata, observations, findings, and risks to uplift this SAR for OSCAL-compliant export.
       </p>
     </div>
-    <%= link_to "Back to SAR", sar_document_path(@sar_document), class: "sparc-action sparc-action--neutral sparc-action--ghost", style: "flex-shrink: 0;" %>
+    <%= link_to "Back to SAR", sar_document_path(@sar_document), class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-flex-shrink-0" %>
   </div>
 
   <%= form_with model: @sar_document, url: update_enrich_sar_document_path(@sar_document), method: :patch, local: true, html: { data: { controller: "sar-enrich" } } do |f| %>

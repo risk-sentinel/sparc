@@ -56,6 +56,13 @@
   --sparc-purple: #8e44ad;        /* already passes white-text AA */
   --sparc-purple-hover: #7d3c98;
   --sparc-orange: #b6580a;
+  /* Dark navy surfaces. Untokenised until now and hand-written 25 times across
+     both stylesheets and the views — the header gradients, the filter banner,
+     the code blocks on the import screen and the control-id text all picked the
+     same two values independently. Named so there is one place to change them. */
+  --sparc-ink: #2c3e50;        /* the navy: headers, control ids, gradient end */
+  --sparc-ink-deep: #1a252f;   /* the deeper navy: gradient start, code blocks */
+  --sparc-on-dark-muted: rgba(255, 255, 255, 0.75);  /* body text ON a dark surface */
   --sparc-surface: #ffffff;
   --sparc-surface-alt: #f8f9fa;
   --sparc-border: #828b97;
@@ -211,21 +218,21 @@
 /* Gradient overlays on cards — must override card background */
 .card.sparc-gradient-header,
 .sparc-gradient-header {
-  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%) !important;
+  background: linear-gradient(135deg, var(--sparc-ink) 0%, #3498db 100%) !important;
   color: white;
   border-color: transparent;
 }
 
 .card.sparc-dashboard-header,
 .sparc-dashboard-header {
-  background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%) !important;
+  background: linear-gradient(135deg, var(--sparc-ink-deep) 0%, var(--sparc-ink) 100%) !important;
   color: white;
   border-color: transparent;
 }
 
 .card.sparc-processing-banner,
 .sparc-processing-banner {
-  background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%) !important;
+  background: linear-gradient(135deg, var(--sparc-ink-deep) 0%, var(--sparc-ink) 100%) !important;
   color: white;
   border-color: transparent;
 }
@@ -1577,7 +1584,7 @@ a.link-purple { color: var(--sparc-purple); }
 /* ── Filter banner ─────────────────────────────────────────────── */
 
 .sparc-filter-banner {
-  background: #1a252f;
+  background: var(--sparc-ink-deep);
   color: white;
   padding: 0.6rem 1rem;
   border-radius: 8px;
@@ -1621,9 +1628,21 @@ a.link-purple { color: var(--sparc-purple); }
 }
 .sparc-pill-filter:hover { text-decoration: none; }
 .sparc-pill-filter.active {
-  background: #2c3e50;
+  background: var(--sparc-ink);
   color: white;
   font-weight: 600;
+}
+
+/* The SAR environment row is this same control, hand-written inline three lines
+   above a row that already used the component — including a literal #2c3e50
+   where .active reads var(--sparc-ink). It differs only in these three values,
+   and only because nobody compared them. Kept so this conversion is
+   pixel-identical; unified in the commit that follows, where a visual diff can
+   attribute the change. */
+.sparc-pill-filter--tight {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  background: var(--bs-secondary-bg);
 }
 
 
@@ -2967,13 +2986,16 @@ a.link-purple { color: var(--sparc-purple); }
 }
 
 .sparc-control-picker__empty,
+/* One rule, not two. This was declared twice in adjacent blocks with
+   NON-overlapping properties, so the cascade already merged them and the
+   rendered result is unchanged — but a second declaration of a live class is
+   how `.sparc-field-label` silently restyled 2,456 cells across five screens
+   earlier in this bundle. Merged 2026-09-05, and a spec now fails on any
+   duplicate. */
 .sparc-control-picker__scope {
   padding: 0.45rem 0.6rem;
   font-size: 0.78rem;
   color: var(--bs-secondary-color);
-}
-
-.sparc-control-picker__scope {
   border-bottom: 1px solid var(--bs-border-color);
   font-weight: 600;
 }
@@ -3186,7 +3208,13 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-mb-025 { margin-bottom: 0.25rem; }  /* 31x */
 .sparc-p-1r-125r { padding: 1rem 1.25rem; }  /* 26x */
 .sparc-cursor-pointer { cursor: pointer; }  /* 23x */
-.sparc-d-none { display: none; }  /* 18x */
+/* !important because Bootstrap's display utilities carry it: `.d-flex` is
+   `display: flex !important` and beat this on the heat-map filter banner, which
+   rendered VISIBLE until JavaScript hid it. Hiding is a state and must outrank
+   layout — this is #1107, which was filed as latent and became live the moment
+   the sweep put .sparc-d-none on an element that also carries .d-flex. Same
+   call Bootstrap's own .d-none makes. */
+.sparc-d-none { display: none !important; }  /* 18x */
 .sparc-of-hidden { overflow: hidden; }  /* 18x */
 .sparc-fs-082 { font-size: 0.82rem !important; }  /* 16x */
 .sparc-mb-0 { margin-bottom: 0; }  /* 16x */
@@ -3197,7 +3225,7 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-fs-078 { font-size: 0.78rem !important; }  /* 11x */
 .sparc-p-04-0 { padding: 0.4rem 0; }  /* 10x */
 .sparc-fs-1r { font-size: 1rem !important; }  /* 9x */
-.sparc-m-0 { margin: 0; }  /* 9x */
+.sparc-m-0 { margin: 0 !important; }  /* 9x */
 .sparc-mb-075 { margin-bottom: 0.75rem; }  /* 9x */
 .sparc-mb-035 { margin-bottom: 0.35rem; }  /* 8x */
 .sparc-w-10pct { width: 10%; }  /* 8x */
@@ -3207,14 +3235,13 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-fs-072 { font-size: 0.72rem !important; }  /* 6x */
 .sparc-mt-04 { margin-top: 0.4rem; }  /* 6x */
 .sparc-ofx-auto { overflow-x: auto; }  /* 6x */
-.sparc-p-03-05 { padding: 0.3rem 0.5rem; }  /* 6x */
 .sparc-fs-07 { font-size: 0.7rem !important; }  /* 5x */
 .sparc-fs-25r { font-size: 2.5rem !important; }  /* 5x */
 .sparc-gap-1r { gap: 1rem; }  /* 5x */
 .sparc-mb-02 { margin-bottom: 0.2rem; }  /* 5x */
 .sparc-w-12pct { width: 12%; }  /* 5x */
 .sparc-bl-4px-solid-f39c12 { border-left: 4px solid #f39c12; }  /* 4x */
-.sparc-color-bs-primary { color: var(--bs-primary); }  /* 4x */
+.sparc-color-bs-primary { color: var(--bs-primary) !important; }  /* 4x */
 .sparc-flex-1 { flex: 1; }  /* 4x */
 .sparc-flex-1-1-140px { flex: 1 1 140px; }  /* 4x */
 .sparc-flex-1-1-160px { flex: 1 1 160px; }  /* 4x */
@@ -3361,6 +3388,313 @@ a.link-purple { color: var(--sparc-purple); }
    JS-toggled region: this is the padding box that wraps it. */
 .sparc-wizard-step-body { padding: 1rem 1.25rem; }
 
+/* A selectable row inside a wizard step — the CDEF import list on the SSP
+   wizard. Its own thing rather than .sparc-wizard-step-body: that is the step's
+   container, this is one clickable option inside it. */
+.sparc-wizard-option-row { padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; cursor: pointer; }
+
+/* ── #1047 slice 13 — the STIG parser screen ────────────────────────────── */
+
+/* A column/section eyebrow: small, uppercase, tracked, tertiary.
+   THREE near-identical eyebrows now exist and they differ for no recorded
+   reason — .sparc-card-eyebrow (0.65rem / 0.1em), .sparc-sar-eyebrow
+   (0.72rem / 0.08em / nowrap) and this (0.7rem / 0.08em). Converting to any
+   ONE of them would change appearance, so this keeps the value it had and the
+   three-way split is flagged for the screen-by-screen review rather than
+   silently resolved here. */
+.sparc-eyebrow { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color); }
+
+.sparc-mb-15r { margin-bottom: 1.5rem; }
+.sparc-tt-uppercase { text-transform: uppercase; }
+.sparc-ls-015 { letter-spacing: 0.15em; }
+.sparc-color-danger { color: var(--sparc-danger); }
+.sparc-color-warning { color: var(--sparc-warning); }
+.sparc-minw-200px { min-width: 200px; }
+.sparc-flex-1-1-250px { flex: 1 1 250px; }
+/* The checkbox tint. Not a colour utility — accent-color styles the control
+   itself, and no `color` rule reaches it. */
+.sparc-accent-primary { accent-color: var(--sparc-primary); }
+
+/* ── #1047 slice 14 — the profile control form ──────────────────────────── */
+
+/* A validation-error box above a form. Bootstrap's subtle danger tokens rather
+   than a restated colour, so it follows the theme in both light and dark. */
+.sparc-form-error-box {
+  background: var(--bs-danger-bg-subtle);
+  border: 1px solid var(--bs-danger-border-subtle);
+  padding: 0.75rem;
+}
+.sparc-form-error-text { color: var(--bs-danger-text-emphasis); font-size: 0.85rem; margin: 0.2rem 0; }
+
+/* A clickable parameter choice in the profile form's value picker. */
+.sparc-param-choice { cursor: pointer; font-size: 0.72rem; font-weight: 500; margin: 0.1rem 0; }
+
+.sparc-w-30pct { width: 30%; }
+.sparc-editable-note { color: var(--bs-success); font-size: 0.75rem; font-weight: 400; }
+
+/* ── #1047 slice 15 — the dashboard ─────────────────────────────────────── */
+
+/* The four grouped stat panels. They were four copies of one rule differing
+   only in colour, each restating it THREE times at three alphas:
+   rgba(C,0.45) border, solid C top rule, rgba(C,0.06) fill. All three now
+   derive from the accent the element carries, so the panel follows the token
+   instead of a frozen copy of it. */
+.sparc-home-group {
+  border: 1px solid color-mix(in srgb, var(--sparc-accent) 45%, transparent);
+  border-top: 3px solid var(--sparc-accent);
+  border-radius: 0.375rem;
+  padding: 0.35rem 0.5rem 0.5rem;
+  background: color-mix(in srgb, var(--sparc-accent) 6%, transparent);
+}
+
+/* The little colour bar beside a section heading. */
+.sparc-group-bar {
+  display: inline-block;
+  width: 4px;
+  height: 1.1rem;
+  background: var(--sparc-accent);
+  border-radius: 2px;
+}
+
+/* A section card tinted by the accent it carries. --sparc-card-accent was being
+   SET inline as a custom property; it is now derived, so the card and its
+   heading bar cannot drift apart. */
+.sparc-section-card--accented {
+  border-color: var(--sparc-accent);
+  --sparc-card-accent: var(--sparc-accent);
+}
+
+.sparc-br-05r { border-radius: 0.5rem; }
+.sparc-ls-005 { letter-spacing: 0.05rem; }
+/* !important on these three ONLY, and each is proven by a VALUE difference the
+   browser confirms — not by "something else won the cascade", which was true of
+   241 declarations that rendered identically and must not be forced:
+
+     .sparc-stmt-d*    padding-left 0        loses to .table-sm cell padding 0.25rem
+     .sparc-p-035-085  0.35rem 0.85rem       loses to OUR OWN .card .card-body { padding: 0 }
+     .sparc-minh-60px  60px                  loses to .form-group textarea 100px
+
+   The card-body case is the instructive one: that zero padding is deliberate
+   ("card itself has 2rem"), and the dashboard's inline style existed precisely
+   to override it. Converting the inline to a single class gave that override
+   away. */
+.sparc-p-035-085 { padding: 0.35rem 0.85rem !important; }
+.sparc-fs-22r { font-size: 2.2rem !important; }
+
+/* ── #1047 slice 16 — the profile document screen ───────────────────────── */
+.sparc-color-white-50 { color: rgba(255, 255, 255, 0.5); }
+.sparc-ml-02 { margin-left: 0.2rem; }
+.sparc-fs-066 { font-size: 0.66rem !important; }
+/* A link on the gradient header: readable on the dark band, underlined so it
+   reads as a link without relying on colour alone. */
+.sparc-header-link { color: rgba(255, 255, 255, 0.8); text-decoration: underline; }
+
+/* ── #1047 slice 17 — the profile index table ───────────────────────────── */
+.sparc-w-7pct { width: 7%; }
+.sparc-w-9pct { width: 9%; }
+.sparc-w-17pct { width: 17%; }
+.sparc-w-100pct { width: 100%; }
+.sparc-gap-05 { gap: 0.5rem; }
+/* Truncate to one line with an ellipsis. overflow+white-space are here too:
+   text-overflow does nothing without both, so splitting them into three
+   utilities would let a caller apply one and get no truncation at all. */
+.sparc-text-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* On a badge <span>, not a table cell — no !important needed, Bootstrap's cell
+   rule does not reach it. */
+.sparc-p-02-06 { padding: 0.2rem 0.6rem; }
+
+/* ── #1047 slice 18 — the SSP statements table ──────────────────────────── */
+
+/* An informational statement block. Sibling of .sparc-statement-block--danger,
+   and the two use DIFFERENT alphas on purpose — 4%/18% here, 7%/20% there.
+   OWNER-DECIDED 2026-09-05: the info/danger difference is INTENTIONAL. The
+   danger block is meant to sit heavier on the page than the informational one.
+   Do not converge them. */
+.sparc-statement-block--info {
+  background: color-mix(in srgb, var(--sparc-accent) 4%, transparent);
+  border-color: color-mix(in srgb, var(--sparc-accent) 18%, transparent);
+  border-left: 3px solid var(--sparc-accent);
+}
+
+/* Statement nesting. `depth` is 0 or 1 today (a statement either has a parent
+   or does not), but #1100 stores a real tree — ac-1_smt.a.1.a is three levels
+   down — so the ERB clamps and these go to 3. If the table ever renders the
+   full tree, extend the ladder rather than reintroducing a computed
+   padding-left. */
+.sparc-stmt-d0 { padding-left: 0 !important; }
+.sparc-stmt-d1 { padding-left: 0.75rem !important; }
+.sparc-stmt-d2 { padding-left: 1.5rem !important; }
+.sparc-stmt-d3 { padding-left: 2.25rem !important; }
+
+/* A quoted sub-note under a statement row. */
+.sparc-stmt-note {
+  font-size: 0.75rem;
+  margin-top: 0.2rem;
+  padding-left: 0.4rem;
+  border-left: 2px solid var(--bs-border-color);
+}
+
+.sparc-p-015-045 { padding: 0.15rem 0.45rem; }
+.sparc-mt-075 { margin-top: 0.75rem; }
+
+/* ── #1047 slice 19 — the four document collection tables ───────────────── */
+/* 62 declarations across ssp/sap/sar/poam `_collection`, and only EIGHT
+   distinct — 40 of them a single `white-space: nowrap`. The four partials are
+   the same table four times. */
+.sparc-ws-normal { white-space: normal; }
+.sparc-maxw-280px { max-width: 280px; }
+
+/* ── #1047 slice 20 — the two objectives tables ─────────────────────────── */
+/* sar/sap `_objectives_table` are each other's copy, and both are copies of
+   ssp `_statements_table`: same info block, same depth indent, same note, same
+   eyebrow row. Slice 18 named all of those; only this width was new. */
+.sparc-w-11pct { width: 11%; }
+
+/* ── #1047 slices 21-24 ─────────────────────────────────────────────────── */
+
+/* A shrink-to-fit table column — a checkbox or icon cell. `width: 1%` is the
+   long-standing trick for it; named so nobody has to recognise it. */
+.sparc-w-1pct { width: 1%; }
+
+/* One of the three "how do you want to start" cards on the SAP new screen.
+   They were three copies of one rule differing only in the left border colour,
+   which now comes from the accent the card carries. */
+.sparc-choice-card {
+  border: 1px solid var(--bs-border-color);
+  border-left: 4px solid var(--sparc-accent);
+  padding: 1.25rem;
+}
+
+.sparc-minh-60px { min-height: 60px !important; }
+
+/* ── #1047 slices 25-39 — the last of the >=10 files ────────────────────── */
+
+/* A publish/confirm modal and its backdrop. Hidden state is .sparc-d-none, set
+   by publish_modal_controller through setVisible — NOT baked in here, which is
+   the mistake .sparc-edit-panel made. */
+.sparc-modal-backdrop {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5); z-index: 1040;
+}
+.sparc-modal-centered {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 1050;
+  /* Was a literal `white`, carried in from the inline style. That is a real AA
+     failure in dark mode — themed body text lands on a white panel at 1.23:1,
+     near-invisible:
+
+         #e2e8f0 on #ffffff    1.23:1   (needs 4.5)
+         #a6b4c6 on #ffffff    2.11:1
+         #e2e8f0 on #1e2632   12.36:1   with the token
+
+     --sparc-surface is #ffffff in light, so this is byte-identical to the
+     literal there and changes only the theme that was broken. Not --bs-body-bg
+     (#f5f5f5 light — that would grey the panel); --sparc-surface is the same
+     token .sparc-card uses. */
+  background: var(--sparc-surface);
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.25);
+  width: 520px; max-width: 95vw; max-height: 85vh; overflow-y: auto;
+}
+.sparc-modal-fixfields { border-top: 1px solid var(--bs-border-color); padding-top: 1rem; }
+/* The modal's header and footer bars: a divider, padding, and space-between.
+   #dee2e6 was Bootstrap 4's hard-coded border grey; --bs-border-color is the
+   themed equivalent and follows dark mode, which the literal did not. */
+.sparc-modal-bar-top {
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--bs-border-color);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.sparc-modal-bar-bottom {
+  padding: 0.75rem 1.25rem; border-top: 1px solid var(--bs-border-color);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.sparc-modal-body { padding: 1.25rem; }
+.sparc-m-0-fw-600 { margin: 0; font-weight: 600; }
+.sparc-fs-09 { font-size: 0.9rem !important; }
+
+/* ── #1047 — the tail of the >=10 files ─────────────────────────────────── */
+
+/* The SAR read-only "Assessment Context" panel. */
+.sparc-ctx-readonly {
+  background: var(--bs-secondary-bg); border: 1px solid var(--bs-border-color);
+  border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem;
+}
+.sparc-ctx-readonly-head {
+  padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--bs-border-color);
+  font-size: 0.63rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--bs-tertiary-color);
+}
+.sparc-ctx-readonly-note {
+  font-weight: 400; font-size: 0.7rem; text-transform: none;
+  letter-spacing: 0; margin-left: 0.4rem;
+}
+.sparc-ctx-readonly-table { width: 100%; border-collapse: collapse; }
+.sparc-ctx-readonly-th {
+  width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem;
+  font-weight: 400; text-align: left; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--bs-tertiary-color); vertical-align: top;
+  white-space: nowrap;
+}
+/* The value is tertiary when EMPTY and secondary when present — a state, so it
+   is a modifier rather than an interpolated colour. */
+.sparc-ctx-readonly-td {
+  padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem;
+  vertical-align: top; white-space: pre-wrap;
+  color: var(--bs-secondary-color);
+}
+.sparc-ctx-readonly-td--empty { color: var(--bs-tertiary-color); }
+
+.sparc-field-label-upper {
+  font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--bs-secondary-color);
+}
+.sparc-inline-note { font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+/* Heat-map cell emphasis. `opacity` and the active outline were interpolated
+   per cell; both are two-state, so they are classes. */
+.sparc-heatmap-cell--dim { opacity: 0.35; }
+.sparc-heatmap-cell--active { outline: 2px solid var(--sparc-ink); }
+
+.sparc-p-1r-0-05 { padding: 1rem 0 0.5rem; }
+.sparc-p-05-0 { padding: 0.5rem 0; }
+.sparc-fs-062 { font-size: 0.62rem !important; }
+.sparc-fs-063 { font-size: 0.63rem !important; }
+.sparc-mb-055 { margin-bottom: 0.55rem; }
+.sparc-fw-700 { font-weight: 700; }
+.sparc-gap-075 { gap: 0.75rem; }
+.sparc-m-neg02-0-0 { margin: -0.2rem 0 0; }
+.sparc-break-all { word-break: break-all; }
+.sparc-w-35pct { width: 35%; }
+
+/* A colour swatch/dot. Size and shape here, colour from the accent. */
+.sparc-swatch-dot {
+  display: inline-block; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--sparc-accent);
+}
+.sparc-badge-num { width: 32px; height: 32px; line-height: 24px; }
+.sparc-ml-035 { margin-left: 0.35rem; }
+.sparc-mr-035 { margin-right: 0.35rem; }
+.sparc-p-025-075 { padding: 0.25rem 0.75rem; }
+.sparc-pl-125r { padding-left: 1.25rem; }
+.sparc-ls-008 { letter-spacing: 0.08rem; }
+.sparc-logo-300 { height: 300px; width: auto; }
+.sparc-w-4pct { width: 4%; }
+.sparc-mb-015 { margin-bottom: 0.15rem; }
+.sparc-mb-1r { margin-bottom: 1rem; }
+
+/* A scrollable code/pre surface. */
+.sparc-surface-scroll { background: var(--sparc-surface-alt); overflow-x: auto; }
+
+.sparc-w-20pct { width: 20%; }
+.sparc-p-04-0-only { padding: 0.4rem 0; }
+.sparc-fs-25rem { font-size: 2.5rem !important; }
+.sparc-fs-11r { font-size: 1.1rem !important; }
+.sparc-hr-plain { border: none; margin: 1.5rem 0; }
+.sparc-maxw-700 { max-width: 700px; margin: 0 auto; }
+.sparc-maxw-1100 { max-width: 1100px; }
+.sparc-gap-06 { gap: 0.6rem; }
+.sparc-th-eyebrow-row { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color); }
+
 /* ==========================================================================
    #1047 slice 4 — the SSP show screen's vocabulary.
 
@@ -3398,6 +3732,92 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-mb-06 { margin-bottom: 0.6rem; }
 .sparc-flex-shrink-0 { flex-shrink: 0; }
 .sparc-minw-0 { min-width: 0; }
+.sparc-mb-03 { margin-bottom: 0.3rem; }
+.sparc-mt-02 { margin-top: 0.2rem; }
+.sparc-ml-auto { margin-left: auto; }
+.sparc-fs-15r { font-size: 1.5rem !important; }
+.sparc-prewrap { white-space: pre-wrap; }
+.sparc-border-default { border: 1px solid var(--bs-border-color); }
+.sparc-p-035-09 { padding: 0.35rem 0.9rem; }
+.sparc-tt-capitalize { text-transform: capitalize; }
+.sparc-p-015-05 { padding: 0.15rem 0.5rem; }
+.sparc-p-01-045 { padding: 0.1rem 0.45rem; }
+.sparc-gap-03 { gap: 0.3rem; }
+.sparc-maxw-600 { max-width: 600px; }
+.sparc-h-12r { height: 1.2rem; }
+.sparc-mono { font-family: monospace; }
+.sparc-color-white-45 { color: rgba(255, 255, 255, 0.45); }
+.sparc-color-white-70 { color: rgba(255, 255, 255, 0.7); }
+.sparc-minw-6r { min-width: 6rem; }
+.sparc-p-085-1r { padding: 0.85rem 1rem; }
+.sparc-p-1r { padding: 1rem; }
+.sparc-p-065-075 { padding: 0.65rem 0.75rem; }
+.sparc-m-0-0-065 { margin: 0 0 0.65rem; }
+.sparc-m-0-0-035 { margin: 0 0 0.35rem; }
+.sparc-m-0-0-1r { margin: 0 0 1rem; }
+.sparc-mx-auto { margin: 0 auto; }
+.sparc-maxw-760 { max-width: 760px; }
+.sparc-pt-15r { padding-top: 1.5rem; }
+.sparc-td-none { text-decoration: none; }
+.sparc-lh-16 { line-height: 1.6; }
+.sparc-color-warning-fg { color: var(--sparc-warning-fg); }
+/* !important on the table-cell utilities below is REQUIRED, not stylistic.
+   Bootstrap's `.table > :not(caption) > * > *` is (0,1,1); a single utility
+   class is (0,1,0) and loses, so the converted cells rendered at Bootstrap's
+   0.75rem padding instead of the 0.2/0.45/0.55rem the inline styles gave. That
+   is the specificity trade #1047 already paid for once (63d601cf) — measured
+   here by `visual_regression_1047.py --check-cascade`, which reported 6,398
+   overridden declarations before this and 0 after. Same call the font-size
+   utilities took, and what Bootstrap's own utility API does. */
+.sparc-va-top { vertical-align: top !important; }
+.sparc-va-middle { vertical-align: middle !important; }
+.sparc-pt-055 { padding-top: 0.55rem !important; }
+.sparc-pt-045 { padding-top: 0.45rem !important; }
+.sparc-p-02-04 { padding: 0.2rem 0.4rem !important; }
+.sparc-p-02-05 { padding: 0.2rem 0.5rem !important; }
+.sparc-p-03-08 { padding: 0.3rem 0.8rem !important; }
+/* Moved here from the plain utility block on 2026-09-05. Slice 11 put it on six
+   <th>/<td> inside a .table and the cells rendered at Bootstrap's padding, not
+   0.3/0.5rem — the catalog control edit form came out 219 CSS px taller. Same
+   (0,1,1)-beats-(0,1,0) trade as its neighbours above; it only ever escaped
+   because until slice 11 nothing had used it on a table cell. */
+.sparc-p-03-05 { padding: 0.3rem 0.5rem !important; }
+.sparc-bbw-1 { border-bottom-width: 1px !important; }
+.sparc-w-auto { width: auto; }
+.sparc-w-40px { width: 40px; }
+.sparc-w-60px { width: 60px; }
+.sparc-w-130px { width: 130px; }
+.sparc-w-150px { width: 150px; }
+.sparc-w-200px { width: 200px; }
+.sparc-w-25pct { width: 25%; }
+.sparc-w-40pct { width: 40%; }
+.sparc-color-border { color: var(--bs-border-color) !important; }
+.sparc-mr-025 { margin-right: 0.25rem; }
+.sparc-ml-04 { margin-left: 0.4rem; }
+.sparc-mt-015 { margin-top: 0.15rem; }
+.sparc-lh-14 { line-height: 1.4; }
+.sparc-d-inline-flex { display: inline-flex; }
+.sparc-items-center { align-items: center; }
+.sparc-list-none { list-style: none; }
+.sparc-fs-06 { font-size: 0.6rem; }
+.sparc-bg-transparent { background: transparent; }
+.sparc-fst-italic { font-style: italic; }
+
+/* ── #1047 slice 10 — the HELPER-form leftovers ───────────────────────────
+   Every one of these was already in the repo as `style: "..."` passed to a
+   Rails helper, which the ratchet could not see until this bundle taught it
+   to. They are not new declarations; they are the ones the previous nine
+   slices walked past. */
+.sparc-d-inline { display: inline; }
+.sparc-minw-28px { min-width: 28px; }
+.sparc-p-03-07 { padding: 0.3rem 0.7rem; }
+.sparc-p-04-1r { padding: 0.4rem 1rem; }
+.sparc-p-05-125r { padding: 0.5rem 1.25rem; }
+.sparc-ml-025 { margin-left: 0.25rem; }
+.sparc-m-015-0-04 { margin: 0.15rem 0 0.4rem; }
+.sparc-ml-15r { margin-left: 1.5rem; }
+.sparc-pt-035 { padding-top: 0.35rem; }
+.sparc-w-160px { width: 160px; }
 .sparc-gap-15r { gap: 1.5rem; }
 .sparc-gap-045 { gap: 0.45rem; }
 .sparc-divider-top { border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
@@ -3441,6 +3861,19 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; }
 .sparc-modal-dialog { padding: 2rem; max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
 .sparc-modal-eyebrow { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
+/* The dismiss × every one of these modals carries. Written out longhand five
+   times across four screens, always identically — a component, not three
+   utilities repeated. */
+.sparc-modal-close { font-size: 1.5rem; text-decoration: none; line-height: 1; }
+
+/* A statement block carrying a failure. The SAP screen restated #e74c3c three
+   times at three different alphas; this derives all three from the accent the
+   element already carries, so it follows the token rather than a copy of it. */
+.sparc-statement-block--danger {
+  background: color-mix(in srgb, var(--sparc-accent) 7%, transparent);
+  border-color: color-mix(in srgb, var(--sparc-accent) 20%, transparent);
+  border-left: 3px solid var(--sparc-accent);
+}
 
 /* #1047 — DECORATIVE ACCENT COLOUR, as a class instead of an interpolated hex.
    `style="border-left: 3px solid <%= ssp_status_color(status) %>"` cannot
@@ -3463,6 +3896,12 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-accent--purple { --sparc-accent: #9b59b6; }
 .sparc-accent--violet { --sparc-accent: #8e44ad; }
 .sparc-accent--silver { --sparc-accent: #bdc3c7; }
+.sparc-accent--carrot  { --sparc-accent: #e67e22; }  /* POA&M risk_status: investigating */
+.sparc-accent--pumpkin { --sparc-accent: #d35400; }  /* POA&M risk_status: deviation-requested */
+/* #1047 slice 25 — the sidebar dots used two colours ACCENT_TOKENS did not
+   name, so accent_class would have failed soft and greyed them silently. */
+.sparc-accent--teal  { --sparc-accent: #16a085; }
+.sparc-accent--ocean { --sparc-accent: #2980b9; }
 
 /* The shapes that consume it. */
 .sparc-border-l-3 { border-left: 3px solid var(--sparc-accent); }
@@ -3481,3 +3920,222 @@ a.link-purple { color: var(--sparc-purple); }
    `margin-top` utility: it has ONE caller, and the utility layer's own rule is
    that a value used once or twice is an inline style with extra steps. */
 .sparc-wizard-field-note { margin-top: 0.3rem; }
+
+
+/* ==========================================================================
+   #1047 slice 5 — components of the POA&M show screen.
+
+   Same rule as the enrich components above: a COMPONENT with one use is
+   normal, a UTILITY with one use is an inline style with extra steps. These
+   are named for the role each played inline.
+   ========================================================================== */
+
+/* The document hero band — the rounded, padded gradient panel at the top of a
+   document screen. `color: white` comes from .sparc-gradient-header, which is
+   always on the same element.
+
+   Named .sparc-poam-hero until 2026-09-05, when the SAP screen turned out to
+   have hand-written the same three declarations: it was never a POA&M thing,
+   it just took the name of the first screen to use it. */
+.sparc-doc-hero { border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; }
+
+/* The count tiles under the hero title. */
+.sparc-poam-hero-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.75rem; }
+
+/* Tile tint, DERIVED from the accent the element already carries rather than
+   restated as rgba. Every one of the six inline colours was an accent-token
+   colour (#e74c3c #f39c12 #27ae60 #3498db #9b59b6 #e67e22), so the tile takes
+   a `.sparc-accent--*` class and this reads it — the same shape the #950
+   button system uses with `var(--sparc-action-c)`.
+
+   `color-mix(... N%, transparent)` is equivalent to the rgba it replaces:
+   mixing with transparent scales alpha to N% and leaves the channels, so
+   15% of #e74c3c IS rgba(231,76,60,0.15). Sits on top of .sparc-hero-tile,
+   whose own rgba(255,255,255,0.15) background it overrides. */
+.sparc-hero-tile--tinted {
+  background: color-mix(in srgb, var(--sparc-accent) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sparc-accent) 30%, transparent);
+}
+
+/* The items table, which scrolls horizontally inside its card. */
+.sparc-poam-table { min-width: 400px; }
+.sparc-poam-th-narrow { min-width: 80px; }
+
+/* Advisory banners above the item list. */
+/* Padding only. The amber left border is `.sparc-border-l-4` +
+   `.sparc-accent--orange` (#f39c12), not a restated hex. */
+.sparc-poam-banner { padding: 1rem 1.25rem; }
+.sparc-poam-banner-tight { padding: 0.75rem 1.25rem; }
+.sparc-tag--warning-subtle { background: var(--bs-warning-bg-subtle); color: var(--bs-warning-text-emphasis); }
+.sparc-tag--danger-subtle  { background: var(--bs-danger-bg-subtle);  color: var(--bs-danger-text-emphasis); }
+
+/* One POA&M item card. Padding only — the left border is
+   `.sparc-border-l-4` reading `var(--sparc-accent)`, set by
+   `accent_class(sc)`, which is the vocabulary slice 4 established for exactly
+   this case. Nothing here restates a hex.
+
+   Two of the six risk_status colours had no token, and `accent_class` FAILS
+   SOFT to slate, so using it unextended would have silently greyed
+   `investigating` (#e67e22) and `deviation-requested` (#d35400). Both are added
+   to ACCENT_TOKENS and to the accent list above rather than worked around. */
+.sparc-poam-item-card { padding: 1.25rem 1.5rem; }
+
+/* Item card internals. */
+.sparc-poam-item-title { margin: 0 !important; font-size: 1.05rem !important; }
+.sparc-poam-item-desc { font-size: 0.88rem; margin: 0 0 0.4rem 0; white-space: pre-wrap; }
+.sparc-mono-600 { font-family: monospace; font-weight: 600; }
+
+/* A quoted block (remediation plan, comments) inside an item. */
+.sparc-poam-quote { border-left: 3px solid var(--bs-border-color); padding: 0.4rem 0.7rem; }
+.sparc-poam-quote-body { white-space: pre-wrap; margin-top: 0.2rem; }
+.sparc-poam-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* The collapsible child-entity sections (risks, observations, findings). */
+.sparc-poam-summary { cursor: pointer; font-size: 0.82rem; margin-bottom: 0.75rem; user-select: none; }
+
+/* A child entity rendered as a sub-card. Two paddings, one border. */
+.sparc-poam-subcard { border: 1px solid var(--bs-border-color); padding: 0.6rem 0.8rem; }
+.sparc-poam-subcard--tight { border: 1px solid var(--bs-border-color); padding: 0.5rem 0.8rem; }
+
+/* An italic quoted line inside a sub-card. */
+.sparc-poam-subquote { font-size: 0.8rem; font-style: italic; margin-bottom: 0.3rem; padding-left: 0.5rem; border-left: 2px solid var(--bs-border-color); }
+
+/* Faint tinted notes nested inside a risk sub-card. Tint derived from the
+   accent class on the element, as above; the two differ only in padding. */
+.sparc-poam-note {
+  background: color-mix(in srgb, var(--sparc-accent) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sparc-accent) 15%, transparent);
+}
+.sparc-poam-note--roomy { padding: 0.4rem 0.6rem; }
+.sparc-poam-note--tight { padding: 0.3rem 0.5rem; }
+
+
+/* ==========================================================================
+   #1047 slice 6 — components of the CDEF show screen.
+   ========================================================================== */
+
+/* Tinted callouts. Same rule as slice 5's tiles: the colour is NOT restated,
+   it is read from the `.sparc-accent--*` class on the element. Three alpha
+   pairs, because the screen genuinely used three — the soft pair serves both
+   the purple and the green callout, which differed only in hue. */
+.sparc-cdef-callout {
+  background: color-mix(in srgb, var(--sparc-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sparc-accent) 35%, transparent);
+}
+.sparc-cdef-tint-soft {
+  background: color-mix(in srgb, var(--sparc-accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sparc-accent) 20%, transparent);
+}
+.sparc-cdef-tint {
+  background: color-mix(in srgb, var(--sparc-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sparc-accent) 25%, transparent);
+}
+
+
+/* ==========================================================================
+   #1047 slice 7 — components of the SAR show screen.
+   ========================================================================== */
+
+/* The objective modal is NARROWER and shorter than the one on the CDEF screen.
+   A modifier rather than a second dialog: the shared shape stays in
+   .sparc-modal-dialog, and only the two values that actually differ live here.
+   Declared after it so equal specificity resolves this way. */
+.sparc-modal-dialog--narrow { max-width: 600px; max-height: 80vh; }
+
+/* Section eyebrow above the assessment metadata. Wider tracking than
+   .sparc-modal-eyebrow (0.08em vs 0.04em), which is why it is not that class. */
+.sparc-sar-eyebrow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color); white-space: nowrap; }
+
+/* The section jump control in the header. */
+.sparc-nav-select-control { padding: 0.35rem 0.6rem; border-radius: 6px; border: 1px solid var(--bs-border-color); background: var(--bs-secondary-bg); color: var(--bs-body-color); font-size: 0.82rem; cursor: pointer; min-width: 180px; max-width: 360px; }
+
+/* A row-header cell that should read as a label, not a heading. */
+.sparc-th-plain { font-weight: 400; text-align: left; }
+
+/* Undo the inherited label treatment for an inline value. */
+.sparc-label-reset { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.sparc-label-reset--sm { font-weight: 400; font-size: 0.7rem; text-transform: none; letter-spacing: 0; margin-left: 0.4rem; }
+
+/* The per-control objective panel, revealed by the inline editor. `display:
+   none` is NOT baked in here — it is state, and belongs to .sparc-d-none, which
+   is what setVisible() toggles. Baking it into a component class is the defect
+   that hid both edit panels on the document show pages. */
+.sparc-objective-panel { margin-top: 0.75rem; border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
+
+/* A quiet <summary> that does not look like a button. */
+.sparc-details-summary { font-size: 0.8rem; color: var(--bs-tertiary-color); cursor: pointer; padding: 0.35rem 0; user-select: none; }
+
+/* The header of a collapsible section inside a form. Written out three times in
+   catalog_controls/_form alone, identically each time. NOT .sparc-details-summary
+   (0.35rem 0, tertiary text) or .sparc-section-summary (0.7rem 1rem, 0.95rem) —
+   this is a third size that was already in use, so it gets its own name rather
+   than a nudge to either of theirs, which would be an appearance change. */
+.sparc-form-section-summary { padding: 0.65rem 1rem; cursor: pointer; list-style: none; }
+
+/* An unstyled-looking button inside the modal. */
+.sparc-btn-plain { background: var(--bs-secondary-bg); color: var(--bs-secondary-color); border: 1px solid var(--bs-border-color); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem; }
+
+/* The pass-rate score tile in the header. */
+.sparc-score-tile { text-align: center; min-width: 80px; flex-shrink: 0; }
+
+
+/* ==========================================================================
+   #1047 slice 8 — components of the control-family show screen.
+   ========================================================================== */
+
+/* The control tree's indent. `padding-left: 0.5 + depth * 1.1 rem` is
+   continuous in `depth`, so it becomes an ENUMERATED class per depth rather
+   than a computed style — the same call slice 4 made for indent depth.
+
+   The ceiling is MEASURED, not guessed: across all 4,054 catalog controls the
+   deepest id yields depth 7 (54 controls sit at 5-7), so d0-d7 covers the real
+   estate exactly. The view clamps with `[depth, 7].min`, which is visible in
+   the markup rather than implicit — a hypothetical depth-8 control indents like
+   a depth-7 one instead of losing its indent altogether. */
+.sparc-tree-cell { vertical-align: top !important; padding-top: 0.55rem !important; }
+.sparc-tree-d0 { padding-left: 0.5rem !important; }
+.sparc-tree-d1 { padding-left: 1.6rem !important; }
+.sparc-tree-d2 { padding-left: 2.7rem !important; }
+.sparc-tree-d3 { padding-left: 3.8rem !important; }
+.sparc-tree-d4 { padding-left: 4.9rem !important; }
+.sparc-tree-d5 { padding-left: 6rem !important; }
+.sparc-tree-d6 { padding-left: 7.1rem !important; }
+.sparc-tree-d7 { padding-left: 8.2rem !important; }
+
+/* A nested (sub-part) row, tinted to separate it from its parent.
+   NOTE: #fafbfc is the literal that was inline. It is a light-mode value with
+   no dark-theme counterpart, which was already true as an inline style — moving
+   it here does not fix that, and it is exactly the kind of hardcoded colour
+   #1088 tracks. Preserved verbatim so this sweep changes delivery, not looks. */
+.sparc-row-nested { background: #fafbfc; }
+
+/* The control id itself: heavier and darker at the root, lighter when nested. */
+.sparc-control-name { font-family: monospace; font-weight: 700; color: var(--sparc-ink); font-size: 0.95rem; }
+.sparc-control-name--nested { font-weight: 500; color: #666; font-size: 0.85rem; }
+
+/* The bulk-edit toolbar revealed by the baseline editor. Visibility is NOT
+   baked in — it is state, and belongs to .sparc-d-none via setVisible(). */
+.sparc-bulk-toolbar { margin-bottom: 1rem; padding: 0.75rem 1rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.375rem; }
+
+
+/* ==========================================================================
+   #1047 slice 9 — components of the catalog import screen.
+   ========================================================================== */
+
+/* A fenced example block. Four identical copies were inline on this screen,
+   each restating the same navy and the same translucent white. Both now come
+   from tokens: `--sparc-ink-deep` is the one the header gradients and the
+   filter banner already use, it just had no name until this slice. */
+.sparc-code-block {
+  background: var(--sparc-ink-deep);
+  color: var(--sparc-on-dark-muted);
+  padding: 0.65rem 0.75rem;
+  font-family: monospace;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+/* The step cards down the import page, keyed by the accent they already carry. */
+.sparc-import-step { border-left: 3px solid var(--sparc-accent); }
+.sparc-import-note { background: color-mix(in srgb, var(--sparc-accent) 8%, transparent); }

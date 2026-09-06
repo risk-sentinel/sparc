@@ -6,7 +6,7 @@
         Add system characteristics, components, and users to uplift this SSP for OSCAL-compliant export.
       </p>
     </div>
-    <%= link_to "Back to SSP", ssp_document_path(@ssp_document), class: "sparc-action sparc-action--neutral sparc-action--ghost", style: "flex-shrink: 0;" %>
+    <%= link_to "Back to SSP", ssp_document_path(@ssp_document), class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-flex-shrink-0" %>
   </div>
 
   <%# ── #737: import components/users/back matter from canonical SPARC sources ── %>
@@ -18,7 +18,7 @@
       <% if @boundary_members.any? %>
         <%= button_to "Add #{@boundary_members.size} boundary member(s) as system users",
               import_boundary_users_ssp_document_path(@ssp_document), method: :post,
-              class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm", form: { style: "display:inline;" } %>
+              class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm", form: { class: "sparc-d-inline" } %>
       <% else %>
         <span class="text-body-tertiary small fst-italic">No authorization-boundary members available to import as users.</span>
       <% end %>
