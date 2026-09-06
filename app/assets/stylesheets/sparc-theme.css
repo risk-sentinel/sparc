@@ -3208,7 +3208,13 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-mb-025 { margin-bottom: 0.25rem; }  /* 31x */
 .sparc-p-1r-125r { padding: 1rem 1.25rem; }  /* 26x */
 .sparc-cursor-pointer { cursor: pointer; }  /* 23x */
-.sparc-d-none { display: none; }  /* 18x */
+/* !important because Bootstrap's display utilities carry it: `.d-flex` is
+   `display: flex !important` and beat this on the heat-map filter banner, which
+   rendered VISIBLE until JavaScript hid it. Hiding is a state and must outrank
+   layout — this is #1107, which was filed as latent and became live the moment
+   the sweep put .sparc-d-none on an element that also carries .d-flex. Same
+   call Bootstrap's own .d-none makes. */
+.sparc-d-none { display: none !important; }  /* 18x */
 .sparc-of-hidden { overflow: hidden; }  /* 18x */
 .sparc-fs-082 { font-size: 0.82rem !important; }  /* 16x */
 .sparc-mb-0 { margin-bottom: 0; }  /* 16x */
@@ -3460,7 +3466,19 @@ a.link-purple { color: var(--sparc-purple); }
 
 .sparc-br-05r { border-radius: 0.5rem; }
 .sparc-ls-005 { letter-spacing: 0.05rem; }
-.sparc-p-035-085 { padding: 0.35rem 0.85rem; }
+/* !important on these three ONLY, and each is proven by a VALUE difference the
+   browser confirms — not by "something else won the cascade", which was true of
+   241 declarations that rendered identically and must not be forced:
+
+     .sparc-stmt-d*    padding-left 0        loses to .table-sm cell padding 0.25rem
+     .sparc-p-035-085  0.35rem 0.85rem       loses to OUR OWN .card .card-body { padding: 0 }
+     .sparc-minh-60px  60px                  loses to .form-group textarea 100px
+
+   The card-body case is the instructive one: that zero padding is deliberate
+   ("card itself has 2rem"), and the dashboard's inline style existed precisely
+   to override it. Converting the inline to a single class gave that override
+   away. */
+.sparc-p-035-085 { padding: 0.35rem 0.85rem !important; }
 .sparc-fs-22r { font-size: 2.2rem !important; }
 
 /* ── #1047 slice 16 — the profile document screen ───────────────────────── */
@@ -3503,10 +3521,10 @@ a.link-purple { color: var(--sparc-purple); }
    down — so the ERB clamps and these go to 3. If the table ever renders the
    full tree, extend the ladder rather than reintroducing a computed
    padding-left. */
-.sparc-stmt-d0 { padding-left: 0; }
-.sparc-stmt-d1 { padding-left: 0.75rem; }
-.sparc-stmt-d2 { padding-left: 1.5rem; }
-.sparc-stmt-d3 { padding-left: 2.25rem; }
+.sparc-stmt-d0 { padding-left: 0 !important; }
+.sparc-stmt-d1 { padding-left: 0.75rem !important; }
+.sparc-stmt-d2 { padding-left: 1.5rem !important; }
+.sparc-stmt-d3 { padding-left: 2.25rem !important; }
 
 /* A quoted sub-note under a statement row. */
 .sparc-stmt-note {
@@ -3547,7 +3565,7 @@ a.link-purple { color: var(--sparc-purple); }
   padding: 1.25rem;
 }
 
-.sparc-minh-60px { min-height: 60px; }
+.sparc-minh-60px { min-height: 60px !important; }
 
 /* ── #1047 slices 25-39 — the last of the >=10 files ────────────────────── */
 

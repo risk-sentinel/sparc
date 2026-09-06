@@ -666,7 +666,13 @@ ACCEPTED_OVERRIDES: set[tuple[str, str]] = {
 }
 
 _CASCADE_JS = r"""(swept) => {
-  const spec = (sel) => {
+  // Specificity is computed PER ARM of a grouped selector, and the browser uses
+  // the arm that matches. Measuring the whole group counted
+  // `.h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6` as (0,6,6) — so a
+  // single class appeared to LOSE to Bootstrap's heading rule, when against a
+  // bare <h6> the matching arm is `h6` at (0,0,1) and our class wins. That
+  // false finding survived one round of "fixes" and changed real screens.
+  const specOne = (sel) => {
     const s = sel.replace(/::[\w-]+/g, ' ');
     return [(s.match(/#[\w-]+/g) || []).length,
             (s.match(/\.[\w-]+/g) || []).length + (s.match(/\[[^\]]+\]/g) || []).length
@@ -675,6 +681,20 @@ _CASCADE_JS = r"""(swept) => {
               .match(/(^|[\s>+~(,])([a-zA-Z][\w-]*)/g) || []).length];
   };
   const cmp = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+  // The effective specificity for THIS element: the highest-specificity arm the
+  // element actually matches. Arms it does not match cannot contribute.
+  const specFor = (sel, el) => {
+    let best = null;
+    for (const arm of sel.split(',')) {
+      const a = arm.trim();
+      if (!a) continue;
+      let m; try { m = el.matches(a) } catch (e) { continue }
+      if (!m) continue;
+      const sp = specOne(a);
+      if (!best || cmp(sp, best) > 0) best = sp;
+    }
+    return best;
+  };
 
   const all = [];
   let sheetIdx = 0;
@@ -684,7 +704,7 @@ _CASCADE_JS = r"""(swept) => {
     for (const r of rules) {
       if (r.selectorText && r.style)
         all.push({sel: r.selectorText, style: r.style, order: sheetIdx * 1e6 + i,
-                  sparc: (ss.href || '').includes('sparc-theme'), spec: spec(r.selectorText)});
+                  sparc: (ss.href || '').includes('sparc-theme')});
       i++;
     }
     sheetIdx++;
@@ -702,16 +722,49 @@ _CASCADE_JS = r"""(swept) => {
       if (!m) continue;
       for (const prop of r.style) {
         if (r.style.getPropertyPriority(prop)) continue;   // !important already wins
+        // Find the rule that ACTUALLY wins, not the first one that happens to
+        // outrank us. Breaking on first-found is fine for the boolean "is this
+        // overridden?", and WRONG once the value matters: a same-value rule
+        // encountered first ended the search before the different-value rule
+        // that really wins, so `.sparc-mb-075` (0.75rem) losing to Bootstrap's
+        // heading 0.5rem was misreported as harmless.
+        let best = null;
         for (const o of (byProp[prop] || [])) {
           if (o === r) continue;
           let om; try { om = el.matches(o.sel) } catch (e) { continue }
           if (!om) continue;
-          const d = cmp(o.spec, r.spec);
-          if (o.style.getPropertyPriority(prop) || d > 0 || (d === 0 && o.order > r.order)) {
+          const os = specFor(o.sel, el), rs = specFor(r.sel, el);
+          if (!os || !rs) continue;
+          const d = cmp(os, rs);
+          const beats = o.style.getPropertyPriority(prop) || d > 0 ||
+                        (d === 0 && o.order > r.order);
+          if (!beats) continue;
+          if (!best) { best = o; continue; }
+          // higher priority, then specificity, then source order
+          const bp = best.style.getPropertyPriority(prop) ? 1 : 0;
+          const op = o.style.getPropertyPriority(prop) ? 1 : 0;
+          const obs = specFor(o.sel, el), bbs = specFor(best.sel, el);
+          if (op > bp || (op === bp && obs && bbs && (cmp(obs, bbs) > 0 ||
+              (cmp(obs, bbs) === 0 && o.order > best.order)))) best = o;
+        }
+        {
+          const o = best;
+          if (o) {
+            // Losing the cascade is only a DEFECT if the winner sets a DIFFERENT
+            // value. `.sparc-mb-05 { margin-bottom: 0.5rem }` losing to
+            // Bootstrap's heading rule, which also says 0.5rem, renders
+            // identically — reporting it as LOST cost a day: 241 such findings
+            // were treated as regressions and "fixed" with !important, which
+            // changed the design on screens that had been pixel-perfect.
+            // Report both, but only value-DIFFERING losses are failures.
+            const norm = (v) => (v || '').trim().replace(/\b0(px|rem|em|%)\b/g, '0');
+            const mine = norm(r.style.getPropertyValue(prop));
+            const theirs = norm(o.style.getPropertyValue(prop));
+            const same = mine === theirs;
             // NUL-separated: selectors contain spaces, so a space key is ambiguous.
-            const k = r.sel + '\x00' + prop + '\x00' + o.sel;
+            const k = r.sel + '\x00' + prop + '\x00' + o.sel + '\x00' +
+                      (same ? 'SAME' : mine + ' -> ' + theirs);
             lost[k] = (lost[k] || 0) + 1;
-            break;
           }
         }
       }
@@ -851,16 +904,21 @@ def _check_cascade(pin_from: Path | None) -> int:
                 continue
             checked += 1
             for key, n in page.evaluate(_CASCADE_JS, swept).items():
-                loser, prop, winner = key.split("\x00")
-                findings[(loser, prop, winner)] = findings.get((loser, prop, winner), 0) + n
+                loser, prop, winner, verdict = key.split("\x00")
+                findings[(loser, prop, winner, verdict)] = \
+                    findings.get((loser, prop, winner, verdict), 0) + n
         browser.close()
 
     accepted, real = [], []
-    for (loser, prop, winner), n in findings.items():
-        if _same_component(loser, winner) or (loser, prop) in ACCEPTED_OVERRIDES:
+    same_value = []
+    for (loser, prop, winner, verdict), n in findings.items():
+        if verdict == "SAME":
+            # Overridden, but by an identical value — nothing renders differently.
+            same_value.append((loser, prop, winner, n))
+        elif _same_component(loser, winner) or (loser, prop) in ACCEPTED_OVERRIDES:
             accepted.append((loser, prop, winner, n))
         else:
-            real.append((loser, prop, winner, n))
+            real.append((loser, prop, winner, n, verdict))
 
     print(f"\n{'=' * 66}")
     print(f"cascade check: {checked} screen(s)")
@@ -868,11 +926,20 @@ def _check_cascade(pin_from: Path | None) -> int:
         print(f"  UNREACHABLE    {label}   {path}")
     print(f"  accepted overrides (modifier-over-base or pre-existing): "
           f"{sum(n for *_, n in accepted)} in {len(accepted)} rule(s)")
-    for loser, prop, winner, n in sorted(real, key=lambda r: -r[3]):
-        print(f"  LOST {n:>6} x  {loser} {{ {prop} }}\n"
+    # SOFT FAIL — the rendered value is right, but it is not coming from the
+    # utility that is supposed to own it. Not a rendering defect, so it does not
+    # fail the gate; it IS a DRY defect, because the value is now declared in two
+    # places and only one of them is ours. Either the utility is dead weight on
+    # that element, or the duplicate should go.
+    print(f"  SOFT FAIL — right value, WRONG SOURCE (ours is overridden by an "
+          f"identical value): {sum(n for *_, n in same_value)} in {len(same_value)} rule(s)")
+    for loser, prop, winner, n in sorted(same_value, key=lambda r: -r[3]):
+        print(f"    {n:>5} x  {loser} {{ {prop} }}  <- also set by  {winner[:70]}")
+    for loser, prop, winner, n, verdict in sorted(real, key=lambda r: -r[3]):
+        print(f"  LOST {n:>6} x  {loser} {{ {prop} }}   {verdict}\n"
               f"               to  {winner[:88]}")
     ok = not real and not unreachable
-    print(f"\n{'PASS' if ok else 'FAIL'}: {sum(n for *_, n in real)} overridden "
+    print(f"\n{'PASS' if ok else 'FAIL'}: {sum(r[3] for r in real)} overridden "
           f"declaration(s) in {len(real)} rule(s), "
           f"{len(unreachable)} screen(s) unreachable\n{'=' * 66}")
     return 0 if ok else 1
