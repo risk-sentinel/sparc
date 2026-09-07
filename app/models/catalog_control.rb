@@ -241,6 +241,61 @@ class CatalogControl < ApplicationRecord
   def guidance_hash = parsed_guidance_data
 
   # Returns only populated guidance fields as { field_name => value }.
+  # ── #1113 — catalog_control_parts is AUTHORITATIVE for editing ──────────
+  #
+  # The same catalog content lived in two stores with nothing keeping them in
+  # step: `guidance_data` (a JSONB blob, what the edit form wrote) and
+  # `catalog_control_parts` (structured rows, what the read-only tree renders,
+  # what SSP/CDEF statements join on by `statement_id`, and what the OSCAL
+  # export emits). Measured on AC-1 they held byte-identical content — 1,498
+  # characters of supplemental guidance in both — so editing the form left the
+  # tree below it and the export showing the old prose.
+  #
+  # Parts win, because they are structured, referenced downstream, exported, and
+  # round-trip; the blob carries no part ids at all.
+  #
+  # The blob is NOT dropped: 12+ consumers read it (SSP/SAR/SAP screens, the
+  # catalog and resolved-profile exporters, the SAR parser, the SAP generator).
+  # It is now a MIRROR, written from the parts in the same transaction, so the
+  # two cannot disagree. Retiring it is its own piece of work.
+  PART_MIRRORS = {
+    "statement"             => "statement",
+    "guidance"              => "supplemental_guidance"
+  }.freeze
+
+  # Apply prose edits to catalog parts, then re-derive the mirrored blob keys.
+  # `edits` is { part_id => prose }.
+  def apply_part_edits!(edits)
+    return if edits.blank?
+
+    transaction do
+      parts = catalog_control_parts.where(part_id: edits.keys).index_by(&:part_id)
+      edits.each do |part_id, prose|
+        part = parts[part_id.to_s]
+        next unless part                      # ignore ids that are not ours
+        part.update!(prose: prose.to_s)
+      end
+      mirror_parts_into_guidance_data!
+    end
+  end
+
+  # One direction only: parts -> blob. Never the reverse, or an edit to the blob
+  # would silently win and the drift is back.
+  def mirror_parts_into_guidance_data!
+    data = parsed_guidance_data.dup
+    PART_MIRRORS.each do |part_name, key|
+      part = catalog_control_parts.where(part_name: part_name).order(:row_order).first
+      data[key] = part.prose.to_s if part
+    end
+    objectives = catalog_control_parts.where(part_name: "assessment-objective")
+                                      .where.not(prose: [ nil, "" ]).order(:row_order)
+    if objectives.any?
+      data["assessment_objective"] =
+        objectives.map { |o| [ o.label.presence, o.prose ].compact.join(": ") }.join("\n")
+    end
+    update_column(:guidance_data, data)
+  end
+
   def guidance_fields
     data = parsed_guidance_data
     return {} if data.blank?

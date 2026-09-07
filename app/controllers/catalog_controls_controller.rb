@@ -49,7 +49,12 @@ class CatalogControlsController < ApplicationController
   def update
     permitted = catalog_control_params
     apply_params_labels!(permitted)
+    # #1113 — parts are authoritative for catalog prose. Applied FIRST, and the
+    # mirror into guidance_data happens inside it, so a form submit has one
+    # write path and the two stores cannot drift.
+    part_edits = permitted.delete(:part_prose)
     if @catalog_control.update(permitted.except(:params_labels))
+      @catalog_control.apply_part_edits!(part_edits&.to_h)
       audit_log("catalog_control_updated", subject: @catalog_control, metadata: { control_id: @catalog_control.control_id })
       redirect_to @catalog_control.control_family, notice: "Control updated successfully."
     else
@@ -170,6 +175,7 @@ class CatalogControlsController < ApplicationController
       :control_id, :title, :description, :priority, :baseline_impact,
       guidance_data: {},
       params_labels: {},
+      part_prose: {},
       baseline_levels: []
     )
 

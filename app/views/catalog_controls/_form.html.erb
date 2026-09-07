@@ -33,11 +33,27 @@
       The formal control requirement text. For parent controls, this is the lead-in sentence;
       for sub-parts (AC-01a, AC-01a.1 …) this is the specific requirement prose.
     </p>
-    <%= text_area_tag "catalog_control[guidance_data][statement]",
-        (catalog_control.guidance_data || {})["statement"],
-        id: "catalog_control_guidance_data_statement",
-        class: "form-control", rows: 5,
-        placeholder: "Enter the control statement text..." %>
+    <%
+      stmt_part = catalog_control.catalog_control_parts
+                                 .where(part_name: "statement").order(:row_order).first
+    %>
+    <% if stmt_part %>
+      <%= text_area_tag "catalog_control[part_prose][#{stmt_part.part_id}]",
+          stmt_part.prose,
+          id: "catalog_control_guidance_data_statement",
+          class: "form-control", rows: 5,
+          placeholder: "Enter the control statement text..." %>
+      <div class="text-body-tertiary sparc-fs-075 sparc-mt-02">
+        Catalog part <code><%= stmt_part.part_id %></code> — this is the source the
+        OSCAL export emits and that SSP statements reference.
+      </div>
+    <% else %>
+      <%= text_area_tag "catalog_control[guidance_data][statement]",
+          (catalog_control.guidance_data || {})["statement"],
+          id: "catalog_control_guidance_data_statement",
+          class: "form-control", rows: 5,
+          placeholder: "Enter the control statement text..." %>
+    <% end %>
   </div>
 
   <%# ── Priority + Baseline ── %>
@@ -123,16 +139,27 @@
   <%# ── Additional guidance fields (collapsible) ── %>
   <%
     gd = (catalog_control.guidance_data || {})
-    extra_fields = [
-      ["supplemental_guidance",    "Supplemental Guidance",    8, "Additional context and implementation notes from the catalog..."],
-      ["related_controls",         "Related Controls",         2, "e.g. AC-02, AC-03"],
+    # #1113 — SPLIT BY SOURCE. The first group comes from the catalog and is
+    # edited through `catalog_control_parts`; the second is organisation-authored
+    # and has no NIST equivalent, so it stays on `guidance_data` until #1106
+    # settles a namespace and those can become namespaced OSCAL parts too.
+    #
+    # They used to be one list, so five fields NIST never populates sat beside
+    # two it does — and a blank one read as "the import lost my data".
+    org_fields = [
       ["implementation_guidance",  "Implementation Guidance",  4, "Guidance for implementing this control..."],
       ["check",                    "Check Procedure",          3, "How to verify this control is implemented..."],
       ["fix",                      "Fix Procedure",            3, "How to remediate failures of this control..."],
       ["nist_references",          "NIST References",          2, "e.g. NIST SP 800-53 Rev 5, Section 2.1"],
       ["org_ref",                  "Org Reference",            2, "Internal policy or procedure reference..."],
     ]
-    has_extra = extra_fields.any? { |key, *| gd[key].present? }
+    extra_fields = [ ["related_controls", "Related Controls", 2, "e.g. AC-02, AC-03"] ] + org_fields
+    guidance_part = catalog_control.catalog_control_parts
+                                   .where(part_name: "guidance").order(:row_order).first
+    objective_parts = catalog_control.catalog_control_parts
+                                     .where(part_name: "assessment-objective").order(:row_order)
+    has_extra = extra_fields.any? { |key, *| gd[key].present? } ||
+                guidance_part.present? || objective_parts.any?
   %>
   <details <%= "open" if has_extra %> class="border rounded sparc-mb-125r sparc-p-0">
     <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2 sparc-form-section-summary">
@@ -142,6 +169,63 @@
       <% end %>
     </summary>
     <div class="d-flex flex-column gap-2 p-3">
+
+      <%# ── From the catalog (NIST 800-53 / 800-53A) — edited as PARTS ── %>
+      <% if guidance_part %>
+        <div class="form-group sparc-mb-0">
+          <label for="catalog_control_part_guidance" class="fw-semibold text-body-secondary sparc-fs-088">
+            Supplemental Guidance
+            <span class="sparc-editable-note">(catalog part <%= guidance_part.part_id %>)</span>
+          </label>
+          <%= text_area_tag "catalog_control[part_prose][#{guidance_part.part_id}]",
+              guidance_part.prose, id: "catalog_control_part_guidance",
+              class: "form-control sparc-fs-088", rows: 8 %>
+        </div>
+      <% end %>
+
+      <% if objective_parts.any? %>
+        <div class="form-group sparc-mb-0">
+          <div class="fw-semibold text-body-secondary sparc-fs-088">
+            Assessment Objectives
+            <span class="sparc-editable-note">(<%= objective_parts.size %> from NIST SP 800-53A)</span>
+          </div>
+          <p class="text-body-tertiary sparc-fs-078 sparc-mb-075">
+            What an assessor determines for each part of this control. These flow to the
+            SAP and SAR as individual objectives — edit the wording here and every
+            assessment built from this catalog picks it up.
+          </p>
+          <table class="table table-sm mb-0 sparc-fs-082">
+            <thead>
+              <tr class="sparc-th-eyebrow-row">
+                <th class="sparc-w-22pct sparc-p-03-05">Objective</th>
+                <th class="sparc-p-03-05">Determination statement</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% objective_parts.each do |obj| %>
+                <tr>
+                  <td class="sparc-p-03-05 sparc-monospace sparc-color-bs-primary sparc-va-top">
+                    <%= obj.label.presence || obj.part_id %>
+                  </td>
+                  <td class="sparc-p-03-05">
+                    <%= text_area_tag "catalog_control[part_prose][#{obj.part_id}]",
+                        obj.prose, rows: 2, class: "form-control form-control-sm sparc-fs-082",
+                        placeholder: "Determination statement..." %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+
+      <%# ── Organisation-authored — no NIST equivalent, stored on the control ── %>
+      <% if org_fields.any? %>
+        <div class="text-body-tertiary sparc-fs-075 sparc-mt-05">
+          The fields below are <strong>organisation-authored</strong>. The catalog import
+          never populates them, so a blank one is expected rather than missing data.
+        </div>
+      <% end %>
       <% extra_fields.each do |key, label, rows, placeholder| %>
         <div class="form-group sparc-mb-0">
           <label for="catalog_control_guidance_data_<%= key %>" class="fw-semibold text-body-secondary sparc-fs-088">
