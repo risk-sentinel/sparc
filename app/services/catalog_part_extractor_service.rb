@@ -186,7 +186,17 @@ class CatalogPartExtractorService
       # would destroy the content this feature exists to hold.
       existing = control.public_send(association_name).map(&:statement_id).to_set
 
-      self.class.parts_for_control(catalog, control.control_id).each do |part|
+      parts = self.class.parts_for_control(catalog, control.control_id)
+      # A profile's `resolved_catalog_json` is CACHED, and every profile resolved
+      # before #1100 holds the FLATTENED single statement — the resolver only
+      # started emitting the tree in this bundle. Nothing re-resolves an existing
+      # profile, so backfilling from that JSON gives every existing SSP exactly
+      # one statement per control and the per-statement editor has nothing to
+      # edit. Fall back to `catalog_control_parts`, which the importer now
+      # populates and which is the authoritative store.
+      parts = stored_parts_for(control.control_id) if parts.size <= 1
+
+      parts.each do |part|
         next if existing.include?(part[:part_id])
 
         rows << {
@@ -211,6 +221,34 @@ class CatalogPartExtractorService
     klass.insert_all(rows)
     clear_reassociation_flag
     rows.size
+  end
+
+  # Statement/item parts straight from the table the importer populates, in the
+  # same shape `parts_for_control` returns so the caller cannot tell them apart.
+  def stored_parts_for(control_id)
+    catalog = source_catalog
+    return [] if catalog.blank? || control_id.blank?
+
+    ctrl = CatalogControl.joins(:control_family)
+                         .where(control_families: { control_catalog_id: catalog.id })
+                         .find_by("LOWER(catalog_controls.control_id) = ?", control_id.to_s.downcase)
+    return [] unless ctrl
+
+    ctrl.catalog_control_parts
+        .where(part_name: DEFAULT_PART_NAMES)
+        .order(:row_order)
+        .map do |p|
+          { part_id: p.part_id, parent_part_id: p.parent_part_id,
+            label: p.label, prose: p.prose, row_order: p.row_order }
+        end
+  end
+
+  def source_catalog
+    profile_id = @document.try(:profile_document_id)
+    if profile_id.blank? && @document.respond_to?(:ssp_document_id) && @document.ssp_document_id.present?
+      profile_id = SspDocument.find_by(id: @document.ssp_document_id)&.profile_document_id
+    end
+    ProfileDocument.find_by(id: profile_id)&.control_catalog
   end
 
   def resolve_catalog
