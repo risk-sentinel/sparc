@@ -198,20 +198,48 @@
             <thead>
               <tr class="sparc-th-eyebrow-row">
                 <th class="sparc-w-22pct sparc-p-03-05">Objective</th>
-                <th class="sparc-p-03-05">Determination statement</th>
+                <th class="sparc-p-03-05">Assessment objective</th>
               </tr>
             </thead>
             <tbody>
+              <%
+                # 800-53A nests: AC-01 groups AC-01a., which groups AC-01a.[01].
+                # Only the LEAVES carry a determination statement — 7 of AC-1's 24
+                # objective parts are containers with children and no prose. They
+                # are structure, not something to author, so they render as a
+                # group heading rather than an empty box inviting someone to type
+                # into a node that is not an objective.
+                obj_children = objective_parts.group_by(&:parent_part_id)
+                obj_depth = ->(part) {
+                  d = 0
+                  pid = part.parent_part_id
+                  while pid.present? && d < 3
+                    d += 1
+                    pid = objective_parts.find { |o| o.part_id == pid }&.parent_part_id
+                  end
+                  d
+                }
+              %>
               <% objective_parts.each do |obj| %>
+                <% container = (obj_children[obj.part_id] || []).any? && obj.prose.blank? %>
                 <tr>
-                  <td class="sparc-p-03-05 sparc-monospace sparc-color-bs-primary sparc-va-top">
-                    <%= obj.label.presence || obj.part_id %>
-                  </td>
-                  <td class="sparc-p-03-05">
-                    <%= text_area_tag "catalog_control[part_prose][#{obj.part_id}]",
-                        obj.prose, rows: 2, class: "form-control form-control-sm sparc-fs-082",
-                        placeholder: "Determination statement..." %>
-                  </td>
+                  <% if container %>
+                    <td colspan="2" class="sparc-p-03-05 sparc-stmt-d<%= obj_depth.call(obj) %>">
+                      <span class="sparc-monospace sparc-fw-600"><%= obj.label.presence || obj.part_id %></span>
+                      <span class="text-body-tertiary sparc-fs-075 sparc-ml-025">
+                        groups <%= pluralize((obj_children[obj.part_id] || []).size, "objective") %>
+                      </span>
+                    </td>
+                  <% else %>
+                    <td class="sparc-p-03-05 sparc-monospace sparc-color-bs-primary sparc-va-top sparc-stmt-d<%= obj_depth.call(obj) %>">
+                      <%= obj.label.presence || obj.part_id %>
+                    </td>
+                    <td class="sparc-p-03-05">
+                      <%= text_area_tag "catalog_control[part_prose][#{obj.part_id}]",
+                          obj.prose, rows: 2, class: "form-control form-control-sm sparc-fs-082",
+                          placeholder: "Assessment objective..." %>
+                    </td>
+                  <% end %>
                 </tr>
               <% end %>
             </tbody>

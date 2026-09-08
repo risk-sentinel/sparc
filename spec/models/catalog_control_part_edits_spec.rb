@@ -60,6 +60,27 @@ RSpec.describe "CatalogControl part-authoritative editing (#1113)" do
       .to include("AC-01a.[01]", "an access control policy is documented")
   end
 
+  # Owner review: "are we sure that AC-01, AC-01a. have determinations/objectives?"
+  # They do not. In 800-53A the objective tree nests — AC-01 groups AC-01a., which
+  # groups AC-01a.[01] — and only the LEAVES carry a determination statement.
+  # Measured on the seeded catalog: 7 of AC-1's 24 objective parts are containers
+  # with children and no prose. The mirror must not invent text for them.
+  it "mirrors only objectives that carry prose, not the container nodes" do
+    control.catalog_control_parts.create!(part_id: "ac-1_obj", part_name: "assessment-objective",
+                                          label: "AC-01", prose: nil, row_order: 3,
+                                          uuid: SecureRandom.uuid)
+    control.catalog_control_parts.create!(part_id: "ac-1_obj.a", part_name: "assessment-objective",
+                                          parent_part_id: "ac-1_obj", label: "AC-01a.",
+                                          prose: nil, row_order: 4, uuid: SecureRandom.uuid)
+
+    control.mirror_parts_into_guidance_data!
+
+    mirrored = control.reload.guidance_hash["assessment_objective"].to_s
+    expect(mirrored).to include("AC-01a.[01]")
+    expect(mirrored).not_to include("AC-01:")
+    expect(mirrored).not_to include("AC-01a.:")
+  end
+
   it "ignores a part id that does not belong to this control" do
     other = create(:catalog_control, control_family: family, control_id: "ac-2")
     other.catalog_control_parts.create!(part_id: "ac-2_gdn", part_name: "guidance",
