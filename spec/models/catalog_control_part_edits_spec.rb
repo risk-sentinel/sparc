@@ -81,6 +81,22 @@ RSpec.describe "CatalogControl part-authoritative editing (#1113)" do
     expect(mirrored).not_to include("AC-01a.:")
   end
 
+  # The statement is a tree too: `ac-1_smt` is a container with 3 children and no
+  # prose; the text lives in the item parts. Binding one field to the container
+  # showed an EMPTY Statement box on a control whose statement is nine
+  # paragraphs. Editing an ITEM part must work, and must mirror.
+  it "edits an item part of the statement tree, not just the container" do
+    control.catalog_control_parts.create!(part_id: "ac-1_smt.a", part_name: "item",
+                                          parent_part_id: "ac-1_smt", label: "a.",
+                                          prose: "Develop, document, and disseminate",
+                                          row_order: 5, uuid: SecureRandom.uuid)
+
+    control.apply_part_edits!("ac-1_smt.a" => "Develop and disseminate, revised")
+
+    expect(control.catalog_control_parts.find_by(part_id: "ac-1_smt.a").prose)
+      .to eq("Develop and disseminate, revised")
+  end
+
   it "ignores a part id that does not belong to this control" do
     other = create(:catalog_control, control_family: family, control_id: "ac-2")
     other.catalog_control_parts.create!(part_id: "ac-2_gdn", part_name: "guidance",

@@ -34,17 +34,50 @@
       for sub-parts (AC-01a, AC-01a.1 …) this is the specific requirement prose.
     </p>
     <%
-      stmt_part = catalog_control.catalog_control_parts
-                                 .where(part_name: "statement").order(:row_order).first
+      # The statement is a TREE, not one field. `ac-1_smt` is a CONTAINER with no
+      # prose of its own — the text lives in the item parts (a., 1., (a), b., c.).
+      # Binding one textarea to the container showed an EMPTY box on a control
+      # whose statement is nine paragraphs long. Same shape as the assessment
+      # objectives: containers are structure, leaves carry prose.
+      stmt_parts = catalog_control.catalog_control_parts
+                                  .where(part_name: %w[statement item]).order(:row_order)
+      stmt_kids  = stmt_parts.group_by(&:parent_part_id)
+      stmt_depth = ->(part) {
+        d = 0
+        pid = part.parent_part_id
+        while pid.present? && d < 3
+          d += 1
+          pid = stmt_parts.find { |o| o.part_id == pid }&.parent_part_id
+        end
+        d
+      }
     %>
-    <% if stmt_part %>
-      <%= text_area_tag "catalog_control[part_prose][#{stmt_part.part_id}]",
-          stmt_part.prose,
-          id: "catalog_control_guidance_data_statement",
-          class: "form-control", rows: 5,
-          placeholder: "Enter the control statement text..." %>
+    <% if stmt_parts.any? %>
+      <div class="d-flex flex-column gap-2">
+        <% stmt_parts.each do |sp| %>
+          <% container = (stmt_kids[sp.part_id] || []).any? && sp.prose.blank? %>
+          <% next if container && sp.parent_part_id.blank? %>
+          <div class="sparc-stmt-d<%= stmt_depth.call(sp) %>">
+            <% if container %>
+              <span class="sparc-monospace sparc-fw-600"><%= sp.label.presence || sp.part_id %></span>
+              <span class="text-body-tertiary sparc-fs-075 sparc-ml-025">
+                groups <%= pluralize((stmt_kids[sp.part_id] || []).size, "item") %>
+              </span>
+            <% else %>
+              <div class="d-flex gap-2 align-items-start">
+                <span class="sparc-monospace sparc-fw-600 sparc-color-bs-primary sparc-minw-6r">
+                  <%= sp.label.presence || sp.part_id %>
+                </span>
+                <%= text_area_tag "catalog_control[part_prose][#{sp.part_id}]", sp.prose,
+                    rows: 2, class: "form-control sparc-fs-088 sparc-flex-1",
+                    placeholder: "Requirement text..." %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
       <div class="text-body-tertiary sparc-fs-075 sparc-mt-02">
-        Catalog part <code><%= stmt_part.part_id %></code> — this is the source the
+        Catalog parts under <code><%= stmt_parts.first.part_id %></code> — the source the
         OSCAL export emits and that SSP statements reference.
       </div>
     <% else %>
