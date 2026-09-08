@@ -230,7 +230,7 @@
     <details class="sparc-family-group">
       <summary>
         <strong><%= family_code %></strong> &mdash; <%= @family_names[family_code] || family_code %>
-        <span class="badge bg-secondary"><%= family_controls.size %></span>
+        <span class="badge bg-secondary" data-heatmap-count="<%= family_controls.size %>"><%= family_controls.size %></span>
       </summary>
 
       <div class="mt-2">
