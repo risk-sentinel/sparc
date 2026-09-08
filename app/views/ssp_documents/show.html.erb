@@ -313,6 +313,18 @@
               <span class="sparc-env-tag">&#x2713; <%= prov_as_val %></span>
             <% end %>
             <span class="sparc-ctrl-family sparc-ml-01"><%= family_code %></span>
+            <%# #1100 — how much of this control is answered, on the COLLAPSED
+                card. The per-statement work is invisible until you expand a
+                control, so a document of 150 controls gave an author no way to
+                see where the gaps were without opening all of them. %>
+            <% stmt_total = control.ssp_control_statements.size %>
+            <% if stmt_total > 1 %>
+              <% stmt_answered = control.ssp_control_statements.count { |s| s.implementation_prose.present? } %>
+              <span class="sparc-status sparc-status--<%= stmt_answered.zero? ? 'neutral' : stmt_answered == stmt_total ? 'success' : 'warning' %> sparc-fs-068"
+                    title="Implementation statements carrying prose">
+                <%= stmt_answered %>/<%= stmt_total %> answered
+              </span>
+            <% end %>
           </div>
           <div class="sparc-ctrl-title sparc-mt-01"><%= control.title %></div>
         </div>
@@ -342,6 +354,17 @@
               <div class="sparc-fs-084 sparc-color-body sparc-lh-15"><%= stated_req %></div>
             </div>
           <% end %>
+
+          <%# ── #1100: Implementation statements ──────────────────────────
+              THE primary authoring surface for a control, so it sits directly
+              under the language it answers.
+
+              It used to render inside the EDIT form, below all nine editable
+              fields — so answering a sub-part meant clicking Edit on the
+              control, scrolling past status/application/coverage/type/roles,
+              and finding a table at the bottom. Owner review: "This is not
+              intuitive for where a user responds to each part." %>
+          <%= render "ssp_documents/statements_table", control: control, ssp_document: @ssp_document %>
 
           <%# Ordered field table — editable fields first, then supplemental %>
           <%
@@ -512,9 +535,19 @@
               <% field_id = "ssp_field_#{control.id}_#{fname}" %>
               <div class="form-group">
                 <label class="sparc-edit-label" for="<%= field_id %>">
-                  <%= fname.tr("_", " ") %>
+                  <%# #1100 — this field held the ONLY response for a control
+                      whose statements are answered individually above, which is
+                      what made two places look like one. Named for what it is. %>
+                  <%= fname == "implementation_statement" ? "control-level summary" : fname.tr("_", " ") %>
                   <span class="sparc-edit-editable-hint">(editable)</span>
                 </label>
+                <% if fname == "implementation_statement" %>
+                  <div class="sparc-fs-078 sparc-color-tertiary sparc-mb-025">
+                    Optional. Each addressable part is answered individually in
+                    Implementation Statements above; this is the overall narrative
+                    for the control.
+                  </div>
+                <% end %>
                 <% if fname == "status" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::VALID_STATUSES, fval),
@@ -590,8 +623,9 @@
               </details>
             <% end %>
 
-            <%# ── #393: Implementation statements (per-statement edit modal) ── %>
-            <%= render "ssp_documents/statements_table", control: control, ssp_document: @ssp_document %>
+            <%# #1100 — the implementation statements table used to render here,
+                at the bottom of the edit form. It is the primary authoring
+                surface, not a trailing extra, and now lives in the view above. %>
 
             <%# ── Back-Matter References ── %>
             <% ssp_ctrl_resources = control.back_matter_resources.order(:title) %>

@@ -1,11 +1,16 @@
-<%# Per-control implementation statements table for SSP show page (#393).
-    Mirrors the SAP _objectives_table pattern from #390/#394.
+<%# Per-control implementation statements for the SSP show page (#393, #1100).
+
+    THE primary authoring surface for a control. It renders in the VIEW, under
+    the control language it answers — it used to render at the bottom of the
+    edit form, below all nine editable fields, which is what made it unfindable.
+
     Locals:
       control      - SspControl instance (must have ssp_control_statements loaded)
       ssp_document - SspDocument instance (for routing)
 %>
 <%
   statements = control.ssp_control_statements.sort_by { |s| s.row_order || 0 }
+  answered   = statements.count { |s| s.implementation_prose.present? }
 %>
 
 <% if statements.any? %>
@@ -17,6 +22,13 @@
           (<%= pluralize(statements.size, "statement") %>)
         </span>
       </div>
+      <%# How much of this control is actually answered. The table showed a
+          statement count and nothing about completion, so a control with 22
+          parts and one answer looked identical to one that was finished. %>
+      <span class="sparc-status sparc-status--<%= answered.zero? ? 'neutral' : answered == statements.size ? 'success' : 'warning' %> sparc-fs-07"
+            title="Statements carrying implementation prose">
+        <%= answered %> of <%= statements.size %> answered
+      </span>
     </div>
 
     <div class="table-responsive">
@@ -32,7 +44,8 @@
         <tbody>
           <% statements.each do |stmt| %>
             <% depth = [ stmt.parent_statement_id.present? ? 1 : 0, 3 ].min %>
-            <tr id="stmt-<%= stmt.id %>" data-statement-id="<%= stmt.statement_id %>">
+            <tr id="stmt-<%= stmt.id %>" data-statement-id="<%= stmt.statement_id %>"
+                data-controller="statement-edit">
               <td>
                 <code class="sparc-fs-078 sparc-stmt-d<%= depth %>">
                   <%= stmt.label.presence || stmt.statement_id %>
@@ -55,23 +68,70 @@
                 <% end %>
               </td>
               <td class="sparc-stmt-d<%= depth %>">
-                <%= stmt.implementation_prose.presence ||
-                    content_tag(:span, "(unset \u2014 click Edit to add implementation)",
-                                class: "text-body-tertiary fst-italic") %>
-                <% if stmt.remarks.present? %>
-                  <div class="text-body-secondary sparc-stmt-note">
-                    <%= stmt.remarks %>
-                  </div>
-                <% end %>
+                <%# ── Read view ── %>
+                <div data-statement-edit-target="read">
+                  <%= stmt.implementation_prose.presence ||
+                      content_tag(:span, "(unset — click Edit to add implementation)",
+                                  class: "text-body-tertiary fst-italic") %>
+                  <% if stmt.remarks.present? %>
+                    <div class="text-body-secondary sparc-stmt-note">
+                      <%= stmt.remarks %>
+                    </div>
+                  <% end %>
+                </div>
+
+                <%# ── Inline editor (#1100) ──
+                    Opening this used to be a full page navigation to
+                    `?statement_id=N`, which reloaded every control on the
+                    document to show one modal. %>
+                <div data-statement-edit-target="form" class="sparc-d-none">
+                  <%= form_with url: update_statement_ssp_document_path(ssp_document),
+                                method: :patch, local: true do |f| %>
+                    <%= hidden_field_tag :statement_id, stmt.id %>
+                    <label class="sparc-edit-label" for="stmt-prose-<%= stmt.id %>">
+                      Implementation
+                      <span class="sparc-edit-editable-hint">(editable)</span>
+                    </label>
+                    <%= text_area_tag "ssp_control_statement[implementation_prose]",
+                          stmt.implementation_prose,
+                          rows: 4, class: "form-control sparc-fs-0875",
+                          id: "stmt-prose-#{stmt.id}",
+                          data: { statement_edit_target: "prose" },
+                          placeholder: "Describe how this system implements #{stmt.label.presence || stmt.statement_id}..." %>
+
+                    <label class="sparc-edit-label sparc-mt-025" for="stmt-remarks-<%= stmt.id %>">
+                      Remarks
+                      <span class="sparc-edit-editable-hint">(editable)</span>
+                    </label>
+                    <%= text_area_tag "ssp_control_statement[remarks]", stmt.remarks,
+                          rows: 2, class: "form-control sparc-fs-0875",
+                          id: "stmt-remarks-#{stmt.id}" %>
+
+                    <div class="d-flex gap-1 sparc-mt-035">
+                      <%= f.submit "Save Statement",
+                            class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
+                      <button type="button"
+                              data-action="statement-edit#cancel"
+                              class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm">
+                        Cancel
+                      </button>
+                    </div>
+                  <% end %>
+                </div>
               </td>
               <td class="text-body-secondary sparc-fs-078">
                 <% role_ids = Array(stmt.responsible_roles_data).flat_map { |r| Array(r.is_a?(Hash) ? r["role-id"] : r) } %>
-                <%= role_ids.any? ? role_ids.join(", ") : "\u2014" %>
+                <%= role_ids.any? ? role_ids.join(", ") : "—" %>
               </td>
               <td>
-                <%= link_to "Edit",
-                            ssp_document_path(ssp_document, statement_id: stmt.id, anchor: "stmt-#{stmt.id}"),
-                            class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm sparc-fs-07 sparc-p-015-045" %>
+                <button type="button"
+                        data-action="statement-edit#toggle"
+                        data-statement-edit-target="toggle"
+                        aria-expanded="false"
+                        aria-controls="stmt-prose-<%= stmt.id %>"
+                        class="sparc-action sparc-action--primary sparc-action--outline sparc-action--sm sparc-fs-07 sparc-p-015-045">
+                  Edit
+                </button>
                 <% if %i[overridden_cdef overridden_leveraged].include?(stmt.source_kind) %>
                   <%= button_to "Reset",
                         reset_inherited_statement_ssp_document_path(ssp_document, statement_id: stmt.id),
