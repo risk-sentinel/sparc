@@ -122,6 +122,27 @@ class CatalogControl < ApplicationRecord
 
   def descendant_of?(other) = self.class.descendant?(control_id, other.to_s)
 
+  # EVERY descendant, not one level.
+  #
+  # The show page listed `direct_children` and reported "Sub-parts 3" for AC-01,
+  # which has nine: ac-1a, ac-1a.1, ac-1a.1.(a), ac-1a.1.(b), ac-1a.2, ac-1b,
+  # ac-1c, ac-1c.1, ac-1c.2. The family screen shows the whole tree, so the two
+  # screens disagreed and the deeper parts were reachable only by guessing that
+  # you could click into ac-1a. Owner review: "does not show all the sub-parts
+  # so I think a filter is broken ... this is not intuitive".
+  #
+  # Still not a prefix match: `ac-10` starts with `ac-1` and is a separate
+  # control. `descendant_of?` is what makes that distinction, and it is why this
+  # cannot be a single LIKE query.
+  def descendants
+    self.class.unscoped
+        .where(control_family_id: control_family_id)
+        .where("control_id LIKE ?", "#{control_id}%")
+        .reject { |c| c.id == id }
+        .select { |c| c.descendant_of?(control_id) }
+        .sort_by { |c| [ c.depth, c.control_id ] }
+  end
+
   # Direct children only — one level down. Deeper parts are reached by walking
   # into the child, which is what makes every sub-part addressable.
   def direct_children

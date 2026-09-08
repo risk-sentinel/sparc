@@ -19,9 +19,11 @@ class CatalogControlsController < ApplicationController
   def show
     @control_family  = @catalog_control.control_family
     @control_catalog = @control_family.control_catalog
-    # Direct children only. A prefix match would be wrong: `ac-10` starts with
-    # `ac-1` but is a separate control, not a sub-part of it.
-    @sub_parts = @catalog_control.direct_children
+    # The WHOLE sub-part tree, not one level. AC-01 reported "Sub-parts 3" while
+    # holding nine; the deeper ones were reachable only by clicking into ac-1a.
+    # A prefix match would still be wrong — `ac-10` starts with `ac-1` — which is
+    # why `descendants` filters on `descendant_of?`.
+    @sub_parts = @catalog_control.descendants
     @linked_resources = @catalog_control.back_matter_resources.order(:title)
   end
 

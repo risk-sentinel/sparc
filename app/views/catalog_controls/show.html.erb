@@ -45,6 +45,24 @@
         <div class="card mb-3">
           <div class="card-header fw-semibold">Statement</div>
           <div class="card-body">
+            <%# The control language itself, shown rather than hidden behind a
+                disclosure. The card is titled Statement; it should show the
+                statement. The full 37-part tree stays available below. %>
+            <% stmt_parts = @catalog_control.catalog_control_parts
+                                            .where(part_name: %w[statement item])
+                                            .order(:row_order) %>
+            <% if stmt_parts.any? %>
+              <% own = stmt_parts.first %>
+              <% stmt_parts.each do |sp| %>
+                <% next if sp.prose.blank? %>
+                <div class="sparc-mb-04 sparc-stmt-d<%= [ sp.part_id.count("."), 3 ].min %>">
+                  <% if sp.label.present? && sp != own %>
+                    <span class="sparc-monospace sparc-fw-600 sparc-color-bs-primary"><%= sp.label %></span>
+                  <% end %>
+                  <span class="sparc-lh-15"><%= sp.prose %></span>
+                </div>
+              <% end %>
+            <% end %>
             <%= render "control_catalogs/parts_tree", control: @catalog_control %>
           </div>
         </div>
@@ -70,10 +88,13 @@
             Sub-parts <span class="badge bg-secondary"><%= @sub_parts.size %></span>
           </div>
           <ul class="list-group list-group-flush">
+            <% own_depth = @catalog_control.depth %>
             <% @sub_parts.each do |part| %>
               <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
-                <%= link_to part.display_id, control_catalog_control_path(@control_catalog.url_id, part),
-                      class: "fw-semibold text-decoration-none" %>
+                <span class="sparc-stmt-d<%= [ part.depth - own_depth - 1, 3 ].min %>">
+                  <%= link_to part.display_id, control_catalog_control_path(@control_catalog.url_id, part),
+                        class: "fw-semibold text-decoration-none" %>
+                </span>
                 <span class="text-body-secondary small text-end"><%= part.title %></span>
               </li>
             <% end %>
