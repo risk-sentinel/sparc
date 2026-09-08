@@ -23,6 +23,9 @@ require "tempfile"
 #   - SR-3 Supply Chain Controls: blob SHA-based integrity verification
 #   - SA-15 Development Process: third-party content lifecycle
 class AwsLabsCdefImportService
+  # `nist_family_from_id` — the same derivation the JSON and XCCDF parsers use,
+  # so the three importers cannot drift on what a family is.
+  include CciNistResolvable
   OSCAL_VERSION = "oscal-version".freeze
 
   Result = Struct.new(
@@ -517,7 +520,10 @@ class AwsLabsCdefImportService
       # stored value is `iam.99999` while the source is `IAM.99999`. Comparing
       # raw never matched, and the Security Hub id stayed in the NIST column.
       if control.control_id.present? && control.control_id == ControlId.canonical(sec_hub_id)
-        control.update_columns(control_id: nil)
+        # The family went with it. An unresolved rule has no NIST family, and
+        # leaving the Security Hub id there put unmapped rules on the heatmap as
+        # though they were a control family. `source_control_id` keeps the rule.
+        control.update_columns(control_id: nil, control_family: nil)
       end
 
       direct_ids = sec_hub_converter.converter_entries
@@ -562,7 +568,17 @@ class AwsLabsCdefImportService
     # #912 — `control_id` now holds the NIST reference. `update_columns` skips
     # validations deliberately: a control invalid for an unrelated reason must
     # still receive its resolved mapping.
-    control.update_columns(control_id: ControlId.canonical(nist_ids.first))
+    #
+    # `control_family` MUST move with it. It is set at parse time from whatever
+    # `implemented-requirements[].control-id` held, which for an AWS CDEF is the
+    # Security Hub rule — so enriching `control_id` to `ca-7` while the family
+    # stayed "ELASTICBEANSTALK.1" left the two columns describing different
+    # vocabularies. The heatmap groups by family, so it drew one card per AWS
+    # RULE instead of one per NIST family, with a label no card could contain.
+    control.update_columns(
+      control_id:     ControlId.canonical(nist_ids.first),
+      control_family: nist_family_from_id(nist_ids.first)
+    )
 
     upsert_cdef_field!(control, "aws_security_hub_id", sec_hub_id, editable: false)
     upsert_cdef_field!(control, "nist_oscal_ids", nist_ids.join(","), editable: false)
