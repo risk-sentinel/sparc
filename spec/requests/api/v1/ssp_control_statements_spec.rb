@@ -118,6 +118,22 @@ RSpec.describe "Api::V1::SspControlStatements", type: :request do
       expect(sub_statement.implementation_prose).to be_blank
     end
 
+    # #1100 — the Responsible Roles column displayed a value no screen could set.
+    # OSCAL models responsible-roles as objects carrying a role-id, and
+    # OscalSspExportService writes this column STRAIGHT into the document, so a
+    # bare array of strings would emit schema-invalid OSCAL.
+    it "accepts responsible roles in OSCAL's shape" do
+      patch "/api/v1/ssp_control_statements/#{sub_statement.id}",
+            params: { ssp_control_statement: {
+              responsible_roles_data: [ { "role-id": "system-owner" }, { "role-id": "isso" } ]
+            } }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(sub_statement.reload.responsible_roles_data
+                          .map { |r| r["role-id"] }).to eq(%w[system-owner isso])
+      expect(JSON.parse(response.body).dig("data", "responsible_roles").size).to eq(2)
+    end
+
     it "records an audit event" do
       expect {
         patch "/api/v1/ssp_control_statements/#{sub_statement.id}",

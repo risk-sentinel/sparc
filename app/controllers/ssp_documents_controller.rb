@@ -83,6 +83,19 @@ class SspDocumentsController < ApplicationController
 
     # OSCAL entity panels (always load regardless of creation_method)
     @components      = @ssp_document.ssp_components.order(:title)
+
+    # #1100 — role ids already in use anywhere on this document, offered as a
+    # datalist on the statement editor so an author reuses an existing role
+    # rather than inventing a second spelling of it. Gathered once: the editor
+    # renders on every control card, and querying per card would be 150 queries.
+    @known_role_ids = (
+      @components.flat_map { |c| Array(c.responsible_roles_data) } +
+      SspControlStatement.joins(ssp_control: :ssp_document)
+                         .where(ssp_documents: { id: @ssp_document.id })
+                         .pluck(:responsible_roles_data).flatten
+    ).compact
+     .map { |r| r.is_a?(Hash) ? r["role-id"] : r }
+     .compact_blank.uniq.sort
     @users           = @ssp_document.ssp_users.order(:title)
     @info_types      = @ssp_document.ssp_information_types.order(:title)
     @leveraged_auths = @ssp_document.ssp_leveraged_authorizations.order(:title)
@@ -521,16 +534,33 @@ class SspDocumentsController < ApplicationController
                       .permit(*SspControlStatement::EDITABLE_ATTRIBUTES,
                               responsible_roles_data: [],
                               set_parameters_data:    [])
+                      .to_h
+
+    # #1100 — the inline editor sends role ids as one comma-separated string,
+    # because that is what the read view renders and what an author types.
+    #
+    # It is converted to OSCAL's shape HERE and not left as a bare array of
+    # strings: `OscalSspExportService` writes this column straight into the
+    # document's `responsible-roles`, where the schema requires objects carrying
+    # a `role-id`. The pre-existing `responsible_roles_data: []` permit above
+    # would happily have stored `["isso"]` and produced schema-invalid OSCAL on
+    # the next export — nothing had ever sent it, because no form offered the
+    # field.
+    if params[:ssp_control_statement].key?(:responsible_role_ids)
+      ids = params[:ssp_control_statement][:responsible_role_ids].to_s
+                                                                 .split(",").map(&:strip).reject(&:blank?)
+      permitted["responsible_roles_data"] = ids.map { |id| { "role-id" => id } }
+    end
 
     old_prose = statement.implementation_prose
     if statement.update(permitted)
       # #396 + #398: if prose changed and the statement was inherited,
       # flip the link to overridden so the next CDEF/leveraged refresh
       # leaves the user's edit alone.
-      if permitted[:implementation_prose] &&
-         permitted[:implementation_prose] != old_prose
+      new_prose = permitted["implementation_prose"]
+      if new_prose && new_prose != old_prose
         statement.inheritance_links.where(overridden: false).find_each do |link|
-          link.update!(overridden: true, overridden_prose: permitted[:implementation_prose])
+          link.update!(overridden: true, overridden_prose: new_prose)
         end
       end
       @ssp_document.regenerate_oscal_uuid!

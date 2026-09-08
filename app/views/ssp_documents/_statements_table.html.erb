@@ -44,6 +44,10 @@
         <tbody>
           <% statements.each do |stmt| %>
             <% depth = [ stmt.parent_statement_id.present? ? 1 : 0, 3 ].min %>
+            <%# Stored OSCAL-shaped ({"role-id" => "isso"}), but older rows and
+                imports may carry bare strings — read both, write the shape. %>
+            <% role_ids = Array(stmt.responsible_roles_data)
+                            .flat_map { |r| Array(r.is_a?(Hash) ? r["role-id"] : r) }.compact %>
             <tr id="stmt-<%= stmt.id %>" data-statement-id="<%= stmt.statement_id %>"
                 data-controller="statement-edit">
               <td>
@@ -107,6 +111,25 @@
                           rows: 2, class: "form-control sparc-fs-0875",
                           id: "stmt-remarks-#{stmt.id}" %>
 
+                    <%# #1100 — the Responsible Roles column rendered a value no
+                        screen could set. `update_statement` had permitted
+                        `responsible_roles_data` all along; no form ever offered
+                        it, so the column could only ever show what an OSCAL
+                        import had put there. %>
+                    <label class="sparc-edit-label sparc-mt-025" for="stmt-roles-<%= stmt.id %>">
+                      Responsible Roles
+                      <span class="sparc-edit-editable-hint">(editable)</span>
+                    </label>
+                    <%= text_field_tag "ssp_control_statement[responsible_role_ids]",
+                          role_ids.join(", "),
+                          class: "form-control sparc-fs-0875",
+                          id: "stmt-roles-#{stmt.id}",
+                          list: "ssp-known-role-ids",
+                          placeholder: "Comma-separated role ids, e.g. system-owner, isso" %>
+                    <div class="sparc-fs-078 sparc-color-tertiary sparc-mt-025">
+                      OSCAL <code>responsible-roles</code> for this statement. Leave blank for none.
+                    </div>
+
                     <div class="d-flex gap-1 sparc-mt-035">
                       <%= f.submit "Save Statement",
                             class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
@@ -120,7 +143,6 @@
                 </div>
               </td>
               <td class="text-body-secondary sparc-fs-078">
-                <% role_ids = Array(stmt.responsible_roles_data).flat_map { |r| Array(r.is_a?(Hash) ? r["role-id"] : r) } %>
                 <%= role_ids.any? ? role_ids.join(", ") : "—" %>
               </td>
               <td>

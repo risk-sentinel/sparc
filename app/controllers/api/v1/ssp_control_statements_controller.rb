@@ -85,7 +85,13 @@ class Api::V1::SspControlStatementsController < Api::V1::BaseController
   # belong to the catalog's part tree, and letting a client move them would
   # break the join `CdefToSspInheritanceService` and the exporter rely on.
   def statement_params
-    permit_strictly(:ssp_control_statement, :implementation_prose, :remarks)
+    # `responsible_roles_data` is permitted as a SHAPE, not a blob: OSCAL models
+    # responsible-roles as objects carrying a role-id, and the exporter writes
+    # this column straight into the document, so a bare array of strings would
+    # emit schema-invalid OSCAL.
+    permit_strictly(:ssp_control_statement, :implementation_prose, :remarks,
+      responsible_roles_data: [ :"role-id", { "party-uuids": [] } ]
+    )
   end
 
   def serialize(stmt, detailed: false)

@@ -135,6 +135,34 @@ def test_editing_one_statement_does_not_navigate(authed_page):
     assert_no_csp_violations(authed_page, during="statement inline edit")
 
 
+def test_responsible_roles_can_actually_be_edited(authed_page):
+    """The column displayed a value no screen could write.
+
+    Owner review: "Not sure why Responsible Roles is not able to be edited or
+    why it is there if I cannot edit it." `update_statement` had permitted
+    `responsible_roles_data` all along — no form ever offered the field.
+    """
+    _href, card = _open_control_with_statements(authed_page)
+
+    row = card.locator(STMT_ROW).first
+    assert row.locator("td").nth(2).is_visible(), "no Responsible Roles cell to speak of"
+
+    row.locator("[data-statement-edit-target='toggle']").click()
+    authed_page.wait_for_timeout(250)
+
+    roles = row.locator("input[name='ssp_control_statement[responsible_role_ids]']")
+    assert roles.count() == 1, (
+        "the statement editor offers no Responsible Roles input, so the column "
+        "it renders is still unwritable"
+    )
+    assert roles.is_visible() and roles.is_editable(), "the roles input is not editable"
+
+    # Wired to the page's single datalist rather than each row carrying its own
+    # (and colliding on the id).
+    assert roles.get_attribute("list") == "ssp-known-role-ids"
+    assert authed_page.locator("datalist#ssp-known-role-ids").count() == 1
+
+
 def test_cancelling_closes_the_editor_and_restores_the_read_view(authed_page):
     href, card = _open_control_with_statements(authed_page)
     row = card.locator(STMT_ROW).first
