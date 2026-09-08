@@ -184,13 +184,16 @@
         <% end %>
       </div>
       <% @components.first(5).each do |comp| %>
-        <%# #1088 — the type badge TRAILS the component name, the way the status
-            badges trail the description in System Characteristics above. It led
-            the row before, which put a vocabulary chip where the reader looks
-            for the component's identity. %>
-        <div class="d-flex align-items-center gap-1 sparc-mb-025">
-          <span class="sparc-fs-082 sparc-color-body"><%= truncate(comp.title, length: 30) %></span>
-          <span class="sparc-status sparc-status--<%= comp.component_type == 'this-system' ? 'purple' : 'info' %> sparc-fs-068 ms-auto"><%= comp.component_type %></span>
+        <%# #1088 — name on the first line, type badge on its OWN line beneath,
+            exactly as System Characteristics puts its description on one line
+            and the [Operational] badge on the next. Trailing the badge on the
+            same row was the first attempt and still did not match the card
+            beside it. %>
+        <div class="sparc-mb-04">
+          <div class="sparc-fs-082 sparc-color-body"><%= truncate(comp.title, length: 30) %></div>
+          <div class="d-flex flex-wrap gap-1 sparc-mt-025">
+            <span class="sparc-status sparc-status--<%= comp.component_type == 'this-system' ? 'purple' : 'info' %> sparc-fs-068"><%= comp.component_type %></span>
+          </div>
         </div>
       <% end %>
       <% if @components.count > 5 %>
@@ -262,6 +265,15 @@
      initial_family: params[:family],
      initial_filter: params[:status],
      legend_items: ApplicationHelper::SSP_STATUS_COLORS.first(4).to_a %>
+
+<%# #1100 — one datalist for the page. The statement editor renders on every
+    control card, so the list is emitted ONCE here and referenced by id rather
+    than duplicated (and its id collided) 150 times. %>
+<datalist id="ssp-known-role-ids">
+  <% Array(@known_role_ids).each do |rid| %>
+    <option value="<%= rid %>"></option>
+  <% end %>
+</datalist>
 
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
 <div id="controlsContainer">
