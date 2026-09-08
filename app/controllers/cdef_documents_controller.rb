@@ -90,12 +90,11 @@ class CdefDocumentsController < ApplicationController
                                              .find_by(id: params[:statement_id],
                                                       cdef_documents: { id: @cdef_document.id })
 
-    # Baseline gap analysis (when CDEF was created from a profile)
-    if @cdef_document.profile_document.present?
-      gap_service = CdefBaselineGapService.new(@cdef_document)
-      @gap_analysis = gap_service.analyze
-      @missing_controls = gap_service.missing_control_details if @gap_analysis&.dig(:missing)&.any?
-    end
+    # #1088 — the Baseline Coverage panel that the gap analysis fed was removed
+    # on owner review: "Baseline coverage? There is no need for this to even
+    # exist and was not asked for!" Nothing on this screen reads it any more, so
+    # it is no longer computed on every CDEF show. CdefBaselineGapService itself
+    # stays — cdef_bulk_apply_service and ResolvedCatalog both use it.
   end
 
   # #944 — a component definition had `new`/`create` but no `edit` and no

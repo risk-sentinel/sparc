@@ -40,6 +40,10 @@
             <span class="badge bg-warning text-dark" title="Read-only — imported from AWS Labs">
               AWS Labs (read-only)
             </span>
+            <% if @cdef_document.source_url.present? %>
+              <a href="<%= @cdef_document.source_url %>" target="_blank" rel="noopener"
+                 class="sparc-fs-078 sparc-color-tertiary">View source</a>
+            <% end %>
           <% end %>
           <%# #627/#628 — content-completeness is distinct from the parse status. %>
           <% unless @cdef_document.content_complete? %>
@@ -72,25 +76,12 @@
           meeting two differently-worded warnings about the same document. %>
       <%= render "shared/reconciliation_banner", document: @cdef_document %>
 
-      <% if @cdef_document.aws_labs_source? %>
-        <div class="alert alert-warning d-flex justify-content-between align-items-center mt-2 mb-0" role="alert">
-          <div>
-            <strong>Imported from AWS Labs.</strong>
-            This component definition is maintained upstream and is read-only here.
-            <% if @cdef_document.source_url.present? %>
-              <a href="<%= @cdef_document.source_url %>" target="_blank" rel="noopener" class="alert-link">View source</a>.
-            <% end %>
-            To make edits, create a copy.
-          </div>
-          <% if signed_in? %>
-            <%= button_to "Copy for editing",
-                  copy_cdef_document_path(@cdef_document),
-                  method: :post,
-                  class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm ms-3",
-                  form: { class: "mb-0" } %>
-          <% end %>
-        </div>
-      <% end %>
+      <%# #1088 — the "Imported from AWS Labs ... read-only here ... create a
+          copy" banner was removed on owner review. The header already carries
+          an "AWS Labs (read-only)" badge and the action row already carries a
+          Copy button, so the prose restated both above every page of content.
+          The source link was the one thing only the banner had — it moved up
+          beside the badge. %>
 
       <% if signed_in? %>
         <div class="sparc-d-none" id="doc-meta-edit" data-doc-meta-target="edit">
@@ -132,8 +123,12 @@
           <%= button_to "Create Editable Copy", copy_cdef_document_path(@cdef_document), method: :post,
                 class: "sparc-action sparc-action--positive sparc-action--solid", form: { data: { turbo_confirm: "Create an editable copy of this published component definition?" } } %>
         <% else %>
-          <%= button_to "Copy", copy_cdef_document_path(@cdef_document), method: :post,
-                class: "sparc-action sparc-action--info sparc-action--outline", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
+          <%# On an upstream document this IS the way to make edits, so it says
+              so. The removed banner used to carry that sentence. %>
+          <%= button_to @cdef_document.aws_labs_source? ? "Copy for editing" : "Copy",
+                copy_cdef_document_path(@cdef_document), method: :post,
+                class: "sparc-action sparc-action--info sparc-action--outline",
+                form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
         <% end %>
       <% end %>
       <%# #499 slice 5 — bulk-apply Converter (editable clones only). %>
@@ -220,60 +215,10 @@
      show_percentage: false,
      legend_items: %w[high medium low info].map { |s| [s.capitalize, cdef_severity_color(s)] } %>
 
-<%# ── BASELINE COVERAGE (if linked to profile) ──────────────────── %>
-<% if @gap_analysis.present? %>
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="fw-bold mb-3" id="baseline-coverage-heading">Baseline Coverage</h5>
-      <div class="d-flex align-items-center gap-3 mb-2">
-        <div class="progress flex-grow-1 sparc-h-12r">
-          <%# role="progressbar" takes no accessible name from its contents, so the
-              percentage rendered inside it is invisible to a screen reader — the
-              control announced as "progress bar" with no name and no value. Named
-              from the heading it sits under, and given the value attributes so the
-              figure is announced rather than only drawn (WCAG 2.1 A/AA,
-              axe rule `aria-progressbar-name`). %>
-          <div class="progress-bar sparc-bar-fill <%= @gap_analysis[:coverage_pct] == 100.0 ? 'bg-success' : @gap_analysis[:coverage_pct] >= 80 ? 'bg-warning' : 'bg-danger' %>"
-               data-controller="bar"
-               data-bar-pct-value="<%= @gap_analysis[:coverage_pct] %>"
-               role="progressbar"
-               aria-labelledby="baseline-coverage-heading"
-               aria-valuenow="<%= @gap_analysis[:coverage_pct] %>"
-               aria-valuemin="0"
-               aria-valuemax="100">
-            <%= @gap_analysis[:coverage_pct] %>%
-          </div>
-        </div>
-      </div>
-      <div class="d-flex gap-4 sparc-fs-085">
-        <span class="text-success fw-semibold"><%= @gap_analysis[:covered].size %> covered</span>
-        <% if @gap_analysis[:missing].any? %>
-          <span class="text-danger fw-semibold"><%= @gap_analysis[:missing].size %> missing</span>
-        <% end %>
-        <% if @gap_analysis[:extra].any? %>
-          <span class="text-body-secondary"><%= @gap_analysis[:extra].size %> extra (beyond baseline)</span>
-        <% end %>
-        <span class="text-body-secondary">Baseline: <%= @gap_analysis[:total_baseline] %> controls</span>
-      </div>
-
-      <% if @missing_controls&.any? %>
-        <details class="mt-2">
-          <summary class="text-danger sparc-cursor-pointer sparc-fs-085">
-            Show <%= @missing_controls.size %> missing control(s)
-          </summary>
-          <div class="mt-2 sparc-fs-082">
-            <% @missing_controls.each do |mc| %>
-              <div class="d-flex align-items-center gap-2 py-1 border-bottom">
-                <code class="fw-bold"><%= mc[:id] %></code>
-                <span class="text-body-secondary"><%= mc[:title] %></span>
-              </div>
-            <% end %>
-          </div>
-        </details>
-      <% end %>
-    </div>
-  </div>
-<% end %>
+<%# #1088 — the Baseline Coverage panel (progress bar, covered/missing/extra
+    counts, and a "show N missing controls" list) was removed on owner review:
+    "Baseline coverage? There is no need for this to even exist and was not
+    asked for!" `@gap_analysis` and `@missing_controls` went with it. %>
 
 <%# ── EMPTY-STATE: populate from profile (#628) ───────────────────── %>
 <% if !@cdef_document.cdef_controls.exists? && @cdef_document.editable? %>
