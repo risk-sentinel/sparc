@@ -355,6 +355,16 @@ class CdefDocumentsController < ApplicationController
     requested_boundary = params.dig(:cdef_document, :authorization_boundary_id).presence ||
                          params[:authorization_boundary_id]
 
+    # #980 — instance-wide crosses organization boundaries by definition: it
+    # publishes this CDEF to every organization on the instance, including ones
+    # the requester is not a member of. That is instance authority, so it is
+    # admin-only, and refused here rather than in the service so the service
+    # stays usable from a console and from the seeds.
+    if requested_scope.to_s == "instance" && !current_user&.admin?
+      flash[:error] = "Only an instance administrator can make a component definition available instance-wide."
+      return redirect_to cdef_document_path(@cdef_document)
+    end
+
     CdefScopeService.apply(@cdef_document,
       scope: requested_scope,
       authorization_boundary_id: requested_boundary,

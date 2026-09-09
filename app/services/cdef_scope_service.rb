@@ -25,7 +25,21 @@ class CdefScopeService
   METADATA_KEY = "authorization_boundary_id"
 
   class << self
-    # scope: "global" | "boundary"
+    # scope: "instance" | "global" | "boundary"
+    #
+    # #980 — the three tiers the CDEF model always described and only ever
+    # offered two of:
+    #
+    #   boundary  globally_available: false + boundary_cdef_documents rows
+    #   global    globally_available: true  + organization_id: <the org>
+    #   instance  globally_available: true  + organization_id: NULL
+    #
+    # A NULL organization on an available CDEF means "belongs to no one
+    # organization", which is exactly instance-wide. No new column: the encoding
+    # was already expressible and `globally_available_in` simply never matched it,
+    # so an instance-wide CDEF would have been invisible to every organization
+    # rather than visible to all of them.
+    #
     # Returns the CDEF. Raises ArgumentError on an unusable combination, so a
     # caller cannot half-apply a scope.
     def apply(cdef, scope:, authorization_boundary_id: nil, organization_id: nil)
@@ -41,6 +55,7 @@ class CdefScopeService
       end
 
       case scope.to_s
+      when "instance" then apply_instance(cdef)
       when "global"   then apply_global(cdef, organization_id: organization_id)
       when "boundary" then apply_boundary(cdef, authorization_boundary_id: authorization_boundary_id)
       else raise ArgumentError, "Unknown CDEF scope: #{scope.inspect}"
@@ -53,6 +68,20 @@ class CdefScopeService
     end
 
     private
+
+    # Instance-wide: available to EVERY organization on this instance. The
+    # organization is cleared rather than kept, because a CDEF owned by one
+    # organization and readable by all is a different (and unmodelled) thing —
+    # leaving it set would make the tier indistinguishable from `global` for the
+    # owning org and inconsistent for everyone else.
+    def apply_instance(cdef)
+      ActiveRecord::Base.transaction do
+        unlink_previous_boundary(cdef)
+        cdef.update!(globally_available: true, organization_id: nil)
+        write_metadata_boundary(cdef, nil)
+      end
+      cdef
+    end
 
     def apply_global(cdef, organization_id:)
       ActiveRecord::Base.transaction do

@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 // <script> in _scope_picker — CSP / Turbo-nonce safe (#528). The markup already
 // declared the action + radio targets; this supplies the missing controller.
 export default class CdefScopeController extends Controller {
-  static targets = ["boundaryRadio", "globalRadio", "wrapper"]
+  static targets = ["boundaryRadio", "globalRadio", "instanceRadio", "wrapper"]
 
   connect() {
     this.toggle()
@@ -25,8 +25,16 @@ export default class CdefScopeController extends Controller {
   // done, so the fade is gone rather than tuned.
   toggle() {
     if (!this.hasWrapperTarget) return
-    const disabled = this.hasGlobalRadioTarget && this.globalRadioTarget.checked
+    // #980 — the boundary picker is irrelevant to BOTH available tiers. Keying
+    // off the global radio alone left it enabled under instance-wide, offering
+    // a boundary the service ignores.
+    const disabled = this.#checked("globalRadio") || this.#checked("instanceRadio")
     const picker = this.wrapperTarget.querySelector("select")
     if (picker) picker.disabled = disabled
+  }
+
+  #checked(name) {
+    const cap = `${name[0].toUpperCase()}${name.slice(1)}`
+    return this[`has${cap}Target`] && this[`${name}Target`].checked
   }
 }

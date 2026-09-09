@@ -72,9 +72,29 @@ class CdefDocument < ApplicationRecord
   # Scope: CDEFs visible to a given organization for SSP composition.
   # Returns globally_available CDEFs in that org. (Boundary-specific CDEFs
   # are reached via the boundary's `boundaries.cdef_documents` association.)
+  #
+  # #980 — INCLUDING the instance-wide tier, which is `globally_available` with
+  # NO organization. Without the NULL in this IN list an instance-wide CDEF is
+  # visible to nobody rather than to everybody, which is the exact inversion of
+  # what the tier means.
   scope :globally_available_in, ->(org) {
-    where(globally_available: true, organization_id: org&.id)
+    where(globally_available: true, organization_id: [ org&.id, nil ].uniq)
   }
+
+  # Just the instance-wide tier — no owning organization.
+  scope :instance_wide, -> { where(globally_available: true, organization_id: nil) }
+
+  # #980 — which of the three tiers this CDEF is on. One place to ask, so a
+  # screen cannot invent a fourth answer from the two columns.
+  def scope_tier
+    return :boundary unless globally_available?
+
+    organization_id.nil? ? :instance : :organization
+  end
+
+  def instance_wide?
+    scope_tier == :instance
+  end
 
   # Issue #466 — rows ingested by AwsLabsCdefImportService are tagged in
   # import_metadata.source_type. Scope keeps queries readable.

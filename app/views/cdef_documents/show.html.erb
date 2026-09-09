@@ -501,13 +501,24 @@
     <div class="card-body">
       <h5 class="fw-bold mb-3">Scope</h5>
       <p class="text-body-secondary small">
-        <% if @cdef_document.globally_available? %>
-          Globally available — any boundary's SSP can compose this component definition.
-        <% elsif current_scope_boundary.present? %>
-          Boundary-specific —
-          <%= AuthorizationBoundary.find_by(id: current_scope_boundary)&.name || "boundary ##{current_scope_boundary}" %>.
+        <%# #980 — three tiers, named apart. "Globally available" covered both
+            available tiers, so an instance-wide CDEF and an organization-wide
+            one read identically on the screen that exists to tell them apart. %>
+        <% case @cdef_document.scope_tier %>
+        <% when :instance %>
+          Instance-wide — every organization on this instance can compose this
+          component definition.
+        <% when :organization %>
+          Organization-wide — any boundary's SSP within
+          <%= @cdef_document.organization&.name || "the owning organization" %>
+          can compose this component definition.
         <% else %>
-          This component definition is not scoped to a boundary and is not marked globally available.
+          <% if current_scope_boundary.present? %>
+            Boundary-specific —
+            <%= AuthorizationBoundary.find_by(id: current_scope_boundary)&.name || "boundary ##{current_scope_boundary}" %>.
+          <% else %>
+            This component definition is not scoped to a boundary and is not marked globally available.
+          <% end %>
         <% end %>
       </p>
 
@@ -516,7 +527,8 @@
         <%= render "cdef_documents/scope_picker",
               param_key: :cdef_document,
               selected:  current_scope_boundary,
-              scope:     @cdef_document.globally_available? ? "global" : "boundary" %>
+              scope:     @cdef_document.scope_tier == :instance ? "instance" :
+                         @cdef_document.scope_tier == :organization ? "global" : "boundary" %>
         <%# The picker submits under cdef_document[...]; this action reads the
             flat names, so mirror them across. %>
         <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm">Update Scope</button>
