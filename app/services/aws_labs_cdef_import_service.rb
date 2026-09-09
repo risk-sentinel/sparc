@@ -128,12 +128,43 @@ class AwsLabsCdefImportService
 
       eligible += 1
       begin
-        Tempfile.create([ "aws-labs-reparse-", ".json" ]) do |tmp|
-          tmp.binmode
-          tmp.write(candidate[:content])
-          tmp.flush
-          CdefJsonParserService.new(document, tmp.path).parse(validate: false)
+        # `CdefJsonParserService#parse` WRITES `import_metadata` — it records the
+        # parsed document's own OSCAL metadata there. `write_through_parser_inner`
+        # copes by merging the AWS provenance back on top afterwards; the first
+        # version of this method did not, and every re-parsed document lost
+        # `source_type`, `source_url` and `source_sha`. Measured:
+        # `CdefDocument.aws_labs_sourced.count` went from 230 to ZERO, which also
+        # breaks the dedupe the next refresh depends on — it would have imported
+        # all 230 again as new documents.
+        provenance = (document.import_metadata || {}).slice(
+          "source_type", "source_repo", "source_branch", "source_path", "source_url",
+          "source_sha", "source_commit_sha", "source_oscal_version",
+          "source_metadata_version", "superseded_at", "superseded_by_sha"
+        )
+
+        ActiveRecord::Base.transaction do
+          # `CdefJsonParserService` APPENDS. Every other caller hands it a
+          # freshly created document, so it has never had to replace anything —
+          # run against a populated one it doubles the controls. Measured before
+          # this line existed: the Elastic Beanstalk CDEF came back with 12
+          # controls where it has 6, half of them the old unattributed rows, and
+          # the export grew a fifth component to hold the orphans.
+          #
+          # Children only. The DOCUMENT is preserved, which is the whole point of
+          # re-parsing in place; `cdef_control_fields` and
+          # `cdef_control_statements` go with their controls via `dependent`.
+          document.cdef_controls.destroy_all
+
+          Tempfile.create([ "aws-labs-reparse-", ".json" ]) do |tmp|
+            tmp.binmode
+            tmp.write(candidate[:content])
+            tmp.flush
+            CdefJsonParserService.new(document, tmp.path).parse(validate: false)
+          end
         end
+
+        document.reload
+        document.update!(import_metadata: (document.import_metadata || {}).merge(provenance))
         enrich_with_nist_mappings!(document.reload)
         reparsed += 1
       rescue StandardError => e
