@@ -105,6 +105,50 @@ RSpec.describe "CDEF service-level control list", type: :request do
     end
   end
 
+  # #1088 — scoping the list to the service removed the check components as
+  # rows, and with them the control -> check linkage. Owner: "This is misleading
+  # in how the rule can be checked is it not?" It was: the card named a Security
+  # Hub id and a mapping source, and nothing said what actually verifies the
+  # control.
+  describe "the verifying check" do
+    before do
+      document.cdef_components.find_by(component_uuid: check_uuid)
+              .update!(native_control_ids: [ "ELASTICBEANSTALK.1" ],
+                       check_ids: [ "ELASTIC_BEANSTALK_MANAGED_UPDATES_ENABLED" ])
+      document.cdef_controls.where(component_uuid: service_uuid, control_id: "ca-7").first
+              .cdef_control_fields.create!(field_name: "aws_security_hub_id",
+                                           field_value: "ElasticBeanstalk.1", editable: false)
+    end
+
+    it "names the check and its AWS Config Rule on the control it verifies" do
+      get cdef_document_path(document)
+
+      expect(response.body).to include("verified by")
+      expect(response.body).to include("beanstalk-managed-updates")
+      expect(response.body).to include("ELASTIC_BEANSTALK_MANAGED_UPDATES_ENABLED")
+    end
+
+    # `native_control_ids` is stored upcased by the indexer while the control's
+    # field keeps AWS's own casing, so a raw comparison matches nothing and the
+    # row silently never renders.
+    it "matches despite the casing difference between the two stores" do
+      document.cdef_controls.where(component_uuid: service_uuid, control_id: "ca-7").first
+              .cdef_control_fields.find_by(field_name: "aws_security_hub_id")
+              .update!(field_value: "elasticbeanstalk.1")
+
+      get cdef_document_path(document)
+
+      expect(response.body).to include("ELASTIC_BEANSTALK_MANAGED_UPDATES_ENABLED")
+    end
+
+    it "says nothing for a control no check covers" do
+      get cdef_document_path(document)
+
+      si2 = response.body[/si-2.*?(?=class="control-card|\z)/m]
+      expect(si2).not_to include("verified by") if si2
+    end
+  end
+
   # Screen scoping must not reach the artifact: OSCAL fidelity requires every
   # component and its own implemented-requirements.
   it "still exports every component, including the checks" do

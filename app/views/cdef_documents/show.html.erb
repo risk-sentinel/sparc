@@ -370,6 +370,44 @@
             }
             display_fields = ordered_fields + extras
           %>
+          <%# #1088 — the checks that verify this control.
+              Owner review: "Looks like we didn't keep the sourcing (AWS Security
+              Hub + AWS Config) rules dropping AWS Config? This is misleading in
+              how the rule can be checked is it not?"
+
+              It was. The card named a Security Hub id and a mapping source and
+              stopped, so nothing said HOW the control is verified — which is an
+              AWS Config Rule, and on a two-hop mapping is part of how the NIST
+              id was derived in the first place. Listing the check components as
+              their own control rows used to imply it; scoping the list to the
+              service removed that without replacing it.
+
+              Named here per control rather than only in the components panel, so
+              the check sits beside the control it verifies. %>
+          <% control_checks = @checks_by_security_hub_id
+                                &.[](field_map["aws_security_hub_id"]&.field_value.to_s.upcase)
+                                .presence || [] %>
+          <% if control_checks.any? %>
+            <table class="sparc-field-table">
+              <tr>
+                <th scope="row" class="sparc-field-label">verified by</th>
+                <td class="sparc-field-value">
+                  <% control_checks.each do |check| %>
+                    <div class="d-flex align-items-baseline gap-2 flex-wrap">
+                      <code class="sparc-fs-078"><%= check.title %></code>
+                      <% Array(check.check_ids).each do |cid| %>
+                        <span class="sparc-status sparc-status--neutral sparc-fs-065"
+                              title="AWS Config Rule">
+                          <%= cid %>
+                        </span>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </td>
+              </tr>
+            </table>
+          <% end %>
+
           <% if display_fields.any? %>
             <table class="sparc-field-table">
               <% display_fields.each do |field| %>

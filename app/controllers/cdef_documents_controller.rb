@@ -96,6 +96,26 @@ class CdefDocumentsController < ApplicationController
     # asserts controls. A definition with no service component, or one imported
     # before #1088 stored the attribution, keeps every control it has rather than
     # rendering an empty list.
+    # #1088 — which automated check verifies each control.
+    #
+    # Scoping the list to the service (owner's call) removed the check
+    # components as rows, and took the control -> check linkage with them. The
+    # card was left saying "NIST mapping source: aws_direct" and naming a
+    # Security Hub id, with nothing about HOW the control is actually verified —
+    # misleading, because the answer is an AWS Config Rule, and for a two-hop
+    # mapping the Config Rule is part of the derivation itself.
+    #
+    # Keyed on the Security Hub id the check component declares, upcased on both
+    # sides: `native_control_ids` is stored `.upcase`d by CdefComponentIndexer
+    # while the control's `aws_security_hub_id` field keeps AWS's own casing
+    # ("ElasticBeanstalk.2"), so a raw comparison matches nothing.
+    @checks_by_security_hub_id = Hash.new { |h, k| h[k] = [] }
+    @cdef_document.cdef_components.where.not(component_type: "service").each do |check|
+      Array(check.native_control_ids).each do |sec_hub_id|
+        @checks_by_security_hub_id[sec_hub_id.to_s.upcase] << check
+      end
+    end
+
     @listed_controls =
       if @service_component_uuids.any? &&
          @controls.any? { |c| @service_component_uuids.include?(c.component_uuid) }
