@@ -99,7 +99,16 @@ class AwsLabsCdefImportService
   def reparse_existing!(only_missing_attribution: true)
     return { eligible: 0, reparsed: 0, errors: [] } unless SparcConfig.aws_labs_cdef_enabled?
 
+    # The tree listing is ETag-cached and returns nil on a 304 — "nothing changed
+    # upstream", which is exactly the state a re-parse runs in. `run` clears the
+    # ETag for the same reason when forced; without this the listing is nil and
+    # `build_candidates` raises on it.
+    Rails.cache.delete(
+      "aws_labs_cdef:etag:tree:#{SparcConfig.aws_labs_cdef_repo}:#{SparcConfig.aws_labs_cdef_branch}"
+    )
     tree_entries = @client.list_component_definition_files
+    return { eligible: 0, reparsed: 0, errors: [] } if tree_entries.blank?
+
     @fetch_errors = []
     candidates = build_candidates(tree_entries)
     by_url = candidates.index_by { |c| c[:html_url] }
