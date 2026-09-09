@@ -102,24 +102,97 @@ class SapGeneratorService
     controls_data.select { |c| id_set.include?(ControlId.canonical(c[:control_id])) }
   end
 
+  # #1114 — read the control language through the PROFILE, not around it.
+  #
+  # NIST's layer model is a chain — Catalog -> Profile -> SSP -> SAP — and it
+  # says a profile "tailors by modifying statements, parameters and assessment
+  # actions". So a plan that reads `CatalogControl` directly is reading
+  # UNTAILORED text: the baseline's parameter values are not applied, and the
+  # plan can describe a control the profile tailored out.
+  #
+  # Two concrete defects came from that, and both are fixed by reading the
+  # resolved catalog the profile already publishes:
+  #
+  #   * `guidance_data["assessment_objective"]` is the RAW blob. Measured on the
+  #     seeded catalog, ac-1 carries 1,966 characters of it containing
+  #     `{{ insert: param, ac-01_odp.01 }}` — so a generated plan told an
+  #     assessor to determine something with the organisation-defined value still
+  #     written as markup. It is blank on the seeded plan only because that plan
+  #     predates this path running.
+  #   * the objective arrived as ONE flattened string, which is the other half of
+  #     what the per-objective work (#1114) exists to replace.
+  #
+  # The resolved catalog has parameters already substituted, per part, and
+  # recursively (#942) — so correcting the READ PATH is what fixes the
+  # parameters. There is no second substitution step here, and there must not
+  # be: a copy of that logic would be a copy to drift.
+  #
+  # The direct-catalog read remains the FALLBACK for a plan generated with no
+  # profile in reach, and its text is run through the same resolver rather than
+  # emitted raw.
   def enrich_with_catalog_guidance(controls_data)
     control_ids = controls_data.map { |c| c[:control_id] }.compact
     return if control_ids.empty?
 
-    catalog_controls = CatalogControl.where(control_id: control_ids)
-                                     .index_by(&:control_id)
+    resolved = resolved_catalog_controls
+    catalog_controls = CatalogControl.where(control_id: control_ids).index_by(&:control_id)
 
     controls_data.each do |cd|
+      node = resolved[ControlId.canonical(cd[:control_id]).to_s.downcase]
       cat_ctrl = catalog_controls[cd[:control_id]]
-      next unless cat_ctrl
 
-      cd[:title] ||= cat_ctrl.title
+      cd[:title] ||= node && node["title"]
+      cd[:title] ||= cat_ctrl&.title
+
+      cd[:objective] ||= objective_from_resolved(node)
+      next if cd[:objective].present? || cat_ctrl.nil?
+
+      # Fallback: no profile, or a profile whose resolved catalog does not carry
+      # this control. Resolve the parameters rather than handing an assessor
+      # `{{ insert: param, ... }}`.
+      resolver = OscalParameterResolver.new(
+        cat_ctrl.effective_params_list.presence || cat_ctrl.params_list, {}
+      )
       guidance = cat_ctrl.guidance_data
-      if guidance.is_a?(Hash)
-        cd[:objective] ||= guidance["assessment_objective"] || guidance["description"]
-      end
-      cd[:objective] ||= cat_ctrl.description
+      raw = (guidance.is_a?(Hash) ? (guidance["assessment_objective"] || guidance["description"]) : nil)
+      raw = cat_ctrl.description if raw.blank?
+      cd[:objective] = resolver.resolve_text(raw) if raw.present?
     end
+  end
+
+  # The profile's published catalog, keyed by canonical control id. Empty when no
+  # profile is reachable — `gather_controls` already prefers the SSP, so the
+  # profile is found through it when the plan was generated from one.
+  def resolved_catalog_controls
+    profile = @profile || @ssp&.profile_document
+    json = profile&.resolved_catalog_json
+    return {} if json.blank?
+
+    catalog = json.is_a?(Hash) ? (json["catalog"] || json) : {}
+    nodes = Array(catalog["controls"]) +
+            Array(catalog["groups"]).flat_map { |g| Array(g["controls"]) }
+    nodes.index_by { |c| ControlId.canonical(c["id"]).to_s.downcase }
+  rescue StandardError
+    {}
+  end
+
+  # The control's assessment objectives, as PROSE for the legacy single-field
+  # `objective` column. The per-objective rows are created separately by
+  # `ControlObjectiveExtractorService`, which walks the same tree; this keeps the
+  # old column populated for callers and exports that still read it, with the
+  # parameters already substituted.
+  def objective_from_resolved(node)
+    return nil if node.blank?
+
+    prose = []
+    walk = lambda do |parts|
+      Array(parts).each do |part|
+        prose << part["prose"].to_s.strip if part["name"] == "assessment-objective" && part["prose"].present?
+        walk.call(part["parts"])
+      end
+    end
+    walk.call(node["parts"])
+    prose.presence&.join("\n")
   end
 
   def enrich_with_cdef_mappings(controls_data)
