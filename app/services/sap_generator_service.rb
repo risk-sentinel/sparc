@@ -46,7 +46,29 @@ class SapGeneratorService
     enrich_with_catalog_guidance(controls_data)
     enrich_with_cdef_mappings(controls_data)
 
-    create_sap_document(controls_data)
+    sap = create_sap_document(controls_data)
+
+    # #1114 — a generated plan is assessable per OBJECTIVE from the moment it
+    # exists.
+    #
+    # There were two creation paths and only one of them made objectives:
+    # `SapDocumentsController#rebuild_sap_controls` did, this did not. So a plan
+    # created here carried the flattened `objective` column and ZERO rows —
+    # exactly the defect the per-objective work exists to remove, reintroduced
+    # for every new document.
+    #
+    # Reuses the extractor rather than walking the tree again: it already
+    # resolves the catalog through profile -> ssp.profile, skips controls that
+    # have objectives, and flags a document whose catalog cannot be resolved.
+    # Non-fatal — a plan that generates but cannot yet resolve its objectives is
+    # a document to backfill, not a failed generation.
+    begin
+      ControlObjectiveExtractorService.new(sap).backfill!
+    rescue StandardError => e
+      Rails.logger.warn("[SapGeneratorService] objective backfill failed for ##{sap.id}: #{e.class}: #{e.message}")
+    end
+
+    sap
   end
 
   private

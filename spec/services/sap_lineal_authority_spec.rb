@@ -80,6 +80,27 @@ RSpec.describe "SAP reads through the profile (#1114)" do
     expect(control.objective.to_s).to include("annual")
   end
 
+  # #1114 — a generated plan is assessable per objective immediately.
+  #
+  # `SapDocumentsController#rebuild_sap_controls` created objectives and the
+  # generator did not, so a plan created through this service carried the
+  # flattened column and zero rows — the original defect, reintroduced for every
+  # new document.
+  it "creates the per-objective rows at generation time" do
+    control = sap.sap_controls.find_by(control_id: "ac-1")
+
+    expect(control.sap_control_objectives.count).to be > 0
+    expect(control.sap_control_objectives.pluck(:objective_id)).to include("ac-1_obj.a-1")
+  end
+
+  it "resolves the parameters in those rows too" do
+    control = sap.sap_controls.find_by(control_id: "ac-1")
+    prose = control.sap_control_objectives.map(&:prose).compact.join(" ")
+
+    expect(prose).not_to include("{{ insert")
+    expect(prose).to include("annual")
+  end
+
   # The FALLBACK path: a control the resolved catalog does not carry, so the
   # generator reads the raw catalog blob. There is nothing to tailor with, but it
   # must still not hand an assessor `{{ insert: param, ... }}` — the text is run
