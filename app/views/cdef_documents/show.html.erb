@@ -32,7 +32,7 @@
             <span class="sparc-version-badge">v<%= @cdef_document.cdef_version %></span>
           <% end %>
           <% if @cdef_document.aws_labs_source? %>
-            <span class="badge bg-warning text-dark" title="Read-only — imported from AWS Labs">
+            <span class="sparc-status sparc-status--warning" title="Read-only — imported from AWS Labs">
               AWS Labs (read-only)
             </span>
             <% if @cdef_document.source_url.present? %>
@@ -42,7 +42,7 @@
           <% end %>
           <%# #627/#628 — content-completeness is distinct from the parse status. %>
           <% unless @cdef_document.content_complete? %>
-            <span class="badge bg-warning text-dark"
+            <span class="sparc-status sparc-status--warning"
                   title="<%= @cdef_document.content_completeness_gaps.join('; ') %>">
               Incomplete — needs content
             </span>
@@ -52,7 +52,7 @@
               Distinct from "Incomplete": the content IS there, the component
               index that summarises it is not. %>
           <% if @cdef_document.component_index_degraded? %>
-            <span class="badge bg-warning text-dark"
+            <span class="sparc-status sparc-status--warning"
                   data-testid="cdef-index-degraded"
                   title="The component index failed during import on <%= @cdef_document.component_index_failed_at %>. Controls are intact; component-derived views may understate this document. Re-import to rebuild it.">
               Component index degraded
@@ -221,17 +221,40 @@
     Grouping is only applied when the controls actually carry attribution
     (#1088). A hand-authored CDEF, or one imported before the parser kept it,
     still renders the flat list it always did. %>
-<% grouped_controls = @controls.any? { |c| c.component_uuid.present? } %>
 <% component_titles = @cdef_document.cdef_components.to_h { |c| [ c.component_uuid, c ] } %>
+<%
+  # #1088 — SERVICE LEVEL ONLY. `@listed_controls` is decided in the controller,
+  # alongside `@total_controls`, so the header count and these rows come from one
+  # set and cannot disagree.
+  #
+  # Owner review: "AWS Elastic BeanStalk owns the service and software outright
+  # and the capabilities … are all required to achieve those controls on AWS
+  # Elastic Beanstalk the service. No reason to display anything other than the
+  # service level."
+  #
+  # The check components re-assert the service's own controls — the upstream
+  # document saying which Config Rule delivers which control, not three further
+  # sets of obligations. Listing them here turned 3 controls into 6 rows that
+  # differ only by which check names them. What a reader has to DO is the checks
+  # themselves, and those are named in "Components and applicability" above,
+  # against the controls they achieve.
+  #
+  # The EXPORT is unaffected and still emits every component with its own
+  # implemented-requirements — OSCAL fidelity (#1088 items 4 and 5) is a separate
+  # question from what this screen shows.
+  listed_controls  = @listed_controls || @controls
+  # Heading only when there is more than one group to tell apart.
+  grouped_controls = listed_controls.map(&:component_uuid).compact.uniq.size > 1
+%>
 <div id="controlsContainer">
   <% control_groups =
        if grouped_controls
-         @controls.group_by(&:component_uuid).sort_by { |uuid, _|
+         listed_controls.group_by(&:component_uuid).sort_by { |uuid, _|
            comp = component_titles[uuid]
            [ comp&.component_type == "service" ? 0 : 1, comp&.title.to_s ]
          }
        else
-         [ [ nil, @controls ] ]
+         [ [ nil, listed_controls ] ]
        end %>
   <% control_groups.each do |component_uuid, group_controls| %>
     <% comp = component_titles[component_uuid] %>
@@ -249,9 +272,13 @@
   <% group_controls.sort_by { |c| CdefControl.control_sort_key(c.control_id) }.each do |control| %>
     <%
       field_map    = control.cdef_control_fields.index_by(&:field_name)
-      sev_val      = control.severity.presence || "(Unknown)"
-      sev_color    = cdef_severity_color(sev_val)
-      sev_variant  = cdef_severity_variant(sev_val)
+      # #1088 — no synthetic "(Unknown)". An OSCAL component definition does not
+      # carry severity, so the fallback string was the value on every control of
+      # every AWS Labs document, and it reached the page twice: as the pill, and
+      # as `data-severity` on the card.
+      sev_val      = control.severity.presence
+      sev_color    = sev_val ? cdef_severity_color(sev_val) : nil
+      sev_variant  = sev_val ? cdef_severity_variant(sev_val) : nil
       # #911 — `"".split("-").first` is nil, so the unguarded `.upcase` that was
       # here raised NoMethodError and 500'd this whole page for any CDEF holding
       # an unmapped STIG rule — which, as of this commit, legitimately has no
@@ -262,9 +289,12 @@
       description  = field_map["description"]&.field_value.presence
       cci_refs     = field_map["cci_refs"]&.field_value.presence
     %>
-    <div class="control-card sparc-border-l-4 <%= accent_class(sev_color) %>"
+    <%# `data-severity` is emitted only when there IS one. It fed the severity
+        heatmap's client-side filter, which #1088 removed; leaving it behind put
+        the string "(Unknown)" in the markup of every card for no reader. %>
+    <div class="control-card sparc-border-l-4 <%= accent_class(sev_color) if sev_color %>"
          data-family="<%= family_code %>"
-         data-severity="<%= sev_val %>">
+         <% if sev_val.present? %>data-severity="<%= sev_val %>"<% end %>>
 
       <%# ── Card header ── %>
       <div class="d-flex justify-content-between align-items-start sparc-gap-1r">
@@ -281,9 +311,17 @@
                 Unmapped
               </span>
             <% end %>
-            <span class="sparc-status-pill sparc-status--<%= sev_variant %> sparc-tt-capitalize">
-              <%= sev_val %>
-            </span>
+            <%# #1088 — a severity badge only when there IS a severity. It read
+                "(Unknown)" on every control of every OSCAL-sourced CDEF, because
+                severity is an XCCDF/STIG field an OSCAL component definition does
+                not carry. Owner review: "What is '(Unknown)' as this just leads to
+                questions and meaningless without context." A chip that is always
+                the same word answers nothing and asks something. %>
+            <% if control.severity.present? %>
+              <span class="sparc-status-pill sparc-status--<%= sev_variant %> sparc-tt-capitalize">
+                <%= control.severity %>
+              </span>
+            <% end %>
             <% if control.stig_id.present? && control.stig_id != control.control_id && !control.unmapped_stig_rule? %>
               <span class="sparc-tag-outline fw-semibold text-body-secondary sparc-cdef-tint-soft sparc-accent--purple">
                 <%= control.stig_id %>

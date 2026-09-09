@@ -77,9 +77,33 @@ class CdefDocumentsController < ApplicationController
     @components = @cdef_document.cdef_components
                                 .order(Arel.sql("component_type = 'service' DESC"), :title)
 
+    # #1088 — the controls this definition asserts, counted the way the screen
+    # lists them.
+    #
+    # A check component re-asserts the service's own controls, so counting every
+    # row reported 6 for a definition that covers 3. The service-level set is
+    # decided HERE and handed to the view as both the list and the count, so the
+    # header can never contradict the rows beneath it — the same trap fixed on
+    # the SSP heatmap in this bundle.
+    @service_component_uuids = @cdef_document.cdef_components
+                                             .where(component_type: "service")
+                                             .pluck(:component_uuid).compact
     @total_controls = controls_scope.count
 
     @controls = controls_scope.order(:row_order).includes(:cdef_control_fields, :cdef_control_statements)
+
+    # Scope to the service when the document has one AND that service actually
+    # asserts controls. A definition with no service component, or one imported
+    # before #1088 stored the attribution, keeps every control it has rather than
+    # rendering an empty list.
+    @listed_controls =
+      if @service_component_uuids.any? &&
+         @controls.any? { |c| @service_component_uuids.include?(c.component_uuid) }
+        @controls.select { |c| @service_component_uuids.include?(c.component_uuid) }
+      else
+        @controls.to_a
+      end
+    @total_controls = @listed_controls.size
 
     # #393: deep-link statement editing via ?statement_id=N
     @editing_statement = CdefControlStatement.joins(cdef_control: :cdef_document)
