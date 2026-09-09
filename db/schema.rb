@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_08_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -340,10 +340,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_160000) do
   create_table "cdef_controls", force: :cascade do |t|
     t.string "cci_references"
     t.bigint "cdef_document_id", null: false
+    t.string "component_uuid"
     t.string "control_family"
     t.string "control_id"
     t.datetime "created_at", null: false
     t.string "group_id"
+    t.text "implementation_description"
+    t.string "implementation_source"
     t.integer "row_order", default: 0, null: false
     t.string "rule_id"
     t.string "severity"
@@ -353,7 +356,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_160000) do
     t.string "title"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["cdef_document_id", "component_uuid"], name: "index_cdef_controls_on_document_and_component"
     t.index ["cdef_document_id", "control_family"], name: "idx_cdef_controls_on_doc_family"
+    t.index ["cdef_document_id", "implementation_source"], name: "index_cdef_controls_on_document_and_source"
     t.index ["cdef_document_id", "row_order"], name: "idx_cdef_controls_on_doc_row"
     t.index ["cdef_document_id", "source_control_id"], name: "index_cdef_controls_on_document_and_source_control_id"
     t.index ["cdef_document_id", "stig_id"], name: "index_cdef_controls_on_document_and_stig_id"

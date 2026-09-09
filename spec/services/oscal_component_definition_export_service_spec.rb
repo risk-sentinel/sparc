@@ -83,7 +83,13 @@ RSpec.describe OscalComponentDefinitionExportService do
       cdef.update!(profile_document: profile, control_implementation_source: nil)
 
       expect(exported_source).not_to include("sparc.local")
-      expect(exported_source).not_to include(cdef.id.to_s)
+      # The defect #982 describes is the SYNTHESISED placeholder, which carries
+      # the database primary key into a delivered artifact. Assert that shape,
+      # not the bare digit: `cdef.id.to_s` is a single character, and a 32-char
+      # hex UUID contains any given digit almost always — so the old assertion
+      # failed or passed on which ids the run happened to allocate. Reproduced
+      # on unmodified code at seed 47082.
+      expect(exported_source).not_to match(%r{component-definitions/#{cdef.id}\b})
     end
 
     # #944 exists so a human can name a source SPARC has no record of. A form

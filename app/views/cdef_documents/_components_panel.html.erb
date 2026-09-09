@@ -37,9 +37,28 @@
         What this definition covers, and where it applies.
       </p>
 
+      <%# #1088 item 5 — the two KINDS of component, named apart.
+          Owner review: "I selected AWS Elastic Beanstalk and got 4 nested
+          CDEF's that are related but I cannot drill down to filter so I have NO
+          IDEA why it now exists."
+          They are not nested CDEFs and not related services. An AWS Labs
+          definition carries one `service` component — the service itself, with
+          its regions and partitions — plus one `software` component per AWS
+          Config Rule, which are the CHECKS that implement the service's
+          controls. Rendering them as peers in one undifferentiated grid is what
+          made three checks look like three more component definitions. %>
+      <% services = components.select { |c| c.component_type == "service" } %>
+      <% checks   = components - services %>
+
+      <% if services.any? && checks.any? %>
+        <h4 class="h6 text-body-secondary sparc-mt-025">
+          Service<%= "s" if services.size > 1 %>
+        </h4>
+      <% end %>
+
       <div class="sparc-card-grid">
-        <% components.each do |component| %>
-          <article class="sparc-item-card">
+        <% (services.presence || components).each do |component| %>
+          <article class="sparc-item-card" data-component-uuid="<%= component.component_uuid %>">
             <div class="sparc-item-card__head">
               <h4 class="sparc-item-card__title"><%= component.title %></h4>
               <span class="badge bg-secondary"><%= component.component_type %></span>
@@ -146,6 +165,35 @@
           </article>
         <% end %>
       </div>
+
+      <%# The checks, named as checks. Each one implements controls the service
+          above asserts — it is not another component definition to choose
+          between, which is exactly how the flat grid read. %>
+      <% if services.any? && checks.any? %>
+        <h4 class="h6 text-body-secondary sparc-mt-1r">
+          Checks that implement these controls
+          <span class="fw-normal">(<%= checks.size %>)</span>
+        </h4>
+        <p class="small text-body-secondary">
+          Automated rules the provider ships for this service. They assert the
+          same controls the service does; they are not separate component
+          definitions.
+        </p>
+        <ul class="list-unstyled sparc-mb-0">
+          <% checks.each do |check| %>
+            <li class="d-flex align-items-baseline gap-2 py-1 border-bottom"
+                data-component-uuid="<%= check.component_uuid %>">
+              <code class="sparc-fs-078"><%= check.title %></code>
+              <span class="badge bg-secondary sparc-fs-065"><%= check.component_type %></span>
+              <% if check.native_control_ids.any? %>
+                <span class="small text-body-secondary">
+                  <%= check.native_control_ids.join(", ") %>
+                </span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
     </div>
   </div>
 <% end %>
