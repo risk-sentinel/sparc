@@ -282,7 +282,11 @@ class OscalResolvedProfileCatalogService
   # (examine / interview / test), and carrying the objectives while dropping how
   # they are assessed would repeat the same omission one level down.
   def assessment_part_tree(catalog_control, resolver)
-    part_tree(catalog_control, resolver, %w[assessment-objective assessment-method])
+    # `assessment-objects` is the child of a method carrying WHAT to examine —
+    # the policies, plans, mechanisms and personnel that are the evidence. Without
+    # it a method says "EXAMINE" and never says what (#1114).
+    part_tree(catalog_control, resolver,
+              %w[assessment-objective assessment-method assessment-objects])
   end
 
   # Rebuild stored flat part rows into the nested shape OSCAL expects.

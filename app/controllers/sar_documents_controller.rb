@@ -144,6 +144,19 @@ class SarDocumentsController < ApplicationController
     @needs_reassociation = @sar_document.import_metadata&.dig(
       ControlObjectiveExtractorService::REASSOCIATION_FLAG
     ) == ControlObjectiveExtractorService::REASSOCIATION_VALUE
+
+    # #1114 — what the SSP CLAIMS, shown beside the assessment of it.
+    #
+    # Owner review: "I would expect to see the information from the SSP populated
+    # for the control's assessment context." An assessment result is a judgement
+    # about a claim, and the claim was nowhere on the page.
+    #
+    # Read LIVE from the linked SSP, never copied. `enrich_existing_controls_*`
+    # already copies a few SSP fields into `sar_control_fields` — which is why
+    # `ssp_status` sits on a SAR control as a snapshot that silently goes stale
+    # the moment the SSP is edited. That is the dual-store trap #1113 was about;
+    # a second copy of the same claim is worse than none. One query for the page.
+    @ssp_context_by_control = build_ssp_context(@controls)
   end
 
   def update
@@ -505,6 +518,41 @@ class SarDocumentsController < ApplicationController
   end
 
   private
+
+  # control_id (downcased) => { status:, responsible:, statements: [{label:, prose:}] }
+  #
+  # The statements are the point. Since #1100 an SSP answers a control PER
+  # addressable part — at-1 carries ten — and those individual claims are what an
+  # assessor assesses. Summarising them back into one blob here would undo that
+  # work on the screen that needs it most.
+  def build_ssp_context(controls)
+    ssp = @sar_document.ssp_document
+    return {} if ssp.nil? || controls.blank?
+
+    ids = controls.map { |c| c.control_id.to_s.strip.downcase }.reject(&:blank?).uniq
+    return {} if ids.empty?
+
+    ssp.ssp_controls
+       .includes(:ssp_control_fields, :ssp_control_statements)
+       .select { |c| ids.include?(c.control_id.to_s.strip.downcase) }
+       .to_h do |ssp_control|
+      fields = ssp_control.ssp_control_fields.index_by(&:field_name)
+      statements = ssp_control.ssp_control_statements
+                              .sort_by { |s| s.row_order || 0 }
+                              .filter_map do |s|
+        prose = s.implementation_prose.presence
+        next if prose.blank?
+
+        { label: s.label.presence || s.statement_id, prose: prose }
+      end
+
+      [ ssp_control.control_id.to_s.strip.downcase,
+        { status:      fields["status"]&.field_value.presence,
+          responsible: fields["responsible_entities"]&.field_value.presence,
+          summary:     fields["implementation_statement"]&.field_value.presence,
+          statements:  statements } ]
+    end
+  end
 
   def document_metadata_params
     # #929 — permitted by Api::V1 all along, but not here.

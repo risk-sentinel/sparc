@@ -42,7 +42,23 @@ class CatalogPartExtractorService
   # 1 part instead of 10. That is one half of why every SSP carried exactly one
   # implementation statement per control (#1100); the other half is that the
   # importer never stored the parts at all.
-  CATALOG_PART_NAMES = %w[statement item guidance assessment-objective assessment-method].freeze
+  # #1114 — `assessment-objects` is where 800-53A says WHAT to examine: the
+  # policies, plans, mechanisms and personnel that constitute the evidence for a
+  # method. Owner review of the assessment plan: "the assessment plan should
+  # already have backmatter links for those that have them and callout control
+  # parts that do not (e.g. under assessment depth would be back matter
+  # reference(s) link(s))". Those references are exactly this part.
+  #
+  #     assessment-method  ac-1_asm-examine     prose ""
+  #       assessment-objects  (NO id)           prose "Access control policy and
+  #                                                    procedures; system security
+  #                                                    plan; ..."
+  #
+  # It was dropped twice over: absent from this list, and — because NIST ships it
+  # with no `id` — skipped by the `part["id"].present?` guard even if listed. See
+  # `synthetic_part_id` for why an id is derived rather than the guard relaxed.
+  CATALOG_PART_NAMES = %w[statement item guidance assessment-objective assessment-method
+                          assessment-objects].freeze
 
   # Pure: returns parts of the requested types for a single control.
   def self.parts_for_control(catalog_json, control_id, part_names: DEFAULT_PART_NAMES)
@@ -76,24 +92,41 @@ class CatalogPartExtractorService
   # this node matched -- structural wrappers commonly nest the actual
   # statements/objectives one or two levels down.
   def self.walk_parts(parts, acc, part_names:, parent_part_id:)
-    parts.each do |part|
+    parts.each_with_index do |part, index|
       next_parent = parent_part_id
+      part_id = part["id"].presence || synthetic_part_id(part, parent_part_id, index)
 
-      if part_names.include?(part["name"]) && part["id"].present?
+      if part_names.include?(part["name"]) && part_id.present?
         label_prop = (part["props"] || []).find { |p| p["name"] == "label" }
         acc << {
-          part_id:        part["id"].to_s,
+          part_id:        part_id.to_s,
           part_name:      part["name"].to_s,
           label:          label_prop && label_prop["value"].presence,
           prose:          part["prose"].to_s.strip.presence,
           props_data:    (part["props"] || []),
           parent_part_id: parent_part_id
         }
-        next_parent = part["id"].to_s
+        next_parent = part_id.to_s
       end
 
       walk_parts(part["parts"] || [], acc, part_names: part_names, parent_part_id: next_parent)
     end
+  end
+
+  # NIST ships `assessment-objects` with no `id`, so it cannot be stored,
+  # referenced by an assessment, or linked to back-matter. The id is DERIVED from
+  # its parent and position rather than the guard being relaxed: a part row is
+  # addressable by construction everywhere else in this table, and a NULL id
+  # would break the parent/child join the whole tree depends on.
+  #
+  # Deterministic, so a re-import produces the same id and the upsert stays
+  # idempotent — a random id would create a duplicate row on every import.
+  # Follows NIST's own suffix convention (`ac-1_asm-examine` -> its objects).
+  def self.synthetic_part_id(part, parent_part_id, index)
+    return nil if parent_part_id.blank?
+    return nil unless part["name"].to_s == "assessment-objects"
+
+    "#{parent_part_id}_objects#{index.positive? ? "-#{index}" : ""}"
   end
 
   # Catalog-direct backfill. Walks every control in the catalog and

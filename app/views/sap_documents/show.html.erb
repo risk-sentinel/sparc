@@ -332,7 +332,9 @@
       <%# ── Card body: collapsed by default ── %>
       <%
         has_objectives = control.sap_control_objectives.any?
-        has_details = has_objectives || control.objective.present? || control.test_case.present? || field_map.any?
+        has_methods = ((@assessment_methods_by_control || {})[
+                        ControlId.canonical(control.control_id).to_s.downcase] || []).any?
+        has_details = has_objectives || has_methods || control.objective.present? || control.test_case.present? || field_map.any?
       %>
       <% if has_details %>
         <details class="card-details sparc-mt-035" <%= "open" if @editing_objective && @editing_objective.sap_control_id == control.id %>>
@@ -348,6 +350,43 @@
               <div class="sparc-statement-block">
                 <div class="sparc-statement-label">Assessment Objective</div>
                 <div class="sparc-field-value-padded sparc-p-0"><%= control.objective %></div>
+              </div>
+            <% end %>
+
+            <%# #1114 — assessment depth: the METHOD, and under it WHAT to
+                examine. 800-53A nests these `assessment-method` ->
+                `assessment-objects`; the objects part was dropped at import, so
+                a plan said EXAMINE and never said what.
+
+                A method with no objects is CALLED OUT rather than omitted —
+                owner: "callout control parts that do not [have them]". A missing
+                reference is the finding; a blank row hides it. %>
+            <% control_methods = (@assessment_methods_by_control || {})[
+                 ControlId.canonical(control.control_id).to_s.downcase] || [] %>
+            <% if control_methods.any? %>
+              <div class="sparc-statement-block sparc-statement-block--info sparc-accent--blue">
+                <div class="sparc-statement-label">Assessment Depth</div>
+                <table class="sparc-field-table sparc-mb-0">
+                  <% control_methods.each do |m| %>
+                    <tr>
+                      <th scope="row" class="sparc-field-label">
+                        <%= m[:method].presence || m[:label].presence || "method" %>
+                      </th>
+                      <td class="sparc-field-value">
+                        <% if m[:objects].any? %>
+                          <% m[:objects].each do |obj| %>
+                            <div class="sparc-mb-025"><%= obj %></div>
+                          <% end %>
+                        <% else %>
+                          <span class="sparc-status sparc-status--warning sparc-fs-07"
+                                title="800-53A defines this method for the control but names no assessment objects">
+                            No assessment objects defined
+                          </span>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </table>
               </div>
             <% end %>
 
