@@ -77,6 +77,64 @@ class AwsLabsCdefImportService
     @fetch_errors = []
   end
 
+  # #1088 — re-parse upstream content that is ALREADY imported, in place.
+  #
+  # `run` skips a document whose `source_sha` matches upstream, which is right:
+  # the content has not changed. But #1088 changed how SPARC READS that content
+  # — the parser now keeps `component_uuid` and `implementation_source`, two
+  # levels of the OSCAL tree it used to discard — and neither is reconstructable
+  # from the database (`native_control_ids` is `.uniq.sort`, so per-component
+  # counts are gone, and the source was never stored at all). Re-parsing from
+  # upstream is the only honest recovery.
+  #
+  # It must NOT go through `import_one`. That path is built for content that
+  # genuinely changed upstream: it supersedes the old document and creates a new
+  # one, preserving version history. Driving it from a cleared `source_sha`
+  # DUPLICATES the whole corpus — measured, 230 documents became 460 — and
+  # leaves every SSP and boundary link pointing at the superseded copy.
+  #
+  # So this parses onto the EXISTING record. Same document id, same links, same
+  # slug; only the children are rebuilt, which is what `CdefJsonParserService`
+  # does anyway.
+  def reparse_existing!(only_missing_attribution: true)
+    return { eligible: 0, reparsed: 0, errors: [] } unless SparcConfig.aws_labs_cdef_enabled?
+
+    tree_entries = @client.list_component_definition_files
+    @fetch_errors = []
+    candidates = build_candidates(tree_entries)
+    by_url = candidates.index_by { |c| c[:html_url] }
+
+    scope = CdefDocument.aws_labs_sourced
+    reparsed = 0
+    errors = []
+    eligible = 0
+
+    scope.find_each do |document|
+      candidate = by_url[(document.import_metadata || {})["source_url"]]
+      next if candidate.nil?
+      if only_missing_attribution &&
+         document.cdef_controls.where.not(component_uuid: [ nil, "" ]).exists?
+        next
+      end
+
+      eligible += 1
+      begin
+        Tempfile.create([ "aws-labs-reparse-", ".json" ]) do |tmp|
+          tmp.binmode
+          tmp.write(candidate[:content])
+          tmp.flush
+          CdefJsonParserService.new(document, tmp.path).parse(validate: false)
+        end
+        enrich_with_nist_mappings!(document.reload)
+        reparsed += 1
+      rescue StandardError => e
+        errors << { path: candidate[:path], error: "#{e.class}: #{e.message}" }
+      end
+    end
+
+    { eligible: eligible, reparsed: reparsed, errors: errors }
+  end
+
   def run(force: false)
     @run_started_at = Time.current
     unless SparcConfig.aws_labs_cdef_enabled?
