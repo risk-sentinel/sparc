@@ -153,6 +153,19 @@ RSpec.describe "CDEF component attribution and control-implementation sources" d
                            22222222-2222-4222-8222-222222222222])
     end
 
+    # OSCAL requires a v4-shaped uuid. A source that supplies something else must
+    # not make the export schema-invalid — regression for the defect this change
+    # introduced and `cdef_json_parser_index_savepoint_968_spec` caught.
+    it "derives a valid uuid when the source component's is not one" do
+      document.cdef_controls.update_all(component_uuid: "not-a-uuid")
+      document.cdef_components.first.update!(component_uuid: "not-a-uuid")
+
+      emitted = exported.map { |c| c["uuid"] }
+      pattern = /\A[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[45][0-9A-Fa-f]{3}-[89ABab][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}\z/
+      expect(emitted).to all(match(pattern))
+      expect(emitted).not_to include("not-a-uuid")
+    end
+
     it "round-trips: what comes out re-imports to the same attribution" do
       round_trip = create(:cdef_document)
       parse_into(round_trip,

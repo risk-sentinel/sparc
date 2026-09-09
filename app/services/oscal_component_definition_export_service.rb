@@ -120,7 +120,7 @@ class OscalComponentDefinitionExportService
     exportable = drop_unmapped(controls)
 
     component = {
-      "uuid"        => uuid,
+      "uuid"        => oscal_component_uuid(uuid),
       "type"        => indexed_component&.component_type.presence || "software",
       "title"       => indexed_component&.title.presence || @document.name,
       "description" => indexed_component&.description.presence ||
@@ -133,6 +133,25 @@ class OscalComponentDefinitionExportService
     impls = build_control_implementations(exportable)
     component["control-implementations"] = impls if impls.any?
     component
+  end
+
+  # OSCAL requires a v4-shaped uuid. A component uuid carried in from an
+  # upstream document is preserved — that is the round-trip fidelity #1088 is
+  # for, and the AWS corpus supplies real ones — but a source that supplies
+  # something else must not make the export schema-invalid. Caught by
+  # `cdef_json_parser_index_savepoint_968_spec`, whose fixture uuid ends
+  # "00000000dupe": not hex, so not a uuid, and passing it through produced
+  # `/component-definition/components/0/uuid: does not match pattern`.
+  #
+  # The fallback is DERIVED from the document uuid and the source's own string,
+  # so it is stable across exports and distinct per component rather than a
+  # random value that changes every time.
+  OSCAL_UUID = /\A[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[45][0-9A-Fa-f]{3}-[89ABab][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}\z/
+
+  def oscal_component_uuid(uuid)
+    return uuid if OSCAL_UUID.match?(uuid.to_s)
+
+    OscalUuidService.derived(@document.uuid, "cdef-component-#{uuid}")
   end
 
   # #1088 item 4 — ONE control-implementation PER SOURCE.

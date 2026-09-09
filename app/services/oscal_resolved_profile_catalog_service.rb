@@ -256,8 +256,44 @@ class OscalResolvedProfileCatalogService
   # Returns [] when the catalog has no stored parts, so the caller can fall back
   # to the flattened prose rather than emit a control with no statement at all.
   def statement_part_tree(catalog_control, resolver)
+    part_tree(catalog_control, resolver, %w[statement item])
+  end
+
+  # #1114 — the 800-53A assessment objectives, same shape, different part names.
+  #
+  # These were DROPPED from the resolved catalog entirely. `build_control_parts`
+  # emitted `statement` and `guidance` and nothing else, so a resolved profile
+  # said the control had no assessment objectives at all — and everything
+  # downstream reads the resolved catalog, not the catalog table:
+  #
+  #   catalog_control_parts (ac-1)        24 assessment-objective parts (#1113)
+  #     -> resolved_catalog_json          parts = {statement, guidance}
+  #     -> ControlObjectiveExtractorService  finds 0
+  #     -> SapControlObjective rows          0
+  #     -> sap_generator falls back to `guidance["assessment_objective"]`, ONE
+  #        flattened string
+  #
+  # Measured on the seeded estate: the assessment plan carried 288 controls and
+  # ZERO objectives, against 24 objective parts for ac-1 alone. Owner: "all
+  # assessment objectives are forced into a single objective but there are
+  # multiple objectives that need to be individually checked."
+  #
+  # `assessment-method` comes with them: an objective is assessed BY a method
+  # (examine / interview / test), and carrying the objectives while dropping how
+  # they are assessed would repeat the same omission one level down.
+  def assessment_part_tree(catalog_control, resolver)
+    part_tree(catalog_control, resolver, %w[assessment-objective assessment-method])
+  end
+
+  # Rebuild stored flat part rows into the nested shape OSCAL expects.
+  #
+  # NIST's trees have CONTAINER nodes with no prose (`ac-1_obj`, `ac-1_obj.a`)
+  # above the leaves that carry it (`ac-1_obj.a-1`). They are kept: they are the
+  # addressable ids an assessment references, and dropping them would flatten
+  # exactly what this exists to preserve.
+  def part_tree(catalog_control, resolver, part_names)
     rows = catalog_control.catalog_control_parts
-                          .where(part_name: %w[statement item])
+                          .where(part_name: part_names)
                           .order(:row_order)
                           .to_a
     return [] if rows.empty?
@@ -354,6 +390,9 @@ class OscalResolvedProfileCatalogService
 
       parts << guidance_part
     end
+
+    # #1114 — after statement and guidance, matching the order NIST ships them.
+    parts.concat(assessment_part_tree(catalog_control, resolver))
 
     parts
   end
