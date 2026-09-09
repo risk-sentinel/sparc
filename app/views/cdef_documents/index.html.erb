@@ -100,7 +100,7 @@
               url: cdef_document_path(doc),
               badges: [
                 cdef_source_badge(doc),
-                { text: "OSCAL #{doc.oscal_version.presence || "—"}", class: "badge bg-light text-dark" }
+                { text: "OSCAL #{doc.oscal_version.presence || "—"}", class: "sparc-status sparc-status--neutral" }
               ],
               subtitle: cdef_service_summary(summary),
               description: summary[:primary_description].presence || doc.description,

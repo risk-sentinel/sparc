@@ -23,7 +23,7 @@ module CdefBrowserHelper
   # org-provided definitions, because they carry different warranties.
   def cdef_source_badge(document)
     if document.try(:aws_labs_source?)
-      { text: "AWS", class: "badge bg-warning text-dark", title: "Upstream AWS Labs content" }
+      { text: "AWS", class: "sparc-status sparc-status--warning", title: "Upstream AWS Labs content" }
     elsif document.organization_id.present?
       { text: "Org", class: "badge bg-info", title: "Organization-provided" }
     elsif document.profile_document_id.present?
