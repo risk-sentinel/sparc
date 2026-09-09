@@ -8,17 +8,12 @@
 
 <% else %>
 <%
-  severity_total = @severity_counts.values.sum
-  high_count   = @severity_counts["high"].to_i
-  medium_count = @severity_counts["medium"].to_i
-  low_count    = @severity_counts["low"].to_i
-  info_count   = @severity_counts["info"].to_i
 
   type_colors = { "disa_stig" => "#e74c3c", "scap" => "#3498db", "cis" => "#f39c12", "custom" => "#95a5a6" }
   type_color  = type_colors[@cdef_document.cdef_type] || "#7f8c8d"
 %>
 
-<div data-controller="doc-meta heatmap-chip cdef-control"
+<div data-controller="doc-meta cdef-control"
      data-cdef-control-update-field-url-value="<%= update_field_cdef_document_path(@cdef_document) %>"
      data-cdef-control-create-url-value="<%= create_control_resource_cdef_document_path(@cdef_document) %>"
      data-cdef-control-unlink-url-value="<%= unlink_control_resource_cdef_document_path(@cdef_document) %>">
@@ -157,41 +152,16 @@
     </div>
   </div>
 
+  <%# #1088 — the severity chips and the severity progress bar that sat beside
+      this count went with the "Severity by Control Family" heatmap they
+      filtered. The chips dispatched `heatmap:chip` to `#heatmapSection`, so
+      without that section they would have rendered and silently done nothing.
+      Per-control severity is still on every control card, where it is real for
+      the XCCDF/STIG-sourced CDEFs that populate it. %>
   <div class="d-flex align-items-center gap-4 flex-wrap">
     <div class="text-center flex-shrink-0 sparc-minw-80px">
       <div class="sparc-score sparc-color-white"><%= @total_controls %></div>
       <div class="sparc-score-label">Total Controls</div>
-    </div>
-
-    <div class="sparc-divider-v"></div>
-
-    <div class="d-flex flex-wrap gap-2 sparc-flex-1">
-      <% [["high", high_count], ["medium", medium_count], ["low", low_count], ["info", info_count]].each do |sev, count| %>
-        <% next if count == 0 %>
-        <div class="summary-chip sparc-summary-chip sparc-border-l-3 <%= accent_class(cdef_severity_color(sev)) %>"
-             data-filter-value="<%= sev %>"
-             data-action="click->heatmap-chip#apply keydown.enter->heatmap-chip#apply keydown.space->heatmap-chip#apply"
-             data-heatmap-chip-filter-param="<%= sev %>"
-             role="button"
-             tabindex="0"
-             title="Click to filter: <%= sev %>"
-             >
-          <div class="sparc-chip-count"><%= count %></div>
-          <div class="sparc-chip-label sparc-tt-capitalize"><%= sev %></div>
-        </div>
-      <% end %>
-    </div>
-  </div>
-
-  <div class="mt-3">
-    <div class="sparc-progress-bar">
-      <% [["high", high_count], ["medium", medium_count], ["low", low_count], ["info", info_count]].each do |sev, count| %>
-        <% next if count == 0 %>
-        <div class="sparc-bar-fill sparc-accent-bg <%= accent_class(cdef_severity_color(sev)) %>"
-             data-controller="bar"
-             data-bar-pct-value="<%= (count * 100.0 / [severity_total, 1].max).round(3) %>"
-             title="<%= sev.capitalize %>: <%= count %>"></div>
-      <% end %>
     </div>
   </div>
 </div>
@@ -204,16 +174,12 @@
       document: @cdef_document,
       components: @components || [] %>
 
-<%# ── SEVERITY HEATMAP BY CONTROL FAMILY ─────────────────────────── %>
-<%= render "shared/heatmap",
-     heatmap_data: @heatmap_data,
-     heatmap_families: @heatmap_families,
-     heatmap_statuses: @heatmap_severities,
-     title: "Severity by Control Family",
-     variant_helper: :cdef_severity_variant,
-     filter_key: "severity",
-     show_percentage: false,
-     legend_items: %w[high medium low info].map { |s| [s.capitalize, cdef_severity_color(s)] } %>
+<%# #1088 — the "Severity by Control Family" heatmap was removed on owner
+    review. `severity` is an XCCDF/STIG concept: cdef_xccdf_parser_service
+    populates it, and the OSCAL JSON path has nothing to populate it FROM. It is
+    NULL on every control of every OSCAL-sourced CDEF — the whole AWS Labs
+    corpus — so the panel rendered one "(Unknown)" band per family and told the
+    reader nothing a component definition actually knows. %>
 
 <%# #1088 — the Baseline Coverage panel (progress bar, covered/missing/extra
     counts, and a "show N missing controls" list) was removed on owner review:

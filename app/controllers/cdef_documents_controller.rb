@@ -30,7 +30,6 @@ class CdefDocumentsController < ApplicationController
   # #738: CDEF is global (no boundary); mutations require cdef.write (instance-level). (AC-3)
   before_action :authorize_cdef_write!, only: %i[create update destroy update_field update_metadata copy create_from_profile source_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review update_scope]
 
-  SEVERITY_ORDER = %w[high medium low info].freeze
 
   def index
     @total_count = CdefDocument.count
@@ -78,10 +77,7 @@ class CdefDocumentsController < ApplicationController
     @components = @cdef_document.cdef_components
                                 .order(Arel.sql("component_type = 'service' DESC"), :title)
 
-    @severity_counts = controls_scope.group(:severity).count
-    @total_controls  = controls_scope.count
-
-    @heatmap_data, @heatmap_families, @heatmap_severities = build_severity_heatmap(controls_scope)
+    @total_controls = controls_scope.count
 
     @controls = controls_scope.order(:row_order).includes(:cdef_control_fields, :cdef_control_statements)
 
@@ -738,22 +734,8 @@ class CdefDocumentsController < ApplicationController
     redirect_to cdef_document_path(@cdef_document)
   end
 
-  def build_severity_heatmap(scope)
-    rows = scope.where.not(control_family: [ nil, "" ])
-                .group(:control_family, :severity).count
-
-    data = {}
-    rows.each do |(family, severity), count|
-      sev = severity.presence || "(Unknown)"
-      data[family] ||= {}
-      data[family][sev] = count
-    end
-
-    families = data.keys.sort
-    all_sevs = data.values.flat_map(&:keys).uniq
-    ordered  = SEVERITY_ORDER.select { |s| all_sevs.include?(s) }
-    ordered += (all_sevs - SEVERITY_ORDER).sort
-
-    [ data, families, ordered ]
-  end
+  # #1088 — `build_severity_heatmap` was removed with the panel it fed.
+  # `severity` is an XCCDF/STIG concept with nothing to populate it on the OSCAL
+  # JSON path, so for every AWS Labs CDEF it grouped NULL into one "(Unknown)"
+  # band per family.
 end
