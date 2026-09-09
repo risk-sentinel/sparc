@@ -207,8 +207,46 @@
 <% end %>
 
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
+<%# #1088 — grouped BY COMPONENT, because a flat list of them reads as
+    duplication. Owner review: "duplicating controls 2 ElasticBeanstalk.1, 2
+    ElasticBeanstalk.2, 2 ElasticBeanstalk.3".
+
+    They are not duplicates. On the Elastic Beanstalk definition the SERVICE
+    asserts all three controls and each AWS Config Rule re-asserts the one its
+    check covers — two different components making the same claim, which is what
+    the upstream document says. Rendered as one undifferentiated list the second
+    assertion had nothing to distinguish it from the first, so six rows for three
+    controls looked like a bug in SPARC rather than the structure of the source.
+
+    Grouping is only applied when the controls actually carry attribution
+    (#1088). A hand-authored CDEF, or one imported before the parser kept it,
+    still renders the flat list it always did. %>
+<% grouped_controls = @controls.any? { |c| c.component_uuid.present? } %>
+<% component_titles = @cdef_document.cdef_components.to_h { |c| [ c.component_uuid, c ] } %>
 <div id="controlsContainer">
-  <% @controls.sort_by { |c| CdefControl.control_sort_key(c.control_id) }.each do |control| %>
+  <% control_groups =
+       if grouped_controls
+         @controls.group_by(&:component_uuid).sort_by { |uuid, _|
+           comp = component_titles[uuid]
+           [ comp&.component_type == "service" ? 0 : 1, comp&.title.to_s ]
+         }
+       else
+         [ [ nil, @controls ] ]
+       end %>
+  <% control_groups.each do |component_uuid, group_controls| %>
+    <% comp = component_titles[component_uuid] %>
+    <% if grouped_controls %>
+      <div class="sparc-mt-1r sparc-mb-05 d-flex align-items-baseline gap-2 flex-wrap">
+        <h3 class="h6 sparc-mb-0"><%= comp&.title.presence || "Unattributed" %></h3>
+        <% if comp&.component_type.present? %>
+          <span class="badge bg-secondary sparc-fs-065"><%= comp.component_type %></span>
+        <% end %>
+        <span class="small text-body-secondary">
+          <%= pluralize(group_controls.size, "control") %>
+        </span>
+      </div>
+    <% end %>
+  <% group_controls.sort_by { |c| CdefControl.control_sort_key(c.control_id) }.each do |control| %>
     <%
       field_map    = control.cdef_control_fields.index_by(&:field_name)
       sev_val      = control.severity.presence || "(Unknown)"
@@ -412,6 +450,7 @@
 
     </div><%# end .control-card %>
   <% end %>
+  <% end %><%# end component group %>
 </div>
 
 <%# ── #393: CDEF statement edit modal (deep-linked via ?statement_id=N) ── %>

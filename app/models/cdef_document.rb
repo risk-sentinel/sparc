@@ -37,6 +37,44 @@ class CdefDocument < ApplicationRecord
               message:  { label:   "profile",
                           remedy:  "Choose the profile this component definition was authored against.",
                           options: "/api/v1/profile_documents" }
+  # #1088 — a component definition's baseline is declared by its CONTROLS, not
+  # by a single foreign key.
+  #
+  # `lineage_via :profile_document` demands exactly one profile, and asks for it
+  # on every AWS Labs document with a blocking "Baseline not set" banner. That is
+  # not how OSCAL models the relationship. `control-implementations[].source` is
+  # REQUIRED on every control-implementation and is documented as "a reference to
+  # an OSCAL catalog or profile" — and the property is an ARRAY, precisely so one
+  # component definition can implement controls drawn from several catalogs and
+  # several profiles at once. Owner, on exactly this: "a CDEF can apply to more
+  # than one boundary, thus more than one profile, and more than 1 catalog...
+  # IF AND ONLY IF supported by NIST's own documentation." It is.
+  #
+  # So the #911 guarantee is kept — controls must be traceable to a catalog —
+  # while the mechanism becomes the one the format actually uses. A document
+  # whose every control names its own source is traceable BY CONSTRUCTION, and
+  # has nothing to be prompted for. `profile_document` remains a perfectly good
+  # way to satisfy the same guarantee for documents authored against one profile,
+  # which is what the picker is for.
+  def lineage_issues
+    return [] if every_control_declares_its_source?
+
+    super
+  end
+
+  # The distinct catalogs and profiles this definition's controls are claimed
+  # against, in the order they first appear.
+  def declared_control_sources
+    cdef_controls.filter_map { |c| c.implementation_source.presence }.uniq
+  end
+
+  def every_control_declares_its_source?
+    controls = cdef_controls.to_a
+    return false if controls.empty?
+
+    controls.all? { |c| c.implementation_source.present? }
+  end
+
   include ControlMembership
   membership_within controls: :cdef_controls, baseline: :profile_document,
                     baseline_controls: :profile_controls,

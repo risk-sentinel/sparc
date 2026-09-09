@@ -16,18 +16,15 @@
 <% disclaimer = document.metadata_extra.is_a?(Hash) ? document.metadata_extra["remarks"].presence : nil %>
 <% links = document.metadata_extra.is_a?(Hash) ? Array(document.metadata_extra["links"]) : [] %>
 
-<%# The upstream disclaimer is rendered as an advisory rather than swallowed:
-    AWS labels this content experimental, and a user choosing a component for an
-    authorization package needs to see that before they rely on it. %>
-<% if disclaimer.present? %>
-  <div class="alert alert-warning mb-4" role="note">
-    <strong>Upstream notice</strong>
-    <details class="sparc-mt-035">
-      <summary class="sparc-cursor-pointer"><%= truncate(disclaimer, length: 160) %></summary>
-      <p class="small mb-0 sparc-mt-05 sparc-prewrap"><%= disclaimer %></p>
-    </details>
-  </div>
-<% end %>
+<%# #1088 — the "Upstream notice" banner was removed on owner review: "We do not
+    need the 'Upstream notice' banner."
+
+    It rendered `metadata_extra["remarks"]` — for the AWS corpus, the
+    "EXPERIMENTAL USE ONLY" disclaimer — as a yellow alert above the content of
+    every one of the 230 upstream documents. The provenance it was warning about
+    is already stated by the "AWS Labs (read-only)" badge in the header and by
+    the Provenance panel below, where the full remarks text now sits behind a
+    disclosure. It is not swallowed; it is no longer shouted on every page. %>
 
 <% if components.any? %>
   <div class="card mb-4">
@@ -201,7 +198,7 @@
 <%# Provenance. Which content this is, where it came from, and how stale it is —
     upstream AWS content, SPARC-curated and org-provided definitions carry very
     different warranties and must never be blurred together. %>
-<% if provenance.any? || links.any? %>
+<% if provenance.any? || links.any? || disclaimer.present? %>
   <div class="card mb-4">
     <div class="card-body">
       <h3 class="h5">Provenance</h3>
@@ -221,6 +218,19 @@
           <dd class="col-sm-9 sparc-break-all"><%= value %></dd>
         <% end %>
       </dl>
+
+      <%# #1088 — the upstream disclaimer lives HERE now, not in a yellow alert
+          above the page. AWS labels this content experimental and that must stay
+          reachable, but it belongs with the other provenance facts rather than
+          interrupting every read of every one of the 230 upstream documents. %>
+      <% if disclaimer.present? %>
+        <details class="sparc-mt-075">
+          <summary class="sparc-cursor-pointer small text-body-secondary">
+            Upstream notice from the publisher
+          </summary>
+          <p class="small mb-0 sparc-mt-05 sparc-prewrap"><%= disclaimer %></p>
+        </details>
+      <% end %>
 
       <% if links.any? %>
         <div class="sparc-mt-075">
