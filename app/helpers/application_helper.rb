@@ -279,6 +279,42 @@ module ApplicationHelper
     SSP_STATUS_VARIANTS[status] || "neutral"
   end
 
+  # #1088 — the OSCAL component-type vocabulary, mapped centrally.
+  #
+  # This was a two-way ternary in the view:
+  #
+  #     comp.component_type == 'this-system' ? 'purple' : 'info'
+  #
+  # which is what the issue means by "cannot be reasoned about or themed with
+  # the rest" — every other type→variant mapping in this file is a table, and
+  # this one was an inline conditional that collapsed nine OSCAL types into two
+  # colours. `validation` read as `info`, identical to `software`, on the very
+  # screen #998 added it to.
+  #
+  # `this-system` keeps PURPLE deliberately. Purple is a settled variant
+  # (`sparc-theme.css:815`, with its AA-verified dark pair at 824) and it is the
+  # right signal here: `this-system` is the component that IS the system, not a
+  # part of it, and that distinction is the one a reader most needs. #1088 called
+  # purple unsettled; that is true of #950's BUTTON schema and not of the badge
+  # palette, which is a separate, deliberately different vocabulary
+  # (`sparc-theme.css:3886`).
+  SSP_COMPONENT_TYPE_VARIANTS = {
+    "this-system"       => "purple",
+    "validation"        => "success",
+    "software"          => "info",
+    "hardware"          => "info",
+    "service"           => "info",
+    "policy"            => "neutral",
+    "process-procedure" => "neutral",
+    "plan"              => "neutral",
+    "guidance"          => "neutral",
+    "standard"          => "neutral"
+  }.freeze
+
+  def ssp_component_type_variant(component_type)
+    SSP_COMPONENT_TYPE_VARIANTS[component_type.to_s] || "neutral"
+  end
+
   def sar_status_variant(status, _count = 0)
     SAR_STATUS_VARIANTS[status] || "neutral"
   end
