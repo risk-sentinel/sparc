@@ -411,9 +411,14 @@ class SarJsonParserService
     sar_controls_by_id.each do |ctrl_id, ctrl|
       cat = catalog_controls[normalize_catalog_id(ctrl_id)]
       next unless cat
-      stmt = (cat.guidance_data || {}).dig("statement") || cat.description
-      next if stmt.blank?
-      ctrl.sar_control_fields.create!(field_name: "control_text", field_value: stmt)
+      # #1114 — `control_text` is NO LONGER COPIED from the catalog.
+      #
+      # It duplicated the catalog statement onto every control, as the UNTAILORED
+      # blob: it carried `{{ insert: param, ... }}` verbatim, so an assessor read
+      # markup where the organisation-defined value belongs. The screen now reads
+      # the tailored text from the profile's resolved catalog at render time,
+      # which is both correct and current.
+      next
     end
   # #968 — DELIBERATE swallow, and now a narrow one.
   #

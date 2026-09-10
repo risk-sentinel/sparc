@@ -5,16 +5,27 @@
   ctx_field_names = %w[control_status responsibility impact_statement control_text implementation]
 
   catalog_ctrl = @catalog_guidance[normalize_ctrl_id(control.control_id)]
-  catalog_stmt = (catalog_ctrl&.guidance_data || {})["statement"].presence
+  # #1114 — tailored text in EDIT mode too. This partial had its own copy of the
+  # raw-catalog read, so the parameter fix on the show view left edit mode still
+  # displaying `{{ insert: param, ... }}`. Owner: "going into edit mode removes
+  # some of the visibility."
+  catalog_stmt = (@resolved_statements || {})[control.control_id.to_s].presence ||
+                 (catalog_ctrl&.guidance_data || {})["statement"].presence
+  ssp_ctx = (@ssp_context_by_control || {})[control.control_id.to_s.strip.downcase]
 
+  # #1114 — the four SSP mirrors are gone.
+  #
+  # Control Status, Responsibility, Impact Statement and SSP Implementation
+  # were COPIES of the linked SSP, taken once by the enrich action and stale
+  # from the next SSP edit onward. They rendered as blanks on every document
+  # that enrichment had never been run against — which is what the owner saw.
+  # The SSP is now read live, further down, under "As implemented".
+  #
+  # Control Text was a copy of the catalog statement, stored UNTAILORED, so it
+  # carried raw `{{ insert: param }}`. The tailored text is the row below.
   ctx_rows = [
-    ["Subject",             [card_asset, card_env].select(&:present?).join(" | ")],
-    ["Control Status",      field_map["control_status"]&.field_value.to_s],
-    ["Responsibility",      field_map["responsibility"]&.field_value.to_s],
-    ["Impact Statement",    field_map["impact_statement"]&.field_value.to_s],
-    ["Control Text",        field_map["control_text"]&.field_value.to_s],
-    ["Catalog Description", catalog_stmt.to_s],
-    ["SSP Implementation",  field_map["implementation"]&.field_value.to_s],
+    ["Subject",     [card_asset, card_env].select(&:present?).join(" | ")],
+    ["Control Text", catalog_stmt.to_s],
   ]
   any_ctx = ctx_rows.any? { |_, v| v.present? }
 %>
@@ -37,6 +48,43 @@
             <td class="sparc-ctx-readonly-td<%= " sparc-ctx-readonly-td--empty" if val.blank? %>">
               <%= val.present? ? val : "&mdash;".html_safe %>
             </td>
+          </tr>
+        <% end %>
+      </table>
+    </div>
+  <% end %>
+
+  <%# #1114 — the SSP's claim stays visible while assessing it. Editing is exactly
+      when an assessor needs to see what the system says it does. %>
+  <% if ssp_ctx.present? && (ssp_ctx[:statements].any? || ssp_ctx[:summary].present? || ssp_ctx[:status].present? || ssp_ctx[:responsible].present?) %>
+    <div class="sparc-ctx-readonly">
+      <div class="sparc-ctx-readonly-head">
+        As implemented &mdash; from the SSP
+        <span class="sparc-ctx-readonly-note">(read-only reference)</span>
+      </div>
+      <table class="sparc-ctx-readonly-table">
+        <% if ssp_ctx[:status].present? %>
+          <tr class="sparc-divider-top">
+            <th scope="row" class="sparc-ctx-readonly-th">Declared status</th>
+            <td class="sparc-ctx-readonly-td"><%= ssp_ctx[:status] %></td>
+          </tr>
+        <% end %>
+        <% if ssp_ctx[:responsible].present? %>
+          <tr class="sparc-divider-top">
+            <th scope="row" class="sparc-ctx-readonly-th">Responsible</th>
+            <td class="sparc-ctx-readonly-td"><%= ssp_ctx[:responsible] %></td>
+          </tr>
+        <% end %>
+        <% ssp_ctx[:statements].each do |stmt| %>
+          <tr class="sparc-divider-top">
+            <th scope="row" class="sparc-ctx-readonly-th"><code class="sparc-fs-078"><%= stmt[:label] %></code></th>
+            <td class="sparc-ctx-readonly-td"><%= stmt[:prose] %></td>
+          </tr>
+        <% end %>
+        <% if ssp_ctx[:statements].empty? && ssp_ctx[:summary].present? %>
+          <tr class="sparc-divider-top">
+            <th scope="row" class="sparc-ctx-readonly-th">Implementation</th>
+            <td class="sparc-ctx-readonly-td"><%= ssp_ctx[:summary] %></td>
           </tr>
         <% end %>
       </table>

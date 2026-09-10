@@ -414,14 +414,19 @@
         <%# ── View mode: Assessment Context + field table ── %>
         <div class="sparc-mt-05" id="view-<%= control.id %>">
           <%
+            # #1114 — the four SSP mirrors are gone.
+            #
+            # Control Status, Responsibility, Impact Statement and SSP Implementation
+            # were COPIES of the linked SSP, taken once by the enrich action and stale
+            # from the next SSP edit onward. They rendered as blanks on every document
+            # that enrichment had never been run against — which is what the owner saw.
+            # The SSP is now read live, further down, under "As implemented".
+            #
+            # Control Text was a copy of the catalog statement, stored UNTAILORED, so it
+            # carried raw `{{ insert: param }}`. The tailored text is the row below.
             ctx_rows = [
-              ["Subject",             [card_asset, card_env].select(&:present?).join(" | ")],
-              ["Control Status",      field_map["control_status"]&.field_value.to_s],
-              ["Responsibility",      field_map["responsibility"]&.field_value.to_s],
-              ["Impact Statement",    field_map["impact_statement"]&.field_value.to_s],
-              ["Control Text",        field_map["control_text"]&.field_value.to_s],
-              ["Catalog Description", catalog_stmt.to_s],
-              ["SSP Implementation",  field_map["implementation"]&.field_value.to_s],
+              ["Subject",     [card_asset, card_env].select(&:present?).join(" | ")],
+              ["Control Text", catalog_stmt.to_s],
             ]
             any_ctx = ctx_rows.any? { |_, v| v.present? }
           %>
@@ -460,7 +465,7 @@
               #1100 made per-statement. This reads the SSP itself, so an assessor
               sees each addressable claim as the system currently states it. %>
           <% ssp_ctx = (@ssp_context_by_control || {})[control.control_id.to_s.strip.downcase] %>
-          <% if ssp_ctx.present? && (ssp_ctx[:statements].any? || ssp_ctx[:status].present? || ssp_ctx[:summary].present?) %>
+          <% if ssp_ctx.present? && (ssp_ctx[:statements].any? || ssp_ctx[:status].present? || ssp_ctx[:summary].present? || ssp_ctx[:responsible].present?) %>
             <details class="sparc-ctx-panel">
               <summary class="sparc-ctx-header d-flex align-items-center gap-1 fw-bold">
                 <span class="ctx-arrow sparc-ctx-arrow">&#9658;</span>

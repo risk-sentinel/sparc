@@ -989,12 +989,20 @@ class SarDocumentsController < ApplicationController
       ssp_fields = ssp_ctrl.ssp_control_fields.index_by(&:field_name)
       existing = sar_ctrl.sar_control_fields.pluck(:field_name).to_set
 
-      mappings = {
-        "responsibility"   => ssp_fields["responsible_entities"]&.field_value,
-        "implementation"   => ssp_fields["implementation_statement"]&.field_value.presence ||
-                              ssp_fields["implementation_summary"]&.field_value,
-        "impact_statement" => ssp_fields["notes"]&.field_value
-      }
+      # #1114 — the SSP's own fields are NO LONGER COPIED here.
+      #
+      # `responsibility`, `implementation` and `impact_statement` were snapshots
+      # of the linked SSP, taken once and stale from the next SSP edit onward.
+      # The screen reads the SSP live (`build_ssp_context`), so a copy is a
+      # second answer to the same question that can only diverge — the dual-store
+      # trap of #1113. Owner review: control status "seems to be duplicated by
+      # SSP Status field", and the copied rows rendered empty on every document
+      # this enrichment had never been run against.
+      #
+      # `ssp_status` is still copied below: it is what the SAR ASSERTS the SSP
+      # claimed at assessment time, which is a historical fact about the
+      # assessment rather than a mirror of the current SSP.
+      mappings = {}
 
       mappings.each do |fname, fvalue|
         next if fvalue.blank? || existing.include?(fname)
