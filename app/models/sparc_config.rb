@@ -511,7 +511,6 @@ module SparcConfig
   #
   # Kept as an opt-in for a cautious operator who wants a ceiling while they
   # gain confidence in their claim configuration.
-  def oidc_sync_max_revoke_pct = ENV.fetch("SPARC_OIDC_SYNC_MAX_REVOKE_PCT", "0").to_i
 
   # #860 — deactivate an account that has not signed in for this many days.
   # 0 (the default) disables it, so an upgrade never starts deactivating people.

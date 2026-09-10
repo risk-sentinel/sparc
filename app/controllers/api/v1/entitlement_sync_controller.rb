@@ -33,7 +33,6 @@ class Api::V1::EntitlementSyncController < Api::V1::BaseController
         claim: SparcConfig.oidc_grants_claim,
         prefix: SparcConfig.oidc_grants_prefix,
         instance_roles_allowed: SparcConfig.oidc_instance_roles,
-        max_revoke_pct: SparcConfig.oidc_sync_max_revoke_pct,
         oidc_scopes: SparcConfig.oidc_scopes,
         # The scope is a request; the IdP decides what it releases. An operator
         # debugging "no grants arrive" almost always has the claim configured
@@ -97,7 +96,6 @@ class Api::V1::EntitlementSyncController < Api::V1::BaseController
       dry_run: true,
       summary: plan.summary,
       error: plan.error,
-      blocked_reason: plan.blocked_reason,
       changes: plan.changes.map { |change| serialize_change(change) },
       unmatched: plan.unmatched.map { |r| { grant: r.raw, reason: r.error } }
     }.compact

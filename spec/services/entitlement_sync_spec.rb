@@ -157,9 +157,12 @@ RSpec.describe EntitlementSync do
     end
   end
 
-  describe "the blast-radius guard" do
-    it "refuses a plan that would revoke more than the configured share" do
-      allow(SparcConfig).to receive(:oidc_sync_max_revoke_pct).and_return(25)
+  # #1059 — there is no ceiling on how much one sync may revoke. The owner's
+  # ruling: "the user gets what the OIDC sends. Any missing grants the user
+  # loses, any new grants the user gains." The old guard blocked the whole plan
+  # — additions included — once revocations crossed a share of what it managed.
+  describe "a large revocation" do
+    it "applies in full — no share of a user's IdP grants is too large to revoke" do
       %w[isso issm ciso].each do |name|
         role = Role.find_by(name: name) || create(:role, name: name, scope: "authorization_boundary")
         user.user_roles.create!(role: role, authorization_boundary: boundary, source: "idp")
@@ -167,21 +170,25 @@ RSpec.describe EntitlementSync do
 
       plan = sync([], present: true).apply
 
-      expect(plan).to be_blocked
-      expect(plan.blocked_reason).to match(/over the 25% limit/)
-      expect(user.user_roles.reload.count).to eq(3), "a blocked plan still revoked"
+      expect(plan.revoke.size).to eq(3)
+      expect(plan.revoke).to all(have_attributes(applied: true))
+      expect(user.user_roles.reload.count).to eq(0),
+             "a 100% revocation was withheld — the ceiling is supposed to be gone"
     end
 
-    it "allows a plan inside the limit" do
-      allow(SparcConfig).to receive(:oidc_sync_max_revoke_pct).and_return(50)
-      isso_row = user.user_roles.create!(role: isso, authorization_boundary: boundary, source: "idp")
-      issm = create(:role, name: "issm", scope: "authorization_boundary")
-      user.user_roles.create!(role: issm, authorization_boundary: boundary, source: "idp")
+    it "still applies the ADDITIONS when a plan also revokes heavily" do
+      %w[isso issm].each do |name|
+        role = Role.find_by(name: name) || create(:role, name: name, scope: "authorization_boundary")
+        user.user_roles.create!(role: role, authorization_boundary: boundary, source: "idp")
+      end
+      create(:role, name: "ciso", scope: "authorization_boundary")
 
-      plan = sync([ "sparc:boundary:acme:acme-prod:issm" ]).apply
+      plan = sync([ "sparc:boundary:acme:acme-prod:ciso" ], present: true).apply
 
-      expect(plan).not_to be_blocked
-      expect(user.user_roles.reload.pluck(:id)).not_to include(isso_row.id)
+      expect(plan.revoke.size).to eq(2)
+      expect(plan.add.size).to eq(1)
+      expect(user.user_roles.reload.map { |r| r.role.name }).to eq([ "ciso" ]),
+             "the all-or-nothing guard used to drop the additions along with the revocations"
     end
   end
 

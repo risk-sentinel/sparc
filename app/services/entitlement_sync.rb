@@ -20,10 +20,15 @@
 #   2. Revocation is scoped to `source: "idp"`. A membership an administrator
 #      created is never removed by a sync, whatever the directory says. This
 #      bounds the blast radius BY CONSTRUCTION rather than by a threshold.
-#   3. The blast-radius guard refuses a plan that would revoke more than
-#      SPARC_OIDC_SYNC_MAX_REVOKE_PCT of the IdP-sourced memberships it manages.
-#   4. Instance admin (`users.admin`) is not reachable from any grant, so
+#   3. Instance admin (`users.admin`) is not reachable from any grant, so
 #      recovery is always possible. See IdpGrantResolver.
+#
+# There is deliberately NO ceiling on how much a single sync may revoke (#1059).
+# The user gets what the IdP sends: a grant that appeared is gained, a grant that
+# is gone is lost. A threshold that applied only PART of a plan would leave SPARC
+# and the directory disagreeing about who holds what, which is the exact state
+# this class exists to prevent — and being all-or-nothing, it dropped the
+# ADDITIONS too, so a user whose access legitimately changed a lot got nothing.
 #
 # ── What it will not overwrite ────────────────────────────────────────────
 #
@@ -42,14 +47,13 @@ class EntitlementSync
 
   # The whole outcome. A plan is returned by both dry_run and apply — the same
   # shape, so a caller cannot accidentally treat one as the other.
-  Plan = Struct.new(:mode, :dry_run, :changes, :unmatched, :error, :blocked_reason,
+  Plan = Struct.new(:mode, :dry_run, :changes, :unmatched, :error,
                     keyword_init: true) do
     def add        = changes.select { |c| c.action == :add }
     def update     = changes.select { |c| c.action == :update }
     def revoke     = changes.select { |c| c.action == :revoke }
     def unchanged  = changes.select { |c| c.action == :unchanged }
     def conflicts  = changes.select { |c| c.action == :conflict }
-    def blocked?   = blocked_reason.present?
     def error?     = error.present?
     def applied_count = changes.count(&:applied)
 
@@ -77,7 +81,7 @@ class EntitlementSync
 
   def apply
     plan = build_plan(dry_run: false)
-    return plan if plan.error? || plan.blocked? || @mode == "off"
+    return plan if plan.error? || @mode == "off"
 
     ActiveRecord::Base.transaction { plan.changes.each { |change| apply_change(change) } }
     audit!(plan)
@@ -143,8 +147,7 @@ class EntitlementSync
     changes = additions(resolved)
     changes += revocations(resolved) if mode == "authoritative"
 
-    plan = plan_with(dry_run, changes: changes, unmatched: unmatched)
-    guard_blast_radius(plan)
+    plan_with(dry_run, changes: changes, unmatched: unmatched)
   end
 
   # ── Additions ───────────────────────────────────────────────────────────
@@ -210,40 +213,6 @@ class EntitlementSync
       Change.new(action: :revoke, target_type: :organization_membership, role_name: om.role,
                  organization: om.organization, applied: false)
     end
-  end
-
-  # ── Defence 3 ───────────────────────────────────────────────────────────
-
-  # A percentage of ONE user's memberships is a weak signal, and taken naively it
-  # breaks the feature: a user holding a single IdP role who legitimately leaves
-  # that group is a 100% revocation, so the default 25% limit would block every
-  # ordinary offboarding. Measured the hard way — the first version of this
-  # refused to revoke 1 of 1 and the spec caught it.
-  #
-  # So the guard does not engage on a SINGLE revocation, which is never a mass
-  # de-provisioning event by definition. It engages from two upward, which is
-  # where the misconfiguration signature actually lives: a claim-name typo
-  # returns an empty grant set and wipes everything a user has at once.
-  #
-  # This is a per-login guard and therefore a per-user one. The estate-wide
-  # version — "refuse a sync that would revoke more than X% of ALL memberships"
-  # — belongs to the bulk re-sync path, which does not exist yet. Worth building
-  # there rather than pretending this covers it.
-  def guard_blast_radius(plan)
-    revoking = plan.revoke.size
-    return plan if revoking <= 1
-
-    managed = user.user_roles.where(source: SOURCE).count +
-              user.organization_memberships.where(source: SOURCE).count
-    return plan if managed.zero?
-
-    pct = (revoking.to_f / managed * 100).round
-    limit = SparcConfig.oidc_sync_max_revoke_pct
-    return plan if limit <= 0 || pct <= limit
-
-    plan.blocked_reason = "would revoke #{revoking} of #{managed} IdP-sourced memberships (#{pct}%), " \
-                          "over the #{limit}% limit; nothing was changed"
-    plan
   end
 
   # ── Application ─────────────────────────────────────────────────────────

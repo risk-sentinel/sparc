@@ -42,7 +42,6 @@ https://sparc.example.com/api/v1/entitlement_sync
     "claim": "groups",
     "prefix": "sparc:",
     "instance_roles_allowed": ["global_viewer"],
-    "max_revoke_pct": 0,
     "oidc_scopes": "openid profile email groups",
     "grants_scope_requested": true,
     "managed": { "user_roles": 42, "organization_memberships": 7 }
@@ -132,7 +131,10 @@ often meets.
 | `conflict` | An administrator set a different organization role. **Reported, never overwritten** |
 
 `error` appears when the sync would refuse outright (absent claim, unknown mode).
-`blocked_reason` appears when `SPARC_OIDC_SYNC_MAX_REVOKE_PCT` would stop it.
+
+There is no ceiling on how much a plan may revoke (#1059): a user gets exactly
+what the IdP sends. `max_revoke_pct` and `blocked_reason` were removed from this
+endpoint in v1.16.1 — a client reading either will now find them absent.
 
 ### Status codes
 
