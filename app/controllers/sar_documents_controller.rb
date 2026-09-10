@@ -134,6 +134,18 @@ class SarDocumentsController < ApplicationController
     normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
     @catalog_guidance = CatalogControl.where(control_id: normalized_ids).index_by(&:control_id)
 
+    # #1114 — the control text an assessor reads must be the TAILORED text.
+    #
+    # The screen rendered `guidance_data["statement"]` straight from the catalog,
+    # which is the untailored blob: on ac-1 that put
+    # `{{ insert: param, ac-01_odp.03 }}` on the page, so an assessor was shown
+    # markup where the organisation-defined value belongs. Same defect the SAP
+    # generator had; this is the view that was missed when that was fixed.
+    #
+    # The profile's resolved catalog already substitutes parameters per part and
+    # recursively (#942), so this reads it rather than resolving a second time.
+    @resolved_statements = build_resolved_statements(@controls)
+
     # Totals for display
     @total_controls = controls_scope.count
     @filtered_count = filtered.count
@@ -518,6 +530,40 @@ class SarDocumentsController < ApplicationController
   end
 
   private
+
+  # control_id (canonical, downcased) => the control's tailored statement prose.
+  #
+  # Walks the statement part tree the resolved catalog carries and joins the
+  # leaves, so what an assessor reads is the same text the SSP was written
+  # against. Empty when no profile is reachable — the view then falls back to the
+  # catalog blob, which is worse and still better than showing nothing.
+  def build_resolved_statements(controls)
+    profile = @sar_document.profile_document || @sar_document.ssp_document&.profile_document
+    json = profile&.resolved_catalog_json
+    return {} if json.blank? || controls.blank?
+
+    catalog = json.is_a?(Hash) ? (json["catalog"] || json) : {}
+    nodes = Array(catalog["controls"]) +
+            Array(catalog["groups"]).flat_map { |g| Array(g["controls"]) }
+    by_id = nodes.index_by { |c| ControlId.canonical(c["id"]).to_s.downcase }
+
+    controls.each_with_object({}) do |control, acc|
+      node = by_id[ControlId.canonical(control.control_id).to_s.downcase]
+      next if node.nil?
+
+      prose = []
+      walk = lambda do |parts|
+        Array(parts).each do |part|
+          prose << part["prose"].to_s.strip if %w[statement item].include?(part["name"]) && part["prose"].present?
+          walk.call(part["parts"])
+        end
+      end
+      walk.call(node["parts"])
+      acc[control.control_id.to_s] = prose.join("\n") if prose.any?
+    end
+  rescue StandardError
+    {}
+  end
 
   # control_id (downcased) => { status:, responsible:, statements: [{label:, prose:}] }
   #

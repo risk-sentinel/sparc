@@ -341,7 +341,10 @@
       card_asset   = control.subject_asset.to_s.strip
       card_env     = control.subject_environment.to_s.strip
       catalog_ctrl = @catalog_guidance[normalize_ctrl_id(control.control_id)]
-      catalog_stmt = (catalog_ctrl&.guidance_data || {})["statement"].presence
+      # #1114 — tailored text first. The catalog blob carries raw
+      # `{{ insert: param, ... }}` and is the fallback, not the source.
+      catalog_stmt = (@resolved_statements || {})[control.control_id.to_s].presence ||
+                     (catalog_ctrl&.guidance_data || {})["statement"].presence
     %>
     <div class="control-card sparc-border-l-4 <%= accent_class(result_color) %>">
 

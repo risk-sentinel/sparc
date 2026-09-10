@@ -62,7 +62,11 @@ class OscalSarExportService
       sar_risks: [ :sar_risk_observations ]
     ).to_a
     @components = @document.sar_local_components.to_a
-    @controls = @document.sar_controls.order(:row_order).includes(:sar_control_fields).to_a
+    # #1114 — objectives are preloaded because the export now emits a finding per
+    # determined objective; without this it is one query per control on a
+    # document that routinely carries hundreds.
+    @controls = @document.sar_controls.order(:row_order)
+                         .includes(:sar_control_fields, :sar_control_objectives).to_a
   end
 
   # ── Top-level Assessment Results envelope ──────────────────────────
@@ -300,6 +304,32 @@ class OscalSarExportService
     risk_records.map { |fr| { "risk-uuid" => fr.sar_risk.uuid } }
   end
 
+  # #1114 — the findings an assessment actually determined, one per objective.
+  #
+  # Only objectives with a determination are emitted. OSCAL has no "unknown"
+  # state for a finding target — `status.state` is REQUIRED and the enum is
+  # exactly `satisfied | not-satisfied` — so an objective still `pending` or
+  # `in-progress` must produce NO finding. Emitting one would assert assurance
+  # nobody established, which is the worst error an assessment artifact can make.
+  # `not_applicable` is excluded for the same reason: it is a scoping decision,
+  # not a determination that the objective is satisfied.
+  def build_objective_findings(control, obs_uuid)
+    control.sar_control_objectives.select(&:determined?).map do |objective|
+      {
+        "uuid"                 => OscalUuidService.derived(@document.uuid, "objective-finding", objective.uuid),
+        "title"                => "Finding for #{objective.label.presence || objective.objective_id}",
+        "description"          => objective.prose.presence ||
+                                  "Determination for #{objective.objective_id}",
+        "target"               => {
+          "type"      => "objective-id",
+          TARGET_ID => objective.objective_id,
+          "status"    => { "state" => objective.oscal_state }
+        },
+        RELATED_OBSERVATIONS => [ { OBSERVATION_UUID => obs_uuid } ]
+      }
+    end
+  end
+
   # ── Synthesized result (fallback for un-enriched Excel imports) ──
 
   def build_synthesized_result
@@ -326,19 +356,37 @@ class OscalSarExportService
 
       obs_uuid_map[control.id] = obs_uuid
 
-      # Synthesize a finding per control
-      status_state = result_to_oscal_status(result_val)
-      findings << {
-        "uuid"                 => OscalUuidService.derived(@document.uuid, "synthesized-finding", control.uuid),
-        "title"                => "Finding for #{control.control_id}",
-        "description"          => "Assessment finding for control #{control.control_id}: #{result_val}",
-        "target"               => {
-          "type"      => "objective-id",
-          TARGET_ID => control_id,
-          "status"    => { "state" => status_state }
-        },
-        RELATED_OBSERVATIONS => [ { OBSERVATION_UUID => obs_uuid } ]
-      }
+      # #1114 — one finding per DETERMINED 800-53A objective.
+      #
+      # This emitted ONE finding per control, declaring
+      # `"type" => "objective-id"` while passing a CONTROL id as the target. That
+      # is a false statement in the artifact: `objective-id` must reference an
+      # assessment objective — `ac-1_obj.a-1` — and `ac-1` is not one. The
+      # schema cannot catch it, because both are just strings.
+      #
+      # It also flattened the assessment. NIST divides ac-1 into 24 determination
+      # statements, each separately determined; a single Pass/Failed for the
+      # whole control asserts more than an assessor actually found.
+      objective_findings = build_objective_findings(control, obs_uuid)
+      if objective_findings.any?
+        findings.concat(objective_findings)
+      else
+        # No objective carries a determination — fall back to the control-level
+        # result, and say so honestly with `type: "statement-id"`, which is what
+        # a control-level target actually is.
+        status_state = result_to_oscal_status(result_val)
+        findings << {
+          "uuid"                 => OscalUuidService.derived(@document.uuid, "synthesized-finding", control.uuid),
+          "title"                => "Finding for #{control.control_id}",
+          "description"          => "Assessment finding for control #{control.control_id}: #{result_val}",
+          "target"               => {
+            "type"      => "statement-id",
+            TARGET_ID => control_id,
+            "status"    => { "state" => status_state }
+          },
+          RELATED_OBSERVATIONS => [ { OBSERVATION_UUID => obs_uuid } ]
+        }
+      end
     end
 
     {
