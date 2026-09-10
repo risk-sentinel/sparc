@@ -97,29 +97,58 @@ RSpec.describe "inline style= in views (#1047 ratchet)", type: :view do
   # class attributes and this spec reported clean. TAG_SCAN steps over quoted
   # attribute values instead of stopping at the first `>`.
   #
-  # The whitespace handling is deliberate, and CodeQL found two defects in the
-  # first version of this pattern (`rb/bad-tag-filter`, `rb/redos`):
+  # SCANNED, NOT MATCHED — and that is the point.
   #
-  #   1. `<[a-zA-Z][^\s>]*` then `(?:\s+(...)\s*)*` let whitespace be consumed by
-  #      EITHER the leading `\s+` or the trailing `\s*` of the previous
-  #      iteration. That ambiguity is what makes a pattern backtrack
-  #      exponentially. Each iteration now begins with `\s+` and nothing trails
-  #      it, so there is exactly one way to match any run of whitespace.
-  #   2. It did not match `<script \n>` — a tag whose name is followed by
-  #      whitespace and then immediately `>`. For a guard whose entire job is
-  #      seeing past awkward markup, that is a blind spot of the same kind as the
-  #      Stimulus arrow above. `\s*` before the close now covers it.
+  # This was a regex, and CodeQL was right about it twice
+  # (`rb/bad-tag-filter`, `rb/redos`). The first version stopped at the first
+  # `>`, so it could not see a second `class=` past a Stimulus arrow — the live
+  # defect this guard exists for. Rewriting it to step over quoted values fixed
+  # that and introduced nested quantifiers, which is the shape that backtracks
+  # exponentially. Tightening the whitespace cleared two of the three alerts and
+  # left one, because the nesting is inherent to expressing "a tag" as a pattern.
   #
-  # I could NOT reproduce the exponential backtracking on Ruby's engine at 38
-  # repetitions; the bad-tag-filter miss reproduces immediately. Both are fixed
-  # regardless — this scans every .erb in the repo, and a guard that can be
-  # stalled or blinded by its own input is not a guard.
-  TAG_SCAN = %r{<[a-zA-Z][^\s>/]*(?:\s+[^\s=>/]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)*\s*/?>}m
+  # A tag is not a regular language once quoting matters, so it is parsed rather
+  # than matched. This walks the source once, tracking whether it is inside a
+  # quote, and cannot backtrack at all: linear by construction, and there is no
+  # pattern left for an analyser to be right about.
+  #
+  # `each_tag` yields the full text of every element's opening tag.
+  def each_tag(source)
+    return enum_for(:each_tag, source) unless block_given?
+
+    i = 0
+    len = source.length
+    while (i = source.index("<", i))
+      break if i >= len - 1
+      unless source[i + 1].match?(/[a-zA-Z]/)
+        i += 1
+        next
+      end
+
+      j = i + 1
+      quote = nil
+      while j < len
+        ch = source[j]
+        if quote
+          quote = nil if ch == quote
+        elsif ch == '"' || ch == "'"
+          quote = ch
+        elsif ch == ">"
+          break
+        end
+        j += 1
+      end
+
+      break if j >= len
+      yield source[i..j]
+      i = j + 1
+    end
+  end
 
   it "never leaves an element with two class attributes" do
     offenders = Dir.glob(view_root.join("**/*.erb")).flat_map do |path|
       masked = File.read(path).gsub(/<%.*?%>/m, "ERB")
-      masked.scan(TAG_SCAN)
+      each_tag(masked)
             .select { |tag| tag.scan(/(?:\A|\s)class\s*=/).size > 1 }
             .map { |tag| "#{path.sub(Rails.root.to_s + '/', '')}: #{tag.split.join(' ')[0, 110]}" }
     end
