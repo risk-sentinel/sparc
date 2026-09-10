@@ -214,7 +214,7 @@ class OscalComponentDefinitionExportService
   # `control-id`, and exporting `unknown-<id>` is a false claim no validator
   # would catch. Shared by both component paths.
   def drop_unmapped(controls)
-    unmapped = @document.cdef_controls.unmapped_stig_rules.pluck(:id).to_set
+    unmapped = @document.cdef_controls.unmapped_stig_rules.ids.to_set
     controls.reject { |c| unmapped.include?(c.id) }
   end
 

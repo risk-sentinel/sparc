@@ -338,7 +338,6 @@ class SarJsonParserService
       sar_controls_by_id[ctrl_id] = ctrl
     end
 
-    populate_catalog_text_fields(sar_controls_by_id)
     create_objective_records(sar_controls_by_id, objectives_by_control)
     link_findings_to_objectives(sar_controls_by_id, findings_to_link)
     enrich_from_linked_sap_or_ssp(sar_controls_by_id)
@@ -402,43 +401,17 @@ class SarJsonParserService
   # Pull control statement prose from the local catalog so the Assessment
   # Context panel has a "Control Text" row even when the SAR isn't linked
   # to an SSP yet.
-  def populate_catalog_text_fields(sar_controls_by_id)
-    return if sar_controls_by_id.empty?
-
-    normalized = sar_controls_by_id.keys.compact.map { |id| normalize_catalog_id(id) }.uniq
-    catalog_controls = CatalogControl.where(control_id: normalized).index_by(&:control_id)
-
-    sar_controls_by_id.each do |ctrl_id, ctrl|
-      cat = catalog_controls[normalize_catalog_id(ctrl_id)]
-      next unless cat
-      # #1114 — `control_text` is NO LONGER COPIED from the catalog.
-      #
-      # It duplicated the catalog statement onto every control, as the UNTAILORED
-      # blob: it carried `{{ insert: param, ... }}` verbatim, so an assessor read
-      # markup where the organisation-defined value belongs. The screen now reads
-      # the tailored text from the profile's resolved catalog at render time,
-      # which is both correct and current.
-      next
-    end
-  # #968 — DELIBERATE swallow, and now a narrow one.
+  # #1114 — REMOVED. This copied the catalog statement onto every SAR control as
+  # `control_text`, and it copied the UNTAILORED blob: it carried
+  # `{{ insert: param, ... }}` verbatim, so an assessor read markup where the
+  # organisation-defined value belongs. The screen now reads the tailored text
+  # from the profile's resolved catalog at render time, which is both correct and
+  # current.
   #
-  # Control text copied from the catalog is an enrichment: a SAR without it is
-  # complete and usable, just less readable, so one bad lookup must not fail the
-  # import. That decision stands.
-  #
-  # What changed is the breadth. `rescue StandardError` also absorbed NoMethodError
-  # and friends — a bug in SPARC reported as "catalog lookup failed" and nothing
-  # else. The listed classes are the ways the DATA can be wrong; anything else
-  # raises.
-  #
-  # This runs inside `parse_from_hash`'s transaction (via
-  # synthesize_controls_from_results), so the narrowing matters twice: a
-  # transaction-aborting error is no longer swallowed here. `sar_control_fields`
-  # carries no unique index, so RecordNotUnique is not currently reachable — the
-  # narrow list keeps that true if one is ever added.
-  rescue ActiveRecord::RecordInvalid, NoMatchingPatternError, KeyError => e
-    Rails.logger.warn("[SarJsonParserService] catalog lookup failed: #{e.class}: #{e.message}")
-  end
+  # `87e2cb80` stopped the write by replacing the body with `next`, which left a
+  # method that queried `CatalogControl` for every import and then did nothing
+  # with the result — a wasted query and a `rescue` guarding no work. Sonar found
+  # the orphaned block parameter; the dead query was the part that mattered.
 
   def normalize_catalog_id(id)
     id.to_s.strip.downcase

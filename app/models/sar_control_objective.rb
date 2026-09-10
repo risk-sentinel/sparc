@@ -2,7 +2,8 @@ class SarControlObjective < ApplicationRecord
   belongs_to :sar_control
   has_many :sar_findings, dependent: :nullify
 
-  OBJECTIVE_STATUSES = %w[pending in-progress passing failed not_applicable].freeze
+  IN_PROGRESS = "in-progress".freeze
+  OBJECTIVE_STATUSES = [ "pending", IN_PROGRESS, "passing", "failed", "not_applicable" ].freeze
 
   validates :objective_id, presence: true,
                            uniqueness: { scope: :sar_control_id }
@@ -28,7 +29,7 @@ class SarControlObjective < ApplicationRecord
 
   scope :failing,         -> { where(status: "failed") }
   scope :passing,         -> { where(status: "passing") }
-  scope :in_progress,     -> { where(status: "in-progress") }
+  scope :in_progress,     -> { where(status: IN_PROGRESS) }
   scope :pending,         -> { where(status: "pending") }
   scope :not_applicable,  -> { where(status: "not_applicable") }
 
@@ -59,7 +60,7 @@ class SarControlObjective < ApplicationRecord
     "failed"         => "not-satisfied",
     "not_applicable" => nil,
     "pending"        => nil,
-    "in-progress"    => nil
+    IN_PROGRESS      => nil
   }.freeze
 
   def oscal_state = OSCAL_STATE[status.to_s]

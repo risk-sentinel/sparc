@@ -20,6 +20,10 @@ class OscalSarExportService
 
   # OSCAL prop/element names reused across the export build.
   TARGET_ID            = "target-id".freeze
+  # #1114 — the two `finding.target.type` values OSCAL allows. Named because
+  # they are a closed vocabulary from the schema, not incidental strings.
+  TARGET_TYPE_STATEMENT = "statement-id".freeze
+  TARGET_TYPE_OBJECTIVE = "objective-id".freeze
   REVIEWED_CONTROLS    = "reviewed-controls".freeze
   RELATED_OBSERVATIONS = "related-observations".freeze
   OBSERVATION_UUID     = "observation-uuid".freeze
@@ -283,10 +287,10 @@ class OscalSarExportService
   def build_finding_target(finding)
     base = (finding.target_data || {}).except("needs_objective_link")
     if finding.ssp_control_statement_id.present? && finding.ssp_control_statement
-      base["type"]      = "statement-id"
+      base["type"]      = TARGET_TYPE_STATEMENT
       base[TARGET_ID] = finding.ssp_control_statement.statement_id
     elsif finding.sar_control_objective_id.present? && finding.sar_control_objective
-      base["type"]      = "objective-id"
+      base["type"]      = TARGET_TYPE_OBJECTIVE
       base[TARGET_ID] = finding.sar_control_objective.objective_id
     end
     honest_target_type(base).presence
@@ -309,12 +313,12 @@ class OscalSarExportService
   # corrects the assertion without discarding the assessment.
   def honest_target_type(base)
     return base if base.blank?
-    return base unless base["type"].to_s == "objective-id"
+    return base unless base["type"].to_s == TARGET_TYPE_OBJECTIVE
 
     target = base[TARGET_ID].to_s
     return base if known_objective_ids.include?(target)
 
-    base.merge("type" => "statement-id")
+    base.merge("type" => TARGET_TYPE_STATEMENT)
   end
 
   # Every objective id this document actually holds. One query, memoised: this
@@ -359,7 +363,7 @@ class OscalSarExportService
         "description"          => objective.prose.presence ||
                                   "Determination for #{objective.objective_id}",
         "target"               => {
-          "type"      => "objective-id",
+          "type"      => TARGET_TYPE_OBJECTIVE,
           TARGET_ID => objective.objective_id,
           "status"    => { "state" => objective.oscal_state }
         },
@@ -418,7 +422,7 @@ class OscalSarExportService
           "title"                => "Finding for #{control.control_id}",
           "description"          => "Assessment finding for control #{control.control_id}: #{result_val}",
           "target"               => {
-            "type"      => "statement-id",
+            "type"      => TARGET_TYPE_STATEMENT,
             TARGET_ID => control_id,
             "status"    => { "state" => status_state }
           },

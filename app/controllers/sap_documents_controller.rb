@@ -1,4 +1,9 @@
 class SapDocumentsController < ApplicationController
+  # #1114 — the 800-53A part names this screen reads. A closed vocabulary from
+  # the catalog, not incidental strings.
+  ASSESSMENT_METHOD  = "assessment-method".freeze
+  ASSESSMENT_OBJECTS = "assessment-objects".freeze
+
   include ReconciliationGate
   # #911 layer 2 — refuse an edit until the document names the baseline
   # its controls descend from. `set_baseline` is deliberately absent.
@@ -403,7 +408,7 @@ class SapDocumentsController < ApplicationController
     parts = CatalogControlPart
               .joins(:catalog_control)
               .where(catalog_controls: { control_id: ids })
-              .where(part_name: %w[assessment-method assessment-objects])
+              .where(part_name: [ ASSESSMENT_METHOD, ASSESSMENT_OBJECTS ])
               .select("catalog_control_parts.*, catalog_controls.control_id AS owner_control_id")
               .order(:row_order)
 
@@ -411,13 +416,13 @@ class SapDocumentsController < ApplicationController
     objects_by_parent = Hash.new { |h, k| h[k] = [] }
 
     parts.each do |part|
-      next unless part.part_name == "assessment-objects"
+      next unless part.part_name == ASSESSMENT_OBJECTS
 
       objects_by_parent[part.parent_part_id] << part.prose.to_s.strip.presence
     end
 
     parts.each do |part|
-      next unless part.part_name == "assessment-method"
+      next unless part.part_name == ASSESSMENT_METHOD
 
       method = Array(part.props_data).find { |pr| pr["name"] == "method" }
       by_control[part.owner_control_id.to_s.downcase] << {
@@ -487,7 +492,7 @@ class SapDocumentsController < ApplicationController
 
   def walk_method_parts(parts, methods)
     parts.each do |part|
-      if part["name"] == "assessment-method"
+      if part["name"] == ASSESSMENT_METHOD
         method_prop = (part["props"] || []).find { |p| p["name"] == "method" }
         methods << method_prop["value"] if method_prop && method_prop["value"].present?
       end

@@ -497,9 +497,6 @@ class SarDocumentsController < ApplicationController
       ControlObjectiveExtractorService.new(@sar_document).backfill!
     end
 
-    # Re-enrich SAR controls from the linked SAP -> SSP chain (or direct SSP).
-    field_count = enrich_existing_controls_from_sap_or_ssp_chain
-
     # Copy back-matter resources from each linked source. Mirrors the SAP
     # pattern -- without this, a SAR import with no native back-matter
     # would never show resources even when the upstream SSP/profile has
@@ -510,11 +507,9 @@ class SarDocumentsController < ApplicationController
     audit_log("sar_document_reprocessed", subject: @sar_document,
               metadata: { sap_id: sap_id, ssp_id: ssp_id, profile_id: profile_id,
                           objectives_assigned: objective_count,
-                          fields_added: field_count,
                           back_matter_copied: bm_count })
 
     msg = "Source associated."
-    msg += " #{field_count} context fields populated." if field_count > 0
     msg += " #{objective_count} objectives populated." if objective_count > 0
     msg += " #{bm_count} back-matter resources copied." if bm_count > 0
     flash[:success] = msg
@@ -979,47 +974,22 @@ class SarDocumentsController < ApplicationController
     end
   end
 
-  # After associate_source links the SAR to a SAP/SSP, walk every existing
-  # SarControl and copy responsibility / implementation / impact_statement
-  # fields from the SSP if they're missing. SAR -> SAP -> SSP chain (or
-  # SAR -> SSP directly). Returns the count of fields added.
-  def enrich_existing_controls_from_sap_or_ssp_chain
-    ssp = resolve_linked_ssp_for_sar(@sar_document)
-    return 0 if ssp.nil?
-
-    ssp_controls = ssp.ssp_controls.includes(:ssp_control_fields)
-                                   .index_by { |c| c.control_id.to_s.strip.downcase }
-
-    count = 0
-    @sar_document.sar_controls.includes(:sar_control_fields).find_each do |sar_ctrl|
-      ssp_ctrl = ssp_controls[sar_ctrl.control_id.to_s.strip.downcase]
-      next unless ssp_ctrl
-      ssp_fields = ssp_ctrl.ssp_control_fields.index_by(&:field_name)
-      existing = sar_ctrl.sar_control_fields.pluck(:field_name).to_set
-
-      # #1114 — the SSP's own fields are NO LONGER COPIED here.
-      #
-      # `responsibility`, `implementation` and `impact_statement` were snapshots
-      # of the linked SSP, taken once and stale from the next SSP edit onward.
-      # The screen reads the SSP live (`build_ssp_context`), so a copy is a
-      # second answer to the same question that can only diverge — the dual-store
-      # trap of #1113. Owner review: control status "seems to be duplicated by
-      # SSP Status field", and the copied rows rendered empty on every document
-      # this enrichment had never been run against.
-      #
-      # `ssp_status` is still copied below: it is what the SAR ASSERTS the SSP
-      # claimed at assessment time, which is a historical fact about the
-      # assessment rather than a mirror of the current SSP.
-      mappings = {}
-
-      mappings.each do |fname, fvalue|
-        next if fvalue.blank? || existing.include?(fname)
-        sar_ctrl.sar_control_fields.create!(field_name: fname, field_value: fvalue)
-        count += 1
-      end
-    end
-    count
-  end
+  # #1114 — REMOVED, along with the copying it existed to do.
+  #
+  # It walked every SAR control and copied `responsibility`, `implementation` and
+  # `impact_statement` from the linked SSP. Those were SNAPSHOTS: stale from the
+  # SSP's next edit, and blank on every document this had never been run against,
+  # which is what the owner saw. The screen reads the SSP live
+  # (`build_ssp_context`), so a copy is a second answer to the same question that
+  # can only diverge — the dual-store trap of #1113.
+  #
+  # `87e2cb80` emptied the mappings hash but left the walk in place, so it went on
+  # loading every SSP control and iterating an empty hash on each association.
+  # Sonar found the unused local; the pointless walk was the part that mattered.
+  #
+  # NOTE: an earlier comment here claimed `ssp_status` was "still copied below".
+  # It is not written here at all — `SarFromSspService` writes it when a SAR is
+  # generated from an SSP (`sar_from_ssp_service.rb:108`). The claim was wrong.
 
   def resolve_linked_ssp_for_sar(sar)
     return SspDocument.find_by(id: sar.ssp_document_id) if sar.ssp_document_id.present?
