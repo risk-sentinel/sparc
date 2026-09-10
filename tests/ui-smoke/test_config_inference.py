@@ -19,8 +19,11 @@ to discover, so they are encoded here rather than rediscovered:
 1. When a consent banner is configured, the login card ships with `d-none` and a
    modal gates it. Nothing on the login form is visible until "Proceed" is
    clicked. That gate IS the AC-8 control, so it is asserted, not worked around.
-2. The login form is TABBED. A provider panel is inactive until its tab is
-   clicked, so its submit button exists but is not visible on load.
+2. Tabs cover FORM-based methods only (local, LDAP), and the bar renders only
+   when more than one of them is offered. Since #1082 every SSO method — OIDC
+   included — is a button on the landing view, visible on load without a click.
+   A probe that waits for a provider TAB will not match, and if it merely skips
+   when it does not match, the coverage vanishes silently.
 
     uv run pytest test_config_inference.py --browser chromium --browser firefox
 """
@@ -131,6 +134,8 @@ class TestAuthMethodRendering:
         # point. Zero of them means the instance is unusable — exactly what a bad
         # inference would produce.
         has_password_form = page.locator("input[type='password']").count() > 0
+        # A tab bar renders only for FORM-based methods now (#1082), so this is
+        # one signal among several rather than the OIDC one it used to be.
         has_provider_tab = page.locator("button[data-tab]").count() > 0
         # SPARC renders provider sign-in as a FORM POST, not an anchor.
         has_provider_form = page.locator("form[action*='/auth/'] button").count() > 0
@@ -142,25 +147,27 @@ class TestAuthMethodRendering:
         )
         assert_no_csp_violations(page, during="/login load")
 
-    def test_oidc_tab_and_submit_render_when_oidc_is_configured(self, page):
-        """The OIDC tab renders only `if SparcConfig.enable_oidc?`.
+    def test_oidc_submit_renders_when_oidc_is_configured(self, page):
+        """The OIDC sign-in control renders only `if SparcConfig.enable_oidc?`.
 
-        That makes the tab trigger a direct read-out of the inference: if
-        `SPARC_ENABLE_OIDC <- SPARC_OIDC_CLIENT_ID` regressed to false, this tab
-        disappears and OIDC login becomes unreachable.
+        That makes it a direct read-out of the inference: if
+        `SPARC_ENABLE_OIDC <- SPARC_OIDC_CLIENT_ID` regressed to false, the
+        control disappears and OIDC login becomes unreachable.
+
+        #1082 — this used to locate `button[data-tab='tab-oidc']` and skip when
+        it was absent. OIDC is no longer a tab (a one-button panel is not a
+        tab), so on an OIDC-configured instance the probe stopped matching and
+        this test SKIPPED rather than failing: the coverage disappeared quietly,
+        which is worse than a red test. It now probes the sign-in form itself,
+        which is what actually has to be present and reachable.
         """
         record_csp(page)
         _open_login(page)
 
-        tab = page.locator("button[data-tab='tab-oidc']")
-        if tab.count() == 0:
+        submit = page.locator("form[action*='/auth/oidc'] button[type='submit']")
+        if submit.count() == 0:
             pytest.skip("OIDC not configured on this instance")
 
-        tab.first.wait_for(state="visible", timeout=5000)
-        tab.first.click()
-
-        submit = page.locator("form[action*='/auth/oidc'] button[type='submit']")
-        assert submit.count() > 0, "OIDC panel has no submit button"
         submit.first.wait_for(state="visible", timeout=5000)
         assert submit.first.is_enabled(), "OIDC submit is visible but disabled"
 
@@ -171,7 +178,7 @@ class TestAuthMethodRendering:
             f"OIDC form action is not a same-origin path ({action!r}); "
             "CSP form-action will block the submit"
         )
-        assert_no_csp_violations(page, during="activating the OIDC login tab")
+        assert_no_csp_violations(page, during="rendering the OIDC sign-in button")
 
     def test_no_raw_config_variable_names_leak_into_the_page(self, page):
         """A misconfigured toggle must not surface raw variable names to users."""
