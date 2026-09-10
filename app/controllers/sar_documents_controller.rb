@@ -77,10 +77,7 @@ class SarDocumentsController < ApplicationController
 
     # Apply context filters (section/asset/env) BEFORE building heatmap so
     # the family cards reflect the active context selection
-    base_filtered = controls_scope
-    base_filtered = base_filtered.where(section: params[:section])                 if params[:section].present?
-    base_filtered = base_filtered.where(subject_asset: params[:asset])             if params[:asset].present?
-    base_filtered = base_filtered.where(subject_environment: params[:environment]) if params[:environment].present?
+    base_filtered = filter_by_context(controls_scope)
 
     # #1114 — the heatmap is the ASSESSMENT PLAN's shape, with progress on it.
     #
@@ -97,57 +94,12 @@ class SarDocumentsController < ApplicationController
       build_method_heatmap_from_scope(base_filtered)
     @assessed_pct_by_family = build_assessed_pct_by_family(base_filtered)
 
-    # Apply family/status filters using raw SQL to avoid
-    # #or structural incompatibility with :joins
-    filtered = base_filtered
-
-    if params[:family].present?
-      # UPCASE THE PARAMETER, not just the column (#1094). Both sides of this OR
-      # require the VALUE to already be uppercase: `control_family` is stored
-      # uppercase ("AC", "AT", ...) and the fallback upcases the column but not
-      # what it is compared against. `control_id` is stored LOWERCASE ("ac-1"),
-      # so a lowercase family is the natural thing to type or to build from an id
-      # — and it returned "0 of 150 controls" while reporting that as the answer.
-      # Every family tile already links uppercase, so only hand-typed, bookmarked
-      # and API-built URLs were affected, silently.
-      #
-      # Matches ControlLookupService:159 and Api::V1::CatalogControls:124, which
-      # both normalise with `.to_s.upcase`; this was the one site that did not.
-      filtered = filtered.where(
-        "control_family = :family OR (control_family IS NULL AND UPPER(SPLIT_PART(control_id, '-', 1)) = :family)",
-        family: params[:family].to_s.upcase
-      )
-    end
-
-    if params[:status].present?
-      filtered = filtered.where(
-        "cached_result = :status OR (cached_result IS NULL AND sar_controls.id IN " \
-        "(SELECT sar_control_id FROM sar_control_fields WHERE field_name = 'result' AND field_value = :status))",
-        status: params[:status]
-      )
-    end
-
-    # #1114 — filter by the assessment METHOD the plan calls for.
-    #
-    # The coverage heatmap's badges are methods, so its links carry `?method=`.
-    # Methods live on the linked SAP, not on `sar_controls`, so this resolves the
-    # control ids that carry the method and filters on those.
-    if params[:method].present?
-      wanted = params[:method].to_s.downcase
-      ids = planned_methods_by_control.filter_map do |control_id, methods|
-        next control_id if wanted == "multiple" && methods.size > 1
-        next control_id if wanted == ApplicationHelper::LABEL_NONE.downcase && methods.empty?
-        control_id if methods.include?(wanted)
-      end
-      # Compared canonically: the plan and the results spell control ids
-      # differently ("AC-1" vs "ac-1"), and a raw match silently returns nothing.
-      # Stays a RELATION: `filtered` is ordered, included and paginated below, and
-      # `.select {}` on a relation returns an Array, which breaks all three.
-      matching_ids = filtered.pluck(:id, :control_id).filter_map do |id, control_id|
-        id if ids.include?(ControlId.canonical(control_id).to_s.downcase)
-      end
-      filtered = filtered.where(id: matching_ids)
-    end
+    # Each filter is its own method: they are independent questions asked of the
+    # same scope, and inlining all three is what carried this action past the
+    # cognitive-complexity threshold. Order does not matter — every one narrows.
+    filtered = filter_by_family(base_filtered)
+    filtered = filter_by_result(filtered)
+    filtered = filter_by_assessment_method(filtered)
 
     # Paginate (explicit order since default_scope was removed for query performance)
     # N+1 guard: include objectives so the per-control table renders without
@@ -558,6 +510,84 @@ class SarDocumentsController < ApplicationController
   end
 
   private
+
+  # #1114 — the SAR control filters, one question each.
+  #
+  # These were four inline blocks in `show`, which is what pushed that action to
+  # a cognitive complexity of 18 (Sonar `rubydre:S3776`, threshold 15). Named
+  # separately they are independently readable and independently testable, and
+  # the reason each is written the way it is stays attached to it.
+
+  # Context: which slice of the system the reader is looking at. Applied BEFORE
+  # the heatmap is built, so the family cards reflect the active selection.
+  def filter_by_context(scope)
+    scope = scope.where(section: params[:section])                 if params[:section].present?
+    scope = scope.where(subject_asset: params[:asset])             if params[:asset].present?
+    scope = scope.where(subject_environment: params[:environment]) if params[:environment].present?
+    scope
+  end
+
+  # Raw SQL rather than `#or`, which is structurally incompatible with the joins
+  # in play.
+  #
+  # UPCASE THE PARAMETER, not just the column (#1094). Both sides of this OR
+  # require the VALUE to already be uppercase: `control_family` is stored
+  # uppercase ("AC", "AT", ...) and the fallback upcases the column but not what
+  # it is compared against. `control_id` is stored LOWERCASE ("ac-1"), so a
+  # lowercase family is the natural thing to type or to build from an id — and it
+  # returned "0 of 150 controls" while reporting that as the answer. Every family
+  # tile links uppercase, so only hand-typed, bookmarked and API-built URLs were
+  # affected, silently.
+  #
+  # Matches ControlLookupService:159 and Api::V1::CatalogControls:124, which both
+  # normalise with `.to_s.upcase`; this was the one site that did not.
+  def filter_by_family(scope)
+    return scope if params[:family].blank?
+
+    scope.where(
+      "control_family = :family OR (control_family IS NULL AND UPPER(SPLIT_PART(control_id, '-', 1)) = :family)",
+      family: params[:family].to_s.upcase
+    )
+  end
+
+  # `cached_result` with a fallback to the `result` field for rows that predate
+  # the denormalised column.
+  def filter_by_result(scope)
+    return scope if params[:status].blank?
+
+    scope.where(
+      "cached_result = :status OR (cached_result IS NULL AND sar_controls.id IN " \
+      "(SELECT sar_control_id FROM sar_control_fields WHERE field_name = 'result' AND field_value = :status))",
+      status: params[:status]
+    )
+  end
+
+  # #1114 — the assessment METHOD the plan calls for.
+  #
+  # The coverage heatmap's badges are methods, so its links carry `?method=`.
+  # Methods live on the linked SAP, not on `sar_controls`, so this resolves the
+  # control ids carrying the method and filters on those.
+  def filter_by_assessment_method(scope)
+    return scope if params[:method].blank?
+
+    wanted = params[:method].to_s.downcase
+    ids = planned_methods_by_control.filter_map do |control_id, methods|
+      next control_id if wanted == "multiple" && methods.size > 1
+      next control_id if wanted == ApplicationHelper::LABEL_NONE.downcase && methods.empty?
+
+      control_id if methods.include?(wanted)
+    end
+
+    # Compared canonically: the plan and the results spell control ids
+    # differently ("AC-1" vs "ac-1"), and a raw match silently returns nothing.
+    #
+    # Stays a RELATION: the caller orders, includes and paginates this, and
+    # `.select {}` on a relation returns an Array, which breaks all three.
+    matching_ids = scope.pluck(:id, :control_id).filter_map do |id, control_id|
+      id if ids.include?(ControlId.canonical(control_id).to_s.downcase)
+    end
+    scope.where(id: matching_ids)
+  end
 
   METHOD_ORDER = %w[examine interview test].freeze
 

@@ -152,18 +152,57 @@ RSpec.describe "SAR assessment coverage heatmap (#1114)", type: :request do
       expect(card).not_to include("status=examine")
     end
 
-    it "narrows the control list to controls the plan assesses that way" do
-      get sar_document_path(sar, method: "test")
-
-      expect(response.body).to include("ac-2")
-      expect(response.body).not_to match(/data-family="AC"[^>]*>\s*<[^>]*>\s*ac-1/)
+    # Asserted by COUNTING the rendered control cards. The first version of these
+    # used a negative regex against the page text, which never matched anything —
+    # so a mutation that stopped the filter narrowing at all passed clean.
+    def rendered_controls(body)
+      body.scan(/class="control-card/).size
     end
 
-    it "returns an empty list rather than everything for a method nothing uses" do
+    it "narrows the control list to controls the plan assesses that way" do
+      get sar_document_path(sar)
+      unfiltered = rendered_controls(response.body)
+
+      get sar_document_path(sar, method: "test")
+      filtered = rendered_controls(response.body)
+
+      expect(unfiltered).to eq(2)
+      expect(filtered).to eq(1), "?method=test must narrow to the one control the plan tests"
+    end
+
+    it "selects the RIGHT control, not merely fewer of them" do
+      get sar_document_path(sar, method: "test")
+
+      # ac-2 is the test-only control; ac-1 is examine+interview.
+      expect(response.body).to include("ac-2")
+      expect(response.body).not_to include(">ac-1<")
+    end
+
+    it "matches a control the plan assesses several ways" do
       get sar_document_path(sar, method: "interview")
 
-      # ac-1 is examine+interview; ac-2 is test only.
+      expect(rendered_controls(response.body)).to eq(1)
       expect(response.body).to include("ac-1")
+    end
+
+    it "returns nothing for a method the plan never calls for" do
+      get sar_document_path(sar, method: "nonexistent")
+
+      expect(rendered_controls(response.body)).to eq(0),
+        "an unmatched method must return an empty list, not the whole document"
+    end
+
+    it "narrows by family too" do
+      other = sar.sar_controls.create!(control_id: "au-1", title: "Audit",
+                                       control_family: "AU", row_order: 2)
+      expect(other).to be_persisted
+
+      get sar_document_path(sar)
+      expect(rendered_controls(response.body)).to eq(3)
+
+      get sar_document_path(sar, family: "AC")
+      expect(rendered_controls(response.body)).to eq(2),
+        "?family=AC must exclude the AU control"
     end
   end
 
