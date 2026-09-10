@@ -13,6 +13,11 @@
     legend_items      — Array of [label, color] pairs for the legend
     show_percentage   — Boolean, whether to show compliance percentage per family (default: true)
     percentage_calc   — Lambda/Proc: ->(family_data, family_total) { pct } — custom % logic
+    family_percentages — Hash { family => pct }. Takes precedence over
+                        percentage_calc, for a percentage that cannot be derived
+                        from the family's own badge counts — SAR assessment
+                        progress is computed from OBJECTIVE determinations, which
+                        the badges (assessment methods) know nothing about.
     url_sync          — Boolean, whether to sync filters to URL (default: false)
     initial_family    — Pre-applied family filter (from URL param)
     initial_filter    — Pre-applied status/severity filter (from URL param)
@@ -25,6 +30,7 @@
 <%
   show_pct       = local_assigns.fetch(:show_percentage, true)
   pct_calc       = local_assigns[:percentage_calc]
+  family_pcts    = local_assigns[:family_percentages]
   sync_url       = local_assigns.fetch(:url_sync, false)
   init_family    = local_assigns[:initial_family].to_s
   init_filter    = local_assigns[:initial_filter].to_s
@@ -71,7 +77,9 @@
         <% family_total = family_data.values.sum %>
         <%
           if show_pct
-            if pct_calc
+            if family_pcts
+              family_pct = family_pcts[family].to_i
+            elsif pct_calc
               family_pct = pct_calc.call(family_data, family_total)
             else
               impl  = family_data["Implemented"].to_i
@@ -85,7 +93,7 @@
         <div class="sparc-heatmap-card<%= ' active' if card_active %>"
              data-family="<%= family %>"
              <% if mode == :server && doc && p_helper %>
-               data-href="<%= send(p_helper, doc, f_params.except(:page).merge(card_active ? { family: nil, status: nil } : { family: family, status: nil })) %>"
+               data-href="<%= send(p_helper, doc, f_params.except(:page).merge(card_active ? { :family => nil, fkey.to_sym => nil } : { :family => family, fkey.to_sym => nil })) %>"
                data-action="click->heatmap#navigateByHref"
              <% else %>
                data-action="click->heatmap#filterByCard"
@@ -95,7 +103,8 @@
               <%= link_to family,
                     send(p_helper, doc,
                       f_params.except(:page).merge(
-                        card_active ? { family: nil, status: nil } : { family: family, status: nil }
+                        card_active ? { :family => nil, fkey.to_sym => nil }
+                                    : { :family => family, fkey.to_sym => nil }
                       )),
                     class: "sparc-family-link" %>
             <% elsif fam_url %>
@@ -135,10 +144,17 @@
               <% if mode == :server && doc && p_helper %>
                 <% cell_active = active_family == family && active_status == s %>
                 <% has_any_filter = active_family.present? || active_status.present? %>
+                <%# #1114 — the filter param is the DECLARED filter key.
+                    It was hardcoded to `status`, so a server-mode heatmap whose
+                    badges are anything else — the SAR's assessment methods —
+                    linked to `?status=examine`, which that screen reads as a
+                    RESULT filter and matches nothing. Stimulus mode already used
+                    `fkey`; only this branch disagreed. %>
                 <%= link_to count,
                       send(p_helper, doc,
                         f_params.except(:page).merge(
-                          cell_active ? { family: nil, status: nil } : { family: family, status: s }
+                          cell_active ? { :family => nil, fkey.to_sym => nil }
+                                      : { :family => family, fkey.to_sym => s }
                         )),
                       title: "#{family} / #{s}: #{count}",
                       class: "sparc-heatmap-badge sparc-status--#{send(variant_helper, s)} " \

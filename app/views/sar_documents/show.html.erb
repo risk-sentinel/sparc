@@ -240,21 +240,27 @@
      heatmap_data: @heatmap_data,
      heatmap_families: @heatmap_families,
      heatmap_statuses: @heatmap_statuses,
-     title: "Results by Control Family",
-     variant_helper: :sar_status_variant,
-     filter_key: "status",
+     title: "Assessment Coverage by Control Family",
+     variant_helper: :sap_method_variant,
+     filter_key: "method",
      link_mode: :server,
      document: @sar_document,
      path_helper: :sar_document_path,
      filter_params: filter_params,
      active_family: active_family,
      active_status: active_status,
-     percentage_calc: ->(fd, _ft) {
-       fp = fd.sum { |s, c| s.to_s.downcase.start_with?("pass") ? c : 0 }
-       ff = fd.sum { |s, c| s.to_s.downcase.match?(/\A(fail|not satisfied)/) ? c : 0 }
-       (fp * 100.0 / [fp + ff, 1].max).round
-     },
-     legend_items: [["Passed", "#27ae60"], ["Failed", "#e74c3c"], ["Not Satisfied", "#f39c12"], ["Not Specified", "#95a5a6"]] %>
+     # #1114 — the tile percentage is ASSESSMENT PROGRESS, not a pass rate.
+     # A pass rate reads as progress and is not: a family with one control
+     # examined and passed showed 100% while 23 objectives sat untouched.
+     # "Assessed" means a determination was recorded (satisfied / not-satisfied)
+     # — the same rule the exporter applies when deciding what may become a
+     # finding, so the tile and the artifact cannot disagree.
+     family_percentages: @assessed_pct_by_family,
+     legend_items: [["Examine", sap_method_color("examine")],
+                    ["Interview", sap_method_color("interview")],
+                    ["Test", sap_method_color("test")],
+                    ["Multiple", sap_method_color("multiple")],
+                    ["None", sap_method_color(ApplicationHelper::LABEL_NONE)]] %>
 
 
 <%# ── NEEDS RE-ASSOCIATION BANNER ──────────────────────────────── %>

@@ -82,9 +82,20 @@ class SarDocumentsController < ApplicationController
     base_filtered = base_filtered.where(subject_asset: params[:asset])             if params[:asset].present?
     base_filtered = base_filtered.where(subject_environment: params[:environment]) if params[:environment].present?
 
-    # Heatmap built from context-filtered scope (responds to asset/env/section)
+    # #1114 — the heatmap is the ASSESSMENT PLAN's shape, with progress on it.
+    #
+    # Owner: "the mapping that the SAP has for Examine, Interview, Test and its
+    # heat map … is the right shape for the SAR with the % completed (assessed)
+    # on the tiles. This gives the full picture of what is expected of the
+    # assessor and the team being assessed."
+    #
+    # Methods answer "what is expected"; the percentage answers "how far in are
+    # we". The previous tile carried a PASS RATE, which reads as progress and is
+    # not — a family with one control examined and passed showed 100% while 23
+    # objectives sat untouched.
     @heatmap_data, @heatmap_families, @heatmap_statuses =
-      build_heatmap_from_scope(base_filtered)
+      build_method_heatmap_from_scope(base_filtered)
+    @assessed_pct_by_family = build_assessed_pct_by_family(base_filtered)
 
     # Apply family/status filters using raw SQL to avoid
     # #or structural incompatibility with :joins
@@ -114,6 +125,28 @@ class SarDocumentsController < ApplicationController
         "(SELECT sar_control_id FROM sar_control_fields WHERE field_name = 'result' AND field_value = :status))",
         status: params[:status]
       )
+    end
+
+    # #1114 — filter by the assessment METHOD the plan calls for.
+    #
+    # The coverage heatmap's badges are methods, so its links carry `?method=`.
+    # Methods live on the linked SAP, not on `sar_controls`, so this resolves the
+    # control ids that carry the method and filters on those.
+    if params[:method].present?
+      wanted = params[:method].to_s.downcase
+      ids = planned_methods_by_control.filter_map do |control_id, methods|
+        next control_id if wanted == "multiple" && methods.size > 1
+        next control_id if wanted == ApplicationHelper::LABEL_NONE.downcase && methods.empty?
+        control_id if methods.include?(wanted)
+      end
+      # Compared canonically: the plan and the results spell control ids
+      # differently ("AC-1" vs "ac-1"), and a raw match silently returns nothing.
+      # Stays a RELATION: `filtered` is ordered, included and paginated below, and
+      # `.select {}` on a relation returns an Array, which breaks all three.
+      matching_ids = filtered.pluck(:id, :control_id).filter_map do |id, control_id|
+        id if ids.include?(ControlId.canonical(control_id).to_s.downcase)
+      end
+      filtered = filtered.where(id: matching_ids)
     end
 
     # Paginate (explicit order since default_scope was removed for query performance)
@@ -530,6 +563,91 @@ class SarDocumentsController < ApplicationController
   end
 
   private
+
+  METHOD_ORDER = %w[examine interview test].freeze
+
+  # family => { method => count }, the same shape SAP's heatmap uses.
+  #
+  # The methods come from the linked SAP where there is one — the PLAN is what
+  # says how a control will be assessed, and #1114's whole point is that the SAR
+  # reads down the chain rather than inventing its own answer. Where no SAP is
+  # linked, they come from the catalog's own 800-53A `assessment-method` parts,
+  # which is the same authority the SAP itself draws on.
+  def build_method_heatmap_from_scope(scope)
+    methods_by_control = planned_methods_by_control
+    data = {}
+
+    scope.where.not(control_family: [ nil, "" ])
+         .pluck(:control_family, :control_id).each do |family, control_id|
+      methods = methods_by_control[ControlId.canonical(control_id).to_s.downcase] || []
+      data[family] ||= Hash.new(0)
+      if methods.empty?
+        data[family][ApplicationHelper::LABEL_NONE] += 1
+      else
+        data[family]["multiple"] += 1 if methods.size > 1
+        methods.each { |m| data[family][m] += 1 }
+      end
+    end
+
+    families = data.keys.sort
+    all_methods = data.values.flat_map(&:keys).uniq
+    ordered = METHOD_ORDER.select { |m| all_methods.include?(m) }
+    ordered << "multiple" if all_methods.include?("multiple")
+    ordered += (all_methods - METHOD_ORDER - [ "multiple" ]).sort
+
+    [ data, families, ordered ]
+  end
+
+  # canonical control id => ["examine", "interview", ...]
+  def planned_methods_by_control
+    sap = @sar_document.sap_document
+    if sap
+      return sap.sap_controls.pluck(:control_id, :assessment_method).each_with_object({}) do |(cid, raw), acc|
+        acc[ControlId.canonical(cid).to_s.downcase] =
+          raw.to_s.split(",").map { |m| m.strip.downcase }.reject(&:blank?).uniq
+      end
+    end
+
+    # No plan linked — fall back to what 800-53A itself prescribes.
+    CatalogControlPart
+      .joins(:catalog_control)
+      .where(part_name: "assessment-method")
+      .pluck(Arel.sql("catalog_controls.control_id"), :props_data)
+      .each_with_object(Hash.new { |h, k| h[k] = [] }) do |(cid, props), acc|
+        method = Array(props).find { |pr| pr["name"] == "method" }
+        next if method.nil?
+
+        acc[ControlId.canonical(cid).to_s.downcase] |= [ method["value"].to_s.downcase ]
+      end
+  end
+
+  # family => percent of that family's objectives that carry a DETERMINATION.
+  #
+  # "Assessed" means a determination was recorded — satisfied or not-satisfied.
+  # `pending` and `in-progress` are not assessed, and `not_applicable` is a
+  # scoping decision rather than an assessment, so none of them count toward
+  # progress. Same rule the exporter applies when deciding what may become a
+  # finding, so the tile and the artifact cannot disagree.
+  def build_assessed_pct_by_family(scope)
+    families = scope.where.not(control_family: [ nil, "" ]).distinct.pluck(:control_family)
+    return {} if families.empty?
+
+    rows = SarControlObjective
+             .joins(:sar_control)
+             .where(sar_controls: { sar_document_id: @sar_document.id, control_family: families })
+             .group("sar_controls.control_family", :status).count
+
+    totals = Hash.new(0)
+    determined = Hash.new(0)
+    rows.each do |(family, status), count|
+      totals[family] += count
+      determined[family] += count if %w[passing failed].include?(status)
+    end
+
+    totals.each_with_object({}) do |(family, total), acc|
+      acc[family] = total.zero? ? 0 : (determined[family] * 100.0 / total).round
+    end
+  end
 
   # control_id (canonical, downcased) => the control's tailored statement prose.
   #
@@ -984,7 +1102,8 @@ class SarDocumentsController < ApplicationController
   end
 
   def filter_params
-    params.except(:controller, :action, :id).permit(:section, :family, :status, :asset, :environment, :page).to_h
+    params.except(:controller, :action, :id)
+          .permit(:section, :family, :status, :method, :asset, :environment, :page).to_h
   end
 
   SAR_STATUS_ORDER = [
