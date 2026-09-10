@@ -575,7 +575,25 @@
                   <%= fname.tr("_", " ") %>
                   <span class="sparc-edit-editable-hint">(editable)</span>
                 </label>
-                <% if fname == "result" %>
+                <% if fname == "date" %>
+                  <%# #1114 — a real datetime control, defaulting to now. It was
+                      a 3-row textarea, so an assessor typed a date by hand in
+                      whatever format occurred to them — and this feeds OSCAL
+                      `observation.collected`, which the schema REQUIRES and
+                      which must be a real timestamp. %>
+                  <%= datetime_local_field_tag "fields[#{fname}]",
+                        (Time.zone.parse(fval).strftime("%Y-%m-%dT%H:%M") rescue nil) ||
+                          Time.zone.now.strftime("%Y-%m-%dT%H:%M"),
+                        class: "form-control sparc-fs-0875", id: field_id %>
+                <% elsif fname == "assessor" %>
+                  <%# #1114 — who made the determination, defaulted to the
+                      signed-in user rather than typed. Was `custom_author`, a
+                      free-text spreadsheet column; in OSCAL this is an
+                      assessment actor. %>
+                  <%= text_field_tag "fields[#{fname}]",
+                        fval.presence || current_user&.display_name.presence || current_user&.email,
+                        class: "form-control sparc-fs-0875", id: field_id %>
+                <% elsif fname == "result" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SarControlField::RESULT_VALUES, fval),
                         include_blank: "&mdash; select &mdash;".html_safe, class: "form-control sparc-fs-0875", id: field_id %>
