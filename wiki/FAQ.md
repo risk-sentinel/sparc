@@ -41,6 +41,18 @@ This was a CSP regression fixed in **v1.8.1**. Ensure you're on ≥ v1.8.1.
 Fixed in **v1.8.5** — Chromium enforces CSP `form-action` on every redirect hop.
 Upgrade to ≥ v1.8.5.
 
+**Sign-in does nothing — the form just comes back, and the password is right.**
+You are almost certainly reaching a production-mode instance over plain **HTTP**.
+Production sets `force_ssl`, so SPARC considers itself an `https://` site; your
+browser sends an `http://` origin; the two disagree and the browser's CSRF check
+rejects the form before your credentials are read. Browse to the **`https://`**
+address instead. Since **v1.16.1** SPARC says this on screen rather than
+re-rendering the form silently, so if you see no message at all you are on an
+older build. Two things that make this one hard to spot: **read-only pages work
+perfectly** — the instance looks healthy until the first form submission — and
+**`curl` cannot reproduce it**, because curl sends no `Origin` header, so a
+successful `curl` login proves nothing about whether a browser can sign in.
+
 **Deploy fails on a "Email has already been taken" / case-variant email.**
 v1.8.5 added a DB-enforced `LOWER(email)` unique index. Resolve pre-existing
 case-variant duplicate emails before deploying.

@@ -40,6 +40,17 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
   for fast inner-loop checks, never for the release/pre-push gate. Green `rspec`
   alone is **not** sufficient — it never exercises the running image, routing, or
   CSP. **CI-only or docs-only changes are exempt.**
+- **Reach the local prod stack over HTTPS (`:3443`), never plain HTTP (`:3000`).**
+  `RAILS_ENV=production` sets `force_ssl`, so Rails builds `request.base_url` as
+  `https://…` while a browser on `http://localhost:3000` sends
+  `Origin: http://…`. They disagree, forgery protection rejects the request, and
+  **read-only pages keep working** — the instance looks healthy right up to the
+  first POST. Since #978 the rejection says so on screen instead of re-rendering
+  the login form blank-faced; before that it was indistinguishable from a wrong
+  password, and cost a round of diagnosis chasing credentials.
+  **`curl` does not reproduce it** — curl sends no `Origin` header, so the check
+  never runs and the login succeeds. Verifying credentials with curl proves
+  nothing about whether a browser can sign in.
 - **A `remediated` finding is RETIRED, not reviewed** (owner-decided 2026-08-20).
   A review cadence asks "is this accepted risk still acceptable?", which is a
   question about a LIVE disposition and the wrong question for something already
