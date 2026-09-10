@@ -8,17 +8,12 @@
 
 <% else %>
 <%
-  severity_total = @severity_counts.values.sum
-  high_count   = @severity_counts["high"].to_i
-  medium_count = @severity_counts["medium"].to_i
-  low_count    = @severity_counts["low"].to_i
-  info_count   = @severity_counts["info"].to_i
 
   type_colors = { "disa_stig" => "#e74c3c", "scap" => "#3498db", "cis" => "#f39c12", "custom" => "#95a5a6" }
   type_color  = type_colors[@cdef_document.cdef_type] || "#7f8c8d"
 %>
 
-<div data-controller="doc-meta heatmap-chip cdef-control"
+<div data-controller="doc-meta cdef-control"
      data-cdef-control-update-field-url-value="<%= update_field_cdef_document_path(@cdef_document) %>"
      data-cdef-control-create-url-value="<%= create_control_resource_cdef_document_path(@cdef_document) %>"
      data-cdef-control-unlink-url-value="<%= unlink_control_resource_cdef_document_path(@cdef_document) %>">
@@ -37,13 +32,17 @@
             <span class="sparc-version-badge">v<%= @cdef_document.cdef_version %></span>
           <% end %>
           <% if @cdef_document.aws_labs_source? %>
-            <span class="badge bg-warning text-dark" title="Read-only — imported from AWS Labs">
+            <span class="sparc-status sparc-status--warning" title="Read-only — imported from AWS Labs">
               AWS Labs (read-only)
             </span>
+            <% if @cdef_document.source_url.present? %>
+              <a href="<%= @cdef_document.source_url %>" target="_blank" rel="noopener"
+                 class="sparc-fs-078 sparc-color-tertiary">View source</a>
+            <% end %>
           <% end %>
           <%# #627/#628 — content-completeness is distinct from the parse status. %>
           <% unless @cdef_document.content_complete? %>
-            <span class="badge bg-warning text-dark"
+            <span class="sparc-status sparc-status--warning"
                   title="<%= @cdef_document.content_completeness_gaps.join('; ') %>">
               Incomplete — needs content
             </span>
@@ -53,7 +52,7 @@
               Distinct from "Incomplete": the content IS there, the component
               index that summarises it is not. %>
           <% if @cdef_document.component_index_degraded? %>
-            <span class="badge bg-warning text-dark"
+            <span class="sparc-status sparc-status--warning"
                   data-testid="cdef-index-degraded"
                   title="The component index failed during import on <%= @cdef_document.component_index_failed_at %>. Controls are intact; component-derived views may understate this document. Re-import to rebuild it.">
               Component index degraded
@@ -72,28 +71,15 @@
           meeting two differently-worded warnings about the same document. %>
       <%= render "shared/reconciliation_banner", document: @cdef_document %>
 
-      <% if @cdef_document.aws_labs_source? %>
-        <div class="alert alert-warning d-flex justify-content-between align-items-center mt-2 mb-0" role="alert">
-          <div>
-            <strong>Imported from AWS Labs.</strong>
-            This component definition is maintained upstream and is read-only here.
-            <% if @cdef_document.source_url.present? %>
-              <a href="<%= @cdef_document.source_url %>" target="_blank" rel="noopener" class="alert-link">View source</a>.
-            <% end %>
-            To make edits, create a copy.
-          </div>
-          <% if signed_in? %>
-            <%= button_to "Copy for editing",
-                  copy_cdef_document_path(@cdef_document),
-                  method: :post,
-                  class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm ms-3",
-                  form: { class: "mb-0" } %>
-          <% end %>
-        </div>
-      <% end %>
+      <%# #1088 — the "Imported from AWS Labs ... read-only here ... create a
+          copy" banner was removed on owner review. The header already carries
+          an "AWS Labs (read-only)" badge and the action row already carries a
+          Copy button, so the prose restated both above every page of content.
+          The source link was the one thing only the banner had — it moved up
+          beside the badge. %>
 
       <% if signed_in? %>
-        <div id="doc-meta-edit" data-doc-meta-target="edit" style="display: none;">
+        <div class="sparc-d-none" id="doc-meta-edit" data-doc-meta-target="edit">
           <%= form_with url: update_metadata_cdef_document_path(@cdef_document), method: :patch, local: true do |f| %>
             <div class="d-flex gap-2 align-items-center flex-wrap">
               <%= f.text_field :name, value: @cdef_document.name,
@@ -110,11 +96,11 @@
       <div class="sparc-header-meta">
         <%= @cdef_document.original_filename %>
         &nbsp;&bull;&nbsp;
-        <span class="fw-semibold" style="color: <%= type_color %>;"><%= @cdef_document.cdef_type&.upcase&.tr("_", " ") || "Unknown" %></span>
+        <span class="fw-semibold sparc-accent-text <%= accent_class(type_color) %>"><%= @cdef_document.cdef_type&.upcase&.tr("_", " ") || "Unknown" %></span>
         &nbsp;&bull;&nbsp; <%= @total_controls %> controls
       </div>
       <% if @cdef_document.description.present? %>
-        <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; max-width: 600px;"><%= truncate(@cdef_document.description, length: 200) %></div>
+        <div class="sparc-color-white-45 sparc-fs-082 sparc-mt-04 sparc-maxw-600"><%= truncate(@cdef_document.description, length: 200) %></div>
       <% end %>
     </div>
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
@@ -132,8 +118,12 @@
           <%= button_to "Create Editable Copy", copy_cdef_document_path(@cdef_document), method: :post,
                 class: "sparc-action sparc-action--positive sparc-action--solid", form: { data: { turbo_confirm: "Create an editable copy of this published component definition?" } } %>
         <% else %>
-          <%= button_to "Copy", copy_cdef_document_path(@cdef_document), method: :post,
-                class: "sparc-action sparc-action--info sparc-action--outline", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
+          <%# On an upstream document this IS the way to make edits, so it says
+              so. The removed banner used to carry that sentence. %>
+          <%= button_to @cdef_document.aws_labs_source? ? "Copy for editing" : "Copy",
+                copy_cdef_document_path(@cdef_document), method: :post,
+                class: "sparc-action sparc-action--info sparc-action--outline",
+                form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
         <% end %>
       <% end %>
       <%# #499 slice 5 — bulk-apply Converter (editable clones only). %>
@@ -162,38 +152,16 @@
     </div>
   </div>
 
+  <%# #1088 — the severity chips and the severity progress bar that sat beside
+      this count went with the "Severity by Control Family" heatmap they
+      filtered. The chips dispatched `heatmap:chip` to `#heatmapSection`, so
+      without that section they would have rendered and silently done nothing.
+      Per-control severity is still on every control card, where it is real for
+      the XCCDF/STIG-sourced CDEFs that populate it. %>
   <div class="d-flex align-items-center gap-4 flex-wrap">
-    <div class="text-center flex-shrink-0" style="min-width: 80px;">
-      <div class="sparc-score" style="color: white;"><%= @total_controls %></div>
+    <div class="text-center flex-shrink-0 sparc-minw-80px">
+      <div class="sparc-score sparc-color-white"><%= @total_controls %></div>
       <div class="sparc-score-label">Total Controls</div>
-    </div>
-
-    <div class="sparc-divider-v"></div>
-
-    <div class="d-flex flex-wrap gap-2" style="flex: 1;">
-      <% [["high", high_count, "#e74c3c"], ["medium", medium_count, "#f39c12"], ["low", low_count, "#3498db"], ["info", info_count, "#95a5a6"]].each do |sev, count, color| %>
-        <% next if count == 0 %>
-        <div class="summary-chip sparc-summary-chip"
-             data-filter-value="<%= sev %>"
-             data-action="click->heatmap-chip#apply keydown.enter->heatmap-chip#apply keydown.space->heatmap-chip#apply"
-             data-heatmap-chip-filter-param="<%= sev %>"
-             role="button"
-             tabindex="0"
-             title="Click to filter: <%= sev %>"
-             style="border-left: 3px solid <%= color %>;">
-          <div class="sparc-chip-count"><%= count %></div>
-          <div class="sparc-chip-label" style="text-transform: capitalize;"><%= sev %></div>
-        </div>
-      <% end %>
-    </div>
-  </div>
-
-  <div class="mt-3">
-    <div class="sparc-progress-bar">
-      <% [["high", high_count, "#e74c3c"], ["medium", medium_count, "#f39c12"], ["low", low_count, "#3498db"], ["info", info_count, "#95a5a6"]].each do |sev, count, color| %>
-        <% next if count == 0 %>
-        <div style="width: <%= (count * 100.0 / [severity_total, 1].max).round(3) %>%; background: <%= color %>;" title="<%= sev.capitalize %>: <%= count %>"></div>
-      <% end %>
     </div>
   </div>
 </div>
@@ -206,70 +174,17 @@
       document: @cdef_document,
       components: @components || [] %>
 
-<%# ── SEVERITY HEATMAP BY CONTROL FAMILY ─────────────────────────── %>
-<%= render "shared/heatmap",
-     heatmap_data: @heatmap_data,
-     heatmap_families: @heatmap_families,
-     heatmap_statuses: @heatmap_severities,
-     title: "Severity by Control Family",
-     variant_helper: :cdef_severity_variant,
-     filter_key: "severity",
-     show_percentage: false,
-     legend_items: [["High", "#e74c3c"], ["Medium", "#f39c12"], ["Low", "#3498db"], ["Info", "#95a5a6"]] %>
+<%# #1088 — the "Severity by Control Family" heatmap was removed on owner
+    review. `severity` is an XCCDF/STIG concept: cdef_xccdf_parser_service
+    populates it, and the OSCAL JSON path has nothing to populate it FROM. It is
+    NULL on every control of every OSCAL-sourced CDEF — the whole AWS Labs
+    corpus — so the panel rendered one "(Unknown)" band per family and told the
+    reader nothing a component definition actually knows. %>
 
-<%# ── BASELINE COVERAGE (if linked to profile) ──────────────────── %>
-<% if @gap_analysis.present? %>
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="fw-bold mb-3" id="baseline-coverage-heading">Baseline Coverage</h5>
-      <div class="d-flex align-items-center gap-3 mb-2">
-        <div class="progress flex-grow-1" style="height: 1.2rem;">
-          <%# role="progressbar" takes no accessible name from its contents, so the
-              percentage rendered inside it is invisible to a screen reader — the
-              control announced as "progress bar" with no name and no value. Named
-              from the heading it sits under, and given the value attributes so the
-              figure is announced rather than only drawn (WCAG 2.1 A/AA,
-              axe rule `aria-progressbar-name`). %>
-          <div class="progress-bar <%= @gap_analysis[:coverage_pct] == 100.0 ? 'bg-success' : @gap_analysis[:coverage_pct] >= 80 ? 'bg-warning' : 'bg-danger' %>"
-               style="width: <%= @gap_analysis[:coverage_pct] %>%"
-               role="progressbar"
-               aria-labelledby="baseline-coverage-heading"
-               aria-valuenow="<%= @gap_analysis[:coverage_pct] %>"
-               aria-valuemin="0"
-               aria-valuemax="100">
-            <%= @gap_analysis[:coverage_pct] %>%
-          </div>
-        </div>
-      </div>
-      <div class="d-flex gap-4" style="font-size: 0.85rem;">
-        <span class="text-success fw-semibold"><%= @gap_analysis[:covered].size %> covered</span>
-        <% if @gap_analysis[:missing].any? %>
-          <span class="text-danger fw-semibold"><%= @gap_analysis[:missing].size %> missing</span>
-        <% end %>
-        <% if @gap_analysis[:extra].any? %>
-          <span class="text-body-secondary"><%= @gap_analysis[:extra].size %> extra (beyond baseline)</span>
-        <% end %>
-        <span class="text-body-secondary">Baseline: <%= @gap_analysis[:total_baseline] %> controls</span>
-      </div>
-
-      <% if @missing_controls&.any? %>
-        <details class="mt-2">
-          <summary class="text-danger" style="font-size: 0.85rem; cursor: pointer;">
-            Show <%= @missing_controls.size %> missing control(s)
-          </summary>
-          <div class="mt-2" style="font-size: 0.82rem;">
-            <% @missing_controls.each do |mc| %>
-              <div class="d-flex align-items-center gap-2 py-1 border-bottom">
-                <code class="fw-bold"><%= mc[:id] %></code>
-                <span class="text-body-secondary"><%= mc[:title] %></span>
-              </div>
-            <% end %>
-          </div>
-        </details>
-      <% end %>
-    </div>
-  </div>
-<% end %>
+<%# #1088 — the Baseline Coverage panel (progress bar, covered/missing/extra
+    counts, and a "show N missing controls" list) was removed on owner review:
+    "Baseline coverage? There is no need for this to even exist and was not
+    asked for!" `@gap_analysis` and `@missing_controls` went with it. %>
 
 <%# ── EMPTY-STATE: populate from profile (#628) ───────────────────── %>
 <% if !@cdef_document.cdef_controls.exists? && @cdef_document.editable? %>
@@ -292,14 +207,78 @@
 <% end %>
 
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
+<%# #1088 — grouped BY COMPONENT, because a flat list of them reads as
+    duplication. Owner review: "duplicating controls 2 ElasticBeanstalk.1, 2
+    ElasticBeanstalk.2, 2 ElasticBeanstalk.3".
+
+    They are not duplicates. On the Elastic Beanstalk definition the SERVICE
+    asserts all three controls and each AWS Config Rule re-asserts the one its
+    check covers — two different components making the same claim, which is what
+    the upstream document says. Rendered as one undifferentiated list the second
+    assertion had nothing to distinguish it from the first, so six rows for three
+    controls looked like a bug in SPARC rather than the structure of the source.
+
+    Grouping is only applied when the controls actually carry attribution
+    (#1088). A hand-authored CDEF, or one imported before the parser kept it,
+    still renders the flat list it always did. %>
+<% component_titles = @cdef_document.cdef_components.to_h { |c| [ c.component_uuid, c ] } %>
+<%
+  # #1088 — SERVICE LEVEL ONLY. `@listed_controls` is decided in the controller,
+  # alongside `@total_controls`, so the header count and these rows come from one
+  # set and cannot disagree.
+  #
+  # Owner review: "AWS Elastic BeanStalk owns the service and software outright
+  # and the capabilities … are all required to achieve those controls on AWS
+  # Elastic Beanstalk the service. No reason to display anything other than the
+  # service level."
+  #
+  # The check components re-assert the service's own controls — the upstream
+  # document saying which Config Rule delivers which control, not three further
+  # sets of obligations. Listing them here turned 3 controls into 6 rows that
+  # differ only by which check names them. What a reader has to DO is the checks
+  # themselves, and those are named in "Components and applicability" above,
+  # against the controls they achieve.
+  #
+  # The EXPORT is unaffected and still emits every component with its own
+  # implemented-requirements — OSCAL fidelity (#1088 items 4 and 5) is a separate
+  # question from what this screen shows.
+  listed_controls  = @listed_controls || @controls
+  # Heading only when there is more than one group to tell apart.
+  grouped_controls = listed_controls.map(&:component_uuid).compact.uniq.size > 1
+%>
 <div id="controlsContainer">
-  <% @controls.sort_by { |c| CdefControl.control_sort_key(c.control_id) }.each do |control| %>
+  <% control_groups =
+       if grouped_controls
+         listed_controls.group_by(&:component_uuid).sort_by { |uuid, _|
+           comp = component_titles[uuid]
+           [ comp&.component_type == "service" ? 0 : 1, comp&.title.to_s ]
+         }
+       else
+         [ [ nil, listed_controls ] ]
+       end %>
+  <% control_groups.each do |component_uuid, group_controls| %>
+    <% comp = component_titles[component_uuid] %>
+    <% if grouped_controls %>
+      <div class="sparc-mt-1r sparc-mb-05 d-flex align-items-baseline gap-2 flex-wrap">
+        <h3 class="h6 sparc-mb-0"><%= comp&.title.presence || "Unattributed" %></h3>
+        <% if comp&.component_type.present? %>
+          <span class="badge bg-secondary sparc-fs-065"><%= comp.component_type %></span>
+        <% end %>
+        <span class="small text-body-secondary">
+          <%= pluralize(group_controls.size, "control") %>
+        </span>
+      </div>
+    <% end %>
+  <% group_controls.sort_by { |c| CdefControl.control_sort_key(c.control_id) }.each do |control| %>
     <%
       field_map    = control.cdef_control_fields.index_by(&:field_name)
-      sev_val      = control.severity.presence || "(Unknown)"
-      sev_colors_map = { "high" => "#e74c3c", "medium" => "#f39c12", "low" => "#3498db", "info" => "#95a5a6" }
-      sev_color    = sev_colors_map[sev_val] || "#7f8c8d"
-      sev_variant  = cdef_severity_variant(sev_val)
+      # #1088 — no synthetic "(Unknown)". An OSCAL component definition does not
+      # carry severity, so the fallback string was the value on every control of
+      # every AWS Labs document, and it reached the page twice: as the pill, and
+      # as `data-severity` on the card.
+      sev_val      = control.severity.presence
+      sev_color    = sev_val ? cdef_severity_color(sev_val) : nil
+      sev_variant  = sev_val ? cdef_severity_variant(sev_val) : nil
       # #911 — `"".split("-").first` is nil, so the unguarded `.upcase` that was
       # here raised NoMethodError and 500'd this whole page for any CDEF holding
       # an unmapped STIG rule — which, as of this commit, legitimately has no
@@ -310,31 +289,41 @@
       description  = field_map["description"]&.field_value.presence
       cci_refs     = field_map["cci_refs"]&.field_value.presence
     %>
-    <div class="control-card"
+    <%# `data-severity` is emitted only when there IS one. It fed the severity
+        heatmap's client-side filter, which #1088 removed; leaving it behind put
+        the string "(Unknown)" in the markup of every card for no reader. %>
+    <div class="control-card sparc-border-l-4 <%= accent_class(sev_color) if sev_color %>"
          data-family="<%= family_code %>"
-         data-severity="<%= sev_val %>"
-         style="border-left: 4px solid <%= sev_color %>;">
+         <% if sev_val.present? %>data-severity="<%= sev_val %>"<% end %>>
 
       <%# ── Card header ── %>
-      <div class="d-flex justify-content-between align-items-start" style="gap: 1rem;">
-        <div style="min-width: 0; flex: 1;">
-          <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.2rem;">
+      <div class="d-flex justify-content-between align-items-start sparc-gap-1r">
+        <div class="sparc-flex-1 sparc-minw-0">
+          <div class="d-flex align-items-center gap-2 flex-wrap sparc-mb-02">
             <%# #911 — an unmapped STIG rule leads with its own identifier and
                 says so, rather than showing a bare dash where a control would be. %>
             <span class="sparc-ctrl-id">
               <%= control.control_id.presence || control.provenance_id.presence || "&mdash;".html_safe %>
             </span>
             <% if control.unmapped_stig_rule? %>
-              <span class="sparc-tag-outline fw-semibold" style="background: rgba(243,156,18,0.10); border: 1px solid rgba(243,156,18,0.35);"
+              <span class="sparc-tag-outline fw-semibold sparc-cdef-callout sparc-accent--orange"
                     title="This STIG rule resolved to no NIST control through its CCI references.">
                 Unmapped
               </span>
             <% end %>
-            <span class="sparc-status-pill sparc-status--<%= sev_variant %>" style="text-transform: capitalize;">
-              <%= sev_val %>
-            </span>
+            <%# #1088 — a severity badge only when there IS a severity. It read
+                "(Unknown)" on every control of every OSCAL-sourced CDEF, because
+                severity is an XCCDF/STIG field an OSCAL component definition does
+                not carry. Owner review: "What is '(Unknown)' as this just leads to
+                questions and meaningless without context." A chip that is always
+                the same word answers nothing and asks something. %>
+            <% if control.severity.present? %>
+              <span class="sparc-status-pill sparc-status--<%= sev_variant %> sparc-tt-capitalize">
+                <%= control.severity %>
+              </span>
+            <% end %>
             <% if control.stig_id.present? && control.stig_id != control.control_id && !control.unmapped_stig_rule? %>
-              <span class="sparc-tag-outline fw-semibold text-body-secondary" style="background: rgba(155,89,182,0.08); border: 1px solid rgba(155,89,182,0.2);">
+              <span class="sparc-tag-outline fw-semibold text-body-secondary sparc-cdef-tint-soft sparc-accent--purple">
                 <%= control.stig_id %>
               </span>
             <% end %>
@@ -344,11 +333,11 @@
               </span>
             <% end %>
             <% if cci_refs.present? %>
-              <span class="sparc-tag-outline fw-semibold text-body-secondary" style="background: rgba(39,174,96,0.08); border: 1px solid rgba(39,174,96,0.2); color: var(--bs-secondary-color);">
+              <span class="sparc-tag-outline fw-semibold text-body-secondary sparc-cdef-tint-soft sparc-accent--green sparc-color-secondary">
                 CCI (<%= cci_refs.split(",").map(&:strip).size %>)
               </span>
             <% end %>
-            <span class="sparc-ctrl-family" style="margin-left: 0.1rem;"><%= family_code %></span>
+            <span class="sparc-ctrl-family sparc-ml-01"><%= family_code %></span>
           </div>
           <% if control.title.present? %>
             <div class="sparc-ctrl-title"><%= control.title %></div>
@@ -357,7 +346,7 @@
       </div>
 
       <%# ── Card body: collapsed by default ── %>
-      <details class="card-details" style="margin-top: 0.35rem;">
+      <details class="card-details sparc-mt-035">
         <summary class="sparc-card-detail-toggle d-flex align-items-center gap-1">
           <span class="card-arrow sparc-card-arrow">&#9658;</span>
           <span class="sparc-card-detail-separator"></span>
@@ -367,8 +356,8 @@
           <%# Description block %>
           <% if description.present? %>
             <div class="sparc-statement-block">
-              <div class="sparc-statement-label" style="color: var(--bs-primary);">Description</div>
-              <div style="font-size: 0.84rem; color: var(--bs-body-color); line-height: 1.5;"><%= description %></div>
+              <div class="sparc-statement-label sparc-color-bs-primary">Description</div>
+              <div class="sparc-color-body sparc-fs-084 sparc-lh-15"><%= description %></div>
             </div>
           <% end %>
 
@@ -381,6 +370,44 @@
             }
             display_fields = ordered_fields + extras
           %>
+          <%# #1088 — the checks that verify this control.
+              Owner review: "Looks like we didn't keep the sourcing (AWS Security
+              Hub + AWS Config) rules dropping AWS Config? This is misleading in
+              how the rule can be checked is it not?"
+
+              It was. The card named a Security Hub id and a mapping source and
+              stopped, so nothing said HOW the control is verified — which is an
+              AWS Config Rule, and on a two-hop mapping is part of how the NIST
+              id was derived in the first place. Listing the check components as
+              their own control rows used to imply it; scoping the list to the
+              service removed that without replacing it.
+
+              Named here per control rather than only in the components panel, so
+              the check sits beside the control it verifies. %>
+          <% control_checks = @checks_by_security_hub_id
+                                &.[](field_map["aws_security_hub_id"]&.field_value.to_s.upcase)
+                                .presence || [] %>
+          <% if control_checks.any? %>
+            <table class="sparc-field-table">
+              <tr>
+                <th scope="row" class="sparc-field-label">verified by</th>
+                <td class="sparc-field-value">
+                  <% control_checks.each do |check| %>
+                    <div class="d-flex align-items-baseline gap-2 flex-wrap">
+                      <code class="sparc-fs-078"><%= check.title %></code>
+                      <% Array(check.check_ids).each do |cid| %>
+                        <span class="sparc-status sparc-status--neutral sparc-fs-065"
+                              title="AWS Config Rule">
+                          <%= cid %>
+                        </span>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </td>
+              </tr>
+            </table>
+          <% end %>
+
           <% if display_fields.any? %>
             <table class="sparc-field-table">
               <% display_fields.each do |field| %>
@@ -399,38 +426,38 @@
                     <%# Display mode %>
                     <div id="field-display-<%= control.control_id %>-<%= field.field_name %>">
                       <% if field.field_name == "severity" %>
-                        <span class="sparc-status-pill sparc-status--<%= cdef_severity_variant(field.field_value) %>" style="font-size: 0.75rem; font-weight: 600; text-transform: capitalize;"><%= field.field_value %></span>
+                        <span class="sparc-status-pill sparc-status--<%= cdef_severity_variant(field.field_value) %> sparc-fs-075 sparc-fw-600 sparc-tt-capitalize"><%= field.field_value %></span>
                       <% elsif field.field_name == "cci_refs" %>
-                        <div class="d-flex flex-wrap" style="gap: 0.3rem;">
+                        <div class="d-flex flex-wrap sparc-gap-03">
                           <% field.field_value.to_s.split(",").map(&:strip).each do |cci| %>
-                            <span class="rounded fw-semibold" style="background: rgba(39,174,96,0.1); border: 1px solid rgba(39,174,96,0.25); color: #27ae60; padding: 0.1rem 0.45rem; font-size: 0.72rem; font-family: monospace;"><%= cci %></span>
+                            <span class="rounded fw-semibold sparc-cdef-tint sparc-accent--green sparc-accent-text sparc-mono sparc-fs-072 sparc-p-01-045"><%= cci %></span>
                           <% end %>
                         </div>
                       <% elsif field.field_value.present? %>
-                        <div style="white-space: pre-wrap;"><%= field.field_value %></div>
+                        <div class="sparc-prewrap"><%= field.field_value %></div>
                       <% else %>
-                        <span class="text-body-tertiary fst-italic" style="font-size: 0.82rem;">Click &#x270E; to add</span>
+                        <span class="text-body-tertiary fst-italic sparc-fs-082">Click &#x270E; to add</span>
                       <% end %>
                     </div>
 
                     <%# Edit mode (hidden by default) %>
                     <% if field.editable && !@cdef_document.published_lifecycle? %>
-                      <div id="field-edit-<%= control.control_id %>-<%= field.field_name %>" style="display: none;">
+                      <div class="sparc-d-none" id="field-edit-<%= control.control_id %>-<%= field.field_name %>">
                         <% if field.select_field? %>
-                          <select id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-select form-select-sm" style="font-size: 0.82rem;">
+                          <select id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-select form-select-sm sparc-fs-082">
                             <option value="">-- Select --</option>
                             <% field.select_options&.each do |label, value| %>
                               <option value="<%= value %>" <%= 'selected' if field.field_value == value %>><%= label %></option>
                             <% end %>
                           </select>
                         <% elsif %w[implementation_narrative notes].include?(field.field_name) %>
-                          <textarea id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-control form-control-sm" rows="3" style="font-size: 0.82rem;"><%= field.field_value %></textarea>
+                          <textarea id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-control form-control-sm sparc-fs-082" rows="3"><%= field.field_value %></textarea>
                         <% else %>
-                          <input type="text" id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-control form-control-sm" value="<%= field.field_value %>" style="font-size: 0.82rem;">
+                          <input type="text" id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-control form-control-sm sparc-fs-082" value="<%= field.field_value %>">
                         <% end %>
                         <div class="mt-1 d-flex gap-1">
-                          <button type="button" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" data-action="cdef-control#saveField" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Save</button>
-                          <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" data-action="cdef-control#toggleFieldEdit" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Cancel</button>
+                          <button type="button" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm sparc-fs-075 sparc-p-015-05" data-action="cdef-control#saveField" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Save</button>
+                          <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm sparc-fs-075 sparc-p-015-05" data-action="cdef-control#toggleFieldEdit" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Cancel</button>
                         </div>
                       </div>
                     <% end %>
@@ -448,13 +475,13 @@
           <div class="mt-3" id="control-refs-<%= control.control_id %>">
             <h6 class="fw-semibold small">
               References
-              <span class="badge bg-secondary" style="font-size: 0.65rem;"><%= ctrl_resources.size %></span>
+              <span class="badge bg-secondary sparc-fs-065"><%= ctrl_resources.size %></span>
             </h6>
             <% if ctrl_resources.any? %>
               <div class="d-flex flex-wrap gap-2 mb-2" id="refs-list-<%= control.control_id %>">
                 <% ctrl_resources.each do |resource| %>
                   <% link_record = control.control_back_matter_links.find_by(back_matter_resource: resource) %>
-                  <span class="badge bg-body-secondary text-body d-inline-flex align-items-center gap-1" style="font-size: 0.78rem; font-weight: 500;">
+                  <span class="badge bg-body-secondary text-body d-inline-flex align-items-center gap-1 sparc-fs-078 sparc-fw-500">
                     <%# #897 — safe_external_url, not .href (a stored javascript: scheme survives ERB escaping). %>
                     <% if (safe_href = safe_external_url(resource.href)) %>
                       <a href="<%= safe_href %>" target="_blank" rel="noopener noreferrer" class="text-decoration-none"><%= resource.title %></a>
@@ -463,7 +490,7 @@
                     <% end %>
                     <code class="small text-body-tertiary ms-1">#<%= resource.uuid.truncate(12) %></code>
                     <% if !@cdef_document.published_lifecycle? && link_record %>
-                      <button type="button" class="btn-close btn-close-sm ms-1" style="font-size: 0.5rem;"
+                      <button type="button" class="btn-close btn-close-sm ms-1 sparc-fs-05"
                               data-action="cdef-control#unlink" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-link-id-param="<%= link_record.id %>"
                               title="Unlink"></button>
                     <% end %>
@@ -472,7 +499,7 @@
               </div>
             <% end %>
             <% if !@cdef_document.published_lifecycle? %>
-              <div id="add-ref-<%= control.control_id %>" style="display: none;" class="mb-2">
+              <div id="add-ref-<%= control.control_id %>" class="mb-2 sparc-d-none">
                 <div class="row g-2 align-items-end">
                   <div class="col-md-3">
                     <input type="text" id="ref-title-<%= control.control_id %>" class="form-control form-control-sm" placeholder="Title *">
@@ -489,7 +516,7 @@
                   </div>
                 </div>
               </div>
-              <button type="button" class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" id="add-ref-btn-<%= control.control_id %>" data-action="cdef-control#toggleAddRef" data-cdef-control-id-param="<%= control.control_id %>" style="font-size: 0.75rem;">
+              <button type="button" class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm sparc-fs-075" id="add-ref-btn-<%= control.control_id %>" data-action="cdef-control#toggleAddRef" data-cdef-control-id-param="<%= control.control_id %>">
                 + Add Reference
               </button>
             <% end %>
@@ -499,23 +526,24 @@
 
     </div><%# end .control-card %>
   <% end %>
+  <% end %><%# end component group %>
 </div>
 
 <%# ── #393: CDEF statement edit modal (deep-linked via ?statement_id=N) ── %>
 <% if @editing_statement %>
   <% stmt = @editing_statement %>
-  <div id="editStatementModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;">
-    <div class="bg-body rounded-3" style="padding: 2rem; max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+  <div class="sparc-modal-overlay" id="editStatementModal">
+    <div class="bg-body rounded-3 sparc-modal-dialog">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <div class="text-body-tertiary" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;">
+          <div class="text-body-tertiary sparc-modal-eyebrow">
             Component Implementation Statement (read-only references from catalog)
           </div>
-          <h3 style="margin: 0;"><%= stmt.label.presence || stmt.statement_id %></h3>
-          <code class="text-body-secondary" style="font-size: 0.78rem;"><%= stmt.statement_id %></code>
+          <h3 class="sparc-m-0"><%= stmt.label.presence || stmt.statement_id %></h3>
+          <code class="text-body-secondary sparc-fs-078"><%= stmt.statement_id %></code>
         </div>
         <%= link_to "&times;".html_safe, cdef_document_path(@cdef_document),
-              class: "text-body-secondary", style: "font-size: 1.5rem; text-decoration: none; line-height: 1;" %>
+              class: "text-body-secondary sparc-modal-close" %>
       </div>
 
       <%= form_with url: update_statement_cdef_document_path(@cdef_document), method: :patch, local: true do |f| %>
@@ -554,13 +582,24 @@
     <div class="card-body">
       <h5 class="fw-bold mb-3">Scope</h5>
       <p class="text-body-secondary small">
-        <% if @cdef_document.globally_available? %>
-          Globally available — any boundary's SSP can compose this component definition.
-        <% elsif current_scope_boundary.present? %>
-          Boundary-specific —
-          <%= AuthorizationBoundary.find_by(id: current_scope_boundary)&.name || "boundary ##{current_scope_boundary}" %>.
+        <%# #980 — three tiers, named apart. "Globally available" covered both
+            available tiers, so an instance-wide CDEF and an organization-wide
+            one read identically on the screen that exists to tell them apart. %>
+        <% case @cdef_document.scope_tier %>
+        <% when :instance %>
+          Instance-wide — every organization on this instance can compose this
+          component definition.
+        <% when :organization %>
+          Organization-wide — any boundary's SSP within
+          <%= @cdef_document.organization&.name || "the owning organization" %>
+          can compose this component definition.
         <% else %>
-          This component definition is not scoped to a boundary and is not marked globally available.
+          <% if current_scope_boundary.present? %>
+            Boundary-specific —
+            <%= AuthorizationBoundary.find_by(id: current_scope_boundary)&.name || "boundary ##{current_scope_boundary}" %>.
+          <% else %>
+            This component definition is not scoped to a boundary and is not marked globally available.
+          <% end %>
         <% end %>
       </p>
 
@@ -569,7 +608,8 @@
         <%= render "cdef_documents/scope_picker",
               param_key: :cdef_document,
               selected:  current_scope_boundary,
-              scope:     @cdef_document.globally_available? ? "global" : "boundary" %>
+              scope:     @cdef_document.scope_tier == :instance ? "instance" :
+                         @cdef_document.scope_tier == :organization ? "global" : "boundary" %>
         <%# The picker submits under cdef_document[...]; this action reads the
             flat names, so mirror them across. %>
         <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm">Update Scope</button>

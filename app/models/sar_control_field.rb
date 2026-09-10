@@ -3,20 +3,40 @@ class SarControlField < ApplicationRecord
 
   validates :field_name, presence: true
 
-  # Fields editable by users per the Test Plan Results schema
+  # What an assessor RECORDS about a control.
+  #
+  # #1114 — this list is the legacy Test Plan Results SPREADSHEET vocabulary,
+  # inherited when `0b04dc25` renamed TPR to SAR "for OSCAL alignment" without
+  # remodelling the fields. Owner review pruned it:
+  #
+  #   custom, custom_name  removed — spreadsheet free-columns with no semantics,
+  #                        nothing in OSCAL to carry them, nothing that reads them
+  #   custom_author        renamed `assessor`, and defaulted to the signed-in user
+  #                        rather than typed. In OSCAL this is an assessment
+  #                        actor, not a free-text note
+  #   expected_result      removed — 800-53A already STATES the expected result as
+  #                        determination statements, and SPARC now stores them
+  #                        (SarControlObjective). A human retyping it duplicates
+  #                        the catalog and can contradict it
+  #   test_text            removed — what to examine is the catalog's
+  #                        `assessment-objects`, shown per method under Assessment
+  #                        Depth rather than typed per control
+  #
+  # The COLUMNS are left in place. Existing SARs hold values in them and the
+  # Excel importer writes them; dropping the data in the same release as the UI
+  # would lose an assessor's work with no way back.
   EDITABLE_FIELDS = %w[
     date
     result
     notes_weakness
     recommended_fix
-    test_text
-    expected_result
-    custom
-    custom_name
-    custom_author
+    assessor
     working_comments
     working_status
   ].freeze
+
+  # Retired from the UI, still readable on documents that carry them (#1114).
+  LEGACY_FIELDS = %w[test_text expected_result custom custom_name custom_author].freeze
 
   RESULT_VALUES = %w[Pass Failed].freeze
 

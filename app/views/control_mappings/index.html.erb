@@ -4,7 +4,7 @@
   [@draft_count, "Draft"]
 ] %>
 
-<div class="card" style="overflow: hidden;">
+<div class="card sparc-of-hidden">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Control Mappings</h2>
     <% if can_write_mappings? %>
@@ -34,15 +34,15 @@
       <% end %>
     </div>
   <% elsif @control_mappings.any? %>
-    <table class="table table-hover" style="table-layout: fixed;">
+    <table class="table table-hover sparc-table-layout-fixed">
       <colgroup>
-        <col style="width: 20%;">
-        <col style="width: 28%;">
-        <col style="width: 10%;">
-        <col style="width: 8%;">
-        <col style="width: 10%;">
-        <col style="width: 12%;">
-        <col style="width: 12%;">
+        <col class="sparc-w-20pct">
+        <col class="sparc-w-28pct">
+        <col class="sparc-w-10pct">
+        <col class="sparc-w-8pct">
+        <col class="sparc-w-10pct">
+        <col class="sparc-w-12pct">
+        <col class="sparc-w-12pct">
       </colgroup>
       <thead>
         <tr>
@@ -58,10 +58,10 @@
       <tbody>
         <% @control_mappings.each do |mapping| %>
           <tr>
-            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= mapping.name %>">
+            <td class="sparc-text-ellipsis" title="<%= mapping.name %>">
               <%= link_to mapping.name, control_mapping_path(mapping), class: "text-decoration-none" %>
             </td>
-            <td class="small text-body-secondary" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+            <td class="small text-body-secondary sparc-text-ellipsis"
                 title="<%= mapping.source_catalog.name %> → <%= mapping.target_catalog.name %>">
               <%= mapping.source_catalog.name %> &rarr; <%= mapping.target_catalog.name %>
             </td>

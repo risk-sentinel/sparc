@@ -94,6 +94,7 @@ class CatalogImportService
       # #393: populate catalog_control_parts from the freshly imported
       # guidance_data["parts"]. Best-effort -- failures don't block import
       # since the migration backfill can re-run later.
+      flush_control_parts!
       backfill_parts_best_effort(catalog)
 
     stats
@@ -311,6 +312,28 @@ class CatalogImportService
                                     guidance_data: guidance_data, params_data: params_data,
                                     label: ctrl_label, sort_id: sort_id, links_data: control_links)
 
+    # #1100 — store the OSCAL parts TREE, from the node we already have in hand.
+    #
+    # `guidance_data` above flattens the tree into five named prose fields and
+    # drops `ctrl["parts"]`. `CatalogPartExtractorService.backfill_catalog_parts!`
+    # then reads `guidance_data["parts"]`, a key nothing has ever written — so it
+    # skipped every control, produced 0 rows, and raised nothing. The producer
+    # and the consumer disagreed about where parts live, and "no parts found"
+    # and "no parts stored" are indistinguishable, so the #968 failure trace
+    # stayed empty and the gap was invisible.
+    #
+    # Measured before this change: 0 catalog_control_parts against 4,054
+    # catalog_controls. Downstream, that is why every SSP carried exactly one
+    # implementation statement per control.
+    #
+    # Written HERE rather than round-tripped through a jsonb blob: the table is
+    # the designed home for this, it has a unique index on
+    # (catalog_control_id, part_id), and duplicating the tree into
+    # `guidance_data` would buy nothing but a second copy to keep in step.
+    # `upsert_catalog_control` returns :created/:updated, not the record, so the
+    # row is looked up by the same id it was just written under.
+    persist_control_parts(family.catalog_controls.find_by(control_id: control_id), ctrl["parts"])
+
     # Create sub-control records for each statement item part (a., 1., (a), …)
     stmt_part = (ctrl["parts"] || []).find { |p| p["name"] == "statement" }
     import_oscal_item_parts(family, control_id, sort_id, stmt_part&.[]("parts"))
@@ -321,6 +344,81 @@ class CatalogImportService
     end
 
     result
+  end
+
+  # Persist `controls[].parts[]` verbatim for one control.
+  #
+  # Idempotent on (catalog_control_id, part_id) — the table's own unique index —
+  # so a re-import updates rather than duplicating. UUIDs are DERIVED so a
+  # re-import cannot change the identity of a part a document already references
+  # (#397).
+  def persist_control_parts(catalog_control, parts)
+    return if catalog_control.blank? || parts.blank?
+
+    acc = []
+    CatalogPartExtractorService.walk_parts(
+      parts, acc,
+      part_names:     CatalogPartExtractorService::CATALOG_PART_NAMES,
+      parent_part_id: nil
+    )
+    return if acc.empty?
+
+    now  = Time.current
+    rows = acc.each_with_index.map do |part, idx|
+      {
+        catalog_control_id: catalog_control.id,
+        uuid:               OscalUuidService.derived(
+                              catalog_control.uuid,
+                              "catalog-part:#{part[:part_name]}",
+                              part[:part_id]
+                            ),
+        part_id:            part[:part_id],
+        part_name:          part[:part_name],
+        label:              part[:label],
+        parent_part_id:     part[:parent_part_id],
+        prose:              part[:prose],
+        props_data:         part[:props_data] || [],
+        row_order:          idx,
+        created_at:         now,
+        updated_at:         now
+      }
+    end
+
+    # BUFFERED, not written per control: one upsert per control issued ~1,200
+    # statements for the Rev 5 catalog where a handful will do.
+    #
+    # MEASURED, because the first version of this comment claimed far more than
+    # the numbers support. On spec/services/catalog_import_service_spec.rb,
+    # 71 examples:
+    #
+    #   per-control upsert   4m50.9s
+    #   buffered             4m23.7s
+    #
+    # ~9%. Worth having, and NOT the explanation for a slow full suite — the
+    # work is dominated by parsing and control upserts, not by these round
+    # trips. Buffering is the right shape regardless; it is not a fix for
+    # anything else.
+    @part_rows ||= []
+    @part_rows.concat(rows)
+    flush_control_parts! if @part_rows.size >= PART_FLUSH_SIZE
+  end
+
+  PART_FLUSH_SIZE = 2_000
+
+  def flush_control_parts!
+    return if @part_rows.blank?
+
+    @part_rows.each_slice(PART_FLUSH_SIZE) do |slice|
+      CatalogControlPart.upsert_all(
+        # `updated_at` is NOT listed: Rails adds it to the update set itself, and
+        # naming it here makes Postgres reject the statement as a duplicate
+        # assignment to the same column.
+        slice,
+        unique_by:   %i[catalog_control_id part_id],
+        update_only: %i[label parent_part_id prose props_data row_order]
+      )
+    end
+    @part_rows = []
   end
 
   # Recursively create CatalogControl records for OSCAL statement item parts.

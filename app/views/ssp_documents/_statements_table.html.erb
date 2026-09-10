@@ -1,86 +1,166 @@
-<%# Per-control implementation statements table for SSP show page (#393).
-    Mirrors the SAP _objectives_table pattern from #390/#394.
+<%# Per-control implementation statements for the SSP show page (#393, #1100).
+
+    THE primary authoring surface for a control. It renders in the VIEW, under
+    the control language it answers — it used to render at the bottom of the
+    edit form, below all nine editable fields, which is what made it unfindable.
+
     Locals:
       control      - SspControl instance (must have ssp_control_statements loaded)
       ssp_document - SspDocument instance (for routing)
 %>
 <%
   statements = control.ssp_control_statements.sort_by { |s| s.row_order || 0 }
+  answered   = statements.count { |s| s.implementation_prose.present? }
 %>
 
 <% if statements.any? %>
-  <div class="sparc-statement-block" style="background: rgba(52,152,219,0.04); border-color: rgba(52,152,219,0.18); border-left: 3px solid #3498db; margin-top: 0.75rem;">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2" style="margin-bottom: 0.4rem;">
+  <div class="sparc-statement-block sparc-statement-block--info sparc-accent--blue sparc-mt-075">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 sparc-mb-04">
       <div class="sparc-statement-label sparc-heading-controls">
         Implementation Statements
-        <span class="text-body-secondary" style="font-weight: 400; font-size: 0.7rem;">
+        <span class="text-body-secondary sparc-fw-400 sparc-fs-07">
           (<%= pluralize(statements.size, "statement") %>)
         </span>
       </div>
+      <%# How much of this control is actually answered. The table showed a
+          statement count and nothing about completion, so a control with 22
+          parts and one answer looked identical to one that was finished. %>
+      <span class="sparc-status sparc-status--<%= answered.zero? ? 'neutral' : answered == statements.size ? 'success' : 'warning' %> sparc-fs-07"
+            title="Statements carrying implementation prose">
+        <%= answered %> of <%= statements.size %> answered
+      </span>
     </div>
 
     <div class="table-responsive">
-      <table class="table table-sm table-hover" style="font-size: 0.82rem; margin-bottom: 0;">
+      <table class="table table-sm table-hover sparc-fs-082 sparc-mb-0">
         <thead>
-          <tr style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color);">
-            <th style="width: 12%;">Statement</th>
+          <tr class="sparc-th-eyebrow-row">
+            <th class="sparc-w-12pct">Statement</th>
             <th>Implementation</th>
-            <th style="width: 14%;">Responsible Roles</th>
-            <th style="width: 6%;"></th>
+            <th class="sparc-w-14pct">Responsible Roles</th>
+            <th class="sparc-w-6pct"></th>
           </tr>
         </thead>
         <tbody>
           <% statements.each do |stmt| %>
-            <% depth = stmt.parent_statement_id.present? ? 1 : 0 %>
-            <tr id="stmt-<%= stmt.id %>" data-statement-id="<%= stmt.statement_id %>">
+            <% depth = [ stmt.parent_statement_id.present? ? 1 : 0, 3 ].min %>
+            <%# Stored OSCAL-shaped ({"role-id" => "isso"}), but older rows and
+                imports may carry bare strings — read both, write the shape. %>
+            <% role_ids = Array(stmt.responsible_roles_data)
+                            .flat_map { |r| Array(r.is_a?(Hash) ? r["role-id"] : r) }.compact %>
+            <tr id="stmt-<%= stmt.id %>" data-statement-id="<%= stmt.statement_id %>"
+                data-controller="statement-edit">
               <td>
-                <code style="font-size: 0.78rem; padding-left: <%= depth * 0.75 %>rem;">
+                <code class="sparc-fs-078 sparc-stmt-d<%= depth %>">
                   <%= stmt.label.presence || stmt.statement_id %>
                 </code>
                 <%# #396 + #398: inheritance source badge %>
                 <% case stmt.source_kind
                    when :cdef %>
-                  <span class="badge bg-info text-dark" style="font-size: 0.65rem;" title="Implementation inherited from a CDEF">CDEF</span>
+                  <span class="badge bg-info text-dark sparc-fs-065" title="Implementation inherited from a CDEF">CDEF</span>
                 <% when :leveraged %>
-                  <span class="badge bg-primary" style="font-size: 0.65rem;" title="Inherited via a leveraged authorization">Leveraged</span>
+                  <span class="badge bg-primary sparc-fs-065" title="Inherited via a leveraged authorization">Leveraged</span>
                 <% when :responsibility %>
                   <%# #956 — the leveraged system hands this back to us. It is
                       the opposite of an inherited implementation, and the one
                       the reader actually has to act on. %>
-                  <span class="badge bg-danger" style="font-size: 0.65rem;" title="The leveraged system requires this system to implement the control itself">Your responsibility</span>
+                  <span class="badge bg-danger sparc-fs-065" title="The leveraged system requires this system to implement the control itself">Your responsibility</span>
                 <% when :overridden_responsibility %>
-                  <span class="badge bg-success" style="font-size: 0.65rem;" title="A customer responsibility this system has implemented">Responsibility met</span>
+                  <span class="badge bg-success sparc-fs-065" title="A customer responsibility this system has implemented">Responsibility met</span>
                 <% when :overridden_cdef, :overridden_leveraged %>
-                  <span class="badge bg-warning text-dark" style="font-size: 0.65rem;" title="Inherited but edited locally">Overridden</span>
+                  <span class="badge bg-warning text-dark sparc-fs-065" title="Inherited but edited locally">Overridden</span>
                 <% end %>
               </td>
-              <td style="padding-left: <%= depth * 0.75 %>rem;">
-                <%= stmt.implementation_prose.presence ||
-                    content_tag(:span, "(unset \u2014 click Edit to add implementation)",
-                                class: "text-body-tertiary fst-italic") %>
-                <% if stmt.remarks.present? %>
-                  <div class="text-body-secondary" style="font-size: 0.75rem; margin-top: 0.2rem; padding-left: 0.4rem; border-left: 2px solid var(--bs-border-color);">
-                    <%= stmt.remarks %>
-                  </div>
-                <% end %>
+              <td class="sparc-stmt-d<%= depth %>">
+                <%# ── Read view ── %>
+                <div data-statement-edit-target="read">
+                  <%= stmt.implementation_prose.presence ||
+                      content_tag(:span, "(unset — click Edit to add implementation)",
+                                  class: "text-body-tertiary fst-italic") %>
+                  <% if stmt.remarks.present? %>
+                    <div class="text-body-secondary sparc-stmt-note">
+                      <%= stmt.remarks %>
+                    </div>
+                  <% end %>
+                </div>
+
+                <%# ── Inline editor (#1100) ──
+                    Opening this used to be a full page navigation to
+                    `?statement_id=N`, which reloaded every control on the
+                    document to show one modal. %>
+                <div data-statement-edit-target="form" class="sparc-d-none">
+                  <%= form_with url: update_statement_ssp_document_path(ssp_document),
+                                method: :patch, local: true do |f| %>
+                    <%= hidden_field_tag :statement_id, stmt.id %>
+                    <label class="sparc-edit-label" for="stmt-prose-<%= stmt.id %>">
+                      Implementation
+                      <span class="sparc-edit-editable-hint">(editable)</span>
+                    </label>
+                    <%= text_area_tag "ssp_control_statement[implementation_prose]",
+                          stmt.implementation_prose,
+                          rows: 4, class: "form-control sparc-fs-0875",
+                          id: "stmt-prose-#{stmt.id}",
+                          data: { statement_edit_target: "prose" },
+                          placeholder: "Describe how this system implements #{stmt.label.presence || stmt.statement_id}..." %>
+
+                    <label class="sparc-edit-label sparc-mt-025" for="stmt-remarks-<%= stmt.id %>">
+                      Remarks
+                      <span class="sparc-edit-editable-hint">(editable)</span>
+                    </label>
+                    <%= text_area_tag "ssp_control_statement[remarks]", stmt.remarks,
+                          rows: 2, class: "form-control sparc-fs-0875",
+                          id: "stmt-remarks-#{stmt.id}" %>
+
+                    <%# #1100 — the Responsible Roles column rendered a value no
+                        screen could set. `update_statement` had permitted
+                        `responsible_roles_data` all along; no form ever offered
+                        it, so the column could only ever show what an OSCAL
+                        import had put there. %>
+                    <label class="sparc-edit-label sparc-mt-025" for="stmt-roles-<%= stmt.id %>">
+                      Responsible Roles
+                      <span class="sparc-edit-editable-hint">(editable)</span>
+                    </label>
+                    <%= text_field_tag "ssp_control_statement[responsible_role_ids]",
+                          role_ids.join(", "),
+                          class: "form-control sparc-fs-0875",
+                          id: "stmt-roles-#{stmt.id}",
+                          list: "ssp-known-role-ids",
+                          placeholder: "Comma-separated role ids, e.g. system-owner, isso" %>
+                    <div class="sparc-fs-078 sparc-color-tertiary sparc-mt-025">
+                      OSCAL <code>responsible-roles</code> for this statement. Leave blank for none.
+                    </div>
+
+                    <div class="d-flex gap-1 sparc-mt-035">
+                      <%= f.submit "Save Statement",
+                            class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
+                      <button type="button"
+                              data-action="statement-edit#cancel"
+                              class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm">
+                        Cancel
+                      </button>
+                    </div>
+                  <% end %>
+                </div>
               </td>
-              <td class="text-body-secondary" style="font-size: 0.78rem;">
-                <% role_ids = Array(stmt.responsible_roles_data).flat_map { |r| Array(r.is_a?(Hash) ? r["role-id"] : r) } %>
-                <%= role_ids.any? ? role_ids.join(", ") : "\u2014" %>
+              <td class="text-body-secondary sparc-fs-078">
+                <%= role_ids.any? ? role_ids.join(", ") : "—" %>
               </td>
               <td>
-                <%= link_to "Edit",
-                            ssp_document_path(ssp_document, statement_id: stmt.id, anchor: "stmt-#{stmt.id}"),
-                            class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm",
-                            style: "font-size: 0.7rem; padding: 0.15rem 0.45rem;" %>
+                <button type="button"
+                        data-action="statement-edit#toggle"
+                        data-statement-edit-target="toggle"
+                        aria-expanded="false"
+                        aria-controls="stmt-prose-<%= stmt.id %>"
+                        class="sparc-action sparc-action--primary sparc-action--outline sparc-action--sm sparc-fs-07 sparc-p-015-045">
+                  Edit
+                </button>
                 <% if %i[overridden_cdef overridden_leveraged].include?(stmt.source_kind) %>
                   <%= button_to "Reset",
                         reset_inherited_statement_ssp_document_path(ssp_document, statement_id: stmt.id),
                         method: :post,
-                        class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm",
-                        style: "font-size: 0.7rem; padding: 0.15rem 0.45rem;",
+                        class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm sparc-fs-07 sparc-p-015-045",
                         form: { data: { turbo_confirm: "Discard your override and reset to the source prose?" },
-                                style: "display: inline;" } %>
+                                class: "sparc-d-inline" } %>
                 <% end %>
               </td>
             </tr>

@@ -1,8 +1,8 @@
 <%= form_with(model: [profile_document, profile_control], local: true) do |f| %>
   <% if profile_control.errors.any? %>
-    <div class="rounded mb-3" style="background: var(--bs-danger-bg-subtle); border: 1px solid var(--bs-danger-border-subtle); padding: 0.75rem;">
+    <div class="rounded mb-3 sparc-form-error-box">
       <% profile_control.errors.full_messages.each do |msg| %>
-        <p style="color: var(--bs-danger-text-emphasis); font-size: 0.85rem; margin: 0.2rem 0;"><%= msg %></p>
+        <p class="sparc-form-error-text"><%= msg %></p>
       <% end %>
     </div>
   <% end %>
@@ -49,26 +49,26 @@
     end
   %>
   <% if param_fields.any? %>
-    <details class="border rounded" style="margin-bottom: 1.25rem; padding: 0;" open>
-      <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2" style="padding: 0.65rem 1rem; cursor: pointer; list-style: none;">
+    <details class="border rounded sparc-mb-125r sparc-p-0" open>
+      <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2 sparc-form-section-summary">
         <span>&#9656;</span> Parameters
-        <span class="badge rounded-pill text-bg-info" style="font-size: 0.7rem; font-weight: 500;">
+        <span class="badge rounded-pill text-bg-info sparc-fs-07 sparc-fw-500">
           <%= param_fields.size %> param<%= param_fields.size == 1 ? "" : "s" %>
         </span>
       </summary>
       <div class="p-3">
-        <p class="text-body-tertiary" style="font-size: 0.78rem; margin-bottom: 0.75rem;">
+        <p class="text-body-tertiary sparc-fs-078 sparc-mb-075">
           Parameters inherited from the catalog. Edit the <strong>Value</strong> to set organization-specific definitions.
           <% if select_meta.any? %>
             Click a suggestion badge to use a catalog-defined value, or type a custom value.
           <% end %>
         </p>
-        <table class="table table-sm mb-0" style="font-size: 0.82rem;">
+        <table class="table table-sm mb-0 sparc-fs-082">
           <thead>
             <tr>
-              <th style="width: 22%; padding: 0.3rem 0.5rem;">Param ID</th>
-              <th style="width: 30%; padding: 0.3rem 0.5rem;">Label</th>
-              <th style="padding: 0.3rem 0.5rem;">Value</th>
+              <th class="sparc-w-22pct sparc-p-03-05">Param ID</th>
+              <th class="sparc-w-30pct sparc-p-03-05">Label</th>
+              <th class="sparc-p-03-05">Value</th>
             </tr>
           </thead>
           <tbody>
@@ -77,18 +77,18 @@
               <% label_field = label_map[param_id] %>
               <% sel = select_meta[param_id] %>
               <tr>
-                <td style="padding: 0.3rem 0.5rem; font-family: monospace; color: var(--bs-primary);">
+                <td class="sparc-p-03-05 sparc-monospace sparc-color-bs-primary">
                   <%= param_id %>
                 </td>
-                <td style="padding: 0.3rem 0.5rem;" class="text-body-secondary">
+                <td class="text-body-secondary sparc-p-03-05">
                   <%= label_field&.field_value %>
                 </td>
-                <td style="padding: 0.3rem 0.5rem;">
+                <td class="sparc-p-03-05">
                   <% if sel %>
                     <% choices = sel["choice"] || [] %>
                     <% is_multi = sel["how-many"] == "one-or-more" %>
-                    <div style="margin-bottom: 0.35rem;">
-                      <span class="text-body-tertiary" style="font-size: 0.72rem;">
+                    <div class="sparc-mb-035">
+                      <span class="text-body-tertiary sparc-fs-072">
                         Selection<%= is_multi ? " (one or more)" : "" %>:
                       </span>
                       <%# #942 — show the resolved wording, carry the verbatim
@@ -96,7 +96,6 @@
                           still round-trips. %>
                       <% choices.each do |choice| %>
                         <span class="badge bg-primary-subtle text-primary-emphasis sparc-param-choice"
-                              style="cursor: pointer; font-size: 0.72rem; font-weight: 500; margin: 0.1rem 0;"
                               data-multi="<%= is_multi %>"
                               data-choice-value="<%= choice %>"
                               data-controller="param-choice"
@@ -108,8 +107,7 @@
                   <% end %>
                   <%= text_field_tag "param_values[#{param_id}]",
                       pf.field_value,
-                      class: "form-control form-control-sm",
-                      style: "font-size: 0.82rem;",
+                      class: "form-control form-control-sm sparc-fs-082",
                       placeholder: sel ? "Choose above or enter custom value..." : "Organization-defined value..." %>
                 </td>
               </tr>
@@ -125,7 +123,7 @@
     <div class="form-group">
       <label for="profile-control-field-<%= fname %>">
         <%= fname.tr("_", " ").titleize %>
-        <span style="color: var(--bs-success); font-size: 0.75rem; font-weight: 400;">(editable)</span>
+        <span class="sparc-editable-note">(editable)</span>
       </label>
       <%= text_area_tag "fields[#{fname}]", field&.field_value.to_s,
             id: "profile-control-field-#{fname}",
@@ -143,22 +141,22 @@
 <% if profile_control.persisted? %>
   <% linked = defined?(@linked_resources) ? @linked_resources : profile_control.back_matter_resources.order(:title) %>
   <% available = defined?(@available_resources) ? @available_resources : [] %>
-  <details class="border rounded mt-4" style="padding: 0;" <%= "open" if linked.any? %>>
-    <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2" style="padding: 0.65rem 1rem; cursor: pointer; list-style: none;">
+  <details class="border rounded mt-4 sparc-p-0" <%= "open" if linked.any? %>>
+    <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2 sparc-form-section-summary">
       <span>&#9656;</span> Back-Matter References
-      <span class="badge rounded-pill text-bg-info" style="font-size: 0.7rem; font-weight: 500;">
+      <span class="badge rounded-pill text-bg-info sparc-fs-07 sparc-fw-500">
         <%= linked.size %>
       </span>
     </summary>
     <div class="p-3">
-      <p class="text-body-tertiary" style="font-size: 0.78rem; margin-bottom: 0.75rem;">
+      <p class="text-body-tertiary sparc-fs-078 sparc-mb-075">
         Link back-matter resources (policies, evidence, external references) to this control.
         Linked resources appear as <code>href="#uuid"</code> references in OSCAL exports.
       </p>
 
       <%# ── Currently linked ── %>
       <% if linked.any? %>
-        <table class="table table-sm mb-3" style="font-size: 0.82rem;">
+        <table class="table table-sm mb-3 sparc-fs-082">
           <thead>
             <tr><th>Title</th><th>UUID</th><th>Href</th><th></th></tr>
           </thead>

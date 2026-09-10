@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { setVisible } from "controllers/visibility"
 
 // Stimulus controller for inline and bulk baseline-impact editing on the
 // control family show page.
@@ -36,12 +37,24 @@ export default class BaselineEditorController extends Controller {
     const viewElements = this.element.querySelectorAll("[data-baseline-view]")
     const checkboxCells = this.element.querySelectorAll("[data-baseline-checkbox-cell]")
 
-    editElements.forEach(el => { el.style.display = this.editing ? "" : "none" })
-    viewElements.forEach(el => { el.style.display = this.editing ? "none" : "" })
-    checkboxCells.forEach(el => { el.style.display = this.editing ? "" : "none" })
+    // #1047 — visibility through the CLASS, never through the style attribute.
+    //
+    // These used to write `el.style.display = this.editing ? "" : "none"`, which
+    // works ONLY while the markup hides them with an inline style. The sweep
+    // moves `style="display: none"` into `.sparc-d-none`, and a class cannot be
+    // overridden by writing an EMPTY inline display — so the toggle would have
+    // stopped revealing anything and the whole editing mode would have gone
+    // dead, silently and only on click. That is a worse failure than the
+    // inversions this helper was written for.
+    //
+    // setVisible() also strips any legacy inline `display` on the way past, so
+    // this works before the sweep reaches the view as well as after.
+    editElements.forEach(el => setVisible(el, this.editing))
+    viewElements.forEach(el => setVisible(el, !this.editing))
+    checkboxCells.forEach(el => setVisible(el, this.editing))
 
     if (this.hasBulkToolbarTarget) {
-      this.bulkToolbarTarget.style.display = this.editing ? "" : "none"
+      setVisible(this.bulkToolbarTarget, this.editing)
     }
 
     if (this.hasEditToggleTarget) {

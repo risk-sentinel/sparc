@@ -31,24 +31,24 @@
     <%# ── Control statement ─────────────────────────────────────────── %>
     <% if detail.statement.present? %>
       <div class="sparc-statement-block">
-        <div class="sparc-statement-label" style="color: var(--bs-primary);">
+        <div class="sparc-statement-label sparc-color-bs-primary">
           Control Statement
           <% if detail.priority.present? %>
-            <span class="badge rounded-pill text-bg-secondary" style="font-size: 0.68rem; margin-left: 0.4rem;">
+            <span class="badge rounded-pill text-bg-secondary sparc-fs-068 sparc-ml-04">
               <%= detail.priority %>
             </span>
           <% end %>
         </div>
-        <div class="text-body-secondary" style="font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap;"><%= detail.statement %></div>
+        <div class="text-body-secondary sparc-fs-085 sparc-lh-15 sparc-prewrap"><%= detail.statement %></div>
       </div>
     <% end %>
 
     <%# ── Parameters ────────────────────────────────────────────────── %>
     <% if detail.parameters.any? %>
       <div class="sparc-statement-block">
-        <div class="sparc-statement-label" style="color: var(--bs-primary);">
+        <div class="sparc-statement-label sparc-color-bs-primary">
           Parameters
-          <span class="text-body-tertiary" style="font-weight: 400; font-size: 0.72rem;">
+          <span class="text-body-tertiary sparc-fw-400 sparc-fs-072">
             organization-defined values for this baseline
           </span>
         </div>
@@ -58,10 +58,10 @@
             <table class="sparc-field-table">
               <% detail.parameters.each do |param| %>
                 <tr>
-                  <th scope="row" class="sparc-field-label" style="width: 28%;">
-                    <div style="font-family: monospace; font-size: 0.78rem;"><%= param.id %></div>
+                  <th scope="row" class="sparc-field-label sparc-w-28pct">
+                    <div class="sparc-mono sparc-fs-078"><%= param.id %></div>
                     <% if param.label.present? %>
-                      <div class="text-body-secondary" style="font-weight: 400; font-size: 0.78rem;"><%= param.label %></div>
+                      <div class="text-body-secondary sparc-fw-400 sparc-fs-078"><%= param.label %></div>
                     <% end %>
                   </th>
                   <td class="sparc-field-value">
@@ -77,7 +77,7 @@
                               assistive technology handles most reliably and it
                               survives the markup being restructured later. %>
                           <% choice_id = "param-#{param.id.parameterize}-#{i}" %>
-                          <label class="form-check" for="<%= choice_id %>" style="font-size: 0.82rem;">
+                          <label class="form-check sparc-fs-082" for="<%= choice_id %>">
                             <%= check_box_tag "param_values[#{param.id}][]", choice,
                                   ParameterValueList.split(param.value).include?(choice),
                                   id: choice_id, class: "form-check-input" %>
@@ -85,7 +85,7 @@
                           </label>
                         <% end %>
                       </div>
-                      <div class="text-body-tertiary" style="font-size: 0.72rem; margin-top: 0.2rem;">
+                      <div class="text-body-tertiary sparc-fs-072 sparc-mt-02">
                         Select <%= param.how_many == "one-or-more" ? "one or more" : "one" %>
                       </div>
                     <% else %>
@@ -99,7 +99,7 @@
                             "aria-label": "#{param.label.presence || param.id} (#{param.id})",
                             placeholder: param.label.presence || "Organization-defined value" %>
                       <% if param.description.present? %>
-                        <div class="text-body-tertiary" style="font-size: 0.72rem; margin-top: 0.2rem;"><%= param.description %></div>
+                        <div class="text-body-tertiary sparc-fs-072 sparc-mt-02"><%= param.description %></div>
                       <% end %>
                     <% end %>
                   </td>
@@ -114,10 +114,10 @@
           <table class="sparc-field-table">
             <% detail.parameters.each do |param| %>
               <tr>
-                <th scope="row" class="sparc-field-label" style="width: 28%;">
-                  <div style="font-family: monospace; font-size: 0.78rem;"><%= param.id %></div>
+                <th scope="row" class="sparc-field-label sparc-w-28pct">
+                  <div class="sparc-mono sparc-fs-078"><%= param.id %></div>
                   <% if param.label.present? %>
-                    <div class="text-body-secondary" style="font-weight: 400; font-size: 0.78rem;"><%= param.label %></div>
+                    <div class="text-body-secondary sparc-fw-400 sparc-fs-078"><%= param.label %></div>
                   <% end %>
                 </th>
                 <td class="sparc-field-value">
@@ -130,7 +130,7 @@
                     <span class="text-body-tertiary fst-italic">Not set — the baseline default applies</span>
                   <% end %>
                   <% if param.select? && param.choices.any? %>
-                    <div class="text-body-tertiary" style="font-size: 0.72rem; margin-top: 0.2rem;">
+                    <div class="text-body-tertiary sparc-fs-072 sparc-mt-02">
                       Options: <%= param.choices.join("; ") %>
                     </div>
                   <% end %>
@@ -146,7 +146,7 @@
     <% if detail.guidance.present? %>
       <div class="sparc-statement-block">
         <div class="sparc-statement-label">Guidance</div>
-        <div class="text-body-secondary" style="font-size: 0.82rem; line-height: 1.5; white-space: pre-wrap;"><%= detail.guidance %></div>
+        <div class="text-body-secondary sparc-fs-082 sparc-lh-15 sparc-prewrap"><%= detail.guidance %></div>
       </div>
     <% end %>
 
@@ -156,7 +156,7 @@
         <div class="sparc-statement-label">Related Controls</div>
         <div class="d-flex flex-wrap gap-1">
           <% detail.related_controls.each do |ref| %>
-            <span class="badge text-bg-light" style="font-family: monospace; font-size: 0.72rem;"><%= ref.upcase %></span>
+            <span class="badge text-bg-light sparc-mono sparc-fs-072"><%= ref.upcase %></span>
           <% end %>
         </div>
       </div>

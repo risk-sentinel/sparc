@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { isVisible } from "controllers/visibility"
+import { isVisible, setVisible } from "controllers/visibility"
 
 // Stimulus controller for the smart publication modal.
 //
@@ -46,8 +46,11 @@ export default class PublishModalController extends Controller {
       }
 
       this.renderModal(data)
-      this.modalTarget.style.display = "block"
-      this.backdropTarget.style.display = "block"
+      // #1047 — through the class, so the markup can express "hidden" as one
+      // too. Setting an inline display would work but leave .sparc-d-none on the
+      // element as dead weight, with two sources of truth for one state.
+      setVisible(this.modalTarget, true)
+      setVisible(this.backdropTarget, true)
       document.body.style.overflow = "hidden"
     } catch (error) {
       console.error("Failed to check publication readiness:", error)
@@ -170,8 +173,8 @@ export default class PublishModalController extends Controller {
   }
 
   close() {
-    this.modalTarget.style.display = "none"
-    this.backdropTarget.style.display = "none"
+    setVisible(this.modalTarget, false)
+    setVisible(this.backdropTarget, false)
     document.body.style.overflow = ""
   }
 
@@ -203,7 +206,7 @@ export default class PublishModalController extends Controller {
     const needsFixes = !data.ready
 
     if (needsFixes) {
-      this.fixFieldsTarget.style.display = "block"
+      setVisible(this.fixFieldsTarget, true)
       // Pre-fill from user profile defaults
       if (this.hasCreatorNameTarget)
         this.creatorNameTarget.value = defaults.creator_name || ""
@@ -214,7 +217,7 @@ export default class PublishModalController extends Controller {
       if (this.hasContactTypeTarget)
         this.contactTypeTarget.value = defaults.party_type || "organization"
     } else {
-      this.fixFieldsTarget.style.display = "none"
+      setVisible(this.fixFieldsTarget, false)
     }
 
     // Update publish button state

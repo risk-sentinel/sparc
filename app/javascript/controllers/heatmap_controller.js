@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { setVisible } from "controllers/visibility"
 
 // Stimulus controller for interactive heatmap filtering.
 //
@@ -27,6 +28,7 @@ export default class HeatmapController extends Controller {
   connect() {
     this.activeFamily = this.initialFamilyValue || null
     this.activeFilter = this.initialFilterValue || null
+    this.groupOpenStateCaptured = false
 
     if (this.activeFamily || this.activeFilter) {
       this.applyFilter()
@@ -146,9 +148,12 @@ export default class HeatmapController extends Controller {
       container.querySelectorAll(".control-card").forEach(card => {
         card.style.display = ""
       })
-      container.querySelectorAll("details.sparc-family-group").forEach(group => {
+      const groups = container.querySelectorAll("details.sparc-family-group")
+      groups.forEach(group => {
         group.style.display = ""
+        this.updateGroupCount(group, null)
       })
+      this.restoreGroupOpenState(groups)
     }
 
     this.badgeTargets.forEach(el => {
@@ -161,7 +166,7 @@ export default class HeatmapController extends Controller {
     })
 
     if (this.hasBannerTarget) {
-      this.bannerTarget.style.display = "none"
+      setVisible(this.bannerTarget, false)
     }
 
     this.updateAriaStates()
@@ -193,18 +198,35 @@ export default class HeatmapController extends Controller {
 
     const container = document.getElementById(this.containerIdValue)
     if (container) {
+      const groups = container.querySelectorAll("details.sparc-family-group")
+      const filtering = Boolean(this.activeFamily || this.activeFilter)
+      if (filtering) this.captureGroupOpenState(groups)
+
+      // Tally the matches per family group while filtering the cards, so the
+      // group decisions below read a real count instead of re-deriving
+      // visibility from the serialized style attribute.
+      const matchesPerGroup = new Map()
       container.querySelectorAll(".control-card").forEach(card => {
         const familyMatch = !this.activeFamily || card.dataset.family === this.activeFamily
         const filterMatch = !this.activeFilter || this.cardMatchesFilter(card, this.activeFilter)
         const show = familyMatch && filterMatch
         card.style.display = show ? "" : "none"
-        if (show) visible++
+        if (!show) return
+        visible++
+        const group = card.closest("details.sparc-family-group")
+        if (group) matchesPerGroup.set(group, (matchesPerGroup.get(group) || 0) + 1)
       })
 
-      // Hide family group wrappers that have no visible cards
-      container.querySelectorAll("details.sparc-family-group").forEach(group => {
-        const hasVisible = group.querySelector(".control-card:not([style*='display: none'])")
-        group.style.display = hasVisible ? "" : "none"
+      groups.forEach(group => {
+        const matches = matchesPerGroup.get(group) || 0
+        // Hide family group wrappers that have no visible cards
+        group.style.display = matches > 0 ? "" : "none"
+        // A group that survives the filter must not hide its matches behind a
+        // collapsed <details>. These groups render closed, so without this a
+        // deep link like ?family=CM&status=Deferred lands on a page whose
+        // matching rows are all sealed inside a collapsed summary.
+        if (filtering && matches > 0) group.open = true
+        this.updateGroupCount(group, filtering ? matches : null)
       })
     }
 
@@ -231,9 +253,9 @@ export default class HeatmapController extends Controller {
           label = this.activeFamily || this.activeFilter
         }
         this.bannerLabelTarget.textContent = "Showing: " + label + " \u2014 " + visible + " control(s)"
-        this.bannerTarget.style.display = "flex"
+        setVisible(this.bannerTarget, true)
       } else {
-        this.bannerTarget.style.display = "none"
+        setVisible(this.bannerTarget, false)
       }
     }
 
@@ -255,6 +277,37 @@ export default class HeatmapController extends Controller {
       return methods.includes(filter)
     }
     return card.dataset[this.filterKeyValue] === filter
+  }
+
+  // The family summary badge is server-rendered with that group's unfiltered
+  // total. Show "<matches> / <total>" while a filter narrows the group and the
+  // bare total otherwise, so the header can never contradict the rows under it.
+  updateGroupCount(group, matches) {
+    const badge = group.querySelector("[data-heatmap-count]")
+    if (!badge) return
+    const total = badge.dataset.heatmapCount
+    badge.textContent = (matches === null || String(matches) === total)
+      ? total
+      : `${matches} / ${total}`
+  }
+
+  // Remember how the user had the groups expanded before the first filter of a
+  // run, so clear() restores that rather than leaving every group forced open.
+  captureGroupOpenState(groups) {
+    if (this.groupOpenStateCaptured) return
+    groups.forEach(group => { group.dataset.heatmapPrevOpen = group.open ? "1" : "0" })
+    this.groupOpenStateCaptured = true
+  }
+
+  restoreGroupOpenState(groups) {
+    if (!this.groupOpenStateCaptured) return
+    groups.forEach(group => {
+      if (group.dataset.heatmapPrevOpen !== undefined) {
+        group.open = group.dataset.heatmapPrevOpen === "1"
+        delete group.dataset.heatmapPrevOpen
+      }
+    })
+    this.groupOpenStateCaptured = false
   }
 
   updateAriaStates() {

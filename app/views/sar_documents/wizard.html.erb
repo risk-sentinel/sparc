@@ -8,12 +8,12 @@
   <%= form_with url: create_from_wizard_sar_documents_path, method: :post, local: true do |f| %>
 
     <%# ── Step 1: Assessment Basics ── %>
-    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span class="sparc-status--info" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">1</span>
+    <details open class="mb-3 border rounded-3 sparc-wizard-step">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
+        <span class="sparc-status--info sparc-wizard-step-number">1</span>
         Assessment Basics
       </summary>
-      <div style="padding: 1rem 1.25rem;">
+      <div class="sparc-wizard-step-body">
         <div class="form-group">
           <label for="name">Assessment Name <span class="sparc-required">*</span></label>
           <%= f.text_field :name, required: true, class: "form-control", placeholder: "e.g., FY2026 Annual Security Assessment" %>
@@ -35,12 +35,12 @@
     </details>
 
     <%# ── Step 2: SAP Selection ── %>
-    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span class="sparc-status--success" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">2</span>
+    <details open class="mb-3 border rounded-3 sparc-wizard-step">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
+        <span class="sparc-status--success sparc-wizard-step-number">2</span>
         Assessment Plan (SAP) Selection
       </summary>
-      <div style="padding: 1rem 1.25rem;">
+      <div class="sparc-wizard-step-body">
         <% if @sap_documents.any? %>
           <div class="form-group">
             <label for="sap_document_id">Link to Assessment Plan</label>
@@ -48,13 +48,13 @@
                   @sap_documents.map { |s| ["#{s.name} (#{s.sap_controls.count} controls)", s.id] },
                   { include_blank: "-- No SAP (create empty SAR) --" },
                   { class: "form-control" } %>
-            <small class="text-body-secondary d-block" style="margin-top: 0.3rem;">
+            <small class="text-body-secondary d-block sparc-mt-03">
               Controls from the selected SAP will be imported into the SAR with default "Not Tested" status.
               Each control will also get a default OSCAL finding.
             </small>
           </div>
         <% else %>
-          <p class="text-body-secondary" style="font-size: 0.88rem;">
+          <p class="text-body-secondary sparc-fs-088">
             No completed SAP documents found. You can still create a SAR without linking to a SAP,
             or <%= link_to "upload a SAP", new_sap_document_path %> first.
           </p>
@@ -64,13 +64,13 @@
     </details>
 
     <%# ── Step 3: Assessment Period ── %>
-    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span class="sparc-status--warning" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">3</span>
+    <details open class="mb-3 border rounded-3 sparc-wizard-step">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
+        <span class="sparc-status--warning sparc-wizard-step-number">3</span>
         Assessment Period
       </summary>
-      <div style="padding: 1rem 1.25rem;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem;">
+      <div class="sparc-wizard-step-body">
+        <div class="sparc-field-grid-2-roomy">
           <div class="form-group">
             <label for="assessment_start">Start Date</label>
             <%= f.datetime_local_field :assessment_start, class: "form-control", value: Time.current.beginning_of_day.strftime('%Y-%m-%dT%H:%M') %>
@@ -78,7 +78,7 @@
           <div class="form-group">
             <label for="assessment_end">End Date</label>
             <%= f.datetime_local_field :assessment_end, class: "form-control" %>
-            <small class="text-body-secondary d-block" style="margin-top: 0.3rem;">
+            <small class="text-body-secondary d-block sparc-mt-03">
               Leave blank if the assessment is ongoing.
             </small>
           </div>

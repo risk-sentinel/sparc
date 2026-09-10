@@ -122,6 +122,27 @@ class CatalogControl < ApplicationRecord
 
   def descendant_of?(other) = self.class.descendant?(control_id, other.to_s)
 
+  # EVERY descendant, not one level.
+  #
+  # The show page listed `direct_children` and reported "Sub-parts 3" for AC-01,
+  # which has nine: ac-1a, ac-1a.1, ac-1a.1.(a), ac-1a.1.(b), ac-1a.2, ac-1b,
+  # ac-1c, ac-1c.1, ac-1c.2. The family screen shows the whole tree, so the two
+  # screens disagreed and the deeper parts were reachable only by guessing that
+  # you could click into ac-1a. Owner review: "does not show all the sub-parts
+  # so I think a filter is broken ... this is not intuitive".
+  #
+  # Still not a prefix match: `ac-10` starts with `ac-1` and is a separate
+  # control. `descendant_of?` is what makes that distinction, and it is why this
+  # cannot be a single LIKE query.
+  def descendants
+    self.class.unscoped
+        .where(control_family_id: control_family_id)
+        .where("control_id LIKE ?", "#{control_id}%")
+        .reject { |c| c.id == id }
+        .select { |c| c.descendant_of?(control_id) }
+        .sort_by { |c| [ c.depth, c.control_id ] }
+  end
+
   # Direct children only — one level down. Deeper parts are reached by walking
   # into the child, which is what makes every sub-part addressable.
   def direct_children
@@ -241,6 +262,61 @@ class CatalogControl < ApplicationRecord
   def guidance_hash = parsed_guidance_data
 
   # Returns only populated guidance fields as { field_name => value }.
+  # ── #1113 — catalog_control_parts is AUTHORITATIVE for editing ──────────
+  #
+  # The same catalog content lived in two stores with nothing keeping them in
+  # step: `guidance_data` (a JSONB blob, what the edit form wrote) and
+  # `catalog_control_parts` (structured rows, what the read-only tree renders,
+  # what SSP/CDEF statements join on by `statement_id`, and what the OSCAL
+  # export emits). Measured on AC-1 they held byte-identical content — 1,498
+  # characters of supplemental guidance in both — so editing the form left the
+  # tree below it and the export showing the old prose.
+  #
+  # Parts win, because they are structured, referenced downstream, exported, and
+  # round-trip; the blob carries no part ids at all.
+  #
+  # The blob is NOT dropped: 12+ consumers read it (SSP/SAR/SAP screens, the
+  # catalog and resolved-profile exporters, the SAR parser, the SAP generator).
+  # It is now a MIRROR, written from the parts in the same transaction, so the
+  # two cannot disagree. Retiring it is its own piece of work.
+  PART_MIRRORS = {
+    "statement"             => "statement",
+    "guidance"              => "supplemental_guidance"
+  }.freeze
+
+  # Apply prose edits to catalog parts, then re-derive the mirrored blob keys.
+  # `edits` is { part_id => prose }.
+  def apply_part_edits!(edits)
+    return if edits.blank?
+
+    transaction do
+      parts = catalog_control_parts.where(part_id: edits.keys).index_by(&:part_id)
+      edits.each do |part_id, prose|
+        part = parts[part_id.to_s]
+        next unless part                      # ignore ids that are not ours
+        part.update!(prose: prose.to_s)
+      end
+      mirror_parts_into_guidance_data!
+    end
+  end
+
+  # One direction only: parts -> blob. Never the reverse, or an edit to the blob
+  # would silently win and the drift is back.
+  def mirror_parts_into_guidance_data!
+    data = parsed_guidance_data.dup
+    PART_MIRRORS.each do |part_name, key|
+      part = catalog_control_parts.where(part_name: part_name).order(:row_order).first
+      data[key] = part.prose.to_s if part
+    end
+    objectives = catalog_control_parts.where(part_name: "assessment-objective")
+                                      .where.not(prose: [ nil, "" ]).order(:row_order)
+    if objectives.any?
+      data["assessment_objective"] =
+        objectives.map { |o| [ o.label.presence, o.prose ].compact.join(": ") }.join("\n")
+    end
+    update_column(:guidance_data, data)
+  end
+
   def guidance_fields
     data = parsed_guidance_data
     return {} if data.blank?

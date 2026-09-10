@@ -578,11 +578,61 @@ class OscalSspExportService
     ControlId.canonical(raw_id)
   end
 
+  # `implementation-status` is an OSCAL-NAMESPACED prop, so its value has to come
+  # from NIST's vocabulary — implemented / partial / planned / alternative /
+  # not-applicable.
+  #
+  # This used to be `status.downcase.gsub(/\s+/, "-")`, which slugified SPARC's
+  # own vocabulary straight into NIST's namespace. Three of the eight SPARC
+  # statuses happen to collide with a NIST term and were right by accident; the
+  # other five were not:
+  #
+  #   Deferred                   -> "deferred"                    not a NIST value
+  #   Partially Implemented      -> "partially-implemented"       NIST says "partial"
+  #   Alternative Implementation -> "alternative-implementation"  NIST says "alternative"
+  #   Will Not Implement         -> "will-not-implement"          no NIST equivalent
+  #   Not Implemented            -> "not-implemented"             no NIST equivalent
+  #
+  # NOTHING CAUGHT IT. Prop VALUES are Metaschema constraints, not JSON Schema
+  # ones, and `OscalSchemaValidationService` validates JSON Schema — so the
+  # export reported valid while telling a conforming reader something it cannot
+  # interpret.
+  #
+  # Two rules here:
+  #
+  #   1. Map to NIST's term when one honestly applies. `Deferred` becomes
+  #      `planned`: the control is intended and not yet in place, which is what
+  #      `planned` means. It is NOT `not-applicable` — deferring something is not
+  #      declaring it irrelevant.
+  #   2. When NIST cannot express the status at all — `Will Not Implement`,
+  #      `Not Implemented` — do NOT invent a term in NIST's namespace. Omit the
+  #      OSCAL prop and say it in SPARC's own, where a reader knows to interpret
+  #      it as ours.
+  #
+  # The verbatim SPARC status is ALWAYS emitted under SPARC_NS as well, so the
+  # round trip loses nothing and the mapping stays inspectable.
+  NIST_IMPLEMENTATION_STATUS = {
+    "implemented"                => "implemented",
+    "partially implemented"      => "partial",
+    "planned"                    => "planned",
+    "deferred"                   => "planned",
+    "alternative implementation" => "alternative",
+    "not applicable"             => "not-applicable"
+  }.freeze
+
+  def implementation_status_props(status)
+    props = []
+    nist  = NIST_IMPLEMENTATION_STATUS[status.to_s.strip.downcase]
+    props << { "name" => IMPLEMENTATION_STATUS, "value" => nist } if nist
+    props << { "name" => "sparc-status", "ns" => SPARC_NS, "value" => status }
+    props
+  end
+
   def build_props(field_map)
     props = []
 
     status = field_map["status"]&.field_value
-    props << { "name" => IMPLEMENTATION_STATUS, "value" => status.downcase.gsub(/\s+/, "-") } if status.present?
+    props.concat(implementation_status_props(status)) if status.present?
 
     type_use = field_map["control_application"]&.field_value
     props << { "name" => "control-type", "ns" => SPARC_NS, "value" => type_use } if type_use.present?

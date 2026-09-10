@@ -30,7 +30,6 @@ class CdefDocumentsController < ApplicationController
   # #738: CDEF is global (no boundary); mutations require cdef.write (instance-level). (AC-3)
   before_action :authorize_cdef_write!, only: %i[create update destroy update_field update_metadata copy create_from_profile source_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review update_scope]
 
-  SEVERITY_ORDER = %w[high medium low info].freeze
 
   def index
     @total_count = CdefDocument.count
@@ -78,24 +77,64 @@ class CdefDocumentsController < ApplicationController
     @components = @cdef_document.cdef_components
                                 .order(Arel.sql("component_type = 'service' DESC"), :title)
 
-    @severity_counts = controls_scope.group(:severity).count
-    @total_controls  = controls_scope.count
-
-    @heatmap_data, @heatmap_families, @heatmap_severities = build_severity_heatmap(controls_scope)
+    # #1088 — the controls this definition asserts, counted the way the screen
+    # lists them.
+    #
+    # A check component re-asserts the service's own controls, so counting every
+    # row reported 6 for a definition that covers 3. The service-level set is
+    # decided HERE and handed to the view as both the list and the count, so the
+    # header can never contradict the rows beneath it — the same trap fixed on
+    # the SSP heatmap in this bundle.
+    @service_component_uuids = @cdef_document.cdef_components
+                                             .where(component_type: "service")
+                                             .pluck(:component_uuid).compact
+    @total_controls = controls_scope.count
 
     @controls = controls_scope.order(:row_order).includes(:cdef_control_fields, :cdef_control_statements)
+
+    # Scope to the service when the document has one AND that service actually
+    # asserts controls. A definition with no service component, or one imported
+    # before #1088 stored the attribution, keeps every control it has rather than
+    # rendering an empty list.
+    # #1088 — which automated check verifies each control.
+    #
+    # Scoping the list to the service (owner's call) removed the check
+    # components as rows, and took the control -> check linkage with them. The
+    # card was left saying "NIST mapping source: aws_direct" and naming a
+    # Security Hub id, with nothing about HOW the control is actually verified —
+    # misleading, because the answer is an AWS Config Rule, and for a two-hop
+    # mapping the Config Rule is part of the derivation itself.
+    #
+    # Keyed on the Security Hub id the check component declares, upcased on both
+    # sides: `native_control_ids` is stored `.upcase`d by CdefComponentIndexer
+    # while the control's `aws_security_hub_id` field keeps AWS's own casing
+    # ("ElasticBeanstalk.2"), so a raw comparison matches nothing.
+    @checks_by_security_hub_id = Hash.new { |h, k| h[k] = [] }
+    @cdef_document.cdef_components.where.not(component_type: "service").each do |check|
+      Array(check.native_control_ids).each do |sec_hub_id|
+        @checks_by_security_hub_id[sec_hub_id.to_s.upcase] << check
+      end
+    end
+
+    @listed_controls =
+      if @service_component_uuids.any? &&
+         @controls.any? { |c| @service_component_uuids.include?(c.component_uuid) }
+        @controls.select { |c| @service_component_uuids.include?(c.component_uuid) }
+      else
+        @controls.to_a
+      end
+    @total_controls = @listed_controls.size
 
     # #393: deep-link statement editing via ?statement_id=N
     @editing_statement = CdefControlStatement.joins(cdef_control: :cdef_document)
                                              .find_by(id: params[:statement_id],
                                                       cdef_documents: { id: @cdef_document.id })
 
-    # Baseline gap analysis (when CDEF was created from a profile)
-    if @cdef_document.profile_document.present?
-      gap_service = CdefBaselineGapService.new(@cdef_document)
-      @gap_analysis = gap_service.analyze
-      @missing_controls = gap_service.missing_control_details if @gap_analysis&.dig(:missing)&.any?
-    end
+    # #1088 — the Baseline Coverage panel that the gap analysis fed was removed
+    # on owner review: "Baseline coverage? There is no need for this to even
+    # exist and was not asked for!" Nothing on this screen reads it any more, so
+    # it is no longer computed on every CDEF show. CdefBaselineGapService itself
+    # stays — cdef_bulk_apply_service and ResolvedCatalog both use it.
   end
 
   # #944 — a component definition had `new`/`create` but no `edit` and no
@@ -355,6 +394,16 @@ class CdefDocumentsController < ApplicationController
     requested_scope = params.dig(:cdef_document, :scope).presence || params[:scope]
     requested_boundary = params.dig(:cdef_document, :authorization_boundary_id).presence ||
                          params[:authorization_boundary_id]
+
+    # #980 — instance-wide crosses organization boundaries by definition: it
+    # publishes this CDEF to every organization on the instance, including ones
+    # the requester is not a member of. That is instance authority, so it is
+    # admin-only, and refused here rather than in the service so the service
+    # stays usable from a console and from the seeds.
+    if requested_scope.to_s == "instance" && !current_user&.admin?
+      flash[:error] = "Only an instance administrator can make a component definition available instance-wide."
+      return redirect_to cdef_document_path(@cdef_document)
+    end
 
     CdefScopeService.apply(@cdef_document,
       scope: requested_scope,
@@ -729,22 +778,8 @@ class CdefDocumentsController < ApplicationController
     redirect_to cdef_document_path(@cdef_document)
   end
 
-  def build_severity_heatmap(scope)
-    rows = scope.where.not(control_family: [ nil, "" ])
-                .group(:control_family, :severity).count
-
-    data = {}
-    rows.each do |(family, severity), count|
-      sev = severity.presence || "(Unknown)"
-      data[family] ||= {}
-      data[family][sev] = count
-    end
-
-    families = data.keys.sort
-    all_sevs = data.values.flat_map(&:keys).uniq
-    ordered  = SEVERITY_ORDER.select { |s| all_sevs.include?(s) }
-    ordered += (all_sevs - SEVERITY_ORDER).sort
-
-    [ data, families, ordered ]
-  end
+  # #1088 — `build_severity_heatmap` was removed with the panel it fed.
+  # `severity` is an XCCDF/STIG concept with nothing to populate it on the OSCAL
+  # JSON path, so for every AWS Labs CDEF it grouped NULL into one "(Unknown)"
+  # band per family.
 end

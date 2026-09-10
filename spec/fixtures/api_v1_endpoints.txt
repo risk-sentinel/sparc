@@ -148,11 +148,13 @@ GET /api/v1/scanner_findings/:id
 GET /api/v1/scanner_findings/:scanner_finding_id/disposition
 GET /api/v1/service_accounts
 GET /api/v1/service_accounts/:id
+GET /api/v1/ssp_control_statements/:id
 GET /api/v1/ssp_documents
 GET /api/v1/ssp_documents/:id
 GET /api/v1/ssp_documents/:id/export
 GET /api/v1/ssp_documents/:ssp_document_id/components
 GET /api/v1/ssp_documents/:ssp_document_id/components/:id
+GET /api/v1/ssp_documents/:ssp_document_id/statements
 GET /api/v1/users
 GET /api/v1/users/:id
 GET /api/v1/users/:user_id/api_tokens
@@ -188,6 +190,7 @@ PATCH /api/v1/sap_documents/:id
 PATCH /api/v1/sar_documents/:id
 PATCH /api/v1/sar_risks/:id
 PATCH /api/v1/service_accounts/:id
+PATCH /api/v1/ssp_control_statements/:id
 PATCH /api/v1/ssp_documents/:id
 PATCH /api/v1/ssp_documents/:ssp_document_id/components/:id
 PATCH /api/v1/users/:id
@@ -327,6 +330,7 @@ PUT /api/v1/sar_documents/:id
 PUT /api/v1/sar_documents/:id/update_fields
 PUT /api/v1/sar_risks/:id
 PUT /api/v1/service_accounts/:id
+PUT /api/v1/ssp_control_statements/:id
 PUT /api/v1/ssp_documents/:id
 PUT /api/v1/ssp_documents/:id/update_fields
 PUT /api/v1/ssp_documents/:ssp_document_id/components/:id

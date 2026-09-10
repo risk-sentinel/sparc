@@ -16,13 +16,13 @@
     <%# ── Step 1: Installation ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3">
-        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">1</span>
+        <span class="badge bg-primary rounded-circle me-2 sparc-badge-num">1</span>
         Installation
       </h2>
       <p>SPARC runs on Ruby 3.4, Rails 8.1, and PostgreSQL. Choose your setup method:</p>
 
       <h5 class="fw-bold mt-3">Option A: Docker Compose (recommended)</h5>
-      <pre class="p-3 rounded" style="background: var(--sparc-surface-alt); overflow-x: auto;"><code># Clone the repository
+      <pre class="p-3 rounded sparc-surface-scroll"><code># Clone the repository
 git clone https://github.com/risk-sentinel/sparc.git
 cd sparc
 
@@ -33,7 +33,7 @@ docker compose up --build</code></pre>
       </p>
 
       <h5 class="fw-bold mt-3">Option B: Local Development</h5>
-      <pre class="p-3 rounded" style="background: var(--sparc-surface-alt); overflow-x: auto;"><code># Install dependencies
+      <pre class="p-3 rounded sparc-surface-scroll"><code># Install dependencies
 bundle install
 
 # Create database, run migrations, and seed NIST catalogs
@@ -46,11 +46,11 @@ bin/rails server</code></pre>
     <%# ── Step 2: Seed the Database ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3">
-        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">2</span>
+        <span class="badge bg-primary rounded-circle me-2 sparc-badge-num">2</span>
         Seed the Database
       </h2>
       <p>The default seed loads NIST SP 800-53 Rev 4 and Rev 5 control catalogs. For a full demo environment with sample documents:</p>
-      <pre class="p-3 rounded" style="background: var(--sparc-surface-alt); overflow-x: auto;"><code># Seed with NIST catalogs only (default)
+      <pre class="p-3 rounded sparc-surface-scroll"><code># Seed with NIST catalogs only (default)
 bin/rails db:seed
 
 # Seed with full demo data (SSP, SAP, SAR, POA&amp;M, CDEFs, Profiles, KSI validations)
@@ -66,11 +66,11 @@ SPARC_SEED_MODE=20x bin/rails db:seed</code></pre>
     <%# ── Step 3: First Login ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3">
-        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">3</span>
+        <span class="badge bg-primary rounded-circle me-2 sparc-badge-num">3</span>
         First Login
       </h2>
       <p>A default admin account is created during seeding:</p>
-      <div class="card" style="max-width: 400px;">
+      <div class="card sparc-maxw-400px">
         <div class="card-body">
           <p class="mb-1"><strong>Email:</strong> <code>admin@sparc.local</code></p>
           <p class="mb-0"><strong>Password:</strong> <code>Sp@rc2025!Admin</code></p>
@@ -85,7 +85,7 @@ SPARC_SEED_MODE=20x bin/rails db:seed</code></pre>
     <%# ── Step 4: Import a Catalog ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3">
-        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">4</span>
+        <span class="badge bg-primary rounded-circle me-2 sparc-badge-num">4</span>
         Import a Control Catalog
       </h2>
       <p>If you ran <code>db:seed</code>, NIST SP 800-53 Rev 4 and Rev 5 catalogs are already loaded. To import additional catalogs:</p>
@@ -103,7 +103,7 @@ SPARC_SEED_MODE=20x bin/rails db:seed</code></pre>
     <%# ── Step 5: Create a Baseline Profile ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3">
-        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">5</span>
+        <span class="badge bg-primary rounded-circle me-2 sparc-badge-num">5</span>
         Create a Baseline Profile
       </h2>
       <ol>
@@ -119,7 +119,7 @@ SPARC_SEED_MODE=20x bin/rails db:seed</code></pre>
     <%# ── Step 6: Create an SSP ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3">
-        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">6</span>
+        <span class="badge bg-primary rounded-circle me-2 sparc-badge-num">6</span>
         Create a System Security Plan
       </h2>
       <p>SPARC supports two ways to create SSPs:</p>
@@ -146,7 +146,7 @@ SPARC_SEED_MODE=20x bin/rails db:seed</code></pre>
     <%# ── Step 7: Run an Assessment ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3">
-        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">7</span>
+        <span class="badge bg-primary rounded-circle me-2 sparc-badge-num">7</span>
         Run an Assessment
       </h2>
       <ol>
@@ -161,7 +161,7 @@ SPARC_SEED_MODE=20x bin/rails db:seed</code></pre>
     <%# ── Step 8: Export OSCAL ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3">
-        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">8</span>
+        <span class="badge bg-primary rounded-circle me-2 sparc-badge-num">8</span>
         Export OSCAL Artifacts
       </h2>
       <p>Every document in SPARC can be exported as OSCAL-compliant JSON, YAML, or XML:</p>
@@ -180,11 +180,11 @@ SPARC_SEED_MODE=20x bin/rails db:seed</code></pre>
     <%# ── Step 9: API Access ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3">
-        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">9</span>
+        <span class="badge bg-primary rounded-circle me-2 sparc-badge-num">9</span>
         API Access
       </h2>
       <p>Generate an API token and make your first call:</p>
-      <pre class="p-3 rounded" style="background: var(--sparc-surface-alt); overflow-x: auto;"><code># In Rails console, generate a token
+      <pre class="p-3 rounded sparc-surface-scroll"><code># In Rails console, generate a token
 token = ApiToken.generate!(user: User.first, name: "CLI Access")
 puts token.plaintext_token
 
@@ -206,7 +206,7 @@ curl -H "Authorization: Bearer sparc_your_token" \
 
     <%# ── Next Steps ── %>
     <section>
-      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Next Steps</h2>
+      <h2 class="h4 fw-bold mb-3 sparc-color-primary">Next Steps</h2>
       <ul>
         <li>Explore the interactive <strong>control heat maps</strong> on SSP and SAR detail pages</li>
         <li>Set up <strong>OIDC authentication</strong> with Okta or another provider for SSO</li>

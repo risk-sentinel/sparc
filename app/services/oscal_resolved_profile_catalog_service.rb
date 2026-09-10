@@ -251,6 +251,77 @@ class OscalResolvedProfileCatalogService
     )
   end
 
+  # The stored statement parts, rebuilt into the nested shape OSCAL expects.
+  #
+  # Returns [] when the catalog has no stored parts, so the caller can fall back
+  # to the flattened prose rather than emit a control with no statement at all.
+  def statement_part_tree(catalog_control, resolver)
+    part_tree(catalog_control, resolver, %w[statement item])
+  end
+
+  # #1114 — the 800-53A assessment objectives, same shape, different part names.
+  #
+  # These were DROPPED from the resolved catalog entirely. `build_control_parts`
+  # emitted `statement` and `guidance` and nothing else, so a resolved profile
+  # said the control had no assessment objectives at all — and everything
+  # downstream reads the resolved catalog, not the catalog table:
+  #
+  #   catalog_control_parts (ac-1)        24 assessment-objective parts (#1113)
+  #     -> resolved_catalog_json          parts = {statement, guidance}
+  #     -> ControlObjectiveExtractorService  finds 0
+  #     -> SapControlObjective rows          0
+  #     -> sap_generator falls back to `guidance["assessment_objective"]`, ONE
+  #        flattened string
+  #
+  # Measured on the seeded estate: the assessment plan carried 288 controls and
+  # ZERO objectives, against 24 objective parts for ac-1 alone. Owner: "all
+  # assessment objectives are forced into a single objective but there are
+  # multiple objectives that need to be individually checked."
+  #
+  # `assessment-method` comes with them: an objective is assessed BY a method
+  # (examine / interview / test), and carrying the objectives while dropping how
+  # they are assessed would repeat the same omission one level down.
+  def assessment_part_tree(catalog_control, resolver)
+    # `assessment-objects` is the child of a method carrying WHAT to examine —
+    # the policies, plans, mechanisms and personnel that are the evidence. Without
+    # it a method says "EXAMINE" and never says what (#1114).
+    part_tree(catalog_control, resolver,
+              %w[assessment-objective assessment-method assessment-objects])
+  end
+
+  # Rebuild stored flat part rows into the nested shape OSCAL expects.
+  #
+  # NIST's trees have CONTAINER nodes with no prose (`ac-1_obj`, `ac-1_obj.a`)
+  # above the leaves that carry it (`ac-1_obj.a-1`). They are kept: they are the
+  # addressable ids an assessment references, and dropping them would flatten
+  # exactly what this exists to preserve.
+  def part_tree(catalog_control, resolver, part_names)
+    rows = catalog_control.catalog_control_parts
+                          .where(part_name: part_names)
+                          .order(:row_order)
+                          .to_a
+    return [] if rows.empty?
+
+    nodes = rows.to_h do |row|
+      node = { "id" => row.part_id, "name" => row.part_name }
+      node["prose"] = resolver.resolve_text(row.prose) if row.prose.present?
+      node["props"] = [ { "name" => "label", "value" => row.label } ] if row.label.present?
+      [ row.part_id, node ]
+    end
+
+    roots = []
+    rows.each do |row|
+      node   = nodes[row.part_id]
+      parent = row.parent_part_id.present? && nodes[row.parent_part_id]
+      if parent
+        (parent["parts"] ||= []) << node
+      else
+        roots << node
+      end
+    end
+    roots
+  end
+
   def build_control_props(catalog_control, profile_control)
     props = []
     props << { "name" => "label", "value" => catalog_control.display_id }
@@ -281,7 +352,26 @@ class OscalResolvedProfileCatalogService
     # substituted parameter can itself reference others.
     resolver = parameter_resolver(catalog_control, profile_control)
 
-    if guidance["statement"].present?
+    # #1100 — emit the statement TREE, not one flattened blob.
+    #
+    # This used to emit a single part carrying `guidance["statement"]`, which is
+    # every sub-part concatenated into one string. A resolved profile that says
+    # a control has one statement is not just terse — it is what made every SSP
+    # generated from it carry one implementation statement for a control that
+    # NIST divides into nine.
+    #
+    # `catalog_control_parts` now holds the tree as NIST ships it, with NIST's
+    # own ids (ac-1_smt.a, ac-1_smt.a.1.a) and parent linkage. Parameters are
+    # resolved PER PART, so `{{ insert: param, ac-01_odp.03 }}` is substituted
+    # in the sub-part that actually contains it rather than in a blob.
+    #
+    # The flat form remains the fallback for a catalog imported before parts
+    # were stored and not yet re-imported. It is worse, and it is better than
+    # emitting nothing.
+    statement_parts = statement_part_tree(catalog_control, resolver)
+    if statement_parts.present?
+      parts.concat(statement_parts)
+    elsif guidance["statement"].present?
       parts << {
         "id"    => "#{catalog_control.control_id}_smt",
         "name"  => "statement",
@@ -304,6 +394,9 @@ class OscalResolvedProfileCatalogService
 
       parts << guidance_part
     end
+
+    # #1114 — after statement and guidance, matching the order NIST ships them.
+    parts.concat(assessment_part_tree(catalog_control, resolver))
 
     parts
   end

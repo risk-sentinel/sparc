@@ -37,6 +37,44 @@ class CdefDocument < ApplicationRecord
               message:  { label:   "profile",
                           remedy:  "Choose the profile this component definition was authored against.",
                           options: "/api/v1/profile_documents" }
+  # #1088 — a component definition's baseline is declared by its CONTROLS, not
+  # by a single foreign key.
+  #
+  # `lineage_via :profile_document` demands exactly one profile, and asks for it
+  # on every AWS Labs document with a blocking "Baseline not set" banner. That is
+  # not how OSCAL models the relationship. `control-implementations[].source` is
+  # REQUIRED on every control-implementation and is documented as "a reference to
+  # an OSCAL catalog or profile" — and the property is an ARRAY, precisely so one
+  # component definition can implement controls drawn from several catalogs and
+  # several profiles at once. Owner, on exactly this: "a CDEF can apply to more
+  # than one boundary, thus more than one profile, and more than 1 catalog...
+  # IF AND ONLY IF supported by NIST's own documentation." It is.
+  #
+  # So the #911 guarantee is kept — controls must be traceable to a catalog —
+  # while the mechanism becomes the one the format actually uses. A document
+  # whose every control names its own source is traceable BY CONSTRUCTION, and
+  # has nothing to be prompted for. `profile_document` remains a perfectly good
+  # way to satisfy the same guarantee for documents authored against one profile,
+  # which is what the picker is for.
+  def lineage_issues
+    return [] if every_control_declares_its_source?
+
+    super
+  end
+
+  # The distinct catalogs and profiles this definition's controls are claimed
+  # against, in the order they first appear.
+  def declared_control_sources
+    cdef_controls.filter_map { |c| c.implementation_source.presence }.uniq
+  end
+
+  def every_control_declares_its_source?
+    controls = cdef_controls.to_a
+    return false if controls.empty?
+
+    controls.all? { |c| c.implementation_source.present? }
+  end
+
   include ControlMembership
   membership_within controls: :cdef_controls, baseline: :profile_document,
                     baseline_controls: :profile_controls,
@@ -72,9 +110,29 @@ class CdefDocument < ApplicationRecord
   # Scope: CDEFs visible to a given organization for SSP composition.
   # Returns globally_available CDEFs in that org. (Boundary-specific CDEFs
   # are reached via the boundary's `boundaries.cdef_documents` association.)
+  #
+  # #980 — INCLUDING the instance-wide tier, which is `globally_available` with
+  # NO organization. Without the NULL in this IN list an instance-wide CDEF is
+  # visible to nobody rather than to everybody, which is the exact inversion of
+  # what the tier means.
   scope :globally_available_in, ->(org) {
-    where(globally_available: true, organization_id: org&.id)
+    where(globally_available: true, organization_id: [ org&.id, nil ].uniq)
   }
+
+  # Just the instance-wide tier — no owning organization.
+  scope :instance_wide, -> { where(globally_available: true, organization_id: nil) }
+
+  # #980 — which of the three tiers this CDEF is on. One place to ask, so a
+  # screen cannot invent a fourth answer from the two columns.
+  def scope_tier
+    return :boundary unless globally_available?
+
+    organization_id.nil? ? :instance : :organization
+  end
+
+  def instance_wide?
+    scope_tier == :instance
+  end
 
   # Issue #466 — rows ingested by AwsLabsCdefImportService are tagged in
   # import_metadata.source_type. Scope keeps queries readable.

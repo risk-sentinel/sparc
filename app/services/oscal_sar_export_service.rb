@@ -20,6 +20,10 @@ class OscalSarExportService
 
   # OSCAL prop/element names reused across the export build.
   TARGET_ID            = "target-id".freeze
+  # #1114 — the two `finding.target.type` values OSCAL allows. Named because
+  # they are a closed vocabulary from the schema, not incidental strings.
+  TARGET_TYPE_STATEMENT = "statement-id".freeze
+  TARGET_TYPE_OBJECTIVE = "objective-id".freeze
   REVIEWED_CONTROLS    = "reviewed-controls".freeze
   RELATED_OBSERVATIONS = "related-observations".freeze
   OBSERVATION_UUID     = "observation-uuid".freeze
@@ -62,7 +66,11 @@ class OscalSarExportService
       sar_risks: [ :sar_risk_observations ]
     ).to_a
     @components = @document.sar_local_components.to_a
-    @controls = @document.sar_controls.order(:row_order).includes(:sar_control_fields).to_a
+    # #1114 — objectives are preloaded because the export now emits a finding per
+    # determined objective; without this it is one query per control on a
+    # document that routinely carries hundreds.
+    @controls = @document.sar_controls.order(:row_order)
+                         .includes(:sar_control_fields, :sar_control_objectives).to_a
   end
 
   # ── Top-level Assessment Results envelope ──────────────────────────
@@ -279,13 +287,47 @@ class OscalSarExportService
   def build_finding_target(finding)
     base = (finding.target_data || {}).except("needs_objective_link")
     if finding.ssp_control_statement_id.present? && finding.ssp_control_statement
-      base["type"]      = "statement-id"
+      base["type"]      = TARGET_TYPE_STATEMENT
       base[TARGET_ID] = finding.ssp_control_statement.statement_id
     elsif finding.sar_control_objective_id.present? && finding.sar_control_objective
-      base["type"]      = "objective-id"
+      base["type"]      = TARGET_TYPE_OBJECTIVE
       base[TARGET_ID] = finding.sar_control_objective.objective_id
     end
-    base.presence
+    honest_target_type(base).presence
+  end
+
+  # #1114 — a target may not CLAIM to be an objective when it is not one.
+  #
+  # Where neither link above resolves, the target falls through to whatever
+  # `target_data` carried in from the import — and the seeded estate imports
+  # `{"type" => "objective-id", "target-id" => "ac-1"}`. Measured on the demo
+  # SAR: 150 findings, all 150 declaring `objective-id` against a CONTROL id.
+  #
+  # `objective-id` must reference an 800-53A assessment objective (`ac-1_obj.a-1`).
+  # `ac-1` is a control. No validator catches the difference because both are
+  # strings, so the document is schema-valid and false — a consumer resolving the
+  # reference finds nothing.
+  #
+  # An unresolvable claim is DOWNGRADED, never dropped: `statement-id` is what a
+  # control-level target actually is, and the finding itself is real. This
+  # corrects the assertion without discarding the assessment.
+  def honest_target_type(base)
+    return base if base.blank?
+    return base unless base["type"].to_s == TARGET_TYPE_OBJECTIVE
+
+    target = base[TARGET_ID].to_s
+    return base if known_objective_ids.include?(target)
+
+    base.merge("type" => TARGET_TYPE_STATEMENT)
+  end
+
+  # Every objective id this document actually holds. One query, memoised: this
+  # runs per finding, and a SAR carries hundreds.
+  def known_objective_ids
+    @known_objective_ids ||= SarControlObjective
+                               .joins(:sar_control)
+                               .where(sar_controls: { sar_document_id: @document.id })
+                               .distinct.pluck(:objective_id).to_set
   end
 
   def build_finding_observations(finding)
@@ -298,6 +340,36 @@ class OscalSarExportService
     risk_records = finding.sar_finding_risks.to_a
     return nil if risk_records.empty?
     risk_records.map { |fr| { "risk-uuid" => fr.sar_risk.uuid } }
+  end
+
+  # #1114 — the findings an assessment actually determined, one per objective.
+  #
+  # Only objectives with a determination are emitted. OSCAL has no "unknown"
+  # state for a finding target — `status.state` is REQUIRED and the enum is
+  # exactly `satisfied | not-satisfied` — so an objective still `pending` or
+  # `in-progress` must produce NO finding. Emitting one would assert assurance
+  # nobody established, which is the worst error an assessment artifact can make.
+  # `not_applicable` is excluded for the same reason: it is a scoping decision,
+  # not a determination that the objective is satisfied.
+  def build_objective_findings(control, obs_uuid)
+    # `determinable?` as well as `determined?`: a CONTAINER carries a label and no
+    # prose, so there is nothing stated to determine about it. If one ever holds a
+    # determination — imported that way, or set before the UI stopped offering it
+    # — exporting a finding for it would assert a judgement about a grouping node.
+    control.sar_control_objectives.select { |o| o.determinable? && o.determined? }.map do |objective|
+      {
+        "uuid"                 => OscalUuidService.derived(@document.uuid, "objective-finding", objective.uuid),
+        "title"                => "Finding for #{objective.label.presence || objective.objective_id}",
+        "description"          => objective.prose.presence ||
+                                  "Determination for #{objective.objective_id}",
+        "target"               => {
+          "type"      => TARGET_TYPE_OBJECTIVE,
+          TARGET_ID => objective.objective_id,
+          "status"    => { "state" => objective.oscal_state }
+        },
+        RELATED_OBSERVATIONS => [ { OBSERVATION_UUID => obs_uuid } ]
+      }
+    end
   end
 
   # ── Synthesized result (fallback for un-enriched Excel imports) ──
@@ -326,19 +398,37 @@ class OscalSarExportService
 
       obs_uuid_map[control.id] = obs_uuid
 
-      # Synthesize a finding per control
-      status_state = result_to_oscal_status(result_val)
-      findings << {
-        "uuid"                 => OscalUuidService.derived(@document.uuid, "synthesized-finding", control.uuid),
-        "title"                => "Finding for #{control.control_id}",
-        "description"          => "Assessment finding for control #{control.control_id}: #{result_val}",
-        "target"               => {
-          "type"      => "objective-id",
-          TARGET_ID => control_id,
-          "status"    => { "state" => status_state }
-        },
-        RELATED_OBSERVATIONS => [ { OBSERVATION_UUID => obs_uuid } ]
-      }
+      # #1114 — one finding per DETERMINED 800-53A objective.
+      #
+      # This emitted ONE finding per control, declaring
+      # `"type" => "objective-id"` while passing a CONTROL id as the target. That
+      # is a false statement in the artifact: `objective-id` must reference an
+      # assessment objective — `ac-1_obj.a-1` — and `ac-1` is not one. The
+      # schema cannot catch it, because both are just strings.
+      #
+      # It also flattened the assessment. NIST divides ac-1 into 24 determination
+      # statements, each separately determined; a single Pass/Failed for the
+      # whole control asserts more than an assessor actually found.
+      objective_findings = build_objective_findings(control, obs_uuid)
+      if objective_findings.any?
+        findings.concat(objective_findings)
+      else
+        # No objective carries a determination — fall back to the control-level
+        # result, and say so honestly with `type: "statement-id"`, which is what
+        # a control-level target actually is.
+        status_state = result_to_oscal_status(result_val)
+        findings << {
+          "uuid"                 => OscalUuidService.derived(@document.uuid, "synthesized-finding", control.uuid),
+          "title"                => "Finding for #{control.control_id}",
+          "description"          => "Assessment finding for control #{control.control_id}: #{result_val}",
+          "target"               => {
+            "type"      => TARGET_TYPE_STATEMENT,
+            TARGET_ID => control_id,
+            "status"    => { "state" => status_state }
+          },
+          RELATED_OBSERVATIONS => [ { OBSERVATION_UUID => obs_uuid } ]
+        }
+      end
     end
 
     {

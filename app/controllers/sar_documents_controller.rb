@@ -77,44 +77,29 @@ class SarDocumentsController < ApplicationController
 
     # Apply context filters (section/asset/env) BEFORE building heatmap so
     # the family cards reflect the active context selection
-    base_filtered = controls_scope
-    base_filtered = base_filtered.where(section: params[:section])                 if params[:section].present?
-    base_filtered = base_filtered.where(subject_asset: params[:asset])             if params[:asset].present?
-    base_filtered = base_filtered.where(subject_environment: params[:environment]) if params[:environment].present?
+    base_filtered = filter_by_context(controls_scope)
 
-    # Heatmap built from context-filtered scope (responds to asset/env/section)
+    # #1114 — the heatmap is the ASSESSMENT PLAN's shape, with progress on it.
+    #
+    # Owner: "the mapping that the SAP has for Examine, Interview, Test and its
+    # heat map … is the right shape for the SAR with the % completed (assessed)
+    # on the tiles. This gives the full picture of what is expected of the
+    # assessor and the team being assessed."
+    #
+    # Methods answer "what is expected"; the percentage answers "how far in are
+    # we". The previous tile carried a PASS RATE, which reads as progress and is
+    # not — a family with one control examined and passed showed 100% while 23
+    # objectives sat untouched.
     @heatmap_data, @heatmap_families, @heatmap_statuses =
-      build_heatmap_from_scope(base_filtered)
+      build_method_heatmap_from_scope(base_filtered)
+    @assessed_pct_by_family = build_assessed_pct_by_family(base_filtered)
 
-    # Apply family/status filters using raw SQL to avoid
-    # #or structural incompatibility with :joins
-    filtered = base_filtered
-
-    if params[:family].present?
-      # UPCASE THE PARAMETER, not just the column (#1094). Both sides of this OR
-      # require the VALUE to already be uppercase: `control_family` is stored
-      # uppercase ("AC", "AT", ...) and the fallback upcases the column but not
-      # what it is compared against. `control_id` is stored LOWERCASE ("ac-1"),
-      # so a lowercase family is the natural thing to type or to build from an id
-      # — and it returned "0 of 150 controls" while reporting that as the answer.
-      # Every family tile already links uppercase, so only hand-typed, bookmarked
-      # and API-built URLs were affected, silently.
-      #
-      # Matches ControlLookupService:159 and Api::V1::CatalogControls:124, which
-      # both normalise with `.to_s.upcase`; this was the one site that did not.
-      filtered = filtered.where(
-        "control_family = :family OR (control_family IS NULL AND UPPER(SPLIT_PART(control_id, '-', 1)) = :family)",
-        family: params[:family].to_s.upcase
-      )
-    end
-
-    if params[:status].present?
-      filtered = filtered.where(
-        "cached_result = :status OR (cached_result IS NULL AND sar_controls.id IN " \
-        "(SELECT sar_control_id FROM sar_control_fields WHERE field_name = 'result' AND field_value = :status))",
-        status: params[:status]
-      )
-    end
+    # Each filter is its own method: they are independent questions asked of the
+    # same scope, and inlining all three is what carried this action past the
+    # cognitive-complexity threshold. Order does not matter — every one narrows.
+    filtered = filter_by_family(base_filtered)
+    filtered = filter_by_result(filtered)
+    filtered = filter_by_assessment_method(filtered)
 
     # Paginate (explicit order since default_scope was removed for query performance)
     # N+1 guard: include objectives so the per-control table renders without
@@ -134,6 +119,18 @@ class SarDocumentsController < ApplicationController
     normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
     @catalog_guidance = CatalogControl.where(control_id: normalized_ids).index_by(&:control_id)
 
+    # #1114 — the control text an assessor reads must be the TAILORED text.
+    #
+    # The screen rendered `guidance_data["statement"]` straight from the catalog,
+    # which is the untailored blob: on ac-1 that put
+    # `{{ insert: param, ac-01_odp.03 }}` on the page, so an assessor was shown
+    # markup where the organisation-defined value belongs. Same defect the SAP
+    # generator had; this is the view that was missed when that was fixed.
+    #
+    # The profile's resolved catalog already substitutes parameters per part and
+    # recursively (#942), so this reads it rather than resolving a second time.
+    @resolved_statements = build_resolved_statements(@controls)
+
     # Totals for display
     @total_controls = controls_scope.count
     @filtered_count = filtered.count
@@ -144,6 +141,19 @@ class SarDocumentsController < ApplicationController
     @needs_reassociation = @sar_document.import_metadata&.dig(
       ControlObjectiveExtractorService::REASSOCIATION_FLAG
     ) == ControlObjectiveExtractorService::REASSOCIATION_VALUE
+
+    # #1114 — what the SSP CLAIMS, shown beside the assessment of it.
+    #
+    # Owner review: "I would expect to see the information from the SSP populated
+    # for the control's assessment context." An assessment result is a judgement
+    # about a claim, and the claim was nowhere on the page.
+    #
+    # Read LIVE from the linked SSP, never copied. `enrich_existing_controls_*`
+    # already copies a few SSP fields into `sar_control_fields` — which is why
+    # `ssp_status` sits on a SAR control as a snapshot that silently goes stale
+    # the moment the SSP is edited. That is the dual-store trap #1113 was about;
+    # a second copy of the same claim is worse than none. One query for the page.
+    @ssp_context_by_control = build_ssp_context(@controls)
   end
 
   def update
@@ -439,9 +449,6 @@ class SarDocumentsController < ApplicationController
       ControlObjectiveExtractorService.new(@sar_document).backfill!
     end
 
-    # Re-enrich SAR controls from the linked SAP -> SSP chain (or direct SSP).
-    field_count = enrich_existing_controls_from_sap_or_ssp_chain
-
     # Copy back-matter resources from each linked source. Mirrors the SAP
     # pattern -- without this, a SAR import with no native back-matter
     # would never show resources even when the upstream SSP/profile has
@@ -452,11 +459,9 @@ class SarDocumentsController < ApplicationController
     audit_log("sar_document_reprocessed", subject: @sar_document,
               metadata: { sap_id: sap_id, ssp_id: ssp_id, profile_id: profile_id,
                           objectives_assigned: objective_count,
-                          fields_added: field_count,
                           back_matter_copied: bm_count })
 
     msg = "Source associated."
-    msg += " #{field_count} context fields populated." if field_count > 0
     msg += " #{objective_count} objectives populated." if objective_count > 0
     msg += " #{bm_count} back-matter resources copied." if bm_count > 0
     flash[:success] = msg
@@ -505,6 +510,246 @@ class SarDocumentsController < ApplicationController
   end
 
   private
+
+  # #1114 — the SAR control filters, one question each.
+  #
+  # These were four inline blocks in `show`, which is what pushed that action to
+  # a cognitive complexity of 18 (Sonar `rubydre:S3776`, threshold 15). Named
+  # separately they are independently readable and independently testable, and
+  # the reason each is written the way it is stays attached to it.
+
+  # Context: which slice of the system the reader is looking at. Applied BEFORE
+  # the heatmap is built, so the family cards reflect the active selection.
+  def filter_by_context(scope)
+    scope = scope.where(section: params[:section])                 if params[:section].present?
+    scope = scope.where(subject_asset: params[:asset])             if params[:asset].present?
+    scope = scope.where(subject_environment: params[:environment]) if params[:environment].present?
+    scope
+  end
+
+  # Raw SQL rather than `#or`, which is structurally incompatible with the joins
+  # in play.
+  #
+  # UPCASE THE PARAMETER, not just the column (#1094). Both sides of this OR
+  # require the VALUE to already be uppercase: `control_family` is stored
+  # uppercase ("AC", "AT", ...) and the fallback upcases the column but not what
+  # it is compared against. `control_id` is stored LOWERCASE ("ac-1"), so a
+  # lowercase family is the natural thing to type or to build from an id — and it
+  # returned "0 of 150 controls" while reporting that as the answer. Every family
+  # tile links uppercase, so only hand-typed, bookmarked and API-built URLs were
+  # affected, silently.
+  #
+  # Matches ControlLookupService:159 and Api::V1::CatalogControls:124, which both
+  # normalise with `.to_s.upcase`; this was the one site that did not.
+  def filter_by_family(scope)
+    return scope if params[:family].blank?
+
+    scope.where(
+      "control_family = :family OR (control_family IS NULL AND UPPER(SPLIT_PART(control_id, '-', 1)) = :family)",
+      family: params[:family].to_s.upcase
+    )
+  end
+
+  # `cached_result` with a fallback to the `result` field for rows that predate
+  # the denormalised column.
+  def filter_by_result(scope)
+    return scope if params[:status].blank?
+
+    scope.where(
+      "cached_result = :status OR (cached_result IS NULL AND sar_controls.id IN " \
+      "(SELECT sar_control_id FROM sar_control_fields WHERE field_name = 'result' AND field_value = :status))",
+      status: params[:status]
+    )
+  end
+
+  # #1114 — the assessment METHOD the plan calls for.
+  #
+  # The coverage heatmap's badges are methods, so its links carry `?method=`.
+  # Methods live on the linked SAP, not on `sar_controls`, so this resolves the
+  # control ids carrying the method and filters on those.
+  def filter_by_assessment_method(scope)
+    return scope if params[:method].blank?
+
+    wanted = params[:method].to_s.downcase
+    ids = planned_methods_by_control.filter_map do |control_id, methods|
+      next control_id if wanted == "multiple" && methods.size > 1
+      next control_id if wanted == ApplicationHelper::LABEL_NONE.downcase && methods.empty?
+
+      control_id if methods.include?(wanted)
+    end
+
+    # Compared canonically: the plan and the results spell control ids
+    # differently ("AC-1" vs "ac-1"), and a raw match silently returns nothing.
+    #
+    # Stays a RELATION: the caller orders, includes and paginates this, and
+    # `.select {}` on a relation returns an Array, which breaks all three.
+    matching_ids = scope.pluck(:id, :control_id).filter_map do |id, control_id|
+      id if ids.include?(ControlId.canonical(control_id).to_s.downcase)
+    end
+    scope.where(id: matching_ids)
+  end
+
+  METHOD_ORDER = %w[examine interview test].freeze
+
+  # family => { method => count }, the same shape SAP's heatmap uses.
+  #
+  # The methods come from the linked SAP where there is one — the PLAN is what
+  # says how a control will be assessed, and #1114's whole point is that the SAR
+  # reads down the chain rather than inventing its own answer. Where no SAP is
+  # linked, they come from the catalog's own 800-53A `assessment-method` parts,
+  # which is the same authority the SAP itself draws on.
+  def build_method_heatmap_from_scope(scope)
+    methods_by_control = planned_methods_by_control
+    data = {}
+
+    scope.where.not(control_family: [ nil, "" ])
+         .pluck(:control_family, :control_id).each do |family, control_id|
+      methods = methods_by_control[ControlId.canonical(control_id).to_s.downcase] || []
+      data[family] ||= Hash.new(0)
+      if methods.empty?
+        data[family][ApplicationHelper::LABEL_NONE] += 1
+      else
+        data[family]["multiple"] += 1 if methods.size > 1
+        methods.each { |m| data[family][m] += 1 }
+      end
+    end
+
+    families = data.keys.sort
+    all_methods = data.values.flat_map(&:keys).uniq
+    ordered = METHOD_ORDER.select { |m| all_methods.include?(m) }
+    ordered << "multiple" if all_methods.include?("multiple")
+    ordered += (all_methods - METHOD_ORDER - [ "multiple" ]).sort
+
+    [ data, families, ordered ]
+  end
+
+  # canonical control id => ["examine", "interview", ...]
+  def planned_methods_by_control
+    sap = @sar_document.sap_document
+    if sap
+      return sap.sap_controls.pluck(:control_id, :assessment_method).each_with_object({}) do |(cid, raw), acc|
+        acc[ControlId.canonical(cid).to_s.downcase] =
+          raw.to_s.split(",").map { |m| m.strip.downcase }.reject(&:blank?).uniq
+      end
+    end
+
+    # No plan linked — fall back to what 800-53A itself prescribes.
+    CatalogControlPart
+      .joins(:catalog_control)
+      .where(part_name: "assessment-method")
+      .pluck(Arel.sql("catalog_controls.control_id"), :props_data)
+      .each_with_object(Hash.new { |h, k| h[k] = [] }) do |(cid, props), acc|
+        method = Array(props).find { |pr| pr["name"] == "method" }
+        next if method.nil?
+
+        acc[ControlId.canonical(cid).to_s.downcase] |= [ method["value"].to_s.downcase ]
+      end
+  end
+
+  # family => percent of that family's objectives that carry a DETERMINATION.
+  #
+  # "Assessed" means a determination was recorded — satisfied or not-satisfied.
+  # `pending` and `in-progress` are not assessed, and `not_applicable` is a
+  # scoping decision rather than an assessment, so none of them count toward
+  # progress. Same rule the exporter applies when deciding what may become a
+  # finding, so the tile and the artifact cannot disagree.
+  def build_assessed_pct_by_family(scope)
+    families = scope.where.not(control_family: [ nil, "" ]).distinct.pluck(:control_family)
+    return {} if families.empty?
+
+    # #1114 — CONTAINERS are excluded from the denominator.
+    #
+    # NIST's tree carries grouping nodes with a label and no prose, and there is
+    # nothing to determine about them. Counting them as outstanding work made the
+    # bar unreachable: ac-1 has 24 objectives of which 7 are containers, so a
+    # FULLY assessed control reported 71%. A progress figure that cannot reach
+    # 100% teaches the reader to distrust it.
+    rows = SarControlObjective
+             .joins(:sar_control)
+             .determinable
+             .where(sar_controls: { sar_document_id: @sar_document.id, control_family: families })
+             .group("sar_controls.control_family", :status).count
+
+    totals = Hash.new(0)
+    determined = Hash.new(0)
+    rows.each do |(family, status), count|
+      totals[family] += count
+      determined[family] += count if %w[passing failed].include?(status)
+    end
+
+    totals.each_with_object({}) do |(family, total), acc|
+      acc[family] = total.zero? ? 0 : (determined[family] * 100.0 / total).round
+    end
+  end
+
+  # control_id (canonical, downcased) => the control's tailored statement prose.
+  #
+  # Walks the statement part tree the resolved catalog carries and joins the
+  # leaves, so what an assessor reads is the same text the SSP was written
+  # against. Empty when no profile is reachable — the view then falls back to the
+  # catalog blob, which is worse and still better than showing nothing.
+  def build_resolved_statements(controls)
+    profile = @sar_document.profile_document || @sar_document.ssp_document&.profile_document
+    json = profile&.resolved_catalog_json
+    return {} if json.blank? || controls.blank?
+
+    catalog = json.is_a?(Hash) ? (json["catalog"] || json) : {}
+    nodes = Array(catalog["controls"]) +
+            Array(catalog["groups"]).flat_map { |g| Array(g["controls"]) }
+    by_id = nodes.index_by { |c| ControlId.canonical(c["id"]).to_s.downcase }
+
+    controls.each_with_object({}) do |control, acc|
+      node = by_id[ControlId.canonical(control.control_id).to_s.downcase]
+      next if node.nil?
+
+      prose = []
+      walk = lambda do |parts|
+        Array(parts).each do |part|
+          prose << part["prose"].to_s.strip if %w[statement item].include?(part["name"]) && part["prose"].present?
+          walk.call(part["parts"])
+        end
+      end
+      walk.call(node["parts"])
+      acc[control.control_id.to_s] = prose.join("\n") if prose.any?
+    end
+  rescue StandardError
+    {}
+  end
+
+  # control_id (downcased) => { status:, responsible:, statements: [{label:, prose:}] }
+  #
+  # The statements are the point. Since #1100 an SSP answers a control PER
+  # addressable part — at-1 carries ten — and those individual claims are what an
+  # assessor assesses. Summarising them back into one blob here would undo that
+  # work on the screen that needs it most.
+  def build_ssp_context(controls)
+    ssp = @sar_document.ssp_document
+    return {} if ssp.nil? || controls.blank?
+
+    ids = controls.map { |c| c.control_id.to_s.strip.downcase }.reject(&:blank?).uniq
+    return {} if ids.empty?
+
+    ssp.ssp_controls
+       .includes(:ssp_control_fields, :ssp_control_statements)
+       .select { |c| ids.include?(c.control_id.to_s.strip.downcase) }
+       .to_h do |ssp_control|
+      fields = ssp_control.ssp_control_fields.index_by(&:field_name)
+      statements = ssp_control.ssp_control_statements
+                              .sort_by { |s| s.row_order || 0 }
+                              .filter_map do |s|
+        prose = s.implementation_prose.presence
+        next if prose.blank?
+
+        { label: s.label.presence || s.statement_id, prose: prose }
+      end
+
+      [ ssp_control.control_id.to_s.strip.downcase,
+        { status:      fields["status"]&.field_value.presence,
+          responsible: fields["responsible_entities"]&.field_value.presence,
+          summary:     fields["implementation_statement"]&.field_value.presence,
+          statements:  statements } ]
+    end
+  end
 
   def document_metadata_params
     # #929 — permitted by Api::V1 all along, but not here.
@@ -759,39 +1004,22 @@ class SarDocumentsController < ApplicationController
     end
   end
 
-  # After associate_source links the SAR to a SAP/SSP, walk every existing
-  # SarControl and copy responsibility / implementation / impact_statement
-  # fields from the SSP if they're missing. SAR -> SAP -> SSP chain (or
-  # SAR -> SSP directly). Returns the count of fields added.
-  def enrich_existing_controls_from_sap_or_ssp_chain
-    ssp = resolve_linked_ssp_for_sar(@sar_document)
-    return 0 if ssp.nil?
-
-    ssp_controls = ssp.ssp_controls.includes(:ssp_control_fields)
-                                   .index_by { |c| c.control_id.to_s.strip.downcase }
-
-    count = 0
-    @sar_document.sar_controls.includes(:sar_control_fields).find_each do |sar_ctrl|
-      ssp_ctrl = ssp_controls[sar_ctrl.control_id.to_s.strip.downcase]
-      next unless ssp_ctrl
-      ssp_fields = ssp_ctrl.ssp_control_fields.index_by(&:field_name)
-      existing = sar_ctrl.sar_control_fields.pluck(:field_name).to_set
-
-      mappings = {
-        "responsibility"   => ssp_fields["responsible_entities"]&.field_value,
-        "implementation"   => ssp_fields["implementation_statement"]&.field_value.presence ||
-                              ssp_fields["implementation_summary"]&.field_value,
-        "impact_statement" => ssp_fields["notes"]&.field_value
-      }
-
-      mappings.each do |fname, fvalue|
-        next if fvalue.blank? || existing.include?(fname)
-        sar_ctrl.sar_control_fields.create!(field_name: fname, field_value: fvalue)
-        count += 1
-      end
-    end
-    count
-  end
+  # #1114 — REMOVED, along with the copying it existed to do.
+  #
+  # It walked every SAR control and copied `responsibility`, `implementation` and
+  # `impact_statement` from the linked SSP. Those were SNAPSHOTS: stale from the
+  # SSP's next edit, and blank on every document this had never been run against,
+  # which is what the owner saw. The screen reads the SSP live
+  # (`build_ssp_context`), so a copy is a second answer to the same question that
+  # can only diverge — the dual-store trap of #1113.
+  #
+  # `87e2cb80` emptied the mappings hash but left the walk in place, so it went on
+  # loading every SSP control and iterating an empty hash on each association.
+  # Sonar found the unused local; the pointless walk was the part that mattered.
+  #
+  # NOTE: an earlier comment here claimed `ssp_status` was "still copied below".
+  # It is not written here at all — `SarFromSspService` writes it when a SAR is
+  # generated from an SSP (`sar_from_ssp_service.rb:108`). The claim was wrong.
 
   def resolve_linked_ssp_for_sar(sar)
     return SspDocument.find_by(id: sar.ssp_document_id) if sar.ssp_document_id.present?
@@ -890,7 +1118,8 @@ class SarDocumentsController < ApplicationController
   end
 
   def filter_params
-    params.except(:controller, :action, :id).permit(:section, :family, :status, :asset, :environment, :page).to_h
+    params.except(:controller, :action, :id)
+          .permit(:section, :family, :status, :method, :asset, :environment, :page).to_h
   end
 
   SAR_STATUS_ORDER = [

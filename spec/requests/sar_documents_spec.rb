@@ -205,17 +205,43 @@ RSpec.describe "SarDocuments", type: :request do
       sar.sar_controls.create!(control_id: "cm-2", title: "Baseline", row_order: 0)
     end
 
-    it "links the SAR to the SAP and back-fills responsibility from the SSP chain" do
+    it "links the SAR to the SAP" do
       patch associate_source_sar_document_path(sar), params: {
         sar_document: { sap_document_id: sap.id }
       }
 
       sar.reload
       expect(sar.sap_document_id).to eq(sap.id)
-      ctrl = sar.sar_controls.find_by(control_id: "cm-2")
-      field = ctrl.sar_control_fields.find_by(field_name: "responsibility")
-      expect(field&.field_value).to eq("Platform")
       expect(response).to redirect_to(sar_document_path(sar))
+    end
+
+    # #1114 — the contract CHANGED, deliberately: this used to assert that
+    # associating a source COPIED `responsible_entities` from the SSP onto the
+    # SAR control. That copy was a snapshot, stale from the next SSP edit onward,
+    # and it rendered blank on every document the enrichment had not been run
+    # against. The screen reads the SSP live instead.
+    #
+    # The assertion is INVERTED rather than deleted: the absence of the copy is
+    # now the behaviour worth pinning, or the mirror could quietly return.
+    it "does NOT copy the SSP's responsibility onto the SAR control" do
+      patch associate_source_sar_document_path(sar), params: {
+        sar_document: { sap_document_id: sap.id }
+      }
+
+      ctrl = sar.reload.sar_controls.find_by(control_id: "cm-2")
+      expect(ctrl.sar_control_fields.find_by(field_name: "responsibility")).to be_nil
+    end
+
+    it "still shows the SSP's responsibility on the screen, read live" do
+      patch associate_source_sar_document_path(sar), params: {
+        sar_document: { sap_document_id: sap.id }
+      }
+      sar.reload.update!(ssp_document: ssp)
+
+      get sar_document_path(sar)
+
+      expect(response.body).to include("Platform"),
+        "removing the copy must not remove the information"
     end
 
     it "doesn't duplicate fields on re-association" do

@@ -100,7 +100,7 @@
               refresh_inherited_statements_ssp_document_path(@ssp_document),
               method: :post,
               class: "sparc-action sparc-action--caution sparc-action--solid",
-              form: { style: "display: inline;" } %>
+              form: { class: "sparc-d-inline" } %>
       <% end %>
       <%= link_to "&#8592; Back".html_safe, ssp_documents_path,
             class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
@@ -159,7 +159,7 @@
       <div class="d-flex justify-content-between align-items-center sparc-mb-05">
         <span class="sparc-card-eyebrow">System Characteristics</span>
         <% if signed_in? && @ssp_document.draft? %>
-          <%= link_to enrich_ssp_document_path(@ssp_document), style: "font-size: 0.72rem; color: var(--bs-tertiary-color); text-decoration: none;" do %>&#9998; Edit<% end %>
+          <%= link_to enrich_ssp_document_path(@ssp_document), class: "sparc-fs-072 sparc-color-tertiary sparc-td-none" do %>&#9998; Edit<% end %>
         <% end %>
       </div>
       <% if @ssp_document.description.present? %>
@@ -180,13 +180,20 @@
       <div class="d-flex justify-content-between align-items-center sparc-mb-05">
         <span class="sparc-card-eyebrow">Components (<%= @components.count %>)</span>
         <% if signed_in? && @ssp_document.draft? %>
-          <%= link_to enrich_ssp_document_path(@ssp_document, anchor: "components"), style: "font-size: 0.72rem; color: var(--bs-tertiary-color); text-decoration: none;" do %>&#9998; Edit<% end %>
+          <%= link_to enrich_ssp_document_path(@ssp_document, anchor: "components"), class: "sparc-fs-072 sparc-color-tertiary sparc-td-none" do %>&#9998; Edit<% end %>
         <% end %>
       </div>
       <% @components.first(5).each do |comp| %>
-        <div class="d-flex align-items-center gap-1 sparc-mb-025">
-          <span class="sparc-status sparc-status--<%= comp.component_type == 'this-system' ? 'purple' : 'info' %> sparc-fs-068"><%= comp.component_type %></span>
-          <span class="sparc-fs-082 sparc-color-body"><%= truncate(comp.title, length: 30) %></span>
+        <%# #1088 — name on the first line, type badge on its OWN line beneath,
+            exactly as System Characteristics puts its description on one line
+            and the [Operational] badge on the next. Trailing the badge on the
+            same row was the first attempt and still did not match the card
+            beside it. %>
+        <div class="sparc-mb-04">
+          <div class="sparc-fs-082 sparc-color-body"><%= truncate(comp.title, length: 30) %></div>
+          <div class="d-flex flex-wrap gap-1 sparc-mt-025">
+            <span class="sparc-status sparc-status--<%= comp.component_type == 'this-system' ? 'purple' : 'info' %> sparc-fs-068"><%= comp.component_type %></span>
+          </div>
         </div>
       <% end %>
       <% if @components.count > 5 %>
@@ -199,7 +206,7 @@
       <div class="d-flex justify-content-between align-items-center sparc-mb-05">
         <span class="sparc-card-eyebrow">Users (<%= @users.count %>)</span>
         <% if signed_in? && @ssp_document.draft? %>
-          <%= link_to enrich_ssp_document_path(@ssp_document, anchor: "users"), style: "font-size: 0.72rem; color: var(--bs-tertiary-color); text-decoration: none;" do %>&#9998; Edit<% end %>
+          <%= link_to enrich_ssp_document_path(@ssp_document, anchor: "users"), class: "sparc-fs-072 sparc-color-tertiary sparc-td-none" do %>&#9998; Edit<% end %>
         <% end %>
       </div>
       <% @users.first(5).each do |user| %>
@@ -222,7 +229,7 @@
       <div class="fw-semibold sparc-fs-088 sparc-color-body">Enrich for OSCAL Compliance</div>
       <div class="text-body-secondary sparc-fs-078">Add system characteristics, components, and users to produce a fully valid OSCAL SSP export.</div>
     </div>
-    <%= link_to "Enrich SSP", enrich_ssp_document_path(@ssp_document), class: "sparc-action sparc-action--info sparc-action--outline", style: "flex-shrink: 0; font-size: 0.85rem; padding: 0.4rem 1rem;" %>
+    <%= link_to "Enrich SSP", enrich_ssp_document_path(@ssp_document), class: "sparc-action sparc-action--info sparc-action--outline sparc-flex-shrink-0 sparc-fs-085 sparc-p-04-1r" %>
   </div>
 <% end %>
 
@@ -259,6 +266,15 @@
      initial_filter: params[:status],
      legend_items: ApplicationHelper::SSP_STATUS_COLORS.first(4).to_a %>
 
+<%# #1100 — one datalist for the page. The statement editor renders on every
+    control card, so the list is emitted ONCE here and referenced by id rather
+    than duplicated (and its id collided) 150 times. %>
+<datalist id="ssp-known-role-ids">
+  <% Array(@known_role_ids).each do |rid| %>
+    <option value="<%= rid %>"></option>
+  <% end %>
+</datalist>
+
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
 <div id="controlsContainer">
   <div class="d-flex justify-content-between align-items-center mb-3">
@@ -276,7 +292,7 @@
     <details class="sparc-family-group" data-family-group="<%= family_code %>">
       <summary>
         <strong><%= family_code %></strong> &mdash; <%= @family_names[family_code] || @family_names[family_code.downcase] || family_code %>
-        <span class="badge bg-secondary"><%= family_controls.size %></span>
+        <span class="badge bg-secondary" data-heatmap-count="<%= family_controls.size %>"><%= family_controls.size %></span>
       </summary>
 
       <div class="mt-2">
@@ -309,6 +325,18 @@
               <span class="sparc-env-tag">&#x2713; <%= prov_as_val %></span>
             <% end %>
             <span class="sparc-ctrl-family sparc-ml-01"><%= family_code %></span>
+            <%# #1100 — how much of this control is answered, on the COLLAPSED
+                card. The per-statement work is invisible until you expand a
+                control, so a document of 150 controls gave an author no way to
+                see where the gaps were without opening all of them. %>
+            <% stmt_total = control.ssp_control_statements.size %>
+            <% if stmt_total > 1 %>
+              <% stmt_answered = control.ssp_control_statements.count { |s| s.implementation_prose.present? } %>
+              <span class="sparc-status sparc-status--<%= stmt_answered.zero? ? 'neutral' : stmt_answered == stmt_total ? 'success' : 'warning' %> sparc-fs-068"
+                    title="Implementation statements carrying prose">
+                <%= stmt_answered %>/<%= stmt_total %> answered
+              </span>
+            <% end %>
           </div>
           <div class="sparc-ctrl-title sparc-mt-01"><%= control.title %></div>
         </div>
@@ -338,6 +366,17 @@
               <div class="sparc-fs-084 sparc-color-body sparc-lh-15"><%= stated_req %></div>
             </div>
           <% end %>
+
+          <%# ── #1100: Implementation statements ──────────────────────────
+              THE primary authoring surface for a control, so it sits directly
+              under the language it answers.
+
+              It used to render inside the EDIT form, below all nine editable
+              fields — so answering a sub-part meant clicking Edit on the
+              control, scrolling past status/application/coverage/type/roles,
+              and finding a table at the bottom. Owner review: "This is not
+              intuitive for where a user responds to each part." %>
+          <%= render "ssp_documents/statements_table", control: control, ssp_document: @ssp_document %>
 
           <%# Ordered field table — editable fields first, then supplemental %>
           <%
@@ -464,6 +503,37 @@
 
         <%# ── Edit form ── %>
         <div id="edit-<%= control.id %>" class="sparc-divider-top-mt sparc-d-none">
+          <%# WHAT THE AUTHOR IS ANSWERING, kept on screen WHILE they answer it.
+              `inline_edit` swaps `view-<id>` for `edit-<id>`, so opening Edit hid
+              the entire read view — and with it "What This Baseline Requires",
+              which is the control's own language with this baseline's parameter
+              values applied, plus its implementation sub-parts (#1002).
+
+              The edit panel put back only `guidance_fields` (related controls,
+              supplemental guidance), so the author was asked to write an
+              implementation statement with the requirement, the parameters and
+              the sub-part list all hidden. Reported from a container review.
+
+              Same `baseline_detail` the read view builds a few lines up and the
+              same partial the Profile screen renders, so the two screens cannot
+              describe one control differently. `editable: false` — the SSP
+              CONSUMES the baseline, it does not define it.
+
+              Open by default here, unlike the read view: in edit mode this is
+              the reference being worked from, not optional background. %>
+          <% if baseline_detail&.any? %>
+            <details class="sparc-mb-075" open>
+              <summary class="sparc-ctx-header d-flex align-items-center gap-1 fw-semibold text-body-secondary rounded sparc-ctx-header--blue">
+                <span class="catalog-arrow sparc-ctx-arrow">&#9658;</span>
+                What This Baseline Requires
+                <span class="sparc-section-hint sparc-fs-07">&mdash; the language, parameters and sub-parts you are implementing</span>
+              </summary>
+              <div class="sparc-ctx-panel--blue">
+                <%= render "shared/baseline_control_detail", detail: baseline_detail, editable: false %>
+              </div>
+            </details>
+          <% end %>
+
           <%= form_with url: ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
             <%= hidden_field_tag :control_id, control.control_id %>
 
@@ -477,37 +547,41 @@
               <% field_id = "ssp_field_#{control.id}_#{fname}" %>
               <div class="form-group">
                 <label class="sparc-edit-label" for="<%= field_id %>">
-                  <%= fname.tr("_", " ") %>
+                  <%# #1100 — this field held the ONLY response for a control
+                      whose statements are answered individually above, which is
+                      what made two places look like one. Named for what it is. %>
+                  <%= fname == "implementation_statement" ? "control-level summary" : fname.tr("_", " ") %>
                   <span class="sparc-edit-editable-hint">(editable)</span>
                 </label>
+                <% if fname == "implementation_statement" %>
+                  <div class="sparc-fs-078 sparc-color-tertiary sparc-mb-025">
+                    Optional. Each addressable part is answered individually in
+                    Implementation Statements above; this is the overall narrative
+                    for the control.
+                  </div>
+                <% end %>
                 <% if fname == "status" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::VALID_STATUSES, fval),
-                        include_blank: "— select —", class: "form-control", id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        include_blank: "— select —", class: "form-control sparc-fs-0875", id: field_id %>
                 <% elsif fname == "control_application" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::CONTROL_APPLICATION_VALUES, fval),
-                        include_blank: "— select —", class: "form-control", id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        include_blank: "— select —", class: "form-control sparc-fs-0875", id: field_id %>
                 <% elsif fname == "coverage_level" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::COVERAGE_LEVEL_VALUES, fval),
-                        include_blank: "— select —", class: "form-control", id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        include_blank: "— select —", class: "form-control sparc-fs-0875", id: field_id %>
                 <% elsif fname == "control_type" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::CONTROL_TYPE_VALUES, fval),
-                        include_blank: "— select —", class: "form-control", id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        include_blank: "— select —", class: "form-control sparc-fs-0875", id: field_id %>
                 <% elsif fname == "expected_completion" %>
                   <%= text_field_tag "fields[#{fname}]", fval,
-                        class: "form-control", placeholder: "YYYY-MM-DD", id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        class: "form-control sparc-fs-0875", placeholder: "YYYY-MM-DD", id: field_id %>
                 <% else %>
                   <%= text_area_tag "fields[#{fname}]", fval,
-                        class: "form-control", rows: 3, id: field_id,
-                        style: "font-size: 0.875rem;" %>
+                        class: "form-control sparc-fs-0875", rows: 3, id: field_id %>
                 <% end %>
               </div>
             <% end %>
@@ -561,8 +635,9 @@
               </details>
             <% end %>
 
-            <%# ── #393: Implementation statements (per-statement edit modal) ── %>
-            <%= render "ssp_documents/statements_table", control: control, ssp_document: @ssp_document %>
+            <%# #1100 — the implementation statements table used to render here,
+                at the bottom of the edit form. It is the primary authoring
+                surface, not a trailing extra, and now lives in the view above. %>
 
             <%# ── Back-Matter References ── %>
             <% ssp_ctrl_resources = control.back_matter_resources.order(:title) %>
@@ -625,7 +700,7 @@
 
             <div class="d-flex gap-2 mt-3">
               <%= f.submit "Save Changes",
-                    class: "sparc-action sparc-action--primary sparc-action--solid", style: "padding: 0.5rem 1.25rem; font-size: 0.875rem;" %>
+                    class: "sparc-action sparc-action--primary sparc-action--solid sparc-p-05-125r sparc-fs-0875" %>
               <button type="button"
                       data-action="inline-edit#toggle"
                       data-inline-edit-id-param="<%= control.id %>"
@@ -659,7 +734,7 @@
           <code class="text-body-secondary sparc-fs-078"><%= stmt.statement_id %></code>
         </div>
         <%= link_to "&times;".html_safe, ssp_document_path(@ssp_document),
-              class: "text-body-secondary", style: "font-size: 1.5rem; text-decoration: none; line-height: 1;" %>
+              class: "text-body-secondary sparc-modal-close" %>
       </div>
 
       <%= form_with url: update_statement_ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>

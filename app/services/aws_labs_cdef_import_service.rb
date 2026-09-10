@@ -23,6 +23,9 @@ require "tempfile"
 #   - SR-3 Supply Chain Controls: blob SHA-based integrity verification
 #   - SA-15 Development Process: third-party content lifecycle
 class AwsLabsCdefImportService
+  # `nist_family_from_id` — the same derivation the JSON and XCCDF parsers use,
+  # so the three importers cannot drift on what a family is.
+  include CciNistResolvable
   OSCAL_VERSION = "oscal-version".freeze
 
   Result = Struct.new(
@@ -72,6 +75,104 @@ class AwsLabsCdefImportService
     # Reset per `run`; initialized here so a caller that exercises
     # `build_candidates` directly does not hit a nil.
     @fetch_errors = []
+  end
+
+  # #1088 — re-parse upstream content that is ALREADY imported, in place.
+  #
+  # `run` skips a document whose `source_sha` matches upstream, which is right:
+  # the content has not changed. But #1088 changed how SPARC READS that content
+  # — the parser now keeps `component_uuid` and `implementation_source`, two
+  # levels of the OSCAL tree it used to discard — and neither is reconstructable
+  # from the database (`native_control_ids` is `.uniq.sort`, so per-component
+  # counts are gone, and the source was never stored at all). Re-parsing from
+  # upstream is the only honest recovery.
+  #
+  # It must NOT go through `import_one`. That path is built for content that
+  # genuinely changed upstream: it supersedes the old document and creates a new
+  # one, preserving version history. Driving it from a cleared `source_sha`
+  # DUPLICATES the whole corpus — measured, 230 documents became 460 — and
+  # leaves every SSP and boundary link pointing at the superseded copy.
+  #
+  # So this parses onto the EXISTING record. Same document id, same links, same
+  # slug; only the children are rebuilt, which is what `CdefJsonParserService`
+  # does anyway.
+  def reparse_existing!(only_missing_attribution: true)
+    return { eligible: 0, reparsed: 0, errors: [] } unless SparcConfig.aws_labs_cdef_enabled?
+
+    # The tree listing is ETag-cached and returns nil on a 304 — "nothing changed
+    # upstream", which is exactly the state a re-parse runs in. `run` clears the
+    # ETag for the same reason when forced; without this the listing is nil and
+    # `build_candidates` raises on it.
+    Rails.cache.delete(
+      "aws_labs_cdef:etag:tree:#{SparcConfig.aws_labs_cdef_repo}:#{SparcConfig.aws_labs_cdef_branch}"
+    )
+    tree_entries = @client.list_component_definition_files
+    return { eligible: 0, reparsed: 0, errors: [] } if tree_entries.blank?
+
+    @fetch_errors = []
+    candidates = build_candidates(tree_entries)
+    by_url = candidates.index_by { |c| c[:html_url] }
+
+    scope = CdefDocument.aws_labs_sourced
+    reparsed = 0
+    errors = []
+    eligible = 0
+
+    scope.find_each do |document|
+      candidate = by_url[(document.import_metadata || {})["source_url"]]
+      next if candidate.nil?
+      if only_missing_attribution &&
+         document.cdef_controls.where.not(component_uuid: [ nil, "" ]).exists?
+        next
+      end
+
+      eligible += 1
+      begin
+        # `CdefJsonParserService#parse` WRITES `import_metadata` — it records the
+        # parsed document's own OSCAL metadata there. `write_through_parser_inner`
+        # copes by merging the AWS provenance back on top afterwards; the first
+        # version of this method did not, and every re-parsed document lost
+        # `source_type`, `source_url` and `source_sha`. Measured:
+        # `CdefDocument.aws_labs_sourced.count` went from 230 to ZERO, which also
+        # breaks the dedupe the next refresh depends on — it would have imported
+        # all 230 again as new documents.
+        provenance = (document.import_metadata || {}).slice(
+          "source_type", "source_repo", "source_branch", "source_path", "source_url",
+          "source_sha", "source_commit_sha", "source_oscal_version",
+          "source_metadata_version", "superseded_at", "superseded_by_sha"
+        )
+
+        ActiveRecord::Base.transaction do
+          # `CdefJsonParserService` APPENDS. Every other caller hands it a
+          # freshly created document, so it has never had to replace anything —
+          # run against a populated one it doubles the controls. Measured before
+          # this line existed: the Elastic Beanstalk CDEF came back with 12
+          # controls where it has 6, half of them the old unattributed rows, and
+          # the export grew a fifth component to hold the orphans.
+          #
+          # Children only. The DOCUMENT is preserved, which is the whole point of
+          # re-parsing in place; `cdef_control_fields` and
+          # `cdef_control_statements` go with their controls via `dependent`.
+          document.cdef_controls.destroy_all
+
+          Tempfile.create([ "aws-labs-reparse-", ".json" ]) do |tmp|
+            tmp.binmode
+            tmp.write(candidate[:content])
+            tmp.flush
+            CdefJsonParserService.new(document, tmp.path).parse(validate: false)
+          end
+        end
+
+        document.reload
+        document.update!(import_metadata: (document.import_metadata || {}).merge(provenance))
+        enrich_with_nist_mappings!(document.reload)
+        reparsed += 1
+      rescue StandardError => e
+        errors << { path: candidate[:path], error: "#{e.class}: #{e.message}" }
+      end
+    end
+
+    { eligible: eligible, reparsed: reparsed, errors: errors }
   end
 
   def run(force: false)
@@ -517,7 +618,10 @@ class AwsLabsCdefImportService
       # stored value is `iam.99999` while the source is `IAM.99999`. Comparing
       # raw never matched, and the Security Hub id stayed in the NIST column.
       if control.control_id.present? && control.control_id == ControlId.canonical(sec_hub_id)
-        control.update_columns(control_id: nil)
+        # The family went with it. An unresolved rule has no NIST family, and
+        # leaving the Security Hub id there put unmapped rules on the heatmap as
+        # though they were a control family. `source_control_id` keeps the rule.
+        control.update_columns(control_id: nil, control_family: nil)
       end
 
       direct_ids = sec_hub_converter.converter_entries
@@ -562,7 +666,17 @@ class AwsLabsCdefImportService
     # #912 — `control_id` now holds the NIST reference. `update_columns` skips
     # validations deliberately: a control invalid for an unrelated reason must
     # still receive its resolved mapping.
-    control.update_columns(control_id: ControlId.canonical(nist_ids.first))
+    #
+    # `control_family` MUST move with it. It is set at parse time from whatever
+    # `implemented-requirements[].control-id` held, which for an AWS CDEF is the
+    # Security Hub rule — so enriching `control_id` to `ca-7` while the family
+    # stayed "ELASTICBEANSTALK.1" left the two columns describing different
+    # vocabularies. The heatmap groups by family, so it drew one card per AWS
+    # RULE instead of one per NIST family, with a label no card could contain.
+    control.update_columns(
+      control_id:     ControlId.canonical(nist_ids.first),
+      control_family: nist_family_from_id(nist_ids.first)
+    )
 
     upsert_cdef_field!(control, "aws_security_hub_id", sec_hub_id, editable: false)
     upsert_cdef_field!(control, "nist_oscal_ids", nist_ids.join(","), editable: false)

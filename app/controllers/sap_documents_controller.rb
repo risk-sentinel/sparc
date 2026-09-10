@@ -1,4 +1,9 @@
 class SapDocumentsController < ApplicationController
+  # #1114 — the 800-53A part names this screen reads. A closed vocabulary from
+  # the catalog, not incidental strings.
+  ASSESSMENT_METHOD  = "assessment-method".freeze
+  ASSESSMENT_OBJECTS = "assessment-objects".freeze
+
   include ReconciliationGate
   # #911 layer 2 — refuse an edit until the document names the baseline
   # its controls descend from. `set_baseline` is deliberately absent.
@@ -89,6 +94,18 @@ class SapDocumentsController < ApplicationController
     @needs_reassociation = @sap_document.import_metadata&.dig(
       ControlObjectiveExtractorService::REASSOCIATION_FLAG
     ) == ControlObjectiveExtractorService::REASSOCIATION_VALUE
+
+    # #1114 — the assessment methods and, under each, WHAT to examine.
+    #
+    # Owner review: "the assessment plan should already have backmatter links for
+    # those that have them and callout control parts that do not (e.g. under
+    # assessment depth would be back matter reference(s) link(s))".
+    #
+    # 800-53A nests it `assessment-method` -> `assessment-objects`, where the
+    # method carries EXAMINE/INTERVIEW/TEST as a prop and the objects part
+    # carries the evidence list. Read from the catalog, keyed by normalised
+    # control id, in ONE query for the page rather than per control card.
+    @assessment_methods_by_control = build_assessment_method_index(@controls)
   end
 
   def new
@@ -377,6 +394,48 @@ class SapDocumentsController < ApplicationController
 
   private
 
+  # control_id => [{ method:, label:, objects: [prose, ...] }, ...]
+  #
+  # `assessment-objects` used to be dropped at import (no `id` in NIST's JSON,
+  # and absent from the allowlist), so a method could say EXAMINE and never say
+  # what. Controls whose methods carry NO objects are still returned, with an
+  # empty list, because the screen must CALL THAT OUT rather than omit the row —
+  # a missing reference is the finding, not a blank.
+  def build_assessment_method_index(controls)
+    ids = controls.map { |c| ControlId.canonical(c.control_id) }.compact.uniq
+    return {} if ids.empty?
+
+    parts = CatalogControlPart
+              .joins(:catalog_control)
+              .where(catalog_controls: { control_id: ids })
+              .where(part_name: [ ASSESSMENT_METHOD, ASSESSMENT_OBJECTS ])
+              .select("catalog_control_parts.*, catalog_controls.control_id AS owner_control_id")
+              .order(:row_order)
+
+    by_control = Hash.new { |h, k| h[k] = [] }
+    objects_by_parent = Hash.new { |h, k| h[k] = [] }
+
+    parts.each do |part|
+      next unless part.part_name == ASSESSMENT_OBJECTS
+
+      objects_by_parent[part.parent_part_id] << part.prose.to_s.strip.presence
+    end
+
+    parts.each do |part|
+      next unless part.part_name == ASSESSMENT_METHOD
+
+      method = Array(part.props_data).find { |pr| pr["name"] == "method" }
+      by_control[part.owner_control_id.to_s.downcase] << {
+        method:  method && method["value"].to_s.downcase.presence,
+        label:   part.label.presence,
+        part_id: part.part_id,
+        objects: objects_by_parent[part.part_id].compact
+      }
+    end
+
+    by_control
+  end
+
   def document_metadata_params
     permitted = params.require(:sap_document).permit(:name, :sap_version, :oscal_version, :description,
       :assessment_type, :assessment_start, :assessment_end,
@@ -433,7 +492,7 @@ class SapDocumentsController < ApplicationController
 
   def walk_method_parts(parts, methods)
     parts.each do |part|
-      if part["name"] == "assessment-method"
+      if part["name"] == ASSESSMENT_METHOD
         method_prop = (part["props"] || []).find { |p| p["name"] == "method" }
         methods << method_prop["value"] if method_prop && method_prop["value"].present?
       end

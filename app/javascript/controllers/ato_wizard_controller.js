@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { setVisible } from "controllers/visibility"
 
 // Drives the ATO Package Wizard step panels (#650 CSP epic):
 //   - each step (profile, cdef, ssp, sap, sar, poam) has a group of radios
@@ -31,17 +32,30 @@ export default class AtoWizardController extends Controller {
     const selectPanel = document.getElementById(`${stepName}_select_existing_panel`)
     const genericSelectPanel = document.getElementById(`${stepName}_select_panel`)
 
-    if (createPanel) createPanel.style.display = "none"
-    if (selectPanel) selectPanel.style.display = "none"
-    if (genericSelectPanel) genericSelectPanel.style.display = "none"
+    // #1047 — through `controllers/visibility`, never `style.display`.
+    //
+    // These panels carry `.sparc-wizard-step-panel .sparc-d-none`, and
+    // `.sparc-d-none` is `display: none !important`. An inline
+    // `style.display = "block"` CANNOT outrank `!important`, so once the sweep
+    // moved the panels off `style="display:none"` this controller stopped being
+    // able to open any of them — ten panels across the wizard, every step of it,
+    // silently inert.
+    //
+    // The header below says "Behavior is preserved exactly: same DOM ids, same
+    // show/hide logic." That stayed true of the LOGIC and stopped being true of
+    // the RESULT, which is exactly the kind of break a comment cannot catch and
+    // an interaction test can.
+    setVisible(createPanel, false)
+    setVisible(selectPanel, false)
+    setVisible(genericSelectPanel, false)
 
     // Show the relevant panel
-    if (mode === "create_new" && createPanel) {
-      createPanel.style.display = "block"
-    } else if (mode === "select_existing" && selectPanel) {
-      selectPanel.style.display = "block"
-    } else if (mode === "select" && genericSelectPanel) {
-      genericSelectPanel.style.display = "block"
+    if (mode === "create_new") {
+      setVisible(createPanel, true)
+    } else if (mode === "select_existing") {
+      setVisible(selectPanel, true)
+    } else if (mode === "select") {
+      setVisible(genericSelectPanel, true)
     }
   }
 }

@@ -1,16 +1,16 @@
-<div class="card" style="max-width: 760px; margin: 0 auto;">
+<div class="card sparc-mx-auto sparc-maxw-760">
   <div class="card-body">
 
   <%# Header %>
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
     <div>
-      <h2 style="margin: 0 0 0.35rem;">Import Control Catalog</h2>
-      <p class="text-body-tertiary small" style="margin: 0;">
+      <h2 class="sparc-m-0-0-035">Import Control Catalog</h2>
+      <p class="text-body-tertiary small sparc-m-0">
         Load a full catalog from an OSCAL JSON, OSCAL YAML, OSCAL XML, or legacy NIST XML file. Existing controls are updated; new ones are created.
       </p>
     </div>
     <%= link_to "← All Catalogs", control_catalogs_path,
-          class: "sparc-action sparc-action--neutral sparc-action--ghost bg-body-secondary text-body-secondary border small", style: "text-decoration: none; white-space: nowrap; flex-shrink: 0;" %>
+          class: "sparc-action sparc-action--neutral sparc-action--ghost bg-body-secondary text-body-secondary border small sparc-td-none sparc-ws-nowrap sparc-flex-shrink-0" %>
   </div>
 
   <%# Upload form %>
@@ -18,7 +18,7 @@
         html: { enctype: "multipart/form-data" },
         data: { turbo: false } do |f| %>
 
-    <div style="margin-bottom: 1.25rem;">
+    <div class="sparc-mb-125r">
       <%= render "shared/dropzone",
         form: f,
         field: :catalog_file,
@@ -28,32 +28,32 @@
 
     <div class="d-flex gap-2 align-items-center mb-4">
       <%= f.submit "Import Catalog", class: "sparc-action sparc-action--info sparc-action--solid fw-semibold" %>
-      <span class="text-body-tertiary" style="font-size: 0.8rem;">Large catalogs are processed in the background.</span>
+      <span class="text-body-tertiary sparc-fs-08">Large catalogs are processed in the background.</span>
     </div>
   <% end %>
 
   <%# ── Supported Format Reference ── %>
-  <div class="border-top" style="padding-top: 1.5rem;">
-    <h3 class="fw-bold" style="font-size: 1rem; margin: 0 0 1rem;">Supported Formats</h3>
+  <div class="border-top sparc-pt-15r">
+    <h3 class="fw-bold sparc-fs-1r sparc-m-0-0-1r">Supported Formats</h3>
 
-    <div class="row row-cols-1 row-cols-md-2 g-3" style="margin-bottom: 1.25rem;">
+    <div class="row row-cols-1 row-cols-md-2 g-3 sparc-mb-125r">
 
       <%# OSCAL JSON %>
-      <div class="col"><div class="bg-body-secondary border rounded" style="border-left: 3px solid var(--sparc-primary) !important; padding: 1rem;">
-        <div class="d-flex align-items-center gap-2" style="margin-bottom: 0.5rem;">
-          <span class="fw-bold sparc-status sparc-status--info" style="font-size: 0.72rem; font-family: monospace;">.json</span>
+      <div class="col"><div class="bg-body-secondary border rounded sparc-import-step sparc-accent--blue sparc-p-1r">
+        <div class="d-flex align-items-center gap-2 sparc-mb-05">
+          <span class="fw-bold sparc-status sparc-status--info sparc-mono sparc-fs-072">.json</span>
           <strong class="small">OSCAL Catalog (JSON)</strong>
         </div>
-        <p class="text-body-secondary" style="font-size: 0.82rem; margin: 0 0 0.65rem; line-height: 1.5;">
+        <p class="text-body-secondary sparc-fs-082 sparc-lh-15 sparc-m-0-0-065">
           NIST OSCAL 1.x catalog schema. Imports families, controls, statements,
           supplemental guidance, and related-control links.
         </p>
         <a href="https://github.com/usnistgov/oscal-content/tree/main/nist.gov/SP800-53"
            target="_blank" rel="noopener"
-           class="text-primary" style="font-size: 0.78rem; text-decoration: none;">
+           class="text-primary sparc-fs-078 sparc-td-none">
           ↗ Download from usnistgov/oscal-content
         </a>
-        <div class="rounded" style="margin-top: 0.5rem; background: #1a252f; padding: 0.65rem 0.75rem; font-family: monospace; font-size: 0.72rem; color: rgba(255,255,255,0.75); line-height: 1.6; overflow-x: auto;">
+        <div class="rounded sparc-code-block sparc-mt-05">
           { "catalog": {<br>
           &nbsp;&nbsp;"metadata": { "title": "…", "version": "…" },<br>
           &nbsp;&nbsp;"groups": [{<br>
@@ -72,21 +72,21 @@
       </div></div>
 
       <%# OSCAL YAML %>
-      <div class="col"><div class="bg-body-secondary border rounded" style="border-left: 3px solid #e67e22 !important; padding: 1rem;">
-        <div class="d-flex align-items-center gap-2" style="margin-bottom: 0.5rem;">
-          <span class="fw-bold sparc-status sparc-status--orange" style="font-size: 0.72rem; font-family: monospace;">.yaml</span>
+      <div class="col"><div class="bg-body-secondary border rounded sparc-import-step sparc-accent--carrot sparc-p-1r">
+        <div class="d-flex align-items-center gap-2 sparc-mb-05">
+          <span class="fw-bold sparc-status sparc-status--orange sparc-mono sparc-fs-072">.yaml</span>
           <strong class="small">OSCAL Catalog (YAML)</strong>
         </div>
-        <p class="text-body-secondary" style="font-size: 0.82rem; margin: 0 0 0.65rem; line-height: 1.5;">
+        <p class="text-body-secondary sparc-fs-082 sparc-lh-15 sparc-m-0-0-065">
           NIST OSCAL 1.x catalog schema in YAML. Same structure as OSCAL JSON.
           Imports families, controls, statements, parameters, and guidance.
         </p>
         <a href="https://github.com/usnistgov/oscal-content/tree/main/nist.gov/SP800-53"
            target="_blank" rel="noopener"
-           class="text-warning" style="font-size: 0.78rem; text-decoration: none;">
+           class="text-warning sparc-fs-078 sparc-td-none">
           ↗ Download from usnistgov/oscal-content
         </a>
-        <div class="rounded" style="margin-top: 0.5rem; background: #1a252f; padding: 0.65rem 0.75rem; font-family: monospace; font-size: 0.72rem; color: rgba(255,255,255,0.75); line-height: 1.6; overflow-x: auto;">
+        <div class="rounded sparc-code-block sparc-mt-05">
           catalog:<br>
           &nbsp;&nbsp;metadata:<br>
           &nbsp;&nbsp;&nbsp;&nbsp;title: "…"<br>
@@ -101,21 +101,21 @@
       </div></div>
 
       <%# OSCAL XML %>
-      <div class="col"><div class="bg-body-secondary border rounded" style="border-left: 3px solid #27ae60 !important; padding: 1rem;">
-        <div class="d-flex align-items-center gap-2" style="margin-bottom: 0.5rem;">
-          <span class="fw-bold sparc-status sparc-status--success" style="font-size: 0.72rem; font-family: monospace;">.xml</span>
+      <div class="col"><div class="bg-body-secondary border rounded sparc-import-step sparc-accent--green sparc-p-1r">
+        <div class="d-flex align-items-center gap-2 sparc-mb-05">
+          <span class="fw-bold sparc-status sparc-status--success sparc-mono sparc-fs-072">.xml</span>
           <strong class="small">OSCAL Catalog (XML)</strong>
         </div>
-        <p class="text-body-secondary" style="font-size: 0.82rem; margin: 0 0 0.65rem; line-height: 1.5;">
+        <p class="text-body-secondary sparc-fs-082 sparc-lh-15 sparc-m-0-0-065">
           NIST OSCAL 1.x catalog schema in XML. Imports families, controls, parameters
           (including select/choice), statements, and supplemental guidance.
         </p>
         <a href="https://github.com/usnistgov/oscal-content/tree/main/nist.gov/SP800-53"
            target="_blank" rel="noopener"
-           class="text-success" style="font-size: 0.78rem; text-decoration: none;">
+           class="text-success sparc-fs-078 sparc-td-none">
           ↗ Download from usnistgov/oscal-content
         </a>
-        <div class="rounded" style="margin-top: 0.5rem; background: #1a252f; padding: 0.65rem 0.75rem; font-family: monospace; font-size: 0.72rem; color: rgba(255,255,255,0.75); line-height: 1.6; overflow-x: auto;">
+        <div class="rounded sparc-code-block sparc-mt-05">
           &lt;catalog xmlns="…/ns/oscal/1.0"&gt;<br>
           &nbsp;&nbsp;&lt;metadata&gt;&lt;title&gt;…&lt;/title&gt;&lt;/metadata&gt;<br>
           &nbsp;&nbsp;&lt;group id="ac"&gt;<br>
@@ -130,21 +130,21 @@
       </div></div>
 
       <%# NIST XML (Legacy) %>
-      <div class="col"><div class="bg-body-secondary border rounded" style="border-left: 3px solid var(--sparc-purple) !important; padding: 1rem;">
-        <div class="d-flex align-items-center gap-2" style="margin-bottom: 0.5rem;">
-          <span class="fw-bold sparc-status sparc-status--purple" style="font-size: 0.72rem; font-family: monospace;">.xml</span>
+      <div class="col"><div class="bg-body-secondary border rounded sparc-import-step sparc-accent--violet sparc-p-1r">
+        <div class="d-flex align-items-center gap-2 sparc-mb-05">
+          <span class="fw-bold sparc-status sparc-status--purple sparc-mono sparc-fs-072">.xml</span>
           <strong class="small">NIST SP 800-53 XML Feed (Legacy)</strong>
         </div>
-        <p class="text-body-secondary" style="font-size: 0.82rem; margin: 0 0 0.65rem; line-height: 1.5;">
+        <p class="text-body-secondary sparc-fs-082 sparc-lh-15 sparc-m-0-0-065">
           SCAP SP 800-53 feed schema v2.0. Imports family, control ID, title, baselines,
           statement text, discussion (supplemental guidance), and related controls.
         </p>
         <a href="https://csrc.nist.gov/projects/risk-management/sp800-53-controls/downloads"
            target="_blank" rel="noopener"
-           class="link-purple" style="font-size: 0.78rem; text-decoration: none;">
+           class="link-purple sparc-fs-078 sparc-td-none">
           ↗ Download from NIST CSRC
         </a>
-        <div class="rounded" style="margin-top: 0.5rem; background: #1a252f; padding: 0.65rem 0.75rem; font-family: monospace; font-size: 0.72rem; color: rgba(255,255,255,0.75); line-height: 1.6; overflow-x: auto;">
+        <div class="rounded sparc-code-block sparc-mt-05">
           &lt;controls:control&gt;<br>
           &nbsp;&nbsp;&lt;family&gt;ACCESS CONTROL&lt;/family&gt;<br>
           &nbsp;&nbsp;&lt;number&gt;AC-1&lt;/number&gt;<br>
@@ -159,8 +159,8 @@
     </div>
 
     <%# Warning box %>
-    <div class="border rounded" style="background: rgba(243,156,18,0.08); border-left: 3px solid #f39c12 !important; padding: 0.85rem 1rem; font-size: 0.84rem; line-height: 1.5;">
-      <strong style="color: var(--sparc-warning-fg);">⚠ Format requirement:</strong>
+    <div class="border rounded sparc-import-note sparc-accent--orange sparc-import-step sparc-fs-084 sparc-lh-15 sparc-p-085-1r">
+      <strong class="sparc-color-warning-fg">⚠ Format requirement:</strong>
       Files must match one of the OSCAL JSON, OSCAL YAML, OSCAL XML, or NIST SCAP XML schemas above.
       Other file structures are <em>not</em> supported by this importer — use the
       links above to download the official NIST source files.

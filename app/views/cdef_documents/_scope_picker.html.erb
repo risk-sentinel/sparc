@@ -1,9 +1,14 @@
-<%# CDEF scope picker (#395 P1).
-    Two mutually exclusive choices:
+<%# CDEF scope picker (#395 P1, third tier #980).
+    Three mutually exclusive choices:
       - Boundary-specific: attached to the picked AuthorizationBoundary's
         sub-Boundary records via boundary_cdef_documents.
-      - Globally available: usable by any boundary's SSP composition flow
+      - Organization-wide: usable by any boundary's SSP composition flow
         within the current user's organization.
+      - Instance-wide: usable by EVERY organization on this instance.
+        Admin-only — it publishes across organization boundaries, which is
+        instance authority. `CdefDocumentsController#update_scope` refuses it
+        for a non-admin, so hiding the radio here is presentation, not the
+        guard.
 
     Required local: param_key (e.g. :cdef_document).
 %>
@@ -14,6 +19,11 @@
   boundaries = assignable_boundaries(current_user)
   selected_boundary_id = local_assigns.fetch(:selected, nil).presence
   selected_scope = local_assigns.fetch(:scope, "boundary").to_s
+  # Only an instance admin may choose the instance tier — see update_scope.
+  # A non-admin looking at a CDEF that is ALREADY instance-wide still sees the
+  # option, disabled, rather than a picker that silently misreports the state.
+  may_scope_instance = current_user&.admin?
+  instance_selected  = selected_scope == "instance"
 %>
 
 <div data-controller="cdef-scope">
@@ -37,10 +47,29 @@
           id:    "#{param_key}_scope_global",
           data:  { action: "change->cdef-scope#toggle", cdef_scope_target: "globalRadio" } %>
     <label class="form-check-label" for="<%= param_key %>_scope_global">
-      <strong>Globally available within organization</strong> — any boundary's
-      SSP can compose this CDEF.
+      <strong>Organization-wide</strong> — any boundary's SSP within your
+      organization can compose this CDEF.
     </label>
   </div>
+
+  <%# #980 — the third tier. The model always described it; only two were ever
+      offered, so a CDEF meant for every organization had nowhere to say so. %>
+  <% if may_scope_instance || instance_selected %>
+    <div class="form-check">
+      <%= radio_button_tag "#{param_key}[scope]", "instance", instance_selected,
+            class: "form-check-input",
+            disabled: !may_scope_instance,
+            id:    "#{param_key}_scope_instance",
+            data:  { action: "change->cdef-scope#toggle", cdef_scope_target: "instanceRadio" } %>
+      <label class="form-check-label" for="<%= param_key %>_scope_instance">
+        <strong>Instance-wide</strong> — every organization on this instance can
+        compose this CDEF.
+        <% unless may_scope_instance %>
+          <span class="text-body-secondary">(instance administrators only)</span>
+        <% end %>
+      </label>
+    </div>
+  <% end %>
 </div>
 
 <%# Boundary picker (only relevant when scope = boundary). The TODO below
@@ -57,7 +86,7 @@
           class: "form-control",
           id:    "#{param_key}_authorization_boundary_id" %>
     <small class="text-body-secondary d-block mt-1">
-      Required when scope is "Boundary-specific". Ignored when "Globally available" is selected.
+      Required when scope is "Boundary-specific". Ignored for the organization-wide and instance-wide tiers.
     </small>
   <% else %>
     <%# #929 — the field used to vanish when the list was empty, leaving

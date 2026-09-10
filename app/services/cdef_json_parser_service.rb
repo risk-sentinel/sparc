@@ -113,7 +113,24 @@ class CdefJsonParserService
             source_vocabulary: "nist",
             title:          ir[CONTROL_ID],
             control_family: ir[CONTROL_ID].to_s.split("-").first.upcase.presence,
-            row_order:      row_order
+            row_order:      row_order,
+            # #1088 — the two enclosing levels this walk used to discard.
+            #
+            # WHICH component asserts the control (#1088 item 5): the AWS CDEFs
+            # carry one `service` component plus one `software` component per
+            # AWS Config Rule, and each re-declares the controls its check
+            # covers. Without this the rows flattened into an unexplained
+            # duplicate list — 6 rows for 3 controls on Elastic Beanstalk.
+            #
+            # And against WHICH catalog or profile (#1088 item 4): `source` is
+            # REQUIRED on a control-implementation and the array may hold
+            # several, so one CDEF can implement controls from more than one
+            # catalog and more than one profile. Dropping it forced the exporter
+            # to re-synthesise a single source from `profile_document_id`,
+            # reattributing every control to one catalog.
+            component_uuid:             component["uuid"],
+            implementation_source:      ci["source"],
+            implementation_description: ci["description"]
           }
 
           control_attrs << attrs

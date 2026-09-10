@@ -593,6 +593,11 @@ Rails.application.routes.draw do
         # screen, making the web UI the only way to perform those mutations.
         resources :components, only: [ :index, :show, :create, :update, :destroy ],
                                controller: "ssp_components"
+        # #1100 — per-statement implementation prose. Read-and-update only: the
+        # statement tree is DERIVED from the catalog's parts, so a client
+        # authors the prose and never the structure.
+        resources :statements, only: [ :index ],
+                               controller: "ssp_control_statements"
         collection do
           post :convert
         end
@@ -676,6 +681,9 @@ Rails.application.routes.draw do
       end
       resources :poam_risks, only: [ :show, :update, :destroy ]
       resources :sar_risks, only: [ :show, :update, :destroy ]
+      # #1100 — a statement is addressed by its own id once a client has listed
+      # it, the same shape the risk sub-resources use.
+      resources :ssp_control_statements, only: [ :show, :update ]
 
       # Evidence CRUD (#756 — file upload + Control/CDEF association) plus
       # attestations (#440 — periodic-review records + CMS schema export).

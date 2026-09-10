@@ -1,8 +1,8 @@
 <%= form_with model: [poam_document, poam_item], local: true do |f| %>
   <% if poam_item.errors.any? %>
-    <div class="rounded mb-4" style="background: var(--bs-danger-bg-subtle); color: var(--bs-danger-text-emphasis); border: 1px solid var(--bs-danger-border-subtle); padding: 1rem;">
+    <div class="rounded mb-4 sparc-form-error-box sparc-form-error-text sparc-p-1r">
       <strong><%= pluralize(poam_item.errors.count, "error") %> prevented this item from being saved:</strong>
-      <ul class="mt-2" style="padding-left: 1.25rem;">
+      <ul class="mt-2 sparc-pl-125r">
         <% poam_item.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
         <% end %>
@@ -63,7 +63,7 @@
     </div>
   </div>
 
-  <hr class="border-top" style="border: none; margin: 1.5rem 0;">
+  <hr class="border-top sparc-hr-plain">
 
   <%# ── Linked SSP Implementation Statement (#393) ── %>
   <% if defined?(@available_ssp_statements) && @available_ssp_statements.any? %>
@@ -87,7 +87,7 @@
   <% elsif @poam_document.authorization_boundary&.ssp_document.present? %>
     <div class="form-group">
       <span class="fw-semibold">Linked SSP Statement</span>
-      <div class="text-body-secondary fst-italic" style="font-size: 0.85rem;">
+      <div class="text-body-secondary fst-italic sparc-fs-085">
         The boundary's SSP has no implementation statements yet. Backfill statements on the SSP to enable linking.
       </div>
     </div>
@@ -97,7 +97,7 @@
   <% if defined?(@available_risks) && @available_risks&.any? %>
     <div class="form-group">
       <label class="fw-semibold" for="poam_risk_ids">Associated Risks</label>
-      <select id="poam_risk_ids" name="poam_risk_ids[]" multiple class="form-control" style="min-height: 80px;">
+      <select id="poam_risk_ids" name="poam_risk_ids[]" multiple class="form-control sparc-minh-80px">
         <% @available_risks.each do |risk| %>
           <option value="<%= risk.id %>" <%= "selected" if poam_item.poam_risk_ids.include?(risk.id) %>><%= truncate(risk.title.to_s, length: 100) %> (<%= risk.status %>)</option>
         <% end %>
@@ -109,7 +109,7 @@
   <% if defined?(@available_observations) && @available_observations&.any? %>
     <div class="form-group">
       <label class="fw-semibold" for="poam_observation_ids">Associated Observations</label>
-      <select id="poam_observation_ids" name="poam_observation_ids[]" multiple class="form-control" style="min-height: 80px;">
+      <select id="poam_observation_ids" name="poam_observation_ids[]" multiple class="form-control sparc-minh-80px">
         <% @available_observations.each do |obs| %>
           <option value="<%= obs.id %>" <%= "selected" if poam_item.poam_observation_ids.include?(obs.id) %>><%= truncate(obs.title.to_s, length: 100) %></option>
         <% end %>
@@ -121,7 +121,7 @@
   <% if defined?(@available_findings) && @available_findings&.any? %>
     <div class="form-group">
       <label class="fw-semibold" for="poam_finding_ids">Associated Findings</label>
-      <select id="poam_finding_ids" name="poam_finding_ids[]" multiple class="form-control" style="min-height: 80px;">
+      <select id="poam_finding_ids" name="poam_finding_ids[]" multiple class="form-control sparc-minh-80px">
         <% @available_findings.each do |finding| %>
           <option value="<%= finding.id %>" <%= "selected" if poam_item.poam_finding_ids.include?(finding.id) %>><%= truncate(finding.title.to_s, length: 100) %></option>
         <% end %>
@@ -130,8 +130,8 @@
     </div>
   <% end %>
 
-  <hr class="border-top" style="border: none; margin: 1.5rem 0;">
-  <h3 class="mb-3" style="font-size: 1rem;">Notes &amp; Evidence</h3>
+  <hr class="border-top sparc-hr-plain">
+  <h3 class="mb-3 sparc-fs-1r">Notes &amp; Evidence</h3>
 
   <div class="form-group">
     <%= f.label :internal_notes, "Internal Notes", class: "fw-semibold" %>
@@ -144,7 +144,7 @@
   </div>
 
   <%# OSCAL extensibility arrays (#389/#416/#423) — shared partials. %>
-  <hr class="border-top" style="border: none; margin: 1.5rem 0;">
+  <hr class="border-top sparc-hr-plain">
 
   <%= render "shared/oscal_props_array",
              param_key: "poam_item", record: poam_item %>

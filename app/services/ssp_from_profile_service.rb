@@ -166,7 +166,16 @@ class SspFromProfileService
       field_entries << [ idx, "stated_requirement", statement ] if statement.present?
       field_entries << [ idx, "description", guidance ]         if guidance.present?
 
-      statement_entries << [ idx, statement_part_id(control) ] if statement.present?
+      # #1100 — ONE ENTRY PER STATEMENT PART, not one per control.
+      #
+      # This used to push a single `<control-id>_smt`, so a control NIST divides
+      # into nine addressable statements got exactly one row, and an SSP author
+      # had one box in which to answer all of them. OSCAL models this the other
+      # way round: `statements` is an array whose members identify WHICH
+      # statements within a control are addressed.
+      statement_parts_for(control).each do |part_id, parent_part_id, label, order|
+        statement_entries << [ idx, part_id, parent_part_id, label, order ]
+      end
 
       # Editable placeholder fields
       field_entries << [ idx, "status", "Deferred" ]
@@ -220,7 +229,17 @@ class SspFromProfileService
 
     control_uuids = SspControl.where(id: imported_ids).pluck(:id, :uuid).to_h
 
-    records = statement_entries.filter_map do |idx, statement_id|
+    # #1100 — `parent_statement_id` holds the parent's CATALOG STATEMENT ID
+    # ("ac-1_smt.a"), not a row FK. That is the existing convention:
+    # CatalogPartExtractorService writes `part[:parent_part_id]` into it, the
+    # model documents it as a catalog reference, and both
+    # CdefToSspInheritanceService and LeveragedAuthorizationService copy the
+    # string straight across when they clone statements.
+    #
+    # So no second pass and no id resolution — the value is already in hand, and
+    # writing a numeric id here would have broken every consumer that treats it
+    # as the catalog's identifier.
+    records = statement_entries.filter_map do |idx, statement_id, parent_id, label, order|
       control_id = imported_ids[idx]
       uuid       = control_uuids[control_id]
       next if uuid.blank?
@@ -228,11 +247,13 @@ class SspFromProfileService
       SspControlStatement.new(
         ssp_control_id:       control_id,
         statement_id:         statement_id,
+        parent_statement_id:  parent_id,
+        label:                label,
         # #397 stability invariant, the same derivation the OSCAL importer
         # uses, so the two paths cannot produce different ids for one statement.
         uuid:                 OscalUuidService.derived(uuid, "ssp-statement", statement_id),
         implementation_prose: nil,
-        row_order:            0
+        row_order:            order
       )
     end
 
@@ -249,6 +270,55 @@ class SspFromProfileService
     part  = parts.is_a?(Array) ? parts.find { |p| p["name"] == "statement" } : nil
 
     part&.dig("id").presence || "#{control['id']}_smt"
+  end
+
+  # Every addressable statement in a control, flattened depth-first with its
+  # parent so the SSP mirrors the catalog's structure.
+  #
+  # Returns [[part_id, parent_part_id, label, row_order], ...].
+  #
+  # The container part (`name: "statement"`) is INCLUDED: OSCAL lets a response
+  # be attached to the whole statement as well as to its items, and dropping it
+  # would silently discard implementation prose already recorded against
+  # `<control>_smt` by an earlier generation or an OSCAL import.
+  #
+  # Falls back to the single `_smt` id when the resolved catalog carries no
+  # nested parts — a profile resolved before #1100, or one whose catalog has not
+  # been re-imported. One statement is wrong, and it is what those documents
+  # already have; inventing ids the catalog does not contain would be worse.
+  def statement_parts_for(control)
+    entries = []
+    order   = 0
+
+    walk = lambda do |parts, parent_id|
+      Array(parts).each do |part|
+        id = part["id"].to_s
+        if %w[statement item].include?(part["name"].to_s) && id.present?
+          label = Array(part["props"]).find { |pr| pr["name"] == "label" }&.dig("value")
+          entries << [ id, parent_id, label, order ]
+          order += 1
+          walk.call(part["parts"], id)
+        else
+          walk.call(part["parts"], parent_id)
+        end
+      end
+    end
+
+    statement = Array(control["parts"]).find { |p| p["name"] == "statement" }
+
+    # NO statement part at all -> NO rows. #955: 30 base controls in Rev 5.2.0
+    # (ac-2 and au-2 among them) genuinely carry only guidance, and they must
+    # yield nothing rather than an empty statement.
+    #
+    # The test is the PART's existence, not its prose. NIST's container part
+    # carries no prose of its own — the text lives in its `item` children — so
+    # guarding on prose skips every properly-structured control, which is
+    # exactly the mistake an earlier version of this made.
+    return [] if statement.blank?
+
+    walk.call([ statement ], nil)
+
+    entries.presence || [ [ statement_part_id(control), nil, nil, 0 ] ]
   end
 
   def create_by_component_records(imported_control_ids)

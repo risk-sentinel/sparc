@@ -2,7 +2,7 @@
   <% if catalog_control.errors.any? %>
     <div class="flash error mb-4">
       <strong><%= pluralize(catalog_control.errors.count, "error") %>:</strong>
-      <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
+      <ul class="sparc-mt-05 sparc-ml-15r">
         <% catalog_control.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
         <% end %>
@@ -12,10 +12,10 @@
 
   <%# ── Identity row ── %>
   <div class="row g-3">
-    <div class="col-auto" style="width: 160px;">
+    <div class="col-auto sparc-w-160px">
       <div class="form-group">
         <%= f.label :control_id, "Control ID *" %>
-        <%= f.text_field :control_id, class: "form-control fw-semibold", placeholder: "e.g. AC-01", style: "font-family: monospace;" %>
+        <%= f.text_field :control_id, class: "form-control fw-semibold sparc-monospace", placeholder: "e.g. AC-01" %>
       </div>
     </div>
     <div class="col">
@@ -29,15 +29,64 @@
   <%# ── Statement (primary guidance_data field) ── %>
   <div class="form-group">
     <label for="catalog_control_guidance_data_statement" class="fw-semibold">Statement</label>
-    <p class="text-body-tertiary" style="font-size: 0.82rem; margin: 0.15rem 0 0.4rem;">
+    <p class="text-body-tertiary sparc-fs-082 sparc-m-015-0-04">
       The formal control requirement text. For parent controls, this is the lead-in sentence;
       for sub-parts (AC-01a, AC-01a.1 …) this is the specific requirement prose.
     </p>
-    <%= text_area_tag "catalog_control[guidance_data][statement]",
-        (catalog_control.guidance_data || {})["statement"],
-        id: "catalog_control_guidance_data_statement",
-        class: "form-control", rows: 5,
-        placeholder: "Enter the control statement text..." %>
+    <%
+      # The statement is a TREE, not one field. `ac-1_smt` is a CONTAINER with no
+      # prose of its own — the text lives in the item parts (a., 1., (a), b., c.).
+      # Binding one textarea to the container showed an EMPTY box on a control
+      # whose statement is nine paragraphs long. Same shape as the assessment
+      # objectives: containers are structure, leaves carry prose.
+      stmt_parts = catalog_control.catalog_control_parts
+                                  .where(part_name: %w[statement item]).order(:row_order)
+      stmt_kids  = stmt_parts.group_by(&:parent_part_id)
+      stmt_depth = ->(part) {
+        d = 0
+        pid = part.parent_part_id
+        while pid.present? && d < 3
+          d += 1
+          pid = stmt_parts.find { |o| o.part_id == pid }&.parent_part_id
+        end
+        d
+      }
+    %>
+    <% if stmt_parts.any? %>
+      <div class="d-flex flex-column gap-2">
+        <% stmt_parts.each do |sp| %>
+          <% container = (stmt_kids[sp.part_id] || []).any? && sp.prose.blank? %>
+          <% next if container && sp.parent_part_id.blank? %>
+          <div class="sparc-stmt-d<%= stmt_depth.call(sp) %>">
+            <% if container %>
+              <span class="sparc-monospace sparc-fw-600"><%= sp.label.presence || sp.part_id %></span>
+              <span class="text-body-tertiary sparc-fs-075 sparc-ml-025">
+                groups <%= pluralize((stmt_kids[sp.part_id] || []).size, "item") %>
+              </span>
+            <% else %>
+              <div class="d-flex gap-2 align-items-start">
+                <span class="sparc-monospace sparc-fw-600 sparc-color-bs-primary sparc-minw-6r">
+                  <%= sp.label.presence || sp.part_id %>
+                </span>
+                <%= text_area_tag "catalog_control[part_prose][#{sp.part_id}]", sp.prose,
+                    rows: 2, class: "form-control sparc-fs-088 sparc-flex-1",
+                    placeholder: "Requirement text..." %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+      <div class="text-body-tertiary sparc-fs-075 sparc-mt-02">
+        Catalog parts under <code><%= stmt_parts.first.part_id %></code> — the source the
+        OSCAL export emits and that SSP statements reference.
+      </div>
+    <% else %>
+      <%= text_area_tag "catalog_control[guidance_data][statement]",
+          (catalog_control.guidance_data || {})["statement"],
+          id: "catalog_control_guidance_data_statement",
+          class: "form-control", rows: 5,
+          placeholder: "Enter the control statement text..." %>
+    <% end %>
   </div>
 
   <%# ── Priority + Baseline ── %>
@@ -53,7 +102,7 @@
     <div class="col">
       <div class="form-group">
         <span class="fw-semibold">Baseline Impact</span>
-        <div class="d-flex gap-3 mt-1" style="padding-top: 0.35rem;">
+        <div class="d-flex gap-3 mt-1 sparc-pt-035">
           <% CatalogControl::BASELINE_LEVELS.each do |level| %>
             <label class="form-check mb-0">
               <input type="checkbox" class="form-check-input" name="catalog_control[baseline_levels][]"
@@ -69,41 +118,40 @@
 
   <%# ── Parameters (editable labels, populated from OSCAL import) ── %>
   <% if catalog_control.params_present? %>
-    <details class="border rounded" style="margin-bottom: 1.25rem; padding: 0;" open>
-      <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2" style="padding: 0.65rem 1rem; cursor: pointer; list-style: none;">
+    <details class="border rounded sparc-mb-125r sparc-p-0" open>
+      <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2 sparc-form-section-summary">
         <span>&#9656;</span> OSCAL Parameters
-        <span class="badge rounded-pill text-bg-info" style="font-size: 0.7rem; font-weight: 500;">
+        <span class="badge rounded-pill text-bg-info sparc-fs-07 sparc-fw-500">
           <%= catalog_control.params_list.size %> param<%= catalog_control.params_list.size == 1 ? "" : "s" %>
         </span>
       </summary>
       <div class="p-3">
-        <p class="text-body-tertiary" style="font-size: 0.78rem; margin-bottom: 0.75rem;">
+        <p class="text-body-tertiary sparc-fs-078 sparc-mb-075">
           Parameters referenced by the control statement via <code>{{ insert: param, &lt;id&gt; }}</code>.
           Edit the <strong>Label</strong> to customize organization-specific values.
           Param IDs and structural constraints are read-only.
         </p>
-        <table class="table table-sm mb-0" style="font-size: 0.82rem;">
+        <table class="table table-sm mb-0 sparc-fs-082">
           <thead>
             <tr>
-              <th style="width: 22%; padding: 0.3rem 0.5rem;">Param ID</th>
-              <th style="width: 40%; padding: 0.3rem 0.5rem;">Label</th>
-              <th style="padding: 0.3rem 0.5rem;">Constraint / Choices</th>
+              <th class="sparc-w-22pct sparc-p-03-05">Param ID</th>
+              <th class="sparc-w-40pct sparc-p-03-05">Label</th>
+              <th class="sparc-p-03-05">Constraint / Choices</th>
             </tr>
           </thead>
           <tbody>
             <% catalog_control.params_list.each do |param| %>
               <tr>
-                <td style="padding: 0.3rem 0.5rem; font-family: monospace; color: var(--bs-primary);">
+                <td class="sparc-p-03-05 sparc-monospace sparc-color-bs-primary">
                   <%= param["id"] %>
                 </td>
-                <td style="padding: 0.3rem 0.5rem;">
+                <td class="sparc-p-03-05">
                   <%= text_field_tag "catalog_control[params_labels][#{param['id']}]",
                       param["label"],
-                      class: "form-control form-control-sm",
-                      style: "font-size: 0.82rem;",
+                      class: "form-control form-control-sm sparc-fs-082",
                       placeholder: "Organization-defined value..." %>
                 </td>
-                <td style="padding: 0.3rem 0.5rem;">
+                <td class="sparc-p-03-05">
                   <% if param.dig("select", "choice").present? %>
                     <span class="text-body-secondary">Select <%= param.dig("select", "how-many") || "one" %>:</span>
                     <%= param["select"]["choice"].join("; ") %>
@@ -124,36 +172,131 @@
   <%# ── Additional guidance fields (collapsible) ── %>
   <%
     gd = (catalog_control.guidance_data || {})
-    extra_fields = [
-      ["supplemental_guidance",    "Supplemental Guidance",    8, "Additional context and implementation notes from the catalog..."],
-      ["related_controls",         "Related Controls",         2, "e.g. AC-02, AC-03"],
+    # #1113 — SPLIT BY SOURCE. The first group comes from the catalog and is
+    # edited through `catalog_control_parts`; the second is organisation-authored
+    # and has no NIST equivalent, so it stays on `guidance_data` until #1106
+    # settles a namespace and those can become namespaced OSCAL parts too.
+    #
+    # They used to be one list, so five fields NIST never populates sat beside
+    # two it does — and a blank one read as "the import lost my data".
+    org_fields = [
       ["implementation_guidance",  "Implementation Guidance",  4, "Guidance for implementing this control..."],
       ["check",                    "Check Procedure",          3, "How to verify this control is implemented..."],
       ["fix",                      "Fix Procedure",            3, "How to remediate failures of this control..."],
       ["nist_references",          "NIST References",          2, "e.g. NIST SP 800-53 Rev 5, Section 2.1"],
       ["org_ref",                  "Org Reference",            2, "Internal policy or procedure reference..."],
     ]
-    has_extra = extra_fields.any? { |key, *| gd[key].present? }
+    extra_fields = [ ["related_controls", "Related Controls", 2, "e.g. AC-02, AC-03"] ] + org_fields
+    guidance_part = catalog_control.catalog_control_parts
+                                   .where(part_name: "guidance").order(:row_order).first
+    objective_parts = catalog_control.catalog_control_parts
+                                     .where(part_name: "assessment-objective").order(:row_order)
+    has_extra = extra_fields.any? { |key, *| gd[key].present? } ||
+                guidance_part.present? || objective_parts.any?
   %>
-  <details <%= "open" if has_extra %> class="border rounded" style="margin-bottom: 1.25rem; padding: 0;">
-    <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2" style="padding: 0.65rem 1rem; cursor: pointer; list-style: none;">
+  <details <%= "open" if has_extra %> class="border rounded sparc-mb-125r sparc-p-0">
+    <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2 sparc-form-section-summary">
       <span>&#9656;</span> Additional Guidance Fields
       <% if has_extra %>
-        <span class="text-body-tertiary" style="font-size: 0.75rem; font-weight: 400; margin-left: 0.25rem;">(populated)</span>
+        <span class="text-body-tertiary sparc-fs-075 sparc-fw-400 sparc-ml-025">(populated)</span>
       <% end %>
     </summary>
     <div class="d-flex flex-column gap-2 p-3">
+
+      <%# ── From the catalog (NIST 800-53 / 800-53A) — edited as PARTS ── %>
+      <% if guidance_part %>
+        <div class="form-group sparc-mb-0">
+          <label for="catalog_control_part_guidance" class="fw-semibold text-body-secondary sparc-fs-088">
+            Supplemental Guidance
+            <span class="sparc-editable-note">(catalog part <%= guidance_part.part_id %>)</span>
+          </label>
+          <%= text_area_tag "catalog_control[part_prose][#{guidance_part.part_id}]",
+              guidance_part.prose, id: "catalog_control_part_guidance",
+              class: "form-control sparc-fs-088", rows: 8 %>
+        </div>
+      <% end %>
+
+      <% if objective_parts.any? %>
+        <div class="form-group sparc-mb-0">
+          <div class="fw-semibold text-body-secondary sparc-fs-088">
+            Assessment Objectives
+            <span class="sparc-editable-note">(<%= objective_parts.size %> from NIST SP 800-53A)</span>
+          </div>
+          <p class="text-body-tertiary sparc-fs-078 sparc-mb-075">
+            What an assessor determines for each part of this control. These flow to the
+            SAP and SAR as individual objectives — edit the wording here and every
+            assessment built from this catalog picks it up.
+          </p>
+          <table class="table table-sm mb-0 sparc-fs-082">
+            <thead>
+              <tr class="sparc-th-eyebrow-row">
+                <th class="sparc-w-22pct sparc-p-03-05">Objective</th>
+                <th class="sparc-p-03-05">Assessment objective</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%
+                # 800-53A nests: AC-01 groups AC-01a., which groups AC-01a.[01].
+                # Only the LEAVES carry a determination statement — 7 of AC-1's 24
+                # objective parts are containers with children and no prose. They
+                # are structure, not something to author, so they render as a
+                # group heading rather than an empty box inviting someone to type
+                # into a node that is not an objective.
+                obj_children = objective_parts.group_by(&:parent_part_id)
+                obj_depth = ->(part) {
+                  d = 0
+                  pid = part.parent_part_id
+                  while pid.present? && d < 3
+                    d += 1
+                    pid = objective_parts.find { |o| o.part_id == pid }&.parent_part_id
+                  end
+                  d
+                }
+              %>
+              <% objective_parts.each do |obj| %>
+                <% container = (obj_children[obj.part_id] || []).any? && obj.prose.blank? %>
+                <tr>
+                  <% if container %>
+                    <td colspan="2" class="sparc-p-03-05 sparc-stmt-d<%= obj_depth.call(obj) %>">
+                      <span class="sparc-monospace sparc-fw-600"><%= obj.label.presence || obj.part_id %></span>
+                      <span class="text-body-tertiary sparc-fs-075 sparc-ml-025">
+                        groups <%= pluralize((obj_children[obj.part_id] || []).size, "objective") %>
+                      </span>
+                    </td>
+                  <% else %>
+                    <td class="sparc-p-03-05 sparc-monospace sparc-color-bs-primary sparc-va-top sparc-stmt-d<%= obj_depth.call(obj) %>">
+                      <%= obj.label.presence || obj.part_id %>
+                    </td>
+                    <td class="sparc-p-03-05">
+                      <%= text_area_tag "catalog_control[part_prose][#{obj.part_id}]",
+                          obj.prose, rows: 2, class: "form-control form-control-sm sparc-fs-082",
+                          placeholder: "Assessment objective..." %>
+                    </td>
+                  <% end %>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+
+      <%# ── Organisation-authored — no NIST equivalent, stored on the control ── %>
+      <% if org_fields.any? %>
+        <div class="text-body-tertiary sparc-fs-075 sparc-mt-05">
+          The fields below are <strong>organisation-authored</strong>. The catalog import
+          never populates them, so a blank one is expected rather than missing data.
+        </div>
+      <% end %>
       <% extra_fields.each do |key, label, rows, placeholder| %>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label for="catalog_control_guidance_data_<%= key %>" class="fw-semibold text-body-secondary" style="font-size: 0.88rem;">
+        <div class="form-group sparc-mb-0">
+          <label for="catalog_control_guidance_data_<%= key %>" class="fw-semibold text-body-secondary sparc-fs-088">
             <%= label %>
           </label>
           <%= text_area_tag "catalog_control[guidance_data][#{key}]",
               gd[key],
               id: "catalog_control_guidance_data_#{key}",
-              class: "form-control",
+              class: "form-control sparc-fs-088",
               rows: rows,
-              style: "font-size: 0.88rem;",
               placeholder: placeholder %>
         </div>
       <% end %>
@@ -161,7 +304,7 @@
   </details>
 
   <%# ── Submit ── %>
-  <div class="d-flex gap-3" style="margin-top: 0.5rem;">
+  <div class="d-flex gap-3 sparc-mt-05">
     <%= f.submit "Save Control", class: "sparc-action sparc-action--primary sparc-action--solid" %>
     <%= link_to "Cancel", control_family, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
   </div>
@@ -171,22 +314,22 @@
 <% if !catalog_control.new_record? %>
   <% linked = defined?(@linked_resources) ? @linked_resources : catalog_control.back_matter_resources.order(:title) %>
   <% available = defined?(@available_resources) ? @available_resources : [] %>
-  <details class="border rounded mt-4" style="padding: 0;" <%= "open" if linked.any? %>>
-    <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2" style="padding: 0.65rem 1rem; cursor: pointer; list-style: none;">
+  <details class="border rounded mt-4 sparc-p-0" <%= "open" if linked.any? %>>
+    <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2 sparc-form-section-summary">
       <span>&#9656;</span> Back-Matter References
-      <span class="badge rounded-pill text-bg-info" style="font-size: 0.7rem; font-weight: 500;">
+      <span class="badge rounded-pill text-bg-info sparc-fs-07 sparc-fw-500">
         <%= linked.size %>
       </span>
     </summary>
     <div class="p-3">
-      <p class="text-body-tertiary" style="font-size: 0.78rem; margin-bottom: 0.75rem;">
+      <p class="text-body-tertiary sparc-fs-078 sparc-mb-075">
         Link back-matter resources (policies, evidence, external references) to this control.
         Linked resources appear as <code>href="#uuid"</code> references in OSCAL exports.
       </p>
 
       <%# ── Currently linked ── %>
       <% if linked.any? %>
-        <table class="table table-sm mb-3" style="font-size: 0.82rem;">
+        <table class="table table-sm mb-3 sparc-fs-082">
           <thead>
             <tr><th>Title</th><th>UUID</th><th>Href</th><th></th></tr>
           </thead>
@@ -199,8 +342,14 @@
                 <td>
                   <% link_record = catalog_control.control_back_matter_links.find_by(back_matter_resource: resource) %>
                   <% if link_record %>
+                    <%# `catalog_controls` is nested under `control_families` with
+                        `shallow: true`, so its member routes collapse — DELETE is
+                        `control_back_matter_link_path(:id)`, NOT the nested
+                        two-argument form. The nested name only exists on the
+                        PROFILE side, whose `profile_controls` is not shallow, and
+                        that is the helper this line was copied from (#371). %>
                     <%= button_to "Unlink",
-                          catalog_control_control_back_matter_link_path(catalog_control, link_record),
+                          control_back_matter_link_path(link_record),
                           method: :delete,
                           class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
                           data: { turbo_confirm: "Unlink \"#{resource.title}\"?" } %>

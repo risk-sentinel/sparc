@@ -39,9 +39,21 @@ RSpec.describe "Api::V1::ControlLookups", type: :request do
   # self-consistent while the parameter was being dropped, which is precisely how
   # this survived the #995 sweep.
   describe "GET /api/v1/controls — pagination convention (#1022)" do
+    # The family codes are PINNED, and that is load-bearing.
+    #
+    # The factory's code is a sequence — `("AA".."ZZ").to_a[n % 676]` — so which
+    # code this family gets depends on how many families earlier examples in the
+    # run happened to create. When it landed on "AU" it collided with the "AU"
+    # family the filter example creates, and since the endpoint filters on family
+    # CODE across every catalog, `?family=AU` then matched both: 5 + 3 = 8 where
+    # the example asserts 3. Order-dependent, seed-dependent, and nothing to do
+    # with the behaviour under test.
+    #
+    # Pinning also makes the fixture say what it means: `ac-*` controls belong to
+    # AC.
     before do
       catalog = create(:control_catalog)
-      family  = create(:control_family, control_catalog: catalog)
+      family  = create(:control_family, control_catalog: catalog, code: "AC")
       5.times { |i| create(:catalog_control, control_family: family, control_id: "ac-#{i + 1}") }
     end
 
