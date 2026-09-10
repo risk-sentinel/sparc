@@ -1,0 +1,21 @@
+<%# The email/password form, extracted in #1082.
+
+    It has two call sites now: the ordinary Local Login tab, and the
+    break-glass disclosure shown when a required-methods policy excludes local
+    login for everybody EXCEPT the bootstrap administrator. Two copies of a
+    login form is how a fix lands on one of them (a lesson from the SSP control
+    editors, which had exactly this shape). %>
+<%= form_tag login_path, method: :post do %>
+  <div class="mb-2">
+    <label for="<%= id_prefix %>email" class="form-label fw-semibold mb-1">Email Address</label>
+    <input type="email" name="email" id="<%= id_prefix %>email" class="form-control form-control-sm"
+           placeholder="you@example.com" required <%= "autofocus" if autofocus %>
+           value="<%= params[:email] %>">
+  </div>
+  <div class="mb-2">
+    <label for="<%= id_prefix %>password" class="form-label fw-semibold mb-1">Password</label>
+    <input type="password" name="password" id="<%= id_prefix %>password" class="form-control form-control-sm"
+           placeholder="Enter your password" required>
+  </div>
+  <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm w-100 fw-semibold">Sign In</button>
+<% end %>

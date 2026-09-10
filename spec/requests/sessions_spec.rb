@@ -194,15 +194,24 @@ RSpec.describe "Sessions", type: :request do
 
   # ── v1.8.1 — Okta/OIDC tab CSP regression (#hotfix) ───────────────────
   describe "login page tab toggle (CSP regression guard)" do
+    # #1082 moved OIDC out of the tab bar — a one-button panel is not a tab, and
+    # it was the only SSO method rendered as one. This guard is about the CSP
+    # MECHANISM (data-tab delegation, never inline onclick), so it now exercises
+    # a configuration where a tab bar genuinely exists: two FORM-based methods.
+    # Pointing it at OIDC would have tested a tab that no longer has any reason
+    # to exist, and deleting it would have dropped a live CSP regression guard.
     before do
-      allow(SparcConfig).to receive(:enable_oidc?).and_return(true)
-      allow(SparcConfig).to receive(:oidc_provider_title).and_return("Okta")
+      allow(SparcConfig).to receive_messages(
+        enable_local_login?: true,
+        enable_ldap?: true, ldap_host: "ldap.example.gov",
+        enable_oidc?: true, oidc_client_id: "abc123", oidc_provider_title: "Okta"
+      )
     end
 
     it "renders tab buttons with data-tab attributes (not inline onclick)" do
       get login_path
       expect(response.body).to include('data-tab="tab-local"')
-      expect(response.body).to include('data-tab="tab-oidc"')
+      expect(response.body).to include('data-tab="tab-ldap"')
       # Inline onclick handlers are blocked by CSP (no 'unsafe-inline');
       # if any tab button regresses to inline onclick the toggle silently dies.
       expect(response.body).not_to match(/<button[^>]*data-tab[^>]*onclick=/)
@@ -213,9 +222,10 @@ RSpec.describe "Sessions", type: :request do
       expect(response.body).to match(/<script\s+nonce=".+?">[^<]*addEventListener\('click'/m)
     end
 
-    it "shows the OIDC tab when OIDC is enabled" do
+    it "offers OIDC as a button rather than a tab when OIDC is enabled" do
       get login_path
       expect(response.body).to include("Sign in with Okta")
+      expect(response.body).not_to include('data-tab="tab-oidc"')
     end
   end
 
