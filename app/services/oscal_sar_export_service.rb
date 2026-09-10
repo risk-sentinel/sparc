@@ -289,7 +289,41 @@ class OscalSarExportService
       base["type"]      = "objective-id"
       base[TARGET_ID] = finding.sar_control_objective.objective_id
     end
-    base.presence
+    honest_target_type(base).presence
+  end
+
+  # #1114 — a target may not CLAIM to be an objective when it is not one.
+  #
+  # Where neither link above resolves, the target falls through to whatever
+  # `target_data` carried in from the import — and the seeded estate imports
+  # `{"type" => "objective-id", "target-id" => "ac-1"}`. Measured on the demo
+  # SAR: 150 findings, all 150 declaring `objective-id` against a CONTROL id.
+  #
+  # `objective-id` must reference an 800-53A assessment objective (`ac-1_obj.a-1`).
+  # `ac-1` is a control. No validator catches the difference because both are
+  # strings, so the document is schema-valid and false — a consumer resolving the
+  # reference finds nothing.
+  #
+  # An unresolvable claim is DOWNGRADED, never dropped: `statement-id` is what a
+  # control-level target actually is, and the finding itself is real. This
+  # corrects the assertion without discarding the assessment.
+  def honest_target_type(base)
+    return base if base.blank?
+    return base unless base["type"].to_s == "objective-id"
+
+    target = base[TARGET_ID].to_s
+    return base if known_objective_ids.include?(target)
+
+    base.merge("type" => "statement-id")
+  end
+
+  # Every objective id this document actually holds. One query, memoised: this
+  # runs per finding, and a SAR carries hundreds.
+  def known_objective_ids
+    @known_objective_ids ||= SarControlObjective
+                               .joins(:sar_control)
+                               .where(sar_controls: { sar_document_id: @document.id })
+                               .distinct.pluck(:objective_id).to_set
   end
 
   def build_finding_observations(finding)

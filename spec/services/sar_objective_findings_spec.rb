@@ -99,6 +99,39 @@ RSpec.describe "SAR findings target 800-53A objectives (#1114)" do
     end
   end
 
+  # The path the seeded estate actually takes: REAL findings whose imported
+  # target_data claims objective-id against a control id. Measured on the demo
+  # SAR — 150 findings, all 150 making that false claim.
+  describe "a real finding whose imported target claims an objective it is not" do
+    let!(:result) { create(:sar_result, sar_document: document) }
+    let!(:finding) do
+      result.sar_findings.create!(
+        uuid: SecureRandom.uuid, title: "Finding for ac-1",
+        description: "imported", target_data: { "type" => "objective-id", "target-id" => "ac-1" }
+      )
+    end
+
+    it "downgrades the claim to statement-id rather than exporting it" do
+      f = findings.find { |x| x["title"] == "Finding for ac-1" }
+
+      expect(f.dig("target", "type")).to eq("statement-id"),
+        "a control id must not be exported as an objective-id"
+      expect(f.dig("target", "target-id")).to eq("ac-1")
+    end
+
+    it "keeps the claim when the target IS a real objective on this document" do
+      objective("ac-1_obj.a-1", "passing")
+      finding.update!(target_data: { "type" => "objective-id", "target-id" => "ac-1_obj.a-1" })
+
+      f = findings.find { |x| x["title"] == "Finding for ac-1" }
+      expect(f.dig("target", "type")).to eq("objective-id")
+    end
+
+    it "does not discard the finding — the assessment is real" do
+      expect(findings.map { |x| x["title"] }).to include("Finding for ac-1")
+    end
+  end
+
   describe "with no objectives at all" do
     it "still exports a control-level finding" do
       expect(findings.size).to eq(1)
