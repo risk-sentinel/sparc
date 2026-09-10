@@ -4139,3 +4139,14 @@ a.link-purple { color: var(--sparc-purple); }
 /* The step cards down the import page, keyed by the accent they already carry. */
 .sparc-import-step { border-left: 3px solid var(--sparc-accent); }
 .sparc-import-note { background: color-mix(in srgb, var(--sparc-accent) 8%, transparent); }
+
+/* #1114 — an 800-53A grouping node inside an objectives table. NIST's tree puts
+   container parts (label, no prose) above the determination statements; they are
+   headings, not rows an assessor acts on, so they read as structure rather than
+   as another line of work. */
+.sparc-objective-group > th {
+  background: var(--bs-tertiary-bg);
+  font-weight: 600;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}

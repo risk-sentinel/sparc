@@ -348,7 +348,11 @@ class OscalSarExportService
   # `not_applicable` is excluded for the same reason: it is a scoping decision,
   # not a determination that the objective is satisfied.
   def build_objective_findings(control, obs_uuid)
-    control.sar_control_objectives.select(&:determined?).map do |objective|
+    # `determinable?` as well as `determined?`: a CONTAINER carries a label and no
+    # prose, so there is nothing stated to determine about it. If one ever holds a
+    # determination — imported that way, or set before the UI stopped offering it
+    # — exporting a finding for it would assert a judgement about a grouping node.
+    control.sar_control_objectives.select { |o| o.determinable? && o.determined? }.map do |objective|
       {
         "uuid"                 => OscalUuidService.derived(@document.uuid, "objective-finding", objective.uuid),
         "title"                => "Finding for #{objective.label.presence || objective.objective_id}",

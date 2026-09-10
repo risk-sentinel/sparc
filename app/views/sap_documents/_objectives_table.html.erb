@@ -49,6 +49,19 @@
             depth = [ obj.parent_objective_id.present? ? 1 : 0, 3 ].min
             color = status_colors[obj.status] || "#95a5a6"
           %>
+          <%# #1114 — a CONTAINER is a grouping node, not a determination. See
+              the SAR partial: NIST puts `ac-1_obj`, `ac-1_obj.a` above the
+              statements with a label and no prose, and rendering them as
+              assessable rows showed "(no prose)" with a status pill for
+              something there is nothing to determine about. %>
+          <% if obj.container? %>
+            <tr class="sparc-objective-group" data-objective-id="<%= obj.objective_id %>">
+              <th scope="rowgroup" colspan="5" class="sparc-stmt-d<%= depth %> sparc-field-label">
+                <code class="sparc-fs-078"><%= obj.label.presence || obj.objective_id %></code>
+              </th>
+            </tr>
+            <% next %>
+          <% end %>
           <tr id="obj-<%= obj.id %>" data-status="<%= obj.status %>" data-objective-id="<%= obj.objective_id %>">
             <td>
               <code class="sparc-fs-078 sparc-stmt-d<%= depth %>">
@@ -56,7 +69,7 @@
               </code>
             </td>
             <td class="sparc-stmt-d<%= depth %>">
-              <%= obj.prose.presence || content_tag(:span, "(no prose)", class: "text-body-tertiary fst-italic") %>
+              <%= obj.prose %>
               <% if obj.assessor_notes.present? %>
                 <div class="text-body-secondary sparc-stmt-note">
                   <%= obj.assessor_notes %>

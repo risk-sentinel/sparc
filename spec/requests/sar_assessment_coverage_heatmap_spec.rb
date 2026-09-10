@@ -29,9 +29,17 @@ RSpec.describe "SAR assessment coverage heatmap (#1114)", type: :request do
   let!(:sar_ac1) { sar.sar_controls.create!(control_id: "ac-1", title: "Policy", control_family: "AC", row_order: 0) }
   let!(:sar_ac2) { sar.sar_controls.create!(control_id: "ac-2", title: "Accounts", control_family: "AC", row_order: 1) }
 
-  def objective(control, id, status)
-    control.sar_control_objectives.create!(objective_id: id, status: status,
+  # A determination statement HAS prose. An objective without it is one of NIST's
+  # grouping containers, which is a different thing — see the container examples
+  # below.
+  def objective(control, id, status, prose: "the policy is reviewed")
+    control.sar_control_objectives.create!(objective_id: id, status: status, prose: prose,
                                            row_order: 0, uuid: SecureRandom.uuid)
+  end
+
+  def container(control, id)
+    control.sar_control_objectives.create!(objective_id: id, status: "pending", prose: nil,
+                                           label: id.upcase, row_order: 0, uuid: SecureRandom.uuid)
   end
 
   describe "the methods" do
@@ -107,6 +115,22 @@ RSpec.describe "SAR assessment coverage heatmap (#1114)", type: :request do
       get sar_document_path(sar)
 
       expect(assigns_pct(response.body)).to eq(0)
+    end
+
+    # #1114 — NIST's tree carries grouping nodes with a label and NO prose, and
+    # there is nothing to determine about them. Counting them as outstanding work
+    # made the bar unreachable: ac-1 has 24 objectives of which 7 are containers,
+    # so a FULLY assessed control reported 71%. A progress figure that cannot
+    # reach 100% teaches the reader to distrust it.
+    it "excludes NIST's container nodes from the denominator" do
+      objective(sar_ac1, "ac-1_obj.a-1", "passing")
+      container(sar_ac1, "ac-1_obj")
+      container(sar_ac1, "ac-1_obj.a")
+
+      get sar_document_path(sar)
+
+      expect(assigns_pct(response.body)).to eq(100),
+        "a fully assessed control must be able to reach 100%"
     end
 
     it "reports 0 rather than blowing up when a family has no objectives" do

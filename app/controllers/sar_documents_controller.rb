@@ -632,8 +632,16 @@ class SarDocumentsController < ApplicationController
     families = scope.where.not(control_family: [ nil, "" ]).distinct.pluck(:control_family)
     return {} if families.empty?
 
+    # #1114 — CONTAINERS are excluded from the denominator.
+    #
+    # NIST's tree carries grouping nodes with a label and no prose, and there is
+    # nothing to determine about them. Counting them as outstanding work made the
+    # bar unreachable: ac-1 has 24 objectives of which 7 are containers, so a
+    # FULLY assessed control reported 71%. A progress figure that cannot reach
+    # 100% teaches the reader to distrust it.
     rows = SarControlObjective
              .joins(:sar_control)
+             .determinable
              .where(sar_controls: { sar_document_id: @sar_document.id, control_family: families })
              .group("sar_controls.control_family", :status).count
 
