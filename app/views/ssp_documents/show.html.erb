@@ -192,7 +192,7 @@
         <div class="sparc-mb-04">
           <div class="sparc-fs-082 sparc-color-body"><%= truncate(comp.title, length: 30) %></div>
           <div class="d-flex flex-wrap gap-1 sparc-mt-025">
-            <span class="sparc-status sparc-status--<%= comp.component_type == 'this-system' ? 'purple' : 'info' %> sparc-fs-068"><%= comp.component_type %></span>
+            <span class="sparc-status sparc-status--<%= ssp_component_type_variant(comp.component_type) %> sparc-fs-068"><%= comp.component_type %></span>
           </div>
         </div>
       <% end %>
