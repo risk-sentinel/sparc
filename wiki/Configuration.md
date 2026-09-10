@@ -17,6 +17,43 @@ SPARC is configured via environment variables — most prefixed with `SPARC_`. A
 | `SPARC_RESOURCES` | (adds to 9 shipped links) | JSON array of external resource links **added to** the shipped set (#914). Your entries appear first; duplicate `href`s collapse |
 | `SPARC_RESOURCES_REPLACE` | `false` | Set `true` to make `SPARC_RESOURCES` replace the shipped links instead of extending them |
 
+### Adding your own resource links
+
+`SPARC_RESOURCES` is a **JSON array of objects**, not a `name:url` list. Every
+entry needs exactly two keys — `display_text` and `href`:
+
+```bash
+SPARC_RESOURCES='[
+  {"display_text":"Internal Wiki","href":"https://wiki.example.gov"},
+  {"display_text":"ATO Handbook","href":"https://intranet.example.gov/ato"}
+]'
+```
+
+Four behaviours to know before you set it:
+
+- **It adds to the shipped links; it does not replace them.** Before v1.16.0 it
+  replaced them wholesale. If you want only your own list, set
+  `SPARC_RESOURCES_REPLACE=true`.
+- **Both keys are required.** An entry missing `display_text` or `href` — or
+  carrying either as an empty string — is dropped, and the remaining entries
+  still load. A partial list is a normal outcome, not an error.
+- **Duplicate `href`s collapse, first occurrence wins.** Re-listing a shipped
+  link with your own wording gives you your `display_text`.
+- **Nothing raises — every rejection is logged.** Because your links are *added*
+  to the shipped ones, a broken value and a working value both leave the shipped
+  links on screen, so "my links are missing" looks identical to "my links were
+  ignored". **Check the logs for `[Resources]`:**
+
+| Log line | What you got wrong |
+|----------|--------------------|
+| `SPARC_RESOURCES is not valid JSON and is being ignored` | A syntax error — usually shell quoting. Wrap the whole value in **single** quotes so the double quotes inside survive |
+| `SPARC_RESOURCES must be a JSON array of {"display_text":…,"href":…} objects, got a …` | Valid JSON of the wrong shape — a bare object or string instead of an array |
+| `Ignoring N SPARC_RESOURCES entries missing a display_text or href` | The array parsed, but N entries were the wrong shape |
+
+Links you add are plain external links. SPARC host-checks a link before it will
+label it as OSCAL reference material, so a lookalike host supplied here cannot
+borrow that badge.
+
 ## Database
 
 There are three ways to configure the connection. **Set exactly one** — they are
