@@ -150,8 +150,34 @@ RSpec.describe "Seeded permission grants (#919)" do
   # Editing the grants without bumping the version means existing deployments
   # never receive them — the change ships and silently does nothing, which is
   # indistinguishable from it not being made.
-  it "requires a seed version that reflects the #919 grants" do
-    expect(SeedRunner::CURRENT_VERSIONS["roles"]).to eq("1.3.0"),
+  # #1044 — the role an IdP is told to grant must EXIST to be granted. If the
+  # seeds stop defining it, IdpGrantResolver refuses the claim with "role not
+  # found" and time-boxed administration silently stops working, with nothing
+  # in the suite going red: the role is data, not behaviour.
+  describe "the instance_admin role (#1044)" do
+    it "is defined, instance-scoped, and carries admin.administer" do
+      block = seeds[/\{ name: "instance_admin".*?\},/m]
+
+      expect(block).to be_present, "the instance_admin role is no longer seeded"
+      expect(block).to include('scope: "instance"'),
+                       "a boundary-scoped grant confers boundary power, not instance authority"
+      expect(block).to include("PERM_INSTANCE_ADMIN")
+    end
+
+    it "grants admin.administer and nothing else — the rest would be inert" do
+      expect(seeds).to match(/PERM_INSTANCE_ADMIN\s*=\s*\{\s*"admin\.administer"\s*=>\s*true\s*\}/),
+                       "admin.administer short-circuits has_permission?, so any other key " \
+                       "listed here would imply it is doing work it is not"
+    end
+  end
+
+  # 1.3.0 -> 1.4.0 for #1044, which adds the `instance_admin` role carrying
+  # `admin.administer`. Without the bump SeedRunner skips the section on every
+  # existing database, so the role an IdP is supposed to grant would not exist
+  # to grant — the grant would resolve to "role not found" and the feature would
+  # appear broken on exactly the deployments that already run SPARC.
+  it "requires a seed version that reflects the seeded grants" do
+    expect(SeedRunner::CURRENT_VERSIONS["roles"]).to eq("1.4.0"),
       "The roles seed version must be bumped whenever these grants change, or " \
       "SeedRunner skips the section on every existing database. If you changed the " \
       "grants above, bump the version AND update this expectation."

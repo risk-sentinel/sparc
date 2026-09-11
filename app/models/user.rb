@@ -463,13 +463,58 @@ class User < ApplicationRecord
 
   # ── Permission helpers ─────────────────────────────────────────────
 
+  # ── Instance-administrator AUTHORITY (#1044) ──────────────────────────────
+  #
+  # TWO THINGS THAT WERE ONE THING, and keeping them apart is the whole issue:
+  #
+  #   `admin?`                  IDENTITY — the dedicated break-glass account
+  #                             (e.g. sparc.admin@…). A boolean column, never
+  #                             reachable from an IdP claim by construction, so
+  #                             recovery survives any directory misconfiguration.
+  #
+  #   `instance_administrator?` AUTHORITY — may act with instance-wide power
+  #                             right now. Satisfied by the break-glass account,
+  #                             OR by an ordinary user (clem.field@…) holding an
+  #                             instance-scoped role carrying `admin.administer`.
+  #
+  # The second is what an IdP grants and revokes. Okta expires the group, the
+  # next sign-in revokes the grant (EntitlementSync, authoritative mode), and
+  # SPARC_SESSION_MAX_HOURS (#1043) bounds the tail of the session already open —
+  # so "time-boxed" is enforced by the directory rather than by anyone
+  # remembering to take it away.
+  #
+  # Deliberately NOT routed through has_permission?: that method short-circuits
+  # on this one, and asking it for "admin.administer" would recurse forever.
+  def instance_administrator?
+    return true if admin?
+
+    # NOT memoized, deliberately. The first version used `@x ||=` and its own
+    # spec caught the consequence: authority SURVIVED the grant being destroyed,
+    # because `reload` does not clear instance variables. Stale authorization is
+    # the one thing this predicate must never produce — a revoked administrator
+    # keeping power is the exact failure a time-boxed grant exists to prevent.
+    #
+    # `||=` was also worthless here: it never caches a `false`, which is the
+    # common case, so it skipped the work only for the users who need the check
+    # least. Wrong on both counts.
+    user_roles.joins(:role)
+              .where(authorization_boundary_id: nil)
+              .where("roles.permissions @> ?", { "admin.administer" => true }.to_json)
+              .exists?
+  end
+
   # Check if user has a specific granular permission, optionally scoped
-  # to an authorization boundary. Instance Admin bypasses all permission checks.
+  # to an authorization boundary. Instance-administrator authority bypasses all
+  # permission checks.
   #
   #   user.has_permission?("ssp.write")
   #   user.has_permission?("ssp.write", authorization_boundary_id: 5)
   def has_permission?(permission_key, authorization_boundary_id: nil)
-    return true if admin?
+    # #1044 — was `return true if admin?`. A time-boxed administrator that got
+    # past the admin gate and was then refused every individual permission would
+    # be a half-open door: the screens would open and the actions inside them
+    # would fail.
+    return true if instance_administrator?
 
     role_scope = user_roles.joins(:role)
     role_scope = if authorization_boundary_id

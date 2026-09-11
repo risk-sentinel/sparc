@@ -134,6 +134,7 @@ SPARC defines **35 permission keys** across 14 resource areas (`Role::PERMISSION
 | `back_matter.federate` | Federate back-matter resources across authorization boundaries / peers |
 | `amendment.approve` | Approve / reject an HDF Amendment (a scanner-finding disposition) so it suppresses its finding |
 | `admin.rotate_credentials` | Rotate instance credentials / master secrets |
+| `admin.administer` | **Instance-administrator authority.** Opens every administrative screen and satisfies every other permission check. Intended to be granted by an identity provider for a **bounded window** (see below) rather than held permanently |
 
 **Resource groups** (`Role::RESOURCE_LABELS`): Control Catalogs, Baselines / Profiles, Authorization Boundaries, System Security Plans, Security Assessment Results, Security Assessment Plans, POA&Ms, Component Definitions, Evidence, Control Mappings, Converters, Back-Matter Resources, HDF Amendments, Instance Administration.
 

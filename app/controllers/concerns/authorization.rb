@@ -34,9 +34,13 @@ module Authorization
   # `admin_required_message` rather than the method, so a future change to the
   # AUTHORITY check cannot be silently skipped by a controller that only wanted
   # different wording. That is exactly how the four copies came to exist.
+  # #1044 — AUTHORITY, not identity. Satisfied by the break-glass account or by
+  # an IdP-granted, time-boxed instance administrator. `users.admin` is still
+  # the only thing that can recover an instance, and still the only thing the
+  # separation-of-duties carve-outs accept.
   def authorize_admin!
     return unless SparcConfig.any_auth_enabled?
-    return if current_user&.admin?
+    return if current_user&.instance_administrator?
 
     raise NotAuthorizedError, admin_required_message
   end

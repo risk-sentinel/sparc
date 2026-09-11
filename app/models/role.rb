@@ -40,6 +40,17 @@ class Role < ApplicationRecord
   # that does not exist. A permission that grants nothing is worse than no
   # permission, because the role catalog implies a restriction a reader will trust.
   # Entries left in stored `roles.permissions` JSONB become inert.
+  # #1044 — `admin.administer` is instance-administrator AUTHORITY, grantable
+  # from an IdP so an operator can hold it for a bounded window rather than
+  # permanently. It sits in the `admin` namespace, already labelled "Instance
+  # Administration", rather than the `instance.administer` the issue proposed —
+  # that would have opened a second group meaning the same thing as the one that
+  # exists.
+  #
+  # AUTHORITY, never IDENTITY. `users.admin` remains the dedicated break-glass
+  # account: unreachable from any claim by construction (IdpGrantResolver only
+  # ever produces user_roles and organization_memberships), and still the only
+  # thing the separation-of-duties carve-outs accept.
   PERMISSION_KEYS = %w[
     catalogs.read
     catalogs.write
@@ -76,6 +87,7 @@ class Role < ApplicationRecord
     back_matter.federate
     amendment.approve
     admin.rotate_credentials
+    admin.administer
   ].freeze
 
   # Group permission keys by resource for UI rendering

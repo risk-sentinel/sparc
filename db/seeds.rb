@@ -2313,8 +2313,22 @@ PERM_VENDOR_DEPENDENCY = {
   K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true
 }.freeze
 
+# #1044 — instance-administrator authority. `admin.administer` short-circuits
+# User#has_permission?, so this single key carries every capability the
+# break-glass account has. Listing more here would imply the others are doing
+# work; they would be inert.
+PERM_INSTANCE_ADMIN = { "admin.administer" => true }.freeze
+
 SPARC_ROLES = [
   # ── Instance-Scope Roles ──────────────────────────────────────────────────
+  # #1044 — the role an IdP grants for a BOUNDED window. Carrying
+  # `admin.administer` confers instance-administrator AUTHORITY; it does NOT
+  # make the holder the break-glass account (`users.admin`), which no claim can
+  # confer or revoke. Name it in SPARC_OIDC_INSTANCE_ROLES to allow the grant,
+  # then expire the group membership in the IdP — the next sign-in revokes it.
+  { name: "instance_admin", display_name: "Instance Administrator", scope: "instance", sort_order: 0,
+    description: "Instance-wide administrative authority, intended to be granted for a bounded window by an identity provider rather than held permanently. Distinct from the dedicated break-glass administrator account, which is never conferred or revoked by a directory and remains the recovery path of last resort.",
+    permissions: PERM_INSTANCE_ADMIN },
   { name: "policy_manager", display_name: "Policy Manager", scope: "instance", sort_order: 1,
     description: "Manages organizational security policies, control catalogs, and compliance baselines. Develops, publishes, and maintains tailored profiles and enterprise-wide security policy frameworks aligned with NIST, FedRAMP, and OSCAL standards.",
     permissions: PERM_POLICY_MANAGER },
