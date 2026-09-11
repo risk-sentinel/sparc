@@ -212,7 +212,8 @@ class Api::V1::OrganizationsController < Api::V1::BaseController
     }
   end
 
-  def authorize_admin!
-    raise NotAuthorizedError, "Not authorized to manage organizations" unless current_user.admin?
-  end
+  # #1044 — was a private authorize_admin! that SHADOWED the shared gate in
+  # concerns/authorization.rb. Only the wording differed, so only the wording
+  # is kept; the authority check now has exactly one definition.
+  def admin_required_message = "Not authorized to manage organizations"
 end

@@ -21,12 +21,27 @@ module Authorization
   end
 
   # Require the current user to be an Instance Admin.
+  #
+  # #1044 — THE ONLY DEFINITION. Four API controllers (organizations,
+  # service_accounts, roles, api_tokens) each carried a private copy that
+  # SHADOWED this one, so editing the shared gate silently missed four of the
+  # most sensitive endpoints in the app. That duplication is itself the bug, and
+  # it has to go before an `instance.administer` permission can be added here —
+  # otherwise the permission would open the gate on 21 controllers and not the
+  # four that matter most, which is a half-open door.
+  #
+  # A controller that wants a more specific refusal overrides
+  # `admin_required_message` rather than the method, so a future change to the
+  # AUTHORITY check cannot be silently skipped by a controller that only wanted
+  # different wording. That is exactly how the four copies came to exist.
   def authorize_admin!
     return unless SparcConfig.any_auth_enabled?
     return if current_user&.admin?
 
-    raise NotAuthorizedError, "Admin access required"
+    raise NotAuthorizedError, admin_required_message
   end
+
+  def admin_required_message = "Admin access required"
 
   # Require the current user to have a specific role.
   #
