@@ -503,7 +503,7 @@ exactly as it did before.
 | SPARC_OIDC_SYNC_MODE | `off` / `bootstrap` / `authoritative`. `bootstrap` performs the ADD leg only; `authoritative` also revokes what the claim no longer carries. `bootstrap` exists because `off → bootstrap → authoritative` is an adoption ladder and `off → authoritative` is a cliff | `off` | `authoritative` | No |
 | SPARC_OIDC_GRANTS_CLAIM | Which OIDC claim carries the grants | `groups` | `sparc_grants` | No |
 | SPARC_OIDC_GRANTS_PREFIX | Prefix that marks a directory group as a SPARC grant, so unrelated groups in the same claim are ignored | `sparc:` | `acme-sparc:` | No |
-| SPARC_OIDC_INSTANCE_ROLES | Allowlist of instance-wide roles the IdP may confer. An allowlist rather than a boolean: "manage instance roles from the IdP" and "let a directory group confer every instance-wide authority SPARC has" are different requests, and only the first was made | (empty) | `global_viewer,policy_manager` | No |
+| SPARC_OIDC_INSTANCE_ROLES | Allowlist of instance-wide roles the IdP may confer. An allowlist rather than a boolean: "manage instance roles from the IdP" and "let a directory group confer every instance-wide authority SPARC has" are different requests, and only the first was made. **Includes `instance_admin` (#1044) to grant time-boxed instance-administrator authority** — the grant ends when the IdP drops the group, applied at the next sign-in, with `SPARC_SESSION_MAX_HOURS` bounding any session already open. It can never confer the break-glass `users.admin` column, which no claim can reach. | (empty) | `instance_admin,policy_manager` | No |
 
 > **The model is deterministic: the user gets what the IdP sends.** Every sign-in
 > processes the grants claim — a grant that has appeared is gained, a grant that
