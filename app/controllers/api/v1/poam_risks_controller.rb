@@ -137,14 +137,14 @@ class Api::V1::PoamRisksController < Api::V1::BaseController
   end
 
   def authorize_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("poam.read", authorization_boundary_id: @boundary&.id)
 
     raise NotAuthorizedError, "Not authorized to view POA&M risks"
   end
 
   def authorize_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("poam.write", authorization_boundary_id: @boundary&.id)
 
     raise NotAuthorizedError, "Not authorized to modify POA&M risks"

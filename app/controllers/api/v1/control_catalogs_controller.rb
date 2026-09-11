@@ -86,7 +86,7 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
   # DocumentBaseController#authorize_document_write! but for an
   # instance-scoped (non-boundary) resource.
   def authorize_catalogs_write!
-    return if current_user&.admin?
+    return if current_user&.instance_administrator?
     return if current_user&.has_permission?("catalogs.write")
 
     render json: { error: "Forbidden" }, status: :forbidden

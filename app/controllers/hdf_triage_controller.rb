@@ -40,7 +40,7 @@ class HdfTriageController < ApplicationController
     @scanner_scopes = ScanRun::SCANNER_SCOPES
     @lifecycle_statuses = ScannerFinding::LIFECYCLE_STATUSES
     @re_failed_count = @boundary.scanner_findings.current.where(lifecycle_status: "re_failed").count
-    @can_approve = current_user&.admin? ||
+    @can_approve = current_user&.instance_administrator? ||
                    current_user&.has_permission?("amendment.approve", authorization_boundary_id: @boundary.id)
   end
 

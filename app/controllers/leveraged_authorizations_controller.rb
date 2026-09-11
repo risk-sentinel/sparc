@@ -75,7 +75,7 @@ class LeveragedAuthorizationsController < ApplicationController
   # which audits the denial and redirects consistently (AU-2, AC-3).
   def authorize_leveraging_boundary!
     return unless SparcConfig.any_auth_enabled?
-    return if current_user&.admin?
+    return if current_user&.instance_administrator?
     return if @leveraging_boundary.assigned_users.exists?(id: current_user&.id)
 
     raise Authorization::NotAuthorizedError,

@@ -447,7 +447,7 @@ class User < ApplicationRecord
   #   user.has_role?("isso")                              # instance-level
   #   user.has_role?("isso", authorization_boundary_id: 5) # boundary-level
   def has_role?(role_name, authorization_boundary_id: nil)
-    return true if admin?
+    return true if instance_administrator?
 
     scope = user_roles.joins(:role).where(roles: { name: role_name })
     scope = scope.where(authorization_boundary_id: authorization_boundary_id) if authorization_boundary_id
@@ -529,7 +529,7 @@ class User < ApplicationRecord
   # Check if the user has a permission in ANY boundary (or instance-level).
   # Used by the discovery endpoint to determine general capability.
   def has_any_permission?(permission_key)
-    return true if admin?
+    return true if instance_administrator?
 
     user_roles.joins(:role)
               .where("roles.permissions @> ?", { permission_key => true }.to_json)

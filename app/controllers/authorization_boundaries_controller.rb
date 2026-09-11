@@ -189,7 +189,7 @@ class AuthorizationBoundariesController < ApplicationController
   def attachable_candidates(document_class)
     orphans = document_class.where(authorization_boundary_id: nil).order(created_at: :desc)
     return orphans unless SparcConfig.any_auth_enabled?
-    return orphans if current_user&.admin?
+    return orphans if current_user&.instance_administrator?
 
     document_class.none
   end

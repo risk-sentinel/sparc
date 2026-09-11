@@ -129,7 +129,7 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
   end
 
   def authorize_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("evidence.read", authorization_boundary_id: @boundary&.id)
 
     raise NotAuthorizedError, "Not authorized to view dispositions"
@@ -138,14 +138,14 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
   # #809 (D5) — amendment approval is a distinct permission the Instance Admin
   # assigns to roles via RBAC. Until the Role-assignment UI ships, admins approve.
   def authorize_approve!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("amendment.approve", authorization_boundary_id: @boundary&.id)
 
     raise NotAuthorizedError, "Not authorized to approve amendments"
   end
 
   def authorize_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("evidence.write", authorization_boundary_id: @boundary&.id)
 
     raise NotAuthorizedError, "Not authorized to set dispositions"

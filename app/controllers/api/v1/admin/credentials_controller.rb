@@ -80,7 +80,7 @@ class Api::V1::Admin::CredentialsController < Api::V1::BaseController
   private
 
   def authorize_rotate!
-    return if current_user&.admin?
+    return if current_user&.instance_administrator?
     return if current_user&.has_permission?("admin.rotate_credentials")
 
     raise NotAuthorizedError, "Token lacks admin.rotate_credentials permission"

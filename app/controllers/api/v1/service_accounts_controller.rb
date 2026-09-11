@@ -199,7 +199,7 @@ class Api::V1::ServiceAccountsController < Api::V1::BaseController
       display_name: account.display_label,
       service_account: true,
       status: account.status,
-      admin: account.admin?,
+      admin: account.instance_administrator?,
       owner_id: account.owner_id,
       active_token_count: account.api_tokens.active.count
     }

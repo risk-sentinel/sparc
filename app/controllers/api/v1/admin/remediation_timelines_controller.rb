@@ -33,7 +33,7 @@ class Api::V1::Admin::RemediationTimelinesController < Api::V1::BaseController
   private
 
   def require_admin!
-    raise NotAuthorizedError, "Admin only" unless current_user&.admin?
+    raise NotAuthorizedError, "Admin only" unless current_user&.instance_administrator?
   end
 
   # The effective grid: every baseline × criticality cell, showing the provisioned

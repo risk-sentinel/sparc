@@ -190,7 +190,7 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
   end
 
   def readable_ssps
-    return SspDocument.all if current_user.admin?
+    return SspDocument.all if current_user.instance_administrator?
 
     SspDocument.where(authorization_boundary_id: current_user.authorization_boundaries.ids)
   end

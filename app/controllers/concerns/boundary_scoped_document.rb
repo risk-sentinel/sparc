@@ -57,7 +57,7 @@ module BoundaryScopedDocument
   # globals (nil) only for a type that can legitimately BE global (#952).
   def boundary_scoped_relation(relation)
     return relation unless SparcConfig.any_auth_enabled?
-    return relation if current_user&.admin?
+    return relation if current_user&.instance_administrator?
 
     boundary_ids = current_user ? current_user.authorization_boundaries.ids : []
     boundary_ids += [ nil ] if bsd_global_fallback

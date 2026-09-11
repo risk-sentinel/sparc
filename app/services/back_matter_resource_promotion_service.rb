@@ -113,7 +113,7 @@ class BackMatterResourcePromotionService
   # Approver authority predicate (NIST AC-3 / AC-6).
   def can_approve?(user = @actor)
     return false unless user
-    return true  if user.admin?
+    return true  if user.instance_administrator?
     return true  if user.has_role?("policy_manager")
 
     boundary = boundary_for_resource

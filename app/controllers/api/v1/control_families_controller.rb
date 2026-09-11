@@ -101,7 +101,7 @@ class Api::V1::ControlFamiliesController < Api::V1::BaseController
   end
 
   def authorize_catalog_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("catalogs.write")
 
     raise NotAuthorizedError, "Not authorized to modify catalog content"

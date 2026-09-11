@@ -83,7 +83,7 @@
               <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--violet"></span> Leveraged POA&amp;Ms
             <% end %>
           </li>
-          <% if current_user&.admin? %>
+          <% if current_user&.instance_administrator? %>
             <li>
               <%= link_to federation_peers_path, class: "sparc-sidebar-leaf" do %>
                 <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--ocean"></span> Federation Peers

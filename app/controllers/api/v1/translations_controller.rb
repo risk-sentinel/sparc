@@ -173,7 +173,7 @@ class Api::V1::TranslationsController < Api::V1::BaseController
 
     boundary = AuthorizationBoundary.find(boundary_param)
 
-    unless current_user.admin? || current_user.has_permission?("evidence.read")
+    unless current_user.instance_administrator? || current_user.has_permission?("evidence.read")
       raise NotAuthorizedError, "Not authorized to read evidence for this boundary"
     end
 

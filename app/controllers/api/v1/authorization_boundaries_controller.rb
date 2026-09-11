@@ -19,7 +19,7 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
 
   # GET /api/v1/authorization_boundaries
   def index
-    scope = if current_user.admin?
+    scope = if current_user.instance_administrator?
       AuthorizationBoundary.all
     else
       current_user.authorization_boundaries.distinct
@@ -136,14 +136,14 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
   end
 
   def authorize_boundary_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("authorization_boundaries.read", authorization_boundary_id: @boundary.id)
 
     raise NotAuthorizedError, "Not authorized to view this authorization boundary"
   end
 
   def authorize_boundary_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("authorization_boundaries.write")
 
     raise NotAuthorizedError, "Not authorized to modify authorization boundaries"

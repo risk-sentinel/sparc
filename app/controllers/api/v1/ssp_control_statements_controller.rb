@@ -122,14 +122,14 @@ class Api::V1::SspControlStatementsController < Api::V1::BaseController
   end
 
   def authorize_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("ssp.read", authorization_boundary_id: @boundary&.id)
 
     raise NotAuthorizedError, "Not authorized to view SSP statements"
   end
 
   def authorize_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("ssp.write", authorization_boundary_id: @boundary&.id)
 
     raise NotAuthorizedError, "Not authorized to modify SSP statements"

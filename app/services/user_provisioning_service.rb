@@ -56,14 +56,32 @@ class UserProvisioningService
   #
   # @param user [User]
   # @param user_params [ActionController::Parameters, Hash, nil]
+  # #1044 — THE ESCALATION BOUNDARY, and the one place in the triage where
+  # authority and identity had to be split INSIDE a single method.
+  #
+  # Managing users is administrative work, so instance-administrator authority
+  # is enough to set `status`. Setting the `admin` COLUMN is different in kind:
+  # it confers the break-glass account, which is permanent, is not time-boxed by
+  # anything, and cannot be revoked by a directory.
+  #
+  # If a time-boxed administrator could set it, an IdP-granted grant lasting one
+  # afternoon could mint a permanent administrator before it expired — and the
+  # guarantee that makes granting instance roles from an IdP safe at all
+  # ("`users.admin` is unreachable from any claim, by construction" —
+  # IdpGrantResolver) would hold only on paper. The claim could not reach the
+  # column directly, so it would reach it through a user it created.
+  #
+  # So the column stays with the break-glass account: `admin?`, not authority.
   def apply_privileged_attributes!(user, user_params)
-    return unless @actor&.admin?
+    return unless @actor&.instance_administrator?
     return if user_params.blank?
 
     admin_param  = fetch(user_params, :admin)
     status_param = fetch(user_params, :status)
 
-    user.admin = ActiveModel::Type::Boolean.new.cast(admin_param) unless admin_param.nil?
+    if !admin_param.nil? && @actor&.admin?
+      user.admin = ActiveModel::Type::Boolean.new.cast(admin_param)
+    end
     user.status = status_param if status_param.present? && User::STATUSES.include?(status_param.to_s)
     user
   end

@@ -114,7 +114,7 @@ class Api::V1::SspComponentsController < Api::V1::BaseController
   # SSP — the same boundary-scoped check Api::V1::SspDocumentsController makes,
   # including the #952 rule that a nil boundary is not "open to everyone".
   def authorize_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
 
     boundary_id = @ssp_document.authorization_boundary_id
     return if current_user.has_permission?("ssp.read", authorization_boundary_id: boundary_id)
@@ -123,7 +123,7 @@ class Api::V1::SspComponentsController < Api::V1::BaseController
   end
 
   def authorize_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
 
     boundary_id = @ssp_document.authorization_boundary_id
     return if current_user.has_permission?("ssp.write", authorization_boundary_id: boundary_id)

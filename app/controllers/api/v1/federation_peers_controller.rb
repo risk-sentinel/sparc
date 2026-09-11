@@ -137,7 +137,7 @@ class Api::V1::FederationPeersController < Api::V1::BaseController
   end
 
   def authorize_federate!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("back_matter.federate")
 
     raise NotAuthorizedError, "Not authorized to manage federation peers"

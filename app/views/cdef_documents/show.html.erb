@@ -109,7 +109,7 @@
           not lead to a guard that immediately bounces the user back. %>
       <% if signed_in? && !@cdef_document.aws_labs_source? &&
             !@cdef_document.published_lifecycle? &&
-            (current_user.admin? || current_user.has_permission?("cdef.write")) %>
+            (current_user.instance_administrator? || current_user.has_permission?("cdef.write")) %>
         <%= link_to "Edit", edit_cdef_document_path(@cdef_document),
               class: "sparc-action sparc-action--primary sparc-action--outline", data: { testid: "edit-cdef" } %>
       <% end %>
@@ -128,7 +128,7 @@
       <% end %>
       <%# #499 slice 5 — bulk-apply Converter (editable clones only). %>
       <% if signed_in? && !@cdef_document.aws_labs_source? &&
-            (current_user.admin? || current_user.has_permission?("converters.write")) %>
+            (current_user.instance_administrator? || current_user.has_permission?("converters.write")) %>
         <%# `update`, not `overwrite`: bulk_apply_preview stands between this and
             any change, so it applies reviewed edits rather than replacing rows
             unseen. The verb is mid-label, which is why the sweep missed it. %>

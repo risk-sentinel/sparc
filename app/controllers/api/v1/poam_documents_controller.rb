@@ -99,7 +99,7 @@ class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
   end
 
   def readable_sars
-    return SarDocument.all if current_user.admin?
+    return SarDocument.all if current_user.instance_administrator?
 
     SarDocument.where(authorization_boundary_id: current_user.authorization_boundaries.ids)
   end

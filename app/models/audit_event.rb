@@ -611,7 +611,7 @@ class AuditEvent < ApplicationRecord
       provider: provider,
       ip_address: ip_address,
       user_agent: user_agent,
-      metadata: metadata,
+      metadata: admin_authority_metadata(user).merge(metadata),
       subject_type: subject&.class&.name,
       subject_id: subject&.id
     )
@@ -638,5 +638,39 @@ class AuditEvent < ApplicationRecord
     event
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error("[AuditEvent] Failed to log #{action}: #{e.message}")
+  end
+
+  # #1044 — WHICH administrative authority was used.
+  #
+  # An action taken by the break-glass account and one taken by a time-boxed
+  # administrator are not the same event to an assessor, and after #1044 they
+  # are indistinguishable from the outside: both pass every gate. They have
+  # completely different provenance —
+  #
+  #   break_glass     a dedicated instance-admin account, established at boot,
+  #                   signing in locally with a credential checked out of a
+  #                   vault (EPV, AWS Secrets Manager). Attribution runs through
+  #                   the checkout record, not through SPARC.
+  #
+  #   instance_admin  an ordinary named person holding an IdP-granted,
+  #                   time-boxed instance role. Attribution is the person, and
+  #                   the directory decides when it ends.
+  #
+  # Recorded as metadata rather than a column: it is a property of the ACT, and
+  # backfilling a column for events logged before the distinction existed would
+  # mean inventing an answer. An event with no key predates #1044 or was not
+  # administrative — absent, not false.
+  #
+  # Caller metadata wins on key collision (see the merge order above), so this
+  # can never overwrite what a caller deliberately recorded.
+  #
+  # NIST 800-53: AU-3 (content of audit records — who), AU-3(1) (additional
+  # detail), AC-6(9) (audit the execution of privileged functions).
+  def self.admin_authority_metadata(user)
+    return {} if user.nil?
+    return { "admin_authority" => "break_glass" } if user.admin?
+    return {} unless user.instance_administrator?
+
+    { "admin_authority" => "instance_admin" }
   end
 end

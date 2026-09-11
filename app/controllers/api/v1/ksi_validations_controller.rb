@@ -122,7 +122,7 @@ class Api::V1::KsiValidationsController < Api::V1::BaseController
   # #1024 — mirrors Api::V1::EvidencesController. Instance admins bypass; every
   # other caller needs the grant ON THIS BOUNDARY.
   def authorize_ksi_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("evidence.read",
                                            authorization_boundary_id: @boundary&.id)
 
@@ -130,7 +130,7 @@ class Api::V1::KsiValidationsController < Api::V1::BaseController
   end
 
   def authorize_ksi_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("evidence.write",
                                            authorization_boundary_id: @boundary&.id)
 

@@ -53,7 +53,7 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
   end
 
   def allowed_methods(user, ep)
-    return ep[:methods] if user.admin?
+    return ep[:methods] if user.instance_administrator?
 
     # Admin-only endpoints are invisible to non-admins entirely
     return [] if ep[:admin_only]

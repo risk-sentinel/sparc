@@ -117,14 +117,14 @@ class Api::V1::PoamSubresourcesController < Api::V1::BaseController
   def boundary_id = @document.authorization_boundary_id
 
   def authorize_poam_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("poam.read", authorization_boundary_id: boundary_id)
 
     raise NotAuthorizedError, "Not authorized to view this POA&M"
   end
 
   def authorize_poam_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("poam.write", authorization_boundary_id: boundary_id)
 
     raise NotAuthorizedError, "Not authorized to modify this POA&M"

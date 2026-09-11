@@ -193,7 +193,7 @@ class Api::V1::ConvertersController < Api::V1::BaseController
   def authorize_read! = nil
 
   def authorize_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("converters.write")
 
     raise NotAuthorizedError, "Not authorized to modify converters"

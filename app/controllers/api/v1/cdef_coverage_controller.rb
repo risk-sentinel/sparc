@@ -117,7 +117,7 @@ class Api::V1::CdefCoverageController < Api::V1::BaseController
     return nil if id.nil?
 
     boundary = AuthorizationBoundary.find(id)
-    unless current_user.admin? || current_user.has_permission?("cdef.write", authorization_boundary_id: boundary.id)
+    unless current_user.instance_administrator? || current_user.has_permission?("cdef.write", authorization_boundary_id: boundary.id)
       raise NotAuthorizedError, "Not authorized to save coverage for this boundary"
     end
 
@@ -127,7 +127,7 @@ class Api::V1::CdefCoverageController < Api::V1::BaseController
   # Mirrors the evidence index (#934): non-admins see their boundaries' runs
   # plus unattached ones, so the API never hides a record the UI would show.
   def scoped_runs
-    return CdefCoverageRun.all if current_user.admin?
+    return CdefCoverageRun.all if current_user.instance_administrator?
 
     CdefCoverageRun.where(authorization_boundary_id: current_user.authorization_boundaries.ids + [ nil ])
   end
@@ -137,7 +137,7 @@ class Api::V1::CdefCoverageController < Api::V1::BaseController
   end
 
   def authorize_analyze!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("cdef.read")
 
     raise NotAuthorizedError, "Not authorized to analyze CDEF coverage"
@@ -145,7 +145,7 @@ class Api::V1::CdefCoverageController < Api::V1::BaseController
   alias_method :authorize_read!, :authorize_analyze!
 
   def authorize_save!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("cdef.write")
 
     raise NotAuthorizedError, "Not authorized to save a coverage run"

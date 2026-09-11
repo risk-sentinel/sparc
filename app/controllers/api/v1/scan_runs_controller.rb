@@ -104,14 +104,14 @@ class Api::V1::ScanRunsController < Api::V1::BaseController
   end
 
   def authorize_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("evidence.read", authorization_boundary_id: @boundary&.id)
 
     raise NotAuthorizedError, "Not authorized to view scan runs"
   end
 
   def authorize_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("evidence.write", authorization_boundary_id: @boundary&.id)
 
     raise NotAuthorizedError, "Not authorized to ingest scans"
