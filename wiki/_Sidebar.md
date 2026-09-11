@@ -6,6 +6,7 @@
 
 **Getting Started**
 * [Getting Started](Getting-Started)
+* [Onboarding a Team and a Pipeline](Onboarding-a-Team-and-a-Pipeline)
 * [Configuration Reference](Configuration)
 * [Authentication and MFA](Authentication-and-MFA)
 
