@@ -53,7 +53,19 @@ jobs:
 
             const SELF_NAME = 'Required Checks Passed';  // matches the job's `name:` field below; must equal the context name in branch protection
             const POLL_INTERVAL_S = 15;
-            const TIMEOUT_MIN = 25;
+            // #1123 — 25 -> 45. This is a WAITER, not a test: its budget must
+            // exceed the slowest job it waits for, with margin.
+            //
+            // MUST STAY ABOVE `timeout-minutes` FOR THE `test` JOB IN
+            // .github/workflows/ci.yml (currently 30). At 25 it was configured
+            // TIGHTER than the job it waits on, so a `test` run of 26 minutes —
+            // well inside its own allowance, and green — still failed this gate.
+            // Measured across ten CI runs on 2026-09-11: six of nine successful
+            // runs exceeded 25 minutes (29.7, 27.7, 27.4, 26.3, 25.3, 25.2).
+            //
+            // 45 is 1.5x the worst observed. Raise it again if the suite grows;
+            // it was 6,655 examples when this was set.
+            const TIMEOUT_MIN = 45;
             const MAX_ITER = Math.ceil((TIMEOUT_MIN * 60) / POLL_INTERVAL_S);
 
             const OK_CONCLUSIONS = new Set(['success', 'skipped', 'neutral']);
@@ -114,6 +126,10 @@ jobs:
 
             // ── Poll loop
             let iter = 0;
+            // #1123 — captured each iteration so the timeout message can name what
+            // was still running. `byName` is loop-scoped and must not be read after it.
+            let lastPending = [];
+
             while (iter < MAX_ITER) {
               iter += 1;
 
@@ -225,11 +241,22 @@ jobs:
               }
 
               // 4. Pending non-required checks (failure-only watch already done above)
+              lastPending = stillPending.map(({ rule }) => rule.checkName);
               core.info(
                 `Iter ${iter}/${MAX_ITER}: still waiting on ${stillPending.length} required check(s): ` +
-                stillPending.map(({ rule }) => rule.checkName).join(', ')
+                lastPending.join(', ')
               );
               await new Promise(r => setTimeout(r, POLL_INTERVAL_S * 1000));
             }
 
-            core.setFailed(`Timed out after ${TIMEOUT_MIN} minutes waiting for required checks to complete.`);
+            // #1123 — say WHICH failure this is. A timeout and a failed check
+            // both showed up as a red "Required Checks Passed", so the only way
+            // to tell them apart was to re-run and wait again. Name the checks
+            // that were still running and say plainly that nothing failed.
+            core.setFailed(
+              `TIMED OUT after ${TIMEOUT_MIN} minutes — this is NOT a failing check. ` +
+              `Still running: ${lastPending.join(', ') || '(none reported)'}. ` +
+              `No required check reported a failure; they had not finished. ` +
+              `If a job legitimately takes longer than ${TIMEOUT_MIN} minutes, raise TIMEOUT_MIN here ` +
+              `(it must stay above the slowest job's own timeout-minutes in ci.yml) rather than re-running.`
+            );
