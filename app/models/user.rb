@@ -26,6 +26,13 @@ class User < ApplicationRecord
   # UserProvisioningService.
   STATUSES = %w[active suspended deactivated].freeze
 
+  # The JSONB containment test every permission lookup runs. Named because it
+  # appeared verbatim in three places (Sonar ruby:S1192) — and because the
+  # `@>` operator is easy to mistype into something that still parses and
+  # silently matches nothing, which on a permission check fails OPEN-looking:
+  # the user simply appears to have no permissions.
+  PERMISSION_MATCH_SQL = "roles.permissions @> ?"
+
   # Allow password_digest to be null for OIDC-only users
   has_secure_password validations: false
 
@@ -497,10 +504,7 @@ class User < ApplicationRecord
     # `||=` was also worthless here: it never caches a `false`, which is the
     # common case, so it skipped the work only for the users who need the check
     # least. Wrong on both counts.
-    user_roles.joins(:role)
-              .where(authorization_boundary_id: nil)
-              .where("roles.permissions @> ?", { "admin.administer" => true }.to_json)
-              .exists?
+    roles_granting("admin.administer").where(authorization_boundary_id: nil).exists?
   end
 
   # Check if user has a specific granular permission, optionally scoped
@@ -516,14 +520,14 @@ class User < ApplicationRecord
     # would fail.
     return true if instance_administrator?
 
-    role_scope = user_roles.joins(:role)
+    role_scope = roles_granting(permission_key)
     role_scope = if authorization_boundary_id
       role_scope.where(authorization_boundary_id: [ authorization_boundary_id, nil ])
     else
       role_scope.where(authorization_boundary_id: nil)
     end
 
-    role_scope.where("roles.permissions @> ?", { permission_key => true }.to_json).exists?
+    role_scope.exists?
   end
 
   # Check if the user has a permission in ANY boundary (or instance-level).
@@ -531,9 +535,7 @@ class User < ApplicationRecord
   def has_any_permission?(permission_key)
     return true if instance_administrator?
 
-    user_roles.joins(:role)
-              .where("roles.permissions @> ?", { permission_key => true }.to_json)
-              .exists?
+    roles_granting(permission_key).exists?
   end
 
   # #770 bug 6 — org-admin membership on a specific organization. This is the
@@ -617,6 +619,16 @@ class User < ApplicationRecord
   end
 
   private
+
+  # The user_roles that grant `permission_key`, unscoped by boundary.
+  #
+  # All three permission lookups were building this same relation and differed
+  # only in how they filtered boundary afterwards, so the duplication was the
+  # predicate itself rather than just the SQL string. One definition means a
+  # change to how permissions are matched cannot land in two of three places.
+  def roles_granting(permission_key)
+    user_roles.joins(:role).where(PERMISSION_MATCH_SQL, { permission_key => true }.to_json)
+  end
 
   def normalize_email
     self.email = email.to_s.downcase.strip if email.present?

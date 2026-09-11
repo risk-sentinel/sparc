@@ -605,13 +605,31 @@ class AuditEvent < ApplicationRecord
   # added here that carries credential material would make the alert correct.
   def self.log(user: nil, action:, provider: nil, ip_address: nil,
                user_agent: nil, metadata: {}, subject: nil)
+    # #1044 — resolved BEFORE the create!, not inside its argument list. Two
+    # reasons, and the second is the load-bearing one:
+    #
+    #   1. The argument list was doing two things at once.
+    #   2. `create!` below carries a CodeQL dismissal (alert #24, false
+    #      positive, dismissed 2026-07-28 with a written rationale). Editing
+    #      that line changes its fingerprint, so the dismissal stops matching
+    #      and the SAME finding returns under a new alert number — which is
+    #      exactly what happened on the first push of this branch (#39). The
+    #      call is now byte-identical to main, so a settled disposition is not
+    #      disturbed by a change that has nothing to do with it.
+    #
+    # `admin_authority_metadata` returns at most
+    # `{"admin_authority" => "break_glass"|"instance_admin"}` — no new taint
+    # reaches `metadata`, so the dismissed verdict is unaffected on the merits
+    # as well as by fingerprint.
+    metadata = admin_authority_metadata(user).merge(metadata)
+
     event = create!(
       user: user,
       action: action,
       provider: provider,
       ip_address: ip_address,
       user_agent: user_agent,
-      metadata: admin_authority_metadata(user).merge(metadata),
+      metadata: metadata,
       subject_type: subject&.class&.name,
       subject_id: subject&.id
     )
