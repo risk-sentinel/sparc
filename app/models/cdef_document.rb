@@ -241,7 +241,14 @@ class CdefDocument < ApplicationRecord
       count: count,
       message: "#{count} STIG #{'rule'.pluralize(count)} resolved to no NIST control " \
                "through their CCI references, so they carry no control identifier.",
-      remedy: "Refresh the stig_to_nist converter, or supply the missing CCI references in the benchmark.",
+      # #1033 — SPARC does not own the CIS/SCAP -> NIST mapping; the upstream
+      # tools resolve it and put the answer in HDF `tags.nist`, which SPARC
+      # reads. Naming them here because an unmapped CDEF looks identical
+      # whether the mapping is missing or the content simply has none.
+      remedy: "Refresh the stig_to_nist converter, or supply the missing CCI references in the benchmark. " \
+              "For SCAP or CIS content, convert it upstream first — `saf convert xccdf_results2hdf` for SCAP, " \
+              "cis-bench for CIS Benchmarks — which resolve NIST controls themselves. " \
+              "The cis_to_nist and scap_oval_to_nist converters are applied by hand from the Converters screen.",
       # No Api::V1 converters endpoint exists yet, so this points at the screen
       # that owns the remedy rather than inventing a path.
       options: "/converters"

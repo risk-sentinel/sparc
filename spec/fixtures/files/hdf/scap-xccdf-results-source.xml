@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cdf:Benchmark xmlns:cdf="http://checklists.nist.gov/xccdf/1.2" id="xccdf_org.example_benchmark_sparc-scap-sample">
+  <cdf:status date="2026-09-11">accepted</cdf:status>
+  <cdf:title>SPARC SCAP acceptance sample</cdf:title>
+  <cdf:description>Minimal SCAP client XCCDF-Results document used to prove SPARC accepts saf-converted SCAP output.</cdf:description>
+  <cdf:version>1.0</cdf:version>
+  <cdf:Group id="xccdf_org.example_group_auditing">
+    <cdf:title>Auditing</cdf:title>
+    <cdf:Rule id="xccdf_org.example_rule_audit-enabled" severity="medium">
+      <cdf:title>Audit logging must be enabled</cdf:title>
+      <cdf:description>The system must record auditable events.</cdf:description>
+      <cdf:ident system="http://cce.mitre.org">CCE-80001-2</cdf:ident>
+      <cdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <cdf:check-content-ref href="oval.xml" name="oval:org.example:def:1"/>
+      </cdf:check>
+    </cdf:Rule>
+  </cdf:Group>
+  <cdf:TestResult id="xccdf_org.example_testresult_1" start-time="2026-09-11T00:00:00" end-time="2026-09-11T00:01:00">
+    <cdf:title>SPARC SCAP acceptance sample results</cdf:title>
+    <cdf:target>sparc-sample-host</cdf:target>
+    <cdf:rule-result idref="xccdf_org.example_rule_audit-enabled" time="2026-09-11T00:00:30" severity="medium">
+      <cdf:result>pass</cdf:result>
+    </cdf:rule-result>
+    <cdf:score system="urn:xccdf:scoring:default" maximum="100">100.0</cdf:score>
+  </cdf:TestResult>
+</cdf:Benchmark>
