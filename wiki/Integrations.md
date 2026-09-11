@@ -29,7 +29,10 @@
 - Compatible with: Okta, Keycloak, Entra ID, Auth0, and other OIDC-compliant providers
 - Custom scopes via `SPARC_OIDC_SCOPES` (default: `"openid profile email"`)
 - Button text via `SPARC_OIDC_PROVIDER_TITLE` (default: `"SSO"`)
-- MFA enforcement via `SPARC_OIDC_FORCE_MFA` (validates ACR/amr claims)
+- MFA enforcement: `SPARC_REQUIRE_AUTH_METHODS` (#805), or `SPARC_REQUIRE_FIDO2`
+  for hardware keys. **`SPARC_OIDC_FORCE_MFA` does nothing** — a predicate reads
+  it but nothing calls that predicate, so the value never reaches a decision.
+  It defaults to `true`, which makes it read like an active control (#1120)
 - Related: [Issue #33](https://github.com/risk-sentinel/sparc/issues/33) (Okta), [Issue #35](https://github.com/risk-sentinel/sparc/issues/35) (generic OIDC)
 
 #### Asking the IdP for more than the default scopes
@@ -120,9 +123,12 @@ Adopt in that order. `off` → `bootstrap` → `authoritative` is a ladder;
 - **It never removes a role an administrator granted.** Revocation is limited to
   memberships the sync itself created, so an in-app grant survives any claim,
   any misconfiguration, and any empty group.
-- **It never grants instance admin.** Instance Admin is not a role, so no claim
-  can confer it — which is what keeps a break-glass recovery path open no matter
-  what your directory says.
+- **It never grants the break-glass account.** That is the `admin` COLUMN, not a
+  role, so no claim can reach it — which keeps a recovery path open no matter
+  what your directory says. Since v1.16.1 a claim *can* confer instance-
+  administrator **authority** via the `instance_admin` role, if you allowlist it
+  (see below); that authority is time-boxed by your IdP and cannot create a
+  permanent administrator.
 - **A MISSING claim is an error, not "revoke everything."** If the claim name is
   wrong or the scope was not released, SPARC changes nothing and records why.
   Only an *empty* claim means "this person has no grants."
@@ -137,6 +143,37 @@ SPARC_OIDC_INSTANCE_ROLES="global_viewer,policy_manager"
 
 An allowlist per role, not a switch — opting in to `global_viewer` does not
 confer `head_of_agency`.
+
+###### Time-boxed instance administrators (#1044)
+
+`instance_admin` is a seeded role carrying `admin.administer`, which confers
+full instance-wide authority. Allowlist it and grant the matching IdP group with
+an **expiry**, and an operator holds administrative power for a window instead of
+permanently:
+
+```bash
+SPARC_OIDC_INSTANCE_ROLES="instance_admin"
+```
+
+Okta can expire a group membership after a set duration, so nobody has to
+remember to take it away. Three things bound the grant, and the third is the one
+operators miss:
+
+1. The IdP decides when it ends.
+2. SPARC applies that at the user's **next sign-in**.
+3. `SPARC_SESSION_MAX_HOURS` bounds the session **already open** — without it an
+   administrator who never goes idle keeps a revoked grant alive.
+
+So the real duration is *the IdP's expiry plus the remainder of any open
+session, up to the cap*. Set a one-hour Okta duration and expect that, not
+exactly one hour.
+
+> **This never confers the break-glass account.** `users.admin` is a column, not
+> a role, and no claim can reach it — which is what makes granting instance
+> roles from a directory safe. A time-boxed administrator also cannot set that
+> column on someone else, so a grant lasting an afternoon cannot leave a
+> permanent administrator behind. Audit events record which authority acted
+> (`admin_authority`: `break_glass` or `instance_admin`).
 
 ##### When a grant names something that does not exist
 
@@ -153,7 +190,7 @@ the grant resolves by itself at that user's next sign-in.
 | `SPARC_OIDC_SYNC_MODE` | `off` | `off` / `bootstrap` / `authoritative` |
 | `SPARC_OIDC_GRANTS_CLAIM` | `groups` | Which claim carries grants |
 | `SPARC_OIDC_GRANTS_PREFIX` | `sparc:` | Only values with this prefix are read |
-| `SPARC_OIDC_INSTANCE_ROLES` | *(empty)* | Instance roles the IdP may grant |
+| `SPARC_OIDC_INSTANCE_ROLES` | *(empty)* | Instance roles the IdP may grant — including `instance_admin` for time-boxed instance-administrator authority |
 | `SPARC_SESSION_MAX_HOURS` | `8` | Absolute session lifetime, so a long-lived session cannot outlive its entitlements |
 | `SPARC_USER_INACTIVITY_DAYS` | `0` | Deactivate accounts idle this long. **This is offboarding** — a disabled IdP account cannot sign in |
 

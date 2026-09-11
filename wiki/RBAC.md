@@ -1,18 +1,18 @@
 # Role-Based Access Control (RBAC)
 
-_Reflects SPARC **v1.15.0**. Authoritative source: `app/models/role.rb` (permission keys) and the role seeds in `db/seeds.rb`._
+_Reflects SPARC **v1.16.1**. Authoritative source: `app/models/role.rb` (permission keys) and the role seeds in `db/seeds.rb`._
 
 ## Overview
 
-SPARC implements a granular Role-Based Access Control system with **29 roles** aligned with [NIST SP 800-37 Rev. 2](https://csrc.nist.gov/publications/detail/sp/800-37/rev-2/final) (Risk Management Framework). The system is designed to mirror real-world security authorization workflows, ensuring that each user in the compliance lifecycle has precisely the access they need and nothing more.
+SPARC implements a granular Role-Based Access Control system with **30 roles** aligned with [NIST SP 800-37 Rev. 2](https://csrc.nist.gov/publications/detail/sp/800-37/rev-2/final) (Risk Management Framework). The system is designed to mirror real-world security authorization workflows, ensuring that each user in the compliance lifecycle has precisely the access they need and nothing more.
 
-The role taxonomy is grounded in the NIST RMF and aligns with **OSCAL (Open Security Controls Assessment Language) responsible-party definitions**. OSCAL does not define its own role taxonomy; instead it relies on standard RMF roles referenced in OSCAL metadata (`party` and `role` elements across Catalogs, Profiles, SSPs, Assessment Plans, SARs, and POA&Ms). The 29 roles represent the complete canonical set for OSCAL implementation, drawn from NIST SP 800-37 Rev. 2, OSCAL documentation, and FedRAMP-specific guidance (including FedRAMP Rev. 5 baselines and FedRAMP 20x automation). All roles are seeded via `db/seeds.rb` and manageable in the admin UI at `/admin/roles`.
+The role taxonomy is grounded in the NIST RMF and aligns with **OSCAL (Open Security Controls Assessment Language) responsible-party definitions**. OSCAL does not define its own role taxonomy; instead it relies on standard RMF roles referenced in OSCAL metadata (`party` and `role` elements across Catalogs, Profiles, SSPs, Assessment Plans, SARs, and POA&Ms). The 30 roles represent the complete canonical set for OSCAL implementation, drawn from NIST SP 800-37 Rev. 2, OSCAL documentation, and FedRAMP-specific guidance (including FedRAMP Rev. 5 baselines and FedRAMP 20x automation). All roles are seeded via `db/seeds.rb` and manageable in the admin UI at `/admin/roles`.
 
 Authorization is enforced through **three layers**, evaluated in order:
 
 | Layer | Mechanism | Scope |
 |-------|-----------|-------|
-| 1. Instance Admin | Boolean flag on `User` model | Global bypass -- all checks pass |
+| 1. Instance-administrator authority | `instance_administrator?` — the break-glass `admin` column **or** an instance role carrying `admin.administer` (#1044) | Global bypass -- all checks pass |
 | 2. Role-based | `has_role?(role_name, authorization_boundary_id:)` | Structural access by job function |
 | 3. Permission-based | `has_permission?(key, authorization_boundary_id:)` | Granular control over specific resources |
 
@@ -22,14 +22,83 @@ Authorization is enforced through **three layers**, evaluated in order:
 
 ## Instance Admin
 
-Instance Admin is a **boolean column on the User model**, not a role. It provides unrestricted access to the entire SPARC instance.
+Since **v1.16.1 (#1044)** there are **two ways** to hold instance-wide
+administrative power, and they are deliberately different things.
+
+| | **Break-glass account** | **Instance Administrator role** |
+|---|---|---|
+| What it is | A boolean column on the User model | An instance-scoped **role** carrying the `admin.administer` permission |
+| Who holds it | One dedicated account, established at boot (`SPARC_ADMIN_EMAIL`) | Any named user the identity provider grants it to |
+| How it is used | A **local** sign-in with a credential checked out of a vault — EPV, AWS Secrets Manager or equivalent | The person's ordinary SSO sign-in |
+| How it ends | It does not — permanent by design | The IdP drops the group; the next sign-in revokes it |
+| Grantable by an IdP | **Never** | Yes, when allowlisted |
+
+Both pass every administrative gate. What separates them is **provenance** —
+and the audit trail records which one acted (see below).
+
+### The break-glass account
 
 - Bypasses ALL authorization checks across all authorization boundaries and resources.
 - The first Instance Admin account is bootstrapped during `db:seed` with a randomly generated 16-character password.
 - The bootstrapped admin **must change their password on first login**.
-- Instance Admin status can only be granted by another Instance Admin through the admin interface.
+- **Cannot be granted or revoked by an identity provider.** `IdpGrantResolver`
+  only ever produces roles and organization memberships, so no directory claim
+  can reach the column. That is what makes granting instance roles from an IdP
+  safe at all: recovery from a misconfigured directory is always available.
+- **Only the break-glass account may confer the column on someone else.** A
+  time-boxed administrator cannot — otherwise a grant lasting an afternoon
+  could mint a permanent administrator before it expired.
+- Retains local sign-in even when `SPARC_REQUIRE_AUTH_METHODS` mandates SSO for
+  everyone else (#1082), because an IdP outage is exactly when it is needed. The
+  login page demotes the password form to an **"Administrator sign-in"**
+  disclosure rather than removing it.
 
-> Instance Admin is intended for platform operators and initial setup only. Day-to-day users should be assigned appropriate roles instead.
+> Because the credential is shared and vault-held, SPARC can only record that
+> *the account* signed in. Attribution to a human runs through your vault's
+> **checkout record**. That is the reason to prefer the role below for routine
+> administration.
+
+### Instance-administrator authority, granted for a window
+
+An ordinary named user can be granted the seeded **`instance_admin`** role,
+which carries `admin.administer` and confers the same authority for as long as
+the directory says so:
+
+```bash
+SPARC_OIDC_INSTANCE_ROLES="instance_admin"   # allowlist it — empty by default
+```
+
+Then, in the IdP, grant the matching group with an expiry. Okta can expire a
+group membership after a set duration, so nobody has to remember to take it
+away.
+
+**Three things bound it**, and an operator should understand all three:
+
+1. The **IdP** decides when the grant ends.
+2. SPARC learns at the **next sign-in** — `EntitlementSync` in `authoritative`
+   mode revokes IdP-sourced grants that the claim no longer carries.
+3. `SPARC_SESSION_MAX_HOURS` (#1043) bounds the session that is **already open**.
+   Without it, an administrator who never goes idle keeps a revoked grant alive.
+
+> The real duration is therefore *the IdP's expiry plus the remainder of any
+> open session, up to the session cap*. An operator setting a one-hour Okta
+> duration should expect that, not exactly one hour.
+
+Two things it deliberately cannot do: set the `admin` column on a user, and
+approve a document or finding disposition **it submitted itself** — ordinary
+separation of duties, which a temporary grant does not suspend.
+
+### Which authority acted
+
+Every audit event written by an administrator carries `admin_authority`:
+
+| Value | Meaning |
+|---|---|
+| `break_glass` | The dedicated account. Trace the human through the vault checkout record |
+| `instance_admin` | A named person holding a time-boxed grant |
+| *(absent)* | Not an administrative actor, or the event predates v1.16.1 |
+
+> Day-to-day users should be assigned appropriate roles instead of either.
 
 ---
 
@@ -48,7 +117,7 @@ Both surfaces — the admin organization screen and the API (`PATCH /api/v1/auth
 
 SPARC roles are divided into two categories based on their scope:
 
-- **Instance-Scoped Roles** (10 roles) -- Apply globally across all authorization boundaries. Stored with `authorization_boundary_id = NULL` in the `user_roles` table.
+- **Instance-Scoped Roles** (11 roles) -- Apply globally across all authorization boundaries. Stored with `authorization_boundary_id = NULL` in the `user_roles` table.
 - **Authorization-Boundary-Scoped Roles** (19 roles) -- Apply only to the specific authorization boundary they are assigned to. Stored with an `authorization_boundary_id` value in the `user_roles` table.
 
 A single user can hold:
@@ -134,6 +203,7 @@ SPARC defines **35 permission keys** across 14 resource areas (`Role::PERMISSION
 | `back_matter.federate` | Federate back-matter resources across authorization boundaries / peers |
 | `amendment.approve` | Approve / reject an HDF Amendment (a scanner-finding disposition) so it suppresses its finding |
 | `admin.rotate_credentials` | Rotate instance credentials / master secrets |
+| `admin.administer` | **Instance-administrator authority.** Opens every administrative screen and satisfies every other permission check. Intended to be granted by an identity provider for a **bounded window** (see below) rather than held permanently |
 
 **Resource groups** (`Role::RESOURCE_LABELS`): Control Catalogs, Baselines / Profiles, Authorization Boundaries, System Security Plans, Security Assessment Results, Security Assessment Plans, POA&Ms, Component Definitions, Evidence, Control Mappings, Converters, Back-Matter Resources, HDF Amendments, Instance Administration.
 
@@ -204,7 +274,15 @@ A user with the **Global Viewer** instance role and the **ISSO** authorization-b
 
 ## Instance-Scoped Roles
 
-These 10 roles apply across the entire SPARC instance and are not tied to any specific authorization boundary.
+These 11 roles apply across the entire SPARC instance and are not tied to any specific authorization boundary.
+
+### Instance Administrator
+
+Carries `admin.administer`, which confers full instance-wide authority — the
+same power the break-glass account has, held by a named person for as long as
+the identity provider says so. Allowlist it with `SPARC_OIDC_INSTANCE_ROLES` and
+grant the matching IdP group with an expiry. See [Instance Admin](#instance-admin)
+above for what bounds it, and for the two things it deliberately cannot do.
 
 ### Policy Manager
 

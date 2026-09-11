@@ -65,7 +65,7 @@ class Api::V1::ControlMappingEntriesController < Api::V1::BaseController
   private
 
   def authorize_mappings_write!
-    return if current_user&.admin?
+    return if current_user&.instance_administrator?
     return if current_user&.has_permission?("mappings.write")
 
     render json: { error: "Forbidden" }, status: :forbidden

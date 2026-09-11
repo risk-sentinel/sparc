@@ -112,14 +112,14 @@ class Api::V1::AuthorizationBoundaryMembershipsController < Api::V1::BaseControl
   end
 
   def authorize_boundary_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("authorization_boundaries.read", authorization_boundary_id: @boundary.id)
 
     raise NotAuthorizedError, "Not authorized to view this authorization boundary"
   end
 
   def authorize_boundary_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     # #919 — manage_members, boundary-scoped. See the web sibling for why: the
     # delegated grant is held at boundary scope, so an unscoped check refuses it.
     return if current_user.has_permission?("authorization_boundaries.manage_members",

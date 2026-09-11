@@ -257,22 +257,40 @@ key *enrollment*, the other restricts *login method*); pick the model that fits.
 
 ## Roles
 
-SPARC seeds 9 RMF roles with two scopes:
+SPARC seeds **30** RMF roles across two scopes — **11 instance-scoped** (global)
+and **19 authorization-boundary-scoped** (assigned per boundary). The full
+catalog, the permission keys, and who is granted what are maintained in the
+wiki: **[RBAC](https://github.com/risk-sentinel/sparc/wiki/RBAC)**. It is not
+repeated here, because two lists of thirty roles drift.
 
-**Instance-scoped** (global):
-- Policy Manager
-- Global Viewer
+Roles are managed in the admin UI at `/admin/roles`, and assigned at
+`/admin/users`.
 
-**Project-scoped** (assigned per project):
-- Authorizing Official (AO)
-- System Owner / ISO
-- CISO
-- ISSO
-- Project Member
-- Assessor / 3PAO
-- View Only
+### Two ways to hold administrative power (#1044)
 
-Roles are managed via the admin UI at `/admin/users`.
+This matters to authentication, because the two sign in differently.
+
+| | **Break-glass account** | **Instance Administrator role** |
+|---|---|---|
+| What it is | The `admin` boolean column on `User` | The instance-scoped `instance_admin` role, carrying `admin.administer` |
+| Signs in as | A **local** login (`SPARC_ADMIN_EMAIL`), credential checked out of a vault — EPV, AWS Secrets Manager | The person's ordinary SSO identity |
+| Ends | Never — permanent by design | When the IdP drops the group; applied at the next sign-in |
+| An IdP can grant it | **No** — unreachable from any claim, by construction | Yes, when named in `SPARC_OIDC_INSTANCE_ROLES` |
+
+Both satisfy every administrative gate. Two things only the break-glass account
+may do: set the `admin` column on another user (otherwise a grant lasting an
+afternoon could mint a permanent administrator), and bypass separation of duties
+on approvals.
+
+The break-glass account keeps **local** sign-in even when
+`SPARC_REQUIRE_AUTH_METHODS` mandates SSO for everyone else — an IdP outage is
+precisely when it is needed. See [Enforcing strong
+authentication](#enforcing-strong-authentication).
+
+Audit events record which authority acted, as `admin_authority`
+(`break_glass` / `instance_admin`). For the break-glass account SPARC can only
+record that the shared account signed in; attribution to a person runs through
+the vault's checkout record.
 
 ---
 

@@ -434,7 +434,7 @@ module ApplicationHelper
   def nav_authorization_boundaries
     return [] unless defined?(current_user) && current_user
 
-    if current_user.admin?
+    if current_user.instance_administrator?
       AuthorizationBoundary.order(:name).limit(10)
     else
       current_user.authorization_boundaries.order(:name).limit(10)
@@ -509,7 +509,7 @@ module ApplicationHelper
   def sidebar_organizations
     return [] unless defined?(current_user) && current_user
 
-    orgs = if current_user.admin?
+    orgs = if current_user.instance_administrator?
       Organization.where(status: :active).includes(:authorization_boundaries).order(:name)
     else
       current_user.organizations.where(status: :active).includes(:authorization_boundaries).order(:name)
@@ -554,6 +554,6 @@ module ApplicationHelper
   # button that renders and then 302s.
   def can_write_sources?
     return false unless current_user
-    current_user.admin? || current_user.has_permission?("back_matter.write")
+    current_user.instance_administrator? || current_user.has_permission?("back_matter.write")
   end
 end

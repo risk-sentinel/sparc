@@ -61,7 +61,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
     @resource.organization ||= current_user.organizations.first if current_user.organizations.any?
 
     # Only admins/service accounts can create authoritative resources
-    if @resource.source == "authoritative" && !current_user.admin?
+    if @resource.source == "authoritative" && !current_user.instance_administrator?
       render json: { error: "Only admins can create authoritative resources" }, status: :forbidden
       return
     end
@@ -293,21 +293,21 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
   end
 
   def authorize_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("back_matter.read")
 
     raise NotAuthorizedError, "Not authorized to view back-matter resources"
   end
 
   def authorize_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?(SCOPE_BACK_MATTER_WRITE)
 
     raise NotAuthorizedError, "Not authorized to manage back-matter resources"
   end
 
   def authorize_promote!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("back_matter.promote")
     return if current_user.has_permission?(SCOPE_BACK_MATTER_WRITE)
 
@@ -324,7 +324,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
   end
 
   def authorize_bulk_import!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("back_matter.bulk_import")
     return if current_user.has_permission?(SCOPE_BACK_MATTER_WRITE)
 
@@ -341,7 +341,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
   end
 
   def authorize_archive!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("back_matter.archive")
     return if current_user.has_permission?(SCOPE_BACK_MATTER_WRITE)
 

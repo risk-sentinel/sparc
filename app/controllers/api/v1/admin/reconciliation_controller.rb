@@ -42,6 +42,6 @@ class Api::V1::Admin::ReconciliationController < Api::V1::BaseController
   end
 
   def require_admin!
-    raise NotAuthorizedError, "Admin only" unless current_user&.admin?
+    raise NotAuthorizedError, "Admin only" unless current_user&.instance_administrator?
   end
 end

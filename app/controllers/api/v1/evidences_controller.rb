@@ -150,7 +150,7 @@ class Api::V1::EvidencesController < Api::V1::BaseController
   # in the UI (BoundaryScopedDocument). Keeping API and UI in agreement
   # avoids the API hiding records the same user can see on screen.
   def scoped_evidences
-    scope = if current_user.admin?
+    scope = if current_user.instance_administrator?
       Evidence.all
     else
       boundary_ids = current_user.authorization_boundaries.ids + [ nil ]
@@ -289,14 +289,14 @@ class Api::V1::EvidencesController < Api::V1::BaseController
   end
 
   def authorize_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("evidence.read")
 
     raise NotAuthorizedError, "Not authorized to view evidence"
   end
 
   def authorize_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
 
     boundary_id = @evidence&.authorization_boundary_id || params.dig(:evidence, :authorization_boundary_id)
     return if current_user.has_permission?("evidence.write", authorization_boundary_id: boundary_id)

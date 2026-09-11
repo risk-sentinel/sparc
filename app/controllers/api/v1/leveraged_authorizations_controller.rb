@@ -115,7 +115,7 @@ class Api::V1::LeveragedAuthorizationsController < Api::V1::BaseController
   # See the note at the top of this file before changing it.
   def authorize_leveraging_boundary!
     return unless SparcConfig.any_auth_enabled?
-    return if current_user&.admin?
+    return if current_user&.instance_administrator?
     return if @leveraging_boundary.assigned_users.exists?(id: current_user&.id)
 
     raise NotAuthorizedError,

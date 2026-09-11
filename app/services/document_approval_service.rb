@@ -82,7 +82,7 @@ class DocumentApprovalService
     # Separation of duties: a non-admin cannot approve a document they submitted.
     return false if !user.admin? && @document.submitted_by_user_id.present? &&
                     @document.submitted_by_user_id == user.id
-    return true if user.admin?
+    return true if user.instance_administrator?
 
     perm = APPROVE_PERMISSION[@document.class.name]
     return true if perm && user.has_permission?(perm)

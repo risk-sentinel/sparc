@@ -32,7 +32,7 @@ class Api::V1::HdfPackagesController < Api::V1::BaseController
   end
 
   def authorize_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("evidence.read", authorization_boundary_id: @boundary&.id)
 
     raise NotAuthorizedError, "Not authorized to export the HDF package"

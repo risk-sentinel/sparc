@@ -101,13 +101,13 @@ class CdefCoverageController < ApplicationController
   end
 
   def assignable_boundaries
-    return AuthorizationBoundary.order(:name) if current_user&.admin?
+    return AuthorizationBoundary.order(:name) if current_user&.instance_administrator?
 
     current_user&.authorization_boundaries&.order(:name) || AuthorizationBoundary.none
   end
 
   def scoped_runs
-    return CdefCoverageRun.all if current_user&.admin?
+    return CdefCoverageRun.all if current_user&.instance_administrator?
 
     CdefCoverageRun.where(authorization_boundary_id: current_user.authorization_boundaries.ids + [ nil ])
   end

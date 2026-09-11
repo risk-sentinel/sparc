@@ -198,7 +198,7 @@ class AuthoritativeSourcesController < ApplicationController
     # Deliberately NOT `visible_resources`: that scope is `.active`, so an
     # archived source would 404 on the very screen that restores it.
     @resource = BackMatterResource.find(params[:id])
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if @resource.globally_available? ||
               current_user.organizations.ids.include?(@resource.organization_id)
 
@@ -207,7 +207,7 @@ class AuthoritativeSourcesController < ApplicationController
   end
 
   def authorize_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("back_matter.write")
 
     flash[:error] = "Not authorized to change authoritative sources"
@@ -218,7 +218,7 @@ class AuthoritativeSourcesController < ApplicationController
   # everything for an instance admin.
   def visible_resources
     base = BackMatterResource.active
-    return base if current_user.admin?
+    return base if current_user.instance_administrator?
 
     org_ids = current_user.organizations.ids
     if org_ids.any?
@@ -235,7 +235,7 @@ class AuthoritativeSourcesController < ApplicationController
   end
 
   def authorize_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("back_matter.read")
 
     flash[:error] = "Not authorized to view authoritative sources"

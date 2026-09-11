@@ -26,6 +26,13 @@ class User < ApplicationRecord
   # UserProvisioningService.
   STATUSES = %w[active suspended deactivated].freeze
 
+  # The JSONB containment test every permission lookup runs. Named because it
+  # appeared verbatim in three places (Sonar ruby:S1192) — and because the
+  # `@>` operator is easy to mistype into something that still parses and
+  # silently matches nothing, which on a permission check fails OPEN-looking:
+  # the user simply appears to have no permissions.
+  PERMISSION_MATCH_SQL = "roles.permissions @> ?"
+
   # Allow password_digest to be null for OIDC-only users
   has_secure_password validations: false
 
@@ -447,7 +454,7 @@ class User < ApplicationRecord
   #   user.has_role?("isso")                              # instance-level
   #   user.has_role?("isso", authorization_boundary_id: 5) # boundary-level
   def has_role?(role_name, authorization_boundary_id: nil)
-    return true if admin?
+    return true if instance_administrator?
 
     scope = user_roles.joins(:role).where(roles: { name: role_name })
     scope = scope.where(authorization_boundary_id: authorization_boundary_id) if authorization_boundary_id
@@ -463,32 +470,72 @@ class User < ApplicationRecord
 
   # ── Permission helpers ─────────────────────────────────────────────
 
+  # ── Instance-administrator AUTHORITY (#1044) ──────────────────────────────
+  #
+  # TWO THINGS THAT WERE ONE THING, and keeping them apart is the whole issue:
+  #
+  #   `admin?`                  IDENTITY — the dedicated break-glass account
+  #                             (e.g. sparc.admin@…). A boolean column, never
+  #                             reachable from an IdP claim by construction, so
+  #                             recovery survives any directory misconfiguration.
+  #
+  #   `instance_administrator?` AUTHORITY — may act with instance-wide power
+  #                             right now. Satisfied by the break-glass account,
+  #                             OR by an ordinary user (clem.field@…) holding an
+  #                             instance-scoped role carrying `admin.administer`.
+  #
+  # The second is what an IdP grants and revokes. Okta expires the group, the
+  # next sign-in revokes the grant (EntitlementSync, authoritative mode), and
+  # SPARC_SESSION_MAX_HOURS (#1043) bounds the tail of the session already open —
+  # so "time-boxed" is enforced by the directory rather than by anyone
+  # remembering to take it away.
+  #
+  # Deliberately NOT routed through has_permission?: that method short-circuits
+  # on this one, and asking it for "admin.administer" would recurse forever.
+  def instance_administrator?
+    return true if admin?
+
+    # NOT memoized, deliberately. The first version used `@x ||=` and its own
+    # spec caught the consequence: authority SURVIVED the grant being destroyed,
+    # because `reload` does not clear instance variables. Stale authorization is
+    # the one thing this predicate must never produce — a revoked administrator
+    # keeping power is the exact failure a time-boxed grant exists to prevent.
+    #
+    # `||=` was also worthless here: it never caches a `false`, which is the
+    # common case, so it skipped the work only for the users who need the check
+    # least. Wrong on both counts.
+    roles_granting("admin.administer").where(authorization_boundary_id: nil).exists?
+  end
+
   # Check if user has a specific granular permission, optionally scoped
-  # to an authorization boundary. Instance Admin bypasses all permission checks.
+  # to an authorization boundary. Instance-administrator authority bypasses all
+  # permission checks.
   #
   #   user.has_permission?("ssp.write")
   #   user.has_permission?("ssp.write", authorization_boundary_id: 5)
   def has_permission?(permission_key, authorization_boundary_id: nil)
-    return true if admin?
+    # #1044 — was `return true if admin?`. A time-boxed administrator that got
+    # past the admin gate and was then refused every individual permission would
+    # be a half-open door: the screens would open and the actions inside them
+    # would fail.
+    return true if instance_administrator?
 
-    role_scope = user_roles.joins(:role)
+    role_scope = roles_granting(permission_key)
     role_scope = if authorization_boundary_id
       role_scope.where(authorization_boundary_id: [ authorization_boundary_id, nil ])
     else
       role_scope.where(authorization_boundary_id: nil)
     end
 
-    role_scope.where("roles.permissions @> ?", { permission_key => true }.to_json).exists?
+    role_scope.exists?
   end
 
   # Check if the user has a permission in ANY boundary (or instance-level).
   # Used by the discovery endpoint to determine general capability.
   def has_any_permission?(permission_key)
-    return true if admin?
+    return true if instance_administrator?
 
-    user_roles.joins(:role)
-              .where("roles.permissions @> ?", { permission_key => true }.to_json)
-              .exists?
+    roles_granting(permission_key).exists?
   end
 
   # #770 bug 6 — org-admin membership on a specific organization. This is the
@@ -572,6 +619,16 @@ class User < ApplicationRecord
   end
 
   private
+
+  # The user_roles that grant `permission_key`, unscoped by boundary.
+  #
+  # All three permission lookups were building this same relation and differed
+  # only in how they filtered boundary afterwards, so the duplication was the
+  # predicate itself rather than just the SQL string. One definition means a
+  # change to how permissions are matched cannot land in two of three places.
+  def roles_granting(permission_key)
+    user_roles.joins(:role).where(PERMISSION_MATCH_SQL, { permission_key => true }.to_json)
+  end
 
   def normalize_email
     self.email = email.to_s.downcase.strip if email.present?

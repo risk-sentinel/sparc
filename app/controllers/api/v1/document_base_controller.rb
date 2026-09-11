@@ -111,7 +111,7 @@ class Api::V1::DocumentBaseController < Api::V1::BaseController
 
   # Boundary-scoped index: admin sees all, non-admin sees only their boundaries
   def scoped_documents
-    scope = if current_user.admin?
+    scope = if current_user.instance_administrator?
       document_class.all
     else
       boundary_ids = current_user.authorization_boundaries.ids
@@ -139,7 +139,7 @@ class Api::V1::DocumentBaseController < Api::V1::BaseController
   # ordinary boundary member does not. Evidence is not a DocumentBase subclass
   # and keeps its own rules.
   def authorize_document_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
 
     if @document.authorization_boundary_id.nil?
       return if current_user.has_permission?(read_permission_key)
@@ -157,7 +157,7 @@ class Api::V1::DocumentBaseController < Api::V1::BaseController
   # nothing on B. Kept symmetrical with
   # BoundaryScopedDocument#authorize_document_write!.
   def authorize_document_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
 
     current_id   = @document&.authorization_boundary_id
     requested_id = params.dig(document_param_key, :authorization_boundary_id).presence

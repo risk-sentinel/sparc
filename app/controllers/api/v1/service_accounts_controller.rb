@@ -199,7 +199,7 @@ class Api::V1::ServiceAccountsController < Api::V1::BaseController
       display_name: account.display_label,
       service_account: true,
       status: account.status,
-      admin: account.admin?,
+      admin: account.instance_administrator?,
       owner_id: account.owner_id,
       active_token_count: account.api_tokens.active.count
     }
@@ -222,7 +222,8 @@ class Api::V1::ServiceAccountsController < Api::V1::BaseController
     data
   end
 
-  def authorize_admin!
-    raise NotAuthorizedError, "Not authorized to manage service accounts" unless current_user.admin?
-  end
+  # #1044 — was a private authorize_admin! that SHADOWED the shared gate in
+  # concerns/authorization.rb. Only the wording differed, so only the wording
+  # is kept; the authority check now has exactly one definition.
+  def admin_required_message = "Not authorized to manage service accounts"
 end

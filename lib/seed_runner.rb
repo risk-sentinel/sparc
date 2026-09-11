@@ -24,7 +24,7 @@ module SeedRunner
     # is a re-import for the same reason 3.0.0 was.
     "nist_rev5_catalog"    => "3.1.0",
     "nist_rev4_catalog"    => "3.1.0",
-    "roles"                => "1.3.0",  # #947 evidence.attest on the 7 accountable boundary roles
+    "roles"                => "1.4.0",  # #1044 instance_admin role carrying admin.administer
     "admin_user"           => "1.1.0",
     "fedramp_20x_ksi"      => "1.0.0",
     "nist_rev4_rev5_mapping" => "1.0.0",

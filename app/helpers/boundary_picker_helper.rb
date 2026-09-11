@@ -41,7 +41,7 @@ module BoundaryPickerHelper
   # Returns AuthorizationBoundary.none for a nil user (signed-out render).
   def assignable_boundaries(user)
     return AuthorizationBoundary.none if user.nil?
-    return AuthorizationBoundary.order(:name) if user.admin?
+    return AuthorizationBoundary.order(:name) if user.instance_administrator?
 
     granted = user.authorization_boundaries.ids
     rostered = AuthorizationBoundary

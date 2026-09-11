@@ -126,7 +126,7 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
 
   # #575 Path D — admin shortcut + `profiles.write` permission gate.
   def authorize_profiles_write!
-    return if current_user&.admin?
+    return if current_user&.instance_administrator?
     return if current_user&.has_permission?("profiles.write")
 
     render json: { error: "Forbidden" }, status: :forbidden

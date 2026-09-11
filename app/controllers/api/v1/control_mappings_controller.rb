@@ -74,7 +74,7 @@ class Api::V1::ControlMappingsController < Api::V1::BaseController
 
   # #575 Path D — admin shortcut + `mappings.write` permission gate.
   def authorize_mappings_write!
-    return if current_user&.admin?
+    return if current_user&.instance_administrator?
     return if current_user&.has_permission?("mappings.write")
 
     render json: { error: "Forbidden" }, status: :forbidden

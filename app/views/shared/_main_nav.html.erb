@@ -122,7 +122,7 @@
                     </div>
                   </li>
                   <li><hr class="dropdown-divider"></li>
-                  <% if current_user.admin? %>
+                  <% if current_user.instance_administrator? %>
                     <li><h6 class="dropdown-header">Administration</h6></li>
                     <li><%= link_to "Users", admin_users_path, class: "dropdown-item" %></li>
                     <li><%= link_to "Roles", admin_roles_path, class: "dropdown-item" %></li>
@@ -248,7 +248,7 @@
                       <span>&#127970;</span> Organizations
                       <span class="badge bg-secondary ms-auto" style="font-size: 0.65rem;"><%= Organization.count %></span>
                     <% end %></li>
-                    <% if current_user&.admin? %>
+                    <% if current_user&.instance_administrator? %>
                       <li><%= link_to admin_service_accounts_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
                         <span>&#128272;</span> Service Accounts
                       <% end %></li>

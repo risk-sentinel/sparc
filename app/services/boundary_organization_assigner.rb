@@ -44,7 +44,7 @@ class BoundaryOrganizationAssigner
   private
 
   def authorize!
-    return if @actor.admin?
+    return if @actor.instance_administrator?
 
     if moving_between_organizations?
       raise MoveRequiresAdminError,

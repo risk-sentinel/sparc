@@ -22,7 +22,7 @@
   # Only an instance admin may choose the instance tier — see update_scope.
   # A non-admin looking at a CDEF that is ALREADY instance-wide still sees the
   # option, disabled, rather than a picker that silently misreports the state.
-  may_scope_instance = current_user&.admin?
+  may_scope_instance = current_user&.instance_administrator?
   instance_selected  = selected_scope == "instance"
 %>
 

@@ -393,7 +393,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   # #499 slice 3 — bulk-apply gated on converters.write (matches the
   # existing AWS Labs refresh authorization).
   def authorize_bulk_apply!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("converters.write")
 
     raise NotAuthorizedError, "Not authorized to bulk-apply converters"

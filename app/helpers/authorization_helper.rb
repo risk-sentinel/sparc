@@ -7,12 +7,12 @@ module AuthorizationHelper
   #   2. User is an Instance Admin
   #   3. User has the catalogs.write permission
   def can_write_catalogs?
-    !SparcConfig.any_auth_enabled? || current_user&.admin? || current_user&.has_permission?("catalogs.write")
+    !SparcConfig.any_auth_enabled? || current_user&.instance_administrator? || current_user&.has_permission?("catalogs.write")
   end
 
   # Check if the current user can perform write operations on control mappings.
   def can_write_mappings?
-    !SparcConfig.any_auth_enabled? || current_user&.admin? || current_user&.has_permission?("mappings.write")
+    !SparcConfig.any_auth_enabled? || current_user&.instance_administrator? || current_user&.has_permission?("mappings.write")
   end
 
   # #928 — mirrors ProfileDocumentsController#authorize_profiles_write!, so the
@@ -20,17 +20,17 @@ module AuthorizationHelper
   # through. Unscoped `profiles.write`: profiles are instance-level, not
   # boundary-scoped.
   def can_write_profiles?
-    !SparcConfig.any_auth_enabled? || current_user&.admin? || current_user&.has_permission?("profiles.write")
+    !SparcConfig.any_auth_enabled? || current_user&.instance_administrator? || current_user&.has_permission?("profiles.write")
   end
 
   # Check if the current user can perform write operations on converters.
   def can_write_converters?
-    !SparcConfig.any_auth_enabled? || current_user&.admin? || current_user&.has_permission?("converters.write")
+    !SparcConfig.any_auth_enabled? || current_user&.instance_administrator? || current_user&.has_permission?("converters.write")
   end
 
   # #629 — bulk delete is instance-admin-only; mirror authorize_admin! so the
   # UI only renders the controls when the action would actually be allowed.
   def can_bulk_delete?
-    !SparcConfig.any_auth_enabled? || current_user&.admin?
+    !SparcConfig.any_auth_enabled? || current_user&.instance_administrator?
   end
 end

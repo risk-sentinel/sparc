@@ -605,6 +605,24 @@ class AuditEvent < ApplicationRecord
   # added here that carries credential material would make the alert correct.
   def self.log(user: nil, action:, provider: nil, ip_address: nil,
                user_agent: nil, metadata: {}, subject: nil)
+    # #1044 — resolved BEFORE the create!, not inside its argument list. Two
+    # reasons, and the second is the load-bearing one:
+    #
+    #   1. The argument list was doing two things at once.
+    #   2. `create!` below carries a CodeQL dismissal (alert #24, false
+    #      positive, dismissed 2026-07-28 with a written rationale). Editing
+    #      that line changes its fingerprint, so the dismissal stops matching
+    #      and the SAME finding returns under a new alert number — which is
+    #      exactly what happened on the first push of this branch (#39). The
+    #      call is now byte-identical to main, so a settled disposition is not
+    #      disturbed by a change that has nothing to do with it.
+    #
+    # `admin_authority_metadata` returns at most
+    # `{"admin_authority" => "break_glass"|"instance_admin"}` — no new taint
+    # reaches `metadata`, so the dismissed verdict is unaffected on the merits
+    # as well as by fingerprint.
+    metadata = admin_authority_metadata(user).merge(metadata)
+
     event = create!(
       user: user,
       action: action,
@@ -638,5 +656,39 @@ class AuditEvent < ApplicationRecord
     event
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error("[AuditEvent] Failed to log #{action}: #{e.message}")
+  end
+
+  # #1044 — WHICH administrative authority was used.
+  #
+  # An action taken by the break-glass account and one taken by a time-boxed
+  # administrator are not the same event to an assessor, and after #1044 they
+  # are indistinguishable from the outside: both pass every gate. They have
+  # completely different provenance —
+  #
+  #   break_glass     a dedicated instance-admin account, established at boot,
+  #                   signing in locally with a credential checked out of a
+  #                   vault (EPV, AWS Secrets Manager). Attribution runs through
+  #                   the checkout record, not through SPARC.
+  #
+  #   instance_admin  an ordinary named person holding an IdP-granted,
+  #                   time-boxed instance role. Attribution is the person, and
+  #                   the directory decides when it ends.
+  #
+  # Recorded as metadata rather than a column: it is a property of the ACT, and
+  # backfilling a column for events logged before the distinction existed would
+  # mean inventing an answer. An event with no key predates #1044 or was not
+  # administrative — absent, not false.
+  #
+  # Caller metadata wins on key collision (see the merge order above), so this
+  # can never overwrite what a caller deliberately recorded.
+  #
+  # NIST 800-53: AU-3 (content of audit records — who), AU-3(1) (additional
+  # detail), AC-6(9) (audit the execution of privileged functions).
+  def self.admin_authority_metadata(user)
+    return {} if user.nil?
+    return { "admin_authority" => "break_glass" } if user.admin?
+    return {} unless user.instance_administrator?
+
+    { "admin_authority" => "instance_admin" }
   end
 end

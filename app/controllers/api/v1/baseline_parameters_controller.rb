@@ -165,7 +165,7 @@ class Api::V1::BaselineParametersController < Api::V1::BaseController
   # #574 — accept either numeric id or slug; same rationale as the
   # ksi_validations and #566 fixes.
   def authorize_profiles_write!
-    return if current_user&.admin?
+    return if current_user&.instance_administrator?
     return if current_user&.has_permission?("profiles.write")
 
     render json: { error: "Forbidden" }, status: :forbidden

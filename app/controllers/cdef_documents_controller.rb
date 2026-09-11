@@ -400,7 +400,7 @@ class CdefDocumentsController < ApplicationController
     # the requester is not a member of. That is instance authority, so it is
     # admin-only, and refused here rather than in the service so the service
     # stays usable from a console and from the seeds.
-    if requested_scope.to_s == "instance" && !current_user&.admin?
+    if requested_scope.to_s == "instance" && !current_user&.instance_administrator?
       flash[:error] = "Only an instance administrator can make a component definition available instance-wide."
       return redirect_to cdef_document_path(@cdef_document)
     end
@@ -668,7 +668,7 @@ class CdefDocumentsController < ApplicationController
 
   # #499 slice 5 — bulk-apply web UI auth helpers.
   def authorize_bulk_apply_web!
-    return if current_user&.admin?
+    return if current_user&.instance_administrator?
     return if current_user&.has_permission?("converters.write")
 
     flash[:error] = "Not authorized to bulk-apply converters."

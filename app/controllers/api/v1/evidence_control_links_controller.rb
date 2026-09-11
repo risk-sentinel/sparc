@@ -122,14 +122,14 @@ class Api::V1::EvidenceControlLinksController < Api::V1::BaseController
   end
 
   def authorize_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("evidence.read")
 
     raise NotAuthorizedError, "Not authorized to view evidence control links"
   end
 
   def authorize_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
 
     boundary_id = @evidence&.authorization_boundary_id
     return if current_user.has_permission?("evidence.write", authorization_boundary_id: boundary_id)

@@ -161,7 +161,7 @@ class Api::V1::AttestationsController < Api::V1::BaseController
   # instance-level grant passed for every boundary at once. Passing the boundary
   # is what makes the two surfaces answer the same question.
   def authorize_read!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("evidence.read",
                                            authorization_boundary_id: @evidence&.authorization_boundary_id)
 
@@ -169,7 +169,7 @@ class Api::V1::AttestationsController < Api::V1::BaseController
   end
 
   def authorize_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("evidence.write",
                                            authorization_boundary_id: @evidence&.authorization_boundary_id)
 

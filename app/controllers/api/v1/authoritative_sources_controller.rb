@@ -157,7 +157,7 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
 
   def set_source
     @source = BackMatterResource.find(params[:id])
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if @source.globally_available? ||
               current_user.organizations.ids.include?(@source.organization_id)
 
@@ -165,7 +165,7 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
   end
 
   def visible_sources
-    return BackMatterResource.all if current_user.admin?
+    return BackMatterResource.all if current_user.instance_administrator?
 
     org_ids = current_user.organizations.ids
     if org_ids.any?
@@ -176,7 +176,7 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
   end
 
   def authorize_write!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("back_matter.write")
 
     raise NotAuthorizedError, "Not authorized to change authoritative sources"
@@ -201,7 +201,7 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
   end
 
   def authorize_federate!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.has_permission?("back_matter.federate")
 
     raise NotAuthorizedError, "Not authorized to federate authoritative sources"

@@ -162,7 +162,7 @@ class Attestation < ApplicationRecord
     # it. A UI-only constraint blocking something the model permits is precisely
     # the defect #947 was filed about; reintroducing one here would be its own
     # small joke.
-    return permitted if user.admin?
+    return permitted if user.instance_administrator?
 
     held = user.user_roles
     if authorization_boundary_id.present?
@@ -217,7 +217,7 @@ class Attestation < ApplicationRecord
     # other permission check in the app. They still name a real attesting role,
     # so the recorded claim stays inside the closed vocabulary and reads the
     # same as anyone else's.
-    if attester_user.admin?
+    if attester_user.instance_administrator?
       return self.class.attestable_roles(authorization_boundary_id: boundary_id).exists?(name: role)
     end
 
@@ -266,7 +266,7 @@ class Attestation < ApplicationRecord
     # admins clear everywhere. The role still has to be a real attesting one, so
     # an admin cannot invent a title; they can only assert under an authority
     # the instance actually recognises.
-    if attester_user.admin?
+    if attester_user.instance_administrator?
       return if self.class.attestable_roles(authorization_boundary_id: boundary_id).exists?(name: role)
 
       errors.add(:role, "'#{role_label}' is not a role that may attest. " \

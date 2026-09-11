@@ -158,7 +158,7 @@ class Api::V1::UsersController < Api::V1::BaseController
   end
 
   def authorize_admin_or_self!
-    return if current_user.admin?
+    return if current_user.instance_administrator?
     return if current_user.id == @user.id
 
     raise NotAuthorizedError, "Not authorized to access this user"
