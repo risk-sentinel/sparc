@@ -486,7 +486,7 @@ an Okta-specific configuration guide.
 | SPARC_OIDC_REDIRECT_URI | Callback URL registered with IdP (must match exactly) | (auto) | `https://sparc.yourdomain.com/auth/oidc/callback` | Yes (if enabled) |
 | SPARC_OIDC_SCOPES | Space-separated OIDC scopes to request | `openid profile email` | `openid profile email groups offline_access` | No |
 | SPARC_OIDC_PROVIDER_TITLE | Display name shown on login button and tab | SSO | `Corporate Login (Okta)` | No |
-| SPARC_OIDC_FORCE_MFA | **NOT IMPLEMENTED — this variable is never read.** It is listed here because it appears in older configuration examples and in some compliance prose. MFA enforcement is `SPARC_REQUIRE_AUTH_METHODS` (#805); phishing-resistant hardware keys are `SPARC_REQUIRE_FIDO2` (#802). Setting this has no effect whatsoever. | (unread) | — | No |
+| SPARC_OIDC_FORCE_MFA | **NOT IMPLEMENTED — setting it has no effect.** `SparcConfig#oidc_force_mfa?` exists and reads it, but that predicate has **zero call sites**: nothing consults it, so no MFA is forced. It defaults to `true`, which makes it look like an active control. It is listed here because it appears in older configuration examples and in some compliance prose. MFA enforcement is `SPARC_REQUIRE_AUTH_METHODS` (#805); phishing-resistant hardware keys are `SPARC_REQUIRE_FIDO2` (#802). Setting this has no effect whatsoever. | (unread) | — | No |
 
 #### IdP-mediated entitlements (#860, v1.16.0)
 
