@@ -29,7 +29,10 @@
 - Compatible with: Okta, Keycloak, Entra ID, Auth0, and other OIDC-compliant providers
 - Custom scopes via `SPARC_OIDC_SCOPES` (default: `"openid profile email"`)
 - Button text via `SPARC_OIDC_PROVIDER_TITLE` (default: `"SSO"`)
-- MFA enforcement via `SPARC_OIDC_FORCE_MFA` (validates ACR/amr claims)
+- MFA enforcement: `SPARC_REQUIRE_AUTH_METHODS` (#805), or `SPARC_REQUIRE_FIDO2`
+  for hardware keys. **`SPARC_OIDC_FORCE_MFA` does nothing** — a predicate reads
+  it but nothing calls that predicate, so the value never reaches a decision.
+  It defaults to `true`, which makes it read like an active control (#1120)
 - Related: [Issue #33](https://github.com/risk-sentinel/sparc/issues/33) (Okta), [Issue #35](https://github.com/risk-sentinel/sparc/issues/35) (generic OIDC)
 
 #### Asking the IdP for more than the default scopes
@@ -120,9 +123,12 @@ Adopt in that order. `off` → `bootstrap` → `authoritative` is a ladder;
 - **It never removes a role an administrator granted.** Revocation is limited to
   memberships the sync itself created, so an in-app grant survives any claim,
   any misconfiguration, and any empty group.
-- **It never grants instance admin.** Instance Admin is not a role, so no claim
-  can confer it — which is what keeps a break-glass recovery path open no matter
-  what your directory says.
+- **It never grants the break-glass account.** That is the `admin` COLUMN, not a
+  role, so no claim can reach it — which keeps a recovery path open no matter
+  what your directory says. Since v1.16.1 a claim *can* confer instance-
+  administrator **authority** via the `instance_admin` role, if you allowlist it
+  (see below); that authority is time-boxed by your IdP and cannot create a
+  permanent administrator.
 - **A MISSING claim is an error, not "revoke everything."** If the claim name is
   wrong or the scope was not released, SPARC changes nothing and records why.
   Only an *empty* claim means "this person has no grants."
