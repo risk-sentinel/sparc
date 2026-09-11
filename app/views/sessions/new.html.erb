@@ -1,67 +1,64 @@
-<% if SparcConfig.any_auth_enabled? %>
-  <%# ── Tab Navigation ────────────────────────────────────────────── %>
-  <ul class="nav nav-tabs nav-fill mb-3" role="tablist" style="font-size: 0.85rem;">
-    <% tab_index = 0 %>
+<%# ── Login page (#1082) ──────────────────────────────────────────────────
 
-    <%# Inline event-handler attributes (onclick=, onload=, etc.) are
-        blocked by the v1.7.0 CSP — no 'unsafe-inline' in script-src,
-        and the per-page nonce only exempts nonce-attributed script
-        blocks. Click delegation happens in the nonced script block
-        in the login layout, keyed off data-tab. v1.8.1 hotfix. %>
-    <% if SparcConfig.enable_local_login? %>
-      <li class="nav-item flex-fill" role="presentation">
-        <button class="nav-link w-100 fw-semibold <%= 'active' if tab_index == 0 %>"
-                data-tab="tab-local"
-                type="button" role="tab">
-          Local Login
-        </button>
-      </li>
-      <% tab_index += 1 %>
-    <% end %>
+    Two rules govern what appears here:
 
-    <% if SparcConfig.enable_oidc? %>
-      <li class="nav-item flex-fill" role="presentation">
-        <button class="nav-link w-100 fw-semibold <%= 'active' if tab_index == 0 %>"
-                data-tab="tab-oidc"
-                type="button" role="tab">
-          <%= SparcConfig.oidc_provider_title %>
-        </button>
-      </li>
-      <% tab_index += 1 %>
-    <% end %>
+    1. Offer only methods that can actually HOLD a session. When
+       SPARC_REQUIRE_AUTH_METHODS is set, signing in with a method outside it
+       succeeds and is then ended on the very next request (#805's
+       check_required_auth_method) — which reads to the user as SPARC signing
+       them out at random. SparcConfig#offer_auth_method? answers both halves:
+       is the method usable, and would the gate accept it.
 
-    <% if SparcConfig.enable_ldap? %>
-      <li class="nav-item flex-fill" role="presentation">
-        <button class="nav-link w-100 fw-semibold <%= 'active' if tab_index == 0 %>"
-                data-tab="tab-ldap"
-                type="button" role="tab">
-          LDAP
-        </button>
-      </li>
-      <% tab_index += 1 %>
-    <% end %>
-  </ul>
+    2. A method whose entire panel is ONE BUTTON is not a tab. OIDC used to be
+       a tab containing a single "Sign in with <provider>" button, so reaching
+       an Okta login took two clicks while FIDO2, PIV, GitHub and GitLab — all
+       equally one-button methods — sat one click away in the button stack.
+       Tabs are now for form-based methods only (local, LDAP); every SSO method
+       renders the same way as every other SSO method.
+%>
+<% form_methods = %w[local ldap].select { |m| SparcConfig.offer_auth_method?(m) } %>
+<% sso_methods  = %w[oidc fido2 piv github gitlab].select { |m| SparcConfig.offer_auth_method?(m) } %>
 
-  <%# ── Tab Panels ────────────────────────────────────────────────── %>
-  <% panel_index = 0 %>
+<%# Break-glass: local login is usable but the required-methods policy excludes
+    it. The gate exempts the bootstrap administrator and service accounts from
+    that policy (auth_gate_exempt_user?), so hiding the form outright would
+    leave the break-glass account with no door — during an IdP outage, which is
+    exactly when it matters. Reachable, but demoted out of the way so ordinary
+    users are steered to the method their organization requires. %>
+<% break_glass_local = SparcConfig.auth_method_usable?("local") && !SparcConfig.offer_auth_method?("local") %>
+
+<% if form_methods.any? || sso_methods.any? %>
+  <% if SparcConfig.require_auth_methods? %>
+    <p class="text-body-secondary small text-center mb-3">
+      Your organization requires signing in with
+      <strong><%= SparcConfig.required_auth_methods.join(" or ") %></strong>.
+    </p>
+  <% end %>
+
+  <%# ── Tab Navigation — form-based methods only ──────────────────── %>
+  <% if form_methods.size > 1 %>
+    <ul class="nav nav-tabs nav-fill mb-3 sparc-fs-085" role="tablist">
+      <%# Inline event-handler attributes (onclick=, onload=, etc.) are
+          blocked by the v1.7.0 CSP — no 'unsafe-inline' in script-src,
+          and the per-page nonce only exempts nonce-attributed script
+          blocks. Click delegation happens in the nonced script block
+          in the login layout, keyed off data-tab. v1.8.1 hotfix. %>
+      <% form_methods.each_with_index do |method, index| %>
+        <li class="nav-item flex-fill" role="presentation">
+          <button class="nav-link w-100 fw-semibold <%= 'active' if index.zero? %>"
+                  data-tab="tab-<%= method %>"
+                  type="button" role="tab">
+            <%= method == "local" ? "Local Login" : "LDAP" %>
+          </button>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
 
   <%# ── Local Login ─────────────────────────────────────────── %>
-  <% if SparcConfig.enable_local_login? %>
-    <div id="tab-local" class="login-tab-panel <%= 'active' if panel_index == 0 %>">
-      <%= form_tag login_path, method: :post do %>
-        <div class="mb-2">
-          <label for="email" class="form-label fw-semibold mb-1">Email Address</label>
-          <input type="email" name="email" id="email" class="form-control form-control-sm"
-                 placeholder="you@example.com" required autofocus
-                 value="<%= params[:email] %>">
-        </div>
-        <div class="mb-2">
-          <label for="password" class="form-label fw-semibold mb-1">Password</label>
-          <input type="password" name="password" id="password" class="form-control form-control-sm"
-                 placeholder="Enter your password" required>
-        </div>
-        <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm w-100 fw-semibold">Sign In</button>
-      <% end %>
+  <% if form_methods.include?("local") %>
+    <div id="tab-local" class="login-tab-panel <%= 'active' if form_methods.first == 'local' %>">
+      <%= render "sessions/local_form", id_prefix: "", autofocus: true %>
 
       <% if SparcConfig.enable_registration? %>
         <div class="d-flex align-items-center my-2 text-body-tertiary">
@@ -70,30 +67,11 @@
         <%= link_to "Create Account", register_path, class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm w-100 fw-semibold" %>
       <% end %>
     </div>
-    <% panel_index += 1 %>
-  <% end %>
-
-  <%# ── OIDC / SSO ─────────────────────────────────────────── %>
-  <% if SparcConfig.enable_oidc? %>
-    <div id="tab-oidc" class="login-tab-panel <%= 'active' if panel_index == 0 %>">
-      <div class="text-center p-3">
-        <p class="text-body-secondary mb-4 small">
-          Sign in with your organization's identity provider
-        </p>
-        <%# POST form for CSRF safety (OmniAuth requires POST) %>
-        <%= form_tag "/auth/oidc", method: :post, data: { turbo: false } do %>
-          <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm w-100 fw-semibold">
-            Sign in with <%= SparcConfig.oidc_provider_title %>
-          </button>
-        <% end %>
-      </div>
-    </div>
-    <% panel_index += 1 %>
   <% end %>
 
   <%# ── LDAP ───────────────────────────────────────────────── %>
-  <% if SparcConfig.enable_ldap? %>
-    <div id="tab-ldap" class="login-tab-panel <%= 'active' if panel_index == 0 %>">
+  <% if form_methods.include?("ldap") %>
+    <div id="tab-ldap" class="login-tab-panel <%= 'active' if form_methods.first == 'ldap' %>">
       <%= form_tag login_path, method: :post do %>
         <input type="hidden" name="auth_method" value="ldap">
         <div class="mb-2">
@@ -109,44 +87,49 @@
         <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm w-100 fw-semibold">Sign In with LDAP</button>
       <% end %>
     </div>
-    <% panel_index += 1 %>
   <% end %>
 
-  <%# ── FIDO2 security key (passwordless — the key + PIN is the login) ── %>
-  <% if SparcConfig.fido2_enabled? %>
-    <div class="d-flex align-items-center my-2 text-body-tertiary">
-      <hr class="flex-grow-1 m-0"><span class="px-3">or</span><hr class="flex-grow-1 m-0">
-    </div>
-    <div data-controller="webauthn"
-         data-webauthn-auth-options-url-value="<%= webauthn_authentication_options_path %>"
-         data-webauthn-auth-url-value="<%= webauthn_session_path %>">
-      <button type="button" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm w-100 fw-semibold"
-              data-webauthn-target="submit"
-              data-action="webauthn#login">
-        Sign in with a security key
-      </button>
-      <output class="alert mt-2 small d-block" hidden data-webauthn-target="status"></output>
-    </div>
-  <% end %>
+  <%# ── SSO / passwordless methods — all one-button, all rendered alike ── %>
+  <% if sso_methods.any? %>
+    <% if form_methods.any? %>
+      <div class="d-flex align-items-center my-2 text-body-tertiary">
+        <hr class="flex-grow-1 m-0"><span class="px-3">or sign in with</span><hr class="flex-grow-1 m-0">
+      </div>
+    <% end %>
 
-  <%# ── PIV / CAC smart-card (cert + PIN, validated by the gateway) ── %>
-  <%# #808 — with SPARC_PIV_LOGIN_REQUIRES_CERT, show only when a verified cert %>
-  <%# was forwarded on this login request; default keeps the always-show button. %>
-  <% if show_piv_login_button? %>
-    <div class="d-flex align-items-center my-2 text-body-tertiary">
-      <hr class="flex-grow-1 m-0"><span class="px-3">or</span><hr class="flex-grow-1 m-0">
-    </div>
-    <%= link_to "Sign in with your CAC / smart card", piv_session_path,
-          class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm w-100 fw-semibold", data: { turbo: false } %>
-  <% end %>
-
-  <%# ── SSO Buttons (GitHub / GitLab) ───────────────────── %>
-  <% if SparcConfig.github_enabled? || SparcConfig.gitlab_enabled? %>
-    <div class="d-flex align-items-center my-2 text-body-tertiary">
-      <hr class="flex-grow-1 m-0"><span class="px-3">or sign in with</span><hr class="flex-grow-1 m-0">
-    </div>
     <div class="d-grid gap-2">
-      <% if SparcConfig.github_enabled? %>
+      <% if sso_methods.include?("oidc") %>
+        <%# POST form for CSRF safety (OmniAuth requires POST) %>
+        <%= form_tag "/auth/oidc", method: :post, data: { turbo: false } do %>
+          <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm w-100 fw-semibold">
+            Sign in with <%= SparcConfig.oidc_provider_title %>
+          </button>
+        <% end %>
+      <% end %>
+
+      <%# FIDO2 security key (passwordless — the key + PIN is the login) %>
+      <% if sso_methods.include?("fido2") %>
+        <div data-controller="webauthn"
+             data-webauthn-auth-options-url-value="<%= webauthn_authentication_options_path %>"
+             data-webauthn-auth-url-value="<%= webauthn_session_path %>">
+          <button type="button" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm w-100 fw-semibold"
+                  data-webauthn-target="submit"
+                  data-action="webauthn#login">
+            Sign in with a security key
+          </button>
+          <output class="small" hidden data-webauthn-target="status"></output>
+        </div>
+      <% end %>
+
+      <%# PIV / CAC smart-card (cert + PIN, validated by the gateway).
+          #808 — with SPARC_PIV_LOGIN_REQUIRES_CERT, show only when a verified
+          cert was forwarded on this login request; the default always shows. %>
+      <% if sso_methods.include?("piv") && show_piv_login_button? %>
+        <%= link_to "Sign in with your CAC / smart card", piv_session_path,
+              class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm w-100 fw-semibold", data: { turbo: false } %>
+      <% end %>
+
+      <% if sso_methods.include?("github") %>
         <%= form_tag "/auth/github", method: :post, data: { turbo: false } do %>
           <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm w-100 fw-semibold">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-github me-1" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -154,7 +137,8 @@
           </button>
         <% end %>
       <% end %>
-      <% if SparcConfig.gitlab_enabled? %>
+
+      <% if sso_methods.include?("gitlab") %>
         <%= form_tag "/auth/gitlab", method: :post, data: { turbo: false } do %>
           <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm w-100 fw-semibold text-dark">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 512 512"><path d="M503.5 204.6L502.8 202.8L433.1 21C431.7 17.5 429.2 14.4 425.9 12.4C422.8 10.4 419.3 9.3 415.7 9.5C412.1 9.6 408.6 10.9 405.7 13.1C402.8 15.3 400.6 18.4 399.4 21.9L347.6 154.5H164.6L112.8 21.9C111.6 18.4 109.4 15.3 106.5 13.1C103.6 10.9 100.1 9.6 96.5 9.5C92.9 9.4 89.4 10.4 86.3 12.4C83 14.4 80.5 17.5 79.1 21L9.3 202.8L8.5 204.6C-1.5 230.8-2.7 259.6 5 286.3C12.6 313.1 29.1 336.6 51.4 353.5L51.7 353.7L52.7 354.4L163.5 437L217.9 479L251.2 504.4C254.2 506.7 257.8 508 261.5 508C265.2 508 268.8 506.7 271.8 504.4L305.1 479L359.5 437L470.5 354.4L470.6 354.3C492.9 337.4 509.4 313.8 517.1 287C524.7 260.2 523.6 231.4 513.6 205.2L503.5 204.6Z"/></svg>
@@ -165,16 +149,44 @@
     </div>
   <% end %>
 
+  <%# ── Break-glass administrator sign-in ─────────────────────────── %>
+  <% if break_glass_local %>
+    <details class="mt-3">
+      <summary class="small text-body-secondary">Administrator sign-in</summary>
+      <p class="text-body-secondary small mt-2 mb-2">
+        Email and password is not an accepted method for this instance. It
+        remains available to the break-glass administrator account only —
+        every other account is signed out again immediately after using it.
+      </p>
+      <%= render "sessions/local_form", id_prefix: "breakglass-", autofocus: false %>
+    </details>
+  <% end %>
+
 <% else %>
-  <%# ── No Auth Configured ──────────────────────────────────── %>
+  <%# ── No usable auth method ───────────────────────────────── %>
   <div class="text-center p-4">
-    <div style="font-size: 2.5rem;" class="mb-2">&#128274;</div>
-    <h3 class="mb-2">Authentication Not Configured</h3>
-    <p class="text-body-secondary small">
-      No authentication methods are currently enabled.
-      Set one or more <code>SPARC_ENABLE_*</code> environment variables
-      to activate login.
-    </p>
+    <div class="sparc-fs-25r mb-2">&#128274;</div>
+
+    <% if SparcConfig.require_auth_methods? %>
+      <%# The lockout shape #1082 exists to prevent: a policy demanding methods
+          that are not usable. In production this raises at BOOT
+          (zz_auth_posture.rb) and is never reached; this is the development
+          and test face of the same misconfiguration. %>
+      <h3 class="mb-2">No Usable Sign-In Method</h3>
+      <p class="text-body-secondary small">
+        <code>SPARC_REQUIRE_AUTH_METHODS</code> requires
+        <strong><%= SparcConfig.required_auth_methods.join(", ") %></strong>,
+        and none of those is configured on this instance.
+      </p>
+    <% else %>
+      <h3 class="mb-2">Authentication Not Configured</h3>
+      <p class="text-body-secondary small">
+        No authentication methods are currently enabled.
+        Set one or more <code>SPARC_ENABLE_*</code> environment variables
+        to activate login.
+      </p>
+    <% end %>
+
     <p class="mt-3 small">
       See
       <a href="https://github.com/risk-sentinel/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md"

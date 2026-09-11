@@ -172,6 +172,72 @@ the person signed in. A separate `piv_asserted_by_idp` event records the claim
 and value that satisfied the requirement, which is what an assessor asks for
 when they want to know *why* SPARC accepted a login as PIV.
 
+## Requiring a method — enable vs require (#1082)
+
+`SPARC_REQUIRE_AUTH_METHODS` is the gate. A session established by a method
+outside the list is ended on the next request, so the list decides what may
+hold a session — not merely what is offered.
+
+**Since v1.16.1, requiring a method also enables it.** Requiring is the
+strongest statement of intent there is, so you set one variable rather than two:
+
+```bash
+SPARC_REQUIRE_AUTH_METHODS="oidc,piv"
+SPARC_OIDC_CLIENT_ID="…"            # still required — see below
+```
+
+Two rules govern the pairing:
+
+- **A requirement turns a switch on.** `local`, `ldap`, `piv` and `fido2` need
+  no credential, so requiring one enables it. An explicit `SPARC_ENABLE_*=false`
+  still wins — that is how you say "required everywhere else, not reachable
+  here".
+- **A requirement cannot invent a credential.** `oidc`, `github` and `gitlab`
+  still need their client id, and `ldap` still needs `SPARC_LDAP_HOST`. Requiring
+  them without that configuration makes them *required but unusable*.
+
+### A policy that cannot be satisfied now fails at boot
+
+Before v1.16.1 nothing checked that a required method was usable. This
+configuration
+
+```bash
+SPARC_REQUIRE_AUTH_METHODS="oidc,piv"
+# SPARC_ENABLE_PIV unset, no SPARC_OIDC_CLIENT_ID
+```
+
+started cleanly and then ended every session on the next request, redirecting to
+a login page that offered nothing capable of satisfying the gate. It failed at
+**request** time, so it deployed green and locked the instance.
+
+Now:
+
+| Situation | What happens |
+|-----------|--------------|
+| **No** required method is usable | **Production refuses to start**, naming the missing variable. Other environments log the same message and the login page shows it on screen |
+| **Some** required methods usable, some not | Boots, with a warning. Not a lockout — the list is an OR, so people sign in with one that works — but nobody can choose the broken one |
+| All usable | Boots, logging the posture it resolved |
+
+### The login page offers only what can hold a session
+
+A method the gate will refuse is no longer displayed. Signing in with one used
+to *succeed* and then end on the very next request, which reads to a user as
+SPARC signing them out at random.
+
+One consequence is deliberate: when your policy excludes email-and-password,
+the login form is demoted to an **"Administrator sign-in"** disclosure rather
+than removed. The break-glass bootstrap admin (`SPARC_ADMIN_EMAIL`) and service
+accounts are exempt from the gate, and removing the form outright would leave
+that account no way in during an IdP outage — exactly when it is needed.
+
+> **`SPARC_OIDC_FORCE_MFA` does nothing.** A predicate reads it
+> (`SparcConfig#oidc_force_mfa?`) but nothing calls that predicate, so the value
+> never reaches a decision. It defaults to `true`, which makes it read like an
+> active control it has never been.
+> MFA enforcement is `SPARC_REQUIRE_AUTH_METHODS`; hardware-key enforcement is
+> `SPARC_REQUIRE_FIDO2`. It survives in older examples and some compliance
+> prose, and setting it has no effect.
+
 ## Compliance
 
 | Control | How SPARC meets it |

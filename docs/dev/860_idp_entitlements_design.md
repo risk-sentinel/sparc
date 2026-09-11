@@ -230,8 +230,12 @@ of not handing customers a cliff.
    applied and unmatched with a named reason for each.
 3. `EntitlementSync#dry_run` — the diff, computed and reported, applying nothing.
 4. `EntitlementSync#apply` — modes `off` / `bootstrap` / `authoritative`.
-5. Blast-radius guard — refuse a sync revoking more than
-   `SPARC_OIDC_SYNC_MAX_REVOKE_PCT` (default 25%) without confirmation.
+5. ~~Blast-radius guard — refuse a sync revoking more than
+   `SPARC_OIDC_SYNC_MAX_REVOKE_PCT` (default 25%) without confirmation.~~
+   **REMOVED in v1.16.1 (#1059).** It shipped defaulting to `0` (disabled) and
+   was withdrawn: a threshold that applies only PART of a plan leaves SPARC and
+   the directory disagreeing about who holds what. Defences 1, 2 and 6 remain
+   and are what actually bound the blast radius.
 6. Instance-role protection and the last-admin guard.
 7. Unmatched-grant queue for the instance admin.
 8. Audit events per grant applied, skipped and revoked, **registered in
@@ -338,7 +342,7 @@ listed here only so the console work is done in one sitting.
 | `SPARC_OIDC_GRANTS_CLAIM` | `groups` | Which claim carries grants |
 | `SPARC_OIDC_GRANTS_PREFIX` | `sparc:` | Filter applied before parsing |
 | `SPARC_OIDC_SYNC_MODE` | `off` | `off` / `bootstrap` / `authoritative` |
-| `SPARC_OIDC_SYNC_MAX_REVOKE_PCT` | `25` | Blast-radius guard |
+| ~~`SPARC_OIDC_SYNC_MAX_REVOKE_PCT`~~ | ~~`25`~~ | ~~Blast-radius guard~~ — shipped as `0`, **removed in v1.16.1 (#1059)** |
 
 All four go in `docs/ENVIRONMENT_VARIABLES.md` and the wiki when the code lands.
 

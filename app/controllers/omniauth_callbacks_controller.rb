@@ -129,7 +129,7 @@ class OmniauthCallbacksController < ApplicationController
                                claim_present: claims.present?).apply
 
     Rails.logger.info("[EntitlementSync] #{user.email}: #{plan.summary}")
-    log_sync_problem(user, plan) if plan.error? || plan.blocked?
+    log_sync_problem(user, plan) if plan.error?
     warn_about_unmatched(plan)
   rescue StandardError => e
     # A sync failure must not deny a user their session: they authenticated
@@ -161,7 +161,7 @@ class OmniauthCallbacksController < ApplicationController
   end
 
   def log_sync_problem(user, plan)
-    reason = plan.error || plan.blocked_reason
+    reason = plan.error
     Rails.logger.warn("[EntitlementSync] #{user.email}: #{reason}")
     AuditEvent.log(user: user, action: "idp_sync_failed", provider: "oidc",
                    ip_address: request.remote_ip, metadata: { reason: reason })

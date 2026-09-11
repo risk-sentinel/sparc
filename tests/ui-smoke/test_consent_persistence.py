@@ -127,16 +127,22 @@ def test_login_tabs_are_clickable_after_consent(page):
             "#833 symptom: tabs look enabled but cannot be selected."
         ) from exc
 
-    oidc_tab = page.locator("button[data-tab='tab-oidc']")
-    if oidc_tab.count() == 0:
-        pytest.skip("OIDC is not enabled on this instance")
+    # #1082 — this used to click the OIDC TAB, which no longer exists (OIDC is a
+    # button on the landing view). The subject was never OIDC: it is whether a
+    # real pointer event REACHES a control on the revealed card, which is the
+    # #833 symptom — controls look enabled but the backdrop swallows clicks.
+    # The email field is the equivalent probe and, unlike a sign-in button, it
+    # does not navigate away mid-assertion.
+    email = page.locator("#email")
+    if email.count() == 0:
+        pytest.skip("no local login form on this instance")
 
     # A real click, with a short timeout. If anything is intercepting pointer
     # events this raises rather than silently retrying until the page settles.
-    oidc_tab.first.click(timeout=2000)
+    email.first.click(timeout=2000)
 
-    assert page.locator("#tab-oidc.active").count() == 1, (
-        "clicking the OIDC tab did not activate its panel — the click did not reach the button"
+    assert email.first.evaluate("el => el === document.activeElement"), (
+        "clicking the email field did not focus it — the click did not reach the control"
     )
 
 

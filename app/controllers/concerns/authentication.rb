@@ -324,15 +324,13 @@ module Authentication
   # in, so this is inert unless configured.
   def piv_asserted_by_idp? = session[:piv_assertion].present?
 
-  def provider_tokens(provider)
-    case provider
-    when "openid_connect" then %w[openid_connect oidc sso]
-    when "github"         then %w[github sso oauth]
-    when "gitlab"         then %w[gitlab sso oauth]
-    when "webauthn"       then %w[webauthn fido2]
-    else                       [ provider ] # local, ldap, piv, api_token
-    end
-  end
+  # #1082 — the table moved to SparcConfig::AUTH_METHOD_TOKENS so the login page
+  # can ask the same question this gate answers. It was private here, so the
+  # page had no way to know which methods the gate would accept and offered
+  # methods it would refuse — a successful sign-in ended on the next request.
+  # Same values, one definition; two copies of an alias table drifting apart is
+  # the failure this consolidation exists to prevent.
+  def provider_tokens(provider) = SparcConfig.auth_method_tokens(provider)
 
   # How the current session authenticated (set by start_session, #802).
   def current_auth_provider

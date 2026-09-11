@@ -155,7 +155,10 @@ export default class WebauthnController extends Controller {
   setStatus(message, variant) {
     if (!this.hasStatusTarget) return
     this.statusTarget.textContent = message
-    this.statusTarget.className = `alert alert-${variant} mt-3`
+    // d-block here, NOT in the markup: a display utility in the hidden state
+    // outranks the `hidden` attribute (!important) and paints an empty alert box
+    // that silently spaces out whatever sits around it.
+    this.statusTarget.className = `alert alert-${variant} mt-3 d-block`
     this.statusTarget.hidden = false
   }
 

@@ -19,7 +19,11 @@ RSpec.describe "Accessibility (WCAG 2.1 AA)", type: :system do
 
     visit "/login"
     accept_consent_banner
-    expect(page).to have_button("Local Login")
+    # Readiness probe for the axe assertion below, NOT the assertion itself.
+    # It used to wait on the "Local Login" TAB button, which #1082 removed —
+    # with local login the only form-based method there is no tab bar to render.
+    # The sign-in button is present in every configuration that offers a form.
+    expect(page).to have_button("Sign In")
 
     expect(page).to be_axe_clean
       .according_to(*SparcAxe::WCAG_2_1_AA)

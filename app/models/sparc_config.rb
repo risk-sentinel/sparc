@@ -223,7 +223,15 @@ module SparcConfig
   # ── Authentication Toggles ────────────────────────────────────────────────
   # All default to false — features must be explicitly enabled.
 
-  def enable_local_login?  = ENV.fetch("SPARC_ENABLE_LOCAL_LOGIN", "false") == "true"
+  # #1082 — a requirement is the strongest possible statement of intent to
+  # enable. `SPARC_REQUIRE_AUTH_METHODS="piv"` used to demand a method it did
+  # not turn on, which locked every non-break-glass user out at request time.
+  # Same infer-enable-from-config pattern as #785 and #802, and an explicit
+  # SPARC_ENABLE_*=false still wins, exactly as it does for enable_oidc?.
+  #
+  # Only the SWITCH-style methods infer. oidc/github/gitlab need a credential
+  # that a requirement cannot supply — see auth_method_usable?.
+  def enable_local_login?  = auth_switch_enabled?("SPARC_ENABLE_LOCAL_LOGIN", "local")
 
   # #785 — inferred from the credential. Configuring an OIDC client ID is an
   # unambiguous statement of intent, and the inference can only turn ON a
@@ -235,7 +243,7 @@ module SparcConfig
     oidc_client_id.present?
   end
 
-  def enable_ldap?         = ENV.fetch("SPARC_ENABLE_LDAP", "false") == "true"
+  def enable_ldap?         = auth_switch_enabled?("SPARC_ENABLE_LDAP", "ldap")
 
   # #785 — was read raw in authoritative_source_fetch_service.rb. Outbound
   # content fetching stays explicit (never inferred): an air-gapped deployment
@@ -247,7 +255,7 @@ module SparcConfig
   # enables the feature, so operators set ONE variable, not two (the same
   # infer-enable-from-config pattern as #785). This also removes the lockout
   # footgun — a required key always has a reachable enrollment page.
-  def fido2_enabled?       = ENV.fetch("SPARC_FIDO2_ENABLED", "false") == "true" || require_fido2?
+  def fido2_enabled?       = auth_switch_enabled?("SPARC_FIDO2_ENABLED", "webauthn") || require_fido2?
 
   # #802 — mandatory FIDO2 enrollment gate. Forces users to register a security
   # key on first login (org-wide hardware-key rollout, no external IdP needed).
@@ -287,13 +295,87 @@ module SparcConfig
 
   def require_auth_methods? = required_auth_methods.any?
 
+  # The ONE alias table (#1082). It was previously private to
+  # concerns/authentication.rb, which meant the login page had no way to ask
+  # "would this method satisfy the gate?" without restating the aliases. Two
+  # copies of this mapping drifting apart is precisely the bug this issue is
+  # about — a page offering a method the gate will refuse — so the enforcement
+  # gate now reads it from here instead of keeping its own.
+  AUTH_METHOD_TOKENS = {
+    "openid_connect" => %w[openid_connect oidc sso],
+    "github"         => %w[github sso oauth],
+    "gitlab"         => %w[gitlab sso oauth],
+    "webauthn"       => %w[webauthn fido2]
+  }.freeze
+
+  # Every token that means the same method as `name`, whichever end you hold:
+  # the gate asks with a PROVIDER ("openid_connect"), the login page asks with
+  # the operator-facing token ("oidc"). Both must resolve to the same set, or
+  # the page and the gate disagree.
+  def auth_method_tokens(name)
+    name = name.to_s
+    return AUTH_METHOD_TOKENS[name] if AUTH_METHOD_TOKENS.key?(name)
+
+    AUTH_METHOD_TOKENS.each_value { |tokens| return tokens if tokens.include?(name) }
+    [ name ] # local, ldap, piv, api_token — no aliases
+  end
+
+  # #1082 — ENABLED is operator intent; USABLE is whether the method holds what
+  # it needs to actually establish a session. The two were conflated, and
+  # nothing checked the second at all, so a required-but-unusable method locked
+  # the instance at REQUEST time rather than failing at boot.
+  #
+  # Credential-backed providers are deliberately NOT inferred from a
+  # requirement: requiring `oidc` cannot conjure a client id, so it reports as
+  # unusable rather than pretending to be on and rendering a button that 500s.
+  def auth_method_usable?(token)
+    case token.to_s
+    when "local"             then enable_local_login?
+    when "ldap"              then enable_ldap? && ldap_host.present?
+    when "piv"               then enable_piv?
+    when "webauthn", "fido2" then fido2_enabled?
+    when "oidc", "openid_connect" then enable_oidc? && oidc_client_id.present?
+    when "github"            then github_enabled?
+    when "gitlab"            then gitlab_enabled?
+    when "sso"               then auth_method_usable?("oidc") || github_enabled? || gitlab_enabled?
+    else false
+    end
+  end
+
+  # An explicit value always wins — including an explicit "false", which is how
+  # an operator says "required for everyone else, but not reachable here".
+  # Otherwise the requirement itself turns the switch on.
+  def auth_switch_enabled?(env_var, token)
+    raw = ENV.fetch(env_var, nil)
+    return raw == "true" if raw.present?
+
+    (auth_method_tokens(token) & required_auth_methods).any?
+  end
+
+  def usable_required_auth_methods   = required_auth_methods.select { |m| auth_method_usable?(m) }
+  def unusable_required_auth_methods = required_auth_methods.reject { |m| auth_method_usable?(m) }
+
+  # Should the login page offer this method?
+  #
+  # A method the gate will not accept must not be offered: signing in with it
+  # SUCCEEDS and is then ended on the very next request (#805's
+  # check_required_auth_method), which reads to the user as SPARC randomly
+  # signing them out. Offering only what can hold a session collapses local
+  # login on its own when an operator genuinely mandates OIDC.
+  def offer_auth_method?(token)
+    return false unless auth_method_usable?(token)
+    return true unless require_auth_methods?
+
+    (auth_method_tokens(token) & required_auth_methods).any?
+  end
+
   # PIV / CAC smart-card auth (#779, Track B). The mTLS handshake + DoD PKI
   # validation + revocation happen at the proxy/ALB (sparc-iac); SPARC consumes
   # the *validated* client cert it forwards. piv_cert_header carries the PEM;
   # piv_verify_header must equal piv_verify_success or SPARC rejects (fail-closed
   # — never trust a cert the proxy didn't verify, and the proxy strips any
   # client-supplied copies of these headers).
-  def enable_piv?          = ENV.fetch("SPARC_ENABLE_PIV", "false") == "true"
+  def enable_piv?          = auth_switch_enabled?("SPARC_ENABLE_PIV", "piv")
   def piv_cert_header      = ENV.fetch("SPARC_PIV_CERT_HEADER", "X-SSL-Client-Cert")
   def piv_verify_header    = ENV.fetch("SPARC_PIV_VERIFY_HEADER", "X-SSL-Client-Verify")
   def piv_verify_success   = ENV.fetch("SPARC_PIV_VERIFY_SUCCESS", "SUCCESS")
@@ -511,7 +593,6 @@ module SparcConfig
   #
   # Kept as an opt-in for a cautious operator who wants a ceiling while they
   # gain confidence in their claim configuration.
-  def oidc_sync_max_revoke_pct = ENV.fetch("SPARC_OIDC_SYNC_MAX_REVOKE_PCT", "0").to_i
 
   # #860 — deactivate an account that has not signed in for this many days.
   # 0 (the default) disables it, so an upgrade never starts deactivating people.
