@@ -235,7 +235,9 @@ class OscalComponentDefinitionExportService
       raise OscalValidationError,
             "No rule in \"#{@document.name}\" maps to a NIST control, so there is no " \
             "implemented requirement to export. Refresh the stig_to_nist converter, or " \
-            "supply the missing CCI references in the benchmark, then export again."
+            "supply the missing CCI references in the benchmark, then export again. " \
+            "For SCAP or CIS content, convert it upstream first (`saf convert xccdf_results2hdf`, " \
+            "or cis-bench for CIS Benchmarks) — those tools resolve NIST controls themselves (#1033)."
     end
 
     # #944 — authored values win; the fallbacks are exactly what was hardcoded
