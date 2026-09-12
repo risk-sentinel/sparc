@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_09_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_12_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -123,6 +123,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_180000) do
     t.string "name", null: false
     t.bigint "organization_id"
     t.bigint "profile_document_id"
+    t.string "security_objective_availability"
+    t.string "security_objective_confidentiality"
+    t.string "security_objective_integrity"
     t.string "slug"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
@@ -1723,6 +1726,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_180000) do
   end
 
   create_table "ssp_information_types", force: :cascade do |t|
+    t.bigint "authorization_boundary_id"
     t.text "availability_impact_adjustment"
     t.string "availability_impact_base"
     t.string "availability_impact_selected"
@@ -1741,6 +1745,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_180000) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", null: false
+    t.index ["authorization_boundary_id"], name: "index_ssp_information_types_on_authorization_boundary_id"
     t.index ["ssp_document_id", "uuid"], name: "idx_ssp_info_types_doc_uuid", unique: true
     t.index ["ssp_document_id"], name: "index_ssp_information_types_on_ssp_document_id"
   end
@@ -1991,6 +1996,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_180000) do
   add_foreign_key "ssp_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "ssp_documents", "profile_documents", on_delete: :nullify
   add_foreign_key "ssp_documents", "users", column: "uploaded_by_user_id", on_delete: :nullify
+  add_foreign_key "ssp_information_types", "authorization_boundaries"
   add_foreign_key "ssp_information_types", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_inventory_items", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_leveraged_authorizations", "ssp_documents", on_delete: :cascade
