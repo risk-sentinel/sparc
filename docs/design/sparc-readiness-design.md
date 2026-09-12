@@ -1,7 +1,9 @@
 # `sparc readiness` — Design Spec
 
 **Status:** Draft · **Owner:** SPARC core · **Target repo:** `risk-sentinel/sparc`
-**Related:** `ONBOARDING.md` (boundary onboarding checklist), `sparc-validate`
+**Related:** [Boundary Onboarding Checklist](../../wiki/Boundary-Onboarding-Checklist.md)
+(the wiki page this derives from — written 2026-09-12; the spec previously
+referenced an `ONBOARDING.md` that did not exist in any repo), `sparc-validate`
 
 ---
 
