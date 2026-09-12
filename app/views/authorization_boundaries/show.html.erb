@@ -30,6 +30,10 @@
   </div>
 </div>
 
+<%# ── Adoption readiness (#940) — inline, above the details, because a team
+      onboarding needs to see what is missing before they read what is there. %>
+<%= render "readiness", readiness: @readiness %>
+
 <%# ── Authorization Boundary Details ──────────────────────────────────────── %>
 <div class="card mb-4">
   <div class="card-body">

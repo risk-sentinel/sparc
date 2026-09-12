@@ -41,6 +41,9 @@ class AuthorizationBoundariesController < ApplicationController
     # OSCAL back-matter via evidence -> back_matter_resource), surfaced here so
     # they can be managed from the boundary screen.
     @evidences = @authorization_boundary.evidences.order(created_at: :desc)
+    # #940 — the same service the API serves at .../readiness, so the screen and
+    # the endpoint cannot disagree. Read-only, so it is safe on every page load.
+    @readiness = BoundaryReadinessService.new(@authorization_boundary).report
   end
 
   # GET /authorization_boundaries/:id/attach_document?type=ssp

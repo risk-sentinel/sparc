@@ -124,7 +124,7 @@
           <div class="form-group">
             <%= f.label :security_sensitivity_level, "Security Sensitivity Level" %>
             <%= f.select :security_sensitivity_level,
-                  [["Low (FIPS 199)", "fips-199-low"], ["Moderate (FIPS 199)", "fips-199-moderate"], ["High (FIPS 199)", "fips-199-high"]],
+                  [["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]],
                   { include_blank: "-- Select --" },
                   { class: "form-control" } %>
           </div>
@@ -200,7 +200,7 @@
                 <select name="ssp_document[information_types][][confidentiality_impact_base]" aria-label="Confidentiality (Base)" class="form-control sparc-fs-085">
                   <option value="">--</option>
                   <% %w[fips-199-low fips-199-moderate fips-199-high].each do |v| %>
-                    <option value="<%= v %>" <%= "selected" if it.confidentiality_impact_base == v %>><%= v.split("-").last.capitalize %></option>
+                    <option value="<%= v %>" <%= "selected" if it.confidentiality_impact_base == v %>><%= fips_impact_label(v) %></option>
                   <% end %>
                 </select>
               </div>
@@ -209,7 +209,7 @@
                 <select name="ssp_document[information_types][][integrity_impact_base]" aria-label="Integrity (Base)" class="form-control sparc-fs-085">
                   <option value="">--</option>
                   <% %w[fips-199-low fips-199-moderate fips-199-high].each do |v| %>
-                    <option value="<%= v %>" <%= "selected" if it.integrity_impact_base == v %>><%= v.split("-").last.capitalize %></option>
+                    <option value="<%= v %>" <%= "selected" if it.integrity_impact_base == v %>><%= fips_impact_label(v) %></option>
                   <% end %>
                 </select>
               </div>

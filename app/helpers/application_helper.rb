@@ -22,6 +22,27 @@ module ApplicationHelper
   # order (success before error before warning) so a request setting several
   # keys renders predictably. Blank messages are dropped — an empty flash
   # should not paint an empty box.
+  # #940 — readiness state -> [badge class, label].
+  #
+  # `not_modelled` gets a NEUTRAL badge and the label "not tracked", never a
+  # failure colour: it means SPARC cannot answer, not that the boundary failed
+  # to do something. Colouring it red would blame the user for our gap.
+  READINESS_BADGES = {
+    complete:     [ "badge-ok",   "Complete" ],
+    partial:      [ "badge-warn", "Partial" ],
+    absent:       [ "badge-fail", "Not started" ],
+    not_modelled: [ "badge-info", "Not tracked" ]
+  }.freeze
+
+  def readiness_badge(status)
+    READINESS_BADGES.fetch(status.to_s.to_sym, [ "badge-info", status.to_s.humanize ])
+  end
+
+  # FIPS-199 impact level for display: "Moderate", never "fips-199-moderate".
+  # The OSCAL vocabulary is what SPARC stores and exports; it is not what a
+  # person reads. One definition in SspInformationType (#940).
+  def fips_impact_label(value) = SspInformationType.impact_label(value)
+
   def displayable_flashes
     FLASH_CLASSES.filter_map do |key, css_class|
       message = flash[key]

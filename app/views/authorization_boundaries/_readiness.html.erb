@@ -1,0 +1,58 @@
+<%# #940 S2 — what SPARC knows about this boundary.
+
+    A thin client over BoundaryReadinessService, the same object the API serves
+    at /api/v1/authorization_boundaries/:id/readiness, so the screen and the
+    endpoint can never disagree.
+
+    Four states, and `not_modelled` is the one that matters: it says SPARC
+    CANNOT answer, rather than implying the boundary failed to do something.
+%>
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h5 class="card-title mb-1">Adoption readiness</h5>
+        <p class="text-body-secondary small mb-0">
+          What SPARC knows about this boundary. Each item links to the
+          <a href="https://github.com/risk-sentinel/sparc/wiki/Adopting-OSCAL"
+             target="_blank" rel="noopener">adoption guide</a> section that explains it.
+        </p>
+      </div>
+      <div class="text-end sparc-fs-085">
+        <% summary = readiness[:summary] %>
+        <span class="badge-ok rounded fw-semibold px-2"><%= summary[:complete] %> complete</span>
+        <% if summary[:partial].to_i.positive? %>
+          <span class="badge-warn rounded fw-semibold px-2 ms-1"><%= summary[:partial] %> partial</span>
+        <% end %>
+        <% if summary[:absent].to_i.positive? %>
+          <span class="badge-fail rounded fw-semibold px-2 ms-1"><%= summary[:absent] %> not started</span>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <tbody>
+          <% readiness[:sections].each do |section| %>
+            <tr>
+              <td class="text-nowrap sparc-w-150px">
+                <% badge, label = readiness_badge(section[:status]) %>
+                <span class="<%= badge %> rounded fw-semibold px-2 sparc-fs-075"><%= label %></span>
+              </td>
+              <td>
+                <a href="https://github.com/risk-sentinel/sparc/wiki/Adopting-OSCAL#<%= section[:guide_anchor] %>"
+                   target="_blank" rel="noopener" class="fw-semibold text-decoration-none">
+                  <%= section[:title] %>
+                </a>
+              </td>
+              <td class="text-body-secondary sparc-fs-085"><%= section[:detail] %></td>
+              <td class="text-end text-body-tertiary sparc-fs-085">
+                <%= section[:count] %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

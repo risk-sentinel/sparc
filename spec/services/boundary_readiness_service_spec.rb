@@ -123,6 +123,20 @@ RSpec.describe BoundaryReadinessService do
       expect(status_of(:classification)).to eq(:complete)
     end
 
+    # The stored value is OSCAL's vocabulary; the report is read by people.
+    it "renders the level as a human label, never as fips-199-*" do
+      create(:ssp_document, authorization_boundary: boundary)
+      SspInformationType.create!(
+        ssp_document: boundary.ssp_document, authorization_boundary: boundary,
+        uuid: SecureRandom.uuid, title: "T", description: "D",
+        confidentiality_impact_selected: "fips-199-high"
+      )
+
+      section = described_class.new(boundary.reload).sections.find { |x| x.key == :classification }
+      expect(section.detail).to include("High")
+      expect(section.detail).not_to include("fips-199")
+    end
+
     # The condition that was undetectable before S3.
     it "is PARTIAL and says so when the recorded objectives contradict the types" do
       create(:ssp_document, authorization_boundary: boundary)

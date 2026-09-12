@@ -182,7 +182,7 @@
             <div class="form-group">
               <label for="ssp_security_sensitivity_level">Security Sensitivity Level</label>
               <%= select_tag :ssp_security_sensitivity_level,
-                    options_for_select([["Low (FIPS 199)", "fips-199-low"], ["Moderate (FIPS 199)", "fips-199-moderate"], ["High (FIPS 199)", "fips-199-high"]]),
+                    options_for_select([["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]]),
                     include_blank: "-- Select --",
                     class: "form-control" %>
             </div>
