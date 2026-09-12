@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component-definition xmlns="http://csrc.nist.gov/ns/oscal/1.0" uuid="067bc67f-6900-4145-bf5d-382cca2a10b5">
+  <metadata>
+    <title>ACME Web Application Server — Component Definition</title>
+    <last-modified>2026-08-30T19:55:05Z</last-modified>
+    <version>1.0.0</version>
+    <oscal-version>1.2.2</oscal-version>
+    <role id="prepared-by">
+      <title>Prepared By</title>
+    </role>
+    <party uuid="bb948026-91cb-4647-84f9-ad35b0b4f09d" type="organization">
+      <name>SPARC Export</name>
+    </party>
+  </metadata>
+  <component uuid="fb29502b-906d-48a2-bda1-2e3e6ca6fd62" type="software">
+    <title>ACME Web Application Server — Component Definition</title>
+    <description>
+      <p>DEMO/SAMPLE — Fictional component definition for testing purposes only. Represents a web application server's security control implementations.</p>
+    </description>
+    <control-implementation uuid="79445a56-5caa-46e6-b913-c0e75ac54a26" source="https://sparc.local/component-definitions/1">
+      <description>
+        <p>Controls from custom component definition: ACME Web Application Server — Component Definition</p>
+      </description>
+      <implemented-requirement uuid="390c2a31-fd2b-49c7-be77-1916a9ea6486" control-id="ac-2">
+        <description>
+          <p>Account Management</p>
+        </description>
+        <prop name="severity" value="high"/>
+        <statement statement-id="ac-2_stmt" uuid="6ade6d9f-15d1-4563-ba50-037f7a962abd">
+          <description>
+            <p>The web application server implements role-based account management through integration with the organization's centralized identity provider. Account provisioning, modification, and deprovisioning follow automated workflows triggered by HR system events.</p>
+          </description>
+        </statement>
+      </implemented-requirement>
+      <implemented-requirement uuid="32582057-cf49-4a5c-aae9-76cdb828c7dc" control-id="ac-3">
+        <description>
+          <p>Access Enforcement</p>
+        </description>
+        <prop name="severity" value="high"/>
+        <statement statement-id="ac-3_stmt" uuid="8e08c599-ca5e-4085-9b6e-7ef15f2fc300">
+          <description>
+            <p>Access enforcement is implemented through a combination of application-level RBAC and infrastructure-level security groups. All API endpoints require Bearer token authentication with boundary-scoped authorization checks.</p>
+          </description>
+        </statement>
+      </implemented-requirement>
+      <implemented-requirement uuid="ab3c671e-0dd0-421b-9582-fe363a03c1d0" control-id="au-2">
+        <description>
+          <p>Event Logging</p>
+        </description>
+        <prop name="severity" value="medium"/>
+        <statement statement-id="au-2_stmt" uuid="a4b30c15-f834-43e7-9d78-51de55ebeef9">
+          <description>
+            <p>The application logs all authentication events, authorization decisions, data access operations, and administrative actions. Logs are structured as JSON and forwarded to the centralized logging service.</p>
+          </description>
+        </statement>
+      </implemented-requirement>
+      <implemented-requirement uuid="41518cd0-e4db-45b6-b176-38afeeade99b" control-id="au-3">
+        <description>
+          <p>Content of Audit Records</p>
+        </description>
+        <prop name="severity" value="medium"/>
+        <statement statement-id="au-3_stmt" uuid="6a48eca0-87cc-4a48-b8c3-4cd2b068e1d8">
+          <description>
+            <p>Each audit record includes timestamp, user identity, source IP, action performed, resource affected, and outcome (success/failure). Records conform to the organization's logging schema.</p>
+          </description>
+        </statement>
+      </implemented-requirement>
+      <implemented-requirement uuid="4c7c0ab6-758e-492e-b75c-fcd2dee9bb34" control-id="ia-2">
+        <description>
+          <p>Identification and Auth</p>
+        </description>
+        <prop name="severity" value="high"/>
+        <statement statement-id="ia-2_stmt" uuid="45e17565-a063-4537-83cf-3777a98d99eb">
+          <description>
+            <p>User identification and authentication is delegated to the OIDC identity provider (Okta) with phishing-resistant MFA enforcement. Service accounts use short-lived API tokens with SHA-256 digest storage.</p>
+          </description>
+        </statement>
+      </implemented-requirement>
+      <implemented-requirement uuid="1861381e-23e7-4a9f-adac-c682defe8a93" control-id="sc-8">
+        <description>
+          <p>Transmission Confidentiality</p>
+        </description>
+        <prop name="severity" value="high"/>
+        <statement statement-id="sc-8_stmt" uuid="d76ffa0f-e53c-48cf-bfd0-696b00c2211f">
+          <description>
+            <p>All data in transit is protected using TLS 1.2+ with strong cipher suites. Internal service-to-service communication uses mTLS. Certificate validation is enforced on all connections.</p>
+          </description>
+        </statement>
+      </implemented-requirement>
+      <implemented-requirement uuid="400bbee3-9457-44b0-b3f1-bdc87d5afcbf" control-id="sc-13">
+        <description>
+          <p>Cryptographic Protection</p>
+        </description>
+        <prop name="severity" value="high"/>
+        <statement statement-id="sc-13_stmt" uuid="19c9cf75-dc36-448d-9209-bb72af1cca09">
+          <description>
+            <p>The application uses FIPS 140-2 validated cryptographic modules for all cryptographic operations. Key management is handled through AWS KMS with automatic annual rotation.</p>
+          </description>
+        </statement>
+      </implemented-requirement>
+      <implemented-requirement uuid="60f23e83-2d11-402f-96e5-017201d268b4" control-id="cm-6">
+        <description>
+          <p>Configuration Settings</p>
+        </description>
+        <prop name="severity" value="medium"/>
+        <statement statement-id="cm-6_stmt" uuid="04e9a596-726c-4925-9f11-57550eabc1b3">
+          <description>
+            <p>Application configuration follows CIS benchmark recommendations. All settings are managed through version-controlled configuration files with automated drift detection.</p>
+          </description>
+        </statement>
+      </implemented-requirement>
+      <implemented-requirement uuid="40231901-a810-4beb-8a5c-d74d6eb88b37" control-id="ir-6">
+        <description>
+          <p>Incident Reporting</p>
+        </description>
+        <prop name="severity" value="medium"/>
+        <statement statement-id="ir-6_stmt" uuid="d855d45d-6d72-4246-87f7-88b7968834ce">
+          <description>
+            <p>The application integrates with the organization's incident management system (PagerDuty). Security events above defined thresholds trigger automatic incident creation with appropriate severity classification.</p>
+          </description>
+        </statement>
+      </implemented-requirement>
+      <implemented-requirement uuid="3484dcf1-d5a9-4296-a184-a6914782203f" control-id="si-4">
+        <description>
+          <p>System Monitoring</p>
+        </description>
+        <prop name="severity" value="medium"/>
+        <statement statement-id="si-4_stmt" uuid="f3687c1e-5394-4982-aecc-c5550cce0889">
+          <description>
+            <p>Real-time monitoring is implemented through CloudWatch metrics, application performance monitoring (APM), and behavioral anomaly detection. Alert thresholds are configured for all critical system parameters.</p>
+          </description>
+        </statement>
+      </implemented-requirement>
+    </control-implementation>
+  </component>
+  <back-matter>
+    <resource uuid="8513e43c-711a-4ecb-991e-bbb9ca84694f">
+      <title>SPARC Document Source</title>
+      <description>
+        <p>Managed by SPARC</p>
+      </description>
+      <rlink href="https://localhost:3443" media-type="text/html"/>
+    </resource>
+  </back-matter>
+</component-definition>
