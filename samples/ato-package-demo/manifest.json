@@ -1,0 +1,136 @@
+{
+  "authorization_boundary": {
+    "name": "Cloud Web Application ATO",
+    "status": "active",
+    "generated_at": "2026-09-12T18:25:12Z"
+  },
+  "export": {
+    "serializations": [
+      "json",
+      "yaml",
+      "xml"
+    ],
+    "contents": "unvalidated",
+    "note": "Documents are exported WITHOUT gating on schema validation, so a package remains recoverable when a document does not yet conform. `schema_valid` on each file states whether that serialization passes its OSCAL schema. Do not treat presence in this archive as evidence of conformance."
+  },
+  "documents": [
+    {
+      "type": "ssp",
+      "name": "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
+      "file": "ssp.json",
+      "files": [
+        {
+          "file": "ssp.json",
+          "format": "json",
+          "schema_valid": true
+        },
+        {
+          "file": "ssp.yaml",
+          "format": "yaml",
+          "schema_valid": true
+        },
+        {
+          "file": "ssp.xml",
+          "format": "xml",
+          "schema_valid": true
+        }
+      ]
+    },
+    {
+      "type": "sap",
+      "name": "ACME Cloud Platform — Annual Assessment Plan (Rev 5)",
+      "file": "sap.json",
+      "files": [
+        {
+          "file": "sap.json",
+          "format": "json",
+          "schema_valid": true
+        },
+        {
+          "file": "sap.yaml",
+          "format": "yaml",
+          "schema_valid": true
+        },
+        {
+          "file": "sap.xml",
+          "format": "xml",
+          "schema_valid": true
+        }
+      ]
+    },
+    {
+      "type": "sar",
+      "name": "ACME Cloud Platform — Annual Security Assessment (Rev 5)",
+      "file": "sar.json",
+      "files": [
+        {
+          "file": "sar.json",
+          "format": "json",
+          "schema_valid": true
+        },
+        {
+          "file": "sar.yaml",
+          "format": "yaml",
+          "schema_valid": true
+        },
+        {
+          "file": "sar.xml",
+          "format": "xml",
+          "schema_valid": true
+        }
+      ]
+    },
+    {
+      "type": "poam",
+      "name": "ACME Cloud Platform — Plan of Action & Milestones",
+      "file": "poam-1.json",
+      "files": [
+        {
+          "file": "poam-1.json",
+          "format": "json",
+          "schema_valid": true
+        },
+        {
+          "file": "poam-1.yaml",
+          "format": "yaml",
+          "schema_valid": true
+        },
+        {
+          "file": "poam-1.xml",
+          "format": "xml",
+          "schema_valid": true
+        }
+      ]
+    },
+    {
+      "type": "cdef",
+      "name": "ACME Web Application Server — Component Definition",
+      "file": "cdef-acme-web-application-server-component-definition.json",
+      "files": [
+        {
+          "file": "cdef-acme-web-application-server-component-definition.json",
+          "format": "json",
+          "schema_valid": true
+        },
+        {
+          "file": "cdef-acme-web-application-server-component-definition.yaml",
+          "format": "yaml",
+          "schema_valid": true
+        },
+        {
+          "file": "cdef-acme-web-application-server-component-definition.xml",
+          "format": "xml",
+          "schema_valid": true
+        }
+      ]
+    }
+  ],
+  "omitted": [],
+  "validation": {
+    "ssp": true,
+    "sap": true,
+    "sar": true,
+    "poam_1": true,
+    "cdef_acme-web-application-server-component-definition": true
+  }
+}

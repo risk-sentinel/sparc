@@ -1,0 +1,236 @@
+{
+  "component-definition": {
+    "uuid": "067bc67f-6900-4145-bf5d-382cca2a10b5",
+    "metadata": {
+      "title": "ACME Web Application Server — Component Definition",
+      "version": "1.0.0",
+      "oscal-version": "1.2.2",
+      "last-modified": "2026-08-30T19:55:05Z",
+      "roles": [
+        {
+          "id": "prepared-by",
+          "title": "Prepared By"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "bb948026-91cb-4647-84f9-ad35b0b4f09d",
+          "type": "organization",
+          "name": "SPARC Export"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "fb29502b-906d-48a2-bda1-2e3e6ca6fd62",
+        "type": "software",
+        "title": "ACME Web Application Server — Component Definition",
+        "description": "DEMO/SAMPLE — Fictional component definition for testing purposes only. Represents a web application server's security control implementations.",
+        "control-implementations": [
+          {
+            "uuid": "79445a56-5caa-46e6-b913-c0e75ac54a26",
+            "source": "https://sparc.local/component-definitions/1",
+            "description": "Controls from custom component definition: ACME Web Application Server — Component Definition",
+            "implemented-requirements": [
+              {
+                "uuid": "390c2a31-fd2b-49c7-be77-1916a9ea6486",
+                "control-id": "ac-2",
+                "description": "Account Management",
+                "props": [
+                  {
+                    "name": "severity",
+                    "value": "high"
+                  }
+                ],
+                "statements": [
+                  {
+                    "statement-id": "ac-2_stmt",
+                    "uuid": "6ade6d9f-15d1-4563-ba50-037f7a962abd",
+                    "description": "The web application server implements role-based account management through integration with the organization's centralized identity provider. Account provisioning, modification, and deprovisioning follow automated workflows triggered by HR system events."
+                  }
+                ]
+              },
+              {
+                "uuid": "32582057-cf49-4a5c-aae9-76cdb828c7dc",
+                "control-id": "ac-3",
+                "description": "Access Enforcement",
+                "props": [
+                  {
+                    "name": "severity",
+                    "value": "high"
+                  }
+                ],
+                "statements": [
+                  {
+                    "statement-id": "ac-3_stmt",
+                    "uuid": "8e08c599-ca5e-4085-9b6e-7ef15f2fc300",
+                    "description": "Access enforcement is implemented through a combination of application-level RBAC and infrastructure-level security groups. All API endpoints require Bearer token authentication with boundary-scoped authorization checks."
+                  }
+                ]
+              },
+              {
+                "uuid": "ab3c671e-0dd0-421b-9582-fe363a03c1d0",
+                "control-id": "au-2",
+                "description": "Event Logging",
+                "props": [
+                  {
+                    "name": "severity",
+                    "value": "medium"
+                  }
+                ],
+                "statements": [
+                  {
+                    "statement-id": "au-2_stmt",
+                    "uuid": "a4b30c15-f834-43e7-9d78-51de55ebeef9",
+                    "description": "The application logs all authentication events, authorization decisions, data access operations, and administrative actions. Logs are structured as JSON and forwarded to the centralized logging service."
+                  }
+                ]
+              },
+              {
+                "uuid": "41518cd0-e4db-45b6-b176-38afeeade99b",
+                "control-id": "au-3",
+                "description": "Content of Audit Records",
+                "props": [
+                  {
+                    "name": "severity",
+                    "value": "medium"
+                  }
+                ],
+                "statements": [
+                  {
+                    "statement-id": "au-3_stmt",
+                    "uuid": "6a48eca0-87cc-4a48-b8c3-4cd2b068e1d8",
+                    "description": "Each audit record includes timestamp, user identity, source IP, action performed, resource affected, and outcome (success/failure). Records conform to the organization's logging schema."
+                  }
+                ]
+              },
+              {
+                "uuid": "4c7c0ab6-758e-492e-b75c-fcd2dee9bb34",
+                "control-id": "ia-2",
+                "description": "Identification and Auth",
+                "props": [
+                  {
+                    "name": "severity",
+                    "value": "high"
+                  }
+                ],
+                "statements": [
+                  {
+                    "statement-id": "ia-2_stmt",
+                    "uuid": "45e17565-a063-4537-83cf-3777a98d99eb",
+                    "description": "User identification and authentication is delegated to the OIDC identity provider (Okta) with phishing-resistant MFA enforcement. Service accounts use short-lived API tokens with SHA-256 digest storage."
+                  }
+                ]
+              },
+              {
+                "uuid": "1861381e-23e7-4a9f-adac-c682defe8a93",
+                "control-id": "sc-8",
+                "description": "Transmission Confidentiality",
+                "props": [
+                  {
+                    "name": "severity",
+                    "value": "high"
+                  }
+                ],
+                "statements": [
+                  {
+                    "statement-id": "sc-8_stmt",
+                    "uuid": "d76ffa0f-e53c-48cf-bfd0-696b00c2211f",
+                    "description": "All data in transit is protected using TLS 1.2+ with strong cipher suites. Internal service-to-service communication uses mTLS. Certificate validation is enforced on all connections."
+                  }
+                ]
+              },
+              {
+                "uuid": "400bbee3-9457-44b0-b3f1-bdc87d5afcbf",
+                "control-id": "sc-13",
+                "description": "Cryptographic Protection",
+                "props": [
+                  {
+                    "name": "severity",
+                    "value": "high"
+                  }
+                ],
+                "statements": [
+                  {
+                    "statement-id": "sc-13_stmt",
+                    "uuid": "19c9cf75-dc36-448d-9209-bb72af1cca09",
+                    "description": "The application uses FIPS 140-2 validated cryptographic modules for all cryptographic operations. Key management is handled through AWS KMS with automatic annual rotation."
+                  }
+                ]
+              },
+              {
+                "uuid": "60f23e83-2d11-402f-96e5-017201d268b4",
+                "control-id": "cm-6",
+                "description": "Configuration Settings",
+                "props": [
+                  {
+                    "name": "severity",
+                    "value": "medium"
+                  }
+                ],
+                "statements": [
+                  {
+                    "statement-id": "cm-6_stmt",
+                    "uuid": "04e9a596-726c-4925-9f11-57550eabc1b3",
+                    "description": "Application configuration follows CIS benchmark recommendations. All settings are managed through version-controlled configuration files with automated drift detection."
+                  }
+                ]
+              },
+              {
+                "uuid": "40231901-a810-4beb-8a5c-d74d6eb88b37",
+                "control-id": "ir-6",
+                "description": "Incident Reporting",
+                "props": [
+                  {
+                    "name": "severity",
+                    "value": "medium"
+                  }
+                ],
+                "statements": [
+                  {
+                    "statement-id": "ir-6_stmt",
+                    "uuid": "d855d45d-6d72-4246-87f7-88b7968834ce",
+                    "description": "The application integrates with the organization's incident management system (PagerDuty). Security events above defined thresholds trigger automatic incident creation with appropriate severity classification."
+                  }
+                ]
+              },
+              {
+                "uuid": "3484dcf1-d5a9-4296-a184-a6914782203f",
+                "control-id": "si-4",
+                "description": "System Monitoring",
+                "props": [
+                  {
+                    "name": "severity",
+                    "value": "medium"
+                  }
+                ],
+                "statements": [
+                  {
+                    "statement-id": "si-4_stmt",
+                    "uuid": "f3687c1e-5394-4982-aecc-c5550cce0889",
+                    "description": "Real-time monitoring is implemented through CloudWatch metrics, application performance monitoring (APM), and behavioral anomaly detection. Alert thresholds are configured for all critical system parameters."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "back-matter": {
+      "resources": [
+        {
+          "uuid": "8513e43c-711a-4ecb-991e-bbb9ca84694f",
+          "title": "SPARC Document Source",
+          "description": "Managed by SPARC",
+          "rlinks": [
+            {
+              "href": "https://localhost:3443",
+              "media-type": "text/html"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

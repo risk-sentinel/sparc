@@ -4,6 +4,14 @@
 > for testing, demonstration, and development purposes only. No real organizations,
 > systems, or personnel are represented.
 
+## Directories
+
+| Directory | What it holds |
+|---|---|
+| `nist-traditional-demo/` | Individual OSCAL documents, JSON |
+| `fedramp-20x-demo/` | FedRAMP 20x workflow artifacts |
+| `ato-package-demo/` | **The assembled ATO package** — every document in JSON, YAML **and** XML, plus its manifest (#836) |
+
 ## Overview
 
 This directory contains pre-generated OSCAL artifacts demonstrating two compliance
