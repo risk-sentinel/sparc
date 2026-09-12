@@ -1,0 +1,38 @@
+# Fast inner loop on the PROD image (#966).
+#
+# The dev stack used to be a second base OS entirely (Dockerfile_debian). That
+# bought edit-and-go iteration and cost us #750: Debian's implicit LANG=C.UTF-8
+# masked UBI9's missing locale, which 500'd every page in production. A
+# different base for development is how a prod-only bug stays hidden until prod.
+#
+# This gets the same iteration speed on the SAME image production ships.
+#
+# WHAT IS MOUNTED, AND WHY NOT EVERYTHING
+#
+#   app/ lib/ config/ db/   the code you actually edit
+#
+# NOT `.:/rails`, deliberately. The image carries PRECOMPILED assets in
+# public/assets; mounting the host's public/ over them serves a directory that
+# has never been compiled, and every page loses its CSS. Gems are unaffected
+# either way — BUNDLE_PATH is /usr/local/bundle, outside /rails.
+#
+# RAILS_ENV stays `production`, so `config.enable_reloading = false` applies: a
+# code change needs `docker compose restart web` (seconds), not a rebuild
+# (minutes). That is the whole win.
+#
+# After editing app/assets/**, rebuild — Propshaft resolves digests from the
+# compiled set, which lives in the image.
+#
+# Usage:
+#   docker compose -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml \
+#                  -f dev/ubi9/compose.dev.yaml up -d
+services:
+  web:
+    volumes:
+      - ./app:/rails/app:ro
+      - ./lib:/rails/lib:ro
+      # NOT :ro — the local-storage initializer below is mounted INSIDE this
+      # directory, and Docker cannot create a mountpoint in a read-only mount.
+      - ./config:/rails/config
+      - ./db:/rails/db:ro
+      - ./dev/ubi9/zzz_local_storage.rb:/rails/config/initializers/zzz_local_storage.rb:ro
