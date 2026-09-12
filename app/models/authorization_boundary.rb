@@ -51,6 +51,10 @@ class AuthorizationBoundary < ApplicationRecord
   before_validation :assign_uuid_if_blank
 
   validates :name, presence: true
+  # Only on the transition INTO `authorized`: an already-authorized boundary
+  # whose ISSO leaves must remain editable, or the gate would trap records it
+  # was meant to protect.
+  validate :staffed_before_authorization, if: -> { status_changed? && authorized? }
   validates :status, presence: true
   validates :uuid, presence: true,
                    format: { with: BackMatterResource::UUID_V4_REGEX }
@@ -120,6 +124,47 @@ class AuthorizationBoundary < ApplicationRecord
     order = SspInformationType::IMPACT_LEVELS
     Array(levels).compact_blank.max_by { |l| order.index(l) || -1 }
   end
+
+  # ── Staffing gate for authorization (#1040) ────────────────────────────
+  #
+  # A boundary with ZERO members was valid, could reach `status: authorized`,
+  # and would export an SSP. SPARC already believed in separation of duties at
+  # the moment of an ACTION — a non-admin cannot approve what they submitted,
+  # the person who set a disposition cannot approve it, an assessor is denied
+  # `evidence.attest` — and was silent about it at the moment of STAFFING.
+  #
+  # #1040 called this blocked on "two competing rosters". Measured, they are not
+  # competing; they answer different questions:
+  #
+  #   AuthorizationBoundaryMembership / user_roles
+  #     WHO MAY ACT in SPARC. Access control. This is the roster.
+  #   boundary_metadata[:authorizing_official, …]
+  #     WHOSE NAME IS PRINTED in the OSCAL document — propagated into
+  #     `authorizing_official_data` and friends by BoundaryMetadataSyncService.
+  #     That person may hold no SPARC account at all.
+  #
+  # They share role names, which is what made them look like rivals. The gate
+  # reads the ROSTER, because authorization is about who is accountable, not
+  # about what a document says.
+  REQUIRED_ROLES_FOR_AUTHORIZATION = %w[authorizing_official system_owner isso].freeze
+
+  # Roles held on the roster, from BOTH assignment paths — admin-assigned
+  # user_roles and boundary memberships. Reading only one is how a person added
+  # through the other becomes invisible (#770 bug 3).
+  def staffed_roles
+    # `map`, NOT `pluck`. pluck issues a query and therefore CANNOT SEE
+    # memberships built in memory but not yet saved — so staffing a boundary and
+    # authorizing it in the same save would fail spuriously, which is exactly
+    # what a caller would naturally write. Its own factory trait caught this.
+    (authorization_boundary_memberships.map(&:role) +
+      user_roles.filter_map { |ur| ur.role&.name }).compact.uniq
+  end
+
+  def missing_roles_for_authorization
+    REQUIRED_ROLES_FOR_AUTHORIZATION - staffed_roles
+  end
+
+  def staffed_for_authorization? = missing_roles_for_authorization.empty?
 
   def linked_documents
     [ ssp_document, sap_document, sar_document, profile_document, *poam_documents ].compact
@@ -205,6 +250,15 @@ class AuthorizationBoundary < ApplicationRecord
     poam_count = PoamDocument.where(authorization_boundary_id: id).count
     deps << "#{poam_count} POA&M(s)" if poam_count > 0
     deps
+  end
+
+  def staffed_before_authorization
+    missing = missing_roles_for_authorization
+    return if missing.empty?
+
+    errors.add(:status,
+               "cannot be authorized without #{missing.map { |r| r.humanize.titleize }.to_sentence} " \
+               "on the personnel roster — authorization records who is accountable")
   end
 
   def assign_uuid_if_blank

@@ -8,9 +8,20 @@ FactoryBot.define do
       status { "active" }
     end
 
+    # #1040 — authorization now requires the accountable roles on the roster, so
+    # the trait staffs the boundary. A trait that produces an invalid record is
+    # a trap for whoever reaches for it next.
     trait :authorized do
       status { "authorized" }
       authorization_boundary_description { Faker::Lorem.paragraph }
+
+      after(:build) do |ab|
+        AuthorizationBoundary::REQUIRED_ROLES_FOR_AUTHORIZATION.each do |role|
+          ab.authorization_boundary_memberships.build(
+            role: role, user_name: Faker::Name.name, user_email: Faker::Internet.email
+          )
+        end
+      end
     end
 
     trait :with_boundaries do
