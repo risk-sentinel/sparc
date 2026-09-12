@@ -1001,6 +1001,9 @@ Rails.application.routes.draw do
         end
         # HDF Amendment triage (#447) — ingest scanner output + list findings,
         # and export the boundary's dispositions as an HDF Amendments artefact.
+        # #940 — what SPARC knows about this boundary: a read-only completeness
+        # report over the decisions in the wiki's "Adopting OSCAL" guide.
+        resource :readiness, only: [ :show ], controller: "boundary_readiness"
         resources :scan_runs, only: [ :index, :show, :create ]
         resources :scanner_findings, only: [ :index ]
         resource :hdf_amendments, only: [ :show ], controller: "hdf_amendments"
