@@ -32,23 +32,27 @@
 
     <div class="table-responsive">
       <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr class="sparc-fs-075 text-body-tertiary text-uppercase">
+            <th scope="col">Section</th>
+            <th scope="col">Status</th>
+            <th scope="col">Notes</th>
+          </tr>
+        </thead>
         <tbody>
           <% readiness[:sections].each do |section| %>
             <tr>
-              <td class="text-nowrap sparc-w-150px">
-                <% badge, label = readiness_badge(section[:status]) %>
-                <span class="<%= badge %> rounded fw-semibold px-2 sparc-fs-075"><%= label %></span>
-              </td>
-              <td>
+              <td class="fw-semibold">
                 <a href="https://github.com/risk-sentinel/sparc/wiki/Adopting-OSCAL#<%= section[:guide_anchor] %>"
-                   target="_blank" rel="noopener" class="fw-semibold text-decoration-none">
+                   target="_blank" rel="noopener" class="text-decoration-none">
                   <%= section[:title] %>
                 </a>
               </td>
-              <td class="text-body-secondary sparc-fs-085"><%= section[:detail] %></td>
-              <td class="text-end text-body-tertiary sparc-fs-085">
-                <%= section[:count] %>
+              <td class="text-nowrap sparc-w-150px">
+                <% badge, label = readiness_badge(section[:status], section[:key]) %>
+                <span class="<%= badge %> rounded fw-semibold px-2 sparc-fs-075"><%= label %></span>
               </td>
+              <td class="text-body-secondary sparc-fs-085"><%= section[:detail] %></td>
             </tr>
           <% end %>
         </tbody>

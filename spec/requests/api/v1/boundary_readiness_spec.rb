@@ -36,13 +36,23 @@ RSpec.describe "GET /api/v1/authorization_boundaries/:id/readiness", type: :requ
     expect(summary.keys).to match_array(%w[complete partial absent not_modelled])
   end
 
-  # Anything SPARC cannot observe must say so rather than reading as a gap the
-  # boundary is responsible for.
-  it "reports environments as not_modelled" do
+  # Environments are reported from the boundary's sub-boundaries, each of which
+  # carries an `environment`. A boundary with none has not said where it runs.
+  it "reports environments as absent when the boundary has no sub-boundaries" do
     get "/api/v1/authorization_boundaries/#{boundary.id}/readiness", headers: headers
 
     environments = response.parsed_body.dig("data", "sections").find { |s| s["key"] == "environments" }
-    expect(environments["status"]).to eq("not_modelled")
+    expect(environments["status"]).to eq("absent")
+  end
+
+  it "reports environments as complete once one is recorded" do
+    create(:boundary, authorization_boundary: boundary, name: "Prod", environment: "production")
+
+    get "/api/v1/authorization_boundaries/#{boundary.id}/readiness", headers: headers
+
+    environments = response.parsed_body.dig("data", "sections").find { |s| s["key"] == "environments" }
+    expect(environments["status"]).to eq("complete")
+    expect(environments["detail"]).to include("production")
   end
 
   it "resolves a boundary by slug as well as id" do

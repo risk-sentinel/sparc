@@ -24,9 +24,10 @@ module ApplicationHelper
   # should not paint an empty box.
   # #940 — readiness state -> [badge class, label].
   #
-  # `not_modelled` gets a NEUTRAL badge and the label "not tracked", never a
-  # failure colour: it means SPARC cannot answer, not that the boundary failed
-  # to do something. Colouring it red would blame the user for our gap.
+  # `not_modelled` gets a NEUTRAL badge, never a failure colour: it means SPARC
+  # cannot answer, not that the boundary failed to do something. Colouring it
+  # red would blame the user for our gap. (No section uses it today — the one
+  # that did, Environments, turned out to be modelled after all.)
   READINESS_BADGES = {
     complete:     [ "badge-ok",   "Complete" ],
     partial:      [ "badge-warn", "Partial" ],
@@ -34,8 +35,20 @@ module ApplicationHelper
     not_modelled: [ "badge-info", "Not tracked" ]
   }.freeze
 
-  def readiness_badge(status)
-    READINESS_BADGES.fetch(status.to_s.to_sym, [ "badge-info", status.to_s.humanize ])
+  # Sections where ABSENT is not a failure (owner, 2026-09-12). Leveraged
+  # authorizations: a standalone system that inherits nothing is a legitimate
+  # posture, not an omission — red would tell a truthful boundary it is broken.
+  # It still shows AMBER, because "we inherit nothing" should be a decision
+  # someone made rather than a field nobody filled in.
+  ABSENT_IS_NOT_A_FAILURE = %i[leveraged].freeze
+
+  def readiness_badge(status, section_key = nil)
+    state = status.to_s.to_sym
+    if state == :absent && ABSENT_IS_NOT_A_FAILURE.include?(section_key.to_s.to_sym)
+      return [ "badge-warn", "Not started" ]
+    end
+
+    READINESS_BADGES.fetch(state, [ "badge-info", status.to_s.humanize ])
   end
 
   # FIPS-199 impact level for display: "Moderate", never "fips-199-moderate".

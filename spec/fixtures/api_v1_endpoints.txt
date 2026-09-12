@@ -64,6 +64,7 @@ GET /api/v1/authorization_boundaries/:authorization_boundary_id/leveraged_author
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/memberships
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/roles
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/readiness
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs/:id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scanner_findings

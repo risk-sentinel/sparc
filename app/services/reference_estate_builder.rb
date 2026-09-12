@@ -343,6 +343,19 @@ class ReferenceEstateBuilder
       boundary.description  = "Reference estate authorization boundary (#845)."
       boundary.authorization_boundary_description =
         "Everything operated by #{org.name} within the reference estate."
+
+      # #1040 — an authorized boundary must name who is accountable for it. The
+      # reference estate is what E2E and DAST run against, so an UNSTAFFED
+      # authorized boundary here would be a fixture modelling something SPARC no
+      # longer permits. Built in the same save, which is why the gate reads the
+      # in-memory association rather than querying.
+      AuthorizationBoundary::REQUIRED_ROLES_FOR_AUTHORIZATION.each do |role|
+        boundary.authorization_boundary_memberships.build(
+          role: role,
+          user_name:  "#{org.name} #{role.humanize.titleize}",
+          user_email: "#{role.tr('_', '.')}@#{org.name.parameterize}.example.gov"
+        )
+      end
     end
   end
 
