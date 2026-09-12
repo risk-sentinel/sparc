@@ -1,9 +1,23 @@
 # `sparc readiness` — Design Spec
 
 **Status:** Draft · **Owner:** SPARC core · **Target repo:** `risk-sentinel/sparc`
-**Related:** [Boundary Onboarding Checklist](../../wiki/Boundary-Onboarding-Checklist.md)
-(the wiki page this derives from — written 2026-09-12; the spec previously
-referenced an `ONBOARDING.md` that did not exist in any repo), `sparc-validate`
+**Related:** [Adopting OSCAL](../../wiki/Adopting-OSCAL.md), `sparc-validate`
+
+> **Status note, 2026-09-12 — read before building from this spec.**
+> The owner has redirected #940: *"THIS IS NOT what 940 should have been
+> about… What is needed is for boundaries to know what is needed to adopt
+> OSCAL."* The need is an **adoption guide** covering the implementation and
+> assessment layers — who the team is, what the boundary contains, its
+> classification, back-matter, whether an SSP already exists, what is
+> leveraged, UI vs API, how they stay current, and how evidence arrives.
+> That is now [Adopting OSCAL](../../wiki/Adopting-OSCAL.md), and it is
+> #1040's territory rather than this spec's.
+>
+> This document specifies something different: a scoring CLI with
+> green/amber/red verdicts and a CI gate. That may still be wanted later,
+> but it is NOT the current need and should not be built from this spec
+> without a fresh decision. It also referenced an `ONBOARDING.md` that has
+> never existed in any repo in the organization.
 
 ---
 
