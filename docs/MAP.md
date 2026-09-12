@@ -95,7 +95,7 @@ inventory, AWS/UBI9/HDF findings, a11y audit, credential rotation). Not public.
 
 | Path | Purpose |
 |---|---|
-| [design/sparc-readiness-design.md](design/sparc-readiness-design.md) | `sparc readiness` — scores a boundary against a declarative catalog of onboarding checks and emits a CI gate verdict. Draft. |
+| [design/sparc-readiness-design.md](design/sparc-readiness-design.md) | `sparc readiness` — scores a boundary against a declarative catalog of onboarding checks and emits a CI gate verdict. **Draft, and superseded as a current need** (owner, 2026-09-12): what was wanted is an adoption guide, now in the wiki as [Adopting OSCAL](https://github.com/risk-sentinel/sparc/wiki/Adopting-OSCAL). Do not build from this spec without a fresh decision. |
 
 Forward-looking specs for work not yet built. Distinct from `dev/` (process and
 roadmap) and from the wiki (which documents what exists today) — a design here
