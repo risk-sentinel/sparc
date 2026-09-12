@@ -19,7 +19,7 @@ RSpec.describe "the readiness card on the boundary screen (#940)", type: :reques
     get authorization_boundary_path(boundary)
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("Adoption readiness")
+    expect(response.body).to include("Boundary Completeness")
   end
 
   it "names every section" do
@@ -85,7 +85,7 @@ RSpec.describe "the readiness card on the boundary screen (#940)", type: :reques
   it "adds no inline styles — the #1047 ratchet owns that" do
     get authorization_boundary_path(boundary)
 
-    card = response.body[/Adoption readiness.*?<\/table>/m]
+    card = response.body[/Boundary Completeness.*?<\/table>/m]
     expect(card).to be_present
     expect(card).not_to include("style=")
   end
