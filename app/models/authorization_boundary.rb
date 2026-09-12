@@ -13,6 +13,10 @@ class AuthorizationBoundary < ApplicationRecord
   has_many :assigned_users, through: :user_roles, source: :user
   has_many :cdef_documents, through: :boundaries
 
+  # #940 S3 — the information types that DETERMINE this boundary's FIPS-199
+  # categorization. Inputs to the categorization, so they belong with it.
+  has_many :information_types, class_name: "SspInformationType", dependent: :nullify
+
   has_one  :ssp_document, dependent: :nullify
   has_one  :sap_document, dependent: :nullify
   has_one  :sar_document, dependent: :nullify
@@ -67,6 +71,54 @@ class AuthorizationBoundary < ApplicationRecord
     define_method("#{key}=") { |v|
       self.boundary_metadata = (boundary_metadata || {}).merge(key => v)
     }
+  end
+
+  # ── FIPS-199 categorization (#940 S3) ──────────────────────────────────
+  #
+  # The chain NIST actually defines, which SPARC had the pieces of and never
+  # assembled:
+  #
+  #   SP 800-60 Vol 2 gives each information type PROVISIONAL C/I/A impacts
+  #     -> the system owner ADJUSTS them, with rationale
+  #       -> FIPS-199 takes the HIGH WATER MARK across every type and objective
+  #         -> that level selects the 800-53 baseline
+  #
+  # Nothing computed the high water mark before this. `security_sensitivity_level`
+  # was free text set by the wizard or by an OSCAL import, so it could contradict
+  # the information types beneath it and nothing checked. Deriving it means the
+  # categorization cannot disagree with its own inputs.
+  OBJECTIVES = %i[confidentiality integrity availability].freeze
+
+  # The impact for one objective: the high water mark across the information
+  # types, falling back to the value recorded directly on the boundary when no
+  # type carries one.
+  def security_objective(objective)
+    from_types = information_types.filter_map { |t| t.effective_impact(objective) }
+    highest(from_types).presence || self[:"security_objective_#{objective}"].presence
+  end
+
+  # FIPS-199: the system's categorization is the highest impact across all three
+  # objectives. One HIGH anywhere makes the system HIGH — that is the rule, and
+  # it is why averaging or "mostly moderate" is wrong.
+  def security_categorization
+    highest(OBJECTIVES.filter_map { |o| security_objective(o) })
+  end
+
+  # True when the recorded categorization disagrees with what the information
+  # types imply. The condition that was previously undetectable.
+  def categorization_conflicts_with_information_types?
+    derived = highest(information_types.flat_map { |t| OBJECTIVES.filter_map { |o| t.effective_impact(o) } })
+    return false if derived.blank?
+
+    stored = OBJECTIVES.filter_map { |o| self[:"security_objective_#{o}"].presence }
+    return false if stored.empty?
+
+    highest(stored) != derived
+  end
+
+  private def highest(levels)
+    order = SspInformationType::IMPACT_LEVELS
+    Array(levels).compact_blank.max_by { |l| order.index(l) || -1 }
   end
 
   def linked_documents
