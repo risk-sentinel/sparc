@@ -153,26 +153,39 @@ RSpec.describe BoundaryReadinessService do
     end
   end
 
-  # The honest state, and the reason it exists. The owner asked for "1 to n
-  # environments documented"; SPARC models environments nowhere. Reporting that
-  # as `absent` would blame the boundary for SPARC's gap, and reporting nothing
-  # would read as "nothing to do".
+  # Environments ARE modelled — on `Boundary`, the sub-boundary, which carries an
+  # `environment` column. I first reported this as not_modelled after checking
+  # AuthorizationBoundary, SspDocument, SspComponent and CdefDocument and never
+  # checking `Boundary`, which is where it lives.
+  #
+  # Owner's rule (2026-09-12): 1..n environments before it is green.
   describe "environments" do
-    it "is reported as not_modelled, never as absent or complete" do
-      expect(status_of(:environments)).to eq(:not_modelled)
+    it "is absent when the boundary has no sub-boundaries" do
+      expect(status_of(:environments)).to eq(:absent)
     end
 
-    it "says plainly that SPARC cannot answer it" do
-      section = described_class.new(boundary).sections.find { |s| s.key == :environments }
-
-      expect(section.detail).to match(/does not model environments/i)
-      expect(section.count).to be_nil
+    # There is no `partial` state, and this is why: Boundary validates
+    # `environment` as present, so a sub-boundary that names no environment
+    # cannot be saved. Reporting on it would be dead code.
+    it "cannot exist without an environment — the invariant is enforced at the model" do
+      expect {
+        create(:boundary, authorization_boundary: boundary, name: "Unnamed", environment: nil)
+      }.to raise_error(ActiveRecord::RecordInvalid, /Environment can't be blank/)
     end
 
-    it "is excluded from the answerable sections rather than counted as a gap" do
-      summary = described_class.new(boundary).report[:summary]
+    it "is complete with one environment" do
+      create(:boundary, authorization_boundary: boundary, name: "Prod", environment: "production")
 
-      expect(summary[:not_modelled]).to eq(1)
+      expect(status_of(:environments)).to eq(:complete)
+    end
+
+    it "is complete with n environments, and names them" do
+      create(:boundary, authorization_boundary: boundary, name: "Prod", environment: "production")
+      create(:boundary, authorization_boundary: boundary, name: "Dev", environment: "development")
+
+      section = described_class.new(boundary.reload).sections.find { |s| s.key == :environments }
+      expect(section.status).to eq(:complete)
+      expect(section.detail).to include("development", "production")
     end
   end
 

@@ -30,11 +30,35 @@ RSpec.describe "the readiness card on the boundary screen (#940)", type: :reques
     expect(response.body).to include("Components, ports and protocols")
   end
 
-  # `not_modelled` must not read as a failure of the boundary.
-  it "labels an unmodelled item 'Not tracked', not as a failure" do
+  it "renders a Section / Status / Notes table" do
     get authorization_boundary_path(boundary)
 
-    expect(response.body).to include("Not tracked")
+    expect(response.body).to include("Section")
+    expect(response.body).to include("Status")
+    expect(response.body).to include("Notes")
+  end
+
+  # Owner, 2026-09-12: complete green, absent red — EXCEPT leveraged
+  # authorizations, which is amber. A standalone system that inherits nothing is
+  # a legitimate posture, not an omission; red would tell a truthful boundary it
+  # is broken. Amber because "we inherit nothing" should be a decision someone
+  # made rather than a field nobody filled in.
+  describe "colour rules" do
+    it "gives an absent section the failure badge" do
+      expect(helper_badge(:absent, :back_matter)).to eq([ "badge-fail", "Not started" ])
+    end
+
+    it "gives ABSENT leveraged authorizations the WARNING badge, not failure" do
+      expect(helper_badge(:absent, :leveraged)).to eq([ "badge-warn", "Not started" ])
+    end
+
+    it "gives a complete section the success badge" do
+      expect(helper_badge(:complete, :leveraged).first).to eq("badge-ok")
+    end
+
+    def helper_badge(status, key)
+      ApplicationController.helpers.readiness_badge(status, key)
+    end
   end
 
   it "links each section to the adoption guide" do

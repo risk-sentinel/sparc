@@ -232,15 +232,29 @@ class BoundaryReadinessService
     )
   end
 
-  # The honest one. The owner asked for "1 to n environments documented" and
-  # SPARC has no environment model at all — no table, and no column on
-  # AuthorizationBoundary, SspDocument, SspComponent or CdefDocument. Reporting
-  # this as `absent` would blame the boundary for SPARC's gap.
+  # Environments ARE modelled — on `Boundary`, the sub-boundary of an
+  # authorization boundary, which carries an `environment` column. I first
+  # reported this as `not_modelled` after grepping AuthorizationBoundary,
+  # SspDocument, SspComponent and CdefDocument and never checking `Boundary`,
+  # which is exactly where it lives.
+  #
+  # The owner's rule: 1..n environments before it is green. A boundary with no
+  # sub-boundary has not said where it runs; one whose sub-boundaries carry no
+  # environment has named the pieces without saying which environment each is.
   def environments
+    all = boundary.boundaries
+    count = all.count
+    named = all.filter_map { |sub| sub.environment.presence }.uniq
+
+    # No `partial` branch: `Boundary` validates `environment` as present, so a
+    # sub-boundary that names no environment cannot exist. A check for it would
+    # be dead code — the second time this report tried to report on a state the
+    # model already makes impossible (evidence links were the first).
     Section.new(
-      key: :environments, title: "Environments", count: nil, status: :not_modelled,
-      detail: "SPARC does not model environments, so this cannot be reported. " \
-              "Record them in document metadata until it does.",
+      key: :environments, title: "Environments", count: count,
+      status: count.zero? ? :absent : :complete,
+      detail: count.zero? ? "No environments recorded — the boundary does not say where it runs" :
+                            "#{count} recorded: #{named.sort.join(', ')}",
       guide_anchor: "2-what-makes-up-the-boundary"
     )
   end
