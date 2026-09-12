@@ -110,7 +110,10 @@ class BoundaryReadinessService
   def classification_detail(level, types, conflict)
     return "No FIPS-199 categorization, and no information types to derive one from" if level.blank?
 
-    base = "#{level} (high water mark)"
+    # The stored value is `fips-199-moderate`; a person reads "Moderate". This
+    # string is rendered verbatim on the boundary screen, so it must not leak
+    # the storage vocabulary.
+    base = "#{SspInformationType.impact_label(level)} (FIPS-199 high water mark)"
     return "#{base}, but the recorded objectives CONTRADICT the information types" if conflict
     return "#{base}, recorded directly — no SP 800-60 information types justify it" if types.zero?
 
@@ -141,7 +144,7 @@ class BoundaryReadinessService
   # the ability to say what is inherited, shared or operated — so a single
   # undifferentiated component is reported as PARTIAL, not complete.
   def components
-    return absent_without_ssp(:components, "Components", "2-what-makes-up-the-boundary") if ssp.nil?
+    return absent_without_ssp(:components, COMPONENTS_TITLE, "2-what-makes-up-the-boundary") if ssp.nil?
 
     all = ssp.ssp_components
     count = all.count
@@ -154,7 +157,7 @@ class BoundaryReadinessService
     end
 
     Section.new(
-      key: :components, title: "Components, ports and protocols", count: count, status: status,
+      key: :components, title: COMPONENTS_TITLE, count: count, status: status,
       detail: count.zero? ? "No components recorded" :
               "#{count} component(s); types: #{typed.join(', ')}; #{with_protocols} with ports/protocols",
       guide_anchor: "2-what-makes-up-the-boundary"
@@ -243,6 +246,12 @@ class BoundaryReadinessService
   end
 
   REQUIRED_ROLES = %w[system_owner isso authorizing_official].freeze
+
+  # Named once. The first version titled this section "Components" when there was
+  # no SSP and "Components, ports and protocols" otherwise — a heading that
+  # changes with the data is one a reader cannot search for, and its own spec
+  # caught it.
+  COMPONENTS_TITLE = "Components, ports and protocols"
 
   def absent_without_ssp(key, title, anchor)
     Section.new(key: key, title: title, count: 0, status: :absent,

@@ -9,6 +9,24 @@ class SspInformationType < ApplicationRecord
   # through export without translation.
   IMPACT_LEVELS = %w[fips-199-low fips-199-moderate fips-199-high].freeze
 
+  # `fips-199-moderate` is a STORAGE value. Users read "Moderate".
+  #
+  # The derivation was copy-pasted as `.split("-").last.capitalize` in three
+  # views, which is how the day comes that one of them renders the raw token.
+  # One definition, used by the views (via `fips_impact_label`) and by anything
+  # that builds a sentence out of a level.
+  IMPACT_LABELS = {
+    "fips-199-low"      => "Low",
+    "fips-199-moderate" => "Moderate",
+    "fips-199-high"     => "High"
+  }.freeze
+
+  def self.impact_label(value)
+    return nil if value.blank?
+
+    IMPACT_LABELS[value.to_s].presence || value.to_s.split("-").last.to_s.capitalize
+  end
+
   # The impact actually in force for an objective: the owner's SELECTED value if
   # they made one, otherwise the provisional BASE from SP 800-60 Vol 2. That is
   # the order FIPS-199 intends — an adjustment overrides the provisional value,

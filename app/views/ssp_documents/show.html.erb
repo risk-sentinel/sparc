@@ -167,7 +167,7 @@
       <% end %>
       <div class="d-flex flex-wrap gap-1 sparc-mt-025">
         <% if @ssp_document.security_sensitivity_level.present? %>
-          <span class="sparc-status sparc-status--info sparc-fs-072"><%= @ssp_document.security_sensitivity_level.split("-").last.capitalize %></span>
+          <span class="sparc-status sparc-status--info sparc-fs-072"><%= fips_impact_label(@ssp_document.security_sensitivity_level) %></span>
         <% end %>
         <% if @ssp_document.system_status.present? %>
           <span class="sparc-status sparc-status--success sparc-fs-072"><%= @ssp_document.system_status.titleize %></span>
