@@ -106,7 +106,8 @@ jobs:
           SECONDARY_SIGNAL: ${{ inputs.secondary_signal }}
           SUMMARY_OUT: sca-summary.md
         run: |
-          python3 -m pip install --quiet pyyaml
+          # #966 — pinned; see the semgrep note in security.yml.
+          python3 -m pip install --quiet pyyaml==6.0.3
           python3 <<'PY'
           import json, os, sys
           from datetime import date, datetime

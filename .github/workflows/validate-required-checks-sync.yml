@@ -32,7 +32,9 @@ jobs:
           node-version: '22'
 
       - name: Install js-yaml
-        run: npm install --no-save js-yaml@4
+        # #966 — exact version, and --ignore-scripts so a dependency's install
+        # hooks cannot execute in CI (githubactions:S6505).
+        run: npm install --no-save --ignore-scripts js-yaml@4.3.2
 
       - name: Validate JSON-vs-workflow filter sync
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
