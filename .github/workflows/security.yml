@@ -300,7 +300,10 @@ jobs:
 
       - name: Run Semgrep SARIF output
         run: |
-          pip3 install semgrep
+          # #966 — pinned. An unpinned install resolves to whatever is current
+          # at run time, so a scan result is not reproducible and a bad release
+          # lands silently. Bump deliberately.
+          pip3 install semgrep==1.177.0
           semgrep --config p/ruby --config p/rails --sarif --output semgrep-results.sarif ${{ env.RAILS_APP_PATH }}
         continue-on-error: true
 
@@ -722,7 +725,10 @@ jobs:
           # cdxgen settings: Ruby project, JSON output, no auto-upload anywhere
           FETCH_LICENSE: 'true'
         run: |
-          npx --yes @cyclonedx/cdxgen@11 -t ruby -o sbom-ruby.cdx.json .
+          # #966 — exact version, not the `@11` range. `npx --yes` installs on
+          # demand and runs lifecycle scripts, so the range meant executing
+          # whatever 11.x resolved to that morning.
+          npx --yes @cyclonedx/cdxgen@11.11.0 -t ruby -o sbom-ruby.cdx.json .
           # cdxgen emits a phantom version-less component for gems that appear
           # under multiple platforms in Gemfile.lock (e.g. precompiled nokogiri's
           # 7 "-<platform>" variants also produce a bare `pkg:gem/nokogiri` with an

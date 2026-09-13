@@ -200,7 +200,14 @@ ENV PATH=/usr/local/bin:$PATH \
 
 WORKDIR /rails
 COPY Gemfile Gemfile.lock ./
+# #966 (docker:S8547) — `BUNDLE_DEPLOYMENT=1` above already implies frozen, so
+# this changes no behaviour. It states the guarantee AT THE CALL SITE instead of
+# depending on an env var set several lines earlier: lock drift fails the build
+# loudly rather than quietly resolving something new and shipping it.
+# Verified safe before adding: `BUNDLE_FROZEN=true bundle check` exits 0 against
+# the committed lock, and Gemfile.lock is clean in git.
 RUN gem install bundler --no-document \
+    && bundle config set --local frozen true \
     && bundle install \
     && rm -rf ~/.bundle "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git \
     && bundle exec bootsnap precompile --gemfile
