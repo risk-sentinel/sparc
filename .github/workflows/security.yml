@@ -150,7 +150,7 @@ jobs:
         if: steps.gitleaks-cache.outputs.cache-hit != 'true'
         run: |
           GITLEAKS_VERSION="8.24.0"  # Pinned — avoids GitHub API rate limit failures
-          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar xz -C /usr/local/bin gitleaks
+          curl -sSfL --proto '=https' --tlsv1.2 "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar xz -C /usr/local/bin gitleaks
 
       - name: Run Gitleaks
         run: gitleaks detect --source . --report-format sarif --report-path gitleaks-results.sarif --no-banner -v
@@ -300,7 +300,10 @@ jobs:
 
       - name: Run Semgrep SARIF output
         run: |
-          pip3 install semgrep
+          # #966 — pinned. An unpinned install resolves to whatever is current
+          # at run time, so a scan result is not reproducible and a bad release
+          # lands silently. Bump deliberately.
+          pip3 install semgrep==1.177.0
           semgrep --config p/ruby --config p/rails --sarif --output semgrep-results.sarif ${{ env.RAILS_APP_PATH }}
         continue-on-error: true
 
@@ -568,7 +571,7 @@ jobs:
         if: steps.asff-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p contrib
-          curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/asff.tpl -o contrib/asff.tpl
+          curl -sSfL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/asff.tpl -o contrib/asff.tpl
 
       - name: Run Trivy container scan (ASFF for SAF trivy2hdf)
         env:
@@ -722,7 +725,10 @@ jobs:
           # cdxgen settings: Ruby project, JSON output, no auto-upload anywhere
           FETCH_LICENSE: 'true'
         run: |
-          npx --yes @cyclonedx/cdxgen@11 -t ruby -o sbom-ruby.cdx.json .
+          # #966 — exact version, not the `@11` range. `npx --yes` installs on
+          # demand and runs lifecycle scripts, so the range meant executing
+          # whatever 11.x resolved to that morning.
+          npx --yes @cyclonedx/cdxgen@11.11.0 -t ruby -o sbom-ruby.cdx.json .
           # cdxgen emits a phantom version-less component for gems that appear
           # under multiple platforms in Gemfile.lock (e.g. precompiled nokogiri's
           # 7 "-<platform>" variants also produce a bare `pkg:gem/nokogiri` with an
@@ -818,8 +824,24 @@ jobs:
       - name: Install Grype
         if: steps.grype-cache.outputs.cache-hit != 'true'
         run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh \
-            | sh -s -- -b /usr/local/bin "${GRYPE_VERSION}"
+          set -euo pipefail
+          # #966 — was `curl .../grype/main/install.sh | sh`. GRYPE_VERSION pinned
+          # the BINARY; the SCRIPT came from whatever was on `main` at run time and
+          # was piped straight into a shell with the job's permissions. One of these
+          # jobs is the release-gating scan.
+          #
+          # Same shape as the hdf-cli install in sonarqube-hdf.yml: pinned release
+          # asset, published checksums, verify BEFORE anything executes.
+          # --proto '=https' so a redirect cannot downgrade the transport (S6506).
+          ver="${GRYPE_VERSION#v}"
+          base="https://github.com/anchore/grype/releases/download/${GRYPE_VERSION}"
+          tar="grype_${ver}_linux_amd64.tar.gz"
+          curl -sSfL --proto '=https' --tlsv1.2 "${base}/${tar}" -o "${tar}"
+          curl -sSfL --proto '=https' --tlsv1.2 "${base}/grype_${ver}_checksums.txt" -o checksums.txt
+          grep " ${tar}$" checksums.txt | sha256sum -c -
+          tar -xzf "${tar}" grype
+          install -m 0755 grype /usr/local/bin/grype
+          rm -f "${tar}" checksums.txt grype
           grype version
 
       # NOTE: shell ($(...)) is NOT evaluated in a cache `key:` — only ${{ }}

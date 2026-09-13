@@ -24,6 +24,12 @@
 # ============================================================================
 set -euo pipefail
 
+# #966 — the installer below pins this. Previously nothing pinned trivy at all:
+# the script piped `contrib/install.sh` from `main` into a shell, so both the
+# script and the version it fetched were whatever happened to be current.
+# Override to test a different release: TRIVY_VERSION=v0.75.0 scripts/trivy-scan.sh
+TRIVY_VERSION="${TRIVY_VERSION:-v0.74.0}"
+
 # ── Ensure common local install paths are on PATH ─────────────────────────
 export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
 
@@ -85,15 +91,41 @@ ensure_trivy() {
   info "(No brew/apt required — downloads from GitHub releases)"
 
   mkdir -p "$HOME/.local/bin"
-  if ! curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b "$HOME/.local/bin"; then
+
+  # #966 — was `curl .../trivy/main/contrib/install.sh | sh`: a script from
+  # whatever is on `main` at run time, piped into a shell. Same class as the two
+  # Grype Blockers (githubactions:S8482); this one is a developer convenience
+  # rather than CI, which is the only reason Sonar rated it lower.
+  #
+  # Pinned release asset + published checksum, verified BEFORE anything runs.
+  # --proto '=https' so a redirect cannot downgrade the transport (S6506).
+  # Trivy's asset names are their own vocabulary: Darwin is published as
+  # "macOS", and the architectures are "64bit"/"ARM64" rather than uname's.
+  # Assuming uname's spelling produced a 404 on the first attempt.
+  os="$(uname -s)"; arch="$(uname -m)"
+  case "$os"   in Darwin) os="macOS" ;; esac
+  case "$arch" in x86_64) arch="64bit" ;; arm64|aarch64) arch="ARM64" ;; esac
+  tarball="trivy_${TRIVY_VERSION#v}_${os}-${arch}.tar.gz"
+  base="https://github.com/aquasecurity/trivy/releases/download/${TRIVY_VERSION}"
+  tmp="$(mktemp -d)"
+
+  if ! (
+    cd "$tmp" \
+      && curl -sSfL --proto '=https' --tlsv1.2 "${base}/${tarball}" -o "${tarball}" \
+      && curl -sSfL --proto '=https' --tlsv1.2 "${base}/trivy_${TRIVY_VERSION#v}_checksums.txt" -o checksums.txt \
+      && grep " ${tarball}$" checksums.txt | shasum -a 256 -c - \
+      && tar -xzf "${tarball}" trivy \
+      && install -m 0755 trivy "$HOME/.local/bin/trivy"
+  ); then
+    rm -rf "$tmp"
     fail "Trivy installation failed."
     echo ""
-    echo "Manual install options:"
-    echo "  mkdir -p ~/.local/bin"
-    echo "  curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b ~/.local/bin"
-    echo "  # or download from: https://github.com/aquasecurity/trivy/releases"
+    echo "Manual install: https://github.com/aquasecurity/trivy/releases"
+    echo "  (download ${tarball}, verify against trivy_${TRIVY_VERSION#v}_checksums.txt, then)"
+    echo "  install -m 0755 trivy ~/.local/bin/trivy"
     exit 1
   fi
+  rm -rf "$tmp"
 
   ok "Trivy installed: $(trivy --version 2>&1 | head -1)"
 }

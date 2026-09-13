@@ -144,13 +144,13 @@ RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 \
     && microdnf clean all
 
 # jemalloc from source -> /usr/local/lib/libjemalloc.so.2 (LD_PRELOAD'd at runtime)
-RUN curl -sSfL "https://github.com/jemalloc/jemalloc/releases/download/${JEMALLOC_VERSION}/jemalloc-${JEMALLOC_VERSION}.tar.bz2" -o /tmp/jemalloc.tar.bz2 \
+RUN curl -sSfL --proto '=https' --tlsv1.2 "https://github.com/jemalloc/jemalloc/releases/download/${JEMALLOC_VERSION}/jemalloc-${JEMALLOC_VERSION}.tar.bz2" -o /tmp/jemalloc.tar.bz2 \
     && mkdir -p /tmp/jemalloc && tar -xjf /tmp/jemalloc.tar.bz2 -C /tmp/jemalloc --strip-components=1 \
     && cd /tmp/jemalloc && ./configure --prefix=/usr/local && make -j"$(nproc)" && make install \
     && rm -rf /tmp/jemalloc*
 
 # Ruby from source -> /usr/local
-RUN curl -sSfL "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-${RUBY_VERSION}.tar.gz" -o /tmp/ruby.tar.gz \
+RUN curl -sSfL --proto '=https' --tlsv1.2 "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-${RUBY_VERSION}.tar.gz" -o /tmp/ruby.tar.gz \
     && mkdir -p /tmp/ruby && tar -xzf /tmp/ruby.tar.gz -C /tmp/ruby --strip-components=1 \
     && cd /tmp/ruby && ./configure --prefix=/usr/local --enable-shared --disable-install-doc \
     && make -j"$(nproc)" && make install && rm -rf /tmp/ruby*
@@ -200,7 +200,14 @@ ENV PATH=/usr/local/bin:$PATH \
 
 WORKDIR /rails
 COPY Gemfile Gemfile.lock ./
+# #966 (docker:S8547) — `BUNDLE_DEPLOYMENT=1` above already implies frozen, so
+# this changes no behaviour. It states the guarantee AT THE CALL SITE instead of
+# depending on an env var set several lines earlier: lock drift fails the build
+# loudly rather than quietly resolving something new and shipping it.
+# Verified safe before adding: `BUNDLE_FROZEN=true bundle check` exits 0 against
+# the committed lock, and Gemfile.lock is clean in git.
 RUN gem install bundler --no-document \
+    && bundle config set --local frozen true \
     && bundle install \
     && rm -rf ~/.bundle "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git \
     && bundle exec bootsnap precompile --gemfile
