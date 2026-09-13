@@ -78,3 +78,7 @@ saf-cli.log
 /docs/images/sparc_logo_clean.jpg
 /docs/images/sparc_logo_clear.png
 license-inventory.json
+
+# Redis snapshots — a local runtime artifact, committed by accident at repo
+# creation (2026-02-27). Never source; Sonar was parsing it as UTF-8 text.
+*.rdb

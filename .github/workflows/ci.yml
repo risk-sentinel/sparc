@@ -402,4 +402,5 @@ jobs:
             -Dsonar.projectKey=risk-sentinel_sparc
             -Dsonar.organization=risk-sentinel
             -Dsonar.ruby.coverage.reportPaths=coverage/.resultset.json
-            -Dsonar.exclusions=lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**
+            -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.exclusions=lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.ico,**/*.svg,**/*.mp4,**/*.xlsx,**/*.rdb,**/*.pdf,**/*.woff,**/*.woff2
