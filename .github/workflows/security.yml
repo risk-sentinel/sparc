@@ -303,7 +303,10 @@ jobs:
           # #966 — pinned. An unpinned install resolves to whatever is current
           # at run time, so a scan result is not reproducible and a bad release
           # lands silently. Bump deliberately.
-          pip3 install semgrep==1.177.0
+          # --only-binary :all: so a source distribution's setup.py cannot execute
+          # during install (githubactions:S8541). Verified semgrep publishes wheels:
+          # `pip install --dry-run --only-binary :all: semgrep==1.177.0` exits 0.
+          pip3 install --only-binary :all: semgrep==1.177.0
           semgrep --config p/ruby --config p/rails --sarif --output semgrep-results.sarif ${{ env.RAILS_APP_PATH }}
         continue-on-error: true
 

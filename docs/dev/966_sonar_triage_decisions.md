@@ -57,11 +57,25 @@ because it is marked as `--no-build` but has no binary distribution
 
 Forcing the flag would break the job to satisfy a rule the lock already satisfies.
 
-### 3. `githubactions:S6505` on `sonarqube-hdf.yml:155` — Won't Fix
+### 3. `githubactions:S6505` — both `npx` sites — Won't Fix
 
-`@mitre/saf@${SAF_VER}` is already an **exact** pin (`1.6.0`). The finding is
-`npx --yes` running lifecycle scripts at all; suppressing those risks breaking
-the CLI's own postinstall. It is also the fallback path — hdf-cli is primary.
+| Site | Package |
+|---|---|
+| `sonarqube-hdf.yml:155` | `@mitre/saf@${SAF_VER}` — exact pin `1.6.0` |
+| `security.yml:731` | `@cyclonedx/cdxgen@11.11.0` — exact pin (was the range `@11`) |
+
+Both are now pinned to an exact version, so the *resolution* risk is closed. The
+residual finding is that `npx --yes` runs lifecycle scripts **at all**, and there
+is no `--ignore-scripts` for `npx`.
+
+Suppressing those scripts is not free: both packages are CLIs whose postinstall
+may fetch what they need to run, and both sit on release-gating paths — the SBOM
+that feeds the Grype scan, and the SonarQube→HDF bridge. Breaking either to
+satisfy a rule that the exact pin has already largely answered is the wrong
+trade. Revisit if npm gains a supported way to run an exec with scripts
+disabled.
+
+The saf bridge is additionally the fallback path; hdf-cli is primary.
 
 ### 4. The five `Web:*` "bugs" — False Positive
 
