@@ -78,7 +78,6 @@ env:
   # given above (mitre/hdf-libs#184) was resolved by #993/#996. Left alone
   # deliberately — changing this workflow needs its own approval.
   HDF_CLI_VERSION: v3.4.1
-  SAF_VERSION: '1.6.0'
   BUCKET: sparc-prod-security-artifacts
 
 jobs:
@@ -130,7 +129,6 @@ jobs:
           URL: ${{ inputs.sonar_host_url }}
           KEY: ${{ inputs.sonar_project_key }}
           ORG: ${{ inputs.sonar_organization }}
-          SAF_VER: ${{ env.SAF_VERSION }}
         run: |
           set -euo pipefail
           out="$HDF_FILE"
@@ -166,7 +164,11 @@ jobs:
             # whenever SONARQUBE_HDF_USE_SAF=true; the default hdf-cli path is
             # unaffected. Not fixed here: out of scope for #966, and the fix is
             # upstream's or a post-processing step someone must choose.
-            npm install --no-save --ignore-scripts "@mitre/saf@${SAF_VER}"
+            # Version pinned LITERALLY, not via an env var: `githubactions:S8543`
+            # fired on PR #1126 because the analyzer cannot see through
+            # `${SAF_VER}`, and neither can a reader of this line. Single-use
+            # indirection bought nothing. Matches the cdxgen call in security.yml.
+            npm install --no-save --ignore-scripts @mitre/saf@1.6.0
             ./node_modules/.bin/saf convert sonarqube2hdf \
               -n "$KEY" -u "$URL" --auth "$SONAR_TOKEN" -o "$out"
           fi

@@ -21,6 +21,7 @@ below is short: two Blockers alone held Security at E.
 | 4 | `S8544`/`S8543`/`S6505` | semgrep, pyyaml, cdxgen and js-yaml pinned to exact versions; `--ignore-scripts` on the npm install |
 | 1 | `docker:S8547` | `bundle config set --local frozen true` stated at the call site |
 | 2 | `githubactions:S6505` | **Both `npx` calls replaced** — `npm install --no-save --ignore-scripts` then invoking the binary directly. See the correction below |
+| 1 | `githubactions:S8543` | saf's version pinned **literally** at the call site. It was pinned already, via `${SAF_VER}` — but the analyzer cannot see through a shell variable, and neither can a reader. Single-use indirection, removed |
 | 7 | various | **Deleted with `Dockerfile_debian`** — 3 clear-text APT (`docker:S5332`) and 4 pinning findings, in an image nobody shipped |
 
 Every install sequence was run locally before committing. Two were wrong on the
@@ -71,6 +72,22 @@ default `hdf-cli` path is unaffected, which is why nobody has hit it.
 
 **Not fixed in #966** — out of scope, and the fix is either upstream's or a
 post-processing step that is the owner's call. Flagged, not filed.
+
+---
+
+## What the PR's own gate caught
+
+`new_security_rating` came back **C**, failing the PR quality gate on a single
+MAJOR: `githubactions:S8543` at `sonarqube-hdf.yml:169`, the saf install line
+this PR had just rewritten. The version was pinned — `@mitre/saf@${SAF_VER}`,
+with `SAF_VER` set from a workflow-level constant — so the first instinct was
+"false positive". It is not a useful one: an env var read one line and one
+`env:` block away is invisible to the analyzer *and* to the next person editing
+the call site. The constant had exactly one reference. Inlining `@mitre/saf@1.6.0`
+matches the cdxgen call in `security.yml`, which the same rule passed.
+
+Worth noting the gate worked as designed: the finding was in code added by the
+fix for a *different* finding, and nothing else would have caught it.
 
 ---
 
