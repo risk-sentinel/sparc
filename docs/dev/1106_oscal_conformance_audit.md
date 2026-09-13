@@ -115,14 +115,6 @@ Unbounded, and the only finding here that is open-ended rather than a fixed list
 whatever an author types after `prop:` becomes a name asserted as NIST's. Needs a
 namespace at minimum, and probably an allow-list.
 
-### F5 — `validation-type` / `validation-reference` are not NIST props
-
-**`oscal_ssp_export_service.rb:386,389`** (`SspComponent::VALIDATION_*_PROP`)
-
-For `type='validation'` components OSCAL constrains `link/@rel` —
-`validation-details` — and defines no such props. Either namespace them or
-express the relationship as a link.
-
 ### F6 — SAP and catalog props with no NIST definition
 
 | Prop | Site | Status |
@@ -158,12 +150,28 @@ re-raising them later would waste the same time twice.
 | SAP `method` emitted with no `ns` | NIST defines `method` on `activity` in the OSCAL namespace with values `EXAMINE`/`INTERVIEW`/`TEST`; SPARC's `.upcase` produces exactly those. It is even `min-occurs=1`, so emitting it is required. Correct as-is |
 | `by-component` `implementation-status` carrying raw SPARC vocabulary | `SspByComponent::IMPLEMENTATION_STATUSES` already **is** NIST's vocabulary — `implemented partial planned alternative not-applicable`. No mapping needed |
 | CDEF `cci` prop | Correctly namespaced to `http://cyber.mil/cci` |
+| **SSP `validation-type` / `validation-reference`** (was F5 — **WITHDRAWN**) | **NIST-defined.** They arrive through `shared-constraints/allowed-values-component_component_property-name.ent`, one of **10** entity files `implementation-common.xml` includes. The hand audit read only the top-level metaschemas and could not see them. Correct as emitted |
 
 Note in passing: NIST publishes `method`, `implementation-level`,
 `contributes-to-assurance` and `aggregates` under a **second** NIST namespace,
 `http://csrc.nist.gov/ns/rmf` — worth knowing before assuming "NIST" means one URI.
 
 ---
+
+## Superseded by the generated dataset (slice 0)
+
+This document was produced by hand. `lib/oscal_conformance/<version>/` is now
+generated from the same authority by `bin/rails oscal:bundle_conformance`, and it
+**resolves entity includes the hand pass missed** — `implementation-common.xml`
+alone pulls in 10 `.ent` files. Two corrections came out of that:
+
+* **F5 is withdrawn** (above). Automation found `validation-type` legitimate;
+  acting on the hand audit would have namespaced two conforming NIST props.
+* The machine verdict over every prop SPARC emits **with no `ns`** is
+  **13 violations of 18**. The other five — catalog `label`/`sort-id`, SSP
+  `validation-type`/`validation-reference`, SAP `method` — are conformant.
+
+Where this document and the generated dataset disagree, **the dataset wins**.
 
 ## Coverage — what this pass did and did not do
 
@@ -181,6 +189,6 @@ mapping resources.
 ## Suggested sequencing
 
 F1 and F2 are the two that produce *wrong documents a consumer will misread*, and
-both are small. F3/F5/F6 are one mechanical pattern applied in six places and
+both are small. F3/F6 are one mechanical pattern applied in five places and
 should follow the F7 namespace decision so the fix is applied once. F4 is the only
 one needing a design call beyond the namespace.

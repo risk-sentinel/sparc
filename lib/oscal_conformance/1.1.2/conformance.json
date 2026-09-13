@@ -1,0 +1,2962 @@
+{
+  "oscal_version": "1.1.2",
+  "generated_from": "https://raw.githubusercontent.com/usnistgov/OSCAL/tree/v1.1.2/src/metaschema",
+  "models": {
+    "catalog": {
+      "prop_names": {
+        "aggregates": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/rmf')]/@name"
+        ],
+        "alt-identifier": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "alt-label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-method": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-objective": [
+          ".//part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-objects": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "example": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "guidance": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "instruction": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "item": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='statement']//part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "job-title": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "keywords": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "mail-stop": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "marking": [
+          ".[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "method": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/prop[has-oscal-namespace('http://csrc.nist.gov/ns/rmf')]/@name",
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/prop[has-oscal-namespace(('http://csrc.nist.gov/ns/oscal','http://csrc.nist.gov/ns/rmf')) and @name='method']/@value"
+        ],
+        "objective": [
+          ".//part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "objects": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "office": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "overview": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "published": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "resolution-tool": [
+          "metadata/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "sort-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "source-profile-uuid": [
+          "metadata/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "statement": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "status": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='status']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ]
+      },
+      "prop_values": {
+        "": {
+          "values": [
+            "approval",
+            "request-changes"
+          ],
+          "advisory": false,
+          "target": "./type[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@value"
+        },
+        "method": {
+          "values": [
+            "INTERVIEW",
+            "EXAMINE",
+            "TEST"
+          ],
+          "advisory": false,
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/prop[has-oscal-namespace(('http://csrc.nist.gov/ns/oscal','http://csrc.nist.gov/ns/rmf')) and @name='method']/@value"
+        },
+        "status": {
+          "values": [
+            "withdrawn",
+            "Withdrawn"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='status']/@value"
+        },
+        "type": {
+          "values": [
+            "logo",
+            "image",
+            "screen-shot",
+            "law",
+            "regulation",
+            "standard",
+            "external-guidance",
+            "acronyms",
+            "citation",
+            "policy",
+            "procedure",
+            "system-guide",
+            "users-guide",
+            "administrators-guide",
+            "rules-of-behavior",
+            "plan",
+            "artifact",
+            "evidence",
+            "tool-output",
+            "raw-data",
+            "interview-notes",
+            "questionnaire",
+            "report",
+            "agreement"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value"
+        }
+      },
+      "cardinalities": [
+        {
+          "target": "published|last-modified|link[@rel='canonical']",
+          "min_occurs": 1
+        }
+      ],
+      "role_ids": [
+        "contact",
+        "content-approver",
+        "creator",
+        "prepared-by",
+        "prepared-for"
+      ],
+      "metaschemas": [
+        "oscal_catalog_metaschema.xml",
+        "oscal_control-common_metaschema.xml",
+        "oscal_metadata_metaschema.xml"
+      ]
+    },
+    "profile": {
+      "prop_names": {
+        "aggregates": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/rmf')]/@name"
+        ],
+        "alt-identifier": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "alt-label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "job-title": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "keywords": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "mail-stop": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "marking": [
+          ".[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "office": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "published": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "sort-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ]
+      },
+      "prop_values": {
+        "": {
+          "values": [
+            "approval",
+            "request-changes"
+          ],
+          "advisory": false,
+          "target": "./type[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@value"
+        },
+        "type": {
+          "values": [
+            "logo",
+            "image",
+            "screen-shot",
+            "law",
+            "regulation",
+            "standard",
+            "external-guidance",
+            "acronyms",
+            "citation",
+            "policy",
+            "procedure",
+            "system-guide",
+            "users-guide",
+            "administrators-guide",
+            "rules-of-behavior",
+            "plan",
+            "artifact",
+            "evidence",
+            "tool-output",
+            "raw-data",
+            "interview-notes",
+            "questionnaire",
+            "report",
+            "agreement"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value"
+        }
+      },
+      "cardinalities": [
+        {
+          "target": "published|last-modified|link[@rel='canonical']",
+          "min_occurs": 1
+        }
+      ],
+      "role_ids": [
+        "contact",
+        "content-approver",
+        "creator",
+        "prepared-by",
+        "prepared-for"
+      ],
+      "metaschemas": [
+        "oscal_control-common_metaschema.xml",
+        "oscal_metadata_metaschema.xml",
+        "oscal_profile_metaschema.xml"
+      ]
+    },
+    "component-definition": {
+      "prop_names": {
+        "aggregates": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/rmf')]/@name"
+        ],
+        "allows-authenticated-scan": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='allows-authenticated-scan']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "alt-identifier": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "alt-label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-tag": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-type']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "baseline-configuration-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "direction": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='direction']/@value"
+        ],
+        "fqdn": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "function": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "hardware-model": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "implementation-point": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='implementation-point']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "inherited-uuid": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "ipv4-address": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "ipv6-address": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "is-scanned": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='is-scanned']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-date": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-remote-system-name": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-title": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "job-title": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "keywords": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "leveraged-authorization-uuid": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "mac-address": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "mail-stop": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "marking": [
+          ".[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "model": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "netbios-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "network-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "office": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "os-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "os-version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "patch-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "physical-location": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "privilege-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='privilege-level']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "public": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='public']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "published": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "release-date": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "serial-number": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-identifier": [
+          "(.)[@type='software']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-patch-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "sort-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "uri": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "validation-reference": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "validation-type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "vendor-name": [
+          "(.)[@type=('software', 'hardware', 'service')]/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "virtual": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='virtual']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "vlan-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ]
+      },
+      "prop_values": {
+        "": {
+          "values": [
+            "approval",
+            "request-changes"
+          ],
+          "advisory": false,
+          "target": "./type[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@value"
+        },
+        "allows-authenticated-scan": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='allows-authenticated-scan']/@value"
+        },
+        "asset-type": {
+          "values": [
+            "operating-system",
+            "database",
+            "web-server",
+            "dns-server",
+            "email-server",
+            "directory-server",
+            "pbx",
+            "firewall",
+            "router",
+            "switch",
+            "storage-array",
+            "appliance"
+          ],
+          "advisory": true,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-type']/@value"
+        },
+        "direction": {
+          "values": [
+            "incoming",
+            "outgoing"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='direction']/@value"
+        },
+        "implementation-point": {
+          "values": [
+            "internal",
+            "external"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='implementation-point']/@value"
+        },
+        "is-scanned": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='is-scanned']/@value"
+        },
+        "privilege-level": {
+          "values": [
+            "privileged",
+            "non-privileged",
+            "no-logical-access"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='privilege-level']/@value"
+        },
+        "public": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='public']/@value"
+        },
+        "type": {
+          "values": [
+            "logo",
+            "image",
+            "screen-shot",
+            "law",
+            "regulation",
+            "standard",
+            "external-guidance",
+            "acronyms",
+            "citation",
+            "policy",
+            "procedure",
+            "system-guide",
+            "users-guide",
+            "administrators-guide",
+            "rules-of-behavior",
+            "plan",
+            "artifact",
+            "evidence",
+            "tool-output",
+            "raw-data",
+            "interview-notes",
+            "questionnaire",
+            "report",
+            "agreement"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value"
+        },
+        "virtual": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='virtual']/@value"
+        }
+      },
+      "cardinalities": [
+        {
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-id']",
+          "min_occurs": 1
+        },
+        {
+          "target": "published|last-modified|link[@rel='canonical']",
+          "min_occurs": 1
+        }
+      ],
+      "role_ids": [
+        "asset-administrator",
+        "asset-owner",
+        "configuration-management",
+        "contact",
+        "content-approver",
+        "creator",
+        "help-desk",
+        "incident-response",
+        "isa-authorizing-official-local",
+        "isa-authorizing-official-remote",
+        "isa-poc-local",
+        "isa-poc-remote",
+        "maintainer",
+        "network-operations",
+        "prepared-by",
+        "prepared-for",
+        "provider",
+        "security-operations"
+      ],
+      "metaschemas": [
+        "oscal_component_metaschema.xml",
+        "oscal_control-common_metaschema.xml",
+        "oscal_implementation-common_metaschema.xml",
+        "oscal_metadata_metaschema.xml"
+      ]
+    },
+    "system-security-plan": {
+      "prop_names": {
+        "aggregates": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/rmf')]/@name"
+        ],
+        "allows-authenticated-scan": [
+          "(component | inventory-item)/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='allows-authenticated-scan']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='allows-authenticated-scan']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "alt-identifier": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "alt-label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-tag": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-type']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "authenticator-assurance-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "baseline-configuration-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "cloud-deployment-model": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='cloud-deployment-model']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "cloud-service-model": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='cloud-service-model']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "control-origination": [
+          "(.|statement|.//by-component)/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='control-origination']/@value",
+          "(.|statement|.//by-component)/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "direction": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='direction']/@value"
+        ],
+        "federation-assurance-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "fqdn": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "function": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "hardware-model": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "identity-assurance-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "identity-assurance-level,authenticator-assurance-level,federation-assurance-level": [
+          "prop[@name=('identity-assurance-level','authenticator-assurance-level','federation-assurance-level')]/@value"
+        ],
+        "implementation-point": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='implementation-point']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "inherited-uuid": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "ipv4-address": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "ipv6-address": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "is-scanned": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='is-scanned']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-date": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-remote-system-name": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-title": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "job-title": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "keywords": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "leveraged-authorization-uuid": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "mac-address": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "mail-stop": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "marking": [
+          ".[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "model": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "netbios-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "network-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "office": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "os-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "os-version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "patch-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "physical-location": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "privacy-designation": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='privacy-designation']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "privilege-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='privilege-level']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "public": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='public']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "published": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "release-date": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "serial-number": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-identifier": [
+          "(.)[@type='software']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-patch-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "sort-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "uri": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "validation-reference": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "validation-type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "vendor-name": [
+          "(.)[@type=('software', 'hardware', 'service')]/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "virtual": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='virtual']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "vlan-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ]
+      },
+      "prop_values": {
+        "": {
+          "values": [
+            "approval",
+            "request-changes"
+          ],
+          "advisory": false,
+          "target": "./type[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@value"
+        },
+        "allows-authenticated-scan": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='allows-authenticated-scan']/@value"
+        },
+        "asset-type": {
+          "values": [
+            "operating-system",
+            "database",
+            "web-server",
+            "dns-server",
+            "email-server",
+            "directory-server",
+            "pbx",
+            "firewall",
+            "router",
+            "switch",
+            "storage-array",
+            "appliance"
+          ],
+          "advisory": true,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-type']/@value"
+        },
+        "cloud-deployment-model": {
+          "values": [
+            "public-cloud",
+            "private-cloud",
+            "community-cloud",
+            "hybrid-cloud",
+            "government-only-cloud",
+            "other"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='cloud-deployment-model']/@value"
+        },
+        "cloud-service-model": {
+          "values": [
+            "saas",
+            "paas",
+            "iaas",
+            "other"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='cloud-service-model']/@value"
+        },
+        "control-origination": {
+          "values": [
+            "organization",
+            "system-specific",
+            "customer-configured",
+            "customer-provided",
+            "inherited"
+          ],
+          "advisory": false,
+          "target": "(.|statement|.//by-component)/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='control-origination']/@value"
+        },
+        "direction": {
+          "values": [
+            "incoming",
+            "outgoing"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='direction']/@value"
+        },
+        "identity-assurance-level,authenticator-assurance-level,federation-assurance-level": {
+          "values": [
+            "1",
+            "2",
+            "3"
+          ],
+          "advisory": false,
+          "target": "prop[@name=('identity-assurance-level','authenticator-assurance-level','federation-assurance-level')]/@value"
+        },
+        "implementation-point": {
+          "values": [
+            "internal",
+            "external"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='implementation-point']/@value"
+        },
+        "is-scanned": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='is-scanned']/@value"
+        },
+        "privacy-designation": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='privacy-designation']/@value"
+        },
+        "privilege-level": {
+          "values": [
+            "privileged",
+            "non-privileged",
+            "no-logical-access"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='privilege-level']/@value"
+        },
+        "public": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='public']/@value"
+        },
+        "type": {
+          "values": [
+            "internal",
+            "external",
+            "general-public"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value"
+        },
+        "virtual": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='virtual']/@value"
+        }
+      },
+      "cardinalities": [
+        {
+          "target": "provided|responsibility",
+          "min_occurs": 1
+        },
+        {
+          "target": "published|last-modified|link[@rel='canonical']",
+          "min_occurs": 1
+        },
+        {
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-id']",
+          "min_occurs": 1
+        }
+      ],
+      "role_ids": [
+        "asset-administrator",
+        "asset-owner",
+        "authorizing-official",
+        "authorizing-official-poc",
+        "configuration-management",
+        "contact",
+        "content-approver",
+        "creator",
+        "help-desk",
+        "incident-response",
+        "information-system-security-officer",
+        "isa-authorizing-official-local",
+        "isa-authorizing-official-remote",
+        "isa-poc-local",
+        "isa-poc-remote",
+        "maintainer",
+        "network-operations",
+        "prepared-by",
+        "prepared-for",
+        "privacy-poc",
+        "provider",
+        "security-operations",
+        "system-owner",
+        "system-poc-management",
+        "system-poc-other",
+        "system-poc-technical"
+      ],
+      "metaschemas": [
+        "oscal_control-common_metaschema.xml",
+        "oscal_implementation-common_metaschema.xml",
+        "oscal_metadata_metaschema.xml",
+        "oscal_ssp_metaschema.xml"
+      ]
+    },
+    "assessment-plan": {
+      "prop_names": {
+        "accepted": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "access-complexity": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='access-complexity']/@value",
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='access-complexity']/@value"
+        ],
+        "access-vector": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='access-vector']/@value",
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='access-vector']/@value"
+        ],
+        "aggregates": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/rmf')]/@name"
+        ],
+        "allows-authenticated-scan": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='allows-authenticated-scan']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "alt-identifier": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "alt-label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-exclusions": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-inclusions": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-method": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-objective": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-tag": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-type']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assumptions": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "authentication": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='authentication']/@value"
+        ],
+        "baseline-configuration-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "collateral-damage-potential": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='collateral-damage-potential']/@value"
+        ],
+        "confidentiality-impact, integrity-impact, availability-impact": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name=('confidentiality-impact', 'integrity-impact', 'availability-impact')]/@value"
+        ],
+        "confidentiality-requirement, integrity-requirement, availability-requirement": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('confidentiality-requirement', 'integrity-requirement', 'availability-requirement')]/@value"
+        ],
+        "direction": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='direction']/@value"
+        ],
+        "disclosures": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "exploit-code-maturity": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='exploit-code-maturity']/@value"
+        ],
+        "exploitability": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='exploitability']/@value"
+        ],
+        "false-positive": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "fqdn": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "function": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "hardware-model": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "implementation-point": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='implementation-point']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "inherited-uuid": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "ipv4-address": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "ipv6-address": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "is-scanned": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='is-scanned']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-date": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-remote-system-name": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-title": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "job-title": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "keywords": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "leveraged-authorization-uuid": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "mac-address": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "mail-stop": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "marking": [
+          ".[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "method": [
+          ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "methodology": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "model": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "modified-attack-complexity": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-attack-complexity']/@value"
+        ],
+        "modified-attack-vector": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-attack-vector']/@value"
+        ],
+        "modified-privileges-required, modified-confidentiality, modified-integrity, modified-availability": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('modified-privileges-required', 'modified-confidentiality', 'modified-integrity', 'modified-availability')]/@value"
+        ],
+        "modified-scope": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-scope']/@value"
+        ],
+        "modified-user-interaction": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-user-interaction']/@value"
+        ],
+        "netbios-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "network-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "objective": [
+          ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value",
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "office": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "os-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "os-version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "patch-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "physical-location": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "priority": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "privilege-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='privilege-level']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "privileges-required, confidentiality-impact, integrity-impact, availability-impact": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('privileges-required', 'confidentiality-impact', 'integrity-impact', 'availability-impact')]/@value"
+        ],
+        "public": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='public']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "published": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "release-date": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "remediation-level": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='remediation-level']/@value",
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='remediation-level']/@value"
+        ],
+        "report-confidence": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='report-confidence']/@value",
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='report-confidence']/@value"
+        ],
+        "results-delivery": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "risk-adjusted": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "rules-of-engagement": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "scope": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='scope']/@value"
+        ],
+        "serial-number": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-identifier": [
+          "(.)[@type='software']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-patch-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "sort-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "state": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='state']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "target-distribution, confidentiality-requirement, integrity-requirement, availability-requirement": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name=('target-distribution', 'confidentiality-requirement', 'integrity-requirement', 'availability-requirement')]/@value"
+        ],
+        "type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "uri": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "user-interaction": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='user-interaction']/@value"
+        ],
+        "validation-reference": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "validation-type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "vendor-name": [
+          "(.)[@type=('software', 'hardware', 'service')]/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "virtual": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='virtual']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "vlan-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ]
+      },
+      "prop_values": {
+        "": {
+          "values": [
+            "approval",
+            "request-changes"
+          ],
+          "advisory": false,
+          "target": "./type[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@value"
+        },
+        "access-complexity": {
+          "values": [
+            "high",
+            "low"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='access-complexity']/@value"
+        },
+        "access-vector": {
+          "values": [
+            "network",
+            "adjacent",
+            "local",
+            "physical"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='access-vector']/@value"
+        },
+        "allows-authenticated-scan": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='allows-authenticated-scan']/@value"
+        },
+        "asset-type": {
+          "values": [
+            "operating-system",
+            "database",
+            "web-server",
+            "dns-server",
+            "email-server",
+            "directory-server",
+            "pbx",
+            "firewall",
+            "router",
+            "switch",
+            "storage-array",
+            "appliance"
+          ],
+          "advisory": true,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-type']/@value"
+        },
+        "authentication": {
+          "values": [
+            "multiple",
+            "single",
+            "none"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name='authentication']/@value"
+        },
+        "collateral-damage-potential": {
+          "values": [
+            "none",
+            "low",
+            "low-medium",
+            "medium-high",
+            "high",
+            "not-defined"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name='collateral-damage-potential']/@value"
+        },
+        "confidentiality-impact, integrity-impact, availability-impact": {
+          "values": [
+            "none",
+            "partial",
+            "complete"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name=('confidentiality-impact', 'integrity-impact', 'availability-impact')]/@value"
+        },
+        "confidentiality-requirement, integrity-requirement, availability-requirement": {
+          "values": [
+            "not-defined",
+            "low",
+            "medium",
+            "high"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('confidentiality-requirement', 'integrity-requirement', 'availability-requirement')]/@value"
+        },
+        "direction": {
+          "values": [
+            "incoming",
+            "outgoing"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='direction']/@value"
+        },
+        "exploit-code-maturity": {
+          "values": [
+            "not-defined",
+            "unproven",
+            "proof-of-concept",
+            "functional",
+            "high"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='exploit-code-maturity']/@value"
+        },
+        "exploitability": {
+          "values": [
+            "unproven",
+            "proof-of-concept",
+            "functional",
+            "high",
+            "not-defined"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name='exploitability']/@value"
+        },
+        "implementation-point": {
+          "values": [
+            "internal",
+            "external"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='implementation-point']/@value"
+        },
+        "is-scanned": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='is-scanned']/@value"
+        },
+        "method": {
+          "values": [
+            "INTERVIEW",
+            "EXAMINE",
+            "TEST"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value"
+        },
+        "modified-attack-complexity": {
+          "values": [
+            "not-defined",
+            "high",
+            "low"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-attack-complexity']/@value"
+        },
+        "modified-attack-vector": {
+          "values": [
+            "not-defined",
+            "network",
+            "adjacent",
+            "local",
+            "physical"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-attack-vector']/@value"
+        },
+        "modified-privileges-required, modified-confidentiality, modified-integrity, modified-availability": {
+          "values": [
+            "not-defined",
+            "none",
+            "low",
+            "high"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('modified-privileges-required', 'modified-confidentiality', 'modified-integrity', 'modified-availability')]/@value"
+        },
+        "modified-scope": {
+          "values": [
+            "not-defined",
+            "unchanged",
+            "changed"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-scope']/@value"
+        },
+        "modified-user-interaction": {
+          "values": [
+            "not-defined",
+            "none",
+            "required"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-user-interaction']/@value"
+        },
+        "objective": {
+          "values": [
+            "INTERVIEW",
+            "EXAMINE",
+            "TEST"
+          ],
+          "advisory": false,
+          "target": ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value"
+        },
+        "privilege-level": {
+          "values": [
+            "privileged",
+            "non-privileged",
+            "no-logical-access"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='privilege-level']/@value"
+        },
+        "privileges-required, confidentiality-impact, integrity-impact, availability-impact": {
+          "values": [
+            "none",
+            "low",
+            "high"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('privileges-required', 'confidentiality-impact', 'integrity-impact', 'availability-impact')]/@value"
+        },
+        "public": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='public']/@value"
+        },
+        "remediation-level": {
+          "values": [
+            "not-defined",
+            "official-fix",
+            "temporary-fix",
+            "workaround",
+            "unavailable"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='remediation-level']/@value"
+        },
+        "report-confidence": {
+          "values": [
+            "not-defined",
+            "unknown",
+            "reasonable",
+            "confirmed"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='report-confidence']/@value"
+        },
+        "scope": {
+          "values": [
+            "unchanged",
+            "changed"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='scope']/@value"
+        },
+        "state": {
+          "values": [
+            "initial",
+            "adjusted"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='state']/@value"
+        },
+        "target-distribution, confidentiality-requirement, integrity-requirement, availability-requirement": {
+          "values": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "not-defined"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name=('target-distribution', 'confidentiality-requirement', 'integrity-requirement', 'availability-requirement')]/@value"
+        },
+        "type": {
+          "values": [
+            "internal",
+            "external",
+            "general-public"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value"
+        },
+        "user-interaction": {
+          "values": [
+            "none",
+            "required"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='user-interaction']/@value"
+        },
+        "virtual": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='virtual']/@value"
+        }
+      },
+      "cardinalities": [
+        {
+          "target": "published|last-modified|link[@rel='canonical']",
+          "min_occurs": 1
+        },
+        {
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('objective','assessment-objective')]",
+          "max_occurs": "1"
+        },
+        {
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/prop[has-oscal-namespace(('http://csrc.nist.gov/ns/oscal','http://csrc.nist.gov/ns/rmf')) and @name='method']",
+          "min_occurs": 1,
+          "max_occurs": "1"
+        },
+        {
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('objects','assessment-objects')]",
+          "min_occurs": 1,
+          "max_occurs": "1"
+        },
+        {
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('objective','assessment-objective')]/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method-id']",
+          "min_occurs": 1
+        },
+        {
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']",
+          "min_occurs": 1
+        },
+        {
+          "target": ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']",
+          "min_occurs": 1
+        },
+        {
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-id']",
+          "min_occurs": 1
+        }
+      ],
+      "role_ids": [
+        "asset-administrator",
+        "asset-owner",
+        "configuration-management",
+        "contact",
+        "content-approver",
+        "creator",
+        "help-desk",
+        "incident-response",
+        "isa-authorizing-official-local",
+        "isa-authorizing-official-remote",
+        "isa-poc-local",
+        "isa-poc-remote",
+        "maintainer",
+        "network-operations",
+        "prepared-by",
+        "prepared-for",
+        "provider",
+        "security-operations"
+      ],
+      "metaschemas": [
+        "oscal_assessment-common_metaschema.xml",
+        "oscal_assessment-plan_metaschema.xml",
+        "oscal_control-common_metaschema.xml",
+        "oscal_implementation-common_metaschema.xml",
+        "oscal_metadata_metaschema.xml"
+      ]
+    },
+    "assessment-results": {
+      "prop_names": {
+        "accepted": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "access-complexity": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='access-complexity']/@value",
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='access-complexity']/@value"
+        ],
+        "access-vector": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='access-vector']/@value",
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='access-vector']/@value"
+        ],
+        "aggregates": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/rmf')]/@name"
+        ],
+        "allows-authenticated-scan": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='allows-authenticated-scan']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "alt-identifier": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "alt-label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-method": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-objective": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-tag": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-type']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "authentication": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='authentication']/@value"
+        ],
+        "baseline-configuration-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "collateral-damage-potential": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='collateral-damage-potential']/@value"
+        ],
+        "confidentiality-impact, integrity-impact, availability-impact": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name=('confidentiality-impact', 'integrity-impact', 'availability-impact')]/@value"
+        ],
+        "confidentiality-requirement, integrity-requirement, availability-requirement": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('confidentiality-requirement', 'integrity-requirement', 'availability-requirement')]/@value"
+        ],
+        "direction": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='direction']/@value"
+        ],
+        "exploit-code-maturity": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='exploit-code-maturity']/@value"
+        ],
+        "exploitability": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='exploitability']/@value"
+        ],
+        "false-positive": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "fqdn": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "function": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "hardware-model": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "implementation-point": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='implementation-point']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "inherited-uuid": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "ipv4-address": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "ipv6-address": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "is-scanned": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='is-scanned']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-date": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-remote-system-name": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-title": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "job-title": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "keywords": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "leveraged-authorization-uuid": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "mac-address": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "mail-stop": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "marking": [
+          ".[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "method": [
+          ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "model": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "modified-attack-complexity": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-attack-complexity']/@value"
+        ],
+        "modified-attack-vector": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-attack-vector']/@value"
+        ],
+        "modified-privileges-required, modified-confidentiality, modified-integrity, modified-availability": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('modified-privileges-required', 'modified-confidentiality', 'modified-integrity', 'modified-availability')]/@value"
+        ],
+        "modified-scope": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-scope']/@value"
+        ],
+        "modified-user-interaction": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-user-interaction']/@value"
+        ],
+        "netbios-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "network-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "objective": [
+          ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value",
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "office": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "os-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "os-version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "patch-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "physical-location": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "priority": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "privilege-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='privilege-level']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "privileges-required, confidentiality-impact, integrity-impact, availability-impact": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('privileges-required', 'confidentiality-impact', 'integrity-impact', 'availability-impact')]/@value"
+        ],
+        "public": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='public']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "published": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "release-date": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "remediation-level": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='remediation-level']/@value",
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='remediation-level']/@value"
+        ],
+        "report-confidence": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='report-confidence']/@value",
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='report-confidence']/@value"
+        ],
+        "risk-adjusted": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "scope": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='scope']/@value"
+        ],
+        "serial-number": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-identifier": [
+          "(.)[@type='software']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-patch-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "sort-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "state": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='state']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "target-distribution, confidentiality-requirement, integrity-requirement, availability-requirement": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name=('target-distribution', 'confidentiality-requirement', 'integrity-requirement', 'availability-requirement')]/@value"
+        ],
+        "type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "uri": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "user-interaction": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='user-interaction']/@value"
+        ],
+        "validation-reference": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "validation-type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "vendor-name": [
+          "(.)[@type=('software', 'hardware', 'service')]/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "virtual": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='virtual']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "vlan-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ]
+      },
+      "prop_values": {
+        "": {
+          "values": [
+            "approval",
+            "request-changes"
+          ],
+          "advisory": false,
+          "target": "./type[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@value"
+        },
+        "access-complexity": {
+          "values": [
+            "high",
+            "low"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='access-complexity']/@value"
+        },
+        "access-vector": {
+          "values": [
+            "network",
+            "adjacent",
+            "local",
+            "physical"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='access-vector']/@value"
+        },
+        "allows-authenticated-scan": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='allows-authenticated-scan']/@value"
+        },
+        "asset-type": {
+          "values": [
+            "operating-system",
+            "database",
+            "web-server",
+            "dns-server",
+            "email-server",
+            "directory-server",
+            "pbx",
+            "firewall",
+            "router",
+            "switch",
+            "storage-array",
+            "appliance"
+          ],
+          "advisory": true,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-type']/@value"
+        },
+        "authentication": {
+          "values": [
+            "multiple",
+            "single",
+            "none"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name='authentication']/@value"
+        },
+        "collateral-damage-potential": {
+          "values": [
+            "none",
+            "low",
+            "low-medium",
+            "medium-high",
+            "high",
+            "not-defined"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name='collateral-damage-potential']/@value"
+        },
+        "confidentiality-impact, integrity-impact, availability-impact": {
+          "values": [
+            "none",
+            "partial",
+            "complete"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name=('confidentiality-impact', 'integrity-impact', 'availability-impact')]/@value"
+        },
+        "confidentiality-requirement, integrity-requirement, availability-requirement": {
+          "values": [
+            "not-defined",
+            "low",
+            "medium",
+            "high"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('confidentiality-requirement', 'integrity-requirement', 'availability-requirement')]/@value"
+        },
+        "direction": {
+          "values": [
+            "incoming",
+            "outgoing"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='direction']/@value"
+        },
+        "exploit-code-maturity": {
+          "values": [
+            "not-defined",
+            "unproven",
+            "proof-of-concept",
+            "functional",
+            "high"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='exploit-code-maturity']/@value"
+        },
+        "exploitability": {
+          "values": [
+            "unproven",
+            "proof-of-concept",
+            "functional",
+            "high",
+            "not-defined"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name='exploitability']/@value"
+        },
+        "implementation-point": {
+          "values": [
+            "internal",
+            "external"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='implementation-point']/@value"
+        },
+        "is-scanned": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='is-scanned']/@value"
+        },
+        "method": {
+          "values": [
+            "INTERVIEW",
+            "EXAMINE",
+            "TEST"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value"
+        },
+        "modified-attack-complexity": {
+          "values": [
+            "not-defined",
+            "high",
+            "low"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-attack-complexity']/@value"
+        },
+        "modified-attack-vector": {
+          "values": [
+            "not-defined",
+            "network",
+            "adjacent",
+            "local",
+            "physical"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-attack-vector']/@value"
+        },
+        "modified-privileges-required, modified-confidentiality, modified-integrity, modified-availability": {
+          "values": [
+            "not-defined",
+            "none",
+            "low",
+            "high"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('modified-privileges-required', 'modified-confidentiality', 'modified-integrity', 'modified-availability')]/@value"
+        },
+        "modified-scope": {
+          "values": [
+            "not-defined",
+            "unchanged",
+            "changed"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-scope']/@value"
+        },
+        "modified-user-interaction": {
+          "values": [
+            "not-defined",
+            "none",
+            "required"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-user-interaction']/@value"
+        },
+        "objective": {
+          "values": [
+            "INTERVIEW",
+            "EXAMINE",
+            "TEST"
+          ],
+          "advisory": false,
+          "target": ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value"
+        },
+        "privilege-level": {
+          "values": [
+            "privileged",
+            "non-privileged",
+            "no-logical-access"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='privilege-level']/@value"
+        },
+        "privileges-required, confidentiality-impact, integrity-impact, availability-impact": {
+          "values": [
+            "none",
+            "low",
+            "high"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('privileges-required', 'confidentiality-impact', 'integrity-impact', 'availability-impact')]/@value"
+        },
+        "public": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='public']/@value"
+        },
+        "remediation-level": {
+          "values": [
+            "not-defined",
+            "official-fix",
+            "temporary-fix",
+            "workaround",
+            "unavailable"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='remediation-level']/@value"
+        },
+        "report-confidence": {
+          "values": [
+            "not-defined",
+            "unknown",
+            "reasonable",
+            "confirmed"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='report-confidence']/@value"
+        },
+        "scope": {
+          "values": [
+            "unchanged",
+            "changed"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='scope']/@value"
+        },
+        "state": {
+          "values": [
+            "initial",
+            "adjusted"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='state']/@value"
+        },
+        "target-distribution, confidentiality-requirement, integrity-requirement, availability-requirement": {
+          "values": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "not-defined"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name=('target-distribution', 'confidentiality-requirement', 'integrity-requirement', 'availability-requirement')]/@value"
+        },
+        "type": {
+          "values": [
+            "internal",
+            "external",
+            "general-public"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value"
+        },
+        "user-interaction": {
+          "values": [
+            "none",
+            "required"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='user-interaction']/@value"
+        },
+        "virtual": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='virtual']/@value"
+        }
+      },
+      "cardinalities": [
+        {
+          "target": "published|last-modified|link[@rel='canonical']",
+          "min_occurs": 1
+        },
+        {
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('objective','assessment-objective')]",
+          "max_occurs": "1"
+        },
+        {
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/prop[has-oscal-namespace(('http://csrc.nist.gov/ns/oscal','http://csrc.nist.gov/ns/rmf')) and @name='method']",
+          "min_occurs": 1,
+          "max_occurs": "1"
+        },
+        {
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('objects','assessment-objects')]",
+          "min_occurs": 1,
+          "max_occurs": "1"
+        },
+        {
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('objective','assessment-objective')]/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method-id']",
+          "min_occurs": 1
+        },
+        {
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']",
+          "min_occurs": 1
+        },
+        {
+          "target": ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']",
+          "min_occurs": 1
+        },
+        {
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-id']",
+          "min_occurs": 1
+        }
+      ],
+      "role_ids": [
+        "asset-administrator",
+        "asset-owner",
+        "configuration-management",
+        "contact",
+        "content-approver",
+        "creator",
+        "help-desk",
+        "incident-response",
+        "isa-authorizing-official-local",
+        "isa-authorizing-official-remote",
+        "isa-poc-local",
+        "isa-poc-remote",
+        "maintainer",
+        "network-operations",
+        "prepared-by",
+        "prepared-for",
+        "provider",
+        "security-operations"
+      ],
+      "metaschemas": [
+        "oscal_assessment-common_metaschema.xml",
+        "oscal_assessment-results_metaschema.xml",
+        "oscal_control-common_metaschema.xml",
+        "oscal_implementation-common_metaschema.xml",
+        "oscal_metadata_metaschema.xml"
+      ]
+    },
+    "plan-of-action-and-milestones": {
+      "prop_names": {
+        "accepted": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "access-complexity": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='access-complexity']/@value",
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='access-complexity']/@value"
+        ],
+        "access-vector": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='access-vector']/@value",
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='access-vector']/@value"
+        ],
+        "aggregates": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/rmf')]/@name"
+        ],
+        "allows-authenticated-scan": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='allows-authenticated-scan']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "alt-identifier": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "alt-label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-method": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-objective": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-tag": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "asset-type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-type']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "authentication": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='authentication']/@value"
+        ],
+        "baseline-configuration-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "collateral-damage-potential": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='collateral-damage-potential']/@value"
+        ],
+        "confidentiality-impact, integrity-impact, availability-impact": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name=('confidentiality-impact', 'integrity-impact', 'availability-impact')]/@value"
+        ],
+        "confidentiality-requirement, integrity-requirement, availability-requirement": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('confidentiality-requirement', 'integrity-requirement', 'availability-requirement')]/@value"
+        ],
+        "direction": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='direction']/@value"
+        ],
+        "exploit-code-maturity": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='exploit-code-maturity']/@value"
+        ],
+        "exploitability": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='exploitability']/@value"
+        ],
+        "false-positive": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "fqdn": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "function": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "hardware-model": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "implementation-point": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='implementation-point']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "inherited-uuid": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "ipv4-address": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "ipv6-address": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "is-scanned": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='is-scanned']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-date": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-remote-system-name": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "isa-title": [
+          "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "job-title": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "keywords": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "label": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "leveraged-authorization-uuid": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "mac-address": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "mail-stop": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "marking": [
+          ".[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "method": [
+          ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "model": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "modified-attack-complexity": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-attack-complexity']/@value"
+        ],
+        "modified-attack-vector": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-attack-vector']/@value"
+        ],
+        "modified-privileges-required, modified-confidentiality, modified-integrity, modified-availability": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('modified-privileges-required', 'modified-confidentiality', 'modified-integrity', 'modified-availability')]/@value"
+        ],
+        "modified-scope": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-scope']/@value"
+        ],
+        "modified-user-interaction": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-user-interaction']/@value"
+        ],
+        "netbios-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "network-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "objective": [
+          ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value",
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "office": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "os-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "os-version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "patch-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "physical-location": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "priority": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "privilege-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='privilege-level']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "privileges-required, confidentiality-impact, integrity-impact, availability-impact": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('privileges-required', 'confidentiality-impact', 'integrity-impact', 'availability-impact')]/@value"
+        ],
+        "public": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='public']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "published": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "release-date": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "remediation-level": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='remediation-level']/@value",
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='remediation-level']/@value"
+        ],
+        "report-confidence": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name='report-confidence']/@value",
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='report-confidence']/@value"
+        ],
+        "risk-adjusted": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "scope": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='scope']/@value"
+        ],
+        "serial-number": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-identifier": [
+          "(.)[@type='software']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-name": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-patch-level": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "software-version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "sort-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "state": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='state']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "target-distribution, confidentiality-requirement, integrity-requirement, availability-requirement": [
+          "(.)[@system='http://www.first.org/cvss/v2.0' and @name=('target-distribution', 'confidentiality-requirement', 'integrity-requirement', 'availability-requirement')]/@value"
+        ],
+        "type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "uri": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "user-interaction": [
+          "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='user-interaction']/@value"
+        ],
+        "validation-reference": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "validation-type": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "vendor-name": [
+          "(.)[@type=('software', 'hardware', 'service')]/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "version": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "virtual": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='virtual']/@value",
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "vlan-id": [
+          "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ]
+      },
+      "prop_values": {
+        "": {
+          "values": [
+            "approval",
+            "request-changes"
+          ],
+          "advisory": false,
+          "target": "./type[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@value"
+        },
+        "access-complexity": {
+          "values": [
+            "high",
+            "low"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='access-complexity']/@value"
+        },
+        "access-vector": {
+          "values": [
+            "network",
+            "adjacent",
+            "local",
+            "physical"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='access-vector']/@value"
+        },
+        "allows-authenticated-scan": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='allows-authenticated-scan']/@value"
+        },
+        "asset-type": {
+          "values": [
+            "operating-system",
+            "database",
+            "web-server",
+            "dns-server",
+            "email-server",
+            "directory-server",
+            "pbx",
+            "firewall",
+            "router",
+            "switch",
+            "storage-array",
+            "appliance"
+          ],
+          "advisory": true,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-type']/@value"
+        },
+        "authentication": {
+          "values": [
+            "multiple",
+            "single",
+            "none"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name='authentication']/@value"
+        },
+        "collateral-damage-potential": {
+          "values": [
+            "none",
+            "low",
+            "low-medium",
+            "medium-high",
+            "high",
+            "not-defined"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name='collateral-damage-potential']/@value"
+        },
+        "confidentiality-impact, integrity-impact, availability-impact": {
+          "values": [
+            "none",
+            "partial",
+            "complete"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name=('confidentiality-impact', 'integrity-impact', 'availability-impact')]/@value"
+        },
+        "confidentiality-requirement, integrity-requirement, availability-requirement": {
+          "values": [
+            "not-defined",
+            "low",
+            "medium",
+            "high"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('confidentiality-requirement', 'integrity-requirement', 'availability-requirement')]/@value"
+        },
+        "direction": {
+          "values": [
+            "incoming",
+            "outgoing"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='direction']/@value"
+        },
+        "exploit-code-maturity": {
+          "values": [
+            "not-defined",
+            "unproven",
+            "proof-of-concept",
+            "functional",
+            "high"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='exploit-code-maturity']/@value"
+        },
+        "exploitability": {
+          "values": [
+            "unproven",
+            "proof-of-concept",
+            "functional",
+            "high",
+            "not-defined"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name='exploitability']/@value"
+        },
+        "implementation-point": {
+          "values": [
+            "internal",
+            "external"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='implementation-point']/@value"
+        },
+        "is-scanned": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='is-scanned']/@value"
+        },
+        "method": {
+          "values": [
+            "INTERVIEW",
+            "EXAMINE",
+            "TEST"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value"
+        },
+        "modified-attack-complexity": {
+          "values": [
+            "not-defined",
+            "high",
+            "low"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-attack-complexity']/@value"
+        },
+        "modified-attack-vector": {
+          "values": [
+            "not-defined",
+            "network",
+            "adjacent",
+            "local",
+            "physical"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-attack-vector']/@value"
+        },
+        "modified-privileges-required, modified-confidentiality, modified-integrity, modified-availability": {
+          "values": [
+            "not-defined",
+            "none",
+            "low",
+            "high"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('modified-privileges-required', 'modified-confidentiality', 'modified-integrity', 'modified-availability')]/@value"
+        },
+        "modified-scope": {
+          "values": [
+            "not-defined",
+            "unchanged",
+            "changed"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-scope']/@value"
+        },
+        "modified-user-interaction": {
+          "values": [
+            "not-defined",
+            "none",
+            "required"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='modified-user-interaction']/@value"
+        },
+        "objective": {
+          "values": [
+            "INTERVIEW",
+            "EXAMINE",
+            "TEST"
+          ],
+          "advisory": false,
+          "target": ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value"
+        },
+        "privilege-level": {
+          "values": [
+            "privileged",
+            "non-privileged",
+            "no-logical-access"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='privilege-level']/@value"
+        },
+        "privileges-required, confidentiality-impact, integrity-impact, availability-impact": {
+          "values": [
+            "none",
+            "low",
+            "high"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name=('privileges-required', 'confidentiality-impact', 'integrity-impact', 'availability-impact')]/@value"
+        },
+        "public": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='public']/@value"
+        },
+        "remediation-level": {
+          "values": [
+            "not-defined",
+            "official-fix",
+            "temporary-fix",
+            "workaround",
+            "unavailable"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='remediation-level']/@value"
+        },
+        "report-confidence": {
+          "values": [
+            "not-defined",
+            "unknown",
+            "reasonable",
+            "confirmed"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='report-confidence']/@value"
+        },
+        "scope": {
+          "values": [
+            "unchanged",
+            "changed"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='scope']/@value"
+        },
+        "state": {
+          "values": [
+            "initial",
+            "adjusted"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='state']/@value"
+        },
+        "target-distribution, confidentiality-requirement, integrity-requirement, availability-requirement": {
+          "values": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "not-defined"
+          ],
+          "advisory": false,
+          "target": "(.)[@system='http://www.first.org/cvss/v2.0' and @name=('target-distribution', 'confidentiality-requirement', 'integrity-requirement', 'availability-requirement')]/@value"
+        },
+        "type": {
+          "values": [
+            "avoid",
+            "mitigate",
+            "transfer",
+            "accept",
+            "share",
+            "contingency",
+            "none"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='type']/@value"
+        },
+        "user-interaction": {
+          "values": [
+            "none",
+            "required"
+          ],
+          "advisory": false,
+          "target": "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='user-interaction']/@value"
+        },
+        "virtual": {
+          "values": [
+            "yes",
+            "no"
+          ],
+          "advisory": false,
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='virtual']/@value"
+        }
+      },
+      "cardinalities": [
+        {
+          "target": "published|last-modified|link[@rel='canonical']",
+          "min_occurs": 1
+        },
+        {
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-id']",
+          "min_occurs": 1
+        },
+        {
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('objective','assessment-objective')]",
+          "max_occurs": "1"
+        },
+        {
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/prop[has-oscal-namespace(('http://csrc.nist.gov/ns/oscal','http://csrc.nist.gov/ns/rmf')) and @name='method']",
+          "min_occurs": 1,
+          "max_occurs": "1"
+        },
+        {
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('objects','assessment-objects')]",
+          "min_occurs": 1,
+          "max_occurs": "1"
+        },
+        {
+          "target": "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('objective','assessment-objective')]/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method-id']",
+          "min_occurs": 1
+        },
+        {
+          "target": "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']",
+          "min_occurs": 1
+        },
+        {
+          "target": ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']",
+          "min_occurs": 1
+        }
+      ],
+      "role_ids": [
+        "asset-administrator",
+        "asset-owner",
+        "configuration-management",
+        "contact",
+        "content-approver",
+        "creator",
+        "help-desk",
+        "incident-response",
+        "isa-authorizing-official-local",
+        "isa-authorizing-official-remote",
+        "isa-poc-local",
+        "isa-poc-remote",
+        "maintainer",
+        "network-operations",
+        "prepared-by",
+        "prepared-for",
+        "provider",
+        "security-operations"
+      ],
+      "metaschemas": [
+        "oscal_assessment-common_metaschema.xml",
+        "oscal_control-common_metaschema.xml",
+        "oscal_implementation-common_metaschema.xml",
+        "oscal_metadata_metaschema.xml",
+        "oscal_poam_metaschema.xml"
+      ]
+    }
+  },
+  "role_ids": [
+    "asset-administrator",
+    "asset-owner",
+    "authorizing-official",
+    "authorizing-official-poc",
+    "configuration-management",
+    "contact",
+    "content-approver",
+    "creator",
+    "help-desk",
+    "incident-response",
+    "information-system-security-officer",
+    "isa-authorizing-official-local",
+    "isa-authorizing-official-remote",
+    "isa-poc-local",
+    "isa-poc-remote",
+    "maintainer",
+    "network-operations",
+    "prepared-by",
+    "prepared-for",
+    "privacy-poc",
+    "provider",
+    "security-operations",
+    "system-owner",
+    "system-poc-management",
+    "system-poc-other",
+    "system-poc-technical"
+  ]
+}
