@@ -46,8 +46,8 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf "${TMPDIR}"' EXIT
 
 echo "→ downloading hdf-cli v${HDF_LIBS_VERSION} (${OS}/${ARCH})"
-curl -fsSL "${RELEASE_URL}/${ASSET}"          -o "${TMPDIR}/${ASSET}"
-curl -fsSL "${RELEASE_URL}/checksums.txt"     -o "${TMPDIR}/checksums.txt"
+curl -fsSL --proto '=https' --tlsv1.2 "${RELEASE_URL}/${ASSET}"          -o "${TMPDIR}/${ASSET}"
+curl -fsSL --proto '=https' --tlsv1.2 "${RELEASE_URL}/checksums.txt"     -o "${TMPDIR}/checksums.txt"
 
 echo "→ verifying SHA-256 against release checksums.txt"
 EXPECTED_SHA="$(awk -v f="${ASSET}" '$2 == f { print $1 }' "${TMPDIR}/checksums.txt")"
