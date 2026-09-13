@@ -818,8 +818,24 @@ jobs:
       - name: Install Grype
         if: steps.grype-cache.outputs.cache-hit != 'true'
         run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh \
-            | sh -s -- -b /usr/local/bin "${GRYPE_VERSION}"
+          set -euo pipefail
+          # #966 — was `curl .../grype/main/install.sh | sh`. GRYPE_VERSION pinned
+          # the BINARY; the SCRIPT came from whatever was on `main` at run time and
+          # was piped straight into a shell with the job's permissions. One of these
+          # jobs is the release-gating scan.
+          #
+          # Same shape as the hdf-cli install in sonarqube-hdf.yml: pinned release
+          # asset, published checksums, verify BEFORE anything executes.
+          # --proto '=https' so a redirect cannot downgrade the transport (S6506).
+          ver="${GRYPE_VERSION#v}"
+          base="https://github.com/anchore/grype/releases/download/${GRYPE_VERSION}"
+          tar="grype_${ver}_linux_amd64.tar.gz"
+          curl -sSfL --proto '=https' --tlsv1.2 "${base}/${tar}" -o "${tar}"
+          curl -sSfL --proto '=https' --tlsv1.2 "${base}/grype_${ver}_checksums.txt" -o checksums.txt
+          grep " ${tar}$" checksums.txt | sha256sum -c -
+          tar -xzf "${tar}" grype
+          install -m 0755 grype /usr/local/bin/grype
+          rm -f "${tar}" checksums.txt grype
           grype version
 
       # NOTE: shell ($(...)) is NOT evaluated in a cache `key:` — only ${{ }}
