@@ -44,6 +44,7 @@ development. See [`issue_rules.md`](issue_rules.md) for the full doc-update proc
 | [`admin_credential_rotation.md`](admin_credential_rotation.md) | Admin-credential rotation runbook — Secrets Manager ↔ ECS ↔ database |
 | [`860_idp_entitlements_design.md`](860_idp_entitlements_design.md) | #860 IdP-as-system-of-record design memo — **historical, shipped in v1.16.0.** Configuration lives in the wiki and `docs/ENVIRONMENT_VARIABLES.md` |
 | [`919_authorization_triage.md`](919_authorization_triage.md) | #919 controller authorization sweep — triage record |
+| [`966_sonar_triage_decisions.md`](966_sonar_triage_decisions.md) | #966 SonarCloud triage — what was fixed in code, and the console decisions still needed (with the evidence for each) |
 | [`781_screenshots.md`](781_screenshots.md) | #781 wiki screenshot capture process |
 | [`hdf-libs-3.5.1-oscal-poam-upstream-report.md`](hdf-libs-3.5.1-oscal-poam-upstream-report.md) | hdf-cli 3.5.1 OSCAL POA&M upstream contract report |
 | [`user_guide_template.md`](user_guide_template.md) | Template for a new wiki User Guide page |
