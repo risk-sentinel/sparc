@@ -1,94 +1,57 @@
-# Development Docker Compose — see docs/ENVIRONMENT_VARIABLES.md for all SPARC_* config options.
-# Copy .env.example to .env to customize settings.
+# The default local stack: `docker compose up -d`.
+#
+# #966 — this used to build a SECOND BASE OS (Dockerfile_debian) purely to make
+# development fast. That is now unnecessary and was never free:
+#
+#   * It cost us #750. Debian's implicit LANG=C.UTF-8 masked UBI9's missing
+#     locale, which 500'd every page in production. A different base for
+#     development is how a prod-only bug stays hidden until prod.
+#   * Nothing in CI ever built it, so it was unverified by construction.
+#   * It carried 7 of the 34 open SonarCloud vulnerabilities, for an image
+#     nobody ships.
+#
+# Measured before removing it: on the UBI9 image with the source bind-mounted,
+# an edit is visible in the container instantly and served 12s after
+# `docker compose restart web` — against 2-5 minutes for a rebuild. Same image
+# production ships.
+#
+# ── WHAT CHANGED FOR YOU ──────────────────────────────────────────────────
+#
+# `RAILS_ENV=development` INSIDE THE CONTAINER IS GONE. It cannot be offered on
+# the production runtime image: that stage carries no compiler and no package
+# manager (verified — no gcc, make, apt-get, microdnf or dnf), so the old
+# runtime `apt-get install build-essential && bundle install` is impossible
+# there, and adding a toolchain would stop it being the artifact we ship.
+#
+# For true development mode with hot reloading, run Rails on the HOST
+# (`bin/rails server`) against this stack's Postgres and Redis — which is
+# already where the test suite runs. For anything that must exercise the
+# shipped artifact, this stack is now that artifact.
+#
+# ── ARCHITECTURE ──────────────────────────────────────────────────────────
+#
+# `platform: ""` clears the amd64 pin that docker-compose.ubi9.yaml sets. That
+# pin reproduces the deployed posture (Fargate defaults to X86_64) and belongs
+# to the RELEASE GATE, not to local development, where it means QEMU emulation.
+# Run the gate stack explicitly when you need that posture:
+#
+#   docker compose -f docker-compose.ubi9.yaml up -d --build
+#
+# SAME PROJECT NAME as the gate stack, deliberately. `include:` does not inherit
+# it, and without this the default file resolves to project `sparc` while the
+# gate resolves to `sparc-ubi9` — two projects building the SAME Dockerfile into
+# two differently-named images, so no build cache is shared and a second ~700MB
+# copy lands on disk. One project, one image, one set of containers.
+name: sparc-ubi9
+
+include:
+  - docker-compose.ubi9.yaml
+  - compose.dev.yaml
+
 services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password  # gitleaks:allow
-      POSTGRES_DB: ssp_tpr_manager_development
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"          # avoid conflict with local Postgres
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6380:6379"          # avoid conflict
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile_debian   # dev stays on Debian (apt + runtime bundle); prod ships UBI9 ./Dockerfile
-    user: root
-    # Runtime apt deps for native gem extensions. zlib1g-dev is required to
-    # compile the `zlib` gem added in #620 (CVE-2026-27820); without the header
-    # this runtime `bundle install` fails. The Dockerfile build stage already
-    # got zlib1g-dev in #620, but this dev-compose command does its own
-    # apt-get — so it needs the header too (added with #561).
-    command: bash -c "apt-get update -qq && apt-get install --no-install-recommends -y build-essential libpq-dev zlib1g-dev > /dev/null 2>&1; bundle install --quiet && rm -f tmp/pids/server.pid && bundle exec rails db:prepare && bundle exec rails db:seed && bundle exec puma -C config/puma.rb"
-    volumes:
-      - .:/rails
-      - bundle_cache:/usr/local/bundle
-      - storage_data:/rails/storage
-      - ./ssl:/rails/ssl:ro          # SSL certs for dev HTTPS (mkcert)
-    ports:
-      - "3000:3000"
-      - "3443:3443"                   # HTTPS port (used when SSL_DEV=true)
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    env_file: .env
-    environment:
-      RAILS_ENV: development
-      DATABASE_URL: postgresql://postgres:password@db:5432/ssp_tpr_manager_development  # gitleaks:allow
-      REDIS_URL: redis://redis:6379/0
-      ACTIVE_STORAGE_SERVICE: local
-      DOCKERIZED: "true"
-      BUNDLE_DEPLOYMENT: ""           # override Dockerfile frozen-install setting
-      BUNDLE_WITHOUT: "development test"
-      # SSL_DEV: "true"              # Uncomment to enable HTTPS on port 3443
-
-  sidekiq:
-    build:
-      context: .
-      dockerfile: Dockerfile_debian
-    user: root
-    # zlib1g-dev: see the web service — needed to compile the `zlib` gem (#620) (#561).
-    command: bash -c "apt-get update -qq && apt-get install --no-install-recommends -y build-essential libpq-dev zlib1g-dev > /dev/null 2>&1; bundle install --quiet && bundle exec sidekiq"
-    volumes:
-      - .:/rails
-      - bundle_cache:/usr/local/bundle
-      - storage_data:/rails/storage
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      web:
-        condition: service_started
-    env_file: .env
-    environment:
-      RAILS_ENV: development
-      DATABASE_URL: postgresql://postgres:password@db:5432/ssp_tpr_manager_development  # gitleaks:allow
-      REDIS_URL: redis://redis:6379/0
-      BUNDLE_DEPLOYMENT: ""           # override Dockerfile frozen-install setting
-      BUNDLE_WITHOUT: "development test"
-
-volumes:
-  postgres_data:
-  bundle_cache:
-  storage_data:
+    # `!reset` REMOVES the value from the merged config. `platform: ""` does not
+    # — it is ignored, the base file's amd64 pin wins, and the stack runs under
+    # QEMU on Apple Silicon. Measured: `uname -m` reported x86_64 on an arm64
+    # host, and the build crawled.
+    platform: !reset null

@@ -9,7 +9,7 @@
 #
 # WHAT IS MOUNTED, AND WHY NOT EVERYTHING
 #
-#   app/ lib/ config/ db/   the code you actually edit
+#   app/ lib/ db/   the code you actually edit
 #
 # NOT `.:/rails`, deliberately. The image carries PRECOMPILED assets in
 # public/assets; mounting the host's public/ over them serves a directory that
@@ -23,16 +23,20 @@
 # After editing app/assets/**, rebuild — Propshaft resolves digests from the
 # compiled set, which lives in the image.
 #
+#
+# LIVES AT THE REPO ROOT, deliberately. `include:` resolves a file's relative
+# paths against THAT FILE's directory, while `-f` resolves them against the
+# first compose file's directory. From dev/ubi9/ the two disagree: `./app`
+# became dev/ubi9/app under include, Docker created an empty directory and
+# mounted it OVER the real source, and the container died on
+# "cannot load such file -- /rails/config/boot". At the root both forms agree.
+#
 # Usage:
-#   docker compose -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml \
-#                  -f dev/ubi9/compose.dev.yaml up -d
+#   docker compose up -d            # the default stack already includes this
 services:
   web:
     volumes:
       - ./app:/rails/app:ro
       - ./lib:/rails/lib:ro
-      # NOT :ro — the local-storage initializer below is mounted INSIDE this
-      # directory, and Docker cannot create a mountpoint in a read-only mount.
-      - ./config:/rails/config
       - ./db:/rails/db:ro
       - ./dev/ubi9/zzz_local_storage.rb:/rails/config/initializers/zzz_local_storage.rb:ro
