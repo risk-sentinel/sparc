@@ -38,12 +38,39 @@ does not survive contact with a test:
   cleanly, and the binary invoked directly produces a valid **CycloneDX 1.6**
   SBOM with **354 components** for this repo. The postinstall is not
   load-bearing for `-t ruby`.
-* `npm install --no-save --ignore-scripts @mitre/saf@1.6.0` likewise yields a
-  working CLI — `saf --version` reports `1.6.0`.
+* `npm install --no-save --ignore-scripts @mitre/saf@1.6.0` — verified by
+  **running `saf convert sonarqube2hdf` against SonarCloud**, not by
+  `saf --version`: 524 issues, 524 rules, 49 controls, a 1.2 MB HDF. A control
+  install **with** scripts produced byte-identical output except the profile
+  `sha256`.
 
 `npx` has no `--ignore-scripts`; `npm install` does. Both sites now use it. The
 lesson is the ordinary one: the claim that a fix was too risky was reasoning, not
 measurement, and thirty seconds of testing settled it.
+
+The owner then asked the sharper question — *did you test that they still work?*
+— and for saf the honest answer was no: `--version` proves the binary loads, not
+that the subcommand does. Running it surfaced something neither check would have:
+
+### Pre-existing: the saf bridge fails its own validation step
+
+`saf convert sonarqube2hdf` output **omits `baselines`**, which HDF results
+require, so the workflow's next step rejects it:
+
+```
+hdf validate sonar.hdf.json --type results
+  -> not a valid HDF results document
+     Errors: baselines is required
+```
+
+Reproduced on hdf-cli **3.4.1** (CI's pin) and **3.5.1**, and with lifecycle
+scripts **enabled** — so this is not a consequence of `--ignore-scripts`. It
+means the bridge is broken end-to-end whenever a caller sets
+`SONARQUBE_HDF_USE_SAF=true` (wired through `sonarqube-hdf-emit.yml`). The
+default `hdf-cli` path is unaffected, which is why nobody has hit it.
+
+**Not fixed in #966** — out of scope, and the fix is either upstream's or a
+post-processing step that is the owner's call. Flagged, not filed.
 
 ---
 
