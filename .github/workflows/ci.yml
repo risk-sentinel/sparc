@@ -359,7 +359,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [ test ]
-    if: always() && github.event.pull_request.head.repo.full_name == github.repository
+    # Analyse BOTH: the PR branch (so the gate has something to judge) and
+    # main after merge (so the branch rating and the new-code baseline stay
+    # current). The fork leg must be `event_name != 'pull_request' || same-repo`
+    # — comparing the PR field alone is null on a push, which SKIPPED main
+    # entirely and left it unanalysed once Automatic Analysis was disabled.
+    # Same idiom as security.yml's fork boundary.
+    if: >-
+      always()
+      && (github.event_name != 'pull_request'
+          || github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
