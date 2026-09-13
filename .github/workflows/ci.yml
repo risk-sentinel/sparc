@@ -330,3 +330,67 @@ jobs:
           name: screenshots
           path: ${{ github.workspace }}/tmp/screenshots
           if-no-files-found: ignore
+
+  # ── SonarCloud analysis, with COVERAGE (#966) ────────────────────────────────
+  #
+  # Coverage read `n/a` on SonarCloud despite 6,700+ rspec examples. Every step
+  # of the chain worked except the last: SimpleCov is wired, `spec_helper.rb`
+  # starts it under COVERAGE, the `test` job sets COVERAGE=1, and the report is
+  # uploaded as a build artifact — and then nothing hands it to Sonar.
+  #
+  # The cause is that analysis runs as SonarCloud AUTOMATIC ANALYSIS (the GitHub
+  # App), which reads the repository and cannot see a build artifact. No coverage
+  # condition could ever gate anything: the same scan-versus-assessment gap that
+  # let security.yml report success 85 times while finding a live advisory.
+  #
+  # ── REQUIRED BEFORE THIS WORKS ───────────────────────────────────────────────
+  #
+  # SonarCloud refuses to run CI-based analysis while Automatic Analysis is
+  # enabled. An administrator must turn it off:
+  #
+  #   SonarCloud -> risk-sentinel_sparc -> Administration -> Analysis Method
+  #   -> disable "Automatic Analysis"
+  #
+  # Until that is done this job FAILS with "You are running CI analysis while
+  # Automatic Analysis is enabled". That is why it is advisory in
+  # .github/required-checks.json — a pending UI toggle must not block merges.
+  sonar_scan:
+    name: SonarCloud Code Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [ test ]
+    if: always() && github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Sonar needs full history to attribute new code to commits; a shallow
+          # clone silently degrades the new-code period to "everything".
+          fetch-depth: 0
+
+      - name: Download coverage from the test job
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        continue-on-error: true
+        with:
+          name: coverage-report
+          path: coverage
+
+      - name: Report what coverage arrived
+        run: |
+          if [ -f coverage/.resultset.json ]; then
+            echo "coverage/.resultset.json present ($(wc -c < coverage/.resultset.json) bytes)"
+          else
+            echo "::warning::no SimpleCov report — analysis will run WITHOUT coverage"
+            ls -la coverage 2>/dev/null || echo "(no coverage directory)"
+          fi
+
+      - name: SonarCloud scan
+        uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=risk-sentinel_sparc
+            -Dsonar.organization=risk-sentinel
+            -Dsonar.ruby.coverage.reportPaths=coverage/.resultset.json
+            -Dsonar.exclusions=lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**
