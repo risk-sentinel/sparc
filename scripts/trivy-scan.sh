@@ -102,9 +102,23 @@ ensure_trivy() {
   # Trivy's asset names are their own vocabulary: Darwin is published as
   # "macOS", and the architectures are "64bit"/"ARM64" rather than uname's.
   # Assuming uname's spelling produced a 404 on the first attempt.
+  #
+  # The default cases are not ceremony (shelldre:S131). Without them an
+  # unrecognised platform falls through UNCHANGED and builds an asset name that
+  # does not exist, so the failure surfaces as an opaque 404 from curl — which
+  # is exactly how the macOS naming mistake presented the first time. Fail here,
+  # naming the platform, instead of three lines later naming nothing.
   os="$(uname -s)"; arch="$(uname -m)"
-  case "$os"   in Darwin) os="macOS" ;; esac
-  case "$arch" in x86_64) arch="64bit" ;; arm64|aarch64) arch="ARM64" ;; esac
+  case "$os" in
+    Darwin) os="macOS" ;;
+    Linux)  os="Linux" ;;
+    *) fail "Unsupported OS for automatic Trivy install: $os"; exit 1 ;;
+  esac
+  case "$arch" in
+    x86_64)       arch="64bit" ;;
+    arm64|aarch64) arch="ARM64" ;;
+    *) fail "Unsupported architecture for automatic Trivy install: $arch"; exit 1 ;;
+  esac
   tarball="trivy_${TRIVY_VERSION#v}_${os}-${arch}.tar.gz"
   base="https://github.com/aquasecurity/trivy/releases/download/${TRIVY_VERSION}"
   tmp="$(mktemp -d)"
