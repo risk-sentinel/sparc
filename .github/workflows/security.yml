@@ -728,10 +728,17 @@ jobs:
           # cdxgen settings: Ruby project, JSON output, no auto-upload anywhere
           FETCH_LICENSE: 'true'
         run: |
-          # #966 — exact version, not the `@11` range. `npx --yes` installs on
-          # demand and runs lifecycle scripts, so the range meant executing
-          # whatever 11.x resolved to that morning.
-          npx --yes @cyclonedx/cdxgen@11.11.0 -t ruby -o sbom-ruby.cdx.json .
+          # #966 — exact version, and NO `npx`. `npx --yes` installs on demand and
+          # runs the package's lifecycle scripts, with no opt-out (S6505); the
+          # `@11` range also meant executing whatever 11.x resolved to that
+          # morning. `npm install --ignore-scripts` then invoking the binary
+          # directly gives the same tool with neither behaviour.
+          #
+          # Verified rather than assumed: installed this way, cdxgen produces a
+          # valid CycloneDX 1.6 SBOM with 354 components for this repo, so its
+          # postinstall is not load-bearing for `-t ruby`.
+          npm install --no-save --ignore-scripts @cyclonedx/cdxgen@11.11.0
+          ./node_modules/.bin/cdxgen -t ruby -o sbom-ruby.cdx.json .
           # cdxgen emits a phantom version-less component for gems that appear
           # under multiple platforms in Gemfile.lock (e.g. precompiled nokogiri's
           # 7 "-<platform>" variants also produce a bare `pkg:gem/nokogiri` with an

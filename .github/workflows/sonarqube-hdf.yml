@@ -152,7 +152,11 @@ jobs:
             # Bridge: npm @mitre/saf, pinned. Uses the runner's Node (>=20).
             # saf's sonarqube2hdf takes no --organization flag; the token scopes
             # the SonarCloud org. (hdf-cli is the org-aware strategic path.)
-            npx --yes "@mitre/saf@${SAF_VER}" convert sonarqube2hdf \
+            # #966 — no `npx`: it runs lifecycle scripts with no opt-out (S6505).
+            # Verified `npm install --ignore-scripts @mitre/saf@1.6.0` yields a
+            # working CLI (`saf --version` reports 1.6.0).
+            npm install --no-save --ignore-scripts "@mitre/saf@${SAF_VER}"
+            ./node_modules/.bin/saf convert sonarqube2hdf \
               -n "$KEY" -u "$URL" --auth "$SONAR_TOKEN" -o "$out"
           fi
 

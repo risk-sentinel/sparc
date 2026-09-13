@@ -20,11 +20,30 @@ below is short: two Blockers alone held Security at E.
 | 1 | `shell:S6506` | `scripts/trivy-scan.sh` was the same `curl \| sh` shape — now a pinned, checksum-verified release |
 | 4 | `S8544`/`S8543`/`S6505` | semgrep, pyyaml, cdxgen and js-yaml pinned to exact versions; `--ignore-scripts` on the npm install |
 | 1 | `docker:S8547` | `bundle config set --local frozen true` stated at the call site |
+| 2 | `githubactions:S6505` | **Both `npx` calls replaced** — `npm install --no-save --ignore-scripts` then invoking the binary directly. See the correction below |
 | 7 | various | **Deleted with `Dockerfile_debian`** — 3 clear-text APT (`docker:S5332`) and 4 pinning findings, in an image nobody shipped |
 
 Every install sequence was run locally before committing. Two were wrong on the
 first attempt and would have failed in CI: Trivy publishes Darwin as **macOS**
 with `64bit`/`ARM64` architectures, not uname's spelling.
+
+### A correction: the two `npx` findings were NOT unfixable
+
+This document previously recorded `githubactions:S6505` on both `npx` sites as
+**Won't Fix**, arguing that suppressing lifecycle scripts risked breaking two
+CLIs on release-gating paths. The owner pushed back on that, and the argument
+does not survive contact with a test:
+
+* `npm install --no-save --ignore-scripts @cyclonedx/cdxgen@11.11.0` installs
+  cleanly, and the binary invoked directly produces a valid **CycloneDX 1.6**
+  SBOM with **354 components** for this repo. The postinstall is not
+  load-bearing for `-t ruby`.
+* `npm install --no-save --ignore-scripts @mitre/saf@1.6.0` likewise yields a
+  working CLI — `saf --version` reports `1.6.0`.
+
+`npx` has no `--ignore-scripts`; `npm install` does. Both sites now use it. The
+lesson is the ordinary one: the claim that a fix was too risky was reasoning, not
+measurement, and thirty seconds of testing settled it.
 
 ---
 
@@ -57,27 +76,7 @@ because it is marked as `--no-build` but has no binary distribution
 
 Forcing the flag would break the job to satisfy a rule the lock already satisfies.
 
-### 3. `githubactions:S6505` — both `npx` sites — Won't Fix
-
-| Site | Package |
-|---|---|
-| `sonarqube-hdf.yml:155` | `@mitre/saf@${SAF_VER}` — exact pin `1.6.0` |
-| `security.yml:731` | `@cyclonedx/cdxgen@11.11.0` — exact pin (was the range `@11`) |
-
-Both are now pinned to an exact version, so the *resolution* risk is closed. The
-residual finding is that `npx --yes` runs lifecycle scripts **at all**, and there
-is no `--ignore-scripts` for `npx`.
-
-Suppressing those scripts is not free: both packages are CLIs whose postinstall
-may fetch what they need to run, and both sit on release-gating paths — the SBOM
-that feeds the Grype scan, and the SonarQube→HDF bridge. Breaking either to
-satisfy a rule that the exact pin has already largely answered is the wrong
-trade. Revisit if npm gains a supported way to run an exec with scripts
-disabled.
-
-The saf bridge is additionally the fallback path; hdf-cli is primary.
-
-### 4. The five `Web:*` "bugs" — False Positive
+### 3. The five `Web:*` "bugs" — False Positive
 
 All five have keyboard equivalents already; the analyzer looks for `onKeyDown` /
 `onKeyUp` **attributes**, which the CSP forbids us from using (no inline
