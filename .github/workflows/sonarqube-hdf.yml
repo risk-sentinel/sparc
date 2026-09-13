@@ -153,8 +153,19 @@ jobs:
             # saf's sonarqube2hdf takes no --organization flag; the token scopes
             # the SonarCloud org. (hdf-cli is the org-aware strategic path.)
             # #966 — no `npx`: it runs lifecycle scripts with no opt-out (S6505).
-            # Verified `npm install --ignore-scripts @mitre/saf@1.6.0` yields a
-            # working CLI (`saf --version` reports 1.6.0).
+            # `npm install --ignore-scripts` was verified by RUNNING this exact
+            # subcommand, not by `saf --version`: it returned 524 issues / 49
+            # controls, byte-identical to an install WITH scripts except for the
+            # profile sha256. The postinstall is not load-bearing here.
+            #
+            # NOTE, pre-existing and NOT caused by --ignore-scripts: saf 1.6.0's
+            # sonarqube2hdf output omits `baselines`, so the `hdf validate` step
+            # below REJECTS it ("not a valid HDF results document") on both
+            # hdf-cli 3.4.1 and 3.5.1. Measured with scripts enabled too — same
+            # result. This bridge is therefore believed broken end-to-end
+            # whenever SONARQUBE_HDF_USE_SAF=true; the default hdf-cli path is
+            # unaffected. Not fixed here: out of scope for #966, and the fix is
+            # upstream's or a post-processing step someone must choose.
             npm install --no-save --ignore-scripts "@mitre/saf@${SAF_VER}"
             ./node_modules/.bin/saf convert sonarqube2hdf \
               -n "$KEY" -u "$URL" --auth "$SONAR_TOKEN" -o "$out"
