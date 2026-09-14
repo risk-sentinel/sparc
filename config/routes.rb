@@ -598,6 +598,11 @@ Rails.application.routes.draw do
         # authors the prose and never the structure.
         resources :statements, only: [ :index ],
                                controller: "ssp_control_statements"
+        # #1116 — the roles a document DECLARES. A role-id must resolve to one
+        # of these, so they need a surface a pipeline can write; the UI is a
+        # thin client over it. `:id` is the OSCAL role-id, not a database key.
+        resources :roles, only: [ :index, :create, :update, :destroy ],
+                          controller: "ssp_roles", id: /[^\/]+/
         collection do
           post :convert
         end

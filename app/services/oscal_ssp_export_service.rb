@@ -115,11 +115,19 @@ class OscalSspExportService
   def build_metadata
     @document.build_oscal_metadata(
       default_version: @document.ssp_version || "1.0.0",
-      default_roles: [
-        { "id" => "prepared-by",     "title" => "Prepared By" },
-        { "id" => "system-owner",    "title" => "System Owner" },
-        { "id" => "authorizing-official", "title" => "Authorizing Official" }
-      ],
+      # #1116 — NIST's CANONICAL ids, not invented ones. The ISSO is
+      # `information-system-security-officer` in NIST's suggested vocabulary;
+      # an author typing `isso` mints a private id for a role NIST already
+      # defines, and a consuming tool resolving it has to guess.
+      #
+      # These are the defaults a document declares when it has authored none.
+      # Everything else NIST suggests is offered by the picker through
+      # `undeclared_suggested_roles`, and a deployment can declare its own —
+      # `role-id` is allow-other="yes", so a custom role is legal provided it is
+      # DECLARED.
+      default_roles: OscalRole::SSP_DEFAULT_IDS.map { |id|
+        { "id" => id, "title" => OscalRole.humanize(id) }
+      },
       default_parties: default_parties
     )
   end
