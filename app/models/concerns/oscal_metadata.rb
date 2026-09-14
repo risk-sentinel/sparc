@@ -154,9 +154,24 @@ module OscalMetadata
   # OscalConformanceService enforces that; these helpers are what the UI and the
   # API offer so an author PICKS rather than types.
 
+  # The roles this document declares. Falls back to the SAME defaults the
+  # exporter emits — a document that has authored no roles still DECLARES the
+  # defaults in `metadata.roles`, so the picker must offer them and the
+  # referential guard must accept them. Reading only the authored list made a
+  # fresh document reject every role it was about to export.
   def declared_roles
-    oscal_roles.presence || []
+    # `key?`, NOT `.presence`. An author who removes the last role has declared
+    # NONE, which is different from never having authored any — and `.presence`
+    # conflates them, silently resurrecting the defaults the author just deleted.
+    return oscal_roles if metadata_extra&.key?("roles")
+
+    default_declared_roles
   end
+
+  # Overridden per document type. Empty here: a model with no default roles
+  # declares none, and inventing some would put ids in a document that its
+  # exporter never emits.
+  def default_declared_roles = []
 
   def declared_role_ids = declared_roles.filter_map { |r| r["id"] }.uniq
 

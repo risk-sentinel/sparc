@@ -88,6 +88,14 @@ class SspDocumentsController < ApplicationController
     # datalist on the statement editor so an author reuses an existing role
     # rather than inventing a second spelling of it. Gathered once: the editor
     # renders on every control card, and querying per card would be 150 queries.
+    # #1116 — what the picker offers: the roles this document DECLARES, by
+    # title. Previously this gathered ids already USED in the document, which
+    # perpetuated whatever was typed first (including typos) and never consulted
+    # metadata.roles at all.
+    @declared_role_options = @ssp_document.declared_role_options
+
+    # Retained for the read view, which still renders the raw ids a document may
+    # have arrived with from an OSCAL import.
     @known_role_ids = (
       @components.flat_map { |c| Array(c.responsible_roles_data) } +
       SspControlStatement.joins(ssp_control: :ssp_document)
@@ -547,8 +555,24 @@ class SspDocumentsController < ApplicationController
     # the next export — nothing had ever sent it, because no form offered the
     # field.
     if params[:ssp_control_statement].key?(:responsible_role_ids)
-      ids = params[:ssp_control_statement][:responsible_role_ids].to_s
-                                                                 .split(",").map(&:strip).reject(&:blank?)
+      # #1116 — the picker posts an ARRAY (multi-select). A comma-separated
+      # string is still accepted so an older client, or a caller shaped like the
+      # pre-#1116 form, does not silently post one role named "a, b".
+      raw = params[:ssp_control_statement][:responsible_role_ids]
+      ids = (raw.is_a?(Array) ? raw : raw.to_s.split(",")).map(&:strip).reject(&:blank?)
+
+      # Referential guard at the WRITE path, not only at export. An id that
+      # resolves to no declared role is the defect this issue exists to remove,
+      # and refusing it here means a document cannot reach a broken state in the
+      # first place. Declaring roles is its own surface — Api::V1 .../roles.
+      undeclared = ids - @ssp_document.declared_role_ids
+      if undeclared.any?
+        return render json: {
+          error: "not declared on this document: #{undeclared.join(', ')}. " \
+                 "Declare the role first."
+        }, status: :unprocessable_content
+      end
+
       permitted["responsible_roles_data"] = ids.map { |id| { "role-id" => id } }
     end
 
