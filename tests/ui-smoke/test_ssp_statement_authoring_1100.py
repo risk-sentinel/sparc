@@ -219,16 +219,21 @@ def test_selecting_a_role_persists_and_shows_in_the_read_view(authed_page):
     assert "system-owner" in values, f"nothing recognisable to select: {values}"
 
     roles.select_option(["system-owner"])
-    row.locator("[data-action='statement-edit#save'], button[type='submit']").first.click()
+
+    # `f.submit` renders <input type="submit">, NOT <button type="submit">.
+    # Guessing that selector cost a 30s timeout that looked like a product hang.
+    row.locator("input[type='submit']").first.click()
     authed_page.wait_for_load_state("networkidle")
 
-    # Re-read the row from the reloaded page rather than the stale handle.
+    # Assert on the whole ROW, not the `read` target: the Responsible Roles
+    # column is its own <td> outside that element, so reading the target alone
+    # would miss the value even when it saved correctly.
     reloaded = authed_page.locator(STMT_ROW).first
-    read_text = reloaded.locator("[data-statement-edit-target='read']").inner_text()
+    row_text = reloaded.inner_text()
 
-    assert "system-owner" in read_text or "System Owner" in read_text, (
-        "the selected role did not survive the save — the Responsible Roles "
-        f"column still reads: {read_text!r}"
+    assert "system-owner" in row_text or "System Owner" in row_text, (
+        "the selected role did not survive the save — the row now reads: "
+        f"{row_text[:400]!r}"
     )
 
 
