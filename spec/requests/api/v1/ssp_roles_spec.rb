@@ -57,14 +57,17 @@ RSpec.describe "Api::V1::SspRoles", type: :request do
 
   describe "POST create" do
     it "lets a permission-holding non-admin declare a NIST role" do
+      # `incident-response` is in NIST's vocabulary but NOT among the SSP
+      # defaults — so this proves creation rather than colliding with a role the
+      # document already declares implicitly.
       post "/api/v1/ssp_documents/#{ssp.slug}/roles",
-           params: { role: { id: "information-system-security-officer" } },
+           params: { role: { id: "incident-response" } },
            headers: bearer_for(author)
 
       expect(response).to have_http_status(:created)
-      expect(json.dig("data", "title")).to eq("Information System Security Officer")
+      expect(json.dig("data", "title")).to eq("Incident Response")
       expect(json.dig("data", "organization_defined")).to be false
-      expect(ssp.reload.declared_role_ids).to include("information-system-security-officer")
+      expect(ssp.reload.declared_role_ids).to include("incident-response")
     end
 
     # AU-12. An action missing from AuditEvent::ACTIONS records NOWHERE — the
@@ -115,10 +118,10 @@ RSpec.describe "Api::V1::SspRoles", type: :request do
 
     it "refuses a reader without ssp.write" do
       post "/api/v1/ssp_documents/#{ssp.slug}/roles",
-           params: { role: { id: "system-owner" } }, headers: bearer_for(reader)
+           params: { role: { id: "incident-response" } }, headers: bearer_for(reader)
 
       expect(response).to have_http_status(:forbidden)
-      expect(ssp.reload.declared_role_ids).not_to include("system-owner")
+      expect(ssp.reload.declared_role_ids).not_to include("incident-response")
     end
   end
 
@@ -148,7 +151,8 @@ RSpec.describe "Api::V1::SspRoles", type: :request do
       delete "/api/v1/ssp_documents/#{ssp.slug}/roles/system-owner", headers: bearer_for(author)
 
       expect(response).to have_http_status(:no_content)
-      expect(ssp.reload.declared_role_ids).to be_empty
+      expect(ssp.reload.declared_role_ids).to be_empty,
+        "removing the last role must leave NONE declared — not resurrect the defaults"
     end
 
     # The guard that keeps the document referentially sound: removing a role that
