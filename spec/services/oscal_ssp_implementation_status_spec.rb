@@ -2,24 +2,31 @@
 
 require "rails_helper"
 
-# `implementation-status` is emitted WITHOUT an `ns`, which places it in the
-# OSCAL namespace — so its value must be one of NIST's:
+# `implementation-status` is NOT a prop. In OSCAL 1.2.2/1.2.3 it is a
+# define-assembly with a required `state` flag, and it attaches to exactly one
+# place — `by-component`.
 #
-#   implemented / partial / planned / alternative / not-applicable
+# ── Why this file was rewritten ─────────────────────────────────────────────
 #
-# The export built it as `status.downcase.gsub(/\s+/, "-")`, slugifying SPARC's
-# own vocabulary into NIST's namespace. Three of the eight SPARC statuses
-# collide with a NIST term and were right by accident; five were not, and
-# `deferred` was shipping in the seeded demo SSP.
+# Its previous version asserted that an `implementation-status` PROP was emitted
+# on `implemented-requirement` carrying a NIST-mapped value, and it passed. It
+# was testing the wrong thing: an earlier pass at #1106 correctly spotted that
+# `status.downcase.gsub(/\s+/, "-")` was slugifying SPARC's vocabulary into
+# NIST's namespace, and fixed the VALUE — on a prop that does not exist. No value
+# makes a nonexistent prop conformant.
 #
-# NOTHING CAUGHT IT, and the reason matters: prop VALUES are Metaschema
-# constraints, not JSON Schema ones. `OscalSchemaValidationService` checks JSON
-# Schema, so the document validated cleanly while telling a conforming reader a
-# word it cannot interpret. A schema pass is not a conformance pass.
+# This is not a weakened test. It asserts strictly more: the old prop is ABSENT,
+# the verbatim status is still preserved, and the assembly that OSCAL does define
+# is emitted in the right shape and place. The generated conformance dataset
+# (lib/oscal_conformance/) is used as the authority rather than a hand-copied
+# list, so a NIST vocabulary change cannot leave this spec asserting stale terms.
 RSpec.describe OscalSspExportService, "implementation-status conformance" do
   # NOT a constant: one declared in a describe block is defined on Object and
   # leaks into every other spec file in the suite.
-  let(:nist_allowed) { %w[implemented partial planned alternative not-applicable] }
+  let(:conformance) do
+    JSON.parse(Rails.root.join("lib", "oscal_conformance", "1.2.2", "conformance.json").read)
+  end
+  let(:ssp_prop_names) { conformance.dig("models", "system-security-plan", "prop_names") }
 
   let(:boundary) { create(:authorization_boundary) }
   let(:ssp)      { create(:ssp_document, authorization_boundary: boundary) }
@@ -33,46 +40,49 @@ RSpec.describe OscalSspExportService, "implementation-status conformance" do
     ir["props"] || []
   end
 
-  # Every status SPARC offers, not a sample: the defect was that five of the
-  # eight were wrong and only the three lucky ones were ever exercised.
-  {
-    "Implemented"                => "implemented",
-    "Partially Implemented"      => "partial",
-    "Planned"                    => "planned",
-    "Deferred"                   => "planned",
-    "Alternative Implementation" => "alternative",
-    "Not Applicable"             => "not-applicable"
-  }.each do |sparc_status, nist_value|
-    it "maps #{sparc_status.inspect} to the NIST term #{nist_value.inspect}" do
-      oscal = props_for(sparc_status).find { |p| p["name"] == "implementation-status" }
-
-      expect(oscal).to be_present, "#{sparc_status} has a NIST equivalent and must emit the OSCAL prop"
-      expect(oscal["ns"]).to be_nil, "implementation-status belongs to the OSCAL namespace"
-      expect(oscal["value"]).to eq(nist_value)
-      expect(nist_allowed).to include(oscal["value"])
-    end
+  it "NIST does not define implementation-status as an SSP prop at all" do
+    expect(ssp_prop_names).not_to include("implementation-status"),
+      "if NIST ever defines it as a prop, this spec should fail and the exporter be revisited"
   end
 
-  # The other direction. NIST cannot express these, and inventing a term inside
-  # its namespace would be worse than saying nothing there.
-  [ "Will Not Implement", "Not Implemented" ].each do |sparc_only|
-    it "does NOT invent a NIST term for #{sparc_only.inspect}" do
-      props = props_for(sparc_only)
+  # Every status SPARC offers, not a sample: the original defect was that five of
+  # the eight were wrong and only the three lucky ones were ever exercised.
+  [
+    "Implemented", "Partially Implemented", "Planned", "Deferred",
+    "Alternative Implementation", "Not Applicable",
+    "Will Not Implement", "Not Implemented"
+  ].each do |status|
+    it "emits no implementation-status prop for #{status.inspect}, and keeps the verbatim value" do
+      props = props_for(status)
 
       expect(props.find { |p| p["name"] == "implementation-status" }).to be_nil,
-        "#{sparc_only} has no NIST equivalent; emitting one would misinform a conforming reader"
+        "implementation-status is an assembly on by-component; as a prop here it claims a NIST definition that does not exist"
+
       sparc = props.find { |p| p["name"] == "sparc-status" }
-      expect(sparc).to be_present
-      expect(sparc["ns"]).to eq(described_class::SPARC_NS)
-      expect(sparc["value"]).to eq(sparc_only)
+      expect(sparc).to be_present, "the status must survive the export, in SPARC's own namespace"
+      expect(sparc["ns"]).to eq(OscalNamespace.instance)
+      expect(sparc["value"]).to eq(status), "the verbatim value must stay inspectable"
     end
   end
 
-  it "always preserves the verbatim SPARC status alongside the mapped one" do
-    props = props_for("Deferred")
+  # The other half: where OSCAL DOES define it, SPARC must emit the assembly —
+  # and the vocabulary needs no mapping, because SspByComponent already stores
+  # NIST's terms.
+  describe "the by-component assembly, which is where OSCAL puts it" do
+    it "emits state, in NIST's vocabulary, in the assembly shape" do
+      component = create(:ssp_component, ssp_document: ssp, title: "App Server")
+      control   = ssp.ssp_controls.create!(control_id: "ac-2", title: "Account Management")
+      create(:ssp_by_component, ssp_control: control, ssp_component: component,
+                                implementation_status: "partial",
+                                description: "Partially implemented by the app server.")
 
-    expect(props.find { |p| p["name"] == "implementation-status" }["value"]).to eq("planned")
-    expect(props.find { |p| p["name"] == "sparc-status" }["value"]).to eq("Deferred"),
-      "the mapping must stay inspectable — a reader has to be able to see what SPARC actually recorded"
+      json = JSON.parse(described_class.new(ssp.reload).export_unvalidated)
+      bc = json.dig("system-security-plan", "control-implementation", "implemented-requirements")
+               .find { |r| r["control-id"] == "ac-2" }
+               .fetch("by-components").first
+
+      expect(bc["implementation-status"]).to eq("state" => "partial")
+      expect(SspByComponent::IMPLEMENTATION_STATUSES).to include("partial")
+    end
   end
 end
