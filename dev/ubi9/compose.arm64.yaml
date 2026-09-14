@@ -23,9 +23,22 @@
 # CI builds and scans amd64, so that remains covered there; this file is for the
 # local loop only.
 #
-# Usage:
+# ── THIS FILE IS NOT ENOUGH ON ITS OWN ──────────────────────────────────────
+#
+# `DOCKER_DEFAULT_PLATFORM=linux/amd64` is exported from ~/.bash.d/10-env.sh on
+# at least one workstation, and it OVERRIDES compose entirely. Removing the pin
+# here still yields an amd64 image, silently, under emulation — verified: the
+# container reported `uname -m: x86_64` on an arm64 host while this override was
+# in effect. run_gate.sh unsets it (line ~39) for exactly this reason; a direct
+# `docker compose` invocation does not.
+#
+# Usage — the unset is REQUIRED, not optional:
+#   DOCKER_DEFAULT_PLATFORM= \
 #   docker compose -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml \
 #     up --build -d
+#
+# Verify, do not assume:
+#   docker compose -f docker-compose.ubi9.yaml exec -T web uname -m   # -> aarch64
 #
 # Say so in the PR test plan when the local gate ran this way, rather than
 # letting "UBI9 image built and tested" imply the shipping architecture.
