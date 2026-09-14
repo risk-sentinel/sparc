@@ -38,7 +38,6 @@ class OscalSspExportService
   RESPONSIBILITY_MARKER = "responsibility".freeze
   SSP_STATEMENT         = "ssp-statement".freeze
   # Namespace for SPARC-specific OSCAL props (control-type, provided-as, etc.).
-  SPARC_NS = "https://sparc.local/ns".freeze
 
   def initialize(ssp_document)
     @document = ssp_document
@@ -578,53 +577,71 @@ class OscalSspExportService
     ControlId.canonical(raw_id)
   end
 
-  # `implementation-status` is an OSCAL-NAMESPACED prop, so its value has to come
-  # from NIST's vocabulary — implemented / partial / planned / alternative /
-  # not-applicable.
+  # `implementation-status` is NOT a prop. In OSCAL 1.2.2/1.2.3 it is a
+  # define-assembly with a required `state` flag, and it attaches to exactly ONE
+  # place — `by-component`:
   #
-  # This used to be `status.downcase.gsub(/\s+/, "-")`, which slugified SPARC's
-  # own vocabulary straight into NIST's namespace. Three of the eight SPARC
-  # statuses happen to collide with a NIST term and were right by accident; the
-  # other five were not:
+  #     <define-assembly name="implementation-status">
+  #       <define-flag name="state" as-type="token" required="yes">
   #
-  #   Deferred                   -> "deferred"                    not a NIST value
-  #   Partially Implemented      -> "partially-implemented"       NIST says "partial"
-  #   Alternative Implementation -> "alternative-implementation"  NIST says "alternative"
-  #   Will Not Implement         -> "will-not-implement"          no NIST equivalent
-  #   Not Implemented            -> "not-implemented"             no NIST equivalent
+  # It does not attach to `implemented-requirement` or `statement`, and it does
+  # not exist in the component-definition model at all (0 occurrences in
+  # component.xml). Emitting it as a prop here was the OSCAL 1.0 shape surviving
+  # in a 1.2.2 export.
   #
-  # NOTHING CAUGHT IT. Prop VALUES are Metaschema constraints, not JSON Schema
-  # ones, and `OscalSchemaValidationService` validates JSON Schema — so the
-  # export reported valid while telling a conforming reader something it cannot
-  # interpret.
+  # An earlier pass at #1106 fixed the VALUE — mapping SPARC's vocabulary onto
+  # NIST's terms, because `status.downcase.gsub(/\s+/, "-")` had been slugifying
+  # `Deferred` and `Partially Implemented` straight into NIST's namespace. That
+  # was the right diagnosis of the wrong line: the prop itself does not exist, so
+  # no value makes it conformant. Nothing caught either problem, because prop
+  # names and values are Metaschema constraints and
+  # `OscalSchemaValidationService` validates JSON Schema.
   #
-  # Two rules here:
+  # The correct emission is already in this file, at `build_by_component`:
   #
-  #   1. Map to NIST's term when one honestly applies. `Deferred` becomes
-  #      `planned`: the control is intended and not yet in place, which is what
-  #      `planned` means. It is NOT `not-applicable` — deferring something is not
-  #      declaring it irrelevant.
-  #   2. When NIST cannot express the status at all — `Will Not Implement`,
-  #      `Not Implemented` — do NOT invent a term in NIST's namespace. Omit the
-  #      OSCAL prop and say it in SPARC's own, where a reader knows to interpret
-  #      it as ours.
+  #     entry[IMPLEMENTATION_STATUS] = { "state" => bc.implementation_status }
   #
-  # The verbatim SPARC status is ALWAYS emitted under SPARC_NS as well, so the
-  # round trip loses nothing and the mapping stays inspectable.
-  NIST_IMPLEMENTATION_STATUS = {
-    "implemented"                => "implemented",
-    "partially implemented"      => "partial",
-    "planned"                    => "planned",
-    "deferred"                   => "planned",
-    "alternative implementation" => "alternative",
-    "not applicable"             => "not-applicable"
+  # and it needs no mapping table, because `SspByComponent::IMPLEMENTATION_STATUSES`
+  # already IS NIST's vocabulary.
+  #
+  # At implemented-requirement level SPARC's status is SPARC's own concept, so it
+  # is emitted under SPARC's namespace where a reader knows to interpret it as
+  # ours. Nothing is lost: the verbatim value was always emitted there anyway.
+  def implementation_status_props(status)
+    [ { "name" => "sparc-status", "ns" => OscalNamespace.instance, "value" => status } ]
+  end
+
+  # `control-origination` IS NIST's, not ours — #1106 recorded it as a FedRAMP
+  # prop name borrowed under a SPARC namespace, and that premise is wrong for
+  # 1.2.2/1.2.3. NIST defines it in the SSP model, and the vocabulary is
+  # ENFORCED (`allow-other="no"`), so a value outside it is a hard violation
+  # rather than a style question:
+  #
+  #     organization · system-specific · customer-configured ·
+  #     customer-provided · inherited
+  #
+  # SPARC was emitting the right NAME under the wrong namespace with the wrong
+  # values ("System Specific" title-cased). Same rule as everywhere else here:
+  # map when a NIST term honestly applies, and when none does, do NOT invent one
+  # in NIST's namespace.
+  #
+  # "Hybrid — partially inherited" has no NIST equivalent. OSCAL expresses split
+  # responsibility per-component rather than as a control-level term, so there is
+  # nothing to map it to and it is emitted under SPARC's namespace only.
+  # "Not Applicable" is a STATUS, not an origination, and is dropped here — it is
+  # already carried by the implementation-status assembly on by-component.
+  NIST_CONTROL_ORIGINATION = {
+    "system specific" => "system-specific",
+    "inherited from provider" => "inherited"
   }.freeze
 
-  def implementation_status_props(status)
+  def control_origination_props(origination)
     props = []
-    nist  = NIST_IMPLEMENTATION_STATUS[status.to_s.strip.downcase]
-    props << { "name" => IMPLEMENTATION_STATUS, "value" => nist } if nist
-    props << { "name" => "sparc-status", "ns" => SPARC_NS, "value" => status }
+    nist  = NIST_CONTROL_ORIGINATION[origination.to_s.strip.downcase]
+    # No `ns`: control-origination is NIST's, and NIST's namespace is implicit.
+    props << { "name" => "control-origination", "value" => nist } if nist
+    props << { "name" => "sparc-control-origination",
+               "ns" => OscalNamespace.instance, "value" => origination }
     props
   end
 
@@ -635,16 +652,16 @@ class OscalSspExportService
     props.concat(implementation_status_props(status)) if status.present?
 
     type_use = field_map["control_application"]&.field_value
-    props << { "name" => "control-type", "ns" => SPARC_NS, "value" => type_use } if type_use.present?
+    props << { "name" => "control-type", "ns" => OscalNamespace.instance, "value" => type_use } if type_use.present?
 
     coverage_level = field_map["coverage_level"]&.field_value
-    props << { "name" => "provided-as", "ns" => SPARC_NS, "value" => coverage_level } if coverage_level.present?
+    props << { "name" => "provided-as", "ns" => OscalNamespace.instance, "value" => coverage_level } if coverage_level.present?
 
     origination = field_map["control_type"]&.field_value
-    props << { "name" => "control-origination", "ns" => SPARC_NS, "value" => origination } if origination.present?
+    props.concat(control_origination_props(origination)) if origination.present?
 
     responsible = field_map["responsible_entities"]&.field_value
-    props << { "name" => "responsible-entities", "ns" => SPARC_NS, "value" => responsible } if responsible.present?
+    props << { "name" => "responsible-entities", "ns" => OscalNamespace.instance, "value" => responsible } if responsible.present?
 
     props
   end
