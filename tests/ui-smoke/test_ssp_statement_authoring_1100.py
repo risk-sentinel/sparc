@@ -136,11 +136,18 @@ def test_editing_one_statement_does_not_navigate(authed_page):
 
 
 def test_responsible_roles_can_actually_be_edited(authed_page):
-    """The column displayed a value no screen could write.
+    """The column displayed a value no screen could write (#1100), and then let
+    an author type anything (#1116).
 
-    Owner review: "Not sure why Responsible Roles is not able to be edited or
-    why it is there if I cannot edit it." `update_statement` had permitted
-    `responsible_roles_data` all along — no form ever offered the field.
+    Owner review on #1100: "Not sure why Responsible Roles is not able to be
+    edited or why it is there if I cannot edit it." The field was added as free
+    text with a datalist of ids ALREADY USED in the document — which offered
+    back whatever was typed first, typos included, and never consulted
+    metadata.roles.
+
+    #1116 made it a PICKER over declared roles. A `role-id` must resolve to a
+    role in metadata.roles; free text let an author write `isso` and produce a
+    document that validates cleanly and whose reference resolves to nothing.
     """
     _href, card = _open_control_with_statements(authed_page)
 
@@ -150,17 +157,79 @@ def test_responsible_roles_can_actually_be_edited(authed_page):
     row.locator("[data-statement-edit-target='toggle']").click()
     authed_page.wait_for_timeout(250)
 
-    roles = row.locator("input[name='ssp_control_statement[responsible_role_ids]']")
+    roles = row.locator("select[name='ssp_control_statement[responsible_role_ids][]']")
     assert roles.count() == 1, (
-        "the statement editor offers no Responsible Roles input, so the column "
+        "the statement editor offers no Responsible Roles picker, so the column "
         "it renders is still unwritable"
     )
-    assert roles.is_visible() and roles.is_editable(), "the roles input is not editable"
+    assert roles.is_visible(), "the roles picker is not visible"
+    assert roles.get_attribute("multiple") is not None, (
+        "a statement may name several responsible roles"
+    )
 
-    # Wired to the page's single datalist rather than each row carrying its own
-    # (and colliding on the id).
-    assert roles.get_attribute("list") == "ssp-known-role-ids"
-    assert authed_page.locator("datalist#ssp-known-role-ids").count() == 1
+    # THE #1116 GUARANTEE: no free-text path to a role id remains on this screen.
+    # A text input here would let an author mint an id that resolves to nothing.
+    assert row.locator("input[name='ssp_control_statement[responsible_role_ids]']").count() == 0, (
+        "a free-text roles input is still present — an author can still invent "
+        "a role id that resolves to no declared role"
+    )
+
+    # Options are DECLARED roles: titles are shown, role-ids are stored, so the
+    # machine identifier never has to be typed or remembered.
+    #
+    # `all_text_contents()` on the options, NOT `inner_text()` on the select:
+    # inner_text of a <select> is rendering-dependent — Firefox returns '' for
+    # options while Chromium returns them joined.
+    option_values = roles.locator("option").evaluate_all(
+        "opts => opts.map(o => o.value)"
+    )
+    option_labels = roles.locator("option").all_text_contents()
+
+    assert option_values, "the picker offers no roles at all"
+    assert "system-owner" in option_values, (
+        f"the SSP's default declared roles are not offered: {option_values}"
+    )
+    assert any("System Owner" == label.strip() for label in option_labels), (
+        f"roles are offered by raw id rather than by title: {option_labels}"
+    )
+    # NIST's canonical id for the ISSO — not the `isso` abbreviation #1116
+    # records authors typing.
+    assert "isso" not in option_values, (
+        "a non-canonical role id is being offered; NIST defines this role as "
+        "information-system-security-officer"
+    )
+
+
+def test_selecting_a_role_persists_and_shows_in_the_read_view(authed_page):
+    """The journey that matters: pick a role, save, and see it stick.
+
+    The previous suite asserted the FIELD existed but never that a selection
+    survived a save — so the column could have gone on rendering nothing while
+    every example stayed green. #1116 turned the field into a picker, which is
+    only worth anything if what it picks is what the document ends up carrying.
+    """
+    _href, card = _open_control_with_statements(authed_page)
+    row = card.locator(STMT_ROW).first
+
+    row.locator("[data-statement-edit-target='toggle']").click()
+    authed_page.wait_for_timeout(250)
+
+    roles = row.locator("select[name='ssp_control_statement[responsible_role_ids][]']")
+    values = roles.locator("option").evaluate_all("opts => opts.map(o => o.value)")
+    assert "system-owner" in values, f"nothing recognisable to select: {values}"
+
+    roles.select_option(["system-owner"])
+    row.locator("[data-action='statement-edit#save'], button[type='submit']").first.click()
+    authed_page.wait_for_load_state("networkidle")
+
+    # Re-read the row from the reloaded page rather than the stale handle.
+    reloaded = authed_page.locator(STMT_ROW).first
+    read_text = reloaded.locator("[data-statement-edit-target='read']").inner_text()
+
+    assert "system-owner" in read_text or "System Owner" in read_text, (
+        "the selected role did not survive the save — the Responsible Roles "
+        f"column still reads: {read_text!r}"
+    )
 
 
 def test_cancelling_closes_the_editor_and_restores_the_read_view(authed_page):
