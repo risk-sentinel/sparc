@@ -130,16 +130,48 @@ module OscalMetadata
     # is filtered out before export. OSCAL schemas reject additional
     # properties under metadata, so leaking these would fail validation.
     extra = (metadata_extra || {}).slice(*METADATA_EXTRA_KEYS)
-    if extra.any?
-      merged = base.merge(extra)
-    else
-      defaults = default_oscal_metadata_extras
-      defaults["roles"] = default_roles if default_roles.present?
-      defaults["parties"] = default_parties if default_parties.present?
-      merged = base.merge(defaults)
-    end
 
-    merged
+    # #1116 — merged PER KEY, not all-or-nothing.
+    #
+    # This was `if extra.any? … else …`, so a document carrying ANY one
+    # allowlisted key lost the defaults for all the others. METADATA_EXTRA_KEYS
+    # includes `parties`, `links` and `remarks`, which means a document that
+    # recorded a single remark exported with NO roles — and every `role-id` in
+    # it then resolved to nothing. Schema validation cannot see that: the
+    # document is structurally perfect and refers to nothing.
+    #
+    # `extra` is merged LAST so authored values still win over defaults.
+    defaults = default_oscal_metadata_extras
+    defaults["roles"] = default_roles if default_roles.present?
+    defaults["parties"] = default_parties if default_parties.present?
+
+    base.merge(defaults.merge(extra))
+  end
+
+  # ── Declared roles (#1116) ────────────────────────────────────────────────
+  #
+  # A `role-id` used anywhere in the document must resolve to one of these.
+  # OscalConformanceService enforces that; these helpers are what the UI and the
+  # API offer so an author PICKS rather than types.
+
+  def declared_roles
+    oscal_roles.presence || []
+  end
+
+  def declared_role_ids = declared_roles.filter_map { |r| r["id"] }.uniq
+
+  # [title, id] pairs for a select. Title is what a person recognises; the id is
+  # what OSCAL stores — the "English in front, machine identifier behind" shape.
+  def declared_role_options
+    declared_roles.map { |r| [ r["title"].presence || OscalRole.humanize(r["id"]), r["id"] ] }
+  end
+
+  # Roles NIST suggests that this document has not declared yet — offered by the
+  # picker so an author adopts NIST's canonical id instead of inventing one.
+  def undeclared_suggested_roles
+    declared = declared_role_ids.to_set
+    OscalRole.suggested(oscal_version || DEFAULT_OSCAL_VERSION)
+             .reject { |r| declared.include?(r["id"]) }
   end
 
   # Merge metadata from a parent/source document (inheritance)
