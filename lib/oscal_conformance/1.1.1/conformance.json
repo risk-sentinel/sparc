@@ -13,24 +13,6 @@
         "alt-label": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
-        "assessment": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "assessment-method": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "assessment-objective": [
-          ".//part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "assessment-objects": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "guidance": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "item": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='statement']//part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
         "job-title": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
@@ -51,17 +33,8 @@
           "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/prop[has-oscal-namespace('http://csrc.nist.gov/ns/rmf')]/@name",
           "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/prop[has-oscal-namespace(('http://csrc.nist.gov/ns/oscal','http://csrc.nist.gov/ns/rmf')) and @name='method']/@value"
         ],
-        "objective": [
-          ".//part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "objects": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
         "office": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "overview": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
         "published": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
@@ -75,9 +48,6 @@
         "source-profile-uuid": [
           "metadata/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
-        "statement": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
         "status": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='status']/@value",
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
@@ -88,6 +58,38 @@
         ],
         "version": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ]
+      },
+      "part_names": {
+        "assessment": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-method": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-objective": [
+          ".//part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-objects": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "guidance": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "item": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='statement']//part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "objective": [
+          ".//part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "objects": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name=('assessment','assessment-method')]/part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "overview": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "statement": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ]
       },
       "prop_values": {
@@ -209,6 +211,7 @@
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ]
       },
+      "part_names": {},
       "prop_values": {
         "": {
           "values": [
@@ -441,6 +444,7 @@
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ]
       },
+      "part_names": {},
       "prop_values": {
         "": {
           "values": [
@@ -795,6 +799,7 @@
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ]
       },
+      "part_names": {},
       "prop_values": {
         "": {
           "values": [
@@ -1013,21 +1018,6 @@
         "alt-label": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
-        "assessment": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "assessment-exclusions": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "assessment-inclusions": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "assessment-method": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "assessment-objective": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
         "asset-id": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
@@ -1037,9 +1027,6 @@
         "asset-type": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='asset-type']/@value",
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "assumptions": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
         "authentication": [
           "(.)[@system='http://www.first.org/cvss/v2.0' and @name='authentication']/@value"
@@ -1059,9 +1046,6 @@
         "direction": [
           "(.)[@type='interconnection']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name",
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='direction']/@value"
-        ],
-        "disclosures": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
         "exploit-code-maturity": [
           "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='exploit-code-maturity']/@value"
@@ -1135,9 +1119,6 @@
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value",
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
-        "methodology": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
         "model": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
@@ -1163,8 +1144,7 @@
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
         "objective": [
-          ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value",
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+          ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value"
         ],
         "office": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
@@ -1209,14 +1189,8 @@
           "(.)[@system='http://www.first.org/cvss/v2.0' and @name='report-confidence']/@value",
           "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='report-confidence']/@value"
         ],
-        "results-delivery": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
         "risk-adjusted": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "rules-of-engagement": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
         "scope": [
           "(.)[@system=('http://www.first.org/cvss/v3.0', 'http://www.first.org/cvss/v3.1') and @name='scope']/@value"
@@ -1274,6 +1248,41 @@
         ],
         "vlan-id": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ]
+      },
+      "part_names": {
+        "assessment": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-exclusions": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-inclusions": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-method": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-objective": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assumptions": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "disclosures": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "methodology": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "objective": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "results-delivery": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "rules-of-engagement": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ]
       },
       "prop_values": {
@@ -1671,15 +1680,6 @@
         "alt-label": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
-        "assessment": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "assessment-method": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "assessment-objective": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
         "asset-id": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
@@ -1806,8 +1806,7 @@
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
         "objective": [
-          ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value",
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+          ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value"
         ],
         "office": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
@@ -1911,6 +1910,20 @@
         ],
         "vlan-id": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ]
+      },
+      "part_names": {
+        "assessment": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-method": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-objective": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "objective": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ]
       },
       "prop_values": {
@@ -2308,15 +2321,6 @@
         "alt-label": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
-        "assessment": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "assessment-method": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
-        "assessment-objective": [
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
-        ],
         "asset-id": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
@@ -2443,8 +2447,7 @@
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ],
         "objective": [
-          ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value",
-          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+          ".[@name='objective']/prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal') and @name='method']/@value"
         ],
         "office": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
@@ -2548,6 +2551,20 @@
         ],
         "vlan-id": [
           "prop[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ]
+      },
+      "part_names": {
+        "assessment": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-method": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "assessment-objective": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
+        ],
+        "objective": [
+          "part[has-oscal-namespace('http://csrc.nist.gov/ns/oscal')]/@name"
         ]
       },
       "prop_values": {

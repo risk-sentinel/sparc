@@ -16,6 +16,62 @@
         "alt-label": [
           "oscal-parameter-prop-name"
         ],
+        "job-title": [
+          "oscal-metadata-party-prop-name-values"
+        ],
+        "keywords": [
+          "oscal-metadata-prop-name-values"
+        ],
+        "label": [
+          "oscal-control-prop-name",
+          "oscal-group-prop-name",
+          "oscal-parameter-prop-name",
+          "oscal-part-prop-name"
+        ],
+        "mail-stop": [
+          "oscal-metadata-party-prop-name-values"
+        ],
+        "marking": [
+          "oscal-metadata-prop-name-values"
+        ],
+        "method": [
+          "oscal-control-objective-part-method-prop-value",
+          "oscal-control-statement-part-prop-name",
+          "oscal-control-statement-part-rmf-prop-name"
+        ],
+        "office": [
+          "oscal-metadata-party-prop-name-values"
+        ],
+        "published": [
+          "oscal-back-matter-resource-prop-name-values"
+        ],
+        "resolution-tool": [
+          "oscal-catalog-metadata-prop-name"
+        ],
+        "sort-id": [
+          "oscal-control-prop-name",
+          "oscal-group-prop-name",
+          "oscal-parameter-prop-name",
+          "oscal-part-prop-name"
+        ],
+        "source-profile-uuid": [
+          "oscal-catalog-metadata-prop-name"
+        ],
+        "status": [
+          "oscal-control-prop-name",
+          "oscal-control-prop-status-value"
+        ],
+        "type": [
+          "oscal-back-matter-resource-prop-name-values",
+          "oscal-back-matter-resource-prop-type-values",
+          "oscal-metadata-location-prop-name-values",
+          "oscal-metadata-location-prop-type-values"
+        ],
+        "version": [
+          "oscal-back-matter-resource-prop-name-values"
+        ]
+      },
+      "part_names": {
         "assessment": [
           "oscal-control-part-name"
         ],
@@ -40,72 +96,18 @@
         "item": [
           "oscal-control-statement-part-subpart-name"
         ],
-        "job-title": [
-          "oscal-metadata-party-prop-name-values"
-        ],
-        "keywords": [
-          "oscal-metadata-prop-name-values"
-        ],
-        "label": [
-          "oscal-control-prop-name",
-          "oscal-group-prop-name",
-          "oscal-parameter-prop-name",
-          "oscal-part-prop-name"
-        ],
-        "mail-stop": [
-          "oscal-metadata-party-prop-name-values"
-        ],
-        "marking": [
-          "oscal-metadata-prop-name-values"
-        ],
-        "method": [
-          "oscal-control-objective-part-method-prop-value",
-          "oscal-control-statement-part-prop-name",
-          "oscal-control-statement-part-rmf-prop-name"
-        ],
         "objective": [
           "oscal-control-statement-part-name"
         ],
         "objects": [
           "oscal-control-objective-part-subpart-name"
         ],
-        "office": [
-          "oscal-metadata-party-prop-name-values"
-        ],
         "overview": [
           "oscal-control-part-name",
           "oscal-group-part-name"
         ],
-        "published": [
-          "oscal-back-matter-resource-prop-name-values"
-        ],
-        "resolution-tool": [
-          "oscal-catalog-metadata-prop-name"
-        ],
-        "sort-id": [
-          "oscal-control-prop-name",
-          "oscal-group-prop-name",
-          "oscal-parameter-prop-name",
-          "oscal-part-prop-name"
-        ],
-        "source-profile-uuid": [
-          "oscal-catalog-metadata-prop-name"
-        ],
         "statement": [
           "oscal-control-part-name"
-        ],
-        "status": [
-          "oscal-control-prop-name",
-          "oscal-control-prop-status-value"
-        ],
-        "type": [
-          "oscal-back-matter-resource-prop-name-values",
-          "oscal-back-matter-resource-prop-type-values",
-          "oscal-metadata-location-prop-name-values",
-          "oscal-metadata-location-prop-type-values"
-        ],
-        "version": [
-          "oscal-back-matter-resource-prop-name-values"
         ]
       },
       "prop_values": {
@@ -243,6 +245,7 @@
           "oscal-back-matter-resource-prop-name-values"
         ]
       },
+      "part_names": {},
       "prop_values": {
         "oscal-metadata-action-system-values": {
           "values": [
@@ -574,6 +577,7 @@
           "oscal-inventory-item-prop-name-values"
         ]
       },
+      "part_names": {},
       "prop_values": {
         "allows-authenticated-scan": {
           "values": [
@@ -993,6 +997,7 @@
           "oscal-inventory-item-prop-name-values"
         ]
       },
+      "part_names": {},
       "prop_values": {
         "allows-authenticated-scan": {
           "values": [
@@ -1222,21 +1227,6 @@
         "alt-label": [
           "oscal-parameter-prop-name"
         ],
-        "assessment": [
-          "oscal-assessment-objective-types"
-        ],
-        "assessment-exclusions": [
-          "oscal-terms-and-conditions-part-name"
-        ],
-        "assessment-inclusions": [
-          "oscal-terms-and-conditions-part-name"
-        ],
-        "assessment-method": [
-          "oscal-assessment-objective-types"
-        ],
-        "assessment-objective": [
-          "oscal-assessment-objective-types"
-        ],
         "asset-id": [
           "oscal-component-prop-name-values",
           "oscal-implemented-component-prop-name-values",
@@ -1253,9 +1243,6 @@
           "oscal-implemented-component-prop-name-values",
           "oscal-inventory-item-prop-asset-type-values",
           "oscal-inventory-item-prop-name-values"
-        ],
-        "assumptions": [
-          "oscal-terms-and-conditions-part-name"
         ],
         "at": [
           "oscal-cvss-v4.0-at-values"
@@ -1290,9 +1277,6 @@
           "oscal-component-interconnection-prop-name-values",
           "oscal-component-interconnection-service-software-system-prop-name-values",
           "oscal-component-prop-direction-values"
-        ],
-        "disclosures": [
-          "oscal-terms-and-conditions-part-name"
         ],
         "e": [
           "oscal-cvss-v4.0-e-values"
@@ -1390,9 +1374,6 @@
           "oscal-activity-values",
           "oscal-assesment-part-objective-name"
         ],
-        "methodology": [
-          "oscal-terms-and-conditions-part-name"
-        ],
         "model": [
           "oscal-component-prop-name-values",
           "oscal-implemented-component-prop-name-values",
@@ -1434,8 +1415,7 @@
           "oscal-inventory-item-prop-name-values"
         ],
         "objective": [
-          "oscal-assesment-part-objective-method-value",
-          "oscal-assessment-objective-types"
+          "oscal-assesment-part-objective-method-value"
         ],
         "office": [
           "oscal-metadata-party-prop-name-values"
@@ -1497,14 +1477,8 @@
           "oscal-facet-cvss2-report-confidence-values",
           "oscal-facet-cvss3-report-confidence-values"
         ],
-        "results-delivery": [
-          "oscal-terms-and-conditions-part-name"
-        ],
         "risk-adjusted": [
           "oscal-risk-prop-name-values"
-        ],
-        "rules-of-engagement": [
-          "oscal-terms-and-conditions-part-name"
         ],
         "s": [
           "oscal-cvss-v4.0-s-values"
@@ -1603,6 +1577,41 @@
           "oscal-component-prop-name-values",
           "oscal-implemented-component-prop-name-values",
           "oscal-inventory-item-prop-name-values"
+        ]
+      },
+      "part_names": {
+        "assessment": [
+          "oscal-assessment-objective-types"
+        ],
+        "assessment-exclusions": [
+          "oscal-terms-and-conditions-part-name"
+        ],
+        "assessment-inclusions": [
+          "oscal-terms-and-conditions-part-name"
+        ],
+        "assessment-method": [
+          "oscal-assessment-objective-types"
+        ],
+        "assessment-objective": [
+          "oscal-assessment-objective-types"
+        ],
+        "assumptions": [
+          "oscal-terms-and-conditions-part-name"
+        ],
+        "disclosures": [
+          "oscal-terms-and-conditions-part-name"
+        ],
+        "methodology": [
+          "oscal-terms-and-conditions-part-name"
+        ],
+        "objective": [
+          "oscal-assessment-objective-types"
+        ],
+        "results-delivery": [
+          "oscal-terms-and-conditions-part-name"
+        ],
+        "rules-of-engagement": [
+          "oscal-terms-and-conditions-part-name"
         ]
       },
       "prop_values": {
@@ -2208,15 +2217,6 @@
         "alt-label": [
           "oscal-parameter-prop-name"
         ],
-        "assessment": [
-          "oscal-assessment-objective-types"
-        ],
-        "assessment-method": [
-          "oscal-assessment-objective-types"
-        ],
-        "assessment-objective": [
-          "oscal-assessment-objective-types"
-        ],
         "asset-id": [
           "oscal-component-prop-name-values",
           "oscal-implemented-component-prop-name-values",
@@ -2405,8 +2405,7 @@
           "oscal-inventory-item-prop-name-values"
         ],
         "objective": [
-          "oscal-assesment-part-objective-method-value",
-          "oscal-assessment-objective-types"
+          "oscal-assesment-part-objective-method-value"
         ],
         "office": [
           "oscal-metadata-party-prop-name-values"
@@ -2568,6 +2567,20 @@
           "oscal-component-prop-name-values",
           "oscal-implemented-component-prop-name-values",
           "oscal-inventory-item-prop-name-values"
+        ]
+      },
+      "part_names": {
+        "assessment": [
+          "oscal-assessment-objective-types"
+        ],
+        "assessment-method": [
+          "oscal-assessment-objective-types"
+        ],
+        "assessment-objective": [
+          "oscal-assessment-objective-types"
+        ],
+        "objective": [
+          "oscal-assessment-objective-types"
         ]
       },
       "prop_values": {
@@ -3173,15 +3186,6 @@
         "alt-label": [
           "oscal-parameter-prop-name"
         ],
-        "assessment": [
-          "oscal-assessment-objective-types"
-        ],
-        "assessment-method": [
-          "oscal-assessment-objective-types"
-        ],
-        "assessment-objective": [
-          "oscal-assessment-objective-types"
-        ],
         "asset-id": [
           "oscal-component-prop-name-values",
           "oscal-implemented-component-prop-name-values",
@@ -3370,8 +3374,7 @@
           "oscal-inventory-item-prop-name-values"
         ],
         "objective": [
-          "oscal-assesment-part-objective-method-value",
-          "oscal-assessment-objective-types"
+          "oscal-assesment-part-objective-method-value"
         ],
         "office": [
           "oscal-metadata-party-prop-name-values"
@@ -3533,6 +3536,20 @@
           "oscal-component-prop-name-values",
           "oscal-implemented-component-prop-name-values",
           "oscal-inventory-item-prop-name-values"
+        ]
+      },
+      "part_names": {
+        "assessment": [
+          "oscal-assessment-objective-types"
+        ],
+        "assessment-method": [
+          "oscal-assessment-objective-types"
+        ],
+        "assessment-objective": [
+          "oscal-assessment-objective-types"
+        ],
+        "objective": [
+          "oscal-assessment-objective-types"
         ]
       },
       "prop_values": {
@@ -4158,6 +4175,7 @@
           "oscal-back-matter-resource-prop-name-values"
         ]
       },
+      "part_names": {},
       "prop_values": {
         "oscal-metadata-action-system-values": {
           "values": [

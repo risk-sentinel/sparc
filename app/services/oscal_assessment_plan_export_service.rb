@@ -82,7 +82,7 @@ class OscalAssessmentPlanExportService
 
     meta["props"] ||= []
     unless meta["props"].any? { |p| p["name"] == "assessment-type" }
-      meta["props"] << { "name" => "assessment-type", "ns" => "https://sparc.local/ns", "value" => @document.assessment_type }
+      meta["props"] << { "name" => "assessment-type", "ns" => OscalNamespace.instance, "value" => @document.assessment_type }
     end
   end
 
@@ -108,7 +108,7 @@ class OscalAssessmentPlanExportService
       {
         "uuid" => OscalUuidService.org_party_uuid_for(@document),
         "type" => "organization",
-        "name" => "Assessment Organization (SPARC Export)"
+        "name" => "Assessment Organization (#{SparcConfig.oscal_org_name})"
       }
     ]
 
@@ -212,8 +212,12 @@ class OscalAssessmentPlanExportService
       schedule_text += "Start: #{@document.assessment_start}" if @document.assessment_start.present?
       schedule_text += " | End: #{@document.assessment_end}" if @document.assessment_end.present?
 
+      # #1106 — `assessment-schedule` is not a NIST-defined PART name (parts and
+      # props are separate vocabularies; neither list contains it). A part with
+      # no `ns` claims NIST defined it, exactly as a prop does.
       parts << {
         "name" => "assessment-schedule",
+        "ns" => OscalNamespace.instance,
         "title" => "Assessment Schedule",
         "prose" => schedule_text
       }
@@ -222,6 +226,7 @@ class OscalAssessmentPlanExportService
     if @document.description.present?
       parts << {
         "name" => "assessment-scope",
+        "ns" => OscalNamespace.instance,
         "title" => "Assessment Scope",
         "prose" => @document.description
       }
@@ -271,7 +276,7 @@ class OscalAssessmentPlanExportService
         "uuid"  => OscalUuidService.derived(@document.uuid, "sap-assessment-platform"),
         "title" => "Assessment Platform",
         "props" => [
-          { "name" => "type", "ns" => "https://sparc.local/ns", "value" => "manual" }
+          { "name" => "type", "ns" => OscalNamespace.instance, "value" => "manual" }
         ]
       }
     ]

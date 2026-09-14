@@ -61,7 +61,7 @@ class OscalComponentDefinitionExportService
       ],
       default_parties: [
         { "uuid" => OscalUuidService.org_party_uuid_for(@document),
-          "type" => "organization", "name" => "SPARC Export" }
+          "type" => "organization", "name" => SparcConfig.oscal_org_name }
       ]
     )
   end
@@ -347,18 +347,25 @@ class OscalComponentDefinitionExportService
     } ]
   end
 
-  # Append CDEF field-derived props in a stable order (implementation-status,
-  # control-origin, baseline-priority).
+  # Append CDEF field-derived props in a stable order.
+  #
+  # #1106 — all three are SPARC's own concepts and none is NIST-defined for the
+  # component-definition model, so they carry the deployment namespace.
+  #
+  # `implementation-status` is the sharpest case: OSCAL defines it as an ASSEMBLY
+  # on `by-component`, and the component-definition model has no such concept at
+  # all (0 occurrences in component.xml). Emitting it here with no `ns` asserted a
+  # NIST definition that does not exist in this model in any form.
   def append_ir_enhanced_props(result, field_map)
     {
-      "implementation_status" => "implementation-status",
+      "implementation_status" => "sparc-implementation-status",
       "control_origin"        => "control-origin",
       "baseline_priority"     => "baseline-priority"
     }.each do |field_name, prop_name|
       value = field_map[field_name]&.field_value
       next if value.blank?
       result["props"] ||= []
-      result["props"] << { "name" => prop_name, "value" => value }
+      result["props"] << { "name" => prop_name, "ns" => OscalNamespace.instance, "value" => value }
     end
   end
 
@@ -425,16 +432,22 @@ class OscalComponentDefinitionExportService
     parts.join("\n\n").presence || "No description available"
   end
 
+  # `severity`, `rule-id`, `group-id` and `stig-id` are DISA/STIG vocabulary, not
+  # NIST's — none is defined by any OSCAL model (#1106). Emitted with no `ns`
+  # they CLAIMED a NIST definition that does not exist. They now carry DISA's
+  # namespace, which is what the `cci` prop below already did correctly and is
+  # the pattern being copied.
   def build_props(control)
     props = []
-    props << { "name" => "severity", "value" => control.severity } if control.severity.present?
-    props << { "name" => "rule-id",  "value" => control.rule_id }  if control.rule_id.present?
-    props << { "name" => "group-id", "value" => control.group_id } if control.group_id.present?
-    props << { "name" => "stig-id",  "value" => control.stig_id }  if control.stig_id.present?
+    stig  = OscalNamespace.uri(:stig)
+    props << { "name" => "severity", "ns" => stig, "value" => control.severity } if control.severity.present?
+    props << { "name" => "rule-id",  "ns" => stig, "value" => control.rule_id }  if control.rule_id.present?
+    props << { "name" => "group-id", "ns" => stig, "value" => control.group_id } if control.group_id.present?
+    props << { "name" => "stig-id",  "ns" => stig, "value" => control.stig_id }  if control.stig_id.present?
 
     if control.cci_references.present?
       control.cci_references.split(",").each do |cci|
-        props << { "name" => "cci", "ns" => "http://cyber.mil/cci", "value" => cci.strip }
+        props << { "name" => "cci", "ns" => OscalNamespace.uri(:cci), "value" => cci.strip }
       end
     end
 
@@ -446,7 +459,14 @@ class OscalComponentDefinitionExportService
     when "disa_stig" then "https://public.cyber.mil/stigs/"
     when "cis"       then "https://www.cisecurity.org/cis-benchmarks"
     when "scap"      then "https://csrc.nist.gov/projects/security-content-automation-protocol"
-    else "https://sparc.local/component-definitions/#{@document.id}"
+    else
+      # #1106 — the last-resort source. It was `https://sparc.local/…`, which
+      # resolves to nothing (`.local` is mDNS-reserved, RFC 6762) and put the
+      # database primary key into a delivered artifact. Provenance for a
+      # locally-authored CDEF belongs to the organization running this SPARC —
+      # the same identity that supplies its roles and ODPs — so it is attributed
+      # to them, at an address that actually resolves.
+      "#{SparcConfig.app_url.chomp('/')}/cdef_documents/#{@document.id}"
     end
   end
 

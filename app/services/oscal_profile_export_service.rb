@@ -65,7 +65,7 @@ class OscalProfileExportService
       ],
       default_parties: [
         { "uuid" => OscalUuidService.org_party_uuid_for(@document),
-          "type" => "organization", "name" => "SPARC Export" }
+          "type" => "organization", "name" => SparcConfig.oscal_org_name }
       ]
     )
   end
@@ -112,12 +112,22 @@ class OscalProfileExportService
 
   def build_alter(control)
     props = []
-    props << { "name" => "priority", "value" => control.priority } if control.priority.present?
+    if control.priority.present?
+      props << { "name" => "priority", "ns" => OscalNamespace.instance, "value" => control.priority }
+    end
 
+    # #1106 slice 5 — author-defined props.
+    #
+    # Whatever an author types after `prop:` became a prop name in NIST's
+    # namespace: unbounded, and the only finding in the audit that was open-ended
+    # rather than a fixed list. The fix is NOT an allow-list — extending OSCAL is
+    # the point, and NIST provides for it. It is a namespace: these are the
+    # deployment's own terms, so they are emitted under the deployment's
+    # namespace, where they are legal by construction and never a violation.
     control.profile_control_fields.each do |field|
       next unless field.field_name.start_with?("prop:")
       prop_name = field.field_name.delete_prefix("prop:")
-      props << { "name" => prop_name, "value" => field.field_value }
+      props << { "name" => prop_name, "ns" => OscalNamespace.instance, "value" => field.field_value }
     end
 
     return nil if props.empty?
