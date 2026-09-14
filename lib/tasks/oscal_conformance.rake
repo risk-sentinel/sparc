@@ -73,9 +73,9 @@ namespace :oscal do
 
       dataset["models"][model] = extract_model_rules(sources).merge("metaschemas" => sources.keys.sort)
       counts = dataset["models"][model]
-      oscal_log format("  %-32s %2d files  %3d prop-names  %3d vocabularies  %3d cardinalities",
-                       model, sources.size,
-                       counts["prop_names"].size, counts["prop_values"].size, counts["cardinalities"].size)
+      oscal_log format("  %-32s %2d files  %3d props  %3d parts  %3d vocabularies  %3d cardinalities",
+                       model, sources.size, counts["prop_names"].size, counts["part_names"].size,
+                       counts["prop_values"].size, counts["cardinalities"].size)
     end
 
     dataset["role_ids"] = dataset["models"]
@@ -125,6 +125,7 @@ namespace :oscal do
   # Pull the four constraint kinds JSON Schema cannot express.
   def extract_model_rules(sources)
     prop_names   = Hash.new { |h, k| h[k] = [] }
+    part_names   = Hash.new { |h, k| h[k] = [] }
     prop_values  = {}
     cardinalities = []
     role_ids     = []
@@ -147,7 +148,13 @@ namespace :oscal do
         if target.include?("role-id")
           role_ids |= enums
         elsif target.include?("/@name") && target.include?("has-oscal-namespace")
-          enums.each { |e| prop_names[e] |= [ id.presence || target ] }
+          # PROPS AND PARTS ARE DIFFERENT VOCABULARIES and both end in `/@name`.
+          # `part[…]/@name` allows `statement`, `item`, `guidance`; `prop[…]/@name`
+          # allows `label`, `sort-id`. Folding them together would let a prop
+          # named `statement` pass as NIST-defined. The element is the LAST path
+          # step before /@name — `part[…]/prop[…]/@name` is a prop constraint.
+          bucket = target[/(\w+)\[[^\]]*\]\/@name\z/, 1] == "part" ? part_names : prop_names
+          enums.each { |e| bucket[e] |= [ id.presence || target ] }
         elsif target.include?("/@value")
           name = target[/@name='([^']+)'/, 1] || target[/@name=\(([^)]+)\)/, 1].to_s.delete("'")
           prop_names[name] |= [ id.presence || target ] if name.present?
@@ -170,6 +177,7 @@ namespace :oscal do
 
     {
       "prop_names" => prop_names.transform_values(&:sort).sort.to_h,
+      "part_names" => part_names.transform_values(&:sort).sort.to_h,
       "prop_values" => prop_values.sort.to_h,
       "cardinalities" => cardinalities,
       "role_ids" => role_ids.sort

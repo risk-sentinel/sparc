@@ -95,7 +95,7 @@ class OscalPoamExportService
       ],
       default_parties: [
         { "uuid" => OscalUuidService.org_party_uuid_for(@document),
-          "type" => "organization", "name" => "SPARC Export" }
+          "type" => "organization", "name" => SparcConfig.oscal_org_name }
       ]
     )
   end

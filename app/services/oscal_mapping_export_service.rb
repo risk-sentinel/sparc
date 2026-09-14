@@ -59,7 +59,7 @@ class OscalMappingExportService
       ],
       default_parties: [
         { "uuid" => OscalUuidService.derived(@mapping.id.to_s, "mapping-default-party"),
-          "type" => "organization", "name" => "SPARC Export" }
+          "type" => "organization", "name" => SparcConfig.oscal_org_name }
       ]
     )
   end

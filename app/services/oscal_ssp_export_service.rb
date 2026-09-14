@@ -129,7 +129,7 @@ class OscalSspExportService
   # not dangle.
   def default_parties
     parties = [ { "uuid" => OscalUuidService.org_party_uuid_for(@document),
-                  "type" => "organization", "name" => "SPARC Export" } ]
+                  "type" => "organization", "name" => SparcConfig.oscal_org_name } ]
 
     @boundary_leveraged_auths.each do |la|
       uuid = leveraged_party_uuid(la)

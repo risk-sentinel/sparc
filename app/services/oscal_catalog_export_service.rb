@@ -56,7 +56,7 @@ class OscalCatalogExportService
       ],
       default_parties: [
         { "uuid" => OscalUuidService.derived(@catalog.oscal_uuid.to_s, "catalog-default-party"),
-          "type" => "organization", "name" => "SPARC Export" }
+          "type" => "organization", "name" => SparcConfig.oscal_org_name }
       ]
     )
   end
@@ -117,11 +117,17 @@ class OscalCatalogExportService
     if control.sort_id.present?
       props << { "name" => "sort-id", "value" => control.sort_id }
     end
-    props << { "name" => "priority", "value" => control.priority } if control.priority.present?
+    # #1106 — `label` and `sort-id` above are CORRECT unnamespaced: NIST's own
+    # 800-53 catalog emits 12,831 and 1,196 of them exactly that way. `priority`
+    # and `impact-level` are not NIST catalog prop names, so they carry the
+    # deployment namespace instead of claiming one.
+    if control.priority.present?
+      props << { "name" => "priority", "ns" => OscalNamespace.instance, "value" => control.priority }
+    end
 
     if control.baseline_impact.present?
       control.baseline_impact.split(",").map(&:strip).each do |level|
-        props << { "name" => "impact-level", "value" => level }
+        props << { "name" => "impact-level", "ns" => OscalNamespace.instance, "value" => level }
       end
     end
 
