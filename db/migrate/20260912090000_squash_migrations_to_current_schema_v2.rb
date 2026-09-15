@@ -57,6 +57,8 @@
 #   bin/rails db:migrate       # runs this single file on an existing database
 # ============================================================================
 class SquashMigrationsToCurrentSchemaV2 < ActiveRecord::Migration[8.1]
+  class SchemaExtractionError < StandardError; end
+
   def up
     # An existing database already has the full per-migration history applied,
     # so the schema is correct and there is no work to do. Guarding on a table
@@ -72,7 +74,11 @@ class SquashMigrationsToCurrentSchemaV2 < ActiveRecord::Migration[8.1]
     if schema_content =~ /\.define\(.*?\) do\s*$(.*)\nend\s*\z/m
       eval($1, binding, schema_file.to_s) # rubocop:disable Security/Eval
     else
-      raise "could not extract the schema definition block from #{schema_file}"
+      # A specific class, not a bare string: this fires only if schema.rb's
+      # generated shape changes, and a caller that wants to rescue THAT should
+      # not have to match on message text.
+      raise SchemaExtractionError,
+            "could not extract the schema definition block from #{schema_file}"
     end
   end
 

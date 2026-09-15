@@ -386,8 +386,12 @@ jobs:
 
       - name: Report what coverage arrived
         run: |
-          if [ -f coverage/.resultset.json ]; then
-            echo "coverage/.resultset.json present ($(wc -c < coverage/.resultset.json) bytes)"
+          # coverage.json is the simplecov_json_formatter report, which is what
+          # Sonar's Ruby analyzer parses. `.resultset.json` is SimpleCov's raw
+          # internal data — Sonar reads it without error and reports NO coverage,
+          # which is how this went unnoticed.
+          if [ -f coverage/coverage.json ]; then
+            echo "coverage/coverage.json present ($(wc -c < coverage/coverage.json) bytes)"
           else
             echo "::warning::no SimpleCov report — analysis will run WITHOUT coverage"
             ls -la coverage 2>/dev/null || echo "(no coverage directory)"
@@ -401,6 +405,6 @@ jobs:
           args: >
             -Dsonar.projectKey=risk-sentinel_sparc
             -Dsonar.organization=risk-sentinel
-            -Dsonar.ruby.coverage.reportPaths=coverage/.resultset.json
+            -Dsonar.ruby.coverage.reportPaths=coverage/coverage.json
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.ico,**/*.svg,**/*.mp4,**/*.xlsx,**/*.rdb,**/*.pdf,**/*.woff,**/*.woff2

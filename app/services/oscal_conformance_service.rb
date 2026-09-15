@@ -97,6 +97,10 @@ class OscalConformanceService
       node.each { |k, v| walk(v, "#{path}/#{k}", rules) unless %w[props parts].include?(k) }
     when Array
       node.each_with_index { |v, i| walk(v, "#{path}[#{i}]", rules) }
+    else
+      # A leaf scalar — string, number, boolean, nil. Nothing to descend into
+      # and nothing to check: props and parts are always carried by a Hash.
+      nil
     end
   end
 
@@ -165,6 +169,13 @@ class OscalConformanceService
           severity: :violation, rule: "party-uuid-unresolved", location: path,
           message: "party-uuid #{value.inspect} resolves to no party in metadata.parties"
         )
+      else
+        # NOT a no-op. `collect_references` is where reference kinds are
+        # produced; adding one there and forgetting it here would drop a whole
+        # class of reference silently — the document would validate while its
+        # references dangled, which is the exact failure this service exists to
+        # catch. Fail loudly instead.
+        raise ArgumentError, "unhandled reference kind #{kind.inspect} at #{path}"
       end
     end
   end
@@ -177,11 +188,18 @@ class OscalConformanceService
         when "role-id"     then acc << [ :role, v, path ]
         when "party-uuids" then Array(v).each { |u| acc << [ :party, u, path ] }
         when "party-uuid"  then acc << [ :party, v, path ]
+        else
+          # Every other key: not a reference. Recursion below still descends
+          # into it, so nothing is missed by not matching here.
+          nil
         end
         collect_references(v, "#{path}/#{k}", acc)
       end
     when Array
       node.each_with_index { |v, i| collect_references(v, "#{path}[#{i}]", acc) }
+    else
+      # Leaf scalar — a reference is always a Hash value under a known key.
+      nil
     end
     acc
   end
