@@ -406,16 +406,30 @@ jobs:
           # passes `#` lines through as arguments, and sonar-scanner fails with
           # "Unrecognized option: #".
           #
-          # sonar.tests declares the test trees. Without it Sonar treats spec/ and
-          # tests/ as PRODUCTION source: test files demand coverage of their own
-          # (nothing measures coverage OF a test) and are analysed for smells as
-          # if they shipped. On PR #1130 that put 81 uncovered lines of Python
-          # test code into the new-code denominator — 54% of the total.
+          # sonar.sources MUST be explicit whenever sonar.tests is set. Left to
+          # default it is "." — which CONTAINS spec/ and tests/ — and the overlap
+          # made the scanner index NOTHING: "0 files indexed", "0 New Lines of
+          # Code", Zero Coverage Sensor, and a quality gate that PASSED because
+          # there was nothing left to measure. Measured on PR #1130; a vacuous
+          # pass is worse than an honest failure.
+          #
+          # It stays "." rather than an allow-list of app,lib,config,... — that
+          # narrower form was tried and silently dropped .github (17 files),
+          # Dockerfile, docs and dev from analysis, which is where #966's
+          # githubactions supply-chain findings live. The overlap is resolved by
+          # EXCLUDING the test trees from source indexing below, not by shrinking
+          # what gets analysed.
+          #
+          # sonar.tests declares the test trees so test files are not required to
+          # have coverage of their own (nothing measures coverage OF a test) and
+          # are not analysed for smells as if they shipped. Before it, 81
+          # uncovered lines of Python test code sat in the new-code denominator —
+          # 54% of the total.
           args: >
             -Dsonar.projectKey=risk-sentinel_sparc
             -Dsonar.organization=risk-sentinel
             -Dsonar.ruby.coverage.reportPaths=coverage/coverage.json
+            -Dsonar.sources=.
             -Dsonar.tests=spec,tests
-            -Dsonar.test.inclusions=spec/**/*.rb,tests/**/*.py
             -Dsonar.sourceEncoding=UTF-8
-            -Dsonar.exclusions=lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.ico,**/*.svg,**/*.mp4,**/*.xlsx,**/*.rdb,**/*.pdf,**/*.woff,**/*.woff2
+            -Dsonar.exclusions=spec/**,tests/**,lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.ico,**/*.svg,**/*.mp4,**/*.xlsx,**/*.rdb,**/*.pdf,**/*.woff,**/*.woff2
