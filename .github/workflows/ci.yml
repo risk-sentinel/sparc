@@ -402,15 +402,19 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
+          # NOTE: no comments inside the `args: >` block below — a folded scalar
+          # passes `#` lines through as arguments, and sonar-scanner fails with
+          # "Unrecognized option: #".
+          #
+          # sonar.tests declares the test trees. Without it Sonar treats spec/ and
+          # tests/ as PRODUCTION source: test files demand coverage of their own
+          # (nothing measures coverage OF a test) and are analysed for smells as
+          # if they shipped. On PR #1130 that put 81 uncovered lines of Python
+          # test code into the new-code denominator — 54% of the total.
           args: >
             -Dsonar.projectKey=risk-sentinel_sparc
             -Dsonar.organization=risk-sentinel
             -Dsonar.ruby.coverage.reportPaths=coverage/coverage.json
-            # Declare the test trees. Without this Sonar treats spec/ and tests/
-            # as PRODUCTION source: test files then demand coverage of their own
-            # (nothing measures coverage OF a test) and are analysed for smells
-            # as if they shipped. On PR #1130 that put 81 uncovered lines of
-            # Python test code into the new-code denominator — 54% of the total.
             -Dsonar.tests=spec,tests
             -Dsonar.test.inclusions=spec/**/*.rb,tests/**/*.py
             -Dsonar.sourceEncoding=UTF-8

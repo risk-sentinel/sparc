@@ -30,11 +30,24 @@ require "rake"
 #      that would have accepted a prop named `statement` as NIST-defined.
 RSpec.describe "OSCAL conformance generator" do
   # Rake task bodies define their helpers as Object methods once loaded.
+  #
+  # `Rake.application` is GLOBAL. An earlier version of this file called
+  # `Rake::Task.clear` and installed a fresh application without restoring the
+  # old one, which wiped every task the rest of the suite relies on — specs
+  # doing `Rake::Task["sparc:bootstrap_admin"]` then died with "Don't know how to
+  # build task". It passed in isolation and broke CI, which is the signature of
+  # global state mutated in a before(:all).
+  #
+  # A private application is installed for the load and the original put back.
   before(:all) do
-    Rake::Task.clear if defined?(Rake::Task)
+    @original_rake_application = Rake.application
     Rake.application = Rake::Application.new
     load Rails.root.join("lib/tasks/oscal_schemas.rake")
     load Rails.root.join("lib/tasks/oscal_conformance.rake")
+  end
+
+  after(:all) do
+    Rake.application = @original_rake_application
   end
 
   let(:subject_obj) { Object.new }
