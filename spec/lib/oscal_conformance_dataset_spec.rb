@@ -15,7 +15,11 @@ RSpec.describe "OSCAL conformance dataset" do
 
   def dataset(version)
     path = DATASET_DIR.join(version, "conformance.json")
-    raise "missing conformance dataset for OSCAL #{version} — run bin/rails oscal:bundle_conformance[#{version}]" unless path.exist?
+    unless path.exist?
+      raise IOError,
+            "missing conformance dataset for OSCAL #{version} — " \
+            "run bin/rails oscal:bundle_conformance[#{version}]"
+    end
 
     JSON.parse(path.read)
   end
