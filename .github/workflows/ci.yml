@@ -406,16 +406,23 @@ jobs:
           # passes `#` lines through as arguments, and sonar-scanner fails with
           # "Unrecognized option: #".
           #
-          # sonar.tests declares the test trees. Without it Sonar treats spec/ and
-          # tests/ as PRODUCTION source: test files demand coverage of their own
-          # (nothing measures coverage OF a test) and are analysed for smells as
-          # if they shipped. On PR #1130 that put 81 uncovered lines of Python
-          # test code into the new-code denominator — 54% of the total.
+          # sonar.sources MUST be explicit whenever sonar.tests is set. Sources
+          # otherwise defaults to "." — which CONTAINS spec/ and tests/ — and the
+          # overlap made the scanner index NOTHING: "0 files indexed", "0 New
+          # Lines of Code", Zero Coverage Sensor, and a quality gate that PASSED
+          # because there was nothing left to measure. A vacuous pass is worse
+          # than an honest failure; measured on PR #1130.
+          #
+          # sonar.tests declares the test trees so test files are not required to
+          # have coverage of their own (nothing measures coverage OF a test) and
+          # are not analysed for smells as if they shipped. Before it, 81
+          # uncovered lines of Python test code sat in the new-code denominator —
+          # 54% of the total.
           args: >
             -Dsonar.projectKey=risk-sentinel_sparc
             -Dsonar.organization=risk-sentinel
             -Dsonar.ruby.coverage.reportPaths=coverage/coverage.json
+            -Dsonar.sources=app,lib,config,db,bin,scripts
             -Dsonar.tests=spec,tests
-            -Dsonar.test.inclusions=spec/**/*.rb,tests/**/*.py
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.ico,**/*.svg,**/*.mp4,**/*.xlsx,**/*.rdb,**/*.pdf,**/*.woff,**/*.woff2
