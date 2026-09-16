@@ -53,6 +53,29 @@ RSpec.describe "Api::V1::SspRoles", type: :request do
 
       expect(response).to have_http_status(:forbidden)
     end
+
+    # #1134 — the vocabulary a client declares FROM, each entry showing the
+    # OSCAL role it resolves to.
+    describe "meta.membership_roles" do
+      def offered
+        get "/api/v1/ssp_documents/#{ssp.slug}/roles", headers: bearer_for(reader)
+        json.dig("meta", "membership_roles").index_by { |r| r["membership_role"] }
+      end
+
+      it "resolves a role NIST names to NIST's id, already declared by default" do
+        expect(offered["isso"]).to include("role_id" => "information-system-security-officer",
+                                           "organization_defined" => false, "declared" => true)
+      end
+
+      it "resolves one NIST does not name to an organization-defined role, not yet declared" do
+        expect(offered["ciso"]).to include("role_id" => "ciso", "organization_defined" => true, "declared" => false)
+        expect(offered["ciso"]["label"]).to be_present
+      end
+
+      it "offers only the responsibility-bearing subset" do
+        expect(offered.keys).not_to include(*OscalRole::ACCESS_ONLY_MEMBERSHIP_ROLES)
+      end
+    end
   end
 
   describe "POST create" do
@@ -122,6 +145,77 @@ RSpec.describe "Api::V1::SspRoles", type: :request do
 
       expect(response).to have_http_status(:forbidden)
       expect(ssp.reload.declared_role_ids).not_to include("incident-response")
+    end
+
+    # #1134 — the normal path: picked from the boundary vocabulary, never typed.
+    describe "by membership_role" do
+      def declare(membership_role, as: author, **extra)
+        post "/api/v1/ssp_documents/#{ssp.slug}/roles",
+             params: { role: { membership_role: membership_role, **extra } }, headers: bearer_for(as)
+      end
+
+      it "lets a permission-holding non-admin declare an organization-defined role" do
+        declare("ciso")
+
+        expect(response).to have_http_status(:created)
+        expect(json["data"]).to include("id" => "ciso", "organization_defined" => true)
+        role = ssp.reload.declared_roles.find { |r| r["id"] == "ciso" }
+        expect(role.dig("props", 0, "ns")).to eq(OscalNamespace.instance)
+        expect(ssp.declared_role_ids).to include(*OscalRole::SSP_DEFAULT_IDS), "declaring one must keep the defaults"
+      end
+
+      it "declares NIST's id, not the membership value, for a role NIST names" do
+        ssp.update!(metadata_extra: { "roles" => [] })
+
+        declare("authorizing_official")
+
+        expect(response).to have_http_status(:created)
+        expect(json["data"]).to include("id" => "authorizing-official", "organization_defined" => false)
+        expect(ssp.reload.declared_role_ids).to eq([ "authorizing-official" ])
+      end
+
+      it "records the membership role it came from in the audit event" do
+        expect { declare("assessor") }
+          .to change { AuditEvent.where(action: "ssp_role_declared").count }.by(1)
+
+        expect(AuditEvent.where(action: "ssp_role_declared").last.metadata)
+          .to include("role_id" => "assessor", "membership_role" => "assessor")
+      end
+
+      it "refuses an access-only membership role" do
+        declare("view_only")
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(json["error"]).to match(/responsibility-bearing/)
+        expect(ssp.reload.metadata_extra.to_h).not_to have_key("roles")
+      end
+
+      it "refuses a value outside the boundary vocabulary" do
+        declare("policy_department")
+
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+
+      it "refuses a role that resolves to one already declared" do
+        declare("system_owner")
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(json["error"]).to match(/already declared/)
+      end
+
+      it "refuses id and membership_role together" do
+        declare("ciso", id: "something-else")
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(ssp.reload.declared_role_ids).not_to include("ciso", "something-else")
+      end
+
+      it "refuses a reader without ssp.write" do
+        declare("ciso", as: reader)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(ssp.reload.declared_role_ids).not_to include("ciso")
+      end
     end
   end
 

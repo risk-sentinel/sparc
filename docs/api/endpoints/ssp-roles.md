@@ -37,10 +37,44 @@ there is no roles table.
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `.../roles` | Declared roles, plus NIST ids not yet declared |
-| `POST` | `.../roles` | Declare a role |
+| `GET` | `.../roles` | Declared roles, the boundary vocabulary, and NIST ids not yet declared |
+| `POST` | `.../roles` | Declare a role — by `membership_role` (normal) or by `id` |
 | `PATCH` / `PUT` | `.../roles/:id` | Retitle a declared role |
 | `DELETE` | `.../roles/:id` | Undeclare a role |
+
+## Declaring from the boundary (the normal path)
+
+Pass `membership_role` instead of an id. The role comes from the
+**authorization-boundary membership** vocabulary — the built-ins plus whatever
+`SPARC_AUTH_BOUNDARY_ROLES` adds — which is where the system's personnel
+actually sit. Nobody types an identifier.
+
+Each membership role resolves in exactly one way:
+
+* **NIST names it** → declared with NIST's id. `isso` becomes
+  `information-system-security-officer`; `system_owner` becomes `system-owner`.
+* **NIST does not** → declared **organization-defined** (the prop shown below),
+  under the hyphenated form of the value: `ciso` becomes `ciso`.
+
+`GET .../roles` lists the vocabulary under `meta.membership_roles`, each entry
+showing what it would resolve to, so a client can offer it by label:
+
+| Field | Meaning |
+|---|---|
+| `membership_role` | The value to send back as `membership_role` |
+| `label` | Display label (an operator label from `SPARC_AUTH_BOUNDARY_ROLES` wins) |
+| `role_id` | The OSCAL `role-id` it declares |
+| `organization_defined` | `true` when NIST names no equivalent |
+| `declared` | Already declared on this document |
+
+Only **responsibility-bearing** roles are offered or accepted. `view_only` and
+`project_member` name a level of access, not a function anyone is responsible
+for, so posting one is refused with `422`.
+
+Importing boundary members as system users (`POST /ssp_documents/:id/import_boundary_users`)
+resolves roles the same way and declares every role it references. A system
+user's `role-ids` describes the user rather than claiming responsibility, so the
+import resolves access-only members too.
 
 ## Two tiers of role, both legal
 
@@ -75,7 +109,16 @@ that reason.
 
 ## Examples
 
-Declare a NIST role:
+Declare from the boundary vocabulary:
+
+```bash
+curl -X POST "$SPARC/api/v1/ssp_documents/acme-prod/roles" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"role": {"membership_role": "ciso"}}'
+```
+
+Declare a NIST role by id:
 
 ```bash
 curl -X POST "$SPARC/api/v1/ssp_documents/acme-prod/roles" \
@@ -115,7 +158,7 @@ Each role serialises as:
 | `403` | No `ssp.read` / `ssp.write` on the SSP's boundary |
 | `404` | The role is not declared on this document |
 | `409` | `DELETE` on a role that statements still reference |
-| `422` | Missing id, an id that is not an NCName token, or a duplicate |
+| `422` | Missing id, an id that is not an NCName token, or a duplicate; a `membership_role` outside the responsibility-bearing vocabulary; `id` and `membership_role` sent together |
 
 The `409` is deliberate: undeclaring a role that statements still point at would
 manufacture the dangling reference this endpoint exists to prevent. Reassign the

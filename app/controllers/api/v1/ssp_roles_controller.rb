@@ -14,8 +14,10 @@
 # UI is a thin client over the same endpoints rather than the only way.
 #
 # Endpoints (nested under /api/v1/ssp_documents/:ssp_document_id):
-#   GET    .../roles        — declared roles, plus NIST ids not yet declared
-#   POST   .../roles        — declare a role
+#   GET    .../roles        — declared roles, the boundary vocabulary, and NIST
+#                              ids not yet declared
+#   POST   .../roles        — declare a role: by `membership_role` (normal) or
+#                              by a typed `id` (the exception, #1134)
 #   PATCH  .../roles/:id    — retitle one
 #   DELETE .../roles/:id    — undeclare one (refused while still referenced)
 #
@@ -49,13 +51,29 @@ class Api::V1::SspRolesController < Api::V1::BaseController
         # Not a restriction: NIST sets allow-other="yes" on role-id, so a
         # deployment-defined role is legal — it just has to be declared.
         suggested: @ssp_document.undeclared_suggested_roles,
+        # #1134 — the NORMAL path. The boundary-membership vocabulary a role is
+        # declared from, each showing the OSCAL role it resolves to, so a client
+        # picks by label and never types an id.
+        membership_roles: membership_roles,
         oscal_version: @ssp_document.oscal_version || OscalSchema::DEFAULT_VERSION
       }
     }
   end
 
   # POST /api/v1/ssp_documents/:ssp_document_id/roles
+  #
+  # `role[membership_role]` is the normal path (#1134): the role is resolved
+  # from the boundary vocabulary, to NIST's id where one exists and to an
+  # organization-defined role otherwise. `role[id]` stays legal — NIST sets
+  # allow-other="yes" — but is the exception.
   def create
+    membership_role = role_params[:membership_role].to_s.strip
+    if membership_role.present?
+      return render_api_error("send role[membership_role] or role[id], not both") if role_params[:id].present?
+
+      return create_from_membership_role(membership_role)
+    end
+
     id    = role_params[:id].to_s.strip
     title = role_params[:title].to_s.strip
 
@@ -109,6 +127,37 @@ class Api::V1::SspRolesController < Api::V1::BaseController
   end
 
   private
+
+  def create_from_membership_role(membership_role)
+    # The responsibility-bearing subset only (owner-decided): an access grant
+    # such as `view_only` is not something anyone is responsible FOR.
+    unless OscalRole.membership_role_options.any? { |(_label, value)| value == membership_role }
+      return render_api_error("membership role #{membership_role.inspect} is not a responsibility-bearing " \
+                              "boundary role; see meta.membership_roles")
+    end
+
+    role_id = OscalRole.from_membership_role(membership_role, @ssp_document.role_vocabulary_version)["id"]
+    return render_api_error("role #{role_id.inspect} is already declared") if @ssp_document.declared_role_ids.include?(role_id)
+
+    @ssp_document.declare_membership_roles([ membership_role ])
+    @ssp_document.save!
+    audit_log("ssp_role_declared", subject: @ssp_document,
+                                   metadata: { role_id: role_id, membership_role: membership_role })
+
+    role = @ssp_document.declared_roles.find { |r| r["id"] == role_id }
+    render json: { data: serialize(role) }, status: :created
+  end
+
+  def membership_roles
+    declared = @ssp_document.declared_role_ids.to_set
+    version  = @ssp_document.role_vocabulary_version
+
+    OscalRole.membership_role_options.map do |label, value|
+      role = OscalRole.from_membership_role(value, version)
+      { membership_role: value, label: label, role_id: role["id"],
+        organization_defined: OscalRole.organization_defined?(role), declared: declared.include?(role["id"]) }
+    end
+  end
 
   def set_ssp_document
     # By slug, matching Api::V1::SspComponentsController.
@@ -165,6 +214,6 @@ class Api::V1::SspRolesController < Api::V1::BaseController
   end
 
   def role_params
-    params.fetch(:role, {}).permit(:id, :title, :organization_defined)
+    params.fetch(:role, {}).permit(:id, :title, :organization_defined, :membership_role)
   end
 end
