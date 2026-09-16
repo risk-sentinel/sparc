@@ -39,6 +39,9 @@ OSCAL import/export/validation, the document processing pipeline, SSP/SAR wizard
 ### [OSCAL End to End](OSCAL-End-to-End)
 How SPARC, SAF CLI, InSpec and Heimdall fit together — what binds each OSCAL model to the previous one, the three layers against a single authorization boundary, how every scanner is normalized into the same shape, UUID stability across reuse, leveraged/federated authorizations, and why an accelerated ATO is not a continuous one.
 
+### [SPARC's Compliance Posture](Compliance-Posture)
+How SPARC implements the controls it asks you to document — the Rev 5 HIGH baseline it targets and what is actually covered, the Application / sparc-iac / CSP-inherited split, where the mapping and the five OSCAL CDEFs live, and how to load SPARC's own component definitions into SPARC and inherit them into your SSP.
+
 ### [Framework Mapping](Framework-Mapping)
 How SPARC maps external frameworks — DISA STIG, CIS Benchmarks, CCI, SCAP/OVAL — to NIST SP 800-53 via OSCAL, and the roadmap for expanding coverage.
 

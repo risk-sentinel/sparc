@@ -39,6 +39,7 @@
 * [Screens & UI](Screens)
 * [Core Functions & Features](Core-Functions)
 * [OSCAL End to End](OSCAL-End-to-End)
+* [SPARC's Compliance Posture](Compliance-Posture)
 * [Framework Mapping](Framework-Mapping)
 * [Integrations](Integrations)
 * [Architecture](Architecture)
