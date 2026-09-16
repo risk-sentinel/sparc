@@ -25,6 +25,10 @@
 # already defines as `information-system-security-officer`. A reader resolving
 # the NIST id knows what it means; one resolving `isso` has to guess.
 class OscalRole
+  # A declaration refused for a reason the author can act on. The message is
+  # safe to show them.
+  class DeclarationError < StandardError; end
+
   ROLE_SOURCE_PROP = "role-source"
   ORGANIZATION_DEFINED = "organization-defined"
 
