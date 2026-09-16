@@ -243,6 +243,25 @@ def create_ssp(boundary_id: int) -> dict[str, Any]:
         return r.json()["data"]
 
 
+def add_boundary_member(boundary_id: Any, user_name: str, role: str) -> dict[str, Any]:
+    """A roster entry on a boundary (#1134). Removed with its boundary."""
+    with _client() as c:
+        r = c.post(
+            f"/api/v1/authorization_boundaries/{boundary_id}/memberships",
+            json={"authorization_boundary_membership": {"user_name": user_name, "role": role}},
+        )
+        r.raise_for_status()
+        return r.json()["data"]
+
+
+def ssp_roles(ssp_slug: Any) -> dict[str, Any]:
+    """`GET /api/v1/ssp_documents/:slug/roles` — declared roles plus meta (#1134)."""
+    with _client() as c:
+        r = c.get(f"/api/v1/ssp_documents/{ssp_slug}/roles")
+        r.raise_for_status()
+        return r.json()
+
+
 def create_evidence(title: str | None = None) -> dict[str, Any]:
     """Evidence submitted by the smoke service account (#934).
 
