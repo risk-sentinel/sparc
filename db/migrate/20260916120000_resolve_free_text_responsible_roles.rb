@@ -61,9 +61,13 @@ class ResolveFreeTextResponsibleRoles < ActiveRecord::Migration[8.1]
     defer_data_migration { resolve_free_text_roles }
   end
 
-  # The prior values were dangling references. There is nothing worth restoring,
-  # and the ids themselves survive — route 4 keeps them, as declared roles.
-  def down; end
+  def down
+    # Deliberately empty. The prior values were dangling references; there is
+    # nothing worth restoring, and the ids themselves survive — route 4 keeps
+    # them, as declared roles. (The comment is INSIDE the method on purpose:
+    # Sonar's empty-function rule does not read the one above it, and six
+    # existing migrations are flagged for exactly that.)
+  end
 
   # Public so the spec drives it directly rather than through the deferral
   # plumbing, which `deferred_data_migration_contract_spec` already covers.
