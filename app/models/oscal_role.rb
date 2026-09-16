@@ -32,6 +32,42 @@ class OscalRole
   # should read "System POC (Technical)", not "System Poc Technical".
   ACRONYMS = { "poc" => "POC", "isso" => "ISSO", "issm" => "ISSM", "ao" => "AO" }.freeze
 
+  # ── Tier 2, sourced rather than typed (#1134) ───────────────────────────
+  #
+  # The deployment's own role vocabulary is the AUTHORIZATION-BOUNDARY
+  # MEMBERSHIP roles — the seven built-ins plus whatever `SPARC_AUTH_BOUNDARY_ROLES`
+  # adds (#875 made that configurable in fact, not just in name). That is where
+  # personnel actually sit, which is the question an SSP's `responsible-role`
+  # asks. `Role` is the permission-bearing vocabulary and answers a different
+  # one — authority — so it is deliberately not the source here.
+
+  # Membership roles that name a level of ACCESS, or bare participation, rather
+  # than a function somebody is answerable for. Offering one as a
+  # `responsible-role` would put a claim in the document that means nothing to
+  # an assessor — "responsible for this control implementation: read-only
+  # access" is not a statement anyone wants to defend.
+  #
+  # A DENY list, not an allow list, because the vocabulary is configurable: a
+  # deployment that adds a role is naming a function, and we cannot know its
+  # name in advance. Only the built-ins we ship can be judged here.
+  ACCESS_ONLY_MEMBERSHIP_ROLES = %w[view_only project_member].freeze
+
+  # Membership role → NIST's suggested id. VOCABULARY, not form, so it has to be
+  # a table — no amount of case-folding gets from `isso` to
+  # `information-system-security-officer`. Same discipline as
+  # `AuthorizationBoundaryMembership.resolve_role` and `ControlId`.
+  #
+  # Only three of the seven built-ins have a NIST equivalent. The rest are
+  # organization-defined, and inventing NIST ids for them would be the exact
+  # failure this exists to prevent — an id NIST does not define, declared as
+  # though it did. Every target here is checked against the generated dataset by
+  # spec, so a typo or a NIST rename cannot pass silently.
+  MEMBERSHIP_TO_NIST = {
+    "authorizing_official" => "authorizing-official",
+    "system_owner"         => "system-owner",
+    "isso"                 => "information-system-security-officer"
+  }.freeze
+
   # What an SSP declares when its author has declared nothing. Every id here is
   # in NIST's suggested vocabulary — verified by spec against the generated
   # dataset, so a typo or a NIST rename cannot pass silently.
@@ -73,6 +109,48 @@ class OscalRole
       Array(role["props"]).any? do |p|
         p["name"] == ROLE_SOURCE_PROP && p["ns"] == OscalNamespace.instance
       end
+    end
+
+    # ── The boundary bridge (#1134) ──────────────────────────────────────
+    #
+    # `import_boundary_users` used to write the raw membership role into OSCAL
+    # `role-ids` — underscored, which is not even NIST's form, and never
+    # declared. Everything that turns a membership role into an OSCAL role now
+    # goes through here, so the picker, the import and the migration cannot
+    # disagree about what a role resolves to.
+
+    def responsibility_bearing?(membership_role)
+      ACCESS_ONLY_MEMBERSHIP_ROLES.exclude?(membership_role.to_s)
+    end
+
+    # `[[label, membership_role], ...]` for a picker. Reads `role_options`, so a
+    # deployment that narrows the vocabulary narrows this too.
+    def membership_role_options
+      AuthorizationBoundaryMembership.role_options
+                                     .select { |(_label, value)| responsibility_bearing?(value) }
+    end
+
+    # The declarable role a membership role resolves to: NIST's id where NIST
+    # defines one, an organization-defined role otherwise. Either way the result
+    # is something to DECLARE — the reference never dangles, and what is
+    # non-NIST stays inside a namespaced prop.
+    def from_membership_role(membership_role, version = OscalSchema::DEFAULT_VERSION)
+      value = membership_role.to_s
+      nist  = MEMBERSHIP_TO_NIST[value]
+
+      # The dataset check is not ceremony: if NIST retires an id, the mapping
+      # has to fall through to organization-defined rather than emit a reference
+      # to a role the version's vocabulary no longer contains.
+      return { "id" => nist, "title" => humanize(nist) } if nist && suggested_ids(version).include?(nist)
+
+      organization_defined(membership_role_id(value),
+                           AuthorizationBoundaryMembership.role_label_for(value))
+    end
+
+    # FORM only — `role-id` is an NCName and NIST's vocabulary is
+    # lowercase-hyphen, while the membership column is underscored.
+    def membership_role_id(membership_role)
+      membership_role.to_s.tr("_", "-")
     end
 
     def humanize(id)

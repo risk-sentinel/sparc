@@ -149,8 +149,9 @@ class OscalConformanceService
   # Referential integrity — the half schema validation structurally cannot do.
   # A document can be perfectly shaped and refer to nothing.
   def check_references
-    declared_roles   = Array(@root.dig("metadata", "roles")).filter_map { |r| r["id"] }.to_set
-    declared_parties = Array(@root.dig("metadata", "parties")).filter_map { |p| p["uuid"] }.to_set
+    declared_roles     = Array(@root.dig("metadata", "roles")).filter_map { |r| r["id"] }.to_set
+    declared_parties   = Array(@root.dig("metadata", "parties")).filter_map { |p| p["uuid"] }.to_set
+    declared_locations = Array(@root.dig("metadata", "locations")).filter_map { |l| l["uuid"] }.to_set
 
     collect_references(@root, "").each do |kind, value, path|
       case kind
@@ -169,6 +170,13 @@ class OscalConformanceService
           severity: :violation, rule: "party-uuid-unresolved", location: path,
           message: "party-uuid #{value.inspect} resolves to no party in metadata.parties"
         )
+      when :location
+        next if declared_locations.include?(value)
+
+        @findings << Finding.new(
+          severity: :violation, rule: "location-uuid-unresolved", location: path,
+          message: "location-uuid #{value.inspect} resolves to no location in metadata.locations"
+        )
       else
         # NOT a no-op. `collect_references` is where reference kinds are
         # produced; adding one there and forgetting it here would drop a whole
@@ -180,14 +188,50 @@ class OscalConformanceService
     end
   end
 
+  # ── What is collected, and what deliberately is not (#1134 audit) ────────
+  #
+  # Every reference-shaped key in the six bundled models was enumerated from the
+  # schemas. They fall into two groups.
+  #
+  # Resolved here, because their target lives in `metadata` — which is the half
+  # of referential integrity this service owns:
+  #
+  #   role-id, role-ids, party-uuid, party-uuids, location-uuids
+  #
+  # NOT resolved here, because their target is another SECTION of the document
+  # rather than metadata, and checking them means walking that section:
+  #
+  #   component-uuid           -> system-implementation.components
+  #   activity-uuid, task-uuid -> the assessment plan's local definitions
+  #   subject-uuid, subject-placeholder-uuid
+  #   observation-uuid, risk-uuid, finding-uuid, response-uuid
+  #   implementation-uuid, implementation-statement-uuid
+  #   provided-uuid, responsibility-uuid
+  #
+  # `actor-uuid` is the awkward one and is deliberately left alone: OSCAL's
+  # `origin/actors[]` resolves it against parties, tools OR assessment platforms
+  # depending on the sibling `type`, so treating it as a party reference would
+  # manufacture false violations on every tool-origin finding.
+  #
+  # That list is a record, not a plan. Covering it is a separate piece of work;
+  # what matters is that it was measured rather than assumed.
   def collect_references(node, path, acc = [])
     case node
     when Hash
       node.each do |k, v|
         case k
         when "role-id"     then acc << [ :role, v, path ]
+        # #1134 — the PLURAL was missing, so `system-implementation.users[].role-ids`
+        # was never collected and never checked. `import_boundary_users` wrote the
+        # raw boundary-membership role into it, underscored and undeclared, and
+        # this service reported a clean document. The guard below fires on an
+        # unhandled reference KIND; a missing KEY falls into the `else` and
+        # returns before it can apply, which is how the gap survived.
+        when "role-ids"    then Array(v).each_with_index { |r, i| acc << [ :role, r, "#{path}/role-ids[#{i}]" ] }
         when "party-uuids" then Array(v).each { |u| acc << [ :party, u, path ] }
         when "party-uuid"  then acc << [ :party, v, path ]
+        when "location-uuids"
+          Array(v).each_with_index { |u, i| acc << [ :location, u, "#{path}/location-uuids[#{i}]" ] }
         else
           # Every other key: not a reference. Recursion below still descends
           # into it, so nothing is missed by not matching here.
