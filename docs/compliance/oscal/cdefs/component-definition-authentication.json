@@ -3,9 +3,9 @@
     "uuid": "4a4fa4a0-0b56-4507-b6d6-102ef3fab368",
     "metadata": {
       "title": "SPARC Authentication and Access Control",
-      "version": "1.3.0",
-      "oscal-version": "1.1.2",
-      "last-modified": "2026-07-30T00:00:00Z",
+      "version": "1.3.1",
+      "oscal-version": "1.2.2",
+      "last-modified": "2026-09-16T00:00:00Z",
       "roles": [
         {
           "id": "prepared-by",

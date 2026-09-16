@@ -3,9 +3,9 @@
     "uuid": "0aa1b931-de70-4da9-8fe6-1938e21e8eae",
     "metadata": {
       "title": "SPARC Security Scanning and System Integrity",
-      "version": "1.2.0",
-      "oscal-version": "1.1.2",
-      "last-modified": "2026-07-26T00:00:00Z",
+      "version": "1.2.1",
+      "oscal-version": "1.2.2",
+      "last-modified": "2026-09-16T00:00:00Z",
       "roles": [
         {
           "id": "prepared-by",
