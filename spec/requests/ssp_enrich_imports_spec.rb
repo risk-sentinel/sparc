@@ -28,6 +28,61 @@ RSpec.describe "SSP enrich imports (#737)", type: :request do
       expect { post import_boundary_users_ssp_document_path(ssp) }.to change { ssp.ssp_users.count }.by(1)
       expect(ssp.ssp_users.where(title: "Jane AO").count).to eq(1)
     end
+
+    # #1134 — this used to write the raw membership role (`authorizing_official`)
+    # into `role-ids`: underscored, never declared, a dangling reference.
+    describe "role-ids (#1134)" do
+      def user_role_ids(title) = ssp.ssp_users.find_by!(title: title).role_ids_data
+
+      it "stores NIST's id for a membership role NIST names, not the membership value" do
+        post import_boundary_users_ssp_document_path(ssp)
+
+        expect(user_role_ids("Jane AO")).to eq([ "authorizing-official" ])
+        expect(user_role_ids("John SO")).to eq([ "system-owner" ])
+      end
+
+      it "declares an organization-defined role for one NIST does not name" do
+        AuthorizationBoundaryMembership.create!(authorization_boundary: boundary, user_name: "Casey CISO", role: "ciso")
+
+        post import_boundary_users_ssp_document_path(ssp)
+
+        expect(user_role_ids("Casey CISO")).to eq([ "ciso" ])
+        declared = ssp.reload.declared_roles.find { |r| r["id"] == "ciso" }
+        expect(declared).to be_present
+        expect(OscalRole.organization_defined?(declared)).to be(true)
+      end
+
+      it "keeps the default roles declared when it adds one" do
+        AuthorizationBoundaryMembership.create!(authorization_boundary: boundary, user_name: "Casey CISO", role: "ciso")
+
+        post import_boundary_users_ssp_document_path(ssp)
+
+        expect(ssp.reload.declared_role_ids).to include(*OscalRole::SSP_DEFAULT_IDS, "ciso")
+      end
+
+      it "writes no roles when every one it references is already declared" do
+        post import_boundary_users_ssp_document_path(ssp)
+
+        # Both members map onto SSP defaults, so the document keeps declaring
+        # them implicitly rather than freezing them into its metadata.
+        expect(ssp.reload.metadata_extra.to_h).not_to have_key("roles")
+      end
+
+      it "exports a document with no unresolved role-ids — access-only members included" do
+        AuthorizationBoundaryMembership.create!(authorization_boundary: boundary, user_name: "Casey CISO", role: "ciso")
+        AuthorizationBoundaryMembership.create!(authorization_boundary: boundary, user_name: "Val Viewer", role: "view_only")
+
+        post import_boundary_users_ssp_document_path(ssp)
+
+        exported = JSON.parse(OscalSspExportService.new(ssp.reload).export_unvalidated)
+        users = exported.dig("system-security-plan", "system-implementation", "users")
+        expect(users.flat_map { |u| u["role-ids"] }).to include("authorizing-official", "ciso", "view-only")
+
+        result = OscalConformanceService.new(exported, model: "system-security-plan").validate
+        unresolved = result.violations.select { |v| v.rule == "role-id-unresolved" }
+        expect(unresolved).to be_empty, -> { unresolved.map(&:message).join("\n") }
+      end
+    end
   end
   describe "POST /ssp_documents/:id/import_cdef_components" do
     let(:boundary) { create(:authorization_boundary) }

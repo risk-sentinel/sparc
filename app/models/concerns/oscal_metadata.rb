@@ -189,6 +189,40 @@ module OscalMetadata
              .reject { |r| declared.include?(r["id"]) }
   end
 
+  # #1134 — declare the OSCAL role each boundary-membership role resolves to and
+  # return `{ membership_role => role-id }`, so a caller writes a reference only
+  # to something this document now declares. Resolution is
+  # `OscalRole.from_membership_role`, the one place the import, the API and the
+  # migration all go through.
+  #
+  # Assigns in memory; the caller saves. Writes nothing when every role is
+  # already declared, so a document that has authored no roles keeps declaring
+  # the defaults implicitly rather than having them frozen into its metadata.
+  def declare_membership_roles(membership_roles)
+    version  = role_vocabulary_version
+    declared = declared_roles
+    known    = declared.filter_map { |r| r["id"] }.to_set
+    added    = []
+
+    resolved = membership_roles.map(&:to_s).reject(&:blank?).uniq.index_with do |value|
+      role = OscalRole.from_membership_role(value, version)
+      added << role if known.add?(role["id"])
+      role["id"]
+    end
+
+    self.oscal_roles = declared + added if added.any?
+    resolved
+  end
+
+  # A document may carry an OSCAL version we ship no conformance dataset for
+  # (an import from 1.0.x, say). Resolving against an empty vocabulary would
+  # push every NIST-named role onto organization-defined, so fall back to the
+  # default — the same rule `ResolveFreeTextResponsibleRoles` applies.
+  def role_vocabulary_version
+    version = oscal_version.presence || DEFAULT_OSCAL_VERSION
+    OscalRole.suggested_ids(version).any? ? version : DEFAULT_OSCAL_VERSION
+  end
+
   # Merge metadata from a parent/source document (inheritance)
   # Child fields take precedence over parent fields.
   def inherit_metadata_from(source)

@@ -372,21 +372,35 @@ class SspDocumentsController < ApplicationController
   def import_boundary_users
     members = @ssp_document.authorization_boundary&.authorization_boundary_memberships&.order(:role, :user_name) || []
     existing = @ssp_document.ssp_users.pluck(:title).map(&:to_s)
-    added = 0
-    members.each do |m|
+    to_import = members.filter_map do |m|
       name = m.user_name.presence || m.user_email.presence
-      next if name.blank? || existing.include?(name)
-
-      @ssp_document.ssp_users.create!(
-        uuid: SecureRandom.uuid,
-        title: name,
-        short_name: name.to_s.split.first,
-        description: "Imported from authorization-boundary member (role: #{m.role}).",
-        role_ids_data: [ m.role ].compact
-      )
-      added += 1
+      [ m, name ] unless name.blank? || existing.include?(name)
     end
-    redirect_to enrich_ssp_document_path(@ssp_document), notice: "Imported #{added} system user(s) from boundary members."
+
+    # #1134 — `role-ids` must reference roles declared in `metadata.roles`. This
+    # used to write the raw membership role (`system_owner`, underscored and
+    # undeclared), a dangling reference in every export. Each role now resolves
+    # to NIST's id or an organization-defined role, and is DECLARED first.
+    #
+    # Every member's role, not only the responsibility-bearing subset the
+    # picker offers: a `view_only` member is still a system user, and a user's
+    # `role-ids` describes the user rather than claiming responsibility for a
+    # control.
+    ActiveRecord::Base.transaction do
+      role_ids = @ssp_document.declare_membership_roles(to_import.map { |m, _| m.role })
+      @ssp_document.save! if @ssp_document.changed?
+
+      to_import.each do |m, name|
+        @ssp_document.ssp_users.create!(
+          uuid: SecureRandom.uuid,
+          title: name,
+          short_name: name.to_s.split.first,
+          description: "Imported from authorization-boundary member (role: #{m.role}).",
+          role_ids_data: [ role_ids[m.role.to_s] ].compact
+        )
+      end
+    end
+    redirect_to enrich_ssp_document_path(@ssp_document), notice: "Imported #{to_import.size} system user(s) from boundary members."
   end
 
   def update_enrich
