@@ -108,6 +108,61 @@ RSpec.describe OscalConformanceService do
     end
   end
 
+  # #1134 — the collector matched "role-id" and missed the PLURAL, so
+  # `system-implementation.users[].role-ids` was never checked at all.
+  # `import_boundary_users` wrote the raw boundary-membership role into it,
+  # underscored and undeclared, and this service reported a clean document.
+  describe "role-ids on a system user" do
+    def doc_with_user_roles(ids, declared: [])
+      ssp_doc(
+        "metadata" => { "roles" => declared.map { |i| { "id" => i, "title" => i } } },
+        "system-implementation" => { "users" => [ { "title" => "A Person", "role-ids" => ids } ] }
+      )
+    end
+
+    it "reports an id that resolves to no declared role" do
+      result = check(doc_with_user_roles([ "authorizing_official" ], declared: [ "authorizing-official" ]))
+
+      expect(result.violations.map(&:rule)).to include("role-id-unresolved")
+    end
+
+    it "names which entry in the array is unresolved" do
+      result = check(doc_with_user_roles([ "system-owner", "not-declared" ], declared: [ "system-owner" ]))
+
+      expect(result.violations.map(&:location)).to eq([ "/system-implementation/users[0]/role-ids[1]" ])
+    end
+
+    it "accepts ids the document declares" do
+      result = check(doc_with_user_roles([ "system-owner" ], declared: [ "system-owner" ]))
+
+      expect(result.violations).to be_empty
+    end
+  end
+
+  # Also found by the #1134 audit: `location-uuids` resolves against
+  # `metadata.locations`, which is the same half of referential integrity this
+  # service owns, and it was not collected either.
+  describe "location-uuids" do
+    it "reports a location that is not declared" do
+      result = check(ssp_doc("metadata" => { "locations" => [] },
+                             "system-implementation" => {
+                               "users" => [ { "title" => "x", "location-uuids" => [ "11111111-1111-4111-8111-111111111111" ] } ]
+                             }))
+
+      expect(result.violations.map(&:rule)).to include("location-uuid-unresolved")
+    end
+
+    it "accepts one the metadata declares" do
+      uuid = "11111111-1111-4111-8111-111111111111"
+      result = check(ssp_doc("metadata" => { "locations" => [ { "uuid" => uuid } ] },
+                             "system-implementation" => {
+                               "users" => [ { "title" => "x", "location-uuids" => [ uuid ] } ]
+                             }))
+
+      expect(result.violations).to be_empty
+    end
+  end
+
   describe "an unknown OSCAL version" do
     it "is a violation, not a silent pass" do
       doc = ssp_doc("metadata" => { "oscal-version" => "9.9.9" })
