@@ -90,7 +90,7 @@ curl -X GET "https://sparc.example.com/api/v1/cdef_documents?status=published&cd
       "cdef_type": "software",
       "cdef_version": "1.2.0",
       "benchmark_id": "xccdf_org.stig_benchmark_Apache_Tomcat_10",
-      "oscal_version": "1.1.2",
+      "oscal_version": "1.2.2",
       "lifecycle_status": "published",
       "file_type": "oscal_json",
       "controls_count": 42,
@@ -146,7 +146,7 @@ curl -X GET "https://sparc.example.com/api/v1/cdef_documents/web-application-ser
     "cdef_type": "software",
     "cdef_version": "1.2.0",
     "benchmark_id": "xccdf_org.stig_benchmark_Apache_Tomcat_10",
-    "oscal_version": "1.1.2",
+    "oscal_version": "1.2.2",
     "lifecycle_status": "published",
     "file_type": "oscal_json",
     "controls_count": 42,
@@ -199,7 +199,7 @@ Create a new component definition document.
 | `cdef_type` | string | Yes | Component type: `software`, `hardware`, `service`, `policy`, `process` |
 | `cdef_version` | string | No | Version of the component definition |
 | `benchmark_id` | string | No | XCCDF benchmark identifier |
-| `oscal_version` | string | No | OSCAL schema version (default: `1.1.2`) |
+| `oscal_version` | string | No | OSCAL schema version. No column default; an unset value falls back to `OscalSchema::DEFAULT_VERSION` on export |
 | `lifecycle_status` | string | No | Status: `draft`, `published`, `archived` (default: `draft`) |
 | `file_type` | string | No | Source format: `oscal_json`, `oscal_yaml`, `oscal_xml`, `xccdf` |
 
@@ -216,7 +216,7 @@ curl -X POST "https://sparc.example.com/api/v1/cdef_documents" \
       "cdef_type": "software",
       "cdef_version": "1.2.0",
       "benchmark_id": "xccdf_org.stig_benchmark_Apache_Tomcat_10",
-      "oscal_version": "1.1.2",
+      "oscal_version": "1.2.2",
       "lifecycle_status": "draft",
       "file_type": "oscal_json"
     }
@@ -235,7 +235,7 @@ curl -X POST "https://sparc.example.com/api/v1/cdef_documents" \
     "cdef_type": "software",
     "cdef_version": "1.2.0",
     "benchmark_id": "xccdf_org.stig_benchmark_Apache_Tomcat_10",
-    "oscal_version": "1.1.2",
+    "oscal_version": "1.2.2",
     "lifecycle_status": "draft",
     "file_type": "oscal_json",
     "controls_count": 0,

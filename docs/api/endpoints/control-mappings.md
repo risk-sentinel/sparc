@@ -75,7 +75,7 @@ curl -X GET "https://sparc.example.com/api/v1/control_mappings?status=active&sou
       "method_type": "automated",
       "matching_rationale": "Direct identifier mapping with manual review of withdrawn controls",
       "mapping_version": "2.0.0",
-      "oscal_version": "1.1.2",
+      "oscal_version": "1.2.1",
       "source_catalog_id": 1,
       "target_catalog_id": 2,
       "entries_count": 1189,
@@ -131,7 +131,7 @@ curl -X GET "https://sparc.example.com/api/v1/control_mappings/1" \
     "method_type": "automated",
     "matching_rationale": "Direct identifier mapping with manual review of withdrawn controls",
     "mapping_version": "2.0.0",
-    "oscal_version": "1.1.2",
+    "oscal_version": "1.2.1",
     "source_catalog_id": 1,
     "target_catalog_id": 2,
     "source_catalog_name": "NIST SP 800-53 Rev 4",
@@ -167,7 +167,7 @@ Create a new control mapping between two catalogs.
 | `method_type` | string | Yes | Mapping method: `automated`, `manual`, `hybrid` |
 | `matching_rationale` | string | No | Explanation of how controls are matched |
 | `mapping_version` | string | No | Version of the mapping |
-| `oscal_version` | string | No | OSCAL schema version (default: `1.1.2`) |
+| `oscal_version` | string | No | OSCAL schema version. The `control_mappings` column defaults to `1.2.1` — the one document type that carries its own default rather than deferring to `OscalSchema::DEFAULT_VERSION` |
 | `source_catalog_id` | integer | Yes | ID of the source control catalog |
 | `target_catalog_id` | integer | Yes | ID of the target control catalog |
 
@@ -185,7 +185,7 @@ curl -X POST "https://sparc.example.com/api/v1/control_mappings" \
       "method_type": "automated",
       "matching_rationale": "Direct identifier mapping with manual review of withdrawn controls",
       "mapping_version": "1.0.0",
-      "oscal_version": "1.1.2",
+      "oscal_version": "1.2.1",
       "source_catalog_id": 1,
       "target_catalog_id": 2
     }
@@ -204,7 +204,7 @@ curl -X POST "https://sparc.example.com/api/v1/control_mappings" \
     "method_type": "automated",
     "matching_rationale": "Direct identifier mapping with manual review of withdrawn controls",
     "mapping_version": "1.0.0",
-    "oscal_version": "1.1.2",
+    "oscal_version": "1.2.1",
     "source_catalog_id": 1,
     "target_catalog_id": 2,
     "entries_count": 0,

@@ -85,8 +85,9 @@ curl -X POST "https://sparc.example.com/api/v1/oscal/sar_from_hdf?authorization_
 
 #### Output is schema-validated before it is returned
 
-SPARC validates the translated document against the bundled NIST OSCAL v1.1.2
-Assessment Results schema and **will not return one that fails**. Previously this
+SPARC validates the translated document against the bundled NIST OSCAL
+Assessment Results schema at `OscalSchema::DEFAULT_VERSION` and **will not
+return one that fails**. Previously this
 endpoint returned the converter's output as-is, so a caller could receive a
 `200` carrying a document no OSCAL tool would accept — a failure that then
 surfaced somewhere with no connection to this call.

@@ -2,9 +2,19 @@
 
 **System:** SPARC (Systematic Policy and Regulatory Compliance)
 **Baseline:** NIST SP 800-53 Revision 5 -- HIGH Impact
-**Last Reviewed:** 2026-03-21
-**Version:** 1.0
+**Last Reviewed:** 2026-09-16
+**Version:** 1.1
 **Maintainer:** SPARC Security Team
+
+**What the 2026-09-16 review covered (#1117):** the Summary Statistics were
+recomputed from the control rows and had been wrong by 66 controls; the
+Responsibility and Status vocabularies were reconciled against the values the
+rows actually use; coverage was measured against the resolved Rev 5 HIGH
+baseline catalog; and the OSCAL version stamp on the component definitions in
+`oscal/cdefs/` was corrected to the version SPARC ships. Per-control
+implementation claims were carried forward from the 2026-03-21 review and are
+re-examined against the code in the release that changes them, per the
+compliance-artifact rule in `docs/dev/issue_rules.md`.
 
 ---
 

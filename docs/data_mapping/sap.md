@@ -2,7 +2,7 @@
 
 # SAP (Security Assessment Plan) -- OSCAL Data Mapping
 
-OSCAL version: **1.1.2** | OSCAL root element: `assessment-plan`
+OSCAL version: `OscalSchema::DEFAULT_VERSION` (currently **1.2.2**) | OSCAL root element: `assessment-plan`
 
 Export service: `OscalAssessmentPlanExportService`
 
@@ -46,7 +46,7 @@ SapDocument
 | `SapDocument#uuid` | `assessment-plan.uuid` | Yes | Regenerated on content change |
 | `SapDocument#name` | `assessment-plan.metadata.title` | Yes | |
 | `SapDocument#sap_version` | `assessment-plan.metadata.version` | Yes | Defaults to `"1.0.0"` |
-| `SapDocument#oscal_version` | `assessment-plan.metadata.oscal-version` | Yes | Defaults to `"1.1.2"` |
+| `SapDocument#oscal_version` | `assessment-plan.metadata.oscal-version` | Yes | Falls back to `OscalSchema::DEFAULT_VERSION` when unset |
 | (generated) | `assessment-plan.metadata.last-modified` | Yes | `Time.current.iso8601` at export |
 | `SapDocument#metadata_extra` | `assessment-plan.metadata.*` | No | Preserved roles, parties, revisions. Merged into metadata |
 | `SapDocument#assessment_type` | `assessment-plan.metadata.props[name=assessment-type]` | No | ns: `https://sparc.local/ns`; appended if not already in metadata_extra |

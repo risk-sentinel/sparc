@@ -2,7 +2,7 @@
 
 # SAR (Security Assessment Results) -- OSCAL Data Mapping
 
-OSCAL version: **1.1.2** | OSCAL root element: `assessment-results`
+OSCAL version: `OscalSchema::DEFAULT_VERSION` (currently **1.2.2**) | OSCAL root element: `assessment-results`
 
 Export service: `OscalSarExportService`
 
@@ -66,7 +66,7 @@ The SAR export service uses a **unified approach** with two paths:
 | `SarDocument#uuid` | `assessment-results.uuid` | Yes | Regenerated on content change |
 | `SarDocument#name` | `assessment-results.metadata.title` | Yes | |
 | `SarDocument#sar_version` | `assessment-results.metadata.version` | Yes | Defaults to `"1.0.0"` |
-| `SarDocument#oscal_version` | `assessment-results.metadata.oscal-version` | Yes | Defaults to `"1.1.2"` |
+| `SarDocument#oscal_version` | `assessment-results.metadata.oscal-version` | Yes | Falls back to `OscalSchema::DEFAULT_VERSION` when unset |
 | (generated) | `assessment-results.metadata.last-modified` | Yes | `Time.current.iso8601` at export |
 | `SarDocument#metadata_extra` | `assessment-results.metadata.*` | No | Preserved roles, parties, revisions. Merged into metadata |
 | (default) | `assessment-results.metadata.roles[]` | No | Default: assessor role |
