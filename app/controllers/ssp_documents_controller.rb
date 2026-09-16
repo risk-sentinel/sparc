@@ -26,13 +26,13 @@ class SspDocumentsController < ApplicationController
     :create_control_resource, :link_control_resource, :unlink_control_resource,
     :update_statement,
     :refresh_inherited_statements, :reset_inherited_statement,
-    :attach_profile, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter,
+    :attach_profile, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter,
     :attach_boundary
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users, :import_cdef_components, :import_back_matter ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :validate_oscal_export, :status, :edit, :enrich, :attach_profile, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter, :attach_boundary ]
+  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter, :attach_boundary ]
 
   def index
     scope = boundary_scoped_relation(SspDocument).order(created_at: :desc)
@@ -318,6 +318,9 @@ class SspDocumentsController < ApplicationController
     @info_types       = @ssp_document.ssp_information_types.order(:title)
     # #737: canonical sources offered for import on the enrich form.
     @boundary_members = @ssp_document.authorization_boundary&.authorization_boundary_memberships&.order(:role, :user_name) || []
+    # #1134: roles are declared from the boundary vocabulary, never typed.
+    @declared_roles = @ssp_document.declared_roles
+    @declarable_membership_roles = @ssp_document.membership_role_choices.reject { |c| c[:declared] }
     @imported_cdef_ids = @ssp_document.ssp_components.pluck(:cdef_document_id).compact
     @boundary_cdefs = (@ssp_document.authorization_boundary&.cdef_documents&.distinct&.order(:name) || []).to_a
     org = @ssp_document.authorization_boundary&.organization
@@ -401,6 +404,22 @@ class SspDocumentsController < ApplicationController
       end
     end
     redirect_to enrich_ssp_document_path(@ssp_document), notice: "Imported #{to_import.size} system user(s) from boundary members."
+  end
+
+  # #1134: the enrich page's declare-a-role form. A thin client over the same
+  # model path as `POST /api/v1/ssp_documents/:id/roles` with `membership_role`,
+  # so both refuse exactly the same things.
+  def declare_role
+    membership_role = params[:membership_role].to_s
+    role = @ssp_document.declare_responsible_membership_role(membership_role)
+    @ssp_document.save!
+    audit_log("ssp_role_declared", subject: @ssp_document,
+                                   metadata: { role_id: role["id"], membership_role: membership_role })
+    flash[:success] = "Declared role \"#{role['title']}\" (#{role['id']})."
+    redirect_to enrich_ssp_document_path(@ssp_document)
+  rescue OscalRole::DeclarationError => e
+    flash[:error] = "Could not declare role: #{e.message}."
+    redirect_to enrich_ssp_document_path(@ssp_document)
   end
 
   def update_enrich

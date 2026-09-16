@@ -143,6 +143,8 @@ Rails.application.routes.draw do
       patch :update_enrich
       # #737: pull system users from authorization-boundary members
       post :import_boundary_users
+      # #1134: declare an OSCAL role picked from the boundary vocabulary
+      post :declare_role
       # #737: import system components from linked / org-wide component definitions
       post :import_cdef_components
       # #737: link existing (reusable) back-matter resources onto this SSP

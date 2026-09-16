@@ -54,7 +54,7 @@ class Api::V1::SspRolesController < Api::V1::BaseController
         # #1134 — the NORMAL path. The boundary-membership vocabulary a role is
         # declared from, each showing the OSCAL role it resolves to, so a client
         # picks by label and never types an id.
-        membership_roles: membership_roles,
+        membership_roles: @ssp_document.membership_role_choices,
         oscal_version: @ssp_document.oscal_version || OscalSchema::DEFAULT_VERSION
       }
     }
@@ -129,34 +129,14 @@ class Api::V1::SspRolesController < Api::V1::BaseController
   private
 
   def create_from_membership_role(membership_role)
-    # The responsibility-bearing subset only (owner-decided): an access grant
-    # such as `view_only` is not something anyone is responsible FOR.
-    unless OscalRole.membership_role_options.any? { |(_label, value)| value == membership_role }
-      return render_api_error("membership role #{membership_role.inspect} is not a responsibility-bearing " \
-                              "boundary role; see meta.membership_roles")
-    end
-
-    role_id = OscalRole.from_membership_role(membership_role, @ssp_document.role_vocabulary_version)["id"]
-    return render_api_error("role #{role_id.inspect} is already declared") if @ssp_document.declared_role_ids.include?(role_id)
-
-    @ssp_document.declare_membership_roles([ membership_role ])
+    role = @ssp_document.declare_responsible_membership_role(membership_role)
     @ssp_document.save!
     audit_log("ssp_role_declared", subject: @ssp_document,
-                                   metadata: { role_id: role_id, membership_role: membership_role })
+                                   metadata: { role_id: role["id"], membership_role: membership_role })
 
-    role = @ssp_document.declared_roles.find { |r| r["id"] == role_id }
     render json: { data: serialize(role) }, status: :created
-  end
-
-  def membership_roles
-    declared = @ssp_document.declared_role_ids.to_set
-    version  = @ssp_document.role_vocabulary_version
-
-    OscalRole.membership_role_options.map do |label, value|
-      role = OscalRole.from_membership_role(value, version)
-      { membership_role: value, label: label, role_id: role["id"],
-        organization_defined: OscalRole.organization_defined?(role), declared: declared.include?(role["id"]) }
-    end
+  rescue OscalRole::DeclarationError => e
+    render_api_error("#{e.message}; see meta.membership_roles")
   end
 
   def set_ssp_document

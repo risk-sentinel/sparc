@@ -214,6 +214,39 @@ module OscalMetadata
     resolved
   end
 
+  # #1134 — declare ONE role an author picked from the boundary vocabulary: the
+  # path the API and the enrich page share, so they refuse the same things.
+  # Only the responsibility-bearing subset is accepted (owner-decided); the
+  # boundary import resolves every member's role through
+  # `declare_membership_roles` directly, because a user's `role-ids` claims no
+  # responsibility. Assigns in memory; the caller saves. Returns the role.
+  def declare_responsible_membership_role(membership_role)
+    value = membership_role.to_s.strip
+    unless OscalRole.membership_role_options.any? { |(_label, v)| v == value }
+      raise OscalRole::DeclarationError,
+            "membership role #{value.inspect} is not a responsibility-bearing boundary role"
+    end
+
+    role_id = OscalRole.from_membership_role(value, role_vocabulary_version)["id"]
+    raise OscalRole::DeclarationError, "role #{role_id.inspect} is already declared" if declared_role_ids.include?(role_id)
+
+    declare_membership_roles([ value ])
+    declared_roles.find { |r| r["id"] == role_id }
+  end
+
+  # What a picker offers: each responsibility-bearing membership role, with the
+  # OSCAL role it resolves to and whether this document already declares it.
+  def membership_role_choices
+    declared = declared_role_ids.to_set
+    version  = role_vocabulary_version
+
+    OscalRole.membership_role_options.map do |label, value|
+      role = OscalRole.from_membership_role(value, version)
+      { membership_role: value, label: label, role_id: role["id"],
+        organization_defined: OscalRole.organization_defined?(role), declared: declared.include?(role["id"]) }
+    end
+  end
+
   # A document may carry an OSCAL version we ship no conformance dataset for
   # (an import from 1.0.x, say). Resolving against an empty vocabulary would
   # push every NIST-named role onto organization-defined, so fall back to the
