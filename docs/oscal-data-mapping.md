@@ -17,7 +17,7 @@ XCCDF                     → ControlFields            against NIST schemas
 
 **Internal Model**: All document types share the same structural pattern. Controls belong to a document; fields belong to a control. Editable fields can be updated through inline editing in the UI or via the REST API.
 
-**Export**: Export services read the internal model and produce OSCAL v1.1.2 JSON. The output is validated against the official NIST JSON Schema before download. An unvalidated export option is also available.
+**Export**: Export services read the internal model and produce OSCAL JSON at the document's own `oscal_version`, falling back to `OscalSchema::DEFAULT_VERSION` (currently **1.2.2**). The output is validated against the official NIST JSON Schema before download. An unvalidated export option is also available.
 
 ## 2. Document Type Reference Table
 
@@ -134,7 +134,7 @@ schema.oscal_mappings    # Field-to-OSCAL-element mapping for exports
 
 ## 6. OSCAL Schema Validation
 
-`OscalSchemaValidationService` validates exported OSCAL documents against official NIST schemas (v1.1.2).
+`OscalSchemaValidationService` validates exported OSCAL documents against the official NIST schemas. SPARC bundles v1.1.1 – v1.2.2 (`lib/oscal_schemas_bundle/`) and validates against `OscalSchema::DEFAULT_VERSION` unless a version is passed.
 
 ### Schema Locations
 
@@ -154,7 +154,7 @@ The service accepts these symbolic keys: `:ssp`, `:assessment_plan`, `:assessmen
 result = OscalSchemaValidationService.validate(:ssp, data_hash)
 result.valid?          # => true / false
 result.errors          # => [] or array of error strings
-result.schema_version  # => "1.1.2"
+result.schema_version  # => "1.2.2"  (OscalSchema::DEFAULT_VERSION)
 
 # Validate and raise on failure (used in export pipelines)
 OscalSchemaValidationService.validate!(:ssp, data_hash)

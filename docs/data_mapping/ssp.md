@@ -2,7 +2,7 @@
 
 # SSP (System Security Plan) -- OSCAL Data Mapping
 
-OSCAL version: **1.1.2** | OSCAL root element: `system-security-plan`
+OSCAL version: `OscalSchema::DEFAULT_VERSION` (currently **1.2.2**) | OSCAL root element: `system-security-plan`
 
 Export service: `OscalSspExportService`
 
@@ -52,7 +52,7 @@ SspDocument
 | `SspDocument#uuid` | `system-security-plan.uuid` | Yes | Regenerated on content change |
 | `SspDocument#name` | `system-security-plan.metadata.title` | Yes | Document name |
 | `SspDocument#ssp_version` | `system-security-plan.metadata.version` | Yes | Defaults to `"1.0.0"` |
-| `SspDocument#oscal_version` | `system-security-plan.metadata.oscal-version` | Yes | Defaults to `"1.1.2"` |
+| `SspDocument#oscal_version` | `system-security-plan.metadata.oscal-version` | Yes | Falls back to `OscalSchema::DEFAULT_VERSION` when unset |
 | (generated) | `system-security-plan.metadata.last-modified` | Yes | `Time.current.iso8601` at export |
 | `SspDocument#metadata_extra` | `system-security-plan.metadata.*` | No | Preserved roles, parties, revisions, etc. Merged into metadata |
 | (default) | `system-security-plan.metadata.roles[]` | No | Defaults: prepared-by, system-owner, authorizing-official |

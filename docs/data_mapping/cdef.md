@@ -2,7 +2,8 @@
 
 # Component Definition (CDEF) — OSCAL Data Mapping
 
-This document describes how SPARC internal models map to OSCAL v1.1.2
+This document describes how SPARC internal models map to OSCAL at
+`OscalSchema::DEFAULT_VERSION` (currently v1.2.2)
 `component-definition` JSON for import and export.
 
 ## Model Hierarchy
@@ -32,7 +33,7 @@ Export service: `OscalComponentDefinitionExportService`
 | `uuid` | `.uuid` | Yes | RFC 4122 UUID, regenerated on content change |
 | `name` | `.metadata.title` | Yes | Also used as `.components[0].title` |
 | `cdef_version` | `.metadata.version` | No | Defaults to `"1.0.0"` if blank |
-| `oscal_version` | `.metadata.oscal-version` | Yes | Falls back to `"1.1.2"` constant |
+| `oscal_version` | `.metadata.oscal-version` | Yes | Falls back to the `OscalSchema::DEFAULT_VERSION` constant |
 | _(generated)_ | `.metadata.last-modified` | Yes | `Time.current.iso8601` at export time |
 | `metadata_extra` | `.metadata.*` | No | Preserved metadata merged into base; if absent, default roles/parties are generated |
 | `description` | `.components[0].description` | No | Defaults to `"Imported component definition"` |

@@ -2,7 +2,8 @@
 
 # POA&M (Plan of Action & Milestones) — OSCAL Data Mapping
 
-This document describes how SPARC internal models map to OSCAL v1.1.2
+This document describes how SPARC internal models map to OSCAL at
+`OscalSchema::DEFAULT_VERSION` (currently v1.2.2)
 `plan-of-action-and-milestones` JSON for import and export.
 
 ## Model Hierarchy
@@ -44,7 +45,7 @@ Export service: `OscalPoamExportService`
 | `uuid` | `.uuid` | Yes | RFC 4122 UUID, regenerated on content change |
 | `name` | `.metadata.title` | Yes | Document display name |
 | `poam_version` | `.metadata.version` | No | Defaults to `"1.0.0"` if blank |
-| `oscal_version` | `.metadata.oscal-version` | Yes | Always `"1.1.2"` on export |
+| `oscal_version` | `.metadata.oscal-version` | Yes | Falls back to `OscalSchema::DEFAULT_VERSION` when unset |
 | _(generated)_ | `.metadata.last-modified` | Yes | `Time.current.iso8601` at export time |
 | `metadata_extra` | `.metadata.*` | No | Preserved metadata (revisions, roles, parties, etc.) merged into base |
 | `import_metadata["import_ssp"]` | `.import-ssp` | No | Reference to the parent SSP |
