@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-08-25 — **two lanes now run concurrently** (`ci.v0.0.1` CI work and `v1.16.1` release work, owner decision 2026-08-25, to protect #968's 09-06 due date). See *Phases 17-18* in section 2 for the lane split and the four crossings between them. CI-1 merged (PR #1066); CI-2 in review (PR #1068).
+**Last updated:** 2026-09-17 — **v1.16.1 is on its last bundle (AD: #1116 #1117 #1134, in PR)**; Y, Z, AA, AB delivered and AC resolved — see *Lane REL* in section 2. *Previously (2026-08-25):* **two lanes now run concurrently** (`ci.v0.0.1` CI work and `v1.16.1` release work, owner decision 2026-08-25, to protect #968's 09-06 due date). See *Phases 17-18* in section 2 for the lane split and the four crossings between them. CI-1 merged (PR #1066); CI-2 in review (PR #1068).
 
 ---
 
@@ -518,9 +518,11 @@ discovered in a merge.
 | Status | Bundle / Issue | Domain | Files Modified | Collision Risk |
 | ------ | -------------- | ------ | -------------- | -------------- |
 | [x] | **Y** ~~#968~~ ~~#1051~~ ~~#1022~~ ~~#1058~~ | Jobs/Services + API + OSCAL | `app/services/**`, `app/jobs/**` (rescue audit), `oscal_component_definition_export_service.rb` | **SHIPPED 2026-08-31** — all four in one day; #968 met its 09-06 date |
-| [~] | **Z** ~~#1047~~ ~~#728~~ #1046 (+ ~~#1090~~ ~~#1092~~ ~~#1093~~ ~~#1094~~ ~~#1095~~ ~~#1096~~ folded, and **#1100** carried) | Shared/UI (**every screen**) + Catalog/SSP services + OSCAL export | **`app/assets/stylesheets/sparc-theme.css` — 255 → 588 classes, the single hottest file in the repo this cycle**; inline `style=` across `app/views/**` (**1,516 → 254**, 42 view files); `spec/views/inline_style_ratchet_spec.rb`; `tests/ui-smoke/visual_regression_1047.py`; 5 Stimulus controllers moved to `controllers/visibility`; `app/services/{catalog_import,catalog_part_extractor,oscal_resolved_profile_catalog,ssp_from_profile,oscal_ssp_export}_service.rb`; 2 migrations (`20260905090000`, `20260905140000`); `app/helpers/application_helper.rb` | **HIGH — `sparc-theme.css` and `app/views/**` are touched by ANY UI work.** #1047 and #728 close on this PR; the 254-declaration tail is **#1109 / v1.17.1**. #1046 not started. **#1100 stays open pending owner review.** Anyone editing a view during this window should rebase before touching `sparc-theme.css` |
-| [ ] | **AA** #978 #1044 #1059 | Auth/Users + Boundary/Org | sessions, CSRF/Origin config, IdP admin path | **LOW** vs Lane CI |
-| [ ] | **AB** #1040 #940 #1033 #930 #966 #836 | Onboarding + cross-cutting | new onboarding flow, `app/models/sparc_config.rb`, Sonar backlog across many files | **MEDIUM** — `sparc_config.rb` is a known hot file |
+| [x] | **Z** ~~#1047~~ ~~#728~~ #1046 → v1.17.1 (+ ~~#1090~~ ~~#1092~~ ~~#1093~~ ~~#1094~~ ~~#1095~~ ~~#1096~~ folded, and **#1100** carried) | Shared/UI (**every screen**) + Catalog/SSP services + OSCAL export | **`app/assets/stylesheets/sparc-theme.css` — 255 → 588 classes, the single hottest file in the repo this cycle**; inline `style=` across `app/views/**` (**1,516 → 254**, 42 view files); `spec/views/inline_style_ratchet_spec.rb`; `tests/ui-smoke/visual_regression_1047.py`; 5 Stimulus controllers moved to `controllers/visibility`; `app/services/{catalog_import,catalog_part_extractor,oscal_resolved_profile_catalog,ssp_from_profile,oscal_ssp_export}_service.rb`; 2 migrations (`20260905090000`, `20260905140000`); `app/helpers/application_helper.rb` | **HIGH — `sparc-theme.css` and `app/views/**` are touched by ANY UI work.** #1047 and #728 close on this PR; the 254-declaration tail is **#1109 / v1.17.1**. #1046 not started. **#1100 stays open pending owner review.** Anyone editing a view during this window should rebase before touching `sparc-theme.css` |
+| [x] | **AA** ~~#978~~ ~~#1044~~ ~~#1059~~ ~~#1082~~ | Auth/Users + Boundary/Org | sessions, CSRF/Origin config, IdP admin path | **DELIVERED 2026-09-11** — PR #1119, PR #1122 |
+| [x] | **AB** ~~#1040~~ ~~#940~~ ~~#1033~~ ~~#930~~ ~~#966~~ ~~#836~~ ~~#1123~~ | Onboarding + cross-cutting | new onboarding flow, `app/models/sparc_config.rb`, Sonar backlog across many files | **DELIVERED 2026-09-12 → 09-13** — PR #1125, #1126, #1128 |
+| [x] | **AC** ~~#1106~~ ~~#1124~~ · #1063 → v1.17.1 | OSCAL export + DB | `lib/oscal_conformance/`, `OscalConformanceService`, `OscalNamespace`, **migration squash 65 → 24 files** | **DELIVERED 2026-09-15** — PR #1130 (+ #1132). The squash rewrote `db/migrate/` wholesale: **any branch cut before `9a7d7ebd` must rebase before adding a migration** |
+| [~] | **AD** #1116 #1117 #1134 | SSP + OSCAL + Compliance docs | `ssp_documents_controller.rb` (`import_boundary_users`, new `declare_role`), `app/views/ssp_documents/enrich.html.erb`, `app/models/concerns/oscal_metadata.rb`, `app/models/oscal_role.rb`, `api/v1/ssp_roles_controller.rb`, `oscal_conformance_service.rb`, `config/routes.rb`, **2 data migrations + `db/schema.rb` version**, `docs/compliance/**` (5 CDEFs, mapping) | **MEDIUM** — `ssp_documents_controller.rb`, `routes.rb` and `schema.rb` are hot files; `docs/compliance/` CDEFs are guarded by `spec/compliance/`. **IN PR** |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -646,6 +648,8 @@ multi-developer Rails projects.
 | #107 | Possibly new `ksi_indicators` table | New table |
 | #183 | Squash all existing migrations into single consolidated file | All tables (schema-only, no data change) |
 | #283 | Pre-release squash: consolidate 9 post-v1.0.0 migrations into `20260323120000_squash_to_v110.rb` | All tables (schema-only, no data change) -- **COMPLETED 2026-03-23** |
+| #1116 | Deferred data migration `20260916120000_resolve_free_text_responsible_roles` | `ssp_control_statements`, `ssp_components`, `ssp_by_components` (`responsible_roles_data`), `ssp_documents` (`metadata_extra.roles`) -- no schema change |
+| #1134 | Deferred data migration `20260916180000_resolve_system_user_role_ids` | `ssp_users` (`role_ids_data`), `ssp_documents` (`metadata_extra.roles`) -- no schema change; bumps `db/schema.rb` version |
 
 <!-- markdownlint-enable MD013 -->
 

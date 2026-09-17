@@ -459,11 +459,18 @@ Multi-step creation flow: profile/baseline selector, CDEF selector, system detai
 
 | | |
 |---|---|
-| **Route** | `GET /ssp_documents/:id/enrich`, `PATCH /ssp_documents/:id/update_enrich` |
-| **Controller** | `SspDocumentsController#enrich`, `#update_enrich` |
-| **Auth** | Required |
+| **Route** | `GET /ssp_documents/:id/enrich`, `PATCH /ssp_documents/:id/update_enrich`, `POST /ssp_documents/:id/declare_role` |
+| **Controller** | `SspDocumentsController#enrich`, `#update_enrich`, `#declare_role` |
+| **Auth** | Required; importing and declaring need SSP write on the boundary |
 
-Form for adding OSCAL-required metadata: system characteristics (description, sensitivity level, status, authorization boundary), components (title, type, description), system users (title, role IDs), and information types.
+Form for adding OSCAL-required metadata: system characteristics (description, sensitivity level, status, authorization boundary), components (title, type, description), system users (title, description), and information types.
+
+The **Import from canonical sources** panel adds boundary members as system
+users, imports components from component definitions, and links reusable back
+matter. Its **Declared roles** section lists the OSCAL roles the SSP declares
+and offers the boundary's responsibility-bearing membership roles, by label, to
+declare (#1134). A role NIST defines is declared with NIST's id. Any other role
+is declared organization-defined and labelled that way in the list.
 
 A component already typed `validation` also shows a **Validation** block --
 validation type, certificate reference, authoritative-record URL, and the
