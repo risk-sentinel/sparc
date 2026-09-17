@@ -649,7 +649,17 @@ jobs:
             [ -n "$tag" ] || continue
             echo "── promoting ${tag}"
             for slug in linux-amd64 linux-arm64; do
-              skopeo copy "oci-archive:/tmp/sparc-${slug}.tar" "docker://${tag}-${slug}"
+              # `--all`, and it is load-bearing. Each archive holds ONE
+              # architecture (#711 moved the builds onto native runners), while
+              # this job runs on an amd64 runner — and a bare `skopeo copy`
+              # selects the image matching the HOST. Copying the arm64 archive
+              # then fails outright:
+              #   no image found in image index for architecture amd64
+              # which is what v1.16.1 hit, the first tag to reach this code.
+              # `--all` copies every manifest in the index instead of choosing
+              # one, so each archive ships whole — its image plus the
+              # provenance/SBOM attestations buildx attached.
+              skopeo copy --all "oci-archive:/tmp/sparc-${slug}.tar" "docker://${tag}-${slug}"
             done
             docker buildx imagetools create -t "${tag}" \
               "${tag}-linux-amd64" "${tag}-linux-arm64"
