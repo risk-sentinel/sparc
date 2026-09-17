@@ -409,6 +409,12 @@ class SspDocumentsController < ApplicationController
   # #1134: the enrich page's declare-a-role form. A thin client over the same
   # model path as `POST /api/v1/ssp_documents/:id/roles` with `membership_role`,
   # so both refuse exactly the same things.
+  #
+  # NIST 800-53 Controls:
+  #   AC-3  Access Enforcement (authorize_document_write!, boundary-scoped ssp.write)
+  #   AU-12 Audit Record Generation (ssp_role_declared)
+  #   SI-10 Information Input Validation (only a responsibility-bearing boundary
+  #         role is accepted, and never a duplicate)
   def declare_role
     membership_role = params[:membership_role].to_s
     role = @ssp_document.declare_responsible_membership_role(membership_role)
