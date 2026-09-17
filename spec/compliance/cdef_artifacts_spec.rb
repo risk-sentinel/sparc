@@ -68,30 +68,43 @@ RSpec.describe "OSCAL component definitions", type: :model do
 
       # Without this the stamp above is cosmetic — a string nothing reads.
       #
-      # This reads the BUNDLED schema for the declared version off disk rather
-      # than going through OscalSchemaValidationService with `version:`. The
-      # service resolves versions out of the `oscal_schemas` TABLE, which the
-      # test database never seeds, so every version request falls through to the
-      # single unversioned file in lib/oscal_schemas — and the Result still
-      # reports `schema_version` as whatever was ASKED for. Requesting "9.9.9"
-      # comes back valid, at "9.9.9". An example built on that would pass for a
-      # stamp naming a version that does not exist.
+      # This reads the schema off disk rather than going through
+      # OscalSchemaValidationService with `version:`. The service resolves
+      # versions out of the `oscal_schemas` TABLE, which the test database never
+      # seeds, so every version request falls through to the single unversioned
+      # set in lib/oscal_schemas — and the Result still reports `schema_version`
+      # as whatever was ASKED for. Requesting "9.9.9" comes back valid, at
+      # "9.9.9". An example built on that would pass for a stamp naming a version
+      # that does not exist.
       #
-      # (The unversioned fallback file is byte-identical to
-      # lib/oscal_schemas_bundle/v1.2.2 today, which is why these artifacts
-      # validated cleanly for three releases while stamped 1.1.2.)
-      it "is valid against the bundled schema for the version it declares" do
-        schema_path = Rails.root.join("lib/oscal_schemas_bundle/v#{declared_version}/oscal_component_schema.json")
-        expect(schema_path).to exist,
-          -> { "#{File.basename(path)} declares OSCAL #{declared_version}, which SPARC does not bundle a " \
-               "schema for — the claim cannot be checked, let alone met." }
+      # It reads the TRACKED lib/oscal_schemas/, never lib/oscal_schemas_bundle/.
+      # The bundle is gitignored and generated during the Docker build, so it
+      # exists on a developer's machine and not in CI: this example first read
+      # it, passed locally, and failed all five artifacts on PR #1135 with
+      # "does not bundle a schema". Same rule as
+      # spec/services/oscal_default_version_conformance_spec.rb.
+      #
+      # The tracked set is only ONE version, so the example proves which one
+      # before trusting it: the schema's own `$id` must name the version the
+      # artifact declares. That keeps the check honest if either side moves —
+      # a stamp and a schema at different versions fail here instead of
+      # validating against the wrong release.
+      it "is valid against the schema for the version it declares" do
+        schema_path = Rails.root.join("lib/oscal_schemas/oscal_component_schema.json")
+        schema      = JSON.parse(schema_path.read)
+        schema_version = schema["$id"].to_s[%r{/oscal/([\d.]+)/}, 1]
 
-        schemer = JSONSchemer.schema(OscalSchema.preprocess_schema(JSON.parse(schema_path.read)))
+        expect(schema_version).to eq(declared_version),
+          -> { "#{File.basename(path)} declares OSCAL #{declared_version}, but the tracked component " \
+               "schema is #{schema_version || '(no version in $id)'} — the claim cannot be checked, " \
+               "let alone met." }
+
+        schemer = JSONSchemer.schema(OscalSchema.preprocess_schema(schema))
         errors  = schemer.validate(data).first(5).map { |e| "#{e['data_pointer'].presence || '(root)'}: #{e['type']}" }
 
         expect(errors).to be_empty,
           -> { "#{File.basename(path)} claims OSCAL #{declared_version} and is not valid against the " \
-               "bundled v#{declared_version} schema:\n  #{errors.join("\n  ")}" }
+               "v#{declared_version} schema:\n  #{errors.join("\n  ")}" }
       end
 
       # A duplicate uuid is legal JSON and legal against the schema, but it
