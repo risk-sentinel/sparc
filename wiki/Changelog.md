@@ -4,7 +4,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
-## v1.16.1 -- OSCAL Conformance, Auth Posture, Boundary Onboarding (pending tag)
+## v1.16.1 -- OSCAL Conformance, Auth Posture, Boundary Onboarding (2026-09-17)
 
 A patch release of **22 issues**, and its theme is the same as v1.16.0's: **schema-valid is not the same as correct.** An OSCAL document can pass every schema check and still name a namespace it has no right to, use a vocabulary value NIST never defined, or reference a role it never declares. An auth configuration can boot cleanly and still lock out every user on the first request. This release found those gaps and closed them.
 
