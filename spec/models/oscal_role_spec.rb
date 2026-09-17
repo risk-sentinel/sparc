@@ -178,5 +178,4 @@ RSpec.describe OscalRole do
       expect(described_class.membership_role_options).to eq([ [ "Control Provider", "control_provider" ] ])
     end
   end
-
 end
