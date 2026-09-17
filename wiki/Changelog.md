@@ -4,6 +4,30 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.16.2 -- Publishable (pending tag)
+
+**v1.16.1's container image was never published, and this release exists to ship it.** The code is v1.16.1's, unchanged.
+
+The release pipeline builds each architecture on its own native runner (#711) and promotes the resulting single-architecture OCI archives with `skopeo`. That promote job runs on an amd64 runner, and a bare `skopeo copy` selects the image matching the **host** — so the amd64 archive copied and the arm64 archive failed outright:
+
+```
+no image found in image index for architecture amd64, variant "", OS linux
+```
+
+Nothing reached a registry. The step's own comment already promised `--all` ("copies the whole OCI index: both architectures AND the provenance/SBOM attestation manifests"); the loop never passed it. It does now.
+
+Fixing that exposed two more defects in the same release-only path, each hidden behind the one before it: the `anchore/scan-action/download-grype` pin resolved to **no commit that exists**, and because GitHub resolves every `uses:` in a job before running any step, the entire signing job died at startup — cosign signing included. With the pin corrected, the scan step then failed on `grype: command not found`, because that action does not put grype on `PATH`; it returns the path to execute. All three are fixed.
+
+The whole chain is now proven end to end on a prerelease build: both architectures in one index, `cosign verify` passing under the release identity, and both the CycloneDX SBOM and the OpenVEX vulnerability attestations verifying against the published digest.
+
+Dual-architecture publishing is not new — v1.16.0 and every release before it shipped amd64 and arm64. The *mechanism* was replaced two days after v1.16.0 was tagged, and **v1.16.1 was the first tag to reach it**. No pull request exercises the promote step, so nothing caught it earlier.
+
+**v1.16.1 keeps its tag and its release notes, and has no image.** It is not republished: a tag-triggered run reads the workflow file from the tag's own commit, so re-running it would use the unfixed file, and building it from `main` instead would stamp an `org.opencontainers.image.revision` that points at a different commit than the tag. A version whose image cannot honestly name its own source is worse than a version with no image, so v1.16.1 is skipped and this release carries the fix in the tagged commit itself.
+
+For everything this release contains, see [v1.16.1](https://github.com/risk-sentinel/sparc/releases/tag/v1.16.1).
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.16.2).
+
 ## v1.16.1 -- OSCAL Conformance, Auth Posture, Boundary Onboarding (2026-09-17)
 
 A patch release of **22 issues**, and its theme is the same as v1.16.0's: **schema-valid is not the same as correct.** An OSCAL document can pass every schema check and still name a namespace it has no right to, use a vocabulary value NIST never defined, or reference a role it never declares. An auth configuration can boot cleanly and still lock out every user on the first request. This release found those gaps and closed them.
