@@ -320,7 +320,7 @@ jobs:
           echo "minted $(grep -c '^export' /tmp/smoke-env.sh) exports"
 
       - name: Set up Python tooling
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
           enable-cache: true
 
@@ -540,7 +540,7 @@ jobs:
 
       - name: Set up QEMU (multi-platform)
         if: needs.prepare.outputs.dry_run != 'true'
-        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
+        uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
@@ -554,7 +554,7 @@ jobs:
 
       - name: Configure AWS credentials (OIDC)
         if: needs.prepare.outputs.dry_run != 'true'
-        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
         with:
           role-to-assume: ${{ secrets.SPARC_APP_CI_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
@@ -562,7 +562,7 @@ jobs:
       - name: Login to Amazon ECR
         if: needs.prepare.outputs.dry_run != 'true'
         id: ecr-login
-        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
 
       - name: Compute image tags
         id: tags
@@ -713,7 +713,7 @@ jobs:
 
       - name: Install Syft
         if: needs.prepare.outputs.dry_run == 'true'
-        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
 
       - name: Generate SBOM (dry run)
         if: needs.prepare.outputs.dry_run == 'true'
@@ -758,7 +758,7 @@ jobs:
           cosign-release: "v3.1.1"
 
       - name: Install Syft
-        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
 
       - name: Login to Docker Hub
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
@@ -767,13 +767,13 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
         with:
           role-to-assume: ${{ secrets.SPARC_APP_CI_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
 
       # ── Sign images (keyless OIDC) ──
 
@@ -902,11 +902,11 @@ jobs:
         # anchore/scan-action — and GitHub resolves every `uses:` in a job
         # before running any step, so the whole job died at startup and the
         # signing half that had worked since v1.15.x never got to run.
-        uses: anchore/scan-action/download-grype@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+        uses: anchore/scan-action/download-grype@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         id: grype
 
       - name: Set up Ruby (amendments + VEX enrichment)
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        uses: ruby/setup-ruby@bec3f19a76460dbe12f60def7d1a77585f07516c # v1
         with:
           ruby-version: .ruby-version
 
