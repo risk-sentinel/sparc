@@ -41,6 +41,23 @@ def ssp():
         delete_doc("authorization_boundaries", boundary["slug"])
 
 
+def _submit_and_wait(page, control, action):
+    """Click a form control and wait for its POST to be ANSWERED.
+
+    Turbo submits forms with fetch, so no navigation has started when `click()`
+    returns and `wait_for_load_state("networkidle")` settles immediately. Asking
+    the API what was declared at that point races the POST — measured: the
+    oracle read the document before the request reached the server, which then
+    answered 302 in 19 ms. Waiting on the response removes the race.
+    """
+    with page.expect_response(
+        lambda r: r.request.method == "POST" and r.url.split("?")[0].endswith(f"/{action}")
+    ) as info:
+        control.click()
+    assert info.value.status < 400, f"POST {action} answered {info.value.status}"
+    page.wait_for_load_state("networkidle")
+
+
 def _open_section(page, slug):
     page.goto(f"/ssp_documents/{slug}/enrich")
     page.wait_for_load_state("networkidle")
@@ -104,8 +121,9 @@ def test_declaring_a_role_persists_and_is_organization_defined(authed_page, ssp)
     target = undeclared_org[0]
 
     section.locator(SELECT).select_option(target["membership_role"])
-    section.locator("input[type='submit'][value='Declare role']").click()
-    page.wait_for_load_state("networkidle")
+    _submit_and_wait(
+        page, section.locator("input[type='submit'][value='Declare role']"), "declare_role"
+    )
 
     declared = {r["id"]: r for r in ssp_roles(slug)["data"]}
     assert target["role_id"] in declared, (
@@ -134,8 +152,11 @@ def test_importing_boundary_members_declares_what_it_references(authed_page, ssp
 
     page.goto(f"/ssp_documents/{slug}/enrich")
     page.wait_for_load_state("networkidle")
-    page.get_by_role("button", name="boundary member(s) as system users").click()
-    page.wait_for_load_state("networkidle")
+    _submit_and_wait(
+        page,
+        page.get_by_role("button", name="boundary member(s) as system users"),
+        "import_boundary_users",
+    )
 
     declared = {r["id"] for r in ssp_roles(slug)["data"]}
     # `view_only` is not offered as a responsibility, but a viewer is still a
