@@ -896,7 +896,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Grype
-        uses: anchore/scan-action/download-grype@abae6f91766d0bab7c6b23e6bb95dcb4d5c11b31 # v7
+        # Pinned to the SAME commit `sca-scan.yml` uses for this action, so the
+        # repo carries one version of it rather than two. The previous pin,
+        # `abae6f91…` "# v7", resolved to NOTHING — no such commit exists in
+        # anchore/scan-action — and GitHub resolves every `uses:` in a job
+        # before running any step, so the whole job died at startup and the
+        # signing half that had worked since v1.15.x never got to run.
+        uses: anchore/scan-action/download-grype@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
         id: grype
 
       - name: Set up Ruby (amendments + VEX enrichment)
