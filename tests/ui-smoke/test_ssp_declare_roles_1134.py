@@ -72,12 +72,15 @@ def test_roles_are_offered_by_label_and_never_typed(authed_page, ssp):
     values = select.locator("option").evaluate_all("opts => opts.map(o => o.value)")
     labels = [t.strip() for t in select.locator("option").all_text_contents()]
     assert values, "the picker offers nothing"
-    assert not ACCESS_ONLY & set(values), (
-        f"access-only membership roles are offered as responsibilities: {sorted(ACCESS_ONLY & set(values))}"
+    offered_access_only = sorted(ACCESS_ONLY & set(values))
+    assert not offered_access_only, (
+        f"access-only membership roles are offered as responsibilities: {offered_access_only}"
     )
     # `isso` and `system_owner` resolve to roles every SSP declares by default,
     # so offering them would only produce a duplicate.
-    assert not {"isso", "system_owner"} & set(values), f"already-declared roles are offered: {values}"
+    assert not {"isso", "system_owner"} & set(values), (
+        f"already-declared roles are offered: {values}"
+    )
     assert all(label not in values for label in labels), (
         f"roles are offered by raw membership value rather than by label: {labels}"
     )
@@ -91,9 +94,14 @@ def test_declaring_a_role_persists_and_is_organization_defined(authed_page, ssp)
     section = _open_section(page, slug)
 
     choices = {c["membership_role"]: c for c in ssp_roles(slug)["meta"]["membership_roles"]}
-    target = next((c for c in choices.values() if c["organization_defined"] and not c["declared"]), None)
-    if target is None:
-        pytest.skip("this instance's boundary vocabulary has no undeclared organization-defined role")
+    undeclared_org = [
+        c for c in choices.values() if c["organization_defined"] and not c["declared"]
+    ]
+    if not undeclared_org:
+        pytest.skip(
+            "this instance's boundary vocabulary has no undeclared organization-defined role"
+        )
+    target = undeclared_org[0]
 
     section.locator(SELECT).select_option(target["membership_role"])
     section.locator("input[type='submit'][value='Declare role']").click()
