@@ -4,6 +4,32 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.16.3 -- Upgradable (pending tag)
+
+**v1.16.2 could not be upgraded into.** A deployment moving from v1.16.0 ended with no pending migrations and a database missing seven columns, and every boundary page returned 500:
+
+```
+PG::UndefinedColumn: column ssp_information_types.authorization_boundary_id does not exist
+```
+
+The v1.16.1 migration squash replaced 42 schema migrations with a version stamp. That is correct for a **fresh** install, where `db:schema:load` builds the database from `schema.rb`. It is wrong for an **upgrade**, where `db:migrate` applies migrations and never reads `schema.rb` at all — so the stamp recorded 42 migrations as applied and performed no DDL. Two of them post-dated v1.16.0 and had therefore never run anywhere:
+
+| Table | Columns that went missing |
+|---|---|
+| `authorization_boundaries` | `security_objective_confidentiality`, `_integrity`, `_availability` |
+| `ssp_information_types` | `authorization_boundary_id` |
+| `cdef_controls` | `component_uuid`, `implementation_source`, `implementation_description` |
+
+Only the boundary columns had surfaced, because they sit on the boundary page; the `cdef_controls` columns would have failed the first time anyone opened a CDEF.
+
+**This release restores them**, with the data lift the original migration carried — each boundary's FIPS-199 categorization is recovered from its newest SSP, and information types are pointed back at their boundary. The repair is guarded per column, so it is a no-op on installs that already have them, and safe to run more than once.
+
+**It also makes the failure detectable.** `bin/rails db:verify_schema` compares the live database against `schema.rb` and exits non-zero listing every missing table, column and index. Run it after `db:migrate` in a deploy: "no pending migrations" only states that the version table is current, which was exactly the true and useless claim v1.16.2 shipped with. `docs/dev/schema_drift_check.sql` is the same check as plain SQL for a database you cannot yet run this release against.
+
+No application behaviour changes. Upgrading from v1.16.2 or v1.16.0 applies the repair automatically.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.16.3).
+
 ## v1.16.2 -- Publishable (2026-09-18)
 
 **v1.16.1's container image was never published, and this release exists to ship it.** The code is v1.16.1's, unchanged.
