@@ -644,10 +644,26 @@ jobs:
           # create`. All of it happens AFTER the approval — nothing reaches a
           # registry before then, which is the property the artifact hand-off
           # exists to preserve.
+          # STAGING TAGS MUST NOT LOOK LIKE RELEASES (#1146).
+          #
+          # These per-arch pushes are scaffolding for `imagetools create`, but
+          # they used to be named `${tag}-linux-amd64` — i.e. `v1.16.2-linux-amd64`,
+          # which MATCHES the ECR lifecycle rule that keeps the N newest
+          # `v*`-tagged images. Three images per release against a rule sized for
+          # one meant each release expired roughly three releases of history.
+          #
+          # `stage-<run id>-` matches no release pattern, so retention counts one
+          # image per release again, and it stays correct for any future suffix
+          # because nothing v-prefixed is created at all. The tags are deleted
+          # after the index is assembled; the name is what stops the damage, the
+          # deletion stops the accumulation.
+          STAGE_PREFIX="stage-${GITHUB_RUN_ID}"
+
           FIRST=""
           while read -r tag; do
             [ -n "$tag" ] || continue
             echo "── promoting ${tag}"
+            repo="${tag%:*}"
             for slug in linux-amd64 linux-arm64; do
               # `--all`, and it is load-bearing. Each archive holds ONE
               # architecture (#711 moved the builds onto native runners), while
@@ -659,10 +675,11 @@ jobs:
               # `--all` copies every manifest in the index instead of choosing
               # one, so each archive ships whole — its image plus the
               # provenance/SBOM attestations buildx attached.
-              skopeo copy --all "oci-archive:/tmp/sparc-${slug}.tar" "docker://${tag}-${slug}"
+              skopeo copy --all "oci-archive:/tmp/sparc-${slug}.tar" \
+                "docker://${repo}:${STAGE_PREFIX}-${slug}"
             done
             docker buildx imagetools create -t "${tag}" \
-              "${tag}-linux-amd64" "${tag}-linux-arm64"
+              "${repo}:${STAGE_PREFIX}-linux-amd64" "${repo}:${STAGE_PREFIX}-linux-arm64"
             [ -n "$FIRST" ] || FIRST="$tag"
           done <<< "$TAGS"
 
@@ -681,6 +698,54 @@ jobs:
           esac
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
           echo "Promoted verified image as ${DIGEST}"
+
+      # ── Remove the scaffolding (#1146) ──────────────────────────────────
+      #
+      # `if: always()` because a half-promoted run leaves stage tags too, and
+      # those are exactly the ones nobody comes back for. It never fails the
+      # job: the release is already published and signed by this point, and a
+      # registry hiccup during cleanup is not a reason to fail a good release —
+      # the tags are named so that, left behind, they cost retention nothing.
+      - name: Delete the staging tags
+        if: always() && needs.prepare.outputs.dry_run != 'true'
+        continue-on-error: true
+        env:
+          STAGE_PREFIX: stage-${{ github.run_id }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          ECR_REPO: ${{ secrets.SPARC_ECR_REGISTRY }}
+        run: |
+          set -uo pipefail
+
+          # Docker Hub: delete by tag through the Hub API. `docker` itself has no
+          # verb for this — the registry API's DELETE is on a manifest, which
+          # would remove the image the release tag also points at.
+          if [ -n "${DOCKERHUB_TOKEN:-}" ]; then
+            HUB_JWT=$(curl -sS -X POST https://hub.docker.com/v2/users/login \
+              -H "Content-Type: application/json" \
+              -d "{\"username\":\"${DOCKERHUB_USERNAME}\",\"password\":\"${DOCKERHUB_TOKEN}\"}" \
+              | python3 -c 'import json,sys; print(json.load(sys.stdin).get("token",""))')
+            for slug in linux-amd64 linux-arm64; do
+              tag="${STAGE_PREFIX}-${slug}"
+              code=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+                -H "Authorization: JWT ${HUB_JWT}" \
+                "https://hub.docker.com/v2/repositories/risksentinel/sparc/tags/${tag}/")
+              echo "docker hub ${tag}: HTTP ${code}"
+            done
+          else
+            echo "no DOCKERHUB_TOKEN — skipping Docker Hub cleanup"
+          fi
+
+          # ECR: batch-delete by tag. The OIDC session from the login step above
+          # is still current.
+          if [ "${HAS_ECR:-false}" = "true" ] && [ -n "${ECR_REPO:-}" ]; then
+            aws ecr batch-delete-image \
+              --repository-name "${ECR_REPO}" \
+              --image-ids "imageTag=${STAGE_PREFIX}-linux-amd64" "imageTag=${STAGE_PREFIX}-linux-arm64" \
+              --output text || echo "ecr cleanup reported a problem; tags left behind cost retention nothing"
+          else
+            echo "no ECR configured — skipping ECR cleanup"
+          fi
 
       # ── Dry-run build: single-platform, local only ──
       - name: Build image (dry run)
