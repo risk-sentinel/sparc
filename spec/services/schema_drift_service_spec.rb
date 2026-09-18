@@ -73,6 +73,16 @@ RSpec.describe SchemaDriftService do
     end
   end
 
+  describe "an unrecognised drift kind" do
+    # The rendering `case` refuses rather than returning nil: a drift that
+    # printed as an empty line would read as "nothing missing", which is the
+    # failure mode this whole service exists to end.
+    it "raises instead of rendering nothing" do
+      expect { described_class::Drift.new(kind: :sequence, table: "x", name: "y").to_s }
+        .to raise_error(ArgumentError, /unhandled drift kind/)
+    end
+  end
+
   describe "read-only by construction" do
     it "changes nothing about the database" do
       before_columns = connection.columns(:authorization_boundaries).map(&:name).sort
