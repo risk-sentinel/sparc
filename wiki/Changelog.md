@@ -4,7 +4,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
-## v1.16.2 -- Publishable (pending tag)
+## v1.16.2 -- Publishable (2026-09-18)
 
 **v1.16.1's container image was never published, and this release exists to ship it.** The code is v1.16.1's, unchanged.
 
