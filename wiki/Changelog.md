@@ -4,7 +4,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
-## v1.16.3 -- Upgradable (pending tag)
+## v1.16.3 -- Upgradable (2026-09-18)
 
 **v1.16.2 could not be upgraded into.** A deployment moving from v1.16.0 ended with no pending migrations and a database missing seven columns, and every boundary page returned 500:
 
@@ -31,6 +31,8 @@ No application behaviour changes. Upgrading from v1.16.2 or v1.16.0 applies the 
 [Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.16.3).
 
 ## v1.16.2 -- Publishable (2026-09-18)
+
+> **Do not upgrade an existing deployment to this release — use [v1.16.3](https://github.com/risk-sentinel/sparc/releases/tag/v1.16.3).** Upgrading a database from v1.16.0 to v1.16.2 leaves it with no pending migrations and seven missing columns, and every boundary page returns `500`. A **fresh install** of v1.16.2 is unaffected, because `db:schema:load` creates every column. v1.16.3 repairs an affected database in place. See v1.16.3 above, and [#1147](https://github.com/risk-sentinel/sparc/issues/1147).
 
 **v1.16.1's container image was never published, and this release exists to ship it.** The code is v1.16.1's, unchanged.
 
