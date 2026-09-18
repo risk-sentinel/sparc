@@ -88,11 +88,50 @@ Enrichment adds the OSCAL metadata an SSP needs beyond control narratives.
    - **System characteristics** — description, sensitivity level, system status,
      authorization boundary.
    - **Components** — title, type, description for each system component.
-   - **System users** — title and role IDs.
+   - **System users** — title and description.
    - **Information types.**
 3. Save. The detail page now shows the **System Characteristics**,
    **Components**, and **Users** cards, and the OSCAL badge flips to
    **Enriched**.
+
+### Declaring the roles an SSP uses
+
+Every role an OSCAL document names, whether for a system user or as the
+responsible role on a statement, has to be **declared** in the document first.
+A reference to an undeclared role still passes schema validation, but a tool
+reading the document can't resolve it.
+
+You don't type role identifiers. The enrich page's **Import from canonical
+sources** panel has a **Declared roles** section:
+
+1. Expand **Declared roles**. It lists each role the SSP declares, with its
+   OSCAL id. A new SSP declares four by default: Prepared By, System Owner,
+   Authorizing Official and Information System Security Officer.
+2. Pick a role from **Declare a boundary role** and click **Declare role**.
+
+The list offers your authorization boundary's membership roles — the same
+roles you assign on the boundary's personnel roster, including any your
+administrator added through `SPARC_AUTH_BOUNDARY_ROLES`. Each becomes an OSCAL
+role in one of two ways:
+
+- **NIST defines an equivalent** → the role is declared with NIST's id, so any
+  OSCAL tool recognises it. *ISSO* becomes `information-system-security-officer`.
+- **NIST doesn't** → the role is declared **organization-defined** and marked
+  with your deployment's namespace. The list flags these as
+  *(organization-defined)* before you pick one.
+
+Roles that grant a level of access rather than a responsibility (*View Only*,
+*Project Member*) aren't offered, because naming one as responsible for a
+control makes a claim an assessor can't evaluate. Roles already declared aren't
+offered again.
+
+**Add boundary member(s) as system users** declares roles for you: each
+imported person's boundary role is resolved the same way and declared before
+the user references it. Access-only roles are included here, because a viewer
+is still a system user.
+
+Pipelines can do the same thing through the API — see
+[SSP Roles](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/ssp-roles.md).
 
 ## How to document control implementations
 

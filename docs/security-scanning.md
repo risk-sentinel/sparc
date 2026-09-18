@@ -86,7 +86,7 @@ The `-w` flag is used with `sarif2hdf` to include the raw SARIF in the HDF passt
 
 After HDF conversion, each file is enriched with OSCAL-aligned metadata using `saf supplement passthrough write`. The metadata source is `.github/oscal-metadata.json`, which contains:
 
-- Organization party information (OSCAL v1.1.2 format)
+- Organization party information (OSCAL metadata format)
 - Scanner and preparer role definitions
 - Responsible party assignments
 

@@ -130,16 +130,130 @@ module OscalMetadata
     # is filtered out before export. OSCAL schemas reject additional
     # properties under metadata, so leaking these would fail validation.
     extra = (metadata_extra || {}).slice(*METADATA_EXTRA_KEYS)
-    if extra.any?
-      merged = base.merge(extra)
-    else
-      defaults = default_oscal_metadata_extras
-      defaults["roles"] = default_roles if default_roles.present?
-      defaults["parties"] = default_parties if default_parties.present?
-      merged = base.merge(defaults)
+
+    # #1116 — merged PER KEY, not all-or-nothing.
+    #
+    # This was `if extra.any? … else …`, so a document carrying ANY one
+    # allowlisted key lost the defaults for all the others. METADATA_EXTRA_KEYS
+    # includes `parties`, `links` and `remarks`, which means a document that
+    # recorded a single remark exported with NO roles — and every `role-id` in
+    # it then resolved to nothing. Schema validation cannot see that: the
+    # document is structurally perfect and refers to nothing.
+    #
+    # `extra` is merged LAST so authored values still win over defaults.
+    defaults = default_oscal_metadata_extras
+    defaults["roles"] = default_roles if default_roles.present?
+    defaults["parties"] = default_parties if default_parties.present?
+
+    base.merge(defaults.merge(extra))
+  end
+
+  # ── Declared roles (#1116) ────────────────────────────────────────────────
+  #
+  # A `role-id` used anywhere in the document must resolve to one of these.
+  # OscalConformanceService enforces that; these helpers are what the UI and the
+  # API offer so an author PICKS rather than types.
+
+  # The roles this document declares. Falls back to the SAME defaults the
+  # exporter emits — a document that has authored no roles still DECLARES the
+  # defaults in `metadata.roles`, so the picker must offer them and the
+  # referential guard must accept them. Reading only the authored list made a
+  # fresh document reject every role it was about to export.
+  def declared_roles
+    # `key?`, NOT `.presence`. An author who removes the last role has declared
+    # NONE, which is different from never having authored any — and `.presence`
+    # conflates them, silently resurrecting the defaults the author just deleted.
+    return oscal_roles if metadata_extra&.key?("roles")
+
+    default_declared_roles
+  end
+
+  # Overridden per document type. Empty here: a model with no default roles
+  # declares none, and inventing some would put ids in a document that its
+  # exporter never emits.
+  def default_declared_roles = []
+
+  def declared_role_ids = declared_roles.filter_map { |r| r["id"] }.uniq
+
+  # [title, id] pairs for a select. Title is what a person recognises; the id is
+  # what OSCAL stores — the "English in front, machine identifier behind" shape.
+  def declared_role_options
+    declared_roles.map { |r| [ r["title"].presence || OscalRole.humanize(r["id"]), r["id"] ] }
+  end
+
+  # Roles NIST suggests that this document has not declared yet — offered by the
+  # picker so an author adopts NIST's canonical id instead of inventing one.
+  def undeclared_suggested_roles
+    declared = declared_role_ids.to_set
+    OscalRole.suggested(oscal_version || DEFAULT_OSCAL_VERSION)
+             .reject { |r| declared.include?(r["id"]) }
+  end
+
+  # #1134 — declare the OSCAL role each boundary-membership role resolves to and
+  # return `{ membership_role => role-id }`, so a caller writes a reference only
+  # to something this document now declares. Resolution is
+  # `OscalRole.from_membership_role`, the one place the import, the API and the
+  # migration all go through.
+  #
+  # Assigns in memory; the caller saves. Writes nothing when every role is
+  # already declared, so a document that has authored no roles keeps declaring
+  # the defaults implicitly rather than having them frozen into its metadata.
+  def declare_membership_roles(membership_roles)
+    version  = role_vocabulary_version
+    declared = declared_roles
+    known    = declared.filter_map { |r| r["id"] }.to_set
+    added    = []
+
+    resolved = membership_roles.map(&:to_s).reject(&:blank?).uniq.index_with do |value|
+      role = OscalRole.from_membership_role(value, version)
+      added << role if known.add?(role["id"])
+      role["id"]
     end
 
-    merged
+    self.oscal_roles = declared + added if added.any?
+    resolved
+  end
+
+  # #1134 — declare ONE role an author picked from the boundary vocabulary: the
+  # path the API and the enrich page share, so they refuse the same things.
+  # Only the responsibility-bearing subset is accepted (owner-decided); the
+  # boundary import resolves every member's role through
+  # `declare_membership_roles` directly, because a user's `role-ids` claims no
+  # responsibility. Assigns in memory; the caller saves. Returns the role.
+  def declare_responsible_membership_role(membership_role)
+    value = membership_role.to_s.strip
+    unless OscalRole.membership_role_options.any? { |(_label, v)| v == value }
+      raise OscalRole::DeclarationError,
+            "membership role #{value.inspect} is not a responsibility-bearing boundary role"
+    end
+
+    role_id = OscalRole.from_membership_role(value, role_vocabulary_version)["id"]
+    raise OscalRole::DeclarationError, "role #{role_id.inspect} is already declared" if declared_role_ids.include?(role_id)
+
+    declare_membership_roles([ value ])
+    declared_roles.find { |r| r["id"] == role_id }
+  end
+
+  # What a picker offers: each responsibility-bearing membership role, with the
+  # OSCAL role it resolves to and whether this document already declares it.
+  def membership_role_choices
+    declared = declared_role_ids.to_set
+    version  = role_vocabulary_version
+
+    OscalRole.membership_role_options.map do |label, value|
+      role = OscalRole.from_membership_role(value, version)
+      { membership_role: value, label: label, role_id: role["id"],
+        organization_defined: OscalRole.organization_defined?(role), declared: declared.include?(role["id"]) }
+    end
+  end
+
+  # A document may carry an OSCAL version we ship no conformance dataset for
+  # (an import from 1.0.x, say). Resolving against an empty vocabulary would
+  # push every NIST-named role onto organization-defined, so fall back to the
+  # default — the same rule `ResolveFreeTextResponsibleRoles` applies.
+  def role_vocabulary_version
+    version = oscal_version.presence || DEFAULT_OSCAL_VERSION
+    OscalRole.suggested_ids(version).any? ? version : DEFAULT_OSCAL_VERSION
   end
 
   # Merge metadata from a parent/source document (inheritance)

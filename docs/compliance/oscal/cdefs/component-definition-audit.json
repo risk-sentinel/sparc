@@ -3,9 +3,9 @@
     "uuid": "7a632d4d-886a-4f0c-b2a9-ca0ee206b9c8",
     "metadata": {
       "title": "SPARC Audit and Accountability",
-      "version": "1.1.0",
-      "oscal-version": "1.1.2",
-      "last-modified": "2026-07-26T00:00:00Z",
+      "version": "1.1.1",
+      "oscal-version": "1.2.2",
+      "last-modified": "2026-09-16T00:00:00Z",
       "roles": [
         {
           "id": "prepared-by",

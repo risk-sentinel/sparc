@@ -120,14 +120,24 @@
                       Responsible Roles
                       <span class="sparc-edit-editable-hint">(editable)</span>
                     </label>
-                    <%= text_field_tag "ssp_control_statement[responsible_role_ids]",
-                          role_ids.join(", "),
-                          class: "form-control sparc-fs-0875",
+                    <%# #1116 — PICK, never type. A `role-id` must resolve to a
+                        role declared in metadata.roles; free text let an author
+                        write `isso` and produce a document whose reference
+                        resolved to nothing. Schema-valid, referentially broken.
+
+                        Titles are shown, role-ids are stored — the machine
+                        identifier never has to be typed or remembered. %>
+                    <%= select_tag "ssp_control_statement[responsible_role_ids]",
+                          options_for_select(@declared_role_options, role_ids),
+                          multiple: true,
+                          class: "form-select sparc-fs-0875",
                           id: "stmt-roles-#{stmt.id}",
-                          list: "ssp-known-role-ids",
-                          placeholder: "Comma-separated role ids, e.g. system-owner, isso" %>
+                          size: [ [ @declared_role_options.size, 3 ].max, 6 ].min %>
                     <div class="sparc-fs-078 sparc-color-tertiary sparc-mt-025">
-                      OSCAL <code>responsible-roles</code> for this statement. Leave blank for none.
+                      OSCAL <code>responsible-roles</code> for this statement. Select none for none.
+                      <% if @declared_role_options.empty? %>
+                        <strong>No roles are declared on this document yet.</strong>
+                      <% end %>
                     </div>
 
                     <div class="d-flex gap-1 sparc-mt-035">

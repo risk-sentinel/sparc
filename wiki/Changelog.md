@@ -4,6 +4,49 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.16.2 -- Publishable (2026-09-18)
+
+**v1.16.1's container image was never published, and this release exists to ship it.** The code is v1.16.1's, unchanged.
+
+The release pipeline builds each architecture on its own native runner (#711) and promotes the resulting single-architecture OCI archives with `skopeo`. That promote job runs on an amd64 runner, and a bare `skopeo copy` selects the image matching the **host** — so the amd64 archive copied and the arm64 archive failed outright:
+
+```
+no image found in image index for architecture amd64, variant "", OS linux
+```
+
+Nothing reached a registry. The step's own comment already promised `--all` ("copies the whole OCI index: both architectures AND the provenance/SBOM attestation manifests"); the loop never passed it. It does now.
+
+Fixing that exposed two more defects in the same release-only path, each hidden behind the one before it: the `anchore/scan-action/download-grype` pin resolved to **no commit that exists**, and because GitHub resolves every `uses:` in a job before running any step, the entire signing job died at startup — cosign signing included. With the pin corrected, the scan step then failed on `grype: command not found`, because that action does not put grype on `PATH`; it returns the path to execute. All three are fixed.
+
+The whole chain is now proven end to end on a prerelease build: both architectures in one index, `cosign verify` passing under the release identity, and both the CycloneDX SBOM and the OpenVEX vulnerability attestations verifying against the published digest.
+
+Dual-architecture publishing is not new — v1.16.0 and every release before it shipped amd64 and arm64. The *mechanism* was replaced two days after v1.16.0 was tagged, and **v1.16.1 was the first tag to reach it**. No pull request exercises the promote step, so nothing caught it earlier.
+
+**v1.16.1 keeps its tag and its release notes, and has no image.** It is not republished: a tag-triggered run reads the workflow file from the tag's own commit, so re-running it would use the unfixed file, and building it from `main` instead would stamp an `org.opencontainers.image.revision` that points at a different commit than the tag. A version whose image cannot honestly name its own source is worse than a version with no image, so v1.16.1 is skipped and this release carries the fix in the tagged commit itself.
+
+For everything this release contains, see [v1.16.1](https://github.com/risk-sentinel/sparc/releases/tag/v1.16.1).
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.16.2).
+
+## v1.16.1 -- OSCAL Conformance, Auth Posture, Boundary Onboarding (2026-09-17)
+
+A patch release of **22 issues**, and its theme is the same as v1.16.0's: **schema-valid is not the same as correct.** An OSCAL document can pass every schema check and still name a namespace it has no right to, use a vocabulary value NIST never defined, or reference a role it never declares. An auth configuration can boot cleanly and still lock out every user on the first request. This release found those gaps and closed them.
+
+- **OSCAL exports are checked for what JSON Schema cannot see** ([#1106](https://github.com/risk-sentinel/sparc/issues/1106)) — all seven export models were audited for namespaces, vocabularies and constraints, not just schema version. A version-keyed conformance dataset now drives `OscalConformanceService`, and a namespace registry (`SPARC_OSCAL_NS`, `SPARC_OSCAL_ORG_NAME`) stops SPARC-defined props from claiming NIST's namespace. Before this, "SPARC Export" was the responsible organization party in 8 places, so a tenant's SSP named SPARC as accountable for it.
+- **OSCAL roles are declared, never typed** ([#1116](https://github.com/risk-sentinel/sparc/issues/1116), [#1134](https://github.com/risk-sentinel/sparc/issues/1134)). Statement responsible roles were free text, so `isso` produced a reference to a role the document never declared. Importing boundary members wrote raw membership roles into system users' `role-ids`, and the conformance check never looked at `role-ids` at all. Roles are now picked from declared roles, and declared by choosing from the boundary's membership vocabulary, on the SSP enrich page or through `POST /api/v1/ssp_documents/:id/roles`. A role NIST defines is declared with NIST's id; any other role is declared organization-defined under the deployment namespace. Two data migrations resolve values already stored and drop none of them.
+- **Exports that were invalid, now aren't.** 163 of 232 CDEFs exported schema-invalid OSCAL because an empty `control-implementations` scaffold was emitted on control-less documents ([#1051](https://github.com/risk-sentinel/sparc/issues/1051)). XML exports declared 1.2.2 but were validated against the 1.2.1 XSDs ([#1058](https://github.com/risk-sentinel/sparc/issues/1058)); the XSD set is now generated rather than hand-maintained.
+- **An auth policy that cannot be satisfied fails at boot, not at sign-in** ([#1082](https://github.com/risk-sentinel/sparc/issues/1082)). Requiring a method through `SPARC_REQUIRE_AUTH_METHODS` now enables it. Signing in over plain HTTP on a prod-mode container failed silently, indistinguishable from a wrong password; the CSRF rejection now says what happened ([#978](https://github.com/risk-sentinel/sparc/issues/978)).
+- **Instance administrator authority can come from the IdP, time-boxed** ([#1044](https://github.com/risk-sentinel/sparc/issues/1044)), separate from the break-glass account, which stays reachable during an IdP outage. The IdP revoke ceiling is removed: a user gets exactly what the IdP sends ([#1059](https://github.com/risk-sentinel/sparc/issues/1059)).
+- **A boundary cannot be authorized without the people accountable for it** ([#1040](https://github.com/risk-sentinel/sparc/issues/1040)). A boundary with no members could reach `authorized` and export an SSP. It now gets guided onboarding for greenfield and brownfield OSCAL adoption, and a completeness report of what SPARC knows about it, on screen and over the API ([#940](https://github.com/risk-sentinel/sparc/issues/940)). ATO package assembly is tested across all three serializations with round-trip equivalence ([#836](https://github.com/risk-sentinel/sparc/issues/836)).
+- **Content Security Policy: 1,262 of 1,516 inline styles removed** ([#1047](https://github.com/risk-sentinel/sparc/issues/1047)) — every file that held ten or more is now at zero. `style-src 'unsafe-inline'` stays in the policy until the remaining 254 are gone, because removing it early breaks every one silently. One real WCAG AA contrast failure fixed ([#728](https://github.com/risk-sentinel/sparc/issues/728)).
+- **Failures that were only counts now leave a trace** ([#968](https://github.com/risk-sentinel/sparc/issues/968)) — the ingest paths' swallow-and-continue rescue patterns were audited, and the two that hid real failures now propagate them.
+- **SPARC's own compliance evidence has a route to a reader** ([#1117](https://github.com/risk-sentinel/sparc/issues/1117)) — a new [Compliance Posture](Compliance-Posture) page. SPARC's five CDEFs claimed OSCAL 1.1.2 while it shipped 1.2.2, and the control mapping's own statistics were off by 66 controls; both are corrected and guarded by specs.
+- Also: `/api/v1/controls` honours `?items`/`?per_page` instead of returning all 4,054 rows ([#1022](https://github.com/risk-sentinel/sparc/issues/1022)); CIS and SCAP/OVAL mappings are accepted from upstream rather than owned ([#1033](https://github.com/risk-sentinel/sparc/issues/1033)); a wiki page on integrating a team and a pipeline ([#930](https://github.com/risk-sentinel/sparc/issues/930)); SonarCloud triage with supply-chain hardening ([#966](https://github.com/risk-sentinel/sparc/issues/966)); 64 migrations squashed to the current schema, with every data migration kept ([#1124](https://github.com/risk-sentinel/sparc/issues/1124)); and the required-checks gate no longer times out on healthy runs ([#1123](https://github.com/risk-sentinel/sparc/issues/1123)).
+
+**Behaviour changes:** A `SPARC_REQUIRE_AUTH_METHODS` value that no configured method can satisfy now **fails at boot** in production. It used to start cleanly and end every session on the first request. Naming a method in `SPARC_REQUIRE_AUTH_METHODS` also **enables** it; `SPARC_ENABLE_*=false` still wins. `SPARC_OIDC_SYNC_MAX_REVOKE_PCT` is **removed**, along with the `max_revoke_pct` and `blocked_reason` fields in the entitlement-sync API response. A boundary cannot move into `authorized` without its accountable roles staffed; an already-authorized boundary is unaffected. `GET /api/v1/controls` is now **paginated**. In no-auth mode, admin-only guards no longer depend on whether the first user row is an admin. `Dockerfile_debian` is **removed**: `docker compose up` now runs the UBI9 production image with `app/`, `lib/` and `db/` mounted. Migrations are squashed, and a deployment already on v1.16.0 upgrades with no pending migrations.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.16.1).
+
 ## v1.16.0 -- API Parity, IdP Entitlements, OSCAL Fidelity (2026-08-24)
 
 The largest release on the v1.x line: **86 issues**. The through-line: **a green result is not evidence.** Endpoints answered `200` to payloads they never parsed. Tests asserted against constants they had already overwritten. A scan ran, found a live advisory, and reported success. This release went looking for the gap between what SPARC reported and what it did, and closed it.

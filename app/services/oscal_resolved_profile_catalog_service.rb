@@ -53,7 +53,7 @@ class OscalResolvedProfileCatalogService
       "parties"       => [ {
         "uuid" => SecureRandom.uuid,
         "type" => "organization",
-        "name" => "SPARC Export"
+        "name" => SparcConfig.oscal_org_name
       } ]
     }.compact
   end

@@ -55,7 +55,7 @@ None.
       "file_type": "catalog",
       "baseline_level": "high",
       "profile_version": "1.0",
-      "oscal_version": "1.1.2",
+      "oscal_version": "1.2.2",
       "created_at": "2025-03-01T10:00:00Z",
       "updated_at": "2025-06-15T12:00:00Z"
     },
@@ -69,7 +69,7 @@ None.
       "file_type": "catalog",
       "baseline_level": "moderate",
       "profile_version": "1.0",
-      "oscal_version": "1.1.2",
+      "oscal_version": "1.2.2",
       "created_at": "2025-03-01T10:00:00Z",
       "updated_at": "2025-06-15T12:00:00Z"
     }
@@ -128,7 +128,7 @@ None.
     "file_type": "catalog",
     "baseline_level": "high",
     "profile_version": "1.0",
-    "oscal_version": "1.1.2",
+    "oscal_version": "1.2.2",
     "created_at": "2025-03-01T10:00:00Z",
     "updated_at": "2025-06-15T12:00:00Z",
     "description": "FedRAMP HIGH baseline profile derived from NIST SP 800-53 Rev 5. Includes 370 controls.",
@@ -192,7 +192,7 @@ None.
     "file_type": "catalog",
     "baseline_level": "high",
     "profile_version": "1.0",
-    "oscal_version": "1.1.2",
+    "oscal_version": "1.2.2",
     "created_at": "2025-12-10T10:00:00Z",
     "updated_at": "2025-12-10T10:00:00Z"
   }
@@ -219,7 +219,7 @@ curl -s -X POST \
       "description": "FedRAMP HIGH baseline profile derived from NIST SP 800-53 Rev 5. Includes 370 controls.",
       "baseline_level": "high",
       "profile_version": "1.0",
-      "oscal_version": "1.1.2",
+      "oscal_version": "1.2.2",
       "control_catalog_id": 1,
       "lifecycle_status": "draft",
       "file_type": "catalog"
@@ -258,7 +258,7 @@ Same fields as [POST create](#post-apiv1profile_documents). All fields are optio
     "file_type": "catalog",
     "baseline_level": "high",
     "profile_version": "1.1",
-    "oscal_version": "1.1.2",
+    "oscal_version": "1.2.2",
     "created_at": "2025-03-01T10:00:00Z",
     "updated_at": "2025-12-10T11:00:00Z"
   }

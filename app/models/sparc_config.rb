@@ -19,7 +19,7 @@
 #   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
-  VERSION = "1.16.0"
+  VERSION = "1.16.2"
 
   extend self
 
@@ -50,6 +50,27 @@ module SparcConfig
   # ── Application ───────────────────────────────────────────────────────────
 
   def app_url       = ENV.fetch("SPARC_APP_URL", "http://localhost:3000")
+
+  # ── OSCAL deployment identity (#1106) ─────────────────────────────────────
+  #
+  # One identity, owned by the operators who manage ODPs, mappings, converters
+  # and organization-defined roles after import. It answers two questions that
+  # every exported artifact asks: whose vocabulary defines a locally-coined
+  # property, and which organization is responsible for this document.
+  #
+  # Both default to today's behaviour, so an instance that sets neither sees no
+  # change in its exports.
+
+  # The namespace for terms THIS deployment defines — props SPARC does not
+  # define, and organization-defined roles. Props under it are never conformance
+  # violations; SPARC validates claims about other authorities' vocabularies,
+  # not the operator's own.
+  def oscal_namespace = ENV.fetch("SPARC_OSCAL_NS") { OscalNamespace::REGISTRY[:sparc] }
+
+  # The organization responsible for exported artifacts. SPARC is the TOOL, not
+  # the author: without this, every artifact names "SPARC Export" as its
+  # responsible party, so a tenant's SSP claims SPARC is accountable for it.
+  def oscal_org_name  = ENV.fetch("SPARC_OSCAL_ORG_NAME", "SPARC Export")
   def app_name      = ENV.fetch("SPARC_APP_NAME", "SPARC")
   # #785 — SPARC has exactly TWO email identities, because they serve different
   # functions: `admin_email` is the instance administrator account, and

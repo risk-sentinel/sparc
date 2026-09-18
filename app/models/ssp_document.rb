@@ -87,6 +87,13 @@ class SspDocument < ApplicationRecord
   end
   requires_content("At least one control") { ssp_controls.exists? }
 
+  # #1116 — kept in step with OscalSspExportService's `default_roles`, which
+  # builds from the same constant. If these diverged, the picker would offer a
+  # role the export never declares, and the reference would dangle.
+  def default_declared_roles
+    OscalRole::SSP_DEFAULT_IDS.map { |id| { "id" => id, "title" => OscalRole.humanize(id) } }
+  end
+
   def wizard_created?
     creation_method == "wizard"
   end

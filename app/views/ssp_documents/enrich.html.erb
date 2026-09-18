@@ -24,6 +24,40 @@
       <% end %>
     </div>
 
+    <%# #1134: OSCAL roles, declared from the boundary vocabulary — picked by label, never typed %>
+    <details class="mb-1" id="ssp-declared-roles">
+      <summary class="small fw-semibold sparc-cursor-pointer">Declared roles (<%= @declared_roles.size %>)</summary>
+      <div class="mt-2 ms-2">
+        <% if @declared_roles.any? %>
+          <ul class="list-unstyled small mb-2" data-testid="ssp-declared-roles-list">
+            <% @declared_roles.each do |role| %>
+              <li>
+                <%= role["title"].presence || OscalRole.humanize(role["id"]) %>
+                <code class="text-body-tertiary"><%= role["id"] %></code>
+                <% if OscalRole.organization_defined?(role) %><span class="badge text-bg-secondary">organization-defined</span><% end %>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <div class="text-body-tertiary small fst-italic mb-2">This SSP declares no roles.</div>
+        <% end %>
+        <% if @declarable_membership_roles.any? %>
+          <%= form_with url: declare_role_ssp_document_path(@ssp_document), method: :post,
+                        class: "d-flex flex-wrap align-items-center gap-2" do %>
+            <label for="ssp-declare-role-select" class="small">Declare a boundary role</label>
+            <%= select_tag :membership_role,
+                  options_for_select(@declarable_membership_roles.map { |c|
+                    [ c[:organization_defined] ? "#{c[:label]} (organization-defined)" : c[:label], c[:membership_role] ]
+                  }),
+                  id: "ssp-declare-role-select", class: "form-control sparc-fs-085 w-auto" %>
+            <%= submit_tag "Declare role", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
+          <% end %>
+        <% else %>
+          <span class="text-body-tertiary small fst-italic">Every responsibility-bearing boundary role is already declared.</span>
+        <% end %>
+      </div>
+    </details>
+
     <%# System components from component definitions (boundary first, then org-wide) %>
     <% if @boundary_cdefs.any? || @org_cdefs.any? %>
       <%= form_with url: import_cdef_components_ssp_document_path(@ssp_document), method: :post do %>

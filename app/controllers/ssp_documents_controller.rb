@@ -26,13 +26,13 @@ class SspDocumentsController < ApplicationController
     :create_control_resource, :link_control_resource, :unlink_control_resource,
     :update_statement,
     :refresh_inherited_statements, :reset_inherited_statement,
-    :attach_profile, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter,
+    :attach_profile, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter,
     :attach_boundary
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users, :import_cdef_components, :import_back_matter ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :validate_oscal_export, :status, :edit, :enrich, :attach_profile, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter, :attach_boundary ]
+  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter, :attach_boundary ]
 
   def index
     scope = boundary_scoped_relation(SspDocument).order(created_at: :desc)
@@ -88,6 +88,14 @@ class SspDocumentsController < ApplicationController
     # datalist on the statement editor so an author reuses an existing role
     # rather than inventing a second spelling of it. Gathered once: the editor
     # renders on every control card, and querying per card would be 150 queries.
+    # #1116 — what the picker offers: the roles this document DECLARES, by
+    # title. Previously this gathered ids already USED in the document, which
+    # perpetuated whatever was typed first (including typos) and never consulted
+    # metadata.roles at all.
+    @declared_role_options = @ssp_document.declared_role_options
+
+    # Retained for the read view, which still renders the raw ids a document may
+    # have arrived with from an OSCAL import.
     @known_role_ids = (
       @components.flat_map { |c| Array(c.responsible_roles_data) } +
       SspControlStatement.joins(ssp_control: :ssp_document)
@@ -310,6 +318,9 @@ class SspDocumentsController < ApplicationController
     @info_types       = @ssp_document.ssp_information_types.order(:title)
     # #737: canonical sources offered for import on the enrich form.
     @boundary_members = @ssp_document.authorization_boundary&.authorization_boundary_memberships&.order(:role, :user_name) || []
+    # #1134: roles are declared from the boundary vocabulary, never typed.
+    @declared_roles = @ssp_document.declared_roles
+    @declarable_membership_roles = @ssp_document.membership_role_choices.reject { |c| c[:declared] }
     @imported_cdef_ids = @ssp_document.ssp_components.pluck(:cdef_document_id).compact
     @boundary_cdefs = (@ssp_document.authorization_boundary&.cdef_documents&.distinct&.order(:name) || []).to_a
     org = @ssp_document.authorization_boundary&.organization
@@ -364,21 +375,57 @@ class SspDocumentsController < ApplicationController
   def import_boundary_users
     members = @ssp_document.authorization_boundary&.authorization_boundary_memberships&.order(:role, :user_name) || []
     existing = @ssp_document.ssp_users.pluck(:title).map(&:to_s)
-    added = 0
-    members.each do |m|
+    to_import = members.filter_map do |m|
       name = m.user_name.presence || m.user_email.presence
-      next if name.blank? || existing.include?(name)
-
-      @ssp_document.ssp_users.create!(
-        uuid: SecureRandom.uuid,
-        title: name,
-        short_name: name.to_s.split.first,
-        description: "Imported from authorization-boundary member (role: #{m.role}).",
-        role_ids_data: [ m.role ].compact
-      )
-      added += 1
+      [ m, name ] unless name.blank? || existing.include?(name)
     end
-    redirect_to enrich_ssp_document_path(@ssp_document), notice: "Imported #{added} system user(s) from boundary members."
+
+    # #1134 — `role-ids` must reference roles declared in `metadata.roles`. This
+    # used to write the raw membership role (`system_owner`, underscored and
+    # undeclared), a dangling reference in every export. Each role now resolves
+    # to NIST's id or an organization-defined role, and is DECLARED first.
+    #
+    # Every member's role, not only the responsibility-bearing subset the
+    # picker offers: a `view_only` member is still a system user, and a user's
+    # `role-ids` describes the user rather than claiming responsibility for a
+    # control.
+    ActiveRecord::Base.transaction do
+      role_ids = @ssp_document.declare_membership_roles(to_import.map { |m, _| m.role })
+      @ssp_document.save! if @ssp_document.changed?
+
+      to_import.each do |m, name|
+        @ssp_document.ssp_users.create!(
+          uuid: SecureRandom.uuid,
+          title: name,
+          short_name: name.to_s.split.first,
+          description: "Imported from authorization-boundary member (role: #{m.role}).",
+          role_ids_data: [ role_ids[m.role.to_s] ].compact
+        )
+      end
+    end
+    redirect_to enrich_ssp_document_path(@ssp_document), notice: "Imported #{to_import.size} system user(s) from boundary members."
+  end
+
+  # #1134: the enrich page's declare-a-role form. A thin client over the same
+  # model path as `POST /api/v1/ssp_documents/:id/roles` with `membership_role`,
+  # so both refuse exactly the same things.
+  #
+  # NIST 800-53 Controls:
+  #   AC-3  Access Enforcement (authorize_document_write!, boundary-scoped ssp.write)
+  #   AU-12 Audit Record Generation (ssp_role_declared)
+  #   SI-10 Information Input Validation (only a responsibility-bearing boundary
+  #         role is accepted, and never a duplicate)
+  def declare_role
+    membership_role = params[:membership_role].to_s
+    role = @ssp_document.declare_responsible_membership_role(membership_role)
+    @ssp_document.save!
+    audit_log("ssp_role_declared", subject: @ssp_document,
+                                   metadata: { role_id: role["id"], membership_role: membership_role })
+    flash[:success] = "Declared role \"#{role['title']}\" (#{role['id']})."
+    redirect_to enrich_ssp_document_path(@ssp_document)
+  rescue OscalRole::DeclarationError => e
+    flash[:error] = "Could not declare role: #{e.message}."
+    redirect_to enrich_ssp_document_path(@ssp_document)
   end
 
   def update_enrich
@@ -547,8 +594,24 @@ class SspDocumentsController < ApplicationController
     # the next export — nothing had ever sent it, because no form offered the
     # field.
     if params[:ssp_control_statement].key?(:responsible_role_ids)
-      ids = params[:ssp_control_statement][:responsible_role_ids].to_s
-                                                                 .split(",").map(&:strip).reject(&:blank?)
+      # #1116 — the picker posts an ARRAY (multi-select). A comma-separated
+      # string is still accepted so an older client, or a caller shaped like the
+      # pre-#1116 form, does not silently post one role named "a, b".
+      raw = params[:ssp_control_statement][:responsible_role_ids]
+      ids = (raw.is_a?(Array) ? raw : raw.to_s.split(",")).map(&:strip).reject(&:blank?)
+
+      # Referential guard at the WRITE path, not only at export. An id that
+      # resolves to no declared role is the defect this issue exists to remove,
+      # and refusing it here means a document cannot reach a broken state in the
+      # first place. Declaring roles is its own surface — Api::V1 .../roles.
+      undeclared = ids - @ssp_document.declared_role_ids
+      if undeclared.any?
+        return render json: {
+          error: "not declared on this document: #{undeclared.join(', ')}. " \
+                 "Declare the role first."
+        }, status: :unprocessable_content
+      end
+
       permitted["responsible_roles_data"] = ids.map { |id| { "role-id" => id } }
     end
 

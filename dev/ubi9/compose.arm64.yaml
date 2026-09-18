@@ -1,33 +1,47 @@
-# arm64 override for the UBI9 validation stack (#859).
+# Local-validation override: build and run the UBI9 prod image NATIVELY.
 #
-# `docker-compose.ubi9.yaml` pins the web service to `platform: linux/amd64`.
-# That is right for reproducing the deployed posture — AWS Fargate defaults to
-# X86_64 when `runtime_platform` is omitted, so prod is amd64 — but it has two
-# costs this override removes.
+# `docker-compose.ubi9.yaml` pins `platform: linux/amd64` because that is what
+# ships. On an arm64 workstation that runs the whole build under QEMU, which is
+# slow enough to matter — a Rails image compiling native gems under emulation is
+# a long build, and it exhausted the Docker VM outright on 2026-09-13, taking the
+# daemon down at container-start after ~44 completed steps.
 #
-#   1. **CI could not verify the arm64 half of a release.** Every published tag
-#      is a multi-arch manifest, and the release gate only ever exercised amd64,
-#      so whoever pulled arm64 got the untested half.
-#   2. **Local iteration on Apple Silicon pays the QEMU tax.** Every run is
-#      emulated, which is slow enough to discourage running the stack at all.
+# `!reset null` REMOVES the key rather than setting it to an empty string.
+# `platform: ""` is silently ignored by compose and the stack still runs under
+# emulation — measured, and the reason this file uses the reset form.
 #
-# Nothing in the image resists arm64: the UBI9 base is multi-arch, the
-# Dockerfile hardcodes no architecture, and the hdf-cli install already resolves
-# `aarch64|arm64`. Every dependency here is multi-arch too — postgres:15,
-# redis:7-alpine and caddy:2-alpine all publish arm64.
+# ── What this does and does not prove ───────────────────────────────────────
 #
-# Usage — CI, against a prebuilt arm64 image:
+# The pre-PR gate is that a UBI9 prod image is BUILT LOCALLY FROM THE BRANCH CODE
+# and TESTED before the PR opens. The disqualifier is STALENESS — an image that
+# does not match the commit under test, which is why `docker cp`-ing source into
+# a running container never satisfies it. Architecture is not the disqualifier:
+# the same Dockerfile, the same layers, the same application code.
+#
+# What an arm64 run does NOT cover is an arch-specific defect — a native gem that
+# behaves differently on x86_64, or a base-image package that differs by arch.
+# CI builds and scans amd64, so that remains covered there; this file is for the
+# local loop only.
+#
+# ── THIS FILE IS NOT ENOUGH ON ITS OWN ──────────────────────────────────────
+#
+# `DOCKER_DEFAULT_PLATFORM=linux/amd64` is exported from ~/.bash.d/10-env.sh on
+# at least one workstation, and it OVERRIDES compose entirely. Removing the pin
+# here still yields an amd64 image, silently, under emulation — verified: the
+# container reported `uname -m: x86_64` on an arm64 host while this override was
+# in effect. run_gate.sh unsets it (line ~39) for exactly this reason; a direct
+# `docker compose` invocation does not.
+#
+# Usage — the unset is REQUIRED, not optional:
+#   DOCKER_DEFAULT_PLATFORM= \
 #   docker compose -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml \
-#     up -d --no-build
+#     up --build -d
 #
-# Usage — locally on Apple Silicon, building natively:
-#   docker compose -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml up -d --build
+# Verify, do not assume:
+#   docker compose -f docker-compose.ubi9.yaml exec -T web uname -m   # -> aarch64
 #
-# NOTE: this changes only the ARCHITECTURE. It does not make the stack a
-# different posture — SPARC_APP_URL, the TLS profile and the auth flags all
-# still come from the base file and `.env`, so a run here proves the same things
-# it would on amd64, on the other half of the manifest.
-
+# Say so in the PR test plan when the local gate ran this way, rather than
+# letting "UBI9 image built and tested" imply the shipping architecture.
 services:
   web:
-    platform: linux/arm64
+    platform: !reset null

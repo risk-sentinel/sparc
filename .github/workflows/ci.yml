@@ -386,8 +386,12 @@ jobs:
 
       - name: Report what coverage arrived
         run: |
-          if [ -f coverage/.resultset.json ]; then
-            echo "coverage/.resultset.json present ($(wc -c < coverage/.resultset.json) bytes)"
+          # coverage.json is the simplecov_json_formatter report, which is what
+          # Sonar's Ruby analyzer parses. `.resultset.json` is SimpleCov's raw
+          # internal data — Sonar reads it without error and reports NO coverage,
+          # which is how this went unnoticed.
+          if [ -f coverage/coverage.json ]; then
+            echo "coverage/coverage.json present ($(wc -c < coverage/coverage.json) bytes)"
           else
             echo "::warning::no SimpleCov report — analysis will run WITHOUT coverage"
             ls -la coverage 2>/dev/null || echo "(no coverage directory)"
@@ -398,8 +402,34 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
+          # NOTE: no comments inside the `args: >` block below — a folded scalar
+          # passes `#` lines through as arguments, and sonar-scanner fails with
+          # "Unrecognized option: #".
+          #
+          # sonar.sources MUST be explicit whenever sonar.tests is set. Left to
+          # default it is "." — which CONTAINS spec/ and tests/ — and the overlap
+          # made the scanner index NOTHING: "0 files indexed", "0 New Lines of
+          # Code", Zero Coverage Sensor, and a quality gate that PASSED because
+          # there was nothing left to measure. Measured on PR #1130; a vacuous
+          # pass is worse than an honest failure.
+          #
+          # It stays "." rather than an allow-list of app,lib,config,... — that
+          # narrower form was tried and silently dropped .github (17 files),
+          # Dockerfile, docs and dev from analysis, which is where #966's
+          # githubactions supply-chain findings live. The overlap is resolved by
+          # EXCLUDING the test trees from source indexing below, not by shrinking
+          # what gets analysed.
+          #
+          # sonar.tests declares the test trees so test files are not required to
+          # have coverage of their own (nothing measures coverage OF a test) and
+          # are not analysed for smells as if they shipped. Before it, 81
+          # uncovered lines of Python test code sat in the new-code denominator —
+          # 54% of the total.
           args: >
             -Dsonar.projectKey=risk-sentinel_sparc
             -Dsonar.organization=risk-sentinel
-            -Dsonar.ruby.coverage.reportPaths=coverage/.resultset.json
-            -Dsonar.exclusions=lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**
+            -Dsonar.ruby.coverage.reportPaths=coverage/coverage.json
+            -Dsonar.sources=.
+            -Dsonar.tests=spec,tests
+            -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.exclusions=spec/**,tests/**,lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.ico,**/*.svg,**/*.mp4,**/*.xlsx,**/*.rdb,**/*.pdf,**/*.woff,**/*.woff2

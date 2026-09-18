@@ -50,7 +50,7 @@ None.
       "source": "NIST",
       "status": "published",
       "lifecycle_status": "active",
-      "oscal_version": "1.1.2",
+      "oscal_version": "1.2.2",
       "published": true,
       "created_at": "2025-01-15T12:00:00Z",
       "updated_at": "2025-06-01T08:00:00Z"
@@ -64,7 +64,7 @@ None.
       "source": "NIST",
       "status": "published",
       "lifecycle_status": "deprecated",
-      "oscal_version": "1.1.2",
+      "oscal_version": "1.2.2",
       "published": true,
       "created_at": "2025-01-15T12:00:00Z",
       "updated_at": "2025-06-01T08:00:00Z"
@@ -123,7 +123,7 @@ None.
     "source": "NIST",
     "status": "published",
     "lifecycle_status": "active",
-    "oscal_version": "1.1.2",
+    "oscal_version": "1.2.2",
     "published": true,
     "created_at": "2025-01-15T12:00:00Z",
     "updated_at": "2025-06-01T08:00:00Z",
@@ -185,7 +185,7 @@ None.
     "source": "CIS",
     "status": "draft",
     "lifecycle_status": "draft",
-    "oscal_version": "1.1.2",
+    "oscal_version": "1.2.2",
     "published": false,
     "created_at": "2025-12-10T10:00:00Z",
     "updated_at": "2025-12-10T10:00:00Z"
@@ -214,7 +214,7 @@ curl -s -X POST \
       "description": "Center for Internet Security Controls version 8.",
       "version": "8.0",
       "source": "CIS",
-      "oscal_version": "1.1.2",
+      "oscal_version": "1.2.2",
       "lifecycle_status": "draft"
     }
   }' \
@@ -250,7 +250,7 @@ Same fields as [POST create](#post-apiv1control_catalogs). All fields are option
     "source": "NIST",
     "status": "published",
     "lifecycle_status": "active",
-    "oscal_version": "1.1.2",
+    "oscal_version": "1.2.2",
     "published": true,
     "created_at": "2025-01-15T12:00:00Z",
     "updated_at": "2025-12-10T11:00:00Z"

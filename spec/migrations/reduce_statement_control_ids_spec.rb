@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/migrate/20260821180000_reduce_statement_control_ids_on_cdef_controls")
+# NOTE (#1124): this migration is a SCHEMA migration and was archived by the
+# 2026-09-12 squash — its effect is captured in schema.rb, so it will never run
+# again. The spec still documents and exercises the transformation it performed,
+# so it requires the file from db/migrate_archive/ rather than db/migrate/.
+require Rails.root.join("db/migrate_archive/20260821180000_reduce_statement_control_ids_on_cdef_controls")
 
 # #1030 — the backfill for rows ingested before the parsers reduced at the
 # resolution boundary.

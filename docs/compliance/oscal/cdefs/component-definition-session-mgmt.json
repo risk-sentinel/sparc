@@ -3,9 +3,9 @@
     "uuid": "e521153c-6465-4350-9744-541bd79bb2e1",
     "metadata": {
       "title": "SPARC Session Management and Cryptographic Protection",
-      "version": "1.0.0",
-      "oscal-version": "1.1.2",
-      "last-modified": "2026-03-21T00:00:00Z",
+      "version": "1.0.1",
+      "oscal-version": "1.2.2",
+      "last-modified": "2026-09-16T00:00:00Z",
       "roles": [
         {
           "id": "prepared-by",

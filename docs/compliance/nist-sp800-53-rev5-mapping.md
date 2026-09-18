@@ -2,9 +2,19 @@
 
 **System:** SPARC (Systematic Policy and Regulatory Compliance)
 **Baseline:** NIST SP 800-53 Revision 5 -- HIGH Impact
-**Last Reviewed:** 2026-03-21
-**Version:** 1.0
+**Last Reviewed:** 2026-09-16
+**Version:** 1.1
 **Maintainer:** SPARC Security Team
+
+**What the 2026-09-16 review covered (#1117):** the Summary Statistics were
+recomputed from the control rows and had been wrong by 66 controls; the
+Responsibility and Status vocabularies were reconciled against the values the
+rows actually use; coverage was measured against the resolved Rev 5 HIGH
+baseline catalog; and the OSCAL version stamp on the component definitions in
+`oscal/cdefs/` was corrected to the version SPARC ships. Per-control
+implementation claims were carried forward from the 2026-03-21 review and are
+re-examined against the code in the release that changes them, per the
+compliance-artifact rule in `docs/dev/issue_rules.md`.
 
 ---
 
@@ -24,6 +34,7 @@ implementation within the SPARC ecosystem. Each control is assigned a
 | CSP Inherited | Cloud service provider responsibility (AWS/Azure) |
 | Organizational Policy | Requires organization-level policy documents |
 | Hybrid | Shared across two or more of the above |
+| N/A | Control does not apply to this system type |
 
 **Status values:**
 
@@ -209,7 +220,7 @@ injection for direct import into compliance dashboards.
 | CA-2(2) | Specialized Assessments | H | Hybrid | 9 automated security scan tools provide specialized vulnerability, SAST, SCA, and container assessments | `.github/workflows/security.yml` | Implemented |
 | CA-3 | Information Exchange | H | Organizational Policy | Organization defines system interconnection agreements | Org policy docs | Planned |
 | CA-5 | Plan of Action and Milestones | H | Application (SPARC) | SPARC manages POA&M documents with item tracking, status, and milestone dates. **Scanner findings become POA&M items automatically (#809)** — `HdfAggregationService` upserts a tracked `PoamFinding` for every current failed finding not suppressed by an applicable approved amendment, so undispositioned scanner risk is tracked without manual re-keying (see [HDF Amendment Aggregation & Lifecycle](#hdf-amendment-aggregation--lifecycle-809-811)) | `app/models/poam_document.rb`, `app/services/hdf_aggregation_service.rb` | Implemented |
-| CA-6 | Authorization | H | Hybrid (Org Policy + SPARC) | Authorizing official grants ATO; SPARC manages the SSP package. **Document review/approval workflow (#630)** — trust-store artifacts (Control Catalog, Profile, Baseline, CDEF) move `draft → pending_review → approved` before publish, via `DocumentApprovalService` (role-gated approver: admin / `*.approve` permission / policy_manager; submitter cannot self-approve). Aligns with RMF SP 800-37 Task S-6 (Plan Review & Approval). Publish is gated on `approved` when `SPARC_REQUIRE_DOCUMENT_APPROVAL=true`. Baseline review (#633) surfaces selected-vs-expected controls + ODP values for sign-off | Org policy docs, `app/services/document_approval_service.rb`, `app/services/baseline_review_service.rb`, `app/models/concerns/approvable.rb`, `app/controllers/concerns/publishable.rb`, `app/controllers/review_queue_controller.rb` | Partial |
+| CA-6 | Authorization | H | Hybrid | Authorizing official grants ATO; SPARC manages the SSP package. **Document review/approval workflow (#630)** — trust-store artifacts (Control Catalog, Profile, Baseline, CDEF) move `draft → pending_review → approved` before publish, via `DocumentApprovalService` (role-gated approver: admin / `*.approve` permission / policy_manager; submitter cannot self-approve). Aligns with RMF SP 800-37 Task S-6 (Plan Review & Approval). Publish is gated on `approved` when `SPARC_REQUIRE_DOCUMENT_APPROVAL=true`. Baseline review (#633) surfaces selected-vs-expected controls + ODP values for sign-off | Org policy docs, `app/services/document_approval_service.rb`, `app/services/baseline_review_service.rb`, `app/models/concerns/approvable.rb`, `app/controllers/concerns/publishable.rb`, `app/controllers/review_queue_controller.rb` | Partial |
 | CA-7 | Continuous Monitoring | H | Hybrid | Weekly scheduled security scans; HDF normalization enables dashboard integration; audit event stream. KSI validations support scheduled re-validation with next_validation_due tracking and auto-expiration. **Threshold-based security gate (#244)** evaluates every PR against the per-scanner bands in `docs/compliance/thresholds/` after applying disposition amendments from `sparc-findings.yml` (waivers, false positives, POA&Ms). Severity-based review cadence (HIGH 30d, MEDIUM 60d, LOW 120d) enforced by `bin/sparc_findings_to_hdf_amendments.rb` validator — stale dispositions block merge. **Attestation cadence (#440)** captures application-level periodic-review frequency on Evidence-bound attestations (`frequency` field: daily / weekly / monthly / quarterly / annually / ad_hoc) for downstream FedRAMP package generation join. **Artifact review-cadence enablement (#680/#685)** — the `artifact_versions` history records each version's reviewed/as-of date, exposing the delta between reviews so review cadence can be validated against a control's ODP frequency; consistent with SPARC's role, it *enables* (records + exposes the data) rather than *performs* the compliance judgment (validator tracked in #685). **HDF ↔ OSCAL translation bridge (#449)** exposes tenants' compliance pipelines to the same translation engine SPARC uses internally — `POST /api/v1/oscal/sar_from_hdf` / `oscal/poam_from_hdf` accept tenant scan output and emit OSCAL SAR / POAM (with optional Evidence-record back-matter linkage when `authorization_boundary_id` is supplied); `POST /api/v1/hdf/amendments_from_oscal_poam` reverses the flow for `hdf amend apply` consumers. **HDF Amendment triage (#447)** adds a persistent, human-in-the-loop layer over that stateless bridge — ingest scanner findings per authorization boundary, disposition failed controls, and export a deterministic per-boundary HDF Amendments artefact (`GET /api/v1/authorization_boundaries/:id/hdf_amendments`) tenant CI pulls and applies. **SonarCloud SAST → OHDF evidence (#636)** — `sonarqube-hdf-emit.yml` fetches SonarCloud findings post-analysis and bakes them into the same security-artifacts OHDF stream Heimdall aggregates (see SA-11(1)). **Aggregation into the authorization package (#809/#811)** closes the loop — scans are bound to the target/CDEF they assessed and retained as history, and the resulting evidence is folded into the boundary's SSP/SAP/SAR as a non-destructive `hdf_scan_result` annotation and into its POA&M, on demand or via `AggregateFindingsJob` (see [HDF Amendment Aggregation & Lifecycle](#hdf-amendment-aggregation--lifecycle-809-811)) | `.github/workflows/security.yml` (security_gate job), `app/services/hdf_aggregation_service.rb`, `app/services/hdf_ingest_service.rb`, `.github/workflows/sonarqube-hdf-emit.yml`, `.github/workflows/sonarqube-hdf.yml`, `app/models/audit_event.rb`, `app/models/ksi_validation.rb`, `app/models/attestation.rb`, `app/services/ksi_export_service.rb`, `app/services/cms_attestation_export_service.rb`, `app/services/hdf_runner.rb`, `app/services/hdf_oscal_translation_service.rb`, `app/controllers/api/v1/translations_controller.rb`, `bin/sparc_findings_to_hdf_amendments.rb`, `script/dev/install-hdf.sh`, `docs/compliance/thresholds/`, `docs/compliance/sparc-findings.yml` | Implemented |
 | CA-7(1) | Independent Assessment | H | Organizational Policy | Organization schedules independent continuous monitoring assessments | Org policy docs | Planned |
 | CA-7(4) | Risk Monitoring | H | Hybrid | Security pipeline evaluates severity thresholds via SAF CLI threshold gating against amended HDFs (#244); dependency audit detects new CVEs. `security_gate` evaluates **each** amended HDF against its own band in `docs/compliance/thresholds/` (`saf validate threshold -i <hdf> -T <band>`), and is the single step that decides what blocks a merge. Brakeman/CodeQL/Gitleaks/trivy-fs/trivy-container carry zero-tolerance critical+high bands; bundler-audit is zero-tolerance from medium up; the SBOM and grype outputs are explicitly inventory-only, not severity gates (#1064). **Corrected in #1048** — this row previously claimed these bands were enforced. They were not: the gate invoked a non-existent `-F` flag, `saf_action` reported the parse error as a warning and exited 0, and the per-scanner blocks in the old single `threshold.yml` were never a SAF feature and were read by nothing. No HDF had been assessed since #244 landed | `.github/workflows/security.yml` (security_gate), `docs/compliance/thresholds/` | Implemented |
@@ -499,7 +510,7 @@ injection for direct import into compliance dashboards.
 | SC-2 | Separation of User and System Management Functionality | H | Application (SPARC) | Admin functions separated behind `authorize_admin!` gate; separate admin UI sections | `app/controllers/concerns/authorization.rb` | Implemented |
 | SC-3 | Security Function Isolation | H | Hybrid | Authentication, authorization, and audit concerns isolated in separate modules; container isolation in sparc-iac | `app/controllers/concerns/authentication.rb`, `app/controllers/concerns/authorization.rb` | Implemented |
 | SC-4 | Information in Shared System Resources | H | Application (SPARC) | `reset_session` clears all session data on login/logout; no shared state between users | `app/controllers/concerns/authentication.rb` | Implemented |
-| SC-5 | Denial-of-Service Protection | H | Hybrid | WAF and auto-scaling remain infrastructure (sparc-iac, planned). **Application-layer rate limiting is implemented** via Rack::Attack (#513), with per-bucket limits configurable by environment and a CIDR safelist: uploads per IP and per user, API writes per token, login failures per IP, the API→session bridge per IP (#573), and CSP report beacons. **#974 adds `controls/downloads/5min/ip`**, which exists because that release made Controls-layer document downloads readable without a session when `SPARC_PUBLIC_CATALOGS=true` — and they are the most expensive read in the product, with a full NIST SP 800-53 Rev 5 catalog export measured at 24 seconds and 2.97 MB. Every prior bucket covered writes, uploads or credentials, so an anonymous GET had no limit at all and a published instance could be used as an amplifier. Keyed by IP because the caller it guards against holds neither session nor token. Deliberately scoped to the `download_*` actions: the screens are cheap and paginated, and throttling them would make a published catalog unbrowsable, so a spec asserts the screens, the API and unrelated paths are NOT in the bucket | `config/initializers/rack_attack.rb`, `app/models/sparc_config.rb`, `spec/initializers/rack_attack_spec.rb`, sparc-iac | Partially implemented (application layer implemented; WAF/auto-scaling planned in sparc-iac) |
+| SC-5 | Denial-of-Service Protection | H | Hybrid | WAF and auto-scaling remain infrastructure (sparc-iac, planned). **Application-layer rate limiting is implemented** via Rack::Attack (#513), with per-bucket limits configurable by environment and a CIDR safelist: uploads per IP and per user, API writes per token, login failures per IP, the API→session bridge per IP (#573), and CSP report beacons. **#974 adds `controls/downloads/5min/ip`**, which exists because that release made Controls-layer document downloads readable without a session when `SPARC_PUBLIC_CATALOGS=true` — and they are the most expensive read in the product, with a full NIST SP 800-53 Rev 5 catalog export measured at 24 seconds and 2.97 MB. Every prior bucket covered writes, uploads or credentials, so an anonymous GET had no limit at all and a published instance could be used as an amplifier. Keyed by IP because the caller it guards against holds neither session nor token. Deliberately scoped to the `download_*` actions: the screens are cheap and paginated, and throttling them would make a published catalog unbrowsable, so a spec asserts the screens, the API and unrelated paths are NOT in the bucket | `config/initializers/rack_attack.rb`, `app/models/sparc_config.rb`, `spec/initializers/rack_attack_spec.rb`, sparc-iac | Partial |
 | SC-7 | Boundary Protection | H | Hybrid | Application: authorization boundaries scope access; Infrastructure: VPC, security groups, NACLs | `app/controllers/concerns/authorization.rb`, sparc-iac | Implemented |
 | SC-7(3) | Access Points | H | Infrastructure (sparc-iac) | Limited access points via ALB; no direct database access | sparc-iac | Planned |
 | SC-7(4) | External Telecommunications Services | H | Infrastructure (sparc-iac) | CSP-managed network infrastructure | sparc-iac | Planned |
@@ -546,7 +557,7 @@ injection for direct import into compliance dashboards.
 | SI-7(1) | Integrity Checks | H | Hybrid | bundler-audit verifies gem integrity; Trivy verifies container component integrity; CycloneDX SBOM comparison | `.github/workflows/security.yml` | Implemented |
 | SI-7(7) | Integration of Detection and Response | H | Hybrid | Security scan results feed into HDF normalization; severity thresholds trigger pipeline failures | `.github/workflows/security.yml` | Implemented |
 | SI-8 | Spam Protection | H | Infrastructure (sparc-iac) | Email spam filtering at infrastructure/service level | sparc-iac | N/A |
-| SI-10 | Information Input Validation | H | Application (SPARC) | Rails strong parameters; model validations (email format, password length, status inclusion); XSS sanitization for banner HTML; avatar upload validates content type allowlist (PNG/JPG/GIF/WebP) and 2 MB size limit at client-side (Stimulus) and server-side (controller + model); Cropper.js constrains output to 256x256. **Document content-completeness gate (#627/#628)** — publication is gated on a per-type content-completeness check (`ContentCompleteness` concern: SSP requires system characteristics + ≥1 control; CDEF requires ≥1 control; Profile requires a linked catalog + ≥1 control), enforced in `Publishable#publish` so an empty metadata-only shell cannot be published/trusted **Evidence temporal validation (#903)** — `Evidence#collected_at` is rejected when in the future; scoped to changed values so a pre-existing bad row stays correctable. **Upload requirement enforced visibly (#902)** — the evidence file requirement moved off the visually-hidden input's native `required` attribute (which Chrome enforces by silently refusing to submit) onto a client guard that states the reason, and a client-rejected file is cleared from the input rather than posted. **Stored-href scheme validation (#897)** — `BackMatterResource#href` rejects any scheme other than `http`/`https` on write, closing a gap where `href: "javascript:alert(1)"` was a valid record on both the web and `Api::V1` surfaces; scheme-less OSCAL fragment/relative references stay valid so catalog import is unaffected. **Baseline parameter payload validation (#994)** — `PUT /api/v1/profile_documents/:id/parameters` parses its body through `BaselineParameterPayload` and returns 422 naming the expected structure for anything it cannot read, instead of the 200 with zero updates that `params.permit` produced by discarding unrecognised shapes silently; a non-array `selected` is refused rather than coerced and persisted. **Strong parameters are a filter, not a validator** — a `permit` call reports nothing about what it dropped, so any endpoint relying on it alone can accept a request it never understood. **Validation-component constraints (#998)** — `SspComponent` refuses `validation-type` / `validation-reference` / `validation-details` on a component that is not of type `validation`, and refuses a validation that points at itself or at a component in another SSP, so a certificate assertion cannot be recorded against nothing or against the wrong system | `app/models/user.rb`, `app/models/back_matter_resource.rb`, `app/controllers/profiles_controller.rb`, `app/javascript/controllers/avatar_crop_controller.js`, `app/models/concerns/content_completeness.rb`, `app/controllers/concerns/publishable.rb`, `app/lib/baseline_parameter_payload.rb`, `app/services/baseline_parameter_service.rb`, Rails defaults | Implemented |
+| SI-10 | Information Input Validation | H | Application (SPARC) | Rails strong parameters; model validations (email format, password length, status inclusion); XSS sanitization for banner HTML; avatar upload validates content type allowlist (PNG/JPG/GIF/WebP) and 2 MB size limit at client-side (Stimulus) and server-side (controller + model); Cropper.js constrains output to 256x256. **Document content-completeness gate (#627/#628)** — publication is gated on a per-type content-completeness check (`ContentCompleteness` concern: SSP requires system characteristics + ≥1 control; CDEF requires ≥1 control; Profile requires a linked catalog + ≥1 control), enforced in `Publishable#publish` so an empty metadata-only shell cannot be published/trusted **Evidence temporal validation (#903)** — `Evidence#collected_at` is rejected when in the future; scoped to changed values so a pre-existing bad row stays correctable. **Upload requirement enforced visibly (#902)** — the evidence file requirement moved off the visually-hidden input's native `required` attribute (which Chrome enforces by silently refusing to submit) onto a client guard that states the reason, and a client-rejected file is cleared from the input rather than posted. **Stored-href scheme validation (#897)** — `BackMatterResource#href` rejects any scheme other than `http`/`https` on write, closing a gap where `href: "javascript:alert(1)"` was a valid record on both the web and `Api::V1` surfaces; scheme-less OSCAL fragment/relative references stay valid so catalog import is unaffected. **Baseline parameter payload validation (#994)** — `PUT /api/v1/profile_documents/:id/parameters` parses its body through `BaselineParameterPayload` and returns 422 naming the expected structure for anything it cannot read, instead of the 200 with zero updates that `params.permit` produced by discarding unrecognised shapes silently; a non-array `selected` is refused rather than coerced and persisted. **Strong parameters are a filter, not a validator** — a `permit` call reports nothing about what it dropped, so any endpoint relying on it alone can accept a request it never understood. **Validation-component constraints (#998)** — `SspComponent` refuses `validation-type` / `validation-reference` / `validation-details` on a component that is not of type `validation`, and refuses a validation that points at itself or at a component in another SSP, so a certificate assertion cannot be recorded against nothing or against the wrong system **OSCAL role references must resolve (#1116/#1134)** — a `role-id` or `role-ids` entry that names no role in `metadata.roles` is schema-valid and still broken, so JSON Schema validation cannot catch it; `OscalConformanceService` reports it as `role-id-unresolved`, and now collects the plural `role-ids` (on system users) and `location-uuids`, which it previously skipped without reporting anything. The input side no longer accepts free text: statement responsible roles are chosen from declared roles, and a role is declared by choosing from the authorization boundary's membership vocabulary (`OscalMetadata#declare_responsible_membership_role`, shared by the enrich page and `POST /api/v1/ssp_documents/:id/roles`), which refuses a value outside that vocabulary, an access-only role (`view_only`, `project_member`) offered as a responsibility, and a duplicate. Importing boundary members as system users declares every role it references before writing the reference, and two deferred data migrations resolve the free-text values written before this change. None of them is dropped; any value not recognised is declared organization-defined | `app/models/user.rb`, `app/models/back_matter_resource.rb`, `app/models/oscal_role.rb`, `app/models/concerns/oscal_metadata.rb`, `app/services/oscal_conformance_service.rb`, `app/controllers/api/v1/ssp_roles_controller.rb`, `db/migrate/20260916120000_resolve_free_text_responsible_roles.rb`, `db/migrate/20260916180000_resolve_system_user_role_ids.rb`, `app/controllers/profiles_controller.rb`, `app/javascript/controllers/avatar_crop_controller.js`, `app/models/concerns/content_completeness.rb`, `app/controllers/concerns/publishable.rb`, `app/lib/baseline_parameter_payload.rb`, `app/services/baseline_parameter_service.rb`, Rails defaults | Implemented |
 | SI-11 | Error Handling | H | Application (SPARC) | Production disables full error reports; generic error messages for auth failures; `rescue_from` for authorization errors. **Document parse error handling (#618)** — a parse can no longer fail silently: fileless API creates resolve to a terminal `completed` on save (`Api::V1::BaseController#finalize_unprocessed_create`); the parse lifecycle (`enqueued`/`started`/`succeeded`/`failed`) is logged with document + job ids (AU-3); and `StuckDocumentReaperJob` (recurring) transitions documents stranded in pending/processing past `SPARC_DOCUMENT_REAP_MINUTES` (no live job) to `failed` with a user-visible `error_message`, instead of an indefinite spinner. **Content-completeness decoupled from parse status (#627/#628)** — the `completed` parse status no longer mis-signals "document is done": content-completeness is a distinct, computed signal (`ContentCompleteness#content_complete?`) surfaced in the UI (Incomplete badge) and API serializers, and an empty shell gains a recovery path via populate-from-profile rather than being a dead end | `config/environments/production.rb`, `app/controllers/concerns/authorization.rb`, `app/controllers/api/v1/base_controller.rb`, `app/jobs/document_conversion_job.rb`, `app/jobs/stuck_document_reaper_job.rb`, `app/models/concerns/content_completeness.rb` | Implemented |
 | SI-12 | Information Management and Retention | H | Hybrid | Audit events retained in PostgreSQL; 90-day artifact retention for security scan results; organizational retention policies. **Durable, version-aware artifact retention (#680)** — artifacts are addressed by a stable resolver URL that always resolves to current content, and **every content version is retained** (`artifact_versions` + a per-version blob) with the parsed-blob purge **defaulted off**, so referenced content never disappears out from under an exported document. Infra-side lifecycle / cold-storage tiering / RDS retention is tracked in sparc-iac#476 | `app/models/audit_event.rb`, `.github/workflows/security.yml`, `app/controllers/concerns/artifact_resolvable.rb`, `app/models/artifact_version.rb`, `app/models/concerns/artifact_versionable.rb`, `app/jobs/document_conversion_job.rb` | Partial |
 | SI-16 | Memory Protection | H | Infrastructure (sparc-iac) | OS-level memory protections; container runtime security | sparc-iac | Planned |
@@ -677,51 +688,68 @@ The authoritative back-matter workflow added in #372 contributes to the followin
 
 ## Summary Statistics
 
+Recomputed from the family tables above on 2026-09-16 (#1117). Every number
+here is derived from the rows in the `## AC` .. `## SR` sections and nothing
+else — the themed sections below those (Admin Credential Rotation, Authoritative
+Sources, HDF Amendment Aggregation, Section 508) revisit controls already
+counted, so counting them again would double-count 32 rows.
+
+`spec/compliance/control_mapping_spec.rb` recomputes these tables and fails when
+they disagree with the rows, so they cannot silently drift again.
+
+**Coverage against the baseline, measured 2026-09-16.** The Rev 5 HIGH baseline
+resolves to **370** controls and enhancements across 18 families. This document
+lists **313**, of which **286** are baseline controls — so **84 HIGH baseline
+controls are not yet listed here**, and 27 listed controls sit outside the
+baseline (the PM and PT families, which Rev 5 does not baseline-select, plus
+enhancements beyond HIGH). The totals below count rows in this document; they
+are not a claim of complete baseline coverage.
+
 ### By Responsibility
 
 | Responsibility | Count | Percentage |
 |---|---|---|
-| Application (SPARC) | 96 | 39% |
-| Infrastructure (sparc-iac) | 47 | 19% |
-| CSP Inherited | 28 | 11% |
-| Organizational Policy | 58 | 24% |
-| Hybrid | 16 | 7% |
-| N/A | 2 | 1% |
-| **Total** | **247** | **100%** |
+| Application (SPARC) | 75 | 24% |
+| Infrastructure (sparc-iac) | 35 | 11% |
+| CSP Inherited | 28 | 9% |
+| Organizational Policy | 70 | 22% |
+| Hybrid | 104 | 33% |
+| N/A | 1 | 0% |
+| **Total** | **313** | **100%** |
 
 ### By Status
 
 | Status | Count | Percentage |
 |---|---|---|
-| Implemented | 133 | 54% |
-| Partial | 22 | 9% |
-| Planned | 59 | 24% |
-| CSP Inherited | 28 | 11% |
-| N/A | 5 | 2% |
-| **Total** | **247** | **100%** |
+| Implemented | 150 | 48% |
+| Partial | 31 | 10% |
+| Planned | 101 | 32% |
+| CSP Inherited | 29 | 9% |
+| N/A | 2 | 1% |
+| **Total** | **313** | **100%** |
 
 ### By Family
 
 | Family | Controls Listed | Implemented | Partial | Planned | CSP Inherited | N/A |
 |---|---|---|---|---|---|---|
-| AC | 28 | 22 | 3 | 3 | 0 | 0 |
+| AC | 32 | 27 | 2 | 3 | 0 | 0 |
 | AT | 6 | 0 | 0 | 6 | 0 | 0 |
-| AU | 17 | 14 | 1 | 2 | 0 | 0 |
-| CA | 11 | 5 | 2 | 4 | 0 | 0 |
-| CM | 16 | 11 | 2 | 3 | 0 | 0 |
-| CP | 22 | 0 | 2 | 17 | 3 | 0 |
-| IA | 18 | 12 | 4 | 2 | 0 | 0 |
-| IR | 12 | 2 | 4 | 6 | 0 | 0 |
-| MA | 6 | 1 | 3 | 2 | 0 | 0 |
-| MP | 7 | 2 | 0 | 2 | 2 | 1 |
-| PE | 22 | 0 | 0 | 1 | 21 | 0 |
+| AU | 21 | 17 | 1 | 3 | 0 | 0 |
+| CA | 12 | 5 | 2 | 5 | 0 | 0 |
+| CM | 21 | 16 | 2 | 3 | 0 | 0 |
+| CP | 26 | 0 | 2 | 20 | 4 | 0 |
+| IA | 22 | 18 | 2 | 2 | 0 | 0 |
+| IR | 12 | 2 | 3 | 7 | 0 | 0 |
+| MA | 7 | 1 | 3 | 3 | 0 | 0 |
+| MP | 7 | 2 | 0 | 3 | 2 | 0 |
+| PE | 23 | 0 | 0 | 1 | 22 | 0 |
 | PL | 8 | 4 | 1 | 3 | 0 | 0 |
-| PM | 12 | 3 | 3 | 6 | 0 | 0 |
-| PS | 8 | 4 | 1 | 3 | 0 | 0 |
+| PM | 12 | 2 | 3 | 7 | 0 | 0 |
+| PS | 9 | 4 | 1 | 4 | 0 | 0 |
 | PT | 7 | 0 | 2 | 5 | 0 | 0 |
-| RA | 10 | 7 | 0 | 2 | 0 | 1 |
-| SA | 15 | 11 | 2 | 2 | 0 | 0 |
-| SC | 26 | 12 | 0 | 12 | 0 | 2 |
-| SI | 18 | 13 | 2 | 2 | 0 | 1 |
-| SR | 11 | 4 | 0 | 5 | 1 | 1 |
-| **Total** | **247** | **133** | **22** | **59** | **28** | **5** |
+| RA | 10 | 8 | 0 | 2 | 0 | 0 |
+| SA | 18 | 13 | 2 | 3 | 0 | 0 |
+| SC | 27 | 13 | 3 | 10 | 0 | 1 |
+| SI | 21 | 14 | 2 | 4 | 0 | 1 |
+| SR | 12 | 4 | 0 | 7 | 1 | 0 |
+| **Total** | **313** | **150** | **31** | **101** | **29** | **2** |

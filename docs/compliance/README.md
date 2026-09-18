@@ -3,7 +3,15 @@
 # SPARC Compliance Documentation
 
 This directory contains NIST SP 800-53 Rev 5 compliance documentation for the
-SPARC application, targeting the **HIGH baseline** (370 controls, 20 families).
+SPARC application, targeting the **HIGH baseline** (370 controls). The control
+mapping currently lists 313 controls across 20 families, 286 of them from the
+HIGH baseline — see its Summary Statistics for the measured coverage.
+
+> **Reading this from outside the repository?** The public entry point is
+> [SPARC's Compliance Posture](https://github.com/risk-sentinel/sparc/wiki/Compliance-Posture)
+> on the wiki — what SPARC implements, what it hands to `sparc-iac`, what is
+> inherited from the CSP, and how to load these CDEFs into SPARC and inherit
+> them into your own SSP. This directory is the technical reference behind it.
 
 ---
 
@@ -50,7 +58,7 @@ Security scan HDF ───┘ (via sparc-compliance-latest artifact + repositor
 2. **`sparc-compliance-latest` artifact** — Published by the `publish_for_sparc_iac` job
    in `.github/workflows/security.yml` on every push to `main`. Bundles:
    - `hdf/` — HDF-normalized scan results (Brakeman, CodeQL, Trivy, Gitleaks, etc.)
-   - `cdefs/` — OSCAL component definitions (5 files, 71 controls)
+   - `cdefs/` — OSCAL component definitions (5 files, 71 implemented requirements)
    - `sbom/` — CycloneDX SBOM for supply chain evidence
    - `oscal-metadata.json` — System ID and party metadata
    - `manifest.json` — File inventory with run ID and git SHA for traceability
@@ -110,7 +118,10 @@ comment block at the top of the file or module:
 
 ### Updating OSCAL CDEFs
 
-CDEFs in `oscal/cdefs/` follow OSCAL v1.1.2 component-definition format. When
+CDEFs in `oscal/cdefs/` follow the OSCAL component-definition format at
+`OscalSchema::DEFAULT_VERSION` — the version SPARC itself exports at, currently
+**v1.2.2**. `spec/compliance/cdef_artifacts_spec.rb` fails if a shipped CDEF
+declares anything else, so the stamp cannot fall behind the product again. When
 updating, ensure:
 
 1. Each `implemented-requirement` has a unique UUID
@@ -262,7 +273,7 @@ why the mechanism is now declared rather than assumed.
 
 ## Baseline Selection Rationale
 
-**NIST SP 800-53 Rev 5 HIGH** (370 controls) was selected because:
+**NIST SP 800-53 Rev 5 HIGH** (370 controls and enhancements) was selected because:
 
 - sparc-iac committed to HIGH baseline for FedRAMP readiness
 - HIGH is a superset of Moderate (325) and Low (135)

@@ -143,6 +143,8 @@ Rails.application.routes.draw do
       patch :update_enrich
       # #737: pull system users from authorization-boundary members
       post :import_boundary_users
+      # #1134: declare an OSCAL role picked from the boundary vocabulary
+      post :declare_role
       # #737: import system components from linked / org-wide component definitions
       post :import_cdef_components
       # #737: link existing (reusable) back-matter resources onto this SSP
@@ -598,6 +600,11 @@ Rails.application.routes.draw do
         # authors the prose and never the structure.
         resources :statements, only: [ :index ],
                                controller: "ssp_control_statements"
+        # #1116 — the roles a document DECLARES. A role-id must resolve to one
+        # of these, so they need a surface a pipeline can write; the UI is a
+        # thin client over it. `:id` is the OSCAL role-id, not a database key.
+        resources :roles, only: [ :index, :create, :update, :destroy ],
+                          controller: "ssp_roles", id: /[^\/]+/
         collection do
           post :convert
         end
