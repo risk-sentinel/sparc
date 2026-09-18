@@ -649,7 +649,17 @@ jobs:
             [ -n "$tag" ] || continue
             echo "── promoting ${tag}"
             for slug in linux-amd64 linux-arm64; do
-              skopeo copy "oci-archive:/tmp/sparc-${slug}.tar" "docker://${tag}-${slug}"
+              # `--all`, and it is load-bearing. Each archive holds ONE
+              # architecture (#711 moved the builds onto native runners), while
+              # this job runs on an amd64 runner — and a bare `skopeo copy`
+              # selects the image matching the HOST. Copying the arm64 archive
+              # then fails outright:
+              #   no image found in image index for architecture amd64
+              # which is what v1.16.1 hit, the first tag to reach this code.
+              # `--all` copies every manifest in the index instead of choosing
+              # one, so each archive ships whole — its image plus the
+              # provenance/SBOM attestations buildx attached.
+              skopeo copy --all "oci-archive:/tmp/sparc-${slug}.tar" "docker://${tag}-${slug}"
             done
             docker buildx imagetools create -t "${tag}" \
               "${tag}-linux-amd64" "${tag}-linux-arm64"
@@ -886,7 +896,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Grype
-        uses: anchore/scan-action/download-grype@abae6f91766d0bab7c6b23e6bb95dcb4d5c11b31 # v7
+        # Pinned to the SAME commit `sca-scan.yml` uses for this action, so the
+        # repo carries one version of it rather than two. The previous pin,
+        # `abae6f91…` "# v7", resolved to NOTHING — no such commit exists in
+        # anchore/scan-action — and GitHub resolves every `uses:` in a job
+        # before running any step, so the whole job died at startup and the
+        # signing half that had worked since v1.15.x never got to run.
+        uses: anchore/scan-action/download-grype@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
         id: grype
 
       - name: Set up Ruby (amendments + VEX enrichment)
@@ -925,12 +941,21 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ needs.prepare.outputs.version_stripped }}"
-          grype "risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}" \
+          # `download-grype` does NOT put grype on PATH — it "provides a path to
+          # execute it" and returns that path as `outputs.cmd`. Calling a bare
+          # `grype` here failed with `command not found` (exit 127) on
+          # v1.16.1-rc2, after the image had already been published, signed and
+          # SBOM-attested. Every other workflow in this repo installs grype into
+          # /usr/local/bin by hand, so this job is the only caller that has to
+          # honour the output, and nothing exercised it until an rc did.
+          GRYPE="${{ steps.grype.outputs.cmd }}"
+          [ -x "$GRYPE" ] || { echo "::error::grype not executable at '${GRYPE}'"; exit 1; }
+          "$GRYPE" "risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}" \
             -o json > "sparc-vulns-${VERSION}.json"
           # Scanner and database provenance. #917 is explicit that a scan is
           # only meaningful relative to what was KNOWN — a finding count with no
           # database timestamp cannot be interpreted a year later.
-          grype version -o json > "sparc-scanner-${VERSION}.json"
+          "$GRYPE" version -o json > "sparc-scanner-${VERSION}.json"
 
       - name: Build the VEX predicate and carry the rationale into it
         run: |
