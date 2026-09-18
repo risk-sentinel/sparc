@@ -941,12 +941,21 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ needs.prepare.outputs.version_stripped }}"
-          grype "risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}" \
+          # `download-grype` does NOT put grype on PATH — it "provides a path to
+          # execute it" and returns that path as `outputs.cmd`. Calling a bare
+          # `grype` here failed with `command not found` (exit 127) on
+          # v1.16.1-rc2, after the image had already been published, signed and
+          # SBOM-attested. Every other workflow in this repo installs grype into
+          # /usr/local/bin by hand, so this job is the only caller that has to
+          # honour the output, and nothing exercised it until an rc did.
+          GRYPE="${{ steps.grype.outputs.cmd }}"
+          [ -x "$GRYPE" ] || { echo "::error::grype not executable at '${GRYPE}'"; exit 1; }
+          "$GRYPE" "risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}" \
             -o json > "sparc-vulns-${VERSION}.json"
           # Scanner and database provenance. #917 is explicit that a scan is
           # only meaningful relative to what was KNOWN — a finding count with no
           # database timestamp cannot be interpreted a year later.
-          grype version -o json > "sparc-scanner-${VERSION}.json"
+          "$GRYPE" version -o json > "sparc-scanner-${VERSION}.json"
 
       - name: Build the VEX predicate and carry the rationale into it
         run: |
