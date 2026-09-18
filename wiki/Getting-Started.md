@@ -107,6 +107,27 @@ refuses if the instance already holds authorization data of its own. See
 For the separate, lighter `SPARC_SEED_DEMO` sample records, see
 [Configuration](Configuration).
 
+## Upgrading an existing deployment
+
+Upgrading applies pending migrations, then **verify the schema actually matches what the code expects**:
+
+```bash
+bin/rails db:migrate
+bin/rails db:verify_schema
+```
+
+`db:verify_schema` compares the live database against `db/schema.rb` and exits non-zero listing every missing table, column and index. It is read-only.
+
+**Why it exists, and why "no pending migrations" is not enough.** `db:migrate` applies migrations and never reads `schema.rb`; only a fresh `db:schema:load` builds a database from it. A migration that is archived after it ships therefore leaves an upgraded database missing its columns while the version table looks perfectly current. That happened in **v1.16.2**, where seven columns went missing and every boundary page returned `500` ([#1147](https://github.com/risk-sentinel/sparc/issues/1147)). **v1.16.3 repairs such a database automatically** — upgrade straight to it, and do not stop at v1.16.1 or v1.16.2.
+
+To check a deployment running a release older than v1.16.3, run the same check as plain SQL from any checkout — no Rails, no gems:
+
+```bash
+bin/schema_drift_sql | psql "$DATABASE_URL"
+```
+
+Rows returned are columns the code expects that the database does not have. No rows means the schema is complete.
+
 ## 6. Where to go next
 
 | Goal | Start here |
