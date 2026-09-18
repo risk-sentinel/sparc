@@ -24,7 +24,7 @@ Only the boundary columns had surfaced, because they sit on the boundary page; t
 
 **This release restores them**, with the data lift the original migration carried — each boundary's FIPS-199 categorization is recovered from its newest SSP, and information types are pointed back at their boundary. The repair is guarded per column, so it is a no-op on installs that already have them, and safe to run more than once.
 
-**It also makes the failure detectable.** `bin/rails db:verify_schema` compares the live database against `schema.rb` and exits non-zero listing every missing table, column and index. Run it after `db:migrate` in a deploy: "no pending migrations" only states that the version table is current, which was exactly the true and useless claim v1.16.2 shipped with. `docs/dev/schema_drift_check.sql` is the same check as plain SQL for a database you cannot yet run this release against.
+**It also makes the failure detectable.** `bin/rails db:verify_schema` compares the live database against `schema.rb` and exits non-zero listing every missing table, column and index. Run it after `db:migrate` in a deploy: "no pending migrations" only states that the version table is current, which was exactly the true and useless claim v1.16.2 shipped with. `bin/schema_drift_sql | psql "$DATABASE_URL"` prints the same check as plain SQL — no Rails, no gems — for a database you cannot yet run this release against.
 
 No application behaviour changes. Upgrading from v1.16.2 or v1.16.0 applies the repair automatically.
 

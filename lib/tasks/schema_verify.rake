@@ -18,7 +18,8 @@ namespace :db do
       abort("\ndb:verify_schema FAILED — the database does not match db/schema.rb.\n" \
             "Apply the repair migration (RepairColumnsArchivedByTheSquash) or, for drift it\n" \
             "does not cover, generate a migration for the differences listed above.\n" \
-            "Do NOT run db:schema:load against a populated database: it would drop data.")
+            "Do NOT run db:schema:load against a populated database: it would drop data.\n" \
+            "For a database this release cannot reach yet: bin/schema_drift_sql | psql $DATABASE_URL")
     end
   end
 end

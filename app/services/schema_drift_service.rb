@@ -21,6 +21,9 @@
 # stable in shape, so it is parsed rather than executed — executing it against
 # a live database is exactly the destructive operation this must never perform.
 #
+# `bin/schema_drift_sql` prints the same check as plain SQL, for a deployment
+# that cannot run this code yet.
+#
 # READ-ONLY BY CONSTRUCTION. It reports; it changes nothing. Repairing arbitrary
 # drift automatically would mean inventing DDL for a database nobody has looked
 # at, which is how a reporting tool becomes an outage.
@@ -31,6 +34,7 @@ class SchemaDriftService
       when :table then "missing table #{table}"
       when :column then "missing column #{table}.#{name}"
       when :index then "missing index #{name} on #{table}"
+      else raise ArgumentError, "unhandled drift kind #{kind.inspect}"
       end
     end
   end
