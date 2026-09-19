@@ -4,11 +4,34 @@
 # #1147 — print a standalone SQL check for a database this release cannot reach.
 #
 #   bin/schema_drift_sql | psql "$DATABASE_URL"
+#   bin/schema_drift_sql path/to/schema.rb          # defaults to db/schema.rb
 #
-# Lists every column db/schema.rb declares that the target database does not
-# have. Plain Ruby: no Rails, no gems, no database connection here — so it runs
-# from any checkout against any deployment, including one still on an older
-# release where `bin/rails db:verify_schema` does not exist yet.
+# Lists every table and column db/schema.rb declares that the target database
+# does not have. Plain Ruby: no Rails, no gems, no database connection here — so
+# it runs from any checkout against any deployment, including one still on an
+# older release where `bin/rails db:verify_schema` does not exist yet.
+#
+# ── #1151: it used to be blind to a missing TABLE ──────────────────────────
+#
+# The emitted query inner-joined the table list:
+#
+#     FROM expected e
+#     JOIN information_schema.tables t ON t.table_name = e.table_name
+#
+# A table that does not exist contributes no rows to an inner join, so it was
+# reported as CLEAN. The check only ever found missing columns on tables that
+# already existed — and a missing table is the likeliest damage in exactly the
+# old-database case this script exists for. A deployment on v1.15.3 upgrading
+# straight to v1.16.3 is missing four table-creating migrations, and this script
+# said nothing about any of them.
+#
+# It now reports both, and distinguishes them: a missing table is listed ONCE,
+# rather than once per column it would have had, and column checks are only
+# applied to tables that are actually present.
+#
+# `SchemaDriftService` never had this bug (it emits a :table drift when
+# `live_tables` lacks the table); this script is the standalone equivalent and
+# has to agree with it.
 #
 # GENERATED, NEVER COMMITTED. An earlier version of this shipped the SQL itself
 # as a file; it went stale the moment schema.rb changed, and its 1,161 repeated
@@ -16,7 +39,11 @@
 # stale, because it reads schema.rb at the moment you run it.
 require "pathname"
 
-schema = Pathname.new(__dir__).join("../db/schema.rb").expand_path
+schema = if ARGV[0]
+  Pathname.new(ARGV[0]).expand_path
+else
+  Pathname.new(__dir__).join("../db/schema.rb").expand_path
+end
 abort "no schema at #{schema}" unless schema.exist?
 
 tables = {}
@@ -39,16 +66,32 @@ end
 pairs = tables.flat_map { |table, columns| columns.map { |c| format("('%s','%s')", table, c) } }
 abort "parsed no columns out of #{schema} — refusing to emit a check that would pass on anything" if pairs.empty?
 
-puts "-- Expected schema from db/schema.rb: #{tables.size} tables, #{pairs.size} columns."
-puts "-- Rows returned = columns the CODE expects that this database does NOT have."
+puts "-- Expected schema from #{schema}: #{tables.size} tables, #{pairs.size} columns."
+puts "-- Rows returned = structure the CODE expects that this database does NOT have."
+puts "-- kind = 'missing table' (listed once) or 'missing column' (on a table that exists)."
 puts "WITH expected(table_name, column_name) AS (VALUES"
 puts pairs.each_slice(4).map { |slice| "  #{slice.join(', ')}" }.join(",\n")
+puts "),"
+puts "live_tables AS ("
+puts "  SELECT table_name FROM information_schema.tables"
+puts "  WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
+puts "),"
+puts "live_columns AS ("
+puts "  SELECT table_name, column_name FROM information_schema.columns"
+puts "  WHERE table_schema = 'public'"
 puts ")"
-puts "SELECT e.table_name, e.column_name"
+puts "SELECT 'missing table' AS kind, e.table_name, NULL::text AS column_name"
+puts "FROM (SELECT DISTINCT table_name FROM expected) e"
+puts "WHERE NOT EXISTS ("
+puts "  SELECT 1 FROM live_tables lt WHERE lt.table_name = e.table_name"
+puts ")"
+puts "UNION ALL"
+puts "SELECT 'missing column' AS kind, e.table_name, e.column_name"
 puts "FROM expected e"
-puts "JOIN information_schema.tables t"
-puts "  ON t.table_schema = 'public' AND t.table_name = e.table_name"
-puts "LEFT JOIN information_schema.columns c"
-puts "  ON c.table_schema = 'public' AND c.table_name = e.table_name AND c.column_name = e.column_name"
-puts "WHERE c.column_name IS NULL"
-puts "ORDER BY e.table_name, e.column_name;"
+puts "WHERE EXISTS ("
+puts "  SELECT 1 FROM live_tables lt WHERE lt.table_name = e.table_name"
+puts ") AND NOT EXISTS ("
+puts "  SELECT 1 FROM live_columns lc"
+puts "  WHERE lc.table_name = e.table_name AND lc.column_name = e.column_name"
+puts ")"
+puts "ORDER BY 1, 2, 3;"
