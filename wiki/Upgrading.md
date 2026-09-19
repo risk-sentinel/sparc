@@ -3,7 +3,7 @@
 How to move a running SPARC deployment from one release to the next without losing schema.
 
 > **Read this before upgrading from any release older than v1.16.0.**
-> Upgrading such a database **directly** to v1.16.3 or later silently skips 16 migrations — including three `CREATE TABLE`s — and `db:migrate` will report that nothing is pending. The upgrade appears to succeed. See [Path B](#path-b--upgrading-from-a-release-older-than-v1160).
+> Upgrading such a database **directly** to v1.16.3 or later silently skips migrations that can no longer be reached — **16 from v1.15.5, 21 from v1.15.3**, including tables that are never created — and `db:migrate` will report that nothing is pending. The upgrade appears to succeed. See [Path B](#path-b--upgrading-from-a-release-older-than-v1160).
 
 These instructions assume the **containerized deployment** (`risksentinel/sparc` on Docker Hub), which is how most teams run SPARC. Every command runs against the published image; nothing requires a repository checkout.
 
@@ -111,7 +111,9 @@ Then [verify](#step-5--verify-you-arrived).
 
 v1.16.1 consolidated 42 schema migrations into a single version-stamping migration and moved the original files out of the migration path. A database that had already run them is fine. A database that had **not** run them can no longer reach them: the files are no longer anywhere `db:migrate` looks.
 
-For a v1.15.x database, **16 migrations** fall into that gap:
+**How many fall into that gap depends on exactly which release you are on** — the older the database, the more it never ran. Measured: **v1.15.5 → 16 migrations** (3 of them creating tables); **v1.15.3 → 21** (4 creating tables, adding `create_cdef_components`).
+
+For a **v1.15.5** database, these 16:
 
 | | |
 |---|---|
@@ -132,7 +134,7 @@ For a v1.15.x database, **16 migrations** fall into that gap:
 | `20260822120000` | `add_source_to_organization_memberships` |
 | `20260823140000` | `add_provided_by_to_back_matter_resources` |
 
-The repair shipped in v1.16.3 covers a different, smaller gap and **does not cover any of these**.
+The repair shipped in v1.16.3 covers a different, smaller gap — `20260908180000` and `20260912090000` — and **covers none of these**.
 
 **v1.16.0 is the last release where all 16 are still on the migration path.** Deploying it applies them normally — correct column types, foreign keys, indexes, and the data backfills they carry.
 
