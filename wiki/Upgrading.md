@@ -60,9 +60,28 @@ docker run --rm --entrypoint /rails/bin/schema_drift_sql \
 psql "$DATABASE_URL" -f sparc-drift-check.sql
 ```
 
-**Rows returned are columns the application expects that your database does not have.** No rows means the schema is current for that release.
+**Rows returned are columns the application expects that your database does not have.**
 
-Run this **before** and **after** the upgrade. Before, it tells you which path you need; after, it proves you arrived.
+> **This check does not report missing _tables_ — only missing columns on tables that already exist.** If an upgrade skipped a migration that creates a table, this check stays silent about it. Run the table check below as well, and treat `db:verify_schema` (which does detect missing tables) as the authoritative check once you are on v1.16.3 or later.
+
+### Also check for missing tables
+
+```bash
+psql "$DATABASE_URL" <<'SQL'
+SELECT t.table_name
+FROM (VALUES
+  ('cdef_components'), ('cdef_service_aliases'),
+  ('cdef_coverage_runs'), ('dismissed_idp_grants')
+) AS t(table_name)
+LEFT JOIN information_schema.tables i
+  ON i.table_schema = 'public' AND i.table_name = t.table_name
+WHERE i.table_name IS NULL;
+SQL
+```
+
+Rows returned are tables that should exist and do not. These four are the table-creating migrations a database on **v1.15.x** cannot reach — they are the clearest signal that a direct upgrade was attempted and that [Path B](#path-b--upgrading-from-a-release-older-than-v1160) is required.
+
+Run both checks **before** and **after** the upgrade. Before, they tell you which path you need; after, they prove you arrived.
 
 ---
 
@@ -157,7 +176,8 @@ Do not run `db:schema:load` against a populated database — it drops data.
 
 1. **Coming from v1.15.x or older and you skipped v1.16.0?** That is the likely cause. Restore your backup and follow [Path B](#path-b--upgrading-from-a-release-older-than-v1160).
 2. **Drift limited to the seven columns** on `authorization_boundaries`, `ssp_information_types` and `cdef_controls`? That is the v1.16.2 gap. Upgrading to v1.16.3 or later repairs it automatically.
-3. **Anything else** — capture the `db:verify_schema` output and open an issue at [risk-sentinel/sparc/issues](https://github.com/risk-sentinel/sparc/issues). Include the release you upgraded from, the release you upgraded to, and the full drift report.
+3. **Missing tables, not just columns?** The SQL drift check cannot see those — use `db:verify_schema`, or the table check above. A database on v1.15.x that upgraded directly is missing four table-creating migrations.
+4. **Anything else** — capture the `db:verify_schema` output and open an issue at [risk-sentinel/sparc/issues](https://github.com/risk-sentinel/sparc/issues). Include the release you upgraded from, the release you upgraded to, and the full drift report.
 
 ---
 
