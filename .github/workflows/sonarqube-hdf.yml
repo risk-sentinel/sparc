@@ -12,6 +12,9 @@ name: SonarQube → HDF (evidence)
 # reusable workflows from the INTERNAL container-build-sign — same constraint as the
 # vendored sbom-source/sca-scan (#718) — so this copy lives in-repo. Kept in sync
 # with upstream by hand; configure-aws-credentials is repinned to sparc's SHA.
+# KNOWN DIVERGENCE (#1153): the S3 emit step fails closed on an unset
+# EVIDENCE_BOUNDARY instead of defaulting to 'sparc'. Carry this upstream on the
+# next sync rather than reverting it.
 #
 # SonarCloud analysis itself runs via the SonarCloud GitHub App (automatic
 # analysis) — this workflow only FETCHES the results from the API post-analysis.
@@ -205,10 +208,21 @@ jobs:
         env:
           REPO_SLUG: ${{ inputs.repo_slug }}
           # Canonical evidence layout (#741): <boundary>/<date|latest>/<repo>/<source>/
-          # boundary defaults to 'sparc'; IAM prefix scope provisioned in sparc-iac#537.
-          BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY || 'sparc' }}
+          # IAM prefix scope provisioned in sparc-iac#537.
+          #
+          # NO DEFAULT (#1153) — DIVERGES FROM UPSTREAM, deliberately. See the header:
+          # this file is vendored from container-build-sign. The same change belongs
+          # upstream; until it lands there, this copy fails closed rather than writing
+          # evidence to a boundary nobody reads.
+          BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY }}
         run: |
           set -euo pipefail
+          # Same refusal as the SONAR_TOKEN guard above: emitting something valid to
+          # the wrong place is worse than emitting nothing.
+          if [ -z "${BOUNDARY:-}" ]; then
+            echo "::error::EVIDENCE_BOUNDARY is unset — refusing to emit evidence to a default prefix (sparc-iac#715)"
+            exit 1
+          fi
           DATE="$(date -u +%Y-%m-%d)"
           for when in "${DATE}" latest; do
             aws s3 cp "$HDF_FILE" "s3://${BUCKET}/${BOUNDARY}/${when}/${REPO_SLUG}/sonarqube/" --no-progress
