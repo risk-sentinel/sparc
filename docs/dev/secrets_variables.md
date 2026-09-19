@@ -10,6 +10,25 @@ workflows, where each one is consumed, and a recommended target scope
 **Variables:** 0 (all rotated to secrets via #543 / PR #544)
 **Secrets:** 8 distinct names across 2 workflows
 
+> **CORRECTION, measured 2026-09-19 (#1153).** The table below is a snapshot taken
+> for the #543 refactor and has not been re-measured since; its `security.yml` line
+> references no longer resolve. Two **variables** exist, so "Variables: 0" is false:
+>
+> | Name | Type | Files | Refs | Scope |
+> |---|---|---|---|---|
+> | `EVIDENCE_BOUNDARY` | variable | `security.yml` (×2), `sbom-and-sca.yml`, `sonarqube-hdf.yml` | 4 | **org**, visibility all |
+> | `SONARQUBE_HDF_USE_SAF` | variable | `sonarqube-hdf-emit.yml` | 1 | org |
+>
+> `EVIDENCE_BOUNDARY` selects the S3 evidence prefix
+> (`<boundary>/<date|latest>/<repo>/<source>/`, #741 / sparc-iac#537) and pivots from
+> `sparc` to `risk-sentinel` under sparc-iac#715. **It has no default:** all four
+> sites fail closed on an unset value rather than writing to the old boundary
+> (#1153). Secrets added since this snapshot and absent from the table include
+> `S3_EMIT_ROLE_ARN`, `SPARC_SONAR_EMIT_ARN` and `SPARC_APP_CI_ARN`.
+>
+> A full re-inventory is worth its own issue; this note records only what #1153
+> measured directly.
+
 ---
 
 ## Summary table

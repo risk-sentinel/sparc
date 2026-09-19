@@ -2274,20 +2274,38 @@ jobs:
         env:
           COMPLIANCE_S3_BUCKET: ${{ secrets.COMPLIANCE_S3_BUCKET }}
           # Canonical evidence layout (#741): <boundary>/<date|latest>/<repo>/<source>/
-          # boundary defaults to 'sparc'; IAM prefix scope provisioned in sparc-iac#537.
-          # The archive's own subdirs (hdf/ sarif/ asff/ sbom/ grype/) are the <source>
-          # groupings under <repo>/. Per-commit traceability rides the dispatch git_sha.
-          BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY || 'sparc' }}
+          # IAM prefix scope provisioned in sparc-iac#537. The archive's own subdirs
+          # (hdf/ sarif/ asff/ sbom/ grype/) are the <source> groupings under <repo>/.
+          # Per-commit traceability rides the dispatch git_sha.
+          #
+          # NO DEFAULT (#1153). This used to read `|| 'sparc'`, which was inert while the
+          # org variable held that value and becomes a SILENT WRONG-BOUNDARY WRITE the
+          # moment it is unset — evidence that exists, validates, and is filed where
+          # nobody is reading for it. Same reasoning as the SONAR_TOKEN guard in
+          # sonarqube-hdf.yml: refuse to emit rather than emit something misleading.
+          BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY }}
         run: |
           DATE=$(date -u +%Y-%m-%d)
           REPO=sparc
           BUCKET="${COMPLIANCE_S3_BUCKET}"
+          if [ -z "${BOUNDARY:-}" ]; then
+            echo "::error::EVIDENCE_BOUNDARY is unset — refusing to emit evidence to a default prefix (sparc-iac#715)"
+            exit 1
+          fi
           if [ -z "$BUCKET" ]; then
             echo "::warning::COMPLIANCE_S3_BUCKET not set — skipping S3 upload"
             exit 0
           fi
           for when in "${DATE}" latest; do
-            aws s3 sync sparc-compliance/ "s3://${BUCKET}/${BOUNDARY}/${when}/${REPO}/" --no-progress
+            # --sse aws:kms is about the REQUEST, not the object (#1157). The bucket
+            # already defaults to SSE-KMS, so objects land encrypted either way — but
+            # default encryption does NOT populate s3:x-amz-server-side-encryption, and
+            # that is the condition key the evidence deny tests. "Encrypted" and
+            # "satisfies the deny" are different statements; assuming they were the same
+            # took estate-wide emission down on 2026-09-19 (sparc-iac#719).
+            # No key id: the bucket default applies.
+            aws s3 sync sparc-compliance/ "s3://${BUCKET}/${BOUNDARY}/${when}/${REPO}/" \
+              --sse aws:kms --no-progress
           done
           PREFIX="${BOUNDARY}/${DATE}/${REPO}"
           echo "## S3 Upload" >> $GITHUB_STEP_SUMMARY
@@ -2433,7 +2451,8 @@ jobs:
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           COMPLIANCE_S3_BUCKET: ${{ secrets.COMPLIANCE_S3_BUCKET }}
-          BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY || 'sparc' }}
+          # No default — see the compliance-bundle step above (#1153).
+          BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY }}
         run: |
           set -euo pipefail
           BUCKET="${COMPLIANCE_S3_BUCKET}"
@@ -2444,6 +2463,12 @@ jobs:
             echo "::warning::COMPLIANCE_S3_BUCKET not set — skipping metrics upload"
             exit 0
           fi
+          # The boundary is NOT skippable the way the bucket is: a missing bucket
+          # emits nothing, a missing boundary emits to the wrong place (#1153).
+          if [ -z "${BOUNDARY:-}" ]; then
+            echo "::error::EVIDENCE_BOUNDARY is unset — refusing to emit evidence to a default prefix (sparc-iac#715)"
+            exit 1
+          fi
           DEST="s3://${BUCKET}/${BOUNDARY}/latest/${REPO}"
 
           # A 403 here most likely means SPARC_APP_CI_ARN is prefix-scoped to
@@ -2453,7 +2478,8 @@ jobs:
           # AccessDenied for someone to trace back to a path change.
           upload() {
             local src="$1" name="$2"
-            aws s3 cp "$src" "${DEST}/${name}" --region "${AWS_REGION}" || {
+            # --sse aws:kms — see the compliance-bundle step above (#1157).
+            aws s3 cp "$src" "${DEST}/${name}" --sse aws:kms --region "${AWS_REGION}" || {
               echo "::error::failed writing ${DEST}/${name} — if this is AccessDenied, SPARC_APP_CI_ARN is probably still scoped to the old bucket-root latest/ prefix (see #965 and sparc-iac#651)"
               return 1
             }

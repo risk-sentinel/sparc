@@ -1,0 +1,54 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# #1147 — print a standalone SQL check for a database this release cannot reach.
+#
+#   bin/schema_drift_sql | psql "$DATABASE_URL"
+#
+# Lists every column db/schema.rb declares that the target database does not
+# have. Plain Ruby: no Rails, no gems, no database connection here — so it runs
+# from any checkout against any deployment, including one still on an older
+# release where `bin/rails db:verify_schema` does not exist yet.
+#
+# GENERATED, NEVER COMMITTED. An earlier version of this shipped the SQL itself
+# as a file; it went stale the moment schema.rb changed, and its 1,161 repeated
+# table names were 157 duplicate-literal findings. The generator cannot go
+# stale, because it reads schema.rb at the moment you run it.
+require "pathname"
+
+schema = Pathname.new(__dir__).join("../db/schema.rb").expand_path
+abort "no schema at #{schema}" unless schema.exist?
+
+tables = {}
+current = nil
+schema.readlines.each do |line|
+  if (m = line.match(/^\s*create_table\s+"([^"]+)"/))
+    current = m[1]
+    tables[current] = []
+    next
+  end
+  next if current.nil?
+
+  if line.match?(/^\s*end\s*$/)
+    current = nil
+  elsif (m = line.match(/^\s*t\.(?!index|check_constraint)[a-z_]+\s+"([^"]+)"/))
+    tables[current] << m[1]
+  end
+end
+
+pairs = tables.flat_map { |table, columns| columns.map { |c| format("('%s','%s')", table, c) } }
+abort "parsed no columns out of #{schema} — refusing to emit a check that would pass on anything" if pairs.empty?
+
+puts "-- Expected schema from db/schema.rb: #{tables.size} tables, #{pairs.size} columns."
+puts "-- Rows returned = columns the CODE expects that this database does NOT have."
+puts "WITH expected(table_name, column_name) AS (VALUES"
+puts pairs.each_slice(4).map { |slice| "  #{slice.join(', ')}" }.join(",\n")
+puts ")"
+puts "SELECT e.table_name, e.column_name"
+puts "FROM expected e"
+puts "JOIN information_schema.tables t"
+puts "  ON t.table_schema = 'public' AND t.table_name = e.table_name"
+puts "LEFT JOIN information_schema.columns c"
+puts "  ON c.table_schema = 'public' AND c.table_name = e.table_name AND c.column_name = e.column_name"
+puts "WHERE c.column_name IS NULL"
+puts "ORDER BY e.table_name, e.column_name;"
