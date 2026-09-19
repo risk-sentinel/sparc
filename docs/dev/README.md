@@ -29,6 +29,7 @@ development. See [`issue_rules.md`](issue_rules.md) for the full doc-update proc
 | [`Implementation_plan.md`](Implementation_plan.md) | **Live** roadmap — current and next phases, and the open-issue audit |
 | [`implemented.md`](implemented.md) | **Archive** — Phases 1–16, everything shipped through v1.16.0. History, not a plan |
 | [`Developer_Collision_Avoidance_Plan.md`](Developer_Collision_Avoidance_Plan.md) | Domain ownership, hot files, migration coordination |
+| [`v1-15-3_upgrade-plan.md`](v1-15-3_upgrade-plan.md) | **#1151** — what the customer still on v1.15.3 needs to reach v1.16.3 (ECS Fargate / Aurora, no ECS Exec), the ECS traps, and the notice to send |
 | [`secrets_variables.md`](secrets_variables.md) | GitHub Actions secrets & variables inventory |
 | [`aws_labs_cdef_coverage.md`](aws_labs_cdef_coverage.md) | AWS Labs CDEF coverage — **generated** by `bin/aws_labs_cdef_coverage_report.rb`; re-run it rather than editing |
 | [`aws_security_hub_nist_mapping.md`](aws_security_hub_nist_mapping.md) | Security Hub → NIST mapping (#491, #494) — the converter design |
