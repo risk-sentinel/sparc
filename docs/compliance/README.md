@@ -302,7 +302,12 @@ On merge to main, the `publish_for_sparc_iac` job:
 
 1. Bundles CDEFs + HDF scan results + SBOMs + OSCAL metadata + manifest
 2. Uploads as `sparc-compliance-latest` GitHub artifact (90-day retention)
-3. Syncs to S3: `s3://<security-artifacts-bucket>/{date}/{sha}/app/`
+3. Syncs to S3 under the canonical evidence layout (#741, sparc-iac#537):
+   `s3://<security-artifacts-bucket>/<EVIDENCE_BOUNDARY>/{<date>,latest}/sparc/`,
+   where the archive's own subdirectories (`hdf/ sarif/ asff/ sbom/ grype/`) are the
+   `<source>` level. The boundary comes from the `EVIDENCE_BOUNDARY` org variable —
+   `risk-sentinel` as of sparc-iac#715 — and the emit refuses to run if it is unset
+   (#1153). Per-commit traceability rides the dispatch `git_sha`, not the key.
 4. Fires `repository_dispatch: sparc-compliance-updated` to sparc-iac
 
 ### AWS OIDC Trust Policy

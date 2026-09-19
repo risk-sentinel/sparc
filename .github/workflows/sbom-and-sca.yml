@@ -84,9 +84,13 @@ jobs:
     env:
       BUCKET: ${{ secrets.COMPLIANCE_S3_BUCKET }}
       # Canonical evidence layout (#741): <boundary>/<date|latest>/<repo>/<source>/
-      # boundary defaults to 'sparc'; the matching IAM prefix scope
-      # (s3:PutObject on <boundary>/*/sparc/*) is provisioned in sparc-iac#537.
-      BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY || 'sparc' }}
+      # The matching IAM prefix scope (s3:PutObject on <boundary>/*/sparc/*) is
+      # provisioned in sparc-iac#537.
+      #
+      # NO DEFAULT (#1153). `|| 'sparc'` was inert while the org variable held that
+      # value; after the risk-sentinel pivot an unset variable would write silently
+      # to the old boundary instead of failing.
+      BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY }}
       REPO: sparc
       SOURCE: sca
       # Mapped from the secret so step-level `if:` can gate on presence
@@ -127,6 +131,10 @@ jobs:
         if: ${{ steps.aws.outcome == 'success' }}
         run: |
           set -eo pipefail
+          if [ -z "${BOUNDARY:-}" ]; then
+            echo "::error::EVIDENCE_BOUNDARY is unset — refusing to emit evidence to a default prefix (sparc-iac#715)"
+            exit 1
+          fi
           DATE=$(date -u +%F)
           for when in "${DATE}" latest; do
             aws s3 cp sparc.cdx.json \
