@@ -21,6 +21,9 @@ Welcome to the official SPARC wiki. SPARC is a Rails 8.1 application for managin
 ### [Getting Started](Getting-Started)
 First-15-minutes setup — Docker quick start, seeding the NIST catalogs, first login, and where to go next.
 
+### [Upgrading](Upgrading)
+Moving a running deployment between releases, for the containerized install. Which path applies depends on the release you are on — **a database on v1.15.x or older must stop at v1.16.0 first**, and how to verify the schema actually arrived.
+
 ### [User Guides](User-Guides)
 Task-oriented how-to guides, one per area of the UI — the OSCAL document lifecycle (SSP, SAP, SAR, POA&M), control catalogs and baselines, authorization boundaries, the Compliance Library, and administration. Where [Screens & UI](Screens) is the reference inventory, these guides walk you through getting things done.
 

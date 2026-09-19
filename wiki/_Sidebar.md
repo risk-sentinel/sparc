@@ -6,6 +6,7 @@
 
 **Getting Started**
 * [Getting Started](Getting-Started)
+* [Upgrading](Upgrading)
 * [Onboarding a Team and a Pipeline](Onboarding-a-Team-and-a-Pipeline)
 * [Adopting OSCAL](Adopting-OSCAL)
 * [Configuration Reference](Configuration)

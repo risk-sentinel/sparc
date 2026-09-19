@@ -28,6 +28,8 @@ Only the boundary columns had surfaced, because they sit on the boundary page; t
 
 No application behaviour changes. Upgrading from v1.16.2 or v1.16.0 applies the repair automatically.
 
+> **Upgrading from v1.15.x or older? The repair does not cover you.** A database that never ran the migrations the v1.16.1 squash archived cannot reach them, and this release repairs a different, smaller gap. Such a deployment must upgrade to **v1.16.0 first**, then to this release. See [Upgrading](Upgrading).
+
 [Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.16.3).
 
 ## v1.16.2 -- Publishable (2026-09-18)
