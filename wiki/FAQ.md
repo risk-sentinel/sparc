@@ -59,6 +59,19 @@ case-variant duplicate emails before deploying.
 
 ## Deployment & data
 
+**Pages return `500` with `PG::UndefinedColumn` after an upgrade, but `db:migrate` says nothing is pending.**
+The database is missing structure the code expects. `db:migrate` never reads
+`schema.rb`, so a migration archived after it shipped leaves an upgraded database
+without its columns while the version table looks current. Run
+`docker compose exec web bin/rails db:verify_schema` to list exactly what is
+missing. **If you upgraded from v1.15.x or older directly, that is the cause** —
+you must pass through v1.16.0. See [Upgrading](Upgrading).
+
+**Which release can I upgrade to directly?**
+Anything from v1.16.0 onward goes straight to the latest. Below that, stop at
+v1.16.0 first. Never upgrade an existing deployment *into* v1.16.2. Full matrix in
+[Upgrading](Upgrading).
+
 **A deploy "hangs" or the container restarts during a long migration.**
 Long data migrations now use the deferred pattern (v1.8.3): the container binds
 its port immediately and the migration body runs post-boot via Solid Queue.
