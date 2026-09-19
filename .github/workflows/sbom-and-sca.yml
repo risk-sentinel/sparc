@@ -137,8 +137,11 @@ jobs:
           fi
           DATE=$(date -u +%F)
           for when in "${DATE}" latest; do
+            # --sse aws:kms sends the request header the evidence deny tests; the
+            # bucket's default encryption does not populate it (#1157, sparc-iac#719).
             aws s3 cp sparc.cdx.json \
-              "s3://${BUCKET}/${BOUNDARY}/${when}/${REPO}/${SOURCE}/sparc.cdx.json" --no-progress
+              "s3://${BUCKET}/${BOUNDARY}/${when}/${REPO}/${SOURCE}/sparc.cdx.json" \
+              --sse aws:kms --no-progress
           done
           echo "Emitted to s3://${BUCKET}/${BOUNDARY}/{${DATE},latest}/${REPO}/${SOURCE}/sparc.cdx.json"
 

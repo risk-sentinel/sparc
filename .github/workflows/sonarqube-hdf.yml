@@ -12,9 +12,9 @@ name: SonarQube → HDF (evidence)
 # reusable workflows from the INTERNAL container-build-sign — same constraint as the
 # vendored sbom-source/sca-scan (#718) — so this copy lives in-repo. Kept in sync
 # with upstream by hand; configure-aws-credentials is repinned to sparc's SHA.
-# KNOWN DIVERGENCE (#1153): the S3 emit step fails closed on an unset
-# EVIDENCE_BOUNDARY instead of defaulting to 'sparc'. Carry this upstream on the
-# next sync rather than reverting it.
+# KNOWN DIVERGENCES: (#1153) the S3 emit step fails closed on an unset
+# EVIDENCE_BOUNDARY instead of defaulting to 'sparc'; (#1157) the emit sends
+# `--sse aws:kms`. Carry both upstream on the next sync rather than reverting them.
 #
 # SonarCloud analysis itself runs via the SonarCloud GitHub App (automatic
 # analysis) — this workflow only FETCHES the results from the API post-analysis.
@@ -225,7 +225,12 @@ jobs:
           fi
           DATE="$(date -u +%Y-%m-%d)"
           for when in "${DATE}" latest; do
-            aws s3 cp "$HDF_FILE" "s3://${BUCKET}/${BOUNDARY}/${when}/${REPO_SLUG}/sonarqube/" --no-progress
+            # --sse aws:kms sends the request header the evidence deny tests; the
+            # bucket's default encryption does not populate it (#1157, sparc-iac#719).
+            # SECOND KNOWN DIVERGENCE from upstream container-build-sign — carry it
+            # over on the next sync, with the fail-closed boundary guard (#1153).
+            aws s3 cp "$HDF_FILE" "s3://${BUCKET}/${BOUNDARY}/${when}/${REPO_SLUG}/sonarqube/" \
+              --sse aws:kms --no-progress
           done
           echo "Emitted to s3://${BUCKET}/${BOUNDARY}/{${DATE},latest}/${REPO_SLUG}/sonarqube/"
 

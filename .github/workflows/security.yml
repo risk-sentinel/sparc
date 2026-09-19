@@ -2297,7 +2297,15 @@ jobs:
             exit 0
           fi
           for when in "${DATE}" latest; do
-            aws s3 sync sparc-compliance/ "s3://${BUCKET}/${BOUNDARY}/${when}/${REPO}/" --no-progress
+            # --sse aws:kms is about the REQUEST, not the object (#1157). The bucket
+            # already defaults to SSE-KMS, so objects land encrypted either way — but
+            # default encryption does NOT populate s3:x-amz-server-side-encryption, and
+            # that is the condition key the evidence deny tests. "Encrypted" and
+            # "satisfies the deny" are different statements; assuming they were the same
+            # took estate-wide emission down on 2026-09-19 (sparc-iac#719).
+            # No key id: the bucket default applies.
+            aws s3 sync sparc-compliance/ "s3://${BUCKET}/${BOUNDARY}/${when}/${REPO}/" \
+              --sse aws:kms --no-progress
           done
           PREFIX="${BOUNDARY}/${DATE}/${REPO}"
           echo "## S3 Upload" >> $GITHUB_STEP_SUMMARY
@@ -2470,7 +2478,8 @@ jobs:
           # AccessDenied for someone to trace back to a path change.
           upload() {
             local src="$1" name="$2"
-            aws s3 cp "$src" "${DEST}/${name}" --region "${AWS_REGION}" || {
+            # --sse aws:kms — see the compliance-bundle step above (#1157).
+            aws s3 cp "$src" "${DEST}/${name}" --sse aws:kms --region "${AWS_REGION}" || {
               echo "::error::failed writing ${DEST}/${name} — if this is AccessDenied, SPARC_APP_CI_ARN is probably still scoped to the old bucket-root latest/ prefix (see #965 and sparc-iac#651)"
               return 1
             }
