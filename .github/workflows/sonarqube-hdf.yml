@@ -198,7 +198,7 @@ jobs:
         id: aws
         if: ${{ inputs.upload }}
         continue-on-error: true     # missing/unassumable role → skip emit, don't fail the run
-        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ secrets.S3_EMIT_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
