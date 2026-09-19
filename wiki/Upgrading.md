@@ -62,7 +62,9 @@ psql "$DATABASE_URL" -f sparc-drift-check.sql
 
 **Rows returned are columns the application expects that your database does not have.**
 
-> **This check does not report missing _tables_ — only missing columns on tables that already exist.** If an upgrade skipped a migration that creates a table, this check stays silent about it. Run the table check below as well, and treat `db:verify_schema` (which does detect missing tables) as the authoritative check once you are on v1.16.3 or later.
+> **Generating this check from a v1.16.3 or earlier image? It cannot report a missing _table_ — only missing columns on tables that already exist.** If an upgrade skipped a migration that creates a table, the check from those images stays silent about it. Run the table check below as well.
+>
+> Images after v1.16.3 report both, each row tagged `missing table` or `missing column`. `db:verify_schema` has always detected missing tables and is the authoritative check once you are on v1.16.3 or later.
 
 ### Also check for missing tables
 
