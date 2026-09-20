@@ -171,6 +171,14 @@
                     Index degraded
                   </span>
                 <% end %>
+                <%# #1103 — spotted in the LIST for the same reason. %>
+                <% if doc.nist_enrichment_degraded? %>
+                  <span class="badge-warn rounded fw-semibold sparc-p-02-06 sparc-fs-085"
+                        data-testid="cdef-enrichment-degraded"
+                        title="NIST enrichment failed during import; controls are intact but unmapped.">
+                    NIST mappings degraded
+                  </span>
+                <% end %>
               <% end %>
             </td>
             <td><%= doc.cdef_controls.count %></td>
