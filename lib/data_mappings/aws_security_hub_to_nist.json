@@ -1,12 +1,12 @@
 {
   "format": "aws_security_hub_to_nist",
-  "version": "scraped-2026-05-19",
+  "version": "scraped-2026-09-20",
   "source": "https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-controls-reference.html",
   "license": "Documentation is public; mappings are AWS-authored",
   "attribution": "AWS Security Hub User Guide. Copyright Amazon.com, Inc. or its affiliates.",
   "description": "AWS Security Hub control -> NIST 800-53 rev5 mapping scraped from the AWS Security Hub User Guide. Primary mapping source for the AWS Security Hub -> NIST converter (#491).",
   "rev": 5,
-  "total_entries": 595,
+  "total_entries": 597,
   "mappings": [
     {
       "sec_hub_id": "ACM.1",
@@ -798,6 +798,17 @@
       "related_requirements_raw": null
     },
     {
+      "sec_hub_id": "Bedrock.1",
+      "title": "Amazon Bedrock data sources should be encrypted with customer managed AWS KMS keys",
+      "service_slug": "bedrock-controls",
+      "nist_rev5_raw": [],
+      "nist_oscal_ids": [],
+      "aws_config_rule": "bedrock-data-source-encryption-enabled",
+      "severity": "Medium",
+      "category": "Protect > Data protection >\n            Encryption of data at rest",
+      "related_requirements_raw": null
+    },
+    {
       "sec_hub_id": "BedrockAgentCore.1",
       "title": "Bedrock AgentCore runtimes should be configured with VPC network mode",
       "service_slug": "bedrockagentcore-controls",
@@ -901,6 +912,17 @@
       "aws_config_rule": "bedrockagentcore-browsercustom-recording-enabled",
       "severity": "Medium",
       "category": "Identify > Logging",
+      "related_requirements_raw": null
+    },
+    {
+      "sec_hub_id": "BedrockAgentCore.7",
+      "title": "Bedrock AgentCore custom code interpreters should use a private network configuration",
+      "service_slug": "bedrockagentcore-controls",
+      "nist_rev5_raw": [],
+      "nist_oscal_ids": [],
+      "aws_config_rule": "bedrockagentcore-codeinterpreter-networkmode-check",
+      "severity": "High",
+      "category": "Protect > Secure network\n            configuration > Resources within VPC",
       "related_requirements_raw": null
     },
     {
@@ -2765,7 +2787,7 @@
         "sc-7.3",
         "sc-7.4"
       ],
-      "aws_config_rule": "service-vpc-endpoint-enabled",
+      "aws_config_rule": "vpc-endpoint-enabled",
       "severity": "Medium",
       "category": "Protect > Secure network configuration >\n            API private access",
       "related_requirements_raw": "NIST.800-53.r5 AC-21,\n            NIST.800-53.r5 AC-3, NIST.800-53.r5 AC-3(7), NIST.800-53.r5 AC-4, NIST.800-53.r5\n            AC-4(21), NIST.800-53.r5 AC-6, NIST.800-53.r5 SC-7, NIST.800-53.r5 SC-7(11),\n            NIST.800-53.r5 SC-7(16), NIST.800-53.r5 SC-7(20), NIST.800-53.r5 SC-7(21),\n            NIST.800-53.r5 SC-7(3), NIST.800-53.r5 SC-7(4), NIST.800-171.r2 3.1.3, NIST.800-171.r2\n            3.13.1"
@@ -4049,31 +4071,6 @@
       "related_requirements_raw": "NIST.800-53.r5 SC-12(2),\n            NIST.800-53.r5 CM-3(6), NIST.800-53.r5 SC-13, NIST.800-53.r5 SC-28, NIST.800-53.r5\n            SC-28(1), NIST.800-53.r5 SC-7(10), NIST.800-53.r5 CA-9(1), NIST.800-53.r5 SI-7(6),\n            NIST.800-53.r5 AU-9"
     },
     {
-      "sec_hub_id": "ECS.1",
-      "title": "Amazon ECS task definitions should have secure networking modes and user definitions",
-      "service_slug": "ecs-controls",
-      "nist_rev5_raw": [
-        "AC-2(1)",
-        "AC-3",
-        "AC-3(15)",
-        "AC-3(7)",
-        "AC-5",
-        "AC-6"
-      ],
-      "nist_oscal_ids": [
-        "ac-2.1",
-        "ac-3",
-        "ac-3.15",
-        "ac-3.7",
-        "ac-5",
-        "ac-6"
-      ],
-      "aws_config_rule": "ecs-task-definition-user-for-host-mode-check",
-      "severity": "High",
-      "category": "Protect > Secure access management",
-      "related_requirements_raw": "NIST.800-53.r5 AC-2(1), NIST.800-53.r5 AC-3, NIST.800-53.r5 AC-3(15), NIST.800-53.r5 AC-3(7), NIST.800-53.r5 AC-5, NIST.800-53.r5 AC-6"
-    },
-    {
       "sec_hub_id": "ECS.10",
       "title": "ECS Fargate services should run on the latest Fargate platform version",
       "service_slug": "ecs-controls",
@@ -4487,12 +4484,16 @@
       "sec_hub_id": "EFS.6",
       "title": "EFS mount targets should not be associated with subnets that assign public IP addresses on launch",
       "service_slug": "efs-controls",
-      "nist_rev5_raw": [],
-      "nist_oscal_ids": [],
+      "nist_rev5_raw": [
+        "SC-7"
+      ],
+      "nist_oscal_ids": [
+        "sc-7"
+      ],
       "aws_config_rule": "efs-mount-target-public-accessible",
       "severity": "Medium",
       "category": "Protect > Network security > Resources not\n            publicly accessible",
-      "related_requirements_raw": null
+      "related_requirements_raw": "NIST.800-53.r5 SC-7, NIST.800-171.r2 3.1.20, PCI DSS v4.0.1/1.4.4"
     },
     {
       "sec_hub_id": "EFS.7",
@@ -6799,39 +6800,6 @@
       "related_requirements_raw": null
     },
     {
-      "sec_hub_id": "IoTEvents.1",
-      "title": "AWS IoT Events inputs should be tagged",
-      "service_slug": "iotevents-controls",
-      "nist_rev5_raw": [],
-      "nist_oscal_ids": [],
-      "aws_config_rule": "iotevents-input-tagged",
-      "severity": "Low",
-      "category": "Identify > Inventory > Tagging",
-      "related_requirements_raw": null
-    },
-    {
-      "sec_hub_id": "IoTEvents.2",
-      "title": "AWS IoT Events detector models should be tagged",
-      "service_slug": "iotevents-controls",
-      "nist_rev5_raw": [],
-      "nist_oscal_ids": [],
-      "aws_config_rule": "iotevents-detector-model-tagged",
-      "severity": "Low",
-      "category": "Identify > Inventory > Tagging",
-      "related_requirements_raw": null
-    },
-    {
-      "sec_hub_id": "IoTEvents.3",
-      "title": "AWS IoT Events alarm models should be tagged",
-      "service_slug": "iotevents-controls",
-      "nist_rev5_raw": [],
-      "nist_oscal_ids": [],
-      "aws_config_rule": "iotevents-alarm-model-tagged",
-      "severity": "Low",
-      "category": "Identify > Inventory > Tagging",
-      "related_requirements_raw": null
-    },
-    {
       "sec_hub_id": "IoTSiteWise.1",
       "title": "AWS IoT SiteWise asset models should be tagged",
       "service_slug": "iotsitewise-controls",
@@ -7304,23 +7272,6 @@
       "severity": "Medium",
       "category": "Identify > Logging",
       "related_requirements_raw": "NIST.800-53.r5 AU-2,\n            NIST.800-53.r5 AU-3,\n            NIST.800-53.r5 AU-12,\n            NIST.800-53.r5 SI-4, PCI DSS v4.0.1/10.3.3"
-    },
-    {
-      "sec_hub_id": "MQ.3",
-      "title": "Amazon MQ brokers should have automatic minor version upgrade enabled",
-      "service_slug": "mq-controls",
-      "nist_rev5_raw": [
-        "CM-3",
-        "SI-2"
-      ],
-      "nist_oscal_ids": [
-        "cm-3",
-        "si-2"
-      ],
-      "aws_config_rule": "mq-auto-minor-version-upgrade-enabled",
-      "severity": "Medium",
-      "category": "Identify > Vulnerability, patch, and version management",
-      "related_requirements_raw": "NIST.800-53.r5 CM-3, NIST.800-53.r5 SI-2, PCI DSS v4.0.1/6.3.3"
     },
     {
       "sec_hub_id": "MQ.4",
@@ -8547,17 +8498,6 @@
       "severity": "Low",
       "category": "Identify > Inventory",
       "related_requirements_raw": "NIST.800-53.r5 CA-9(1), NIST.800-53.r5 CM-2, NIST.800-53.r5 CM-2(2)"
-    },
-    {
-      "sec_hub_id": "RDS.18",
-      "title": "RDS instances should be deployed in a VPC",
-      "service_slug": "rds-controls",
-      "nist_rev5_raw": [],
-      "nist_oscal_ids": [],
-      "aws_config_rule": "rds-deployed-in-vpc",
-      "severity": "High",
-      "category": "Protect > Secure network configuration >\n    Resources within VPC",
-      "related_requirements_raw": null
     },
     {
       "sec_hub_id": "RDS.19",
@@ -10201,7 +10141,7 @@
     },
     {
       "sec_hub_id": "S3.5",
-      "title": "S3 general purpose buckets should require requests to use SSL",
+      "title": "S3 general purpose buckets should require requests to use TLS",
       "service_slug": "s3-controls",
       "nist_rev5_raw": [
         "AC-17(2)",
@@ -10886,6 +10826,72 @@
       "severity": "High",
       "category": "Protect > Secure network configuration > Resources within VPC",
       "related_requirements_raw": "NIST.800-53.r5 AC-21, NIST.800-53.r5 AC-3, NIST.800-53.r5 AC-3(7), NIST.800-53.r5 AC-4, NIST.800-53.r5 AC-4(21), NIST.800-53.r5 AC-6, NIST.800-53.r5 SC-7, NIST.800-53.r5 SC-7(11), NIST.800-53.r5 SC-7(16), NIST.800-53.r5 SC-7(20), NIST.800-53.r5 SC-7(21), NIST.800-53.r5 SC-7(3), NIST.800-53.r5 SC-7(4), NIST.800-53.r5 SC-7(9)"
+    },
+    {
+      "sec_hub_id": "SageMaker.20",
+      "title": "SageMaker model explainability job definitions should have network isolation enabled",
+      "service_slug": "sagemaker-controls",
+      "nist_rev5_raw": [],
+      "nist_oscal_ids": [],
+      "aws_config_rule": "sagemaker-model-explainability-job-network-isolation",
+      "severity": "High",
+      "category": "Protect > Secure network\n            configuration > Resources not publicly accessible",
+      "related_requirements_raw": null
+    },
+    {
+      "sec_hub_id": "SageMaker.21",
+      "title": "SageMaker notebook instances should be encrypted with customer managed AWS KMS keys",
+      "service_slug": "sagemaker-controls",
+      "nist_rev5_raw": [],
+      "nist_oscal_ids": [],
+      "aws_config_rule": "sagemaker-notebook-instance-storage-vol-kms-encrypted",
+      "severity": "Medium",
+      "category": "Protect > Data protection >\n            Encryption of data at rest",
+      "related_requirements_raw": null
+    },
+    {
+      "sec_hub_id": "SageMaker.22",
+      "title": "SageMaker monitoring schedules should have inter-container traffic encryption enabled",
+      "service_slug": "sagemaker-controls",
+      "nist_rev5_raw": [],
+      "nist_oscal_ids": [],
+      "aws_config_rule": "sagemaker-monitoring-schedule-traffic-encryption",
+      "severity": "Medium",
+      "category": "Protect > Data protection >\n            Encryption of data in transit",
+      "related_requirements_raw": null
+    },
+    {
+      "sec_hub_id": "SageMaker.23",
+      "title": "SageMaker inference experiments should have instance storage volume encrypted with customer managed AWS KMS keys",
+      "service_slug": "sagemaker-controls",
+      "nist_rev5_raw": [],
+      "nist_oscal_ids": [],
+      "aws_config_rule": "sagemaker-inf-experiment-instance-storage-kms-encrypted",
+      "severity": "Medium",
+      "category": "Protect > Data protection >\n            Encryption of data at rest",
+      "related_requirements_raw": null
+    },
+    {
+      "sec_hub_id": "SageMaker.24",
+      "title": "SageMaker inference experiments should have data storage encrypted with customer managed AWS KMS keys",
+      "service_slug": "sagemaker-controls",
+      "nist_rev5_raw": [],
+      "nist_oscal_ids": [],
+      "aws_config_rule": "sagemaker-inf-experiment-data-storage-kms-encrypted",
+      "severity": "Medium",
+      "category": "Protect > Data protection >\n            Encryption of data at rest",
+      "related_requirements_raw": null
+    },
+    {
+      "sec_hub_id": "SageMaker.25",
+      "title": "SageMaker model quality job definitions should have network isolation enabled",
+      "service_slug": "sagemaker-controls",
+      "nist_rev5_raw": [],
+      "nist_oscal_ids": [],
+      "aws_config_rule": "sagemaker-model-quality-job-definition-isolation",
+      "severity": "High",
+      "category": "Protect > Secure network\n            configuration > Resources not publicly accessible",
+      "related_requirements_raw": null
     },
     {
       "sec_hub_id": "SageMaker.3",
