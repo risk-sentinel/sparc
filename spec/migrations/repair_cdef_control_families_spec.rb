@@ -4,7 +4,7 @@ require "rails_helper"
 require Rails.root.join("db/migrate/20260908160000_repair_cdef_control_families.rb")
 
 # #1088 CDEF screen review — the heatmap grouped by AWS Security Hub rule
-# instead of NIST family, because `AwsLabsCdefImportService#write_enrichment!`
+# instead of NIST family, because `CdefNistEnrichmentService#write_enrichment!`
 # rewrote `control_id` to the resolved NIST control and left `control_family`
 # holding the rule it was parsed from.
 RSpec.describe RepairCdefControlFamilies do

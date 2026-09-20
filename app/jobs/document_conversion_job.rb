@@ -64,6 +64,8 @@ class DocumentConversionJob < ApplicationJob
         parser_class.new(document, tempfile.path).parse
       end
 
+      enrich_cdef_nist_mappings(document)
+
       # Auto-publish resolved profile catalogs (NIST-published baselines)
       auto_publish = document.metadata_extra&.dig("auto_publish")
       lifecycle = auto_publish ? "published" : "in_progress"
@@ -114,6 +116,31 @@ class DocumentConversionJob < ApplicationJob
   end
 
   private
+
+  # #1103 — resolve AWS Security Hub identifiers to NIST controls on the UPLOAD
+  # path. Enrichment used to be private to AwsLabsCdefImportService, so it ran
+  # only on the weekly AWS Labs refresh: a CDEF uploaded here parsed its
+  # controls and left every one of them holding a Security Hub id with no NIST
+  # reference, belonging to no NIST family. The controls were there; nothing
+  # that groups by NIST could see them.
+  #
+  # Runs AFTER the parse and OUTSIDE its transaction, deliberately. A document
+  # that parsed correctly must not be lost because a converter lookup failed —
+  # so a failure here degrades the document (#968's partial-success contract)
+  # instead of failing the import.
+  def enrich_cdef_nist_mappings(document)
+    return unless document.is_a?(CdefDocument)
+
+    CdefNistEnrichmentService.new.enrich!(document)
+    document.clear_nist_enrichment_failure!
+  rescue StandardError => e
+    # Recorded on the document, not only in the log — the whole point of #968
+    # item 4 is that an operator must be able to SEE a degraded import.
+    document.record_nist_enrichment_failure!(e)
+    Rails.logger.error(
+      "[DocumentConversionJob] NIST enrichment failed for CdefDocument #{document.id}: #{e.class} — #{e.message}"
+    )
+  end
 
   # #618 — structured, greppable lifecycle log for the parse pipeline. Pairs
   # with the `enqueued` line emitted at the enqueue site (FileUploadable) and
