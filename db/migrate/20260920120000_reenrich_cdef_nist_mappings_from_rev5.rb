@@ -63,11 +63,14 @@ class ReenrichCdefNistMappingsFromRev5 < ActiveRecord::Migration[8.1]
     end
   end
 
-  # Deliberately empty. Going back would mean re-writing rev4 statement-letter
-  # ids that address nothing in the rev5 catalog, over correct rev5 ones. The
-  # prior values are not worth restoring, and `source_control_id` still holds
-  # the Security Hub identifier every mapping was derived from.
-  def down; end
+  def down
+    # Deliberately a no-op, not an oversight. Reversing would re-write rev4
+    # statement-letter ids that address nothing in the rev5 catalog over the
+    # correct rev5 ones — it would restore the defect. The prior values are not
+    # worth keeping, and `source_control_id` still holds the Security Hub
+    # identifier every mapping was derived from, so nothing is lost by going
+    # forward only.
+  end
 
   private
 

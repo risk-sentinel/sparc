@@ -174,9 +174,15 @@ class CdefNistEnrichmentService
   # Cached SecHub -> AWS Config Rule bridge, built once per service
   # instance from the scraped JSON. Used as the second hop when the
   # AWS Security Hub converter has no direct row for a SecHub id.
+  #
+  # AwsSecurityHub::AwsSecurityHubMappingLoader is NOT required here. `lib/` is
+  # autoloaded (`config.autoload_lib` in config/application.rb, and
+  # `aws_security_hub` is not in its ignore list), so Zeitwerk owns the
+  # constant. The inline `require` this carried over from
+  # AwsLabsCdefImportService was redundant, and manually requiring a file
+  # Zeitwerk manages is what breaks reloading in development.
   def sec_hub_config_rule_bridge
     @sec_hub_config_rule_bridge ||= begin
-      require Rails.root.join("lib/aws_security_hub/aws_security_hub_mapping_loader")
       path = Rails.root.join("lib/data_mappings/aws_security_hub_to_nist.json")
       if path.exist?
         AwsSecurityHub::AwsSecurityHubMappingLoader.build_config_rule_bridge(JSON.parse(File.read(path)))
