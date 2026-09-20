@@ -278,7 +278,8 @@ RSpec.describe AwsLabsCdefImportService do
 
       # Stub the bridge so we don't depend on the live JSON for fixture data.
       bridge = { "IAM.3" => "access-keys-rotated", "IAM.7" => "iam-password-policy", "IAM.99999" => nil }
-      allow_any_instance_of(described_class).to receive(:sec_hub_config_rule_bridge).and_return(bridge)
+      # #1103 — the bridge moved with the enrichment into CdefNistEnrichmentService.
+      allow_any_instance_of(CdefNistEnrichmentService).to receive(:sec_hub_config_rule_bridge).and_return(bridge)
     end
 
     it "hop 1: writes aws_direct fields for SecHub controls in aws_security_hub_to_nist" do

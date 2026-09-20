@@ -191,6 +191,51 @@ class CdefDocument < ApplicationRecord
     false
   end
 
+  # #1103 — the same partial-success contract, for NIST enrichment.
+  #
+  # Enrichment resolves AWS Security Hub identifiers to NIST controls AFTER the
+  # parse has already succeeded. If it fails, the document and its controls are
+  # intact and must not be lost — but the controls carry no NIST reference, so
+  # every NIST-oriented view (heat map, coverage, inheritance) understates the
+  # document while looking perfectly healthy. #968 learned this the hard way
+  # with the component index: a log line is not a contract.
+  #
+  # Degraded means: the controls are present, but their NIST mappings are
+  # missing or stale. Re-importing, or re-running enrichment, clears it.
+  def nist_enrichment_degraded?
+    import_metadata.is_a?(Hash) && import_metadata["nist_enrichment_failed_at"].present?
+  end
+
+  # `update_column` on purpose, for the same reason as the index recorder above:
+  # the caller is recovering from a failed statement and must not run
+  # validations or callbacks that could raise again.
+  def record_nist_enrichment_failure!(error)
+    return false unless persisted?
+
+    update_column(
+      :import_metadata,
+      (import_metadata || {}).merge(
+        "nist_enrichment_failed_at" => Time.current.iso8601,
+        "nist_enrichment_error"     => "#{error.class}: #{error.message}".truncate(500)
+      )
+    )
+    true
+  rescue StandardError
+    # Never let the bookkeeping become the failure; the caller's log line stands.
+    false
+  end
+
+  # Clear the marker once enrichment has succeeded, so a document that was
+  # degraded and has since been re-enriched stops reporting as degraded.
+  def clear_nist_enrichment_failure!
+    return false unless persisted? && nist_enrichment_degraded?
+
+    update_column(:import_metadata, import_metadata.except("nist_enrichment_failed_at", "nist_enrichment_error"))
+    true
+  rescue StandardError
+    false
+  end
+
   # When the index failed, as an ISO8601 string; nil when it never has.
   def component_index_failed_at
     return nil unless component_index_degraded?

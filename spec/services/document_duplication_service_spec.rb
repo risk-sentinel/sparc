@@ -189,7 +189,7 @@ RSpec.describe DocumentDuplicationService do
           implementation_prose: "Statement prose",
           uuid: SecureRandom.uuid
         )
-        # Enrichment-style fields added by AwsLabsCdefImportService#enrich_with_nist_mappings!
+        # Enrichment-style fields added by CdefNistEnrichmentService#enrich!
         control.cdef_control_fields.create!(field_name: "aws_security_hub_id",  field_value: "IAM.1", editable: false)
         control.cdef_control_fields.create!(field_name: "nist_oscal_ids",       field_value: "ac-2,ac-3", editable: false)
         control.cdef_control_fields.create!(field_name: "nist_mapping_source",  field_value: "aws_direct", editable: false)
