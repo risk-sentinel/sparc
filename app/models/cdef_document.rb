@@ -236,6 +236,12 @@ class CdefDocument < ApplicationRecord
     false
   end
 
+  # When enrichment failed, as an ISO8601 string; nil when it never has.
+  def nist_enrichment_failed_at
+    return nil unless nist_enrichment_degraded?
+    import_metadata["nist_enrichment_failed_at"]
+  end
+
   # When the index failed, as an ISO8601 string; nil when it never has.
   def component_index_failed_at
     return nil unless component_index_degraded?

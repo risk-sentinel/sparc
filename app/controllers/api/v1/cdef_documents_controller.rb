@@ -445,6 +445,13 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       # documents can see which ones understate their components.
       component_index_degraded: cdef.component_index_degraded?,
       component_index_failed_at: cdef.component_index_failed_at,
+      # #1103 — the same contract for NIST enrichment. The controls are intact
+      # but carry no NIST reference, so every NIST-oriented view understates the
+      # document while it looks perfectly healthy. Index-level for the same
+      # reason as above: a consumer listing documents can see which ones are
+      # unmapped rather than opening each one.
+      nist_enrichment_degraded: cdef.nist_enrichment_degraded?,
+      nist_enrichment_failed_at: cdef.nist_enrichment_failed_at,
       file_type: cdef.file_type,
       cdef_type: cdef.cdef_type,
       cdef_version: cdef.cdef_version,
