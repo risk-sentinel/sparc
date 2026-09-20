@@ -173,6 +173,25 @@ RSpec.describe DocumentConversionJob, type: :job do
       end
     end
 
+    # #1103 slice 5 — regions. AWS publishes them as a separate component
+    # definition that services point at with `provided-by` links, so whichever
+    # file is uploaded second has to complete the pair. Neither the ordering nor
+    # the repair AwsLabsCdefImportService had was reachable from this path.
+    it "re-indexes regions after a CDEF upload" do
+      expect_any_instance_of(CdefRegionReindexService).to receive(:call).with(document)
+
+      described_class.new.perform(:cdef, document.id)
+    end
+
+    it "does not fail the import when the region re-index raises" do
+      allow_any_instance_of(CdefRegionReindexService)
+        .to receive(:call).and_raise(ActiveRecord::StatementInvalid, "boom")
+
+      described_class.new.perform(:cdef, document.id)
+
+      expect(document.reload.status).to eq("completed")
+    end
+
     it "does not touch a non-CDEF document type" do
       profile = create(:profile_document, file_type: "json", status: "pending")
       profile.file.attach(
@@ -182,6 +201,7 @@ RSpec.describe DocumentConversionJob, type: :job do
       )
 
       expect_any_instance_of(CdefNistEnrichmentService).not_to receive(:enrich!)
+      expect_any_instance_of(CdefRegionReindexService).not_to receive(:call)
       described_class.new.perform(:profile, profile.id)
 
       expect(profile.reload.status).to eq("completed")
