@@ -65,6 +65,7 @@ class DocumentConversionJob < ApplicationJob
       end
 
       enrich_cdef_nist_mappings(document)
+      reindex_cdef_regions(document)
 
       # Auto-publish resolved profile catalogs (NIST-published baselines)
       auto_publish = document.metadata_extra&.dig("auto_publish")
@@ -139,6 +140,29 @@ class DocumentConversionJob < ApplicationJob
     document.record_nist_enrichment_failure!(e)
     Rails.logger.error(
       "[DocumentConversionJob] NIST enrichment failed for CdefDocument #{document.id}: #{e.class} — #{e.message}"
+    )
+  end
+
+  # #1103 — complete a region pairing whichever file arrived second.
+  #
+  # AWS publishes regions as their own component definition and services point
+  # at it with `provided-by` links, so the dependency crosses files by design.
+  # The indexer resolves those links against regions ALREADY indexed, and this
+  # path uploads files in browser order as independent async jobs — so a service
+  # uploaded before its regions CDEF stored no regions and nothing ever fixed
+  # it. AwsLabsCdefImportService had both an ordering pass and a repair pass for
+  # its own path; neither was reachable from here.
+  #
+  # Same partial-success reasoning as enrichment: a re-index failure must not
+  # fail an import that otherwise succeeded, and the service records the
+  # degradation on the document itself.
+  def reindex_cdef_regions(document)
+    return unless document.is_a?(CdefDocument)
+
+    CdefRegionReindexService.new.call(document)
+  rescue StandardError => e
+    Rails.logger.error(
+      "[DocumentConversionJob] region re-index failed for CdefDocument #{document.id}: #{e.class} — #{e.message}"
     )
   end
 

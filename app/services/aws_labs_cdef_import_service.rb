@@ -398,12 +398,14 @@ class AwsLabsCdefImportService
   # resolved none. A service that genuinely has no regions re-indexes on each
   # run, which is bounded work and self-correcting; a service that HAS regions
   # is left alone entirely.
+  #
+  # #1103 — the RULE now lives in CdefRegionReindexService so the upload path
+  # gets it too; this keeps the AWS Labs specifics (the content is already in
+  # hand from build_candidates, so repairing costs no extra request).
   def repair_regions(document, candidate)
     return if candidate[:defines_regions]
-    return unless CdefComponent.where(component_type: "region").exists?
-    return if document.cdef_components.where.not(region_ids: []).exists?
 
-    reindex_components(document, candidate[:content])
+    CdefRegionReindexService.new(logger: @logger).call(document, content: candidate[:content])
   end
 
   def highest_version(group)
