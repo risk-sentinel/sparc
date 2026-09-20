@@ -127,6 +127,13 @@ class CdefDocumentIndex(DocumentBase):
     # degraded rows without opening each one.
     component_index_degraded: bool
     component_index_failed_at: str | None = None
+    # #1103 — the same contract for NIST enrichment. The controls are intact but
+    # carry no NIST reference, so every NIST-oriented view understates the
+    # document while it looks healthy. Independent of the component index: a
+    # document can have a working index and unmapped controls, or the reverse,
+    # and the two have different remedies.
+    nist_enrichment_degraded: bool
+    nist_enrichment_failed_at: str | None = None
     # #887 — the enriched shape the UI renders, so the API is not a thinner
     # answer to the same question.
     components: ComponentSummary

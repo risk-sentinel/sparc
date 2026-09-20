@@ -23,6 +23,23 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
   the UI is a thin client over it (shared service where practical). Add a
   request spec for the endpoint (happy path + auth/authorization). The UI is
   never the only way to perform a mutation.
+- **NEVER recreate a database to get tests to pass. Keep a PRESERVED database.**
+  Recreating is not a neutral reset — it destroys the only state that can detect
+  an **upgrade** defect. A gate that always starts from a fresh install proves a
+  *new* deployment works and says nothing about an existing one. That is exactly
+  how the squash defect shipped: **v1.16.2 was unupgradable** — seven columns
+  missing, boundary pages 500 — while a *fresh install of v1.16.2 was fine*, so
+  every gate was green because every gate built a new database. Postgres runs on
+  the workstation for exactly this reason: keep a database that carries forward
+  across branches, so a migration is exercised against data that predates it.
+  Use `stop`/`start`, never `down -v`; volumes and ActiveStorage blobs must
+  survive. When a check fails against existing data **that is a result** —
+  root-cause it. Recreating the database to get green is the same class of error
+  as weakening a test. And a migration whose job is to repair EXISTING
+  deployments is **not** verified by a gate run on a fresh database — say so
+  explicitly rather than letting "gate green" imply it. The supported upgrade
+  hop is **v1.16.3 → current** (owner-decided 2026-09-20), which is the hop a
+  preserved database should represent.
 - **Local smoke + API check concludes any application-code change — against the
   PROD (UBI9) image** — before pushing work that touches application code
   (`app/`, `lib/`, `config/`, `db/`, views, assets, migrations), run BOTH the
