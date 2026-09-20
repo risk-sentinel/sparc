@@ -22,6 +22,29 @@ ARG HDF_LIBS_VERSION=3.5.1
 # The base already carries them, so a digest bump is sufficient — no `microdnf
 # update`, which would trade reproducibility for the same result.
 #
+# Bumped 2026-09-20 for the trivy-container gate breach on PR #1163: SEVEN HIGH
+# CVEs, none of them introduced by that branch (it changes no Dockerfile and no
+# dependency manifest — these are base OS packages and a freshly published
+# advisory batch).
+#   openssl-libs  3.5.5-6.el9_8   -> 3.5.8-1.el9_8    CVE-2026-14456
+#   libevent      2.1.12-8.el9_4  -> 2.1.13-1.el9_8   CVE-2026-63382/-63383
+#                                                     /-63384/-63385/-63387/-63388
+#
+# **This is the case the rule above does NOT cover, and measuring is what showed
+# it.** Measured with `rpm -q` on both digests, per the note above rather than
+# read off an advisory: the new digest carries the fixed openssl-libs but
+# libevent is UNCHANGED at 2.1.12-8.el9_4 — Red Hat published the RPM without
+# rebuilding ubi-minimal around it. `microdnf update --assumeno libevent` on the
+# new digest confirms `libevent-2.1.13-1.el9_8` is in `ubi-9-baseos-rpms` and
+# available. So the digest bump alone does not clear the gate, and the runtime
+# stage below updates that one package explicitly.
+#
+# libevent is not something SPARC asks for: nothing in the install list requires
+# it, and `rpm -qR` across the image shows it arriving as an openldap
+# dependency. It is patched rather than removed because removing a transitive
+# library to silence a scanner is how a dlopen consumer breaks silently in
+# production.
+#
 # Bumped again 2026-08-20 (9.8 -> 9.8, newer build) for #1001. The 9.8 pin above
 # was three months of errata behind, and the register's Debian->UBI9 re-base
 # found the same CVEs still in the image under their RHEL package names.
@@ -48,7 +71,7 @@ ARG HDF_LIBS_VERSION=3.5.1
 # Measured with `rpm -q` on both digests, per the practice above. The bump is
 # surgical: 109 packages before and after, nothing added or removed, and
 # sqlite-libs is the ONLY version change — so the blast radius is the fix.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:580752f96d36c4132bffd30f9c34865bf4bd87f6aa161c969d117f21732e50f7
+ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:7b8e25a1b56ca4d00219198f3b5b51a3e1693a5c4f5369c5e190d7d6cb3f980e
 
 # ── hdf-builder: hdf-cli compiled from source, toolchain pinned (#1001) ──────
 # This used to be a release-tarball download (script/dev/install-hdf.sh, then
@@ -224,7 +247,17 @@ FROM ${UBI_IMAGE} AS runtime
 # the entrypoint needs: pg_isready (postgresql) and bash (docker-entrypoint).
 RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 \
       openssl-libs zlib libyaml libffi libpq tzdata shadow-utils bash postgresql ca-certificates \
-    && microdnf clean all
+    && microdnf update -y --nodocs --setopt=install_weak_deps=0 libevent \
+    && microdnf clean all \
+    && rpm -q libevent openssl-libs
+
+# The `update libevent` above is deliberate and narrow — see the UBI_IMAGE note.
+# Red Hat shipped libevent-2.1.13-1.el9_8 to ubi-9-baseos-rpms for six HIGH CVEs
+# but has not rebuilt ubi-minimal with it, so the digest pin cannot deliver it.
+# Scoped to the one package rather than a blanket `microdnf update`, which would
+# float every package in the image and defeat the digest pin entirely. The
+# trailing `rpm -q` makes the resulting versions part of the BUILD LOG, so a
+# regression is visible at build time instead of at the next scan.
 
 # Custom/private-CA trust (#774), mechanism 1 — build-time bake-in. Drop PEM/CRT
 # files into ./certs/ (empty by default; corporate proxy / DoD-PKI / internal
