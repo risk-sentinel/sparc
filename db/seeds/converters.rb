@@ -281,13 +281,21 @@ if mitre_path.exist?
     description: "AWS Config Rule → NIST 800-53 mapping vendored from mitre/heimdall2 " \
                  "(Apache-2.0). Editable to extend coverage beyond MITRE's curated set.",
     source: mitre_doc["source"],
-    # MITRE heimdall2 AwsConfigMappingData emits Rev 4 control ids.
-    # The ControlIdNormalizer auto-translates to Rev 5 when a caller
-    # requests target_rev=5.
-    target_rev: "4"
+    # #1103 — follow the vendored document instead of asserting a revision.
+    # Upstream now publishes both Rev 4 and Rev 5 and the porter selects rev5,
+    # so this converter's targets ARE rev5 ids.
+    #
+    # The old hardcoded "4" was defensible only for the bulk-apply path, where
+    # ControlIdNormalizer.translate converts on request. The AWS Security Hub
+    # enrichment chain does no such translation — it plucks `target_id`
+    # verbatim — so a rev4 declaration meant rev4 ids landing unconverted in a
+    # converter declared `target_rev: "5"`.
+    target_rev: (mitre_doc["rev"] || 4).to_s
   )
 
   if converter.converter_entries.none?
+    # rev omitted on purpose: the loader defaults to the revision the document
+    # declares, so the file is the single source of truth for which it is.
     rows = AwsSecurityHub::AwsConfigMappingLoader.build(mitre_doc)
     row_order = 0
     entries = rows.map do |r|

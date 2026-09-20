@@ -46,6 +46,64 @@ RSpec.describe AwsSecurityHub::AwsConfigMappingLoader do
       expect(rows.first["remarks"]).to include("aws_config_rule_source_identifier=FOO")
     end
 
+    # #1103 — which revision's ids become the converter's targets.
+    context "revision selection" do
+      let(:doc) do
+        {
+          "rev" => 5,
+          "available_revs" => [ 4, 5 ],
+          "mappings" => [
+            {
+              "aws_config_rule_name" => "access-keys-rotated",
+              "aws_config_rule_source_identifier" => "ACCESS_KEYS_ROTATED",
+              "nist_rev4_raw" => [ "AC-2(1)", "AC-2(j)" ],
+              "nist_rev4_oscal_ids" => [ "ac-2.1", "ac-2_smt.j" ],
+              "nist_rev5_raw" => [ "AC-3(15)" ],
+              "nist_rev5_oscal_ids" => [ "ac-3.15" ],
+              "nist_oscal_ids" => [ "ac-3.15" ]
+            }
+          ]
+        }
+      end
+
+      it "defaults to the revision the document declares" do
+        rows = described_class.build(doc)
+
+        expect(rows.map { |r| r["target_id"] }).to contain_exactly("ac-3.15")
+      end
+
+      it "honours an explicit rev override" do
+        rows = described_class.build(doc, rev: 4)
+
+        expect(rows.map { |r| r["target_id"] }).to contain_exactly("ac-2.1", "ac-2_smt.j")
+      end
+
+      it "records both revisions and the selection in remarks" do
+        remarks = described_class.build(doc).first["remarks"]
+
+        expect(remarks).to include("mitre_rev4=AC-2(1),AC-2(j)")
+        expect(remarks).to include("mitre_rev5=AC-3(15)")
+        expect(remarks).to include("selected_rev=5")
+      end
+
+      # A file vendored before #1103 has no per-revision keys and no top-level
+      # `rev`. It must still load as the rev4 data it actually is, rather than
+      # producing zero rows.
+      it "loads a pre-#1103 document as rev4" do
+        legacy = {
+          "mappings" => [
+            { "aws_config_rule_name" => "foo", "aws_config_rule_source_identifier" => "FOO",
+              "nist_rev4_raw" => [ "AC-3" ], "nist_oscal_ids" => [ "ac-3" ] }
+          ]
+        }
+
+        rows = described_class.build(legacy)
+
+        expect(rows.map { |r| r["target_id"] }).to contain_exactly("ac-3")
+        expect(rows.first["remarks"]).to include("selected_rev=4")
+      end
+    end
+
     it "skips entries with empty rule name" do
       doc = { "mappings" => [ { "aws_config_rule_name" => "", "nist_oscal_ids" => [ "ac-3" ] } ] }
       expect(described_class.build(doc)).to eq([])
