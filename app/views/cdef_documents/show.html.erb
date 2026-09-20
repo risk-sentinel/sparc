@@ -58,6 +58,17 @@
               Component index degraded
             </span>
           <% end %>
+          <%# #1103 — the controls are present but carry no NIST reference, so the
+              heat map, coverage and inheritance all read empty while the import
+              looks clean. Distinct from "Component index degraded": that is the
+              component summary, this is the control mapping. %>
+          <% if @cdef_document.nist_enrichment_degraded? %>
+            <span class="sparc-status sparc-status--warning"
+                  data-testid="cdef-enrichment-degraded"
+                  title="NIST enrichment failed during import on <%= @cdef_document.nist_enrichment_failed_at %>. Controls are intact; they carry no NIST mapping, so NIST-grouped views understate this document. Re-import to resolve them.">
+              NIST mappings degraded
+            </span>
+          <% end %>
           <% if signed_in? && !@cdef_document.aws_labs_source? %>
             <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
           <% end %>
