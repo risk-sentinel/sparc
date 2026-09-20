@@ -1,0 +1,47 @@
+# The PRESERVED-BASELINE override — run the RELEASED image, not this checkout.
+#
+# Why this file exists
+# --------------------
+# The gate stack had no database volume at all, so every run began on an empty
+# database and could only ever prove that a FRESH INSTALL works. That is not a
+# small gap: v1.16.2 shipped UNUPGRADABLE — seven columns missing, boundary pages
+# returning 500 — while a fresh install of v1.16.2 was perfectly fine. Every gate
+# was green, because every gate built a new database. See
+# docs/dev/issue_rules.md, "never recreate a database to get tests to pass".
+#
+# The fix is a database that PREDATES the branch under test. This override brings
+# the stack up on the last released image so the volume is populated by THAT
+# code; the branch image is then deployed over the same volume and its migrations
+# run against real prior data, which is the only way an upgrade defect surfaces
+# before a customer finds it.
+#
+# The supported hop is v1.16.3 -> current (owner-decided 2026-09-20), so the
+# baseline is pinned to v1.16.3 rather than to `latest`.
+#
+# Usage
+# -----
+#   # 1. populate the volume with a genuine v1.16.3 database
+#   DOCKER_DEFAULT_PLATFORM= docker compose \
+#     -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml \
+#     -f dev/ubi9/compose.baseline.yaml up -d
+#
+#   # 2. capture it, once, as the reusable baseline
+#   docker compose -f docker-compose.ubi9.yaml exec -T db \
+#     pg_dump -U postgres -Fc ssp_tpr_manager_production > dev/ubi9/baseline-v1.16.3.dump
+#
+#   # 3. drop this override and bring the BRANCH image up on the same volume
+#   DOCKER_DEFAULT_PLATFORM= docker compose \
+#     -f docker-compose.ubi9.yaml -f dev/ubi9/compose.arm64.yaml up -d --build
+#
+# Restoring the baseline later costs one command and does not recreate anything:
+#   docker compose -f docker-compose.ubi9.yaml exec -T db \
+#     pg_restore -U postgres -d ssp_tpr_manager_production --clean --if-exists \
+#     < dev/ubi9/baseline-v1.16.3.dump
+#
+# `!reset null` REMOVES the key rather than blanking it — the same form, and for
+# the same reason, as compose.arm64.yaml: an empty string is silently ignored and
+# the build would still run.
+services:
+  web:
+    image: risksentinel/sparc:v1.16.3
+    build: !reset null

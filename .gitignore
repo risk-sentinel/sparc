@@ -82,3 +82,10 @@ license-inventory.json
 # Redis snapshots — a local runtime artifact, committed by accident at repo
 # creation (2026-02-27). Never source; Sonar was parsing it as UTF-8 text.
 *.rdb
+
+# #1103 — the preserved-baseline database dump. Regenerated on demand from the
+# PINNED released image via dev/ubi9/compose.baseline.yaml, which is better
+# provenance than a committed blob and cannot drift. Deliberately NOT checked
+# in: this repository is public and the dump carries the `users` table (the
+# bootstrapped admin's password digest) and `audit_events`.
+dev/ubi9/baseline-*.dump

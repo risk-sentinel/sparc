@@ -22,6 +22,17 @@ services:
     environment:
       POSTGRES_PASSWORD: password  # gitleaks:allow
       POSTGRES_DB: ssp_tpr_manager_production
+    # The gate database MUST survive the stack, or the gate can only ever prove
+    # that a FRESH INSTALL works. It had no volume at all, so every run started
+    # from an empty database and no upgrade defect could possibly be detected —
+    # which is exactly how v1.16.2 shipped unupgradable (seven columns missing,
+    # boundary pages 500) while a fresh install of it was fine, and every gate
+    # was green. See docs/dev/issue_rules.md, "never recreate a database".
+    #
+    # Named, so `stop`/`start` and even `down` keep it. Removing it is a
+    # deliberate act (`docker volume rm`), never a side effect.
+    volumes:
+      - ubi9_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -47,6 +58,10 @@ services:
     volumes:
       # Local-validation only: force disk storage (prod hardcodes S3). See file.
       - ./dev/ubi9/zzz_local_storage.rb:/rails/config/initializers/zzz_local_storage.rb:ro
+      # ActiveStorage blobs must survive alongside the database they are
+      # referenced from. A preserved database pointing at vanished blobs is a
+      # broken deployment, not a preserved one.
+      - ubi9_storage:/rails/storage
     depends_on:
       db:
         condition: service_healthy
@@ -110,3 +125,9 @@ services:
       - "3443:3443"
     volumes:
       - ./dev/ubi9/Caddyfile:/etc/caddy/Caddyfile:ro
+
+# Named so they outlive the containers. `docker compose down` removes anonymous
+# volumes and leaves these alone; only `docker volume rm` discards them.
+volumes:
+  ubi9_pgdata:
+  ubi9_storage:
