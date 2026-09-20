@@ -375,7 +375,8 @@ merged** — #1103 (AWS Labs CDEFs import with no controls), #1104 (~40
 SonarCloud findings standing on `main`), #1105 (review OSCAL 1.2.3) and
 **#1106** (sweep all seven exports for namespace, vocabulary and constraint
 conformance — the generalisation of the `implementation-status` defect, and the
-only one milestoned).
+only one milestoned **at the time**). Since then the owner milestoned **#1103**
+and **#1104** onto v1.17.0; #1105 is still unmilestoned.
 
 **Two failure modes the pixel gate cannot see, both found by the owner's
 page-by-page review rather than by the harness.** Converting `style="display:
@@ -514,7 +515,7 @@ been sequenced, and it is small: six issues against v1.16.1's 22.
 debt the last two milestones deliberately deferred — the CSP remainder, the
 Sonar backlog, a config audit, a coverage matrix and one untested method. None
 of them is a thing a user asks for. **What v1.17.0 is *for* is the open
-question**, and the 24 unmilestoned issues below are where the answer has to come
+question**, and the 27 unmilestoned issues below are where the answer has to come
 from.
 
 <!-- markdownlint-disable MD013 -->
@@ -523,7 +524,7 @@ from.
 | --- | --- | --- | --- |
 | **AE — Finish what v1.16.1 started** | #1109 #1133 #1046 | The tails, and they are related. **#1109** is the last **254 inline styles across 94 files**, none holding ten — the flat tail #1047 stopped at 83%. It is the only thing standing between SPARC and removing `style-src 'unsafe-inline'`, which is binary: it comes out at zero or not at all. **#1133** is 191 SonarCloud findings, of which ~36 are demo-seed duplicate literals that want a `sonar.exclusions` change rather than edits, plus a `NOSONAR` in an `.erb` that never took and 34 contrast findings our own WCAG gate contradicts. **#1046** is the same shape — 213 bare-symbol route mappings Sonar wants named, already owner-**ACCEPTED** once, so it needs a decision to close rather than work. | 3d |
 | **AF — Make the gates mean something** | #1063 #1131 #1120 | **#1063** is the per-endpoint `tests/api` and per-screen ui-smoke both-directions matrix carved out of #885 — the coverage question every other gate rests on, and the one most likely to find real gaps. **#1131** is `OscalConformanceService#check_part`, whose part-name half has no coverage at all: the #1134 audit found a missing KEY slipping past a guard built for a missing KIND, and this is the other half of the same service. **#1120** audits all **125 `SPARC_*` variables** — removing the dead ones (`SPARC_OIDC_FORCE_MFA` is cited in the compliance docs and enforces nothing) and inferring what a neighbour already implies. | 4d |
-| **AG — What the release is FOR** ⚠️ **NOT SEQUENCED — needs an owner decision** | *candidates from the 24 unmilestoned, below* | The two bundles above are debt. A patch release can ship on debt alone, but a **minor** release should carry something a user asked for, and the unmilestoned list holds several: the **OSCAL 1.2.3 adoption decision (#1105)**, whose dataset is already baked and measured, with **#1108** the sweep that must follow it; **#1103**, where AWS Labs CDEFs import with no controls so the Security Hub → NIST mapping has nothing to map; **#1101**, the ATO wizard re-asking for a boundary's already-settled profile and CDEFs; and **#1115**, the FedRAMP 20x KSI catalog drift. The three DESIGN questions (**#1099** findings-vs-risks, **#1089** CDEF 1:n profiles, **#1091** user-defined risk vocabulary) each change the data model and are owner calls before they are work. | est. TBD |
+| **AG — What the release is FOR** ⚠️ **NOT SEQUENCED — needs an owner decision** | **#1103** (member), **#1104** · *further candidates from the 27 unmilestoned, below* | The two bundles above are debt. A patch release can ship on debt alone, but a **minor** release should carry something a user asked for, and the unmilestoned list holds several: the **OSCAL 1.2.3 adoption decision (#1105)**, whose dataset is already baked and measured, with **#1108** the sweep that must follow it; **#1103**, where AWS Labs CDEFs import with no controls so the Security Hub → NIST mapping has nothing to map; **#1101**, the ATO wizard re-asking for a boundary's already-settled profile and CDEFs; and **#1115**, the FedRAMP 20x KSI catalog drift. The three DESIGN questions (**#1099** findings-vs-risks, **#1089** CDEF 1:n profiles, **#1091** user-defined risk vocabulary) each change the data model and are owner calls before they are work. | est. TBD |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -556,10 +557,10 @@ unestimated for exactly that reason.
 
 ---
 
-## Open work — measured 2026-09-17 (re-measured after the v1.16.1 tag)
+## Open work — measured 2026-09-20 (re-measured on the #1103 bundle)
 
-Re-measured against the live repository, not carried forward. **540 issues**;
-**510 are closed**, **30 open**. What remains:
+Re-measured against the live repository, not carried forward. **550 issues**;
+**514 are closed**, **36 open**. What remains:
 
 > **The closed count in this section was itself stale until 2026-08-25.** It read
 > "282 issues, 252 closed" while the repository held 503 and 460 — the open
@@ -574,8 +575,8 @@ Re-measured against the live repository, not carried forward. **540 issues**;
 > `gh issue list --milestone <name>`, never with `gh api .../milestones`.
 >
 > ```bash
-> gh issue list --state closed --limit 3000 --json number --jq 'length'   # 510
-> gh issue list --state open   --limit 3000 --json number --jq 'length'   #  30
+> gh issue list --state closed --limit 3000 --json number --jq 'length'   # 514
+> gh issue list --state open   --limit 3000 --json number --jq 'length'   #  36
 > ```
 >
 > `--limit` must exceed the real count or the answer is silently truncated to the
@@ -583,13 +584,13 @@ Re-measured against the live repository, not carried forward. **540 issues**;
 
 | State | Count |
 | --- | --- |
-| Closed | **510** |
+| Closed | **514** |
 | Open, on `ci.v0.0.1` | **0** — the milestone closed 2026-08-30 at **22 issues** (+ 8 PRs) |
 | Open, on `v1.16.1` | **0** — all 22 closed; **tagged 2026-09-17** |
-| Open, on `v1.17.0` | **6** — #1046 #1063 #1109 #1120 #1131 #1133, each moved or filed there by the owner |
-| **Open, on NO milestone** | **24** (22 on 2026-09-05, 25 on 09-03, 10 on 08-25) — see below |
+| Open, on `v1.17.0` | **9** — #1046 #1063 #1103 #1104 #1109 #1120 #1131 #1133 #1151, each moved or filed there by the owner |
+| **Open, on NO milestone** | **27** (24 on 2026-09-17, 22 on 09-05, 25 on 09-03, 10 on 08-25) — see below |
 
-The reconciliation: 0 + 6 + 24 = 30, and 510 + 30 = 540.
+The reconciliation: 0 + 9 + 27 = 36, and 514 + 36 = 550.
 
 > **Three milestones are still OPEN on GitHub with zero open issues** — `v1.16.0`,
 > `ci.v0.0.1` and `v1.16.1`. Closing a milestone is an owner action and none is
@@ -599,11 +600,19 @@ The reconciliation: 0 + 6 + 24 = 30, and 510 + 30 = 540.
 **The no-milestone count went DOWN for the first time**, 25 → 22, and the
 movement is worth reading rather than the net: **six closed** with PR #1102
 (#1090 #1092 #1093 #1094 #1095 #1096 — the Bundle Z fold-ins), **three new**
-were filed out of the work that followed it (#1103 #1104 #1105), and **#1106**
-was filed and milestoned straight onto v1.16.1. The discovery factor has not
+were filed out of the work that followed it (#1103 #1104 #1105 — #1103 and
+#1104 have since moved to v1.17.0), and **#1106** was filed and milestoned
+straight onto v1.16.1. The discovery factor has not
 stopped; a bundle merged faster than it filed, once.
 
-### The twenty-four with no milestone
+### The twenty-seven with no milestone
+
+> **This register had fallen five issues behind when it was re-measured on
+> 2026-09-20** — #1144, #1154, #1155, #1159 and #1161 were open and unmilestoned
+> and appeared in no row, while the heading still read twenty-four. The register
+> exists precisely because #950 went missing by sitting in it, so a row that is
+> never added is the failure mode, not a formatting detail. Re-measure the list
+> itself, not only its count.
 
 These are invisible to every milestone count, which is exactly how **#950 went
 missing** — it sat open with no milestone after being split from #949, appeared
@@ -643,13 +652,16 @@ and #1121 on 09-11.
 | **#1099** | 2026-09-03 | design(oscal): findings and risks are unrelated in SPARC, but OSCAL relates them (finding.related-risks) |
 | **#1100** | 2026-09-03 | design(ssp): control sub-parts are aggregated, so an assessor cannot respond per part (ac-1a, ac-1a.1, ...) |
 | **#1101** | 2026-09-03 | feat(ato): the wizard re-asks for the boundary's already-settled profile/CDEFs and does not default the SSP/SAP/SAR/POA&M |
-| **#1103** | 2026-09-03 | bug(cdef): AWS Labs CDEFs import with no controls, so the Security Hub → NIST converter has nothing to map (v1.15.3) |
-| **#1104** | 2026-09-04 | chore(sonar): clear the ~40 SonarCloud findings standing on main — with won't-fix rationale for four of them |
 | **#1105** | 2026-09-05 | chore(oscal): review OSCAL 1.2.3 and decide whether to adopt it (SPARC ships 1.2.2) |
 | **#1107** | 2026-09-05 | bug(css): .sparc-d-none is defined before all 70 component classes that bake a display value, so it loses the cascade to every one of them |
 | **#1108** | 2026-09-05 | audit(oscal): re-run the seven-model conformance sweep against OSCAL 1.2.3, after #1105 decides adoption |
 | **#1115** | 2026-09-07 | FedRAMP 20x KSI catalog has drifted: theme codes renamed, all indicator ids re-keyed to mnemonics |
 | **#1121** | 2026-09-11 | Sample-data generation through the API, not around it — YAML-driven endpoint exerciser (moved from sparc-validate#3) |
+| **#1144** | 2026-09-18 | bug(supply-chain): the OpenVEX attestation names a placeholder product (HDFPID-0001), not the image it describes |
+| **#1154** | 2026-09-19 | sparc-horizon contract dependencies: namespace validate rules, KSI/800-53 mapping documents, and the Delivery API surface |
+| **#1155** | 2026-09-19 | Register the SPARC namespace URI and the federation namespace UUID before Horizon generates fixtures |
+| **#1159** | 2026-09-19 | federation: deduplicating on the object UUID alone lets a peer claim another boundary's objects |
+| **#1161** | 2026-09-19 | uuid: Ruby and Python reference implementations of the UUIDv5 key grammar, with shared test vectors |
 
 **Six rows left this table on 2026-09-05** — the Bundle Z fold-ins
 (#1090, #1092, #1093, #1094, #1095, #1096), closed by PR #1102 rather than by a
@@ -752,19 +764,21 @@ owner-review work carrying no issue, and the PR body uses no closing keyword for
 | 17 | **Complete** | `ci.v0.0.1` — evidence and gates | **0 open, 22 closed** — re-measured 2026-09-05 with `gh issue list --milestone ci.v0.0.1`. This row read **30 closed** until then; that is the milestone **page's** number and it counts the milestone's **8 PRs** alongside its issues. CI-1 #1048 #1050 #987 #885 · CI-2 #962 #985 #990 #1027 · CI-3 #835 #927 #711 #1061 · CI-4 #858 #859 #965 #917 · filed and closed out of it: #1064 #1065 #1067 #1080 | Closed **2026-08-30**, three working days ahead of the ~09-02 the cadence predicted. **CI-1**: `security_gate` had never assessed a single HDF — `saf validate threshold -F` names a flag that has never existed in any released saf, oclif rejected the parse, `saf_action` reported a warning and exited 0, and the next step wrote "Security gate passed". **CI-2**: several of the 12 HDFs had ZERO controls, and a zero-control document passes every band trivially — a clean scan and a broken scanner were the same green check. **#1080** closed the milestone by finding that local scans disagreed with CI 68-to-0 because `.dockerignore` did not exclude gitignored local scan output: `COPY . .` baked a developer's own CycloneDX SBOM into the image and Trivy parsed it back as installed packages. CI was correct throughout. Inventory: `docs/compliance/scan-artifact-inventory.md`. Estimated 8 → revised 11 → **actual ~7 working days** |
 | 18 | **Complete** | v1.16.1 — the patch release | **0 open, 22 closed. Tagged `v1.16.1` 2026-09-17** from `main` @ `df6439c0`, against a ~09-22 soft target. Bundles Y → Z → AA → AB → AC → AD, all delivered. Earlier detail: **AB DELIVERED 09-12 → 09-13** (PR #1125 #1126 #1128; 5d est → 2d). **AC resolved 09-16**: #1106 + #1124 in PR #1130, #1063 → v1.17.0. **AD — #1116 #1117 #1134 — in PR, the last bundle.** Earlier: **Y SHIPPED 2026-08-31** (3d est → 1d). **Z DELIVERED 2026-09-10** (4d est → 10d; the overrun was the OSCAL assessment chain an owner screen-review uncovered, not the sweep). **AA DELIVERED 2026-09-11** via [PR #1119](https://github.com/risk-sentinel/sparc/pull/1119) and [PR #1122](https://github.com/risk-sentinel/sparc/pull/1122) — #978 #1059 #1082 #1044, **3d est → 2d**. AA filed two issues out of its own work: **#1120** (audit all 125 SPARC_* variables, v1.17.0) and **#1123** (the CI gate times out on healthy runs, owner-scheduled onto AB). Bundles: ~~Y~~ · ~~Z~~ · ~~AA~~ · ~~AB~~ · ~~AC~~ · ~~AD~~ | Estimated **14 working days**, target **~2026-09-22 and soft**. **Re-measured after AA:** Y 3d→1d, Z 4d→10d, AA 3d→2d. Two of three bundles have come in at or under estimate; the one that did not was the one whose scope was discovered by an owner screen-review AFTER it was scoped. **That is the pattern worth acting on — the estimate is reliable when the work is measured first, and unreliable when a review finds the work mid-bundle.** **AB is the largest remaining bundle and contains an owner-decision item (#1033) and a 281-finding triage (#966); it should be re-scoped before it starts rather than after.** |
 
-| 19 | **Current** | v1.17.0 — the next milestone | **6 open, 0 closed** (measured 2026-09-17): #1046 #1063 #1109 #1120 #1131 #1133. Proposed bundles **AE** (the v1.16.1 tails — #1109 #1133 #1046), **AF** (coverage and config gates — #1063 #1131 #1120) and **AG** (*unsequenced* — what the release is FOR, drawn from the 24 unmilestoned issues). | AE 3d + AF 4d; **AG unestimated pending an owner decision.** The milestone is currently all deferred debt, and whether v1.17.0 is a patch or a minor is the first thing to settle |
+| 19 | **Current** | v1.17.0 — the next milestone | **9 open, 0 closed** (measured 2026-09-20): #1046 #1063 #1103 #1104 #1109 #1120 #1131 #1133 #1151. Proposed bundles **AE** (the v1.16.1 tails — #1109 #1133 #1046 #1104), **AF** (coverage and config gates — #1063 #1131 #1120) and **AG** (**#1103** plus further candidates — what the release is FOR). **#1151** came out of the v1.16.3 cycle and is not yet bundled. | AE 3d + AF 4d; **AG unestimated pending an owner decision.** The milestone is currently all deferred debt, and whether v1.17.0 is a patch or a minor is the first thing to settle |
 
 <!-- markdownlint-enable MD013 -->
 
 **Re-measured 2026-09-17, after the v1.16.1 tag** (`gh issue list --state all
---limit 3000`): **540 issues total — 510 closed, 30 open.** Open splits **0** on
+--limit 3000`): **550 issues total — 514 closed, 36 open.** Open splits **0** on
 `v1.16.1` (tagged 2026-09-17 at **22 issues**), **6** on `v1.17.0`, **0** on
 `ci.v0.0.1` (closed 2026-08-30 at **22 issues**), and **24** with no milestone.
-0 + 6 + 24 = 30, and 510 + 30 = 540. *(09-05 measurement: 525 total, 488 closed,
+0 + 9 + 27 = 36, and 514 + 36 = 550. *(09-17 measurement: 540 total, 510 closed,
+30 open. 09-05: 525 total, 488 closed,
 37 open.)* Since 2026-09-03: PR #1102 closed **six** of
 the unmilestoned spot-check issues, and **four** new ones were filed out of the
-work that followed it (#1103 #1104 #1105 unmilestoned, **#1106** milestoned
-onto v1.16.1). The no-milestone count fell for the first time, 25 → 22.
+work that followed it (#1103 #1104 #1105 unmilestoned at the time — #1103 and
+#1104 are now on **v1.17.0** — and **#1106** milestoned onto v1.16.1). The
+no-milestone count fell for the first time, 25 → 22; it has since risen to 27.
 
 > This footer previously read "503 issues total — 478 closed, 28 open", which
 > does not add up (478 + 28 = 506), carried two different measurement dates in
