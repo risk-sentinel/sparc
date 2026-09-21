@@ -89,3 +89,8 @@ license-inventory.json
 # in: this repository is public and the dump carries the `users` table (the
 # bootstrapped admin's password digest) and `audit_events`.
 dev/ubi9/baseline-*.dump
+
+# Python bytecode. Only tests/api/.gitignore covered this, so a package added
+# anywhere else — lib/federation/python (#1161) — committed its __pycache__.
+__pycache__/
+*.pyc
