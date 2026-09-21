@@ -299,3 +299,349 @@ findings:
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
   next_review_date: '2026-10-19'
+- cve_id: CVE-2026-14662
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
+    Arbitrary code execution via integer wraparound in tsvector and tsquery functions This is executed
+    by the PostgreSQL server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres`
+    reports only postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package
+    — and `command -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through
+    the `pg` gem and libpq against a SEPARATE Postgres container, so the vulnerable program is not in
+    this image at all — the same basis as CVE-2026-53613, where the util-linux libraries are present but
+    mount(8) is not. No fix is available upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-14664
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
+    Arbitrary code execution via heap buffer overflow in regexp This is executed by the PostgreSQL server
+    backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only postgresql-13.23-5.el9_8
+    and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command -v` finds no postgres,
+    postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem and libpq against a
+    SEPARATE Postgres container, so the vulnerable program is not in this image at all — the same basis
+    as CVE-2026-53613, where the util-linux libraries are present but mount(8) is not. No fix is available
+    upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-14668
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
+    Information disclosure via type confusion in ctid selectivity estimator This is executed by the PostgreSQL
+    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
+    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
+    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
+    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
+    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
+    not. No fix is available upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-14669
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
+    Arbitrary code execution via long POSIX timezone abbreviation This is executed by the PostgreSQL server
+    backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only postgresql-13.23-5.el9_8
+    and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command -v` finds no postgres,
+    postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem and libpq against a
+    SEPARATE Postgres container, so the vulnerable program is not in this image at all — the same basis
+    as CVE-2026-53613, where the util-linux libraries are present but mount(8) is not. No fix is available
+    upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-14670
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
+    Arbitrary code execution via plperl tied hash heap buffer overflow This is executed by the PostgreSQL
+    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
+    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
+    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
+    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
+    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
+    not. No fix is available upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-14671
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
+    Arbitrary code execution via type confusion in ''refint'' module This is executed by the PostgreSQL
+    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
+    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
+    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
+    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
+    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
+    not. No fix is available upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-14677
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). pltcl:
+    plperl: PostgreSQL: Arbitrary code execution in 32-bit pltcl and plperl This is executed by the PostgreSQL
+    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
+    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
+    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
+    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
+    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
+    not. No fix is available upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-14679
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
+    Stack buffer overflow via OUT parameter count manipulation This is executed by the PostgreSQL server
+    backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only postgresql-13.23-5.el9_8
+    and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command -v` finds no postgres,
+    postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem and libpq against a
+    SEPARATE Postgres container, so the vulnerable program is not in this image at all — the same basis
+    as CVE-2026-53613, where the util-linux libraries are present but mount(8) is not. No fix is available
+    upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-14680
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
+    Arbitrary code execution via type confusion with "internal" arguments This is executed by the PostgreSQL
+    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
+    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
+    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
+    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
+    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
+    not. No fix is available upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-15741
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
+    Privilege escalation via SQL injection in EXTRACT() deparse This is executed by the PostgreSQL server
+    backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only postgresql-13.23-5.el9_8
+    and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command -v` finds no postgres,
+    postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem and libpq against a
+    SEPARATE Postgres container, so the vulnerable program is not in this image at all — the same basis
+    as CVE-2026-53613, where the util-linux libraries are present but mount(8) is not. No fix is available
+    upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-15742
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL
+    fuzzystrmatch: Arbitrary code execution via integer wraparound This is executed by the PostgreSQL
+    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
+    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
+    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
+    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
+    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
+    not. No fix is available upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-16239
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
+    Arbitrary code execution via type confusion in cursor lifecycle This is executed by the PostgreSQL
+    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
+    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
+    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
+    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
+    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
+    not. No fix is available upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-6471
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
+    Arbitrary code execution via logical decoding plugin This is executed by the PostgreSQL server backend.
+    MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only postgresql-13.23-5.el9_8
+    and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command -v` finds no postgres,
+    postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem and libpq against a
+    SEPARATE Postgres container, so the vulnerable program is not in this image at all — the same basis
+    as CVE-2026-53613, where the util-linux libraries are present but mount(8) is not. No fix is available
+    upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-74860
+  package: libxml2
+  installed_version: 2.9.13-14.el9_8.4
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). double-free/UAF
+    in libxml2 Python bindings MEASURED: the image carries only libxml2-2.9.13-14.el9_8.4; `libxml2-python`
+    is NOT installed and there is no python3 interpreter in the image at all (`command -v python3` finds
+    nothing), so the Python bindings this finding describes cannot be loaded. No fix is available upstream
+    (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-18408
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'POA&M / DEFERRED 2026-09-21 (#1173). PostgreSQL: Arbitrary code execution via untrusted
+    data inclusion in pg_dump Unlike the server-side findings in this batch, `pg_dump` IS present in the
+    image — deliberately NOT dispositioned as not-applicable, because the claim would be about reachability
+    rather than absence, and reachability is a property of code that can change silently. SPARC reaches
+    Postgres through the `pg` gem and libpq and does not shell out to `pg_dump` on any request path, so
+    the exposure requires an operator to run it against untrusted input. No fix is available upstream
+    (not-fixed), so there is no remediation to apply. Scanned the IMAGE, not an SBOM (#862).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-19385
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'POA&M / DEFERRED 2026-09-21 (#1173). PostgreSQL pg_dump: Arbitrary code execution via crafted
+    transform lists Unlike the server-side findings in this batch, `pg_dump` IS present in the image —
+    deliberately NOT dispositioned as not-applicable, because the claim would be about reachability rather
+    than absence, and reachability is a property of code that can change silently. SPARC reaches Postgres
+    through the `pg` gem and libpq and does not shell out to `pg_dump` on any request path, so the exposure
+    requires an operator to run it against untrusted input. No fix is available upstream (not-fixed),
+    so there is no remediation to apply. Scanned the IMAGE, not an SBOM (#862).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-6464
+  package: postgresql/postgresql-private-libs
+  installed_version: 13.23-5.el9_8
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'POA&M / DEFERRED 2026-09-21 (#1173). PostgreSQL psql: Arbitrary command execution via untrusted
+    data in COPY FROM STDIN Unlike the server-side findings in this batch, `psql` IS present in the image
+    — deliberately NOT dispositioned as not-applicable, because the claim would be about reachability
+    rather than absence, and reachability is a property of code that can change silently. SPARC reaches
+    Postgres through the `pg` gem and libpq and does not shell out to `psql` on any request path, so the
+    exposure requires an operator to run it against untrusted input. No fix is available upstream (not-fixed),
+    so there is no remediation to apply. Scanned the IMAGE, not an SBOM (#862).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-86140
+  package: libxml2
+  installed_version: 2.9.13-14.el9_8.4
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'POA&M / DEFERRED 2026-09-21 (#1173). libxml2: Arbitrary code execution via stack-based buffer
+    overflow in xmlSnprintfElements The system library IS present (/usr/lib64/libxml2.so.2), so this is
+    not dispositioned as absent. It is however not on SPARC''s XML path: nokogiri ships as the precompiled
+    `aarch64-linux-gnu` native gem and statically bundles its own libxml2 — `ldd` on nokogiri.so shows
+    NO dynamic libxml2 link — so application XML parsing does not enter this copy. Recorded as accepted
+    risk rather than not-applicable because that is a statement about reachability, which can change.
+    No fix is available upstream (not-fixed).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-86145
+  package: pcre2/pcre2-syntax
+  installed_version: 10.40-6.el9
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'POA&M / DEFERRED 2026-09-21 (#1173). PCRE2: Out-of-bounds write allows arbitrary code execution
+    via crafted regular expressions pcre2-10.40-6.el9 and pcre2-syntax are present and used by system
+    tooling in the image. Not dispositioned as absent, because they are not absent. No fix is available
+    upstream (not-fixed), so there is no remediation to apply and the finding is accepted for review.
+    Scanned the IMAGE, not an SBOM (#862).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+- cve_id: CVE-2026-89161
+  package: pcre2/pcre2-syntax
+  installed_version: 10.40-6.el9
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'POA&M / DEFERRED 2026-09-21 (#1173). PCRE2: Memory corruption vulnerability in pcre2_jit_match
+    pcre2-10.40-6.el9 and pcre2-syntax are present and used by system tooling in the image. Not dispositioned
+    as absent, because they are not absent. No fix is available upstream (not-fixed), so there is no remediation
+    to apply and the finding is accepted for review. Scanned the IMAGE, not an SBOM (#862).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
