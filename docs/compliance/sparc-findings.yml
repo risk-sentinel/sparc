@@ -1,63 +1,3 @@
-# SPARC finding dispositions — the register `bin/sparc_findings_to_hdf_amendments.rb`
-# turns into HDF amendments.
-#
-# ── THE TWO DELIBERATE ABSENCES ARE RESOLVED (#1065, 2026-08-28) ──────────
-#
-# This block used to say: do NOT "fix" resolv and uri by adding entries here.
-# That instruction has been carried out to its intended conclusion, and the
-# reason it existed is now gone. Recorded rather than deleted, because the way
-# it was closed is the precedent.
-#
-# Trivy reported four CRITICAL/HIGH findings against the shipping UBI9 image,
-# all the same case — a shadowed Ruby default gem, where the vulnerable
-# Ruby-shipped copy stays on disk while Bundler loads a patched one:
-#
-#   CVE-2026-27820  zlib    3.2.1 on disk  — was dispositioned below
-#   CVE-2026-41316  erb     4.0.4 on disk  — was dispositioned below
-#   CVE-2025-24294  resolv  0.6.0 on disk  — NO ENTRY, deliberately
-#   CVE-2025-61594  uri     1.0.3 on disk  — NO ENTRY, deliberately
-#
-# The owner decision of 2026-08-24 was to record the honest residual rather than
-# write a disposition to make the number look clean, and to hold #1065 open
-# "until the residual is genuinely 0 — i.e. the shadowed copies are gone from
-# the image, not dispositioned away."
-#
-# That is exactly what happened. **Ruby 3.4.4 -> 3.4.10** ships zlib 3.2.3,
-# erb 4.0.4.1 (the upstream backport), resolv 0.7.1 and uri 1.0.4 — each at or
-# above the version its advisory patches at. The vulnerable code left the image.
-# Measured on a clean CI runner:
-#
-#   main@daf41392   4 requirement(s): failed=2 notApplicable=2 (amended)
-#   PR #1078        1 requirement(s): failed=0        <- canary only
-#
-# `docs/compliance/thresholds/trivy-container.yml` is ratcheted to `high: 0`
-# accordingly. NO disposition was added for resolv or uri, then or now.
-#
-# THE ZLIB AND ERB ENTRIES ARE NOW RETIRED (2026-08-29), along with the
-# sqlite-libs one. An earlier revision of this header kept them on the grounds
-# that the SBOM and grype paths key on different ids, so an inert entry was safer
-# than retiring one that still matched. That reasoning was superseded by
-# evidence: all three findings are absent from the shipping image, so they are
-# `remediated` and belong in sparc-findings.retired.yml, per the owner decision
-# of 2026-08-20 ("a remediated finding is RETIRED, not reviewed").
-#
-#   erb    — image ships 4.0.4.1, the backport the entry's own fixed_version named
-#   zlib   — image ships 3.2.3, meeting the entry's fixed_version of >= 3.2.3
-#   sqlite — image ships 3.34.1-11.el9_8, NOT the 3.34.1-9.el9_7 recorded; Red Hat
-#            marks RHEL 9 "Not affected"; the scanner reports the CVE at no severity
-#
-# Each carries `verified_absent_on` and `verified_by` in the retired file. The gem
-# evidence is direct image inspection plus CI's 4 -> 0 container measurement, NOT a
-# local trivy gemspec scan — that path is unreliable per #1080.
-#
-# ONE RESIDUAL REMAINS, and it is not hidden: `json`. Ruby 3.4.10 still ships
-# json 2.9.1 on disk (CVE-2026-54696, fixed upstream in 2.19.9). It carries no
-# entry here for the same reason resolv and uri never did — it is a real
-# finding, and the honest thing is to leave it visible. It does not reach the
-# CRITICAL/HIGH gate because it is CVSS 3.7 LOW. The Gemfile pins
-# `json >= 2.19.9`, so the LOADED copy is patched (2.21.2); the on-disk copy
-# waits on upstream Ruby.
-#
 findings:
 - cve_id: CVE-2025-30258
   package: gnupg2
@@ -74,7 +14,17 @@ findings:
     Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the
     image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
     SEVERITY CORRECTED MEDIUM -> LOW: MEDIUM was the grading of the DEBIAN artifact this entry used to
-    describe, which is not in the image. LOW is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
+    describe, which is not in the image. LOW is how grype 0.114.0 grades the artifact that IS present.
+    RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0
+    image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is
+    still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and
+    unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further
+    28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the
+    #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still
+    PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and
+    unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -93,7 +43,17 @@ findings:
     2.3.3-5.el9_7 [rpm]. Rewritten to describe what the image actually contains; discovery_date is the
     date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8).
     Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the
-    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
+    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
+    RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0
+    image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is
+    still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and
+    unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further
+    28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the
+    #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still
+    PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and
+    unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -114,7 +74,17 @@ findings:
     RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
     the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
     SEVERITY CORRECTED MEDIUM -> LOW: MEDIUM was the grading of the DEBIAN artifact this entry used to
-    describe, which is not in the image. LOW is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
+    describe, which is not in the image. LOW is how grype 0.114.0 grades the artifact that IS present.
+    RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0
+    image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is
+    still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and
+    unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further
+    28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the
+    #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still
+    PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and
+    unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -133,7 +103,17 @@ findings:
     252-67.el9_8.4 [rpm]. Rewritten to describe what the image actually contains; discovery_date is the
     date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8).
     Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the
-    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
+    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
+    RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0
+    image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is
+    still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and
+    unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further
+    28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the
+    #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still
+    PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and
+    unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -154,7 +134,17 @@ findings:
     (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until
     this is fixed or documented as having no upstream fix (owner, 2026-08-20). SEVERITY CORRECTED MEDIUM
     -> LOW: MEDIUM was the grading of the DEBIAN artifact this entry used to describe, which is not in
-    the image. LOW is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
+    the image. LOW is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner):
+    accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest
+    (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image,
+    still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral
+    basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not
+    an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence:
+    grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability
+    DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still
+    fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral
+    basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not
+    an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -173,7 +163,17 @@ findings:
     2.3.3-5.el9_7 [rpm]. Rewritten to describe what the image actually contains; discovery_date is the
     date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8).
     Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the
-    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
+    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
+    RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0
+    image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is
+    still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and
+    unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further
+    28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the
+    #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still
+    PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and
+    unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -192,7 +192,17 @@ findings:
     11.5.0-14.el9 [rpm]; libstdc++ 11.5.0-14.el9 [rpm]. Rewritten to describe what the image actually
     contains; discovery_date is the date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest,
     RHEL 9.8). Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING:
-    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
+    the image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
+    RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0
+    image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is
+    still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and
+    unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further
+    28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the
+    #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still
+    PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and
+    unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -213,7 +223,17 @@ findings:
     none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image
     is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). SEVERITY
     CORRECTED LOW -> MEDIUM: LOW was the grading of the DEBIAN artifact this entry used to describe, which
-    is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
+    is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED
+    2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan
+    of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT
+    in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in
+    severity — so the deferral basis is factually unchanged and there is no remediation available to apply.
+    Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days,
+    to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164
+    branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in
+    the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged
+    in severity - so the deferral basis is factually unchanged and there is no remediation available to
+    apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -232,7 +252,17 @@ findings:
     3.34.1-10.el9_8 [rpm]. Rewritten to describe what the image actually contains; discovery_date is the
     date THIS artifact''s exposure was found (grype 0.114.0 scan of sparc-ubi9-web:latest, RHEL 9.8).
     Fix: none available upstream (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the
-    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20). RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
+    image is not released until this is fixed or documented as having no upstream fix (owner, 2026-08-20).
+    RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0
+    image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is
+    still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and
+    unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further
+    28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the
+    #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still
+    PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and
+    unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available
+    to apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -254,7 +284,17 @@ findings:
     Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until this is fixed
     or documented as having no upstream fix (owner, 2026-08-20). SEVERITY CORRECTED INFORMATIONAL -> MEDIUM:
     INFORMATIONAL was the grading of the DEBIAN artifact this entry used to describe, which is not in
-    the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
+    the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04
+    (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest
+    (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image,
+    still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral
+    basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not
+    an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence:
+    grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability
+    DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still
+    fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral
+    basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not
+    an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -275,7 +315,17 @@ findings:
     (not-fixed). Tracked in risk-sentinel/sparc#1001. RELEASE-BLOCKING: the image is not released until
     this is fixed or documented as having no upstream fix (owner, 2026-08-20). SEVERITY CORRECTED INFORMATIONAL
     -> MEDIUM: INFORMATIONAL was the grading of the DEBIAN artifact this entry used to describe, which
-    is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED 2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in severity — so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days, to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164 branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged in severity - so the deferral basis is factually unchanged and there is no remediation available to apply. Scanned the IMAGE, not an SBOM (#862).'
+    is not in the image. MEDIUM is how grype 0.114.0 grades the artifact that IS present. RE-REVIEWED
+    2026-09-04 (owner): accepted for a further 21 days, to 2026-09-25. Evidence: grype 0.114.0 image scan
+    of sparc-ubi9-web:latest (vulnerability DB built 2026-09-03) re-confirmed the finding is still PRESENT
+    in the shipping image, still fix-state not-fixed with no upstream fixed version, and unchanged in
+    severity — so the deferral basis is factually unchanged and there is no remediation available to apply.
+    Scanned the IMAGE, not an SBOM (#862). RE-REVIEWED 2026-09-21 (owner): accepted for a further 28 days,
+    to 2026-10-19. Evidence: grype 0.114.0 image scan of sparc-ubi9-web:latest, built from the #1144/#1164
+    branch (vulnerability DB built 2026-09-21T06:39:24Z), re-confirmed the finding is still PRESENT in
+    the shipping image, still fix-state not-fixed with no upstream fixed version offered, and unchanged
+    in severity - so the deferral basis is factually unchanged and there is no remediation available to
+    apply. Scanned the IMAGE, not an SBOM (#862).'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
@@ -565,6 +615,23 @@ findings:
   reviewed_by: '@clem-field'
   discovery_date: '2026-09-21'
   next_review_date: '2026-10-19'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
+      program against untrusted input. The mitigating factors below are properties of THIS image, measured
+      rather than argued. No upstream fix exists, so remediation is not available and the residual is
+      what is being accepted.
+    mitigating_factors:
+    - description: 'no PostgreSQL server in the image: postgres, postmaster, pg_ctl and initdb are all
+        absent (command -v)'
+    - description: SPARC reaches its database through the `pg` gem and libpq against a SEPARATE Postgres
+        container; no application code path shells out to pg_dump
+    - description: pg_dump acts on a database an OPERATOR points it at, so exploitation requires an operator
+        to run it against a hostile server rather than any request reaching it
+    kev_checked: '2026-09-21'
+    kev_listed: false
 - cve_id: CVE-2026-19385
   package: postgresql/postgresql-private-libs
   installed_version: 13.23-5.el9_8
@@ -582,6 +649,23 @@ findings:
   reviewed_by: '@clem-field'
   discovery_date: '2026-09-21'
   next_review_date: '2026-10-19'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
+      program against untrusted input. The mitigating factors below are properties of THIS image, measured
+      rather than argued. No upstream fix exists, so remediation is not available and the residual is
+      what is being accepted.
+    mitigating_factors:
+    - description: 'no PostgreSQL server in the image: postgres, postmaster, pg_ctl and initdb are all
+        absent (command -v)'
+    - description: SPARC reaches its database through the `pg` gem and libpq; no application code path
+        shells out to pg_dump
+    - description: the transform list is supplied on the pg_dump command line, so it is operator-controlled
+        input and not attacker-controlled request data
+    kev_checked: '2026-09-21'
+    kev_listed: false
 - cve_id: CVE-2026-6464
   package: postgresql/postgresql-private-libs
   installed_version: 13.23-5.el9_8
@@ -599,6 +683,23 @@ findings:
   reviewed_by: '@clem-field'
   discovery_date: '2026-09-21'
   next_review_date: '2026-10-19'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
+      program against untrusted input. The mitigating factors below are properties of THIS image, measured
+      rather than argued. No upstream fix exists, so remediation is not available and the residual is
+      what is being accepted.
+    mitigating_factors:
+    - description: 'no PostgreSQL server in the image: postgres, postmaster, pg_ctl and initdb are all
+        absent (command -v)'
+    - description: SPARC reaches its database through the `pg` gem and libpq; no application code path
+        invokes psql
+    - description: COPY FROM STDIN requires an operator to run psql interactively against a hostile server;
+        no request path reaches it
+    kev_checked: '2026-09-21'
+    kev_listed: false
 - cve_id: CVE-2026-86140
   package: libxml2
   installed_version: 2.9.13-14.el9_8.4
@@ -616,6 +717,23 @@ findings:
   reviewed_by: '@clem-field'
   discovery_date: '2026-09-21'
   next_review_date: '2026-10-19'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
+      program against untrusted input. The mitigating factors below are properties of THIS image, measured
+      rather than argued. No upstream fix exists, so remediation is not available and the residual is
+      what is being accepted.
+    mitigating_factors:
+    - description: no package in the image requires libxml2 (rpm -q --whatrequires libxml2 returns nothing)
+        — it is a base-image leftover with no consumer
+    - description: nokogiri ships as the precompiled aarch64-linux-gnu native gem and statically bundles
+        its OWN libxml2; ldd on nokogiri.so shows no dynamic libxml2 linkage, so application XML parsing
+        never enters this copy
+    - description: libpq does not link libxml2 either (ldd), so the database path does not reach it
+    kev_checked: '2026-09-21'
+    kev_listed: false
 - cve_id: CVE-2026-86145
   package: pcre2/pcre2-syntax
   installed_version: 10.40-6.el9
@@ -631,6 +749,22 @@ findings:
   reviewed_by: '@clem-field'
   discovery_date: '2026-09-21'
   next_review_date: '2026-10-19'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
+      program against untrusted input. The mitigating factors below are properties of THIS image, measured
+      rather than argued. No upstream fix exists, so remediation is not available and the residual is
+      what is being accepted.
+    mitigating_factors:
+    - description: Ruby does not link pcre2 — it uses Onigmo — verified by ldd on the ruby binary, so
+        no application regular expression is evaluated by this library
+    - description: the only package requiring pcre2 is libselinux, which does not process untrusted input
+        at runtime
+    - description: no attacker-controlled pattern reaches pcre2 on any request path
+    kev_checked: '2026-09-21'
+    kev_listed: false
 - cve_id: CVE-2026-89161
   package: pcre2/pcre2-syntax
   installed_version: 10.40-6.el9
@@ -645,3 +779,20 @@ findings:
   reviewed_by: '@clem-field'
   discovery_date: '2026-09-21'
   next_review_date: '2026-10-19'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
+      program against untrusted input. The mitigating factors below are properties of THIS image, measured
+      rather than argued. No upstream fix exists, so remediation is not available and the residual is
+      what is being accepted.
+    mitigating_factors:
+    - description: Ruby does not link pcre2 — it uses Onigmo — verified by ldd on the ruby binary, so
+        no application regular expression is evaluated by this library
+    - description: the only package requiring pcre2 is libselinux, which does not process untrusted input
+        at runtime
+    - description: pcre2_jit_match is reached only through a pcre2 caller, and the image has none that
+        sees untrusted input
+    kev_checked: '2026-09-21'
+    kev_listed: false
