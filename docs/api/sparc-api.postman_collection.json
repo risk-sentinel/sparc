@@ -6700,6 +6700,38 @@
       ]
     },
     {
+      "name": "Federation Identity",
+      "description": "The namespace URI and federation namespace UUID every peer derives object identity against (#1155).",
+      "item": [
+        {
+          "name": "Get Federation Identity",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/federation/identity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "federation",
+                "identity"
+              ]
+            },
+            "description": "Returns the federation's identity constants: the namespace URI and the federation namespace UUID used to derive object identity (UUIDv5).\n\nThe UUID is DERIVED from the namespace URI rather than randomly generated, so a peer can recompute it instead of embedding a copied literal:\n\n```\nuuidv5(URL_NAMESPACE, \"https://sparc.risk-sentinel.org/ns\")\n  = 9f434272-f796-589b-b972-954790395630\n```\n\n`data.derivation` publishes the recipe so the value can be verified rather than trusted. `meta.instance_namespace` is a DIFFERENT thing — the vocabulary this deployment defines locally.\n\nRead-only, authenticated, not permission-gated."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Federation Peers",
       "item": [
         {

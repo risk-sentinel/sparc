@@ -51,4 +51,35 @@ RSpec.describe OscalNamespace do
       expect(described_class.known?("https://att.example/ns/oscal")).to be true
     end
   end
+  # #1155 — both values are hashed inputs to every object identity in the
+  # federation, so these assertions exist to make an accidental change LOUD.
+  describe "the federation namespace UUID (#1155)" do
+    it "is the UUIDv5 derived from SPARC's namespace URI, recomputed not repeated" do
+      expect(described_class::FEDERATION_NAMESPACE)
+        .to eq(described_class.derived_federation_namespace)
+    end
+
+    it "pins the exact registered value, so the URI cannot move silently either" do
+      expect(described_class::FEDERATION_NAMESPACE).to eq("9f434272-f796-589b-b972-954790395630")
+      expect(described_class.uri(:sparc)).to eq("https://sparc.risk-sentinel.org/ns")
+    end
+
+    it "derives from the FEDERATION namespace, never the operator's local vocabulary" do
+      allow(SparcConfig).to receive(:oscal_namespace).and_return("https://att.example/ns/oscal")
+
+      expect(described_class.derived_federation_namespace)
+        .to eq("9f434272-f796-589b-b972-954790395630")
+    end
+
+    it "is a syntactically valid UUID" do
+      expect(described_class::FEDERATION_NAMESPACE)
+        .to match(/\A\h{8}-\h{4}-5\h{3}-[89ab]\h{3}-\h{12}\z/)
+    end
+
+    it "changes when the namespace URI changes, which is why the pin above matters" do
+      other = Digest::UUID.uuid_v5(Digest::UUID::URL_NAMESPACE, "https://risk-sentinel.org/ns/sparc")
+
+      expect(other).not_to eq(described_class::FEDERATION_NAMESPACE)
+    end
+  end
 end

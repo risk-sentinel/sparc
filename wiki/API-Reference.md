@@ -35,8 +35,21 @@ exchanges a Bearer token for a Rails session cookie (v1.8.4).
 Per-resource endpoints exist for SSP, SAR, SAP, POA&M, Profile, CDEF documents,
 control catalogs, control mappings, authoritative sources, federation peers,
 baseline parameters, back-matter resources, evidence and evidence control links,
-attestations, the KSI catalog and validations, admin credentials, users, and
-discovery. Common verbs include `convert`, `update_fields`, and `export`.
+attestations, the KSI catalog and validations, admin credentials, users,
+federation identity, and discovery. Common verbs include `convert`,
+`update_fields`, and `export`.
+
+> **New: federation identity.** `GET /api/v1/federation/identity` publishes the
+> two constants every peer derives object identity against — the namespace URI
+> and the federation namespace UUID. Object UUIDs are UUIDv5 derived against
+> that namespace, and peers deduplicate without coordinating only while every
+> instance uses the same one; when two disagree nothing errors, the same
+> logical object just arrives under a second identity. The UUID is **derived
+> from the namespace URI** rather than randomly generated, so an integrator can
+> recompute it rather than embed a copied literal, and the response publishes
+> the recipe so it can be verified rather than trusted. Read-only,
+> authenticated, not permission-gated. Full details in
+> [`docs/api/endpoints/federation-identity.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/federation-identity.md).
 
 > **New: SSP components.** `/api/v1/ssp_documents/:slug/components` is full CRUD
 > over the components of a system security plan. Components previously had **no

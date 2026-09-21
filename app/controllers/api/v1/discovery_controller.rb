@@ -78,6 +78,13 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
       description: "API discovery — lists available endpoints scoped to caller permissions",
       permission_read: nil, permission_write: nil, admin_only: false },
 
+    # NOTE: /api/v1/federation/identity (#1155) is intentionally omitted for the
+    # same reason as /api/v1/guides below — it is permission-free reference
+    # data (two federation constants), not part of the scoped compliance-data
+    # surface this registry advertises, and listing it would dilute the
+    # least-privilege view a no-permission caller sees. It is documented in
+    # docs/api/endpoints/federation-identity.md and the Postman collection.
+
     # --- Session bridge (#573) ---
     { path: "/api/v1/sessions/from_token", methods: %w[POST],
       description: "Exchange a Bearer API token for a Rails session cookie (UI test automation)",
