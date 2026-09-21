@@ -52,6 +52,38 @@ class OscalNamespace
     sparc: "https://sparc.risk-sentinel.org/ns"
   }.freeze
 
+  # ── The federation namespace UUID (#1155, owner-decided 2026-09-21) ────────
+  #
+  # Object identity across the federation is UUIDv5 derived from natural keys,
+  # and every derivation needs one namespace UUID that every peer agrees on:
+  #
+  #   Key(parts...) = uuidv5(FEDERATION_NAMESPACE, parts.join(SEP))
+  #
+  # Two properties depend on it. Reruns are idempotent because the same natural
+  # key yields the same UUID, and peers deduplicate WITHOUT coordinating because
+  # they derive the same UUID from the same key. The second only holds while
+  # every instance in the federation uses the same namespace UUID.
+  #
+  # It is DERIVED from the namespace URI rather than randomly generated, so that
+  # a peer never has to be told it. Anyone holding the URI recomputes it, and
+  # anyone holding both can verify the UUID provably belongs to that namespace.
+  # A random v4 would have to be copied literally into every runtime — which is
+  # the failure #1155 was opened to prevent.
+  #
+  # It is a constant for the same reason the URI is: it identifies the
+  # federation, not a deployment, so it must be IDENTICAL everywhere. It is
+  # deliberately NOT derived from `instance` (the operator's local vocabulary),
+  # which varies per install.
+  #
+  #   uuidv5(NAMESPACE_URL, "https://sparc.risk-sentinel.org/ns")
+  #     => 9f434272-f796-589b-b972-954790395630
+  #
+  # `spec/models/oscal_namespace_spec.rb` RECOMPUTES this rather than repeating
+  # it, so that changing either the URI or the UUID alone fails the build. They
+  # are hashed inputs to every object identity in the estate: changing one later
+  # re-keys every document in every fixture and every producing pipeline at once.
+  FEDERATION_NAMESPACE = "9f434272-f796-589b-b972-954790395630"
+
   class UnknownNamespace < StandardError; end
 
   class << self
@@ -77,5 +109,12 @@ class OscalNamespace
     # NIST's explicitly. These are the props whose NAMES and VALUES must come
     # from NIST's vocabulary for the document's OSCAL version.
     def nist?(ns) = ns.blank? || ns == OSCAL
+
+    # Recomputes FEDERATION_NAMESPACE from the namespace URI. Callers should use
+    # the constant; this exists so the derivation is executable rather than a
+    # claim in a comment, and so the spec can assert the two agree.
+    def derived_federation_namespace
+      Digest::UUID.uuid_v5(Digest::UUID::URL_NAMESPACE, REGISTRY.fetch(:sparc))
+    end
   end
 end

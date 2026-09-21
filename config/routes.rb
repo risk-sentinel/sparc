@@ -577,6 +577,11 @@ Rails.application.routes.draw do
       # API discovery (#250)
       get "available", to: "discovery#available"
 
+      # Federation identity (#1155) — the namespace URI and the federation
+      # namespace UUID every peer derives object identity against. Served so a
+      # peer reads or verifies them rather than embedding its own constant.
+      get "federation/identity", to: "federation_identities#show"
+
       # In-app User Guides (#784) — read-only help content, versioned with
       # the deployment. Backs the Help Center; also lets integrators pull docs.
       resources :guides, only: [ :index, :show ], param: :slug
