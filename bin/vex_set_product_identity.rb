@@ -4,6 +4,11 @@
 # Name the IMAGE each OpenVEX statement is about, replacing the hdf-libs
 # placeholder product identifier.
 #
+# NIST SP 800-53 Rev 5: SR-11 (component authenticity) — the attestation is the
+# artifact a consumer authenticates the image's vulnerability posture from, so
+# the product it names has to be the image. Supports SI-2 and RA-5 by keeping
+# the disposition record interpretable after the fact.
+#
 # WHY THIS EXISTS (#1144)
 #
 # `hdf convert --from hdf-amendments --to openvex` writes every statement's

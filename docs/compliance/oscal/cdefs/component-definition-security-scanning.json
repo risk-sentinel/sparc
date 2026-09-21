@@ -59,7 +59,7 @@
               {
                 "uuid": "b6e3d4f9-7a82-4d1c-8e5a-9c4b3e7f8a21",
                 "control-id": "sr-11",
-                "description": "SPARC verifies component authenticity through Gemfile.lock specific-version pins, container image provenance, and CycloneDX SBOM tracking of component origins. Grype SBOM scanning (#461) augments this by matching each SBOM-declared component against Anchore's vulnerability database — components whose declared identity in the SBOM matches known-vulnerable versions are surfaced as CI failures.",
+                "description": "SPARC verifies component authenticity through Gemfile.lock specific-version pins, container image provenance, and CycloneDX SBOM tracking of component origins. Grype SBOM scanning (#461) augments this by matching each SBOM-declared component against Anchore's vulnerability database — components whose declared identity in the SBOM matches known-vulnerable versions are surfaced as CI failures. The release also publishes an OpenVEX attestation of the vulnerability posture (#917), signed with cosign and bound to the image digest. Each statement names the image it describes by purl and digest rather than a converter placeholder (#1144), and the release asserts that identity against the digest being attested, so the document remains interpretable when read apart from its in-toto subject.",
                 "remarks": "Implemented in Gemfile.lock and .github/workflows/security.yml (grype_sbom_scan)."
               },
               {
