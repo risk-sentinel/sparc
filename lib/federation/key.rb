@@ -69,6 +69,12 @@ module Federation
     # value is accepted unchanged — its form is that authority's business.
     NIST_CONTROL_FORM = /\A[a-z]{2,3}-\d+(\.\d+)*\z/
 
+    # Key names from the grammar file, named once so a typo is a NameError
+    # rather than a silently non-matching string.
+    OBJECT_UUID       = "object-uuid"
+    ORIGINATING_PARTY = "originating-party"
+    ONE_OF            = "one-of"
+
     class << self
       def spec
         @spec ||= JSON.parse(File.read(GRAMMAR_PATH)).freeze
@@ -121,8 +127,8 @@ module Federation
       # the count does not grow with how many peers pile on.
       def dedup(claims)
         scoped = claims.map do |claim|
-          uuid  = (claim[:object_uuid] || claim["object-uuid"]).to_s
-          party = (claim[:originating_party] || claim["originating-party"]).to_s
+          uuid  = (claim[:object_uuid] || claim[OBJECT_UUID]).to_s
+          party = (claim[:originating_party] || claim[ORIGINATING_PARTY]).to_s
 
           if party.strip.empty?
             raise MissingField,
@@ -131,13 +137,13 @@ module Federation
           end
           raise MissingField, "a claim carries no object uuid" if uuid.strip.empty?
 
-          { "object-uuid" => uuid, "originating-party" => party }
+          { OBJECT_UUID => uuid, ORIGINATING_PARTY => party }
         end
 
         objects = scoped.uniq
-        conflicts = objects.group_by { |o| o["object-uuid"] }
+        conflicts = objects.group_by { |o| o[OBJECT_UUID] }
                            .select { |_uuid, group| group.length > 1 }
-                           .map { |uuid, group| { "object-uuid" => uuid, "parties" => group.map { |o| o["originating-party"] }.sort } }
+                           .map { |uuid, group| { OBJECT_UUID => uuid, "parties" => group.map { |o| o[ORIGINATING_PARTY] }.sort } }
 
         [ objects, conflicts ]
       end
@@ -145,17 +151,18 @@ module Federation
       private
 
       def field_list(kind)
-        spec.fetch("field-lists")[kind.to_s] or
+        spec.fetch("field-lists").fetch(kind.to_s) do
           raise UnknownKind, "unknown object kind #{kind.inspect} (known: #{kinds.join(', ')})"
+        end
       end
 
       def resolve(kind, field_spec, args)
         return nfc(field_spec.fetch("literal")) if field_spec.key?("literal")
 
         name, rule, type =
-          if field_spec.key?("one-of")
-            chosen = field_spec.fetch("one-of").find { |candidate| present?(args, candidate) }
-            raise MissingField, "#{kind}: none of #{field_spec['one-of'].join(' / ')} supplied" if chosen.nil?
+          if field_spec.key?(ONE_OF)
+            chosen = field_spec.fetch(ONE_OF).find { |candidate| present?(args, candidate) }
+            raise MissingField, "#{kind}: none of #{field_spec[ONE_OF].join(' / ')} supplied" if chosen.nil?
 
             [ chosen, field_spec.fetch("normalise")[chosen], field_spec.fetch("type")[chosen] ]
           else
@@ -212,9 +219,10 @@ module Federation
         vocabulary = fetch(args, "vocabulary").to_s
         raise MissingField, "vocabulary is required for an object carrying a control identifier" if vocabulary.strip.empty?
 
-        spec.fetch("vocabulary-normalisers")[vocabulary] or
+        spec.fetch("vocabulary-normalisers").fetch(vocabulary) do
           raise InvalidField, "unknown vocabulary #{vocabulary.inspect} " \
                               "(known: #{spec.fetch('vocabulary-normalisers').keys.join(', ')})"
+        end
       end
 
       def fetch(args, name)   = args[name.to_sym] || args[name.to_s]
