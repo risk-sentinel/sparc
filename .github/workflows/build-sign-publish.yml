@@ -1038,6 +1038,44 @@ jobs:
           ruby bin/vex_enrich_rationale.rb \
             --vex "sparc-vex-${VERSION}.json" \
             --findings docs/compliance/sparc-findings.yml
+          # hdf-libs also names every statement's product with its own internal
+          # placeholder, `HDFPID-0001`, which resolves to nothing. The in-toto
+          # subject binds the attestation correctly, but a consumer reading the
+          # VEX document on its own cannot tell which artifact was assessed
+          # (#1144). Only the PUBLIC reference is written: the ECR one is built
+          # from secrets.AWS_ACCOUNT_ID, and this predicate is published to
+          # Docker Hub. The digest is the same for both copies.
+          ruby bin/vex_set_product_identity.rb \
+            --vex "sparc-vex-${VERSION}.json" \
+            --repository index.docker.io/risksentinel/sparc \
+            --digest "${{ needs.build-and-push.outputs.digest }}"
+
+      # #1144 AC — the product identity must MATCH the subject cosign is about
+      # to attest, asserted rather than assumed. Both come from the same
+      # `needs.build-and-push.outputs.digest`, so this catches the case where a
+      # future edit feeds one of them a different value, or the rewrite silently
+      # does not happen.
+      - name: Assert the VEX predicate names the image being attested
+        env:
+          DIGEST: ${{ needs.build-and-push.outputs.digest }}
+          VERSION: ${{ needs.prepare.outputs.version_stripped }}
+        run: |
+          set -euo pipefail
+          ruby -rjson -e '
+            vex = JSON.parse(File.read("sparc-vex-#{ENV.fetch("VERSION")}.json"))
+            digest = ENV.fetch("DIGEST")
+            statements = vex.fetch("statements")
+            abort("::error::VEX carries no statements") if statements.empty?
+            bad = statements.each_with_index.reject do |statement, _i|
+              ids = Array(statement["products"]).map { |p| p["@id"].to_s }
+              ids.any? && ids.all? { |id| id.start_with?("pkg:oci/") && id.include?(digest) }
+            end
+            unless bad.empty?
+              abort("::error::#{bad.length}/#{statements.length} VEX statement(s) do not name " \
+                    "#{digest} — first offender: #{bad.first[0]["products"].inspect}")
+            end
+            puts "VEX product identity matches the attestation subject in #{statements.length} statement(s)"
+          '
 
       - name: Attest the vulnerability posture to Docker Hub
         run: |
