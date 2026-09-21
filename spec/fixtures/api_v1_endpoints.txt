@@ -103,6 +103,7 @@ GET /api/v1/evidences/:evidence_id/attestations/:id
 GET /api/v1/evidences/:evidence_id/attestations/export
 GET /api/v1/evidences/:evidence_id/control_links
 GET /api/v1/evidences/:id
+GET /api/v1/federation/identity
 GET /api/v1/federation_peers
 GET /api/v1/federation_peers/:id
 GET /api/v1/guides
