@@ -19,7 +19,14 @@ class Evidence < ApplicationRecord
   belongs_to :collected_by_user, class_name: "User", optional: true
 
   include BoundaryReferenceValidation
-  has_many :evidence_control_links, dependent: :destroy
+  # `autosave: true` (#1162) because both controllers unlink a control by
+  # calling `mark_for_destruction` on the link and then saving the evidence —
+  # deliberately, so a rejected save leaves the existing links intact instead of
+  # stripping them. Without autosave Rails honours the BUILD half of that (new
+  # children are saved) and silently ignores the DESTROY half, so unlinking a
+  # control never took effect on either surface. The sibling `attestations`
+  # association was already declared this way.
+  has_many :evidence_control_links, dependent: :destroy, autosave: true
   has_many :attestations, dependent: :destroy
 
   # #947 — an attestation IS evidence, so it is created WITH the record rather

@@ -205,16 +205,25 @@ class EvidencesController < ApplicationController
   def build_control_links
     return unless params[:evidence]&.key?(:control_ids)
 
-    control_ids = params.dig(:evidence, :control_ids).to_s.split(",").map(&:strip).reject(&:blank?)
+    # Canonicalised before comparing (#1162), the same rule the API surface
+    # applies — the picker offers the PADDED form (`AC-02`) while the model
+    # stores the canonical one (#911), so comparing what was submitted against
+    # what is stored matched nothing and re-created every link on a no-op save.
+    control_ids = params.dig(:evidence, :control_ids).to_s
+                        .split(",").map(&:strip).reject(&:blank?)
+                        .map { |c| ControlId.canonical(c) }
+                        .uniq
 
     # Existing links are marked for destruction rather than destroyed outright,
     # so a failed validation leaves the record's links exactly as they were —
     # `destroy_all` up front would strip them even when the save was rejected.
     @evidence.evidence_control_links.each do |link|
-      link.mark_for_destruction unless control_ids.include?(link.control_id)
+      link.mark_for_destruction unless control_ids.include?(ControlId.canonical(link.control_id))
     end
 
-    existing = @evidence.evidence_control_links.reject(&:marked_for_destruction?).map(&:control_id)
+    existing = @evidence.evidence_control_links
+                        .reject(&:marked_for_destruction?)
+                        .map { |link| ControlId.canonical(link.control_id) }
     (control_ids - existing).each do |cid|
       @evidence.evidence_control_links.build(control_id: cid)
     end

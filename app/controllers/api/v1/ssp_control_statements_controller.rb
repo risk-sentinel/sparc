@@ -39,8 +39,16 @@ class Api::V1::SspControlStatementsController < Api::V1::BaseController
               .joins(:ssp_control)
               .where(ssp_controls: { ssp_document_id: @document.id })
 
+    # CANONICALISE THE FILTER, AND MATCH EVERY STORED SPELLING (#1162).
+    #
+    # This was an exact string match on an unnormalised column, so `?control_id=ac-2`
+    # returned nothing when the row was stored as `AC-2` — and an empty result is
+    # indistinguishable from "this SSP does not implement AC-2". #911 rewrites a
+    # row to the canonical form only when it is next saved, so the column
+    # legitimately holds a mix and a single spelling cannot address it;
+    # `ControlId.forms` is what that migration posture tells callers to use.
     if params[:control_id].present?
-      scope = scope.where(ssp_controls: { control_id: params[:control_id] })
+      scope = scope.where(ssp_controls: { control_id: ControlId.forms(params[:control_id]) })
     end
 
     scope  = scope.order("ssp_controls.control_id ASC, ssp_control_statements.row_order ASC")
@@ -103,6 +111,16 @@ class Api::V1::SspControlStatementsController < Api::V1::BaseController
       label: stmt.label,
       row_order: stmt.row_order,
       control_id: stmt.ssp_control&.control_id,
+      # The canonical form, alongside the stored one rather than replacing it
+      # (#1162) — the same shape `catalog_controls` already publishes as
+      # `identifier`. This is what joins across two documents exported at
+      # different times; `control_id` stays exactly as stored so existing
+      # consumers are unaffected. Nil-guarded rather than passed straight
+      # through: `ControlId.canonical(nil)` is the string "unknown", so an
+      # unparented statement would otherwise report `control_id: null` beside
+      # `identifier: "unknown"` and a consumer could join on a control named
+      # "unknown".
+      identifier: stmt.ssp_control&.control_id.presence && ControlId.canonical(stmt.ssp_control.control_id),
       # Whether this row still needs an answer is the question the whole
       # per-statement model exists to make askable — a client should not have to
       # infer it from an empty string.
