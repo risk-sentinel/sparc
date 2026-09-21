@@ -1874,3 +1874,30 @@ findings:
     - description: no attacker-controlled SQL or JSON reaches a SQLite parser on any request path
     kev_checked: '2026-07-29'
     kev_listed: false
+- cve_id: CVE-2026-14456
+  package: openssl-libs
+  installed_version: 1:3.5.8-1.el9_8
+  fixed_version: 1:3.5.8-1.el9_8
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED (#1163 took the fix; retired under #1164). Unbounded channel allocation in an
+    OpenSSL QUIC server (Listener SSL object) processing Initial packets for unknown destination connection
+    IDs, giving a remote memory-exhaustion DoS. First dispositioned 2026-08-20 (#1001) as NOT APPLICABLE:
+    SPARC runs no QUIC listener — the application is Puma serving HTTP/1.1 over TCP, TLS terminates ahead
+    of it (ALB in production, caddy locally), and nothing in the image opens a QUIC socket. That reasoning
+    was sound and remains sound, but it is no longer the operative fact. The entry also asserted "No
+    upstream fix exists", and that is now false: Red Hat shipped openssl-libs 3.5.8-1.el9_8, #1163 took
+    it in the UBI9 digest bump, and the vulnerable code is GONE from the image rather than merely
+    unreachable. Under the owner decision of 2026-08-20 a remediated finding is RETIRED, not reviewed,
+    so it moves here rather than carrying a review date.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-08-20'
+  verified_absent_on: '2026-09-20'
+  verified_by: 'grype 0.114.0 (db v6.1.9, built 2026-09-20T06:27:54Z) image scan of sparc-ubi9-web:latest,
+    built from the #1144/#1164 branch at b8ba5f89+; RHEL 9.8 confirmed from /etc/os-release. 185 matches
+    / 119 distinct ids, and CVE-2026-14456 appears nowhere in the reported set — the string is absent
+    from the scan JSON entirely. openssl-libs is reported at 1:3.5.8-1.el9_8 carrying nine other CVEs,
+    so the package is still scanned and this finding is gone rather than renamed (see #1001 for the
+    rename trap). rpm -q inside the image reports openssl-libs-3.5.8-1.el9_8.x86_64. Scanned the IMAGE,
+    not an SBOM (#862).'
