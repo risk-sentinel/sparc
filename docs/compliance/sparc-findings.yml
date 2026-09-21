@@ -1,3 +1,63 @@
+# SPARC finding dispositions — the register `bin/sparc_findings_to_hdf_amendments.rb`
+# turns into HDF amendments.
+#
+# ── THE TWO DELIBERATE ABSENCES ARE RESOLVED (#1065, 2026-08-28) ──────────
+#
+# This block used to say: do NOT "fix" resolv and uri by adding entries here.
+# That instruction has been carried out to its intended conclusion, and the
+# reason it existed is now gone. Recorded rather than deleted, because the way
+# it was closed is the precedent.
+#
+# Trivy reported four CRITICAL/HIGH findings against the shipping UBI9 image,
+# all the same case — a shadowed Ruby default gem, where the vulnerable
+# Ruby-shipped copy stays on disk while Bundler loads a patched one:
+#
+#   CVE-2026-27820  zlib    3.2.1 on disk  — was dispositioned below
+#   CVE-2026-41316  erb     4.0.4 on disk  — was dispositioned below
+#   CVE-2025-24294  resolv  0.6.0 on disk  — NO ENTRY, deliberately
+#   CVE-2025-61594  uri     1.0.3 on disk  — NO ENTRY, deliberately
+#
+# The owner decision of 2026-08-24 was to record the honest residual rather than
+# write a disposition to make the number look clean, and to hold #1065 open
+# "until the residual is genuinely 0 — i.e. the shadowed copies are gone from
+# the image, not dispositioned away."
+#
+# That is exactly what happened. **Ruby 3.4.4 -> 3.4.10** ships zlib 3.2.3,
+# erb 4.0.4.1 (the upstream backport), resolv 0.7.1 and uri 1.0.4 — each at or
+# above the version its advisory patches at. The vulnerable code left the image.
+# Measured on a clean CI runner:
+#
+#   main@daf41392   4 requirement(s): failed=2 notApplicable=2 (amended)
+#   PR #1078        1 requirement(s): failed=0        <- canary only
+#
+# `docs/compliance/thresholds/trivy-container.yml` is ratcheted to `high: 0`
+# accordingly. NO disposition was added for resolv or uri, then or now.
+#
+# THE ZLIB AND ERB ENTRIES ARE NOW RETIRED (2026-08-29), along with the
+# sqlite-libs one. An earlier revision of this header kept them on the grounds
+# that the SBOM and grype paths key on different ids, so an inert entry was safer
+# than retiring one that still matched. That reasoning was superseded by
+# evidence: all three findings are absent from the shipping image, so they are
+# `remediated` and belong in sparc-findings.retired.yml, per the owner decision
+# of 2026-08-20 ("a remediated finding is RETIRED, not reviewed").
+#
+#   erb    — image ships 4.0.4.1, the backport the entry's own fixed_version named
+#   zlib   — image ships 3.2.3, meeting the entry's fixed_version of >= 3.2.3
+#   sqlite — image ships 3.34.1-11.el9_8, NOT the 3.34.1-9.el9_7 recorded; Red Hat
+#            marks RHEL 9 "Not affected"; the scanner reports the CVE at no severity
+#
+# Each carries `verified_absent_on` and `verified_by` in the retired file. The gem
+# evidence is direct image inspection plus CI's 4 -> 0 container measurement, NOT a
+# local trivy gemspec scan — that path is unreliable per #1080.
+#
+# ONE RESIDUAL REMAINS, and it is not hidden: `json`. Ruby 3.4.10 still ships
+# json 2.9.1 on disk (CVE-2026-54696, fixed upstream in 2.19.9). It carries no
+# entry here for the same reason resolv and uri never did — it is a real
+# finding, and the honest thing is to leave it visible. It does not reach the
+# CRITICAL/HIGH gate because it is CVSS 3.7 LOW. The Gemfile pins
+# `json >= 2.19.9`, so the LOADED copy is patched (2.21.2); the on-disk copy
+# waits on upstream Ruby.
+#
 findings:
 - cve_id: CVE-2025-30258
   package: gnupg2
