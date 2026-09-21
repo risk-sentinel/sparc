@@ -94,3 +94,9 @@ dev/ubi9/baseline-*.dump
 # anywhere else — lib/federation/python (#1161) — committed its __pycache__.
 __pycache__/
 *.pyc
+
+# Python build/coverage artifacts (lib/federation/python, #1161)
+coverage.xml
+.coverage
+.venv/
+*.egg-info/
