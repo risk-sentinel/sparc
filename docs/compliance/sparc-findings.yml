@@ -122,7 +122,7 @@ findings:
   superseded_debian_finding: libncursesw6 6.4-4 (removed with the Debian base image)
 - cve_id: CVE-2026-4105
   package: systemd-libs
-  installed_version: 252-67.el9_8.4
+  installed_version: 252-67.el9_8.6
   fixed_version: none available upstream (not-fixed)
   severity: MEDIUM
   disposition: deferred
@@ -221,7 +221,7 @@ findings:
   superseded_debian_finding: libldap-2.5-0 2.5.13+dfsg-5 (removed with the Debian base image)
 - cve_id: CVE-2025-70873
   package: sqlite-libs
-  installed_version: 3.34.1-10.el9_8
+  installed_version: 3.34.1-11.el9_8
   fixed_version: none available upstream (not-fixed)
   severity: LOW
   disposition: deferred
@@ -295,22 +295,6 @@ findings:
     Only the shared libraries from the util-linux source package are present, pulled in as dependencies;
     the vulnerable executable is not in the image. No fix is available upstream, so this would otherwise
     defer indefinitely against a program we do not ship.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-14456
-  package: openssl-libs
-  installed_version: 1:3.5.5-6.el9_8
-  fixed_version: none
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (feature not used) — first dispositioned 2026-08-20 (#1001). Unbounded channel
-    allocation in an OpenSSL QUIC server (Listener SSL object) processing Initial packets for unknown
-    destination connection IDs, giving a remote memory-exhaustion DoS. SPARC runs no QUIC listener: the
-    application is Puma serving HTTP/1.1 over TCP, TLS terminates ahead of it (ALB in production, caddy
-    locally), and nothing in the image opens a QUIC socket. The library is linked for TLS and X.509, and
-    the QUIC server path is never entered. No upstream fix exists.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
