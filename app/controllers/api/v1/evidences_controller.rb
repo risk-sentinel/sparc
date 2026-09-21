@@ -188,15 +188,35 @@ class Api::V1::EvidencesController < Api::V1::BaseController
     raw = params.dig(:evidence, :control_ids)
     return if raw.nil?
 
-    control_ids = (raw.is_a?(Array) ? raw : raw.to_s.split(",")).map { |c| c.to_s.strip }.reject(&:blank?)
+    # CANONICALISE BEFORE COMPARING (#1162). `EvidenceControlLink` canonicalises
+    # on write (#911), so stored ids are `ac-1` while the documented call is
+    # `control_ids[]=AC-1`. Comparing the raw payload against canonical storage
+    # matched nothing: every existing link was marked for destruction and then
+    # rebuilt, so a no-op update churned every row — and each destroy/create
+    # pair runs `cleanup_back_matter_resource` / `sync_back_matter_resource`,
+    # rewriting BackMatterResource records that OSCAL exports reference.
+    #
+    # Both spellings of one control also collapse here, so `AC-1` and `ac-1` in
+    # one payload can no longer build two links to the same control.
+    control_ids = (raw.is_a?(Array) ? raw : raw.to_s.split(","))
+                    .map { |c| c.to_s.strip }
+                    .reject(&:blank?)
+                    .map { |c| ControlId.canonical(c) }
+                    .uniq
 
     # Marked for destruction rather than destroyed outright, so a rejected save
     # leaves the existing links intact instead of stripping them anyway.
+    #
+    # `ControlId.forms` on the stored side because #911 rewrites a row only when
+    # it is next saved — until then a column legitimately holds a mix, and a
+    # pre-#911 row spelled `AC-01` must still match a request for `ac-1`.
     evidence.evidence_control_links.each do |link|
-      link.mark_for_destruction unless control_ids.include?(link.control_id)
+      link.mark_for_destruction unless control_ids.include?(ControlId.canonical(link.control_id))
     end
 
-    existing = evidence.evidence_control_links.reject(&:marked_for_destruction?).map(&:control_id)
+    existing = evidence.evidence_control_links
+                       .reject(&:marked_for_destruction?)
+                       .map { |link| ControlId.canonical(link.control_id) }
     (control_ids - existing).each { |cid| evidence.evidence_control_links.build(control_id: cid) }
   end
 
