@@ -25,7 +25,15 @@ class FederationBundleSigningService
   DIGEST       = "SHA256"
   MAX_CLOCK_SKEW = 5.minutes
 
-  Result = Struct.new(:success, :payload, :error, keyword_init: true) do
+  # `party` is the peer whose secret actually verified the signature — NOT a
+  # field read out of the payload (#1159). Deduplication scopes on
+  # (object UUID, originating party), and that scoping value is only
+  # trustworthy if it comes from verification: a party asserted inside a
+  # document it also signs is the same claim twice, not a second fact.
+  #
+  # Carried on the Result so a caller cannot reach the dedup step holding a
+  # party it remembered rather than one it proved.
+  Result = Struct.new(:success, :payload, :error, :party, keyword_init: true) do
     def success? = success
   end
 
@@ -69,7 +77,7 @@ class FederationBundleSigningService
     skew_error = clock_skew_error(payload)
     return failure(skew_error) if skew_error
 
-    Result.new(success: true, payload: payload)
+    Result.new(success: true, payload: payload, party: peer)
   end
 
   def self.canonicalize(hash)

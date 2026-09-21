@@ -174,3 +174,65 @@ class TestUnicode:
         composed = K.derive("observation", {**base, "control-id": "étape"})
         decomposed = K.derive("observation", {**base, "control-id": "étape"})
         assert composed == decomposed
+
+
+class TestDedupScoping:
+    """#1159 — dedup scopes on (object UUID, originating party).
+
+    Only sound now that the runtimes provably agree on the UUID, which is why
+    #1161 ships before it.
+    """
+
+    def test_every_declared_case_holds(self, spec: dict) -> None:
+        failures = []
+        for case in spec["dedup"]["cases"]:
+            if case["expect"].get("reject"):
+                try:
+                    K.dedup(case["claims"])
+                except K.MissingField:
+                    continue
+                failures.append(f"{case['name']}: was NOT rejected — {case['why']}")
+                continue
+
+            objects, conflicts = K.dedup(case["claims"])
+            if len(objects) != case["expect"]["objects"] or len(conflicts) != case["expect"]["conflicts"]:
+                failures.append(
+                    f"{case['name']}: expected {case['expect']}, "
+                    f"got objects={len(objects)} conflicts={len(conflicts)}"
+                )
+        assert not failures, "\n".join(failures)
+
+    def test_there_are_cases_to_check(self, spec: dict) -> None:
+        assert len(spec["dedup"]["cases"]) >= 5
+
+    def test_the_key_is_the_pair_never_the_uuid_alone(self, spec: dict) -> None:
+        assert spec["dedup"]["key"] == ["object-uuid", "originating-party"]
+
+    def test_two_parties_on_one_uuid_keeps_both_and_surfaces_it(self) -> None:
+        """The attack the rule exists for.
+
+        A peer precomputes another boundary's identifier and claims it. Keeping
+        one silently is the failure mode, whichever one it keeps.
+        """
+        uuid_value = "73b4b970-e2ba-5e5e-884a-7c7de1600e95"
+        objects, conflicts = K.dedup(
+            [
+                {"object-uuid": uuid_value, "originating-party": "party-a"},
+                {"object-uuid": uuid_value, "originating-party": "party-b"},
+            ]
+        )
+        assert len(objects) == 2
+        assert len(conflicts) == 1
+        assert conflicts[0]["parties"] == ["party-a", "party-b"]
+
+    def test_one_conflict_per_contested_uuid_not_per_excess_claim(self) -> None:
+        uuid_value = "73b4b970-e2ba-5e5e-884a-7c7de1600e95"
+        claims = [{"object-uuid": uuid_value, "originating-party": p} for p in "abcd"]
+
+        _objects, conflicts = K.dedup(claims)
+
+        assert len(conflicts) == 1
+
+    def test_a_claim_with_no_party_is_refused(self) -> None:
+        with pytest.raises(K.MissingField):
+            K.dedup([{"object-uuid": "73b4b970-e2ba-5e5e-884a-7c7de1600e95", "originating-party": ""}])

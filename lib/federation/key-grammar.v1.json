@@ -1076,5 +1076,123 @@
       },
       "why": "Only today, +7, +14, +30 and decision dates are materialised; a cell keyed elsewhere is never invalidated."
     }
-  ]
+  ],
+  "dedup": {
+    "key": [
+      "object-uuid",
+      "originating-party"
+    ],
+    "conflict": "surface",
+    "identifies": "a thing, not an assertion about a thing",
+    "why": [
+      "The grammar is public, the namespace is shared, and the inputs are things like a",
+      "boundary system id, a control id and a period. So EVERY peer can compute the",
+      "identifier of any object in any boundary, including boundaries it does not own.",
+      "That is the intended determinism being used as an addressing scheme, and addressing",
+      "needs an owner.",
+      "Deduplicating on the object UUID alone therefore lets a hostile or compromised peer",
+      "precompute another boundary's attestation identifier and submit a document claiming",
+      "it. The receiver then treats two parties' assertions about different things as one",
+      "object, and which one survives is a property of INGESTION ORDER rather than of",
+      "authority.",
+      "This is not a hash collision and not a weakness in UUIDv5 (sparc#1159, Horizon TM-6)."
+    ],
+    "rules": {
+      "scope": "Deduplicate on the PAIR (object UUID, originating party). Never on the UUID alone.",
+      "collapse": "Two claims with the same pair are the same assertion and collapse to one.",
+      "conflict": "Two claims sharing an object UUID under DIFFERENT parties are a conflict to surface, never a duplicate to collapse. Silently keeping one is the failure mode, whichever one it keeps.",
+      "party-provenance": "The originating party must come from bundle VERIFICATION, not from the payload. A party asserted inside a document it also signs is the same claim twice, not a second fact."
+    },
+    "cases": [
+      {
+        "name": "same-object-same-party-collapses",
+        "claims": [
+          {
+            "object-uuid": "73b4b970-e2ba-5e5e-884a-7c7de1600e95",
+            "originating-party": "party-a"
+          },
+          {
+            "object-uuid": "73b4b970-e2ba-5e5e-884a-7c7de1600e95",
+            "originating-party": "party-a"
+          }
+        ],
+        "expect": {
+          "objects": 1,
+          "conflicts": 0
+        },
+        "why": "One party restating its own assertion is a duplicate."
+      },
+      {
+        "name": "same-uuid-different-parties-conflicts",
+        "claims": [
+          {
+            "object-uuid": "73b4b970-e2ba-5e5e-884a-7c7de1600e95",
+            "originating-party": "party-a"
+          },
+          {
+            "object-uuid": "73b4b970-e2ba-5e5e-884a-7c7de1600e95",
+            "originating-party": "party-b"
+          }
+        ],
+        "expect": {
+          "objects": 2,
+          "conflicts": 1
+        },
+        "why": "The attack this rule exists for. Both are kept and the clash is surfaced."
+      },
+      {
+        "name": "different-uuids-same-party-are-two-objects",
+        "claims": [
+          {
+            "object-uuid": "73b4b970-e2ba-5e5e-884a-7c7de1600e95",
+            "originating-party": "party-a"
+          },
+          {
+            "object-uuid": "1399a429-a9ca-5ab2-b6e6-0bddb4c4c2a2",
+            "originating-party": "party-a"
+          }
+        ],
+        "expect": {
+          "objects": 2,
+          "conflicts": 0
+        },
+        "why": "Ordinary case: one party asserting two different things."
+      },
+      {
+        "name": "three-parties-one-uuid-is-one-conflict",
+        "claims": [
+          {
+            "object-uuid": "73b4b970-e2ba-5e5e-884a-7c7de1600e95",
+            "originating-party": "party-a"
+          },
+          {
+            "object-uuid": "73b4b970-e2ba-5e5e-884a-7c7de1600e95",
+            "originating-party": "party-b"
+          },
+          {
+            "object-uuid": "73b4b970-e2ba-5e5e-884a-7c7de1600e95",
+            "originating-party": "party-c"
+          }
+        ],
+        "expect": {
+          "objects": 3,
+          "conflicts": 1
+        },
+        "why": "A conflict is per contested UUID, not per excess claim — otherwise the count grows with how many peers pile on."
+      },
+      {
+        "name": "missing-party-is-refused",
+        "claims": [
+          {
+            "object-uuid": "73b4b970-e2ba-5e5e-884a-7c7de1600e95",
+            "originating-party": ""
+          }
+        ],
+        "expect": {
+          "reject": true
+        },
+        "why": "A claim with no established party cannot be scoped, and scoping it to a default would recreate dedup-by-uuid for exactly the claims that skipped verification."
+      }
+    ]
+  }
 }

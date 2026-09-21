@@ -97,6 +97,51 @@ module Federation
         Digest::UUID.uuid_v5(namespace, input)
       end
 
+      # Deduplicate a set of claims (#1159).
+      #
+      # **An object UUID identifies a thing, not an assertion about a thing.**
+      # The asserting party is never folded into the key, which is deliberate —
+      # it is what lets two peers recognise the same object without
+      # coordinating. The cost is that the grammar is public and the namespace
+      # shared, so ANY peer can compute ANY boundary's identifiers. Determinism
+      # is being used as an addressing scheme, and addressing needs an owner.
+      #
+      # So dedup scopes on the PAIR. Keying on the UUID alone would let a
+      # hostile peer precompute another boundary's attestation identifier and
+      # submit a document claiming it; the receiver would then treat two
+      # parties' assertions about different things as one object, and which
+      # survives would be a property of ingestion order rather than authority.
+      #
+      # Two parties on one UUID is a CONFLICT TO SURFACE, never a duplicate to
+      # collapse. Both are kept: silently keeping one is the failure mode,
+      # whichever one it keeps.
+      #
+      # Returns [objects, conflicts]. `objects` is one entry per distinct pair;
+      # `conflicts` is one entry per CONTESTED UUID, not per excess claim, so
+      # the count does not grow with how many peers pile on.
+      def dedup(claims)
+        scoped = claims.map do |claim|
+          uuid  = (claim[:object_uuid] || claim["object-uuid"]).to_s
+          party = (claim[:originating_party] || claim["originating-party"]).to_s
+
+          if party.strip.empty?
+            raise MissingField,
+                  "a claim carries no originating party — it cannot be scoped, and defaulting " \
+                  "it would recreate dedup-by-uuid for exactly the claims that skipped verification"
+          end
+          raise MissingField, "a claim carries no object uuid" if uuid.strip.empty?
+
+          { "object-uuid" => uuid, "originating-party" => party }
+        end
+
+        objects = scoped.uniq
+        conflicts = objects.group_by { |o| o["object-uuid"] }
+                           .select { |_uuid, group| group.length > 1 }
+                           .map { |uuid, group| { "object-uuid" => uuid, "parties" => group.map { |o| o["originating-party"] }.sort } }
+
+        [ objects, conflicts ]
+      end
+
       private
 
       def field_list(kind)
