@@ -122,7 +122,10 @@ def canonical_control_id(raw: Any) -> str:
     s = re.sub(r"\s+", "-", s)
     s = s.replace("(", ".").replace(")", "")
     s = re.sub(r"\.{2,}", ".", s)
-    s = re.sub(r"-\.", ".", s)
+    # A literal two-character replacement, so str.replace rather than re.sub —
+    # identical semantics (non-overlapping, left to right) to Ruby's
+    # `gsub(/-\./, ".")`, without compiling a pattern for a fixed string.
+    s = s.replace("-.", ".")
     return _strip_padding(s)
 
 

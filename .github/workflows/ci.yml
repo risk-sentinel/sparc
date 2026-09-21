@@ -410,8 +410,15 @@ jobs:
         working-directory: lib/federation/python
         run: |
           set -euo pipefail
-          uv sync --locked --extra test
-          uv run pytest tests -q --cov=sparc_federation \
+          # --no-build refuses to build any dependency from source, so no
+          # dependency's setup script runs during install (Sonar cwe rule).
+          # --no-install-project is what makes that possible: this package is
+          # editable and has no wheel, so a plain --no-build cannot install it.
+          # It is not needed on the path — the tests import it from the working
+          # directory — and skipping it keeps the refusal absolute rather than
+          # carving out an exception.
+          uv sync --locked --no-build --no-install-project --extra test
+          PYTHONPATH=. uv run --no-sync pytest tests -q --cov=sparc_federation \
             --cov-report=xml:"${GITHUB_WORKSPACE}/coverage/federation-python-coverage.xml"
 
       - name: Report what Python coverage arrived
