@@ -190,4 +190,77 @@ RSpec.describe Federation::Key do
       expect(python_uuids.length).to eq(spec_data["vectors"].length)
     end
   end
+  # #1159 — the dedup rule. Only sound now that the runtimes provably agree on
+  # the UUID, which is why #1161 ships before it.
+  describe "deduplication scoping" do
+    it "holds every case the grammar file declares" do
+      failures = spec_data.dig("dedup", "cases").filter_map do |c|
+        if c["expect"]["reject"]
+          begin
+            described_class.dedup(c["claims"])
+            "#{c['name']}: was NOT rejected — #{c['why']}"
+          rescue Federation::Key::MissingField
+            nil
+          end
+        else
+          objects, conflicts = described_class.dedup(c["claims"])
+          unless objects.length == c["expect"]["objects"] && conflicts.length == c["expect"]["conflicts"]
+            "#{c['name']}: expected #{c['expect'].inspect}, got objects=#{objects.length} conflicts=#{conflicts.length}"
+          end
+        end
+      end
+
+      expect(failures).to be_empty, failures.join("\n")
+    end
+
+    it "has cases to check" do
+      expect(spec_data.dig("dedup", "cases").length).to be >= 5
+    end
+
+    it "scopes on the pair, never on the uuid alone" do
+      expect(spec_data.dig("dedup", "key")).to eq(%w[object-uuid originating-party])
+    end
+
+    # The attack the rule exists for: a peer precomputes another boundary's
+    # identifier and claims it. Both claims must survive.
+    it "keeps both claims when two parties assert one uuid" do
+      uuid = "73b4b970-e2ba-5e5e-884a-7c7de1600e95"
+      objects, conflicts = described_class.dedup([
+        { "object-uuid" => uuid, "originating-party" => "party-a" },
+        { "object-uuid" => uuid, "originating-party" => "party-b" }
+      ])
+
+      expect(objects.length).to eq(2)
+      expect(conflicts.length).to eq(1)
+      expect(conflicts.first["parties"]).to eq(%w[party-a party-b])
+    end
+
+    it "counts one conflict per contested uuid, not per excess claim" do
+      uuid = "73b4b970-e2ba-5e5e-884a-7c7de1600e95"
+      claims = %w[a b c d].map { |p| { "object-uuid" => uuid, "originating-party" => p } }
+
+      _objects, conflicts = described_class.dedup(claims)
+
+      expect(conflicts.length).to eq(1)
+    end
+
+    it "refuses a claim with no established party" do
+      expect {
+        described_class.dedup([ { "object-uuid" => "73b4b970-e2ba-5e5e-884a-7c7de1600e95", "originating-party" => "" } ])
+      }.to raise_error(Federation::Key::MissingField, /cannot be scoped/)
+    end
+
+    # The scoping value has to come from verification, not from the payload:
+    # a party asserted inside a document it also signs is the same claim twice.
+    it "takes the party from bundle verification rather than the payload" do
+      # The factory does not set a signing secret; verification is the whole
+      # point of this assertion, so it is set explicitly rather than stubbed.
+      peer = create(:federation_peer, signing_secret: "spec-signing-secret-32-chars-min!!")
+      envelope = FederationBundleSigningService.sign({ "claim" => "anything" }, peer: peer)
+      result = FederationBundleSigningService.verify(envelope, peer: peer)
+
+      expect(result).to be_success
+      expect(result.party).to eq(peer)
+    end
+  end
 end

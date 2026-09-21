@@ -7,6 +7,7 @@ from .key import (
     SeparatorInField,
     UnknownKind,
     canonical_fields,
+    dedup,
     derive,
     spec,
 )
@@ -18,6 +19,7 @@ __all__ = [
     "SeparatorInField",
     "UnknownKind",
     "canonical_fields",
+    "dedup",
     "derive",
     "spec",
 ]

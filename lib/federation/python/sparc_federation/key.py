@@ -231,3 +231,57 @@ def derive(kind: str, args: dict[str, Any]) -> str:
     separator = spec()["separator"]
     namespace = _uuid.UUID(spec()["namespace"]["uuid"])
     return str(_uuid.uuid5(namespace, separator.join(canonical_fields(kind, args))))
+
+
+def dedup(claims: list[dict[str, Any]]) -> tuple[list[dict[str, str]], list[dict[str, Any]]]:
+    """Deduplicate a set of claims (#1159).
+
+    **An object UUID identifies a thing, not an assertion about a thing.** The
+    asserting party is never folded into the key — deliberately, because that is
+    what lets two peers recognise the same object without coordinating. The cost
+    is that the grammar is public and the namespace shared, so ANY peer can
+    compute ANY boundary's identifiers. Determinism is being used as an
+    addressing scheme, and addressing needs an owner.
+
+    So dedup scopes on the PAIR. Keying on the UUID alone would let a hostile
+    peer precompute another boundary's attestation identifier and submit a
+    document claiming it; the receiver would then treat two parties' assertions
+    about different things as one object, and which survives would be a property
+    of ingestion order rather than authority.
+
+    Two parties on one UUID is a CONFLICT TO SURFACE, never a duplicate to
+    collapse. Both are kept: silently keeping one is the failure mode, whichever
+    one it keeps.
+
+    Returns ``(objects, conflicts)``. ``objects`` is one entry per distinct pair;
+    ``conflicts`` is one entry per CONTESTED UUID, not per excess claim, so the
+    count does not grow with how many peers pile on.
+    """
+    scoped: list[dict[str, str]] = []
+    for claim in claims:
+        uuid_value = str(claim.get("object-uuid") or claim.get("object_uuid") or "")
+        party = str(claim.get("originating-party") or claim.get("originating_party") or "")
+        if not party.strip():
+            raise MissingField(
+                "a claim carries no originating party — it cannot be scoped, and defaulting "
+                "it would recreate dedup-by-uuid for exactly the claims that skipped verification"
+            )
+        if not uuid_value.strip():
+            raise MissingField("a claim carries no object uuid")
+        scoped.append({"object-uuid": uuid_value, "originating-party": party})
+
+    objects: list[dict[str, str]] = []
+    for entry in scoped:
+        if entry not in objects:
+            objects.append(entry)
+
+    by_uuid: dict[str, list[str]] = {}
+    for entry in objects:
+        by_uuid.setdefault(entry["object-uuid"], []).append(entry["originating-party"])
+
+    conflicts = [
+        {"object-uuid": uuid_value, "parties": sorted(parties)}
+        for uuid_value, parties in by_uuid.items()
+        if len(parties) > 1
+    ]
+    return objects, conflicts
