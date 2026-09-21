@@ -524,6 +524,13 @@ discovered in a merge.
 | [x] | **AC** ~~#1106~~ ~~#1124~~ · #1063 → v1.17.0 | OSCAL export + DB | `lib/oscal_conformance/`, `OscalConformanceService`, `OscalNamespace`, **migration squash 65 → 24 files** | **DELIVERED 2026-09-15** — PR #1130 (+ #1132). The squash rewrote `db/migrate/` wholesale: **any branch cut before `9a7d7ebd` must rebase before adding a migration** |
 | [x] | **AD** ~~#1116~~ ~~#1117~~ ~~#1134~~ | SSP + OSCAL + Compliance docs | `ssp_documents_controller.rb` (`import_boundary_users`, new `declare_role`), `app/views/ssp_documents/enrich.html.erb`, `app/models/concerns/oscal_metadata.rb`, `app/models/oscal_role.rb`, `api/v1/ssp_roles_controller.rb`, `oscal_conformance_service.rb`, `config/routes.rb`, **2 data migrations + `db/schema.rb` version**, `docs/compliance/**` (5 CDEFs, mapping) | **MEDIUM** — `ssp_documents_controller.rb`, `routes.rb` and `schema.rb` are hot files; `docs/compliance/` CDEFs are guarded by `spec/compliance/`. **MERGED PR #1135, tagged v1.16.1** |
 
+#### Lane REL2 -- `v1.17.0`, unblock `sparc-horizon` and fix what customers hit -- Owner: second developer
+
+| Status | Bundle / Issue | Domain | Files Modified | Collision Risk |
+| ------ | -------------- | ------ | -------------- | -------------- |
+| [ ] | **AE** ~~#1144~~ ~~#1164~~ · **#1151** | CI/Infrastructure + Compliance | `bin/vex_set_product_identity.rb` (NEW), `spec/scripts/vex_set_product_identity_spec.rb` (NEW), `.github/workflows/build-sign-publish.yml` (VEX predicate step + a new assertion step), `docs/compliance/sparc-findings.yml`, `docs/compliance/sparc-findings.retired.yml`, `docs/compliance/oscal/cdefs/component-definition-security-scanning.json` (SR-11) | **MEDIUM on `build-sign-publish.yml`** — §5 requires `actionlint` before push (#553 phantom-failure incident); this bundle's edit was measured against `origin/main` and adds **0 new findings** (3 pre-existing, unchanged). The two register files are guarded by `spec/scripts/` + `spec/compliance/`. **#1144 and #1164 delivered; #1151 not started and blocked on an owner decision.** |
+
+
 <!-- markdownlint-enable MD013 -->
 
 #### The four crossings between these lanes
