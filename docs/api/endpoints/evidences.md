@@ -124,7 +124,7 @@ GET /api/v1/evidences/:id
     "file_size": 184320,
     "file_hash": "9f2b...c31a",
     "oscal_resolver_url": "https://sparc.example.com/artifacts/6f1c0c4e-2b7a-4e51-9a0d-8f2b1c3d4e5f",
-    "linked_control_ids": ["AC-2", "RA-5"],
+    "linked_control_ids": ["ac-2", "ra-5"],
     "attested": false,
     "updated_at": "2026-07-18T14:05:40Z"
   }
@@ -154,7 +154,7 @@ Accepts **`multipart/form-data`** (metadata plus a file) or **`application/json`
 | `status` | yes | `draft`, `collected`, `reviewed`, `attested`, `expired` |
 | `authorization_boundary_id` | no | Omit for global evidence |
 | `file` | no | The artifact itself |
-| `control_ids` | no | Array or comma-separated string; replaces existing control links |
+| `control_ids` | no | Array or comma-separated string; replaces existing control links. **Canonicalised on receipt** (#1162) — `AC-1`, `ac-1` and `AC-01` are the same control, and sending two spellings of one control creates one link, not two |
 
 > **`collected_at`, `collected_by`, and `collected_by_user_id` are server-recorded and cannot be set by the client** (#738, #934, NIST AU-10). Values supplied in the request are ignored — including future timestamps, which the model additionally rejects outright should any path ever be able to set them (#903). Record an artifact's original production date in `description` or `source` instead.
 >
@@ -197,6 +197,14 @@ PATCH /api/v1/evidences/:id
 ```
 
 Same body parameters as create, all optional. Supplying a new `file` re-computes the hash and file metadata. Supplying `control_ids` replaces the existing links; omitting the key leaves them untouched.
+
+Links are matched against the canonical form before being replaced (#1162), so
+re-sending the set you already have is a **no-op**: the rows are left alone
+rather than destroyed and recreated. That matters because each destroy/create
+pair rewrites the `BackMatterResource` records OSCAL exports reference.
+
+Evidence must support at least one control, so sending an empty list is refused
+with `422` and the existing links are left intact.
 
 **Response** `200 OK` — the detailed shape.
 

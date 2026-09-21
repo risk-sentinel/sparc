@@ -53,6 +53,13 @@ Every statement on the document, ordered by control then by the catalog's own
 part order. Optionally narrowed to one control with `?control_id=ac-2`, which is
 what an editor showing a single card needs.
 
+**The filter accepts any spelling of the identifier** (#1162). `ac-2`, `AC-2`,
+`AC-02` and `AC-2 (1)`-style enhancement forms all match the same control,
+whichever form the row happens to be stored in. Before this it was an exact
+string match on an unnormalised column, so a query for `ac-2` against a row
+stored as `AC-02` returned an empty list — indistinguishable from "this SSP does
+not implement AC-2".
+
 ```
 GET /api/v1/ssp_documents/acme-hr-portal-ssp/statements?control_id=ac-2
 Authorization: Bearer <token>
@@ -69,6 +76,7 @@ Authorization: Bearer <token>
       "label": "a.",
       "row_order": 1,
       "control_id": "ac-2",
+      "identifier": "ac-2",
       "answered": true,
       "source_kind": "authored"
     }
@@ -76,6 +84,13 @@ Authorization: Bearer <token>
   "meta": { "count": 22, "items": 100, "page": 1, "pages": 1 }
 }
 ```
+
+`identifier` is the **canonical** form of the control identifier, published
+alongside `control_id` rather than replacing it (#1162) — the same shape
+[`catalog_controls`](catalog-controls.md) uses. `control_id` is the value as
+stored, which may be a display or NIST spelling on rows written before #911;
+`identifier` is what joins across two documents exported at different times. It
+is `null` when a statement has no parent control.
 
 `answered` reports whether the statement carries implementation prose. That is
 the question the per-statement model exists to make askable, and a client should
