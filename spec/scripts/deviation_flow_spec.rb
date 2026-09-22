@@ -235,7 +235,7 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
       File.write(File.join(bin, "gh"), <<~SH)
         #!/bin/sh
         case "$*" in
-          *"collaborators/#{approver}/permission"*) echo '{"permission":"#{permission}"}' ;;
+          *"collaborators/#{approver}/permission"*) echo '#{permission == :unparseable ? "<html>502 Bad Gateway</html>" : %({"permission":"#{permission}"})}' ;;
           *"collaborators/"*"/permission"*)         echo '{"permission":"write"}' ;;
           *"--json latestReviews"*)                 echo '{"latestReviews":[{"state":"APPROVED","author":{"login":"#{approver}"}}]}' ;;
           *"--json comments"*)                      echo '{"comments":#{comments_json}}' ;;
@@ -384,6 +384,22 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
 
         expect(status.exitstatus).to eq(1), stdout
         expect(stdout).to include("not admin/maintain")
+      end
+
+      # An authority check must FAIL CLOSED. `gh` returning something
+      # unparseable — a proxy error page, a rate-limit body, an outage — must
+      # read as "no authority established", never as authority. Nothing
+      # asserted this until a mutation showed the rescue could return "admin"
+      # with every example still green.
+      it "refuses when the permission API answer cannot be read at all" do
+        path = commanded_register
+
+        stdout, status = run_comment_gate(
+          path, "PATH" => stub_gh(permission: :unparseable, commander: "clem-field")
+        )
+
+        expect(status.exitstatus).to eq(1), stdout
+        expect(stdout).to include("holds 'unknown'")
       end
 
       it "records the mechanism it was actually approved by, not a conventional label" do
