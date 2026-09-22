@@ -677,7 +677,11 @@ findings:
   next_review_date: '2026-10-19'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#1173
+    approved_at: '2026-09-22T00:33:13Z'
+    approval_mechanism: admin-merge-bypass
     adjusted_severity: LOW
     adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
       program against untrusted input. The mitigating factors below are properties of THIS image, measured
@@ -711,7 +715,11 @@ findings:
   next_review_date: '2026-10-19'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#1173
+    approved_at: '2026-09-22T00:33:13Z'
+    approval_mechanism: admin-merge-bypass
     adjusted_severity: LOW
     adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
       program against untrusted input. The mitigating factors below are properties of THIS image, measured
@@ -745,7 +753,11 @@ findings:
   next_review_date: '2026-10-19'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#1173
+    approved_at: '2026-09-22T00:33:13Z'
+    approval_mechanism: admin-merge-bypass
     adjusted_severity: LOW
     adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
       program against untrusted input. The mitigating factors below are properties of THIS image, measured
@@ -779,7 +791,11 @@ findings:
   next_review_date: '2026-10-19'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#1173
+    approved_at: '2026-09-22T00:33:13Z'
+    approval_mechanism: admin-merge-bypass
     adjusted_severity: LOW
     adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
       program against untrusted input. The mitigating factors below are properties of THIS image, measured
@@ -811,7 +827,11 @@ findings:
   next_review_date: '2026-10-19'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#1173
+    approved_at: '2026-09-22T00:33:13Z'
+    approval_mechanism: admin-merge-bypass
     adjusted_severity: LOW
     adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
       program against untrusted input. The mitigating factors below are properties of THIS image, measured
@@ -841,7 +861,11 @@ findings:
   next_review_date: '2026-10-19'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#1173
+    approved_at: '2026-09-22T00:33:13Z'
+    approval_mechanism: admin-merge-bypass
     adjusted_severity: LOW
     adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
       program against untrusted input. The mitigating factors below are properties of THIS image, measured
