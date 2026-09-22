@@ -43,12 +43,26 @@ REVIEWED_AT  = ENV["SPARC_REVIEWED_AT"].to_s
 PR_NUMBER    = ENV["SPARC_PR_NUMBER"].to_s
 REPO_SLUG    = ENV.fetch("SPARC_REPO", "risk-sentinel/sparc")
 
+# How the approval was granted, recorded in the evidence so a reader can weigh
+# it (#871). `review` is an approving PR review; `approve-deviation-comment` is
+# the `/approve-deviation` command, which exists because GitHub does not permit
+# approving your own pull request and a single-admin repository has no other
+# route. The gate corroborates each mechanism against the artefact it names —
+# a review against the review list, a comment against the comment list — so the
+# value must describe what ACTUALLY happened rather than what is conventional.
+APPROVAL_MECHANISM = ENV.fetch("SPARC_APPROVAL_MECHANISM", "review")
+VALID_MECHANISMS   = %w[review approve-deviation-comment].freeze
+
 # Repo permission levels that may authorise a deviation.
 AUTHORISED_PERMISSIONS = %w[admin maintain].freeze
 
 def die(msg)
   warn "✗ #{msg}"
   exit 1
+end
+
+unless VALID_MECHANISMS.include?(APPROVAL_MECHANISM)
+  die "SPARC_APPROVAL_MECHANISM #{APPROVAL_MECHANISM.inspect} is not one of #{VALID_MECHANISMS.join(', ')}"
 end
 
 unless REVIEW_STATE == "APPROVED"
@@ -127,6 +141,7 @@ lines.each do |line|
     out << "#{indent}approved_by: \"@#{REVIEWER}\"\n"
     out << "#{indent}approved_in: \"#{approved_in}\"\n"
     out << "#{indent}approved_at: \"#{approved_at}\"\n"
+    out << "#{indent}approval_mechanism: #{APPROVAL_MECHANISM}\n"
     flipped += 1
     next
   end
@@ -142,3 +157,4 @@ puts "✓ Recorded #{flipped} deviation approval(s)"
 puts "    approved_by: @#{REVIEWER} (#{permission})"
 puts "    approved_in: #{approved_in}"
 puts "    approved_at: #{approved_at}"
+puts "    approval_mechanism: #{APPROVAL_MECHANISM}"
