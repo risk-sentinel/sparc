@@ -505,7 +505,7 @@ it.
 > their own comment threads where they were moved there by hand; the milestone
 > is the authority, not the prose.
 
-**Open: 8. Closed: 5.** Re-measured 2026-09-21 from ONE grouped query
+**Open: 6. Closed: 7.** Re-measured 2026-09-22 from ONE grouped query
 (`gh issue list --state open --limit 200 --json number,milestone`, grouped by
 milestone), because three separate filtered counts disagreed with the total
 while milestone edits were propagating. **This is the current phase.** The
@@ -587,7 +587,7 @@ unestimated for exactly that reason.
 ## Open work — measured 2026-09-20 (re-measured after the open-issue sweep)
 
 Re-measured against the live repository, not carried forward. **553 issues**;
-**519 are closed**, **34 open**. What remains:
+**521 are closed**, **32 open**. What remains:
 
 > **This section read 36 open for part of a day.** That figure was measured
 > minutes before #1162 was filed, and then quoted rather than re-measured. It is
@@ -630,7 +630,7 @@ Re-measured against the live repository, not carried forward. **553 issues**;
 | Open, on `v1.17.1` | **8** — #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133. Milestone created 2026-09-20 to hold the deferred debt and the two UI tails |
 | **Open, on NO milestone** | **19** (27 earlier on 2026-09-20, 24 on 09-17, 22 on 09-05, 25 on 09-03, 10 on 08-25) — see below |
 
-The reconciliation: 0 + 8 + 8 + 18 = 34, and 519 + 34 = 553 (re-measured 2026-09-21 with the AH bundle PR; #1155 and #1162 closed with PR #1171, #1161 and #1159 close with this one, and **#1172 was filed onto v1.17.0** — FedRAMP KSI schema ingestion, the capability whose absence produced #1115's drift — and **#871 was brought onto it from unmilestoned** when AH proved the deviation-approval gap is not theoretical).
+The reconciliation: 0 + 6 + 8 + 18 = 32, and 521 + 32 = 553 (re-measured 2026-09-22 with the AK bundle PR; #1155 and #1162 closed with PR #1171, #1161 and #1159 closed with PR #1173, and **#1172 was filed onto v1.17.0** — FedRAMP KSI schema ingestion, the capability whose absence produced #1115's drift — and **#871 was brought onto it from unmilestoned** when AH proved the deviation-approval gap is not theoretical).
 
 > **Three milestones are still OPEN on GitHub with zero open issues** — `v1.16.0`,
 > `ci.v0.0.1` and `v1.16.1`. Closing a milestone is an owner action and none is
