@@ -96,7 +96,22 @@ approved_at = REVIEWED_AT.empty? ? Time.now.utc.strftime("%Y-%m-%d") : REVIEWED_
 approved_in = "#{REPO_SLUG}##{PR_NUMBER}"
 targets     = pending.map { |f| f["cve_id"] }.to_set
 
-# Line-based edit: the register is comment-rich and a YAML round-trip destroys it.
+# Line-based edit: the register is comment-rich and a YAML round-trip destroys
+# it. Proven, not assumed — #1173 added the deviation blocks through a YAML
+# round-trip and silently deleted the file's 60-line header, which carries the
+# #1065 history and the record of the two deliberate absences.
+#
+# INDENTATION-AGNOSTIC (#871). These matchers previously pinned the exact depth
+# (`^  - cve_id:` and six spaces before `risk_status:`). The same #1173 round
+# trip re-indented the register, so ZERO entries matched and the script refused
+# every approval with "expected to flip 6 deviation(s) but flipped 0". It failed
+# safe, but it failed completely, and 16 green specs did not notice because the
+# spec built its own fixture at the old depth.
+#
+# A guard that writes approvals must not break because a file was reformatted,
+# so the depth is now captured from the line rather than assumed — and the
+# replacement lines REUSE the captured indent, so the file's own style is
+# preserved whatever it happens to be.
 require "set"
 lines = File.readlines(FINDINGS)
 out = []
@@ -104,13 +119,14 @@ current = nil
 flipped = 0
 
 lines.each do |line|
-  current = Regexp.last_match(1) if line =~ /^  - cve_id:\s*(\S+)\s*$/
+  current = Regexp.last_match(1) if line =~ /^\s*-\s+cve_id:\s*(\S+)\s*$/
 
-  if current && targets.include?(current) && line =~ /^      risk_status:\s*deviation-requested\s*$/
-    out << "      risk_status: deviation-approved\n"
-    out << "      approved_by: \"@#{REVIEWER}\"\n"
-    out << "      approved_in: \"#{approved_in}\"\n"
-    out << "      approved_at: \"#{approved_at}\"\n"
+  if current && targets.include?(current) && line =~ /^(\s*)risk_status:\s*deviation-requested\s*$/
+    indent = Regexp.last_match(1)
+    out << "#{indent}risk_status: deviation-approved\n"
+    out << "#{indent}approved_by: \"@#{REVIEWER}\"\n"
+    out << "#{indent}approved_in: \"#{approved_in}\"\n"
+    out << "#{indent}approved_at: \"#{approved_at}\"\n"
     flipped += 1
     next
   end

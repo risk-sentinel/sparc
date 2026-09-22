@@ -325,5 +325,93 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
       expect(stdout).to include("NOT CORROBORATED")
       expect(stdout).to include("has not submitted an approving review")
     end
+    # #871 — the fixture is not the artifact that ships.
+    #
+    # Every example above builds its own register, at the indentation the
+    # fixture happens to use. #1173 re-indented the REAL register through a
+    # YAML round-trip and the applier's matchers, which pinned an exact depth,
+    # stopped matching anything: "expected to flip 6 deviation(s) but flipped
+    # 0". It failed safe and it failed completely, and these 16 examples stayed
+    # green throughout, because none of them had ever seen the shipping file.
+    #
+    # So this drives the applier against a copy of the COMMITTED register. The
+    # file's format is part of the contract; nothing was asserting it.
+    describe "against the register that actually ships (#871)" do
+      let(:committed) { Rails.root.join("docs/compliance/sparc-findings.yml") }
+
+      # A copy of the real file with its approved deviations wound back, which
+      # is the state the applier exists to act on.
+      def real_register_awaiting_approval
+        path = File.join(@dir, "real.yml")
+        File.write(path, File.read(committed).gsub("risk_status: deviation-approved",
+                                                   "risk_status: deviation-requested"))
+        path
+      end
+
+      it "flips every pending deviation in the committed register's own format" do
+        path = real_register_awaiting_approval
+        pending = File.read(path).scan("risk_status: deviation-requested").length
+        skip "the committed register carries no deviations to exercise" if pending.zero?
+
+        stdout, status = Open3.capture2e(
+          { "SPARC_FINDINGS_FILE" => path, "SPARC_REVIEW_STATE" => "APPROVED",
+            "SPARC_REVIEWER" => "clem-field", "SPARC_PR_NUMBER" => "999",
+            "PATH" => stub_gh },
+          "ruby", applier
+        )
+
+        expect(status.exitstatus).to eq(0), stdout
+        expect(stdout).to include("Recorded #{pending} deviation approval(s)")
+        expect(File.read(path)).not_to include("risk_status: deviation-requested")
+      end
+
+      it "preserves the register's comments, which a YAML round-trip destroys" do
+        path = real_register_awaiting_approval
+        before = File.readlines(path).count { |l| l.start_with?("#") }
+        skip "the committed register carries no header comments" if before.zero?
+
+        Open3.capture2e(
+          { "SPARC_FINDINGS_FILE" => path, "SPARC_REVIEW_STATE" => "APPROVED",
+            "SPARC_REVIEWER" => "clem-field", "SPARC_PR_NUMBER" => "999",
+            "PATH" => stub_gh },
+          "ruby", applier
+        )
+
+        expect(File.readlines(path).count { |l| l.start_with?("#") }).to eq(before)
+      end
+
+      it "writes the approval at the file's own indentation, whatever it is" do
+        path = real_register_awaiting_approval
+        indent = File.readlines(path)
+                     .find { |l| l =~ /^(\s*)risk_status:/ }
+                     .match(/^(\s*)/)[1]
+
+        Open3.capture2e(
+          { "SPARC_FINDINGS_FILE" => path, "SPARC_REVIEW_STATE" => "APPROVED",
+            "SPARC_REVIEWER" => "clem-field", "SPARC_PR_NUMBER" => "999",
+            "PATH" => stub_gh },
+          "ruby", applier
+        )
+
+        expect(File.read(path)).to include("#{indent}approved_by: \"@clem-field\"")
+        expect(YAML.safe_load_file(path, permitted_classes: [ Date ])).to be_a(Hash)
+      end
+
+      # The depth the fixtures above use must keep working too, so the fix is a
+      # widening rather than a swap from one hardcoded depth to another.
+      it "still handles the deeper indentation the other examples use" do
+        path = requested_register
+
+        stdout, status = Open3.capture2e(
+          { "SPARC_FINDINGS_FILE" => path, "SPARC_REVIEW_STATE" => "APPROVED",
+            "SPARC_REVIEWER" => "clem-field", "SPARC_PR_NUMBER" => "999",
+            "PATH" => stub_gh },
+          "ruby", applier
+        )
+
+        expect(status.exitstatus).to eq(0), stdout
+        expect(File.read(path)).to include("risk_status: deviation-approved")
+      end
+    end
   end
 end
