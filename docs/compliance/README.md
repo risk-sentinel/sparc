@@ -245,6 +245,7 @@ API or it does not.
 | Value | Strength |
 |---|---|
 | `review` | **Strong.** An authorised reviewer submitted an approving review — a distinct, attributable act |
+| `approve-deviation-comment` | **Strong.** An authorised user issued `/approve-deviation` on the PR — also distinct and attributable, and it works when the admin is the author |
 | `admin-merge-bypass` | **Weaker.** An admin merged past the red gate |
 
 **Why the bypass path exists:** GitHub does not permit anyone to approve their
@@ -255,9 +256,46 @@ it. The gate then verifies the named approver holds authority — but it cannot
 verify a separate approval event occurred, and it says so loudly in the log.
 
 This is deliberately recorded in the evidence so the artefact states the
-strength of its own provenance. It is superseded by the mechanized
-`/approve-deviation` flow (#871), which restores a
-distinct approval act that works even when the admin is the author.
+strength of its own provenance.
+
+### `/approve-deviation` — the route that works when the admin is the author
+
+**A comment is not a review**, so GitHub's self-approval restriction does not
+apply to it, while it remains a distinct act with an author and a timestamp.
+That is what makes it a real replacement for the bypass rather than a relabel.
+
+```
+1. PR adds the deviation as `deviation-requested`  → gate RED
+2. An admin comments  /approve-deviation           → works even as the author
+3. The workflow verifies the commenter holds admin/maintain,
+   flips the state, stamps who/when/which-PR/mechanism, and pushes
+4. The push re-fires the FULL pipeline, so nothing is left stale
+5. Everything re-evaluates against the approved state → GREEN
+```
+
+The gate corroborates each mechanism against the artefact it names — a `review`
+against the PR's review list, an `approve-deviation-comment` against its comment
+list. A register entry claiming either without the matching evidence fails.
+
+**Two properties hold this up, and neither is optional:**
+
+- **The workflow *and* the approval logic execute from the base branch.** For
+  `issue_comment` GitHub runs the workflow file from the default branch, so a PR
+  cannot rewrite it — but it can rewrite the scripts, and the job checks out the
+  PR head in order to push back to it. Both scripts are therefore restored from
+  the base branch before they run, and only the findings file is committed.
+  Without that, a PR supplying its own applier would approve itself.
+- **`types: [created]` only.** An edited comment must not manufacture an
+  approval retroactively.
+
+**The push uses a GitHub App token, not `GITHUB_TOKEN`.** A `GITHUB_TOKEN` push
+does not trigger workflow runs, so the approval would land with every other
+check left stale. The step refuses rather than degrading when
+`SPARC_DEVIATION_APP_ID` / `SPARC_DEVIATION_APP_PRIVATE_KEY` are absent.
+
+`admin-merge-bypass` is **not yet retired**. It cannot be proven redundant until
+this flow has run on `main`, and the entries approved that way still depend on
+it being understood.
 
 ### What went wrong before this existed
 
