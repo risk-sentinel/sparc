@@ -157,7 +157,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Gitleaks SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         continue-on-error: true
         with:
@@ -186,7 +186,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: .ruby-version
           bundler-cache: true
@@ -198,7 +198,7 @@ jobs:
 
       - name: Upload Brakeman SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         continue-on-error: true
         with:
           sarif_file: brakeman-results.sarif
@@ -231,7 +231,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         with:
           languages: ruby
           config: |
@@ -246,7 +246,7 @@ jobs:
               - node_modules
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/analyze@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         with:
           output: codeql-results
           category: codeql-sast
@@ -266,7 +266,7 @@ jobs:
 
       - name: Upload CodeQL SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         continue-on-error: true
         with:
           sarif_file: codeql-results.sarif
@@ -312,7 +312,7 @@ jobs:
 
       - name: Upload Semgrep SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         continue-on-error: true
         with:
           sarif_file: semgrep-results.sarif
@@ -339,7 +339,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: .ruby-version
           bundler-cache: true
@@ -383,7 +383,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: .ruby-version
 
@@ -402,7 +402,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: .ruby-version
           bundler-cache: true
@@ -445,7 +445,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy FS SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         continue-on-error: true
         with:
@@ -556,7 +556,7 @@ jobs:
             --image sparc:${{ github.sha }}
 
       - name: Upload Trivy container SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         continue-on-error: true
         with:
@@ -713,7 +713,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: .ruby-version
           bundler-cache: true
@@ -795,7 +795,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (ignore-list generator only — no bundle)
-        uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: 3.4
 
@@ -926,21 +926,21 @@ jobs:
 
       - name: Upload Ruby SBOM SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-ruby.sarif') != ''
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         with:
           sarif_file: grype-results/grype-ruby.sarif
           category: grype-sbom-ruby
 
       - name: Upload Trivy FS SBOM SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-fs.sarif') != ''
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         with:
           sarif_file: grype-results/grype-fs.sarif
           category: grype-sbom-trivy-fs
 
       - name: Upload container SBOM SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-container.sarif') != ''
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         with:
           sarif_file: grype-results/grype-container.sarif
           # Category deliberately unchanged (#873). The SBOM behind it switched
@@ -1006,7 +1006,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (matches the rest of the security workflow)
-        uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: "3.4"
 
@@ -1097,7 +1097,7 @@ jobs:
       # Ruby for the two in-repo translation helpers below. Stdlib only — no
       # bundle install, same posture as the security_gate converter step.
       - name: Set up Ruby (translation helpers only — no bundle)
-        uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: '3.4'
 
@@ -1758,7 +1758,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (converter only — no bundle)
-        uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: 3.4
 
