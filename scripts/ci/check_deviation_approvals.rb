@@ -47,6 +47,19 @@ REPO_SLUG = ENV.fetch("SPARC_REPO", "risk-sentinel/sparc")
 
 AUTHORISED_PERMISSIONS = %w[admin maintain].freeze
 
+# The repository permission GitHub reports for a login, or "" when it cannot be
+# determined — an unreadable answer must never read as authority.
+#
+# Extracted because three call sites (#871) each carried their own copy of the
+# same `gh api` invocation and the same rescue. Duplicated shell strings are how
+# one site quietly stops matching the others.
+def repo_permission(login)
+  raw = `gh api repos/#{REPO_SLUG}/collaborators/#{login}/permission 2>/dev/null`
+  JSON.parse(raw).fetch("permission", "")
+rescue JSON::ParserError
+  ""
+end
+
 def load_findings(source)
   data = YAML.safe_load(source, permitted_classes: [ Date ], aliases: true)
   return {} unless data.is_a?(Hash)
@@ -171,13 +184,7 @@ newly_approved.each do |cve, f|
       next
     end
 
-    perm_raw = `gh api repos/#{REPO_SLUG}/collaborators/#{claimed}/permission 2>/dev/null`
-    permission =
-      begin
-        JSON.parse(perm_raw).fetch("permission", "")
-      rescue JSON::ParserError
-        ""
-      end
+    permission = repo_permission(claimed)
 
     unless AUTHORISED_PERMISSIONS.include?(permission)
       failures << "#{cve}: @#{claimed} commanded /approve-deviation but holds " \
@@ -188,13 +195,7 @@ newly_approved.each do |cve, f|
   end
 
   if f.dig("deviation", "approval_mechanism") == "admin-merge-bypass"
-    perm_raw = `gh api repos/#{REPO_SLUG}/collaborators/#{claimed}/permission 2>/dev/null`
-    permission =
-      begin
-        JSON.parse(perm_raw).fetch("permission", "")
-      rescue JSON::ParserError
-        ""
-      end
+    permission = repo_permission(claimed)
     if AUTHORISED_PERMISSIONS.include?(permission)
       bypassed << "#{cve}: approved by @#{claimed} (#{permission}) via admin merge bypass"
     else
@@ -208,13 +209,7 @@ newly_approved.each do |cve, f|
     next
   end
 
-  perm_raw = `gh api repos/#{REPO_SLUG}/collaborators/#{claimed}/permission 2>/dev/null`
-  permission =
-    begin
-      JSON.parse(perm_raw).fetch("permission", "")
-    rescue JSON::ParserError
-      ""
-    end
+  permission = repo_permission(claimed)
   unless AUTHORISED_PERMISSIONS.include?(permission)
     failures << "#{cve}: @#{claimed} holds '#{permission.empty? ? 'unknown' : permission}', not #{AUTHORISED_PERMISSIONS.join('/')}"
   end
