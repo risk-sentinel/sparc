@@ -101,7 +101,7 @@ puts "Deviations newly approved by this change:"
 newly_approved.each { |cve, f| puts "  - #{cve}  #{f['severity']}  #{f.dig('deviation', 'type')}" }
 puts
 
-unless %w[pull_request pull_request_review].include?(EVENT)
+unless %w[pull_request pull_request_review issue_comment].include?(EVENT)
   puts "✓ Not a pull-request event — approval is enforced by branch protection at merge."
   exit 0
 end
@@ -122,8 +122,28 @@ approvers =
     []
   end
 
+# #871 — the `/approve-deviation` command. GitHub does not permit approving your
+# own pull request, so in a single-admin repository the review list above is
+# permanently empty and `admin-merge-bypass` was the only route. A COMMENT is
+# not a review, so the author can issue one — and it is still a distinct,
+# attributable act with a timestamp and an author, which the bypass never was.
+#
+# Corroborated against the comment list for the same reason reviews are
+# corroborated against the review list: the register must not be the only place
+# the approval exists.
+comment_raw = `gh pr view #{PR_NUM} --json comments 2>/dev/null`
+commanders =
+  begin
+    Array(JSON.parse(comment_raw)["comments"])
+      .select { |c| c["body"].to_s.match?(/^\s*\/approve-deviation\b/) }
+      .filter_map { |c| c.dig("author", "login")&.downcase }
+  rescue JSON::ParserError
+    []
+  end
+
 failures = []
 bypassed = []
+commanded = []
 newly_approved.each do |cve, f|
   claimed = f.dig("deviation", "approved_by").to_s.sub(/\A@/, "").downcase
   if claimed.empty?
@@ -144,6 +164,29 @@ newly_approved.each do |cve, f|
   # authority, not that a distinct approval event occurred. It is accepted only
   # until the mechanized `/approve-deviation` flow lands (#871), which restores
   # a separate, attributable approval act.
+  if f.dig("deviation", "approval_mechanism") == "approve-deviation-comment"
+    unless commanders.include?(claimed)
+      failures << "#{cve}: claims approval by @#{claimed} via /approve-deviation, " \
+                  "but no such comment from them exists on this PR"
+      next
+    end
+
+    perm_raw = `gh api repos/#{REPO_SLUG}/collaborators/#{claimed}/permission 2>/dev/null`
+    permission =
+      begin
+        JSON.parse(perm_raw).fetch("permission", "")
+      rescue JSON::ParserError
+        ""
+      end
+
+    unless AUTHORISED_PERMISSIONS.include?(permission)
+      failures << "#{cve}: @#{claimed} commanded /approve-deviation but holds " \
+                  "'#{permission.empty? ? 'unknown' : permission}', not #{AUTHORISED_PERMISSIONS.join('/')}"
+    end
+    commanded << "#{cve}: approved by @#{claimed} (#{permission}) via /approve-deviation"
+    next
+  end
+
   if f.dig("deviation", "approval_mechanism") == "admin-merge-bypass"
     perm_raw = `gh api repos/#{REPO_SLUG}/collaborators/#{claimed}/permission 2>/dev/null`
     permission =
@@ -190,7 +233,12 @@ if failures.empty?
     puts "  /approve-deviation flow (#871)."
     puts
   end
-  corroborated = newly_approved.size - bypassed.size
+  unless commanded.empty?
+    puts "✓ #{commanded.size} deviation(s) corroborated by /approve-deviation from an authorised user (#871)."
+    commanded.each { |c| puts "    #{c}" }
+    puts
+  end
+  corroborated = newly_approved.size - bypassed.size - commanded.size
   if corroborated.positive?
     puts "✓ #{corroborated} deviation(s) corroborated by an approving review from an authorised reviewer."
     puts "  Approving reviewers on this PR: #{approvers.join(', ')}"

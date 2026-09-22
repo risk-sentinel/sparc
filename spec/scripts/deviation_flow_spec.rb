@@ -223,7 +223,13 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
   describe "the approval loop (#865)" do
     # A stubbed `gh` on PATH, not a cleared PATH — clearing PATH would break
     # `ruby` itself and the example would pass for the wrong reason.
-    def stub_gh(permission: "admin", approver: "clem-field")
+    def stub_gh(permission: "admin", approver: "clem-field", commander: nil)
+      comments_json =
+        if commander
+          %([{"body":"/approve-deviation","author":{"login":"#{commander}"}}])
+        else
+          "[]"
+        end
       bin = File.join(@dir, "bin")
       FileUtils.mkdir_p(bin)
       File.write(File.join(bin, "gh"), <<~SH)
@@ -232,6 +238,7 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
           *"collaborators/#{approver}/permission"*) echo '{"permission":"#{permission}"}' ;;
           *"collaborators/"*"/permission"*)         echo '{"permission":"write"}' ;;
           *"--json latestReviews"*)                 echo '{"latestReviews":[{"state":"APPROVED","author":{"login":"#{approver}"}}]}' ;;
+          *"--json comments"*)                      echo '{"comments":#{comments_json}}' ;;
           *) echo '{}' ;;
         esac
       SH
@@ -325,6 +332,90 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
       expect(stdout).to include("NOT CORROBORATED")
       expect(stdout).to include("has not submitted an approving review")
     end
+    # #871 — the /approve-deviation command.
+    #
+    # The review path is structurally unreachable for a single admin, so this
+    # is the route that actually gets used. It must corroborate as strictly as
+    # the review path does: the register must never be the only place the
+    # approval exists, or it is the bypass again with a different label.
+    describe "the /approve-deviation command (#871)" do
+      # The fixture helper emits no `approval_mechanism` and a different
+      # approver, so both are set here rather than substituted — a `.sub` that
+      # silently matched nothing would leave these examples asserting nothing.
+      def commanded_register
+        body = risk_adjustment(status: "deviation-approved", approval: true)
+                 .sub('approved_by: "@risk-sentinel/sparc-admin"', 'approved_by: "@clem-field"')
+                 .concat("\n      approval_mechanism: approve-deviation-comment")
+        raise "fixture did not take the command mechanism" unless body.include?("approve-deviation-comment")
+        raise "fixture did not take the approver" unless body.include?('"@clem-field"')
+
+        write("c.yml", finding(deviation: body))
+      end
+
+      def run_comment_gate(path, env = {})
+        Open3.capture2e(
+          { "SPARC_FINDINGS_FILE" => path, "GITHUB_EVENT_NAME" => "issue_comment",
+            "SPARC_PR_NUMBER" => "999", "SPARC_BASE_REF" => "refs/none" }.merge(env),
+          "ruby", approver_script
+        )
+      end
+
+      it "corroborates an approval backed by a real command from an authorised user" do
+        path = commanded_register
+        stdout, status = run_comment_gate(path, "PATH" => stub_gh(commander: "clem-field"))
+
+        expect(status.exitstatus).to eq(0), stdout
+        expect(stdout).to include("/approve-deviation")
+      end
+
+      # The whole point. A register can claim anything; the comment list is the
+      # independent record.
+      it "refuses an approval when no such comment exists on the PR" do
+        path = commanded_register
+        stdout, status = run_comment_gate(path, "PATH" => stub_gh(commander: nil))
+
+        expect(status.exitstatus).to eq(1), stdout
+        expect(stdout).to include("no such comment from them exists")
+      end
+
+      it "refuses a command from someone without admin or maintain" do
+        path = commanded_register
+        stdout, status = run_comment_gate(path, "PATH" => stub_gh(permission: "write", commander: "clem-field"))
+
+        expect(status.exitstatus).to eq(1), stdout
+        expect(stdout).to include("not admin/maintain")
+      end
+
+      it "records the mechanism it was actually approved by, not a conventional label" do
+        path = requested_register
+
+        _stdout, status = Open3.capture2e(
+          { "SPARC_FINDINGS_FILE" => path, "SPARC_REVIEW_STATE" => "APPROVED",
+            "SPARC_REVIEWER" => "clem-field", "SPARC_PR_NUMBER" => "999",
+            "SPARC_APPROVAL_MECHANISM" => "approve-deviation-comment",
+            "PATH" => stub_gh },
+          "ruby", applier
+        )
+
+        expect(status.exitstatus).to eq(0)
+        expect(File.read(path)).to include("approval_mechanism: approve-deviation-comment")
+      end
+
+      it "refuses a mechanism it does not recognise rather than recording it" do
+        path = requested_register
+
+        stdout, status = Open3.capture2e(
+          { "SPARC_FINDINGS_FILE" => path, "SPARC_REVIEW_STATE" => "APPROVED",
+            "SPARC_REVIEWER" => "clem-field", "SPARC_PR_NUMBER" => "999",
+            "SPARC_APPROVAL_MECHANISM" => "trust-me", "PATH" => stub_gh },
+          "ruby", applier
+        )
+
+        expect(status.exitstatus).to eq(1), stdout
+        expect(File.read(path)).to include("deviation-requested")
+      end
+    end
+
     # #871 — the fixture is not the artifact that ships.
     #
     # Every example above builds its own register, at the indentation the
