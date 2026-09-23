@@ -16,6 +16,8 @@ What is asserted:
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from helpers import assert_no_csp_violations, first_show_href, record_csp
@@ -25,7 +27,7 @@ UUID_BADGE = ".sparc-uuid"
 
 
 def _org_page(page):
-    href = first_show_href(page, ORGS, ORGS)
+    href = first_show_href(page, index_path=ORGS, prefix=ORGS)
     if not href:
         pytest.skip("no organization seeded — run the demo seed")
     page.goto(href)
@@ -127,3 +129,47 @@ class TestUuidBadgeCopies:
             "the copied confirmation never reverted"
         )
         assert_no_csp_violations(authed_page, during="UUID copy confirmation revert")
+
+# ── The rest of the screens #1180 covers ────────────────────────────────────
+#
+# Presence, not a new test per page: #1180 asks the existing page coverage to
+# assert the element rather than adding a test for its own sake. The boundary
+# is the one that matters most — its UUID was visible on NO screen, while
+# sparc-horizon is being asked to join on it.
+SCREENS = [
+    ("/authorization_boundaries", "boundary"),
+    ("/ssp_documents", "SSP"),
+    ("/sar_documents", "SAR"),
+    ("/cdef_documents", "CDEF"),
+    ("/poam_documents", "POA&M"),
+    ("/profile_documents", "Profile"),
+]
+
+
+@pytest.mark.parametrize("index_path,label", SCREENS, ids=[s[1] for s in SCREENS])
+class TestUuidOnEveryScreen:
+    def test_show_page_exposes_a_copyable_uuid(self, authed_page, index_path, label):
+        record_csp(authed_page)
+        href = first_show_href(authed_page, index_path=index_path, prefix=index_path)
+        if not href:
+            pytest.skip(f"no {label} seeded — run the demo seed")
+
+        authed_page.goto(href)
+        authed_page.wait_for_load_state("networkidle")
+
+        badge = authed_page.locator(UUID_BADGE)
+        assert badge.count() >= 1, f"{label} show page has no UUID badge"
+
+        value = badge.first.get_attribute("data-clipboard-text-value")
+        shown = badge.first.locator(".sparc-uuid__value").inner_text().strip()
+        assert value and shown == value, (
+            f"{label} badge displays {shown!r} but would copy {value!r}"
+        )
+        # A UUID, not some other identifier that happened to land in the slot.
+        assert re.fullmatch(
+            r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+            r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+            value,
+        ), f"{label} badge holds {value!r}, which is not a UUID"
+
+        assert_no_csp_violations(authed_page, during=f"{label} show render")

@@ -74,6 +74,12 @@
             <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
           <% end %>
         </div>
+        <%# #1180 — the document's own UUID, under the name, in the same
+            treatment every other screen uses. Copyable: this is the
+            identifier the federation key grammar keys objects on. %>
+        <div class="mt-1">
+          <%= render "shared/uuid_badge", uuid: @profile_document.uuid, name: "document UUID" %>
+        </div>
       </div>
 
       <% if signed_in? && !@profile_document.published_lifecycle? %>

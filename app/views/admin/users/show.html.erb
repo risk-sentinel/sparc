@@ -1,6 +1,11 @@
 <div class="my-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 fw-bold mb-0"><%= @user.display_label %></h1>
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h1 class="h3 fw-bold mb-1"><%= @user.display_label %></h1>
+      <%# #1180 — moved out of the details list into the header, so the UUID
+          sits in the same place on every screen that has one. %>
+      <%= render "shared/uuid_badge", uuid: @user.uuid, label: "UUID", name: "user UUID" %>
+    </div>
     <div class="d-flex gap-2">
       <%= link_to "Edit", edit_admin_user_path(@user), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
       <% if @user.active? && @user != current_user %>
@@ -85,8 +90,6 @@
                else "secondary"
                end %>
           <dl class="row mb-0">
-            <dt class="col-sm-4">UUID</dt>
-            <dd class="col-sm-8"><code class="small"><%= @user.uuid %></code></dd>
             <dt class="col-sm-4">Email</dt>
             <dd class="col-sm-8"><%= @user.email %></dd>
             <dt class="col-sm-4">Display Name</dt>

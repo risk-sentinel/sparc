@@ -2,7 +2,10 @@
   <div class="d-flex justify-content-between align-items-start mb-4">
     <div>
       <h2><%= @service_account.display_label %></h2>
-      <p class="text-muted mb-0"><%= @service_account.email %></p>
+      <p class="text-muted mb-1"><%= @service_account.email %></p>
+      <%# #1180 — moved out of the Account Details table into the header, so the
+          UUID sits in the same place on every screen that has one. %>
+      <%= render "shared/uuid_badge", uuid: @service_account.uuid, label: "UUID", name: "service account UUID" %>
     </div>
     <div class="d-flex gap-2">
       <%= link_to "Edit", edit_admin_service_account_path(@service_account), class: "sparc-action sparc-action--primary sparc-action--outline" %>
@@ -31,8 +34,7 @@
       <div class="card sparc-card">
         <div class="card-header"><h5 class="mb-0">Account Details</h5></div>
         <div class="card-body">
-          <table class="table table-smtable-sm mb-0">
-            <tr><th>UUID</th><td><code><%= @service_account.uuid %></code></td></tr>
+          <table class="table table-sm mb-0">
             <tr><th>Status</th><td>
               <% if @service_account.disabled? %>
                 <span class="badge bg-danger">Disabled</span>
@@ -64,7 +66,7 @@
         </div>
         <div class="card-body">
           <% if @tokens.any? %>
-            <table class="table table-smtable-sm mb-0">
+            <table class="table table-sm mb-0">
               <thead>
                 <tr><th>Name</th><th>Status</th><th>Expires</th><th>Last Used</th></tr>
               </thead>
@@ -132,7 +134,7 @@
     <div class="card-header"><h5 class="mb-0">Recent Activity</h5></div>
     <div class="card-body">
       <% if @audit_events.any? %>
-        <table class="table table-smtable-sm mb-0">
+        <table class="table table-sm mb-0">
           <thead><tr><th>Action</th><th>By</th><th>Details</th><th>When</th></tr></thead>
           <tbody>
             <% @audit_events.each do |event| %>

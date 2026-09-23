@@ -157,6 +157,11 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
     data = {
       id: ab.id,
       slug: ab.slug,
+      # #1180 — the boundary UUID is what the federation key grammar keys
+      # objects on and what sparc-horizon joins against, yet this serializer
+      # was the one place it was absent. Reaching it needed database access,
+      # which most operators of a deployed instance do not have.
+      uuid: ab.uuid,
       name: ab.name,
       description: ab.description,
       status: ab.status,

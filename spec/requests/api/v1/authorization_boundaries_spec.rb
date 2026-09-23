@@ -36,6 +36,32 @@ RSpec.describe "Api::V1::AuthorizationBoundaries", type: :request do
       expect(parsed["data"]["slug"]).to eq(boundary.slug)
       expect(parsed["data"]["name"]).to eq(boundary.name)
     end
+
+    # #1180 — the boundary UUID is what the federation key grammar keys objects
+    # on and what sparc-horizon joins against, and this serializer was the one
+    # place it was absent. Asserting the VALUE, not merely the key: a key
+    # present with a nil value would satisfy `include` and still ship nothing.
+    it "exposes the uuid, so it can be read without database access" do
+      boundary = create(:authorization_boundary)
+
+      get api_v1_authorization_boundary_path(boundary.slug), headers: auth_headers
+      expect(response).to have_http_status(:ok)
+
+      parsed = JSON.parse(response.body)
+      expect(parsed["data"]["uuid"]).to eq(boundary.uuid)
+      expect(parsed["data"]["uuid"]).to be_present
+    end
+
+    it "exposes the uuid in the index listing too" do
+      boundary = create(:authorization_boundary)
+
+      get api_v1_authorization_boundaries_path, headers: auth_headers
+      expect(response).to have_http_status(:ok)
+
+      row = JSON.parse(response.body)["data"].find { |b| b["slug"] == boundary.slug }
+      expect(row).to be_present
+      expect(row["uuid"]).to eq(boundary.uuid)
+    end
   end
 
   describe "POST /api/v1/authorization_boundaries" do

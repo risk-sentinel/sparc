@@ -66,6 +66,12 @@
           <% end %>
           <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
         </div>
+        <%# #1180 — the document's own UUID, under the name, in the same
+            treatment every other screen uses. Copyable: this is the
+            identifier the federation key grammar keys objects on. %>
+        <div class="mt-1">
+          <%= render "shared/uuid_badge", uuid: @sar_document.uuid, name: "document UUID" %>
+        </div>
       </div>
 
       <div class="sparc-d-none" id="doc-meta-edit" data-doc-meta-target="edit">
