@@ -830,8 +830,13 @@ code {
   transition: box-shadow 0.12s ease-in-out;
 }
 
+/* NO `opacity` here, deliberately. Dimming the label to 0.75 read nicely and
+   measured 4.24:1 against the badge fill — under the 4.5:1 AA floor, because
+   at 0.7rem/600 this is not "large text". axe caught it on the boundary screen
+   (color-contrast::.sparc-uuid__label). The label is already distinct from the
+   value, which is monospace, so it does not need to be dimmer. */
 .sparc-uuid__label {
-  opacity: 0.75;
+  font-weight: 700;
 }
 
 .sparc-uuid__value {
