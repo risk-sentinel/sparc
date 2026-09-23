@@ -1,0 +1,54 @@
+<%# ── shared/uuid_badge ─────────────────────────────────────────────────────
+    The ONE place a UUID is rendered (#1180).
+
+    SPARC's object UUIDs are what the federation key grammar keys on, so an
+    operator reading one off a screen is doing real work — and re-typing 36
+    hex characters by eye is how a wrong identifier gets into a bundle. The
+    badge is therefore a copy BUTTON, not text.
+
+    Shared because #1180 puts this on the organization, boundary and five
+    document screens. Repeating the markup seven times would mean seven places
+    to keep the copy affordance, the accessible name and the theme pairing in
+    step, and they would not stay in step.
+
+    Locals:
+      uuid:  (required) the identifier to show and copy
+      label: optional prefix inside the badge, e.g. "UUID" — omit in a table
+             column where the heading already says what it is
+      name:  what the identifier IS, for the accessible name. Default "UUID";
+             pass e.g. "boundary UUID" where the page shows more than one.
+─────────────────────────────────────────────────────────────────────────── %>
+<%
+  uuid  = local_assigns[:uuid].to_s
+  label = local_assigns.fetch(:label, nil)
+  name  = local_assigns.fetch(:name, "UUID")
+%>
+<% if uuid.present? %>
+  <span class="sparc-uuid" data-controller="clipboard" data-clipboard-text-value="<%= uuid %>">
+    <button type="button"
+            class="badge badge-identifier sparc-uuid__button"
+            data-action="clipboard#copy"
+            title="Copy <%= name %> to the clipboard">
+      <% if label.present? %><span class="sparc-uuid__label"><%= label %></span><% end %>
+      <span class="sparc-uuid__value"><%= uuid %></span>
+      <%# Inline SVG, not an icon font: bootstrap-icons is not loaded in this
+          app, so a `bi bi-clipboard` would render an invisible affordance.
+          currentColor keeps it on the badge's own theme pairing. %>
+      <svg class="sparc-uuid__icon" data-clipboard-target="icon" width="11" height="11"
+           viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="5.5" y="5.5" width="9" height="9" rx="1.5"></rect>
+        <path d="M11 3.5v-1a1 1 0 0 0-1-1H2.5a1 1 0 0 0-1 1V10a1 1 0 0 0 1 1h1"></path>
+      </svg>
+      <svg class="sparc-uuid__icon d-none" data-clipboard-target="check" width="11" height="11"
+           viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M2.5 8.5l4 4 7-9"></path>
+      </svg>
+      <span class="visually-hidden">Copy <%= name %> <%= uuid %> to the clipboard</span>
+    </button>
+    <%# The outcome is announced, not just shown: the only visual confirmation
+        is a tick swap inside the button the user just pressed. %>
+    <span class="visually-hidden" role="status" data-clipboard-target="status"></span>
+  </span>
+<% end %>
