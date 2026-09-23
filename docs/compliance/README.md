@@ -301,6 +301,47 @@ does not trigger workflow runs, so the approval would land with every other
 check left stale. The step refuses rather than degrading when
 `SPARC_DEVIATION_APP_ID` / `SPARC_DEVIATION_APP_PRIVATE_KEY` are absent.
 
+#### Provisioning the App
+
+The push needs a credential that **triggers workflow runs**, which `GITHUB_TOKEN`
+does not. One GitHub App, one permission.
+
+1. **Create it.** GitHub → the `risk-sentinel` org → *Settings* → *Developer
+   settings* → *GitHub Apps* → **New GitHub App**.
+   - *Name*: anything unambiguous, e.g. `SPARC Deviation Approval`
+   - *Homepage URL*: the repository URL (unused, but required)
+   - **Untick *Webhook → Active*.** The App is never called; it only issues
+     tokens. Leaving it on means GitHub retries deliveries to nothing.
+   - *Repository permissions*: **Contents → Read and write**. That is the only
+     one. It needs no issues, no pull-requests, no metadata beyond the default.
+   - *Where can this GitHub App be installed*: **Only on this account**
+2. **Record the App ID** shown after creation — a short number, not a secret.
+3. **Generate a private key** on the same page. It downloads a `.pem` once; if
+   it is lost, generate another and delete the old one.
+4. **Install it.** *Install App* → the `risk-sentinel` account → **Only select
+   repositories** → `sparc`. *Creating the App does not install it*, and an
+   uninstalled App mints no token.
+5. **Add two repository secrets** (repo → *Settings* → *Secrets and variables* →
+   *Actions*):
+
+   | Secret | Value |
+   |---|---|
+   | `SPARC_DEVIATION_APP_ID` | the numeric App ID from step 2 |
+   | `SPARC_DEVIATION_APP_PRIVATE_KEY` | the **entire** `.pem`, including the `-----BEGIN` and `-----END` lines and the trailing newline |
+
+**If the key is pasted without its header/footer lines the token mint fails with
+a signing error**, which reads like a permissions problem and is not one.
+
+Until both secrets exist the workflow **refuses** rather than falling back to
+`GITHUB_TOKEN` — a token that pushes without re-triggering anything would land
+the approval and leave every other check stale, which is how a gate stops
+meaning anything.
+
+**Why an App rather than a PAT:** it is not tied to a person, it rotates
+cleanly, and its reach is one permission on one repository. A PAT is accepted as
+a fallback (`security.yml` already uses `SPARC_IAC_DISPATCH_TOKEN` for
+cross-repo dispatch) but carries its holder's access with it.
+
 `admin-merge-bypass` is **not yet retired**. It cannot be proven redundant until
 this flow has run on `main`, and the entries approved that way still depend on
 it being understood.
