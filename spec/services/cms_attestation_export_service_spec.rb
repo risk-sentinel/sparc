@@ -171,4 +171,49 @@ RSpec.describe CmsAttestationExportService do
       expect(parsed.first).to include("control_id" => "AC-2", "frequency" => "annually")
     end
   end
+  # #1177 — the export is a DELIVERED ARTEFACT, so its record order has to be
+  # stable. It was not: `find_each` ordered the attestations, but the
+  # denormalized links carried no order at all, so the preload returned them in
+  # physical row order and the sequence shifted as the table churned. It
+  # surfaced as a full-suite-only failure that passed in isolation AND at the
+  # same seed — state-dependent, so a re-run always appeared to fix it.
+  #
+  # These assert the WHOLE sequence rather than `.first`, which is what the
+  # earlier spec did and why a wrong order could look right.
+  describe "record ordering (#1177)" do
+    it "emits the controls in a stable, natural order" do
+      evidence = evidence_linked_to("ac-3")
+      evidence.evidence_control_links.create!(control_id: "ac-2")
+      evidence.evidence_control_links.create!(control_id: "au-6")
+      create(:attestation, evidence: evidence)
+
+      records = described_class.new(Attestation.where(evidence: evidence)).call
+
+      expect(records.map { |r| r[:control_id] || r["control_id"] })
+        .to eq(%w[AC-2 AC-3 AU-6])
+    end
+
+    # The case a plain lexicographic sort gets WRONG: "ac-10" sorts before
+    # "ac-2" as a string. Deterministic is not sufficient — it has to be the
+    # order a reader of the delivered file expects.
+    it "orders ac-10 after ac-2, not before it" do
+      evidence = evidence_linked_to("ac-10")
+      evidence.evidence_control_links.create!(control_id: "ac-2")
+      create(:attestation, evidence: evidence)
+
+      records = described_class.new(Attestation.where(evidence: evidence)).call
+
+      expect(records.map { |r| r[:control_id] || r["control_id"] }).to eq(%w[AC-2 AC-10])
+    end
+
+    it "is identical across repeated calls" do
+      evidence = evidence_linked_to("cm-6")
+      %w[ac-2 au-6 ac-10].each { |c| evidence.evidence_control_links.create!(control_id: c) }
+      create(:attestation, evidence: evidence)
+
+      service = described_class.new(Attestation.where(evidence: evidence))
+
+      expect(service.call).to eq(service.call)
+    end
+  end
 end

@@ -103,6 +103,29 @@ RSpec.describe HdfOscalTranslationService do
         expect(names).to include("source", "evidence-type", "status", "control-id", "attestation")
       end
 
+      # #1177 — the same unordered-denormalization defect as the CMS export.
+      # This is a delivered OSCAL artefact, so a prop sequence that varies
+      # between runs makes the output non-reproducible: it cannot be diffed
+      # against a previous delivery or checksummed.
+      it "emits control-id props in a stable, natural order" do
+        evidence.evidence_control_links.create!(control_id: "ac-10")
+        evidence.evidence_control_links.create!(control_id: "ac-2")
+        allow(runner).to receive(:convert).and_return(minimal_sar)
+
+        result = service.hdf_to_oscal_sar("/tmp/scan.hdf.json", boundary: boundary)
+        props = result.dig("assessment-results", "back-matter", "resources", 0, "props")
+        control_ids = props.select { |p| p["name"] == "control-id" }.map { |p| p["value"] }
+
+        # Asserted as a PROPERTY rather than by position: the evidence factory
+        # contributes links of its own, so pinning indices would couple this to
+        # fixture details that are not the point.
+        expect(control_ids).to eq(control_ids.sort_by { |c| ControlId.padded(c) })
+
+        # And naturally, not lexicographically — a plain string sort puts
+        # "ac-10" before "ac-2".
+        expect(control_ids.index("ac-2")).to be < control_ids.index("ac-10")
+      end
+
       it "emits an rlink referencing the durable artifact resolver (#680)" do
         allow(runner).to receive(:convert).and_return(minimal_sar)
         result = service.hdf_to_oscal_sar("/tmp/scan.hdf.json", boundary: boundary)
