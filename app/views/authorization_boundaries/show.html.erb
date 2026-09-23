@@ -1,5 +1,12 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2><%= @authorization_boundary.name %></h2>
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h2 class="mb-1"><%= @authorization_boundary.name %></h2>
+    <%# #1180 — the boundary UUID was visible on NO screen, yet it is the
+        identifier the federation key grammar keys objects on and the value
+        sparc-horizon joins against. Under the name, same treatment as the
+        organization header. %>
+    <%= render "shared/uuid_badge", uuid: @authorization_boundary.uuid, label: "UUID", name: "boundary UUID" %>
+  </div>
   <div class="d-flex gap-2">
     <% if signed_in? %>
       <%= link_to "Build ATO Package",
