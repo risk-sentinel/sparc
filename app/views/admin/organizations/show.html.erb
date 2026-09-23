@@ -4,9 +4,7 @@
     <div>
       <h1 class="h3 fw-bold mb-1"><%= @organization.name %></h1>
       <div class="d-flex align-items-center gap-2">
-        <span class="badge badge-identifier">
-          UUID: <%= @organization.uuid %>
-        </span>
+        <%= render "shared/uuid_badge", uuid: @organization.uuid, label: "UUID", name: "organization UUID" %>
         <% if @organization.active? %>
           <span class="badge badge-ok">Active</span>
         <% else %>
@@ -85,7 +83,16 @@
         <tbody>
           <% @authorization_boundaries.each do |ab| %>
             <tr>
-              <td><%= ab.name %></td>
+              <%# #1180 — the boundary UUID is the identifier the federation key
+                  grammar keys on, and it is visible on no boundary screen. It sits
+                  UNDER THE NAME rather than in its own column so the table keeps
+                  reading as a list of boundaries, and so the treatment matches the
+                  page header above. Copyable, because re-typing 36 hex characters
+                  by eye is how a wrong identifier gets into a bundle. %>
+              <td>
+                <div><%= ab.name %></div>
+                <%= render "shared/uuid_badge", uuid: ab.uuid, name: "boundary UUID" %>
+              </td>
               <td>
                 <% badge_class = case ab.status
                    when "active" then "badge-ok"

@@ -806,6 +806,91 @@ code {
   color: #b0bec5 !important;
 }
 
+/* ── Copyable UUID (#1180) ──────────────────────────────────────────────────
+   `.badge-identifier` on a <button>, so the identifier the federation key
+   grammar keys on can be taken to the clipboard rather than re-typed by eye.
+
+   The button is reset to look exactly like the badge: the affordance is the
+   icon and the hover ring, NOT a button chrome, because these sit inline in
+   table cells and under page headings where a real button would read as an
+   action on the row. */
+.sparc-uuid {
+  display: inline-flex;
+  align-items: center;
+}
+
+.sparc-uuid__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  border: 0;
+  cursor: pointer;
+  /* The badge supplies its own padding; the UA button styles must not win. */
+  line-height: inherit;
+  transition: box-shadow 0.12s ease-in-out;
+}
+
+.sparc-uuid__label {
+  opacity: 0.75;
+}
+
+.sparc-uuid__value {
+  /* A UUID must break as one unit or not at all — a wrapped identifier
+     invites a half-copy by selection. */
+  white-space: nowrap;
+}
+
+/* The icon is quiet until the badge is addressed, so a page carrying several
+   UUIDs does not read as a row of buttons. */
+.sparc-uuid__icon {
+  opacity: 0.5;
+  flex: none;
+  transition: opacity 0.12s ease-in-out;
+}
+
+.sparc-uuid__button:hover .sparc-uuid__icon,
+.sparc-uuid__button:focus-visible .sparc-uuid__icon {
+  opacity: 1;
+}
+
+.sparc-uuid__button:hover {
+  box-shadow: 0 0 0 1px rgba(63, 71, 73, 0.35);
+}
+
+.sparc-uuid__button:focus-visible {
+  outline: 2px solid #0d6efd;
+  outline-offset: 1px;
+}
+
+[data-bs-theme="dark"] .sparc-uuid__button:hover {
+  box-shadow: 0 0 0 1px rgba(176, 190, 197, 0.45);
+}
+
+[data-bs-theme="dark"] .sparc-uuid__button:focus-visible {
+  outline-color: #5dade2;
+}
+
+/* Confirmation. `stroke` is set here rather than left to currentColor because
+   the badge's own colour is `!important`; a CSS stroke still beats the SVG
+   presentation attribute, so the tick can go green without touching it. */
+.sparc-uuid--copied .sparc-uuid__icon {
+  opacity: 1;
+  stroke: #1a7f4b;
+}
+
+.sparc-uuid--failed .sparc-uuid__icon {
+  opacity: 1;
+  stroke: #b02a37;
+}
+
+[data-bs-theme="dark"] .sparc-uuid--copied .sparc-uuid__icon {
+  stroke: #68d391;
+}
+
+[data-bs-theme="dark"] .sparc-uuid--failed .sparc-uuid__icon {
+  stroke: #fc8181;
+}
+
 [data-bs-theme="dark"] .badge-info {
   background-color: #1a2a3a !important;
   color: #5dade2 !important;
