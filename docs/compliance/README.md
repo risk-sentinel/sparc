@@ -279,20 +279,25 @@ list. A register entry claiming either without the matching evidence fails.
 
 **Two properties hold this up, and neither is optional:**
 
-- **The pull request's tree is never checked out.** `issue_comment` is a
-  privileged trigger — it runs with `contents: write` and the App secrets in
-  scope — so the workspace is the DEFAULT BRANCH and only the PR's
-  `sparc-findings.yml` crosses, as file *content*, into a path outside the
-  repository. Everything that executes (the scripts, the Ruby version, the
-  bundle) comes from the default branch.
+- **The command lives in its own workflow, which never touches the PR's code.**
+  `issue_comment` is a privileged trigger — secrets and write access are in
+  scope — so it is kept out of `deviation-approval.yml` entirely, because that
+  file checks out the PR head in order to push back to it. The command runs
+  from `deviation-approve-command.yml`, where:
 
-  Restoring a couple of scripts from base is **not** sufficient and was the
-  first attempt here: CodeQL flagged it critical, correctly. `ruby/setup-ruby`
-  reads the checked-out `.ruby-version` and bundler reads checked-out config
-  long before any of our code runs, so a PR that merely sits in the workspace
-  already has execution. The commit is therefore built with git plumbing
-  against a throwaway index — one blob, one path swapped in a tree read from
-  the fetched ref — so the PR's tree is not materialised even to commit it.
+  - the checkout has **no `ref`**, so it is the default branch, and the Ruby
+    version, the bundle and the approval scripts all come from there;
+  - the PR's findings file is read through the **Contents API** as data, never
+    fetched as a git ref, so no untrusted object reaches the workspace;
+  - the resulting commit is written through the Contents API too, **server
+    side**, so nothing is checked out even in order to commit it.
+
+  Two weaker attempts preceded this, and CodeQL was right to reject both.
+  Restoring only the scripts from base does not help: `ruby/setup-ruby` reads
+  the checked-out `.ruby-version` and bundler reads checked-out config long
+  before any of our code runs. Nor does arguing that the ref expression is
+  empty on this trigger — the analysis is static, and a security property that
+  cannot be seen in the file is not one worth relying on.
 - **`types: [created]` only.** An edited comment must not manufacture an
   approval retroactively.
 

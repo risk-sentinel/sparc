@@ -25,16 +25,6 @@ on:
       - '.github/CODEOWNERS'
   pull_request_review:
     types: [ submitted ]
-  # #871 — the `/approve-deviation` command. GitHub does not permit approving
-  # your own pull request, so in a single-admin repository the review path above
-  # is permanently unreachable and `admin-merge-bypass` was the only route. A
-  # COMMENT is not a review, so the author can issue one, and it is still a
-  # distinct, attributable act with an author and a timestamp.
-  #
-  # `created` only: an EDITED comment must not be able to manufacture an
-  # approval retroactively.
-  issue_comment:
-    types: [ created ]
 
 permissions:
   contents: write        # push the recorded approval back to the PR branch
@@ -45,42 +35,12 @@ jobs:
     name: Deviation approval
     runs-on: ubuntu-latest
     steps:
-      # `issue_comment` carries no pull_request object, so the head ref has to
-      # be resolved before the checkout (#871). `gh` needs no working tree.
-      - name: Resolve the PR head ref
-        id: pr
-        if: github.event_name == 'issue_comment' && github.event.issue.pull_request
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.issue.number }}
-        run: |
-          set -euo pipefail
-          ref=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefName -q .headRefName)
-          if [ -z "$ref" ]; then
-            echo "::error::could not resolve the head ref for PR #${PR_NUMBER}"
-            exit 1
-          fi
-          echo "head_ref=${ref}" >> "$GITHUB_OUTPUT"
-          echo "Resolved PR #${PR_NUMBER} head: ${ref}"
-
       - name: Checkout the PR branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Check out the PR head by name so the recorded approval can be
           # pushed back to it, and fetch history so the gate can diff against
-          # the base branch. For issue_comment the ref comes from the step
-          # above, because the event has no pull_request payload.
-          # NEVER the PR head on `issue_comment` (CodeQL: checkout of untrusted
-          # code in a privileged context, critical). That trigger runs with
-          # `contents: write` and the App secrets in scope, so placing the PR's
-          # tree in this workspace is the pwn-request shape — and restoring a
-          # couple of scripts from base does not fix it, because
-          # `ruby/setup-ruby` reads the checked-out `.ruby-version` and bundler
-          # reads checked-out config long before any of our code runs.
-          #
-          # For `issue_comment` this expression is empty, so the checkout is the
-          # default branch: entirely trusted. The PR's findings file is fetched
-          # as DATA further down and never materialises as a tree.
+          # the base branch.
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
@@ -121,114 +81,6 @@ jobs:
           git commit -m "chore(compliance): record deviation approval from @${REVIEWER} (#865)"
           git push origin "HEAD:${HEAD_REF}"
 
-      # ── #871: the /approve-deviation command ──────────────────────────
-      #
-      # THE TRUST BOUNDARY. `issue_comment` is a privileged trigger: it runs
-      # with `contents: write` and the App secrets available. The workspace
-      # above is therefore the DEFAULT BRANCH, and the pull request's tree is
-      # never checked out — only its `sparc-findings.yml` crosses, as file
-      # CONTENT, into a path outside the repository.
-      #
-      # Everything that executes — the scripts, the Ruby version, the bundle —
-      # comes from the default branch. A pull request cannot reach any of it.
-      - name: Extract the PR's findings file as data, not as a tree
-        id: findings
-        if: >-
-          github.event_name == 'issue_comment'
-          && github.event.issue.pull_request
-          && startsWith(github.event.comment.body, '/approve-deviation')
-        env:
-          PR_NUMBER: ${{ github.event.issue.number }}
-        run: |
-          set -euo pipefail
-          # A ref fetch, NOT a checkout: nothing is written to the worktree.
-          git fetch --no-tags --depth=1 origin "pull/${PR_NUMBER}/head"
-          out="${RUNNER_TEMP}/pr-findings.yml"
-          if ! git show FETCH_HEAD:docs/compliance/sparc-findings.yml > "$out"; then
-            echo "::error::PR #${PR_NUMBER} has no docs/compliance/sparc-findings.yml"
-            exit 1
-          fi
-          echo "path=${out}" >> "$GITHUB_OUTPUT"
-          echo "Extracted $(wc -l < "$out") lines from the PR head."
-
-      - name: Verify the commenter may approve, and record it
-        if: >-
-          github.event_name == 'issue_comment'
-          && github.event.issue.pull_request
-          && startsWith(github.event.comment.body, '/approve-deviation')
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          SPARC_REPO: ${{ github.repository }}
-          SPARC_PR_NUMBER: ${{ github.event.issue.number }}
-          # The applier gates on an APPROVED review state; the command is the
-          # equivalent assertion for this path, and the commenter's authority is
-          # verified against the API exactly as a reviewer's is.
-          SPARC_REVIEW_STATE: APPROVED
-          SPARC_REVIEWER: ${{ github.event.comment.user.login }}
-          SPARC_REVIEWED_AT: ${{ github.event.comment.created_at }}
-          SPARC_APPROVAL_MECHANISM: approve-deviation-comment
-          SPARC_FINDINGS_FILE: ${{ steps.findings.outputs.path }}
-        run: ruby scripts/ci/apply_deviation_approval.rb
-
-      # Pushed with an APP token, not GITHUB_TOKEN: a GITHUB_TOKEN push does not
-      # trigger workflow runs (GitHub anti-recursion), so the approval would
-      # land and nothing would re-evaluate — which is why the review path above
-      # has to cram apply-and-verify into one job and can only turn one check
-      # green. The App token re-fires the whole pipeline.
-      - name: Mint an App token to push with
-        id: app_token
-        if: >-
-          github.event_name == 'issue_comment'
-          && github.event.issue.pull_request
-          && startsWith(github.event.comment.body, '/approve-deviation')
-          && env.HAS_APP == 'true'
-        env:
-          HAS_APP: ${{ secrets.SPARC_DEVIATION_APP_ID != '' && secrets.SPARC_DEVIATION_APP_PRIVATE_KEY != '' }}
-        uses: actions/create-github-app-token@a8d616148505b5069dccd32f177bb87d7f39123b # v2.1.4
-        with:
-          app-id: ${{ secrets.SPARC_DEVIATION_APP_ID }}
-          private-key: ${{ secrets.SPARC_DEVIATION_APP_PRIVATE_KEY }}
-
-      # The commit is built with git PLUMBING against a throwaway index, so the
-      # PR's tree is never checked out even to commit: one blob is written, one
-      # path is swapped in a tree read from FETCH_HEAD, and the result is
-      # pushed. Nothing from the pull request is ever placed where it could run.
-      - name: Push the recorded approval, re-firing the pipeline
-        if: >-
-          github.event_name == 'issue_comment'
-          && github.event.issue.pull_request
-          && startsWith(github.event.comment.body, '/approve-deviation')
-        env:
-          APPROVER: ${{ github.event.comment.user.login }}
-          APP_TOKEN: ${{ steps.app_token.outputs.token }}
-          HEAD_REF: ${{ steps.pr.outputs.head_ref }}
-          FINDINGS: ${{ steps.findings.outputs.path }}
-        run: |
-          set -euo pipefail
-          if git diff --no-index --quiet <(git show FETCH_HEAD:docs/compliance/sparc-findings.yml) "$FINDINGS"; then
-            echo "No approval recorded — nothing to push."
-            exit 0
-          fi
-          if [ -z "${APP_TOKEN}" ]; then
-            echo "::error::SPARC_DEVIATION_APP_ID / _PRIVATE_KEY are not configured."
-            echo "::error::A GITHUB_TOKEN push would NOT re-trigger the pipeline, so the"
-            echo "::error::approval would land with every other check left stale. Refusing."
-            exit 1
-          fi
-          blob=$(git hash-object -w "$FINDINGS")
-          export GIT_INDEX_FILE="${RUNNER_TEMP}/approval.index"
-          git read-tree FETCH_HEAD
-          git update-index --add --cacheinfo "100644,${blob},docs/compliance/sparc-findings.yml"
-          tree=$(git write-tree)
-          commit=$(GIT_AUTHOR_NAME="github-actions[bot]" \
-                   GIT_AUTHOR_EMAIL="41898282+github-actions[bot]@users.noreply.github.com" \
-                   GIT_COMMITTER_NAME="github-actions[bot]" \
-                   GIT_COMMITTER_EMAIL="41898282+github-actions[bot]@users.noreply.github.com" \
-                   git commit-tree "$tree" -p FETCH_HEAD \
-                     -m "chore(compliance): record deviation approval from @${APPROVER} via /approve-deviation (#871)")
-          git push "https://x-access-token:${APP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            "${commit}:refs/heads/${HEAD_REF}"
-
       # Runs in the SAME job after the push, because pushes made with
       # GITHUB_TOKEN deliberately do not trigger new workflow runs — so this
       # gate cannot rely on being re-fired by the commit above.
@@ -236,11 +88,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           SPARC_REPO: ${{ github.repository }}
-          SPARC_PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
-          SPARC_BASE_REF: origin/${{ github.event.pull_request.base.ref || github.event.repository.default_branch }}
-          # The comment path scores the PR's extracted file; the review path has
-          # the PR checked out, so it scores the workspace copy. An EMPTY value
-          # would not fall back — `ENV.fetch` defaults only when the key is
-          # absent, not when it is blank — so the fallback is explicit here.
-          SPARC_FINDINGS_FILE: ${{ steps.findings.outputs.path || format('{0}/docs/compliance/sparc-findings.yml', github.workspace) }}
+          SPARC_PR_NUMBER: ${{ github.event.pull_request.number }}
+          SPARC_BASE_REF: origin/${{ github.event.pull_request.base.ref }}
         run: ruby scripts/ci/check_deviation_approvals.rb

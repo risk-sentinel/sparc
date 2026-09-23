@@ -1,0 +1,155 @@
+---
+# `/approve-deviation` — the route that works when the admin is the author (#871).
+#
+# WHY THIS IS A SEPARATE WORKFLOW
+#
+# `issue_comment` is a PRIVILEGED trigger: it runs with repository secrets and
+# write permission available. `deviation-approval.yml` checks out the pull
+# request's head so it can push back to it, which is safe on the triggers it
+# uses — but a privileged trigger in the same file makes that checkout reachable
+# from a context where the PR controls the code being run. CodeQL flags exactly
+# that (actions/untrusted-checkout/critical), and it is right: the analysis is
+# static, so an argument that "the ref expression is empty on this trigger" is
+# invisible to it — and a security property nobody can see in the file is not a
+# property worth relying on.
+#
+# So the command lives here, and THIS WORKFLOW NEVER TOUCHES THE PR's CODE:
+#
+#   - the checkout has no `ref`, so it is the default branch — entirely trusted,
+#     and the Ruby version, the bundle and the approval scripts all come from it
+#   - the PR's findings file is read through the CONTENTS API as data, never
+#     fetched as a git ref, so no untrusted object reaches this workspace
+#   - the resulting commit is written through the Contents API too, server-side,
+#     so nothing is checked out even to commit it
+#
+# WHY A COMMENT AT ALL. GitHub does not permit approving your own pull request.
+# In a single-admin repository the admin is also the author, so the review-based
+# path is structurally unreachable and `admin-merge-bypass` — which proves
+# authority, not that an approval event happened — was the only route. A comment
+# is not a review, so the author can issue one, and it is still a distinct,
+# attributable act with an author and a timestamp.
+#
+# NIST SP 800-53 Rev 5: CA-5 (POA&M), CA-6 (authorization), RA-7 (risk response).
+name: Deviation approval command
+
+on:
+  issue_comment:
+    # `created` ONLY. An edited comment must not be able to manufacture an
+    # approval retroactively.
+    types: [ created ]
+
+permissions:
+  contents: read        # the push uses the App token, not this one
+  pull-requests: read
+
+jobs:
+  approve_deviation:
+    name: /approve-deviation
+    runs-on: ubuntu-latest
+    # Gate hard and early: a PR comment, the exact command, nothing else.
+    if: >-
+      github.event.issue.pull_request
+      && startsWith(github.event.comment.body, '/approve-deviation')
+    steps:
+      # No `ref`: the DEFAULT BRANCH. Everything that executes in this job comes
+      # from here, and a pull request cannot influence any of it.
+      - name: Checkout the default branch (trusted)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1
+        with:
+          ruby-version: .ruby-version
+
+      - name: Read the PR's findings file as data
+        id: findings
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          head_sha=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid -q .headRefOid)
+          head_ref=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefName -q .headRefName)
+          path=docs/compliance/sparc-findings.yml
+
+          # The Contents API, not a git fetch: this returns FILE CONTENT, so no
+          # object from the pull request enters this repository's store.
+          if ! gh api "repos/${GITHUB_REPOSITORY}/contents/${path}?ref=${head_sha}" \
+                 --jq '.content' | base64 -d > "${RUNNER_TEMP}/pr-findings.yml"; then
+            echo "::error::could not read ${path} at ${head_sha}"
+            exit 1
+          fi
+          blob_sha=$(gh api "repos/${GITHUB_REPOSITORY}/contents/${path}?ref=${head_sha}" --jq '.sha')
+
+          {
+            echo "path=${RUNNER_TEMP}/pr-findings.yml"
+            echo "blob_sha=${blob_sha}"
+            echo "head_ref=${head_ref}"
+            echo "file_path=${path}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Read $(wc -l < "${RUNNER_TEMP}/pr-findings.yml") lines from ${head_sha:0:8}."
+
+      - name: Verify the commenter may approve, and record it
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SPARC_REPO: ${{ github.repository }}
+          SPARC_PR_NUMBER: ${{ github.event.issue.number }}
+          # The applier gates on an APPROVED review state; the command is the
+          # equivalent assertion here, and the commenter's authority is verified
+          # against the API exactly as a reviewer's is.
+          SPARC_REVIEW_STATE: APPROVED
+          SPARC_REVIEWER: ${{ github.event.comment.user.login }}
+          SPARC_REVIEWED_AT: ${{ github.event.comment.created_at }}
+          SPARC_APPROVAL_MECHANISM: approve-deviation-comment
+          SPARC_FINDINGS_FILE: ${{ steps.findings.outputs.path }}
+        run: ruby scripts/ci/apply_deviation_approval.rb
+
+      # An APP token, not GITHUB_TOKEN: a GITHUB_TOKEN write does not trigger
+      # workflow runs (GitHub anti-recursion), so the approval would land with
+      # every other check left stale.
+      - name: Mint an App token to write with
+        id: app_token
+        if: env.HAS_APP == 'true'
+        env:
+          HAS_APP: ${{ secrets.SPARC_DEVIATION_APP_ID != '' && secrets.SPARC_DEVIATION_APP_PRIVATE_KEY != '' }}
+        uses: actions/create-github-app-token@a8d616148505b5069dccd32f177bb87d7f39123b # v2.1.4
+        with:
+          app-id: ${{ secrets.SPARC_DEVIATION_APP_ID }}
+          private-key: ${{ secrets.SPARC_DEVIATION_APP_PRIVATE_KEY }}
+
+      # Written through the Contents API, so the commit is created SERVER-SIDE
+      # on the PR branch. Nothing is checked out, fetched or committed locally.
+      - name: Write the recorded approval to the PR branch
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          APPROVER: ${{ github.event.comment.user.login }}
+          FINDINGS: ${{ steps.findings.outputs.path }}
+          BLOB_SHA: ${{ steps.findings.outputs.blob_sha }}
+          HEAD_REF: ${{ steps.findings.outputs.head_ref }}
+          FILE_PATH: ${{ steps.findings.outputs.file_path }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::SPARC_DEVIATION_APP_ID / _PRIVATE_KEY are not configured."
+            echo "::error::A GITHUB_TOKEN write would NOT re-trigger the pipeline, so the"
+            echo "::error::approval would land with every other check left stale. Refusing."
+            exit 1
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/contents/${FILE_PATH}" \
+            --method PUT \
+            -f message="chore(compliance): record deviation approval from @${APPROVER} via /approve-deviation (#871)" \
+            -f branch="${HEAD_REF}" \
+            -f sha="${BLOB_SHA}" \
+            -f content="$(base64 < "${FINDINGS}" | tr -d '\n')" \
+            --jq '.commit.sha' | sed 's/^/recorded as commit /'
+
+      # Scores the PR's file, not the default branch's, so the gate reports on
+      # what the approval was actually applied to.
+      - name: Verify no deviation is unapproved or self-approved
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SPARC_REPO: ${{ github.repository }}
+          SPARC_PR_NUMBER: ${{ github.event.issue.number }}
+          SPARC_BASE_REF: origin/${{ github.event.repository.default_branch }}
+          SPARC_FINDINGS_FILE: ${{ steps.findings.outputs.path }}
+        run: ruby scripts/ci/check_deviation_approvals.rb
