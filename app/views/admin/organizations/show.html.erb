@@ -4,13 +4,13 @@
     <div>
       <h1 class="h3 fw-bold mb-1"><%= @organization.name %></h1>
       <div class="d-flex align-items-center gap-2">
-        <span class="badge text-bg-light text-body-secondary" style="font-family: monospace; font-size: 0.7rem;">
+        <span class="badge badge-identifier">
           UUID: <%= @organization.uuid %>
         </span>
         <% if @organization.active? %>
-          <span class="badge text-bg-success">Active</span>
+          <span class="badge badge-ok">Active</span>
         <% else %>
-          <span class="badge text-bg-secondary">Inactive</span>
+          <span class="badge badge-neutral">Inactive</span>
         <% end %>
       </div>
     </div>
@@ -44,7 +44,7 @@
             <% end %>
             <% if @organization.address.present? %>
               <dt class="small text-body-secondary">Address</dt>
-              <dd style="white-space: pre-line;"><%= @organization.address %></dd>
+              <dd class="sparc-pre-line"><%= @organization.address %></dd>
             <% end %>
           </dl>
         </div>
@@ -71,7 +71,7 @@
   <div class="card mb-4">
     <div class="card-header fw-semibold">
       Authorization Boundaries
-      <span class="badge text-bg-secondary ms-1"><%= @authorization_boundaries.size %></span>
+      <span class="badge badge-neutral ms-1"><%= @authorization_boundaries.size %></span>
     </div>
     <div class="table-responsive">
       <table class="table table-sm mb-0 align-middle">
@@ -88,13 +88,12 @@
               <td><%= ab.name %></td>
               <td>
                 <% badge_class = case ab.status
-                   when "active" then "success"
-                   when "draft" then "secondary"
-                   when "authorized" then "primary"
-                   when "deauthorized" then "danger"
-                   else "secondary"
+                   when "active" then "badge-ok"
+                   when "authorized" then "badge-info"
+                   when "deauthorized" then "badge-fail"
+                   else "badge-neutral"
                    end %>
-                <span class="badge text-bg-<%= badge_class %>"><%= ab.status.capitalize %></span>
+                <span class="badge <%= badge_class %>"><%= ab.status.capitalize %></span>
               </td>
               <td class="text-end">
                 <%= link_to "View", authorization_boundary_path(ab), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
@@ -125,7 +124,7 @@
                   id: "assign_boundary_select" %>
           </div>
           <div class="col-sm-auto">
-            <%= submit_tag "Associate", class: "btn btn-sm btn-primary" %>
+            <%= submit_tag "Associate", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
           </div>
         <% end %>
         <p class="text-body-secondary small mb-0 mt-2">
@@ -170,7 +169,7 @@
   <div class="card">
     <div class="card-header fw-semibold">
       Current Members
-      <span class="badge text-bg-secondary ms-1"><%= @memberships.size %></span>
+      <span class="badge badge-neutral ms-1"><%= @memberships.size %></span>
     </div>
     <div class="table-responsive">
       <table class="table table-sm mb-0 align-middle">
@@ -188,7 +187,7 @@
             <tr>
               <td><%= link_to m.user.display_label, admin_user_path(m.user) %></td>
               <td class="small text-body-secondary"><%= m.user.email %></td>
-              <td><span class="badge text-bg-info"><%= m.role_label %></span></td>
+              <td><span class="badge badge-info"><%= m.role_label %></span></td>
               <td class="small text-body-secondary"><%= m.created_at.strftime("%Y-%m-%d") %></td>
               <td class="text-end">
                 <%= button_to "Remove", remove_member_admin_organization_path(@organization, membership_id: m.id),
