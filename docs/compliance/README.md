@@ -279,12 +279,20 @@ list. A register entry claiming either without the matching evidence fails.
 
 **Two properties hold this up, and neither is optional:**
 
-- **The workflow *and* the approval logic execute from the base branch.** For
-  `issue_comment` GitHub runs the workflow file from the default branch, so a PR
-  cannot rewrite it — but it can rewrite the scripts, and the job checks out the
-  PR head in order to push back to it. Both scripts are therefore restored from
-  the base branch before they run, and only the findings file is committed.
-  Without that, a PR supplying its own applier would approve itself.
+- **The pull request's tree is never checked out.** `issue_comment` is a
+  privileged trigger — it runs with `contents: write` and the App secrets in
+  scope — so the workspace is the DEFAULT BRANCH and only the PR's
+  `sparc-findings.yml` crosses, as file *content*, into a path outside the
+  repository. Everything that executes (the scripts, the Ruby version, the
+  bundle) comes from the default branch.
+
+  Restoring a couple of scripts from base is **not** sufficient and was the
+  first attempt here: CodeQL flagged it critical, correctly. `ruby/setup-ruby`
+  reads the checked-out `.ruby-version` and bundler reads checked-out config
+  long before any of our code runs, so a PR that merely sits in the workspace
+  already has execution. The commit is therefore built with git plumbing
+  against a throwaway index — one blob, one path swapped in a tree read from
+  the fetched ref — so the PR's tree is not materialised even to commit it.
 - **`types: [created]` only.** An edited comment must not manufacture an
   approval retroactively.
 
