@@ -49,9 +49,15 @@ module Federation
     # spelling of `2026-01`, and a component named `web-01` does not federate.
     class InvalidField < StandardError; end
 
+    # Identifier kinds, named once. These are keys into the grammar file and
+    # into `vocabulary-normalisers`, so a typo would otherwise be a silently
+    # non-matching string rather than a NameError.
+    CONTROL_ID        = "control-id"
+    FAMILY_ID         = "family-id"
+
     TYPE_RULES = {
       "uuid"      => ->(v) { v.match?(/\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/) },
-      "family-id" => ->(v) { v.match?(/\A[a-z]{2,3}\z/) },
+      FAMILY_ID   => ->(v) { v.match?(/\A[a-z]{2,3}\z/) },
       # 2026-Q3 or 2026-01. Zero padding is required, and a quarter carries its
       # hyphen — neither is a spelling variant to be repaired.
       "period"    => ->(v) { v.match?(/\A\d{4}-(Q[1-4]|0[1-9]|1[0-2])\z/) },
@@ -183,10 +189,10 @@ module Federation
         return if type.nil?
 
         ok =
-          if type == "family-id"
-            vocabulary_rule(args, "family-id") == "none" ? value.present? : TYPE_RULES.fetch("family-id").call(value)
-          elsif type == "control-id"
-            vocabulary_rule(args, "control-id") == "none" ? value.present? : value.match?(NIST_CONTROL_FORM)
+          if type == FAMILY_ID
+            vocabulary_rule(args, FAMILY_ID) == "none" ? value.present? : TYPE_RULES.fetch(FAMILY_ID).call(value)
+          elsif type == CONTROL_ID
+            vocabulary_rule(args, CONTROL_ID) == "none" ? value.present? : value.match?(NIST_CONTROL_FORM)
           else
             TYPE_RULES.fetch(type).call(value)
           end
@@ -207,7 +213,7 @@ module Federation
         rule = vocabulary_rule(args, type) if rule == "by-vocabulary"
 
         case rule
-        when "control-id" then ControlId.canonical(value)
+        when CONTROL_ID then ControlId.canonical(value)
         when "lowercase"  then value.to_s.downcase
         when "none", nil  then value.to_s
         else raise ArgumentError, "unknown normaliser #{rule.inspect}"
