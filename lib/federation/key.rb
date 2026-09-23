@@ -171,7 +171,7 @@ module Federation
 
         raise MissingField, "#{kind}: #{name} is required and was not supplied" unless present?(args, name)
 
-        value = nfc(normalise(rule, fetch(args, name), args))
+        value = nfc(normalise(rule, fetch(args, name), args, type))
         validate!(kind, name, type, value, args)
         value
       end
@@ -183,8 +183,10 @@ module Federation
         return if type.nil?
 
         ok =
-          if type == "control-id"
-            vocabulary_rule(args) == "none" ? value.present? : value.match?(NIST_CONTROL_FORM)
+          if type == "family-id"
+            vocabulary_rule(args, "family-id") == "none" ? value.present? : TYPE_RULES.fetch("family-id").call(value)
+          elsif type == "control-id"
+            vocabulary_rule(args, "control-id") == "none" ? value.present? : value.match?(NIST_CONTROL_FORM)
           else
             TYPE_RULES.fetch(type).call(value)
           end
@@ -201,8 +203,8 @@ module Federation
       # authority is opaque and passes through untouched, because its casing is
       # that authority's business — `ACM.1` and `acm.1` are two Security Hub
       # controls, not two spellings of one.
-      def normalise(rule, value, args)
-        rule = vocabulary_rule(args) if rule == "by-vocabulary"
+      def normalise(rule, value, args, type = nil)
+        rule = vocabulary_rule(args, type) if rule == "by-vocabulary"
 
         case rule
         when "control-id" then ControlId.canonical(value)
@@ -215,13 +217,23 @@ module Federation
       # NOT defaulted. Without a vocabulary there is no way to know whether the
       # identifier may be canonicalised, and guessing NIST would canonicalise a
       # foreign identifier into something that validates and names nothing.
-      def vocabulary_rule(args)
+      # Keyed by vocabulary, then by the FIELD'S TYPE (#1175). A NIST control is
+      # canonicalised; a NIST family is merely lowercased, because it is not a
+      # control id. Under an opaque vocabulary neither is touched — `ACM` and
+      # `acm` are two Security Hub families, not two spellings of one, and
+      # lowercasing one into the other is how two runtimes derived two
+      # identifiers for the same cell without either erroring.
+      def vocabulary_rule(args, type)
         vocabulary = fetch(args, "vocabulary").to_s
-        raise MissingField, "vocabulary is required for an object carrying a control identifier" if vocabulary.strip.empty?
+        raise MissingField, "vocabulary is required for an object carrying a scoped identifier" if vocabulary.strip.empty?
 
-        spec.fetch("vocabulary-normalisers").fetch(vocabulary) do
+        by_type = spec.fetch("vocabulary-normalisers").fetch(vocabulary) do
           raise InvalidField, "unknown vocabulary #{vocabulary.inspect} " \
                               "(known: #{spec.fetch('vocabulary-normalisers').keys.join(', ')})"
+        end
+
+        by_type.fetch(type.to_s) do
+          raise InvalidField, "vocabulary #{vocabulary.inspect} declares no rule for a #{type.inspect} field"
         end
       end
 

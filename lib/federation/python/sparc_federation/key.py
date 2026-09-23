@@ -149,25 +149,34 @@ def _nfc(value: Any) -> str:
     return unicodedata.normalize("NFC", str(value))
 
 
-def _vocabulary_rule(args: dict[str, Any]) -> str:
-    """The vocabulary decides how a control identifier is normalised.
+def _vocabulary_rule(args: dict[str, Any], type_: str | None) -> str:
+    """Keyed by vocabulary, then by the FIELD'S TYPE (#1175).
 
-    NOT defaulted: without one there is no way to know whether the identifier may
-    be canonicalised, and guessing NIST would canonicalise a foreign identifier
-    into something that validates and names nothing.
+    A NIST control is canonicalised; a NIST family is merely lowercased, because
+    it is not a control id. Under an opaque vocabulary neither is touched —
+    ``ACM`` and ``acm`` are two Security Hub families, not two spellings of one,
+    and lowercasing one into the other is how two runtimes derived two
+    identifiers for the same cell without either erroring.
+
+    NOT defaulted: without a vocabulary there is no way to know whether the
+    identifier may be normalised at all, and guessing NIST would fold a foreign
+    identifier into something that validates and names nothing.
     """
     vocabulary = str(_fetch(args, "vocabulary") or "").strip()
     if not vocabulary:
-        raise MissingField("vocabulary is required for an object carrying a control identifier")
+        raise MissingField("vocabulary is required for an object carrying a scoped identifier")
     rules = spec()["vocabulary-normalisers"]
     if vocabulary not in rules:
         raise InvalidField(f"unknown vocabulary {vocabulary!r} (known: {', '.join(rules)})")
-    return rules[vocabulary]
+    by_type = rules[vocabulary]
+    if str(type_) not in by_type:
+        raise InvalidField(f"vocabulary {vocabulary!r} declares no rule for a {type_!r} field")
+    return by_type[str(type_)]
 
 
-def _normalise(rule: str | None, value: Any, args: dict[str, Any]) -> str:
+def _normalise(rule: str | None, value: Any, args: dict[str, Any], type_: str | None = None) -> str:
     if rule == "by-vocabulary":
-        rule = _vocabulary_rule(args)
+        rule = _vocabulary_rule(args, type_)
     if rule not in NORMALISERS:
         raise ValueError(f"unknown normaliser {rule!r}")
     return NORMALISERS[rule](value)
@@ -177,8 +186,10 @@ def _validate(kind: str, name: str, type_: str | None, value: str, args: dict[st
     """Validated AFTER normalisation, because that is the value the key is built from."""
     if type_ is None:
         return
-    if type_ == "control-id":
-        ok = bool(value) if _vocabulary_rule(args) == "none" else bool(NIST_CONTROL_FORM.match(value))
+    if type_ == "family-id":
+        ok = bool(value) if _vocabulary_rule(args, "family-id") == "none" else TYPE_RULES["family-id"](value)
+    elif type_ == "control-id":
+        ok = bool(value) if _vocabulary_rule(args, "control-id") == "none" else bool(NIST_CONTROL_FORM.match(value))
     else:
         ok = TYPE_RULES[type_](value)
     if not ok:
@@ -206,7 +217,7 @@ def _resolve(kind: str, field_spec: dict[str, Any], args: dict[str, Any]) -> str
     if not _present(args, name):
         raise MissingField(f"{kind}: {name} is required and was not supplied")
 
-    value = _nfc(_normalise(rule, _fetch(args, name), args))
+    value = _nfc(_normalise(rule, _fetch(args, name), args, type_))
     _validate(kind, name, type_, value, args)
     return value
 
