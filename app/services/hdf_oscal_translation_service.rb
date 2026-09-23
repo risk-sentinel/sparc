@@ -138,7 +138,14 @@ class HdfOscalTranslationService
     props << { "name" => "source",        "value" => evidence.source }                 if evidence.source.present?
     props << { "name" => "evidence-type", "value" => evidence.evidence_type }          if evidence.evidence_type.present?
     props << { "name" => "status",        "value" => evidence.status }                 if evidence.status.present?
-    evidence.evidence_control_links.each do |link|
+    # Ordered for the same reason the CMS export is (#1177): this is a
+    # DELIVERED OSCAL artefact, and the links carry no order of their own, so
+    # unordered iteration made the prop sequence vary between runs and the
+    # output non-reproducible. `ControlId.padded` is the codebase's sort form
+    # and orders naturally, so `ac-10` follows `ac-2` rather than preceding it.
+    evidence.evidence_control_links
+            .sort_by { |link| [ ControlId.padded(link.control_id), link.id.to_i ] }
+            .each do |link|
       props << { "name" => "control-id", "value" => link.control_id }
     end
     evidence.attestations.each do |a|

@@ -27,7 +27,7 @@ class CmsAttestationExportService
     records = []
     @scope.includes(evidence: :evidence_control_links).find_each do |attestation|
       links = attestation.evidence&.evidence_control_links || []
-      links.each do |link|
+      ordered_links(links).each do |link|
         records << build_record(attestation, link)
       end
     end
@@ -39,6 +39,28 @@ class CmsAttestationExportService
   end
 
   private
+
+  # ORDER THE DENORMALIZED RECORDS (#1177).
+  #
+  # `find_each` orders the attestations by primary key, but the links carried
+  # no order at all — not on the association, not in the query — so the preload
+  # returned them in physical row order, which shifts as the table accumulates
+  # and reclaims rows. This is a DELIVERED ARTEFACT, not an internal view: an
+  # export whose record order varies between runs cannot be diffed against a
+  # previous delivery or checksummed, and produces spurious changes in whatever
+  # stores it downstream.
+  #
+  # Sorted on `ControlId.padded`, which is the form this codebase already
+  # designates for display and sorting, because it zero-pads and therefore
+  # orders naturally. A plain sort is deterministic but wrong for a reader:
+  #
+  #   plain:   ac-10, ac-2, ac-2.1, ac-3, au-6
+  #   padded:  ac-2,  ac-2.1, ac-3, ac-10, au-6
+  #
+  # `id` is the tie-break so two links on one control cannot swap either.
+  def ordered_links(links)
+    links.sort_by { |link| [ ControlId.padded(link.control_id), link.id.to_i ] }
+  end
 
   def build_record(attestation, link)
     {
