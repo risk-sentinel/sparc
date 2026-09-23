@@ -28,8 +28,14 @@
     "by-vocabulary": "Dispatch on the 'vocabulary' arg via vocabulary-normalisers below."
   },
   "vocabulary-normalisers": {
-    "nist-sp800-53": "control-id",
-    "opaque": "none"
+    "nist-sp800-53": {
+      "control-id": "control-id",
+      "family-id": "lowercase"
+    },
+    "opaque": {
+      "control-id": "none",
+      "family-id": "none"
+    }
   },
   "context-args": [
     "vocabulary"
@@ -41,7 +47,7 @@
   "types": {
     "uuid": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
     "control-id": "Under nist-sp800-53 the CANONICALISED value must match ^[a-z]{2,3}-\\d+(\\.\\d+)*$ — which rejects a statement fragment (ac-2_smt.a) and a foreign-vocabulary identifier (ACM.1 canonicalises to acm.1, which validates and names nothing). Under an opaque vocabulary any non-empty value is accepted unchanged.",
-    "family-id": "^[a-z]{2,3}$ after lowercasing.",
+    "family-id": "^[a-z]{2,3}$ under nist-sp800-53, after lowercasing. Under an opaque vocabulary any non-empty value is accepted unchanged — its form is that authority's business, exactly as for control-id.",
     "period": "^\\d{4}-(Q[1-4]|(0[1-9]|1[0-2]))$ — 2026-Q3 or 2026-01. 2026-1 is not a spelling of 2026-01, and 2026Q3 is not a quarter.",
     "sha256": "^[0-9a-f]{64}$ after lowercasing.",
     "decision-date": "^\\d{4}-\\d{2}-\\d{2}$ — an AO decision is keyed on the DATE it decides, matching the next-decision-date prop. The normative field table names this field 'period' for every kind, but the accepted value differs: a decision takes a date, everything else takes a reporting period. Only the vectors reveal it.",
@@ -257,7 +263,7 @@
         ],
         "normalise": {
           "control-id": "by-vocabulary",
-          "family-id": "lowercase"
+          "family-id": "by-vocabulary"
         },
         "type": {
           "control-id": "control-id",
@@ -817,6 +823,46 @@
         "2026-10-11"
       ],
       "uuid": "2393bc8d-98e7-5e3e-abe1-f2e8a7528829"
+    },
+    {
+      "name": "cell-for-foreign-family",
+      "kind": "cell",
+      "args": {
+        "node-uuid": "2b0b4a6c-7d31-4e08-95af-6c1e8b204d7a",
+        "source-uuid": "5d40a72c-3e18-4f9b-86d2-0c7a41b5e926",
+        "vocabulary": "opaque",
+        "family-id": "ACM",
+        "horizon-bucket": "today"
+      },
+      "canonical-fields": [
+        "v1",
+        "2b0b4a6c-7d31-4e08-95af-6c1e8b204d7a",
+        "cell",
+        "5d40a72c-3e18-4f9b-86d2-0c7a41b5e926",
+        "ACM",
+        "today"
+      ],
+      "uuid": "b9691843-8d7e-5b3e-a58a-4a56414e4dba"
+    },
+    {
+      "name": "cell-for-foreign-family-lowercased",
+      "kind": "cell",
+      "args": {
+        "node-uuid": "2b0b4a6c-7d31-4e08-95af-6c1e8b204d7a",
+        "source-uuid": "5d40a72c-3e18-4f9b-86d2-0c7a41b5e926",
+        "vocabulary": "opaque",
+        "family-id": "acm",
+        "horizon-bucket": "today"
+      },
+      "canonical-fields": [
+        "v1",
+        "2b0b4a6c-7d31-4e08-95af-6c1e8b204d7a",
+        "cell",
+        "5d40a72c-3e18-4f9b-86d2-0c7a41b5e926",
+        "acm",
+        "today"
+      ],
+      "uuid": "f2a38fbf-bed3-5e41-b95e-c6b8c88a0c00"
     }
   ],
   "assertions": [
@@ -919,6 +965,15 @@
         "cell-on-decision-date"
       ],
       "why": "A family rollup is not the control it contains, and a decision-date bucket is not the +30 bucket."
+    },
+    {
+      "name": "foreign-family-case-is-significant",
+      "relation": "distinct",
+      "vectors": [
+        "cell-for-foreign-family",
+        "cell-for-foreign-family-lowercased"
+      ],
+      "why": "Under an opaque vocabulary ACM and acm are two Security Hub families, not two spellings of one. Lowercasing the first into the second is how two runtimes derived two identifiers for one cell with neither erroring (sparc#1175)."
     }
   ],
   "join-cases": [
@@ -1194,5 +1249,6 @@
         "why": "A claim with no established party cannot be scoped, and scoping it to a default would recreate dedup-by-uuid for exactly the claims that skipped verification."
       }
     ]
-  }
+  },
+  "vocabulary-normalisers-note": "Keyed by vocabulary, then by the FIELD'S TYPE. A NIST control is canonicalised to OSCAL's lowercase dotted form; a NIST family is merely lowercased, because it is not a control id and canonicalising it as one would be a claim the grammar cannot support. Under an opaque vocabulary neither is touched: the identifier belongs to another authority, and ACM and acm are two Security Hub families, not two spellings of one (sparc#1175)."
 }

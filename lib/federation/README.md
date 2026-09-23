@@ -35,13 +35,30 @@ by vectors:
 2. **The grammar version is part of the hashed input.** A field-list change
    changes every identifier derived under it, which is as breaking as changing the
    namespace. A grammar change is a v2, never an edit to v1.
-3. **The vocabulary decides how a control identifier is normalised.** Under
-   `nist-sp800-53` it is canonicalised through SPARC's `ControlId.canonical`;
-   under `opaque` it passes through **unchanged**. `ACM.1` and `acm.1` are two
-   AWS Security Hub controls, not two spellings of one. The vocabulary is
-   **never hashed** — it is context, and it is **required**, because guessing
-   NIST would canonicalise a foreign identifier into something that validates
-   and names nothing.
+3. **The vocabulary decides how a scoped identifier is normalised, per
+   identifier kind.** `vocabulary-normalisers` is keyed by vocabulary and then
+   by the field's type:
+
+   | | `control-id` | `family-id` |
+   |---|---|---|
+   | `nist-sp800-53` | canonicalised via `ControlId.canonical` | lowercased |
+   | `opaque` | unchanged | unchanged |
+
+   A NIST *family* is merely lowercased, not canonicalised as a control id —
+   it is not one, and claiming otherwise is a rule the grammar cannot support.
+   Under an opaque vocabulary neither is touched: `ACM.1` and `acm.1` are two
+   AWS Security Hub controls, and `ACM` and `acm` two Security Hub families,
+   not two spellings of one.
+
+   The vocabulary is **never hashed** — it is context — and it is **required**,
+   because guessing NIST would fold a foreign identifier into something that
+   validates and names nothing.
+
+   **`family-id` was lowercased unconditionally until sparc#1175.** Every
+   family vector used a NIST family, where lowercasing and the scoped rule
+   agree, so no vector caught it and the two runtimes derived different
+   identifiers for the same projection cell with neither erroring. The vectors
+   now cover a foreign family in both cases.
 4. **Strings are NFC, with no trimming and no case folding** beyond the
    normaliser named for the field. Ruby and Python differ from Go by default, so
    each port does it explicitly.
