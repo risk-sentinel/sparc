@@ -756,6 +756,31 @@ code {
   color: #1a5276 !important;
 }
 
+/* Neutral — the intent the alias set was missing, so "Inactive" and friends
+   had to fall back to Bootstrap's `text-bg-secondary`. #950's neutral tokens:
+   #3f4749 light, #b0bec5 dark. Measured 8.02:1 and 7.11:1, inside the band the
+   siblings already occupy (4.96–8.25 light, 6.40–6.72 dark). */
+.badge-neutral {
+  background-color: #e9ecef !important;
+  color: #3f4749 !important;
+}
+
+/* An IDENTIFIER — a UUID, a slug, anything meant to be copied rather than
+   read. Same neutral ground, monospace, and a size down, because the value is
+   long and is reference material rather than status.
+
+   It carries its own font rules so a view needs ONE class (#950: one role, one
+   class) and no inline style — the organizations header previously inlined
+   `font-family: monospace; font-size: 0.7rem`, which is six declarations
+   #1109 would have had to remove. */
+.badge-identifier {
+  background-color: #e9ecef !important;
+  color: #3f4749 !important;
+  font-family: monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
 [data-bs-theme="dark"] .badge-ok {
   background-color: #1a3a2a !important;
   color: #68d391 !important;
@@ -769,6 +794,16 @@ code {
 [data-bs-theme="dark"] .badge-fail {
   background-color: #3a1a1a !important;
   color: #fc8181 !important;
+}
+
+[data-bs-theme="dark"] .badge-neutral {
+  background-color: #2a2f31 !important;
+  color: #b0bec5 !important;
+}
+
+[data-bs-theme="dark"] .badge-identifier {
+  background-color: #2a2f31 !important;
+  color: #b0bec5 !important;
 }
 
 [data-bs-theme="dark"] .badge-info {
@@ -3746,6 +3781,7 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-maxw-600 { max-width: 600px; }
 .sparc-h-12r { height: 1.2rem; }
 .sparc-mono { font-family: monospace; }
+.sparc-pre-line { white-space: pre-line; }
 .sparc-color-white-45 { color: rgba(255, 255, 255, 0.45); }
 .sparc-color-white-70 { color: rgba(255, 255, 255, 0.7); }
 .sparc-minw-6r { min-width: 6rem; }
