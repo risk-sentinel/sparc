@@ -62,6 +62,13 @@ export default class ClipboardController extends Controller {
 
     let ok = false
     try {
+      // NOSONAR(javascript:S1874) document.execCommand IS deprecated, and it is
+      // reached ONLY when navigator.clipboard is unavailable — i.e. outside a
+      // secure context, where the modern API does not exist at all. There is no
+      // standards-track replacement for that case, so the alternatives are this
+      // or a copy button that silently does nothing on a plain-http instance.
+      // SPARC ships behind TLS postures it does not control (#858), so the
+      // fallback stays. Remove it when insecure-context deployments do.
       ok = document.execCommand("copy")
     } catch {
       ok = false

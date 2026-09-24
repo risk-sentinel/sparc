@@ -48,7 +48,13 @@
       <span class="visually-hidden">Copy <%= name %> <%= uuid %> to the clipboard</span>
     </button>
     <%# The outcome is announced, not just shown: the only visual confirmation
-        is a tick swap inside the button the user just pressed. %>
-    <span class="visually-hidden" role="status" data-clipboard-target="status"></span>
+        is a tick swap inside the button the user just pressed.
+
+        <output> rather than a span with role="status" (Web:S6819). It carries
+        the status role implicitly and is the element assistive technology is
+        most consistently built against; the explicit role is not honoured
+        everywhere. `for` is omitted deliberately — this announces the result of
+        an action, not the computed output of named form fields. %>
+    <output class="visually-hidden" data-clipboard-target="status"></output>
   </span>
 <% end %>
