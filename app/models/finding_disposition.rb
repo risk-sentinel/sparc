@@ -29,7 +29,10 @@ class FindingDisposition < ApplicationRecord
   NOT_APPLICABLE_KINDS = %w[falsePositive waiver inherited].freeze
   FAILED_KINDS = %w[poam vendorDependency riskAdjustment operationalRequirement].freeze
 
-  # Kinds that hold or defer risk on a clock — an expiration is mandatory.
+  # Kinds that hold or defer risk on a clock. Historically the ONLY kinds that
+  # required an expiration; every kind requires one now (see the validation
+  # below), so this survives to say which ones a reader would expect it of
+  # anyway, and is what the UI copy leans on.
   EXPIRATION_REQUIRED_KINDS = %w[waiver operationalRequirement].freeze
 
   # No disposition parks a finding for longer than this without a human looking
@@ -50,7 +53,20 @@ class FindingDisposition < ApplicationRecord
   validates :decided_by, presence: true
   validates :decided_at, presence: true
   validates :uuid, presence: true
-  validates :expiration, presence: true, if: :expiration_required?
+  # EVERY kind, not only the clock kinds.
+  #
+  # This was conditional until the hdf-cli 3.7.0 pin, which requires an
+  # `expiresAt` on every amendment override — measured across all seven kinds,
+  # with `null` and `""` both rejected. A disposition without one therefore
+  # cannot be exported at all, and SPARC refuses to invent a date rather than
+  # write one nobody chose into signed evidence.
+  #
+  # Enforcing it HERE rather than in each surface is what keeps the UI, the API
+  # and the exporter saying the same thing. The alternative — a check in the
+  # form, another in the controller, another in the service — is three rules
+  # that drift, and the drift shows up as a disposition someone recorded months
+  # ago that turns out to be unexportable.
+  validates :expiration, presence: true
   validate :expiration_within_review_window
   # #809 — amendment approval flow (creator = decided_by; approver = approved_by).
   validates :approval_status, inclusion: { in: %w[draft approved rejected] }
@@ -83,6 +99,8 @@ class FindingDisposition < ApplicationRecord
     NOT_APPLICABLE_KINDS.include?(kind) ? "notApplicable" : "failed"
   end
 
+  # Kept for callers that ask whether a kind is one a reviewer would EXPECT to
+  # carry a clock. It no longer gates the presence validation — every kind does.
   def expiration_required?
     EXPIRATION_REQUIRED_KINDS.include?(kind)
   end
