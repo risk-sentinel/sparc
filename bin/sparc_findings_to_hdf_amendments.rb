@@ -404,6 +404,11 @@ end
 # path (HdfAmendmentExportService) — both emit hdf-amendments, and both carried
 # the same non-conformant identity mapping. One implementation, so a fix cannot
 # land on one emitter and miss the other. See lib/hdf/amendment_chain.rb.
+# CI SPARSE-CHECKOUT COUPLING. security.yml's security_gate job checks out a
+# LITERAL list of paths, not the whole repo, so this require fails there with a
+# LoadError unless `lib/hdf/amendment_chain.rb` is in that list. It is. Anything
+# else this script starts requiring has to be added there as well — the failure
+# surfaces at runtime in CI, not at checkout, and not locally at all.
 require_relative "../lib/hdf/amendment_chain"
 
 def identity_for(reviewer) = Hdf::AmendmentChain.identity_for(reviewer)
