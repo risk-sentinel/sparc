@@ -79,7 +79,7 @@ the admin UI or API. The recurring job becomes a no-op.
 | **Copyright** | Copyright © 2025 The MITRE Corporation. Approved for Public Release; Distribution Unlimited. Case Number 18-3678. |
 | **License** | Apache License, Version 2.0 |
 | **License text** | [`LICENSES/MITRE-HDF-LIBS-LICENSE`](../../LICENSES/MITRE-HDF-LIBS-LICENSE) |
-| **Provisioning** | Compiled from source at the signed `v3.5.1` tag by the `hdf-builder` stage in `Dockerfile` and by the `security_gate` job, against a pinned Go toolchain (#1001). `script/dev/install-hdf.sh` (downloads + SHA-256 verifies the release binary) remains for local development only. |
+| **Provisioning** | Compiled from source at the signed `v3.7.0` tag by the `hdf-builder` stage in `Dockerfile` and by the `security_gate` job, against a pinned Go toolchain (#1001). `script/dev/install-hdf.sh` (downloads + SHA-256 verifies the release binary) remains for local development only. |
 | **Install path** | `/usr/local/bin/hdf` in the SPARC container image |
 | **Used by** | `security_gate` job (HDF amendments + threshold validation); the SPARC runtime, for HDF <-> OSCAL translation |
 | **NIST control alignment** | RA-3(1) Supply Chain Risk Assessment, SR-3 Supply Chain Controls, SR-11 Component Authenticity (build from the signed upstream tag, with the emitted binary's toolchain and `x/text` version asserted at build time; SHA-256 verification of the release tarball on the local-dev path) |

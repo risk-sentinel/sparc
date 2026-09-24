@@ -1,10 +1,29 @@
 <!-- markdownlint-disable MD013 -->
 # hdf-cli v3.5.1: `hdf-amendments → oscal-poam` emits an OSCAL POA&M that fails the NIST OSCAL 1.1.2 schema
 
-> **Status: FILED upstream as [mitre/hdf-libs#236](https://github.com/mitre/hdf-libs/issues/236)**
-> (2026-08-21). Contains no proprietary content — the input is the four-line synthetic
+> **Status: RESOLVED.** Filed upstream as
+> [mitre/hdf-libs#236](https://github.com/mitre/hdf-libs/issues/236) on 2026-08-21,
+> **closed by upstream on 2026-09-08, and fixed in hdf-cli 3.7.0** — which SPARC now
+> pins.
+>
+> Re-measured on 2026-09-23 with the same reproducer, against both binaries:
+>
+> | hdf-cli | OSCAL 1.1.2 | OSCAL 1.2.2 |
+> | --- | --- | --- |
+> | 3.5.1 | INVALID — 3 violations | INVALID — 7 violations |
+> | **3.7.0** | **VALID** | **VALID** |
+>
+> The `poam_from_amendments` endpoint needed no code change: its `502` came from
+> `rescue_from OscalValidationError`, which simply stops firing once the converter
+> emits valid OSCAL. A regression is pinned by an integration example that runs this
+> reproducer, so it would surface as a red build rather than a returning `502`.
+>
+> **This document is kept as the historical record of the defect and the evidence
+> that established it. Everything below describes hdf-cli 3.5.1 and no longer
+> describes the shipping toolchain.**
+>
+> Contains no proprietary content — the input is the four-line synthetic
 > fixture already committed at `tests/api/fixtures/sample.hdf-amendments.json`.
-> Tracked on our side by the issue that ships this report.
 > Follows the same shape as [`hdf-libs-3.4.1-oscal-sar-upstream-report.md`](hdf-libs-3.4.1-oscal-sar-upstream-report.md),
 > which became [mitre/hdf-libs#184](https://github.com/mitre/hdf-libs/issues/184).
 

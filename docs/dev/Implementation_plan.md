@@ -192,7 +192,7 @@ are in `docs/compliance/scan-artifact-inventory.md`.
   `build-sign-publish.yml`, not `security.yml`, and needs a predicate-format
   decision (in-toto `vuln` vs OpenVEX vs CycloneDX-VEX). It pairs with **#859**,
   which is the same question about the same file — can a consumer verify
-  something about a published artifact. Note for that work: hdf-libs 3.5.1 can
+  something about a published artifact. Note for that work: hdf-libs 3.7.0 can
   already emit `hdf-amendments → openvex` / `cyclonedx-vex` / `csaf-vex`, and
   `sparc-findings.yml` is already the register of accepted findings *with
   rationale* — but **#1067 means amendments currently suppress nothing**, so

@@ -60,7 +60,7 @@ install somewhere other than `/usr/local/bin` (no `sudo` needed for a writable
 directory):
 
 ```bash
-HDF_LIBS_VERSION=3.5.1 HDF_INSTALL_DIR="$PWD/tmp/hdfbin" script/dev/install-hdf.sh
+HDF_LIBS_VERSION=3.7.0 HDF_INSTALL_DIR="$PWD/tmp/hdfbin" script/dev/install-hdf.sh
 ```
 
 > **If `hdf version` still reports the old version after installing**, another
