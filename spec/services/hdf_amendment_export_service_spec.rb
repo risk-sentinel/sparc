@@ -66,6 +66,49 @@ RSpec.describe HdfAmendmentExportService do
       end
     end
 
+    # ── The refusal, both directions ──────────────────────────────────────
+    #
+    # hdf-libs 3.7.0 requires `expiresAt` on every override, and SPARC's model
+    # only makes expiration mandatory for the clock kinds — so a falsePositive
+    # can legitimately have none. That conflict is resolved by refusing, not by
+    # inventing a date: a fabricated far-future expiry would satisfy the schema
+    # and be untrue, which is the trade hdf-cli itself stopped making when it
+    # stopped inventing POA&M deadlines.
+    it "refuses to export a disposition with no expiry, and names it" do
+      dispositioned("CVE-1")
+      dispositioned("CVE-NO-EXPIRY", kind: "falsePositive", expiration: nil)
+
+      expect { service.export(verify: false) }
+        .to raise_error(HdfAmendmentExportService::UnexportableDisposition) { |e|
+          expect(e.missing_expiry).to eq([ "CVE-NO-EXPIRY" ])
+          expect(e.message).to include("no expiry set")
+        }
+    end
+
+    it "refuses an expiry beyond the review window, and names it" do
+      dispositioned("CVE-1")
+      far = dispositioned("CVE-TOO-FAR", kind: "poam")
+      # Past the validation, to represent a row that predates the rule.
+      far.update_column(:expiration, far.decided_at + FindingDisposition::MAX_EXPIRATION_WINDOW + 1.day)
+
+      expect { service.export(verify: false) }
+        .to raise_error(HdfAmendmentExportService::UnexportableDisposition) { |e|
+          expect(e.beyond_window).to eq([ "CVE-TOO-FAR" ])
+        }
+    end
+
+    # The allow leg: the refusal must be the guard talking, not the export
+    # refusing everything.
+    it "exports when every disposition carries a review date" do
+      dispositioned("CVE-1")
+      dispositioned("CVE-2", kind: "falsePositive")
+
+      doc = service.export(verify: false)
+
+      expect(doc["overrides"].size).to eq(2)
+      expect(doc["overrides"].map { |o| o["expiresAt"] }).to all(be_present)
+    end
+
     it "orders overrides by requirementId (deterministic)" do
       dispositioned("CVE-9")
       dispositioned("CVE-1")

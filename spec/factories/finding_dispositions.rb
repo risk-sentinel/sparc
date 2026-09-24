@@ -6,6 +6,12 @@ FactoryBot.define do
     reason { Faker::Lorem.paragraph }
     decided_by { Faker::Internet.email }
     decided_at { Time.current }
+    # Every override SPARC exports must carry an expiresAt (hdf-libs 3.7.0
+    # requires it on all kinds), and a disposition may not park a finding for
+    # more than FindingDisposition::MAX_EXPIRATION_WINDOW. A default review
+    # date makes the factory produce a disposition that can actually be
+    # exported; specs that care about its absence set `expiration: nil`.
+    expiration { 90.days.from_now }
 
     trait :false_positive do
       kind { "falsePositive" }

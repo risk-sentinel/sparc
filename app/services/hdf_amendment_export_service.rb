@@ -36,7 +36,36 @@ class HdfAmendmentExportService
 
   # @param verify [Boolean] validate the emitted doc via `hdf amend verify`
   # @return [Hash] HDF Amendments document
+  # Raised when a disposition cannot be expressed as a conformant override.
+  # Carries the control ids so the caller is told WHICH ones to fix, not merely
+  # that something is wrong.
+  class UnexportableDisposition < StandardError
+    attr_reader :missing_expiry, :beyond_window
+
+    def initialize(missing_expiry: [], beyond_window: [])
+      @missing_expiry = missing_expiry
+      @beyond_window  = beyond_window
+      super(build_message)
+    end
+
+    private
+
+    def build_message
+      parts = []
+      if missing_expiry.any?
+        parts << "no expiry set: #{missing_expiry.join(', ')}"
+      end
+      if beyond_window.any?
+        parts << "expiry further out than #{FindingDisposition::MAX_EXPIRATION_WINDOW.inspect} " \
+                 "from the decision: #{beyond_window.join(', ')}"
+      end
+      "#{parts.join('; ')}. Every HDF amendment override must carry an expiresAt, " \
+        "and SPARC will not invent one — set a review date on each disposition."
+    end
+  end
+
   def export(verify: true)
+    guard_exportable!
     overrides = build_overrides
     doc = {
       "amendmentId" => deterministic_id(overrides),
@@ -62,6 +91,35 @@ class HdfAmendmentExportService
   end
 
   private
+
+  # hdf-libs 3.7.0 requires `expiresAt` on EVERY override — measured across all
+  # seven of SPARC's kinds, and `null` and `""` are both rejected, so only a
+  # real date satisfies it. 3.5.1 required it on none, which is why documents
+  # missing it exported cleanly until the pin moved.
+  #
+  # SPARC's own model only makes expiration mandatory for the clock kinds
+  # (waiver, operationalRequirement), so a falsePositive can legitimately have
+  # none. That is a real conflict between our domain model and hdf's schema,
+  # and it is resolved by REFUSING rather than by writing a date nobody chose.
+  #
+  # A fabricated far-future expiry would satisfy the schema and be untrue — the
+  # same trade hdf-cli 3.4.1 itself stopped making when it stopped inventing
+  # POA&M deadlines. Signed compliance evidence is the last place to put a date
+  # no human picked.
+  def guard_exportable!
+    scope = dispositions
+    missing = scope.reject { |d| d.expiration.present? }
+    beyond  = scope.select do |d|
+      d.expiration.present? &&
+        d.expiration > (d.decided_at || d.created_at) + FindingDisposition::MAX_EXPIRATION_WINDOW
+    end
+    return if missing.empty? && beyond.empty?
+
+    raise UnexportableDisposition.new(
+      missing_expiry: missing.map(&:control_id).sort,
+      beyond_window:  beyond.map(&:control_id).sort
+    )
+  end
 
   def dispositions
     control_ids = @boundary.scanner_findings.pluck(:control_id)

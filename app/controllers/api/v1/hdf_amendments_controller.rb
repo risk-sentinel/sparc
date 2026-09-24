@@ -20,6 +20,18 @@ class Api::V1::HdfAmendmentsController < Api::V1::BaseController
            status: :unprocessable_content
   end
 
+  # 422, not 502: the dispositions are ours to fix, and the message names which.
+  # hdf requires an expiresAt on every override and SPARC will not invent one —
+  # see HdfAmendmentExportService#guard_exportable!.
+  rescue_from HdfAmendmentExportService::UnexportableDisposition do |e|
+    render json: {
+      error: "Dispositions cannot be exported as HDF amendments",
+      details: e.message,
+      missing_expiry: e.missing_expiry,
+      beyond_review_window: e.beyond_window
+    }, status: :unprocessable_content
+  end
+
   # GET .../hdf_amendments
   def show
     verify = params[:verify].to_s != "false"
