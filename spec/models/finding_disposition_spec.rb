@@ -32,15 +32,28 @@ RSpec.describe FindingDisposition do
     expect(dup).not_to be_valid
   end
 
+  # Every kind requires a review date, not only the clock kinds. It became
+  # unconditional with the hdf-cli 3.7.0 pin: hdf requires an `expiresAt` on
+  # every amendment override, so a disposition without one cannot be exported —
+  # and SPARC refuses to invent a date rather than write one nobody chose into
+  # signed evidence. Enforced on the model so the UI, the API and the exporter
+  # cannot disagree.
   describe "expiration requirement" do
-    it "requires expiration for waiver and operationalRequirement" do
-      expect(build(:finding_disposition, kind: "waiver", expiration: nil)).not_to be_valid
-      expect(build(:finding_disposition, kind: "operationalRequirement", expiration: nil)).not_to be_valid
+    described_class::KINDS.each do |kind|
+      it "requires an expiration for #{kind}" do
+        expect(build(:finding_disposition, kind: kind, expiration: nil)).not_to be_valid
+      end
     end
 
-    it "does not require expiration for other kinds" do
-      expect(build(:finding_disposition, kind: "poam", expiration: nil)).to be_valid
-      expect(build(:finding_disposition, kind: "falsePositive", expiration: nil)).to be_valid
+    it "accepts every kind once a review date is set" do
+      described_class::KINDS.each do |kind|
+        d = build(:finding_disposition, kind: kind, expiration: 90.days.from_now)
+        # Some kinds carry their own linkage rules; expiration is not why they
+        # would fail, which is what this asserts.
+        expect(d.errors.where(:expiration)).to be_empty if d.validate
+        d.validate
+        expect(d.errors[:expiration]).to be_empty, "#{kind}: #{d.errors[:expiration].join(', ')}"
+      end
     end
   end
 
@@ -83,10 +96,14 @@ RSpec.describe FindingDisposition do
       expect(d).not_to be_valid
     end
 
-    it "leaves a disposition with no expiry to the presence rules" do
+    it "stays silent when there is no expiry, so presence speaks instead" do
       d = build(:finding_disposition, kind: "falsePositive", expiration: nil)
+      d.validate
 
-      expect(d).to be_valid
+      # One error, not two. A missing review date is a missing review date; it
+      # is not also "outside the review window", and reporting both would tell
+      # the operator to fix something that is not wrong.
+      expect(d.errors[:expiration]).to eq([ "can't be blank" ])
     end
   end
 

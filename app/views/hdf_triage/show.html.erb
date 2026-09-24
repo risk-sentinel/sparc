@@ -200,9 +200,23 @@
                     <%= text_area_tag :reason, disp&.reason, rows: 2, class: "form-control form-control-sm",
                           placeholder: "Justification", required: true %>
                   </div>
+                  <%# The review date is REQUIRED for every kind, not only for
+                      waivers and operational requirements. hdf requires an
+                      expiresAt on every amendment override, so a disposition
+                      without one cannot be exported at all — and SPARC will not
+                      invent a date. The label said "(waiver / operational)",
+                      which told an operator it was optional for everything
+                      else; they would find out at export time instead. %>
                   <div class="mb-2">
-                    <%= label_tag :expiration, "Expiration (waiver / operational)", class: "form-label small mb-0" %>
-                    <%= date_field_tag :expiration, disp&.expiration&.to_date, class: "form-control form-control-sm" %>
+                    <%= label_tag :expiration, "Review date", class: "form-label small mb-0" %>
+                    <%= date_field_tag :expiration, disp&.expiration&.to_date,
+                          class: "form-control form-control-sm", required: true,
+                          max: (Date.current + FindingDisposition::MAX_EXPIRATION_WINDOW).to_s,
+                          min: Date.current.to_s %>
+                    <div class="form-text small">
+                      When this decision must be looked at again — required, and at most
+                      <%= FindingDisposition::MAX_EXPIRATION_WINDOW.inspect %> from today.
+                    </div>
                   </div>
                   <%= f.submit "Save disposition", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
                 <% end %>
@@ -218,6 +232,9 @@
 <div class="mt-3 text-muted small" data-hdf-triage-linkage="<%= @linkage.to_json %>">
   Dispositions export to an HDF Amendments document your CI applies with
   <code>hdf amend apply</code>. Amendments must be <strong>approved</strong> and within
-  their ODP validity window to suppress a finding during aggregation. Waivers and
-  operational requirements require an expiration and an Authorizing Official attestation.
+  their ODP validity window to suppress a finding during aggregation. <strong>Every
+  disposition needs a review date</strong>, at most
+  <%= FindingDisposition::MAX_EXPIRATION_WINDOW.inspect %> out — an amendment override
+  without one cannot be exported, and SPARC will not invent a date. Waivers and
+  operational requirements additionally require an Authorizing Official attestation.
 </div>

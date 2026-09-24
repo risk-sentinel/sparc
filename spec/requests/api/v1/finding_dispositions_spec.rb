@@ -32,13 +32,17 @@ RSpec.describe "Api::V1 finding dispositions", type: :request do
   # and avoids the extra AO-attestation requirement `waiver` carries.
   let(:inherited_from) { create(:authorization_boundary) }
 
+  # A review date is required for EVERY kind, so the helper sends one by
+  # default; examples that test its absence pass `expiration: nil`.
   def set_disposition(headers: admin_headers, kind: "inherited", reason: "Inherited from the platform",
-                      subject_type: "AuthorizationBoundary", subject_id: nil)
-    post path,
-         params: { kind: kind, reason: reason,
-                   linked_subject_type: subject_type,
-                   linked_subject_id: subject_id || inherited_from.id },
-         headers: headers, as: :json
+                      subject_type: "AuthorizationBoundary", subject_id: nil,
+                      expiration: 90.days.from_now.iso8601)
+    params = { kind: kind, reason: reason,
+               linked_subject_type: subject_type,
+               linked_subject_id: subject_id || inherited_from.id }
+    params[:expiration] = expiration unless expiration.nil?
+
+    post path, params: params, headers: headers, as: :json
   end
 
   before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
@@ -53,6 +57,41 @@ RSpec.describe "Api::V1 finding dispositions", type: :request do
       expect(data["reason"]).to eq("Inherited from the platform")
       expect(data["control_id"]).to eq(finding.control_id)
       expect(data["linked_subject_type"]).to eq("AuthorizationBoundary")
+    end
+
+    # ── The review date, enforced at the API ─────────────────────────────
+    #
+    # The UI, this endpoint and the HDF exporter must agree about what a
+    # well-formed disposition is, or an operator records one here and finds out
+    # at export time that it cannot be used. The rule lives on the model, so
+    # all three inherit it rather than each carrying its own copy.
+    #
+    # hdf requires an `expiresAt` on every amendment override and SPARC refuses
+    # to invent one, so a disposition without a review date is not exportable
+    # and must not be creatable.
+    it "refuses a disposition with no review date" do
+      expect { set_disposition(expiration: nil) }.not_to change(FindingDisposition, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to match(/expiration/i)
+    end
+
+    it "refuses a review date beyond the review window" do
+      too_far = (Time.current + FindingDisposition::MAX_EXPIRATION_WINDOW + 1.day).iso8601
+
+      expect { set_disposition(expiration: too_far) }.not_to change(FindingDisposition, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to match(/re-decided rather than extended/i)
+    end
+
+    # The allow leg: the refusals above are the rule talking, not the endpoint
+    # rejecting everything with a date on it.
+    it "accepts a review date inside the window, and reads it back" do
+      set_disposition(expiration: 90.days.from_now.iso8601)
+
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body["data"]["expiration"]).to be_present
     end
 
     it "records who decided, so a disposition is attributable" do
