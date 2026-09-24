@@ -40,7 +40,7 @@ export SPARC_TOKEN="your-bearer-token"
 export SPARC_URL="https://sparc.example.com"
 
 # 2. (For the local sanity check)
-hdf version  # 3.5.1 or compatible
+hdf version  # 3.7.0 or compatible
 ```
 
 ## Demo 1 — HDF results → OSCAL SAR
@@ -171,7 +171,7 @@ the boundary id for forensic traceability.
 
 ```bash
 # One-time: install hdf binary into your shell's PATH
-script/dev/install-hdf.sh   # installs the pinned version (3.5.1)
+script/dev/install-hdf.sh   # installs the pinned version (3.7.0)
 
 # Verify
 hdf version

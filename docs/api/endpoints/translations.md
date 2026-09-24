@@ -153,19 +153,15 @@ Converts an HDF results document into an OSCAL POA&M via `hdf convert --from hdf
 POST /api/v1/oscal/poam_from_amendments
 ```
 
-> ### ⚠️ Currently unavailable on the bundled converter
+> ### ✅ Resolved on hdf-cli 3.7.0 — returns `200` with schema-valid OSCAL
 >
-> **hdf-cli 3.5.1 emits an OSCAL POA&M that fails the NIST OSCAL schema on EVERY
-> OSCAL release from 1.1.1 through 1.2.2** — so this
-> endpoint returns **`502 Bad Gateway`** rather than an invalid document, for *valid*
-> HDF Amendments input and not only for malformed input.
+> **hdf-cli 3.5.1 emitted an OSCAL POA&M that failed the NIST OSCAL schema on every
+> OSCAL release from 1.1.1 through 1.2.2**, so this endpoint returned
+> **`502 Bad Gateway`** rather than an invalid document — for *valid* HDF Amendments
+> input, not only for malformed input.
 >
-> Targeting a newer OSCAL version does not help: 1.2.x rejects **more** (7–8
-> violations vs 3), because it applies the non-empty-string datatype to `title`
-> fields the 1.1.x schemas left unconstrained. The document declares itself
-> `"oscal-version": "1.1.2"`.
->
-> Three violations on the 1.1.x line, reproducible from a four-line synthetic fixture:
+> Three violations on the 1.1.x line, reproducible from a four-line synthetic fixture
+> (`tests/api/fixtures/sample.hdf-amendments.json`):
 >
 > ```
 > /plan-of-action-and-milestones/risks/0: missing required properties: statement
@@ -173,16 +169,25 @@ POST /api/v1/oscal/poam_from_amendments
 > /plan-of-action-and-milestones/metadata/parties/0/name: does not match pattern
 > ```
 >
-> **Do not build a pipeline on this endpoint until the upstream converter is fixed.**
-> `sar_from_hdf` is unaffected — that path was fixed in 3.5.1; this one was not.
+> Targeting a newer OSCAL version made it worse, not better: 1.2.x rejected 7 rather
+> than 3, applying the non-empty-string datatype to `title` fields the 1.1.x schemas
+> left unconstrained.
 >
-> Filed upstream as [mitre/hdf-libs#236](https://github.com/mitre/hdf-libs/issues/236).
+> **Fixed upstream.** [mitre/hdf-libs#236](https://github.com/mitre/hdf-libs/issues/236)
+> was closed on 2026-09-08 and the fix ships in **hdf-cli 3.7.0**, which SPARC now
+> pins. Re-measured on that same reproducer against both binaries: 3.5.1 gives 3
+> violations on OSCAL 1.1.2 and 7 on 1.2.2; **3.7.0 is valid on both**. A regression
+> is pinned by an integration example that runs the minimal reproducer, so it would
+> surface as a red build rather than as a silently returning `502`.
+>
+> The `502` behaviour remains the contract for any future converter regression. SPARC
+> validates every OSCAL document it emits (#831, #1017), and a 200 carrying invalid
+> OSCAL is worse than an error because it propagates — the consumer stores it, signs
+> it, or submits it, and the failure surfaces somewhere with no connection to this
+> call.
+>
 > Full evidence, the reproducer and the raw converter output are in
-> [`docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md`](../../dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md). Until then SPARC will not
-> return the document: it validates every OSCAL document it emits (#831, #1017), and a
-> 200 carrying invalid OSCAL is worse than an error because it propagates — the
-> consumer stores it, signs it, or submits it, and the failure surfaces somewhere with
-> no connection to this call.
+> [`docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md`](../../dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md).
 
 Converts an **HDF Amendments** document into an OSCAL POA&M via `hdf convert --from hdf-amendments --to oscal-poam`. This is the hdf-cli 3.2.0-supported replacement for the removed direct `hdf → oscal-poam` path (#663). Accepts the same optional `authorization_boundary_id` enrichment parameter as `sar_from_hdf`.
 

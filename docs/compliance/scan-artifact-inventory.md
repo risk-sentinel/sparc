@@ -207,7 +207,7 @@ clean scan.**
 `hdf convert` is the strategic CLI (owner decision, 2026-08-25); saf remains
 where hdf cannot yet do the job. Both halves are measured, not assumed.
 
-**`--to hdf@2` is a deliberate down-pin.** hdf-libs 3.5.1 emits v3
+**`--to hdf@2` is a deliberate down-pin.** hdf-libs 3.7.0 emits v3
 (`baselines[]`) by default and `saf validate threshold` cannot read v3 at all,
 so an unpinned convert would take every HDF out of reach of the gate. The v2
 output is accepted by saf with `All validation tests passed`, and the finding

@@ -108,36 +108,37 @@ The **HDF ↔ OSCAL bridge** adds three stateless endpoints — `oscal/sar_from_
 > (`reviewed-controls`, `finding/description`, `characterization/origin`) —
 > [mitre/hdf-libs#184](https://github.com/mitre/hdf-libs/issues/184). **hdf-cli
 > 3.5.1 fixed it**, and the endpoint now returns `200` with schema-valid
-> assessment-results, verified against the production image. The `502` contract
+> assessment-results, verified against the production image (re-verified on
+> hdf-cli 3.7.0, the current pin). The `502` contract
 > above still stands as the behaviour for any future converter regression: SPARC
 > does not fill the gaps in — `reviewed-controls` is *what the assessment
 > covered*, and synthesising it would produce a document that passes the schema
 > and misstates the assessment.
 
-> ### ⚠️ `poam_from_amendments` is unavailable on the bundled converter (v1.16.0)
+> ### `poam_from_amendments` — resolved on hdf-cli 3.7.0
 >
-> The same validation now applies to **every** translation path, not just
-> `sar_from_hdf` — it had been guarding one of three. With it on,
-> **`oscal/poam_from_amendments` returns `502` for valid HDF Amendments input**,
-> because hdf-cli **3.5.1** emits a POA&M that fails the NIST OSCAL schema on **every
-> OSCAL release from 1.1.1 through 1.2.2, including NIST's current one**
-> schema on three counts:
+> **This endpoint works.** It returns `200` with a schema-valid OSCAL POA&M.
 >
-> - `risks[]` is missing the required `statement`
-> - `risks[].props[].value` is `""`, which OSCAL's non-empty string datatype rejects
-> - `metadata.parties[].name` is `""`, the same violation
+> It previously returned `502` for valid HDF Amendments input, because hdf-cli
+> **3.5.1** emitted a POA&M that failed the NIST OSCAL schema on every release
+> from 1.1.1 through 1.2.2, on three counts:
 >
-> **Do not build a pipeline on this endpoint until the converter is fixed
-> upstream.** `sar_from_hdf` is unaffected — 3.5.1 fixed that path and not this one.
+> - `risks[]` missing the required `statement`
+> - `risks[].props[].value` was `""`, which OSCAL's non-empty string datatype rejects
+> - `metadata.parties[].name` was `""`, the same violation
 >
-> This is not a change in what the converter produces; it is a change in whether
-> SPARC hands it to you. Before v1.16.0 the endpoint returned `200` with the
-> invalid document.
+> Filed as [mitre/hdf-libs#236](https://github.com/mitre/hdf-libs/issues/236),
+> **closed upstream on 2026-09-08 and fixed in hdf-cli 3.7.0**, which SPARC now
+> pins. Re-measured on the same reproducer against both binaries: 3.5.1 produces
+> 3 violations on OSCAL 1.1.2 and 7 on 1.2.2; 3.7.0 is valid on both.
 >
-> Filed upstream as [mitre/hdf-libs#236](https://github.com/mitre/hdf-libs/issues/236).
-> Targeting a newer OSCAL version does not help — 1.2.x rejects more, not fewer.
+> The `502` contract above still stands for any future converter regression —
+> SPARC validates every OSCAL document it emits and will not hand back one that
+> fails the schema. A regression is pinned by a test that runs the minimal
+> reproducer, so it would surface as a failing build rather than as a returning
+> `502`.
 >
-> Evidence, reproducer and raw output:
+> Evidence and reproducer:
 > [`docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md).
 
 ### Evidence (v1.12.2)
