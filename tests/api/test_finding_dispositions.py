@@ -27,6 +27,7 @@ from __future__ import annotations
 import json
 import uuid
 from collections.abc import Iterator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -101,9 +102,15 @@ def _payload(scanned: dict[str, Any], **overrides: Any) -> dict[str, Any]:
         "reason": "#995 sweep — inherited from the parent boundary",
         "linked_subject_type": "AuthorizationBoundary",
         "linked_subject_id": scanned["boundary"]["id"],
+        # Every kind requires a review date, and it must sit inside
+        # FindingDisposition::MAX_EXPIRATION_WINDOW. hdf requires an expiresAt
+        # on every amendment override and SPARC refuses to invent one, so a
+        # disposition without a date is not exportable and is not creatable.
+        # Pass `expiration=None` to exercise its absence.
+        "expiration": (datetime.now(UTC) + timedelta(days=90)).isoformat(),
     }
     body.update(overrides)
-    return body
+    return {k: v for k, v in body.items() if v is not None}
 
 
 @pytest.mark.happy
@@ -121,6 +128,35 @@ class TestCreate:
         assert data["kind"] == "inherited"
         assert data["reason"] == _payload(scanned)["reason"]
         assert data["control_id"] == finding["control_id"]
+
+    # ── The review date is part of the contract ──────────────────────────
+    #
+    # The UI, this endpoint and the HDF exporter enforce one rule, held on the
+    # model. hdf requires an expiresAt on every amendment override and SPARC
+    # refuses to invent one, so a disposition without a review date cannot be
+    # exported — and must not be creatable here either, or an operator records
+    # one today and finds out at export time.
+    def test_refuses_a_disposition_with_no_review_date(
+        self, admin_client: httpx.Client, scanned: dict[str, Any], finding: dict[str, Any]
+    ) -> None:
+        response = admin_client.post(
+            _disposition_path(finding["uuid"]), json=_payload(scanned, expiration=None)
+        )
+
+        assert response.status_code == 422, response.text
+        assert "expiration" in response.text.lower(), response.text
+
+    def test_refuses_a_review_date_beyond_the_window(
+        self, admin_client: httpx.Client, scanned: dict[str, Any], finding: dict[str, Any]
+    ) -> None:
+        too_far = (datetime.now(UTC) + timedelta(days=400)).isoformat()
+
+        response = admin_client.post(
+            _disposition_path(finding["uuid"]), json=_payload(scanned, expiration=too_far)
+        )
+
+        assert response.status_code == 422, response.text
+        assert "re-decided rather than extended" in response.text, response.text
 
     def test_a_new_disposition_starts_unapproved(
         self, admin_client: httpx.Client, scanned: dict[str, Any], finding: dict[str, Any]
