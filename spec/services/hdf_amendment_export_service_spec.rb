@@ -36,7 +36,34 @@ RSpec.describe HdfAmendmentExportService do
       o2 = doc["overrides"].find { |o| o["requirementId"] == "CVE-2" }
       expect(o2["type"]).to eq("falsePositive")
       expect(o2["status"]).to eq("notApplicable")
-      expect(o2["appliedBy"]).to eq({ "type" => "github", "identifier" => "@ghuser" })
+      # `username`, not `github`. This example asserted "github" until it was
+      # measured against hdf-libs 3.7.0, which rejects it — the vocabulary is
+      # email | username | system | agent | simple | other and "github" was
+      # never in it. 3.5.1's `amend verify` did not check the field at all, so
+      # the spec and the service agreed with each other and neither agreed with
+      # hdf.
+      expect(o2["appliedBy"]).to eq({ "type" => "username", "identifier" => "@ghuser" })
+
+      # Pin the vocabulary itself, so the next wrong value fails here rather
+      # than in a release gate.
+      doc["overrides"].each do |o|
+        expect(Hdf::AmendmentChain::IDENTITY_TYPES).to include(o.dig("appliedBy", "type"))
+      end
+    end
+
+    it "chains the overrides so an edit after export is detectable" do
+      dispositioned("CVE-1")
+      dispositioned("CVE-2")
+      overrides = service.export["overrides"]
+
+      expect(overrides.size).to be >= 2
+      expect(overrides.first).not_to have_key("previousChecksum")
+      overrides.drop(1).each_with_index do |o, i|
+        expect(o.dig("previousChecksum", "algorithm")).to eq("sha256")
+        expect(o.dig("previousChecksum", "value"))
+          .to eq(Hdf::AmendmentChain.checksum_json(overrides[i])),
+              "override #{i + 1} is not linked to the one before it"
+      end
     end
 
     it "orders overrides by requirementId (deterministic)" do
