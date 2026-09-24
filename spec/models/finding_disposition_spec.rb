@@ -44,6 +44,52 @@ RSpec.describe FindingDisposition do
     end
   end
 
+  # A disposition is a decision taken against a state of the world. A year on,
+  # the package has moved and the CVE may be fixed, so an expiry further out
+  # than the review window is indistinguishable from "never re-examined".
+  #
+  # Both directions, because a cap that rejects everything is not a cap.
+  describe "review window (MAX_EXPIRATION_WINDOW)" do
+    it "accepts an expiry inside the window" do
+      d = build(:finding_disposition, decided_at: Time.current,
+                expiration: Time.current + described_class::MAX_EXPIRATION_WINDOW - 1.day)
+
+      expect(d).to be_valid
+    end
+
+    it "accepts an expiry exactly at the window" do
+      anchor = Time.current
+      d = build(:finding_disposition, decided_at: anchor,
+                expiration: anchor + described_class::MAX_EXPIRATION_WINDOW)
+
+      expect(d).to be_valid
+    end
+
+    it "rejects an expiry beyond the window, and says what to do" do
+      anchor = Time.current
+      d = build(:finding_disposition, decided_at: anchor,
+                expiration: anchor + described_class::MAX_EXPIRATION_WINDOW + 1.day)
+
+      expect(d).not_to be_valid
+      expect(d.errors[:expiration].join).to include("re-decided rather than extended")
+    end
+
+    # The window runs from the DECISION, not from now — so back-dating the
+    # decision does not buy a longer deferral.
+    it "measures from decided_at, not from the present" do
+      d = build(:finding_disposition, decided_at: 6.months.ago,
+                expiration: Time.current + 7.months)
+
+      expect(d).not_to be_valid
+    end
+
+    it "leaves a disposition with no expiry to the presence rules" do
+      d = build(:finding_disposition, kind: "falsePositive", expiration: nil)
+
+      expect(d).to be_valid
+    end
+  end
+
   describe "#hdf_status" do
     it "maps suppressing kinds to notApplicable" do
       %w[falsePositive waiver inherited].each do |kind|

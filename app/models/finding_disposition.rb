@@ -32,6 +32,17 @@ class FindingDisposition < ApplicationRecord
   # Kinds that hold or defer risk on a clock — an expiration is mandatory.
   EXPIRATION_REQUIRED_KINDS = %w[waiver operationalRequirement].freeze
 
+  # No disposition parks a finding for longer than this without a human looking
+  # at it again. A disposition is a decision taken against a state of the world;
+  # a year later the package has moved, the CVE may be fixed, and the reasoning
+  # may not hold. An expiry further out than this is indistinguishable from
+  # "never re-examined".
+  #
+  # Anchored on `decided_at` rather than now, so the clock runs from when the
+  # decision was actually taken. Re-deciding is what resets it — editing the
+  # date alone does not.
+  MAX_EXPIRATION_WINDOW = 1.year
+
   validates :control_id, presence: true,
             uniqueness: { scope: :authorization_boundary_id, case_sensitive: true }
   validates :kind, presence: true, inclusion: { in: KINDS }
@@ -40,6 +51,7 @@ class FindingDisposition < ApplicationRecord
   validates :decided_at, presence: true
   validates :uuid, presence: true
   validates :expiration, presence: true, if: :expiration_required?
+  validate :expiration_within_review_window
   # #809 — amendment approval flow (creator = decided_by; approver = approved_by).
   validates :approval_status, inclusion: { in: %w[draft approved rejected] }
 
@@ -73,6 +85,20 @@ class FindingDisposition < ApplicationRecord
 
   def expiration_required?
     EXPIRATION_REQUIRED_KINDS.include?(kind)
+  end
+
+  # The review window, enforced. See MAX_EXPIRATION_WINDOW.
+  def expiration_within_review_window
+    return if expiration.blank?
+
+    anchor = decided_at || created_at || Time.current
+    limit  = anchor + MAX_EXPIRATION_WINDOW
+    return if expiration <= limit
+
+    errors.add(:expiration,
+               "must be within #{MAX_EXPIRATION_WINDOW.inspect} of the decision " \
+               "(#{anchor.to_date} -> #{limit.to_date}); a longer deferral has to be " \
+               "re-decided rather than extended")
   end
 
   def expired?

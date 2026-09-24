@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +50,11 @@ def create_boundary(admin_client: httpx.Client, label: str) -> dict[str, Any]:
     )
     assert response.status_code in (200, 201), response.text
     return response.json().get("data") or response.json()
+
+
+def _review_date() -> str:
+    """A review date inside FindingDisposition::MAX_EXPIRATION_WINDOW (1 year)."""
+    return (datetime.now(UTC) + timedelta(days=90)).isoformat()
 
 
 def triaged_boundary(admin_client: httpx.Client, label: str) -> dict[str, Any]:
@@ -79,6 +85,10 @@ def triaged_boundary(admin_client: httpx.Client, label: str) -> dict[str, Any]:
             "reason": "#995 HDF triage sweep",
             "linked_subject_type": "AuthorizationBoundary",
             "linked_subject_id": boundary["id"],
+            # Every exported override must carry an expiresAt (hdf-libs 3.7.0
+            # requires it on all kinds) and SPARC refuses to invent one, so a
+            # disposition meant to be exported needs a real review date.
+            "expiration": _review_date(),
         },
     )
     assert dispositioned.status_code == 201, dispositioned.text
