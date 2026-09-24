@@ -1,0 +1,49 @@
+{
+  "name": "riskAdjustments-2026-09-07",
+  "overrides": [
+    {
+      "appliedAt": "2026-09-07T15:01:58Z",
+      "appliedBy": {
+        "identifier": "wdower",
+        "type": "username"
+      },
+      "expiresAt": "2026-12-31T23:59:59Z",
+      "reason": "GHSA-4w7w-66w2-5vf9: vite 5.4.21 reaches this repo only as a transitive dev dependency of vitepress under @mitre/hdf-schema-site, the documentation site, which is not a published package. Traced 2026-09-07: 'pnpm why vite -r --prod' returns no paths. The workspace's own direct vite dependency resolves to 8.2.2 and is unaffected. Revisit when vitepress 2.x lands.",
+      "requirementId": "CVE-2026-39365",
+      "status": "notApplicable",
+      "type": "riskAdjustment"
+    },
+    {
+      "appliedAt": "2026-09-07T15:01:58Z",
+      "appliedBy": {
+        "identifier": "wdower",
+        "type": "username"
+      },
+      "expiresAt": "2026-12-31T23:59:59Z",
+      "previousChecksum": {
+        "algorithm": "sha256",
+        "value": "c9e4806f8543d18823e6f94c170c80bc040d7c3c911f1e20f81c912312c38b21"
+      },
+      "reason": "GHSA-fx2h-pf6j-xcff: vite 5.4.21 reaches this repo only as a transitive dev dependency of vitepress under @mitre/hdf-schema-site, the documentation site, which is not a published package. Traced 2026-09-07: 'pnpm why vite -r --prod' returns no paths. The workspace's own direct vite dependency resolves to 8.2.2 and is unaffected. Revisit when vitepress 2.x lands.",
+      "requirementId": "CVE-2026-53571",
+      "status": "notApplicable",
+      "type": "riskAdjustment"
+    },
+    {
+      "appliedAt": "2026-09-07T15:01:58Z",
+      "appliedBy": {
+        "identifier": "wdower",
+        "type": "username"
+      },
+      "expiresAt": "2026-12-31T23:59:59Z",
+      "previousChecksum": {
+        "algorithm": "sha256",
+        "value": "304cbb8e103bedd8fde53a82998f2e19d135a190449c94bdd12ab546fc267650"
+      },
+      "reason": "GHSA-v6wh-96g9-6wx3: vite 5.4.21 reaches this repo only as a transitive dev dependency of vitepress under @mitre/hdf-schema-site, the documentation site, which is not a published package. Traced 2026-09-07: 'pnpm why vite -r --prod' returns no paths. The workspace's own direct vite dependency resolves to 8.2.2 and is unaffected. Revisit when vitepress 2.x lands.",
+      "requirementId": "CVE-2026-53632",
+      "status": "notApplicable",
+      "type": "riskAdjustment"
+    }
+  ]
+}
