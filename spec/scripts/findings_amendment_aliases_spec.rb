@@ -77,8 +77,18 @@ RSpec.describe "HDF amendment identifier aliases (#1048)" do
 
     # An alias that carried a weaker status would suppress under one scanner and
     # gate under another — worse than not aliasing at all.
-    expect(alias_o.reject { |k, _| k == "requirementId" })
-      .to eq(primary.reject { |k, _| k == "requirementId" })
+    #
+    # `previousChecksum` is excluded alongside `requirementId` because both are
+    # POSITIONAL, not dispositional. The amendment chain links each override to
+    # the one before it, so two overrides in different positions necessarily
+    # carry different links — and the first in the document carries none at all.
+    # Requiring them to match would be requiring the chain NOT to work. What
+    # this example is about is the disposition: type, status, reason, and who
+    # applied it when.
+    positional = %w[requirementId previousChecksum]
+
+    expect(alias_o.reject { |k, _| positional.include?(k) })
+      .to eq(primary.reject { |k, _| positional.include?(k) })
   end
 
   it "emits exactly one override when there is no alias" do
