@@ -224,8 +224,22 @@ RSpec.describe HdfRunner do
         "build in $GOBIN can shadow it), or set SPARC_HDF_ALLOWED_VERSIONS=#{reported}."
     end
 
-    it "validates a known-good HDF results fixture" do
-      expect(runner.validate(hdf_results_fixture, type: "results")).to be true
+    # The fixture is a legacy HDF v2 document (InSpec exec-json), which is what
+    # most scanners still emit through saf, so it must be validated AS v2.
+    #
+    # Both directions, because the refusal is the half that matters. hdf-libs
+    # 3.5.1 validated this exact v2 document against the v3 schemas and
+    # reported SUCCESS — a green that meant nothing. 3.7.0 detects the v2 shape
+    # and refuses, which is what makes `schema_ver:` both possible and
+    # necessary. If the negative example ever passes, the CLI has stopped
+    # telling the versions apart and this suite is back to proving nothing.
+    it "validates a known-good HDF v2 results fixture when asked for v2" do
+      expect(runner.validate(hdf_results_fixture, type: "results", schema_ver: 2)).to be true
+    end
+
+    it "refuses that same v2 fixture against the current (v3) schemas" do
+      expect { runner.validate(hdf_results_fixture, type: "results") }
+        .to raise_error(HdfRunner::Error, /v2|schema-ver/i)
     end
 
     # Pins an upstream divergence that is easy to trip over: as of 3.4.1 the

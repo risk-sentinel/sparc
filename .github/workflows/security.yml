@@ -63,13 +63,17 @@ env:
   # rather than in either job. The previous single-job pin drifted to 3.4.1
   # while the image baked 3.5.1; a second hardcoded copy is exactly how that
   # recurs. Dockerfile carries the same ARG — grep repo-wide before changing.
-  HDF_LIBS_VERSION: '3.5.1'
-  # hdf-libs 3.5.1 pins golang.org/x/text v0.27.0 (CVE-2026-56852, HIGH).
-  # Bumped to match the image; drop when upstream ships x/text >= 0.39.0.
+  HDF_LIBS_VERSION: '3.7.0'
+  # golang.org/x/text FLOOR, not a forced version. 3.5.1 pinned v0.27.0
+  # (CVE-2026-56852, HIGH) and this job forced v0.39.0 ahead of upstream;
+  # 3.7.0 ships v0.39.0 itself. Forcing it now would DOWNGRADE a future
+  # v0.40.x while an equality check reported success, so the requirement is
+  # gone and the floor is asserted against the built binary instead.
   XTEXT_VERSION: '0.39.0'
-  # Every published hdf release, 3.5.1 included, is built with go1.26.5;
-  # the GO-2026-5026 fix line is go1.26.6. A download cannot clear a stdlib
-  # CVE — choosing the toolchain does.
+  # 3.5.1's published binary was built with go1.26.5 and the GO-2026-5026 fix
+  # line is go1.26.6, so a download could not clear a stdlib CVE. 3.7.0's
+  # published binary is built with go1.26.6; we still compile, so the
+  # toolchain stays ours to choose rather than upstream's to change.
   HDF_GO_VERSION: '1.26.6'
   # #873 — Syft produces the container SBOM the Grype gate consumes. Pinned:
   # the gate's correctness depends on this tool emitting source-RPM (upstream=)
@@ -1213,8 +1217,6 @@ jobs:
           git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
             https://github.com/mitre/hdf-libs.git /tmp/hdf-src
           cd /tmp/hdf-src/hdf-cli
-          go mod edit -require="golang.org/x/text@v${XTEXT_VERSION}"
-          go mod download golang.org/x/text
           PKG="github.com/mitre/hdf-libs/hdf-cli/v3/cmd/hdf/cmd"
           CGO_ENABLED=0 go build -trimpath \
             -ldflags "-s -w -X ${PKG}.version=${HDF_LIBS_VERSION}" \
@@ -1222,8 +1224,12 @@ jobs:
           # Read the result back out of the binary rather than trusting the
           # steps above — a drifted requirement or a changed toolchain would
           # otherwise build clean and reintroduce the CVE silently.
-          go version -m /usr/local/bin/hdf | grep -E "golang.org/x/text[[:space:]]+v${XTEXT_VERSION}" \
-            || { echo "::error::hdf does not carry x/text v${XTEXT_VERSION}"; exit 1; }
+          ACTUAL="$(go version -m /usr/local/bin/hdf | awk '$2 == "golang.org/x/text" { print $3 }' | sed 's/^v//')"
+          if [ -z "${ACTUAL}" ] || \
+             [ "$(printf '%s\n%s\n' "${XTEXT_VERSION}" "${ACTUAL}" | sort -V | head -1)" != "${XTEXT_VERSION}" ]; then
+            echo "::error::hdf carries x/text v${ACTUAL:-<none>}, below the v${XTEXT_VERSION} floor"
+            exit 1
+          fi
           hdf version | grep -q "${HDF_LIBS_VERSION}" \
             || { echo "::error::hdf is not version ${HDF_LIBS_VERSION}"; exit 1; }
 

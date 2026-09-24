@@ -188,11 +188,28 @@ RSpec.describe "scripts/vex_set_product_identity.rb (#1144)" do
       )
       skip "hdf CLI not available" unless convert_status.success? && File.exist?(vex)
 
-      expect(File.read(vex)).to include("HDFPID-"), "fixture premise: the converter emits the placeholder"
+      # PREMISE, stated in terms of the OUTCOME rather than the mechanism.
+      #
+      # This used to assert the converter emits an "HDFPID-" placeholder, which
+      # was true of hdf-libs 3.5.1 and is not true of 3.7.0 — 3.7.0 emits no
+      # `products` key at all. Both are the same defect from this script's point
+      # of view: the converter's output does not name the artifact it is about.
+      # Pinning the premise to one spelling of that made the example fail on a
+      # version bump while the script itself was fine.
+      before_doc = JSON.parse(File.read(vex))
+      unnamed = before_doc.fetch("statements").reject { |st| Array(st["products"]).any? { |pr| pr["@id"].to_s.start_with?("pkg:") } }
+      expect(unnamed).not_to be_empty,
+                            "fixture premise: the converter does not name the image on its own"
 
       stdout, code = run(vex)
-
       expect(code).to eq(0), stdout
+
+      # The contract: every statement names the image, and no placeholder of
+      # any generation survives.
+      after_doc = JSON.parse(File.read(vex))
+      ids = after_doc.fetch("statements").flat_map { |st| Array(st["products"]).map { |pr| pr["@id"] } }
+      expect(ids).not_to be_empty
+      expect(ids).to all(start_with("pkg:oci/"))
       expect(File.read(vex)).not_to include("HDFPID-")
     end
   end

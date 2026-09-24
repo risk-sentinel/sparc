@@ -24,12 +24,19 @@ require "stringio"
 #   SA-11 Developer Testing   (validate against schema before persistence)
 class HdfRunner
   JSON_FLAG = "--json".freeze
-  # 3.5.1 (2026-08-19) — the org pin, matching what Heimdall and the CI runners
-  # use. The move off 3.4.1 was not a routine bump: 3.5.1 fixes
-  # mitre/hdf-libs#184, so `hdf -> oscal-sar` now emits assessment-results that
-  # SATISFY the OSCAL v1.1.2 schema. That conversion was unsafe on every
-  # previously shipping version and is now the first that can be trusted.
-  PINNED_VERSION = "3.5.1".freeze
+  # 3.7.0 (2026-09-23) — the org pin, matching the Dockerfile and the CI
+  # runners. 3.5.1 was the first version whose `hdf -> oscal-sar` satisfied the
+  # OSCAL schema (mitre/hdf-libs#184); re-measured on 3.7.0, that still holds —
+  # oscal-sar and hdf-amendments -> oscal-poam both validate against the
+  # bundled schemas at v1.1.2 and v1.2.2.
+  #
+  # The move off 3.5.1 is not cosmetic. 3.5.1's `amend verify` does not
+  # validate appliedBy.type at all — it passes a document carrying
+  # "totally-bogus-not-a-type" — and its `validate` accepts a legacy HDF v2
+  # document against v3 schemas. Both are false passes we were relying on.
+  # 3.7.0 enforces the vocabulary and detects v2, which is what surfaced the
+  # non-conformant amendments this pin ships alongside.
+  PINNED_VERSION = "3.7.0".freeze
   DEFAULT_BINARY = "hdf".freeze
 
   class Error < StandardError
@@ -64,14 +71,33 @@ class HdfRunner
 
   # Validate input against the bundled hdf-cli schema. Raises on mismatch.
   #
+  # The CLI is the proof a document conforms — not our own reading of it, and
+  # not a schema copy of ours that can drift from the binary that will consume
+  # the document downstream.
+  #
   # NOTE: `hdf validate --type results` still requires a top-level `baselines`
-  # field — re-verified on 3.5.1, which fixed the SAR schema defect but NOT
-  # this — while the oscal-sar converter does not. The validator and the
-  # converter still disagree upstream. Don't reach for this as a
-  # pre-flight check on scanner HDF; it will reject input that converts fine.
+  # field — re-verified on 3.5.1 and again on 3.7.0 — while the oscal-sar
+  # converter does not. The validator and the converter still disagree
+  # upstream. Don't reach for this as a pre-flight check on scanner HDF; it
+  # will reject input that converts fine.
+  #
+  # SCHEMA VERSION. hdf validate defaults to the CURRENT (v3) schemas. A legacy
+  # HDF v2 document — InSpec exec-json, which is what most scanners still emit
+  # through saf — is not v3 and must declare `schema_ver: 2`.
+  #
+  # This argument exists because 3.7.0 is the first version that can tell the
+  # difference. 3.5.1 validated `spec/fixtures/files/hdf/sample-results.hdf.json`
+  # — a v2 document — against the v3 schemas and reported SUCCESS. That green
+  # meant nothing. 3.7.0 detects the v2 shape, refuses, and names the flag, so
+  # asking for the right schema is now both possible and required.
+  #
   # @param type [String] "results" | "baseline" | "amendments" | etc.
-  def validate(input, type: "results")
-    invoke("validate", [ "--type", type, "--quiet" ], input: input)
+  # @param schema_ver [Integer, String, nil] HDF schema major version; nil uses
+  #   the CLI default (current).
+  def validate(input, type: "results", schema_ver: nil)
+    flags = [ "--type", type, "--quiet" ]
+    flags += [ "--schema-ver", schema_ver.to_s ] unless schema_ver.nil?
+    invoke("validate", flags, input: input)
     true
   end
 
