@@ -8,7 +8,7 @@
 ARG RUBY_VERSION=3.4.10
 ARG RUBY_MAJOR=3.4
 ARG JEMALLOC_VERSION=5.3.0
-ARG HDF_LIBS_VERSION=3.5.1
+ARG HDF_LIBS_VERSION=3.7.0
 # Digest-pinned manifest-list (multi-arch: amd64, arm64, ppc64le, s390x) for
 # reproducibility (#742 / folded #639 pinning policy). Currently ubi-minimal 9.8.
 # Digest-only (no version tag) so the reference is unambiguous (SonarQube
@@ -79,16 +79,22 @@ ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:7b8e25a1b56ca4d
 # same org, two strategies — and only one of them can fix a Go stdlib CVE.
 #
 # Measured with `go version -m` on the binary that shipped in v1.16.0-rc:
-# hdf 3.5.1 (the NEWEST published release, 2026-08-12) is built with go1.26.5,
-# and the GO-2026-5026 fix line is go1.26.6. No version bump reaches it —
-# choosing the toolchain does. risk-sentinel/container-build-sign reached the
-# same conclusion for its ci-runner and sparc-auditor images (#234, #246);
-# this stage is a port of the one in containers/ci-runner/Dockerfile, and the
-# two should be kept in step.
+# hdf 3.5.1 (then the newest release) is built with go1.26.5, and the
+# GO-2026-5026 fix line is go1.26.6. No version bump reaches it — choosing the
+# toolchain does. risk-sentinel/container-build-sign reached the same
+# conclusion for its ci-runner and sparc-auditor images (#234, #246); this
+# stage is a port of the one in containers/ci-runner/Dockerfile, and the two
+# should be kept in step.
+#
+# 3.7.0's PUBLISHED binary is built with go1.26.6, so that specific gap is
+# closed upstream. This stage still compiles from source, because the reason to
+# keep it is not only the toolchain: it asserts on what the emitted binary
+# ACTUALLY contains, which no download does, and it keeps the upgrade clock
+# ours rather than upstream's.
 #
 # This is NOT a weaker supply chain than the tarball it replaces. The download
 # verified a SHA-256 against the release checksums; this clones the signed
-# v3.5.1 tag from the same canonical repo and then asserts, twice, on what the
+# version tag from the same canonical repo and then asserts, twice, on what the
 # emitted binary actually contains — which the tarball path never did.
 #
 # The download script is KEPT, demoted to script/dev/install-hdf.sh, as a
@@ -107,21 +113,19 @@ RUN git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
         https://github.com/mitre/hdf-libs.git /src
 WORKDIR /src/hdf-cli
 
-# Security bump of a TRANSITIVE dependency, ahead of upstream. hdf-libs v3.5.1
-# pins golang.org/x/text v0.27.0, which carries CVE-2026-56852 (HIGH):
-# norm.Iter can enter an infinite loop on invalid UTF-8. Fixed in v0.39.0.
-# Confirmed present in the shipped binary before this change. We build here
-# precisely so the upgrade clock is ours; accepting a fixable HIGH when we
-# control the compile would be declining to use the capability.
-# REMOVE once hdf-libs ships x/text >= 0.39.0 — the assertion below reports
-# that the bump was undone, never that it became redundant.
+# golang.org/x/text MINIMUM, not a forced version. hdf-libs v3.5.1 pinned
+# x/text v0.27.0, carrying CVE-2026-56852 (HIGH) — norm.Iter can loop forever
+# on invalid UTF-8 — so this stage used to force v0.39.0 with `go mod edit`
+# ahead of upstream.
+#
+# v3.7.0 ships v0.39.0 itself, which is the condition the old comment named for
+# removing the bump. Forcing it now would be worse than redundant: `go mod edit
+# -require` pins EXACTLY, so the day upstream moves to v0.40.x this would pull
+# it back DOWN, and an equality assertion would report success while doing it.
+#
+# So the requirement is gone and the floor stays, asserted against the emitted
+# binary below.
 ARG XTEXT_VERSION=0.39.0
-# `go mod edit` + `go mod download`, not `go get`: edit sets the requirement
-# mechanically with no version resolution and download records the hash in
-# go.sum. `go get` resolves a module graph at build time — less predictable,
-# and what SonarQube flags as a non-lock-file command.
-RUN go mod edit -require="golang.org/x/text@v${XTEXT_VERSION}" \
-    && go mod download golang.org/x/text
 
 # hadolint ignore=DL3003
 RUN COMMIT="$(git -C /src rev-parse --short HEAD)" \
@@ -131,12 +135,14 @@ RUN COMMIT="$(git -C /src rev-parse --short HEAD)" \
          -ldflags "-s -w -X ${PKG}.version=${HDF_LIBS_VERSION} -X ${PKG}.commit=${COMMIT} -X ${PKG}.date=${DATE}" \
          -o /out/hdf ./cmd/hdf
 
-# The x/text bump is silent if it stops applying — a later hdf-libs could pin a
-# newer x/text, or the requirement could stop resolving, and the build would
-# still succeed carrying a vulnerable copy. Read it back out of the ACTUAL
-# binary rather than trusting the instruction above.
-RUN go version -m /out/hdf | grep -E "golang.org/x/text[[:space:]]+v${XTEXT_VERSION}" \
-      || { echo "FAIL: /out/hdf does not carry x/text v${XTEXT_VERSION} (CVE-2026-56852)" >&2; \
+# Read the floor back out of the ACTUAL binary. A `>=` comparison, not `==`:
+# equality would fail the build the day upstream ships a NEWER x/text, which is
+# the outcome we want, not a regression. `sort -V` does the version compare, so
+# 0.100.0 sorts above 0.39.0 rather than below it as a string would.
+RUN ACTUAL="$(go version -m /out/hdf | awk '$2 == "golang.org/x/text" { print $3 }' | sed 's/^v//')" \
+    && [ -n "${ACTUAL}" ] \
+    && [ "$(printf '%s\n%s\n' "${XTEXT_VERSION}" "${ACTUAL}" | sort -V | head -1)" = "${XTEXT_VERSION}" ] \
+      || { echo "FAIL: /out/hdf carries x/text v${ACTUAL:-<none>}, below the v${XTEXT_VERSION} floor (CVE-2026-56852)" >&2; \
            go version -m /out/hdf | grep "golang.org/x/text" >&2; exit 1; }
 # And assert the toolchain, which is the finding this stage exists to close.
 # `go build` silently uses whatever toolchain the image carries; if the FROM
