@@ -1759,6 +1759,11 @@ jobs:
             docs/compliance/thresholds/
             docs/compliance/expected-hdfs.txt
             bin/sparc_findings_to_hdf_amendments.rb
+            # The converter requires this; a sparse checkout without it fails
+            # with a LoadError at runtime, not at checkout. Anything the
+            # converter starts requiring has to be listed HERE too — the
+            # manifest is literal, not a pattern.
+            lib/hdf/amendment_chain.rb
             scripts/ci/check_fixable_dispositions.rb
             scripts/ci/hdf_threshold_v3.rb
           sparse-checkout-cone-mode: false
