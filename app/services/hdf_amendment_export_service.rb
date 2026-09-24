@@ -69,7 +69,7 @@ class HdfAmendmentExportService
   end
 
   def build_overrides
-    dispositions.map do |d|
+    overrides = dispositions.map do |d|
       override = {
         "type"          => d.kind,
         "requirementId" => d.control_id,
@@ -81,17 +81,18 @@ class HdfAmendmentExportService
       override["expiresAt"] = d.expiration.utc.iso8601 if d.expiration
       override
     end
+    # Tamper-evidence. Without it `hdf amend verify` reports "Chain: not
+    # established" and an override edited after export goes undetected.
+    Hdf::AmendmentChain.chain!(overrides)
   end
 
+  # Both the vocabulary and the chain live in Hdf::AmendmentChain, shared with
+  # the release generator. This service used to map an @handle to "github" and
+  # a bare name to "name" — NEITHER is in hdf's vocabulary, and hdf-libs 3.5.1
+  # never checked, so every document this endpoint produced was non-conformant
+  # and verified clean.
   def identity_for(who)
-    who = who.to_s
-    if who.start_with?("@")
-      { "type" => "github", "identifier" => who }
-    elsif who.include?("@")
-      { "type" => "email", "identifier" => who }
-    else
-      { "type" => "name", "identifier" => who }
-    end
+    Hdf::AmendmentChain.identity_for(who)
   end
 
   # Same dispositions → same id, so tenants can pin the artefact in a CI cache.

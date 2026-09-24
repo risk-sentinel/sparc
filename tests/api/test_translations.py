@@ -156,19 +156,21 @@ class TestPoamFromAmendments:
     """hdf-cli 3.2.0 replaced the direct hdf->oscal-poam path with
     hdf-amendments->oscal-poam (#663, upstream mitre/hdf-libs#104).
 
-    **This path is currently unavailable on the bundled converter.** hdf-cli
-    3.5.1 emits a POA&M that fails the NIST OSCAL schema on EVERY version SPARC
-    release from 1.1.1 through 1.2.2 for VALID amendments
-    input, so SPARC refuses to return it (#1017). Newer OSCAL does not help —
-    1.2.x rejects more, not fewer. Filed upstream as mitre/hdf-libs#236;
-    evidence and reproducer in
-    docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md.
+    **This path works.** It returns 200 with a schema-valid OSCAL POA&M.
 
-    These two examples previously asserted `200`, and passed, because nothing
-    validated the output — the exact situation #831 describes: a consumer asked
-    for a document, was told it succeeded, and got something no OSCAL tool would
-    accept. They assert the refusal now. When upstream fixes the converter they
-    will fail, which is the correct way to find out.
+    It did not, from #1017 until the 3.7.0 pin: hdf-cli 3.5.1 emitted a POA&M
+    that failed the NIST OSCAL schema on every release from 1.1.1 through
+    1.2.2, for VALID amendments input, so SPARC refused to return it. These
+    examples asserted that refusal, and their docstring said they would fail
+    when upstream fixed the converter, "which is the correct way to find out".
+
+    That is exactly what happened. mitre/hdf-libs#236 closed on 2026-09-08 and
+    the fix ships in 3.7.0. Measured on the same reproducer: 3.5.1 gives 3
+    violations on OSCAL 1.1.2 and 7 on 1.2.2; 3.7.0 is valid on both. So they
+    assert the working behaviour now.
+
+    The 502 contract is unchanged for a future converter regression — SPARC
+    still validates every OSCAL document it emits (#831, #1017).
     """
 
     @pytest.mark.happy
@@ -177,20 +179,19 @@ class TestPoamFromAmendments:
     ) -> None:
         response = _post_raw(admin_client, POAM_FROM_AMENDMENTS_PATH, _hdf_amendments_bytes())
 
-        assert response.status_code == 502, (
-            "expected 502 while hdf-cli 3.5.1 emits schema-invalid POA&Ms; a 200 here "
-            "means either the converter was fixed upstream (update this test and "
-            "docs/dev/hdf-libs-3.5.1-oscal-poam-upstream-report.md) or the validation "
-            f"guard regressed: {response.text[:300]}"
+        assert response.status_code == 200, (
+            "expected 200: hdf-libs#236 is fixed in 3.7.0. A 502 here means the "
+            "converter regressed or the pin moved back — SPARC validates every "
+            f"OSCAL document it emits and will not return an invalid one: {response.text[:300]}"
         )
 
         body = response.json()
-        assert "does not conform to the OSCAL schema" in body["error"], body
-        # The violations travel with the refusal, so a caller can see it is an
-        # upstream limitation rather than something wrong with their file.
-        details = " ".join(body["details"])
-        assert "poam" in details.lower(), body
-        assert "not a defect in" not in body["note"] or "converter" in body["note"], body
+        poam = body["plan-of-action-and-milestones"]
+        # A document, not an empty shell: #1017 exists because a 200 carrying
+        # nothing useful is worse than an error.
+        assert poam["uuid"], body
+        assert poam["poam-items"], body
+        assert poam["metadata"]["title"], body
 
     @pytest.mark.happy
     def test_multipart_upload_is_refused_the_same_way(
@@ -208,22 +209,31 @@ class TestPoamFromAmendments:
             },
         )
 
-        assert response.status_code == 502, response.text
-        assert "does not conform to the OSCAL schema" in response.json()["error"]
+        assert response.status_code == 200, response.text
+        assert response.json()["plan-of-action-and-milestones"]["poam-items"]
 
     @pytest.mark.validation
     def test_non_amendments_json_is_also_refused(self, admin_client: httpx.Client) -> None:
-        """The converter accepts any JSON object and emits `poam-items: null`.
+        """Wrong file in, error out — and the error now names the caller's fault.
 
-        Before #1017 that came back as a 200, so a caller who submitted the
-        wrong file was told the translation succeeded.
+        Three behaviours in sequence, each better than the last. Before #1017
+        this returned 200: the converter accepted any JSON object and emitted
+        `poam-items: null`, so someone who uploaded the wrong file was told the
+        translation succeeded. #1017 added output validation, which caught it
+        as a 502 — correct refusal, but 502 says "upstream is broken" when in
+        fact the input was wrong.
+
+        hdf-cli 3.7.0 rejects it at the converter ("invalid HDF structure:
+        missing overrides field"), so it is a 422: the caller's payload is the
+        problem and there is something they can do about it. This was the
+        second failure mode recorded in the upstream report.
         """
         response = _post_raw(
             admin_client, POAM_FROM_AMENDMENTS_PATH, b'{"not_hdf":"at all"}'
         )
 
-        assert response.status_code == 502, response.text
-        assert "poam-items" in " ".join(response.json()["details"]), response.text
+        assert response.status_code == 422, response.text
+        assert "overrides" in response.text, response.text
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

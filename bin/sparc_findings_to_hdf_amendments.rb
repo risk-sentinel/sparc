@@ -400,91 +400,16 @@ def deviation_reason(finding, rationale)
   parts.join(" ")
 end
 
-# hdf-amendments constrains appliedBy.type to a fixed vocabulary:
-#   email | username | system | agent | simple | other
-#
-# This emitted "github" for an @handle until it was measured against hdf-libs
-# 3.7.0. That value was NEVER in the vocabulary — but 3.5.1's `amend verify`
-# does not validate this field at all, so it reported "32 valid" over 32
-# non-conformant overrides. Proven, not inferred: on 3.5.1 the same document
-# verifies clean with type "totally-bogus-not-a-type" and with an empty string.
-# 3.7.0 enforces the enum, which is how a latent defect of ours surfaced as an
-# apparent upstream regression.
-#
-# `username` rather than `system`: upstream stamps machine-derived overrides
-# `system`, on the reasoning that a deterministic mapping is not agent judgment
-# (AmendmentsFromVex, ADR-0007). That applies to their VEX path, where no human
-# is named. Ours transcribes a disposition a PERSON recorded in the register —
-# `reviewed_by` — so the human authority is real and `system` would erase it.
-#
-# The identifier keeps the register's own spelling, @handle and all: it is the
-# value the evidence records, and rewriting it here would make the amendment
-# disagree with its source.
-def identity_for(reviewer)
-  if reviewer.to_s.start_with?("@")
-    { "type" => "username", "identifier" => reviewer.to_s }
-  else
-    { "type" => "email", "identifier" => reviewer.to_s }
-  end
-end
+# Identity vocabulary and the amendment chain are shared with the API export
+# path (HdfAmendmentExportService) — both emit hdf-amendments, and both carried
+# the same non-conformant identity mapping. One implementation, so a fix cannot
+# land on one emitter and miss the other. See lib/hdf/amendment_chain.rb.
+require_relative "../lib/hdf/amendment_chain"
 
-# ── Amendment chain (hdfutil.CanonicalJSON / ChecksumJSON) ──────────────────
-#
-# A port of hdf-utilities/go/canonicaljson.go. Three details decide whether a
-# chain written here verifies in hdf, and each is a place a reimplementation
-# drifts silently:
-#
-#   1. object keys sorted by BYTE order
-#   2. null-valued object keys REMOVED (nulls inside arrays kept — array
-#      position is significant)
-#   3. `<`, `>` and `&` escaped as \u003c, \u003e, \u0026 — Go's
-#      encoding/json does this by default and Ruby's JSON.generate does not.
-#      Not cosmetic: our rationales contain "Debian->UBI9" and "MEDIUM -> LOW",
-#      so a literal `>` would give a different digest for most overrides.
-#
-# Validated against upstream's own chained document
-# (.github/hdf-amendments/osv-scanner.json @ v3.7.0): this reproduces both of
-# its recorded previousChecksum values exactly.
-def strip_nulls(value)
-  case value
-  when Hash  then value.reject { |_, v| v.nil? }.transform_values { |v| strip_nulls(v) }
-  when Array then value.map { |v| strip_nulls(v) }
-  else value
-  end
-end
-
-def sort_keys(value)
-  case value
-  when Hash  then value.keys.sort_by(&:b).each_with_object({}) { |k, h| h[k] = sort_keys(value[k]) }
-  when Array then value.map { |v| sort_keys(v) }
-  else value
-  end
-end
-
-def canonical_json(value)
-  JSON.generate(sort_keys(strip_nulls(value)))
-      .gsub("<", "\\u003c").gsub(">", "\\u003e").gsub("&", "\\u0026")
-end
-
-def checksum_json(value)
-  Digest::SHA256.hexdigest(canonical_json(value))
-end
-
-# Mirrors shared.ChainOverrides: stamp previousChecksum in document order,
-# leaving the first unlinked, and compute each checksum AFTER its own
-# previousChecksum is set, so the link is self-inclusive.
-#
-# Without this every override is unchained and `hdf amend verify` reports
-# "Chain: not established" — upstream's words: a document with no
-# previousChecksum "gets no protection" against an amendment edited in place.
-def chain_overrides!(overrides)
-  previous = nil
-  overrides.each do |override|
-    override["previousChecksum"] = previous unless previous.nil?
-    previous = { "algorithm" => "sha256", "value" => checksum_json(override) }
-  end
-  overrides
-end
+def identity_for(reviewer) = Hdf::AmendmentChain.identity_for(reviewer)
+def chain_overrides!(overrides) = Hdf::AmendmentChain.chain!(overrides)
+def canonical_json(value) = Hdf::AmendmentChain.canonical_json(value)
+def checksum_json(value) = Hdf::AmendmentChain.checksum_json(value)
 
 def main(argv)
   opts = { input: "docs/compliance/sparc-findings.yml", output: "amendments.hdf.json", today: Date.today }
