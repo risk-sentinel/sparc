@@ -31,7 +31,8 @@ RSpec.describe FindingDispositionService do
   describe "#upsert linkage rules" do
     it "creates a falsePositive linked to Evidence" do
       disp = service.upsert(kind: "falsePositive", reason: "scanner wrong",
-                            decided_by: "a@b.co", linked_subject: create(:evidence))
+                            decided_by: "a@b.co", linked_subject: create(:evidence),
+                            expiration: 90.days.from_now)
       expect(disp).to be_persisted
       expect(disp.kind).to eq("falsePositive")
       expect(disp.signature_hash).to be_present
@@ -65,20 +66,22 @@ RSpec.describe FindingDispositionService do
 
     it "creates a poam linked to a PoamFinding" do
       disp = service.upsert(kind: "poam", reason: "tracked", decided_by: "a@b.co",
-                            linked_subject: create(:poam_finding))
+                            linked_subject: create(:poam_finding), expiration: 90.days.from_now)
       expect(disp.kind).to eq("poam")
       expect(disp.hdf_status).to eq("failed")
     end
 
     it "creates a riskAdjustment linked to a RiskAssessment" do
       disp = service.upsert(kind: "riskAdjustment", reason: "downgraded", decided_by: "a@b.co",
-                            linked_subject: create(:risk_assessment, authorization_boundary: boundary))
+                            linked_subject: create(:risk_assessment, authorization_boundary: boundary),
+                            expiration: 90.days.from_now)
       expect(disp.kind).to eq("riskAdjustment")
     end
 
     it "creates an inherited disposition linked to an upstream boundary" do
       disp = service.upsert(kind: "inherited", reason: "provided upstream", decided_by: "a@b.co",
-                            linked_subject: create(:authorization_boundary))
+                            linked_subject: create(:authorization_boundary),
+                            expiration: 90.days.from_now)
       expect(disp.kind).to eq("inherited")
     end
 
@@ -111,15 +114,17 @@ RSpec.describe FindingDispositionService do
 
     it "allows falsePositive on CRITICAL findings" do
       disp = service.upsert(kind: "falsePositive", reason: "unreachable", decided_by: "a@b.co",
-                            linked_subject: create(:evidence))
+                            linked_subject: create(:evidence), expiration: 90.days.from_now)
       expect(disp).to be_persisted
     end
   end
 
   describe "idempotency" do
     it "updates the single disposition for (boundary, control_id)" do
-      service.upsert(kind: "poam", reason: "first", decided_by: "a@b.co", linked_subject: create(:poam_finding))
-      service.upsert(kind: "falsePositive", reason: "second", decided_by: "a@b.co", linked_subject: create(:evidence))
+      service.upsert(kind: "poam", reason: "first", decided_by: "a@b.co",
+                     linked_subject: create(:poam_finding), expiration: 90.days.from_now)
+      service.upsert(kind: "falsePositive", reason: "second", decided_by: "a@b.co",
+                     linked_subject: create(:evidence), expiration: 90.days.from_now)
 
       dispositions = FindingDisposition.where(authorization_boundary: boundary, control_id: "CVE-1")
       expect(dispositions.count).to eq(1)

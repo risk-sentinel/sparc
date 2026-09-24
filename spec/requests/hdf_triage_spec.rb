@@ -67,7 +67,8 @@ RSpec.describe "HdfTriage", type: :request do
       evidence = create(:evidence)
       post triage_disposition_authorization_boundary_path(boundary),
            params: { finding_uuid: finding.uuid, kind: "falsePositive", reason: "scanner wrong",
-                     linked_subject_type: "Evidence", linked_subject_id: evidence.id }
+                     linked_subject_type: "Evidence", linked_subject_id: evidence.id,
+                     expiration: 90.days.from_now.to_date.to_s }
       expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
       expect(finding.disposition&.kind).to eq("falsePositive")
     end
@@ -150,7 +151,8 @@ RSpec.describe "HdfTriage", type: :request do
         sign_in_as(triager)
         post triage_disposition_authorization_boundary_path(
           boundary, finding_uuid: finding.uuid, kind: "poam", reason: "tracked",
-          linked_subject_type: "PoamFinding", linked_subject_id: poam_finding.id
+          linked_subject_type: "PoamFinding", linked_subject_id: poam_finding.id,
+          expiration: 90.days.from_now.to_date.to_s
         )
       end
 

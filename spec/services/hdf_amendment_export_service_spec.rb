@@ -76,7 +76,13 @@ RSpec.describe HdfAmendmentExportService do
     # stopped inventing POA&M deadlines.
     it "refuses to export a disposition with no expiry, and names it" do
       dispositioned("CVE-1")
-      dispositioned("CVE-NO-EXPIRY", kind: "falsePositive", expiration: nil)
+      # The model now REFUSES to create one of these, so the scenario has to be
+      # written past validation — which is exactly what it represents: a row
+      # recorded before the rule existed. That is why the export keeps its own
+      # guard instead of trusting the model, since validation only fires on
+      # save and no save is coming for a row already on disk.
+      legacy = dispositioned("CVE-NO-EXPIRY", kind: "falsePositive")
+      legacy.update_column(:expiration, nil)
 
       expect { service.export(verify: false) }
         .to raise_error(HdfAmendmentExportService::UnexportableDisposition) { |e|
