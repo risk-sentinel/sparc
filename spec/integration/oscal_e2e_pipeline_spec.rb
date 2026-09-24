@@ -812,6 +812,33 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
         end
       end
 
+      # ── mitre/hdf-libs#236, pinned at its MINIMUM ─────────────────────────
+      #
+      # The example above starts from SPARC's own POA&M export, which is rich
+      # enough that hdf-cli 3.5.1 already produced schema-valid output from it.
+      # That is precisely why it never caught #236: the defect showed on a
+      # MINIMAL amendments document, where the converter emitted a risk with no
+      # `statement`, an empty prop value and an empty party name.
+      #
+      # Measured on the committed reproducer, same input, both binaries:
+      #   3.5.1 -> INVALID (3 violations on OSCAL 1.1.2, 7 on 1.2.2)
+      #   3.7.0 -> VALID on both
+      #
+      # Upstream closed #236 on 2026-09-08 and the fix ships in 3.7.0, so this
+      # pins the minimum rather than only the comfortable case. If a future
+      # hdf-cli regresses it, this goes red instead of the endpoint quietly
+      # returning 502 again.
+      it "produces schema-valid OSCAL from a MINIMAL amendments document (hdf-libs#236)" do
+        minimal = Rails.root.join("tests/api/fixtures/sample.hdf-amendments.json")
+        expect(minimal).to exist, "the #236 reproducer fixture is missing"
+
+        oscal = HdfOscalTranslationService.new.oscal_poam_from_hdf_amendments(minimal.to_s)
+
+        expect_valid_json_and_yaml(JSON.generate(oscal),
+                                   model_type: :poam,
+                                   label: "Stage 5 hdf-cli POA&M (minimal, #236)")
+      end
+
       # Enrichment is exercised against a document the schema accepts, because
       # the service will not return one it rejects (#831). Using real hdf-cli
       # output here would fail on the upstream converter defect rather than on
