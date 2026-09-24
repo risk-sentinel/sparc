@@ -107,6 +107,18 @@ class TestUuidBadgeCopies:
                 f"clipboard holds {got!r}, expected the displayed UUID {expected!r}"
             )
 
+        # The outcome is ANNOUNCED, not only shown. The controller guards this
+        # with `hasStatusTarget`, so a live region that stopped resolving would
+        # silently announce nothing and every other assertion here would still
+        # pass — which is exactly what happened when the element changed from a
+        # span with role="status" to <output> (Web:S6819).
+        status = badge.locator("[data-clipboard-target='status']")
+        assert status.count() == 1, "the live region is missing"
+        assert status.evaluate("el => el.tagName.toLowerCase()") == "output"
+        assert "copied" in status.inner_text().strip().lower(), (
+            f"nothing was announced: {status.inner_text()!r}"
+        )
+
         # The click is where an inline handler would be rejected, so this is the
         # assertion that matters most.
         assert_no_csp_violations(authed_page, during="UUID copy click")
