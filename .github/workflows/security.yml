@@ -1766,6 +1766,10 @@ jobs:
             lib/hdf/amendment_chain.rb
             scripts/ci/check_fixable_dispositions.rb
             scripts/ci/hdf_threshold_v3.rb
+            # #1186 / #1184 — both run in this job. Literal paths: a script
+            # missing from this list fails at RUNTIME, not at checkout.
+            bin/codeql_pin_check.rb
+            bin/hdf_amend_chain_gate.rb
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (converter only — no bundle)
@@ -1778,6 +1782,14 @@ jobs:
         with:
           name: hdf-results
           path: hdf-results/
+
+      # #1186 — the HDF carries only `path LINE n` for a CodeQL result; the
+      # fingerprints the register pins to are in the SARIF.
+      - name: Download CodeQL SARIF (for the disposition pin check)
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: codeql-sarif
+          path: codeql-sarif/
 
       # hdf-cli, compiled from source with the same pinned toolchain the image
       # uses (#1001). This job used to run bin/install-hdf.sh, which downloads
@@ -1837,9 +1849,28 @@ jobs:
           jq '.overrides | length' amendments.hdf.json >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Verify amendment document against the hdf-cli amendments schema
+      # #1186 — an override matches a CodeQL RULE, so a disposition for
+      # `rb/csrf-protection-disabled` would also waive every FUTURE instance.
+      # Register entries for a rule pin the exact results they were reviewed
+      # against; this fails unless the live results are exactly that set, in
+      # both directions (a new result, or a pin whose line is gone). Runs
+      # BEFORE the amendments are applied, because once applied the rule is
+      # suppressed wholesale and nothing downstream can tell.
+      - name: Pin CodeQL dispositions to their results (#1186)
         run: |
-          hdf amend verify amendments.hdf.json
+          ruby bin/codeql_pin_check.rb \
+            --register docs/compliance/sparc-findings.yml \
+            --sarif codeql-sarif/codeql-results.sarif \
+            --hdf hdf-results/codeql.hdf.json
+
+      # #1184 — `hdf amend verify` exits 0 on an UNCHAINED document (measured on
+      # 3.7.0), so its exit code proves the chain is unbroken, never that it
+      # exists. The gate reads the chain LINE and fails on "not established"
+      # as well as "broken": absent tamper evidence and defeated tamper evidence
+      # are the same outcome.
+      - name: Verify the amendment document, and that its chain is established (#1184)
+        run: |
+          ruby bin/hdf_amend_chain_gate.rb amendments.hdf.json
           hdf amend list amendments.hdf.json | head -20
 
       - name: Apply amendments to each HDF
@@ -1863,30 +1894,44 @@ jobs:
           # and convert cleanly; grype and cyclonedx are still saf and cannot
           # reach v3.
           #
-          # So try v3 per document and fall back to v2 where it cannot get
-          # there. The fallback is visible rather than silent: the threshold
-          # step reports which path each document took.
+          # #1184 — AMENDMENTS ARE APPLIED ONCE, TO v3. The v2 copy in amended/
+          # is a DOWNPIN of that amended v3 document, not a second apply.
+          #
+          # This step used to also run `hdf amend apply` against every raw v2
+          # document. On hdf-cli 3.5.1 that no-op'd with exit 0; on 3.7.0 it
+          # REFUSES v2 input, so all 12 documents fell through to
+          # `cp "$hdf" amended/` — and the `amended-hdfs` artifact published as
+          # evidence was byte-identical to the RAW results (177,872 B each, run
+          # 36055248647). Measured on 3.7.0 (2026-09-27): the downpinned v2
+          # keeps every control and carries the disposition as `status:
+          # skipped` + `waiver_data` — trivy-container breaches as raw v2 (21
+          # HIGH) and passes both downpinned and on the v3 engine.
+          #
+          # Every document reaches v3 today (12 of 12, since #962 moved the
+          # SARIF scanners to `hdf convert`). One that stops reaching it FAILS
+          # the gate: its dispositions would silently not apply, which is the
+          # #1067 defect this path was built to end.
+          V3_FAILED=0
           for hdf in hdf-results/*.hdf.json; do
             [ -f "$hdf" ] || continue
             name=$(basename "$hdf")
-            if hdf convert "$hdf" --from hdf@2 --to hdf -o "amended-v3/$name.v3" 2>/dev/null \
+            if hdf convert "$hdf" --from hdf@2 --to hdf -o "amended-v3/$name.v3" \
                && hdf amend apply --results "amended-v3/$name.v3" \
-                    --amendments amendments.hdf.json -o "amended-v3/$name" 2>/dev/null; then
+                    --amendments amendments.hdf.json -o "amended-v3/$name" \
+               && hdf convert "amended-v3/$name" --from hdf --to hdf@2 -o "amended/$name"; then
               rm -f "amended-v3/$name.v3"
-              echo "  $name: v3 — amendments APPLY"
+              echo "  $name: v3 — amendments APPLY (v2 downpinned from it)"
             else
-              rm -f "amended-v3/$name" "amended-v3/$name.v3"
-              echo "  $name: v2 only — amendments cannot apply (saf-produced)"
+              rm -f "amended-v3/$name" "amended-v3/$name.v3" "amended/$name"
+              V3_FAILED=$((V3_FAILED + 1))
+              echo "::error::$name could not be amended through v3 — its dispositions would not apply"
             fi
-
-            # The v2 copy is produced for every document regardless: it is what
-            # saf reads for anything that could not reach v3.
-            hdf amend apply --results "$hdf" --amendments amendments.hdf.json -o "amended/$name" 2>/dev/null || {
-              echo "::warning::hdf amend apply failed for $name; using raw HDF as fallback"
-              cp "$hdf" "amended/$name"
-            }
           done
-          echo "v3 (amendments effective): $(ls amended-v3 2>/dev/null | wc -l) of $(ls amended | wc -l)"
+          echo "v3 (amendments effective): $(find amended-v3 -name '*.hdf.json' | wc -l) of $(find hdf-results -name '*.hdf.json' | wc -l)"
+          if [ "$V3_FAILED" -gt 0 ]; then
+            echo "::error::$V3_FAILED document(s) did not reach v3 — refusing to assess raw results as if amended"
+            exit 1
+          fi
 
       # #1048 — this step previously read:
       #
@@ -2129,12 +2174,17 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
-      - name: Upload amended HDFs (debug)
+      # #1184 — amended/ is now the v2 DOWNPIN of the amended v3 documents,
+      # so this is evidence rather than a copy of the raw results. The v3
+      # documents the gate actually graded are published beside it.
+      - name: Upload amended HDFs
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: amended-hdfs
-          path: amended/
+          path: |
+            amended/
+            amended-v3/
           retention-days: 30
 
   # ═══════════════════════════════════════════════════════════════

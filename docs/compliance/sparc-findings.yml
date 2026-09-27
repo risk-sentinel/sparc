@@ -880,3 +880,79 @@ findings:
         sees untrusted input
     kev_checked: '2026-09-21'
     kev_listed: false
+# ── CodeQL SAST rules (#1186) — dispositioned per RESULT, not per rule ───────
+#
+# hdf-cli 3.5.1 graded CodeQL results from `problem.severity` and flattened
+# every one of these to MEDIUM; 3.7.0 reads the rules' declared
+# `security-severity` (8.8 and 7.5), so both became HIGH and breached
+# `codeql.yml failed.high.max: 0` on the first 3.7.0 run (PR #1185, 2026-09-24).
+# Nothing in the code changed: the gate was given the wrong severity before.
+#
+# An override matches a CodeQL RULE, so each entry pins the exact results it
+# was reviewed against (`pinned_results`, CodeQL's primaryLocationLineHash).
+# bin/codeql_pin_check.rb fails the gate if the live results differ in either
+# direction, so a new instance of either rule still breaches.
+#
+# DRAFTED, NOT APPROVED. `reviewed_by` is the reviewer's to author — until it
+# is, the converter refuses the register and security_gate stays red. That is
+# deliberate: an approval field is authored by the approver.
+- cve_id: rb/csrf-protection-disabled
+  package: sparc (application code — CodeQL rb/csrf-protection-disabled)
+  installed_version: n/a
+  fixed_version: n/a
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT A VULNERABILITY IN THESE THREE PLACES — each skip of Rails forgery protection is deliberate,
+    documented at the site, and covered by a different control. (1) api/v1/sessions_controller.rb — the
+    only credential this endpoint accepts is a Bearer token, which a cross-origin page cannot make a browser
+    attach; there is no cookie session to forge a request with. The controller has exactly one action, with
+    a note to scope the skip if a second is added. (2) omniauth_callbacks_controller.rb — the OAuth/OIDC
+    `state` parameter IS the forgery protection for an IdP callback, validated by OmniAuth before the action
+    runs; scoped `only: :create`. (3) security/csp_reports_controller.rb — a write-only, unauthenticated CSP
+    report beacon that browsers POST without a token; it changes no state, is Rack::Attack rate-limited and
+    reads at most 8 KB. CodeQL declares the rule at CVSS 8.8, which is the grading for a skip on a
+    cookie-authenticated state-changing endpoint; none of these is one. Pinned to the three results; any
+    new skip breaches the gate (#1186).'
+  nist_control: sc-23
+  reviewed_by: ''
+  discovery_date: '2026-09-24'
+  next_review_date: '2026-10-24'
+  pinned_results:
+  - path: app/controllers/api/v1/sessions_controller.rb
+    line_hash: bcb8fce034920d18:1
+  - path: app/controllers/omniauth_callbacks_controller.rb
+    line_hash: 65a80ff508f87093:1
+  - path: app/controllers/security/csp_reports_controller.rb
+    line_hash: 70c0ede27ea6218:1
+- cve_id: rb/clear-text-storage-sensitive-data
+  package: sparc (application code — CodeQL rb/clear-text-storage-sensitive-data)
+  installed_version: n/a
+  fixed_version: n/a
+  severity: HIGH
+  disposition: false_positive
+  rationale: 'NOT A VULNERABILITY — all five results are NAME matches on values that are not secrets, traced
+    to source. (1)+(2) models/user.rb `self.password =` / `self.password_confirmation =` — has_secure_password
+    attributes; what is stored is the bcrypt `password_digest`, never the value. (3) models/user.rb
+    `update!(attrs)` in reactivate! — the tainted key is `must_reset_password`, a boolean flag. (4)
+    models/audit_event.rb `create!` — the taint source is PivSessionsController#cert_diagnostics, which
+    records `cert_header` (the configured header NAME, e.g. X-SSL-Client-Cert) and `cert_bytes` (an integer
+    byte length) — never the certificate; the same line carries a GitHub code-scanning dismissal (alert #24,
+    2026-07-28) that SARIF->HDF conversion does not see. (5) services/ssp_wizard_service.rb — a FIPS 199
+    impact level (low/moderate/high); its `lgtm[...]` suppression comment is dead syntax CodeQL no longer
+    reads, and is left in place because editing the line would change the pinned fingerprint. Pinned to the
+    five results; any new instance breaches the gate (#1186).'
+  nist_control: sc-28
+  reviewed_by: ''
+  discovery_date: '2026-09-24'
+  next_review_date: '2026-10-24'
+  pinned_results:
+  - path: app/models/audit_event.rb
+    line_hash: af31b0950cdb3e75:1
+  - path: app/models/user.rb
+    line_hash: 9c1de0215b3c2b7d:1
+  - path: app/models/user.rb
+    line_hash: 932e2aaaf1d5e8f7:1
+  - path: app/models/user.rb
+    line_hash: 96ec6e7986178e77:1
+  - path: app/services/ssp_wizard_service.rb
+    line_hash: 65a9810537cf814d:1
