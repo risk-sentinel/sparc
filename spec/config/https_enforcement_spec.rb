@@ -3,6 +3,16 @@
 require "rails_helper"
 
 RSpec.describe "HTTPS enforcement configuration" do
+  let(:probe) { Struct.new(:path) }
+
+  # The `exclude: ->(request) { ... }` lambda, exactly as written in the file.
+  def redirect_exclusion(source)
+    body = source[/exclude:\s*(->\(request\)\s*\{[^}]*\})/, 1]
+    raise "no redirect exclusion lambda found" unless body
+
+    eval(body) # rubocop:disable Security/Eval -- our own config source, read from the repo
+  end
+
   describe "production environment" do
     let(:production_config_path) { Rails.root.join("config/environments/production.rb") }
     let(:production_source) { File.read(production_config_path) }
@@ -21,8 +31,16 @@ RSpec.describe "HTTPS enforcement configuration" do
       expect(production_source).to include("expires: 1.year")
     end
 
-    it "excludes the /up health-check path from SSL redirect" do
-      expect(production_source).to include('request.path == "/up"')
+    # #1151 — evaluated, not string-matched: the lambda is pulled out of the
+    # config source and run, so a rewrite that keeps the behaviour passes and
+    # one that loses a probe path (or excludes everything) fails.
+    it "excludes both health probes, and nothing else, from SSL redirect" do
+      exclude = redirect_exclusion(production_source)
+
+      expect(exclude.call(probe.new("/up"))).to be(true)
+      expect(exclude.call(probe.new("/up/ready"))).to be(true)
+      expect(exclude.call(probe.new("/login"))).to be(false)
+      expect(exclude.call(probe.new("/up/other"))).to be(false)
     end
   end
 
@@ -69,8 +87,12 @@ RSpec.describe "HTTPS enforcement configuration" do
       expect(development_source).to include("config.force_ssl = true")
     end
 
-    it "excludes /up health check from SSL redirect in development" do
-      expect(development_source).to include('request.path == "/up"')
+    it "excludes both health probes, and nothing else, from SSL redirect in development" do
+      exclude = redirect_exclusion(development_source)
+
+      expect(exclude.call(probe.new("/up"))).to be(true)
+      expect(exclude.call(probe.new("/up/ready"))).to be(true)
+      expect(exclude.call(probe.new("/login"))).to be(false)
     end
 
     it "configures redirect port for non-standard HTTPS port" do
