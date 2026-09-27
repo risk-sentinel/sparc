@@ -49,7 +49,7 @@ pg_dump "$DATABASE_URL" -Fc -f sparc-pre-upgrade-$(date +%Y%m%d).dump
 
 ## Step 4 — Check for drift (recommended)
 
-`bin/schema_drift_sql` prints a plain-SQL check of every column the application expects. It is dependency-free — no Rails, no gems, no database connection of its own — so it can be generated from a **newer** image and run against an **older** database.
+`bin/schema_drift_sql` prints a plain-SQL check of every table and column the application expects. It is dependency-free — no Rails, no gems, no database connection of its own — so it can be generated from a **newer** image and run against an **older** database.
 
 The container entrypoint waits for PostgreSQL before running anything, so bypass it with `--entrypoint`:
 
@@ -172,6 +172,33 @@ It compares the live database against the schema the code expects and **exits no
 
 Available from v1.16.3 onward. For anything older, use the [SQL drift check](#step-4--check-for-drift-recommended), which works against any database.
 
+In releases after v1.16.3 it also checks each column's **type**, foreign keys and extensions, and with `STRICT=1` each column's nullability and default and each index's shape:
+
+```bash
+docker compose exec web env STRICT=1 bin/rails db:verify_schema
+```
+
+---
+
+## The boot gate (releases after v1.16.3)
+
+From the release after v1.16.3, **a container checks its own schema before it serves**. After `db:prepare`, and before the web server binds its port, the entrypoint runs:
+
+1. **`db:reconcile_schema`** — creates whatever `db/schema.rb` declares and the database lacks: extensions, tables, columns, indexes, foreign keys. **Additive only**: it never drops, renames or retypes anything. It runs in one transaction, so it either repairs completely or changes nothing, and it **refuses** — changing nothing — when the drift cannot be fixed by adding (a column of the wrong type), when a missing `NOT NULL` column has no default and its table has rows, or when any statement fails (for example a unique index over duplicate data). Every repair or refusal is written to the **audit log** (`schema_reconciled` / `schema_reconciliation_refused`), with the exact SQL.
+2. **`db:verify_schema`** — fails on any remaining structural drift.
+
+If either fails, **the container exits before serving**, so your orchestrator keeps the previous version running and the deployment fails, instead of the application serving errors. There is no switch to bypass it.
+
+To see what reconciliation would do without doing it:
+
+```bash
+docker compose exec web env DRY_RUN=1 bin/rails db:reconcile_schema
+```
+
+**If a new version will not start**, read the container log: the report names every difference and why reconciliation refused. Restore the backup from [Step 3](#step-3--back-up-the-database) if you need the previous version back while you resolve it, and open an issue with the report.
+
+Then point your load balancer's health check at **`/up/ready`**, which returns `503` if the schema drifts after boot — see [Core Functions](Core-Functions#container-deployment).
+
 ---
 
 ## If verification reports drift
@@ -180,7 +207,7 @@ Do not run `db:schema:load` against a populated database — it drops data.
 
 1. **Coming from v1.15.x or older and you skipped v1.16.0?** That is the likely cause. Restore your backup and follow [Path B](#path-b--upgrading-from-a-release-older-than-v1160).
 2. **Drift limited to the seven columns** on `authorization_boundaries`, `ssp_information_types` and `cdef_controls`? That is the v1.16.2 gap. Upgrading to v1.16.3 or later repairs it automatically.
-3. **Missing tables, not just columns?** The SQL drift check cannot see those — use `db:verify_schema`, or the table check above. A database on v1.15.x that upgraded directly is missing four table-creating migrations.
+3. **Missing tables, not just columns?** The SQL drift check in **v1.16.3 and earlier** images cannot see those — use `db:verify_schema`, or the table check above; later images report them. A database on v1.15.x that upgraded directly is missing four table-creating migrations.
 4. **Anything else** — capture the `db:verify_schema` output and open an issue at [risk-sentinel/sparc/issues](https://github.com/risk-sentinel/sparc/issues). Include the release you upgraded from, the release you upgraded to, and the full drift report.
 
 ---
@@ -199,6 +226,7 @@ This is why the schema check exists, and why it is the step that actually tells 
 
 | Release | Note |
 |---|---|
+| **after v1.16.3** | Adds the [boot gate](#the-boot-gate-releases-after-v1163), `db:reconcile_schema`, the `/up` and `/up/ready` health probes, and definition-level checks in `db:verify_schema` (`STRICT=1`). `bin/schema_drift_sql` reports missing tables. |
 | **v1.16.3** | Repairs databases affected by v1.16.2. Adds `db:verify_schema` and `bin/schema_drift_sql`. |
 | **v1.16.2** | **Do not upgrade an existing deployment into this release.** Fresh installs are unaffected. Go to v1.16.3. |
 | **v1.16.1** | Introduced the migration squash. The last release reachable directly from v1.15.x is **v1.16.0**, not this one. |

@@ -356,9 +356,26 @@ on a production database with existing data is a deployment blocker.
 6. **Foreign keys on existing tables** must use `null: true` unless
    a backfill strategy is included in the same migration.
 
-7. **Squash migrations** must include column-level checks for existing
-   databases — not just `table_exists?` — to handle databases that
-   partially applied individual migrations before the squash.
+7. **Squash migrations** — a squash stamps a version and runs no DDL, which
+   is correct for a FRESH database and wrong for any deployment that had not
+   yet run what the squash archived (#1147, #1151). This rule used to ask for
+   column-level checks inside the squash; that cannot work, because an
+   archived squash is dead code that the database needing it never executes.
+   What protects an upgrade now lives **outside any squash**:
+   - the container boot gate runs `db:reconcile_schema` then `db:verify_schema`
+     after `db:prepare` and refuses to start the web server on structural drift;
+   - `/up/ready` reports schema drift to the load balancer (counts only);
+   - the `upgrade_path` CI job builds a database with the **published image of
+     the last release** and upgrades it with the branch, failing on STRICT drift.
+
+8. **Never archive a migration that a supported deployment may not have run.**
+   "The squashed schema captures it" is true only for `db:schema:load`;
+   `db:migrate` never reads `schema.rb`. Qualification for archiving is that
+   **every supported deployment has already run it** — for the current floor,
+   that means it shipped in **v1.16.3** or earlier (owner-decided 2026-09-20).
+   And **"no pending migrations" is not evidence the schema is current**: run
+   `STRICT=1 bin/rails db:verify_schema`, or `bin/upgrade_path_check`, which
+   answer the question that matters.
 
 ### What NOT to Do
 

@@ -935,7 +935,7 @@ Configured in `config/environments/production.rb`:
 | HSTS `max-age` | 1 year | Browsers remember to use HTTPS |
 | HSTS `subdomains` | `true` | Covers all subdomains |
 | HSTS `preload` | `true` | Eligible for browser preload lists |
-| Health-check bypass | `/up` excluded | Container probes (ALB, K8s) use HTTP internally |
+| Health-check bypass | `/up` and `/up/ready` excluded | Container probes (ALB, K8s) use HTTP internally |
 
 Set `FORCE_SSL=false` to disable (e.g., behind a proxy that already handles HTTPS).
 
@@ -963,7 +963,18 @@ Development mode (`Rails.env.development?`) does not set `force_ssl`, so `http:/
 
 ### Container Deployment
 
-The Docker image exposes port 80 (HTTP). HTTPS termination is handled at the reverse proxy / load balancer layer (Nginx, Traefik, ALB). The `/up` health-check endpoint responds over HTTP so internal probes work without TLS.
+The Docker image serves HTTP on port **3000**. HTTPS termination is handled at the reverse proxy / load balancer layer (Nginx, Caddy, Traefik, ALB).
+
+**Health probes** (releases after v1.16.3) — both answer over plain HTTP and need no credentials:
+
+| Path | Use it for | Answers |
+|---|---|---|
+| `/up` | **liveness** — restart the container if it stops answering | `200` while the process serves; never touches the database |
+| `/up/ready` | **readiness** — the load balancer's target health check | `200` when the database answers, no migration is pending and the schema matches; otherwise `503` with counts only |
+
+Point the load balancer's health check at **`/up/ready`**. A proxy-level check such as an NGINX `/nginx-health` proves only that the proxy is listening: when v1.16.2 left existing databases missing seven columns, every layer of that kind reported healthy while boundary pages returned 500. Earlier versions of this page said `/up` answered probes; no route served it until the release after v1.16.3.
+
+The container also **refuses to start** its web server when the database schema does not match the image — see [Upgrading](Upgrading#the-boot-gate-releases-after-v1163).
 
 ### Version Constant
 
