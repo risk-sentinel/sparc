@@ -60,14 +60,14 @@ authentication mode coverage matrix.
 > with it. Issues still *say* v1.17.1 in their own comment threads where they
 > were moved there by hand; the milestone is the authority, not the prose.
 
-**Open: 10. Closed: 9.** Re-measured **2026-09-27** from one grouped query
+**Open: 11. Closed: 9.** Re-measured **2026-09-27** from one grouped query
 (`gh issue list --state open --limit 300 --json number,milestone`, grouped by
 milestone) and `gh issue list --milestone v1.17.0 --state closed --limit 300`.
 **This is the current phase.**
 
 - **Closed on the milestone (9):** #871 #1103 #1144 #1155 #1159 #1161 #1162
   #1164 #1183.
-- **Open (10):** #1109 #1115 #1151 #1154 #1172 #1178 #1179 #1181 #1184 #1186.
+- **Open (11):** #1109 #1115 #1151 #1154 #1172 #1178 #1179 #1181 #1184 #1186 #1189.
 
 **What moved since the last pass (2026-09-22), and why this file fell behind.**
 Four PRs merged without a plan update: #1174 (AK), #1182 (#1180), #1185 (#1183)
@@ -90,6 +90,7 @@ whenever it is done. One of those earns a release slot and the other does not.
 | --- | --- | --- | --- |
 | *delivered in flight* | ~~#1103~~ ~~#1180~~ ~~#1183~~ ~~#1175~~ ~~#1177~~ | **#1103** — PR #1163 (2026-09-20): UI-uploaded CDEFs resolved no NIST mappings or regions because enrichment was private to the AWS Labs importer; MITRE re-vendored 106/rev4 → 394/rev4+5; the gate stack gained the database volume whose absence let the squash defect ship. **#1180** — PR #1182 (2026-09-24, no milestone): every object UUID on screen and copyable, from one shared component (`shared/_uuid_badge` + `clipboard_controller`). **#1183** — PR #1185 (2026-09-24): hdf-cli pinned to **3.7.0**; 3.5.1's amendment and schema checks were false passes, and the amendment register now chains. **#1175** — PR #1174: family-id normalisation scoped to its vocabulary. **#1177** — fixed by `fa785334` in PR #1174 (CMS attestation export ordered, so deliveries are reproducible); that PR carried no closing keyword for it, so it was closed by hand 2026-09-27. | delivered |
 | **AE — Upgrade safety & gate truth** 🔄 **IN FLIGHT** — branch `fix/1151_1186_upgrade_gate_and_gate_grading` | **#1151** **#1186** **#1184** · ~~#1144~~ ~~#1164~~ | **#1151**: a container must not serve traffic on a schema it does not match. Re-scoped per the issue's own 09-19 investigation: `/up` + `/up/ready` health endpoints (there is **no health route today**, though `production.rb` already assumes `/up`), a boot gate in the entrypoint that refuses to bind the port on drift, a **generated additive reconciliation** from `db/schema.rb` with an audit record (owner-decided 2026-09-27: it lands here, not split out), and an `upgrade_path` CI job that migrates a database built by the **published** previous-release image forward (owner-decided: **advisory first**, promote to required after one release). **#1186**: `security_gate` has been **red on `main` since PR #1185** (2026-09-24). Measured: the breach is **two CodeQL rules**, not the three CSRF sites the issue names — `rb/csrf-protection-disabled` (0.88, 3 results) and `rb/clear-text-storage-sensitive-data` (0.75, 5 results, all name-matched false positives). Overrides match on the RULE, so the owner chose register entries **pinned to CodeQL result fingerprints**: a new instance still breaches. The owner authors the dispositions. **#1184**: the gate fails unless `hdf amend verify` reports the chain **established**; the dead v2 `amend apply` leg (which fails 12/12 under 3.7.0 and uploads raw results as `amended-hdfs`) is replaced by downpins of the v3 output. #1144 and #1164 delivered in PR #1165. **Built 2026-09-27 on the branch, one day against 7–9d** — the measurement had been done before planning. Proven on a UBI9 image built from the branch, over a RESTORED v1.16.3 database: the real v1.16.3 → branch upgrade reconciled nothing and verified strict-clean on 98 tables; with a column and an index dropped the container repaired both (2 statements, audited) and served; with a NOT NULL column dropped from a populated table it refused, changed nothing and exited 1 before binding. `bin/upgrade_path_check` both legs: v1.16.0 → v1.16.2 FAILS naming #1147's seven columns, v1.16.0 → v1.16.3 passes. Severity survey (hdf 3.5.1 vs 3.7.0 over every SARIF on run 36055248647): **only CodeQL crossed a band**; trivy moved within band on 20 of 21. | **7–9d → 1d** |
+| **AM — Base image spike** | **#1189** | **SPIKE ONLY — owner, 2026-09-27: measure in this milestone, NOT a commitment to upgrade.** Would a UBI 10 minimal base retire any of the **32 register entries** carried against the UBI9 base (11 `deferred` with no upstream fix, 6 HIGH risk-adjusted deviations, 15 HIGH not-applicable), and what would it break (Ruby and native gems, Postgres client tools, locale, CA trust, arm64, FIPS/OpenSSL, the signing pipeline)? Deliverable: a measured per-entry table and a recommendation; any adoption is its own issue. Filed out of AE, after the owner asked whether the Debian-era deferrals were still real. They are: measured present on RHEL 9.8. | spike |
 | **AL — Evidence identity** | **#1178** → **#1179** | Filed 2026-09-23 from `sparc-validate#432`/`#441`, milestoned 2026-09-27. **#1178** exposes `AuthorizationBoundary#uuid` in the API serializer. The column already exists (`gen_random_uuid()`, non-null), and its absence forces `sparc-validate` to *mint* a second identity for a system SPARC already identifies. **#1179** has SPARC mint and export `hdf-system` documents, so `systemRef` in every HDF v3 results and amendments document resolves to something. Most of the mapping exists in `authorization_boundaries`. #1178 is small and gates #1179. | 0.5d + 3d |
 | **AF — Catalog truth** | **#1115** **#1172** | Must precede **AI**: #1154's second ask is to publish the KSI mapping documents Horizon reads, and the catalog they would be published from has drifted. Measured against FedRAMP `2026.07.14.01`: five theme codes renamed (`EDU`→`CED`, `CM`→`CMT`, `IR`→`INR`, `POL`→`PIY`, `REC`→`RPL`), `AUTH` is no longer a KSI family at all, and **every** indicator id is re-keyed from numbered to mnemonic. SPARC is the flagship and this is the catalog customers see. **#1172 joined this bundle 2026-09-21**: #1115 fixes the data once, #1172 is the ingestion capability whose absence caused the drift. Measured live against `FedRAMP/rules` `2026.09.13.02` — SPARC seeds **11 themes / 54 indicators** from a 431-line hand-written Ruby seed, upstream publishes **10 / 46** plus a JSON Schema with `KSI` as a top-level property. There is a `KsiExportService` and no importer at all. | 2d + 3d |
 | **AI — Horizon contract surface** | **#1154** **#1181** | Three asks, sequenced by the issue: (1) `sparc-validate` rules for the nine SPARC-namespace props, gating Horizon's **P0**. **The 09-22 comment makes the linked schema stale**: adopt the current `sparc-namespace-props.v1.schema.json` (`const` = `https://sparc.risk-sentinel.org/ns`), not the copy linked at filing. (2) Publish the KSI and 800-53 mapping documents with provenance, which depends on **AF**. (3) Confirm the Delivery API surface; Horizon's `fixtures/sparc/` were written from `docs/api`, not live responses. **#1181 joined 2026-09-27** because it *is* the gap in (3): only `cdef_documents` export OSCAL over the API; SSP, SAP, SAR and POA&M have the export services and no API route to them. | 6d + 1.5d |
@@ -99,7 +100,7 @@ whenever it is done. One of those earns a release slot and the other does not.
 | **AK — Deviation approval, mechanized** ✅ **DELIVERED** — PR #1174, merged 2026-09-23 (with #1175) | ~~#871~~ | **Next after AH.** A single admin cannot approve their own PR, so `deviation-requested` -> `deviation-approved` is structurally unreachable and the only route is an admin merge past a red gate. AH hit this for real: six base-image HIGH findings that are present but unreachable and have no upstream fix need a `risk_adjustment`, and there is no way to grant it. **PR #1173 merges by override, so `main` carries six `deviation-requested` entries and the container gate stays RED until this lands.** The flow is an admin commenting `/approve-deviation` — a comment is not a review, so the self-approval block never applies — with a workflow that verifies the commenter, flips the state and pushes with an App or PAT token, because a `GITHUB_TOKEN` push does not trigger workflow runs. Two properties must hold: workflow AND logic come from `main` (a PR that supplies its own `apply_deviation_approval.rb` would self-approve), and `action: created` only. **The escape hatch it retires, `admin-merge-bypass`, has ZERO spec coverage today** while carrying 8 retired entries. #871's own PR carries no deviation so nothing blocks it; the first deviation PR after it is the live test, and #1173's six are already queued to be it. **IN FLIGHT 2026-09-22.** Opening it found that **#1173 had broken `apply_deviation_approval.rb`**: the script edits the register line by line — deliberately, because a YAML round-trip destroys its comments — and #1173's round-trip re-indented the file, so its depth-pinned matchers matched nothing and it refused every approval. Sixteen green specs missed it because each built its own fixture at the old depth; **the fixture was never the artifact**. Repaired, and four specs now drive the applier against the committed register itself. The flow departs from the issue text in one place: the mechanism is recorded as `approve-deviation-comment`, not `review`, because no review occurs and the gate corroborates against the COMMENT list. **Delivered 2026-09-23.** Not yet exercised live: the six #1173 entries were approved through `admin-merge-bypass` (6 of 6 in the register on 2026-09-27), so the first real `/approve-deviation` is still ahead. | 3d |
 
 **The ordering that matters now is AE → AF → AI**, with **AL** in parallel once
-#1178 lands and **AJ** independent. AE goes first because `main`'s security gate
+#1178 lands, and **AJ** and the **AM** spike independent. AE goes first because `main`'s security gate
 is red until #1186 is dispositioned, and every PR after it inherits that red. AG
 → AH, the identity chain AI depended on, is complete.
 
@@ -143,8 +144,8 @@ figure. The large single item inside it is the reconciliation engine.
 
 ## Open work — measured 2026-09-27
 
-Re-measured against the live repository, not carried forward. **563 issues**;
-**526 are closed**, **37 open**. What remains:
+Re-measured against the live repository, not carried forward. **564 issues**;
+**526 are closed**, **38 open**. What remains:
 
 > **This section read 36 open for part of a day.** That figure was measured
 > minutes before #1162 was filed, and then quoted rather than re-measured. It is
@@ -182,13 +183,13 @@ Re-measured against the live repository, not carried forward. **563 issues**;
 | --- | --- |
 | Closed | **526** |
 | Open, on `ci.v0.0.1` / `v1.16.0` / `v1.16.1` | **0** — all shipped (22, 87 and 22 issues) |
-| Open, on `v1.17.0` | **10** — #1109 #1115 #1151 #1154 #1172 #1178 #1179 #1181 #1184 #1186 (bundles in Phase 19) |
+| Open, on `v1.17.0` | **11** — #1109 #1115 #1151 #1154 #1172 #1178 #1179 #1181 #1184 #1186 #1189 (bundles in Phase 19) |
 | Open, on `v1.17.1` | **9** — #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 |
 | **Open, on NO milestone** | **18** (19 on 09-22, 27 on 09-20, 24 on 09-17, 22 on 09-05, 25 on 09-03, 10 on 08-25) — see below |
 
-The reconciliation, from one grouped query on 2026-09-27: **10 + 9 + 18 = 37,
-and 526 + 37 = 563.** Since 09-22: **#1172** was already counted; **#1184 and
-#1186** were filed out of PR #1185 onto v1.17.0; **#1178, #1179, #1181** were
+The reconciliation, from one grouped query on 2026-09-27: **11 + 9 + 18 = 38,
+and 526 + 38 = 564.** Since 09-22: **#1172** was already counted; **#1184 and
+#1186** were filed out of PR #1185 onto v1.17.0, and **#1189** (the UBI 10 spike) out of PR #1188; **#1178, #1179, #1181** were
 filed 09-23 unmilestoned and moved to v1.17.0 on 09-27; **#1176** (service-account
 token brokering) was filed onto v1.17.1; **#1175, #1177, #1180** were filed and
 closed by in-flight work; **#871, #1159, #1161** closed.
@@ -257,9 +258,9 @@ v1.17.0 on 09-27; #1175, #1177 and #1180 arrived and closed in flight.
 
 ### Everything else
 
-The **10** open `v1.17.0` issues each appear in exactly one Phase 19 bundle,
+The **11** open `v1.17.0` issues each appear in exactly one Phase 19 bundle,
 re-verified 2026-09-27: AE #1151 #1186 #1184 · AF #1115 #1172 · AI #1154 #1181 ·
-AJ #1109 · AL #1178 #1179. **The check is only worth anything if it is re-run
+AJ #1109 · AL #1178 #1179 · AM #1189. **The check is only worth anything if it is re-run
 whenever the milestone changes**: it last passed on 09-17, and was false by 09-24.
 
 ## Summary Timeline
@@ -286,15 +287,15 @@ whenever the milestone changes**: it last passed on 09-17, and was false by 09-2
 | 16 | **Complete** | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | **87 issues, 87 closed. Tagged `v1.16.0` 2026-08-24** from `main` @ `75b5bb3b`. The full closed list is the milestone itself — do not maintain a second copy here | **SHIPPED.** Bundles ran #939 → O → S → P → T → Q → hdf pin → U → W → V → R → X. Bundle X merged as [PR #1049](https://github.com/risk-sentinel/sparc/pull/1049) → `9ae84a84`; [PR #1055](https://github.com/risk-sentinel/sparc/pull/1055) → `75b5bb3b` then fixed four defects Bundle X had merged, found by running the FULL suites against a built prod image. Release verification (measured, on the tagged tree): rspec **6230/0**, API **2742 passed** over TLS and again over non-TLS, ui-smoke **524 passed / 0 failed**, rubocop + brakeman + bundle-audit clean. The milestone grew **53 → 86 because the sweeps FOUND things**, not through scope creep. Wiki published and release notes carry the measured table |
 | 17 | **Complete** | `ci.v0.0.1` — evidence and gates | **22 issues, 0 open** (+ 8 PRs on the milestone page) | Closed **2026-08-30**. Detail archived in [`implemented.md`](implemented.md) |
 | 18 | **Complete** | v1.16.1 — the patch release (+ v1.16.2 / v1.16.3 hotfixes) | **22 issues, 0 open. Tagged `v1.16.1` 2026-09-17**; v1.16.2 and v1.16.3 tagged 2026-09-18 | Bundles Y → Z → AA → AB → AC → AD. Detail, and the v1.16.2 un-upgradable record, archived in [`implemented.md`](implemented.md) |
-| 19 | **Current** | v1.17.0 — unblock Horizon, fix what customers hit | **10 open, 9 closed** (2026-09-27): open #1109 #1115 #1151 #1154 #1172 #1178 #1179 #1181 #1184 #1186. Delivered: AG, AH, AK, and #1103 #1180 #1183 #1175 #1177 in flight. **AE in flight** (#1151 #1186 #1184); then **AF → AI**; **AL** (#1178 → #1179) and **AJ** (#1109) in parallel | AE 7–9d · AF 5d · AI 7.5d · AL 3.5d · AJ 3d. The bundle list lives in Phase 19; do not maintain a second copy here |
+| 19 | **Current** | v1.17.0 — unblock Horizon, fix what customers hit | **11 open, 9 closed** (2026-09-27): open #1109 #1115 #1151 #1154 #1172 #1178 #1179 #1181 #1184 #1186 #1189. Delivered: AG, AH, AK, and #1103 #1180 #1183 #1175 #1177 in flight. **AE in flight** (#1151 #1186 #1184); then **AF → AI**; **AL** (#1178 → #1179), **AJ** (#1109) and the **AM** spike (#1189) in parallel | AE 7–9d · AF 5d · AI 7.5d · AL 3.5d · AJ 3d. The bundle list lives in Phase 19; do not maintain a second copy here |
 | 20 | Planned | v1.17.1 — the deferred wave | **9 open, 0 closed** (2026-09-27): #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176. Sonar backlog, gates that must mean something, two UI tails, and **#1176** (service accounts on non-expiring static tokens; broker short-lived IdP credentials) | est. TBD — scope when v1.17.0 is cut |
 
 <!-- markdownlint-enable MD013 -->
 
-**Re-measured 2026-09-27** (`gh issue list --state all --limit 3000`): **563
-issues total — 526 closed, 37 open.** Open splits **10** on `v1.17.0`, **9** on
+**Re-measured 2026-09-27** (`gh issue list --state all --limit 3000`): **564
+issues total — 526 closed, 38 open.** Open splits **11** on `v1.17.0`, **9** on
 `v1.17.1`, **0** on every shipped milestone, and **18** with no milestone:
-10 + 9 + 18 = 37, and 526 + 37 = 563. *(09-20: 551 total, 514 closed, 37 open.
+11 + 9 + 18 = 38, and 526 + 38 = 564. *(09-20: 551 total, 514 closed, 37 open.
 09-17: 540 / 510 / 30. 09-05: 525 / 488 / 37.)*
 
 > This footer previously read "503 issues total — 478 closed, 28 open", which
