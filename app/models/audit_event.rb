@@ -143,6 +143,8 @@ class AuditEvent < ApplicationRecord
     authoritative_source_control_linked
     authoritative_source_control_unlinked
     data_migration_completed
+    schema_reconciled
+    schema_reconciliation_refused
     sap_document_boundary_attached
     sap_document_created
     sap_document_generated
@@ -543,7 +545,7 @@ class AuditEvent < ApplicationRecord
                                 hdf_amendments_exported hdf_package_exported],
     "KSI Validations" => %w[ksi_validation_created ksi_validation_updated
                             ksi_validation_deleted],
-    "Data Migrations" => %w[data_migration_completed],
+    "Data Migrations" => %w[data_migration_completed schema_reconciled schema_reconciliation_refused],
     "Authoritative Sources" => %w[authoritative_source_created
                                   authoritative_source_updated
                                   authoritative_source_archived
