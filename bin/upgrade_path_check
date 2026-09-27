@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# #1151 — does a database built by the LAST RELEASE upgrade cleanly to this code?
+#
+#   UPGRADE_DATABASE_URL=postgres://postgres:pw@localhost:5432/sparc_upgrade \
+#     bin/upgrade_path_check
+#
+# Every other gate builds a FRESH database, which is the one case a squash
+# cannot break: v1.16.2 installed perfectly and could not be upgraded to
+# (#1147). This builds the old database the way operators got theirs — by
+# running the PUBLISHED image of the previous release — then upgrades it with
+# this checkout and fails on any drift from db/schema.rb.
+#
+#   1. BASELINE   the newest v1.X.Y release tag not at HEAD (override: BASELINE).
+#                 Not the top of a plain version sort: that is v3.5.0, retained
+#                 pre-reset numbering that sorts above every v1.x.
+#   2. BUILD      `db:prepare` (+ `db:seed` unless UPGRADE_SEED=0) inside
+#                 risksentinel/sparc:$BASELINE, against the empty database.
+#   3. UPGRADE    `db:migrate` and the deferred data migrations, with this code.
+#   4. CHECK      DRY_RUN reconciliation (printed — a clean upgrade needs none),
+#                 then STRICT=1 db:verify_schema. Any drift fails.
+#
+# With TARGET_IMAGE set, step 3 runs INSIDE that image instead of this
+# checkout, and step 4 checks with this checkout's bin/schema_drift_sql against
+# the TARGET's own schema.rb. That is how the check is proven to have teeth
+# against releases that predate it: v1.16.0 -> v1.16.2 must FAIL naming the
+# seven columns, v1.16.0 -> v1.16.3 must PASS.
+#
+# SAFETY: it refuses a database that already has tables, and it never drops,
+# truncates or recreates anything. Bring your own empty database.
+#
+# Environment:
+#   UPGRADE_DATABASE_URL         the empty database, as reached from THIS host (required)
+#   UPGRADE_DOCKER_DATABASE_URL  the same database as reached from inside a container
+#                                (default: UPGRADE_DATABASE_URL; on Docker Desktop use
+#                                host.docker.internal)
+#   UPGRADE_DOCKER_ARGS          extra `docker run` arguments (CI: --network host)
+#   BASELINE / BASELINE_IMAGE    override the release under test
+#   TARGET_IMAGE                 upgrade with an image instead of this checkout
+#   UPGRADE_SEED                 0 to skip seeding the baseline (default 1: required + demo)
+#   UPGRADE_RAILS_ENV            environment for this checkout's tasks (default test)
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+: "${UPGRADE_DATABASE_URL:?set UPGRADE_DATABASE_URL to an EMPTY database}"
+DOCKER_URL="${UPGRADE_DOCKER_DATABASE_URL:-$UPGRADE_DATABASE_URL}"
+read -r -a DOCKER_ARGS <<< "${UPGRADE_DOCKER_ARGS:-}"
+RAILS_ENV_LOCAL="${UPGRADE_RAILS_ENV:-test}"
+# A throwaway key: nothing is encrypted or served, but production boot requires one.
+# Likewise the production posture checks (object storage, TLS) are acknowledged
+# below: this container stores nothing and serves nothing, it only migrates.
+SECRET="upgrade-path-check-not-a-secret-0123456789abcdef0123456789abcdef0123456789"
+
+step() { printf '\n==> %s\n' "$*"; }
+fail() { printf '\nUPGRADE PATH CHECK FAILED: %s\n' "$*" >&2; exit 1; }
+
+psql_q() { psql "$UPGRADE_DATABASE_URL" -Atq -v ON_ERROR_STOP=1 -c "$1"; }
+
+# ── 1. baseline ──────────────────────────────────────────────────────────
+if [ -z "${BASELINE:-}" ]; then
+  here=$(git tag --points-at HEAD | tr '\n' ' ')
+  BASELINE=$(git tag -l 'v1.*' --sort=-v:refname | grep -E '^v1\.[0-9]+\.[0-9]+$' \
+    | while read -r t; do [[ " $here " == *" $t "* ]] || { echo "$t"; break; }; done)
+  [ -n "$BASELINE" ] || fail "no v1.X.Y release tag found — fetch tags (git fetch --tags)"
+fi
+BASELINE_IMAGE="${BASELINE_IMAGE:-risksentinel/sparc:$BASELINE}"
+step "baseline: $BASELINE ($BASELINE_IMAGE)"
+
+tables=$(psql_q "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'")
+[ "$tables" = "0" ] || fail "the database already has $tables table(s). This check never drops anything — give it an EMPTY database."
+
+in_image() {
+  local image="$1"; shift
+  docker run --rm "${DOCKER_ARGS[@]}" \
+    -e RAILS_ENV=production -e DATABASE_URL="$DOCKER_URL" -e SECRET_KEY_BASE="$SECRET" \
+    -e FORCE_SSL=false -e SPARC_DB_SSLMODE=disable -e SPARC_ALLOW_LOCAL_STORAGE=true \
+    --entrypoint "" "$image" "$@"
+}
+
+# ── 2. build the old database with the old release ───────────────────────
+step "building the $BASELINE database with the published image"
+in_image "$BASELINE_IMAGE" bin/rails db:prepare
+if [ "${UPGRADE_SEED:-1}" != "0" ]; then
+  # DEMO data too: the required seed is catalogs and roles only, which leaves
+  # boundaries, documents and CDEFs empty — and a data migration over an empty
+  # table passes whatever it does. Measured on v1.16.3 (2026-09-27).
+  step "seeding it with demo data, so data migrations meet real rows"
+  in_image "$BASELINE_IMAGE" env SPARC_SEED_DEMO=true bin/rails db:seed
+fi
+baseline_version=$(psql_q "SELECT max(version) FROM schema_migrations")
+echo "baseline schema_migrations head: $baseline_version"
+
+# ── 3 + 4. upgrade, then check ───────────────────────────────────────────
+if [ -n "${TARGET_IMAGE:-}" ]; then
+  step "upgrading with $TARGET_IMAGE"
+  in_image "$TARGET_IMAGE" bin/rails db:migrate
+  schema=$(mktemp)
+  trap 'rm -f "$schema"' EXIT
+  docker run --rm --entrypoint cat "$TARGET_IMAGE" /rails/db/schema.rb > "$schema"
+  step "checking against $TARGET_IMAGE's own db/schema.rb (presence)"
+  missing=$(bin/schema_drift_sql "$schema" | psql "$UPGRADE_DATABASE_URL" -At -F ' ' -v ON_ERROR_STOP=1)
+  if [ -n "$missing" ]; then
+    printf '%s\n' "$missing"
+    fail "$(printf '%s\n' "$missing" | wc -l | tr -d ' ') object(s) the $TARGET_IMAGE code expects are missing after upgrading from $BASELINE"
+  fi
+else
+  export DATABASE_URL="$UPGRADE_DATABASE_URL" RAILS_ENV="$RAILS_ENV_LOCAL"
+  step "upgrading with this checkout (RAILS_ENV=$RAILS_ENV)"
+  bin/rails db:migrate
+  bin/rails sparc:data_migrations:run
+  step "reconciliation a clean upgrade should not need (dry run)"
+  DRY_RUN=1 bin/rails db:reconcile_schema
+  step "strict schema verification"
+  STRICT=1 bin/rails db:verify_schema || fail "the upgraded database does not match db/schema.rb (report above)"
+fi
+
+printf '\nUPGRADE PATH CHECK PASSED: %s -> %s\n' "$BASELINE" "${TARGET_IMAGE:-this checkout}"

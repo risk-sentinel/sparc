@@ -354,6 +354,66 @@ jobs:
   # Until that is done this job FAILS with "You are running CI analysis while
   # Automatic Analysis is enabled". That is why it is advisory in
   # .github/required-checks.json — a pending UI toggle must not block merges.
+  # ── #1151 — upgrade a database built by the LAST RELEASE ──────────
+  #
+  # Every other job builds a FRESH database (`db:test:prepare`), which is the
+  # one case a squash cannot break: v1.16.2 installed perfectly and could not
+  # be upgraded to (#1147). This builds the old database with the PUBLISHED
+  # image of the newest v1.X.Y release, upgrades it with this code, and fails
+  # on any drift from db/schema.rb (STRICT). See bin/upgrade_path_check, which
+  # is the whole logic and runs identically on a laptop.
+  #
+  # Proven both ways before it was trusted (2026-09-27): a v1.16.0 database
+  # upgraded by v1.16.2 FAILS naming the seven #1147 columns; by v1.16.3 it
+  # passes. Measured ~41s of work locally, plus the image pull here.
+  #
+  # ADVISORY FIRST (owner, 2026-09-27): listed in advisoryChecks in
+  # .github/required-checks.json, so a failure reports without blocking a
+  # merge. Promote it after one release of stable runs.
+  upgrade_path:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [ changes ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
+
+    services:
+      postgres:
+        # Pinned to the production major, unlike `test`: this job is about
+        # what an existing deployment's database does on upgrade.
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres  # gitleaks:allow
+          POSTGRES_DB: sparc_upgrade
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config postgresql-client
+
+      # Full history for the TAGS: the baseline is the newest v1.X.Y release
+      # tag not at HEAD, resolved from `git tag`.
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Upgrade the last release's database with this code
+        env:
+          UPGRADE_DATABASE_URL: postgres://postgres:postgres@localhost:5432/sparc_upgrade  # gitleaks:allow
+          # The baseline image reaches the service container through the host.
+          UPGRADE_DOCKER_ARGS: --network host
+        run: bin/upgrade_path_check
+
   sonar_scan:
     name: SonarCloud Code Analysis
     runs-on: ubuntu-latest

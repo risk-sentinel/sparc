@@ -21,11 +21,15 @@
     "  on ANY failed/cancelled check \u2014 including these. Listing a check here exempts",
     "  it from that short-circuit so a broken external check can't block merges.",
     "  'SonarCloud Code Analysis' is SonarCloud's GitHub App (no in-repo workflow);",
-    "  it currently fails on the org LOC quota (#636) \u2014 tracked + fixed org-side."
+    "  it currently fails on the org LOC quota (#636) \u2014 tracked + fixed org-side.",
+    "  'upgrade_path' (#1151) is ADVISORY FIRST by owner decision 2026-09-27: it",
+    "  reports on every PR but must not block a merge until it has run stably for",
+    "  one release. Promoting it = remove it from here and add a rules[] entry."
   ],
   "version": 1,
   "advisoryChecks": [
-    "SonarCloud Code Analysis"
+    "SonarCloud Code Analysis",
+    "upgrade_path"
   ],
   "rules": [
     {
