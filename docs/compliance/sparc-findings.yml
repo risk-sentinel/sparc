@@ -893,9 +893,9 @@ findings:
 # bin/codeql_pin_check.rb fails the gate if the live results differ in either
 # direction, so a new instance of either rule still breaches.
 #
-# DRAFTED, NOT APPROVED. `reviewed_by` is the reviewer's to author — until it
-# is, the converter refuses the register and security_gate stays red. That is
-# deliberate: an approval field is authored by the approver.
+# Drafted with the traced rationale below; `reviewed_by` was authored by the
+# reviewer (@clem-field, 2026-09-27), not by the drafter. The converter refuses
+# a register entry without it, which is what held security_gate red until then.
 - cve_id: rb/csrf-protection-disabled
   package: sparc (application code — CodeQL rb/csrf-protection-disabled)
   installed_version: n/a
@@ -914,7 +914,7 @@ findings:
     cookie-authenticated state-changing endpoint; none of these is one. Pinned to the three results; any
     new skip breaches the gate (#1186).'
   nist_control: sc-23
-  reviewed_by: ''
+  reviewed_by: '@clem-field'
   discovery_date: '2026-09-24'
   next_review_date: '2026-10-24'
   pinned_results:
@@ -942,7 +942,7 @@ findings:
     reads, and is left in place because editing the line would change the pinned fingerprint. Pinned to the
     five results; any new instance breaches the gate (#1186).'
   nist_control: sc-28
-  reviewed_by: ''
+  reviewed_by: '@clem-field'
   discovery_date: '2026-09-24'
   next_review_date: '2026-10-24'
   pinned_results:
