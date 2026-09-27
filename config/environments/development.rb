@@ -79,7 +79,7 @@ Rails.application.configure do
     config.force_ssl = true
     config.ssl_options = {
       redirect: {
-        exclude: ->(request) { request.path == "/up" },
+        exclude: ->(request) { %w[/up /up/ready].include?(request.path) },
         port: ENV.fetch("SSL_PORT", 3443).to_i
       }
     }

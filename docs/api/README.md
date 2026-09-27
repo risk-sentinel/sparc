@@ -30,11 +30,16 @@ Complete Postman collection and environment files for the SPARC REST API (v1).
 
 ## Authentication
 
-All API requests require a Bearer token in the `Authorization` header:
+All API requests require a Bearer token in the `Authorization` header — except
+the two **health probes**, `GET /up` and `GET /up/ready`, which sit outside
+`/api/v1` and take no credentials so a load balancer can call them. See
+[`endpoints/health.md`](endpoints/health.md).
 
 ```
 Authorization: Bearer sparc_your_token_here
 ```
+
+Everything under `/api/v1` requires it.
 
 ### Getting a Token
 
