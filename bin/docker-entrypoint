@@ -59,6 +59,26 @@ if [[ "$*" == *"rails"*"server"* ]]; then
     echo "Running database preparation (create/migrate all databases)..."
     bundle exec rails db:prepare
 
+    # #1151 — the schema gate. `db:prepare` reporting nothing pending is NOT
+    # evidence the schema is current: a migration archived by a squash is never
+    # run, which is how v1.16.2 booted green over seven missing columns and
+    # served 500s (#1147). So, before this container binds its port:
+    #   1. reconcile — create whatever schema.rb declares and the database lacks,
+    #      additively, in one transaction; it refuses (changing nothing) on drift
+    #      it cannot add its way out of. Every run is an audit event.
+    #   2. verify — fail on any STRUCTURAL drift left over.
+    # Either failing stops the container here, so the orchestrator keeps the old
+    # tasks serving and the DEPLOY fails, instead of the application. There is
+    # deliberately no bypass variable: a mismatched schema is what the gate is
+    # for. Definitional drift (defaults, nullability) is printed, not fatal.
+    # NIST SP 800-53 Rev 5: SI-7, CM-3.
+    echo "Reconciling and verifying the database schema against db/schema.rb..."
+    if ! bundle exec rails db:reconcile_schema db:verify_schema; then
+        echo "FATAL: the database schema does not match this image, and could not be reconciled." >&2
+        echo "FATAL: refusing to start the web server. See the report above, and docs: wiki/Upgrading." >&2
+        exit 1
+    fi
+
     # Enable Solid Queue in Puma for single-container deployments (ECS)
     export SOLID_QUEUE_IN_PUMA="${SOLID_QUEUE_IN_PUMA:-true}"
 
