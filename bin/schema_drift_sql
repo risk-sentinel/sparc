@@ -37,7 +37,16 @@
 # as a file; it went stale the moment schema.rb changed, and its 1,161 repeated
 # table names were 157 duplicate-literal findings. The generator cannot go
 # stale, because it reads schema.rb at the moment you run it.
+#
+# ── #1151: one parser ──────────────────────────────────────────────────────
+#
+# This used to carry its own line-regex copy of the parser, with a comment
+# asking it to "agree" with `SchemaDriftService`'s. Both now read
+# `lib/schema_definition.rb`, which is plain Ruby for exactly this reason, so
+# agreement is by construction rather than by vigilance. Still no Rails, no
+# gems and no database connection here.
 require "pathname"
+require_relative "../lib/schema_definition"
 
 schema = if ARGV[0]
   Pathname.new(ARGV[0]).expand_path
@@ -46,22 +55,12 @@ else
 end
 abort "no schema at #{schema}" unless schema.exist?
 
-tables = {}
-current = nil
-schema.readlines.each do |line|
-  if (m = line.match(/^\s*create_table\s+"([^"]+)"/))
-    current = m[1]
-    tables[current] = []
-    next
-  end
-  next if current.nil?
-
-  if line.match?(/^\s*end\s*$/)
-    current = nil
-  elsif (m = line.match(/^\s*t\.(?!index|check_constraint)[a-z_]+\s+"([^"]+)"/))
-    tables[current] << m[1]
-  end
+begin
+  definition = SchemaDefinition.load(schema)
+rescue ArgumentError, NoMethodError => e
+  abort "cannot read #{schema}: #{e.message}"
 end
+tables = definition.tables.transform_values { |t| t.columns.map(&:name) }
 
 pairs = tables.flat_map { |table, columns| columns.map { |c| format("('%s','%s')", table, c) } }
 abort "parsed no columns out of #{schema} — refusing to emit a check that would pass on anything" if pairs.empty?
