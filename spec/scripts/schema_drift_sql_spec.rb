@@ -137,7 +137,9 @@ RSpec.describe "bin/schema_drift_sql" do
   end
 
   describe "refusing to emit a check that would pass on anything" do
-    it "aborts when the schema parses to no columns" do
+    # #1151 — since the parser moved to lib/schema_definition.rb, an empty
+    # schema is refused by the parser itself, before the script's own guard.
+    it "aborts when the schema declares no tables" do
       file = Tempfile.new([ "empty_schema", ".rb" ])
       file.write("ActiveRecord::Schema[8.1].define(version: 1) do\nend\n")
       file.flush
@@ -145,7 +147,29 @@ RSpec.describe "bin/schema_drift_sql" do
       _out, err, status = generate(file.path)
 
       expect(status).not_to be_success
+      expect(err).to match(/declares no tables/)
+    ensure
+      file&.close!
+    end
+
+    it "aborts when the schema's tables declare no columns" do
+      file = fixture_schema(%(  create_table "bare", force: :cascade do |t|\n  end))
+
+      _out, err, status = generate(file.path)
+
+      expect(status).not_to be_success
       expect(err).to match(/parsed no columns/)
+    ensure
+      file&.close!
+    end
+
+    it "aborts, rather than skipping it, on a statement the parser does not know" do
+      file = fixture_schema(%(  create_view "v", "SELECT 1"))
+
+      _out, err, status = generate(file.path)
+
+      expect(status).not_to be_success
+      expect(err).to match(/does not record/)
     ensure
       file&.close!
     end
