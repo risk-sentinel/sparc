@@ -176,8 +176,42 @@ def validate!(finding, errors, today: Date.today)
   end
 
   validate_deviation(finding, errors)
+  validate_pinned_results(finding, errors)
   validate_review_cadence(finding, errors, severity: severity, disposition: disp, discovery: discovery, next_rev: next_rev, today: today)
 
+  errors
+end
+
+# #1186 — a disposition keyed on a scanner RULE must be pinned to its results.
+#
+# An override matches on `requirementId`, and a SAST converter emits one
+# requirement per RULE: CodeQL's `rb/csrf-protection-disabled` is ONE
+# requirement holding every site the rule fires on. Dispositioning it by id
+# alone would waive the rule — including every future instance nobody has
+# reviewed. So an entry whose id is not an advisory id (CVE-, GHSA-, ...) must
+# list the exact results it covers, and bin/codeql_pin_check.rb fails the gate
+# when the live results differ from that list in either direction.
+ADVISORY_ID = /\A(?:CVE|GHSA|GO|PYSEC|RUSTSEC|OSV|TEMP)-/i
+
+def validate_pinned_results(finding, errors)
+  cve_id = finding["cve_id"].to_s
+  pins = finding["pinned_results"]
+
+  if pins.nil?
+    errors << "#{cve_id}: a scanner-RULE disposition must carry pinned_results (#1186) — without them it waives every instance of the rule, including future ones" unless cve_id.match?(ADVISORY_ID)
+    return errors
+  end
+
+  unless pins.is_a?(Array) && pins.any?
+    errors << "#{cve_id}: pinned_results must be a non-empty list of {path, line_hash}"
+    return errors
+  end
+
+  pins.each_with_index do |pin, i|
+    unless pin.is_a?(Hash) && !pin["path"].to_s.strip.empty? && !pin["line_hash"].to_s.strip.empty?
+      errors << "#{cve_id}: pinned_results[#{i}] needs both path and line_hash"
+    end
+  end
   errors
 end
 
@@ -386,7 +420,7 @@ def deviation_reason(finding, rationale)
   dev = finding["deviation"]
   return rationale unless dev.is_a?(Hash)
 
-  parts = ["[FedRAMP deviation: #{dev['type']} / #{dev['risk_status']}]"]
+  parts = [ "[FedRAMP deviation: #{dev['type']} / #{dev['risk_status']}]" ]
   if (adjusted = dev["adjusted_severity"])
     parts << "Adjusted severity: #{adjusted}."
   end
