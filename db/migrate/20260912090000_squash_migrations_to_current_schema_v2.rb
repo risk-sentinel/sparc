@@ -25,6 +25,20 @@
 #     effect. A schema migration qualifies by definition. A data migration
 #     never does.
 #
+# #1151 — THAT RULE IS WRONG, and v1.16.2 is what it cost (#1147). "Captured by
+# the squashed schema" is only true for `db:schema:load`, which builds a FRESH
+# database from schema.rb. `db:migrate` never reads schema.rb: a deployment that
+# had not yet run an archived migration upgrades to "no pending migrations" and
+# a schema without it. The rule that holds is:
+#
+#     Archive a migration only when EVERY supported deployment has already run
+#     it. "No pending migrations" is not evidence the schema is current.
+#
+# Left in place rather than rewritten, because this file is history and its
+# guard below is what ran. What protects an upgrade now is outside any squash:
+# `db:reconcile_schema` and `db:verify_schema` at container boot, and the
+# upgrade-path CI job (docs/dev/issue_rules.md, Migration Safety Rules).
+#
 # So all 23 data migrations STAY in db/migrate. That is not tidiness — it is
 # load-bearing. `DeferredDataMigrationRunner#load_migration_file` resolves a
 # migration class by globbing `ActiveRecord::Migrator.migrations_paths`, which
