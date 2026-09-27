@@ -80,11 +80,12 @@ Rails.application.configure do
   config.force_ssl = ENV.fetch("FORCE_SSL", "true") == "true"
 
   # HSTS: 1-year max-age with subdomains and preload per NIST SP 800-53 SC-8.
-  # Skip http-to-https redirect for the /up health check endpoint so container
-  # probes (ALB, Kubernetes) that hit HTTP internally still get a 200.
+  # Skip http-to-https redirect for the health endpoints so container probes
+  # (ALB, Kubernetes) that hit HTTP internally still get an answer. #1151 added
+  # /up/ready; /up had been excluded here long before any route served it.
   config.ssl_options = {
     hsts: { expires: 1.year, subdomains: true, preload: true },
-    redirect: { exclude: ->(request) { request.path == "/up" } }
+    redirect: { exclude: ->(request) { %w[/up /up/ready].include?(request.path) } }
   }
 
   # Tag every line with the request id so a single request can be followed
@@ -102,8 +103,10 @@ Rails.application.configure do
   # Configurable via SPARC_LOG_LEVEL (preferred) or RAILS_LOG_LEVEL (legacy fallback).
   config.log_level = ENV.fetch("SPARC_LOG_LEVEL", ENV.fetch("RAILS_LOG_LEVEL", "info"))
 
-  # Prevent health checks from clogging up the logs.
+  # Prevent health checks from clogging up the logs. `silence_healthcheck_path`
+  # takes ONE path, so the readiness probe (#1151) gets its own silencer.
   config.silence_healthcheck_path = "/up"
+  config.middleware.insert_before Rails::Rack::Logger, Rails::Rack::SilenceRequest, path: "/up/ready"
 
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
@@ -160,7 +163,7 @@ Rails.application.configure do
   # ]
   #
   # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  # config.host_authorization = { exclude: ->(request) { %w[/up /up/ready].include?(request.path) } }
 
   # #785 Pass 2.1 — object-storage backend from SPARC_STORAGE_URL (scheme →
   # provider), falling back to the legacy ACTIVE_STORAGE_SERVICE, else :local.

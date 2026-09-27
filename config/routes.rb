@@ -77,6 +77,13 @@ Rails.application.routes.draw do
   match "auth/:provider/callback", to: "omniauth_callbacks#create", via: [ :get, :post ]
   get "auth/failure", to: "omniauth_callbacks#failure"
 
+  # ── Health (#1151) ─────────────────────────────────────────────────────
+  # Liveness and readiness for load balancers and orchestrators. Unauthenticated
+  # by necessity; `/up/ready` returns counts only. Both are excluded from the
+  # SSL redirect and silenced in the logs (config/environments/production.rb).
+  get "up", to: "health#show", as: :health_liveness
+  get "up/ready", to: "health#ready", as: :health_readiness
+
   # ── Security telemetry ────────────────────────────────────────────────
   # CSP violation report sink (#528, epic #650). The CSP header's report-uri
   # points here; browsers POST violation reports which we log as structured
