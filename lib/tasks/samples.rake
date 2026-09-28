@@ -100,7 +100,7 @@ namespace :samples do
         "remarks" => "DEMO/SAMPLE — Fictional machine-readable evidence schema for testing purposes only.",
         "evidence-items" => [
           {
-            "ksi-id" => "ksi-mla-03",
+            "ksi-id" => "ksi-mla-evc",
             "title" => "Vulnerability Scan Results",
             "evidence-type" => "scan_result",
             "format" => "json",
@@ -119,7 +119,7 @@ namespace :samples do
             }
           },
           {
-            "ksi-id" => "ksi-svc-02",
+            "ksi-id" => "ksi-svc-vcm",
             "title" => "TLS Configuration Compliance",
             "evidence-type" => "config_export",
             "format" => "json",
@@ -135,7 +135,7 @@ namespace :samples do
             }
           },
           {
-            "ksi-id" => "ksi-scr-02",
+            "ksi-id" => "ksi-scr-mon",
             "title" => "Software Bill of Materials",
             "evidence-type" => "artifact",
             "format" => "cyclonedx-json",

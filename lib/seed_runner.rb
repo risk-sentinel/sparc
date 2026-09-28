@@ -26,7 +26,10 @@ module SeedRunner
     "nist_rev4_catalog"    => "3.1.0",
     "roles"                => "1.4.0",  # #1044 instance_admin role carrying admin.administer
     "admin_user"           => "1.1.0",
-    "fedramp_20x_ksi"      => "1.0.0",
+    # #1115 — built from the vendored FedRAMP/rules snapshot by
+    # FedrampKsiImportService instead of the hand-written seed; re-keys an
+    # existing catalog in place.
+    "fedramp_20x_ksi"      => "2.0.0",
     "nist_rev4_rev5_mapping" => "1.0.0",
     "remediation_timelines"  => "1.0.0",
     "converters"           => "1.4.0",

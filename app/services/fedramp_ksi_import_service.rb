@@ -94,7 +94,7 @@ class FedrampKsiImportService
     digest = Digest::SHA256.hexdigest(raw)
     version = data.dig("info", "version")
     existing = ControlCatalog.find_by(source: SOURCE)
-    if existing&.catalog_content_digest == digest && !dry_run
+    if existing&.catalog_content_digest == digest && crosswalk_current?(existing) && !dry_run
       return Result.new(status: :unchanged, version: version, changes: {}, errors: [])
     end
 
@@ -243,6 +243,14 @@ class FedrampKsiImportService
         changes[:crosswalk_entries] += 1
       end
     end
+  end
+
+  # The snapshot alone does not make an import current: a Rev 5 catalog loaded
+  # AFTER the KSI import left the crosswalk skipped, and a digest-only check
+  # would then skip it forever.
+  def crosswalk_current?(catalog)
+    nist = rev5_catalog
+    nist.nil? || ControlMapping.exists?(name: MAPPING_NAME, source_catalog_id: catalog.id, target_catalog_id: nist.id)
   end
 
   # Highest 5.x in the NIST SP 800-53 framework; the seed's exact name as a
