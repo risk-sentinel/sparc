@@ -26,7 +26,7 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
 
   # GET /api/v1/ksi_catalog/themes
   def themes
-    families = @ksi_catalog.control_families.order(:sort_order)
+    families = @ksi_catalog.control_families.current_first
     families = families.not_retired unless include_retired?
 
     rows = families.map { |f| serialize_theme(f) }
@@ -37,7 +37,8 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
   def indicators
     scope = CatalogControl.joins(:control_family)
                           .where(control_families: { control_catalog_id: @ksi_catalog.id })
-                          .order("control_families.sort_order", "catalog_controls.sort_id")
+                          .reorder(Arel.sql("control_families.retired_at IS NOT NULL"), "control_families.sort_order",
+                                   Arel.sql("catalog_controls.retired_at IS NOT NULL"), "catalog_controls.sort_id")
     scope = scope.not_retired unless include_retired?
 
     scope = scope.where(control_families: { code: params[:theme] }) if params[:theme].present?

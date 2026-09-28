@@ -171,6 +171,28 @@ RSpec.describe "Api::V1::KsiCatalog", type: :request do
       expect(data.first["indicators_count"]).to eq(2)
     end
 
+    # #1193 — retired entries list after current ones, whatever sort_order they kept.
+    it "orders a retired theme after the current ones with include_retired=true" do
+      theme_auth.update!(sort_order: 0)
+
+      get themes_api_v1_ksi_catalog_path, params: { include_retired: "true" }, headers: auth_headers
+
+      expect(JSON.parse(response.body)["data"].map { |t| t["code"] }).to eq(%w[IAM MLA AUTH])
+    end
+
+    it "orders retired indicators after current ones with include_retired=true" do
+      theme_auth.update!(sort_order: 0)
+      create(:catalog_control, control_family: theme_auth, control_id: "ksi-auth-01", title: "Gone",
+             retired_at: 1.day.ago)
+
+      get indicators_api_v1_ksi_catalog_path, params: { include_retired: "true" }, headers: auth_headers
+
+      # Grouped by theme: a retired indicator last within its theme, a retired
+      # theme after every current one.
+      ids = JSON.parse(response.body)["data"].map { |d| d["control_id"] }
+      expect(ids).to eq(%w[ksi-iam-01 ksi-iam-02 ksi-iam-03 ksi-mla-01 ksi-auth-01])
+    end
+
     it "still resolve by id, so an old reference finds what it was" do
       get indicator_api_v1_ksi_catalog_path(id: "ksi-iam-03"), headers: auth_headers
 

@@ -6,6 +6,10 @@ class ControlFamily < ApplicationRecord
   # deleted, for the same reason its controls are. See CatalogControl.
   scope :not_retired, -> { where(retired_at: nil) }
   scope :retired, -> { where.not(retired_at: nil) }
+  # #1193 — for display: retired families after current ones, whatever
+  # sort_order they kept (a retired KSI theme keeps the position the old seed
+  # gave it, which put AUTH first).
+  scope :current_first, -> { reorder(Arel.sql("control_families.retired_at IS NOT NULL"), :sort_order, :code) }
 
   def retired? = retired_at.present?
 

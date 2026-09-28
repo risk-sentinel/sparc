@@ -68,6 +68,20 @@ RSpec.describe "ControlFamilies", type: :request do
       expect(iam.text).not_to match(/\bRetired\b/)
       expect(auth.text).to include("Retired")
     end
+
+    # #1193 — a retired theme keeps the sort_order the old seed gave it (AUTH
+    # was 1); it must still list after every current family.
+    it "lists a retired family after the current ones, whatever its sort_order" do
+      family.update!(sort_order: 5)
+      create(:control_family, control_catalog: catalog, code: "AUTH", name: "Authorization by FedRAMP",
+                              sort_order: 1, retired_at: 1.day.ago)
+
+      get control_catalog_path(catalog)
+      follow_redirect! while response.redirect?
+
+      codes = Nokogiri::HTML(response.body).css("tbody tr td:first-child").map { |td| td.text.squish.split.first }
+      expect(codes).to eq(%w[IAM AUTH])
+    end
   end
 
   describe "GET /control_catalogs/:id/control_families/new" do
