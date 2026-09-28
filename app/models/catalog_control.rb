@@ -239,6 +239,15 @@ class CatalogControl < ApplicationRecord
   # OSCAL base/enhancement IDs match: letter(s) + dash + digits + optional .digits
   scope :top_level, -> { where("control_id ~ ?", '^[a-z]+-[0-9]+(\\.[0-9]+)?$') }
 
+  # #1115 — an entry that left its authoritative source is RETIRED, never
+  # deleted: `ksi_validations` are `dependent: :destroy`, so a delete would take
+  # every boundary's recorded assessment with it. `superseded_by` names the
+  # closest successor(s) — a pointer, not a claim the assessment carries over.
+  scope :not_retired, -> { where(retired_at: nil) }
+  scope :retired, -> { where.not(retired_at: nil) }
+
+  def retired? = retired_at.present?
+
   # Returns the human-readable label (e.g., "AC-1", "AC-2(1)") or falls back to
   # the canonical OSCAL id (e.g., "ac-1", "ac-2.1") when no label is stored.
   def display_id

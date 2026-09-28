@@ -2,6 +2,13 @@ class ControlFamily < ApplicationRecord
   belongs_to :control_catalog
   has_many :catalog_controls, dependent: :destroy
 
+  # #1115 — a theme that no longer exists upstream (KSI AUTH) is retired, not
+  # deleted, for the same reason its controls are. See CatalogControl.
+  scope :not_retired, -> { where(retired_at: nil) }
+  scope :retired, -> { where.not(retired_at: nil) }
+
+  def retired? = retired_at.present?
+
   validates :code, presence: true, uniqueness: { scope: :control_catalog_id },
                    format: { with: /\A[A-Z][A-Z0-9\-]{0,9}\z/, message: "must start with an uppercase letter, 1-10 characters (letters, digits, hyphens)" }
   validates :name, presence: true

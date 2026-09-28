@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_20_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -262,7 +262,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_20_120000) do
     t.jsonb "links_data", default: []
     t.jsonb "params_data", default: []
     t.string "priority"
+    t.datetime "retired_at"
     t.string "sort_id"
+    t.jsonb "superseded_by", default: [], null: false
     t.string "title"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
@@ -270,6 +272,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_20_120000) do
     t.index ["control_family_id", "control_id"], name: "index_catalog_controls_on_control_family_id_and_control_id", unique: true
     t.index ["control_family_id"], name: "index_catalog_controls_on_control_family_id"
     t.index ["control_id"], name: "index_catalog_controls_on_control_id"
+    t.index ["retired_at"], name: "index_catalog_controls_on_retired_at"
     t.index ["uuid"], name: "index_catalog_controls_on_uuid", unique: true
   end
 
@@ -524,6 +527,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_20_120000) do
     t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false
+    t.datetime "retired_at"
     t.integer "sort_order", default: 0
     t.datetime "updated_at", null: false
     t.index ["code"], name: "index_control_families_on_code"
