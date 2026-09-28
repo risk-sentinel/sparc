@@ -62,11 +62,17 @@ def pinned_entries(register_path)
   end
 end
 
-# { rule_id => Set[[path, line_hash], ...] }
-def sarif_results(sarif_path)
+# { rule_id => Set[[path, line_hash], ...] }, for the PINNED rules only.
+#
+# Fails closed on a pinned rule's result with no fingerprint — it could not be
+# matched — but ignores fingerprint gaps in rules the register does not pin,
+# which this check has no business failing the gate over (PR #1188 review).
+def sarif_results(sarif_path, pinned_rules)
   sarif = JSON.parse(File.read(sarif_path))
   sarif.fetch("runs").each_with_object(Hash.new { |h, k| h[k] = Set.new }) do |run, acc|
     Array(run["results"]).each do |result|
+      next unless pinned_rules.include?(result["ruleId"])
+
       location = result.dig("locations", 0, "physicalLocation", "artifactLocation", "uri")
       line_hash = result.dig("partialFingerprints", "primaryLocationLineHash")
       raise "a #{result['ruleId']} result has no location or line hash — cannot pin it" unless location && line_hash
@@ -91,7 +97,7 @@ end
 
 def check(register:, sarif:, hdf:)
   entries = pinned_entries(register)
-  live = sarif_results(sarif)
+  live = sarif_results(sarif, entries.map { |e| e["cve_id"] })
   counts = hdf_result_counts(hdf)
   partial = diff_informed?(sarif)
   errors = []
