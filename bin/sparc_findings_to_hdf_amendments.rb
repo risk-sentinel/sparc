@@ -199,14 +199,31 @@ end
 # reviewed. So an entry whose id is not an advisory id (CVE-, GHSA-, ...) must
 # list the exact results it covers, and bin/codeql_pin_check.rb fails the gate
 # when the live results differ from that list in either direction.
-ADVISORY_ID = /\A(?:CVE|GHSA|GO|PYSEC|RUSTSEC|OSV|TEMP)-/i
+#
+# PR #1188 review: pins are required exactly where they are ENFORCED —
+# bin/codeql_pin_check.rb reads CodeQL's SARIF only, so a CodeQL rule id
+# (`lang/rule-name`) must carry pins. Any OTHER non-advisory id (a Brakeman,
+# Semgrep, Trivy-misconfig or gitleaks rule) is refused outright: pins on it
+# would be checked by nothing, and no pins would waive the whole rule. Such a
+# finding belongs in that scanner's own ignore file until pin support exists.
+# Distro advisory ids (RHSA, ALSA, ALAS, USN, DLA, DSA, ELSA) are advisories,
+# not rules — this image is UBI9, so an RHSA key is a real possibility.
+ADVISORY_ID = /\A(?:CVE|GHSA|GO|PYSEC|RUSTSEC|OSV|TEMP|RHSA|ALSA|ALAS|USN|DLA|DSA|ELSA)-/i
+CODEQL_RULE_ID = %r{\A[a-z]+/[\w-]+\z}
 
 def validate_pinned_results(finding, errors)
   cve_id = finding["cve_id"].to_s
   pins = finding["pinned_results"]
+  return errors if cve_id.match?(ADVISORY_ID) && pins.nil?
+
+  unless cve_id.match?(CODEQL_RULE_ID)
+    errors << "#{cve_id}: not an advisory id and not a CodeQL rule id — no pin check enforces this scanner's rules, " \
+              "so a register disposition would waive the whole rule unchecked; use the scanner's own ignore file (#1186)"
+    return errors
+  end
 
   if pins.nil?
-    errors << "#{cve_id}: a scanner-RULE disposition must carry pinned_results (#1186) — without them it waives every instance of the rule, including future ones" unless cve_id.match?(ADVISORY_ID)
+    errors << "#{cve_id}: a scanner-RULE disposition must carry pinned_results (#1186) — without them it waives every instance of the rule, including future ones"
     return errors
   end
 

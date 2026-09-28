@@ -110,6 +110,30 @@ RSpec.describe "bin/codeql_pin_check.rb" do
     expect(out).to match(/failing closed/)
   end
 
+  describe "results with no fingerprint" do
+    def run_with(extra)
+      sarif = write("codeql.sarif", "runs" => [ { "results" => [ result("a.rb", "h1:1"), extra ] } ])
+      hdf = write("codeql.hdf.json", "profiles" => [ { "controls" => [ { "id" => rule, "results" => [ {} ] } ] } ])
+      register = write("findings.yml", YAML.dump("findings" => [
+        { "cve_id" => rule, "disposition" => "false_positive", "pinned_results" => [ { "path" => "a.rb", "line_hash" => "h1:1" } ] }
+      ]))
+      Open3.capture2e("ruby", script, "--register", register, "--sarif", sarif, "--hdf", hdf)
+    end
+
+    it "ignores them in a rule the register does not pin" do
+      out, status = run_with("ruleId" => "rb/unrelated", "locations" => [])
+
+      expect(status).to be_success, out
+    end
+
+    it "fails closed on them in a PINNED rule" do
+      out, status = run_with("ruleId" => rule, "locations" => [])
+
+      expect(status).not_to be_success
+      expect(out).to match(/has no location or line hash/)
+    end
+  end
+
   it "reads the v3 HDF shape (baselines/requirements) as well as v2" do
     sarif = write("codeql.sarif", "runs" => [ { "results" => [ result("a.rb", "h1:1") ] } ])
     hdf = write("codeql.hdf.json", "baselines" => [ { "requirements" => [ { "id" => rule, "results" => [ {} ] } ] } ])
@@ -156,6 +180,21 @@ RSpec.describe "bin/codeql_pin_check.rb" do
       _out, status = amend("cve_id" => "CVE-2026-0001")
 
       expect(status).to be_success
+    end
+
+    # PR #1188 review: pins are required only where the pin check enforces
+    # them (CodeQL), and a distro advisory is an advisory, not a rule.
+    it "does not treat a distro advisory id as a scanner rule" do
+      out, status = amend("cve_id" => "RHSA-2026:1234")
+
+      expect(status).to be_success, out
+    end
+
+    it "refuses a rule id from a scanner no pin check covers, pinned or not" do
+      out, status = amend("cve_id" => "BRAKE0105", "pinned_results" => [ { "path" => "a.rb", "line_hash" => "h1:1" } ])
+
+      expect(status).not_to be_success
+      expect(out).to match(/BRAKE0105: not an advisory id and not a CodeQL rule id/)
     end
   end
 end
