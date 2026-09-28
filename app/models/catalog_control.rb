@@ -243,6 +243,13 @@ class CatalogControl < ApplicationRecord
   # deleted: `ksi_validations` are `dependent: :destroy`, so a delete would take
   # every boundary's recorded assessment with it. `superseded_by` names the
   # closest successor(s) — a pointer, not a claim the assessment carries over.
+  #
+  # #1195 — DECIDED (owner, 2026-09-28): retirement is KSI-only for now. Only
+  # FedrampKsiImportService retires entries. The KSI API, the catalog pages, the
+  # OSCAL catalog export, `ControlCatalog#total_controls` and KsiExportService
+  # honour it; profile, baseline and SAP paths deliberately do NOT. An importer
+  # that retires entries in another catalog (e.g. NIST withdrawn controls) must
+  # revisit those paths first.
   scope :not_retired, -> { where(retired_at: nil) }
   scope :retired, -> { where.not(retired_at: nil) }
 

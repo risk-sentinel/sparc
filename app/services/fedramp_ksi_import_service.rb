@@ -80,6 +80,16 @@ class FedrampKsiImportService
 
   class Refused < StandardError; end
 
+  # #1194 — the id an old SPARC KSI id was RENAMED to by the approved map, or
+  # nil (retired ids keep their rows, so they resolve without this). Read from
+  # the vendored map rather than the database, so it also answers on a
+  # database re-keyed before this existed.
+  def self.renamed_to(old_id)
+    @renames ||= YAML.safe_load_file(DATA_DIR.join("ksi_legacy_map.yml")).fetch("indicators")
+                     .filter_map { |id, row| [ id, row["rename_to"].downcase ] if row["rename_to"] }.to_h
+    @renames[old_id.to_s.strip.downcase]
+  end
+
   def initialize(dry_run: false, data_dir: DATA_DIR, audit: true)
     @dry_run = dry_run
     @data_dir = Pathname(data_dir)

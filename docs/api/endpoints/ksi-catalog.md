@@ -153,6 +153,8 @@ curl "https://sparc.example.com/api/v1/ksi_catalog/indicators?theme=IAM" \
 
 `:id` is the indicator id in either case, e.g. `ksi-iam-elp` or `KSI-IAM-ELP`. Retired ids resolve too.
 
+An old SPARC id that FedRAMP's re-key **renamed** (e.g. `ksi-iam-02`, now `KSI-IAM-ELP`) also resolves: the answer is the current indicator, with `"resolved_from": "ksi-iam-02"` added so the caller can update its reference. The ten renames are listed in `lib/data/fedramp/ksi_legacy_map.yml`.
+
 **Example Request**
 
 ```bash

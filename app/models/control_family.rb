@@ -3,7 +3,8 @@ class ControlFamily < ApplicationRecord
   has_many :catalog_controls, dependent: :destroy
 
   # #1115 — a theme that no longer exists upstream (KSI AUTH) is retired, not
-  # deleted, for the same reason its controls are. See CatalogControl.
+  # deleted, for the same reason its controls are. KSI-only for now (#1195) —
+  # see CatalogControl.
   scope :not_retired, -> { where(retired_at: nil) }
   scope :retired, -> { where.not(retired_at: nil) }
   # #1193 — for display: retired families after current ones, whatever

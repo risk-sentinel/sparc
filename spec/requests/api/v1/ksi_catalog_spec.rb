@@ -107,6 +107,30 @@ RSpec.describe "Api::V1::KsiCatalog", type: :request do
       expect(parsed["data"]["mapped_nist_controls"].first["target"]).to eq("ia-2")
     end
 
+    # #1194 — the #1115 re-key renamed ten ids in place; an old reference still
+    # finds the indicator, and learns its current id.
+    it "resolves an old id the re-key renamed to the current indicator, saying so" do
+      ksi_iam_02.update!(control_id: "ksi-iam-elp", label: "KSI-IAM-ELP")
+
+      get indicator_api_v1_ksi_catalog_path(id: "KSI-IAM-02"), headers: auth_headers
+
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)["data"]
+      expect(data).to include("control_id" => "ksi-iam-elp", "resolved_from" => "ksi-iam-02")
+    end
+
+    it "does not add resolved_from when the id is found directly" do
+      get indicator_api_v1_ksi_catalog_path(id: "ksi-iam-01"), headers: auth_headers
+
+      expect(JSON.parse(response.body)["data"]).not_to have_key("resolved_from")
+    end
+
+    it "still 404s an old id that was retired rather than renamed, when its row is gone" do
+      get indicator_api_v1_ksi_catalog_path(id: "ksi-auth-04"), headers: auth_headers
+
+      expect(response).to have_http_status(:not_found)
+    end
+
     it "returns 404 for unknown KSI" do
       get indicator_api_v1_ksi_catalog_path(id: "ksi-xxx-99"), headers: auth_headers
       expect(response).to have_http_status(:not_found)
