@@ -19,7 +19,7 @@
               <h5 class="card-title"><%= profile.name %></h5>
               <div class="mb-2">
                 <% if profile.baseline_level.present? %>
-                  <span class="badge bg-info"><%= profile.baseline_level %></span>
+                  <span class="badge badge-info"><%= profile.baseline_level %></span>
                 <% end %>
                 <span class="badge bg-secondary"><%= profile.profile_controls.count %> controls</span>
                 <% if profile.profile_version.present? %>

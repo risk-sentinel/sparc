@@ -152,7 +152,7 @@
             <td><span class="badge bg-<%= lifecycle_badge_class(finding.lifecycle_status) %>"><%= finding.lifecycle_status.titleize %></span></td>
             <td>
               <% if disp %>
-                <span class="badge bg-info text-dark"><%= disp.kind %></span>
+                <span class="badge badge-info"><%= disp.kind %></span>
                 <span class="badge bg-<%= approval_badge_class(disp.approval_status) %>"><%= disp.approval_status %></span>
                 <% if disp.valid_until.present? %>
                   <div class="small text-muted">valid to <%= disp.valid_until.to_date %></div>

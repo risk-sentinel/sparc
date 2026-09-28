@@ -156,7 +156,7 @@
             <% if boundary.cdef_documents.any? %>
               <div class="mt-2">
                 <% boundary.cdef_documents.each do |cdef| %>
-                  <%= link_to cdef.name, cdef_document_path(cdef), class: "badge bg-info text-decoration-none me-1" %>
+                  <%= link_to cdef.name, cdef_document_path(cdef), class: "badge badge-info text-decoration-none me-1" %>
                 <% end %>
               </div>
             <% else %>

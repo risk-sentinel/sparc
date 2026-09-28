@@ -25,7 +25,7 @@ module CdefBrowserHelper
     if document.try(:aws_labs_source?)
       { text: "AWS", class: "sparc-status sparc-status--warning", title: "Upstream AWS Labs content" }
     elsif document.organization_id.present?
-      { text: "Org", class: "badge bg-info", title: "Organization-provided" }
+      { text: "Org", class: "badge badge-info", title: "Organization-provided" }
     elsif document.profile_document_id.present?
       { text: "SPARC", class: "badge bg-primary", title: "Generated from a SPARC profile" }
     else

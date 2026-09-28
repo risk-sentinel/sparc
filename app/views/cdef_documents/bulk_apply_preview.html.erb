@@ -8,7 +8,7 @@
         <strong><%= @converter.name %></strong> →
         <%= link_to cdef_display_name(@cdef_document), cdef_document_path(@cdef_document) %>
         <% if @target_rev.present? && @target_rev != @converter.target_rev %>
-          <span class="badge bg-info ms-2">
+          <span class="badge badge-info ms-2">
             translated <%= @converter.target_rev %> → <%= @target_rev %>
           </span>
         <% end %>
