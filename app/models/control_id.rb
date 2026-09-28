@@ -165,10 +165,12 @@ module ControlId
   # not yet guaranteed canonical. Once a table is fully canonical the extra
   # values are simply redundant, so it stays correct rather than needing unwind.
   # Lowercase variants are included because catalogs do not agree on case for
-  # the padded form. The FedRAMP KSI catalog stores `ksi-auth-01` — padded AND
-  # lowercase — while SPARC's display convention uppercases it. Emitting only
-  # `KSI-AUTH-01` would miss every KSI row, which is the same silent-mismatch
-  # failure in a different vocabulary.
+  # the padded form. The pre-#1115 FedRAMP KSI catalog stored `ksi-auth-01` —
+  # padded AND lowercase — while SPARC's display convention uppercases it, and
+  # those rows survive, retired. Emitting only `KSI-AUTH-01` would miss every
+  # such row, which is the same silent-mismatch failure in a different
+  # vocabulary. (FedRAMP's current ids are mnemonic — `ksi-iam-elp` — and have
+  # no padding to lose.)
   def forms(raw)
     return [] if raw.blank?
 

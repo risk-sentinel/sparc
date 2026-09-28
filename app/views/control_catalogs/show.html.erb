@@ -88,10 +88,19 @@
               <span class="fw-bold bg-body-secondary rounded" style="font-family: monospace; font-size: 1rem; padding: 0.25rem 0.6rem;">
                 <%= family.code %>
               </span>
+              <%# #1115 — no longer published by the catalog's source; kept for the
+                  assessments recorded against it. %>
+              <% if family.retired? %>
+                <span class="badge sparc-status--neutral ms-1">Retired</span>
+              <% end %>
             </td>
             <td><strong><%= link_to family.name, family, class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td class="text-body-secondary small"><%= truncate(family.description, length: 80) %></td>
-            <td class="text-center"><%= family.catalog_controls.size %></td>
+            <% retired_count = family.catalog_controls.to_a.count(&:retired?) %>
+            <td class="text-center">
+              <%= family.catalog_controls.size - retired_count %>
+              <% if retired_count.positive? %><div class="small text-body-secondary">+<%= retired_count %> retired</div><% end %>
+            </td>
             <td>
               <div class="d-flex gap-2">
                 <%= link_to "View", family, class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>

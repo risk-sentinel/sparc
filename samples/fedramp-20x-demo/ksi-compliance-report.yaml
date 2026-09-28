@@ -7,286 +7,592 @@ system:
   organization: Default Organization
 ksi_catalog:
   name: FedRAMP 20x Key Security Indicators
-  version: 1.0.0
+  version: 2026.09.13.02
   source: FedRAMP 20x
-  themes_count: 11
-  indicators_count: 54
-export_timestamp: '2026-03-21T11:29:59Z'
+  source_commit: 58487bda77d76d9ce334304ec2e779ece7cc7d54
+  themes_count: 10
+  indicators_count: 46
+  retired_indicators_count: 0
+export_timestamp: '2026-09-28T19:37:45Z'
 validations:
-- ksi_id: ksi-cm-01
-  ksi_title: Configuration Baseline
-  theme_code: CM
-  theme_name: Change Management
-  status: passed
-  validation_method: automated
-  evidence_format: json
-  last_validated_at: '2026-03-17T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
-  overdue: false
-  notes: Infrastructure-as-code baselines in Terraform
-  evidence:
-  mapped_nist_controls:
-  - target: cm-2
-    relationship: superset
-  - target: cm-6
-    relationship: superset
-  validation_metadata:
-    tool: SPARC CI/CD
-    scan_id: 1e1537adb174966a
-- ksi_id: ksi-cm-02
-  ksi_title: Version Control
-  theme_code: CM
-  theme_name: Change Management
-  status: passed
-  validation_method: automated
-  evidence_format: json
-  last_validated_at: '2026-03-20T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
-  overdue: false
-  notes: All code in GitHub with branch protection
-  evidence:
-  mapped_nist_controls:
-  - target: cm-3
-    relationship: superset
-  validation_metadata:
-    tool: SPARC CI/CD
-    scan_id: 934e702b4760e5b7
-- ksi_id: ksi-cm-04
-  ksi_title: Automated Testing
-  theme_code: CM
-  theme_name: Change Management
-  status: passed
-  validation_method: automated
-  evidence_format: json
-  last_validated_at: '2026-03-13T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
-  overdue: false
-  notes: CI/CD pipeline runs automated tests on every PR
-  evidence:
-  mapped_nist_controls:
-  - target: sa-11
-    relationship: superset
-  validation_metadata:
-    tool: SPARC CI/CD
-    scan_id: b73d2c321e6ba6e0
-- ksi_id: ksi-edu-01
-  ksi_title: Security Awareness Training
-  theme_code: EDU
+- ksi_id: ksi-ced-rat
+  ksi_title: Reviewing All Training
+  ksi_retired: false
+  superseded_by: []
+  theme_code: CED
   theme_name: Cybersecurity Education
   status: not_assessed
   validation_method:
   evidence_format: manual_review
   last_validated_at:
-  next_validation_due: '2026-06-19T11:28:51Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
   overdue: false
   notes: Training records not yet reviewed
   evidence:
   mapped_nist_controls:
+  - target: cp-3
+    relationship: intersects
+  - target: ir-2
+    relationship: intersects
+  - target: ps-6
+    relationship: intersects
   - target: at-2
-    relationship: superset
+    relationship: intersects
+  - target: at-2.2
+    relationship: intersects
+  - target: at-2.3
+    relationship: intersects
+  - target: at-3.5
+    relationship: intersects
+  - target: at-4
+    relationship: intersects
+  - target: ir-2.3
+    relationship: intersects
+  - target: at-3
+    relationship: intersects
+  - target: sr-11.1
+    relationship: intersects
   validation_metadata: {}
-- ksi_id: ksi-iam-01
-  ksi_title: Phishing-Resistant MFA
-  theme_code: IAM
-  theme_name: Identity and Access Management
+- ksi_id: ksi-cmt-lmc
+  ksi_title: Logging Changes
+  ksi_retired: false
+  superseded_by: []
+  theme_code: CMT
+  theme_name: Change Management
   status: passed
   validation_method: automated
   evidence_format: json
-  last_validated_at: '2026-03-16T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
+  last_validated_at: '2026-09-14T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
   overdue: false
-  notes: Okta MFA enforced for all users via SPARC_OIDC_FORCE_MFA=true
+  notes: All code in GitHub with branch protection
   evidence:
   mapped_nist_controls:
-  - target: ia-2
-    relationship: superset
-  validation_metadata:
-    tool: SPARC CI/CD
-    scan_id: 5358e4f2f9f2aa54
-- ksi_id: ksi-iam-02
-  ksi_title: Least Privilege Access
-  theme_code: IAM
-  theme_name: Identity and Access Management
-  status: passed
-  validation_method: automated
-  evidence_format: json
-  last_validated_at: '2026-03-11T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
-  overdue: false
-  notes: RBAC with boundary-scoped permissions verified
-  evidence:
-  mapped_nist_controls:
-  - target: ac-6
-    relationship: superset
-  - target: ac-2
+  - target: au-2
+    relationship: intersects
+  - target: cm-3
+    relationship: intersects
+  - target: cm-3.2
+    relationship: intersects
+  - target: cm-4.2
+    relationship: intersects
+  - target: cm-6
+    relationship: intersects
+  - target: cm-8.3
+    relationship: intersects
+  - target: ma-2
     relationship: intersects
   validation_metadata:
     tool: SPARC CI/CD
-    scan_id: 5ce342c73175e2e7
-- ksi_id: ksi-iam-03
-  ksi_title: Centralized Identity
+    scan_id: 5c49c563fe3b67cf
+- ksi_id: ksi-cmt-vtd
+  ksi_title: Validating Throughout Deployment
+  ksi_retired: false
+  superseded_by: []
+  theme_code: CMT
+  theme_name: Change Management
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-09-20T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
+  overdue: false
+  notes: CI/CD pipeline runs automated tests on every PR
+  evidence:
+  mapped_nist_controls:
+  - target: cm-3
+    relationship: intersects
+  - target: cm-3.2
+    relationship: intersects
+  - target: cm-4.2
+    relationship: intersects
+  - target: si-2
+    relationship: intersects
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: b9123361df02acb4
+- ksi_id: ksi-iam-aam
+  ksi_title: Automating Account Management
+  ksi_retired: false
+  superseded_by: []
   theme_code: IAM
   theme_name: Identity and Access Management
   status: passed
   validation_method: automated
   evidence_format: json
-  last_validated_at: '2026-03-08T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
+  last_validated_at: '2026-09-27T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
   overdue: false
   notes: Okta SSO integrated via OIDC
   evidence:
   mapped_nist_controls:
-  - target: ia-2
+  - target: ac-2.2
     relationship: intersects
-  - target: ia-8
+  - target: ac-2.3
+    relationship: intersects
+  - target: ac-2.13
+    relationship: intersects
+  - target: ac-6.7
+    relationship: intersects
+  - target: ia-4.4
+    relationship: intersects
+  - target: ia-12
+    relationship: intersects
+  - target: ia-12.2
+    relationship: intersects
+  - target: ia-12.3
+    relationship: intersects
+  - target: ia-12.5
     relationship: intersects
   validation_metadata:
     tool: SPARC CI/CD
-    scan_id: 4a420029250807ff
-- ksi_id: ksi-ir-01
-  ksi_title: Incident Response Plan
-  theme_code: IR
+    scan_id: af928a9a3141ef43
+- ksi_id: ksi-iam-apm
+  ksi_title: Adopting Passwordless Methods
+  ksi_retired: false
+  superseded_by: []
+  theme_code: IAM
+  theme_name: Identity and Access Management
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-09-23T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
+  overdue: false
+  notes: Okta FastPass phishing-resistant, passwordless sign-in enforced for all users
+  evidence:
+  mapped_nist_controls:
+  - target: ac-3
+    relationship: intersects
+  - target: ia-5.1
+    relationship: intersects
+  - target: ia-5.2
+    relationship: intersects
+  - target: ia-5.6
+    relationship: intersects
+  - target: ia-6
+    relationship: intersects
+  - target: ac-2
+    relationship: intersects
+  - target: ia-2
+    relationship: intersects
+  - target: ia-2.1
+    relationship: intersects
+  - target: ia-2.2
+    relationship: intersects
+  - target: ia-2.8
+    relationship: intersects
+  - target: ia-5
+    relationship: intersects
+  - target: ia-8
+    relationship: intersects
+  - target: sc-23
+    relationship: intersects
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: f56a1d9888026693
+- ksi_id: ksi-iam-elp
+  ksi_title: Ensuring Least Privilege
+  ksi_retired: false
+  superseded_by: []
+  theme_code: IAM
+  theme_name: Identity and Access Management
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-09-14T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
+  overdue: false
+  notes: RBAC with boundary-scoped permissions verified
+  evidence:
+  mapped_nist_controls:
+  - target: ac-2.5
+    relationship: intersects
+  - target: ac-2.6
+    relationship: intersects
+  - target: ac-3
+    relationship: intersects
+  - target: ac-4
+    relationship: intersects
+  - target: ac-6
+    relationship: intersects
+  - target: ac-12
+    relationship: intersects
+  - target: ac-14
+    relationship: intersects
+  - target: ac-17
+    relationship: intersects
+  - target: ac-17.1
+    relationship: intersects
+  - target: ac-17.2
+    relationship: intersects
+  - target: ac-17.3
+    relationship: intersects
+  - target: ac-20
+    relationship: intersects
+  - target: ac-20.1
+    relationship: intersects
+  - target: cm-2.7
+    relationship: intersects
+  - target: cm-9
+    relationship: intersects
+  - target: ia-2
+    relationship: intersects
+  - target: ia-3
+    relationship: intersects
+  - target: ia-4
+    relationship: intersects
+  - target: ia-4.4
+    relationship: intersects
+  - target: ia-5.2
+    relationship: intersects
+  - target: ia-5.6
+    relationship: intersects
+  - target: ia-11
+    relationship: intersects
+  - target: ps-2
+    relationship: intersects
+  - target: ps-3
+    relationship: intersects
+  - target: ps-4
+    relationship: intersects
+  - target: ps-5
+    relationship: intersects
+  - target: ps-6
+    relationship: intersects
+  - target: sc-4
+    relationship: intersects
+  - target: sc-20
+    relationship: intersects
+  - target: sc-21
+    relationship: intersects
+  - target: sc-22
+    relationship: intersects
+  - target: sc-23
+    relationship: intersects
+  - target: sc-39
+    relationship: intersects
+  - target: si-3
+    relationship: intersects
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: c2140734fed733b9
+- ksi_id: ksi-inr-rir
+  ksi_title: Reviewing Incident Response Procedures
+  ksi_retired: false
+  superseded_by: []
+  theme_code: INR
   theme_name: Incident Response
   status: partial
   validation_method: manual
   evidence_format: manual_review
-  last_validated_at: '2026-03-17T11:28:51Z'
-  next_validation_due: '2026-06-19T11:28:51Z'
+  last_validated_at: '2026-09-17T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
   overdue: false
   notes: IR plan documented but not tested in 12 months
   evidence:
   mapped_nist_controls:
-  - target: ir-1
-    relationship: superset
+  - target: ir-4
+    relationship: intersects
+  - target: ir-4.1
+    relationship: intersects
+  - target: ir-6
+    relationship: intersects
+  - target: ir-6.1
+    relationship: intersects
+  - target: ir-6.3
+    relationship: intersects
+  - target: ir-7
+    relationship: intersects
+  - target: ir-7.1
+    relationship: intersects
   - target: ir-8
-    relationship: superset
+    relationship: intersects
+  - target: ir-8.1
+    relationship: intersects
+  - target: si-4.5
+    relationship: intersects
   validation_metadata: {}
-- ksi_id: ksi-mla-01
-  ksi_title: Centralized Logging
+- ksi_id: ksi-mla-evc
+  ksi_title: Evaluating Configurations
+  ksi_retired: false
+  superseded_by: []
+  theme_code: MLA
+  theme_name: Monitoring, Logging, and Auditing
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-09-26T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
+  overdue: false
+  notes: Trivy and CodeQL run weekly via GitHub Actions
+  evidence:
+  mapped_nist_controls:
+  - target: ca-7
+    relationship: intersects
+  - target: cm-2
+    relationship: intersects
+  - target: cm-6
+    relationship: intersects
+  - target: si-7.7
+    relationship: intersects
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: 97959abf3764ebce
+- ksi_id: ksi-mla-osm
+  ksi_title: Operating SIEM Capability
+  ksi_retired: false
+  superseded_by: []
   theme_code: MLA
   theme_name: Monitoring, Logging, and Auditing
   status: partial
   validation_method: hybrid
   evidence_format: manual_review
-  last_validated_at: '2026-03-12T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
+  last_validated_at: '2026-09-25T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
   overdue: false
   notes: CloudWatch centralized, but legacy syslog not forwarded
   evidence:
   mapped_nist_controls:
-  - target: au-6
-    relationship: superset
+  - target: ac-17.1
+    relationship: intersects
+  - target: ac-20.1
+    relationship: intersects
   - target: au-2
     relationship: intersects
+  - target: au-3
+    relationship: intersects
+  - target: au-3.1
+    relationship: intersects
+  - target: au-4
+    relationship: intersects
+  - target: au-5
+    relationship: intersects
+  - target: au-6.1
+    relationship: intersects
+  - target: au-6.3
+    relationship: intersects
+  - target: au-7
+    relationship: intersects
+  - target: au-7.1
+    relationship: intersects
+  - target: au-8
+    relationship: intersects
+  - target: au-9
+    relationship: intersects
+  - target: au-11
+    relationship: intersects
+  - target: ir-4.1
+    relationship: intersects
+  - target: si-4.2
+    relationship: intersects
+  - target: si-4.4
+    relationship: intersects
+  - target: si-7.7
+    relationship: intersects
   validation_metadata: {}
-- ksi_id: ksi-mla-03
-  ksi_title: Vulnerability Scanning
-  theme_code: MLA
-  theme_name: Monitoring, Logging, and Auditing
-  status: passed
-  validation_method: automated
-  evidence_format: json
-  last_validated_at: '2026-03-09T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
-  overdue: false
-  notes: Trivy and CodeQL run weekly via GitHub Actions
-  evidence:
-  mapped_nist_controls:
-  - target: ra-5
-    relationship: superset
-  validation_metadata:
-    tool: SPARC CI/CD
-    scan_id: 6df9d53d6d47b30d
-- ksi_id: ksi-pol-02
-  ksi_title: Asset Inventory
-  theme_code: POL
+- ksi_id: ksi-piy-giv
+  ksi_title: Generating Inventories
+  ksi_retired: false
+  superseded_by: []
+  theme_code: PIY
   theme_name: Policy and Inventory
   status: passed
   validation_method: automated
   evidence_format: json
-  last_validated_at: '2026-03-17T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
+  last_validated_at: '2026-09-25T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
   overdue: false
   notes: AWS Config asset inventory with weekly compliance checks
   evidence:
   mapped_nist_controls:
+  - target: cm-2.2
+    relationship: intersects
+  - target: cm-7.5
+    relationship: intersects
   - target: cm-8
-    relationship: superset
+    relationship: intersects
+  - target: cm-8.1
+    relationship: intersects
+  - target: cm-12
+    relationship: intersects
+  - target: cm-12.1
+    relationship: intersects
+  - target: cp-2.8
+    relationship: intersects
   validation_metadata:
     tool: SPARC CI/CD
-    scan_id: 709b19f858f69322
-- ksi_id: ksi-rec-01
-  ksi_title: Backup Strategy
-  theme_code: REC
+    scan_id: 4817512c3e3f2ead
+- ksi_id: ksi-rpl-abo
+  ksi_title: Aligning Backups with Objectives
+  ksi_retired: false
+  superseded_by: []
+  theme_code: RPL
   theme_name: Recovery Planning
   status: failed
   validation_method: manual
   evidence_format: manual_review
-  last_validated_at: '2026-03-10T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
+  last_validated_at: '2026-09-20T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
   overdue: false
   notes: Backup restore test failed — RTO exceeded by 2 hours
   evidence:
   mapped_nist_controls:
-  - target: cp-9
-    relationship: superset
-  validation_metadata: {}
-- ksi_id: ksi-svc-01
-  ksi_title: Encryption at Rest
-  theme_code: SVC
-  theme_name: Service Configuration
-  status: passed
-  validation_method: automated
-  evidence_format: json
-  last_validated_at: '2026-03-15T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
-  overdue: false
-  notes: AES-256 encryption at rest via AWS KMS
-  evidence:
-  mapped_nist_controls:
-  - target: sc-28
-    relationship: superset
-  validation_metadata:
-    tool: SPARC CI/CD
-    scan_id: f31985d072120396
-- ksi_id: ksi-svc-02
-  ksi_title: Encryption in Transit
-  theme_code: SVC
-  theme_name: Service Configuration
-  status: passed
-  validation_method: automated
-  evidence_format: json
-  last_validated_at: '2026-03-14T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
-  overdue: false
-  notes: TLS 1.2+ enforced on all endpoints
-  evidence:
-  mapped_nist_controls:
-  - target: sc-8
-    relationship: superset
-  - target: sc-13
+  - target: cm-2.3
     relationship: intersects
-  validation_metadata:
-    tool: SPARC CI/CD
-    scan_id: b61826c14370acc2
-- ksi_id: ksi-scr-02
-  ksi_title: Software Bill of Materials
+  - target: cp-6
+    relationship: intersects
+  - target: cp-9
+    relationship: intersects
+  - target: cp-10
+    relationship: intersects
+  - target: cp-10.2
+    relationship: intersects
+  - target: si-12
+    relationship: intersects
+  validation_metadata: {}
+- ksi_id: ksi-scr-mon
+  ksi_title: Monitoring Supply Chain Risk
+  ksi_retired: false
+  superseded_by: []
   theme_code: SCR
   theme_name: Supply Chain Risk
   status: passed
   validation_method: automated
   evidence_format: json
-  last_validated_at: '2026-03-20T11:28:51Z'
-  next_validation_due: '2026-03-28T11:28:51Z'
+  last_validated_at: '2026-09-17T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
   overdue: false
   notes: CycloneDX SBOM generated on every build
   evidence:
   mapped_nist_controls:
-  - target: sr-4
-    relationship: superset
+  - target: ac-20
+    relationship: intersects
+  - target: ca-3
+    relationship: intersects
+  - target: ir-6.3
+    relationship: intersects
+  - target: ps-7
+    relationship: intersects
+  - target: ra-5
+    relationship: intersects
+  - target: sa-9
+    relationship: intersects
+  - target: si-5
+    relationship: intersects
+  - target: sr-5
+    relationship: intersects
+  - target: sr-6
+    relationship: intersects
+  - target: sr-8
+    relationship: intersects
   validation_metadata:
     tool: SPARC CI/CD
-    scan_id: 0fd91513fe840690
+    scan_id: 5a288976e821e529
+- ksi_id: ksi-svc-acm
+  ksi_title: Automating Configuration Management
+  ksi_retired: false
+  superseded_by: []
+  theme_code: SVC
+  theme_name: Service Configuration
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-09-16T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
+  overdue: false
+  notes: Infrastructure-as-code baselines in Terraform
+  evidence:
+  mapped_nist_controls:
+  - target: ac-2.4
+    relationship: intersects
+  - target: cm-2
+    relationship: intersects
+  - target: cm-2.2
+    relationship: intersects
+  - target: cm-2.3
+    relationship: intersects
+  - target: cm-6
+    relationship: intersects
+  - target: cm-7.1
+    relationship: intersects
+  - target: pl-9
+    relationship: intersects
+  - target: pl-10
+    relationship: intersects
+  - target: sa-5
+    relationship: intersects
+  - target: si-5
+    relationship: intersects
+  - target: sr-10
+    relationship: intersects
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: 45cf5b10586189e8
+- ksi_id: ksi-svc-sin
+  ksi_title: Securing Information
+  ksi_retired: false
+  superseded_by: []
+  theme_code: SVC
+  theme_name: Service Configuration
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-09-25T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
+  overdue: false
+  notes: AES-256 encryption at rest via AWS KMS
+  evidence:
+  mapped_nist_controls:
+  - target: ac-1
+    relationship: intersects
+  - target: ac-17.2
+    relationship: intersects
+  - target: cp-9.8
+    relationship: intersects
+  - target: sc-8
+    relationship: intersects
+  - target: sc-8.1
+    relationship: intersects
+  - target: sc-13
+    relationship: intersects
+  - target: sc-20
+    relationship: intersects
+  - target: sc-21
+    relationship: intersects
+  - target: sc-22
+    relationship: intersects
+  - target: sc-23
+    relationship: intersects
+  - target: sc-28
+    relationship: intersects
+  - target: sc-28.1
+    relationship: intersects
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: d8bc1f2aee8e3f0b
+- ksi_id: ksi-svc-vcm
+  ksi_title: Validating Communications
+  ksi_retired: false
+  superseded_by: []
+  theme_code: SVC
+  theme_name: Service Configuration
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-09-14T19:24:24Z'
+  next_validation_due: '2026-10-28T19:24:24Z'
+  overdue: false
+  notes: TLS 1.2+ enforced on all endpoints
+  evidence:
+  mapped_nist_controls:
+  - target: sc-23
+    relationship: intersects
+  - target: si-7.1
+    relationship: intersects
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: 9f6049edb5787265
 summary:
   total: 15
   by_status:
@@ -296,20 +602,20 @@ summary:
     partial: 2
     expired: 0
   by_theme:
-    CM:
-      total: 3
-      passed: 3
-      failed: 0
-      partial: 0
-      expired: 0
-      not_assessed: 0
-    EDU:
+    CED:
       total: 1
       passed: 0
       failed: 0
       partial: 0
       expired: 0
       not_assessed: 1
+    CMT:
+      total: 2
+      passed: 2
+      failed: 0
+      partial: 0
+      expired: 0
+      not_assessed: 0
     IAM:
       total: 3
       passed: 3
@@ -317,7 +623,7 @@ summary:
       partial: 0
       expired: 0
       not_assessed: 0
-    IR:
+    INR:
       total: 1
       passed: 0
       failed: 0
@@ -331,24 +637,17 @@ summary:
       partial: 1
       expired: 0
       not_assessed: 0
-    POL:
+    PIY:
       total: 1
       passed: 1
       failed: 0
       partial: 0
       expired: 0
       not_assessed: 0
-    REC:
+    RPL:
       total: 1
       passed: 0
       failed: 1
-      partial: 0
-      expired: 0
-      not_assessed: 0
-    SVC:
-      total: 2
-      passed: 2
-      failed: 0
       partial: 0
       expired: 0
       not_assessed: 0
@@ -359,5 +658,13 @@ summary:
       partial: 0
       expired: 0
       not_assessed: 0
+    SVC:
+      total: 3
+      passed: 3
+      failed: 0
+      partial: 0
+      expired: 0
+      not_assessed: 0
   overdue_count: 0
+  retired_validations: 0
   compliance_percentage: 73.3

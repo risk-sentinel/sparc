@@ -10,7 +10,7 @@
         "format": "json",
         "collection-method": "automated",
         "source": "Trivy container scanner via GitHub Actions",
-        "collected-at": "2026-03-21T11:29:59Z",
+        "collected-at": "2026-09-28T19:37:45Z",
         "data": {
           "total-vulnerabilities": 12,
           "critical": 0,
@@ -29,7 +29,7 @@
         "format": "json",
         "collection-method": "automated",
         "source": "AWS Config rule: acm-certificate-expiration-check",
-        "collected-at": "2026-03-21T11:29:59Z",
+        "collected-at": "2026-09-28T19:37:45Z",
         "data": {
           "tls-minimum-version": "TLSv1.2",
           "cipher-suites": [
@@ -37,7 +37,7 @@
             "TLS_CHACHA20_POLY1305_SHA256"
           ],
           "certificate-valid": true,
-          "certificate-expiry": "2026-09-17T11:29:59Z",
+          "certificate-expiry": "2027-03-27T19:37:45Z",
           "hsts-enabled": true
         }
       },
@@ -48,7 +48,7 @@
         "format": "cyclonedx-json",
         "collection-method": "automated",
         "source": "CycloneDX generator in CI/CD pipeline",
-        "collected-at": "2026-03-21T11:29:59Z",
+        "collected-at": "2026-09-28T19:37:45Z",
         "data": {
           "sbom-format": "CycloneDX 1.5",
           "total-components": 247,
