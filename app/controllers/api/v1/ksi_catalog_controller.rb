@@ -77,6 +77,7 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
   #   200 imported | unchanged | planned (dry run)
   #   422 refused — schema-invalid data or an inapplicable map; nothing written
   def import
+    refuse_unrecognized_import_fields!
     dry_run = ActiveModel::Type::Boolean.new.cast(params[:dry_run]) || false
     result = FedrampKsiImportService.new(dry_run: dry_run).call
 
@@ -116,6 +117,20 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
   end
 
   def include_retired? = ActiveModel::Type::Boolean.new.cast(params[:include_retired]) || false
+
+  IMPORT_FIELDS = %w[dry_run].freeze
+
+  # The import takes one option and no record. A body carrying anything else
+  # is refused rather than ignored: answering 200 to a request the endpoint
+  # could not have understood is the #994 shape. There is no root key, so
+  # `permit_strictly` does not apply; Rails' JSON params wrapper copies the
+  # body under the controller's name, which is not a field the caller sent.
+  def refuse_unrecognized_import_fields!
+    wrapper = respond_to?(:_wrapper_key, true) ? _wrapper_key.to_s : nil
+    submitted = request.request_parameters.keys.map(&:to_s) - [ wrapper ]
+    unknown = submitted - IMPORT_FIELDS - ALWAYS_ALLOWED_FIELDS
+    raise UnrecognizedFields.new(unknown, IMPORT_FIELDS) if unknown.any?
+  end
 
   # Same rule as the catalogs API: admins always pass; everyone else needs
   # `catalogs.write`.

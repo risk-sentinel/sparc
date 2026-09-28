@@ -114,8 +114,13 @@ class TestCrudContract(CrudContract):
         ksi = next(c for c in catalog.json()["data"] if c["source"] == "FedRAMP 20x")
         controls = admin_client.get(f"/api/v1/control_catalogs/{ksi['id']}/controls",
                                     params={"items": 100})
-        free = [c["id"] for c in controls.json()["data"] if c["id"] not in used]
-        assert free, "every KSI indicator on this boundary already has a validation"
+        # #1115 — a retired indicator refuses NEW validations by design, so the
+        # contract is exercised on current ones.
+        free = [
+            c["id"] for c in controls.json()["data"]
+            if c["id"] not in used and c.get("retired_at") is None
+        ]
+        assert free, "every current KSI indicator on this boundary already has a validation"
 
         used.add(free[0])
         self._used_controls = used

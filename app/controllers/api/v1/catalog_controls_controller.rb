@@ -251,6 +251,9 @@ class Api::V1::CatalogControlsController < Api::V1::BaseController
       control_family_id: control.control_family_id,
       family_code: control.control_family.code,
       depth: control.depth,
+      # #1115 — an entry its source no longer publishes is retired, not deleted.
+      retired_at: control.retired_at&.iso8601,
+      superseded_by: control.superseded_by,
       created_at: control.created_at.iso8601,
       updated_at: control.updated_at.iso8601
     }
