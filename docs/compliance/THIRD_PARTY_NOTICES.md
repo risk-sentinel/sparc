@@ -92,6 +92,20 @@ holistically dispositioned in `docs/compliance/license-dispositions.yml`
 and not itemized individually in the license inventory (the relevant
 `skip_patterns` in `license-policy.yml` exclude their namespaces).
 
+### FedRAMP consolidated rules — FedRAMP 20x KSI catalog (vendored data)
+
+| Field | Value |
+| --- | --- |
+| **Source repo** | [`FedRAMP/rules`](https://github.com/FedRAMP/rules) @ `58487bda77d76d9ce334304ec2e779ece7cc7d54` (upstream `info.version` `2026.09.13.02`) |
+| **Source files** | `fedramp-consolidated-rules.json`, `schemas/fedramp-consolidated-rules.schema.json` |
+| **Copyright** | None — a work of the United States Government (FedRAMP / GSA) |
+| **License** | Not declared upstream; public domain in the United States under 17 U.S.C. 105. Vendoring decided by the owner 2026-09-28 (#1115, #1172) |
+| **License text** | n/a |
+| **Vendored as** | `lib/data/fedramp/fedramp-consolidated-rules.json` and `.schema.json`, byte-for-byte, with provenance (commit, version, sha256) in `lib/data/fedramp/fedramp-consolidated-rules.provenance.json` |
+| **Re-vendor task** | Replace both files from a new upstream commit and update the sidecar; `bin/ksi_upstream_diff` reports what changed first |
+| **Used by** | `FedrampKsiImportService` — the FedRAMP 20x KSI catalog and its KSI → NIST SP 800-53 Rev 5 crosswalk |
+| **NIST control alignment** | CA-2 Control Assessments, SR-3 Supply Chain Controls (the data is validated against the vendored JSON Schema before import, and its sha256 against the sidecar in the spec suite) |
+
 ### MITRE heimdall2 — AWS Config Rule → NIST mapping (vendored data)
 
 | Field | Value |

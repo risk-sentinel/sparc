@@ -1,0 +1,21 @@
+{
+  "description": "Provenance for the vendored FedRAMP consolidated rules and their JSON Schema. The two files are byte-for-byte copies of upstream and must stay verbatim, so their provenance lives in this sidecar rather than in the files (#1115, #1172).",
+  "source_repository": "https://github.com/FedRAMP/rules",
+  "source_commit": "58487bda77d76d9ce334304ec2e779ece7cc7d54",
+  "upstream_version": "2026.09.13.02",
+  "retrieved": "2026-09-28",
+  "license_basis": "No license declared upstream (GitHub reports license: none). Published by FedRAMP (GSA), a work of the United States Government, which is not subject to copyright in the United States (17 U.S.C. 105). Vendoring decided by the owner 2026-09-28.",
+  "files": {
+    "fedramp-consolidated-rules.json": {
+      "source_url": "https://raw.githubusercontent.com/FedRAMP/rules/58487bda77d76d9ce334304ec2e779ece7cc7d54/fedramp-consolidated-rules.json",
+      "sha256": "64915d88e72353c95f321ea4a9014516ac9441972cbd7f3d1abef7d1514c8fc8",
+      "bytes": 564946
+    },
+    "fedramp-consolidated-rules.schema.json": {
+      "source_url": "https://raw.githubusercontent.com/FedRAMP/rules/58487bda77d76d9ce334304ec2e779ece7cc7d54/schemas/fedramp-consolidated-rules.schema.json",
+      "sha256": "eb4710bee0b06d0f8f803302ac2e88b934ef2bc942d0b548738c7304f0cb418f",
+      "bytes": 28305
+    }
+  },
+  "re_vendor": "Fetch both files from a new upstream commit, replace them verbatim, and update this sidecar (commit, upstream_version, retrieved, sha256, bytes). bin/ksi_upstream_diff reports what changed first."
+}
