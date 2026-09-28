@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-09-28 — **`v1.17.0` in progress**: AG, AH, AK and AE delivered (AE: PR #1188); **AF in flight** on `feature/1115_1172_ksi_catalog_truth` (#1115 #1172), whose hot files are `config/routes.rb`, `db/schema.rb` (two migrations), `app/models/audit_event.rb`, `lib/seed_runner.rb`, `db/seeds/sample_artifacts.rb` and `docs/api/INVENTORY.md` (generated) — see *Lane REL2* in section 2. *Previously (2026-09-17):* v1.16.1 SHIPPED, tagged from `df6439c0`; all six bundles (Y, Z, AA, AB, AC, AD) delivered.
+**Last updated:** 2026-09-28 — **`v1.17.0` in progress**: AG, AH, AK and AE delivered (AE: PR #1188); **AF in review** as PR #1192 on `feature/1115_1172_ksi_catalog_truth` (#1115 #1172), whose hot files are `config/routes.rb`, `db/schema.rb` (two migrations), `app/models/audit_event.rb`, `lib/seed_runner.rb`, `db/seeds/sample_artifacts.rb` and `docs/api/INVENTORY.md` (generated) — see *Lane REL2* in section 2. *Previously (2026-09-17):* v1.16.1 SHIPPED, tagged from `df6439c0`; all six bundles (Y, Z, AA, AB, AC, AD) delivered.
 
 ---
 
