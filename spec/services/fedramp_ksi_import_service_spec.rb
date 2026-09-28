@@ -119,6 +119,30 @@ RSpec.describe FedrampKsiImportService do
     end
   end
 
+  describe "a later FedRAMP release" do
+    it "retires an indicator the new snapshot no longer publishes, keeping its validation, with no successor claimed" do
+      described_class.new.call
+      validation = validate!("ksi-iam-jit", "passed")
+      dir = data_dir_with do |d|
+        rules = JSON.parse(d.join("fedramp-consolidated-rules.json").read)
+        rules["KSI"]["IAM"]["indicators"].delete("KSI-IAM-JIT")
+        rules["info"]["version"] = "2026.10.01.01"
+        d.join("fedramp-consolidated-rules.json").write(JSON.pretty_generate(rules))
+      end
+
+      result = described_class.new(data_dir: dir).call
+
+      expect(result).to be_imported
+      jit = CatalogControl.find(validation.catalog_control_id)
+      expect(jit).to be_retired
+      expect(jit.superseded_by).to eq([])
+      expect(validation.reload.status).to eq("passed")
+      expect(ksi_catalog.reload.version).to eq("2026.10.01.01")
+    ensure
+      FileUtils.rm_rf(dir) if dir
+    end
+  end
+
   describe "the crosswalk" do
     it "is rebuilt from FedRAMP's controls[] against the Rev 5 catalog found by framework, not by name" do
       rev5 = rev5_catalog!
