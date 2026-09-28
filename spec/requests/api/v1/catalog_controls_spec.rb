@@ -35,6 +35,19 @@ RSpec.describe "Api::V1::CatalogControls", type: :request do
       expect(body["meta"]).to include("page", "count")
     end
 
+    # #1115 — a caller choosing a control to act on can tell a retired one apart.
+    it "says which controls are retired, and what superseded them" do
+      family.catalog_controls.create!(control_id: "ac-13", label: "AC-13", title: "Withdrawn",
+                                      retired_at: 1.day.ago, superseded_by: [ "AC-2" ])
+
+      get catalog_path, headers: auth
+
+      rows = JSON.parse(response.body)["data"].index_by { |c| c["control_id"] }
+      expect(rows["ac-13"]).to include("superseded_by" => [ "AC-2" ])
+      expect(rows["ac-13"]["retired_at"]).to be_present
+      expect(rows["ac-2"]).to include("retired_at" => nil, "superseded_by" => [])
+    end
+
     it "does not leak controls from another catalog" do
       other_family = create(:control_family, control_catalog: create(:control_catalog), code: "ZZ")
       other_family.catalog_controls.create!(control_id: "zz-1", title: "Elsewhere")

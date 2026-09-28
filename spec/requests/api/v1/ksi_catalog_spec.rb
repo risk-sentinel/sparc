@@ -250,6 +250,23 @@ RSpec.describe "Api::V1::KsiCatalog", type: :request do
       expect(ksi_catalog.reload.version).to eq("1.0.0")
     end
 
+    it "refuses a body carrying a field it does not accept, and imports nothing" do
+      post import_api_v1_ksi_catalog_path, params: { a_field: "x" }.to_json,
+                                           headers: auth_headers.merge("Content-Type" => "application/json")
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(JSON.parse(response.body)).to include("details" => [ "Unrecognized field: a_field" ], "expected" => [ "dry_run" ])
+      expect(ksi_catalog.reload.version).to eq("1.0.0")
+    end
+
+    it "accepts dry_run in a JSON body as well as the query string" do
+      post import_api_v1_ksi_catalog_path, params: { dry_run: true }.to_json,
+                                           headers: auth_headers.merge("Content-Type" => "application/json")
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)["data"]["status"]).to eq("planned")
+    end
+
     it "is refused without a token" do
       post import_api_v1_ksi_catalog_path
 
