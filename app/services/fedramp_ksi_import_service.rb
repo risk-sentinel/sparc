@@ -27,7 +27,8 @@ require "json_schemer"
 #     indicators IN PLACE — same row, new id — so their validations move with
 #     them;
 #   * every other old indicator is RETIRED (`retired_at`, `superseded_by`) and
-#     keeps its validations as history;
+#     keeps its validations as history — as is any indicator a LATER snapshot
+#     stops publishing, with no successor claimed;
 #   * themes are renamed in place (EDU->CED, CM->CMT, IR->INR, POL->PIY,
 #     REC->RPL); a theme upstream no longer has (AUTH) is retired.
 #
@@ -103,6 +104,7 @@ class FedrampKsiImportService
       catalog = upsert_catalog(existing, version, digest)
       apply_legacy_map(catalog, data, changes)
       upsert_themes_and_indicators(catalog, data, changes)
+      retire_absent_indicators(catalog, data, changes)
       retire_absent_themes(catalog, data, changes)
       rebuild_crosswalk(catalog, data, version, changes)
       raise ActiveRecord::Rollback if dry_run
@@ -206,6 +208,17 @@ class FedrampKsiImportService
 
     fam.code = code
     fam
+  end
+
+  # Anything still current that this snapshot does not publish was dropped
+  # upstream after the approved map was written: retire it, with no successor
+  # claimed. A later FedRAMP release must not leave a dead indicator current.
+  def retire_absent_indicators(catalog, data, changes)
+    published = upstream_indicators(data).keys.map(&:downcase)
+    indicators_of(catalog).not_retired.where.not(control_id: published).find_each do |control|
+      control.update!(retired_at: Time.current)
+      changes[:retired] += 1
+    end
   end
 
   def retire_absent_themes(catalog, data, changes)
