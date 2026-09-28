@@ -350,6 +350,8 @@ class AuditEvent < ApplicationRecord
     hdf_amendments_exported
     hdf_package_exported
 
+    ksi_catalog_imported
+    ksi_catalog_import_refused
     ksi_validation_created
     ksi_validation_updated
     ksi_validation_deleted
@@ -544,7 +546,8 @@ class AuditEvent < ApplicationRecord
                                 hdf_aggregation_enqueued hdf_aggregation_run
                                 hdf_amendments_exported hdf_package_exported],
     "KSI Validations" => %w[ksi_validation_created ksi_validation_updated
-                            ksi_validation_deleted],
+                            ksi_validation_deleted ksi_catalog_imported
+                            ksi_catalog_import_refused],
     "Data Migrations" => %w[data_migration_completed schema_reconciled schema_reconciliation_refused],
     "Authoritative Sources" => %w[authoritative_source_created
                                   authoritative_source_updated
