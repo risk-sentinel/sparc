@@ -1,0 +1,280 @@
+# #1115 — SPARC's hand-seeded KSI ids -> FedRAMP/rules ids (upstream 2026.09.13.02).
+#
+# Upstream publishes NO old->new map (no numbered id appears in it), so this was
+# drafted from measured evidence and REVIEWED AND APPROVED BY THE OWNER on
+# 2026-09-28, exactly as it stands. Evidence per row: `score` weights name (0.45),
+# statement (0.35) and shared NIST 800-53 controls (0.20) similarity, +0.05 same
+# theme; `mutual` = each is the other's best match. Scores rank candidates only —
+# FedRAMP rewrote the indicators rather than renamed them, so the ten renames
+# were judged on meaning, not on score.
+#
+#   rename_to   the SAME requirement under a new id. The row is renamed IN PLACE,
+#               so its KsiValidations (linked by row id) move with it.
+#   retire      kept, never deleted; its validations stay as history. superseded_by
+#               names the closest new indicator — a pointer, NOT a claim that the
+#               old assessment carries over. A low score means a weak pointer.
+#
+# Applied by FedrampKsiImportService. Never edit a row without an owner review.
+approved_by_owner_on: '2026-09-28'
+upstream_version: '2026.09.13.02'
+indicators:
+  ksi-auth-01:
+    title: 'Authorization Data Sharing'
+    retire: true
+    superseded_by: [KSI-CNA-EIS]
+    evidence: { best: KSI-CNA-EIS, best_name: "Enforcing Intended State", score: 0.12, mutual: true }
+  ksi-auth-02:
+    title: 'Significant Change Notifications'
+    retire: true
+    superseded_by: [KSI-CMT-RVP]
+    evidence: { best: KSI-CMT-RVP, best_name: "Reviewing Change Procedures", score: 0.14, mutual: false }
+  ksi-auth-03:
+    title: 'Vulnerability Disclosure Program'
+    retire: true
+    superseded_by: [KSI-PIY-RVD]
+    evidence: { best: KSI-PIY-RVD, best_name: "Reviewing Vulnerability Disclosure", score: 0.20, mutual: false }
+  ksi-auth-04:
+    title: 'FedRAMP 20x Compliance Attestation'
+    retire: true
+    superseded_by: [KSI-SCR-MON]
+    evidence: { best: KSI-SCR-MON, best_name: "Monitoring Supply Chain Risk", score: 0.02, mutual: false }
+  ksi-cm-01:
+    title: 'Configuration Baseline'
+    retire: true
+    superseded_by: [KSI-SVC-ACM]
+    evidence: { best: KSI-SVC-ACM, best_name: "Automating Configuration Managemen", score: 0.18, mutual: false }
+  ksi-cm-02:
+    title: 'Version Control'
+    retire: true
+    superseded_by: [KSI-CMT-VTD]
+    evidence: { best: KSI-CMT-VTD, best_name: "Validating Throughout Deployment", score: 0.12, mutual: false }
+  ksi-cm-03:
+    title: 'Immutable Deployment'
+    retire: true
+    superseded_by: [KSI-CMT-VTD]
+    evidence: { best: KSI-CMT-VTD, best_name: "Validating Throughout Deployment", score: 0.23, mutual: true }
+  ksi-cm-04:
+    title: 'Automated Testing'
+    retire: true
+    superseded_by: [KSI-CMT-VTD]
+    evidence: { best: KSI-CMT-VTD, best_name: "Validating Throughout Deployment", score: 0.17, mutual: false }
+  ksi-cm-05:
+    title: 'Change Approval Process'
+    retire: true
+    superseded_by: [KSI-CMT-RVP]
+    evidence: { best: KSI-CMT-RVP, best_name: "Reviewing Change Procedures", score: 0.22, mutual: true }
+  ksi-cm-06:
+    title: 'Rollback Capability'
+    retire: true
+    superseded_by: [KSI-RPL-RRO]
+    evidence: { best: KSI-RPL-RRO, best_name: "Reviewing Recovery Objectives", score: 0.15, mutual: false }
+  ksi-cm-07:
+    title: 'Change Impact Analysis'
+    retire: true
+    superseded_by: [KSI-CMT-VTD]
+    evidence: { best: KSI-CMT-VTD, best_name: "Validating Throughout Deployment", score: 0.17, mutual: false }
+  ksi-cna-01:
+    title: 'DoS Protection'
+    retire: true
+    superseded_by: [KSI-CNA-RVP]
+    evidence: { best: KSI-CNA-RVP, best_name: "Reviewing Protections", score: 0.19, mutual: true }
+  ksi-cna-02:
+    title: 'High Availability'
+    rename_to: KSI-CNA-OFA
+    evidence: { best: KSI-CNA-OFA, best_name: "Optimizing for Availability", score: 0.23, mutual: true }
+  ksi-cna-03:
+    title: 'Container Immutability'
+    retire: true
+    superseded_by: [KSI-CNA-DFP]
+    evidence: { best: KSI-CNA-DFP, best_name: "Defining Functionality and Privile", score: 0.15, mutual: true }
+  ksi-cna-04:
+    title: 'Microservices Isolation'
+    retire: true
+    superseded_by: [KSI-CNA-DFP]
+    evidence: { best: KSI-CNA-DFP, best_name: "Defining Functionality and Privile", score: 0.11, mutual: false }
+  ksi-cna-05:
+    title: 'Auto-Scaling'
+    retire: true
+    superseded_by: [KSI-CNA-OFA]
+    evidence: { best: KSI-CNA-OFA, best_name: "Optimizing for Availability", score: 0.11, mutual: false }
+  ksi-edu-01:
+    title: 'Security Awareness Training'
+    retire: true
+    superseded_by: [KSI-CED-RAT]
+    evidence: { best: KSI-CED-RAT, best_name: "Reviewing All Training", score: 0.20, mutual: false }
+  ksi-edu-02:
+    title: 'Role-Based Training'
+    retire: true
+    superseded_by: [KSI-CED-RAT]
+    evidence: { best: KSI-CED-RAT, best_name: "Reviewing All Training", score: 0.22, mutual: true }
+  ksi-edu-03:
+    title: 'Phishing Simulation'
+    retire: true
+    superseded_by: [KSI-CED-RAT]
+    evidence: { best: KSI-CED-RAT, best_name: "Reviewing All Training", score: 0.09, mutual: false }
+  ksi-iam-01:
+    title: 'Phishing-Resistant MFA'
+    retire: true
+    superseded_by: [KSI-IAM-APM]
+    evidence: { best: KSI-IAM-APM, best_name: "Adopting Passwordless Methods", score: 0.16, mutual: true }
+  ksi-iam-02:
+    title: 'Least Privilege Access'
+    rename_to: KSI-IAM-ELP
+    evidence: { best: KSI-IAM-ELP, best_name: "Ensuring Least Privilege", score: 0.31, mutual: true }
+  ksi-iam-03:
+    title: 'Centralized Identity'
+    retire: true
+    superseded_by: [KSI-IAM-APM]
+    evidence: { best: KSI-IAM-APM, best_name: "Adopting Passwordless Methods", score: 0.12, mutual: false }
+  ksi-iam-04:
+    title: 'Privileged Access Management'
+    retire: true
+    superseded_by: [KSI-IAM-AAM]
+    evidence: { best: KSI-IAM-AAM, best_name: "Automating Account Management", score: 0.21, mutual: false }
+  ksi-iam-05:
+    title: 'Service Account Management'
+    retire: true
+    superseded_by: [KSI-IAM-AAM]
+    evidence: { best: KSI-IAM-AAM, best_name: "Automating Account Management", score: 0.37, mutual: true }
+  ksi-ir-01:
+    title: 'Incident Response Plan'
+    rename_to: KSI-INR-RIR
+    evidence: { best: KSI-INR-RIR, best_name: "Reviewing Incident Response Proced", score: 0.34, mutual: true }
+  ksi-ir-02:
+    title: 'Incident Detection and Reporting'
+    retire: true
+    superseded_by: [KSI-INR-RIR]
+    evidence: { best: KSI-INR-RIR, best_name: "Reviewing Incident Response Proced", score: 0.17, mutual: false }
+  ksi-ir-03:
+    title: 'Incident Recovery'
+    retire: true
+    superseded_by: [KSI-RPL-TRC]
+    evidence: { best: KSI-RPL-TRC, best_name: "Testing Recovery Capabilities", score: 0.18, mutual: false }
+  ksi-ir-04:
+    title: 'Tabletop Exercises'
+    retire: true
+    superseded_by: [KSI-INR-RPI]
+    evidence: { best: KSI-INR-RPI, best_name: "Reviewing Past Incidents", score: 0.12, mutual: false }
+  ksi-mla-01:
+    title: 'Centralized Logging'
+    retire: true
+    superseded_by: [KSI-MLA-LET]
+    evidence: { best: KSI-MLA-LET, best_name: "Logging Event Types", score: 0.18, mutual: true }
+  ksi-mla-02:
+    title: 'Log Retention'
+    retire: true
+    superseded_by: [KSI-MLA-ALA]
+    evidence: { best: KSI-MLA-ALA, best_name: "Authorizing Log Access", score: 0.18, mutual: true }
+  ksi-mla-03:
+    title: 'Vulnerability Scanning'
+    retire: true
+    superseded_by: [KSI-PIY-RVD]
+    evidence: { best: KSI-PIY-RVD, best_name: "Reviewing Vulnerability Disclosure", score: 0.34, mutual: true }
+  ksi-mla-04:
+    title: 'Infrastructure Monitoring'
+    retire: true
+    superseded_by: [KSI-SCR-MON]
+    evidence: { best: KSI-SCR-MON, best_name: "Monitoring Supply Chain Risk", score: 0.10, mutual: false }
+  ksi-mla-05:
+    title: 'Alert Response'
+    retire: true
+    superseded_by: [KSI-INR-RIR]
+    evidence: { best: KSI-INR-RIR, best_name: "Reviewing Incident Response Proced", score: 0.18, mutual: false }
+  ksi-mla-06:
+    title: 'Anomaly Detection'
+    retire: true
+    superseded_by: [KSI-MLA-RVL]
+    evidence: { best: KSI-MLA-RVL, best_name: "Reviewing Logs", score: 0.09, mutual: false }
+  ksi-mla-07:
+    title: 'Penetration Testing'
+    retire: true
+    superseded_by: [KSI-RPL-TRC]
+    evidence: { best: KSI-RPL-TRC, best_name: "Testing Recovery Capabilities", score: 0.11, mutual: false }
+  ksi-pol-01:
+    title: 'Security Policy Documentation'
+    retire: true
+    superseded_by: [KSI-PIY-RIS]
+    evidence: { best: KSI-PIY-RIS, best_name: "Reviewing Investments in Security", score: 0.19, mutual: true }
+  ksi-pol-02:
+    title: 'Asset Inventory'
+    rename_to: KSI-PIY-GIV
+    evidence: { best: KSI-PIY-GIV, best_name: "Generating Inventories", score: 0.09, mutual: true }
+  ksi-pol-03:
+    title: 'Data Classification'
+    retire: true
+    superseded_by: [KSI-SVC-RUD]
+    evidence: { best: KSI-SVC-RUD, best_name: "Removing Unwanted Data", score: 0.12, mutual: true }
+  ksi-pol-04:
+    title: 'Acceptable Use Policy'
+    retire: true
+    superseded_by: [KSI-PIY-GIV]
+    evidence: { best: KSI-PIY-GIV, best_name: "Generating Inventories", score: 0.05, mutual: false }
+  ksi-rec-01:
+    title: 'Backup Strategy'
+    rename_to: KSI-RPL-ABO
+    evidence: { best: KSI-RPL-ABO, best_name: "Aligning Backups with Objectives", score: 0.11, mutual: false }
+  ksi-rec-02:
+    title: 'Recovery Time Objectives'
+    rename_to: KSI-RPL-RRO
+    evidence: { best: KSI-RPL-RRO, best_name: "Reviewing Recovery Objectives", score: 0.43, mutual: true }
+  ksi-rec-03:
+    title: 'Disaster Recovery Testing'
+    rename_to: KSI-RPL-TRC
+    evidence: { best: KSI-RPL-TRC, best_name: "Testing Recovery Capabilities", score: 0.33, mutual: true }
+  ksi-rec-04:
+    title: 'Business Continuity Plan'
+    retire: true
+    superseded_by: [KSI-RPL-ARP]
+    evidence: { best: KSI-RPL-ARP, best_name: "Aligning Recovery Plan", score: 0.20, mutual: false }
+  ksi-scr-01:
+    title: 'Third-Party Authorization'
+    retire: true
+    superseded_by: [KSI-SCR-MON]
+    evidence: { best: KSI-SCR-MON, best_name: "Monitoring Supply Chain Risk", score: 0.11, mutual: false }
+  ksi-scr-02:
+    title: 'Software Bill of Materials'
+    retire: true
+    superseded_by: [KSI-SCR-MON]
+    evidence: { best: KSI-SCR-MON, best_name: "Monitoring Supply Chain Risk", score: 0.07, mutual: false }
+  ksi-scr-03:
+    title: 'Dependency Scanning'
+    retire: true
+    superseded_by: [KSI-PIY-RVD]
+    evidence: { best: KSI-PIY-RVD, best_name: "Reviewing Vulnerability Disclosure", score: 0.20, mutual: false }
+  ksi-scr-04:
+    title: 'Supply Chain Attestation'
+    retire: true
+    superseded_by: [KSI-SCR-MON]
+    evidence: { best: KSI-SCR-MON, best_name: "Monitoring Supply Chain Risk", score: 0.25, mutual: true }
+  ksi-svc-01:
+    title: 'Encryption at Rest'
+    retire: true
+    superseded_by: [KSI-SVC-SIN]
+    evidence: { best: KSI-SVC-SIN, best_name: "Securing Information", score: 0.10, mutual: true }
+  ksi-svc-02:
+    title: 'Encryption in Transit'
+    retire: true
+    superseded_by: [KSI-SVC-SIN]
+    evidence: { best: KSI-SVC-SIN, best_name: "Securing Information", score: 0.09, mutual: false }
+  ksi-svc-03:
+    title: 'Component Integrity'
+    rename_to: KSI-SVC-VRI
+    evidence: { best: KSI-SVC-VRI, best_name: "Validating Resource Integrity", score: 0.22, mutual: true }
+  ksi-svc-04:
+    title: 'Hardened Baselines'
+    retire: true
+    superseded_by: [KSI-SVC-ACM]
+    evidence: { best: KSI-SVC-ACM, best_name: "Automating Configuration Managemen", score: 0.07, mutual: false }
+  ksi-svc-05:
+    title: 'Key Management'
+    rename_to: KSI-SVC-ASM
+    evidence: { best: KSI-SVC-ASM, best_name: "Automating Secret Management", score: 0.25, mutual: true }
+  ksi-svc-06:
+    title: 'Network Segmentation'
+    rename_to: KSI-CNA-RNT
+    evidence: { best: KSI-CNA-RNT, best_name: "Restricting Network Traffic", score: 0.17, mutual: true }
+  ksi-svc-07:
+    title: 'Endpoint Protection'
+    retire: true
+    superseded_by: [KSI-CNA-DFP]
+    evidence: { best: KSI-CNA-DFP, best_name: "Defining Functionality and Privile", score: 0.10, mutual: false }
