@@ -809,6 +809,40 @@ findings:
         sees untrusted input
     kev_checked: '2026-09-21'
     kev_listed: false
+- cve_id: CVE-2026-54876
+  package: openssl-libs
+  installed_version: 1:3.5.8-1.el9_8
+  fixed_version: none available upstream (Red Hat status under_investigation)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): openssl-libs 1:3.5.8-1.el9_8 [rpm]. OpenSSL: a memory
+    leak in OCSP RESPONSE CHECKING can be driven into denial of service (CVSS 3.1 7.5, AV:N/AC:L/PR:N/UI:N/C:N/I:N/A:H
+    - availability only). Red Hat grades it HIGH and its status is under_investigation, so no fixed el9 package
+    exists to take; upstream OpenSSL has fixed it (155b5fe0, d8c51048). NOT INTRODUCED BY A CODE CHANGE: the image
+    carried the same openssl-libs in main''s 2026-09-24 scan (trivy 0.69.3) with no finding; Red Hat''s advisory data
+    reached the vulnerability DB after that, and trivy first reports it on 2026-09-28 (PR #1188 run 36363884426, and
+    main''s scheduled run 36387546128). Deferred as a POA&M with a risk_adjustment deviation until Red Hat ships a fix.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-28'
+  next_review_date: '2026-10-28'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH is the grading for a deployment that CHECKS OCSP responses from an untrusted source.
+      The vulnerable function is in the image, loaded with libcrypto, but nothing in SPARC calls it - measured
+      from source on 2026-09-28, below. Impact is availability only. No fix exists to apply, so the residual is
+      what is being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: SPARC's own code never performs OCSP - 0 references to OCSP in app/, lib/, config/ or bin/
+        (measured 2026-09-28)
+    - description: no installed gem performs OCSP response checking - the only OCSP reference in the bundle is
+        the openssl gem's Certificate#ocsp_uris, which reads OCSP URLs from a certificate's AIA extension and
+        verifies no response (measured 2026-09-28)
+    - description: availability-only impact (C:N/I:N/A:H) - no confidentiality or integrity exposure
+    kev_checked: '2026-09-28'
+    kev_listed: false
 # ── CodeQL SAST rules (#1186) — dispositioned per RESULT, not per rule ───────
 #
 # hdf-cli 3.5.1 graded CodeQL results from `problem.severity` and flattened
