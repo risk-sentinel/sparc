@@ -834,9 +834,7 @@
   ],
   "authorization_boundaries": [],
   "authorization_boundary_new": [],
-  "authorization_boundary_show": [
-    "color-contrast::.bg-info"
-  ],
+  "authorization_boundary_show": [],
   "cdef_index": [
     "color-contrast::tr:nth-child(1) > td:nth-child(2) > .rounded.fw-semibold",
     "color-contrast::tr:nth-child(10) > td:nth-child(2) > .rounded.fw-semibold",
@@ -1465,11 +1463,9 @@
     "color-contrast::code:nth-child(3)",
     "color-contrast::tr:nth-child(1) > td:nth-child(4) > code:nth-child(1)",
     "color-contrast::tr:nth-child(1) > td:nth-child(4) > code:nth-child(2)",
-    "color-contrast::tr:nth-child(2) > td:nth-child(3) > .bg-info.badge",
     "color-contrast::tr:nth-child(2) > td:nth-child(4) > code:nth-child(1)",
     "color-contrast::tr:nth-child(2) > td:nth-child(4) > code:nth-child(2)",
     "color-contrast::tr:nth-child(3) > td:nth-child(4) > code",
-    "color-contrast::tr:nth-child(4) > td:nth-child(3) > .bg-info.badge",
     "color-contrast::tr:nth-child(4) > td:nth-child(4) > code:nth-child(1)",
     "color-contrast::tr:nth-child(4) > td:nth-child(4) > code:nth-child(2)",
     "color-contrast::tr:nth-child(5) > td:nth-child(4) > code:nth-child(1)",

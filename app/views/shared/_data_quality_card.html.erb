@@ -24,7 +24,7 @@
             <span class="badge bg-warning text-dark"><%= by_severity["warning"] %> Warning<%= 's' if by_severity["warning"] != 1 %></span>
           <% end %>
           <% if (by_severity["info"] || 0) > 0 %>
-            <span class="badge bg-info text-white"><%= by_severity["info"] %> Info</span>
+            <span class="badge badge-info"><%= by_severity["info"] %> Info</span>
           <% end %>
         <% else %>
           <span class="badge bg-success">No Issues</span>
@@ -52,7 +52,7 @@
         <div class="accordion" id="dataQualityAccordion">
           <% warnings.each_with_index do |warning, idx| %>
             <% severity = warning["severity"] || "info" %>
-            <% badge_class = severity == "warning" ? "bg-warning text-dark" : "bg-info text-white" %>
+            <% badge_class = severity == "warning" ? "bg-warning text-dark" : "badge-info" %>
             <% category_label = warning["category"].to_s.tr("_", " ").titleize %>
             <% control_ids = warning["control_ids"] || [] %>
             <% count = warning["count"] || control_ids.size %>

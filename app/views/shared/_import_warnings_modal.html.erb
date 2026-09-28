@@ -35,7 +35,7 @@
           <div class="accordion" id="warningsAccordion">
             <% warnings.each_with_index do |warning, idx| %>
               <% severity = warning["severity"] || "info" %>
-              <% badge_class = severity == "warning" ? "bg-warning text-dark" : "bg-info text-white" %>
+              <% badge_class = severity == "warning" ? "bg-warning text-dark" : "badge-info" %>
               <% category_label = warning["category"].to_s.tr("_", " ").titleize %>
               <% control_ids = warning["control_ids"] || [] %>
               <% count = warning["count"] || control_ids.size %>

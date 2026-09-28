@@ -22,7 +22,7 @@
                 <% if ssp.ssp_version.present? %>
                   <span class="badge bg-dark">v<%= ssp.ssp_version %></span>
                 <% end %>
-                <span class="badge <%= ssp.published_lifecycle? ? 'bg-success' : 'bg-info' %>">
+                <span class="badge <%= ssp.published_lifecycle? ? 'bg-success' : 'badge-info' %>">
                   <%= ssp.lifecycle_label %>
                 </span>
                 <% if ssp.creation_method.present? %>
