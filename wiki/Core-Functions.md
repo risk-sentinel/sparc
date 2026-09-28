@@ -970,9 +970,9 @@ The Docker image serves HTTP on port **3000**. HTTPS termination is handled at t
 | Path | Use it for | Answers |
 |---|---|---|
 | `/up` | **liveness** — restart the container if it stops answering | `200` while the process serves; never touches the database |
-| `/up/ready` | **readiness** — the load balancer's target health check | `200` when the database answers, no migration is pending and the schema matches; otherwise `503` with counts only |
+| `/up/ready` | **readiness** — deploy verification, alarms, and Kubernetes readiness | `200` when the database answers, no migration is pending and the schema matches; otherwise `503` with counts only |
 
-Point the load balancer's health check at **`/up/ready`**. A proxy-level check such as an NGINX `/nginx-health` proves only that the proxy is listening: when v1.16.2 left existing databases missing seven columns, every layer of that kind reported healthy while boundary pages returned 500. Earlier versions of this page said `/up` answered probes; no route served it until the release after v1.16.3.
+Point a load balancer or ECS target-group health check at **`/up`**, and use **`/up/ready`** to verify a deploy and to alarm. Behind ECS a failing target is replaced, so a readiness check there would restart every task during a brief database outage. Either way, a proxy-level check such as an NGINX `/nginx-health` is not enough — it proves only that the proxy is listening. When v1.16.2 left existing databases missing seven columns, every layer of that kind reported healthy while boundary pages returned 500. Earlier versions of this page said `/up` answered probes; no route served it until the release after v1.16.3.
 
 The container also **refuses to start** its web server when the database schema does not match the image — see [Upgrading](Upgrading#the-boot-gate-releases-after-v1163).
 

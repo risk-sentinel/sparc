@@ -84,6 +84,37 @@ RSpec.describe "Health endpoints" do
       expect(response.parsed_body["checks"]).to eq("database" => "unavailable")
     end
 
+    # PR #1188 review: a check that throws must answer like a failed check
+    # (503, JSON, no names) — not an HTML 500 — and must be cached, or every
+    # probe re-runs the catalog walk the cache exists to bound.
+    it "answers 503 with schema_check: error when the schema check itself throws" do
+      allow(SchemaDriftService).to receive(:new).and_raise(RuntimeError, "catalog unreadable")
+
+      get "/up/ready"
+
+      expect(response).to have_http_status(:service_unavailable)
+      expect(response.media_type).to eq("application/json")
+      expect(response.parsed_body).to eq("status" => "unavailable", "checks" => { "database" => "ok", "schema_check" => "error" })
+      expect(response.body).not_to include("catalog unreadable")
+    end
+
+    it "caches a throwing check like any other result" do
+      expect(SchemaDriftService).to receive(:new).once.and_raise(RuntimeError, "boom")
+
+      3.times { get "/up/ready" }
+
+      expect(response).to have_http_status(:service_unavailable)
+    end
+
+    it "reads schema.rb once, not on every cache miss" do
+      allow(HealthController).to receive(:clock).and_return(1_000.0, 2_000.0, 3_000.0)
+      expect(SchemaDefinition).to receive(:load).once.and_call_original
+
+      3.times { get "/up/ready" }
+
+      expect(response).to have_http_status(:ok)
+    end
+
     it "measures the schema at most once per cache window — a probe must not become a query storm" do
       expect(SchemaDriftService).to receive(:new).once.and_call_original
 

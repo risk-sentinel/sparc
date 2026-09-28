@@ -197,7 +197,7 @@ docker compose exec web env DRY_RUN=1 bin/rails db:reconcile_schema
 
 **If a new version will not start**, read the container log: the report names every difference and why reconciliation refused. Restore the backup from [Step 3](#step-3--back-up-the-database) if you need the previous version back while you resolve it, and open an issue with the report.
 
-Then point your load balancer's health check at **`/up/ready`**, which returns `503` if the schema drifts after boot — see [Core Functions](Core-Functions#container-deployment).
+Keep your load balancer's health check on **`/up`**, and check **`/up/ready`** after each deploy (and alarm on it): it returns `503` if the database is unreachable, a migration is pending, or the schema drifts after boot — see [Core Functions](Core-Functions#container-deployment).
 
 ---
 
