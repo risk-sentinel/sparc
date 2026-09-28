@@ -417,6 +417,29 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
         expect(File.read(path)).to include("approval_mechanism: approve-deviation-comment")
       end
 
+      # End to end: what the applier WRITES must be what the converter ACCEPTS.
+      # The two keep separate mechanism lists (they run in different sparse
+      # checkouts), and until PR #1188 they disagreed — the converter allowed
+      # only review/admin-merge-bypass, so the first real /approve-deviation
+      # would have produced a register security_gate refused. Each script's own
+      # specs were green; only running one into the other shows it.
+      it "writes an approval the converter accepts (applier -> converter)" do
+        path = requested_register
+
+        _stdout, status = Open3.capture2e(
+          { "SPARC_FINDINGS_FILE" => path, "SPARC_REVIEW_STATE" => "APPROVED",
+            "SPARC_REVIEWER" => "clem-field", "SPARC_PR_NUMBER" => "999",
+            "SPARC_APPROVAL_MECHANISM" => "approve-deviation-comment",
+            "PATH" => stub_gh },
+          "ruby", applier
+        )
+        expect(status.exitstatus).to eq(0)
+
+        code, out, overrides = amend(path)
+        expect(code).to eq(0), out
+        expect(overrides).not_to be_empty
+      end
+
       it "refuses a mechanism it does not recognise rather than recording it" do
         path = requested_register
 

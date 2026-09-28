@@ -126,7 +126,15 @@ DEVIATION_APPROVAL_FIELDS = %w[approved_by approved_in approved_at].freeze
 #                         use the review path. Authority is verifiable; a
 #                         separate approval event is not. Weaker, and declared
 #                         so it can never be mistaken for the strong path.
-DEVIATION_APPROVAL_MECHANISMS = %w[review admin-merge-bypass].freeze
+#   approve-deviation-comment — an authorised admin/maintainer commented
+#                         `/approve-deviation` on the PR (#871). A distinct,
+#                         attributable act the gate corroborates against the
+#                         PR's comment list. What scripts/ci/apply_deviation_approval.rb
+#                         writes; it was missing here until PR #1188, so the first
+#                         live approval would have been refused. The two lists
+#                         are held in step by the applier -> converter spec in
+#                         spec/scripts/deviation_flow_spec.rb.
+DEVIATION_APPROVAL_MECHANISMS = %w[review admin-merge-bypass approve-deviation-comment].freeze
 
 DISPOSITION_TO_OVERRIDE_TYPE = {
   "false_positive" => "falsePositive",
