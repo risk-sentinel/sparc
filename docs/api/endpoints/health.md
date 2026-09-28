@@ -60,12 +60,13 @@ or a database that does not answer (the schema is not checked):
 | Check | Meaning | Ready when |
 | --- | --- | --- |
 | `database` | `SELECT 1` succeeds | `"ok"` |
+| `schema_check` | present only when the schema check itself failed (it is then `"error"`, and the cause is logged) | absent |
 | `pending_migrations` | migrations in the image the database has not run | `0` |
 | `schema_drift` | **structural** differences from `db/schema.rb` — a missing extension, table, column, index or foreign key, or a column of the wrong type | `0` |
 
 `schema_drift` counts structural drift only. Definitional differences (a default, nullability, an index's shape) are logged as warnings and do not take an instance out of service; `STRICT=1 bin/rails db:verify_schema` reports them. See [Upgrading](https://github.com/risk-sentinel/sparc/wiki/Upgrading).
 
-Use it for **readiness** — the load balancer's target health check. An instance whose schema stops matching is removed from service rather than serving errors.
+**Which probe goes where.** Point a load balancer or ECS target-group health check at **`/up`**, not `/up/ready`. An ECS/ALB target that fails its health check is killed and replaced, so a readiness failure there would restart every task during a brief database outage, and a rolling deploy with a non-additive migration would pull the still-serving tasks. Use `/up/ready` for **deploy verification and alarms**, and as the readiness probe on orchestrators that keep readiness separate from liveness (Kubernetes).
 
 ## Relationship to the boot gate
 

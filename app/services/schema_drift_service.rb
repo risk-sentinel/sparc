@@ -75,9 +75,13 @@ class SchemaDriftService
   # Retained for callers that referenced it before #1151; the recorder owns it.
   IGNORED_TABLES = SchemaDefinition::IGNORED_TABLES
 
-  def initialize(schema_path: Rails.root.join("db/schema.rb"), connection: ActiveRecord::Base.connection)
+  # `definition:` lets a long-lived caller (the health probe) pass a
+  # SchemaDefinition it has already read, instead of re-reading schema.rb.
+  def initialize(schema_path: Rails.root.join("db/schema.rb"), connection: ActiveRecord::Base.connection,
+                 definition: nil)
     @schema_path = schema_path
     @connection = connection
+    @definition = definition
   end
 
   def definition = @definition ||= SchemaDefinition.load(schema_path)

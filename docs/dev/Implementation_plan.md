@@ -119,7 +119,9 @@ is red until #1186 is dispositioned, and every PR after it inherits that red. AG
    register** — grype names requirements `Grype/<id>` and emits its own ignore
    list, so the register's overrides matched 0 grype requirements and a
    deferred (POA&M) finding's status never reaches the grype gate; and
-   **sparc-iac** should point `health_check_path` at `/up/ready` and enable
+   **sparc-iac** should point `health_check_path` at `/up` (liveness) — NOT
+   `/up/ready`, which behind ECS would replace the whole fleet on a database
+   blip (PR #1188 review) — verify deploys against `/up/ready`, and enable
    `deployment_circuit_breaker`.
 5. **Two items the owner flagged during #1185 are still not written up:** the
    image build downloads all 44 OSCAL schemas from GitHub at build time though

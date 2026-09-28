@@ -16,11 +16,15 @@
 # schema with seven missing columns, every layer reported healthy while every
 # boundary page returned 500 (#1147).
 #
-# `/up/ready` is the signal that was missing: point the load balancer here and
-# a container whose schema does not match is taken out of service instead of
-# served. The boot gate in `bin/docker-entrypoint` is the first line — a
-# container that cannot reconcile never binds its port — and this is the
-# second, for drift that appears after boot.
+# `/up/ready` is the signal that was missing — but it is NOT the load
+# balancer's health check (PR #1188 review). Behind an ECS/ALB target group an
+# unhealthy target is killed and replaced, so failing it on a database blip
+# would restart the whole fleet at once, and a rolling deploy with a
+# non-additive migration would pull the still-serving tasks. The target group
+# checks `/up` (liveness); `/up/ready` is for deploy verification, alarms and
+# orchestrators that separate readiness from liveness. The boot gate in
+# `bin/docker-entrypoint` is the first line — a container that cannot
+# reconcile never binds its port — and this reports drift that appears after.
 #
 # ── What it discloses ──────────────────────────────────────────────────────
 #
@@ -59,19 +63,32 @@ class HealthController < ActionController::Base # NOSONAR(rubydre:S7905)
       end
     end
 
-    def reset_cache! = @cache_lock.synchronize { @cache = nil }
+    def reset_cache! = @cache_lock.synchronize { @cache = nil; @schema_definition = nil }
+
+    # schema.rb cannot change while the process runs, so it is read once
+    # (PR #1188 review nit), not re-evaluated on every cache miss.
+    def schema_definition
+      @schema_definition ||= SchemaDefinition.load(Rails.root.join("db/schema.rb"))
+    end
 
     # Monotonic, so a wall-clock change cannot pin or flush the cache.
     def clock = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
     private
 
+    # A check that THROWS is reported, not raised (PR #1188 review): it
+    # answers 503 with `schema_check: "error"` rather than an HTML 500, and the
+    # error is cached like any other result, so a broken check cannot turn every
+    # probe into a fresh catalog walk — the storm CACHE_TTL exists to prevent.
     def measure_schema
       pending = ActiveRecord::Base.connection_pool.migration_context.open.pending_migrations.size
-      drift = SchemaDriftService.new
+      drift = SchemaDriftService.new(definition: schema_definition)
       found = drift.drift
       Rails.logger.warn("health: /up/ready not ready\n#{drift.report}") if found.any?
       { pending_migrations: pending, schema_drift: found.size }
+    rescue StandardError => e
+      Rails.logger.error("health: /up/ready schema check failed (#{e.class}: #{e.message})")
+      { schema_check: "error" }
     end
   end
 
@@ -82,7 +99,8 @@ class HealthController < ActionController::Base # NOSONAR(rubydre:S7905)
   def ready
     checks = { database: database_state }
     checks.merge!(self.class.schema_state) if checks[:database] == "ok"
-    ok = checks[:database] == "ok" && checks[:pending_migrations].zero? && checks[:schema_drift].zero?
+    ok = checks[:database] == "ok" && checks[:schema_check] != "error" &&
+         checks[:pending_migrations].to_i.zero? && checks[:schema_drift].to_i.zero?
 
     render json: { status: ok ? "ok" : "unavailable", checks: checks }, status: ok ? :ok : :service_unavailable
   end
