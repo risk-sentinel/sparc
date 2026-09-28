@@ -1191,7 +1191,8 @@ The API lives under the `Api::V1::` namespace. No UI screens -- these are JSON-o
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/v1/ksi_catalog/themes|indicators|indicators/:id|mappings` | Read-only FedRAMP 20x KSI catalog |
+| `GET` | `/api/v1/ksi_catalog/themes|indicators|indicators/:id|mappings` | FedRAMP 20x KSI catalog (current entries; `include_retired=true` for retired ones) |
+| `POST` | `/api/v1/ksi_catalog/import` | Import the catalog from the vendored FedRAMP/rules snapshot (`dry_run=true` to preview; `catalogs.write`) |
 | various | `/api/v1/authorization_boundaries/:id/ksi_validations` | Per-boundary KSI validation tracking CRUD + `summary`/`export` |
 
 #### Translation Bridge API (#449)

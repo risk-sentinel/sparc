@@ -228,6 +228,7 @@ This is why the schema check exists, and why it is the step that actually tells 
 
 | Release | Note |
 |---|---|
+| **v1.17.0** | Rebuilds the FedRAMP 20x KSI catalog from FedRAMP's published rules. FedRAMP has renamed every indicator (`ksi-iam-02` is now `KSI-IAM-ELP`), and the catalog is re-keyed automatically, a few seconds after the first boot. Ten indicators are renamed in place, and their assessments move with them. The other 44 old indicators, and the `AUTH` theme, are **retired, not deleted**: their assessments are kept and shown as history. New assessments go on the current indicators. To preview the change first, run `bin/rails 'ksi:import[true]'`. |
 | **after v1.16.3** | Adds the [boot gate](#the-boot-gate-releases-after-v1163), `db:reconcile_schema`, the `/up` and `/up/ready` health probes, and definition-level checks in `db:verify_schema` (`STRICT=1`). `bin/schema_drift_sql` reports missing tables. |
 | **v1.16.3** | Repairs databases affected by v1.16.2. Adds `db:verify_schema` and `bin/schema_drift_sql`. |
 | **v1.16.2** | **Do not upgrade an existing deployment into this release.** Fresh installs are unaffected. Go to v1.16.3. |

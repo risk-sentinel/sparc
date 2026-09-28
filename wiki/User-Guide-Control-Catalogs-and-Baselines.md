@@ -71,7 +71,7 @@ imported and stored on the record, so filtering is instant and does not depend
 on how a title happens to be worded.
 
 SPARC decides it from the strongest available signal, in order: an explicit
-source on the catalog, then the shape of the control identifiers (`ksi-auth-01`
+source on the catalog, then the shape of the control identifiers (`ksi-iam-elp`
 is a FedRAMP 20x indicator, `ac-2` an 800-53 family), then the title, then the
 filename. A baseline inherits from the catalog it was built from, so a baseline
 named simply *Demo LOW Baseline* still filters correctly.
@@ -102,6 +102,21 @@ the value on the record and SPARC will not overwrite it on a later import.
 
 On the catalog detail page use the **OSCAL** export buttons. Two variants are
 offered: **validated** (schema-checked) and **unvalidated**.
+
+### What a "Retired" badge means
+
+Some sources withdraw entries. The FedRAMP 20x KSI catalog is built from
+FedRAMP's published rules, and when FedRAMP drops or renames an indicator,
+SPARC **retires** the old one rather than deleting it, so the assessments
+recorded against it are kept.
+
+- On the catalog page a retired family shows a **Retired** badge. A family's
+  count is its current controls, with any retired ones listed as `+N retired`.
+- On a family page a retired control shows a **Retired** badge and, where the
+  source names one, the entry that **superseded** it. That is the source's
+  pointer to the closest successor; it does not mean an assessment carries over.
+- The OSCAL export marks a retired entry `withdrawn`, the way NIST marks a
+  withdrawn 800-53 control.
 
 ---
 
