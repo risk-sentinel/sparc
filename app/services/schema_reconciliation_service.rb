@@ -148,6 +148,7 @@ class SchemaReconciliationService
         Array(by_kind[:extension]).each { |d| connection.enable_extension(d.name) }
         Array(by_kind[:table]).each { |d| create_table(definition.tables.fetch(d.table)) }
         Array(by_kind[:column]).each { |d| add_column(d) }
+        Array(by_kind[:check_constraint]).each { |d| add_check_constraint(d) }
         Array(by_kind[:index]).each { |d| add_index(index_for(d)) }
         Array(by_kind[:foreign_key]).each { |d| add_foreign_key(d) }
         raise ActiveRecord::Rollback if dry_run
@@ -174,6 +175,13 @@ class SchemaReconciliationService
     options = column.options.dup
     options[:default] = column.default.to_proc if column.default.is_a?(SchemaDefinition::Expression)
     options
+  end
+
+  def add_check_constraint(drift)
+    expression, options = definition.tables.fetch(drift.table).check_constraints.find { |_e, o| o[:name].to_s == drift.name }
+    raise Refused, "no check constraint in schema.rb matches #{drift}" unless expression
+
+    connection.add_check_constraint(drift.table, expression, **options)
   end
 
   def index_for(drift) = definition.tables.fetch(drift.table).indexes.find { |i| i.name == drift.name }

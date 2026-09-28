@@ -6,6 +6,9 @@
 #   bin/schema_drift_sql | psql "$DATABASE_URL"
 #   bin/schema_drift_sql path/to/schema.rb          # defaults to db/schema.rb
 #
+# The schema file is EVALUATED as Ruby (lib/schema_definition.rb) — point this
+# only at a schema.rb you trust.
+#
 # Lists every table and column db/schema.rb declares that the target database
 # does not have. Plain Ruby: no Rails, no gems, no database connection here — so
 # it runs from any checkout against any deployment, including one still on an
