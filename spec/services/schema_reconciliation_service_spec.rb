@@ -155,6 +155,57 @@ RSpec.describe SchemaReconciliationService do
     end
   end
 
+  # PR #1188 review: web tasks booting at once must not race the repair. The
+  # lock is session-level, so a SECOND session (its own pool connection)
+  # holds it; the service must block, and must not measure drift until it has
+  # the lock — otherwise a waiting task would act on a stale reading.
+  describe "concurrency" do
+    # A genuinely separate Postgres session. Under transactional tests the pool
+    # hands back the SAME pinned connection (measured: same backend pid), and an
+    # advisory lock is re-entrant within one session — so a pool checkout would
+    # let the service straight through and prove nothing.
+    def separate_session
+      c = ActiveRecord::Base.connection_db_config.configuration_hash
+      PG.connect(dbname: c[:database], host: c[:host], port: c[:port], user: c[:username], password: c[:password])
+    end
+
+    it "waits for another session's repair, and measures drift only once it holds the lock" do
+      other = separate_session
+      expect(other.exec("SELECT pg_backend_pid()").getvalue(0, 0).to_i)
+        .not_to eq(connection.select_value("SELECT pg_backend_pid()"))
+      other.exec("SELECT pg_advisory_lock(#{described_class::LOCK_ID})")
+      drift_service = SchemaDriftService.new
+      allow(drift_service).to receive(:drift).and_call_original
+      service = described_class.new(drift_service: drift_service, connection: connection, audit: false)
+
+      worker = Thread.new { service.call }
+      sleep 0.5
+
+      expect(worker).to be_alive
+      expect(drift_service).not_to have_received(:drift)
+
+      other.exec("SELECT pg_advisory_unlock(#{described_class::LOCK_ID})")
+      expect(worker.join(10)&.value).to be_clean
+      expect(drift_service).to have_received(:drift)
+    ensure
+      worker&.kill
+      other&.close
+    end
+
+    it "releases the lock even when the repair raises" do
+      drift_service = SchemaDriftService.new
+      allow(drift_service).to receive(:drift).and_raise(RuntimeError, "boom")
+
+      expect { described_class.new(drift_service: drift_service, audit: false).call }.to raise_error(RuntimeError, "boom")
+
+      other = separate_session
+      expect(other.exec("SELECT pg_try_advisory_lock(#{described_class::LOCK_ID})").getvalue(0, 0)).to eq("t")
+      other.exec("SELECT pg_advisory_unlock(#{described_class::LOCK_ID})")
+    ensure
+      other&.close
+    end
+  end
+
   describe "dry run" do
     it "reports the exact statements, then rolls every one of them back" do
       connection.remove_column(:authorization_boundaries, :description)
