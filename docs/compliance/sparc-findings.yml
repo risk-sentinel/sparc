@@ -828,7 +828,11 @@ findings:
   next_review_date: '2026-10-28'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1188"
+    approved_at: "2026-09-28"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH is the grading for a deployment that CHECKS OCSP responses from an untrusted source.
       The vulnerable function is in the image, loaded with libcrypto, but nothing in SPARC calls it - measured
