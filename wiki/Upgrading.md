@@ -195,6 +195,8 @@ To see what reconciliation would do without doing it:
 docker compose exec web env DRY_RUN=1 bin/rails db:reconcile_schema
 ```
 
+**A boot-time repair can hold write locks.** Reconciliation runs in one transaction, so a missing index is built with a plain `CREATE INDEX` (not `CONCURRENTLY`, which cannot run in a transaction) and a missing foreign key validates every existing row. On a large table both block writes to it until the repair finishes — while your previous version is still serving. Tasks booting together also wait for one another: the repair is serialised with a database lock, and a task that waited finds the schema already repaired. If `DRY_RUN=1` (above) shows an index or foreign key on a large table, apply it yourself first — `CREATE INDEX CONCURRENTLY`, or `ADD CONSTRAINT … NOT VALID` then `VALIDATE CONSTRAINT` — and the container will find nothing left to repair.
+
 **If a new version will not start**, read the container log: the report names every difference and why reconciliation refused. Restore the backup from [Step 3](#step-3--back-up-the-database) if you need the previous version back while you resolve it, and open an issue with the report.
 
 Keep your load balancer's health check on **`/up`**, and check **`/up/ready`** after each deploy (and alarm on it): it returns `503` if the database is unreachable, a migration is pending, or the schema drifts after boot — see [Core Functions](Core-Functions#container-deployment).
