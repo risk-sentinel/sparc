@@ -18,8 +18,10 @@ class ControlCatalog < ApplicationRecord
 
   validates :name, presence: true
 
+  # #1115 — the controls the catalog holds NOW; retired entries are kept for
+  # history and are not counted.
   def total_controls
-    catalog_controls.count
+    catalog_controls.not_retired.count
   end
 
   def oscal_document_version

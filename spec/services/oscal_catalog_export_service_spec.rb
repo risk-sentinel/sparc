@@ -182,6 +182,53 @@ RSpec.describe OscalCatalogExportService do
     end
   end
 
+  # #1115 — a retired KSI exports the way NIST exports a withdrawn control, and
+  # the document stays schema-valid.
+  describe "retired entries" do
+    before do
+      family.catalog_controls.create!(control_id: "ac-13", label: "AC-13", sort_id: "ac-13", title: "Old",
+                                      retired_at: 1.day.ago, superseded_by: [ "AC-1" ])
+      gone = create(:control_family, control_catalog: catalog, code: "ZZ", name: "Gone", sort_order: 2, retired_at: 1.day.ago)
+      gone.catalog_controls.create!(control_id: "zz-1", label: "ZZ-1", sort_id: "zz-1", title: "Gone too",
+                                    retired_at: 1.day.ago)
+    end
+
+    let(:doc) { JSON.parse(subject.export_unvalidated)["catalog"] }
+
+    it "marks a retired control withdrawn, linking its successor as related (not incorporated-into)" do
+      old = doc["groups"].first["controls"].find { |c| c["id"] == "ac-13" }
+
+      expect(old["props"]).to include({ "name" => "status", "value" => "withdrawn" })
+      expect(old["links"]).to eq([ { "href" => "#ac-1", "rel" => "related" } ])
+      current = doc["groups"].first["controls"].find { |c| c["id"] == "ac-1" }
+      expect(current["props"]).not_to include({ "name" => "status", "value" => "withdrawn" })
+    end
+
+    it "marks a retired family's group withdrawn" do
+      expect(doc["groups"].find { |g| g["id"] == "zz" }["props"]).to eq([ { "name" => "status", "value" => "withdrawn" } ])
+      expect(doc["groups"].find { |g| g["id"] == "ac" }).not_to have_key("props")
+    end
+
+    it "stays valid against the OSCAL catalog schema" do
+      result = subject.validation_result
+
+      expect(result).to be_valid, result.errors.first(5).inspect
+    end
+
+    it "no longer counts the retired controls in total_controls" do
+      expect(catalog.total_controls).to eq(1)
+    end
+  end
+
+  it "exports a family with no controls without an empty controls array, which the schema rejects" do
+    create(:control_family, control_catalog: catalog, code: "EM", name: "Empty", sort_order: 3)
+
+    group = JSON.parse(subject.export_unvalidated)["catalog"]["groups"].find { |g| g["id"] == "em" }
+
+    expect(group).not_to have_key("controls")
+    expect(subject.validation_result).to be_valid
+  end
+
   describe "#validation_result" do
     it "returns a result object" do
       result = subject.validation_result

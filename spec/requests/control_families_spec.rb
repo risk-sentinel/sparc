@@ -35,6 +35,41 @@ RSpec.describe "ControlFamilies", type: :request do
     end
   end
 
+  # #1115 — a retired entry is kept for the assessments recorded against it,
+  # and must not read as current.
+  describe "retired entries" do
+    let(:family) { create(:control_family, control_catalog: catalog, code: "IAM", name: "Identity") }
+
+    before do
+      family.catalog_controls.create!(control_id: "ksi-iam-elp", label: "KSI-IAM-ELP", title: "Ensuring Least Privilege")
+      family.catalog_controls.create!(control_id: "ksi-iam-03", label: "KSI-IAM-03", title: "Centralized Identity",
+                                      retired_at: 1.day.ago, superseded_by: [ "KSI-IAM-APM" ])
+    end
+
+    it "badges a retired control on the family page, with its successor" do
+      get control_catalog_family_path(catalog.url_id, "iam")
+
+      row = Nokogiri::HTML(response.body).css("tr").find { |tr| tr.text.include?("Centralized Identity") }
+      expect(row.text).to include("Retired", "Superseded by KSI-IAM-APM")
+      current = Nokogiri::HTML(response.body).css("tr").find { |tr| tr.text.include?("Ensuring Least Privilege") }
+      expect(current.text).not_to include("Retired")
+    end
+
+    it "counts current controls on the catalog page, with the retired ones apart, and badges a retired family" do
+      create(:control_family, control_catalog: catalog, code: "AUTH", name: "Authorization by FedRAMP", retired_at: 1.day.ago)
+
+      get control_catalog_path(catalog)
+      follow_redirect! while response.redirect?
+
+      rows = Nokogiri::HTML(response.body).css("tbody tr")
+      iam = rows.find { |tr| tr.text.include?("Identity") }
+      auth = rows.find { |tr| tr.text.include?("Authorization by FedRAMP") }
+      expect(iam.text.squish).to include("1 +1 retired")
+      expect(iam.text).not_to match(/\bRetired\b/)
+      expect(auth.text).to include("Retired")
+    end
+  end
+
   describe "GET /control_catalogs/:id/control_families/new" do
     it "renders the new family form" do
       get new_control_catalog_control_family_path(catalog)

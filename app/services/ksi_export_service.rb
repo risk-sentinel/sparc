@@ -16,6 +16,12 @@
 #   yaml    = service.export(format: :yaml)
 #   xml     = service.export(format: :xml)
 #
+# #1115 — FedRAMP retires indicators. A validation on a retired indicator is
+# still EXPORTED (it is the record of what was assessed, flagged `ksi_retired`
+# with FedRAMP's `superseded_by`), but the summary measures the CURRENT catalog:
+# a pass on an indicator FedRAMP no longer publishes is not compliance with the
+# catalog as it stands. Such validations are counted as `retired_validations`.
+#
 # NIST: CA-7 (Continuous Monitoring), PM-6 (Measures of Performance)
 require "yaml"
 require "builder"
@@ -66,7 +72,7 @@ class KsiExportService
                           .includes(catalog_control: :control_family)
 
     ksi_catalog = find_ksi_catalog
-    total_ksis = ksi_catalog&.catalog_controls&.count || 0
+    total_ksis = ksi_catalog ? current_indicators(ksi_catalog).count : 0
 
     stats = build_summary(validations)
     stats[:total_ksis_in_catalog] = total_ksis
@@ -88,7 +94,7 @@ class KsiExportService
   end
 
   def find_ksi_catalog
-    ControlCatalog.find_by(source: "FedRAMP 20x")
+    ControlCatalog.find_by(source: FedrampKsiImportService::SOURCE)
   end
 
   def catalog_info(catalog)
@@ -98,9 +104,15 @@ class KsiExportService
       name: catalog.name,
       version: catalog.version,
       source: catalog.source,
-      themes_count: catalog.control_families.count,
-      indicators_count: catalog.catalog_controls.count
+      source_commit: catalog.metadata_extra&.dig("fedramp_rules", "source_commit"),
+      themes_count: catalog.control_families.not_retired.count,
+      indicators_count: current_indicators(catalog).count,
+      retired_indicators_count: catalog.catalog_controls.retired.count
     }
+  end
+
+  def current_indicators(catalog)
+    catalog.catalog_controls.not_retired
   end
 
   def load_mapping_entries(ksi_catalog)
@@ -118,6 +130,8 @@ class KsiExportService
     {
       ksi_id: validation.ksi_id,
       ksi_title: validation.ksi_title,
+      ksi_retired: validation.catalog_control.retired?,
+      superseded_by: validation.catalog_control.superseded_by,
       theme_code: validation.theme_code,
       theme_name: validation.theme_name,
       status: validation.status,
@@ -146,7 +160,8 @@ class KsiExportService
     }
   end
 
-  def build_summary(validations)
+  def build_summary(all_validations)
+    validations = all_validations.reject { |v| v.catalog_control.retired? }
     by_status = KsiValidation::STATUSES.index_with { |s| validations.count { |v| v.status == s } }
     by_theme = validations.group_by(&:theme_code).transform_values do |vs|
       {
@@ -167,6 +182,7 @@ class KsiExportService
       by_status: by_status,
       by_theme: by_theme,
       overdue_count: validations.count(&:expired?),
+      retired_validations: all_validations.size - validations.size,
       compliance_percentage: total.positive? ? (passed.to_f / total * 100).round(1) : 0.0
     }
   end

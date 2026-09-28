@@ -67,7 +67,10 @@ class OscalCatalogExportService
         "id"       => family.code.downcase,
         "class"    => "family",
         "title"    => family.name,
-        "controls" => build_controls(family)
+        "props"    => (family.retired? ? [ WITHDRAWN_PROP ] : nil),
+        # The schema requires a present `controls` to hold at least one; a
+        # family with none omits the key rather than exporting an invalid [].
+        "controls" => build_controls(family).presence
       }.compact
     end
   end
@@ -108,7 +111,22 @@ class OscalCatalogExportService
     parts = build_control_parts(control)
     result["parts"] = parts if parts.any?
 
+    links = retired_links(control)
+    result["links"] = links if links.any?
+
     result
+  end
+
+  # #1115 — a retired entry (a FedRAMP KSI the source no longer publishes) is
+  # exported the way NIST exports a withdrawn control: `status: withdrawn`. Its
+  # successors are linked `related`, NOT `incorporated-into` — FedRAMP names a
+  # closest successor, it does not say the old requirement was folded into it.
+  WITHDRAWN_PROP = { "name" => "status", "value" => "withdrawn" }.freeze
+
+  def retired_links(control)
+    return [] unless control.retired?
+
+    Array(control.superseded_by).map { |id| { "href" => "##{id.to_s.downcase}", "rel" => "related" } }
   end
 
   def build_control_props(control)
@@ -131,6 +149,7 @@ class OscalCatalogExportService
       end
     end
 
+    props << WITHDRAWN_PROP if control.retired?
     props
   end
 

@@ -121,6 +121,14 @@
                       control_catalog_control_path(@control_family.control_catalog.url_id, control),
                       class: "text-decoration-none" %>
               </span>
+              <%# #1115 — kept for the assessments recorded against it; the
+                  successor is the source's own pointer, not a carried-over result. %>
+              <% if control.retired? %>
+                <span class="badge sparc-status--neutral ms-1">Retired</span>
+                <% if control.superseded_by.present? %>
+                  <div class="small text-body-secondary">Superseded by <%= control.superseded_by.join(", ") %></div>
+                <% end %>
+              <% end %>
             </td>
 
             <%# ── Title / Statement column ── %>

@@ -217,7 +217,7 @@ def test_every_list_endpoint_returns_the_documented_envelope(
 UNPAGINATED_BY_DESIGN = {
     "GET /api/v1/admin/remediation_timelines": "18 rows, fixed set",
     "GET /api/v1/guides": "15 rows, fixed set",
-    "GET /api/v1/ksi_catalog/themes": "11 rows, fixed set",
+    "GET /api/v1/ksi_catalog/themes": "10 rows, FedRAMP's published themes (#1115)",
 }
 
 

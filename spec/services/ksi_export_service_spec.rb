@@ -93,6 +93,34 @@ RSpec.describe KsiExportService do
       expect(result[:overdue_count]).to eq(1)
     end
 
+    # #1115 — a pass on an indicator FedRAMP no longer publishes is history,
+    # not compliance with the catalog as it stands.
+    it "measures the current catalog: a validation on a retired indicator is counted apart" do
+      # Recorded while current, then retired by an import — the real order.
+      retired = create(:catalog_control, control_family: theme, control_id: "ksi-iam-03")
+      create(:ksi_validation, :failed, authorization_boundary: boundary, catalog_control: retired)
+      retired.update!(retired_at: 1.day.ago, superseded_by: [ "KSI-IAM-AAM" ])
+
+      result = service.summary
+
+      expect(result[:total]).to eq(1)
+      expect(result[:compliance_percentage]).to eq(100.0)
+      expect(result[:retired_validations]).to eq(1)
+      expect(result[:total_ksis_in_catalog]).to eq(1)
+    end
+
+    it "still exports the retired validation, flagged, with FedRAMP's successor" do
+      # Recorded while current, then retired by an import — the real order.
+      retired = create(:catalog_control, control_family: theme, control_id: "ksi-iam-03")
+      create(:ksi_validation, :failed, authorization_boundary: boundary, catalog_control: retired)
+      retired.update!(retired_at: 1.day.ago, superseded_by: [ "KSI-IAM-AAM" ])
+
+      row = service.export_hash[:validations].find { |v| v[:ksi_id] == "ksi-iam-03" }
+
+      expect(row).to include(ksi_retired: true, superseded_by: [ "KSI-IAM-AAM" ])
+      expect(service.export_hash[:ksi_catalog]).to include(indicators_count: 1, retired_indicators_count: 1)
+    end
+
     it "includes by_theme breakdown" do
       result = service.summary
       expect(result[:by_theme]["IAM"][:total]).to eq(1)

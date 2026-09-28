@@ -9,10 +9,11 @@
 class ControlMappingEntry < ApplicationRecord
   include ControlIdentifiable
   # #911 — TARGET only. `source_control_id` is by definition the non-NIST side
-  # of the mapping: a FedRAMP KSI entry stores `ksi-iam-01` here and the NIST
+  # of the mapping: a FedRAMP KSI entry stores a KSI id here and the NIST
   # control in `target_control_id`. `ControlId.canonical` encodes NIST numbering,
-  # so it strips KSI's zero-padding to `ksi-iam-1` — an identifier the KSI
-  # catalog does not contain, which silently emptied the mappings endpoint.
+  # so it strips the pre-#1115 ids' zero-padding (`ksi-iam-01` to `ksi-iam-1`),
+  # an identifier the KSI catalog does not contain, which silently emptied the
+  # mappings endpoint.
   #
   # The source identifier persists exactly as it arrived; the NIST side is the
   # one that has to line up with a catalog. Promoting that split into
