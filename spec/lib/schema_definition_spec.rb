@@ -66,6 +66,16 @@ RSpec.describe SchemaDefinition do
         .to raise_error(NoMethodError, /x\.shape|geometry/)
     end
 
+    # PR #1188 review: types the drift comparison cannot read correctly are
+    # refused where schema.rb is first read (development, CI), never at a
+    # production boot.
+    %w[serial bigserial virtual].each do |type|
+      it "refuses a #{type} column until the comparison supports it" do
+        expect { parse(%(create_table "x" do |t|\n t.#{type} "c"\nend)) }
+          .to raise_error(ArgumentError, /x\.c as `#{type}`/)
+      end
+    end
+
     it "raises on a top-level statement it does not record" do
       expect { parse(%(create_table "x" do |t|\n t.string "a"\nend\ncreate_view "v", "SELECT 1")) }
         .to raise_error(NoMethodError, /create_view/)

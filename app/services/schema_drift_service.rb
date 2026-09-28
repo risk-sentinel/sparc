@@ -57,6 +57,7 @@ class SchemaDriftService
       when :index then "missing index #{name} on #{table}"
       when :index_definition then "index #{name} on #{table} is #{actual}, schema.rb declares #{expected}"
       when :foreign_key then "missing foreign key #{table}.#{name} -> #{expected}"
+      when :check_constraint then "missing check constraint #{name} on #{table}"
       else raise ArgumentError, "unhandled drift kind #{kind.inspect}"
       end
     end
@@ -68,9 +69,9 @@ class SchemaDriftService
     def reconcilable? = RECONCILABLE_KINDS.include?(kind)
   end
 
-  STRUCTURAL_KINDS = %i[extension table column column_type index foreign_key].freeze
+  STRUCTURAL_KINDS = %i[extension table column column_type index foreign_key check_constraint].freeze
   DEFINITIONAL_KINDS = %i[nullability default index_definition].freeze
-  RECONCILABLE_KINDS = %i[extension table column index foreign_key].freeze
+  RECONCILABLE_KINDS = %i[extension table column index foreign_key check_constraint].freeze
 
   # Retained for callers that referenced it before #1151; the recorder owns it.
   IGNORED_TABLES = SchemaDefinition::IGNORED_TABLES
@@ -146,7 +147,23 @@ class SchemaDriftService
   def table_drift(table)
     return [ Drift.new(kind: :table, table: table.name) ] unless live_tables.include?(table.name)
 
-    column_drift(table) + index_drift(table)
+    column_drift(table) + index_drift(table) + check_constraint_drift(table)
+  end
+
+  # PR #1188 review: the repair recreated check constraints for a missing
+  # table but nothing compared them on a table that exists. Presence by name —
+  # the dumper always writes `name:` — is the structural question; the
+  # expression is not compared.
+  def check_constraint_drift(table)
+    return [] if table.check_constraints.empty?
+
+    live = connection.check_constraints(table.name).map(&:name)
+    table.check_constraints.filter_map do |_expression, options|
+      name = options[:name].to_s
+      next if name.empty? || live.include?(name)
+
+      Drift.new(kind: :check_constraint, table: table.name, name: name)
+    end
   end
 
   def column_drift(table)

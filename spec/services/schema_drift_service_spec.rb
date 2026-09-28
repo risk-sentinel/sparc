@@ -109,6 +109,45 @@ RSpec.describe SchemaDriftService do
     end
   end
 
+
+  # PR #1188 review: check constraints on an EXISTING table were never compared.
+  describe "check constraints" do
+    def cc_schema
+      file = Tempfile.new([ "schema", ".rb" ])
+      file.write(<<~RUBY)
+        ActiveRecord::Schema[8.1].define(version: 1) do
+          create_table "cc_probes", force: :cascade do |t|
+            t.integer "n"
+            t.check_constraint "n > 0", name: "n_positive"
+          end
+        end
+      RUBY
+      file.flush
+      file
+    end
+
+    it "names a check constraint missing from a table that exists — structural" do
+      connection.create_table(:cc_probes) { |t| t.integer :n }
+      schema = cc_schema
+
+      found = described_class.new(schema_path: schema.path).drift
+
+      expect(found.map(&:to_s)).to eq([ "missing check constraint n_positive on cc_probes" ])
+      expect(found.first).to be_reconcilable
+    ensure
+      schema&.close!
+    end
+
+    it "reports nothing when the constraint is there" do
+      connection.create_table(:cc_probes) { |t| t.integer :n; t.check_constraint "n > 0", name: "n_positive" }
+      schema = cc_schema
+
+      expect(described_class.new(schema_path: schema.path).drift(strict: true)).to eq([])
+    ensure
+      schema&.close!
+    end
+  end
+
   describe "foreign keys and extensions" do
     it "names a missing foreign key" do
       connection.remove_foreign_key(:api_tokens, :users)

@@ -20,6 +20,14 @@
 # the property the regex was protecting (reading the schema can never change a
 # database) while reading the schema the way Rails itself reads it.
 #
+# ── It EXECUTES the file — point it only at a schema.rb you trust ─────────
+#
+# Recording means evaluating: `instance_eval` runs whatever Ruby the file
+# contains, with this process's privileges. The line regex it replaced was
+# safe on any input; this is not (PR #1188 review). The app reads its own
+# db/schema.rb, and bin/upgrade_path_check reads one out of a SPARC image it
+# pulled by tag — never hand it a schema.rb from a source you do not trust.
+#
 # ── Plain Ruby, on purpose ─────────────────────────────────────────────────
 #
 # No Rails, no ActiveSupport. `bin/schema_drift_sql` requires this file from a
@@ -69,6 +77,14 @@ class SchemaDefinition
     primary_key serial bigserial string text time timestamp timestamptz tsrange
     tstzrange tsvector uuid virtual xml
   ].freeze
+
+  # PR #1188 review: the live catalog reports these differently from how the
+  # dumper writes them — serial/bigserial read back as an integer with a
+  # sequence default, a virtual column as its underlying type — and
+  # SchemaDriftService#live_type does not normalise them. None is in schema.rb
+  # today. Refusing them HERE fails in development and CI, where schema.rb is
+  # first read; a silent misread would instead refuse a production boot.
+  UNSUPPORTED_TYPES = %i[serial bigserial virtual].freeze
 
   DEFINE = /\AActiveRecord::Schema\[[\d.]+\]\.define\(version:\s*([\d_]+)\)\s+do\s*\n/
 
@@ -139,6 +155,10 @@ class SchemaDefinition
     def column(name, type, **options)
       type = type.to_sym
       raise NoMethodError, "schema.rb declares #{@table}.#{name} as unknown type `#{type}`" unless COLUMN_TYPES.include?(type)
+      if UNSUPPORTED_TYPES.include?(type)
+        raise ArgumentError, "schema.rb declares #{@table}.#{name} as `#{type}`, which the drift comparison " \
+                                   "cannot read correctly yet — teach SchemaDriftService#live_type before using it"
+      end
 
       options = options.dup
       options[:default] = Expression.new(options[:default].call) if options[:default].respond_to?(:call)

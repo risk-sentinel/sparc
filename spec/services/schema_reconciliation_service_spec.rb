@@ -103,6 +103,29 @@ RSpec.describe SchemaReconciliationService do
     end
   end
 
+  it "adds a check constraint missing from a table that exists" do
+    connection.create_table(:cc_probes) { |t| t.integer :n }
+    schema = Tempfile.new([ "schema", ".rb" ])
+    schema.write(<<~RUBY)
+      ActiveRecord::Schema[8.1].define(version: 1) do
+        create_table "cc_probes", force: :cascade do |t|
+          t.integer "n"
+          t.check_constraint "n > 0", name: "n_positive"
+        end
+      end
+    RUBY
+    schema.flush
+    drift = -> { SchemaDriftService.new(schema_path: schema.path) }
+
+    result = described_class.new(drift_service: drift.call, audit: false).call
+
+    expect(result).to be_reconciled
+    expect(connection.check_constraints(:cc_probes).map(&:name)).to eq([ "n_positive" ])
+    expect(drift.call.drift(strict: true)).to eq([])
+  ensure
+    schema&.close!
+  end
+
   describe "refusal — nothing is changed" do
     it "refuses a NOT NULL column with no default on a populated table, and applies NOTHING else either" do
       boundary_row
