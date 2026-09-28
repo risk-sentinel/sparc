@@ -112,7 +112,9 @@ is red until #1186 is dispositioned, and every PR after it inherits that red. AG
    approval field). AE drafts them with the rationale and fingerprint pins;
    `security_gate` stays red until they are authored.
 2. **Promote `upgrade_path` to a required check** after one release of stable
-   runs. Owed, owner-decided 2026-09-27.
+   runs. Owed, owner-decided 2026-09-27. **At promotion, add a baseline matrix**
+   (`[latest, oldest-supported]`, PR #1188 review): today it tests only a
+   one-release hop, while the archive rule says "every supported deployment".
 3. **Three empty milestones are still open on GitHub** (`v1.16.0`, `ci.v0.0.1`,
    `v1.16.1`). Closing one is an owner action.
 4. **Raised by AE, not filed (owner's call):** the **grype gate ignores the
