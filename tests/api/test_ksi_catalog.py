@@ -92,6 +92,21 @@ class TestShowIndicator:
         )
 
 
+class TestRenamedIds:
+    """#1194 — an old id the #1115 re-key renamed still resolves."""
+
+    @pytest.mark.happy
+    def test_old_renamed_id_resolves_to_the_current_indicator(
+        self, admin_client: httpx.Client
+    ) -> None:
+        response = admin_client.get(f"{PATH}/indicators/ksi-iam-02")
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert data["control_id"] == "ksi-iam-elp"
+        assert data["resolved_from"] == "ksi-iam-02"
+
+
 class TestMappings:
     @pytest.mark.happy
     def test_lists_mappings(self, admin_client: httpx.Client) -> None:

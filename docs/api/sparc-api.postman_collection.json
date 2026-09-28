@@ -7842,7 +7842,7 @@
                 "{{indicator_id}}"
               ]
             },
-            "description": "Returns one indicator by id (ksi-iam-elp or KSI-IAM-ELP) with the NIST SP 800-53 Rev 5 controls FedRAMP maps it to. A retired indicator still resolves, with retired_at and superseded_by set.\n\nResponse format:\n```json\n{\n  \"data\": {\n    \"control_id\": \"ksi-iam-elp\",\n    \"label\": \"KSI-IAM-ELP\",\n    \"title\": \"Ensuring Least Privilege\",\n    \"theme_code\": \"IAM\",\n    \"description\": \"Identity and access management measures are used and persistently reviewed ...\",\n    \"retired_at\": null,\n    \"superseded_by\": [],\n    \"mapped_nist_controls\": [\n      {\n        \"target\": \"ac-2.5\",\n        \"relationship\": \"intersects\"\n      }\n    ]\n  }\n}\n```"
+            "description": "Returns one indicator by id (ksi-iam-elp or KSI-IAM-ELP) with the NIST SP 800-53 Rev 5 controls FedRAMP maps it to. A retired indicator still resolves, with retired_at and superseded_by set. An old id the re-key renamed (e.g. ksi-iam-02) resolves to the current indicator, with resolved_from set.\n\nResponse format:\n```json\n{\n  \"data\": {\n    \"control_id\": \"ksi-iam-elp\",\n    \"label\": \"KSI-IAM-ELP\",\n    \"title\": \"Ensuring Least Privilege\",\n    \"theme_code\": \"IAM\",\n    \"description\": \"Identity and access management measures are used and persistently reviewed ...\",\n    \"retired_at\": null,\n    \"superseded_by\": [],\n    \"mapped_nist_controls\": [\n      {\n        \"target\": \"ac-2.5\",\n        \"relationship\": \"intersects\"\n      }\n    ]\n  }\n}\n```"
           }
         },
         {

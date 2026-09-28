@@ -119,6 +119,16 @@ RSpec.describe FedrampKsiImportService do
     end
   end
 
+  describe ".renamed_to" do
+    it "answers the current id for each of the ten approved renames, in either case, and nil otherwise" do
+      renames = legacy_map.select { |_, row| row["rename_to"] }
+      expect(renames.size).to eq(10)
+      renames.each { |old, row| expect(described_class.renamed_to(old.upcase)).to eq(row["rename_to"].downcase) }
+      expect(described_class.renamed_to("ksi-auth-01")).to be_nil
+      expect(described_class.renamed_to("nope")).to be_nil
+    end
+  end
+
   describe "a later FedRAMP release" do
     it "retires an indicator the new snapshot no longer publishes, keeping its validation, with no successor claimed" do
       described_class.new.call

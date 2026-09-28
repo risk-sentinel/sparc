@@ -117,6 +117,9 @@ recorded against it are kept.
   pointer to the closest successor; it does not mean an assessment carries over.
 - The OSCAL export marks a retired entry `withdrawn`, the way NIST marks a
   withdrawn 800-53 control.
+- Today only the FedRAMP 20x KSI catalog retires entries. Baselines, profiles
+  and assessment plans are built from NIST catalogs and do not take retirement
+  into account.
 
 ---
 

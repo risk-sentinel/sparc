@@ -4,7 +4,7 @@
 #
 # GET  /api/v1/ksi_catalog/themes         — list KSI themes
 # GET  /api/v1/ksi_catalog/indicators     — list KSIs (filterable by theme, impact_level)
-# GET  /api/v1/ksi_catalog/indicators/:id — show KSI with mapped NIST controls
+# GET  /api/v1/ksi_catalog/indicators/:id — show KSI with mapped NIST controls (a renamed old id resolves, #1194)
 # GET  /api/v1/ksi_catalog/mappings       — KSI-to-NIST mapping entries
 # POST /api/v1/ksi_catalog/import         — import the vendored FedRAMP/rules snapshot (#1172)
 #
@@ -54,19 +54,25 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
   end
 
   # GET /api/v1/ksi_catalog/indicators/:id
+  #
+  # #1194 — an old id the #1115 re-key RENAMED (ksi-iam-02 -> ksi-iam-elp)
+  # resolves to the current indicator, answered with `resolved_from` so the
+  # caller learns the current id. A 200, not a redirect: clients that do not
+  # follow redirects would otherwise see the same 404.
   def show_indicator
-    indicator = CatalogControl.joins(:control_family)
-                              .where(control_families: { control_catalog_id: @ksi_catalog.id })
-                              .where(control_id: ControlId.forms(params[:id]))
-                              .first!
+    indicator = find_indicator(params[:id])
+    resolved_from = nil
+    unless indicator
+      current_id = FedrampKsiImportService.renamed_to(params[:id])
+      indicator = current_id && find_indicator(current_id)
+      raise ActiveRecord::RecordNotFound unless indicator
 
-    mapped_controls = load_mapped_controls(indicator.control_id)
+      resolved_from = params[:id].to_s.strip.downcase
+    end
 
-    render json: {
-      data: serialize_indicator(indicator, detailed: true).merge(
-        mapped_nist_controls: mapped_controls
-      )
-    }
+    data = serialize_indicator(indicator, detailed: true).merge(mapped_nist_controls: load_mapped_controls(indicator.control_id))
+    data[:resolved_from] = resolved_from if resolved_from
+    render json: { data: data }
   end
 
   # POST /api/v1/ksi_catalog/import
@@ -115,6 +121,13 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
 
   def set_ksi_catalog
     @ksi_catalog = ControlCatalog.find_by!(source: FedrampKsiImportService::SOURCE)
+  end
+
+  def find_indicator(id)
+    CatalogControl.joins(:control_family)
+                  .where(control_families: { control_catalog_id: @ksi_catalog.id })
+                  .where(control_id: ControlId.forms(id))
+                  .first
   end
 
   def include_retired? = ActiveModel::Type::Boolean.new.cast(params[:include_retired]) || false
