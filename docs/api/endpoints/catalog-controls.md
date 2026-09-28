@@ -95,6 +95,8 @@ curl -X GET "https://sparc.example.com/api/v1/control_catalogs/<uuid>/controls?f
       "control_family_id": 7,
       "family_code": "AC",
       "depth": 0,
+      "retired_at": null,
+      "superseded_by": [],
       "created_at": "2026-08-03T12:00:00Z",
       "updated_at": "2026-08-03T12:00:00Z"
     }
@@ -102,6 +104,8 @@ curl -X GET "https://sparc.example.com/api/v1/control_catalogs/<uuid>/controls?f
   "meta": { "page": 1, "items": 25, "count": 142, "pages": 6 }
 }
 ```
+
+`retired_at` is set on an entry its source no longer publishes. Such entries are kept, not deleted, so the assessments recorded against them survive. Today only FedRAMP 20x KSI indicators are ever retired. `superseded_by` lists the source's closest successor ids; it is a pointer only, not a claim that an assessment carries over. Retired entries are still listed here.
 
 ---
 
