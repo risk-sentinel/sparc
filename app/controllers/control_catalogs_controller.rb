@@ -47,7 +47,7 @@ class ControlCatalogsController < ApplicationController
   end
 
   def show
-    @control_families = @control_catalog.control_families.includes(:catalog_controls)
+    @control_families = @control_catalog.control_families.current_first.includes(:catalog_controls)
 
     respond_to do |format|
       format.html
