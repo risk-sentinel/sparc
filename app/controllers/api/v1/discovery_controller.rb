@@ -197,6 +197,9 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
     { path: "/api/v1/ksi_catalog/mappings", methods: %w[GET],
       description: "KSI-to-NIST 800-53 control mappings",
       permission_read: SCOPE_CATALOGS_READ, permission_write: nil, admin_only: false },
+    { path: "/api/v1/ksi_catalog/import", methods: %w[POST],
+      description: "Import the FedRAMP 20x KSI catalog from the vendored FedRAMP/rules snapshot",
+      permission_read: nil, permission_write: SCOPE_CATALOGS_WRITE, admin_only: false },
 
     # --- Authorization Boundaries ---
     { path: "/api/v1/authorization_boundaries", methods: %w[GET POST],

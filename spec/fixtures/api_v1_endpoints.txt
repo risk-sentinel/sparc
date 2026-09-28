@@ -249,6 +249,7 @@ POST /api/v1/evidences/:evidence_id/control_links
 POST /api/v1/federation_peers
 POST /api/v1/federation_peers/:id/sync
 POST /api/v1/hdf/amendments_from_oscal_poam
+POST /api/v1/ksi_catalog/import
 POST /api/v1/organizations
 POST /api/v1/organizations/:id/boundaries
 POST /api/v1/organizations/:id/deactivate

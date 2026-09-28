@@ -14,6 +14,7 @@ class KsiValidation < ApplicationRecord
   validates :catalog_control_id, uniqueness: { scope: :authorization_boundary_id,
     message: "already has a validation for this KSI in this boundary" }
   validate :evidence_within_boundary
+  validate :indicator_current, on: :create
 
   before_validation :generate_uuid, on: :create
   before_save :check_expiration
@@ -48,6 +49,16 @@ class KsiValidation < ApplicationRecord
   end
 
   private
+
+  # #1115 — a retired indicator keeps the assessments already recorded against
+  # it, as history; a new one belongs on a current indicator. The error names
+  # FedRAMP's successor so the caller knows where to record it.
+  def indicator_current
+    return unless catalog_control&.retired?
+
+    successors = Array(catalog_control.superseded_by).join(", ").presence || "none published"
+    errors.add(:catalog_control, "#{catalog_control.control_id} is retired by FedRAMP (superseded by: #{successors})")
+  end
 
   def generate_uuid
     self.uuid ||= SecureRandom.uuid

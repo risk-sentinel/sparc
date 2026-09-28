@@ -113,6 +113,33 @@ RSpec.describe "Api::V1::KsiValidations", type: :request do
       parsed = JSON.parse(response.body)
       expect(parsed["data"]["status"]).to eq("passed")
       expect(parsed["data"]["ksi_id"]).to eq("ksi-iam-01")
+      expect(parsed["data"]["ksi_retired"]).to be(false)
+    end
+
+    # #1115 — a retired indicator keeps its history; a new assessment belongs
+    # on FedRAMP's successor, which the refusal names.
+    it "refuses a new validation on a retired indicator, naming the successor" do
+      ksi_control.update!(retired_at: 1.day.ago, superseded_by: [ "KSI-IAM-APM" ])
+
+      expect {
+        post api_v1_authorization_boundary_ksi_validations_path(authorization_boundary_id: boundary.slug),
+          params: { ksi_validation: { catalog_control_id: ksi_control.id, status: "passed" } },
+          headers: auth_headers
+      }.not_to change(KsiValidation, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("retired by FedRAMP (superseded by: KSI-IAM-APM)")
+    end
+
+    it "keeps serving, and lets you update, a validation whose indicator was retired after it was recorded" do
+      validation = create(:ksi_validation, :passed, authorization_boundary: boundary, catalog_control: ksi_control)
+      ksi_control.update!(retired_at: 1.day.ago, superseded_by: [ "KSI-IAM-APM" ])
+
+      patch api_v1_authorization_boundary_ksi_validation_path(authorization_boundary_id: boundary.slug, id: validation.id),
+        params: { ksi_validation: { notes: "historical" } }, headers: auth_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)["data"]["ksi_retired"]).to be(true)
     end
 
     it "returns 422 for invalid data" do

@@ -174,6 +174,7 @@ class Api::V1::KsiValidationsController < Api::V1::BaseController
       uuid: validation.uuid,
       ksi_id: validation.ksi_id,
       ksi_title: validation.ksi_title,
+      ksi_retired: validation.catalog_control.retired?,
       theme_code: validation.theme_code,
       theme_name: validation.theme_name,
       status: validation.status,
