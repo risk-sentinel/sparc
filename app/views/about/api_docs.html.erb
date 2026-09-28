@@ -319,15 +319,16 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
     <%# ── KSI Catalog ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3 sparc-heading-enterprise">KSI Catalog (FedRAMP 20x)</h2>
-      <p class="small text-body-secondary">Read-only endpoints for browsing Key Security Indicators.</p>
+      <p class="small text-body-secondary">Key Security Indicators, built from FedRAMP&rsquo;s published rules. Lists return the current catalog; add <code>?include_retired=true</code> for entries FedRAMP no longer publishes.</p>
       <div class="table-responsive">
         <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ksi_catalog/themes</code></td><td>List all KSI themes with indicator counts</td><td>Authenticated</td></tr>
-            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ksi_catalog/indicators</code></td><td>List indicators (filterable by <code>?theme=AUTH</code>, <code>?impact_level=high</code>)</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ksi_catalog/indicators</code></td><td>List indicators (filterable by <code>?theme=IAM</code>, <code>?impact_level=</code>, <code>?include_retired=true</code>)</td><td>Authenticated</td></tr>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ksi_catalog/indicators/:id</code></td><td>Show indicator with mapped NIST controls</td><td>Authenticated</td></tr>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ksi_catalog/mappings</code></td><td>List KSI-to-NIST control mapping entries</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/ksi_catalog/import</code></td><td>Import the vendored FedRAMP/rules snapshot (<code>?dry_run=true</code> to preview)</td><td>catalogs.write</td></tr>
           </tbody>
         </table>
       </div>

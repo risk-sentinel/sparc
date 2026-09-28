@@ -907,8 +907,9 @@ Rails.application.routes.draw do
         end
       end
 
-      # FedRAMP 20x KSI catalog (read-only, #107)
+      # FedRAMP 20x KSI catalog (#107); import from FedRAMP/rules (#1172)
       resource :ksi_catalog, only: [], controller: "ksi_catalog" do
+        post :import, on: :collection
         get :themes, on: :collection
         get :indicators, on: :collection
         get "indicators/:id", action: :show_indicator, on: :collection, as: :indicator

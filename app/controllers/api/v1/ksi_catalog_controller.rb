@@ -1,24 +1,33 @@
-# Read-only API for browsing the FedRAMP 20x KSI catalog.
+# API for the FedRAMP 20x KSI catalog.
 #
 # All endpoints require Bearer token authentication.
-# No write operations — the KSI catalog is seeded from FedRAMP specifications.
 #
-# GET /api/v1/ksi_catalog/themes         — list KSI themes
-# GET /api/v1/ksi_catalog/indicators     — list KSIs (filterable by theme, impact_level)
-# GET /api/v1/ksi_catalog/indicators/:id — show KSI with mapped NIST controls
-# GET /api/v1/ksi_catalog/mappings       — KSI-to-NIST mapping entries
+# GET  /api/v1/ksi_catalog/themes         — list KSI themes
+# GET  /api/v1/ksi_catalog/indicators     — list KSIs (filterable by theme, impact_level)
+# GET  /api/v1/ksi_catalog/indicators/:id — show KSI with mapped NIST controls
+# GET  /api/v1/ksi_catalog/mappings       — KSI-to-NIST mapping entries
+# POST /api/v1/ksi_catalog/import         — import the vendored FedRAMP/rules snapshot (#1172)
+#
+# #1115 — themes and indicators FedRAMP no longer publishes are RETIRED, not
+# deleted, so the assessments recorded against them survive. The list endpoints
+# return the current catalog; `?include_retired=true` adds the retired entries,
+# each carrying `retired_at` and `superseded_by`. A retired indicator is still
+# found by its id, so an old reference resolves to what it was.
 #
 # NIST 800-53 Controls:
-#   AC-3 Access Enforcement (Bearer token auth)
-#   AU-12 Audit Record Generation (read-only, no mutations)
+#   AC-3 Access Enforcement (Bearer token auth; import needs catalogs.write)
+#   AU-12 Audit Record Generation (the import is audited by the service)
+#   CM-3 Configuration Change Control (import is validated, all-or-nothing)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::KsiCatalogController < Api::V1::BaseController
-  before_action :set_ksi_catalog
+  before_action :set_ksi_catalog, except: :import
+  before_action :authorize_catalogs_write!, only: :import
 
   # GET /api/v1/ksi_catalog/themes
   def themes
     families = @ksi_catalog.control_families.order(:sort_order)
+    families = families.not_retired unless include_retired?
 
     rows = families.map { |f| serialize_theme(f) }
     render json: { data: rows, meta: whole_collection(rows) }
@@ -29,6 +38,7 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
     scope = CatalogControl.joins(:control_family)
                           .where(control_families: { control_catalog_id: @ksi_catalog.id })
                           .order("control_families.sort_order", "catalog_controls.sort_id")
+    scope = scope.not_retired unless include_retired?
 
     scope = scope.where(control_families: { code: params[:theme] }) if params[:theme].present?
     if params[:impact_level].present?
@@ -58,6 +68,23 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
     }
   end
 
+  # POST /api/v1/ksi_catalog/import
+  #
+  # Synchronous: the snapshot is 46 indicators and one transaction. Reads only
+  # the vendored copy in lib/data/fedramp — this endpoint never fetches from the
+  # network. `dry_run=true` runs the whole import and rolls it back.
+  #
+  #   200 imported | unchanged | planned (dry run)
+  #   422 refused — schema-invalid data or an inapplicable map; nothing written
+  def import
+    dry_run = ActiveModel::Type::Boolean.new.cast(params[:dry_run]) || false
+    result = FedrampKsiImportService.new(dry_run: dry_run).call
+
+    body = { status: result.status.to_s, upstream_version: result.version,
+             dry_run: dry_run, changes: result.changes, errors: result.errors }
+    render json: { data: body }, status: result.refused? ? :unprocessable_content : :ok
+  end
+
   # GET /api/v1/ksi_catalog/mappings
   def mappings
     mapping = ControlMapping.find_by(source_catalog: @ksi_catalog)
@@ -85,7 +112,18 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
   private
 
   def set_ksi_catalog
-    @ksi_catalog = ControlCatalog.find_by!(source: "FedRAMP 20x")
+    @ksi_catalog = ControlCatalog.find_by!(source: FedrampKsiImportService::SOURCE)
+  end
+
+  def include_retired? = ActiveModel::Type::Boolean.new.cast(params[:include_retired]) || false
+
+  # Same rule as the catalogs API: admins always pass; everyone else needs
+  # `catalogs.write`.
+  def authorize_catalogs_write!
+    return if current_user&.instance_administrator?
+    return if current_user&.has_permission?("catalogs.write")
+
+    render json: { error: "Forbidden" }, status: :forbidden
   end
 
   def serialize_theme(family)
@@ -93,7 +131,8 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
       code: family.code,
       name: family.name,
       sort_order: family.sort_order,
-      indicators_count: family.catalog_controls.count
+      indicators_count: family.catalog_controls.not_retired.count,
+      retired_at: family.retired_at&.iso8601
     }
   end
 
@@ -105,7 +144,9 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
       theme_code: control.control_family.code,
       theme_name: control.control_family.name,
       baseline_impact: control.baseline_impact,
-      baseline_levels: control.baseline_levels
+      baseline_levels: control.baseline_levels,
+      retired_at: control.retired_at&.iso8601,
+      superseded_by: control.superseded_by
     }
 
     if detailed

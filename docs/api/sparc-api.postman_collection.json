@@ -7667,7 +7667,7 @@
     },
     {
       "name": "KSI Catalog",
-      "description": "FedRAMP 20x Key Security Indicator (KSI) catalog. Read-only reference data for KSI themes, indicators, and NIST control mappings.",
+      "description": "FedRAMP 20x Key Security Indicator (KSI) catalog, built from FedRAMP's own published rules (FedRAMP/rules, vendored in lib/data/fedramp). Themes, indicators, the KSI-to-NIST SP 800-53 Rev 5 crosswalk FedRAMP publishes, and the import. Entries FedRAMP no longer publishes are retired, never deleted: list endpoints return the current catalog; add include_retired=true for the rest.",
       "item": [
         {
           "name": "List KSI Themes",
@@ -7691,7 +7691,7 @@
                 "themes"
               ]
             },
-            "description": "Returns all FedRAMP 20x KSI themes. Themes group related Key Security Indicators by security domain (e.g., AUTH for Authentication, VULN for Vulnerability Management).\n\nResponse format:\n```json\n{\n  \"themes\": [\n    {\n      \"code\": \"AUTH\",\n      \"name\": \"Authentication\",\n      \"description\": \"Identity and authentication controls\",\n      \"indicators_count\": 5\n    }\n  ]\n}\n```"
+            "description": "Lists the current KSI themes (retired themes, such as AUTH, only with include_retired=true).\n\nResponse format:\n```json\n{\n  \"data\": [\n    {\n      \"code\": \"IAM\",\n      \"name\": \"Identity and Access Management\",\n      \"sort_order\": 4,\n      \"indicators_count\": 6,\n      \"retired_at\": null\n    }\n  ],\n  \"meta\": {\n    \"count\": 10\n  }\n}\n```"
           },
           "response": [
             {
@@ -7766,7 +7766,7 @@
                 }
               ]
             },
-            "description": "Returns KSI indicators with optional filtering by theme and impact level. Indicators define specific measurable security outcomes required by FedRAMP 20x.\n\nResponse format:\n```json\n{\n  \"indicators\": [\n    {\n      \"id\": 1,\n      \"theme\": \"AUTH\",\n      \"code\": \"AUTH-01\",\n      \"name\": \"Multi-Factor Authentication\",\n      \"impact_levels\": [\"low\", \"moderate\", \"high\"],\n      \"nist_mappings_count\": 3\n    }\n  ]\n}\n```"
+            "description": "Lists the current KSI indicators. Filters: theme (e.g. IAM), impact_level, include_retired=true. Paginated.\n\nResponse format:\n```json\n{\n  \"data\": [\n    {\n      \"control_id\": \"ksi-iam-elp\",\n      \"label\": \"KSI-IAM-ELP\",\n      \"title\": \"Ensuring Least Privilege\",\n      \"theme_code\": \"IAM\",\n      \"theme_name\": \"Identity and Access Management\",\n      \"baseline_impact\": null,\n      \"baseline_levels\": [],\n      \"retired_at\": null,\n      \"superseded_by\": []\n    }\n  ],\n  \"meta\": {\n    \"page\": 1,\n    \"count\": 46\n  }\n}\n```"
           },
           "response": [
             {
@@ -7842,7 +7842,7 @@
                 "{{indicator_id}}"
               ]
             },
-            "description": "Returns a single KSI indicator by ID with full details including all NIST SP 800-53 control mappings. Shows which NIST controls satisfy this indicator.\n\nResponse format:\n```json\n{\n  \"indicator\": {\n    \"id\": 1,\n    \"theme\": \"AUTH\",\n    \"code\": \"AUTH-01\",\n    \"name\": \"Multi-Factor Authentication\",\n    \"description\": \"System enforces MFA for all privileged and non-privileged users\",\n    \"nist_mappings\": [\n      { \"control_id\": \"ia-2\", \"relationship\": \"primary\" },\n      { \"control_id\": \"ia-2(1)\", \"relationship\": \"supporting\" }\n    ]\n  }\n}\n```"
+            "description": "Returns one indicator by id (ksi-iam-elp or KSI-IAM-ELP) with the NIST SP 800-53 Rev 5 controls FedRAMP maps it to. A retired indicator still resolves, with retired_at and superseded_by set.\n\nResponse format:\n```json\n{\n  \"data\": {\n    \"control_id\": \"ksi-iam-elp\",\n    \"label\": \"KSI-IAM-ELP\",\n    \"title\": \"Ensuring Least Privilege\",\n    \"theme_code\": \"IAM\",\n    \"description\": \"Identity and access management measures are used and persistently reviewed ...\",\n    \"retired_at\": null,\n    \"superseded_by\": [],\n    \"mapped_nist_controls\": [\n      {\n        \"target\": \"ac-2.5\",\n        \"relationship\": \"intersects\"\n      }\n    ]\n  }\n}\n```"
           }
         },
         {
@@ -7867,7 +7867,7 @@
                 "mappings"
               ]
             },
-            "description": "Returns the complete mapping table between FedRAMP 20x KSI indicators and NIST SP 800-53 controls. Useful for understanding which NIST controls contribute to each KSI.\n\nResponse format:\n```json\n{\n  \"mappings\": [\n    {\n      \"indicator_code\": \"AUTH-01\",\n      \"nist_control_id\": \"ia-2\",\n      \"relationship\": \"primary\"\n    }\n  ]\n}\n```"
+            "description": "Lists the KSI-to-NIST SP 800-53 Rev 5 crosswalk entries, taken from each indicator's controls[] in FedRAMP's rules. Paginated (50 per page).\n\nResponse format:\n```json\n{\n  \"data\": [\n    {\n      \"source_control_id\": \"ksi-iam-elp\",\n      \"target_control_id\": \"ac-2.5\",\n      \"relationship\": \"intersects\"\n    }\n  ],\n  \"meta\": {\n    \"page\": 1,\n    \"count\": 373,\n    \"mapping_name\": \"FedRAMP 20x KSI to NIST SP 800-53 Rev 5\",\n    \"mapping_status\": \"complete\"\n  }\n}\n```"
           },
           "response": [
             {
@@ -7905,6 +7905,38 @@
               "body": "{\"data\":[],\"meta\":{\"message\":\"No KSI-to-NIST mapping found\"}}"
             }
           ]
+        },
+        {
+          "name": "Import KSI Catalog",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ksi_catalog/import?dry_run=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ksi_catalog",
+                "import"
+              ],
+              "query": [
+                {
+                  "key": "dry_run",
+                  "value": "true",
+                  "description": "true: run the import, report it, roll it back"
+                }
+              ]
+            },
+            "description": "Imports the FedRAMP 20x KSI catalog from the vendored FedRAMP/rules snapshot — never the network. Validates it against FedRAMP's JSON Schema first; re-keys an existing catalog in place (renamed indicators keep their validations; the rest are retired, never deleted); rebuilds the KSI-to-NIST crosswalk. A no-op when the snapshot is already imported. Requires catalogs.write (or instance admin).\n\n200: status imported | unchanged | planned (dry run). 422: status refused, with errors; nothing written.\n\nResponse format:\n```json\n{\n  \"data\": {\n    \"status\": \"imported\",\n    \"upstream_version\": \"2026.09.13.02\",\n    \"dry_run\": false,\n    \"changes\": {\n      \"renamed\": 10,\n      \"retired\": 44,\n      \"themes_created\": 0,\n      \"indicators_created\": 36,\n      \"themes_retired\": 1,\n      \"crosswalk_entries\": 373\n    },\n    \"errors\": []\n  }\n}\n```"
+          }
         }
       ]
     },
