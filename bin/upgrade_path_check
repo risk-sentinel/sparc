@@ -106,8 +106,18 @@ if [ -n "${TARGET_IMAGE:-}" ]; then
 else
   export DATABASE_URL="$UPGRADE_DATABASE_URL" RAILS_ENV="$RAILS_ENV_LOCAL"
   step "upgrading with this checkout (RAILS_ENV=$RAILS_ENV)"
-  bin/rails db:migrate
+  # NOT `bin/rails db:migrate`. Outside production that task ends by dumping
+  # db/schema.rb FROM the migrated database (dump_schema_after_migration is on
+  # in test/development), so the strict verify below would compare the
+  # database with a copy of itself and could never fail — the v1.16.2 case
+  # would pass. PR #1188 review. DatabaseTasks.migrate is the same migration
+  # run without the trailing dump, and the checksum guard proves the file we
+  # verify against is the one this checkout declares.
+  schema_before=$(shasum -a 256 db/schema.rb)
+  bin/rails runner 'ActiveRecord::Tasks::DatabaseTasks.migrate'
   bin/rails sparc:data_migrations:run
+  [ "$(shasum -a 256 db/schema.rb)" = "$schema_before" ] \
+    || fail "db/schema.rb changed during the upgrade — the verify would compare the database with itself"
   step "reconciliation a clean upgrade should not need (dry run)"
   DRY_RUN=1 bin/rails db:reconcile_schema
   step "strict schema verification"
