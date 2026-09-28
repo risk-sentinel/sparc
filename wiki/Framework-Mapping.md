@@ -158,8 +158,8 @@ Two details worth knowing:
 
 - **The source side is matched verbatim first.** SPARC's canonical form encodes
   NIST numbering, and the source side of a mapping is by definition the non-NIST
-  one — a FedRAMP KSI id such as `ksi-iam-01` would canonicalise to `ksi-iam-1`,
-  which the KSI catalog does not contain. A verbatim match therefore wins, and
+  one. A zero-padded id such as the retired KSI `ksi-iam-01` would canonicalise
+  to `ksi-iam-1`, which the KSI catalog does not contain. A verbatim match therefore wins, and
   canonicalisation is only a fallback for the NIST-shaped side.
 - **A catalog with no controls loaded is not treated as a failure.** If SPARC
   holds nothing for that catalog it cannot answer the question, so entries are

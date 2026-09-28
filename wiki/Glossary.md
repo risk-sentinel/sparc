@@ -84,7 +84,7 @@
 
 | Term | Definition |
 |------|------------|
-| **KSI (Key Security Indicators)** | FedRAMP 20x machine-checkable security indicators, grouped into **themes**. SPARC ships a read-only KSI catalog and tracks **KSI validations** per authorization boundary, with summary and export. |
+| **KSI (Key Security Indicators)** | FedRAMP 20x machine-checkable security indicators, grouped into **themes**. SPARC builds its KSI catalog from FedRAMP's published rules and tracks **KSI validations** per authorization boundary, with summary and export. Indicators FedRAMP no longer publishes are **retired**, not deleted. |
 | **HDF (Heimdall Data Format)** | MITRE's normalized security-results format (consumed by Heimdall). SPARC bridges **HDF ↔ OSCAL** — emitting OSCAL SAR / POA&M from HDF and round-tripping POA&M amendments back to HDF — via stateless `/api/v1/` endpoints (see [Changelog](Changelog) v1.6.0). |
 | **SBOM (Software Bill of Materials)** | A CycloneDX inventory of software components and licenses, generated in CI and scanned by Grype/Trivy for vulnerabilities and license compliance. |
 | **SAF CLI** | MITRE's Security Automation Framework CLI, used in CI to normalize scanner output into HDF for compliance evidence. |

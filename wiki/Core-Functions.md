@@ -1032,11 +1032,15 @@ Passing `?authorization_boundary_id=N` to either OSCAL emission endpoint merges 
 
 ## 19. FedRAMP 20x KSI Catalog & Validations
 
-SPARC tracks **Key Security Indicators (KSIs)** — FedRAMP 20x machine-checkable indicators grouped into themes.
+SPARC tracks **Key Security Indicators (KSIs)**: FedRAMP 20x machine-checkable indicators, grouped into themes.
 
-- **Read-only catalog:** `GET /api/v1/ksi_catalog/themes`, `GET /api/v1/ksi_catalog/indicators` (seeded from `db/seeds/fedramp_20x_ksi.rb`).
+- **The catalog comes from FedRAMP.** SPARC builds it from FedRAMP's own published rules ([FedRAMP/rules](https://github.com/FedRAMP/rules)). They ship with SPARC as a pinned snapshot, and the catalog's version is FedRAMP's (for example `2026.09.13.02`). The import checks the snapshot against FedRAMP's JSON Schema first, and never fetches from the network.
+- **FedRAMP's crosswalk.** Each indicator's link to NIST SP 800-53 Rev 5 is the list FedRAMP publishes with it (373 links in `2026.09.13.02`), not a hand-kept table.
+- **Retired, never deleted.** When FedRAMP stops publishing a theme or indicator, SPARC marks it retired and keeps the assessments recorded against it. Retired entries are badged on the catalog pages, left out of the API lists unless `include_retired=true` is passed, and exported to OSCAL as `withdrawn`. A new validation must go on a current indicator; the refusal names FedRAMP's successor.
+- **Import:** `POST /api/v1/ksi_catalog/import` (`dry_run=true` to preview) or `bin/rails ksi:import`. Needs `catalogs.write`. A snapshot that is already imported is a no-op.
+- **Checking for a newer FedRAMP release:** `bin/rails ksi:upstream_diff` compares the snapshot with FedRAMP/rules and lists what changed.
 - **Validations:** `KsiValidation` records are nested under an authorization boundary (`resources :ksi_validations`), with `summary` and `export` collection actions.
-- **Export:** `KsiExportService` emits the boundary's KSI validation state.
+- **Export:** `KsiExportService` emits the boundary's KSI validation state. The report carries FedRAMP's version and source commit. The summary measures the current catalog; validations on retired indicators are listed, flagged, and counted apart.
 
 ---
 

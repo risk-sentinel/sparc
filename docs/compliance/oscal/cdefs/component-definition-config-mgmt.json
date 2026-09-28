@@ -3,9 +3,9 @@
     "uuid": "e59515dd-bc17-4e65-bc04-54592aa9e3bc",
     "metadata": {
       "title": "SPARC Configuration Management and Development Assurance",
-      "version": "1.1.2",
+      "version": "1.1.3",
       "oscal-version": "1.2.2",
-      "last-modified": "2026-09-27T00:00:00Z",
+      "last-modified": "2026-09-28T00:00:00Z",
       "roles": [
         {
           "id": "prepared-by",
@@ -41,8 +41,8 @@
               {
                 "uuid": "55e8da69-76a6-4285-b2df-482797bb6626",
                 "control-id": "cm-3",
-                "description": "SPARC enforces configuration change control through Git version control with mandatory pull request reviews. All code and configuration changes are tracked with full commit history. The CI pipeline (.github/workflows/) validates changes through automated testing, linting, and security scanning before merge. Schema changes that a migration squash would otherwise leave unapplied are controlled at deploy time (#1151): db:reconcile_schema generates the repair from db/schema.rb, applies additive changes only in a single transaction, refuses non-additive or unsafe drift without changing anything, and records every repair or refusal as an audit event carrying the exact SQL executed.",
-                "remarks": "Implemented via Git workflow, .github/workflows/, and branch protection rules. app/services/schema_reconciliation_service.rb, lib/tasks/schema_reconcile.rake; audit actions schema_reconciled and schema_reconciliation_refused."
+                "description": "SPARC enforces configuration change control through Git version control with mandatory pull request reviews. All code and configuration changes are tracked with full commit history. The CI pipeline (.github/workflows/) validates changes through automated testing, linting, and security scanning before merge. Schema changes that a migration squash would otherwise leave unapplied are controlled at deploy time (#1151): db:reconcile_schema generates the repair from db/schema.rb, applies additive changes only in a single transaction, refuses non-additive or unsafe drift without changing anything, and records every repair or refusal as an audit event carrying the exact SQL executed. The FedRAMP 20x KSI catalog is changed only by an operator-initiated import (#1115, #1172): it requires catalogs.write, validates the source against FedRAMP's published JSON Schema before writing anything, applies in a single transaction, offers a dry run that rolls back, never deletes an entry that carries an assessment (entries the source withdraws are retired), and records every import or refusal as an audit event.",
+                "remarks": "Implemented via Git workflow, .github/workflows/, and branch protection rules. app/services/schema_reconciliation_service.rb, lib/tasks/schema_reconcile.rake; audit actions schema_reconciled and schema_reconciliation_refused. app/services/fedramp_ksi_import_service.rb, lib/tasks/ksi.rake, app/controllers/api/v1/ksi_catalog_controller.rb (import); audit actions ksi_catalog_imported and ksi_catalog_import_refused."
               },
               {
                 "uuid": "0e0bfa4d-5074-4172-bbf0-bc65855e38f6",
