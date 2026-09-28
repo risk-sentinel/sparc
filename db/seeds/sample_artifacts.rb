@@ -382,21 +382,21 @@ if %w[20x full].include?(mode)
     evidences = Evidence.where(authorization_boundary: auth_boundary).to_a
 
     KSI_VALIDATION_DATA = {
-      "ksi-iam-01" => { status: "passed",       method: "automated", notes: "Okta MFA enforced for all users via SPARC_OIDC_FORCE_MFA=true" },
-      "ksi-iam-02" => { status: "passed",       method: "automated", notes: "RBAC with boundary-scoped permissions verified" },
-      "ksi-iam-03" => { status: "passed",       method: "automated", notes: "Okta SSO integrated via OIDC" },
-      "ksi-cm-01"  => { status: "passed",       method: "automated", notes: "Infrastructure-as-code baselines in Terraform" },
-      "ksi-cm-02"  => { status: "passed",       method: "automated", notes: "All code in GitHub with branch protection" },
-      "ksi-cm-04"  => { status: "passed",       method: "automated", notes: "CI/CD pipeline runs automated tests on every PR" },
-      "ksi-mla-01" => { status: "partial",      method: "hybrid",    notes: "CloudWatch centralized, but legacy syslog not forwarded" },
-      "ksi-mla-03" => { status: "passed",       method: "automated", notes: "Trivy and CodeQL run weekly via GitHub Actions" },
-      "ksi-svc-01" => { status: "passed",       method: "automated", notes: "AES-256 encryption at rest via AWS KMS" },
-      "ksi-svc-02" => { status: "passed",       method: "automated", notes: "TLS 1.2+ enforced on all endpoints" },
-      "ksi-ir-01"  => { status: "partial",      method: "manual",    notes: "IR plan documented but not tested in 12 months" },
-      "ksi-scr-02" => { status: "passed",       method: "automated", notes: "CycloneDX SBOM generated on every build" },
-      "ksi-rec-01" => { status: "failed",       method: "manual",    notes: "Backup restore test failed — RTO exceeded by 2 hours" },
-      "ksi-edu-01" => { status: "not_assessed", method: nil,         notes: "Training records not yet reviewed" },
-      "ksi-pol-02" => { status: "passed",       method: "automated", notes: "AWS Config asset inventory with weekly compliance checks" }
+      "ksi-iam-apm" => { status: "passed",       method: "automated", notes: "Okta FastPass phishing-resistant, passwordless sign-in enforced for all users" },
+      "ksi-iam-elp" => { status: "passed",       method: "automated", notes: "RBAC with boundary-scoped permissions verified" },
+      "ksi-iam-aam" => { status: "passed",       method: "automated", notes: "Okta SSO integrated via OIDC" },
+      "ksi-svc-acm" => { status: "passed",       method: "automated", notes: "Infrastructure-as-code baselines in Terraform" },
+      "ksi-cmt-lmc" => { status: "passed",       method: "automated", notes: "All code in GitHub with branch protection" },
+      "ksi-cmt-vtd" => { status: "passed",       method: "automated", notes: "CI/CD pipeline runs automated tests on every PR" },
+      "ksi-mla-osm" => { status: "partial",      method: "hybrid",    notes: "CloudWatch centralized, but legacy syslog not forwarded" },
+      "ksi-mla-evc" => { status: "passed",       method: "automated", notes: "Trivy and CodeQL run weekly via GitHub Actions" },
+      "ksi-svc-sin" => { status: "passed",       method: "automated", notes: "AES-256 encryption at rest via AWS KMS" },
+      "ksi-svc-vcm" => { status: "passed",       method: "automated", notes: "TLS 1.2+ enforced on all endpoints" },
+      "ksi-inr-rir" => { status: "partial",      method: "manual",    notes: "IR plan documented but not tested in 12 months" },
+      "ksi-scr-mon" => { status: "passed",       method: "automated", notes: "CycloneDX SBOM generated on every build" },
+      "ksi-rpl-abo" => { status: "failed",       method: "manual",    notes: "Backup restore test failed — RTO exceeded by 2 hours" },
+      "ksi-ced-rat" => { status: "not_assessed", method: nil,         notes: "Training records not yet reviewed" },
+      "ksi-piy-giv" => { status: "passed",       method: "automated", notes: "AWS Config asset inventory with weekly compliance checks" }
     }.freeze
 
     validation_count = 0

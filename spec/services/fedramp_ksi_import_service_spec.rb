@@ -132,6 +132,14 @@ RSpec.describe FedrampKsiImportService do
       expect(result.changes[:crosswalk_targets_not_in_rev5]).to be > 0
     end
 
+    it "is built on the next import when Rev 5 arrives after the KSI catalog — an unchanged snapshot is not enough" do
+      described_class.new.call
+      rev5_catalog!
+
+      expect(described_class.new.call).to be_imported
+      expect(ControlMapping.find_by(name: described_class::MAPPING_NAME).control_mapping_entries).to exist
+    end
+
     it "is skipped, and says so, when no Rev 5 catalog is loaded" do
       expect(described_class.new.call.changes[:crosswalk]).to match(/skipped/)
     end
