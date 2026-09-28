@@ -25,8 +25,9 @@ RSpec.describe "bin/codeql_pin_check.rb" do
     File.join(@dir, name).tap { |p| File.write(p, content.is_a?(String) ? content : JSON.generate(content)) }
   end
 
-  def run(results:, pins:, hdf_count: results.size, disposition: "false_positive")
-    sarif = write("codeql.sarif", "runs" => [ { "results" => results } ])
+  def run(results:, pins:, hdf_count: results.size, disposition: "false_positive", incremental: nil)
+    run_props = incremental ? { "properties" => { "incrementalMode" => incremental } } : {}
+    sarif = write("codeql.sarif", "runs" => [ { "results" => results }.merge(run_props) ])
     hdf = write("codeql.hdf.json", "profiles" => [ { "controls" => [
       { "id" => rule, "results" => Array.new(hdf_count) { { "status" => "failed" } } }
     ] } ])
@@ -59,6 +60,32 @@ RSpec.describe "bin/codeql_pin_check.rb" do
     expect(status).not_to be_success
     expect(out).to match(/STALE pin a\.rb \(h1:1\)/)
     expect(out).to match(/UNDISPOSITIONED result at a\.rb \(h1-edited:1\)/)
+  end
+
+  # PR #1188: pull requests run DIFF-INFORMED analysis, so a data-flow rule
+  # reports only results inside the changed lines. An absent pin is then
+  # expected, and failing on it would red-light every PR that does not touch
+  # a pinned line.
+  describe "a diff-informed (pull request) scan" do
+    it "reports an absent pin as a notice, not a failure" do
+      out, status = run(results: [], pins: [ [ "a.rb", "h1:1" ] ], incremental: "diff-informed,overlay")
+
+      expect(status).to be_success, out
+      expect(out).to match(/outside this diff-informed scan/)
+    end
+
+    it "still FAILS on a new, unpinned result — anything it reports is inside the diff" do
+      out, status = run(results: [ result("new.rb", "h9:1") ], pins: [ [ "a.rb", "h1:1" ] ], incremental: "diff-informed")
+
+      expect(status).not_to be_success
+      expect(out).to match(/UNDISPOSITIONED result at new\.rb/)
+    end
+
+    it "treats a non-diff incremental mode (overlay alone) as a FULL scan" do
+      _out, status = run(results: [], pins: [ [ "a.rb", "h1:1" ] ], incremental: "overlay")
+
+      expect(status).not_to be_success
+    end
   end
 
   it "FAILS when the HDF and the SARIF disagree on the count — the pins must describe the assessed document" do

@@ -32,6 +32,19 @@
 # HDF's result count for the rule is checked against the SARIF's — tying the
 # fingerprints to the document the gate actually assesses.
 #
+# ── Pull requests run a PARTIAL scan ────────────────────────────────────
+#
+# On a pull request the CodeQL action runs DIFF-INFORMED analysis
+# (`runs[].properties.incrementalMode` includes `diff-informed`): data-flow
+# (`path-problem`) queries report only results inside the lines the PR changed.
+# Measured on PR #1188: `rb/clear-text-storage-sensitive-data` returned 0 of its
+# 5 pinned results, none of which the PR touched, while the non-data-flow CSRF
+# rule returned all 3. So on a diff-informed scan an ABSENT pin means "outside
+# this scan", not "fixed", and is reported as a notice. A PRESENT unpinned
+# result is still a failure — anything the scan does report is inside the diff
+# and must be dispositioned. The stale-pin rule is enforced on FULL scans (push
+# to main, schedule), which is where a retired site would actually disappear.
+#
 # FAILS CLOSED: a missing or unreadable SARIF or HDF is an error, never a pass.
 #
 # NIST SP 800-53 Rev 5: RA-5 (vulnerability monitoring), CA-7 (continuous
@@ -63,6 +76,13 @@ def sarif_results(sarif_path)
   end
 end
 
+# True when any run in the SARIF was a diff-informed (partial) analysis.
+def diff_informed?(sarif_path)
+  JSON.parse(File.read(sarif_path)).fetch("runs").any? do |run|
+    run.dig("properties", "incrementalMode").to_s.split(",").map(&:strip).include?("diff-informed")
+  end
+end
+
 def hdf_result_counts(hdf_path)
   hdf = JSON.parse(File.read(hdf_path))
   requirements = hdf["profiles"] ? hdf["profiles"].flat_map { |p| p["controls"] || [] } : hdf.fetch("baselines").flat_map { |b| b["requirements"] || [] }
@@ -73,7 +93,9 @@ def check(register:, sarif:, hdf:)
   entries = pinned_entries(register)
   live = sarif_results(sarif)
   counts = hdf_result_counts(hdf)
+  partial = diff_informed?(sarif)
   errors = []
+  puts "codeql_pin_check: DIFF-INFORMED scan — absent pins are notices, not failures" if partial
 
   entries.each do |entry|
     rule = entry["cve_id"]
@@ -84,7 +106,11 @@ def check(register:, sarif:, hdf:)
       errors << "#{rule}: UNDISPOSITIONED result at #{path} (#{hash}) — the register entry covers only its pinned results; fix it or review and pin it"
     end
     (pinned - found).sort.each do |path, hash|
-      errors << "#{rule}: STALE pin #{path} (#{hash}) — no such result any more; retire it or re-review the edited line"
+      if partial
+        puts "::notice::#{rule}: pinned result #{path} (#{hash}) is outside this diff-informed scan — checked on the next full scan"
+      else
+        errors << "#{rule}: STALE pin #{path} (#{hash}) — no such result any more; retire it or re-review the edited line"
+      end
     end
     if counts.fetch(rule, 0) != found.size
       errors << "#{rule}: the HDF holds #{counts.fetch(rule, 0)} result(s) but the SARIF #{found.size} — the fingerprints do not describe the assessed document"
