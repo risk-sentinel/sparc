@@ -77,7 +77,24 @@ class SchemaReconciliationService
     @audit = audit
   end
 
+  # Session-level advisory lock, the same device `db:migrate` uses for its own
+  # migrations. Any stable bigint; "SPARC" + #1151.
+  LOCK_ID = 0x5CA7_1151
+
+  # PR #1188 review: several web tasks booting at once would each see the same
+  # missing column and each run ADD COLUMN; every one but the first then fails
+  # "already exists", records a false `schema_reconciliation_refused`, and exits
+  # its container — which a deployment circuit breaker could read as a failed
+  # deploy. So the whole check-and-repair is serialised, and the drift is
+  # measured only AFTER the lock is held: a task that waited finds the schema
+  # already repaired and reports clean.
   def call
+    with_lock { reconcile }
+  end
+
+  private
+
+  def reconcile
     drift = drift_service.drift
     return Result.new(status: :clean, statements: [], reasons: [], drift: []) if drift.empty?
 
@@ -90,7 +107,12 @@ class SchemaReconciliationService
     finish(Result.new(status: :refused, statements: [], reasons: [ e.message ], drift: drift || []))
   end
 
-  private
+  def with_lock
+    connection.select_value("SELECT pg_advisory_lock(#{LOCK_ID})")
+    yield
+  ensure
+    connection.select_value("SELECT pg_advisory_unlock(#{LOCK_ID})")
+  end
 
   attr_reader :dry_run, :drift_service, :connection
 
