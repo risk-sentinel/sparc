@@ -18,6 +18,6 @@ puts "Seeding FedRAMP 20x KSI catalog from FedRAMP's consolidated rules..."
 
 result = FedrampKsiImportService.new.call
 puts result.report.lines.map { |l| "  #{l}" }.join
-raise "FedRAMP KSI import refused" if result.refused?
+raise FedrampKsiImportService::Refused, "FedRAMP KSI import refused: #{result.errors.join('; ')}" if result.refused?
 
 puts "Done! FedRAMP 20x KSI catalog seeded."
