@@ -45,6 +45,6 @@ RSpec.describe ImportFedrampKsiCatalogFromRules do
     refused = FedrampKsiImportService::Result.new(status: :refused, version: "x", changes: {}, errors: [ "/: bad" ])
     allow(FedrampKsiImportService).to receive(:new).and_return(instance_double(FedrampKsiImportService, call: refused))
 
-    expect { migration.up }.to raise_error(/FedRAMP KSI import refused: \/: bad/)
+    expect { migration.up }.to raise_error(FedrampKsiImportService::Refused, /FedRAMP KSI import refused: \/: bad/)
   end
 end

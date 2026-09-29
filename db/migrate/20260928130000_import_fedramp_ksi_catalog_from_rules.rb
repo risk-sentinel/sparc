@@ -30,7 +30,7 @@ class ImportFedrampKsiCatalogFromRules < ActiveRecord::Migration[8.1]
   def up
     defer_data_migration do
       result = FedrampKsiImportService.new.call
-      raise "FedRAMP KSI import refused: #{result.errors.join('; ')}" if result.refused?
+      raise FedrampKsiImportService::Refused, "FedRAMP KSI import refused: #{result.errors.join('; ')}" if result.refused?
 
       Rails.logger.info({ fedramp_ksi_import: { status: result.status, version: result.version, changes: result.changes } }.to_json)
     end
