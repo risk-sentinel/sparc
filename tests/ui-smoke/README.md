@@ -193,7 +193,7 @@ suite is correctly reporting an outage; check the deployment, not the tests.
 | `SPARC_SMOKE_BASE_URL` | `https://sparc.risk-sentinel.org` | Target deployment |
 | `SPARC_SMOKE_SA_TOKEN` | _(unset)_ | Service-account bearer token; authenticated tests skip without it |
 | `SPARC_SMOKE_USER_TOKEN` | _(unset)_ | Optional second, **non-admin** identity (the submitter in review/approval flows, #643); two-identity tests skip without it |
-| `SPARC_SMOKE_ORPHAN_SSPS` | _(unset)_ | Comma-separated slugs of LEGACY SSPs with no boundary and no baseline, built by `bin/smoke-prep` (no API path can create one since #952). The repair-banner tests in `test_boundary_baseline_repair_1154.py` consume one each and skip without them |
+| `SPARC_SMOKE_ORPHAN_SSPS` | _(unset)_ | Comma-separated slugs of LEGACY SSPs with no boundary and no baseline, built by `bin/smoke-prep --orphans` (no API path can create one since #952; opt-in so the API suite never sees them, and dated 2025 like the legacy rows they stand for). The repair-banner tests in `test_boundary_baseline_repair_1154.py` consume one each and skip without them |
 | `SPARC_SMOKE_DEMO_SEEDED` | `1` | Whether the target carries the demo fixtures (`SPARC_SEED_DEMO=true`). At `1`, `test_collection_views.py` **fails** if a seeded collection screen is empty, so the card/list checks cannot quietly resume skipping (#984). Set `0` for a deployment with no demo data. |
 | `SPARC_SESSION_COOKIE_NAME` | _(auto-detected)_ | Override the Rails session cookie name; by default the cookie returned by the bridge is auto-detected (`_ssp_tpr_manager_session`) |
 

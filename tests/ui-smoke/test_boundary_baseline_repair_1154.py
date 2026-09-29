@@ -55,8 +55,8 @@ _ORPHANS = [s for s in os.environ.get("SPARC_SMOKE_ORPHAN_SSPS", "").split(",") 
 def orphan_ssp():
     """A legacy SSP with no boundary and no baseline, built by bin/smoke-prep."""
     if not _ORPHANS:
-        pytest.skip("SPARC_SMOKE_ORPHAN_SSPS is empty — run bin/smoke-prep, which builds the "
-                    "legacy boundary-less SSPs this state needs (no API path can create one)")
+        pytest.skip("SPARC_SMOKE_ORPHAN_SSPS is empty — run `bin/smoke-prep --orphans`, which "
+                    "builds the legacy boundary-less SSPs this state needs (no API path can)")
     slug = _ORPHANS.pop(0)
     ssp = get_json(f"/api/v1/ssp_documents/{slug}")
     assert ssp.get("authorization_boundary_id") is None, f"{slug} is not an orphan: {ssp}"

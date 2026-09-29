@@ -102,8 +102,21 @@ def test_updated_guide_renders_its_new_screenshots(authed_page, slug, images, te
     for name in images:
         img = content.locator(f"img[src*='{name}']")
         assert img.count() == 1, f"/help/{slug} does not embed {name}"
-        assert "/help/images/" in (img.get_attribute("src") or "")
-        assert img.evaluate("el => el.naturalWidth") > 0, f"{name} failed to load on /help/{slug}"
+        src = img.get_attribute("src") or ""
+        assert "/help/images/" in src
+        # Guide images are loading="lazy" (UserGuideLibrary): one far down the
+        # page is not fetched until a reader scrolls to it, so look at it the way
+        # a reader does before judging whether it loaded.
+        img.scroll_into_view_if_needed()
+        img.evaluate("el => el.decode ? el.decode().catch(() => null) : null")
+        assert img.evaluate("el => el.complete && el.naturalWidth") > 0, (
+            f"{name} failed to load on /help/{slug}"
+        )
+        served = authed_page.request.get(src)
+        content_type = served.headers.get("content-type", "")
+        assert served.status == 200 and content_type.startswith("image/png"), (
+            f"{src} served {served.status} {content_type}"
+        )
     assert_no_csp_violations(authed_page, during=f"guide {slug}")
 
 

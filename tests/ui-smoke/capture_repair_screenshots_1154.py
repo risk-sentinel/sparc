@@ -10,7 +10,7 @@ are deleted by id afterwards.
 Needs a legacy boundary-less SSP for the repair banner, which only bin/smoke-prep
 can build (no API path can):
 
-    eval "$(bin/smoke-prep --quiet)"
+    eval "$(bin/smoke-prep --quiet --orphans)"
     cd tests/ui-smoke && .venv/bin/python capture_repair_screenshots_1154.py
 
 Output: wiki/images/{ssp-repair-banner,boundary-multiple-ssp-warning,
@@ -58,7 +58,8 @@ def shot(locator, name: str) -> None:
 
 def main() -> int:
     if not ORPHANS:
-        print("SPARC_SMOKE_ORPHAN_SSPS is empty — run bin/smoke-prep first", file=sys.stderr)
+        print("SPARC_SMOKE_ORPHAN_SSPS is empty — run `bin/smoke-prep --orphans` first",
+              file=sys.stderr)
         return 2
     created: list[tuple[str, str]] = []  # (resource, slug) — deleted by id afterwards
     with api() as c:
