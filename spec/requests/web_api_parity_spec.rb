@@ -284,8 +284,8 @@ RSpec.describe "Web <-> API parity", type: :request do
           # this factory record schema-valid", so a real answer is a 200 carrying
           # the OSCAL root. A 422 is NOT an answer: an unknown format is refused
           # with a 422 that lists the OSCAL formats it accepts, so counting "a
-          # 422 mentioning OSCAL" closed `format=excel` for a SAR that the API
-          # cannot export as Excel at all.
+          # 422 mentioning OSCAL" closed a non-OSCAL format for a SAR that the
+          # API cannot export in that format at all.
           get normalize.call(path).sub(":param", record.slug), params: query.merge("validate" => "false"), headers: headers
 
           answered = response.status == 200 && response.body.include?(oscal_root)

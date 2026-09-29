@@ -70,7 +70,7 @@ controllers:
         actions: [import_json]
     gap:
       create:
-        reason: "browser upload ingests OSCAL JSON/XML/YAML SSPs; API has only Excel convert and metadata-only create"
+        reason: "browser upload ingests OSCAL JSON/XML/YAML SSPs; API has only a legacy convert and metadata-only create"
         would_be: "POST /api/v1/ssp_documents/import"
       create_from_wizard:
         reason: "wizard builds SSP with selected CDEF components, CDEF auto-fill and boundary description; API create+populate cannot attach CDEFs"
@@ -136,9 +136,11 @@ controllers:
         actions: [edit]
       - reason: "dead route: no import_json action or template exists in the controller"
         actions: [import_json]
+      - reason: "legacy download, not maintained; no API counterpart"
+        actions: [download_excel]
     gap:
       create:
-        reason: "browser upload ingests OSCAL JSON/XML/YAML SARs; API convert accepts Excel only"
+        reason: "browser upload ingests OSCAL JSON/XML/YAML SARs; API has no OSCAL import"
         would_be: "POST /api/v1/sar_documents/import"
       create_from_wizard:
         reason: "generating a populated SAR from a SAP is browser-only"
@@ -166,9 +168,6 @@ controllers:
       update_objective:
         reason: "per-objective assessment status/assessor/notes are not writable via API"
         would_be: "PATCH /api/v1/sar_documents/:sar_document_id/objectives/:id"
-      download_excel:
-        reason: "SAR Excel export is browser-only"
-        would_be: "GET /api/v1/sar_documents/:id/export?format=excel"
       publish:
         reason: "API PATCH lifecycle_status bypasses publication validation, approval gate, version bump and published timestamp"
         would_be: "POST /api/v1/sar_documents/:id/publish"
