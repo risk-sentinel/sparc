@@ -272,6 +272,11 @@ one component and cannot carry a pair. See
 | **No boundary linked** on an SSP | The SSP was uploaded without a boundary, or before a boundary was required | Pick the boundary in the banner's **Link to a boundary** list and click **Link boundary**. A boundary already linked to a different SSP says so in the list — check that one first |
 | The boundary page warns that several SSPs point at it | More than one SSP is linked to the same boundary, but a boundary has one SSP | Open each SSP listed in the warning and keep the right one linked |
 
+
+An SSP with no boundary shows the **Link to a boundary** control in its banner:
+
+![The No boundary linked banner with its Link to a boundary control](images/ssp-repair-banner.png)
+
 ---
 
 ## Finding what you need

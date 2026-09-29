@@ -89,6 +89,8 @@ button that opens a nested form.
   a number, for example `score<0.85` or `blockers>0`. All three are exported on
   the risk for dashboards such as sparc-horizon. The status list includes
   **Remediating**.
+
+  ![The risk's decision fields: Blocks the ATO?, Condition expires and Reopen trigger](images/poam-risk-decision-fields.png)
 - **Remediation** (`.../poam_remediations/new`) — OSCAL `response`: lifecycle,
   title, description, remarks. **Milestones** are nested under a remediation
   (`.../poam_remediations/:id/poam_milestones/new`) with title, description, and

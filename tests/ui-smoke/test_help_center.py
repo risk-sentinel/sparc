@@ -76,3 +76,41 @@ def test_help_guide_renders_with_screenshot(authed_page):
     assert natural_width > 0, "guide screenshot failed to load (naturalWidth 0)"
 
     assert_no_csp_violations(authed_page, during="guide render")
+
+
+# #1154 bundle — the three guides that gained screenshots of new screens must
+# render in-app WITH those screenshots (issue_rules step 8). Both directions:
+# each named image loads, and an unknown guide or image is refused, not served.
+GUIDES_WITH_NEW_SCREENS = [
+    ("authorization-boundaries",
+     ["boundary-decision-dates.png", "boundary-multiple-ssp-warning.png"], "Next decision date"),
+    ("poam", ["poam-risk-decision-fields.png"], "Reopen trigger"),
+    ("system-security-plans", ["ssp-repair-banner.png"], "Link to a boundary"),
+]
+
+
+@pytest.mark.parametrize(("slug", "images", "text"), GUIDES_WITH_NEW_SCREENS,
+                         ids=[g[0] for g in GUIDES_WITH_NEW_SCREENS])
+def test_updated_guide_renders_its_new_screenshots(authed_page, slug, images, text):
+    record_csp(authed_page)
+    resp = authed_page.goto(f"/help/{slug}")
+    assert resp is not None and resp.status < 400, f"/help/{slug} returned {resp and resp.status}"
+    authed_page.wait_for_load_state("networkidle")
+
+    content = authed_page.locator(".sparc-guide-content")
+    assert text in content.inner_text(), f"/help/{slug} does not carry the new text {text!r}"
+    for name in images:
+        img = content.locator(f"img[src*='{name}']")
+        assert img.count() == 1, f"/help/{slug} does not embed {name}"
+        assert "/help/images/" in (img.get_attribute("src") or "")
+        assert img.evaluate("el => el.naturalWidth") > 0, f"{name} failed to load on /help/{slug}"
+    assert_no_csp_violations(authed_page, during=f"guide {slug}")
+
+
+def test_an_unknown_guide_and_an_unknown_image_are_refused(authed_page):
+    guide = authed_page.goto("/help/no-such-guide-1154")
+    assert guide is not None and guide.status == 404, (
+        f"unknown guide answered {guide and guide.status}"
+    )
+    image = authed_page.request.get("/help/images/no-such-image-1154.png")
+    assert image.status == 404, f"unknown image answered {image.status}"
