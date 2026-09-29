@@ -110,14 +110,22 @@ RSpec.describe HdfSystemExportService do
         expect(service.export["authorizationDate"]).to eq("2025-06-15T00:00:00Z")
       end
 
+      # The model now accepts only YYYY-MM-DD (#1154), but rows written before
+      # that validation can hold anything, so these two plant legacy values the
+      # way they exist — directly in the column — and prove the export still
+      # handles them rather than trusting the model.
+      def plant_legacy_authorization_date(value)
+        boundary.update_column(:boundary_metadata, (boundary.boundary_metadata || {}).merge("authorization_date" => value))
+      end
+
       it "normalizes an ISO 8601 date-time to UTC" do
-        boundary.update!(authorization_date: "2025-06-15T09:30:00-04:00")
+        plant_legacy_authorization_date("2025-06-15T09:30:00-04:00")
         expect(service.export["authorizationDate"]).to eq("2025-06-15T13:30:00Z")
       end
 
       # Date.parse would accept "May"; a date nobody chose must not be exported.
       it "is omitted, not guessed, when the value is not ISO 8601" do
-        boundary.update!(authorization_date: "sometime in May")
+        plant_legacy_authorization_date("sometime in May")
         doc = service.export
 
         expect(doc).not_to have_key("authorizationDate")

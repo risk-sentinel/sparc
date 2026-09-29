@@ -253,7 +253,8 @@ RSpec.describe "Web <-> API parity", type: :request do
       {
         "/api/v1/ssp_documents/:param/export" => [ -> { create(:ssp_document) }, "system-security-plan" ],
         "/api/v1/sap_documents/:param/export" => [ -> { create(:sap_document) }, "assessment-plan" ],
-        "/api/v1/sar_documents/:param/export" => [ -> { create(:sar_document) }, "assessment-results" ]
+        "/api/v1/sar_documents/:param/export" => [ -> { create(:sar_document) }, "assessment-results" ],
+        "/api/v1/poam_documents/:param/export" => [ -> { create(:poam_document) }, "plan-of-action-and-milestones" ]
       }
     end
 
@@ -280,12 +281,14 @@ RSpec.describe "Web <-> API parity", type: :request do
           record = factory.call
           query = Rack::Utils.parse_query(path.split("?", 2).last)
           # validate=false isolates "does the API serve this format" from "is
-          # this factory record schema-valid"; a refusal naming the OSCAL schema
-          # also proves the variant is handled.
+          # this factory record schema-valid", so a real answer is a 200 carrying
+          # the OSCAL root. A 422 is NOT an answer: an unknown format is refused
+          # with a 422 that lists the OSCAL formats it accepts, so counting "a
+          # 422 mentioning OSCAL" closed `format=excel` for a SAR that the API
+          # cannot export as Excel at all.
           get normalize.call(path).sub(":param", record.slug), params: query.merge("validate" => "false"), headers: headers
 
-          answered = (response.status == 200 && response.body.include?(oscal_root)) ||
-                     (response.status == 422 && response.body.match?(/oscal/i))
+          answered = response.status == 200 && response.body.include?(oscal_root)
           closed << "#{controller}##{key} -> #{text}" if answered
         end
       end

@@ -53,6 +53,12 @@ controllers:
       create_control_resource: ["POST /api/v1/back_matter_resources", "POST /api/v1/back_matter_resources/:id/link"]
       link_control_resource: ["POST /api/v1/back_matter_resources/:id/link"]
       unlink_control_resource: ["DELETE /api/v1/back_matter_resources/:id/unlink"]
+      validate_oscal_export: ["GET /api/v1/ssp_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal: ["GET /api/v1/ssp_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_validated: ["GET /api/v1/ssp_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_unvalidated: ["GET /api/v1/ssp_documents/:id/export?format=oscal&validate=false"]  # #1181 / #1154 part 2 — promoted from gap
+      download_xml: ["GET /api/v1/ssp_documents/:id/export?format=oscal-xml"]  # #1181 / #1154 part 2 — promoted from gap
+      download_yaml: ["GET /api/v1/ssp_documents/:id/export?format=oscal-yaml"]  # #1181 / #1154 part 2 — promoted from gap
     ui_only:
       - reason: "HTML form pages; the API takes the same fields as a JSON body"
         actions: [new, enrich]
@@ -103,24 +109,6 @@ controllers:
       publish_check:
         reason: "publication readiness report is browser-only"
         would_be: "GET /api/v1/ssp_documents/:id/publish_check"
-      validate_oscal_export:
-        reason: "OSCAL schema validation result is browser-only"
-        would_be: "GET /api/v1/ssp_documents/:id/export?format=oscal"
-      download_oscal:
-        reason: "OSCAL SSP JSON download is browser-only"
-        would_be: "GET /api/v1/ssp_documents/:id/export?format=oscal"
-      download_oscal_validated:
-        reason: "validated OSCAL SSP JSON download is browser-only"
-        would_be: "GET /api/v1/ssp_documents/:id/export?format=oscal"
-      download_oscal_unvalidated:
-        reason: "unvalidated OSCAL SSP JSON download is browser-only"
-        would_be: "GET /api/v1/ssp_documents/:id/export?format=oscal&validate=false"
-      download_xml:
-        reason: "OSCAL SSP XML download is browser-only"
-        would_be: "GET /api/v1/ssp_documents/:id/export?format=oscal-xml"
-      download_yaml:
-        reason: "OSCAL SSP YAML download is browser-only"
-        would_be: "GET /api/v1/ssp_documents/:id/export?format=oscal-yaml"
 
   sar_documents:
     mapped:
@@ -131,6 +119,12 @@ controllers:
       download_json: ["GET /api/v1/sar_documents/:id/export"]
       attach_boundary: ["PATCH /api/v1/sar_documents/:id"]
       set_baseline: ["PATCH /api/v1/sar_documents/:id"]
+      validate_oscal_export: ["GET /api/v1/sar_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal: ["GET /api/v1/sar_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_validated: ["GET /api/v1/sar_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_unvalidated: ["GET /api/v1/sar_documents/:id/export?format=oscal&validate=false"]  # #1181 / #1154 part 2 — promoted from gap
+      download_xml: ["GET /api/v1/sar_documents/:id/export?format=oscal-xml"]  # #1181 / #1154 part 2 — promoted from gap
+      download_yaml: ["GET /api/v1/sar_documents/:id/export?format=oscal-yaml"]  # #1181 / #1154 part 2 — promoted from gap
     ui_only:
       - reason: "HTML form pages; the API takes the same fields as a JSON body"
         actions: [new, enrich, edit_control]
@@ -181,24 +175,6 @@ controllers:
       publish_check:
         reason: "publication readiness report is browser-only"
         would_be: "GET /api/v1/sar_documents/:id/publish_check"
-      validate_oscal_export:
-        reason: "OSCAL schema validation result is browser-only"
-        would_be: "GET /api/v1/sar_documents/:id/export?format=oscal"
-      download_oscal:
-        reason: "OSCAL SAR JSON download is browser-only"
-        would_be: "GET /api/v1/sar_documents/:id/export?format=oscal"
-      download_oscal_validated:
-        reason: "validated OSCAL SAR JSON download is browser-only"
-        would_be: "GET /api/v1/sar_documents/:id/export?format=oscal"
-      download_oscal_unvalidated:
-        reason: "unvalidated OSCAL SAR JSON download is browser-only"
-        would_be: "GET /api/v1/sar_documents/:id/export?format=oscal&validate=false"
-      download_xml:
-        reason: "OSCAL SAR XML download is browser-only"
-        would_be: "GET /api/v1/sar_documents/:id/export?format=oscal-xml"
-      download_yaml:
-        reason: "OSCAL SAR YAML download is browser-only"
-        would_be: "GET /api/v1/sar_documents/:id/export?format=oscal-yaml"
 
   sap_documents:
     mapped:
@@ -209,6 +185,12 @@ controllers:
       download_json: ["GET /api/v1/sap_documents/:id/export"]
       attach_boundary: ["PATCH /api/v1/sap_documents/:id"]
       set_baseline: ["PATCH /api/v1/sap_documents/:id"]
+      validate_oscal_export: ["GET /api/v1/sap_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal: ["GET /api/v1/sap_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_validated: ["GET /api/v1/sap_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_unvalidated: ["GET /api/v1/sap_documents/:id/export?format=oscal&validate=false"]  # #1181 / #1154 part 2 — promoted from gap
+      download_xml: ["GET /api/v1/sap_documents/:id/export?format=oscal-xml"]  # #1181 / #1154 part 2 — promoted from gap
+      download_yaml: ["GET /api/v1/sap_documents/:id/export?format=oscal-yaml"]  # #1181 / #1154 part 2 — promoted from gap
     ui_only:
       - reason: "HTML form page; the API takes the same fields as a JSON body"
         actions: [new]
@@ -240,24 +222,6 @@ controllers:
       publish_check:
         reason: "publication readiness report is browser-only"
         would_be: "GET /api/v1/sap_documents/:id/publish_check"
-      validate_oscal_export:
-        reason: "OSCAL schema validation result is browser-only"
-        would_be: "GET /api/v1/sap_documents/:id/export?format=oscal"
-      download_oscal:
-        reason: "OSCAL assessment-plan JSON download is browser-only"
-        would_be: "GET /api/v1/sap_documents/:id/export?format=oscal"
-      download_oscal_validated:
-        reason: "validated OSCAL assessment-plan JSON download is browser-only"
-        would_be: "GET /api/v1/sap_documents/:id/export?format=oscal"
-      download_oscal_unvalidated:
-        reason: "unvalidated OSCAL assessment-plan JSON download is browser-only"
-        would_be: "GET /api/v1/sap_documents/:id/export?format=oscal&validate=false"
-      download_xml:
-        reason: "OSCAL assessment-plan XML download is browser-only"
-        would_be: "GET /api/v1/sap_documents/:id/export?format=oscal-xml"
-      download_yaml:
-        reason: "OSCAL assessment-plan YAML download is browser-only"
-        would_be: "GET /api/v1/sap_documents/:id/export?format=oscal-yaml"
 
   poam_documents:
     mapped:
@@ -268,6 +232,13 @@ controllers:
       destroy: ["DELETE /api/v1/poam_documents/:id"]
       attach_boundary: ["PATCH /api/v1/poam_documents/:id"]
       set_baseline: ["PATCH /api/v1/poam_documents/:id"]
+      validate_oscal_export: ["GET /api/v1/poam_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal: ["GET /api/v1/poam_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_validated: ["GET /api/v1/poam_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_unvalidated: ["GET /api/v1/poam_documents/:id/export?format=oscal&validate=false"]  # #1181 / #1154 part 2 — promoted from gap
+      download_xml: ["GET /api/v1/poam_documents/:id/export?format=oscal-xml"]  # #1181 / #1154 part 2 — promoted from gap
+      download_yaml: ["GET /api/v1/poam_documents/:id/export?format=oscal-yaml"]  # #1181 / #1154 part 2 — promoted from gap
+      download_json: ["GET /api/v1/poam_documents/:id/export"]  # #1181 / #1154 part 2 — promoted from gap
     ui_only:
       - reason: "HTML form page; the API takes the same fields as a JSON body"
         actions: [new]
@@ -288,27 +259,6 @@ controllers:
       publish_check:
         reason: "publication readiness report is browser-only"
         would_be: "GET /api/v1/poam_documents/:id/publish_check"
-      download_json:
-        reason: "POA&M JSON export has no API route"
-        would_be: "GET /api/v1/poam_documents/:id/export"
-      validate_oscal_export:
-        reason: "OSCAL schema validation result is browser-only"
-        would_be: "GET /api/v1/poam_documents/:id/export?format=oscal"
-      download_oscal:
-        reason: "OSCAL POA&M JSON download is browser-only"
-        would_be: "GET /api/v1/poam_documents/:id/export?format=oscal"
-      download_oscal_validated:
-        reason: "validated OSCAL POA&M JSON download is browser-only"
-        would_be: "GET /api/v1/poam_documents/:id/export?format=oscal"
-      download_oscal_unvalidated:
-        reason: "unvalidated OSCAL POA&M JSON download is browser-only"
-        would_be: "GET /api/v1/poam_documents/:id/export?format=oscal&validate=false"
-      download_xml:
-        reason: "OSCAL POA&M XML download is browser-only"
-        would_be: "GET /api/v1/poam_documents/:id/export?format=oscal-xml"
-      download_yaml:
-        reason: "OSCAL POA&M YAML download is browser-only"
-        would_be: "GET /api/v1/poam_documents/:id/export?format=oscal-yaml"
 
   poam_findings:
     mapped:
@@ -622,13 +572,10 @@ controllers:
       destroy: ["DELETE /api/v1/control_mappings/:id"]
       publish: ["PATCH /api/v1/control_mappings/:id"]
       deprecate: ["PATCH /api/v1/control_mappings/:id"]
+      download_oscal: ["GET /api/v1/control_mappings/:id/export"]  # #1181 / #1154 part 2 — promoted from gap
     ui_only:
       - reason: "HTML form pages; the API takes the same fields as a JSON body"
         actions: [new, edit]
-    gap:
-      download_oscal:
-        reason: "OSCAL mapping JSON download is browser-only"
-        would_be: "GET /api/v1/control_mappings/:id/export"
 
   control_mapping_entries:
     mapped:
