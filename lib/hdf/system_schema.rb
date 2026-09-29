@@ -32,7 +32,7 @@ module Hdf
     VERSION = "3.7.0"
     PATH = File.expand_path("../data/hdf/hdf-system.v#{VERSION}.schema.json", __dir__)
 
-    module_function
+    extend self
 
     # A component whose `type` is wrong fails every branch of the oneOf, and
     # json_schemer reports each branch — 26 lines for one mistake. Capped so a

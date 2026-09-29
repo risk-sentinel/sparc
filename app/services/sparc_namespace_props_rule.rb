@@ -115,6 +115,8 @@ class SparcNamespacePropsRule
       node.each { |key, child| walk(child, "#{pointer}/#{key}", trail + [ key ]) unless key == "props" }
     when Array
       node.each_with_index { |child, i| walk(child, "#{pointer}/#{i}", trail + [ i ]) }
+    else
+      nil # a scalar holds no props and nothing beneath it
     end
   end
 

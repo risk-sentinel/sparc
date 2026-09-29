@@ -30,22 +30,32 @@
 module SparcNamespaceProps
   NS = OscalNamespace.uri(:sparc)
 
-  NAMES = %w[
-    node-type parent-uuid next-decision-date fips-199
-    blocks-ato evidence-kind signed-by condition-expires trigger
+  NODE_TYPE          = "node-type".freeze
+  PARENT_UUID        = "parent-uuid".freeze
+  NEXT_DECISION_DATE = "next-decision-date".freeze
+  FIPS_199           = "fips-199".freeze
+  BLOCKS_ATO         = "blocks-ato".freeze
+  EVIDENCE_KIND      = "evidence-kind".freeze
+  SIGNED_BY          = "signed-by".freeze
+  CONDITION_EXPIRES  = "condition-expires".freeze
+  TRIGGER            = "trigger".freeze
+
+  NAMES = [
+    NODE_TYPE, PARENT_UUID, NEXT_DECISION_DATE, FIPS_199,
+    BLOCKS_ATO, EVIDENCE_KIND, SIGNED_BY, CONDITION_EXPIRES, TRIGGER
   ].freeze
 
   # The props SPARC DERIVES at each placement. On export these are dropped from
   # any stored/imported props and re-emitted from SPARC's own data, so a stale
   # value carried in from an import (another system's parent, last year's
   # decision date) can never survive beside the current one.
-  SSP_METADATA_NAMES = %w[node-type parent-uuid fips-199 next-decision-date].freeze
-  PARTY_NAMES        = %w[node-type].freeze
-  EVIDENCE_NAMES     = %w[evidence-kind signed-by].freeze
+  SSP_METADATA_NAMES = [ NODE_TYPE, PARENT_UUID, FIPS_199, NEXT_DECISION_DATE ].freeze
+  PARTY_NAMES        = [ NODE_TYPE ].freeze
+  EVIDENCE_NAMES     = [ EVIDENCE_KIND, SIGNED_BY ].freeze
   RISK_COLUMNS = {
-    "blocks-ato"        => :blocks_ato,
-    "condition-expires" => :condition_expires,
-    "trigger"           => :reopen_trigger
+    BLOCKS_ATO        => :blocks_ato,
+    CONDITION_EXPIRES => :condition_expires,
+    TRIGGER           => :reopen_trigger
   }.freeze
 
   FIPS_199_LEVELS = %w[low moderate high].freeze
@@ -67,7 +77,7 @@ module SparcNamespaceProps
     "policy_document"  => "document"
   }.freeze
 
-  module_function
+  extend self
 
   def prop(name, value) = { "name" => name, "ns" => NS, "value" => value.to_s }
 
@@ -119,12 +129,12 @@ module SparcNamespaceProps
 
   def ssp_metadata_props(ssp)
     boundary = ssp.authorization_boundary
-    props = [ prop("node-type", "system") ]
-    props << prop("parent-uuid", boundary.uuid) if boundary&.uuid.present?
+    props = [ prop(NODE_TYPE, "system") ]
+    props << prop(PARENT_UUID, boundary.uuid) if boundary&.uuid.present?
     level = fips_199_for(ssp)
-    props << prop("fips-199", level) if level
+    props << prop(FIPS_199, level) if level
     date = iso_date(boundary&.next_decision_date)
-    props << prop("next-decision-date", date) if date
+    props << prop(NEXT_DECISION_DATE, date) if date
     props
   end
 
@@ -134,9 +144,9 @@ module SparcNamespaceProps
   def required_ssp_metadata(ssp)
     boundary = ssp.authorization_boundary
     {
-      "node-type"   => "system",
-      "parent-uuid" => boundary&.uuid.presence,
-      "fips-199"    => fips_199_for(ssp)
+      NODE_TYPE   => "system",
+      PARENT_UUID => boundary&.uuid.presence,
+      FIPS_199    => fips_199_for(ssp)
     }.compact
   end
 
@@ -158,7 +168,7 @@ module SparcNamespaceProps
     Array(metadata["parties"]).each do |party|
       next unless party.is_a?(Hash) && party["uuid"] == org_party_uuid && party["type"] == "organization"
 
-      party["props"] = replace(party["props"], [ prop("node-type", "organization") ], names: PARTY_NAMES)
+      party["props"] = replace(party["props"], [ prop(NODE_TYPE, "organization") ], names: PARTY_NAMES)
     end
     metadata
   end
@@ -167,11 +177,11 @@ module SparcNamespaceProps
 
   def risk_props(risk)
     props = []
-    props << prop("blocks-ato", risk.blocks_ato.to_s) if risk.respond_to?(:blocks_ato) && !risk.blocks_ato.nil?
+    props << prop(BLOCKS_ATO, risk.blocks_ato.to_s) if risk.respond_to?(:blocks_ato) && !risk.blocks_ato.nil?
     if risk.respond_to?(:condition_expires) && (date = iso_date(risk.condition_expires))
-      props << prop("condition-expires", date)
+      props << prop(CONDITION_EXPIRES, date)
     end
-    props << prop("trigger", risk.reopen_trigger) if risk.respond_to?(:reopen_trigger) && risk.reopen_trigger.present?
+    props << prop(TRIGGER, risk.reopen_trigger) if risk.respond_to?(:reopen_trigger) && risk.reopen_trigger.present?
     props
   end
 
@@ -209,9 +219,10 @@ module SparcNamespaceProps
 
   def import_value(name, raw)
     case name
-    when "blocks-ato"        then { "true" => true, "false" => false }[raw]
-    when "condition-expires" then iso_date(raw) && Date.iso8601(raw)
-    when "trigger"           then raw if raw.is_a?(String) && raw.match?(TRIGGER_PATTERN)
+    when BLOCKS_ATO        then { "true" => true, "false" => false }[raw]
+    when CONDITION_EXPIRES then iso_date(raw) && Date.iso8601(raw)
+    when TRIGGER           then raw if raw.is_a?(String) && raw.match?(TRIGGER_PATTERN)
+    else nil # a name with no column: never imported (risk_attributes_from keeps it in props)
     end
   end
 
@@ -220,9 +231,9 @@ module SparcNamespaceProps
   def evidence_props(evidence, parties:)
     props = []
     kind = EVIDENCE_KINDS[evidence.evidence_type]
-    props << prop("evidence-kind", kind) if kind
+    props << prop(EVIDENCE_KIND, kind) if kind
     signer = signer_party_uuid(evidence, parties)
-    props << prop("signed-by", signer) if signer
+    props << prop(SIGNED_BY, signer) if signer
     props
   end
 

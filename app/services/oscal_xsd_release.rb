@@ -20,7 +20,7 @@
 # logic over constants, and on an ActiveRecord model its result reads as a
 # model attribute to static analysis.
 module OscalXsdRelease
-  module_function
+  extend self
 
   def for(declared)
     carried = OscalSchema::XSD_VERSIONS

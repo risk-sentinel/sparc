@@ -365,10 +365,8 @@ class HdfSystemExportService
   end
 
   def narrative(fields)
-    %w[implementation_statement implementation_summary].each do |name|
-      text = fields[name]&.field_value.to_s.strip
-      return text if text.present?
-    end
-    nil
+    %w[implementation_statement implementation_summary].lazy
+      .map { |name| fields[name]&.field_value.to_s.strip }
+      .find(&:present?)
   end
 end

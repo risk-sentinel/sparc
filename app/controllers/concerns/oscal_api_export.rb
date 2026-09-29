@@ -43,7 +43,8 @@
 module OscalApiExport
   extend ActiveSupport::Concern
 
-  OSCAL_EXPORT_FORMATS = %w[oscal oscal-yaml oscal-xml].freeze
+  XML_FORMAT = "oscal-xml".freeze
+  OSCAL_EXPORT_FORMATS = [ "oscal", "oscal-yaml", XML_FORMAT ].freeze
   FIELDS_FORMAT = "fields".freeze
   UNVALIDATED_HINT = "Re-request with validate=false to export it anyway".freeze
 
@@ -64,7 +65,7 @@ module OscalApiExport
 
     unless formats.include?(format)
       body = { error: "Unknown export format #{format.inspect}", expected: formats }
-      body[:reason] = xml_refusal if format == "oscal-xml" && xml_refusal
+      body[:reason] = xml_refusal if format == XML_FORMAT && xml_refusal
       return render json: body, status: :unprocessable_content
     end
 
@@ -86,7 +87,7 @@ module OscalApiExport
     when "oscal"      then render json: JSON.parse(json_string)
     when "oscal-yaml" then render plain: OscalExportFormatService.to_yaml(json_string),
                                    content_type: "application/x-yaml"
-    when "oscal-xml"  then render xml: OscalExportFormatService.to_xml(json_string, xml_model)
+    when XML_FORMAT   then render xml: OscalExportFormatService.to_xml(json_string, xml_model)
     else
       # Unreachable: the guard above admits only offered formats. Present so
       # that ADDING a format and forgetting to handle it here is a named error
@@ -109,7 +110,7 @@ module OscalApiExport
     offered = []
     offered << FIELDS_FORMAT if fields
     offered.concat(OSCAL_EXPORT_FORMATS)
-    offered.delete("oscal-xml") unless xml_model
+    offered.delete(XML_FORMAT) unless xml_model
     offered
   end
 
