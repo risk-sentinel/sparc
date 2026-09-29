@@ -64,6 +64,58 @@ RSpec.describe "Api::V1::AuthorizationBoundaries", type: :request do
     end
   end
 
+  # #1178 — a boundary row carried no organization link, so a client could not
+  # build the organization -> boundary tree from the API alone. Both list and
+  # detail carry it, and both carry nil (not an absent key) when unassigned.
+  describe "organization link (#1178)" do
+    let(:organization) { create(:organization) }
+    let!(:assigned)    { create(:authorization_boundary, organization: organization) }
+    let!(:unassigned)  { create(:authorization_boundary, organization: nil) }
+
+    it "carries organization_id and organization_uuid on the detail" do
+      get api_v1_authorization_boundary_path(assigned.slug), headers: auth_headers
+      expect(response).to have_http_status(:ok)
+
+      data = response.parsed_body["data"]
+      expect(data["organization_id"]).to eq(organization.id)
+      expect(data["organization_uuid"]).to eq(organization.uuid)
+      expect(data["organization_uuid"]).to be_present
+    end
+
+    it "carries organization_id and organization_uuid on every list row" do
+      get api_v1_authorization_boundaries_path, headers: auth_headers
+      expect(response).to have_http_status(:ok)
+
+      rows = response.parsed_body["data"].index_by { |b| b["slug"] }
+      expect(rows.fetch(assigned.slug)).to include(
+        "organization_id" => organization.id, "organization_uuid" => organization.uuid
+      )
+    end
+
+    it "returns explicit nulls for a boundary with no organization, on list and detail" do
+      get api_v1_authorization_boundary_path(unassigned.slug), headers: auth_headers
+      detail = response.parsed_body["data"]
+      expect(detail).to include("organization_id" => nil, "organization_uuid" => nil)
+
+      get api_v1_authorization_boundaries_path, headers: auth_headers
+      row = response.parsed_body["data"].find { |b| b["slug"] == unassigned.slug }
+      expect(row).to include("organization_id" => nil, "organization_uuid" => nil)
+    end
+
+    it "does not reveal the organization of a boundary the caller cannot read" do
+      outsider = create(:user)
+      headers = { "Authorization" => "Bearer #{ApiToken.generate!(user: outsider, name: 'O').plaintext_token}" }
+
+      get api_v1_authorization_boundary_path(assigned.slug), headers: headers
+      expect(response).to have_http_status(:forbidden)
+      expect(response.body).not_to include(organization.uuid)
+
+      get api_v1_authorization_boundaries_path, headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(organization.uuid)
+    end
+  end
+
   describe "POST /api/v1/authorization_boundaries" do
     it "creates a boundary" do
       boundary_params = {

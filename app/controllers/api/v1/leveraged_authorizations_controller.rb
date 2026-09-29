@@ -32,7 +32,8 @@ class Api::V1::LeveragedAuthorizationsController < Api::V1::BaseController
 
   # GET .../leveraged_authorizations
   def index
-    scope = @leveraging_boundary.leveraging_relationships.order(:id)
+    scope = @leveraging_boundary.leveraging_relationships
+                                .includes(:leveraging_boundary, :leveraged_boundary).order(:id)
     result = paginate(scope, items: 50)
 
     render json: {
@@ -137,6 +138,11 @@ class Api::V1::LeveragedAuthorizationsController < Api::V1::BaseController
       scenario: record.scenario,
       leveraging_boundary_id: record.leveraging_boundary_id,
       leveraged_boundary_id: record.leveraged_boundary_id,
+      # #1178 — the durable (RFC 4122) identity of each side of the
+      # relationship. The leveraged boundary is optional (scenarios 2 and 3
+      # record an ATO SPARC does not hold), so its uuid may be nil.
+      leveraging_boundary_uuid: record.leveraging_boundary&.uuid,
+      leveraged_boundary_uuid: record.leveraged_boundary&.uuid,
       date_authorized: record.date_authorized&.to_date&.iso8601
     }
 

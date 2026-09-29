@@ -205,3 +205,70 @@ class TestDestroy:
 
         still_there = admin_client.get(f"{_path(boundary_id)}/{record['id']}")
         assert still_there.status_code == 200, "a refused delete removed the record anyway"
+
+
+class TestBoundaryUuids:
+    """#1178 — both sides of the relationship carry their durable RFC 4122 uuid.
+
+    The leveraged boundary is optional (scenarios 2 and 3 record an ATO SPARC
+    does not hold), so its uuid is an explicit null there, not an absent key.
+    """
+
+    def _boundary_uuid(self, admin_client: httpx.Client, boundary_id: int) -> str:
+        response = admin_client.get(f"/api/v1/authorization_boundaries/{boundary_id}")
+        assert response.status_code == 200, response.text
+        value = response.json()["data"]["uuid"]
+        assert value, response.text
+        return value
+
+    @pytest.mark.happy
+    def test_scenario_two_has_a_leveraging_uuid_and_a_null_leveraged_uuid(
+        self, admin_client: httpx.Client, leveraged_authorization: tuple[int, dict[str, Any]]
+    ) -> None:
+        boundary_id, record = leveraged_authorization
+        expected = self._boundary_uuid(admin_client, boundary_id)
+
+        shown = admin_client.get(f"{_path(boundary_id)}/{record['id']}")
+        assert shown.status_code == 200, shown.text
+        listing = admin_client.get(_path(boundary_id))
+        assert listing.status_code == 200, listing.text
+        rows = [r for r in listing.json()["data"] if r["id"] == record["id"]]
+        assert len(rows) == 1, listing.text
+
+        for body in (shown.json()["data"], rows[0]):
+            assert body["leveraging_boundary_uuid"] == expected, body
+            assert "leveraged_boundary_uuid" in body, body
+            assert body["leveraged_boundary_uuid"] is None, body
+
+    @pytest.mark.happy
+    def test_scenario_one_carries_the_leveraged_boundary_uuid(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
+        name = f"phase2-1178-leveraged-{uuid.uuid4().hex[:8]}"
+        other = admin_client.post(
+            "/api/v1/authorization_boundaries",
+            json={"authorization_boundary": {"name": name}},
+        )
+        assert other.status_code == 201, other.text
+        other_id = other.json()["data"]["id"]
+        record_id = None
+        try:
+            created = admin_client.post(
+                _path(seeded_boundary_id),
+                json=_payload(crm_type="oscal_with_access", leveraged_boundary_id=other_id),
+            )
+            assert created.status_code == 201, created.text
+            record_id = created.json()["data"]["id"]
+
+            shown = admin_client.get(f"{_path(seeded_boundary_id)}/{record_id}")
+            assert shown.status_code == 200, shown.text
+            data = shown.json()["data"]
+            assert data["leveraged_boundary_id"] == other_id, data
+            assert data["leveraged_boundary_uuid"] == self._boundary_uuid(admin_client, other_id)
+            assert data["leveraging_boundary_uuid"] == self._boundary_uuid(
+                admin_client, seeded_boundary_id
+            )
+        finally:
+            if record_id is not None:
+                admin_client.delete(f"{_path(seeded_boundary_id)}/{record_id}")
+            admin_client.delete(f"/api/v1/authorization_boundaries/{other_id}")
