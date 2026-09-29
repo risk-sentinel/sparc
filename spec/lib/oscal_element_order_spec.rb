@@ -11,13 +11,24 @@ require Rails.root.join("scripts/generate_oscal_element_order")
 #
 # This spec closes that gap by re-running the generator and comparing.
 RSpec.describe "OSCAL element order table" do
-  let(:committed) { JSON.parse(Rails.root.join("lib/oscal_element_order.json").read) }
-  let(:generated) { OscalElementOrderGenerator.generate }
+  # One table per carried release (owner, 2026-09-29). The facts below are
+  # checked against the DEFAULT release's table; drift is checked for every one.
+  let(:committed) { JSON.parse(Rails.root.join("lib/oscal_element_order/v#{OscalSchema::DEFAULT_VERSION}.json").read) }
 
-  it "matches what the generator produces from the committed XSDs" do
-    expect(generated).to eq(committed),
-      "lib/oscal_element_order.json is out of date with lib/oscal_xsd_schemas/. " \
-      "Regenerate it: bundle exec ruby scripts/generate_oscal_element_order.rb"
+  it "has a table for exactly the releases whose XSDs are carried" do
+    expect(OscalElementOrderGenerator.versions).to eq(OscalSchema::XSD_VERSIONS.sort)
+    tables = Rails.root.join("lib/oscal_element_order").glob("v*.json").map { |p| p.basename(".json").to_s.delete_prefix("v") }
+    expect(tables.sort).to eq(OscalSchema::XSD_VERSIONS.sort)
+  end
+
+  OscalSchema::XSD_VERSIONS.each do |version|
+    it "v#{version}: matches what the generator produces from that release's XSDs" do
+      committed_table = JSON.parse(OscalElementOrderGenerator.output_path(version).read)
+
+      expect(OscalElementOrderGenerator.generate(version)).to eq(committed_table),
+        "lib/oscal_element_order/v#{version}.json is out of date with lib/oscal_xsd_schemas/v#{version}/. " \
+        "Regenerate: bundle exec ruby scripts/generate_oscal_element_order.rb"
+    end
   end
 
   it "covers every model the converter can export" do

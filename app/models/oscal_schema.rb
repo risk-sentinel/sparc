@@ -16,7 +16,7 @@ class OscalSchema < ApplicationRecord
   # that 1.1.x left unconstrained. An exporter that satisfies 1.1.2 does not
   # automatically satisfy 1.2.x, and finding that out from an assessor would be
   # finding out too late.
-  SUPPORTED_VERSIONS = %w[1.1.1 1.1.2 1.1.3 1.2.0 1.2.1 1.2.2].freeze
+  SUPPORTED_VERSIONS = %w[1.1.1 1.1.2 1.1.3 1.2.0 1.2.1 1.2.2 1.2.3].freeze
 
   # What SPARC EMITS. #1020 added 1.2.2 to validate against and deliberately
   # left this at 1.1.2, because adding a version to check is a different
@@ -34,15 +34,34 @@ class OscalSchema < ApplicationRecord
   # A document that carries its own `oscal_version` still wins — this is the
   # fallback for documents that do not state one, and the version SPARC
   # declares in `metadata.oscal-version` when it authors a document.
-  DEFAULT_VERSION    = "1.2.2"
+  #
+  # Owner-decided 2026-09-29: 1.2.3 is the default. Same evidence rule as 1.2.2:
+  # every record of every export type in the carried-forward instance (245:
+  # catalog, profile, ssp, component-definition, assessment-plan,
+  # assessment-results, poam, mapping) validates identically under 1.2.2 and
+  # 1.2.3. Measured schema diff: 1.2.3 only adds `region`, `zone` and
+  # `resource-container` to the component `type` vocabulary — an OPEN list
+  # (`anyOf` string | enum), so no document changes validity — and rewords one
+  # profile description. NIST calls it a patch release; the measurement agrees.
+  DEFAULT_VERSION    = "1.2.3"
 
   # OSCAL document-type strings reused as map keys + root_keys below.
   COMPONENT_DEFINITION = "component-definition".freeze
   ASSESSMENT_PLAN      = "assessment-plan".freeze
   ASSESSMENT_RESULTS   = "assessment-results".freeze
 
+  # The releases whose XSDs SPARC carries (owner, 2026-09-29), one directory
+  # each under lib/oscal_xsd_schemas/. XML is validated against the release the
+  # document declares, not the default. 1.2.1 is deliberately not carried
+  # (owner decision); 1.1.1 and 1.2.0 are not carried either.
+  XSD_VERSIONS = %w[1.1.2 1.1.3 1.2.2 1.2.3].freeze
+
+  # Which carried XSD set validates a document that declares `declared`.
+  # The rules live in OscalXsdRelease; kept here for callers of the model API.
+  def self.xsd_version_for(declared) = OscalXsdRelease.for(declared)
+
   # Versions where mapping schemas exist (introduced in 1.2.0)
-  MAPPING_VERSIONS = %w[1.2.0 1.2.1 1.2.2].freeze
+  MAPPING_VERSIONS = %w[1.2.0 1.2.1 1.2.2 1.2.3].freeze
 
   # #1020 — OSCAL 1.2.0 rejects documents that 1.1.x, 1.2.1 and 1.2.2 all accept,
   # and the fault is in that release's schema rather than in the documents.

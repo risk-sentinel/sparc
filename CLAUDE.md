@@ -64,7 +64,7 @@ Control catalogs have a parallel hierarchy: `ControlCatalog` → `ControlFamily`
 - `JsonExportService` — serialize documents to downloadable JSON
 - `SspUpdateService` — handle inline field updates from the UI
 - `CatalogImportService` — import NIST control catalogs
-- `OscalSspExportService` / `OscalComponentDefinitionExportService` — OSCAL JSON exports at `OscalSchema::DEFAULT_VERSION` (currently v1.2.2)
+- `OscalSspExportService` / `OscalComponentDefinitionExportService` — OSCAL JSON exports at `OscalSchema::DEFAULT_VERSION` (currently v1.2.3)
 - `OscalSchemaValidationService` — validate OSCAL JSON against NIST schemas
 - `AwsLabsCdefImportService` — runtime ingestion of OSCAL CDEFs from AWS Labs (#466)
 - `SspExcelParserService` / `SarExcelParserService` / `SarExcelExportService` — parse/export Excel files (.xlsx). Code preserved for API consumers; no longer surfaced in the UI as of #479.

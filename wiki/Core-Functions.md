@@ -222,7 +222,7 @@ schema.oscal_mappings      # => { "status" => { "target" => "prop", ... } }
 
 ## 2. OSCAL Export & Validation
 
-SPARC provides full OSCAL export in three formats (JSON, YAML, XML) for all document types, with schema validation against the official NIST JSON and XSD schemas. **The version written and validated against is 1.2.2** as of v1.16.0; a document carrying its own `oscal-version` is validated against that one instead.
+SPARC provides full OSCAL export in three formats (JSON, YAML, XML) for all document types, with schema validation against the official NIST JSON and XSD schemas. **The version written and validated against is 1.2.3** as of v1.17.0; a document carrying its own `oscal-version` is validated against that one instead.
 
 ### Export Services
 
@@ -243,7 +243,7 @@ Each document type has a dedicated OSCAL export service:
 
 **File:** `app/services/oscal_ssp_export_service.rb`
 
-Builds a complete OSCAL System Security Plan JSON document (1.2.2 by default). The top-level structure includes:
+Builds a complete OSCAL System Security Plan JSON document (1.2.3 by default). The top-level structure includes:
 
 - **metadata** -- title, version, oscal-version, last-modified, roles, parties, revisions.
 - **import-profile** -- reference to the baseline profile.
@@ -288,7 +288,7 @@ Each document controller provides `download_yaml` and `download_xml` actions tha
 
 **File:** `app/services/oscal_schema_validation_service.rb`
 
-Validates OSCAL JSON against the official NIST JSON schemas — 1.2.2 by default, and any of 1.1.1 through 1.2.2 on request — using the `json_schemer` gem (Draft 2020-12 support), and validates OSCAL XML against XSD schemas using `Nokogiri::XML::Schema`. Supports all eight OSCAL model types:
+Validates OSCAL JSON against the official NIST JSON schemas — 1.2.3 by default, and any of 1.1.1 through 1.2.3 on request — using the `json_schemer` gem (Draft 2020-12 support), and validates OSCAL XML against XSD schemas using `Nokogiri::XML::Schema`. Supports all eight OSCAL model types:
 
 ```ruby
 SCHEMA_MAP = {
@@ -313,9 +313,11 @@ Schema files are cached after first load. An internal `preprocess_schema` step r
 
 #### XSD Validation
 
-**Directory:** `lib/oscal_xsd_schemas/`
+**Directory:** `lib/oscal_xsd_schemas/v<release>/` — one complete set per carried release: **1.1.2, 1.1.3, 1.2.2 and 1.2.3**.
 
-XML exports are validated against NIST OSCAL **v1.2.2** XSD schemas using `Nokogiri::XML::Schema` — the same version the JSON set uses and the same version an export declares. The XSD set is fetched by `bin/rails oscal:bundle_xsd_schemas` (which `oscal:bundle_schemas` invokes, so the two sets cannot separate) and a spec fails if it and `DEFAULT_VERSION` disagree (#1058). Seven XSD schema files are stored locally:
+XML is validated with `Nokogiri::XML::Schema` against the XSDs of the release the document **declares** in `metadata/oscal-version` (SPARC's own exports declare the default, 1.2.3). Releases are separate artifacts — the 1.1.x and 1.2.x sets order XML differently — so each is carried exactly as NIST publishes it, and the XML converter writes in that same release's element order (`lib/oscal_element_order/v<release>.json`, generated from the XSDs).
+
+A document declaring a release SPARC does not carry (1.1.1, 1.2.0, 1.2.1) is validated against the nearest carried release in its line (1.1.1 → 1.1.2; 1.2.0 and 1.2.1 → 1.2.2), and the result reports both the declared and the validated-against release — never silently. If a carried release's files are missing, validation fails and names the file. The sets are fetched by `bin/rails oscal:bundle_xsd_schemas` (which `oscal:bundle_schemas` invokes), and specs fail if any set is incomplete or declares a different release than its directory (#1058). Each set holds seven files:
 
 | Schema File | OSCAL Model |
 |---|---|

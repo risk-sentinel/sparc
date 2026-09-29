@@ -25,6 +25,7 @@ class OscalSchemaValidationService
   SCHEMA_DIR     = Rails.root.join("lib", "oscal_schemas").freeze
   XSD_SCHEMA_DIR = Rails.root.join("lib", "oscal_xsd_schemas").freeze
 
+
   # Map logical model names to their disk schema files and expected root keys.
   # Used as fallback when DB schemas are not available.
   SCHEMA_MAP = {
@@ -73,7 +74,13 @@ class OscalSchemaValidationService
     catalog:              "oscal_catalog_schema.xsd"
   }.freeze
 
-  Result = Struct.new(:valid?, :errors, :schema_version, keyword_init: true)
+  # `schema_version` is the release actually validated against. For XML,
+  # `declared_version` is what the document said; when they differ, SPARC does
+  # not carry that release's XSDs and validated against the nearest one it does
+  # (OscalSchema.xsd_version_for) — reported, never silent.
+  Result = Struct.new(:valid?, :errors, :schema_version, :declared_version, keyword_init: true) do
+    def substituted? = declared_version.present? && declared_version != schema_version
+  end
 
   # ── Class API ──────────────────────────────────────────────────────
 
@@ -103,46 +110,52 @@ class OscalSchemaValidationService
     result
   end
 
-  # Validate an XML string against the named XSD schema.
+  # Validate an XML string against the XSD set of the release it declares.
   #   model_type  — one of XSD_SCHEMA_MAP keys, e.g. :ssp
   #   xml_string  — the raw XML string to validate
-  #   Returns a Result struct.
-  def self.validate_xml(model_type, xml_string)
-    xsd_file = XSD_SCHEMA_MAP.fetch(model_type.to_sym) do
-      return Result.new(valid?: false,
-        errors: [ "No XSD schema available for model type: #{model_type}" ],
-        schema_version: DEFAULT_OSCAL_VERSION)
-    end
-
-    xsd_path = XSD_SCHEMA_DIR.join(xsd_file)
-    unless File.exist?(xsd_path)
-      return Result.new(valid?: false,
-        errors: [ "XSD schema file not found: #{xsd_path}" ],
-        schema_version: DEFAULT_OSCAL_VERSION)
-    end
-
-    xsd_schema = xsd_schema_cache[model_type.to_sym] ||= Nokogiri::XML::Schema(File.read(xsd_path))
+  #   version:    — overrides the document's own `metadata/oscal-version`
+  #   Returns a Result struct; `schema_version` is the release validated
+  #   against and `declared_version` the one the document named.
+  def self.validate_xml(model_type, xml_string, version: nil)
     doc = XmlSecurity.parse(xml_string, strict: false)
+    declared = version.presence || declared_xml_version(doc)
+    against  = OscalXsdRelease.for(declared)
+    result   = ->(valid, errors) { Result.new(valid?: valid, errors: errors, schema_version: against, declared_version: declared) }
 
-    validation_errors = xsd_schema.validate(doc)
-    error_messages = validation_errors.first(50).map { |err| err.message }
+    xsd_file = XSD_SCHEMA_MAP.fetch(model_type.to_sym) do
+      return result.call(false, [ "No XSD schema available for model type: #{model_type}" ])
+    end
 
-    Result.new(
-      valid?: error_messages.empty?,
-      errors: error_messages,
-      schema_version: DEFAULT_OSCAL_VERSION
-    )
+    # A carried version whose set is missing on disk is a broken install, and
+    # says so: it must never quietly validate against some other release.
+    # The directory comes from a CLOSED table of the carried releases — the
+    # version string the document declares never reaches the path itself.
+    carried_dir = OscalXsdRelease.dir_for(against)
+    return result.call(false, [ "No XSD set is carried for OSCAL #{against}" ]) unless carried_dir
+
+    xsd_path = XSD_SCHEMA_DIR.join(carried_dir, xsd_file)
+    return result.call(false, [ "XSD schema file not found: #{xsd_path}" ]) unless File.exist?(xsd_path)
+
+    xsd_schema = xsd_schema_cache[[ against, model_type.to_sym ]] ||= Nokogiri::XML::Schema(File.read(xsd_path))
+    error_messages = xsd_schema.validate(doc).first(50).map(&:message)
+    result.call(error_messages.empty?, error_messages)
   rescue Nokogiri::XML::SyntaxError => e
     Result.new(valid?: false, errors: [ "Invalid XML: #{e.message}" ], schema_version: DEFAULT_OSCAL_VERSION)
   rescue StandardError => e
     Result.new(valid?: false, errors: [ "XSD validation error: #{e.message}" ], schema_version: DEFAULT_OSCAL_VERSION)
   end
 
+  # The release an OSCAL XML document declares in <metadata><oscal-version>.
+  def self.declared_xml_version(doc)
+    doc.at_xpath("/*/*[local-name()='metadata']/*[local-name()='oscal-version']")&.text&.strip.presence
+  end
+
   # Validate XML and raise on failure (for use in export pipelines).
   def self.validate_xml!(model_type, xml_string)
     result = validate_xml(model_type, xml_string)
     unless result.valid?
-      raise OscalValidationError, "OSCAL #{model_type} XML validation failed:\n#{result.errors.join("\n")}"
+      against = result.substituted? ? " (declared #{result.declared_version}, validated against #{result.schema_version})" : ""
+      raise OscalValidationError, "OSCAL #{model_type} XML validation failed#{against}:\n#{result.errors.join("\n")}"
     end
     result
   end

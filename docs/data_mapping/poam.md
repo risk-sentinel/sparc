@@ -3,7 +3,7 @@
 # POA&M (Plan of Action & Milestones) — OSCAL Data Mapping
 
 This document describes how SPARC internal models map to OSCAL at
-`OscalSchema::DEFAULT_VERSION` (currently v1.2.2)
+`OscalSchema::DEFAULT_VERSION` (currently v1.2.3)
 `plan-of-action-and-milestones` JSON for import and export.
 
 ## Model Hierarchy

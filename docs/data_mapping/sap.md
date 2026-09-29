@@ -2,7 +2,7 @@
 
 # SAP (Security Assessment Plan) -- OSCAL Data Mapping
 
-OSCAL version: `OscalSchema::DEFAULT_VERSION` (currently **1.2.2**) | OSCAL root element: `assessment-plan`
+OSCAL version: `OscalSchema::DEFAULT_VERSION` (currently **1.2.3**) | OSCAL root element: `assessment-plan`
 
 Export service: `OscalAssessmentPlanExportService`
 

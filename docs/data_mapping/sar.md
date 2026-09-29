@@ -2,7 +2,7 @@
 
 # SAR (Security Assessment Results) -- OSCAL Data Mapping
 
-OSCAL version: `OscalSchema::DEFAULT_VERSION` (currently **1.2.2**) | OSCAL root element: `assessment-results`
+OSCAL version: `OscalSchema::DEFAULT_VERSION` (currently **1.2.3**) | OSCAL root element: `assessment-results`
 
 Export service: `OscalSarExportService`
 

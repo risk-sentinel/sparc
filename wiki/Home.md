@@ -1,6 +1,6 @@
 # SPARC — Systematic and Regulatory Compliance
 
-Welcome to the official SPARC wiki. SPARC is a Rails 8.1 application for managing NIST SP 800-53 compliance documentation — System Security Plans (SSPs), Security Assessment Results (SARs), Security Assessment Plans (SAPs), Plans of Action & Milestones (POA&Ms), Component Definitions (CDEFs), and control catalogs. It replaces spreadsheet-based workflows with a web UI and REST API, with full OSCAL import/export support (NIST OSCAL **1.2.2**, and validation against any release from 1.1.1 onward).
+Welcome to the official SPARC wiki. SPARC is a Rails 8.1 application for managing NIST SP 800-53 compliance documentation — System Security Plans (SSPs), Security Assessment Results (SARs), Security Assessment Plans (SAPs), Plans of Action & Milestones (POA&Ms), Component Definitions (CDEFs), and control catalogs. It replaces spreadsheet-based workflows with a web UI and REST API, with full OSCAL import/export support (NIST OSCAL **1.2.3**, and validation against any release from 1.1.1 onward).
 
 ## Quick Links
 
@@ -84,7 +84,7 @@ Full release history — the current v1.x line plus the legacy v2.x–v3.x entri
 | Frontend | Hotwire (Turbo + Stimulus), Bootstrap 5.3 |
 | Asset Pipeline | Propshaft, importmap (no Node build step) |
 | Auth | OmniAuth (GitHub, GitLab, OIDC), net-ldap, bcrypt |
-| OSCAL Validation | json_schemer (NIST OSCAL schemas 1.1.1–1.2.2, **1.2.2 by default**, baked into the container) |
+| OSCAL Validation | json_schemer (NIST OSCAL schemas 1.1.1–1.2.3, **1.2.3 by default**, baked into the container) |
 | File Parsing | Nokogiri (XML) |
 | Containerization | Docker, Docker Compose |
 

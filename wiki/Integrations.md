@@ -300,7 +300,7 @@ container image published by this repo's CI:
 
 ### Standards Support
 
-- NIST OSCAL schema compliance — **1.2.2** as of v1.16.0
+- NIST OSCAL schema compliance — **1.2.3** as of v1.17.0
 - 8 OSCAL model types supported: catalog, profile, component-definition, SSP, assessment-plan, assessment-results, POA&M, mapping
 
 ### Import Formats

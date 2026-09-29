@@ -56,7 +56,9 @@ module SeedRunner
     # `date_authorized`, which OSCAL REQUIRES, so every SSP on the leveraging
     # boundary failed export validation. Re-run to heal existing rows.
     "demo_collection_screens" => "1.1.0",
-    "oscal_schemas"         => "1.0.0",
+    # OSCAL 1.2.3 became supported + the default (owner, 2026-09-29): re-run so
+    # an existing instance loads the 1.2.3 schema rows it validates against.
+    "oscal_schemas"         => "1.1.0",
     "cdef_service_aliases"  => "1.0.0",  # #904 coverage analysis escape hatches
     # #845 — the requested tier is appended to this at run time, so a tier
     # change re-runs the section. Bump the base to force a rebuild.
