@@ -23,6 +23,15 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
   the UI is a thin client over it (shared service where practical). Add a
   request spec for the endpoint (happy path + auth/authorization). The UI is
   never the only way to perform a mutation.
+  **Enforced by `spec/requests/web_api_parity_spec.rb`** (2026-09-29, after #1181
+  showed a web-only function could go undetected for six months). Every non-API
+  route appears in `spec/fixtures/web_api_parity.yml` in one of three ways: mapped
+  to the `Api::V1` route that performs the same function, classified `ui_only` with
+  a reason, or recorded as a `gap` with a reason and the API route it would need. A
+  new web action with no entry fails the suite, and so does a gap whose API route
+  now exists (promote it). The gap list is the backlog of this rule and is
+  REVIEWED — it is not a waiver, and adding a gap entry does not satisfy the rule
+  for new CRUD work.
 - **NEVER recreate a database to get tests to pass. Keep a PRESERVED database.**
   Recreating is not a neutral reset — it destroys the only state that can detect
   an **upgrade** defect. A gate that always starts from a fresh install proves a

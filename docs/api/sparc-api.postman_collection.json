@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "sparc-api-v1-collection",
     "name": "SPARC API v1",
-    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 306 endpoints across 55 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
+    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 311 endpoints across 57 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -4067,7 +4067,7 @@
                 }
               ]
             },
-            "description": "Export the component definition (#1029).\n\n`format` selects the serialisation — `fields` (default, SPARC's own control-field JSON), `oscal`, `oscal-yaml`, `oscal-xml`.\n\n`validate` defaults to **true** for the OSCAL formats: the document is checked against the NIST schema and a non-conforming one is refused with `422` rather than returned as a file you discover is unusable later. `validate=false` is the escape hatch.\n\nNote a component definition with **no components** does not conform, so a CDEF created and never populated is refused by the default path."
+            "description": "Export a CDEF as OSCAL. `format` = `fields` (default: SPARC's control-field JSON, unchanged) | `oscal` | `oscal-yaml` | `oscal-xml`. `validate=false` returns the document even if it does not conform (default validates and refuses with 422 {error, details, hint}). Unknown format → 422 {error, expected}. Strong ETag: send If-None-Match to get 304 when unchanged. An unpopulated CDEF exports fine: the exporter always emits one component and omits control-implementations when there are no controls, which is valid OSCAL (#1051)."
           },
           "response": [
             {
@@ -5529,6 +5529,32 @@
                 }
               }
             }
+          }
+        },
+        {
+          "name": "GET export",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_mappings/{{id}}/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_mappings",
+                "{{id}}",
+                "export"
+              ]
+            },
+            "description": "Export a control mapping as an OSCAL mapping-collection (#1154 part 2). `format` = `oscal` (default) | `oscal-yaml`; `oscal-xml` is refused with 422 and a `reason` (SPARC carries no mapping XSD). Carries provenance (method, matching rationale, status, description); no confidence score (#1196). Any authenticated token may read. Strong ETag / 304."
           }
         }
       ]
@@ -7622,6 +7648,37 @@
       ]
     },
     {
+      "name": "Hdf Systems",
+      "item": [
+        {
+          "name": "GET show",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{authorization_boundary_id}}/hdf_system",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{authorization_boundary_id}}",
+                "hdf_system"
+              ]
+            },
+            "description": "The boundary as an HDF v3.7.0 `hdf-system` document (#1179): identifier = boundary uuid (urn:ietf:rfc:4122), authorization status, FIPS 199 categorization, owner, components (from the boundary's CDEFs) and control designations (from its SSP). dataFlows omitted (not modelled). 422 when the boundary has no exportable component. Requires authorization_boundaries.read AND ssp.read on the boundary. Strong ETag / 304."
+          }
+        }
+      ]
+    },
+    {
       "name": "IdP Grants",
       "item": [
         {
@@ -9516,6 +9573,32 @@
               "body": "{\n  \"data\": [\n    {\n      \"id\": 2521,\n      \"slug\": \"sample-poam_import-93c00019\",\n      \"uuid\": \"cb12a07e-28e7-4c70-975e-5cd9911b1703\",\n      \"name\": \"sample-poam_import-93c00019\",\n      \"status\": \"pending\",\n      \"file_type\": \"json\",\n      \"original_filename\": \"sample-poam_import-93c00019.json\"\n    }\n  ],\n  \"meta\": {\n    \"created\": 1,\n    \"rejected\": 0,\n    \"errors\": []\n  }\n}"
             }
           ]
+        },
+        {
+          "name": "GET export",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/poam_documents/{{poam_slug}}/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "poam_documents",
+                "{{poam_slug}}",
+                "export"
+              ]
+            },
+            "description": "Export a POA&M (#1181). `format` = `fields` (default: SPARC's control-field JSON, unchanged) | `oscal` | `oscal-yaml` | `oscal-xml`. `validate=false` returns the document even if it does not conform (default validates and refuses with 422 {error, details, hint}). Unknown format → 422 {error, expected}. Strong ETag: send If-None-Match to get 304 when unchanged. Requires `poam.read` on the document's boundary."
+          }
         }
       ]
     },
@@ -11842,7 +11925,7 @@
                 "export"
               ]
             },
-            "description": "Read back the SAP's control fields (#1026).\n\nBefore this endpoint SAP and CDEF accepted bulk control-field WRITES through field-import and exposed no read, so a caller could not confirm what it had written."
+            "description": "Export a SAP (#1181). `format` = `fields` (default: SPARC's control-field JSON, unchanged) | `oscal` | `oscal-yaml` | `oscal-xml`. `validate=false` returns the document even if it does not conform (default validates and refuses with 422 {error, details, hint}). Unknown format → 422 {error, expected}. Strong ETag: send If-None-Match to get 304 when unchanged. Requires `sap.read` on the document's boundary."
           },
           "response": [
             {
@@ -12252,7 +12335,7 @@
                 "export"
               ]
             },
-            "description": "Exports a SAR document as a downloadable JSON file including all assessment findings and control results.\n\nResponse: 200 OK with Content-Disposition header for file download."
+            "description": "Export a SAR (#1181). `format` = `fields` (default: SPARC's control-field JSON, unchanged) | `oscal` | `oscal-yaml` | `oscal-xml`. `validate=false` returns the document even if it does not conform (default validates and refuses with 422 {error, details, hint}). Unknown format → 422 {error, expected}. Strong ETag: send If-None-Match to get 304 when unchanged. Requires `sar.read` on the document's boundary."
           },
           "response": [
             {
@@ -13115,7 +13198,7 @@
                 "export"
               ]
             },
-            "description": "Exports an SSP document as a downloadable JSON file. The export includes the full document hierarchy: document metadata, controls, and all control fields.\n\nResponse: 200 OK with Content-Disposition header for file download."
+            "description": "Export a SSP (#1181). `format` = `fields` (default: SPARC's control-field JSON, unchanged) | `oscal` | `oscal-yaml` | `oscal-xml`. `validate=false` returns the document even if it does not conform (default validates and refuses with 422 {error, details, hint}). Unknown format → 422 {error, expected}. Strong ETag: send If-None-Match to get 304 when unchanged. Requires `ssp.read` on the document's boundary."
           },
           "response": [
             {

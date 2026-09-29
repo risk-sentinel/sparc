@@ -58,6 +58,12 @@ flowchart TD
 4. Save. You land on the boundary **detail** page, the home base for this
    system.
 
+On the boundary's **Edit** page you can also record the **Authorization date**
+(when the ATO was granted) and the **Next decision date** (when the next
+authorization decision is due). Both are dates (`YYYY-MM-DD`); leave one blank to
+clear it. The next decision date travels with the SSP when it is exported, and the
+authorization date is included in the boundary's HDF system document.
+
 ## How to add an environment
 
 Environments (dev, test, prod, …) are the system boundaries within an
@@ -194,6 +200,8 @@ the wizard bundles their current state.
 | An SSP/SAP/SAR/POA&M is missing from every list | It belongs to no boundary, so only Instance Admins can see it | Ask an Instance Admin to attach it from the boundary's Artifact Summary |
 | Upload form shows no boundary to pick | You are not on the roster of any boundary | Ask to be added — these document types cannot be created without one |
 | "Add…" tile lists nothing to attach | No unattached document of that type exists, or you are not an Instance Admin | Upload a new one from the same screen |
+| The boundary page warns that several SSPs point at it | More than one SSP is linked to this boundary, but a boundary has one SSP | Open each SSP listed in the warning and keep the right one linked; re-link the others from their own **Link to a boundary** control |
+| A document shows **No boundary linked** | It was uploaded without a boundary, or before a boundary was required | Pick the boundary in the banner's **Link to a boundary** list on the document itself and click **Link boundary** |
 
 ---
 

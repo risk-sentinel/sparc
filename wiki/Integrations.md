@@ -315,8 +315,29 @@ container image published by this repo's CI:
 
 | Format | Validation | Notes |
 |--------|------------|-------|
-| OSCAL JSON | Validated against official NIST schemas | Primary export |
+| OSCAL JSON | Validated against official NIST schemas (1.2.3 by default) | Primary export; also over the API (`GET /api/v1/<documents>/:id/export?format=oscal`) for SSP, SAP, SAR, POA&M and CDEF |
+| OSCAL YAML / XML | JSON schema; XML against the XSDs of the release the document declares | `format=oscal-yaml` / `format=oscal-xml` |
+| OSCAL mapping collection | Validated against the mapping schema | `GET /api/v1/control_mappings/:id/export` — with provenance; no confidence score |
+| HDF `hdf-system` (v3.7.0) | Vendored hdf-libs schema, in process | `GET /api/v1/authorization_boundaries/:id/hdf_system` — the boundary as an HDF system document |
 | JSON | N/A | Simplified internal format |
+
+### sparc-horizon and sparc-validate
+
+- **SPARC-namespace props.** SSP, SAR and POA&M exports carry the nine props
+  sparc-horizon reads, under `https://sparc.risk-sentinel.org/ns`:
+  `node-type`, `parent-uuid`, `fips-199`, `next-decision-date` (SSP metadata and
+  the organization party), `blocks-ato`, `condition-expires`, `trigger` (risks)
+  and `evidence-kind`, `signed-by` (evidence attachments). Each is emitted only
+  where SPARC holds the data, and a validated export refuses a malformed one.
+  They are always emitted under that registered URI, whatever
+  `SPARC_OSCAL_NS` is set to.
+- **Conditional GET.** Every document export answers `If-None-Match` with
+  `304 Not Modified` when nothing changed (strong ETag over the exported bytes).
+- **HDF system document.** sparc-validate's results and amendments reference the
+  boundary's `hdf-system` document through `systemRef`; SPARC writes it, and the
+  HDF amendments export now carries that `systemRef`.
+- The full delivery contract (endpoints, auth, what can be sent back) is in
+  `docs/api/DELIVERY_CONTRACT.md`.
 
 ### External Dependencies
 

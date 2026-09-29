@@ -34,6 +34,7 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | `DELETE` | `/api/v1/authorization_boundaries/:id` | Delete a boundary |
 | `DELETE` | `/api/v1/authorization_boundaries/bulk` | Bulk-delete boundaries (admin-only) |
 | `PATCH` | `/api/v1/authorization_boundaries/:id/organization` | Assign the boundary to an organization, or clear it with `organization_id: null` |
+| `GET` | `/api/v1/authorization_boundaries/:id/hdf_system` | The boundary as an HDF `hdf-system` document — see [HDF System](hdf-system.md) (#1179) |
 
 ---
 
