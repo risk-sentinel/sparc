@@ -268,6 +268,9 @@ one component and cannot carry a pair. See
 | A control shows no **Statements** table | That control genuinely has no statements — roughly thirty Rev 5.2.0 base controls carry only guidance | Nothing to fix; answer the control on the card itself |
 | Statements appear for some controls but not others in an older plan | The catalog was imported before SPARC stored the statement tree | Re-import the catalog, then re-open the SSP |
 | A parameter value on the SSP looks wrong | It comes from the baseline, not the SSP | Change it on the baseline, then re-open the SSP |
+| **Baseline not set** — the SSP imports a profile SPARC cannot find, and it can't be edited | The profile named in the file isn't loaded, or is named differently | Choose the right profile in the banner's **Profile** list and click **Set baseline**. This works even if the SSP has other problems; the confirmation lists anything still outstanding |
+| **No boundary linked** on an SSP | The SSP was uploaded without a boundary, or before a boundary was required | Pick the boundary in the banner's **Link to a boundary** list and click **Link boundary**. A boundary already linked to a different SSP says so in the list — check that one first |
+| The boundary page warns that several SSPs point at it | More than one SSP is linked to the same boundary, but a boundary has one SSP | Open each SSP listed in the warning and keep the right one linked |
 
 ---
 

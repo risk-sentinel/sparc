@@ -37,6 +37,22 @@
   </div>
 </div>
 
+<% if @linked_ssps.size > 1 %>
+  <%# More than one SSP claims this boundary; the SSP tile below shows only
+      one of them. Named here so the right one can be kept and the others
+      re-linked from their own pages. %>
+  <div class="sparc-card mb-3" role="alert" style="padding: 0.65rem 1rem; border-left: 3px solid rgba(243,156,18,0.6);">
+    <strong><%= @linked_ssps.size %> system security plans point at this boundary.</strong>
+    <span class="text-body-secondary">A boundary has one SSP; the tiles below show only one of them.
+      Open each and keep the right one linked:</span>
+    <ul class="mb-0 mt-1">
+      <% @linked_ssps.each do |ssp| %>
+        <li><%= link_to ssp.name, ssp_document_path(ssp) %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
 <%# ── Boundary Completeness (#940) — inline, above the details, because a team
       onboarding needs to see what is missing before they read what is there. %>
 <%= render "readiness", readiness: @readiness %>

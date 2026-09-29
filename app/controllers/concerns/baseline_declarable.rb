@@ -43,15 +43,46 @@ module BaselineDeclarable
       return
     end
 
-    document.update!(permitted)
+    # The chosen baseline must exist. Checked here because the association is
+    # optional: an unknown id would otherwise save a dangling reference.
+    missing = unknown_lineage_targets(document, permitted)
+    if missing.any?
+      redirect_back fallback_location: document,
+                    alert: "That #{missing.join(' / ')} does not exist. Nothing was changed."
+      return
+    end
+
+    # Judged on its OWN rules, not the whole model's. `update!` ran every
+    # validation, so a document with an unrelated defect — an SSP saved before
+    # #952 made a boundary mandatory — refused every baseline; and the other
+    # route to repairing that defect (the metadata form) is gated until a
+    # baseline is set. That deadlock left production SSPs unrepairable from the
+    # UI, which is the only repair path there is. The other defects are still
+    # reported below, never hidden.
+    document.assign_attributes(permitted)
+    remaining = document.valid? ? [] : document.errors.full_messages
+    document.save!(validate: false)
     audit_log("#{document.model_name.element}_baseline_declared", subject: document,
               metadata: permitted.to_h)
 
-    redirect_back fallback_location: document,
-                  notice: "Baseline set. This document's controls can now be traced to a catalog."
+    notice = "Baseline set. This document's controls can now be traced to a catalog."
+    notice += " It still needs attention: #{remaining.join('; ')}." if remaining.any?
+    redirect_back fallback_location: document, notice: notice
   end
 
   private
+
+  # Lineage attributes naming a record that does not exist, as their labels.
+  def unknown_lineage_targets(document, permitted)
+    permitted.to_h.filter_map do |attribute, id|
+      next if id.blank?
+
+      reflection = document.class.reflect_on_association(attribute.to_s.delete_suffix("_id").to_sym)
+      next unless reflection
+
+      reflection.klass.exists?(id: id) ? nil : reflection.klass.model_name.human.downcase
+    end
+  end
 
   # The instance variable each controller already sets in its own `set_*`
   # before_action (`@ssp_document`, `@cdef_document`, ...).

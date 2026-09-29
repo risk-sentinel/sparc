@@ -44,6 +44,10 @@ class AuthorizationBoundariesController < ApplicationController
     # #940 — the same service the API serves at .../readiness, so the screen and
     # the endpoint cannot disagree. Read-only, so it is safe on every page load.
     @readiness = BoundaryReadinessService.new(@authorization_boundary).report
+    # A boundary has ONE SSP (`has_one`), which silently shows whichever row it
+    # finds first when several point here. Production has no shell to look, so
+    # the drift is reported on the screen that would otherwise hide it.
+    @linked_ssps = SspDocument.where(authorization_boundary_id: @authorization_boundary.id).order(:name).to_a
   end
 
   # GET /authorization_boundaries/:id/attach_document?type=ssp
