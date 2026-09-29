@@ -140,6 +140,19 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     # #1032 — the inline `cdef.write` check that used to live here is now the
     # shared before_action above. It was correct, but it was one gate plus a
     # special case, which is how the two drift.
+    #
+    # #980 — instance-wide publishes this CDEF to EVERY organization on the
+    # instance, including ones the caller does not belong to: instance
+    # authority, admin-only. The web controller has refused it since #980; this
+    # surface did not, so any `cdef.write` holder could do over the API what the
+    # UI forbids. CdefScopeService deliberately carries no such check (it serves
+    # the console and the seeds), so each HTTP surface must.
+    # NIST 800-53: AC-3 (access enforcement), AC-6 (least privilege).
+    if params[:scope].to_s == "instance" && !current_user&.instance_administrator?
+      return render json: { error: "Only an instance administrator can make a component definition available instance-wide." },
+                    status: :forbidden
+    end
+
     CdefScopeService.apply(@cdef,
       scope: params[:scope],
       authorization_boundary_id: params[:authorization_boundary_id],
