@@ -350,6 +350,8 @@ class AuditEvent < ApplicationRecord
     hdf_amendments_exported
     hdf_package_exported
 
+    hdf_system_exported
+
     ksi_catalog_imported
     ksi_catalog_import_refused
     ksi_validation_created
@@ -545,6 +547,8 @@ class AuditEvent < ApplicationRecord
                                 scan_run_ingested
                                 hdf_aggregation_enqueued hdf_aggregation_run
                                 hdf_amendments_exported hdf_package_exported],
+    # #1179 — the boundary exported as an HDF hdf-system document.
+    "HDF System" => %w[hdf_system_exported],
     "KSI Validations" => %w[ksi_validation_created ksi_validation_updated
                             ksi_validation_deleted ksi_catalog_imported
                             ksi_catalog_import_refused],

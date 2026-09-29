@@ -1046,6 +1046,9 @@ Rails.application.routes.draw do
         post :aggregate, to: "aggregations#create"
         # #809 — signed package (amendments + findings + dispositions) for the consumer.
         resource :hdf_package, only: [ :show ], controller: "hdf_packages"
+        # #1179 — the boundary as an HDF `hdf-system` document (schema v3.7.0),
+        # the document HDF results and amendments point at through systemRef.
+        resource :hdf_system, only: [ :show ], controller: "hdf_systems"
       end
 
       # HDF Amendment triage (#447) — flat show of a single finding by uuid,
