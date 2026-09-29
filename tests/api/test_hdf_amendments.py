@@ -100,6 +100,17 @@ class TestExport:
             f"inherited mapped to {override['status']!r}, not notApplicable"
         )
 
+    def test_the_document_is_bound_to_its_system(
+        self, admin_client: httpx.Client, triaged: dict[str, Any]
+    ) -> None:
+        """#1179 — systemRef names the boundary's hdf-system document, keyed on
+        the uuid, and labels.system_id is that same uuid (it was the slug)."""
+        boundary = triaged["boundary"]
+        doc = admin_client.get(_path(boundary["id"])).json()
+
+        assert doc["systemRef"].endswith(f"{BOUNDARIES_PATH}/{boundary['uuid']}/hdf_system"), doc
+        assert doc["labels"]["system_id"] == boundary["uuid"], doc
+
     def test_re_export_is_byte_identical(
         self, admin_client: httpx.Client, triaged: dict[str, Any]
     ) -> None:

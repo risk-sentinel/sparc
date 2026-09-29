@@ -183,10 +183,19 @@ compute amendment validity when the boundary profile carries no ODP.
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments[?verify=false]
 ```
 
-Returns the raw HDF Amendments JSON (schema v3.4.0) — one override per current,
+Returns the raw HDF Amendments JSON (schema v3.7.0) — one override per current,
 non-expired disposition, deterministic (stable ordering + content-seeded
 `amendmentId`). The output is validated with `hdf amend verify` before it is
 returned (`?verify=false` skips this); a schema drift returns `422`.
+
+The document is bound to its system (#1179):
+
+- `systemRef` — the URL of the boundary's [hdf-system document](hdf-system.md),
+  `<SPARC_APP_URL>/api/v1/authorization_boundaries/<boundary uuid>/hdf_system`.
+- `labels.system_id` — the boundary **uuid**, the same value the hdf-system
+  document carries as `systemId` and `identifier`. It was the slug before
+  #1179; a slug is regenerated when the boundary is renamed, so it cannot be a
+  join key. A consumer matching on the old slug value must switch to the uuid.
 
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
