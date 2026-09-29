@@ -23,6 +23,8 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
   include FieldImportable
   # #1031 — file ingest.
   include DocumentFileIngestApi
+  # #1181 — OSCAL export over the API, shared with CDEF/SSP/SAR/POA&M.
+  include OscalApiExport
 
   # #716 — re-declare with the FULL list: re-registering an inherited before_action
   # updates its :only conditions rather than adding a second callback, so these
@@ -136,8 +138,22 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
   #
   # Same body as the SSP and SAR exports — `SapDocument#to_json_data` already
   # emitted `controls:` with each control's fields; only the route was missing.
+  #
+  # #1181 — the assessment plan could be exported as OSCAL only in a browser;
+  # the web routes sit behind session authentication a service account cannot hold.
+  # `format` defaults to `fields` (SPARC's control-field JSON, unchanged);
+  # `oscal`, `oscal-yaml` and `oscal-xml` serve the OSCAL document, validated
+  # unless `validate=false`, with a strong ETag for conditional GET. Read is
+  # boundary-scoped through `authorize_document_read!`. See OscalApiExport.
   def export
-    render json: JSON.parse(JsonExportService.export_sap(@document))
+    render_oscal_api_export(
+      document: @document,
+      service: OscalAssessmentPlanExportService.new(@document),
+      xml_model: :assessment_plan,
+      label: "assessment plan",
+      audit_action: "sap_document_exported",
+      fields: -> { JsonExportService.export_sap(@document) }
+    )
   end
 
   private

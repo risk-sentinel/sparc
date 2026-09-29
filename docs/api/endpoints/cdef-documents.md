@@ -39,7 +39,6 @@ it previously received `201`/`200`.
 | `GET` | `/api/v1/cdef_documents/:slug` | Show a single CDEF |
 | `POST` | `/api/v1/cdef_documents` | Create a new CDEF |
 | `POST` | `/api/v1/cdef_documents/import` | **Ingest a CDEF from a file** (XCCDF / OSCAL JSON / YAML) |
-| `GET` | `/api/v1/cdef_documents/:slug/export` | Export a CDEF with its controls and their field values |
 | `PUT` | `/api/v1/cdef_documents/:slug` | Update a CDEF |
 | `DELETE` | `/api/v1/cdef_documents/:slug` | Delete a CDEF (soft-delete) |
 | `DELETE` | `/api/v1/cdef_documents/bulk` | Bulk-delete CDEFs (admin-only) |
@@ -811,12 +810,38 @@ returned as a file the caller discovers is unusable later.
 ```
 
 `validate=false` is the deliberate escape hatch and always returns the
-document. Note that a component definition with **no components** does not
-conform, so a CDEF created and never populated is refused by the default path —
-that is the check working, not a bug.
+document. A CDEF created and never populated **does** export on the default
+path: the exporter always emits exactly one component (built from the CDEF's
+`component_*` columns) and omits `control-implementations` when there are no
+controls, which is valid OSCAL (#1051). A refusal means a real defect in the
+document — for example a control that resolves to no loaded catalog.
 
 An unknown `format` is refused with `422` naming it and listing what is
 accepted.
+
+### Conditional GET (ETag / 304)
+
+Every response carries a **strong** `ETag`. Send it back as `If-None-Match` and
+an unchanged export answers **`304 Not Modified`** with an empty body.
+
+The ETag is a digest of the document id, its `updated_at`, the `format`, the
+`validate` flag, the instance's default OSCAL version **and the exported bytes**.
+The bytes are in it on purpose: a control, a field, an item or a back-matter
+resource can change without touching the document's own `updated_at`, so an
+ETag built from `updated_at` alone would answer `304` over content that had
+changed. Each `format` (and each `validate` setting) therefore has its own
+ETag. A `304` still builds and validates the export on the server; what it
+saves is the transfer. A `304` is not audited — nothing was delivered.
+
+```bash
+curl -si -H "Authorization: Bearer $TOKEN" \
+  -H 'If-None-Match: "<etag from the previous response>"' \
+  "https://sparc.example.com/api/v1/cdef_documents/<slug>/export?format=oscal"          # HTTP/1.1 304 Not Modified
+```
+
+The export body is shared with the SSP, SAP, SAR, POA&M and mapping-collection
+exports (#1181), so the parameters, refusals and ETag behave the same on all of
+them.
 
 ### Ingesting a STIG end to end
 

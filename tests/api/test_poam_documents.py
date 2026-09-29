@@ -12,6 +12,7 @@ top-level POA&M document.
 # URL path rather than by action name, so the inventory's string match
 # cannot see them.
 # api-inventory: covers poam_documents#import
+# api-inventory: covers poam_documents#export
 
 from __future__ import annotations
 
@@ -24,6 +25,7 @@ import pytest
 
 from _crud_contract import CrudContract
 from _document_helpers import create_doc, delete_doc, make_payload
+from _oscal_export_contract import OscalExportContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     PoamDocumentIndex,
@@ -334,3 +336,9 @@ class TestGenerate:
         )
 
         assert response.status_code == 401, response.text
+
+
+# #1181 — the OSCAL formats of `export`, through the shared contract.
+class TestOscalExportContract(OscalExportContract):
+    PATH = PATH
+    ROOT_KEY = "plan-of-action-and-milestones"

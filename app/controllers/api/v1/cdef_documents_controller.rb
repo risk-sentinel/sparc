@@ -20,9 +20,9 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::CdefDocumentsController < Api::V1::BaseController
-  OSCAL_EXPORT_FORMATS = %w[oscal oscal-yaml oscal-xml].freeze
-
   include ReconciliationGate
+  # #1181 — the OSCAL export body, shared with every other document type.
+  include OscalApiExport
 
   include DocumentApprovalApi
   include FieldImportable
@@ -333,46 +333,21 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   #   so an invalid document is a 422 naming the errors rather than a file the
   #   caller discovers is unusable later. `validate=false` is the deliberate
   #   escape hatch and maps to `export_unvalidated`.
+  #
+  #   Conditional GET (#1154/#1181): a strong ETag over the exported bytes —
+  #   an If-None-Match that still matches answers 304. See OscalApiExport.
+  #
+  # The body lives in OscalApiExport (#1181), shared with the SSP, SAP, SAR,
+  # POA&M and mapping-collection exports; this action only names the pieces.
   def export
-    format = params[:format].presence&.to_s || "fields"
-    return render json: JSON.parse(JsonExportService.export_cdef(@cdef)) if format == "fields"
-
-    unless OSCAL_EXPORT_FORMATS.include?(format)
-      return render json: {
-        error: "Unknown export format #{format.inspect}",
-        expected: ([ "fields" ] + OSCAL_EXPORT_FORMATS)
-      }, status: :unprocessable_content
-    end
-
-    validate = params[:validate].to_s != "false"
-    service = OscalComponentDefinitionExportService.new(@cdef)
-    json_string = validate ? service.export : service.export_unvalidated
-
-    audit_log("cdef_document_exported", subject: @cdef,
-              metadata: { name: @cdef.name, format: format, validated: validate })
-
-    case format
-    when "oscal"      then render json: JSON.parse(json_string)
-    when "oscal-yaml" then render plain: OscalExportFormatService.to_yaml(json_string),
-                                   content_type: "application/x-yaml"
-    when "oscal-xml"  then render xml: OscalExportFormatService.to_xml(json_string, :component_definition)
-    else
-      # Unreachable: the guard above rejects anything outside
-      # OSCAL_EXPORT_FORMATS. Present so that ADDING a format to the constant
-      # and forgetting to handle it here is a named 500 in the log rather than a
-      # silent empty 204 — a `case` with no else returns nil, and Rails answers
-      # a nil render with no content, which is the least debuggable outcome.
-      raise ArgumentError, "Unhandled export format #{format.inspect}"
-    end
-  rescue OscalValidationError => e
-    # Named, and pointing at the way out. A caller who wants the document
-    # anyway can ask for it; what they must not get is a silent 500 or a file
-    # that claims to be OSCAL and is not.
-    render json: {
-      error: "The component definition does not conform to the OSCAL schema",
-      details: Array(e.message.to_s.split("\n")).first(10),
-      hint: "Re-request with validate=false to export it anyway"
-    }, status: :unprocessable_content
+    render_oscal_api_export(
+      document: @cdef,
+      service: OscalComponentDefinitionExportService.new(@cdef),
+      xml_model: :component_definition,
+      label: "component definition",
+      audit_action: "cdef_document_exported",
+      fields: -> { JsonExportService.export_cdef(@cdef) }
+    )
   end
 
   private

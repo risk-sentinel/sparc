@@ -11,7 +11,7 @@ Security Assessment Plan (SAP) documents define the scope, methodology, and sche
 | `POST` | `/api/v1/sap_documents` | Create a new (empty) SAP document | `sap.write` |
 | `POST` | `/api/v1/sap_documents/generate` | **Generate a populated SAP** from an SSP, profile, or boundary | `sap.write` |
 | `POST` | `/api/v1/sap_documents/import` | **Ingest a SAP from an OSCAL file** (JSON / XML / YAML) | `sap.write` |
-| `GET` | `/api/v1/sap_documents/:slug/export` | Export a SAP with its controls and their field values | `sap.read` |
+| `GET` | `/api/v1/sap_documents/:slug/export` | Export the SAP — field JSON by default, or the OSCAL assessment plan (`?format=oscal`, `oscal-yaml`, `oscal-xml`) — see **Export formats** | `sap.read` |
 | `PUT` | `/api/v1/sap_documents/:slug` | Update a SAP document | `sap.write` |
 | `DELETE` | `/api/v1/sap_documents/:slug` | Soft-delete a SAP document | `sap.write` |
 
@@ -361,6 +361,87 @@ None.
 curl -s -X DELETE \
   -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
   "https://sparc.example.com/api/v1/sap_documents/acme-cloud-platform-sap-2025" | jq .
+```
+
+---
+
+## Export formats (#1181)
+
+```
+GET /api/v1/sap_documents/:slug/export[?format=&validate=]
+```
+
+Requires `sap.read` on the document's authorization boundary (instance admins
+always pass). The check is the same one `show` makes: a caller whose `sap.read`
+is on a different boundary is refused `403`, whatever the format.
+
+| `format` | Returns |
+|---|---|
+| `fields` *(default)* | SPARC's own control-field JSON — the SAP with its controls and their field values, the shape this endpoint has returned since #1026 |
+| `oscal` | the OSCAL assessment plan, JSON (root key `assessment-plan`) |
+| `oscal-yaml` | the same document as YAML (`application/x-yaml`) |
+| `oscal-xml` | the same document as OSCAL-namespaced XML |
+
+`validate` defaults to **true** for the OSCAL formats: the OSCAL JSON is checked
+against the NIST schema (and every control it names must resolve to a loaded
+catalog), and a non-conforming document is **refused** rather than returned as
+a file the caller discovers is unusable later. YAML and XML are serialised from
+that same validated JSON, exactly as the web downloads are.
+
+```json
+{
+  "error": "The assessment plan does not conform to the OSCAL schema",
+  "details": ["... up to ten lines ..."],
+  "hint": "Re-request with validate=false to export it anyway"
+}
+```
+
+`validate=false` is the deliberate escape hatch and returns the document as
+built. Each delivered OSCAL export is audited as `sap_document_exported` with the
+format and whether it was validated.
+
+An unknown `format` is refused with `422`:
+
+```json
+{ "error": "Unknown export format \"pdf\"", "expected": ["fields", "oscal", "oscal-yaml", "oscal-xml"] }
+```
+
+### Conditional GET (ETag / 304)
+
+Every response carries a **strong** `ETag`. Send it back as `If-None-Match` and
+an unchanged export answers **`304 Not Modified`** with an empty body.
+
+The ETag is a digest of the document id, its `updated_at`, the `format`, the
+`validate` flag, the instance's default OSCAL version **and the exported bytes**.
+The bytes are in it on purpose: a control, a field, an item or a back-matter
+resource can change without touching the document's own `updated_at`, so an
+ETag built from `updated_at` alone would answer `304` over content that had
+changed. Each `format` (and each `validate` setting) therefore has its own
+ETag. A `304` still builds and validates the export on the server; what it
+saves is the transfer. A `304` is not audited — nothing was delivered.
+
+```bash
+curl -si -H "Authorization: Bearer $TOKEN" \
+  -H 'If-None-Match: "<etag from the previous response>"' \
+  "https://sparc.example.com/api/v1/sap_documents/<slug>/export?format=oscal"          # HTTP/1.1 304 Not Modified
+```
+
+### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Export returned |
+| `304 Not Modified` | `If-None-Match` matched the current ETag |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `403 Forbidden` | Caller lacks `sap.read` for this boundary |
+| `404 Not Found` | No document matches the given slug |
+| `422 Unprocessable Content` | Unknown `format`, or the document does not conform (`validate=true`) |
+
+### cURL Example
+
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "https://sparc.example.com/api/v1/sap_documents/<slug>/export?format=oscal" | jq '."assessment-plan".metadata'
 ```
 
 ---

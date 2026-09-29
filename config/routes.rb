@@ -682,6 +682,14 @@ Rails.application.routes.draw do
         end
         resources :risks, only: [ :index, :create ], controller: "poam_risks"
 
+        # --- #1181 — POA&M export over the API --------------------
+        # POA&M was the one document in the chain with no API export at all:
+        # neither SPARC's field JSON nor the OSCAL document the web downloads.
+        member do
+          get :export
+        end
+        # --- end #1181 ---------------------------------------------
+
         # #1010 — #832 gave risks an API and left their six siblings behind.
         # These are the substance of a POA&M: what OSCAL exports.
         resources :items, only: [ :index, :show, :create, :update, :destroy ],
@@ -856,6 +864,13 @@ Rails.application.routes.draw do
         resources :control_mapping_entries,
                   only: [ :index, :create, :update, :destroy ],
                   as: :entries, path: "entries"
+
+        # --- #1154 part 2 — the OSCAL mapping collection ------------
+        # The crosswalk as a document Horizon can read, not only as rows.
+        member do
+          get :export
+        end
+        # --- end #1154 part 2 ----------------------------------------
       end
 
       # Back-matter resource management (#375) + authoritative workflow (#372)

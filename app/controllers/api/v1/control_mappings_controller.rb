@@ -9,6 +9,7 @@
 # POST   /api/v1/control_mappings          — create (admin)
 # PATCH  /api/v1/control_mappings/:id      — update (admin)
 # DELETE /api/v1/control_mappings/:id      — delete (admin, hard-delete)
+# GET    /api/v1/control_mappings/:id/export — OSCAL mapping collection (#1154)
 #
 # NIST 800-53 Controls:
 #   AC-3 Access Enforcement (Bearer token auth, admin gates)
@@ -17,11 +18,24 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::ControlMappingsController < Api::V1::BaseController
+  # #1154 part 2 — the mapping collection over the API, through the same export
+  # body as every OSCAL document (format / validate / ETag / 422s).
+  include OscalApiExport
+
+  # Why mappings offer no `oscal-xml`: SPARC carries no OSCAL XSD for the
+  # mapping model (lib/oscal_xsd_schemas has none) and so no XSD element order
+  # for it either. XML written without that order is not guaranteed to be valid
+  # OSCAL, and could not be checked if it were — so it is refused, by name,
+  # rather than served as a file that merely looks like OSCAL.
+  MAPPING_XML_REFUSAL = "oscal-xml is not offered for mapping collections: SPARC carries no OSCAL " \
+                        "XSD for the mapping model, so XML could be neither ordered nor validated. " \
+                        "Use oscal (JSON) or oscal-yaml.".freeze
+
   # #575 Path D — authorize BEFORE finding so non-admin / unpermissioned
   # callers get 403, not 404 leaking existence. Admin OR `mappings.write`
   # permission passes.
   before_action :authorize_mappings_write!, only: [ :create, :update, :destroy ]
-  before_action :set_mapping, only: [ :show, :update, :destroy ]
+  before_action :set_mapping, only: [ :show, :update, :destroy, :export ]
 
   # GET /api/v1/control_mappings
   def index
@@ -41,6 +55,28 @@ class Api::V1::ControlMappingsController < Api::V1::BaseController
   # GET /api/v1/control_mappings/:id
   def show
     render json: { data: serialize_mapping(@mapping, detailed: true) }
+  end
+
+  # GET /api/v1/control_mappings/:id/export[?format=&validate=]
+  #
+  # #1154 part 2 — Horizon swaps its heatmap axis between 800-53 families and
+  # KSI themes THROUGH SPARC's mapping documents, so the crosswalk has to be
+  # readable as a document, not only as rows. Read, like `show`, by any
+  # authenticated caller — writes stay gated on `mappings.write`.
+  #
+  # Provenance is collection-level only (method, matching-rationale, status,
+  # mapping-description); there is no confidence score (owner decision D2,
+  # follow-up #1196). The default format is `oscal`: a mapping has no SPARC
+  # field-JSON export to preserve.
+  def export
+    render_oscal_api_export(
+      document: @mapping,
+      service: OscalMappingExportService.new(@mapping),
+      xml_model: nil,
+      xml_refusal: MAPPING_XML_REFUSAL,
+      label: "mapping collection",
+      audit_action: "control_mapping_exported"
+    )
   end
 
   # POST /api/v1/control_mappings

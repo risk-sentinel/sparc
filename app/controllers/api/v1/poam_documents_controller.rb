@@ -9,6 +9,7 @@
 #   POST   /api/v1/poam_documents          — create
 #   PUT    /api/v1/poam_documents/:id      — update
 #   DELETE /api/v1/poam_documents/:id      — soft-delete
+#   GET    /api/v1/poam_documents/:id/export — export (fields JSON, or OSCAL via ?format=, #1181)
 #
 # NIST 800-53 Controls:
 #   AC-3 Access Enforcement (boundary-scoped RBAC)
@@ -18,7 +19,14 @@
 class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
   # #1031 — file ingest; a POA&M is often externally authored OSCAL.
   include DocumentFileIngestApi
+  # #1181 — OSCAL export over the API, shared with CDEF/SSP/SAP/SAR.
+  include OscalApiExport
 
+  # #1181 — `export` is the first member read beyond `show`. Re-declaring an
+  # inherited before_action REPLACES its :only list rather than adding a second
+  # callback, so these carry the parent's actions too (see the SAP controller).
+  before_action :set_document, only: [ :show, :update, :destroy, :export ]
+  before_action :authorize_document_read!, only: [ :show, :export ]
   before_action :authorize_document_write!, only: [ :create, :update, :destroy, :generate, :import ]
 
   # #1031 — DocumentFileIngestApi hook.
@@ -64,6 +72,25 @@ class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
       },
       skipped: result.skipped
     }, status: :created
+  end
+
+  # GET /api/v1/poam_documents/:id/export[?format=&validate=]
+  #
+  # #1181 — the POA&M could be exported as OSCAL only in a browser; the web
+  # routes sit behind session authentication a service account cannot hold.
+  # `format` defaults to `fields` (SPARC's control-field JSON, unchanged);
+  # `oscal`, `oscal-yaml` and `oscal-xml` serve the OSCAL document, validated
+  # unless `validate=false`, with a strong ETag for conditional GET. Read is
+  # boundary-scoped through `authorize_document_read!`. See OscalApiExport.
+  def export
+    render_oscal_api_export(
+      document: @document,
+      service: OscalPoamExportService.new(@document),
+      xml_model: :poam,
+      label: "plan of action and milestones",
+      audit_action: "poam_document_exported",
+      fields: -> { JsonExportService.export_poam(@document) }
+    )
   end
 
   private
