@@ -75,6 +75,7 @@ class PoamRisksController < ApplicationController
     permitted = params.require(:poam_risk).permit(
       :title, :description, :statement, :status,
       :impact, :likelihood, :deadline, :remarks,
+      :blocks_ato, :condition_expires, :reopen_trigger, # #1154
       props_data:   [ :name, :value, :class, :ns, :uuid, :remarks ],
       links_data:   [ :href, :rel, :media_type, :text ],
       origins_data: [ :actor_type, :actor_uuid, :role_id ]

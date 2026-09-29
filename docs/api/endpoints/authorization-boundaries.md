@@ -191,6 +191,12 @@ Create a new authorization boundary.
 | `description` | string | No | Short description |
 | `status` | string | No | Status: `active`, `inactive`, `pending` (default: `active`) |
 | `authorization_boundary_description` | string | No | Detailed description of the boundary scope and included components |
+| `authorization_date` | string | No | When the authorization in force was granted, `YYYY-MM-DD` (#1154). `null` or `""` clears it |
+| `next_decision_date` | string | No | When the authorizing official is next due to decide, `YYYY-MM-DD` (#1154). Exported on the boundary's SSP as the SPARC-namespace prop `next-decision-date`. `null` or `""` clears it |
+
+Both dates are also accepted on update, are returned on every response
+(`null` when unset), and are refused with `422` unless they are a real calendar
+date in `YYYY-MM-DD` form.
 
 **Example Request**
 

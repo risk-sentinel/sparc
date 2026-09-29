@@ -25,6 +25,21 @@
     <%= f.text_area :authorization_boundary_description, class: "form-control", rows: 3 %>
   </div>
 
+  <%# #1154 — decision dates. next_decision_date is exported on the SSP as the
+      SPARC-namespace prop next-decision-date. %>
+  <div class="row row-cols-1 row-cols-md-2 g-3 mb-3">
+    <div class="col">
+      <%= f.label :authorization_date, "Authorization date", class: "form-label fw-semibold" %>
+      <%= field_help "When the authorization currently in force was granted. Leave empty if the system has none yet." %>
+      <%= f.date_field :authorization_date, class: "form-control" %>
+    </div>
+    <div class="col">
+      <%= f.label :next_decision_date, "Next decision date", class: "form-label fw-semibold" %>
+      <%= field_help "When the authorizing official is next due to decide on this system — a reauthorization, or the end of a conditional ATO." %>
+      <%= f.date_field :next_decision_date, class: "form-control" %>
+    </div>
+  </div>
+
   <div class="d-flex gap-2">
     <%= f.submit class: "btn btn-primary" %>
     <%= link_to "Cancel", authorization_boundaries_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>

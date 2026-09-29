@@ -78,6 +78,7 @@ class SspJsonParserService
     attrs[:profile_document_id] = profile_id if profile_id
 
     @document.update!(**attrs)
+    import_next_decision_date(metadata)
     @document.update!(name: metadata["title"]) if metadata["title"].present?
 
     # #583 — promote OSCAL back-matter to first-class BackMatterResource rows.
@@ -329,6 +330,25 @@ class SspJsonParserService
       end
     end
     nil
+  end
+
+  # #1154 — the SPARC-namespace `next-decision-date` on SSP metadata belongs to
+  # the system's boundary (the other SPARC metadata props are DERIVED on export
+  # and need no import). Only fills a boundary that has none: the boundary is
+  # the source of truth, and an import must not silently move an AO's date. A
+  # malformed value is left in metadata as issued rather than failing the import.
+  def import_next_decision_date(metadata)
+    boundary = @document.authorization_boundary
+    return if boundary.nil? || boundary.next_decision_date.present?
+
+    date = Array(metadata["props"]).filter_map { |p|
+      SparcNamespaceProps.ours?(p, %w[next-decision-date]) && SparcNamespaceProps.iso_date(p["value"])
+    }.first
+    return unless date
+    return if boundary.update(next_decision_date: date)
+
+    Rails.logger.warn("[SspJsonParser] next-decision-date not applied to boundary #{boundary.id}: " \
+                      "#{boundary.errors.full_messages.join(', ')}")
   end
 
   def parse_date(value)

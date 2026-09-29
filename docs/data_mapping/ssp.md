@@ -58,6 +58,26 @@ SspDocument
 | (default) | `system-security-plan.metadata.roles[]` | No | Defaults: prepared-by, system-owner, authorizing-official |
 | (default) | `system-security-plan.metadata.parties[]` | No | Default: single organization party "SPARC Export" |
 
+### SPARC-namespace props for sparc-horizon (#1154)
+
+Emitted under `https://sparc.risk-sentinel.org/ns` (fixed — not `SPARC_OSCAL_NS`),
+validated on the validated export path against the vendored contract
+`lib/data/oscal_ns/sparc-namespace-props.v1.schema.json`. Never emitted with an
+invented value: no data, no prop.
+
+| Source | OSCAL JSON Path | Notes |
+|---|---|---|
+| (constant) | `metadata.props[name=node-type]` = `system` | Always; required by the export gate |
+| `AuthorizationBoundary#uuid` | `metadata.props[name=parent-uuid]` | When the SSP has a boundary; required then |
+| `AuthorizationBoundary#security_categorization`, else `SspDocument#security_sensitivity_level`, else the SSP's objectives' high-water mark | `metadata.props[name=fips-199]` | `low` / `moderate` / `high` (the `fips-199-` prefix stripped); required when the system is categorized. The native `security-sensitivity-level` is still emitted |
+| `AuthorizationBoundary#next_decision_date` | `metadata.props[name=next-decision-date]` | `YYYY-MM-DD`. On import, fills an empty boundary date only |
+| (constant) | `metadata.parties[uuid=<org party>].props[name=node-type]` = `organization` | The organization party `OscalUuidService.org_party_uuid_for` resolves |
+| `Evidence#evidence_type` | `back-matter.resources[].props[name=evidence-kind]` | Evidence-backed resources: `signed_statement`→`manual-attestation`, `screenshot`→`screenshot`, `scan_result`→`scan-report`, `policy_document`→`document`; other types emit none |
+| `Attestation#attester_user` | `back-matter.resources[].props[name=signed-by]` | Only when the document declares a party for the attester (party uuid = the user's uuid, or exactly one `person` party with the user's email) |
+
+A stale copy of any of these in `metadata_extra` (e.g. from an import) is
+replaced by the derived value, never emitted beside it.
+
 ## Field Mapping -- Import Profile
 
 | Internal Field | OSCAL JSON Path | Required | Notes |
@@ -191,10 +211,10 @@ Only included if SspInventoryItem records exist.
 | SspControlField `field_name` | OSCAL JSON Path | Notes |
 |------------------------------|----------------|-------|
 | `status` | `implemented-requirements[].props[name=implementation-status]` | Lowercased, spaces to hyphens |
-| `control_application` | `implemented-requirements[].props[name=control-type]` | ns: `https://sparc.local/ns` |
-| `coverage_level` | `implemented-requirements[].props[name=provided-as]` | ns: `https://sparc.local/ns` |
-| `control_type` | `implemented-requirements[].props[name=control-origination]` | ns: `https://sparc.local/ns` |
-| `responsible_entities` | `implemented-requirements[].props[name=responsible-entities]` | ns: `https://sparc.local/ns` |
+| `control_application` | `implemented-requirements[].props[name=control-type]` | ns: `SPARC_OSCAL_NS` (default `https://sparc.risk-sentinel.org/ns`) |
+| `coverage_level` | `implemented-requirements[].props[name=provided-as]` | ns: `SPARC_OSCAL_NS` (default `https://sparc.risk-sentinel.org/ns`) |
+| `control_type` | `implemented-requirements[].props[name=control-origination]` | ns: `SPARC_OSCAL_NS` (default `https://sparc.risk-sentinel.org/ns`) |
+| `responsible_entities` | `implemented-requirements[].props[name=responsible-entities]` | ns: `SPARC_OSCAL_NS` (default `https://sparc.risk-sentinel.org/ns`) |
 
 ### By-Components (SspByComponent)
 

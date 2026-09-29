@@ -178,7 +178,12 @@ class SarJsonParserService
       # PoamGeneratorService SKIPS it rather than converting it. A uuid is the one
       # thing supplied when absent, because it is an identifier rather than
       # content.
+      # #1154 — `blocks-ato` lands in its column (the only decision prop a SAR
+      # risk models); everything else stays in props as issued.
+      decision, props = SparcNamespaceProps.risk_attributes_from(risk["props"], SarRisk)
+
       record = sar_result.sar_risks.new(
+        **decision,
         uuid:                    risk["uuid"].presence || SecureRandom.uuid,
         title:                   risk["title"],
         description:             extract_text(risk["description"]),
@@ -193,7 +198,7 @@ class SarJsonParserService
         mitigating_factors_data: risk["mitigating-factors"] || [],
         risk_log_data:           risk["risk-log"] || {},
         remediations_data:       risk["remediations"] || [],
-        props_data:              risk["props"] || [],
+        props_data:              props,
         links_data:              risk["links"] || [],
         remarks:                 extract_text(risk["remarks"])
       )

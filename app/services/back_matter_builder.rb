@@ -17,6 +17,9 @@
 #   # => { "resources" => [...] }
 #
 class BackMatterBuilder
+  # #1154 — what `oscal_resource_for` reads, loaded with the resources.
+  EVIDENCE_INCLUDES = { evidence: { attestations: :attester_user } }.freeze
+
   def initialize(document)
     @document = document
   end
@@ -107,8 +110,9 @@ class BackMatterBuilder
         []
       else
         BackMatterResource.active.where(source: "authoritative", uuid: uuids.to_a)
+                          .includes(EVIDENCE_INCLUDES)
                           .order(:id)
-                          .map(&:to_oscal_resource)
+                          .map { |r| oscal_resource_for(r) }
       end
     end
   end
@@ -132,9 +136,10 @@ class BackMatterBuilder
   def managed_resources
     doc_resources = @document.back_matter_resources.active
                              .where.not(source: "authoritative")
+                             .includes(EVIDENCE_INCLUDES)
                              .order(:id)
-                             .map(&:to_oscal_resource)
-    ctrl_resources = control_linked_resources.map(&:to_oscal_resource)
+                             .map { |r| oscal_resource_for(r) }
+    ctrl_resources = control_linked_resources.includes(EVIDENCE_INCLUDES).map { |r| oscal_resource_for(r) }
     # Exclude UUIDs already claimed by authoritative resources
     (doc_resources + ctrl_resources).uniq { |r| r["uuid"] }
                                     .reject { |r| authoritative_uuids.include?(r["uuid"]) }
@@ -170,5 +175,20 @@ class BackMatterBuilder
 
   def sparc_resource
     @document.sparc_back_matter_resource
+  end
+
+  # #1154 — an evidence-backed resource carries the SPARC-namespace props
+  # `evidence-kind` (from the evidence type) and `signed-by` (the verified
+  # attester, only when THIS document declares a party for them). Resources
+  # with no evidence behind them are emitted exactly as stored.
+  def oscal_resource_for(record)
+    resource = record.to_oscal_resource
+    return resource unless record.evidence
+
+    SparcNamespaceProps.evidence_resource(resource, record.evidence, parties: declared_parties)
+  end
+
+  def declared_parties
+    @declared_parties ||= @document.respond_to?(:oscal_parties) ? @document.oscal_parties : []
   end
 end

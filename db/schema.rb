@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_120001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1050,7 +1050,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_130000) do
   end
 
   create_table "poam_risks", force: :cascade do |t|
+    t.boolean "blocks_ato"
     t.jsonb "characterizations_data", default: []
+    t.date "condition_expires"
     t.datetime "created_at", null: false
     t.datetime "deadline"
     t.text "description"
@@ -1062,6 +1064,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_130000) do
     t.bigint "poam_document_id", null: false
     t.jsonb "props_data", default: []
     t.text "remarks"
+    t.string "reopen_trigger"
     t.jsonb "risk_log_data", default: {}
     t.text "statement"
     t.string "status"
@@ -1484,6 +1487,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_130000) do
   end
 
   create_table "sar_risks", force: :cascade do |t|
+    t.boolean "blocks_ato"
     t.jsonb "characterizations_data", default: []
     t.datetime "created_at", null: false
     t.datetime "deadline"

@@ -92,7 +92,8 @@ class AuthorizationBoundariesController < ApplicationController
   def update
     metadata_or_profile_changed =
       authorization_boundary_params.key?(:boundary_metadata) ||
-      authorization_boundary_params.key?(:profile_document_id)
+      authorization_boundary_params.key?(:profile_document_id) ||
+      AuthorizationBoundary::BOUNDARY_DATE_KEYS.any? { |k| authorization_boundary_params.key?(k) }
 
     if @authorization_boundary.update(authorization_boundary_params)
       audit_log("authorization_boundary_updated", subject: @authorization_boundary, metadata: { name: @authorization_boundary.name })
@@ -205,6 +206,10 @@ class AuthorizationBoundariesController < ApplicationController
     params.require(:authorization_boundary).permit(
       :name, :description, :status, :authorization_boundary_description,
       :profile_document_id,                                       # #395 P3
+      # #1154 — top-level, NOT inside boundary_metadata: assigning that hash
+      # replaces it whole, so a form posting two dates would erase the rest.
+      # The accessors merge one key at a time.
+      *AuthorizationBoundary::BOUNDARY_DATE_KEYS,
       boundary_metadata: AuthorizationBoundary::BOUNDARY_METADATA_KEYS  # #395 P3
     )
   end

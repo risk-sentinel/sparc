@@ -25,6 +25,7 @@ class OscalPoamExportService
   def export
     data = build_poam
     OscalSchemaValidationService.validate!(:poam, data, version: effective_oscal_version)
+    SparcNamespacePropsRule.validate!(:poam, data) # #1154
     JSON.pretty_generate(data)
   end
 
@@ -88,16 +89,18 @@ class OscalPoamExportService
   end
 
   def build_metadata
-    @document.build_oscal_metadata(
+    org_party_uuid = OscalUuidService.org_party_uuid_for(@document)
+    metadata = @document.build_oscal_metadata(
       default_version: @document.poam_version || "1.0.0",
       default_roles: [
         { "id" => "prepared-by", "title" => "Prepared By" }
       ],
       default_parties: [
-        { "uuid" => OscalUuidService.org_party_uuid_for(@document),
+        { "uuid" => org_party_uuid,
           "type" => "organization", "name" => SparcConfig.oscal_org_name }
       ]
     )
+    SparcNamespaceProps.tag_organization_party!(metadata, org_party_uuid) # #1154
   end
 
   def build_system_id
@@ -154,7 +157,8 @@ class OscalPoamExportService
         "remediations"        => build_remediations(risk),
         "risk-log"            => risk.risk_log_data.presence,
         RELATED_OBSERVATIONS => build_risk_observations(risk),
-        "props"               => risk.props_data.presence,
+        # #1154 — blocks-ato / condition-expires / trigger from their columns.
+        "props"               => SparcNamespaceProps.risk_export_props(risk),
         "links"               => risk.links_data.presence,
         "remarks"             => risk.remarks
       }.compact

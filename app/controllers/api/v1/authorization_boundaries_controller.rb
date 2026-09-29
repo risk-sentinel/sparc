@@ -151,7 +151,9 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
   end
 
   def boundary_params
-    permit_strictly(:authorization_boundary, :name, :description, :status, :authorization_boundary_description)
+    permit_strictly(:authorization_boundary, :name, :description, :status, :authorization_boundary_description,
+                    # #1154 — decision dates (YYYY-MM-DD), stored in boundary_metadata.
+                    :authorization_date, :next_decision_date)
   end
 
   def serialize_boundary(ab, detailed: false)
@@ -171,6 +173,10 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
       name: ab.name,
       description: ab.description,
       status: ab.status,
+      # #1154 — read back what the two date fields write. next_decision_date is
+      # exported on the SSP as the SPARC-namespace prop `next-decision-date`.
+      authorization_date: ab.authorization_date,
+      next_decision_date: ab.next_decision_date,
       created_at: ab.created_at.iso8601,
       updated_at: ab.updated_at.iso8601
     }

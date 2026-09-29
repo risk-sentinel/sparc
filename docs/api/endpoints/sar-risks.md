@@ -99,6 +99,14 @@ user-configurable per organization.
 `open`, `investigating`, `remediating`, `deviation-requested`,
 `deviation-approved`, `closed`.
 
+## Blocks the ATO (#1154)
+
+`blocks_ato` — `true`, `false`, or `null` (not decided). Returned on every
+response and exported as the SPARC-namespace prop `blocks-ato` on the risk. Any
+other value is refused with `422`. The decision *conditions*
+(`condition_expires`, `reopen_trigger`) are POA&M data and are not accepted here
+— see [poam-risks.md § Decision fields](poam-risks.md#decision-fields-1154).
+
 ## The OSCAL collections (#1092)
 
 A risk carries four collections beyond its scalar fields. All four are stored as

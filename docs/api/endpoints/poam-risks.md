@@ -143,6 +143,24 @@ which reports every incomplete risk grouped by document, with the exact fields e
 
 `open`, `investigating`, `remediating`, `deviation-requested`, `deviation-approved`, `closed`
 
+## Decision fields (#1154)
+
+The authorizing official's decision on the risk. All optional, all returned on
+every response, and exported as SPARC-namespace props
+(`https://sparc.risk-sentinel.org/ns`) on the risk:
+
+| Attribute | Type | OSCAL prop | Accepted values |
+|-----------|------|------------|-----------------|
+| `blocks_ato` | boolean or `null` | `blocks-ato` | `true`, `false`, or `null` = not decided (never defaulted to `false`) |
+| `condition_expires` | date | `condition-expires` | `YYYY-MM-DD` |
+| `reopen_trigger` | string | `trigger` | `score` or `blockers`, one of `<` `<=` `>` `>=`, a number — e.g. `score<0.85`, `blockers>=1` |
+
+A value outside these forms is refused with `422` naming the field; it is never
+coerced (`"maybe"` is not stored as `true`). The columns are the one source of
+these three props: a copy left in `props_data` is replaced on export. On import,
+a valid prop lands in its column; a value the contract rejects stays in
+`props_data` as issued, and the validated export then refuses the document.
+
 ## The OSCAL collections (#1092)
 
 A POA&M risk carries four collections beyond its scalar fields. All four are

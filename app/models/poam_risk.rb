@@ -1,5 +1,7 @@
 class PoamRisk < ApplicationRecord
   include RiskRating
+  # #1154 — AO-decision fields (blocks-ato, condition-expires, trigger), validated before type cast.
+  include AtoDecisionFields
 
   belongs_to :poam_document
 
