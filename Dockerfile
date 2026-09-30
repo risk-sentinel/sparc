@@ -298,15 +298,7 @@ COPY --from=builder /rails /rails
 #
 # `bundle check` + a real `bundle exec require` gate the build: a prune that
 # strands the bundle fails here rather than at runtime. Merged with the user
-# setup below to keep this a single layer (sonar docker:S7031).
-RUN ruby /rails/bin/prune-shadowed-gems.rb \
-    && bundle check \
-    && bundle exec ruby -e 'require "net/imap"; require "rails"' \
-    && groupadd --system --gid 1000 rails \
-    && useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash \
-    && mkdir -p db log storage tmp \
-    && chown -R rails:rails db log storage tmp
-
+# setup and the runtime strip below into a single layer (sonar docker:S7031).
 # ── Runtime strip: remove what nothing at runtime loads (#1001, #1200; CM-7) ──
 # MEASURED, not assumed, on the finished image (`rpm --whatrequires` + `ldd` over
 # ruby, every gem extension, pg_isready, bash and hdf):
@@ -330,24 +322,40 @@ RUN ruby /rails/bin/prune-shadowed-gems.rb \
 # package recorded. Measured on the stripped image: 85 packages in
 # rpmdb.sqlite, 85 enumerated by grype, 85 by Trivy 0.74, none missing. The
 # assertions below keep that true (FILE tests, not `command -v`, which answers
-# from the shell's hash of a program it just ran — `rpm` after `rpm -e`): the build fails if the database goes missing
+# from the shell's hash of a program it just ran — `rpm` after `rpm -e`): the
+# build fails if the database goes missing
 # or empty, if any stripped package's files survive, or if anything the runtime
 # executes has an unresolved shared library. To query packages in the shipped
 # image, read its database from any rpm-bearing container:
 #   docker cp <ctr>:/usr/lib/sysimage/rpm/rpmdb.sqlite . && rpm --dbpath . -qa
-RUN rpm -e --nodeps \
+RUN ruby /rails/bin/prune-shadowed-gems.rb \
+    && bundle check \
+    && bundle exec ruby -e 'require "net/imap"; require "rails"' \
+    && groupadd --system --gid 1000 rails \
+    && useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash \
+    && mkdir -p db log storage tmp \
+    && chown -R rails:rails db log storage tmp \
+    && rpm -e --nodeps \
       curl libcurl-minimal microdnf libdnf librepo libsolv libmodulemd librhsm dnf-data \
       glib2 gobject-introspection json-glib libpeas1 \
       libblkid libmount libsmartcols libuuid \
       rpm rpm-libs rpm-sequoia lua-libs \
     && rm -rf /var/cache/dnf /var/cache/yum /var/lib/dnf \
-    && { test -s /usr/lib/sysimage/rpm/rpmdb.sqlite || { echo "::error::the rpm database is gone — scanners could not inventory this image"; exit 1; }; } \
-    && for f in /usr/bin/curl /usr/bin/microdnf /usr/bin/rpm /usr/lib64/libcurl.so.4 /usr/lib64/libglib-2.0.so.0 \
-                /usr/lib64/libmount.so.1 /usr/lib64/libblkid.so.1 /usr/lib64/librpm.so.10 /usr/lib64/librpm_sequoia.so.1; do \
-         [ ! -e "$f" ] || { echo "::error::$f survived the strip"; exit 1; }; done \
-    && unresolved=$( { ldd /usr/local/bin/ruby /usr/local/bin/hdf /usr/bin/pg_isready /usr/bin/bash /usr/bin/grep 2>&1; \
-         find /usr/local/bundle /usr/local/lib/ruby -name '*.so' -exec ldd {} \; 2>&1; } | grep 'not found' || true ) \
-    && { [ -z "$unresolved" ] || { echo "::error::unresolved libraries after the strip:"; echo "$unresolved"; exit 1; }; } \
+    && { test -s /usr/lib/sysimage/rpm/rpmdb.sqlite \
+         || { echo "::error::the rpm database is gone — scanners could not inventory this image"; \
+              exit 1; }; } \
+    && for f in /usr/bin/curl /usr/bin/microdnf /usr/bin/rpm \
+                /usr/lib64/libcurl.so.4 /usr/lib64/libglib-2.0.so.0 \
+                /usr/lib64/libmount.so.1 /usr/lib64/libblkid.so.1 \
+                /usr/lib64/librpm.so.10 /usr/lib64/librpm_sequoia.so.1; do \
+         [ ! -e "$f" ] || { echo "::error::$f survived the strip"; exit 1; }; \
+       done \
+    && unresolved=$( { ldd /usr/local/bin/ruby /usr/local/bin/hdf /usr/bin/pg_isready \
+                           /usr/bin/bash /usr/bin/grep 2>&1; \
+                       find /usr/local/bundle /usr/local/lib/ruby -name '*.so' \
+                            -exec ldd {} \; 2>&1; } | grep 'not found' || true ) \
+    && { [ -z "$unresolved" ] \
+         || { echo "::error::unresolved libraries after the strip:"; echo "$unresolved"; exit 1; }; } \
     && ruby -e 'require "openssl"; require "socket"' \
     && ls -l /usr/lib/sysimage/rpm/rpmdb.sqlite
 
