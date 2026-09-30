@@ -33,6 +33,21 @@ or whenever a new suppression is added.
 > is `not-fixed` upstream except one: the Ruby-shipped on-disk `json` copy
 > (GHSA-x2f5-4prf-w687, LOW), which Bundler shadows with a patched version.
 >
+> **Added 2026-09-30, after the grype gate went live in CI:** two more HIGH,
+> both **openssl-libs 3.5.8, not-fixed** in Red Hat's el10 **and** el9 data
+> (so v1.16.3 carries them too): CVE-2026-75804 (QUIC flow control) and
+> CVE-2026-84782 (DTLS retransmission). They arrived in grype's DB built
+> 2026-09-30, a day after the rescan above. Both are `deferred` with a
+> `risk_adjustment` deviation awaiting the owner's approval. Measured: Ruby's
+> OpenSSL exposes no QUIC or DTLS API, Puma never calls its DTLS client engine,
+> and every TLS connection the app makes is TLS over TCP. Neither is in CISA KEV
+> (catalog 2026.09.29).
+>
+> **Not visible to any scanner above:** the `pg` gem bundles its own libpq with
+> **OpenSSL 3.6.0** built in, and that is what the app's database connections
+> load. By CPE it matches 5 critical and 26 high CVEs, all fixed upstream.
+> Tracked in #1204.
+>
 > Register effect: of the 33 entries carried against the UBI9 base, **28
 > retired** to `sparc-findings.retired.yml` with the package evidence from the
 > image's rpm database (gnupg2 absent; PostgreSQL client 13 → 16; libxml2

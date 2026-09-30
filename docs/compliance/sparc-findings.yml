@@ -271,3 +271,46 @@ findings:
     line_hash: 96ec6e7986178e77:1
   - path: app/services/ssp_wizard_service.rb
     line_hash: 65a9810537cf814d:1
+- cve_id: CVE-2026-75804
+  package: openssl-libs
+  installed_version: 1:3.5.8-1.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'OpenSSL: QUIC connection-level flow control is not enforced, allowing a remote peer to force excess buffering (DoS). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2): openssl-libs 1:3.5.8-1.el10_2, and equally in the shipping v1.16.3 UBI9 image (1:3.5.8-1.el9_8), so not introduced by the base change. Red Hat lists it affected with no fix (not-fixed) on el9 and el10. Surfaced by the grype-container gate made live in #1200 (grype 0.115.0, DB built 2026-09-30T06:32Z); Trivy does not report it. openssl-libs cannot be stripped: Ruby''s OpenSSL bindings and every outbound TLS client need it. Proposed 2026-09-30 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation. Separate from the OpenSSL copy the pg gem bundles, tracked in #1204.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-30'
+  next_review_date: '2026-10-30'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: 'HIGH grades the flaw where the affected protocol is in use. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
+    mitigating_factors:
+    - description: "the flaw is in OpenSSL's QUIC stack; Ruby's OpenSSL extension exposes no QUIC API (no QUIC constants in OpenSSL::SSL, no stream methods on SSLSocket), and no gem in the bundle implements QUIC"
+    - description: "SPARC serves HTTP/1.1 through Puma behind the deployment's TLS terminator; the image runs no QUIC or HTTP/3 endpoint and makes no QUIC connections"
+    kev_checked: '2026-09-30'
+    kev_listed: false
+- cve_id: CVE-2026-84782
+  package: openssl-libs
+  installed_version: 1:3.5.8-1.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'OpenSSL: DTLS retransmission mishandles a suspended handshake write (buffer over-read / state overwrite). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2): openssl-libs 1:3.5.8-1.el10_2, and equally in the shipping v1.16.3 UBI9 image (1:3.5.8-1.el9_8), so not introduced by the base change. Red Hat lists it affected with no fix (not-fixed) on el9 and el10. Surfaced by the grype-container gate made live in #1200 (grype 0.115.0, DB built 2026-09-30T06:32Z); Trivy does not report it. openssl-libs cannot be stripped: Ruby''s OpenSSL bindings and every outbound TLS client need it. Proposed 2026-09-30 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation. Separate from the OpenSSL copy the pg gem bundles, tracked in #1204.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-30'
+  next_review_date: '2026-10-30'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: 'HIGH grades the flaw where the affected protocol is in use. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
+    mitigating_factors:
+    - description: "the flaw is in DTLS retransmission; Ruby's OpenSSL extension exposes no DTLS API (no DTLS constants in OpenSSL::SSL)"
+    - description: "Puma's only DTLS code is its client engine (MiniSSL::Engine.client), which Puma's server never calls; Puma's own TLS listener is development-only (config/puma.rb, SSL_DEV) and production terminates TLS upstream"
+    - description: "every TLS connection the app makes is TLS over TCP (Net::HTTP, libpq); none uses DTLS"
+    kev_checked: '2026-09-30'
+    kev_listed: false
