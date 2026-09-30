@@ -312,6 +312,11 @@ COPY --from=builder /rails /rails
 #     install packages cannot have packages installed into it.
 #   * util-linux's libblkid/libmount/libsmartcols/libuuid — their only consumer
 #     is glib2.
+# #1204 — and pg must link the SYSTEM libpq (Red Hat's, with Red Hat's
+# openssl-libs), never the precompiled gem's bundled libpq-ruby-pg, which
+# carried its own out-of-date OpenSSL that no scanner could see. The Gemfile
+# forces pg's ruby platform; these two checks fail the build if it ever slips.
+#
 # `rpm -e --nodeps` because a depsolve refuses (rpm needs the curl binary,
 # librepo needs libcurl); the removal is ONE transaction, so rpm removing itself
 # is its last act. pcre2 STAYS: libselinux and grep load it.
@@ -356,6 +361,12 @@ RUN ruby /rails/bin/prune-shadowed-gems.rb \
                             -exec ldd {} \; 2>&1; } | grep 'not found' || true ) \
     && { [ -z "$unresolved" ] \
          || { echo "::error::unresolved libraries after the strip:"; echo "$unresolved"; exit 1; }; } \
+    && pgext=$(find /usr/local/bundle -name pg_ext.so | head -1) \
+    && { ldd "$pgext" | grep -q ' => /usr/lib64/libpq.so.5 ' \
+         || { echo "::error::pg does not link the system libpq (#1204):"; ldd "$pgext"; exit 1; }; } \
+    && bundled=$(find / -xdev -name 'libpq-ruby-pg*' 2>/dev/null) \
+    && { [ -z "$bundled" ] \
+         || { echo "::error::a bundled libpq shipped (#1204): $bundled"; exit 1; }; } \
     && ruby -e 'require "openssl"; require "socket"' \
     && ls -l /usr/lib/sysimage/rpm/rpmdb.sqlite
 

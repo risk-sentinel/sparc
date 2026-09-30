@@ -43,10 +43,19 @@ or whenever a new suppression is added.
 > and every TLS connection the app makes is TLS over TCP. Neither is in CISA KEV
 > (catalog 2026.09.29).
 >
-> **Not visible to any scanner above:** the `pg` gem bundles its own libpq with
+> **Removed (#1204):** the precompiled `pg` gem bundled its own libpq with
 > **OpenSSL 3.6.0** built in, and that is what the app's database connections
-> load. By CPE it matches 5 critical and 26 high CVEs, all fixed upstream.
-> Tracked in #1204.
+> loaded, invisible to every scanner (by CPE: 5 critical / 26 high, all fixed
+> upstream). `pg` is now built from source: measured in the image,
+> `require "pg"` maps `/usr/lib64/libpq.so.5.16`, `libssl.so.3.5.8` and
+> `libcrypto.so.3.5.8` (Red Hat's), and no `libpq-ruby-pg` exists. The build
+> fails if one returns (proven with the precompiled gem).
+>
+> **Still bundled, recorded for an owner decision:** `nokogiri` 1.19.4 vendors
+> libxml2 2.13.9 and libxslt 1.1.43 (`source=packaged`, statically linked, 6
+> libxml2 patches). By CPE, libxml2 matches 17 (10 high) and libxslt 3 (2 high),
+> though nokogiri's patches may cover some. Scanners see only the gem. Every
+> other native gem (`openssl`, `puma`, `zlib`) links the system libraries.
 >
 > Register effect: of the 33 entries carried against the UBI9 base, **28
 > retired** to `sparc-findings.retired.yml` with the package evidence from the

@@ -4,8 +4,17 @@ source "https://rubygems.org"
 gem "rails", "~> 8.1.3"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
-# Use postgresql as the database for Active Record
-gem "pg", "~> 1.1"
+# Use postgresql as the database for Active Record.
+#
+# #1204 — built from source (`force_ruby_platform`), NOT the precompiled gem.
+# The precompiled pg ships its own libpq (ports/<arch>/lib/libpq-ruby-pg.so.1)
+# with OpenSSL 3.6.0 built in, and that is what every database connection's
+# TLS ran on: 5 critical / 26 high CVEs by CPE, all fixed upstream, and
+# invisible to every scanner because it is not a package. Compiled against the
+# system libpq it uses Red Hat's patched libpq and openssl-libs, which errata
+# reach and scanners inventory. Needs `pg_config` to build: postgresql-devel in
+# the image builder, libpq-dev in CI, Postgres.app locally.
+gem "pg", "~> 1.1", force_ruby_platform: true
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 # Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
