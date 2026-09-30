@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-# ── SPARC production image — Red Hat UBI9 (Iron Bank / DISA-aligned) (#742, v1.12.0). ──
-# Ruby + jemalloc compiled from source (UBI9 ships neither a ruby:3.4 image nor a
+# ── SPARC production image — Red Hat UBI 10 minimal, hardened (#1200; UBI9 since #742, v1.12.0). ──
+# Ruby + jemalloc compiled from source (UBI ships neither a ruby:3.4 image nor a
 # jemalloc package); native gems build via microdnf. Retires the Debian perl/glibc
 # CVE-disposition treadmill. Multi-arch (amd64 + arm64) in build-sign-publish.
 # The prior Debian image is preserved as Dockerfile_debian for rollback; see
@@ -10,68 +10,32 @@ ARG RUBY_MAJOR=3.4
 ARG JEMALLOC_VERSION=5.3.0
 ARG HDF_LIBS_VERSION=3.7.0
 # Digest-pinned manifest-list (multi-arch: amd64, arm64, ppc64le, s390x) for
-# reproducibility (#742 / folded #639 pinning policy). Currently ubi-minimal 9.8.
+# reproducibility (#742 / folded #639 pinning policy). Currently ubi-minimal 10.2.
 # Digest-only (no version tag) so the reference is unambiguous (SonarQube
-# docker:S6596 — don't pin tag AND digest).
-# Bump deliberately when RH ships a patch — a stale pin is how baked-in base
-# packages quietly rot. Bumped 2026-08-04 (9.7 -> 9.8) to take the fixes for six
-# HIGH CVEs the v1.15.4 scanner audit found with fixes available upstream:
-#   gnutls  3.8.3-10.el9_7    -> 3.8.10-4.el9_8    CVE-2026-33845/-33846/-42009/-42010
-#   libacl  2.3.1-4.el9       -> 2.4.0-1.el9_8     CVE-2026-54369
-#   glib2   2.68.4-18.el9_7.2 -> 2.68.4-19.el9_8.2 CVE-2026-58016
-# The base already carries them, so a digest bump is sufficient — no `microdnf
-# update`, which would trade reproducibility for the same result.
+# docker:S6596 — don't pin tag AND digest). Bump deliberately when Red Hat ships
+# a patch — a stale pin is how baked-in base packages quietly rot — and measure
+# the bump with the scanners and the rpm database, not an advisory.
 #
-# Bumped 2026-09-20 for the trivy-container gate breach on PR #1163: SEVEN HIGH
-# CVEs, none of them introduced by that branch (it changes no Dockerfile and no
-# dependency manifest — these are base OS packages and a freshly published
-# advisory batch).
-#   openssl-libs  3.5.5-6.el9_8   -> 3.5.8-1.el9_8    CVE-2026-14456
-#   libevent      2.1.12-8.el9_4  -> 2.1.13-1.el9_8   CVE-2026-63382/-63383
-#                                                     /-63384/-63385/-63387/-63388
+# WHY UBI 10 (#1189 spike, #1200). Measured 2026-09-29 with grype 0.114.0 (DB
+# v6.1.9) on the FINISHED image, not the bare base, against the 33 register
+# entries the UBI9 image carried:
 #
-# **This is the case the rule above does NOT cover, and measuring is what showed
-# it.** Measured with `rpm -q` on both digests, per the note above rather than
-# read off an advisory: the new digest carries the fixed openssl-libs but
-# libevent is UNCHANGED at 2.1.12-8.el9_4 — Red Hat published the RPM without
-# rebuilding ubi-minimal around it. `microdnf update --assumeno libevent` on the
-# new digest confirms `libevent-2.1.13-1.el9_8` is in `ubi-9-baseos-rpms` and
-# available. So the digest bump alone does not clear the gate, and the runtime
-# stage below updates that one package explicitly.
+#                                  retired  left, no fix  HIGH left  new HIGH
+#   UBI9, current digest + fresh     18         15            4          0
+#   UBI9 + strip below               23         10            3          0
+#   UBI10, no strip                  26          7            9          6
+#   UBI10 + strip below              28          5            2          0
 #
-# libevent is not something SPARC asks for: nothing in the install list requires
-# it, and `rpm -qR` across the image shows it arriving as an openldap
-# dependency. It is patched rather than removed because removing a transitive
-# library to silence a scanner is how a dlopen consumer breaks silently in
-# production.
+# The strip is half the win: el10's util-linux 2.40 and rpm-sequoia carry six
+# HIGHs of their own, and nothing at runtime loads either. UBI10 also moves the
+# Postgres client tools off 13 (end of life) to 16. The full #1189 result is on
+# the issue; the UBI9 bump history (gnutls, libacl, glib2, openssl, libevent,
+# libgcrypt, curl, libarchive, sqlite) is in `git log -- Dockerfile`.
 #
-# Bumped again 2026-08-20 (9.8 -> 9.8, newer build) for #1001. The 9.8 pin above
-# was three months of errata behind, and the register's Debian->UBI9 re-base
-# found the same CVEs still in the image under their RHEL package names.
-# Measured with `rpm -q` on both digests rather than read off an advisory:
-#   libgcrypt      1.10.0-11.el9    -> 1.10.0-13.el9_8    CVE-2026-41989
-#   curl-minimal   7.76.1-40.el9    -> 7.76.1-40.el9_8.5  CVE-2026-1965/-3783
-#   libcurl-minimal 7.76.1-40.el9   -> 7.76.1-40.el9_8.5  (same pair)
-#   glib2          2.68.4-19.el9_8.2 -> 2.68.4-19.el9_8.9
-#   libarchive     3.5.3-9.el9_7    -> 3.5.3-11.el9_8
-# That is three of the four fixable findings in #1001; the fourth is the Go
-# stdlib CVE in hdf-cli, which no base bump can reach — see the hdf-builder
-# stage below.
-#
-# NOTE the header's "Iron Bank / DISA-aligned" is a description of the UBI9
-# LINEAGE, not the source: this pulls Red Hat's PUBLIC registry, not
-# registry1.dso.mil. Nothing here holds Iron Bank pull credentials.
-#
-# Bumped 2026-08-27 for two HIGH sqlite-libs CVEs the release gate caught. This
-# is the first finding the #711 in-runner gate blocked on its own PR, which is
-# what it was built for: nothing in that branch touched the image, and the
-# container simply acquired two new HIGHs against CI-1's measured `high: 4`
-# baseline (6 received, 4 allowed).
-#   sqlite-libs  3.34.1-10.el9_8 -> 3.34.1-11.el9_8   CVE-2026-11822/-11824
-# Measured with `rpm -q` on both digests, per the practice above. The bump is
-# surgical: 109 packages before and after, nothing added or removed, and
-# sqlite-libs is the ONLY version change — so the blast radius is the fix.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:7b8e25a1b56ca4d00219198f3b5b51a3e1693a5c4f5369c5e190d7d6cb3f980e
+# NOTE "DISA-aligned" describes the UBI LINEAGE, not the source: this pulls Red
+# Hat's PUBLIC registry, not registry1.dso.mil. Nothing here holds Iron Bank
+# pull credentials.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:a9f9316ec3a1419a2de6ce4d2d9f034d477e97cdf2a16d6f04b7bd632ac753c4
 
 # ── hdf-builder: hdf-cli compiled from source, toolchain pinned (#1001) ──────
 # This used to be a release-tarball download (script/dev/install-hdf.sh, then
@@ -164,8 +128,9 @@ ARG JEMALLOC_VERSION
 ARG HDF_LIBS_VERSION
 
 # Required -devel for a Rails Ruby: openssl (TLS), zlib, libyaml (psych), libffi
-# (fiddle) + libpq (pg). nodejs for assets:precompile. readline/gdbm/ncurses -devel
-# are NOT in the UBI9 repos and are optional (Ruby 3.4 uses pure-Ruby reline).
+# (fiddle) + libpq (pg). nodejs for assets:precompile. readline/gdbm -devel are
+# NOT in the UBI repos (measured on 9 and 10; ncurses-devel is on 10) and all
+# three are optional (Ruby 3.4 uses pure-Ruby reline).
 RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 \
       gcc gcc-c++ make git tar gzip bzip2 xz findutils \
       openssl-devel zlib-devel libyaml-devel libffi-devel \
@@ -215,11 +180,12 @@ RUN out="$(hdf version 2>&1)"; \
     echo "$out" | grep -q "${HDF_LIBS_VERSION}" \
       || { echo "FAIL: hdf CLI missing or not version ${HDF_LIBS_VERSION}" >&2; exit 1; }
 
-# LANG/LC_ALL (#750): UBI9 minimal ships no locale, so with LANG unset Ruby's
+# LANG/LC_ALL (#750): UBI minimal ships no locale, so with LANG unset Ruby's
 # Encoding.default_external falls back to US-ASCII — ERB then reads templates as
 # ASCII-8BIT and any non-ASCII byte (e.g. the login layout's box-drawing chars)
 # raises Encoding::CompatibilityError at render (500 on every full-layout page).
-# glibc 2.34 provides the built-in C.UTF-8 locale (no glibc-langpack-* needed).
+# glibc provides the built-in C.UTF-8 locale (2.34 on UBI9, 2.39 on UBI10;
+# re-measured on 10: unset LANG still yields US-ASCII) — no glibc-langpack-* needed.
 ENV PATH=/usr/local/bin:$PATH \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -249,21 +215,26 @@ RUN SECRET_KEY_BASE_DUMMY=1 bin/rails oscal:bundle_schemas
 
 # ── runtime: ubi-minimal + runtime libs + compiled ruby/jemalloc + app ──
 FROM ${UBI_IMAGE} AS runtime
+# ── Build freshness (#1200) ──────────────────────────────────────────────────
+# The install below resolves CURRENT packages from Red Hat's repos, but Docker
+# reuses its layer until something above it changes. The #1189 spike found the
+# shipping UBI9 image carrying postgresql 13.23-5 while the repo held -6, fixing
+# 15 CVEs: the layer had been cached before the erratum. Copying the file that
+# holds SparcConfig::VERSION in first makes every version bump re-resolve the
+# install, so a release can never ship a package layer older than its release.
+# A blanket `microdnf update` would instead float every BASE package and defeat
+# the digest pin; base packages move only with a deliberate digest bump.
+COPY app/models/sparc_config.rb /tmp/sparc-version-key.rb
 # Runtime shared libs the compiled Ruby + pg link against, plus the client tools
 # the entrypoint needs: pg_isready (postgresql) and bash (docker-entrypoint).
-RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 \
+# `update --assumeno` changes nothing: it prints the BASE packages that have a
+# newer build in the repo, so a stale digest is visible in every build log.
+RUN rm /tmp/sparc-version-key.rb \
+    && microdnf install -y --nodocs --setopt=install_weak_deps=0 \
       openssl-libs zlib libyaml libffi libpq tzdata shadow-utils bash postgresql ca-certificates \
-    && microdnf update -y --nodocs --setopt=install_weak_deps=0 libevent \
+    && { microdnf update --assumeno --nodocs 2>&1 | sed -n '/Upgrading/,$p' || true; } \
     && microdnf clean all \
-    && rpm -q libevent openssl-libs
-
-# The `update libevent` above is deliberate and narrow — see the UBI_IMAGE note.
-# Red Hat shipped libevent-2.1.13-1.el9_8 to ubi-9-baseos-rpms for six HIGH CVEs
-# but has not rebuilt ubi-minimal with it, so the digest pin cannot deliver it.
-# Scoped to the one package rather than a blanket `microdnf update`, which would
-# float every package in the image and defeat the digest pin entirely. The
-# trailing `rpm -q` makes the resulting versions part of the BUILD LOG, so a
-# regression is visible at build time instead of at the next scan.
+    && rpm -q openssl-libs libpq postgresql libevent
 
 # Custom/private-CA trust (#774), mechanism 1 — build-time bake-in. Drop PEM/CRT
 # files into ./certs/ (empty by default; corporate proxy / DoD-PKI / internal
@@ -276,40 +247,6 @@ COPY certs/ /etc/pki/ca-trust/source/anchors/sparc-custom/
 RUN find /etc/pki/ca-trust/source/anchors/sparc-custom/ -type f \
       ! \( -name '*.crt' -o -name '*.pem' -o -name '*.cer' \) -delete 2>/dev/null || true; \
     update-ca-trust
-
-# ── Drop curl and the package manager from the runtime image (#1001) ─────────
-# MEASURED, not assumed. Every ELF in the runtime image that links libcurl:
-# /usr/bin/curl, /usr/bin/microdnf, /usr/lib64/libdnf.so.2, /usr/lib64/librepo.so.0.
-# Nothing of ours. The application never shells out to curl and never links it:
-# every outbound fetch — the DISA CCI refresh, the AWS Labs CDEF ingest, source
-# federation, Security Hub — goes through Ruby's Net::HTTP / open-uri on Ruby's
-# OpenSSL bindings, `ldd` on the compiled ruby reports zero libcurl references,
-# and hdf-cli is a static Go binary. No gem in Gemfile.lock links it either
-# (no curb / typhoeus / ethon / patron).
-#
-# That left curl-minimal and libcurl-minimal carrying ~16 findings, two of them
-# HIGH, for code nothing in the image calls. They cannot be removed with
-# microdnf: rpm declares a dependency on the curl BINARY and librepo on
-# libcurl, so a depsolve refuses. `rpm -e --nodeps` removes them along with the
-# package manager that needs them, which is the right posture for an immutable
-# runtime anyway — a container that cannot install packages cannot have
-# packages installed into it.
-#
-# RPM ITSELF IS DELIBERATELY KEPT. Grype and Trivy enumerate OS packages by
-# reading the rpm database; removing rpm would make the image scan clean by
-# making it unreadable, which is the same lie #1001 was filed about. 107
-# packages remain enumerable after this, down from 112.
-#
-# Verified in the built image before this was written: rpm -qa still lists,
-# `require "pg"` loads, `rails zeitwerk:check` eager loads clean, hdf runs, and
-# update-ca-trust and pg_isready — the two runtime tools that matter — survive,
-# since both come from ca-certificates/p11-kit and postgresql, not from curl.
-# The runtime CA mechanism in bin/lib/ca-trust.sh uses neither curl nor dnf.
-RUN rpm -e --nodeps curl-minimal libcurl-minimal microdnf libdnf librepo \
-    && rm -rf /var/cache/dnf /var/cache/yum \
-    && ! command -v curl \
-    && ! ls /usr/lib64/libcurl.so.4 2>/dev/null \
-    && rpm -qa | wc -l
 
 # ── Database TLS trust (#785, NIST SC-8(1)) ──────────────────────────────────
 # libpq does NOT honour SSL_CERT_FILE, so the runtime CA mechanism above (which
@@ -369,6 +306,50 @@ RUN ruby /rails/bin/prune-shadowed-gems.rb \
     && useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash \
     && mkdir -p db log storage tmp \
     && chown -R rails:rails db log storage tmp
+
+# ── Runtime strip: remove what nothing at runtime loads (#1001, #1200; CM-7) ──
+# MEASURED, not assumed, on the finished image (`rpm --whatrequires` + `ldd` over
+# ruby, every gem extension, pg_isready, bash and hdf):
+#   * curl + libcurl-minimal — nothing of ours calls or links them. Every
+#     outbound fetch goes through Ruby's Net::HTTP on Ruby's OpenSSL; hdf is a
+#     static Go binary; no gem links libcurl (no curb/typhoeus/ethon/patron).
+#   * the package manager and what only it uses — microdnf, libdnf, librepo,
+#     libsolv, libmodulemd, librhsm, dnf-data, glib2, gobject-introspection,
+#     json-glib, libpeas1, and rpm itself (rpm, rpm-libs, rpm-sequoia,
+#     lua-libs). An immutable runtime needs none of it: a container that cannot
+#     install packages cannot have packages installed into it.
+#   * util-linux's libblkid/libmount/libsmartcols/libuuid — their only consumer
+#     is glib2.
+# `rpm -e --nodeps` because a depsolve refuses (rpm needs the curl binary,
+# librepo needs libcurl); the removal is ONE transaction, so rpm removing itself
+# is its last act. pcre2 STAYS: libselinux and grep load it.
+#
+# REMOVING RPM DOES NOT BLIND THE SCANNERS — proven for #1200, reversing the
+# #1001 assumption that it would. Grype and Trivy read the rpm DATABASE file,
+# not the rpm program, and `rpm -e` leaves the database with every remaining
+# package recorded. Measured on the stripped image: 85 packages in
+# rpmdb.sqlite, 85 enumerated by grype, 85 by Trivy 0.74, none missing. The
+# assertions below keep that true (FILE tests, not `command -v`, which answers
+# from the shell's hash of a program it just ran — `rpm` after `rpm -e`): the build fails if the database goes missing
+# or empty, if any stripped package's files survive, or if anything the runtime
+# executes has an unresolved shared library. To query packages in the shipped
+# image, read its database from any rpm-bearing container:
+#   docker cp <ctr>:/usr/lib/sysimage/rpm/rpmdb.sqlite . && rpm --dbpath . -qa
+RUN rpm -e --nodeps \
+      curl libcurl-minimal microdnf libdnf librepo libsolv libmodulemd librhsm dnf-data \
+      glib2 gobject-introspection json-glib libpeas1 \
+      libblkid libmount libsmartcols libuuid \
+      rpm rpm-libs rpm-sequoia lua-libs \
+    && rm -rf /var/cache/dnf /var/cache/yum /var/lib/dnf \
+    && { test -s /usr/lib/sysimage/rpm/rpmdb.sqlite || { echo "::error::the rpm database is gone — scanners could not inventory this image"; exit 1; }; } \
+    && for f in /usr/bin/curl /usr/bin/microdnf /usr/bin/rpm /usr/lib64/libcurl.so.4 /usr/lib64/libglib-2.0.so.0 \
+                /usr/lib64/libmount.so.1 /usr/lib64/libblkid.so.1 /usr/lib64/librpm.so.10 /usr/lib64/librpm_sequoia.so.1; do \
+         [ ! -e "$f" ] || { echo "::error::$f survived the strip"; exit 1; }; done \
+    && unresolved=$( { ldd /usr/local/bin/ruby /usr/local/bin/hdf /usr/bin/pg_isready /usr/bin/bash /usr/bin/grep 2>&1; \
+         find /usr/local/bundle /usr/local/lib/ruby -name '*.so' -exec ldd {} \; 2>&1; } | grep 'not found' || true ) \
+    && { [ -z "$unresolved" ] || { echo "::error::unresolved libraries after the strip:"; echo "$unresolved"; exit 1; }; } \
+    && ruby -e 'require "openssl"; require "socket"' \
+    && ls -l /usr/lib/sysimage/rpm/rpmdb.sqlite
 
 USER 1000:1000
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
