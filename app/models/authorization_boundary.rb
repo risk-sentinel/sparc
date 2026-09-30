@@ -66,7 +66,7 @@ class AuthorizationBoundary < ApplicationRecord
   # key maps to a setter on the document side via FIELD_TO_SETTER.
   BOUNDARY_METADATA_KEYS = %w[
     system_title short_name impact_level
-    authorization_date authorization_status
+    authorization_date authorization_status next_decision_date
     authorizing_official system_owner isso issm assessor
   ].freeze
 
@@ -76,6 +76,30 @@ class AuthorizationBoundary < ApplicationRecord
       self.boundary_metadata = (boundary_metadata || {}).merge(key => v)
     }
   end
+
+  # ── Decision dates (#1154) ─────────────────────────────────────────────
+  #
+  # `authorization_date` (when the ATO in force was granted) and
+  # `next_decision_date` (when the AO is next due to decide — a reauthorization
+  # or the end of a conditional ATO). The SSP export carries the second as the
+  # SPARC-namespace prop `next-decision-date`, whose contract is YYYY-MM-DD.
+  #
+  # Stored as ISO strings in boundary_metadata. A Date is written in that form,
+  # and a blank value REMOVES the key rather than storing "" — an empty string
+  # is not a date, and an export must never find one to emit.
+  BOUNDARY_DATE_KEYS = %w[authorization_date next_decision_date].freeze
+
+  BOUNDARY_DATE_KEYS.each do |key|
+    define_method("#{key}=") { |v|
+      value = v.respond_to?(:strftime) ? v.to_date.iso8601 : v.to_s.strip.presence
+      current = boundary_metadata || {}
+      self.boundary_metadata = value ? current.merge(key => value) : current.except(key)
+    }
+  end
+
+  # SI-10 — only a CHANGED date is checked, so a legacy value already on a row
+  # does not lock the record against an unrelated edit.
+  validate :boundary_dates_are_iso_dates
 
   # ── FIPS-199 categorization (#940 S3) ──────────────────────────────────
   #
@@ -118,6 +142,17 @@ class AuthorizationBoundary < ApplicationRecord
     return false if stored.empty?
 
     highest(stored) != derived
+  end
+
+  private def boundary_dates_are_iso_dates
+    before = boundary_metadata_was || {}
+    BOUNDARY_DATE_KEYS.each do |key|
+      value = (boundary_metadata || {})[key]
+      next if value.blank? || value == before[key]
+      next if SparcNamespaceProps.iso_date(value)
+
+      errors.add(key.to_sym, "must be a date in the form YYYY-MM-DD")
+    end
   end
 
   private def highest(levels)

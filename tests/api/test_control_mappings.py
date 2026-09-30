@@ -1,8 +1,9 @@
 """Tests for /api/v1/control_mappings.
 
-5 logical endpoints — CRUD with admin-only writes. Mappings link
+6 logical endpoints — CRUD with gated writes, plus the OSCAL export. Mappings link
 controls between catalogs (e.g., NIST SP 800-53 Rev 4 -> Rev 5).
 """
+# api-inventory: covers control_mappings#export
 
 from __future__ import annotations
 
@@ -13,6 +14,7 @@ import httpx
 import pytest
 
 from _crud_contract import CrudContract
+from _oscal_export_contract import OscalExportContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     ControlMappingIndex,
@@ -207,3 +209,42 @@ class TestDestroy:
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
         assert_error_envelope(anon_client.delete(f"{PATH}/0"), expected_status=401)
+
+
+# #1154 part 2 — the mapping collection as an OSCAL document. The default is
+# `oscal` (a mapping has no field-JSON export) and XML is refused by name: SPARC
+# carries no OSCAL mapping XSD, so XML could be neither ordered nor validated.
+class TestOscalExportContract(OscalExportContract):
+    PATH = PATH
+    ROOT_KEY = "mapping-collection"
+    FIELDS_DEFAULT = False
+    XML = False
+
+
+@pytest.mark.happy
+def test_any_authenticated_caller_may_read_the_mapping_export(
+    admin_client: httpx.Client, user_client: httpx.Client
+) -> None:
+    """Reads are open, as `show` is; only writes are gated."""
+    rows = admin_client.get(PATH, params={"items": 1}).json()["data"]
+    assert rows, "no control mapping on this instance to export"
+
+    response = user_client.get(f"{PATH}/{rows[0]['slug']}/export", params={"validate": "false"})
+
+    assert response.status_code == 200, response.text[:300]
+    assert "mapping-collection" in response.json()
+
+
+@pytest.mark.happy
+def test_mapping_export_carries_collection_level_provenance(admin_client: httpx.Client) -> None:
+    """Provenance only, no confidence score (owner decision D2, #1196)."""
+    rows = admin_client.get(PATH, params={"items": 1}).json()["data"]
+    assert rows, "no control mapping on this instance to export"
+
+    response = admin_client.get(f"{PATH}/{rows[0]['slug']}/export", params={"validate": "false"})
+    provenance = response.json()["mapping-collection"]["provenance"]
+
+    assert provenance["method"] == rows[0]["method_type"]
+    assert provenance["matching-rationale"] == rows[0]["matching_rationale"]
+    assert provenance["status"] == rows[0]["status"]
+    assert provenance["mapping-description"]

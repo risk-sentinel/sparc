@@ -24,7 +24,10 @@ RSpec.describe HdfAmendmentExportService do
       doc = service.export
 
       expect(doc["version"]).to eq("1")
-      expect(doc["labels"]["system_id"]).to eq(boundary.slug)
+      # #1179 — keyed on the uuid (the hdf-system document's systemId), not the
+      # slug, which is regenerated on rename and so cannot join anything.
+      expect(doc["labels"]["system_id"]).to eq(boundary.uuid)
+      expect(doc["labels"]["system_id"]).not_to eq(boundary.slug)
       expect(doc["overrides"].length).to eq(2)
 
       o1 = doc["overrides"].find { |o| o["requirementId"] == "CVE-1" }
@@ -186,6 +189,65 @@ RSpec.describe HdfAmendmentExportService do
         HdfRunner::Error.new("schema mismatch", command: "hdf amend verify", exit_code: 1, stderr: "bad")
       )
       expect { service.export }.to raise_error(HdfRunner::Error)
+    end
+
+    # #1179 — the amendment is bound to its system. systemRef is the URL of the
+    # boundary's hdf-system document, keyed on the uuid so a rename does not
+    # move it.
+    it "carries systemRef pointing at the boundary's hdf-system document" do
+      dispositioned("CVE-1")
+      doc = service.export
+
+      expect(doc["systemRef"]).to eq(
+        "#{SparcConfig.app_url.chomp('/')}/api/v1/authorization_boundaries/#{boundary.uuid}/hdf_system"
+      )
+      expect(doc["systemRef"]).to eq(HdfSystemExportService.system_ref(boundary))
+    end
+
+    it "keeps systemRef and labels.system_id when the boundary is renamed" do
+      dispositioned("CVE-1")
+      before = service.export
+      boundary.update!(name: "Renamed #{boundary.name}")
+
+      after = described_class.new(boundary.reload, runner: runner).export
+      expect(after["systemRef"]).to eq(before["systemRef"])
+      expect(after.dig("labels", "system_id")).to eq(before.dig("labels", "system_id"))
+    end
+  end
+
+  # The CLI is the authority on whether systemRef is a field an amendments
+  # document may carry. Skipped, visibly, where no hdf binary exists (the CI
+  # test runner — #835); the shipped image and a provisioned workstation run it.
+  describe "with the real hdf binary" do
+    before do
+      skip "hdf-cli not on PATH (see #835); run in the image or after script/dev/install-hdf.sh" \
+        unless HdfSystemExportService.cli_available?
+    end
+
+    it "passes `hdf amend verify` with systemRef and the uuid label" do
+      dispositioned("CVE-1", decided_by: "sec@corp.io")
+      doc = described_class.new(boundary, runner: HdfRunner.new).export
+
+      expect(doc["systemRef"]).to be_present
+    end
+
+    # The refusal leg, so the pass above is the verifier talking rather than a
+    # verifier that accepts anything.
+    #
+    # It cannot be a malformed systemRef. Measured on hdf-libs 3.7.0, neither
+    # `hdf amend verify` nor `hdf validate --type amendments` asserts the
+    # uri-reference format ("not a uri" passes), and neither refuses an
+    # undefined top-level key. So the CLI's acceptance of systemRef proves the
+    # field is ALLOWED, not that its value is checked — SPARC builds it from its
+    # own route helper, which is what keeps it well-formed. The probe is a
+    # vocabulary the CLI does enforce.
+    it "is rejected by `hdf amend verify` when an override's identity type is outside the vocabulary" do
+      dispositioned("CVE-1", decided_by: "sec@corp.io")
+      doc = described_class.new(boundary, runner: runner).export
+      doc["overrides"].first["appliedBy"]["type"] = "totally-bogus-not-a-type"
+
+      expect { HdfRunner.new.amend_verify(StringIO.new(JSON.generate(doc))) }
+        .to raise_error(HdfRunner::Error)
     end
   end
 end

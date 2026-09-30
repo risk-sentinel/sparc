@@ -34,6 +34,30 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | `DELETE` | `/api/v1/authorization_boundaries/:id` | Delete a boundary |
 | `DELETE` | `/api/v1/authorization_boundaries/bulk` | Bulk-delete boundaries (admin-only) |
 | `PATCH` | `/api/v1/authorization_boundaries/:id/organization` | Assign the boundary to an organization, or clear it with `organization_id: null` |
+| `GET` | `/api/v1/authorization_boundaries/:id/hdf_system` | The boundary as an HDF `hdf-system` document — see [HDF System](hdf-system.md) (#1179) |
+
+---
+
+## Response Fields
+
+Every boundary representation (list rows, create/update/organization responses,
+and the detail) carries these fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | integer | Database id. Instance-local; not stable across environments |
+| `slug` | string | URL slug; accepted anywhere `:id` is |
+| `uuid` | string (RFC 4122) | The boundary's **durable identifier** (#1180, #1178). Use this to key evidence, OSCAL `system-id`, or federation joins -- not `id`, `slug`, or `name`, which are instance-local or mutable |
+| `organization_id` | integer or `null` | The owning organization's id; `null` when the boundary is not assigned to one (#1178) |
+| `organization_uuid` | string (RFC 4122) or `null` | The owning organization's durable identifier; `null` when unassigned (#1178). With `organization_id`, lets a client build the organization -> boundary tree from the API alone |
+| `name` | string | Boundary name |
+| `description` | string | Short description |
+| `status` | string | Lifecycle status |
+| `created_at` / `updated_at` | string (ISO 8601) | Timestamps |
+
+The detail (`GET /api/v1/authorization_boundaries/:id`) additionally carries
+`artifact_summary`, `organization` (the organization's name), `members_count`,
+`evidences_count`, and `environments`.
 
 ---
 
@@ -66,11 +90,13 @@ curl -X GET "https://sparc.example.com/api/v1/authorization_boundaries?status=ac
   "data": [
     {
       "id": 1,
+      "slug": "north-america-prod",
+      "uuid": "3f1c9a52-7d4e-4b8a-9c21-5e6f7a8b9c0d",
+      "organization_id": 2,
+      "organization_uuid": "a7d2e4f6-1b3c-4d5e-8f9a-0b1c2d3e4f5a",
       "name": "North America Prod",
       "description": "Production environment for North American operations",
       "status": "active",
-      "authorization_boundary_description": "Encompasses all AWS us-east-1 and us-west-2 resources including EC2, RDS, S3, and VPC components supporting the ACME Cloud Platform",
-      "ksi_validations_count": 48,
       "created_at": "2026-01-05T08:00:00Z",
       "updated_at": "2026-03-15T11:30:00Z"
     }
@@ -117,13 +143,29 @@ curl -X GET "https://sparc.example.com/api/v1/authorization_boundaries/1" \
 {
   "data": {
     "id": 1,
+    "slug": "north-america-prod",
+    "uuid": "3f1c9a52-7d4e-4b8a-9c21-5e6f7a8b9c0d",
+    "organization_id": 2,
+    "organization_uuid": "a7d2e4f6-1b3c-4d5e-8f9a-0b1c2d3e4f5a",
     "name": "North America Prod",
     "description": "Production environment for North American operations",
     "status": "active",
-    "authorization_boundary_description": "Encompasses all AWS us-east-1 and us-west-2 resources including EC2, RDS, S3, and VPC components supporting the ACME Cloud Platform",
-    "ksi_validations_count": 48,
     "created_at": "2026-01-05T08:00:00Z",
-    "updated_at": "2026-03-15T11:30:00Z"
+    "updated_at": "2026-03-15T11:30:00Z",
+    "artifact_summary": {
+      "ssp": "North America Prod SSP",
+      "sap": null,
+      "sar": null,
+      "poam_count": 1,
+      "boundary_count": 2,
+      "component_count": 5
+    },
+    "organization": "ACME Corp",
+    "members_count": 4,
+    "evidences_count": 12,
+    "environments": [
+      { "name": "Production", "environment": "production", "components": 5 }
+    ]
   }
 }
 ```
@@ -150,6 +192,12 @@ Create a new authorization boundary.
 | `description` | string | No | Short description |
 | `status` | string | No | Status: `active`, `inactive`, `pending` (default: `active`) |
 | `authorization_boundary_description` | string | No | Detailed description of the boundary scope and included components |
+| `authorization_date` | string | No | When the authorization in force was granted, `YYYY-MM-DD` (#1154). `null` or `""` clears it |
+| `next_decision_date` | string | No | When the authorizing official is next due to decide, `YYYY-MM-DD` (#1154). Exported on the boundary's SSP as the SPARC-namespace prop `next-decision-date`. `null` or `""` clears it |
+
+Both dates are also accepted on update, are returned on every response
+(`null` when unset), and are refused with `422` unless they are a real calendar
+date in `YYYY-MM-DD` form.
 
 **Example Request**
 
@@ -173,11 +221,13 @@ curl -X POST "https://sparc.example.com/api/v1/authorization_boundaries" \
 {
   "data": {
     "id": 1,
+    "slug": "north-america-prod",
+    "uuid": "3f1c9a52-7d4e-4b8a-9c21-5e6f7a8b9c0d",
+    "organization_id": null,
+    "organization_uuid": null,
     "name": "North America Prod",
     "description": "Production environment for North American operations",
     "status": "active",
-    "authorization_boundary_description": "Encompasses all AWS us-east-1 and us-west-2 resources including EC2, RDS, S3, and VPC components supporting the ACME Cloud Platform",
-    "ksi_validations_count": 0,
     "created_at": "2026-03-23T12:00:00Z",
     "updated_at": "2026-03-23T12:00:00Z"
   }
@@ -224,9 +274,14 @@ curl -X PUT "https://sparc.example.com/api/v1/authorization_boundaries/1" \
 {
   "data": {
     "id": 1,
+    "slug": "north-america-prod",
+    "uuid": "3f1c9a52-7d4e-4b8a-9c21-5e6f7a8b9c0d",
+    "organization_id": 2,
+    "organization_uuid": "a7d2e4f6-1b3c-4d5e-8f9a-0b1c2d3e4f5a",
     "name": "North America Prod",
     "description": "Decommissioned -- migrated to EMEA region",
     "status": "inactive",
+    "created_at": "2026-01-05T08:00:00Z",
     "updated_at": "2026-03-23T14:00:00Z"
   }
 }

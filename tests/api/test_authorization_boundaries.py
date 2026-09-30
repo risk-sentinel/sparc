@@ -275,3 +275,60 @@ class TestAssignOrganization:
         )
 
         assert response.status_code == 401, response.text
+
+
+class TestOrganizationLink:
+    """#1178 — every boundary row carries its organization's id AND uuid.
+
+    Without them a client (sparc-horizon) cannot build the organization ->
+    boundary tree from the API alone. Both list and detail carry the fields,
+    and both carry explicit nulls for an unassigned boundary: a key that is
+    absent and a key that is null are different contracts.
+    """
+
+    @pytest.fixture
+    def organization(self, admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
+        suffix = uuid.uuid4().hex[:8]
+        response = admin_client.post(
+            "/api/v1/organizations", json={"organization": {"name": f"phase2-1178-org-{suffix}"}}
+        )
+        assert response.status_code == 201, response.text
+        created = response.json()["data"]
+        try:
+            yield created
+        finally:
+            admin_client.post(f"/api/v1/organizations/{created['id']}/deactivate")
+
+    def _row(self, admin_client: httpx.Client, boundary: dict[str, Any]) -> dict[str, Any]:
+        response = admin_client.get(PATH, params={"name": boundary["name"]})
+        assert response.status_code == 200, response.text
+        rows = [r for r in response.json()["data"] if r["id"] == boundary["id"]]
+        assert len(rows) == 1, response.text
+        return rows[0]
+
+    def _detail(self, admin_client: httpx.Client, boundary: dict[str, Any]) -> dict[str, Any]:
+        response = admin_client.get(f"{PATH}/{boundary['id']}")
+        assert response.status_code == 200, response.text
+        return response.json()["data"]
+
+    @pytest.mark.happy
+    def test_unassigned_boundary_carries_explicit_nulls(
+        self, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        for body in (self._row(admin_client, boundary), self._detail(admin_client, boundary)):
+            assert "organization_id" in body and body["organization_id"] is None, body
+            assert "organization_uuid" in body and body["organization_uuid"] is None, body
+
+    @pytest.mark.happy
+    def test_assigned_boundary_carries_the_organization_uuid_on_list_and_detail(
+        self, admin_client: httpx.Client, boundary: dict[str, Any], organization: dict[str, Any]
+    ) -> None:
+        response = admin_client.patch(
+            f"{PATH}/{boundary['id']}/organization", json={"organization_id": organization["id"]}
+        )
+        assert response.status_code == 200, response.text
+
+        for body in (self._row(admin_client, boundary), self._detail(admin_client, boundary)):
+            assert body["organization_id"] == organization["id"], body
+            assert body["organization_uuid"] == organization["uuid"], body
+            assert body["organization_uuid"], body

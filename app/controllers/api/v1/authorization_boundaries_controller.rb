@@ -30,7 +30,8 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
     scope = scope.search_text(params[:q]) if params[:q].present? # #672 free-text search
 
-    result = paginate(scope)
+    # #1178 — every row now carries its organization's uuid; preload it.
+    result = paginate(scope.includes(:organization))
     render json: {
       data: result[:data].map { |ab| serialize_boundary(ab) },
       meta: result[:meta]
@@ -150,7 +151,9 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
   end
 
   def boundary_params
-    permit_strictly(:authorization_boundary, :name, :description, :status, :authorization_boundary_description)
+    permit_strictly(:authorization_boundary, :name, :description, :status, :authorization_boundary_description,
+                    # #1154 — decision dates (YYYY-MM-DD), stored in boundary_metadata.
+                    :authorization_date, :next_decision_date)
   end
 
   def serialize_boundary(ab, detailed: false)
@@ -162,9 +165,18 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
       # was the one place it was absent. Reaching it needed database access,
       # which most operators of a deployed instance do not have.
       uuid: ab.uuid,
+      # #1178 — the organization link, on list AND detail, so a client can build
+      # the organization -> boundary tree from the API alone (sparc-horizon).
+      # Both are nil for a boundary not yet assigned to an organization.
+      organization_id: ab.organization_id,
+      organization_uuid: ab.organization&.uuid,
       name: ab.name,
       description: ab.description,
       status: ab.status,
+      # #1154 — read back what the two date fields write. next_decision_date is
+      # exported on the SSP as the SPARC-namespace prop `next-decision-date`.
+      authorization_date: ab.authorization_date,
+      next_decision_date: ab.next_decision_date,
       created_at: ab.created_at.iso8601,
       updated_at: ab.updated_at.iso8601
     }

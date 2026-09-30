@@ -4,6 +4,8 @@
 #
 #   bin/smoke-prep                       # against docker-compose.ubi9.yaml
 #   eval "$(bin/smoke-prep --quiet)"     # export straight into your shell
+#   bin/smoke-prep --quiet --orphans     # ALSO build the legacy boundary-less SSPs
+#                                        # the ui-smoke repair tests need (#1154)
 #
 # Why this exists: a freshly-seeded admin has `must_reset_password? == true`, and
 # authentication.rb redirects EVERY authenticated request to /password/edit until
@@ -19,13 +21,19 @@ set -euo pipefail
 COMPOSE_FILE="${SPARC_COMPOSE_FILE:-docker-compose.ubi9.yaml}"
 SERVICE="${SPARC_COMPOSE_SERVICE:-web}"
 QUIET=0
-[ "${1:-}" = "--quiet" ] && QUIET=1
+ORPHANS=0
+for arg in "$@"; do
+  case "$arg" in
+    --quiet)   QUIET=1 ;;
+    --orphans) ORPHANS=1 ;;
+  esac
+done
 
 say() { [ "$QUIET" = "1" ] || echo "$@" >&2; }
 
 say "==> preparing identities via $COMPOSE_FILE ($SERVICE)"
 
-OUTPUT=$(docker compose -f "$COMPOSE_FILE" exec -T "$SERVICE" bin/rails runner '
+OUTPUT=$(docker compose -f "$COMPOSE_FILE" exec -T -e SMOKE_ORPHANS="$ORPHANS" "$SERVICE" bin/rails runner '
   ADMIN_PW = "Sm0ke-Admin-Pass-9!"
   USER_PW  = "Sm0ke-User-Pass-9!"
 
@@ -59,7 +67,34 @@ OUTPUT=$(docker compose -f "$COMPOSE_FILE" exec -T "$SERVICE" bin/rails runner '
   admin_token = ApiToken.generate!(user: admin, name: "smoke-admin-#{Time.now.to_i}")
   user_token  = ApiToken.generate!(user: user,  name: "smoke-user-#{Time.now.to_i}")
 
+  # #1154 production repair — LEGACY SSPs with no boundary and no baseline, the
+  # state a production SSP was found in. Since #952 no API or UI path can create
+  # one (an SSP must have a boundary, and a boundary holding an SSP cannot be
+  # deleted), yet upgraded instances carry them. The repair banner only renders
+  # for this state, so ui-smoke needs it built here — BEFORE the suite, like the
+  # tokens above, never during it. One per test that uses the state (six): a
+  # link cannot be undone, so none is shared. Tests delete theirs by slug.
+  #
+  # OPT-IN (--orphans), and BACKDATED. They are real legacy-shaped rows, so any
+  # suite that picks "the newest SSP" would land on one and fail for a reason
+  # that is not its own — the API suite did exactly that (test_ssp_roles, 422)
+  # when these were built unconditionally. The API stage never asks for them;
+  # the smoke stage does, and its tests consume all six. Dated 2025 because
+  # legacy rows are old, which also keeps them out of newest-first pickers.
+  orphans = ENV["SMOKE_ORPHANS"] == "1" ? 6.times.map do
+    tag = SecureRandom.hex(4)
+    ssp = SspDocument.new(name: "smoke-orphan-ssp-#{tag}", slug: "smoke-orphan-ssp-#{tag}",
+                          file_type: "json", status: "completed", lifecycle_status: "in_progress",
+                          import_profile_href: "NIST_SP-800-53_rev5_MODERATE-baseline-resolved-profile_catalog.json")
+    ssp.save!(validate: false)
+    ssp.update_columns(created_at: Time.utc(2025, 1, 1), updated_at: Time.utc(2025, 1, 1))
+    ssp.ssp_controls.create!(control_id: "ac-1", title: "Policy and Procedures")
+    abort("orphan fixture is not boundary-less and unbaselined") if ssp.reload.authorization_boundary_id || ssp.profile_document_id
+    ssp.slug
+  end : []
+
   puts "ADMIN_EMAIL=#{admin.email}"
+  puts "ORPHAN_SSPS=#{orphans.join(",")}"
   puts "ADMIN_TOKEN=#{admin_token.plaintext_token}"
   puts "USER_TOKEN=#{user_token.plaintext_token}"
   puts "USER_IS_ADMIN=#{user.admin}"
@@ -68,6 +103,7 @@ OUTPUT=$(docker compose -f "$COMPOSE_FILE" exec -T "$SERVICE" bin/rails runner '
 ADMIN_TOKEN=$(printf '%s\n' "$OUTPUT" | sed -n 's/^ADMIN_TOKEN=//p')
 USER_TOKEN=$(printf '%s\n' "$OUTPUT" | sed -n 's/^USER_TOKEN=//p')
 USER_IS_ADMIN=$(printf '%s\n' "$OUTPUT" | sed -n 's/^USER_IS_ADMIN=//p')
+ORPHAN_SSPS=$(printf '%s\n' "$OUTPUT" | sed -n 's/^ORPHAN_SSPS=//p')
 
 if [ -z "$ADMIN_TOKEN" ] || [ -z "$USER_TOKEN" ]; then
   echo "!! failed to mint tokens. Raw output:" >&2
@@ -91,6 +127,7 @@ export SPARC_SMOKE_BASE_URL=${SPARC_SMOKE_BASE_URL:-https://localhost:3443}
 export SPARC_SMOKE_INSECURE_TLS=1
 export SPARC_SMOKE_SA_TOKEN=$ADMIN_TOKEN
 export SPARC_SMOKE_USER_TOKEN=$USER_TOKEN
+export SPARC_SMOKE_ORPHAN_SSPS=$ORPHAN_SSPS
 EOF
 
 say ""

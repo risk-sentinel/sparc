@@ -157,6 +157,25 @@ RSpec.describe "Api::V1::Discovery", type: :request do
       end
     end
 
+    # #1154 part 2 — control mappings were marked admin_only, hiding them from
+    # the non-admin `mappings.write` holders the controller actually admits.
+    context "as a non-admin holding mappings.write" do
+      let(:mapper) do
+        role = create(:role, name: "mapper_probe", scope: "instance",
+                             permissions: { "mappings.read" => true, "mappings.write" => true })
+        create(:user).tap { |u| create(:user_role, user: u, role: role) }
+      end
+
+      it "sees the control-mapping endpoints, including the export, with their write methods" do
+        token = ApiToken.generate!(user: mapper, name: "Mapper")
+        get "/api/v1/available", headers: { "Authorization" => "Bearer #{token.plaintext_token}" }
+
+        endpoints = JSON.parse(response.body)["endpoints"].index_by { |e| e["path"] }
+        expect(endpoints["/api/v1/control_mappings"]["methods"]).to include("GET", "POST")
+        expect(endpoints["/api/v1/control_mappings/:id/export"]["methods"]).to eq([ "GET" ])
+      end
+    end
+
     context "as a user with no permissions" do
       let(:no_perm_user) { create(:user) }
       let(:no_perm_token) { ApiToken.generate!(user: no_perm_user, name: "No Perm Token") }

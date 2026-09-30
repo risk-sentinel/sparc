@@ -40,6 +40,7 @@ class OscalSarExportService
                                   control_ids: @document.sar_controls.pluck(:control_id))
     data = build_assessment_results
     OscalSchemaValidationService.validate!(:assessment_results, data, version: effective_oscal_version)
+    SparcNamespacePropsRule.validate!(:assessment_results, data) # #1154
     JSON.pretty_generate(data)
   end
 
@@ -91,16 +92,18 @@ class OscalSarExportService
   # ── Metadata ─────────────────────────────────────────────────────
 
   def build_metadata
-    @document.build_oscal_metadata(
+    org_party_uuid = OscalUuidService.org_party_uuid_for(@document)
+    metadata = @document.build_oscal_metadata(
       default_version: @document.sar_version || "1.0.0",
       default_roles: [
         { "id" => "assessor", "title" => "Security Controls Assessor" }
       ],
       default_parties: [
-        { "uuid" => OscalUuidService.org_party_uuid_for(@document),
+        { "uuid" => org_party_uuid,
           "type" => "organization", "name" => SparcConfig.oscal_org_name }
       ]
     )
+    SparcNamespaceProps.tag_organization_party!(metadata, org_party_uuid) # #1154
   end
 
   # ── Import AP ────────────────────────────────────────────────────
@@ -245,7 +248,8 @@ class OscalSarExportService
         "remediations"         => risk.remediations_data.presence,
         "risk-log"             => risk.risk_log_data.presence,
         RELATED_OBSERVATIONS => build_risk_observations(risk),
-        "props"                => risk.props_data.presence,
+        # #1154 — blocks-ato from its column; other props pass through as issued.
+        "props"                => SparcNamespaceProps.risk_export_props(risk),
         "links"                => risk.links_data.presence,
         "remarks"              => risk.remarks
       }.compact

@@ -3,7 +3,7 @@
 # POA&M (Plan of Action & Milestones) — OSCAL Data Mapping
 
 This document describes how SPARC internal models map to OSCAL at
-`OscalSchema::DEFAULT_VERSION` (currently v1.2.2)
+`OscalSchema::DEFAULT_VERSION` (currently v1.2.3)
 `plan-of-action-and-milestones` JSON for import and export.
 
 ## Model Hierarchy
@@ -128,6 +128,9 @@ Export service: `OscalPoamExportService`
 | `deadline` | `.risks[].deadline` | No | ISO 8601 datetime |
 | `risk_log_data` | `.risks[].risk-log` | No | JSON object (log entries) |
 | `props_data` | `.risks[].props` | No | JSON array |
+| `blocks_ato` | `.risks[].props[name=blocks-ato]` | No | #1154 — ns `https://sparc.risk-sentinel.org/ns`; `true`/`false`, omitted when nil (not decided) |
+| `condition_expires` | `.risks[].props[name=condition-expires]` | No | #1154 — same ns; `YYYY-MM-DD` |
+| `reopen_trigger` | `.risks[].props[name=trigger]` | No | #1154 — same ns; e.g. `score<0.85`. The three columns replace any copy in `props_data`; on import a valid prop moves into its column |
 | `links_data` | `.risks[].links` | No | JSON array |
 | `remarks` | `.risks[].remarks` | No | |
 | _(join table)_ | `.risks[].related-observations` | No | Array of `{ "observation-uuid": "..." }` via `poam_risk_observations` |

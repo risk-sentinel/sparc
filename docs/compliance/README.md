@@ -120,7 +120,7 @@ comment block at the top of the file or module:
 
 CDEFs in `oscal/cdefs/` follow the OSCAL component-definition format at
 `OscalSchema::DEFAULT_VERSION` — the version SPARC itself exports at, currently
-**v1.2.2**. `spec/compliance/cdef_artifacts_spec.rb` fails if a shipped CDEF
+**v1.2.3**. `spec/compliance/cdef_artifacts_spec.rb` fails if a shipped CDEF
 declares anything else, so the stamp cannot fall behind the product again. When
 updating, ensure:
 

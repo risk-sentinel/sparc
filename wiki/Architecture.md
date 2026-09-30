@@ -272,7 +272,7 @@ auto-detects the format via `OscalFormatDetectionService`, and
 
 | Service | Purpose |
 |---------|---------|
-| `OscalSchemaValidationService` | Validates OSCAL against NIST schemas (`json_schemer`) — **1.2.2 by default** since v1.16.0, and any of 1.1.1–1.2.2 on request; schemas are baked into the container (air-gap safe). XML is validated against the **1.2.2** XSDs, fetched by `oscal:bundle_xsd_schemas` and pinned to `DEFAULT_VERSION` by a spec (#1058) |
+| `OscalSchemaValidationService` | Validates OSCAL against NIST schemas (`json_schemer`) — **1.2.3 by default** since v1.17.0 (1.2.2 from v1.16.0), and any of 1.1.1–1.2.3 on request; schemas are baked into the container (air-gap safe). XML is validated against the XSDs of the release the document **declares** — SPARC carries 1.1.2, 1.1.3, 1.2.2 and 1.2.3, fetched by `oscal:bundle_xsd_schemas`; an uncarried release uses the nearest carried one in its line, and the result says so |
 | `PublicationValidationService` | Pre-publish readiness checks |
 | `CatalogImportValidationService` | Validates imported catalogs before persistence |
 

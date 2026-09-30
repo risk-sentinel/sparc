@@ -25,6 +25,7 @@ from _crud_contract import CrudContract
 from _document_helpers import create_doc, delete_doc, make_payload
 from _export_contract import ExportContract
 from _field_import_contract import FieldImportContract
+from _oscal_export_contract import OscalExportContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     SarDocumentIndex,
@@ -307,3 +308,9 @@ class TestConvert:
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
         assert_error_envelope(anon_client.post(f"{PATH}/convert"), expected_status=401)
+
+
+# #1181 — the OSCAL formats of `export`, through the shared contract.
+class TestOscalExportContract(OscalExportContract):
+    PATH = PATH
+    ROOT_KEY = "assessment-results"

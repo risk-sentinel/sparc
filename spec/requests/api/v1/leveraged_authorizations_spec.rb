@@ -132,6 +132,52 @@ RSpec.describe "Api::V1::LeveragedAuthorizations", type: :request do
     end
   end
 
+  # #1178 — the durable identity of both sides of the relationship, so an
+  # evidence pipeline can join on RFC 4122 uuids rather than integer ids.
+  describe "boundary uuids (#1178)" do
+    it "carries both boundary uuids on the list and the detail" do
+      record = create(:leveraged_authorization, leveraging_boundary: boundary,
+                                                leveraged_boundary: leveraged)
+
+      get api_v1_authorization_boundary_leveraged_authorizations_path(boundary),
+        headers: headers_for(member)
+      expect(response).to have_http_status(:ok)
+      row = response.parsed_body["data"].find { |r| r["id"] == record.id }
+      expect(row).to include("leveraging_boundary_uuid" => boundary.uuid,
+                             "leveraged_boundary_uuid" => leveraged.uuid)
+
+      get api_v1_authorization_boundary_leveraged_authorization_path(boundary, record),
+        headers: headers_for(member)
+      expect(response).to have_http_status(:ok)
+      data = response.parsed_body["data"]
+      expect(data["leveraging_boundary_uuid"]).to eq(boundary.uuid)
+      expect(data["leveraged_boundary_uuid"]).to eq(leveraged.uuid)
+      expect(data["leveraged_boundary_uuid"]).to be_present
+      expect(data["crm_type"]).to eq("oscal_with_access")
+    end
+
+    it "returns a null leveraged_boundary_uuid when SPARC does not hold the leveraged system" do
+      record = create(:leveraged_authorization, :legacy, leveraging_boundary: boundary)
+
+      get api_v1_authorization_boundary_leveraged_authorization_path(boundary, record),
+        headers: headers_for(member)
+      expect(response).to have_http_status(:ok)
+      data = response.parsed_body["data"]
+      expect(data).to include("leveraged_boundary_id" => nil, "leveraged_boundary_uuid" => nil)
+      expect(data["leveraging_boundary_uuid"]).to eq(boundary.uuid)
+    end
+
+    it "does not reveal either uuid to a non-member" do
+      record = create(:leveraged_authorization, leveraging_boundary: boundary,
+                                                leveraged_boundary: leveraged)
+
+      get api_v1_authorization_boundary_leveraged_authorization_path(boundary, record),
+        headers: headers_for(outsider)
+      expect(response).to have_http_status(:forbidden)
+      expect(response.body).not_to include(leveraged.uuid)
+    end
+  end
+
   describe "POST .../leveraged_authorizations/:id/populate" do
     it "reports how many inheritance links it imported" do
       record = create(:leveraged_authorization, leveraging_boundary: boundary,

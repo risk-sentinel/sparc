@@ -160,22 +160,27 @@ namespace :oscal do
   # mapping XML, and fetching a file no code reads would be inventory rather than
   # coverage.
   #
-  # Single flat directory, not versioned like the JSON bundle: `validate_xml`
-  # resolves one file per model with no version in the path, so the set on disk
-  # IS the DEFAULT_VERSION set by construction.
-  desc "Fetch the OSCAL XSD set for DEFAULT_VERSION into lib/oscal_xsd_schemas/ (#1058)"
+  # One directory PER VERSION (owner, 2026-09-29): `v1.1.2/`, `v1.1.3/`,
+  # `v1.2.2/`, `v1.2.3/` — `OscalSchema::XSD_VERSIONS`. The set used to be a
+  # single flat DEFAULT_VERSION directory, so every XML document was validated
+  # against the default release whatever version it declared. Releases are
+  # separate artifacts that can differ, so each is carried as NIST publishes it
+  # and `validate_xml` picks the set the document declares
+  # (`OscalSchema.xsd_version_for`).
+  desc "Fetch the OSCAL XSD set for every carried version into lib/oscal_xsd_schemas/v<version>/ (#1058)"
   task bundle_xsd_schemas: :environment do
     require "net/http"
     require "digest"
     require "fileutils"
 
-    version = OscalSchema::DEFAULT_VERSION
-    xsd_dir = Rails.root.join("lib", "oscal_xsd_schemas")
-    FileUtils.mkdir_p(xsd_dir)
+    xsd_root = Rails.root.join("lib", "oscal_xsd_schemas")
 
     entries  = []
     failures = []
 
+    OscalSchema::XSD_VERSIONS.each do |version|
+    xsd_dir = xsd_root.join("v#{version}")
+    FileUtils.mkdir_p(xsd_dir)
     oscal_log "Fetching OSCAL XSD schemas for v#{version}"
 
     OscalSchemaValidationService::XSD_SCHEMA_MAP.each do |model, file|
@@ -211,23 +216,25 @@ namespace :oscal do
       entries << {
         "version"    => version,
         "model"      => model.to_s,
-        "file"       => file,
+        "file"       => "v#{version}/#{file}",
         "sha256"     => sha256,
         "source_url" => url,
         "size"       => body.bytesize
       }
-      oscal_log "  ✓ #{label} → #{file} (#{body.bytesize} bytes, sha256:#{sha256[0..15]}…)"
+      oscal_log "  ✓ #{label} → v#{version}/#{file} (#{body.bytesize} bytes, sha256:#{sha256[0..15]}…)"
+    end
     end
 
     manifest = {
-      "generated_at"    => Time.now.utc.iso8601,
-      "default_version" => version,
-      "schemas"         => entries.sort_by { |e| e["model"] }
+      "generated_at"     => Time.now.utc.iso8601,
+      "default_version"  => OscalSchema::DEFAULT_VERSION,
+      "carried_versions" => OscalSchema::XSD_VERSIONS,
+      "schemas"          => entries.sort_by { |e| [ e["version"], e["model"] ] }
     }
-    File.write(xsd_dir.join("manifest.json"), JSON.pretty_generate(manifest) + "\n")
+    File.write(xsd_root.join("manifest.json"), JSON.pretty_generate(manifest) + "\n")
 
     oscal_log ""
-    oscal_log "XSD set written to lib/oscal_xsd_schemas/ (#{entries.size} schemas, v#{version})"
+    oscal_log "XSD sets written to lib/oscal_xsd_schemas/ (#{entries.size} schemas, #{OscalSchema::XSD_VERSIONS.join(', ')})"
 
     if failures.any?
       annotation = ENV["GITHUB_ACTIONS"] ? "::error::" : ""

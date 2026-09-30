@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparc.risk-sentinel.org/ns/v1/props.schema.json",
+  "title": "SPARC namespace props v1",
+  "description": "Validates a single OSCAL prop in the SPARC namespace. Apply it ONLY to props[] entries whose ns equals https://sparc.risk-sentinel.org/ns, and to every one of them. It is a selective validator, not a whole-document one: applying it to every prop regardless of ns will reject valid OSCAL, because ns is OPTIONAL in OSCAL and an absent ns means the default NIST namespace, not this one. Props in namespaces this estate does not own are preserved as issued and never validated here. ns stays required precisely so a prop cannot claim one of these nine names from outside the namespace. Changes within v1 are additive only. The namespace URI itself changed once, when sparc#1155 registered the real one and Horizon adopted SPARC's in place of its placeholder (#54) — amended in v1 rather than bumped to v2, because nothing derived from the placeholder outside this repository and its fixtures regenerated.",
+  "type": "object",
+  "required": ["name", "ns", "value"],
+  "properties": {
+    "name": {
+      "enum": ["node-type", "parent-uuid", "next-decision-date", "fips-199", "blocks-ato", "evidence-kind", "signed-by", "condition-expires", "trigger"]
+    },
+    "ns": { "const": "https://sparc.risk-sentinel.org/ns" },
+    "value": { "type": "string", "minLength": 1 },
+    "class": { "type": "string" },
+    "remarks": { "type": "string" }
+  },
+  "$defs": {
+    "uuid": { "type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[45][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$" },
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+  },
+  "allOf": [
+    { "if": { "properties": { "name": { "const": "node-type" } } },
+      "then": { "properties": { "value": { "enum": ["federation", "organization", "boundary", "system"] } } } },
+    { "if": { "properties": { "name": { "enum": ["parent-uuid", "signed-by"] } } },
+      "then": { "properties": { "value": { "$ref": "#/$defs/uuid" } } } },
+    { "if": { "properties": { "name": { "enum": ["next-decision-date", "condition-expires"] } } },
+      "then": { "properties": { "value": { "$ref": "#/$defs/date" } } } },
+    { "if": { "properties": { "name": { "const": "fips-199" } } },
+      "then": { "properties": { "value": { "enum": ["low", "moderate", "high"] } } } },
+    { "if": { "properties": { "name": { "const": "blocks-ato" } } },
+      "then": { "properties": { "value": { "enum": ["true", "false"] } } } },
+    { "if": { "properties": { "name": { "const": "evidence-kind" } } },
+      "then": { "properties": { "value": { "enum": ["manual-attestation", "hdf-results", "scan-report", "document", "screenshot"] } } } },
+    { "if": { "properties": { "name": { "const": "trigger" } } },
+      "then": { "properties": { "value": { "pattern": "^(score|blockers)(<|<=|>|>=)[0-9.]+$" } } } }
+  ]
+}

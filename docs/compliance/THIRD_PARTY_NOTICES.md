@@ -106,6 +106,34 @@ and not itemized individually in the license inventory (the relevant
 | **Used by** | `FedrampKsiImportService` — the FedRAMP 20x KSI catalog and its KSI → NIST SP 800-53 Rev 5 crosswalk |
 | **NIST control alignment** | CA-2 Control Assessments, SR-3 Supply Chain Controls (the data is validated against the vendored JSON Schema before import, and its sha256 against the sidecar in the spec suite) |
 
+### sparc-horizon SPARC-namespace props schema (vendored schema)
+
+| Field | Value |
+| --- | --- |
+| **Source repo** | [`risk-sentinel/sparc-horizon`](https://github.com/risk-sentinel/sparc-horizon) @ `e255376d5b6c723557d9ffb48c72f266655599d7` |
+| **Source files** | `schemas/sparc-namespace-props.v1.schema.json` |
+| **Copyright** | Risk Sentinel |
+| **License** | Apache-2.0 (the repository's declared license) |
+| **License text** | The sparc-horizon repository's `LICENSE` |
+| **Vendored as** | `lib/data/oscal_ns/sparc-namespace-props.v1.schema.json`, byte-for-byte, with provenance (commit, blob, sha256) in `sparc-namespace-props.v1.schema.provenance.json` |
+| **Re-vendor task** | Replace the file from a new sparc-horizon commit and update the sidecar; the spec suite pins the sha256 |
+| **Used by** | `SparcNamespacePropsRule` — validates the nine SPARC-namespace props Horizon reads in SSP / SAR / POA&M exports (#1154) |
+| **NIST control alignment** | SI-10 Information Input Validation |
+
+### mitre/hdf-libs hdf-system JSON Schema (vendored schema)
+
+| Field | Value |
+| --- | --- |
+| **Source repo** | [`mitre/hdf-libs`](https://github.com/mitre/hdf-libs) @ `v3.7.0` (`537505a07abb0032ea5bc9b9e68fec62a1a49981`) |
+| **Source files** | `hdf-validators/go/schemas/hdf-system.schema.json` (the self-contained copy the `hdf` CLI embeds) |
+| **Copyright** | © 2025 The MITRE Corporation |
+| **License** | Apache-2.0, with MITRE's public-release terms (see upstream `LICENSE.md`) |
+| **License text** | mitre/hdf-libs `LICENSE.md` at `v3.7.0` |
+| **Vendored as** | `lib/data/hdf/hdf-system.v3.7.0.schema.json`, byte-for-byte, with provenance in `hdf-system.v3.7.0.provenance.json` |
+| **Re-vendor task** | When the hdf-cli pin (`Dockerfile` `HDF_LIBS_VERSION`) moves, fetch the same path at the new tag and update the sidecar |
+| **Used by** | `HdfSystemExportService` — validates the `hdf-system` export in-process; stricter than `hdf validate --type system` at 3.7.0, which does not enforce `unevaluatedProperties` or `uri-reference` (#1179) |
+| **NIST control alignment** | CM-8 System Component Inventory, SI-10 Information Input Validation |
+
 ### MITRE heimdall2 — AWS Config Rule → NIST mapping (vendored data)
 
 | Field | Value |

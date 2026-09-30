@@ -12,9 +12,9 @@ OSCAL import/export. SPARC is a **translation engine + UI** for OSCAL /
 policy-as-code, not a system of record: tenant systems own the source of truth.
 
 **Which OSCAL version does SPARC target?**
-NIST OSCAL **v1.2.2** as of v1.16.0 — that is the version written into
+NIST OSCAL **v1.2.3** as of v1.17.0 — that is the version written into
 `metadata.oscal-version` and the one JSON exports are validated against.
-SPARC can validate against **1.1.1, 1.1.2, 1.1.3, 1.2.0, 1.2.1 and 1.2.2**, and a
+SPARC can validate against **1.1.1, 1.1.2, 1.1.3, 1.2.0, 1.2.1, 1.2.2 and 1.2.3**, and a
 document that carries its own `oscal-version` is validated against that instead
 of the default.
 
@@ -88,7 +88,7 @@ for AWS Labs CDEFs that `SPARC_AWS_LABS_CDEF_ENABLED=true`.
 ## OSCAL & validation
 
 **My OSCAL export was rejected.**
-Exports are validated against the NIST schemas before download (1.2.2 by default). CDEF
+Exports are validated against the NIST schemas before download (1.2.3 by default). CDEF
 mutations are validated **pre-commit** (v1.8.0) — an invalid result is rejected
 rather than persisted. Check the error detail for the failing JSON pointer.
 

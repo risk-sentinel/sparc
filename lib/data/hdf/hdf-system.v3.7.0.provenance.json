@@ -1,0 +1,21 @@
+{
+  "description": "Provenance for the vendored HDF System JSON Schema (#1179). The schema is a byte-for-byte copy of the bundled schema the hdf-libs Go validator embeds, so `hdf validate --type system` and SPARC's in-process check read the same rules. It must stay verbatim; its provenance lives in this sidecar rather than in the file.",
+  "source_repository": "https://github.com/mitre/hdf-libs",
+  "source_tag": "v3.7.0",
+  "source_commit": "537505a07abb0032ea5bc9b9e68fec62a1a49981",
+  "schema_id": "https://mitre.github.io/hdf-libs/schemas/hdf-system/v3.7.0",
+  "retrieved": "2026-09-29",
+  "license": "Apache-2.0",
+  "license_basis": "mitre/hdf-libs LICENSE.md at v3.7.0: Copyright (c) 2025 The MITRE Corporation, Approved for Public Release; Distribution Unlimited, Case Number 18-3678, licensed under the Apache License, Version 2.0, with MITRE redistribution terms (retain the copyright legend and notice). GitHub reports the license as NOASSERTION only because LICENSE.md adds those terms to the Apache text.",
+  "files": {
+    "hdf-system.v3.7.0.schema.json": {
+      "source_path": "hdf-validators/go/schemas/hdf-system.schema.json",
+      "source_url": "https://raw.githubusercontent.com/mitre/hdf-libs/v3.7.0/hdf-validators/go/schemas/hdf-system.schema.json",
+      "git_blob_sha": "09cb6ae91081f77bd581970302f2563e724435da",
+      "sha256": "b761a93a328812a15f92bca4831dc4a85aacfc8bf5ed863ce8aac6b8a6e6b940",
+      "bytes": 185004
+    }
+  },
+  "why_this_path": "hdf-schema/src/schemas/hdf-system.schema.json is the SOURCE schema and $refs its primitives by absolute URL. The hdf-validators copy is the same schema BUNDLED, with every primitive embedded under $defs by $id, so it validates offline and is exactly what the CLI binary embeds.",
+  "re_vendor": "When HdfRunner::PINNED_VERSION and the Dockerfile HDF_LIBS_VERSION move, fetch the same path at the new tag, save it as hdf-system.v<version>.schema.json verbatim, add a sidecar for it, and point Hdf::SystemSchema at it. spec/lib/data/hdf_system_schema_vendored_spec.rb fails when the file and this sidecar disagree."
+}

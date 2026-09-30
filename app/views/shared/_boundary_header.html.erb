@@ -29,5 +29,30 @@
         until you link it.
       </span>
     </div>
+    <%# The repair, on the page that reports the problem. Production has no
+        shell, so this is the only way to fix it, and the metadata form cannot:
+        it is gated until the baseline is set, and an SSP without a boundary
+        could not have its baseline set either. Posts to the ungated
+        attach_boundary action (#929), which authorizes the TARGET boundary.
+        Each option names what is already linked to that boundary, so a
+        duplicate or a mis-link is visible before choosing. %>
+    <% choices = signed_in? ? assignable_boundaries(current_user).to_a : [] %>
+    <% if choices.any? %>
+      <% linked = document.class.where(authorization_boundary_id: choices.map(&:id))
+                          .where.not(id: document.id).pluck(:authorization_boundary_id, :name)
+                          .group_by(&:first).transform_values { |rows| rows.map(&:last) } %>
+      <%= form_with url: url_for([ :attach_boundary, document ]), method: :patch, local: true,
+                    class: "d-flex align-items-center gap-2 flex-wrap mt-2" do %>
+        <label class="fw-semibold small mb-0" for="attach_<%= document.model_name.param_key %>_boundary">Link to a boundary</label>
+        <%= select_tag "#{document.model_name.param_key}[authorization_boundary_id]",
+              options_for_select([ [ "Choose a boundary…", "" ] ] + choices.map { |b|
+                label = linked[b.id].present? ? "#{b.name} — already linked to: #{linked[b.id].join(', ')}" : b.name
+                [ label, b.id ]
+              }),
+              id: "attach_#{document.model_name.param_key}_boundary", required: true,
+              class: "form-select form-select-sm w-auto" %>
+        <%= submit_tag "Link boundary", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
+      <% end %>
+    <% end %>
   </div>
 <% end %>

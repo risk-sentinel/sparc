@@ -1,0 +1,18 @@
+{
+  "description": "Provenance for the vendored SPARC-namespace props schema (#1154). The schema is the contract sparc-horizon validates SPARC's namespace props with; SPARC keeps a byte-for-byte copy as its authoritative local copy and validates its own exports against it (SparcNamespacePropsRule). The file must stay verbatim, so its provenance lives in this sidecar rather than in the file.",
+  "source_repository": "https://github.com/risk-sentinel/sparc-horizon",
+  "source_path": "schemas/sparc-namespace-props.v1.schema.json",
+  "source_commit": "e255376d5b6c723557d9ffb48c72f266655599d7",
+  "source_blob_sha": "5c9bad0705596db4f8da2a7f757fb96643263939",
+  "retrieved": "2026-09-29",
+  "license": "Apache-2.0",
+  "license_basis": "sparc-horizon is licensed Apache-2.0 (GitHub reports spdx_id Apache-2.0 for the repository).",
+  "files": {
+    "sparc-namespace-props.v1.schema.json": {
+      "source_url": "https://raw.githubusercontent.com/risk-sentinel/sparc-horizon/e255376d5b6c723557d9ffb48c72f266655599d7/schemas/sparc-namespace-props.v1.schema.json",
+      "sha256": "9dbe0bb4a0edf58403cf9ba304c5b3699128960b6b91b251b8adf4120521ce12",
+      "bytes": 2972
+    }
+  },
+  "re_vendor": "Fetch the file from a new sparc-horizon commit, replace it verbatim, and update this sidecar (source_commit, source_blob_sha, retrieved, sha256, bytes). Changes within v1 are additive only; a v2 is a new file, not an edit to this one."
+}

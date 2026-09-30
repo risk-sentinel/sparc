@@ -682,6 +682,14 @@ Rails.application.routes.draw do
         end
         resources :risks, only: [ :index, :create ], controller: "poam_risks"
 
+        # --- #1181 — POA&M export over the API --------------------
+        # POA&M was the one document in the chain with no API export at all:
+        # neither SPARC's field JSON nor the OSCAL document the web downloads.
+        member do
+          get :export
+        end
+        # --- end #1181 ---------------------------------------------
+
         # #1010 — #832 gave risks an API and left their six siblings behind.
         # These are the substance of a POA&M: what OSCAL exports.
         resources :items, only: [ :index, :show, :create, :update, :destroy ],
@@ -856,6 +864,13 @@ Rails.application.routes.draw do
         resources :control_mapping_entries,
                   only: [ :index, :create, :update, :destroy ],
                   as: :entries, path: "entries"
+
+        # --- #1154 part 2 — the OSCAL mapping collection ------------
+        # The crosswalk as a document Horizon can read, not only as rows.
+        member do
+          get :export
+        end
+        # --- end #1154 part 2 ----------------------------------------
       end
 
       # Back-matter resource management (#375) + authoritative workflow (#372)
@@ -1031,6 +1046,9 @@ Rails.application.routes.draw do
         post :aggregate, to: "aggregations#create"
         # #809 — signed package (amendments + findings + dispositions) for the consumer.
         resource :hdf_package, only: [ :show ], controller: "hdf_packages"
+        # #1179 — the boundary as an HDF `hdf-system` document (schema v3.7.0),
+        # the document HDF results and amendments point at through systemRef.
+        resource :hdf_system, only: [ :show ], controller: "hdf_systems"
       end
 
       # HDF Amendment triage (#447) — flat show of a single finding by uuid,

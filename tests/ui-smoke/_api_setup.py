@@ -339,3 +339,41 @@ def deactivate_user(user_id: Any) -> None:
     (soft) — the only teardown the API offers — mirroring the API suite."""
     with _client() as c:
         c.delete(f"/api/v1/users/{user_id}")
+
+
+# ── #1154 / production repair (2026-09-29) ─────────────────────────────────
+
+
+def create_poam(boundary_id: int) -> dict[str, Any]:
+    with _client() as c:
+        r = c.post(
+            "/api/v1/poam_documents",
+            json={"poam_document": {"name": _name("poam"),
+                                    "authorization_boundary_id": boundary_id}},
+        )
+        r.raise_for_status()
+        return r.json()["data"]
+
+
+def create_poam_risk(poam_slug: Any) -> dict[str, Any]:
+    with _client() as c:
+        r = c.post(
+            f"/api/v1/poam_documents/{poam_slug}/risks",
+            json={"poam_risk": {"title": _name("risk"), "description": "ui-smoke",
+                                "statement": "ui-smoke", "status": "open",
+                                "deadline": "2027-01-31"}},
+        )
+        r.raise_for_status()
+        return r.json()["data"]
+
+
+def get_json(path: str) -> dict[str, Any]:
+    with _client() as c:
+        r = c.get(path)
+        r.raise_for_status()
+        return r.json()["data"]
+
+
+def patch_json(path: str, body: dict[str, Any]) -> httpx.Response:
+    with _client() as c:
+        return c.patch(path, json=body)

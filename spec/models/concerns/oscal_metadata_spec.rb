@@ -9,16 +9,17 @@ RSpec.describe OscalMetadata do
     # SPARC declares is a contract with every consumer of its OSCAL, so moving
     # it should require editing this line. Moved 1.1.2 -> 1.2.2 by owner
     # decision on 2026-08-23, after every export type was validated against
-    # both versions with an identical pass/fail set.
+    # both versions with an identical pass/fail set; 1.2.2 -> 1.2.3 on
+    # 2026-09-29 on the same evidence.
     it "has OSCAL_VERSION constant" do
-      expect(OscalMetadata::OSCAL_VERSION).to eq("1.2.2")
+      expect(OscalMetadata::OSCAL_VERSION).to eq("1.2.3")
     end
 
     it "provides build_oscal_metadata" do
       metadata = ssp.build_oscal_metadata
       expect(metadata).to be_a(Hash)
       expect(metadata["title"]).to eq(ssp.name)
-      expect(metadata["oscal-version"]).to eq("1.2.2")
+      expect(metadata["oscal-version"]).to eq("1.2.3")
     end
 
     it "provides oscal_roles accessor" do

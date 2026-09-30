@@ -82,6 +82,15 @@ button that opens a nested form.
   on the five-level scale NIST SP 800-30 and FedRAMP use — **Very Low, Low,
   Moderate, High, Very High** — and both are exported as OSCAL risk
   *characterization facets*, so a rating chosen here reaches the artifact.
+  The risk also records the authorizing official's decision about it:
+  **Blocks the ATO?** (*Not decided*, *Yes*, *No*), **Condition expires** (the
+  date a conditional acceptance lapses) and **Reopen trigger** — when the
+  decision must be revisited, written as `score` or `blockers`, a comparison and
+  a number, for example `score<0.85` or `blockers>0`. All three are exported on
+  the risk for dashboards such as sparc-horizon. The status list includes
+  **Remediating**.
+
+  ![The risk's decision fields: Blocks the ATO?, Condition expires and Reopen trigger](images/poam-risk-decision-fields.png)
 - **Remediation** (`.../poam_remediations/new`) — OSCAL `response`: lifecycle,
   title, description, remarks. **Milestones** are nested under a remediation
   (`.../poam_remediations/:id/poam_milestones/new`) with title, description, and

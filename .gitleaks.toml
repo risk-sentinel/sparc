@@ -76,4 +76,12 @@ title = "SPARC Gitleaks Configuration"
     '''token_expires_at:''',
     # Local-validation dummy SECRET_KEY_BASE (explicitly not-for-production).
     '''ubi9-local-validation-not-for-production''',
+    # #1179 — examples inside MITRE's hdf-system schema, vendored byte-for-byte
+    # (lib/data/hdf/, sha256 pinned by its provenance sidecar, so an inline
+    # `gitleaks:allow` is impossible and the value is already in history). A
+    # W3C verification-method type name and the did:key example from the DID
+    # spec — public examples, not keys. Exact lines only: the rest of the file
+    # is still scanned. Owner-approved 2026-09-29.
+    '''Example: 'JsonWebKey2020', 'RsaVerificationKey2018', 'Ed25519VerificationKey2020'\.''',
+    '''"controller": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"''',
   ]

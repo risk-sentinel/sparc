@@ -13,7 +13,7 @@
 # Legacy actions (preserved, now with auth):
 #   POST   /api/v1/ssp_documents/convert       — parse Excel to SSP
 #   PUT    /api/v1/ssp_documents/:id/update_fields — bulk update control fields
-#   GET    /api/v1/ssp_documents/:id/export    — export to JSON
+#   GET    /api/v1/ssp_documents/:id/export    — export (fields JSON, or OSCAL via ?format=, #1181)
 #
 # NIST 800-53 Controls:
 #   IA-2 Identification and Authentication (Bearer token required)
@@ -23,6 +23,8 @@
 #
 class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
   include FieldImportable
+  # #1181 — OSCAL export over the API, shared with CDEF/SAP/SAR/POA&M.
+  include OscalApiExport
 
   before_action :set_document, only: [ :show, :update, :destroy, :update_fields, :export, :populate_from_profile, :import_fields_preview, :import_fields_confirm ]
   before_action :authorize_document_read!, only: [ :show, :export ]
@@ -93,10 +95,23 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
     end
   end
 
-  # GET /api/v1/ssp_documents/:id/export
+  # GET /api/v1/ssp_documents/:id/export[?format=&validate=]
+  #
+  # #1181 — the system security plan could be exported as OSCAL only in a browser; the web
+  # routes sit behind session authentication a service account cannot hold.
+  # `format` defaults to `fields` (SPARC's control-field JSON, unchanged);
+  # `oscal`, `oscal-yaml` and `oscal-xml` serve the OSCAL document, validated
+  # unless `validate=false`, with a strong ETag for conditional GET. Read is
+  # boundary-scoped through `authorize_document_read!`. See OscalApiExport.
   def export
-    json_data = JsonExportService.export_ssp(@document)
-    render json: JSON.parse(json_data)
+    render_oscal_api_export(
+      document: @document,
+      service: OscalSspExportService.new(@document),
+      xml_model: :ssp,
+      label: "system security plan",
+      audit_action: "ssp_document_exported",
+      fields: -> { JsonExportService.export_ssp(@document) }
+    )
   end
 
   # POST /api/v1/ssp_documents/:id/populate_from_profile

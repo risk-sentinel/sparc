@@ -125,7 +125,7 @@ useful rather than merely informative.
 | **Total** | **71** (59 distinct control ids) |
 
 They are emitted at `OscalSchema::DEFAULT_VERSION` — the OSCAL version SPARC
-itself exports at, currently **v1.2.2** — and validated against the bundled NIST
+itself exports at, currently **v1.2.3** — and validated against the bundled NIST
 schema for that version on every build, so the stamp cannot fall behind the
 product.
 

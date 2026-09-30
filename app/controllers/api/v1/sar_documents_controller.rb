@@ -13,7 +13,7 @@
 # Legacy actions:
 #   POST   /api/v1/sar_documents/convert       — parse Excel to SAR
 #   PUT    /api/v1/sar_documents/:id/update_fields — bulk update control fields
-#   GET    /api/v1/sar_documents/:id/export    — export to JSON
+#   GET    /api/v1/sar_documents/:id/export    — export (fields JSON, or OSCAL via ?format=, #1181)
 #
 # NIST 800-53 Controls:
 #   AC-3 Access Enforcement (boundary-scoped RBAC)
@@ -22,6 +22,8 @@
 #
 class Api::V1::SarDocumentsController < Api::V1::DocumentBaseController
   include FieldImportable
+  # #1181 — OSCAL export over the API, shared with CDEF/SSP/SAP/POA&M.
+  include OscalApiExport
 
   before_action :set_document, only: [ :show, :update, :destroy, :update_fields, :export, :import_fields_preview, :import_fields_confirm ]
   before_action :authorize_document_read!, only: [ :show, :export ]
@@ -98,10 +100,23 @@ class Api::V1::SarDocumentsController < Api::V1::DocumentBaseController
     end
   end
 
-  # GET /api/v1/sar_documents/:id/export
+  # GET /api/v1/sar_documents/:id/export[?format=&validate=]
+  #
+  # #1181 — the assessment results could be exported as OSCAL only in a browser; the web
+  # routes sit behind session authentication a service account cannot hold.
+  # `format` defaults to `fields` (SPARC's control-field JSON, unchanged);
+  # `oscal`, `oscal-yaml` and `oscal-xml` serve the OSCAL document, validated
+  # unless `validate=false`, with a strong ETag for conditional GET. Read is
+  # boundary-scoped through `authorize_document_read!`. See OscalApiExport.
   def export
-    json_data = JsonExportService.export_sar(@document)
-    render json: JSON.parse(json_data)
+    render_oscal_api_export(
+      document: @document,
+      service: OscalSarExportService.new(@document),
+      xml_model: :assessment_results,
+      label: "assessment results",
+      audit_action: "sar_document_exported",
+      fields: -> { JsonExportService.export_sar(@document) }
+    )
   end
 
   private

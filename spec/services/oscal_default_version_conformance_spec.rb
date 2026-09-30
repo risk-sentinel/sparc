@@ -123,27 +123,39 @@ RSpec.describe "OSCAL conformance at the default version" do
   #
   # `xs:schema/@version` rather than a `$id`: XSDs carry their version as an
   # attribute on the root element, where the JSON schemas carry it in `$id`.
-  it "ships an XSD set at the default version, not merely a JSON one" do
-    mismatched = OscalSchemaValidationService::XSD_SCHEMA_MAP.filter_map do |model, file|
-      path = Rails.root.join("lib/oscal_xsd_schemas", file)
-      next "#{file} is missing" unless path.exist?
+  #
+  # Since 2026-09-29 (owner) the XSDs are carried PER RELEASE, one directory
+  # each, and XML is validated against the release it declares. So the gate is
+  # now: every carried set exists, each file declares the release its
+  # directory names, and the default release is among them.
+  OscalSchema::XSD_VERSIONS.each do |carried|
+    it "carries a complete XSD set for #{carried}, each file declaring #{carried}" do
+      mismatched = OscalSchemaValidationService::XSD_SCHEMA_MAP.filter_map do |_model, file|
+        path = Rails.root.join("lib/oscal_xsd_schemas", "v#{carried}", file)
+        next "v#{carried}/#{file} is missing" unless path.exist?
 
-      declared = Nokogiri::XML(path.read).root&.[]("version")
-      "#{file} declares #{declared || '(no version attribute)'}" unless declared == version
+        declared = Nokogiri::XML(path.read).root&.[]("version")
+        "v#{carried}/#{file} declares #{declared || '(no version attribute)'}" unless declared == carried
+      end
+
+      expect(mismatched).to be_empty,
+        "lib/oscal_xsd_schemas/v#{carried}/ is not the #{carried} set: #{mismatched.join('; ')}. " \
+        "A document declaring #{carried} is validated against these files. Run `bin/rails oscal:bundle_xsd_schemas`."
     end
-
-    expect(mismatched).to be_empty,
-      "lib/oscal_xsd_schemas/ does not match DEFAULT_VERSION (#{version}): " \
-      "#{mismatched.join('; ')}. An XML export declares the default version in its " \
-      "metadata and is checked against these files, so a mismatch means `validated` " \
-      "names a different release from the one the document claims. Run " \
-      "`bin/rails oscal:bundle_xsd_schemas`."
   end
 
-  # The JSON and XSD sets are fetched by two different code paths, so agreeing
-  # with DEFAULT_VERSION individually is not the same as agreeing with each
-  # other. This is the assertion that makes them one set rather than two.
-  it "keeps the JSON and XSD sets on the same version as each other" do
+  it "carries the default release's XSDs, not merely its JSON" do
+    expect(OscalSchema::XSD_VERSIONS).to include(version)
+  end
+
+  it "leaves no flat, unversioned XSDs behind for anything to read by mistake" do
+    expect(Rails.root.join("lib/oscal_xsd_schemas").glob("*.xsd")).to be_empty
+  end
+
+  # The JSON fallback and the default XSD set are fetched by different paths,
+  # so agreeing with DEFAULT_VERSION individually is not the same as agreeing
+  # with each other.
+  it "keeps the JSON fallback set on a release whose XSDs are carried" do
     json_versions = OscalSchema::DOCUMENT_TYPE_MAP.filter_map do |doc_type, config|
       next if doc_type.to_s == "mapping" && !OscalSchema::MAPPING_VERSIONS.include?(version)
 
@@ -151,15 +163,9 @@ RSpec.describe "OSCAL conformance at the default version" do
       id[%r{/oscal/([\d.]+)/}, 1]
     end.uniq
 
-    xsd_versions = OscalSchemaValidationService::XSD_SCHEMA_MAP.values.filter_map do |file|
-      path = Rails.root.join("lib/oscal_xsd_schemas", file)
-      Nokogiri::XML(path.read).root&.[]("version") if path.exist?
-    end.uniq
-
-    expect(json_versions).to eq(xsd_versions),
-      "the two schema sets disagree — JSON at #{json_versions.inspect}, XSD at " \
-      "#{xsd_versions.inspect}. They are fetched by different paths, so one can " \
-      "move without the other (#1058)."
+    expect(json_versions).to eq([ version ])
+    expect(OscalSchema::XSD_VERSIONS).to include(*json_versions),
+      "the JSON fallback is at #{json_versions.inspect} but no XSD set is carried for it (#1058)."
   end
 
   it "actually loads the default version rather than falling back" do

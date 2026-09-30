@@ -1150,7 +1150,7 @@ The API lives under the `Api::V1::` namespace. No UI screens -- these are JSON-o
 |--------|----------|-------------|
 | `POST` | `/api/v1/ssp_documents/convert` | Upload document file, queue async parsing via `DocumentConversionJob` |
 | `PUT` | `/api/v1/ssp_documents/:id/update_fields` | Bulk update control fields (JSON body) |
-| `GET` | `/api/v1/ssp_documents/:id/export` | Export SSP document as JSON |
+| `GET` | `/api/v1/ssp_documents/:id/export` | Export the SSP: control-field JSON (default) or OSCAL with `format=oscal|oscal-yaml|oscal-xml` (#1181); ETag/304 |
 
 #### SAR Document API
 
@@ -1158,7 +1158,7 @@ The API lives under the `Api::V1::` namespace. No UI screens -- these are JSON-o
 |--------|----------|-------------|
 | `POST` | `/api/v1/sar_documents/convert` | Upload document file, queue async parsing |
 | `PUT` | `/api/v1/sar_documents/:id/update_fields` | Bulk update control fields (JSON body) |
-| `GET` | `/api/v1/sar_documents/:id/export` | Export SAR document as JSON |
+| `GET` | `/api/v1/sar_documents/:id/export` | Export the SAR: control-field JSON (default) or OSCAL with `format=oscal|oscal-yaml|oscal-xml` (#1181); ETag/304 |
 
 #### Document CRUD API
 

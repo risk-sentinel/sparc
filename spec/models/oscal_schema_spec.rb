@@ -192,8 +192,10 @@ RSpec.describe OscalSchema, type: :model do
   end
 
   describe "constants" do
-    it "has 6 supported versions" do
-      expect(OscalSchema::SUPPORTED_VERSIONS).to eq(%w[1.1.1 1.1.2 1.1.3 1.2.0 1.2.1 1.2.2])
+    # 1.2.3 added 2026-09-29 (owner). Pinned so adding or dropping a version
+    # is a deliberate edit, not a side effect.
+    it "has 7 supported versions" do
+      expect(OscalSchema::SUPPORTED_VERSIONS).to eq(%w[1.1.1 1.1.2 1.1.3 1.2.0 1.2.1 1.2.2 1.2.3])
     end
 
     # #1020 — the two lists drifted apart once before. `mapping` exists only
@@ -213,8 +215,10 @@ RSpec.describe OscalSchema, type: :model do
         .to be_empty
     end
 
-    it "emits 1.2.2 by default, whatever it can validate against" do
-      expect(OscalSchema::DEFAULT_VERSION).to eq("1.2.2")
+    # Moved 1.2.2 -> 1.2.3 by owner decision 2026-09-29, after every record of
+    # every export type validated identically under both.
+    it "emits 1.2.3 by default, whatever it can validate against" do
+      expect(OscalSchema::DEFAULT_VERSION).to eq("1.2.3")
       expect(OscalSchema::SUPPORTED_VERSIONS).to include(OscalSchema::DEFAULT_VERSION)
     end
 

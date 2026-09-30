@@ -56,6 +56,7 @@ GET /api/v1/authoritative_sources/export
 GET /api/v1/authorization_boundaries
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_system
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/export
@@ -90,6 +91,7 @@ GET /api/v1/control_catalogs/:id
 GET /api/v1/control_mappings
 GET /api/v1/control_mappings/:control_mapping_id/entries
 GET /api/v1/control_mappings/:id
+GET /api/v1/control_mappings/:id/export
 GET /api/v1/controls
 GET /api/v1/controls/resolve
 GET /api/v1/converters
@@ -118,6 +120,7 @@ GET /api/v1/organizations/:id
 GET /api/v1/organizations/:id/members
 GET /api/v1/poam_documents
 GET /api/v1/poam_documents/:id
+GET /api/v1/poam_documents/:id/export
 GET /api/v1/poam_documents/:poam_document_id/findings
 GET /api/v1/poam_documents/:poam_document_id/findings/:id
 GET /api/v1/poam_documents/:poam_document_id/items

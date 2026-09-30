@@ -4,7 +4,7 @@
 SPARC (Systematic and Regulatory Compliance) is a Rails 8.1 application for
 managing NIST SP 800-53 compliance documentation — SSPs, SARs, SAPs, POA&Ms,
 CDEFs, and control catalogs — with a REST API and OSCAL import/export at
-`OscalSchema::DEFAULT_VERSION` (currently v1.2.2; v1.1.1–v1.2.2 are bundled).
+`OscalSchema::DEFAULT_VERSION` (currently v1.2.3; v1.1.1–v1.2.3 are supported).
 
 > **📖 Public documentation lives in the [GitHub wiki](https://github.com/risk-sentinel/sparc/wiki).**
 > The wiki is the canonical, kept-current home for product usage, configuration,

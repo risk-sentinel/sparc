@@ -90,6 +90,8 @@ Any field not listed is **refused** with `422`, not discarded.
     "scenario": 1,
     "leveraging_boundary_id": 4,
     "leveraged_boundary_id": 9,
+    "leveraging_boundary_uuid": "3f1c9a52-7d4e-4b8a-9c21-5e6f7a8b9c0d",
+    "leveraged_boundary_uuid": "c2e8b1d4-5f6a-4e7b-8c9d-0a1b2c3d4e5f",
     "date_authorized": "2026-02-01",
     "description": "Inherited controls from the platform ATO",
     "inheritance_link_count": 37,
@@ -103,6 +105,13 @@ Any field not listed is **refused** with `422`, not discarded.
 
 `inheritance_links_populated` appears on `create` and `populate` only, and is
 `null` for scenarios 2 and 3.
+
+`leveraging_boundary_uuid` and `leveraged_boundary_uuid` (#1178) are the RFC 4122
+durable identifiers of the two boundaries, present on every representation (list
+rows and detail). Key on these, not on the integer ids, when joining across
+instances or into evidence. `leveraged_boundary_uuid` (like
+`leveraged_boundary_id`) is `null` for scenarios 2 and 3, where SPARC does not
+hold the leveraged system.
 
 #### Status Codes
 

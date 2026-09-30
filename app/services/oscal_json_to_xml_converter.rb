@@ -31,10 +31,15 @@ class OscalJsonToXmlConverter
   # write the XML cannot disagree with the ordering used to check it. See
   # scripts/generate_oscal_element_order.rb; drift is caught by
   # spec/lib/oscal_element_order_spec.rb.
-  ELEMENT_ORDER_PATH = Rails.root.join("lib/oscal_element_order.json").freeze
+  # One table per carried OSCAL release (owner, 2026-09-29): a document is
+  # written in the element order of the release it declares, resolved the same
+  # way validation resolves it (OscalSchema.xsd_version_for), so the order used
+  # to WRITE and the XSD used to CHECK are always the same release.
+  ELEMENT_ORDER_DIR = Rails.root.join("lib/oscal_element_order").freeze
 
-  def self.element_order
-    @element_order ||= JSON.parse(ELEMENT_ORDER_PATH.read).freeze
+  def self.element_order(version = OscalSchema::DEFAULT_VERSION)
+    @element_order ||= {}
+    @element_order[version] ||= JSON.parse(ELEMENT_ORDER_DIR.join("v#{version}.json").read).freeze
   end
 
   ROOT_ELEMENTS = {
@@ -75,7 +80,13 @@ class OscalJsonToXmlConverter
     @root_key = ROOT_ELEMENTS.fetch(@model_type) do
       raise ArgumentError, "Unknown OSCAL model type: #{model_type}. Available: #{ROOT_ELEMENTS.keys.join(', ')}"
     end
+    declared = @data.is_a?(Hash) ? @data.dig(@root_key, "metadata", "oscal-version") : nil
+    @oscal_version = OscalXsdRelease.for(declared)
   end
+
+  attr_reader :oscal_version
+
+  def element_order = self.class.element_order(@oscal_version)
 
   # Convert the data hash to an XML string.
   #
@@ -84,7 +95,7 @@ class OscalJsonToXmlConverter
     root_data = @data[@root_key]
     raise ArgumentError, "Missing root key '#{@root_key}' in data" unless root_data.is_a?(Hash)
 
-    root_type = self.class.element_order.dig("roots", @root_key)
+    root_type = element_order.dig("roots", @root_key)
     root_entry = type_entry(root_type)
 
     builder = Nokogiri::XML::Builder.new(encoding: "UTF-8") do |xml|
@@ -100,7 +111,7 @@ class OscalJsonToXmlConverter
   private
 
   def type_entry(name)
-    name && self.class.element_order.dig("types", name)
+    name && element_order.dig("types", name)
   end
 
   # Extract attribute-eligible key/value pairs from a hash.
@@ -178,7 +189,7 @@ class OscalJsonToXmlConverter
     # Last, OSCAL's own JSON-to-XML group names, for the cases where the two
     # differ outright: `remediations` is <response>, `related-risks` is
     # <associated-risk>. Only accepted when the parent really declares it.
-    aliased = order && Array(self.class.element_order.dig("json_aliases", key))
+    aliased = order && Array(element_order.dig("json_aliases", key))
                        .find { |candidate| order.include?(candidate) }
 
     aliased || mapped || key

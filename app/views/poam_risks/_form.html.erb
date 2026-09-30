@@ -29,11 +29,15 @@
   </div>
 
   <div class="row row-cols-1 row-cols-md-3 g-3 mt-1">
+    <%# #1154 — "Remediating" was missing, so a `remediating` risk (a valid
+        PoamRisk::STATUSES value) opened with a blank required select and the
+        browser silently refused to submit any edit to it. %>
     <div class="col">
       <%= f.label :status, class: "fw-semibold" do %>Status <span class="text-danger">*</span><% end %>
       <%= f.select :status,
             options_for_select([
               [ "Open", "open" ], [ "Investigating", "investigating" ],
+              [ "Remediating", "remediating" ],
               [ "Deviation Requested", "deviation-requested" ],
               [ "Deviation Approved", "deviation-approved" ],
               [ "Closed", "closed" ]
@@ -64,6 +68,35 @@
       item with no time commitment is not a plan of action, and it cannot be
       converted to HDF amendments.
     </div>
+  </div>
+
+  <%# #1154 — the authorizing official's decision on this risk. Exported as the
+      SPARC-namespace props blocks-ato, condition-expires and trigger. All three
+      are optional: an undecided risk is left blank, never defaulted to "No". %>
+  <div class="row row-cols-1 row-cols-md-3 g-3 mt-1">
+    <div class="col">
+      <%= f.label :blocks_ato, "Blocks the ATO?", class: "fw-semibold" %>
+      <%= f.select :blocks_ato,
+            options_for_select([
+              [ "Yes — blocks the ATO", "true" ],
+              [ "No — does not block the ATO", "false" ]
+            ], poam_risk.blocks_ato.nil? ? nil : poam_risk.blocks_ato.to_s),
+            { include_blank: "— Not decided —" }, class: "form-control" %>
+    </div>
+    <div class="col">
+      <%= f.label :condition_expires, "Condition expires", class: "fw-semibold" %>
+      <%= f.date_field :condition_expires, class: "form-control" %>
+    </div>
+    <div class="col">
+      <%= f.label :reopen_trigger, "Reopen trigger", class: "fw-semibold" %>
+      <%= f.text_field :reopen_trigger, class: "form-control",
+                       placeholder: "e.g., score<0.85 or blockers>=1" %>
+    </div>
+  </div>
+  <div class="form-text">
+    If the authorization was granted with a condition on this risk: when that
+    condition lapses, and the measure that reopens the decision —
+    <code>score</code> or <code>blockers</code>, a comparison, and a number.
   </div>
 
   <div class="form-group mt-3">

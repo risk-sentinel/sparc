@@ -21,6 +21,10 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
   SCOPE_PROFILES_WRITE = "profiles.write".freeze
   SCOPE_AB_READ  = "authorization_boundaries.read".freeze
   SCOPE_AB_WRITE = "authorization_boundaries.write".freeze
+  SCOPE_POAM_READ  = "poam.read".freeze
+  SCOPE_POAM_WRITE = "poam.write".freeze
+  SCOPE_MAPPINGS_READ  = "mappings.read".freeze
+  SCOPE_MAPPINGS_WRITE = "mappings.write".freeze
 
   # GET /api/v1/available
   def available
@@ -139,10 +143,13 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
     # --- POA&M Documents ---
     { path: "/api/v1/poam_documents", methods: %w[GET POST],
       description: "Plans of Action and Milestones",
-      permission_read: "poam.read", permission_write: "poam.write", admin_only: false },
+      permission_read: SCOPE_POAM_READ, permission_write: SCOPE_POAM_WRITE, admin_only: false },
     { path: "/api/v1/poam_documents/:slug", methods: %w[GET PUT DELETE],
       description: "Single POA&M document",
-      permission_read: "poam.read", permission_write: "poam.write", admin_only: false },
+      permission_read: SCOPE_POAM_READ, permission_write: SCOPE_POAM_WRITE, admin_only: false },
+    { path: "/api/v1/poam_documents/:slug/export", methods: %w[GET],
+      description: "Export a POA&M: fields JSON (default) or OSCAL (format=oscal|oscal-yaml|oscal-xml); ETag/304",
+      permission_read: SCOPE_POAM_READ, permission_write: nil, admin_only: false },
 
     # --- Control Catalogs ---
     { path: "/api/v1/control_catalogs", methods: %w[GET POST],
@@ -177,12 +184,21 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
       permission_read: "cdef.read", permission_write: "cdef.write", admin_only: false },
 
     # --- Control Mappings ---
+    # Writes need admin OR mappings.write (Api::V1::ControlMappingsController);
+    # `admin_only: true` hid these rows from mappings.write holders, which was
+    # wrong (#1154 part 2). Reads are open to any authenticated caller, but —
+    # like /guides and /federation/identity — permission-free reference data is
+    # advertised only to callers holding the read scope, so a no-permission
+    # caller's view stays least-privilege.
     { path: "/api/v1/control_mappings", methods: %w[GET POST],
       description: "Cross-framework control mappings",
-      permission_read: "mappings.read", permission_write: "mappings.write", admin_only: true },
+      permission_read: SCOPE_MAPPINGS_READ, permission_write: SCOPE_MAPPINGS_WRITE, admin_only: false },
     { path: "/api/v1/control_mappings/:id", methods: %w[GET PUT DELETE],
       description: "Single control mapping",
-      permission_read: "mappings.read", permission_write: "mappings.write", admin_only: true },
+      permission_read: SCOPE_MAPPINGS_READ, permission_write: SCOPE_MAPPINGS_WRITE, admin_only: false },
+    { path: "/api/v1/control_mappings/:id/export", methods: %w[GET],
+      description: "Export a control mapping as OSCAL mapping-collection (format=oscal|oscal-yaml); ETag/304",
+      permission_read: SCOPE_MAPPINGS_READ, permission_write: nil, admin_only: false },
 
     # --- KSI Catalog ---
     { path: "/api/v1/ksi_catalog/themes", methods: %w[GET],
@@ -221,6 +237,9 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
       permission_read: SCOPE_AB_READ, permission_write: nil, admin_only: false },
     { path: "/api/v1/authorization_boundaries/:id/ksi_validations/export", methods: %w[GET],
       description: "Export KSI compliance report (JSON, YAML, XML)",
+      permission_read: SCOPE_AB_READ, permission_write: nil, admin_only: false },
+    { path: "/api/v1/authorization_boundaries/:id/hdf_system", methods: %w[GET],
+      description: "The boundary as an HDF hdf-system document (v3.7.0); also requires ssp.read",
       permission_read: SCOPE_AB_READ, permission_write: nil, admin_only: false },
 
     # --- Users ---

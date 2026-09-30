@@ -2,7 +2,7 @@
 
 # SAR (Security Assessment Results) -- OSCAL Data Mapping
 
-OSCAL version: `OscalSchema::DEFAULT_VERSION` (currently **1.2.2**) | OSCAL root element: `assessment-results`
+OSCAL version: `OscalSchema::DEFAULT_VERSION` (currently **1.2.3**) | OSCAL root element: `assessment-results`
 
 Export service: `OscalSarExportService`
 
@@ -171,6 +171,7 @@ Additional local-definitions content (activities, assessment-assets, etc.) is pr
 | `SarRisk#risk_log_data` | `results[].risks[].risk-log` | No | JSON object |
 | (join: SarRiskObservation) | `results[].risks[].related-observations[].observation-uuid` | No | References SarObservation#uuid |
 | `SarRisk#props_data` | `results[].risks[].props` | No | JSON array |
+| `SarRisk#blocks_ato` | `results[].risks[].props[name=blocks-ato]` | No | #1154 — ns `https://sparc.risk-sentinel.org/ns`; `true`/`false`, omitted when nil. `condition-expires` / `trigger` are not SAR columns and pass through `props_data` as issued |
 | `SarRisk#links_data` | `results[].risks[].links` | No | JSON array |
 | `SarRisk#remarks` | `results[].risks[].remarks` | No | |
 

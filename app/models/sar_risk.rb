@@ -1,5 +1,7 @@
 class SarRisk < ApplicationRecord
   include RiskRating
+  # #1154 — AO-decision fields (blocks-ato only; see the migration), validated before type cast.
+  include AtoDecisionFields
 
   belongs_to :sar_result
 

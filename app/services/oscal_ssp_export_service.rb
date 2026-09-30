@@ -52,6 +52,10 @@ class OscalSspExportService
                                   control_ids: @document.ssp_controls.pluck(:control_id))
     data = build_ssp
     OscalSchemaValidationService.validate!(:ssp, data, version: effective_oscal_version)
+    # #1154 — what JSON Schema cannot see: SPARC-namespace prop values and
+    # placement, against the contract sparc-horizon validates them with.
+    SparcNamespacePropsRule.validate!(:ssp, data,
+                                      required_metadata: SparcNamespaceProps.required_ssp_metadata(@document))
     JSON.pretty_generate(data)
   end
 
@@ -112,7 +116,16 @@ class OscalSspExportService
 
   # ── Metadata ───────────────────────────────────────────────────────
 
+  # #1154 — plus the SPARC-namespace props Horizon reads: node-type,
+  # parent-uuid, fips-199 and next-decision-date on metadata, node-type on the
+  # organization party. See SparcNamespaceProps.
   def build_metadata
+    metadata = build_base_metadata
+    SparcNamespaceProps.apply_ssp_metadata!(metadata, @document)
+    SparcNamespaceProps.tag_organization_party!(metadata, OscalUuidService.org_party_uuid_for(@document))
+  end
+
+  def build_base_metadata
     @document.build_oscal_metadata(
       default_version: @document.ssp_version || "1.0.0",
       # #1116 — NIST's CANONICAL ids, not invented ones. The ISSO is

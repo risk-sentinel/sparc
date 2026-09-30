@@ -5,8 +5,15 @@ require "stringio"
 
 # #447 — translation OUT. Database-backed port of
 # bin/sparc_findings_to_hdf_amendments.rb: emit an HDF Amendments document
-# (schema v3.4.0) from the FindingDispositions for a boundary, for the tenant's CI
-# to `hdf amend apply` against their own scan results.
+# (schema v3.7.0 — HdfRunner::PINNED_VERSION) from the FindingDispositions for a
+# boundary, for the tenant's CI to `hdf amend apply` against their own scan
+# results.
+#
+# #1179 — the document is BOUND to its system: `systemRef` is the URL of the
+# boundary's hdf-system document (HdfSystemExportService.system_ref), and
+# `labels.system_id` is the boundary uuid, the same value that document carries
+# as systemId/identifier. It was the slug, which is regenerated on rename and
+# so cannot be a join key.
 #
 # HYBRID (design D5): SPARC hand-emits the JSON — deterministic (stable ordering +
 # a content-seeded amendmentId so re-export is byte-identical and cache-pinnable) —
@@ -19,7 +26,7 @@ require "stringio"
 # naturally drops from the amendment, which is exactly what a translation layer
 # should do.
 #
-# Our FindingDisposition.kind values ARE the v3.4.0 override type names, so a kind
+# Our FindingDisposition.kind values ARE the v3.7.0 override type names, so a kind
 # maps straight to `override.type`.
 #
 # NIST 800-53: CA-7 (continuous monitoring), SI-2 (flaw remediation),
@@ -75,7 +82,8 @@ class HdfAmendmentExportService
                        "`hdf amend apply --results <scan.hdf.json> --amendments <this>`.",
       "version"     => "1",
       "generator"   => GENERATOR,
-      "labels"      => { "system_id" => (@boundary.slug.presence || @boundary.uuid) },
+      "systemRef"   => HdfSystemExportService.system_ref(@boundary),
+      "labels"      => { "system_id" => @boundary.uuid },
       "overrides"   => overrides
     }
     # #1037 — wrapped in StringIO, NOT passed as a bare String. `HdfRunner`

@@ -112,6 +112,9 @@ class Api::V1::SarRisksController < Api::V1::BaseController
     permit_strictly(:sar_risk,
       :uuid, :title, :description, :statement, :status,
       :deadline, :likelihood, :impact, :remarks,
+      # #1154 — whether this risk blocks the ATO (nil = not decided). The
+      # decision CONDITIONS (condition_expires, reopen_trigger) are POA&M data.
+      :blocks_ato,
       **risk_collection_filters,
       remediations_data: RiskCollectionParams::REMEDIATIONS
     )
@@ -126,6 +129,7 @@ class Api::V1::SarRisksController < Api::V1::BaseController
       deadline: risk.deadline&.utc&.iso8601,
       likelihood: risk.likelihood,
       impact: risk.impact,
+      blocks_ato: risk.blocks_ato, # #1154
       sar_result_id: risk.sar_result_id
     }
 

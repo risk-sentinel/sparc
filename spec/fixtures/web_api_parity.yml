@@ -1,0 +1,953 @@
+# Web <-> API parity register — enforced by spec/requests/web_api_parity_spec.rb.
+#
+# Every NON-API route (not under /api/) is accounted for here, per controller, as:
+#
+#   mapped:   { action: ["VERB /api/v1/..."] }   the Api::V1 route(s) that perform the
+#             same function. The spec fails if a named API route does not exist. A
+#             `?query` suffix documents the variant; existence is checked on the path.
+#   ui_only:  [{ reason:, actions: [...] }]      browser-only mechanisms with no separate
+#             user-facing function (form pages, pickers, sign-in flows...).
+#   gap:      { action: { reason:, would_be:, partial:, issue: } }
+#             a user-facing function with NO (or only a partial) API equivalent. `would_be`
+#             is the API route it needs; when that route appears the spec fails and tells
+#             you to promote the entry to `mapped`. A `?query` would_be on an existing path
+#             is probed against the API. `partial: true` means the route EXISTS but falls
+#             short (unpermitted fields, skipped side effects): never auto-promoted, only
+#             checked to still name a real route. The gap list is REVIEWED, not a waiver.
+#
+# An action reachable by several web paths that classify differently is keyed per path:
+# `action@VERB /path` (the path exactly as `bin/rails routes` prints it, minus (.:format)).
+#
+# `ignored` lists framework-owned routes that are not SPARC functions at all.
+ignored:
+  controllers:
+    - prefix: "rails/"
+      reason: "Rails framework routes (Action Mailbox conductor, info); not SPARC functions"
+    - prefix: "active_storage/"
+      reason: "Active Storage blob/representation plumbing behind uploaded files"
+    - prefix: "action_mailbox/"
+      reason: "Action Mailbox ingress endpoints; not SPARC functions"
+    - prefix: "turbo/native/navigation"
+      reason: "turbo-rails native-app navigation helpers"
+  paths:
+    - path: "/cable"
+      reason: "Action Cable websocket mount (Turbo Streams transport)"
+    - path: "/help/trust-store"
+      reason: "redirect to a help page; not a function"
+
+controllers:
+  # ==== SSP / SAP / SAR / POA&M documents and POA&M sub-resources
+  ssp_documents:
+    mapped:
+      index: ["GET /api/v1/ssp_documents"]
+      show: ["GET /api/v1/ssp_documents/:id", "GET /api/v1/ssp_documents/:id/export", "GET /api/v1/ssp_documents/:ssp_document_id/statements", "GET /api/v1/ssp_documents/:ssp_document_id/components"]
+      destroy: ["DELETE /api/v1/ssp_documents/:id"]
+      update: ["PUT /api/v1/ssp_documents/:id/update_fields"]
+      download_json: ["GET /api/v1/ssp_documents/:id/export"]
+      attach_boundary: ["PATCH /api/v1/ssp_documents/:id"]
+      set_baseline: ["PATCH /api/v1/ssp_documents/:id"]
+      populate_from_profile: ["POST /api/v1/ssp_documents/:id/populate_from_profile"]
+      create_from_profile: ["POST /api/v1/ssp_documents", "POST /api/v1/ssp_documents/:id/populate_from_profile"]
+      declare_role: ["POST /api/v1/ssp_documents/:ssp_document_id/roles"]
+      import_back_matter: ["GET /api/v1/back_matter_resources/:id", "POST /api/v1/back_matter_resources"]
+      create_control_resource: ["POST /api/v1/back_matter_resources", "POST /api/v1/back_matter_resources/:id/link"]
+      link_control_resource: ["POST /api/v1/back_matter_resources/:id/link"]
+      unlink_control_resource: ["DELETE /api/v1/back_matter_resources/:id/unlink"]
+      validate_oscal_export: ["GET /api/v1/ssp_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal: ["GET /api/v1/ssp_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_validated: ["GET /api/v1/ssp_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_unvalidated: ["GET /api/v1/ssp_documents/:id/export?format=oscal&validate=false"]  # #1181 / #1154 part 2 — promoted from gap
+      download_xml: ["GET /api/v1/ssp_documents/:id/export?format=oscal-xml"]  # #1181 / #1154 part 2 — promoted from gap
+      download_yaml: ["GET /api/v1/ssp_documents/:id/export?format=oscal-yaml"]  # #1181 / #1154 part 2 — promoted from gap
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, enrich]
+      - reason: "dead route: edit action has no template (views/ssp_documents/edit.html.erb absent)"
+        actions: [edit]
+      - reason: "pickers/wizard steps that only render choices (published profiles, CDEFs)"
+        actions: [select_profile, wizard, attach_profile]
+      - reason: "dead route: no import_json action or template exists in the controller"
+        actions: [import_json]
+    gap:
+      create:
+        reason: "browser upload ingests OSCAL JSON/XML/YAML SSPs; API has only a legacy convert and metadata-only create"
+        would_be: "POST /api/v1/ssp_documents/import"
+      create_from_wizard:
+        reason: "wizard builds SSP with selected CDEF components, CDEF auto-fill and boundary description; API create+populate cannot attach CDEFs"
+        would_be: "POST /api/v1/ssp_documents/generate"
+      status:
+        reason: "conversion error_message of a failed import is not exposed by API show"
+        would_be: "GET /api/v1/ssp_documents/:id"
+        partial: true
+      update_metadata:
+        reason: "OSCAL metadata (parties, responsible-parties, revisions, locations, props, links, remarks) and oscal_version are not writable via API"
+        would_be: "PATCH /api/v1/ssp_documents/:id"
+        partial: true
+      update_enrich:
+        reason: "system_id, system_name_short, date_authorized, boundary/network/data-flow descriptions, information types and system users are not writable via API"
+        would_be: "PATCH /api/v1/ssp_documents/:id"
+        partial: true
+      update_statement:
+        reason: "API statement update does not mark an inherited statement overridden, so the next CDEF refresh reverts the edit"
+        would_be: "PATCH /api/v1/ssp_control_statements/:id"
+        partial: true
+      refresh_inherited_statements:
+        reason: "bulk resync of inherited prose from linked CDEFs is browser-only"
+        would_be: "POST /api/v1/ssp_documents/:id/refresh_inherited_statements"
+      reset_inherited_statement:
+        reason: "dropping a statement override and resyncing to source is browser-only"
+        would_be: "POST /api/v1/ssp_control_statements/:id/reset_to_source"
+      import_boundary_users:
+        reason: "SSP system users have no API; importing boundary members as users is browser-only"
+        would_be: "POST /api/v1/ssp_documents/:id/import_boundary_users"
+      import_cdef_components:
+        reason: "API component create cannot set cdef_document_id, so a CDEF-linked component cannot be created"
+        would_be: "POST /api/v1/ssp_documents/:id/import_cdef_components"
+      publish:
+        reason: "API PATCH lifecycle_status bypasses publication validation, approval gate, version bump and published timestamp"
+        would_be: "POST /api/v1/ssp_documents/:id/publish"
+      publish_check:
+        reason: "publication readiness report is browser-only"
+        would_be: "GET /api/v1/ssp_documents/:id/publish_check"
+
+  sar_documents:
+    mapped:
+      index: ["GET /api/v1/sar_documents"]
+      show: ["GET /api/v1/sar_documents/:id", "GET /api/v1/sar_documents/:id/export"]
+      destroy: ["DELETE /api/v1/sar_documents/:id"]
+      update: ["PUT /api/v1/sar_documents/:id/update_fields", "POST /api/v1/sar_documents/:id/fields/import/confirm"]
+      download_json: ["GET /api/v1/sar_documents/:id/export"]
+      attach_boundary: ["PATCH /api/v1/sar_documents/:id"]
+      set_baseline: ["PATCH /api/v1/sar_documents/:id"]
+      validate_oscal_export: ["GET /api/v1/sar_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal: ["GET /api/v1/sar_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_validated: ["GET /api/v1/sar_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_unvalidated: ["GET /api/v1/sar_documents/:id/export?format=oscal&validate=false"]  # #1181 / #1154 part 2 — promoted from gap
+      download_xml: ["GET /api/v1/sar_documents/:id/export?format=oscal-xml"]  # #1181 / #1154 part 2 — promoted from gap
+      download_yaml: ["GET /api/v1/sar_documents/:id/export?format=oscal-yaml"]  # #1181 / #1154 part 2 — promoted from gap
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, enrich, edit_control]
+      - reason: "pickers/wizard steps that only render choices (SAPs, profiles, SSPs)"
+        actions: [wizard, select_profile, select_ssp]
+      - reason: "dead route: no editor action or template exists in the controller"
+        actions: [editor]
+      - reason: "dead route: no edit action or template exists in the controller"
+        actions: [edit]
+      - reason: "dead route: no import_json action or template exists in the controller"
+        actions: [import_json]
+      - reason: "legacy download, not maintained; no API counterpart"
+        actions: [download_excel]
+    gap:
+      create:
+        reason: "browser upload ingests OSCAL JSON/XML/YAML SARs; API has no OSCAL import"
+        would_be: "POST /api/v1/sar_documents/import"
+      create_from_wizard:
+        reason: "generating a populated SAR from a SAP is browser-only"
+        would_be: "POST /api/v1/sar_documents/generate"
+      create_from_profile:
+        reason: "generating a populated SAR from a published profile is browser-only"
+        would_be: "POST /api/v1/sar_documents/generate"
+      create_from_ssp:
+        reason: "generating a populated SAR from an SSP is browser-only"
+        would_be: "POST /api/v1/sar_documents/generate"
+      status:
+        reason: "conversion error_message of a failed import is not exposed by API show"
+        would_be: "GET /api/v1/sar_documents/:id"
+        partial: true
+      update_metadata:
+        reason: "OSCAL metadata (parties, responsible-parties, revisions, locations, props, links, remarks), sar_version and oscal_version are not writable via API"
+        would_be: "PATCH /api/v1/sar_documents/:id"
+        partial: true
+      update_enrich:
+        reason: "SAR results, observations and findings (and import_ap_href/assessment dates) have no API; only risks do"
+        would_be: "POST /api/v1/sar_documents/:sar_document_id/results"
+      associate_source:
+        reason: "API PATCH sets source ids but does not backfill objectives or copy back-matter from the linked sources"
+        would_be: "PATCH /api/v1/sar_documents/:id/associate_source"
+      update_objective:
+        reason: "per-objective assessment status/assessor/notes are not writable via API"
+        would_be: "PATCH /api/v1/sar_documents/:sar_document_id/objectives/:id"
+      publish:
+        reason: "API PATCH lifecycle_status bypasses publication validation, approval gate, version bump and published timestamp"
+        would_be: "POST /api/v1/sar_documents/:id/publish"
+      publish_check:
+        reason: "publication readiness report is browser-only"
+        would_be: "GET /api/v1/sar_documents/:id/publish_check"
+
+  sap_documents:
+    mapped:
+      index: ["GET /api/v1/sap_documents"]
+      show: ["GET /api/v1/sap_documents/:id", "GET /api/v1/sap_documents/:id/export"]
+      create: ["POST /api/v1/sap_documents/import", "POST /api/v1/sap_documents/generate"]
+      destroy: ["DELETE /api/v1/sap_documents/:id"]
+      download_json: ["GET /api/v1/sap_documents/:id/export"]
+      attach_boundary: ["PATCH /api/v1/sap_documents/:id"]
+      set_baseline: ["PATCH /api/v1/sap_documents/:id"]
+      validate_oscal_export: ["GET /api/v1/sap_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal: ["GET /api/v1/sap_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_validated: ["GET /api/v1/sap_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_unvalidated: ["GET /api/v1/sap_documents/:id/export?format=oscal&validate=false"]  # #1181 / #1154 part 2 — promoted from gap
+      download_xml: ["GET /api/v1/sap_documents/:id/export?format=oscal-xml"]  # #1181 / #1154 part 2 — promoted from gap
+      download_yaml: ["GET /api/v1/sap_documents/:id/export?format=oscal-yaml"]  # #1181 / #1154 part 2 — promoted from gap
+    ui_only:
+      - reason: "HTML form page; the API takes the same fields as a JSON body"
+        actions: [new]
+      - reason: "dead route: edit action has no template (views/sap_documents/edit.html.erb absent)"
+        actions: [edit]
+      - reason: "dead route: no import_json action or template exists in the controller"
+        actions: [import_json]
+    gap:
+      update:
+        reason: "per-control assessment_method/assessment_status/assessor_name/objective/test_case are sap_controls columns; API field import writes only control fields"
+        would_be: "PATCH /api/v1/sap_documents/:sap_document_id/controls/:id"
+      status:
+        reason: "conversion error_message of a failed import is not exposed by API show"
+        would_be: "GET /api/v1/sap_documents/:id"
+        partial: true
+      update_metadata:
+        reason: "OSCAL metadata (parties, responsible-parties, revisions, locations, props, links, remarks) and oscal_version are not writable via API"
+        would_be: "PATCH /api/v1/sap_documents/:id"
+        partial: true
+      associate_source:
+        reason: "API PATCH sets source ids but does not rebuild controls/objectives or copy back-matter from the linked profile/SSP"
+        would_be: "PATCH /api/v1/sap_documents/:id/associate_source"
+      update_objective:
+        reason: "per-objective status/assessor/notes are not writable via API"
+        would_be: "PATCH /api/v1/sap_documents/:sap_document_id/objectives/:id"
+      publish:
+        reason: "API PATCH lifecycle_status bypasses publication validation, approval gate, version bump and published timestamp"
+        would_be: "POST /api/v1/sap_documents/:id/publish"
+      publish_check:
+        reason: "publication readiness report is browser-only"
+        would_be: "GET /api/v1/sap_documents/:id/publish_check"
+
+  poam_documents:
+    mapped:
+      index: ["GET /api/v1/poam_documents"]
+      show: ["GET /api/v1/poam_documents/:id", "GET /api/v1/poam_documents/:poam_document_id/items", "GET /api/v1/poam_documents/:poam_document_id/risks", "GET /api/v1/poam_documents/:poam_document_id/observations", "GET /api/v1/poam_documents/:poam_document_id/findings"]
+      create: ["POST /api/v1/poam_documents", "POST /api/v1/poam_documents/import"]
+      update: ["PATCH /api/v1/poam_documents/:poam_document_id/items/:id"]
+      destroy: ["DELETE /api/v1/poam_documents/:id"]
+      attach_boundary: ["PATCH /api/v1/poam_documents/:id"]
+      set_baseline: ["PATCH /api/v1/poam_documents/:id"]
+      validate_oscal_export: ["GET /api/v1/poam_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal: ["GET /api/v1/poam_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_validated: ["GET /api/v1/poam_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
+      download_oscal_unvalidated: ["GET /api/v1/poam_documents/:id/export?format=oscal&validate=false"]  # #1181 / #1154 part 2 — promoted from gap
+      download_xml: ["GET /api/v1/poam_documents/:id/export?format=oscal-xml"]  # #1181 / #1154 part 2 — promoted from gap
+      download_yaml: ["GET /api/v1/poam_documents/:id/export?format=oscal-yaml"]  # #1181 / #1154 part 2 — promoted from gap
+      download_json: ["GET /api/v1/poam_documents/:id/export"]  # #1181 / #1154 part 2 — promoted from gap
+    ui_only:
+      - reason: "HTML form page; the API takes the same fields as a JSON body"
+        actions: [new]
+      - reason: "dead route: no edit action or template exists in the controller"
+        actions: [edit]
+    gap:
+      status:
+        reason: "conversion error_message of a failed import is not exposed by API show"
+        would_be: "GET /api/v1/poam_documents/:id"
+        partial: true
+      update_metadata:
+        reason: "OSCAL metadata (parties, responsible-parties, revisions, locations, props, links, remarks) and oscal_version are not writable via API"
+        would_be: "PATCH /api/v1/poam_documents/:id"
+        partial: true
+      publish:
+        reason: "API PATCH lifecycle_status bypasses publication validation, approval gate, version bump and published timestamp"
+        would_be: "POST /api/v1/poam_documents/:id/publish"
+      publish_check:
+        reason: "publication readiness report is browser-only"
+        would_be: "GET /api/v1/poam_documents/:id/publish_check"
+
+  poam_findings:
+    mapped:
+      create: ["POST /api/v1/poam_documents/:poam_document_id/findings"]
+      update: ["PATCH /api/v1/poam_documents/:poam_document_id/findings/:id"]
+      destroy: ["DELETE /api/v1/poam_documents/:poam_document_id/findings/:id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+
+  poam_items:
+    mapped:
+      destroy: ["DELETE /api/v1/poam_documents/:poam_document_id/items/:id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+    gap:
+      create:
+        reason: "linking an item to risks/observations/findings (poam_risk_ids etc.) is not writable via API"
+        would_be: "POST /api/v1/poam_documents/:poam_document_id/items"
+        partial: true
+      update:
+        reason: "re-linking an item to risks/observations/findings (poam_risk_ids etc.) is not writable via API"
+        would_be: "PATCH /api/v1/poam_documents/:poam_document_id/items/:id"
+        partial: true
+
+  poam_local_components:
+    mapped:
+      create: ["POST /api/v1/poam_documents/:poam_document_id/local_components"]
+      update: ["PATCH /api/v1/poam_documents/:poam_document_id/local_components/:id"]
+      destroy: ["DELETE /api/v1/poam_documents/:poam_document_id/local_components/:id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+
+  poam_milestones:
+    mapped:
+      create: ["POST /api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones"]
+      update: ["PATCH /api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones/:id"]
+      destroy: ["DELETE /api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones/:id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+
+  poam_observations:
+    mapped:
+      create: ["POST /api/v1/poam_documents/:poam_document_id/observations"]
+      update: ["PATCH /api/v1/poam_documents/:poam_document_id/observations/:id"]
+      destroy: ["DELETE /api/v1/poam_documents/:poam_document_id/observations/:id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+
+  poam_remediations:
+    mapped:
+      create: ["POST /api/v1/poam_documents/:poam_document_id/remediations"]
+      update: ["PATCH /api/v1/poam_documents/:poam_document_id/remediations/:id"]
+      destroy: ["DELETE /api/v1/poam_documents/:poam_document_id/remediations/:id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+
+  poam_risks:
+    mapped:
+      create: ["POST /api/v1/poam_documents/:poam_document_id/risks"]
+      update: ["PATCH /api/v1/poam_risks/:id"]
+      destroy: ["DELETE /api/v1/poam_risks/:id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+
+  leveraged_poam_documents:
+    gap:
+      index:
+        reason: "POA&Ms of leveraged boundaries visible to leveraging-boundary users; API poam index is scoped to the caller's own boundaries"
+        would_be: "GET /api/v1/leveraged_poam_documents"
+      show:
+        reason: "read-only view of a leveraged boundary's POA&M (items, risks, observations, findings) for a leveraging user has no API"
+        would_be: "GET /api/v1/leveraged_poam_documents/:id"
+  # ==== CDEFs, profiles, catalogs, control mappings, converters
+  cdef_documents:
+    mapped:
+      index: ["GET /api/v1/cdef_documents"]
+      show: ["GET /api/v1/cdef_documents/:id"]
+      create: ["POST /api/v1/cdef_documents", "POST /api/v1/cdef_documents/import"]
+      update: ["PATCH /api/v1/cdef_documents/:id"]
+      destroy: ["DELETE /api/v1/cdef_documents/:id"]
+      bulk_destroy: ["DELETE /api/v1/cdef_documents/bulk"]
+      update_scope: ["PATCH /api/v1/cdef_documents/:id/scope"]
+      create_from_profile: ["POST /api/v1/cdef_documents", "POST /api/v1/cdef_documents/:id/source_from_profile"]
+      source_from_profile: ["POST /api/v1/cdef_documents/:id/source_from_profile"]
+      submit_for_review: ["POST /api/v1/cdef_documents/:id/submit_for_review"]
+      approve: ["POST /api/v1/cdef_documents/:id/approve"]
+      reject: ["POST /api/v1/cdef_documents/:id/reject"]
+      bulk_apply_preview: ["POST /api/v1/cdef_documents/:id/bulk_apply_converter/preview"]
+      bulk_apply_confirm: ["POST /api/v1/cdef_documents/:id/bulk_apply_converter/confirm"]
+      update_field: ["POST /api/v1/cdef_documents/:id/fields/import/preview", "POST /api/v1/cdef_documents/:id/fields/import/confirm"]
+      create_control_resource: ["POST /api/v1/back_matter_resources", "POST /api/v1/back_matter_resources/:id/link"]
+      link_control_resource: ["POST /api/v1/back_matter_resources/:id/link"]
+      unlink_control_resource: ["DELETE /api/v1/back_matter_resources/:id/unlink"]
+      download_json: ["GET /api/v1/cdef_documents/:id/export"]
+      download_oscal: ["GET /api/v1/cdef_documents/:id/export?format=oscal"]
+      download_oscal_validated: ["GET /api/v1/cdef_documents/:id/export?format=oscal"]
+      download_oscal_unvalidated: ["GET /api/v1/cdef_documents/:id/export?format=oscal&validate=false"]
+      download_xml: ["GET /api/v1/cdef_documents/:id/export?format=oscal-xml"]
+      download_yaml: ["GET /api/v1/cdef_documents/:id/export?format=oscal-yaml"]
+      validate_oscal_export: ["GET /api/v1/cdef_documents/:id/export?format=oscal"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+      - reason: "pickers that only render the published-profile list (API reads it from GET /api/v1/profile_documents)"
+        actions: [select_profile, select_profile_source]
+      - reason: "bulk-apply wizard step that only renders the converter picker"
+        actions: [bulk_apply]
+      - reason: "JSON polling endpoint for the processing page; API show carries status"
+        actions: [status]
+    gap:
+      set_baseline:
+        reason: "declaring profile_document_id (the #911 baseline) on a CDEF with controls; API update does not permit profile_document_id and source_from_profile refuses a CDEF that has controls"
+        would_be: "PATCH /api/v1/cdef_documents/:id"
+        partial: true
+      update_metadata:
+        reason: "OSCAL metadata extras (roles, parties, responsible-parties, props, links...) via metadata_extra_json are not writable over the API"
+        would_be: "PATCH /api/v1/cdef_documents/:id"
+        partial: true
+      update_statement:
+        reason: "editing a CDEF control statement (implementation_prose, remarks, set_parameters_data) has no API"
+        would_be: "PATCH /api/v1/cdef_control_statements/:id"
+      copy:
+        reason: "duplicating a CDEF (incl. cloning a read-only AWS Labs CDEF) is browser-only"
+        would_be: "POST /api/v1/cdef_documents/:id/copy"
+      publish:
+        reason: "publication (validation, version bump, published_at, approval gate) is browser-only; PATCH lifecycle_status only sets the string"
+        would_be: "POST /api/v1/cdef_documents/:id/publish"
+      publish_check:
+        reason: "publication-readiness report is browser-only"
+        would_be: "GET /api/v1/cdef_documents/:id/publish_check"
+      refresh_aws_labs:
+        reason: "queueing an AWS Labs CDEF refresh is browser-only"
+        would_be: "POST /api/v1/cdef_documents/refresh_aws_labs"
+
+  profile_documents:
+    mapped:
+      index: ["GET /api/v1/profile_documents"]
+      show: ["GET /api/v1/profile_documents/:id", "GET /api/v1/profile_documents/:profile_document_id/parameters"]
+      create: ["POST /api/v1/profile_documents/import", "POST /api/v1/profile_documents"]
+      destroy: ["DELETE /api/v1/profile_documents/:id"]
+      set_baseline: ["PATCH /api/v1/profile_documents/:id"]
+      create_from_catalog: ["POST /api/v1/profile_documents", "PUT /api/v1/profile_documents/:id/controls"]
+      update_controls: ["PUT /api/v1/profile_documents/:id/controls"]
+      submit_for_review: ["POST /api/v1/profile_documents/:id/submit_for_review"]
+      approve: ["POST /api/v1/profile_documents/:id/approve"]
+      reject: ["POST /api/v1/profile_documents/:id/reject"]
+    ui_only:
+      - reason: "HTML form page; the API takes the same fields as a JSON body"
+        actions: [new]
+      - reason: "pickers that only render catalog / published-profile choices"
+        actions: [select_catalog, select_profile]
+      - reason: "control-picker page for update_controls (the API reads choices from the catalog controls endpoint)"
+        actions: [manage_controls]
+      - reason: "JSON polling endpoint for the processing page; API show carries status"
+        actions: [status]
+      - reason: "dead routes: `resources :profile_documents` generates them but the controller defines no edit/update action and there is no edit template"
+        actions: [edit, update]
+    gap:
+      update_metadata:
+        reason: "`published` date and OSCAL metadata extras (metadata_extra_json) are not writable over the API"
+        would_be: "PATCH /api/v1/profile_documents/:id"
+        partial: true
+      copy:
+        reason: "duplicating a profile is browser-only"
+        would_be: "POST /api/v1/profile_documents/:id/copy"
+      create_from_profile:
+        reason: "tailoring a new profile from a published one (duplicate controls/params, set source_profile_id) is browser-only"
+        would_be: "POST /api/v1/profile_documents/create_from_profile"
+      publish:
+        reason: "publication (priority gate, resolved-catalog generation, version bump) is browser-only"
+        would_be: "POST /api/v1/profile_documents/:id/publish"
+      publish_check:
+        reason: "publication-readiness report (incl. prioritization and parameter checks) is browser-only"
+        would_be: "GET /api/v1/profile_documents/:id/publish_check"
+      download_resolved_catalog:
+        reason: "the resolved-profile catalog JSON is not exposed by the API"
+        would_be: "GET /api/v1/profile_documents/:id/resolved_catalog"
+      download_json:
+        reason: "SPARC JSON export of a profile is browser-only"
+        would_be: "GET /api/v1/profile_documents/:id/export"
+      download_oscal:
+        reason: "OSCAL profile JSON download is browser-only"
+        would_be: "GET /api/v1/profile_documents/:id/export?format=oscal"
+      download_oscal_validated:
+        reason: "validated OSCAL profile JSON download is browser-only"
+        would_be: "GET /api/v1/profile_documents/:id/export?format=oscal"
+      download_oscal_unvalidated:
+        reason: "unvalidated OSCAL profile JSON download is browser-only"
+        would_be: "GET /api/v1/profile_documents/:id/export?format=oscal&validate=false"
+      download_xml:
+        reason: "OSCAL profile XML download is browser-only"
+        would_be: "GET /api/v1/profile_documents/:id/export?format=oscal-xml"
+      download_yaml:
+        reason: "OSCAL profile YAML download is browser-only"
+        would_be: "GET /api/v1/profile_documents/:id/export?format=oscal-yaml"
+      validate_oscal_export:
+        reason: "OSCAL schema-validation verdict for a profile is browser-only"
+        would_be: "GET /api/v1/profile_documents/:id/export?format=oscal"
+
+  profile_controls:
+    mapped:
+      update_parameters: ["PATCH /api/v1/profile_documents/:profile_document_id/parameters"]
+      destroy: ["PUT /api/v1/profile_documents/:id/controls"]
+    ui_only:
+      - reason: "HTML form pages; the write goes through create/update"
+        actions: [new, edit]
+    gap:
+      create:
+        reason: "adding a single control with its own title, priority, tailoring notes and param values; PUT .../controls only adds catalog controls with derived title/priority"
+        would_be: "POST /api/v1/profile_documents/:profile_document_id/profile_controls"
+      update:
+        reason: "editing a profile control's title, priority (P1/P2/P3, a publish gate) and tailoring_notes has no API"
+        would_be: "PATCH /api/v1/profile_documents/:profile_document_id/profile_controls/:id"
+
+  control_catalogs:
+    mapped:
+      index: ["GET /api/v1/control_catalogs"]
+      show: ["GET /api/v1/control_catalogs/:id", "GET /api/v1/control_catalogs/:control_catalog_id/control_families", "GET /api/v1/control_catalogs/:control_catalog_id/controls"]
+      create: ["POST /api/v1/control_catalogs", "POST /api/v1/control_catalogs/:control_catalog_id/control_families"]
+      update: ["PATCH /api/v1/control_catalogs/:id"]
+      destroy: ["DELETE /api/v1/control_catalogs/:id"]
+      baseline_controls: ["GET /api/v1/control_catalogs/:control_catalog_id/controls"]
+      update_baseline: ["PATCH /api/v1/control_catalogs/:control_catalog_id/controls/:id"]
+      bulk_update_baselines: ["PATCH /api/v1/control_catalogs/:control_catalog_id/controls/:id"]
+      submit_for_review: ["POST /api/v1/control_catalogs/:id/submit_for_review"]
+      approve: ["POST /api/v1/control_catalogs/:id/approve"]
+      reject: ["POST /api/v1/control_catalogs/:id/reject"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit, "import@GET /control_catalogs/import"]
+      - reason: "dismisses the import-warnings modal so it does not reappear (UI state flag)"
+        actions: [acknowledge_warnings]
+    gap:
+      "import@POST /control_catalogs/import":
+        reason: "uploading a catalog file (OSCAL/NIST) for background import is browser-only"
+        would_be: "POST /api/v1/control_catalogs/import"
+      update_metadata:
+        reason: "`published` date and OSCAL metadata extras (metadata_extra_json) are not writable over the API"
+        would_be: "PATCH /api/v1/control_catalogs/:id"
+        partial: true
+      revalidate:
+        reason: "re-running catalog quality validation and storing its warnings is browser-only"
+        would_be: "POST /api/v1/control_catalogs/:id/revalidate"
+      publish:
+        reason: "catalog publication (validation, version bump, approval gate) is browser-only"
+        would_be: "POST /api/v1/control_catalogs/:id/publish"
+      publish_check:
+        reason: "publication-readiness report is browser-only"
+        would_be: "GET /api/v1/control_catalogs/:id/publish_check"
+      download_oscal:
+        reason: "OSCAL catalog JSON download is browser-only"
+        would_be: "GET /api/v1/control_catalogs/:id/export?format=oscal"
+      download_oscal_validated:
+        reason: "validated OSCAL catalog JSON download is browser-only"
+        would_be: "GET /api/v1/control_catalogs/:id/export?format=oscal"
+      download_oscal_unvalidated:
+        reason: "unvalidated OSCAL catalog JSON download is browser-only"
+        would_be: "GET /api/v1/control_catalogs/:id/export?format=oscal&validate=false"
+      download_xml:
+        reason: "OSCAL catalog XML download is browser-only"
+        would_be: "GET /api/v1/control_catalogs/:id/export?format=oscal-xml"
+      download_yaml:
+        reason: "OSCAL catalog YAML download is browser-only"
+        would_be: "GET /api/v1/control_catalogs/:id/export?format=oscal-yaml"
+      validate_oscal_export:
+        reason: "OSCAL schema-validation verdict for a catalog is browser-only"
+        would_be: "GET /api/v1/control_catalogs/:id/export?format=oscal"
+
+  catalog_controls:
+    mapped:
+      show: ["GET /api/v1/control_catalogs/:control_catalog_id/controls/:id"]
+      create: ["POST /api/v1/control_catalogs/:control_catalog_id/control_families/:control_family_id/controls"]
+      batch_create: ["POST /api/v1/control_catalogs/:control_catalog_id/control_families/:control_family_id/controls"]
+      destroy: ["DELETE /api/v1/control_catalogs/:control_catalog_id/controls/:id"]
+    ui_only:
+      - reason: "HTML form pages; the write goes through create/batch_create/update"
+        actions: [new, edit, batch_new]
+      - reason: "dead route: `resources :catalog_controls` generates it but the controller defines no index action and there is no index template (the family show page lists controls)"
+        actions: [index]
+    gap:
+      update:
+        reason: "editing catalog-control part prose (statement sub-parts, guidance, objectives via part_prose, authoritative over guidance_data) is not accepted by the API PATCH"
+        would_be: "PATCH /api/v1/control_catalogs/:control_catalog_id/controls/:id"
+        partial: true
+
+  control_families:
+    mapped:
+      show: ["GET /api/v1/control_catalogs/:control_catalog_id/control_families/:id", "GET /api/v1/control_catalogs/:control_catalog_id/control_families/:control_family_id/controls"]
+      create: ["POST /api/v1/control_catalogs/:control_catalog_id/control_families"]
+      update: ["PATCH /api/v1/control_catalogs/:control_catalog_id/control_families/:id"]
+      destroy: ["DELETE /api/v1/control_catalogs/:control_catalog_id/control_families/:id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+      - reason: "dead route: `resources :control_families` generates it but the controller defines no index action and there is no index template (the catalog show page lists families)"
+        actions: [index]
+
+  control_mappings:
+    mapped:
+      index: ["GET /api/v1/control_mappings"]
+      show: ["GET /api/v1/control_mappings/:id", "GET /api/v1/control_mappings/:control_mapping_id/entries"]
+      create: ["POST /api/v1/control_mappings"]
+      update: ["PATCH /api/v1/control_mappings/:id"]
+      destroy: ["DELETE /api/v1/control_mappings/:id"]
+      publish: ["PATCH /api/v1/control_mappings/:id"]
+      deprecate: ["PATCH /api/v1/control_mappings/:id"]
+      download_oscal: ["GET /api/v1/control_mappings/:id/export"]  # #1181 / #1154 part 2 — promoted from gap
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+
+  control_mapping_entries:
+    mapped:
+      create: ["POST /api/v1/control_mappings/:control_mapping_id/entries"]
+      update: ["PATCH /api/v1/control_mappings/:control_mapping_id/entries/:id"]
+      destroy: ["DELETE /api/v1/control_mappings/:control_mapping_id/entries/:id"]
+
+  converters:
+    mapped:
+      index: ["GET /api/v1/converters"]
+      show: ["GET /api/v1/converters/:id", "GET /api/v1/converters/:converter_id/entries"]
+      create: ["POST /api/v1/converters"]
+      update: ["PATCH /api/v1/converters/:id"]
+      destroy: ["DELETE /api/v1/converters/:id"]
+      export: ["GET /api/v1/converters/:id/export"]
+      refresh_cci: ["POST /api/v1/converters/:id/refresh"]
+      refresh_aws_config: ["POST /api/v1/converters/:id/refresh"]
+      refresh_aws_security_hub: ["POST /api/v1/converters/:id/refresh"]
+    ui_only:
+      - reason: "HTML form / upload pages; the write goes through the matching POST"
+        actions: [new, edit, import, stig_parser]
+    gap:
+      do_import:
+        reason: "importing a converter from a CCI/CIS/SCAP mapping JSON file (server-side format detection and entry expansion) is browser-only"
+        would_be: "POST /api/v1/converters/import"
+      import_stig:
+        reason: "parsing a STIG XCCDF XML into a converter is browser-only"
+        would_be: "POST /api/v1/converters/import_stig"
+
+  converter_entries:
+    mapped:
+      create: ["POST /api/v1/converters/:converter_id/entries"]
+      destroy: ["DELETE /api/v1/converters/:converter_id/entries/:id"]
+
+  cdef_coverage:
+    mapped:
+      index: ["GET /api/v1/cdef_coverage/runs"]
+      show: ["GET /api/v1/cdef_coverage/runs/:id"]
+      analyze: ["POST /api/v1/cdef_coverage/analyze"]
+      create: ["POST /api/v1/cdef_coverage/runs"]
+    ui_only:
+      - reason: "HTML upload form; the analysis goes through analyze"
+        actions: [new]
+
+  control_lookups:
+    mapped:
+      index: ["GET /api/v1/controls"]
+  # ==== Boundaries, back matter, evidence, sources, federation, HDF triage, queues
+  authorization_boundaries:
+    mapped:
+      index: ["GET /api/v1/authorization_boundaries"]
+      show: ["GET /api/v1/authorization_boundaries/:id", "GET /api/v1/authorization_boundaries/:authorization_boundary_id/readiness", "GET /api/v1/authorization_boundaries/:authorization_boundary_id/memberships"]
+      create: ["POST /api/v1/authorization_boundaries"]
+      update: ["PATCH /api/v1/authorization_boundaries/:id"]
+      destroy: ["DELETE /api/v1/authorization_boundaries/:id"]
+      bulk_destroy: ["DELETE /api/v1/authorization_boundaries/bulk"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+      - reason: "picker page listing boundary-less documents; the attach itself is a document PATCH with authorization_boundary_id"
+        actions: [attach_document]
+      - reason: "wizard page that only renders profile/document choices and missing-role warnings for the package build"
+        actions: [ato_wizard]
+    gap:
+      create_ato_package:
+        reason: "building an ATO package (AtoPackageService: create/select profile, CDEFs, SSP, SAP, SAR, POA&M for a boundary) is browser-only"
+        would_be: "POST /api/v1/authorization_boundaries/:id/ato_package"
+      download_ato_package:
+        reason: "ATO package ZIP export (AtoPackageExportService) is browser-only"
+        would_be: "GET /api/v1/authorization_boundaries/:id/ato_package"
+  boundaries:
+    ui_only:
+      - reason: "HTML form pages for an environment (name/description/environment/CDEF checkboxes)"
+        actions: [new, edit]
+    gap:
+      create:
+        reason: "creating an environment (Boundary) with its CDEF set under an authorization boundary is browser-only; the API only reads environments inside the boundary show"
+        would_be: "POST /api/v1/authorization_boundaries/:authorization_boundary_id/boundaries"
+      update:
+        reason: "editing an environment and its CDEF set is browser-only"
+        would_be: "PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/boundaries/:id"
+      destroy:
+        reason: "deleting an environment is browser-only"
+        would_be: "DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/boundaries/:id"
+  authorization_boundary_memberships:
+    mapped:
+      create: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/memberships"]
+      update: ["PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id"]
+      destroy: ["DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes user_name/user_email/role as a JSON body"
+        actions: [new, edit]
+  leveraged_authorizations:
+    mapped:
+      show: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/leveraged_authorizations/:id"]
+      create: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/leveraged_authorizations"]
+      destroy: ["DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/leveraged_authorizations/:id"]
+      populate: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/leveraged_authorizations/:id/populate"]
+    ui_only:
+      - reason: "HTML form page with a candidate-boundary picker; the API takes the same fields"
+        actions: [new]
+  back_matter_resources:
+    mapped:
+      create: ["POST /api/v1/back_matter_resources", "POST /api/v1/back_matter_resources/:id/link"]
+      update: ["PATCH /api/v1/back_matter_resources/:id"]
+      destroy: ["DELETE /api/v1/back_matter_resources/:id"]
+  control_back_matter_links:
+    mapped:
+      create: ["POST /api/v1/back_matter_resources", "POST /api/v1/back_matter_resources/:id/link"]
+      link: ["POST /api/v1/back_matter_resources/:id/link"]
+      destroy: ["DELETE /api/v1/back_matter_resources/:id/unlink"]
+  evidences:
+    mapped:
+      index: ["GET /api/v1/evidences"]
+      show: ["GET /api/v1/evidences/:id", "GET /api/v1/evidences/:evidence_id/attestations", "GET /api/v1/evidences/:evidence_id/control_links"]
+      create: ["POST /api/v1/evidences"]
+      update: ["PATCH /api/v1/evidences/:id"]
+      destroy: ["DELETE /api/v1/evidences/:id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields (incl. file, control_ids, attestations_attributes)"
+        actions: [new, edit]
+  attestations:
+    mapped:
+      create: ["POST /api/v1/evidences/:evidence_id/attestations"]
+      destroy: ["DELETE /api/v1/evidences/:evidence_id/attestations/:id"]
+    ui_only:
+      - reason: "HTML form page; the API takes the same attestation fields"
+        actions: [new]
+  attester_eligibility:
+    mapped:
+      index: ["GET /api/v1/attestations/eligible"]
+  artifacts:
+    mapped:
+      show: ["GET /api/v1/artifacts/:uuid"]
+      version: ["GET /api/v1/artifacts/versions/:uuid"]
+  authoritative_sources:
+    mapped:
+      index: ["GET /api/v1/authoritative_sources"]
+      show: ["GET /api/v1/authoritative_sources/:id"]
+      create: ["POST /api/v1/authoritative_sources"]
+      update: ["PATCH /api/v1/authoritative_sources/:id"]
+      destroy: ["DELETE /api/v1/authoritative_sources/:id"]
+      restore: ["POST /api/v1/authoritative_sources/:id/restore"]
+      link_control: ["POST /api/v1/back_matter_resources/:id/link"]
+      unlink_control: ["DELETE /api/v1/back_matter_resources/:id/unlink"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+  federation_peers:
+    mapped:
+      index: ["GET /api/v1/federation_peers"]
+      show: ["GET /api/v1/federation_peers/:id"]
+      create: ["POST /api/v1/federation_peers"]
+      update: ["PATCH /api/v1/federation_peers/:id"]
+      destroy: ["DELETE /api/v1/federation_peers/:id"]
+      sync: ["POST /api/v1/federation_peers/:id/sync"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields (secrets write-only)"
+        actions: [new, edit]
+  hdf_triage:
+    mapped:
+      show: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/scanner_findings", "GET /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs"]
+      ingest: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs"]
+      disposition: ["POST /api/v1/scanner_findings/:scanner_finding_id/disposition"]
+      clear_disposition: ["DELETE /api/v1/scanner_findings/:scanner_finding_id/disposition"]
+      approve_disposition: ["POST /api/v1/scanner_findings/:scanner_finding_id/disposition/approve"]
+      reject_disposition: ["POST /api/v1/scanner_findings/:scanner_finding_id/disposition/reject"]
+      aggregate: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/aggregate"]
+      package: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package"]
+      amendments: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments?verify=false"]
+  promotion_queue:
+    mapped:
+      index: ["GET /api/v1/back_matter_resources/promotion_queue"]
+      approve: ["POST /api/v1/back_matter_resources/:id/approve_promotion"]
+      reject: ["POST /api/v1/back_matter_resources/:id/reject_promotion"]
+  review_queue:
+    gap:
+      index:
+        reason: "no single list of pending_review catalogs/profiles/CDEFs the caller can approve (with profile baseline reviews); per-type indexes can filter lifecycle_status but not by approval authority"
+        would_be: "GET /api/v1/review_queue"
+  # ==== Administration, account, sign-in, help and infrastructure
+  admin/api_tokens:
+    mapped:
+      create: ["POST /api/v1/users/:user_id/api_tokens"]
+      destroy: ["DELETE /api/v1/users/:user_id/api_tokens/:id"]
+
+  admin/audit_logs:
+    gap:
+      index:
+        reason: "Browsing/filtering the audit trail (user, action, category, subject type, date range, text) and its CSV export are browser-only; no API reads AuditEvent"
+        would_be: "GET /api/v1/admin/audit_logs"
+      show:
+        reason: "Reading a single audit event is browser-only"
+        would_be: "GET /api/v1/admin/audit_logs/:id"
+
+  admin/authorization_boundaries:
+    mapped:
+      index: ["GET /api/v1/authorization_boundaries"]
+      show: ["GET /api/v1/authorization_boundaries/:id", "GET /api/v1/authorization_boundaries/:authorization_boundary_id/memberships"]
+      create: ["POST /api/v1/authorization_boundaries", "PATCH /api/v1/authorization_boundaries/:id/organization"]
+      update: ["PATCH /api/v1/authorization_boundaries/:id", "PATCH /api/v1/authorization_boundaries/:id/organization"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+    gap:
+      add_member:
+        reason: "Assigning a user a boundary-scoped RBAC role (UserRole) is browser-only; the memberships API manages only the legacy name/email roster"
+        would_be: "POST /api/v1/authorization_boundaries/:authorization_boundary_id/role_assignments"
+      remove_member:
+        reason: "Removing a boundary-scoped RBAC role assignment (UserRole) is browser-only"
+        would_be: "DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/role_assignments/:id"
+
+  admin/data_migrations:
+    gap:
+      index:
+        reason: "Deferred data-migration run status (pending/running/completed/failed) is visible only in the browser"
+        would_be: "GET /api/v1/admin/data_migrations"
+
+  admin/idp_grants:
+    mapped:
+      index: ["GET /api/v1/idp_grants/unmatched"]
+    gap:
+      dismiss:
+        reason: "Dismissing an unmatched IdP grant (and listing dismissals) is browser-only"
+        would_be: "POST /api/v1/idp_grants/dismissals"
+      restore:
+        reason: "Restoring a dismissed IdP grant is browser-only"
+        would_be: "DELETE /api/v1/idp_grants/dismissals/:id"
+
+  admin/organizations:
+    mapped:
+      index: ["GET /api/v1/organizations"]
+      show: ["GET /api/v1/organizations/:id", "GET /api/v1/organizations/:id/members"]
+      create: ["POST /api/v1/organizations"]
+      update: ["PATCH /api/v1/organizations/:id"]
+      deactivate: ["POST /api/v1/organizations/:id/deactivate"]
+      reactivate: ["POST /api/v1/organizations/:id/reactivate"]
+      assign_boundary: ["POST /api/v1/organizations/:id/boundaries"]
+      add_member: ["POST /api/v1/organizations/:id/members"]
+      remove_member: ["DELETE /api/v1/organizations/:id/members/:membership_id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+
+  admin/reconciliation:
+    mapped:
+      index: ["GET /api/v1/admin/reconciliation"]
+
+  admin/remediation_timelines:
+    mapped:
+      index: ["GET /api/v1/admin/remediation_timelines"]
+      update: ["PUT /api/v1/admin/remediation_timelines"]
+
+  admin/roles:
+    mapped:
+      index: ["GET /api/v1/roles"]
+      show: ["GET /api/v1/roles/:id"]
+      create: ["POST /api/v1/roles"]
+      update: ["PATCH /api/v1/roles/:id"]
+      destroy: ["DELETE /api/v1/roles/:id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+
+  admin/service_accounts:
+    mapped:
+      index: ["GET /api/v1/service_accounts"]
+      show: ["GET /api/v1/service_accounts/:id"]
+      create: ["POST /api/v1/service_accounts"]
+      update: ["PATCH /api/v1/service_accounts/:id"]
+      disable: ["POST /api/v1/service_accounts/:id/disable"]
+      enable: ["POST /api/v1/service_accounts/:id/enable"]
+      regenerate_token: ["POST /api/v1/service_accounts/:id/regenerate_token"]
+      destroy: ["DELETE /api/v1/service_accounts/:id"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+
+  admin/users:
+    mapped:
+      index: ["GET /api/v1/users"]
+      show: ["GET /api/v1/users/:id"]
+      create: ["POST /api/v1/users"]
+      suspend: ["PATCH /api/v1/users/:id"]
+      deactivate: ["DELETE /api/v1/users/:id"]
+      reset_password: ["POST /api/v1/users/:id/password_reset"]
+      email_password_reset: ["POST /api/v1/users/:id/password_reset?mode=email"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body"
+        actions: [new, edit]
+    gap:
+      update:
+        reason: "API PATCH edits names/email/admin/status but cannot set instance role_ids or boundary role assignments, which the web edit form syncs"
+        would_be: "PATCH /api/v1/users/:id"
+        partial: true
+      reactivate:
+        reason: "API can set status=active but cannot force a password reset on reactivation, and does not clear deleted_at/inactive_reason as User#reactivate! does"
+        would_be: "POST /api/v1/users/:id/reactivate"
+      reset_security_keys:
+        reason: "Admin lockout recovery (revoke all of a user's FIDO2 keys) is browser-only"
+        would_be: "DELETE /api/v1/users/:id/webauthn_credentials"
+
+  about:
+    ui_only:
+      - reason: "static about/marketing/quickstart pages"
+        actions: [index, api_docs, quickstart, resources]
+
+  health:
+    ui_only:
+      - reason: "infrastructure health probe, not a user function"
+        actions: [show, ready]
+
+  help:
+    mapped:
+      index: ["GET /api/v1/guides"]
+      show: ["GET /api/v1/guides/:slug"]
+    ui_only:
+      - reason: "serves guide screenshot images embedded in the rendered help pages"
+        actions: [image]
+
+  home:
+    ui_only:
+      - reason: "landing dashboard of instance-wide record counts; each count is the meta.count of the corresponding API list endpoint"
+        actions: [index]
+      - reason: "static informational OSCAL overview page"
+        actions: [oscal_overview]
+
+  omniauth_callbacks:
+    ui_only:
+      - reason: "browser OIDC sign-in callback flow; the API authenticates by bearer token"
+        actions: [create, failure]
+
+  password_resets:
+    ui_only:
+      - reason: "browser one-time reset-link password form flow"
+        actions: [edit, update]
+
+  passwords:
+    ui_only:
+      - reason: "browser password-change form flow for the signed-in user"
+        actions: [edit, update]
+
+  piv_sessions:
+    ui_only:
+      - reason: "browser PIV/mTLS sign-in flow; the API authenticates by bearer token"
+        actions: [create]
+
+  profiles:
+    ui_only:
+      - reason: "profile page and avatar upload/removal (cosmetic browser toggle)"
+        actions: [edit, update_avatar, remove_avatar]
+
+  registrations:
+    ui_only:
+      - reason: "browser self-service sign-up form flow; account provisioning via API is POST /api/v1/users"
+        actions: [new, create]
+
+  security/csp_reports:
+    ui_only:
+      - reason: "browser CSP violation report sink"
+        actions: [create]
+
+  sessions:
+    ui_only:
+      - reason: "browser sign-in/sign-out session flow; the API authenticates by bearer token"
+        actions: [new, create, destroy]
+
+  webauthn_credentials:
+    ui_only:
+      - reason: "FIDO2 security-key enrollment and management; the WebAuthn ceremony is browser-bound"
+        actions: [index, registration_options, create, destroy]
+
+  webauthn_sessions:
+    ui_only:
+      - reason: "browser WebAuthn sign-in ceremony"
+        actions: [options, create]

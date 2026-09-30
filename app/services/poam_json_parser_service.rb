@@ -140,6 +140,10 @@ class PoamJsonParserService
     risks.each_with_object({}) do |risk, map|
       next unless risk["uuid"].present?
 
+      # #1154 — SPARC-namespace decision props land in their columns; anything
+      # the contract would reject stays in props as issued.
+      decision, props = SparcNamespaceProps.risk_attributes_from(risk["props"], PoamRisk)
+
       record = create_risk!({
         uuid:                    risk["uuid"],
         title:                   risk["title"],
@@ -154,10 +158,10 @@ class PoamJsonParserService
         characterizations_data:  risk["characterizations"] || [],
         mitigating_factors_data: risk["mitigating-factors"] || [],
         risk_log_data:           risk["risk-log"] || {},
-        props_data:              risk["props"] || [],
+        props_data:              props,
         links_data:              risk["links"] || [],
         remarks:                 extract_text(risk["remarks"])
-      }, "uuid=#{risk['uuid']}")
+      }.merge(decision), "uuid=#{risk['uuid']}")
 
       # Remediations (called "remediations" in JSON, maps to OSCAL "response")
       (risk["remediations"] || []).each_with_index do |rem, pos|

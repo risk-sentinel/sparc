@@ -93,6 +93,8 @@ class Api::V1::PoamRisksController < Api::V1::BaseController
     permit_strictly(:poam_risk,
       :uuid, :title, :description, :statement, :status,
       :deadline, :likelihood, :impact, :remarks,
+      # #1154 — the AO's decision on this risk; exported as SPARC-namespace props.
+      :blocks_ato, :condition_expires, :reopen_trigger,
       # #1092 — see RiskCollectionParams. No `remediations_data` here: POA&M
       # responses are real rows (`poam_remediations`), not jsonb.
       **risk_collection_filters
@@ -108,6 +110,10 @@ class Api::V1::PoamRisksController < Api::V1::BaseController
       deadline: risk.deadline&.utc&.iso8601,
       likelihood: risk.likelihood,
       impact: risk.impact,
+      # #1154 — nil blocks_ato means "not decided", which is not false.
+      blocks_ato: risk.blocks_ato,
+      condition_expires: risk.condition_expires&.iso8601,
+      reopen_trigger: risk.reopen_trigger,
       poam_document_id: risk.poam_document_id
     }
 

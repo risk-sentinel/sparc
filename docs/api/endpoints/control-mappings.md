@@ -1,6 +1,6 @@
 # Control Mappings API
 
-Manage control mappings between source and target control catalogs. Mappings define relationships between controls in different frameworks or catalog revisions (e.g., NIST 800-53 Rev 4 to Rev 5, or NIST to ISO 27001). All endpoints use numeric IDs. Write operations (create, update, delete) require admin privileges.
+Manage control mappings between source and target control catalogs. Mappings define relationships between controls in different frameworks or catalog revisions (e.g., NIST 800-53 Rev 4 to Rev 5, or NIST to ISO 27001). Mappings are addressed by numeric id or slug. Write operations (create, update, delete) require an instance admin or the `mappings.write` permission.
 
 ## Base URL
 
@@ -20,8 +20,8 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 
 | Operation | Required Role |
 |-----------|---------------|
-| List, Show | Any authenticated user |
-| Create, Update, Delete | Admin only |
+| List, Show, Export | Any authenticated user |
+| Create, Update, Delete | Admin, or `mappings.write` |
 
 ## Endpoints
 
@@ -32,6 +32,7 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | `POST` | `/api/v1/control_mappings` | Create a new mapping (admin) |
 | `PUT` | `/api/v1/control_mappings/:id` | Update a mapping (admin) |
 | `DELETE` | `/api/v1/control_mappings/:id` | Delete a mapping (admin) |
+| `GET` | `/api/v1/control_mappings/:id/export` | Export the mapping as an OSCAL mapping collection (`?format=oscal` or `oscal-yaml`) — see **Export** below |
 | `GET` | `/api/v1/control_mappings/:control_mapping_id/entries` | List the mapping's entries; `meta.unresolved` counts those whose identifiers no longer resolve |
 | `POST` | `/api/v1/control_mappings/:control_mapping_id/entries` | Add a control-to-control relationship (`mappings.write`) |
 | `PATCH`/`PUT` | `/api/v1/control_mappings/:control_mapping_id/entries/:id` | Correct an entry (`mappings.write`) |
@@ -324,6 +325,104 @@ curl -X DELETE "https://sparc.example.com/api/v1/control_mappings/1" \
 | `404` | `Not Found` | Mapping does not exist |
 | `422` | `Unprocessable Entity` | Validation failed -- missing required fields or invalid catalog IDs |
 | `500` | `Internal Server Error` | Unexpected server error -- contact your administrator |
+
+---
+
+## Export as an OSCAL mapping collection (#1154)
+
+```
+GET /api/v1/control_mappings/:id/export[?format=&validate=]
+```
+
+The crosswalk as a **document**, not only as rows — the OSCAL `mapping-collection`
+built by `OscalMappingExportService`. `:id` is the numeric id or the slug.
+
+Read by **any authenticated caller**, as `show` is; writes stay gated.
+
+| `format` | Returns |
+|---|---|
+| `oscal` *(default)* | the OSCAL mapping collection, JSON (root key `mapping-collection`) |
+| `oscal-yaml` | the same document as YAML (`application/x-yaml`) |
+
+There is no `fields` format — a mapping has no SPARC field-JSON export; read the
+rows from `…/entries`.
+
+**`oscal-xml` is not offered, and is refused by name.** SPARC carries no OSCAL
+XSD for the mapping model, and so no XSD element order for it either: XML could
+be neither written in the order OSCAL requires nor validated. Rather than serve
+a file that only looks like OSCAL, the request is refused:
+
+```json
+{
+  "error": "Unknown export format \"oscal-xml\"",
+  "expected": ["oscal", "oscal-yaml"],
+  "reason": "oscal-xml is not offered for mapping collections: SPARC carries no OSCAL XSD for the mapping model, so XML could be neither ordered nor validated. Use oscal (JSON) or oscal-yaml."
+}
+```
+
+`validate` defaults to **true**: the collection is checked against the NIST
+mapping schema and a non-conforming one is refused. A mapping with **no
+entries** does not conform — OSCAL requires at least one map — so an empty
+mapping is refused by the default path; `validate=false` returns it anyway.
+
+```json
+{
+  "error": "The mapping collection does not conform to the OSCAL schema",
+  "details": ["... up to ten lines ..."],
+  "hint": "Re-request with validate=false to export it anyway"
+}
+```
+
+Each delivered export is audited as `control_mapping_exported`.
+
+### Provenance
+
+Provenance is **collection-level**, in `mapping-collection.provenance`:
+
+| field | from |
+|---|---|
+| `method` | `method_type` — `human`, `automation`, `hybrid` |
+| `matching-rationale` | `matching_rationale` — `syntactic`, `semantic`, `functional` |
+| `status` | `status` |
+| `mapping-description` | `description`, or a generated "Control mapping between … and …" |
+
+Per entry, each `maps[]` item carries its `relationship` and, where recorded,
+its own `matching-rationale` and `remarks`. There is **no confidence score** —
+none is recorded, and none is invented (follow-up #1196).
+
+For the **FedRAMP 20x KSI → NIST SP 800-53 Rev 5** crosswalk, the source is
+recorded in the mapping's description — *"FedRAMP's own crosswalk … from the
+controls[] of FedRAMP/rules &lt;upstream version&gt;. FedRAMP authors it; SPARC
+does not."* — and so reaches `mapping-description`; `mapping_version` (and so
+`metadata.version`) is the same upstream version. The upstream **commit** is
+recorded on the KSI *catalog*, not on the mapping, and does not appear in the
+mapping document.
+
+### Conditional GET (ETag / 304)
+
+Every response carries a **strong** `ETag`; send it back as `If-None-Match` and
+an unchanged export answers **`304 Not Modified`** with an empty body. The ETag
+digests the mapping id, its `updated_at`, the `format`, `validate`, the
+instance's default OSCAL version **and the exported bytes**, so a changed entry
+yields a new ETag even if it bypassed the parent's `updated_at`. A `304` is not
+audited.
+
+### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Export returned |
+| `304 Not Modified` | `If-None-Match` matched the current ETag |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `404 Not Found` | No mapping matches the id or slug |
+| `422 Unprocessable Content` | Unknown or unoffered `format`, or the collection does not conform (`validate=true`) |
+
+### cURL Example
+
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "https://sparc.example.com/api/v1/control_mappings/<slug>/export" | jq '."mapping-collection".provenance'
+```
 
 ---
 

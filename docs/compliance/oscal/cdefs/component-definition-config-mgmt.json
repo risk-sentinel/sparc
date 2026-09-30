@@ -3,9 +3,9 @@
     "uuid": "e59515dd-bc17-4e65-bc04-54592aa9e3bc",
     "metadata": {
       "title": "SPARC Configuration Management and Development Assurance",
-      "version": "1.1.3",
-      "oscal-version": "1.2.2",
-      "last-modified": "2026-09-28T00:00:00Z",
+      "version": "1.1.4",
+      "oscal-version": "1.2.3",
+      "last-modified": "2026-09-29T00:00:00Z",
       "roles": [
         {
           "id": "prepared-by",

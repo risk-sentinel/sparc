@@ -1,6 +1,6 @@
 
  { "$schema" : "http://json-schema.org/draft-07/schema#",
-  "$id" : "http://csrc.nist.gov/ns/oscal/1.2.2/oscal-profile-schema.json",
+  "$id" : "http://csrc.nist.gov/ns/oscal/1.2.3/oscal-profile-schema.json",
   "$comment" : "OSCAL Profile Model: JSON Schema",
   "type" : "object",
   "definitions" : 
@@ -370,7 +370,7 @@
             "$ref" : "#/definitions/TokenDatatype" },
            "by-item-name" : 
            { "title" : "Item Name Reference",
-            "description" : "Identify items to remove by the name of the item's information object name, e.g. title or prop.",
+            "description" : "Identify items to remove by the name of the item's information object name, e.g. prop or link.",
             "allOf" : 
             [ 
              { "$ref" : "#/definitions/TokenDatatype" },
