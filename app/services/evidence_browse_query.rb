@@ -47,7 +47,8 @@ class EvidenceBrowseQuery < CollectionBrowseQuery
     AuthorizationBoundary.where(id: scope.distinct.select(:authorization_boundary_id))
                          .order(:name).pluck(:name, :id)
   }, narrow: lambda { |scope, value|
-    scope.where(authorization_boundary_id: [ value, nil ])
+    # #1202 — the rule itself lives in BoundaryScopedList (unchanged).
+    BoundaryScopedList.narrow(:evidence, scope, value)
   }
 
   # Reached through the link table, and matched across every accepted spelling

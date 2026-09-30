@@ -17,9 +17,12 @@ class PoamBrowseQuery < CollectionBrowseQuery
   facet :oscal_version,    label: "OSCAL version"
   facet :poam_version,     label: "Revision"
 
+  # #1202 — narrowed by the one boundary rule the sidebar and every list share.
   facet :authorization_boundary_id, label: "Authorization boundary", choices: lambda { |scope|
     AuthorizationBoundary.where(id: scope.distinct.select(:authorization_boundary_id))
                          .order(:name).pluck(:name, :id)
+  }, narrow: lambda { |scope, value|
+    BoundaryScopedList.narrow(:poam, scope, value)
   }
 
   facet :uploaded_by_user_id, label: "Added by", choices: lambda { |scope|

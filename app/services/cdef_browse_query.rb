@@ -70,21 +70,9 @@ class CdefBrowseQuery
   # for: the boundary view shows what you use, the unscoped view is where you
   # find more to add.
   def apply_boundary(scope)
-    boundary_id = @params[:authorization_boundary_id].presence
-    return scope if boundary_id.blank?
-
-    selected_for_environments = BoundaryCdefDocument
-      .joins(:boundary)
-      .where(boundaries: { authorization_boundary_id: boundary_id })
-      .select(:cdef_document_id)
-
-    consumed_by_ssp = SspComponent
-      .joins(:ssp_document)
-      .where(ssp_documents: { authorization_boundary_id: boundary_id })
-      .where.not(cdef_document_id: nil)
-      .select(:cdef_document_id)
-
-    scope.where(id: selected_for_environments).or(scope.where(id: consumed_by_ssp))
+    # #1202 — the rule lives in BoundaryScopedList, shared with the sidebar and
+    # every other document list; it is unchanged from the #951 union above.
+    BoundaryScopedList.narrow_params(:cdef, scope, @params)
   end
 
   # #672 filtered on name and description only, so an obvious query like

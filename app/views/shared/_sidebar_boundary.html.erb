@@ -50,29 +50,32 @@
                 title: ab.name %>
   </div>
   <div class="collapse" id="sidebarAb<%= ab.id %>">
+    <%# #1202 — each document leaf links through BoundaryScopedList, the same
+        definition its list and Api::V1 narrow with, so a leaf cannot promise a
+        filter its page does not apply. %>
     <ul class="sparc-sidebar-leaves">
       <li>
-        <%= link_to cdef_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
+        <%= link_to BoundaryScopedList.path(:cdef, ab), class: "sparc-sidebar-leaf" do %>
           <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> CDEFs
         <% end %>
       </li>
       <li>
-        <%= link_to ssp_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
+        <%= link_to BoundaryScopedList.path(:ssp, ab), class: "sparc-sidebar-leaf" do %>
           <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> SSP
         <% end %>
       </li>
       <li>
-        <%= link_to sap_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
+        <%= link_to BoundaryScopedList.path(:sap, ab), class: "sparc-sidebar-leaf" do %>
           <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAP
         <% end %>
       </li>
       <li>
-        <%= link_to evidences_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
+        <%= link_to BoundaryScopedList.path(:evidence, ab), class: "sparc-sidebar-leaf" do %>
           <span class="sparc-sidebar-dot" style="background: #16a085;"></span> Evidence
         <% end %>
       </li>
       <li>
-        <%= link_to sar_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
+        <%= link_to BoundaryScopedList.path(:sar, ab), class: "sparc-sidebar-leaf" do %>
           <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAR
         <% end %>
       </li>
@@ -83,7 +86,7 @@
         <% end %>
       </li>
       <li>
-        <%= link_to poam_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
+        <%= link_to BoundaryScopedList.path(:poam, ab), class: "sparc-sidebar-leaf" do %>
           <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> POA&amp;Ms
         <% end %>
       </li>

@@ -43,6 +43,10 @@ class SapDocumentsController < ApplicationController
     @completed_count = scope.where(status: "completed").count
 
     # #672 — filter listed rows; the tiles above keep showing totals.
+    # #1202 — the sidebar links here with `?authorization_boundary_id=`; narrow to
+    # that boundary through the ONE definition the sidebar and Api::V1 also use.
+    # It narrows the permission-scoped relation above, never widens it.
+    scope = BoundaryScopedList.narrow_params(:sap, scope, params)
     scope = scope.search_text(params[:q])
 
     # #888 — cards by default, remembered per screen, and paginated because a
