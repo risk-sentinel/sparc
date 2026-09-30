@@ -11,6 +11,12 @@
 # image. 45 of 74 findings differed. Red Hat's rating is the one that describes
 # a UBI9 image.
 #
+# UBI 10 (#1200, 2026-09-29): on RHEL 10.2 Trivy reports ZERO vulnerabilities
+# at every severity — 0.69.3 in CI, 0.74.0 locally — including on an unstripped
+# image where grype, reading Red Hat's own el10 data, reports HIGHs. This gate
+# still runs, and still catches the Ruby, Go and Node findings Trivy does see,
+# but it cannot see the el10 base. grype-container.yml is the gate that does.
+#
 # MEASURED 0, and the band is ratcheted to match (#1065, 2026-08-28).
 #
 # History, because the number moving to 0 is the whole point of #1065:

@@ -41,5 +41,7 @@ Severity here means the HDF `impact` bucket (`>=0.9` critical, `>=0.7` high,
 and the converters do not agree with each other — see **#1064**. In particular
 the CycloneDX path takes the maximum rating across up to seven sources
 (NVD, Red Hat, GHSA, Ubuntu, …) rather than the OS vendor's rating for the OS
-vendor's own image, and `anchoregrype2hdf` caps impact at `0.5`. Read each
-file's own comment before trusting its numbers.
+vendor's own image. `anchoregrype2hdf` (saf 1.6.0) maps grype's severity
+straight through — High `0.7`, Medium `0.5`, Low `0.3`, re-measured 2026-09-29
+(#1200); an earlier note that it capped at `0.5` most likely came from a scan
+with no High to map. Read each file's own comment before trusting its numbers.
