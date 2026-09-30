@@ -1,8 +1,45 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-08-08 (v1.15.5 — catalog lineage, boundary-roster authorization fix)
+**Last reviewed:** 2026-09-29 (v1.17.0 line — UBI 10 base and runtime strip, #1200)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **UBI 10 rebase (#1200, 2026-09-29):** the production image moved to Red Hat
+> **UBI 10 minimal** (RHEL 10.2), with a runtime strip that removes the package
+> manager, rpm itself, glib2 and the util-linux libraries (nothing at runtime
+> loads them; the rpm DATABASE stays, and both scanners enumerate every package
+> recorded in it — 85 packages, 85 from grype, 85 from Trivy, none missing; the
+> database's other 3 rows are `gpg-pubkey` entries). Real rescan of the built
+> image, not an SBOM:
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype 0.114.0 (image, DB v6.1.9 built 2026-09-29) | **0** | **2** | 44 | 32 |
+> | Trivy 0.74.0 (image, `--severity CRITICAL,HIGH,MEDIUM`) | 0 | 0 | 0 | — |
+>
+> Distinct CVEs, not package matches. **The two scanners disagree completely
+> on el10, and Trivy is the one that is wrong.** Grype reads Red Hat's own el10
+> advisory data (`redhat:distro:redhat:10`); Trivy reports zero at every
+> severity on RHEL 10.2, in CI (0.69.3) and locally (0.74.0), including on an
+> unstripped image carrying HIGHs grype attributes to Red Hat's data. So the
+> grype-container gate is now LIVE at HIGH (`thresholds/grype-container.yml`)
+> and register dispositions reach it as `Grype/<id>`; Trivy stays gated but
+> cannot see this base.
+>
+> The two HIGHs are **pcre2** CVE-2026-86145 and CVE-2026-89161 (10.44-1.el10.3,
+> `not-fixed` upstream), both `deferred` with an approved `risk_adjustment`
+> deviation whose mitigating factors re-measure true on el10 (Ruby uses Onigmo,
+> not pcre2; libselinux is the only package requiring it). Every Medium and Low
+> is `not-fixed` upstream except one: the Ruby-shipped on-disk `json` copy
+> (GHSA-x2f5-4prf-w687, LOW), which Bundler shadows with a patched version.
+>
+> Register effect: of the 33 entries carried against the UBI9 base, **28
+> retired** to `sparc-findings.retired.yml` with the package evidence from the
+> image's rpm database (gnupg2 absent; PostgreSQL client 13 → 16; libxml2
+> 2.9 → 2.12; util-linux libraries stripped; …) and **5 remain** (systemd-libs,
+> openldap, sqlite-libs, pcre2 ×2), re-verified present and still not-fixed.
+> `sparc-findings.yml` now holds 7 entries (those 5 plus the two CodeQL rule
+> dispositions). Full measurement: #1189 (spike) and #1200.
 
 > **v1.12.0 base-image migration (#742):** the production image moved from
 > Debian `ruby:3.4.4-slim` to Red Hat **UBI9 minimal**. This retired the entire

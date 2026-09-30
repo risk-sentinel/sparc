@@ -19,7 +19,7 @@ Concretely, by ecosystem:
 
 | What the finding is against | Authoritative source | Why |
 | --- | --- | --- |
-| `pkg:rpm/redhat/*` — the UBI9 base and its OS packages | **Red Hat** | Red Hat backports fixes and assesses exploitability against their own build. An NVD base score describes upstream code we are not running. |
+| `pkg:rpm/redhat/*` — the UBI base (UBI 10 since #1200) and its OS packages | **Red Hat** | Red Hat backports fixes and assesses exploitability against their own build. An NVD base score describes upstream code we are not running. |
 | `pkg:gem/*` — Ruby dependencies | **ruby-advisory-db / GHSA** | The ecosystem's own advisory data, which is what `bundler-audit` and Dependabot act on. |
 | `pkg:golang/*` — the vendored `hdf` binary's dependencies | **Go vulnerability database / GHSA** | Same reasoning: the ecosystem that ships the code. |
 | Anything else | **NVD** | Fallback, not preference. |
