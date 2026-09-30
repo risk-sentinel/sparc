@@ -60,7 +60,7 @@ authentication mode coverage matrix.
 > with it. Issues still *say* v1.17.1 in their own comment threads where they
 > were moved there by hand; the milestone is the authority, not the prose.
 
-**Open: 1. Closed: 22.** Re-measured **2026-09-29** from one grouped query
+**Open: 3. Closed: 22.** Re-measured **2026-09-30** from one grouped query
 (`gh issue list --state open --limit 400 --json number,milestone`, grouped by
 milestone) and `gh issue list --milestone v1.17.0 --state closed --limit 300`.
 **This is the current phase.**
@@ -68,9 +68,11 @@ milestone) and `gh issue list --milestone v1.17.0 --state closed --limit 300`.
 - **Closed on the milestone (22):** #871 #1103 #1115 #1144 #1151 #1154 #1155
   #1159 #1161 #1162 #1164 #1172 #1178 #1179 #1181 #1183 #1184 #1186 #1189
   #1193 #1194 #1195.
-- **Open (1):** #1200.
+- **Open (3):** #1200, #1202 (both in AN, PR #1201), #1203 (design).
 
-**What moved in the latest pass (2026-09-29, after AF).** AI + AL merged as PR
+**What moved on 2026-09-30.** The owner found the SSP list ignoring the sidebar's boundary filter. A sweep confirmed three web lists (SSP, SAP, SAR) ignore it while their API siblings honour it (#951 had fixed the same defect for CDEFs only), filed as **#1202** and bundled into AN (PR #1201), with one boundary definition shared by the sidebar, the web lists and Api::V1. The owner then separated a second problem, how many SSPs / SAPs / SARs a boundary holds and what may still change each, filed as **#1203** (design, NIST-validated first).
+
+**What moved in the pass before (2026-09-29, after AF).** AI + AL merged as PR
 #1197, closing #1154, #1178, #1179 and #1181. **#1109 (AJ) moved to a new
 `v1.18.0` milestone** (owner): about 300 edits, 45 of them in JavaScript the
 inline-style ratchet cannot see, for a second-order gain, since `script-src` is
@@ -115,7 +117,15 @@ whenever it is done. One of those earns a release slot and the other does not.
 | **AI + AL — Horizon contract surface & evidence identity** ✅ **DELIVERED** — PR #1197, merged 2026-09-29 (owner bundled AI and AL; four-lane fan-out) | ~~#1154~~ ~~#1181~~ ~~#1178~~ ~~#1179~~ | **Decided (owner, 2026-09-29):** D1 emit all nine SPARC-namespace props where the document's data supports them, and ADD the missing data points (verified schema-valid against NIST 1.2.2 and 1.2.3 — `props` is the only legal place, and NIST's prop constraints are scoped to NIST's namespace); D2 mappings carry provenance only, confidence-score deferred to #1196; D3/D4 hdf-system status map and `urn:ietf:rfc:4122` scheme, amendment `systemRef` fix bundled; D5 **OSCAL 1.2.3 is the default** and XSDs are carried PER RELEASE (1.1.2, 1.1.3, 1.2.2, 1.2.3; uncarried releases validate against the nearest carried one, flagged); a **web↔API parity spec** makes the API-first rule enforced. **Built:** #1178 finished (it was mostly already shipped in #1180 — `uuid`; now org id/uuid on boundaries and both boundary uuids on leveraged authorizations); #1181 OSCAL export over the API for SSP, SAP, SAR and POA&M (POA&M had no export route at all) with content-hash ETags and 304s; mapping collections over the API; the nine props with new boundary dates and POA&M/SAR risk decision fields, a validator in the validated export path, import round-trip; `hdf-system` export (validated in process — hdf-cli 3.7.0 itself does not enforce `unevaluatedProperties` or `uri-reference`); `docs/api/DELIVERY_CONTRACT.md`. **Found on the way and fixed here:** a production SSP could be neither baselined nor linked to a boundary from the UI (three rules deadlocked; ECS Fargate has no shell, so the UI is the only repair path); a `cdef.write` holder could make a CDEF instance-wide over the API (web refused since #980) — proven, now 403. **Parity baseline:** 232 mapped, 125 ui_only, **117 gaps** (18 partial) — the API-first backlog, listed for the owner, not filed. | ~11–12d |
 | **AF follow-ups** ✅ **DELIVERED** in PR #1192 (owner bundled them) | ~~#1193~~ ~~#1194~~ ~~#1195~~ | **#1193** — the retired `AUTH` theme kept its old `sort_order` and listed first; retired families now list after current ones where families are displayed (catalog page, KSI themes API), so it also holds on a database already re-keyed. **#1194 DECIDED (owner, 2026-09-28): yes** — an old id the re-key renamed (`ksi-iam-02`) resolves on the KSI API to the current indicator, answered with `resolved_from`; read from the vendored map, so no data change. **#1195 DECIDED (owner, 2026-09-28): KSI-only for now** — documented on the models and in the catalog guide; profile, baseline and SAP paths deliberately ignore retirement until an importer retires entries in another catalog. | 1d |
 | **AJ — Security tail** ➡️ **MOVED to `v1.18.0`** (owner, 2026-09-29: too much risk for a second-order gain) | **#1109** | Independent of the chain. The tail is **201 inline styles across 71 files** re-measured 2026-09-20, not the 254 across 94 the issue was filed with on 2026-09-05 — intervening work cleared ~53 declarations and 23 files, and the issue's own file table is stale by that much. Counted like for like (its table says `evidences/show.html.erb` 9; it measures 9). None holding ten — the flat tail #1047 stopped at 83%. It is the only thing standing between SPARC and removing `style-src 'unsafe-inline'`, which is binary: it comes out at zero or not at all. | 3d |
-| **AN — Hardened UBI 10 image** 🔄 **IN FLIGHT** — branch `feature/1200_ubi10_hardened_base` | **#1200** | Out of the #1189 spike. The owner judged the win real only if the full release checklist passes locally, then decided to ship it. **Built:**
+| **AN — Hardened UBI 10 image** 🔄 **IN FLIGHT** — PR #1201, branch `feature/1200_ubi10_hardened_base` | **#1200** **#1202** | Out of the #1189 spike. The owner judged the win real only if the full release checklist passes locally, then decided to ship it. **Built:**
+| **AO — Per-boundary document representation** (design) | **#1203** | Owner, 2026-09-30:
+- **SSP:** one per boundary, kept current.
+- **SAP:** many per boundary, kept current from the SSP.
+- **SAR:** many per boundary, with states draft (SSP / SAP changes and evidence reach it) → in review (evidence only) → published (frozen).
+
+**Validate against NIST first**: OSCAL assessment layer, SP 800-37 Assess / Authorize, SP 800-53A.
+
+**Today:** `has_one :sap_document` / `:sar_document` pick one arbitrarily where a boundary holds several (boundary 1 has 2 SARs), in the boundary tiles, `AtoPackageExportService`, `HdfAggregationService` and `ReferenceEstate`. | TBD |
 - **Base:** `ubi10/ubi-minimal` (RHEL 10.2); PostgreSQL client moves from 13 (EOL) to 16.
 - **Runtime strip:** curl, the package manager, rpm, glib2 and the util-linux libraries. Removing rpm was PROVEN not to blind the scanners: they read the rpm database, and all 85 packages are enumerated by both. Build-time assertions, each mutation-proven, fail a strip that is too greedy, one that is incomplete, or one that loses the database.
 - **Build freshness:** a version bump re-resolves the package install.
@@ -184,8 +194,8 @@ figure. The large single item inside it is the reconciliation engine.
 
 ## Open work — measured 2026-09-29
 
-Re-measured against the live repository, not carried forward. **570 issues**;
-**539 are closed**, **31 open** (2026-09-29, after PR #1197). What remains:
+Re-measured against the live repository, not carried forward. **572 issues**;
+**539 are closed**, **33 open** (2026-09-30). What remains:
 
 > **This section read 36 open for part of a day.** That figure was measured
 > minutes before #1162 was filed, and then quoted rather than re-measured. It is
@@ -223,12 +233,13 @@ Re-measured against the live repository, not carried forward. **570 issues**;
 | --- | --- |
 | Closed | **539** |
 | Open, on `ci.v0.0.1` / `v1.16.0` / `v1.16.1` | **0** — all shipped (22, 87 and 22 issues) |
-| Open, on `v1.17.0` | **1** — #1200 (bundle AN, Phase 19) |
+| Open, on `v1.17.0` | **3** — #1200 #1202 (bundle AN, PR #1201), #1203 (AO, design) |
 | Open, on `v1.18.0` | **1** — #1109 (AJ; milestone created 2026-09-29, owner) |
 | Open, on `v1.17.1` | **10** — #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 |
 | **Open, on NO milestone** | **19** (18 on 09-29 before #1198, 19 on 09-22, 27 on 09-20, 24 on 09-17, 22 on 09-05, 25 on 09-03, 10 on 08-25) — see below |
 
-The reconciliation, from one grouped query on 2026-09-29 (after PR #1197):
+The reconciliation, from one grouped query on 2026-09-30:
+**3 + 10 + 1 + 19 = 33, and 539 + 33 = 572.** Since 09-29: **#1202** and **#1203** filed onto v1.17.0. Before that, on 09-29 (after PR #1197):
 **1 + 10 + 1 + 19 = 31, and 539 + 31 = 570.** Since the previous pass the same
 day: **#1154, #1178, #1179, #1181** closed (PR #1197) and **#1189** closed (spike
 result); **#1198** (no milestone) and **#1200** (v1.17.0) were filed; **#1109**
@@ -337,16 +348,16 @@ whenever the milestone changes**: it last passed on 09-17, and was false by 09-2
 | 16 | **Complete** | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | **87 issues, 87 closed. Tagged `v1.16.0` 2026-08-24** from `main` @ `75b5bb3b`. The full closed list is the milestone itself — do not maintain a second copy here | **SHIPPED.** Bundles ran #939 → O → S → P → T → Q → hdf pin → U → W → V → R → X. Bundle X merged as [PR #1049](https://github.com/risk-sentinel/sparc/pull/1049) → `9ae84a84`; [PR #1055](https://github.com/risk-sentinel/sparc/pull/1055) → `75b5bb3b` then fixed four defects Bundle X had merged, found by running the FULL suites against a built prod image. Release verification (measured, on the tagged tree): rspec **6230/0**, API **2742 passed** over TLS and again over non-TLS, ui-smoke **524 passed / 0 failed**, rubocop + brakeman + bundle-audit clean. The milestone grew **53 → 86 because the sweeps FOUND things**, not through scope creep. Wiki published and release notes carry the measured table |
 | 17 | **Complete** | `ci.v0.0.1` — evidence and gates | **22 issues, 0 open** (+ 8 PRs on the milestone page) | Closed **2026-08-30**. Detail archived in [`implemented.md`](implemented.md) |
 | 18 | **Complete** | v1.16.1 — the patch release (+ v1.16.2 / v1.16.3 hotfixes) | **22 issues, 0 open. Tagged `v1.16.1` 2026-09-17**; v1.16.2 and v1.16.3 tagged 2026-09-18 | Bundles Y → Z → AA → AB → AC → AD. Detail, and the v1.16.2 un-upgradable record, archived in [`implemented.md`](implemented.md) |
-| 19 | **Current** | v1.17.0 — unblock Horizon, fix what customers hit | **1 open, 22 closed** (2026-09-29): open #1200. Delivered: AG, AH, AK, AE, AF (+ #1193 #1194 #1195), AI + AL (PR #1197), the AM spike (#1189), and #1103 #1180 #1183 #1175 #1177 in flight. **AN (#1200, the hardened UBI 10 image) in flight**; AJ (#1109) moved to v1.18.0 | AN ~3–4d. The bundle list lives in Phase 19; do not maintain a second copy here |
+| 19 | **Current** | v1.17.0 — unblock Horizon, fix what customers hit | **3 open, 22 closed** (2026-09-30): open #1200 #1202 (AN, PR #1201), #1203 (AO, design). Delivered: AG, AH, AK, AE, AF (+ #1193 #1194 #1195), AI + AL (PR #1197), the AM spike (#1189), and #1103 #1180 #1183 #1175 #1177 in flight. **AN (#1200, the hardened UBI 10 image) in flight**; AJ (#1109) moved to v1.18.0 | AN ~3–4d. The bundle list lives in Phase 19; do not maintain a second copy here |
 | 21 | Planned | v1.18.0 — created 2026-09-29 (owner) | **1 open**: #1109 (AJ, the inline-style tail blocking removal of `style-src 'unsafe-inline'`) | 3–4d (re-measured: ~300 sites, 45 in JavaScript) |
 | 20 | Planned | v1.17.1 — the deferred wave | **10 open, 0 closed** (2026-09-29): #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196. Sonar backlog, gates that must mean something, two UI tails, **#1176** (service accounts on non-expiring static tokens; broker short-lived IdP credentials), and **#1196** (a confidence-score for control mappings — for discussion) | est. TBD — scope when v1.17.0 is cut |
 
 <!-- markdownlint-enable MD013 -->
 
-**Re-measured 2026-09-29, after PR #1197** (grouped open query + `gh issue list --state closed --limit 3000`): **570
-issues total — 539 closed, 31 open.** Open splits **1** on `v1.17.0`, **10** on
+**Re-measured 2026-09-30** (grouped open query + `gh issue list --state closed --limit 3000`): **572
+issues total — 539 closed, 33 open.** Open splits **3** on `v1.17.0`, **10** on
 `v1.17.1`, **1** on `v1.18.0`, **0** on every shipped milestone, and **19** with no milestone:
-1 + 10 + 1 + 19 = 31, and 539 + 31 = 570. *(Earlier on 09-29: 568 total, 534 closed, 34 open. 09-28: 567 total, 529 closed, 38 open. 09-27: 564 total, 526 closed, 38 open. 09-20: 551 total, 514 closed, 37 open.
+3 + 10 + 1 + 19 = 33, and 539 + 33 = 572. *(09-29 after PR #1197: 570 / 539 / 31. Earlier on 09-29: 568 total, 534 closed, 34 open. 09-28: 567 total, 529 closed, 38 open. 09-27: 564 total, 526 closed, 38 open. 09-20: 551 total, 514 closed, 37 open.
 09-17: 540 / 510 / 30. 09-05: 525 / 488 / 37.)*
 
 > This footer previously read "503 issues total — 478 closed, 28 open", which
