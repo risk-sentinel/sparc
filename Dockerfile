@@ -71,7 +71,8 @@ ARG HDF_LIBS_VERSION=3.7.0
 # Measured with `rpm -q` on both digests, per the practice above. The bump is
 # surgical: 109 packages before and after, nothing added or removed, and
 # sqlite-libs is the ONLY version change — so the blast radius is the fix.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:7b8e25a1b56ca4d00219198f3b5b51a3e1693a5c4f5369c5e190d7d6cb3f980e
+# SPIKE #1189 (experiment branch, never merged): UBI 10 minimal, current digest.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:a9f9316ec3a1419a2de6ce4d2d9f034d477e97cdf2a16d6f04b7bd632ac753c4
 
 # ── hdf-builder: hdf-cli compiled from source, toolchain pinned (#1001) ──────
 # This used to be a release-tarball download (script/dev/install-hdf.sh, then
@@ -305,7 +306,7 @@ RUN find /etc/pki/ca-trust/source/anchors/sparc-custom/ -type f \
 # update-ca-trust and pg_isready — the two runtime tools that matter — survive,
 # since both come from ca-certificates/p11-kit and postgresql, not from curl.
 # The runtime CA mechanism in bin/lib/ca-trust.sh uses neither curl nor dnf.
-RUN rpm -e --nodeps curl-minimal libcurl-minimal microdnf libdnf librepo \
+RUN rpm -e --nodeps curl libcurl-minimal microdnf libdnf librepo \
     && rm -rf /var/cache/dnf /var/cache/yum \
     && ! command -v curl \
     && ! ls /usr/lib64/libcurl.so.4 2>/dev/null \
