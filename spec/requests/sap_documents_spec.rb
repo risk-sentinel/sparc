@@ -184,13 +184,27 @@ RSpec.describe "SapDocuments", type: :request do
     let(:catalog) { create(:control_catalog) }
     let(:profile) { create(:profile_document, name: "Derived Baseline", status: "completed", control_catalog: catalog) }
 
+    # Each assertion reads ITS OWN select. The form carries two — the SSP and the
+    # baseline — and both preselect by numeric id from different tables. These
+    # examples used to search the whole page for `<option selected value="N">`,
+    # so an SSP and a profile that happened to share an id made "the baseline is
+    # blank" fail on the SSP's own selected option (CI, 2026-10-01, seed 46985),
+    # and could equally let "the baseline is preselected" pass on it.
+    def selected_values(select_id)
+      Nokogiri::HTML(response.body).css("select##{select_id} option[selected]").map { |o| o["value"] }
+    end
+
+    def offered_values(select_id)
+      Nokogiri::HTML(response.body).css("select##{select_id} option").map { |o| o["value"] }
+    end
+
     it "preselects the baseline the chosen SSP records" do
       ssp = create(:ssp_document, status: "completed", profile_document: profile)
 
       get new_sap_document_path(ssp_document_id: ssp.id)
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include(%(<option selected="selected" value="#{profile.id}"))
+      expect(selected_values("profile-select")).to eq([ profile.id.to_s ])
     end
 
     it "preselects the SSP itself, so the choice is not silently dropped" do
@@ -198,7 +212,7 @@ RSpec.describe "SapDocuments", type: :request do
 
       get new_sap_document_path(ssp_document_id: ssp.id)
 
-      expect(response.body).to include(%(<option selected="selected" value="#{ssp.id}"))
+      expect(selected_values("ssp-select")).to eq([ ssp.id.to_s ])
     end
 
     # An SSP with no baseline must not have one invented for it. The remedy is
@@ -209,7 +223,21 @@ RSpec.describe "SapDocuments", type: :request do
 
       get new_sap_document_path(ssp_document_id: ssp.id)
 
-      expect(response.body).not_to include(%(<option selected="selected" value="#{profile.id}"))
+      # The profile is OFFERED, so "nothing selected" is a choice the form made
+      # and not an empty list.
+      expect(offered_values("profile-select")).to include(profile.id.to_s)
+      expect(selected_values("profile-select")).to be_empty
+    end
+
+    # The collision that used to break the example above, forced rather than
+    # left to chance: the SSP and the profile share an id.
+    it "leaves the baseline blank when the SSP records none, even when the SSP and a profile share an id" do
+      ssp = create(:ssp_document, id: profile.id, status: "completed", profile_document: nil)
+
+      get new_sap_document_path(ssp_document_id: ssp.id)
+
+      expect(selected_values("ssp-select")).to eq([ ssp.id.to_s ])
+      expect(selected_values("profile-select")).to be_empty
     end
 
     it "renders with no SSP chosen at all" do
