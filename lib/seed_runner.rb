@@ -55,7 +55,10 @@ module SeedRunner
     # 1.1.0 — the #984 leveraged-authorization fixture was created without
     # `date_authorized`, which OSCAL REQUIRES, so every SSP on the leveraging
     # boundary failed export validation. Re-run to heal existing rows.
-    "demo_collection_screens" => "1.1.0",
+    # 1.2.0 — the review-queue profile was left at the import default `pending`,
+    # so its page rendered only the "processing" banner on a fresh instance.
+    # Re-run to mark it completed; the section heals an existing row.
+    "demo_collection_screens" => "1.2.0",
     # OSCAL 1.2.3 became supported + the default (owner, 2026-09-29): re-run so
     # an existing instance loads the 1.2.3 schema rows it validates against.
     "oscal_schemas"         => "1.1.0",
