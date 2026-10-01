@@ -90,7 +90,9 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
       code, _out, overrides = amend(write("f.yml", finding(deviation: risk_adjustment)))
 
       expect(code).to eq(0)
-      expect(overrides.map { |o| o["status"] }).to eq([ "notApplicable" ])
+      # One override per requirement name the finding may appear under: the bare
+      # id and grype's `Grype/<id>` (#1200). Both must carry the same status.
+      expect(overrides.map { |o| o["status"] }).to eq(%w[notApplicable notApplicable])
     end
 
     it "keeps an UNAPPROVED deviation as failed so a CRITICAL still gates" do
@@ -99,7 +101,7 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
       )
 
       expect(code).to eq(0)
-      expect(overrides.map { |o| o["status"] }).to eq([ "failed" ]),
+      expect(overrides.map { |o| o["status"] }).to eq(%w[failed failed]),
         "an unapproved deviation must remain `failed` — otherwise it is suppressed before anyone approves it"
     end
 

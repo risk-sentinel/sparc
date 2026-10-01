@@ -4,6 +4,24 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.17.0 -- Hardened Image, Delivery API, Upgrade Safety (pending tag)
+
+A minor release with three threads: the container image is rebuilt on a hardened base, the API now delivers what an evidence pipeline needs to consume SPARC's output, and a deployment can no longer start on a database its code does not match.
+
+- **The production image is Red Hat UBI 10 minimal, stripped** ([#1200](https://github.com/risk-sentinel/sparc/issues/1200)). The runtime image carries no package manager and no `rpm` binary; the rpm database stays, so scanners still enumerate every installed package. Every version bump re-resolves the package install, so a release cannot ship a package layer older than itself. The image's PostgreSQL client tools move from 13 to 16. The container vulnerability gate now reads Red Hat's own RHEL 10 advisory data and fails at HIGH.
+- **`pg` uses the system libpq and OpenSSL** ([#1204](https://github.com/risk-sentinel/sparc/issues/1204)). The precompiled gem bundled its own libpq with its own OpenSSL, invisible to image scanners. It is now built from source against the packages the image ships.
+- **A container checks its schema before it serves** ([#1151](https://github.com/risk-sentinel/sparc/issues/1151)). After `db:prepare`, the boot gate reconciles and verifies the database against `schema.rb` and refuses to start the web server on structural drift. `/up` and `/up/ready` are health probes; `/up/ready` returns `503` on an unreachable database, a pending migration or drift. The drift check now reports missing tables as well as missing columns. See [Upgrading](Upgrading).
+- **OSCAL export over the API for every document type** ([#1181](https://github.com/risk-sentinel/sparc/issues/1181)) — SSP, SAP, SAR and POA&M join CDEF at `GET /api/v1/<documents>/:id/export`, at OSCAL 1.2.3. An authorization boundary exposes its durable UUID ([#1178](https://github.com/risk-sentinel/sparc/issues/1178)) and exports as an HDF `hdf-system` document ([#1179](https://github.com/risk-sentinel/sparc/issues/1179)). The delivery contract is written down ([#1154](https://github.com/risk-sentinel/sparc/issues/1154)).
+- **One identity grammar, shared with consumers** ([#1155](https://github.com/risk-sentinel/sparc/issues/1155), [#1161](https://github.com/risk-sentinel/sparc/issues/1161)) — the SPARC namespace and the UUIDv5 key grammar are registered, with reference implementations and shared test vectors. Federation de-duplicates on the originating party as well as the object UUID ([#1159](https://github.com/risk-sentinel/sparc/issues/1159)). The catalog form of a control identifier (`ac-2.1`) is canonical: the API accepts the other spellings on input and normalises them ([#1162](https://github.com/risk-sentinel/sparc/issues/1162)).
+- **The FedRAMP 20x KSI catalog is built from FedRAMP's published rules** ([#1115](https://github.com/risk-sentinel/sparc/issues/1115), [#1172](https://github.com/risk-sentinel/sparc/issues/1172)). Indicators are re-keyed to FedRAMP's current names automatically after the first boot; see [Upgrading](Upgrading).
+- **The boundary filter means the same thing on every list** ([#1202](https://github.com/risk-sentinel/sparc/issues/1202)). The SSP, SAP and SAR lists ignored the boundary the sidebar sent; the sidebar, the web lists and the API now read one definition.
+- **Every object's UUID is on screen, copyable** ([#1180](https://github.com/risk-sentinel/sparc/issues/1180)).
+- **CDEF uploads resolve their NIST mappings** ([#1103](https://github.com/risk-sentinel/sparc/issues/1103)) — the upload path skipped the enrichment the import path applied.
+
+**Behaviour changes:** A container whose database does not structurally match its code **does not start serving**; before, it started and failed on the first affected page. The image is built on RHEL 10.2 and contains **no package manager or `rpm`**: nothing changes for a deployment (same ports, environment variables, custom-CA mounts and database), but if you build your own image on top of SPARC's, install packages in your own build stage. Control identifiers sent to the API are **normalised to the catalog form on receipt**: `AC-1`, `ac-1` and `AC-01` are the same control. OSCAL **1.2.3** is the default version SPARC writes.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.0).
+
 ## v1.16.3 -- Upgradable (2026-09-18)
 
 **v1.16.2 could not be upgraded into.** A deployment moving from v1.16.0 ended with no pending migrations and a database missing seven columns, and every boundary page returned 500:

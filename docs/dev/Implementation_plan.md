@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-09-29 — v1.17.0 currency pass: AF delivered (PR #1192, with #1193–#1195); AI + AL bundled and in flight, with OSCAL 1.2.3 and a web↔API parity spec folded in
+**Last updated:** 2026-10-01 — #1203 (AO, design) moved to v1.17.1 by the owner, leaving v1.17.0 with only bundle AN (PR #1201), which now carries the VERSION bump to 1.17.0; milestone counts re-measured
 
 ---
 
@@ -60,16 +60,31 @@ authentication mode coverage matrix.
 > with it. Issues still *say* v1.17.1 in their own comment threads where they
 > were moved there by hand; the milestone is the authority, not the prose.
 
-**Open: 6. Closed: 17.** Re-measured **2026-09-29** from one grouped query
-(`gh issue list --state open --limit 300 --json number,milestone`, grouped by
+**Open: 3. Closed: 22.** Re-measured **2026-10-01** from one grouped query
+(`gh issue list --state open --limit 400 --json number,milestone`, grouped by
 milestone) and `gh issue list --milestone v1.17.0 --state closed --limit 300`.
 **This is the current phase.**
 
-- **Closed on the milestone (17):** #871 #1103 #1115 #1144 #1151 #1155 #1159
-  #1161 #1162 #1164 #1172 #1183 #1184 #1186 #1193 #1194 #1195.
-- **Open (6):** #1109 #1154 #1178 #1179 #1181 #1189.
+- **Closed on the milestone (22):** #871 #1103 #1115 #1144 #1151 #1154 #1155
+  #1159 #1161 #1162 #1164 #1172 #1178 #1179 #1181 #1183 #1184 #1186 #1189
+  #1193 #1194 #1195.
+- **Open (3):** #1200, #1202, #1204 (all in AN, PR #1201). **#1203** (AO, design) moved to
+  `v1.17.1` (owner, 2026-10-01), so the milestone is empty once PR #1201 merges.
 
-**What moved since the last pass (2026-09-28).** AF merged as PR #1192 on
+**#1204 joined AN (owner, 2026-09-30):** the precompiled `pg` gem shipped its own libpq with OpenSSL 3.6.0 built in, loaded by every database connection and invisible to every scanner. `pg` is now built from source against Red Hat's libpq and OpenSSL, and the build fails if a bundled libpq returns. nokogiri's vendored libxml2 / libxslt is recorded for an owner decision.
+
+**What moved on 2026-09-30.** The owner found the SSP list ignoring the sidebar's boundary filter. A sweep confirmed three web lists (SSP, SAP, SAR) ignore it while their API siblings honour it (#951 had fixed the same defect for CDEFs only), filed as **#1202** and bundled into AN (PR #1201), with one boundary definition shared by the sidebar, the web lists and Api::V1. The owner then separated a second problem, how many SSPs / SAPs / SARs a boundary holds and what may still change each, filed as **#1203** (design, NIST-validated first).
+
+**What moved in the pass before (2026-09-29, after AF).** AI + AL merged as PR
+#1197, closing #1154, #1178, #1179 and #1181. **#1109 (AJ) moved to a new
+`v1.18.0` milestone** (owner): about 300 edits, 45 of them in JavaScript the
+inline-style ratchet cannot see, for a second-order gain, since `script-src` is
+already nonce-based. The **#1189 spike** measured UBI 10 and was closed with its
+result; the owner decided to ship it, filed as **#1200** (bundle AN, in flight).
+**#1198** (vendor the OSCAL schema bundle; the build makes 81 GitHub requests)
+was filed with no milestone.
+
+**What moved in the pass before (2026-09-28 → 09-29).** AF merged as PR #1192 on
 2026-09-29, closing #1115, #1172, #1193, #1194 and #1195. AI and AL were bundled
 (owner) and cut from `main` the same day. **#1196** (a confidence-score for
 control mappings, for discussion) was filed onto **v1.17.1** out of #1154 part 2.
@@ -100,16 +115,38 @@ whenever it is done. One of those earns a release slot and the other does not.
 | --- | --- | --- | --- |
 | *delivered in flight* | ~~#1103~~ ~~#1180~~ ~~#1183~~ ~~#1175~~ ~~#1177~~ | **#1103** — PR #1163 (2026-09-20): UI-uploaded CDEFs resolved no NIST mappings or regions because enrichment was private to the AWS Labs importer; MITRE re-vendored 106/rev4 → 394/rev4+5; the gate stack gained the database volume whose absence let the squash defect ship. **#1180** — PR #1182 (2026-09-24, no milestone): every object UUID on screen and copyable, from one shared component (`shared/_uuid_badge` + `clipboard_controller`). **#1183** — PR #1185 (2026-09-24): hdf-cli pinned to **3.7.0**; 3.5.1's amendment and schema checks were false passes, and the amendment register now chains. **#1175** — PR #1174: family-id normalisation scoped to its vocabulary. **#1177** — fixed by `fa785334` in PR #1174 (CMS attestation export ordered, so deliveries are reproducible); that PR carried no closing keyword for it, so it was closed by hand 2026-09-27. | delivered |
 | **AE — Upgrade safety & gate truth** ✅ **DELIVERED** — PR #1188, merged 2026-09-28 | ~~#1151~~ ~~#1186~~ ~~#1184~~ · ~~#1144~~ ~~#1164~~ | **#1151**: a container must not serve traffic on a schema it does not match. Re-scoped per the issue's own 09-19 investigation: `/up` + `/up/ready` health endpoints (there is **no health route today**, though `production.rb` already assumes `/up`), a boot gate in the entrypoint that refuses to bind the port on drift, a **generated additive reconciliation** from `db/schema.rb` with an audit record (owner-decided 2026-09-27: it lands here, not split out), and an `upgrade_path` CI job that migrates a database built by the **published** previous-release image forward (owner-decided: **advisory first**, promote to required after one release). **#1186**: `security_gate` has been **red on `main` since PR #1185** (2026-09-24). Measured: the breach is **two CodeQL rules**, not the three CSRF sites the issue names — `rb/csrf-protection-disabled` (0.88, 3 results) and `rb/clear-text-storage-sensitive-data` (0.75, 5 results, all name-matched false positives). Overrides match on the RULE, so the owner chose register entries **pinned to CodeQL result fingerprints**: a new instance still breaches. The owner authors the dispositions. **#1184**: the gate fails unless `hdf amend verify` reports the chain **established**; the dead v2 `amend apply` leg (which fails 12/12 under 3.7.0 and uploads raw results as `amended-hdfs`) is replaced by downpins of the v3 output. #1144 and #1164 delivered in PR #1165. **Built 2026-09-27 on the branch, one day against 7–9d** — the measurement had been done before planning. Proven on a UBI9 image built from the branch, over a RESTORED v1.16.3 database: the real v1.16.3 → branch upgrade reconciled nothing and verified strict-clean on 98 tables; with a column and an index dropped the container repaired both (2 statements, audited) and served; with a NOT NULL column dropped from a populated table it refused, changed nothing and exited 1 before binding. `bin/upgrade_path_check` both legs: v1.16.0 → v1.16.2 FAILS naming #1147's seven columns, v1.16.0 → v1.16.3 passes. Severity survey (hdf 3.5.1 vs 3.7.0 over every SARIF on run 36055248647): **only CodeQL crossed a band**; trivy moved within band on 20 of 21. | **7–9d → 1d** |
-| **AM — Base image spike** | **#1189** | **SPIKE ONLY — owner, 2026-09-27: measure in this milestone, NOT a commitment to upgrade.** Would a UBI 10 minimal base retire any of the **32 register entries** carried against the UBI9 base (11 `deferred` with no upstream fix, 6 HIGH risk-adjusted deviations, 15 HIGH not-applicable), and what would it break (Ruby and native gems, Postgres client tools, locale, CA trust, arm64, FIPS/OpenSSL, the signing pipeline)? Deliverable: a measured per-entry table and a recommendation; any adoption is its own issue. Filed out of AE, after the owner asked whether the Debian-era deferrals were still real. They are: measured present on RHEL 9.8. | spike |
+| **AM — Base image spike** ✅ **DELIVERED** 2026-09-29 — result on #1189, adoption filed as #1200 | ~~#1189~~ | **SPIKE ONLY — owner, 2026-09-27: measure in this milestone, NOT a commitment to upgrade.** Would a UBI 10 minimal base retire any of the **32 register entries** carried against the UBI9 base (11 `deferred` with no upstream fix, 6 HIGH risk-adjusted deviations, 15 HIGH not-applicable), and what would it break (Ruby and native gems, Postgres client tools, locale, CA trust, arm64, FIPS/OpenSSL, the signing pipeline)? Deliverable: a measured per-entry table and a recommendation; any adoption is its own issue. Filed out of AE, after the owner asked whether the Debian-era deferrals were still real. They are: measured present on RHEL 9.8. | spike |
 | **AF — Catalog truth** ✅ **DELIVERED** — PR #1192, merged 2026-09-29 | ~~#1115~~ ~~#1172~~ | Must precede **AI**: #1154's second ask is to publish the KSI mapping documents Horizon reads, and the catalog they would be published from has drifted. Measured against FedRAMP `2026.07.14.01`: five theme codes renamed (`EDU`→`CED`, `CM`→`CMT`, `IR`→`INR`, `POL`→`PIY`, `REC`→`RPL`), `AUTH` is no longer a KSI family at all, and **every** indicator id is re-keyed from numbered to mnemonic. SPARC is the flagship and this is the catalog customers see. **#1172 joined this bundle 2026-09-21**: #1115 fixes the data once, #1172 is the ingestion capability whose absence caused the drift. Measured live against `FedRAMP/rules` `2026.09.13.02` — SPARC seeds **11 themes / 54 indicators** from a 431-line hand-written Ruby seed, upstream publishes **10 / 46** plus a JSON Schema with `KSI` as a top-level property. There is a `KsiExportService` and no importer at all. **Owner decisions 2026-09-28:** vendor the upstream files (17 U.S.C. 105); **1:1 renames move in place, everything else retires** (never deleted, since `KsiValidation` is `dependent: :destroy` on its indicator); import reads only the vendored snapshot, plus a separate drift tool; triggered by API and rake only (no UI control). The old→new map is owner-approved (`lib/data/fedramp/ksi_legacy_map.yml`: 10 renames, 44 retirements). **Built on the branch:** vendored rules and schema with a provenance sidecar; a retired state (`retired_at`, `superseded_by`) on controls and families; `FedrampKsiImportService` (schema-validated first, one transaction, digest no-op, dry run); a deferred data migration for existing deployments, and the seed reduced to an importer call; `POST /api/v1/ksi_catalog/import`, with retired entries left out of the read API unless `include_retired=true`; `bin/ksi_upstream_diff.rb`; retired entries badged in the catalog UI and exported to OSCAL as `withdrawn`. **Found on the way:** no deployment whose Rev 5 catalog is named after its OSCAL title ever had a KSI crosswalk, because the seed looked Rev 5 up by an exact name. The importer finds it by framework and version, and a fresh seed now resolves all **373** of FedRAMP's links. An empty family exported `controls: []`, which the OSCAL schema rejects. The drift tool, run live 2026-09-28, finds no drift from `2026.09.13.02`. | 2d + 3d |
-| **AI + AL — Horizon contract surface & evidence identity** 🔄 **IN FLIGHT** — branch `feature/1154_1181_1178_1179_horizon_contract_and_evidence_identity` (owner bundled AI and AL, 2026-09-29; four-lane fan-out) | **#1154** **#1181** **#1178** **#1179** | **Decided (owner, 2026-09-29):** D1 emit all nine SPARC-namespace props where the document's data supports them, and ADD the missing data points (verified schema-valid against NIST 1.2.2 and 1.2.3 — `props` is the only legal place, and NIST's prop constraints are scoped to NIST's namespace); D2 mappings carry provenance only, confidence-score deferred to #1196; D3/D4 hdf-system status map and `urn:ietf:rfc:4122` scheme, amendment `systemRef` fix bundled; D5 **OSCAL 1.2.3 is the default** and XSDs are carried PER RELEASE (1.1.2, 1.1.3, 1.2.2, 1.2.3; uncarried releases validate against the nearest carried one, flagged); a **web↔API parity spec** makes the API-first rule enforced. **Built:** #1178 finished (it was mostly already shipped in #1180 — `uuid`; now org id/uuid on boundaries and both boundary uuids on leveraged authorizations); #1181 OSCAL export over the API for SSP, SAP, SAR and POA&M (POA&M had no export route at all) with content-hash ETags and 304s; mapping collections over the API; the nine props with new boundary dates and POA&M/SAR risk decision fields, a validator in the validated export path, import round-trip; `hdf-system` export (validated in process — hdf-cli 3.7.0 itself does not enforce `unevaluatedProperties` or `uri-reference`); `docs/api/DELIVERY_CONTRACT.md`. **Found on the way and fixed here:** a production SSP could be neither baselined nor linked to a boundary from the UI (three rules deadlocked; ECS Fargate has no shell, so the UI is the only repair path); a `cdef.write` holder could make a CDEF instance-wide over the API (web refused since #980) — proven, now 403. **Parity baseline:** 232 mapped, 125 ui_only, **117 gaps** (18 partial) — the API-first backlog, listed for the owner, not filed. | ~11–12d |
+| **AI + AL — Horizon contract surface & evidence identity** ✅ **DELIVERED** — PR #1197, merged 2026-09-29 (owner bundled AI and AL; four-lane fan-out) | ~~#1154~~ ~~#1181~~ ~~#1178~~ ~~#1179~~ | **Decided (owner, 2026-09-29):** D1 emit all nine SPARC-namespace props where the document's data supports them, and ADD the missing data points (verified schema-valid against NIST 1.2.2 and 1.2.3 — `props` is the only legal place, and NIST's prop constraints are scoped to NIST's namespace); D2 mappings carry provenance only, confidence-score deferred to #1196; D3/D4 hdf-system status map and `urn:ietf:rfc:4122` scheme, amendment `systemRef` fix bundled; D5 **OSCAL 1.2.3 is the default** and XSDs are carried PER RELEASE (1.1.2, 1.1.3, 1.2.2, 1.2.3; uncarried releases validate against the nearest carried one, flagged); a **web↔API parity spec** makes the API-first rule enforced. **Built:** #1178 finished (it was mostly already shipped in #1180 — `uuid`; now org id/uuid on boundaries and both boundary uuids on leveraged authorizations); #1181 OSCAL export over the API for SSP, SAP, SAR and POA&M (POA&M had no export route at all) with content-hash ETags and 304s; mapping collections over the API; the nine props with new boundary dates and POA&M/SAR risk decision fields, a validator in the validated export path, import round-trip; `hdf-system` export (validated in process — hdf-cli 3.7.0 itself does not enforce `unevaluatedProperties` or `uri-reference`); `docs/api/DELIVERY_CONTRACT.md`. **Found on the way and fixed here:** a production SSP could be neither baselined nor linked to a boundary from the UI (three rules deadlocked; ECS Fargate has no shell, so the UI is the only repair path); a `cdef.write` holder could make a CDEF instance-wide over the API (web refused since #980) — proven, now 403. **Parity baseline:** 232 mapped, 125 ui_only, **117 gaps** (18 partial) — the API-first backlog, listed for the owner, not filed. | ~11–12d |
 | **AF follow-ups** ✅ **DELIVERED** in PR #1192 (owner bundled them) | ~~#1193~~ ~~#1194~~ ~~#1195~~ | **#1193** — the retired `AUTH` theme kept its old `sort_order` and listed first; retired families now list after current ones where families are displayed (catalog page, KSI themes API), so it also holds on a database already re-keyed. **#1194 DECIDED (owner, 2026-09-28): yes** — an old id the re-key renamed (`ksi-iam-02`) resolves on the KSI API to the current indicator, answered with `resolved_from`; read from the vendored map, so no data change. **#1195 DECIDED (owner, 2026-09-28): KSI-only for now** — documented on the models and in the catalog guide; profile, baseline and SAP paths deliberately ignore retirement until an importer retires entries in another catalog. | 1d |
-| **AJ — Security tail** | **#1109** | Independent of the chain. The tail is **201 inline styles across 71 files** re-measured 2026-09-20, not the 254 across 94 the issue was filed with on 2026-09-05 — intervening work cleared ~53 declarations and 23 files, and the issue's own file table is stale by that much. Counted like for like (its table says `evidences/show.html.erb` 9; it measures 9). None holding ten — the flat tail #1047 stopped at 83%. It is the only thing standing between SPARC and removing `style-src 'unsafe-inline'`, which is binary: it comes out at zero or not at all. | 3d |
+| **AJ — Security tail** ➡️ **MOVED to `v1.18.0`** (owner, 2026-09-29: too much risk for a second-order gain) | **#1109** | Independent of the chain. The tail is **201 inline styles across 71 files** re-measured 2026-09-20, not the 254 across 94 the issue was filed with on 2026-09-05 — intervening work cleared ~53 declarations and 23 files, and the issue's own file table is stale by that much. Counted like for like (its table says `evidences/show.html.erb` 9; it measures 9). None holding ten — the flat tail #1047 stopped at 83%. It is the only thing standing between SPARC and removing `style-src 'unsafe-inline'`, which is binary: it comes out at zero or not at all. | 3d |
+| **AN — Hardened UBI 10 image** 🔄 **IN FLIGHT** — PR #1201, branch `feature/1200_ubi10_hardened_base` | **#1200** **#1202** **#1204** | Out of the #1189 spike. The owner judged the win real only if the full release checklist passes locally, then decided to ship it. **Built:**
+| **AO — Per-boundary document representation** (design) ➡️ **MOVED to `v1.17.1`** (owner, 2026-10-01) | **#1203** | Owner, 2026-09-30:
+- **SSP:** one per boundary, kept current.
+- **SAP:** many per boundary, kept current from the SSP.
+- **SAR:** many per boundary, with states draft (SSP / SAP changes and evidence reach it) → in review (evidence only) → published (frozen).
+
+**Validate against NIST first**: OSCAL assessment layer, SP 800-37 Assess / Authorize, SP 800-53A.
+
+**Today:** `has_one :sap_document` / `:sar_document` pick one arbitrarily where a boundary holds several (boundary 1 has 2 SARs), in the boundary tiles, `AtoPackageExportService`, `HdfAggregationService` and `ReferenceEstate`. | TBD |
+- **Base:** `ubi10/ubi-minimal` (RHEL 10.2); PostgreSQL client moves from 13 (EOL) to 16.
+- **Runtime strip:** curl, the package manager, rpm, glib2 and the util-linux libraries. Removing rpm was PROVEN not to blind the scanners: they read the rpm database, and all 85 packages are enumerated by both. Build-time assertions, each mutation-proven, fail a strip that is too greedy, one that is incomplete, or one that loses the database.
+- **Build freshness:** a version bump re-resolves the package install.
+
+**Found:**
+- The shipping UBI9 image carried postgresql and libxml2 builds Red Hat had already fixed: a stale layer cache and a stale digest.
+- **Trivy reports zero on RHEL 10.2** (0.69.3 and 0.74.0), and grype-container was ungated. Grype is now gated at HIGH, with register dispositions reaching it as `Grype/<id>`, proven in both directions.
+
+**Register:** 28 of the 33 base-image entries retired with rpm-database evidence; 5 remain.
+
+**Deferred** (owner): renaming the `ubi9` artifacts. | ~3–4d |
 | **AG — Identity contract** ✅ **DELIVERED** | ~~#1155~~ ~~#1162~~ | The root of the Horizon chain, and the cheapest work in the milestone. **#1155** registers the namespace URI (still the illustrative `https://risk-sentinel.org/ns/sparc`) and the federation namespace UUID, which **does not exist** — the spec carries a literal placeholder. Both are hashed inputs to every object identity in the estate. **#1162** settles the canonical control-id form: the API emits canonical in the catalog and raw everywhere else, and #1161's grammar canonicalises control ids *before* derivation, so an inconsistency here produces two UUIDs for one object. It also answers #1154's own open question, "is there a canonical form to target?" **DELIVERED 2026-09-21.** #1155 was partly a FALSE PREMISE: it asked to "confirm the real registered namespace URI" as though none existed, but `OscalNamespace::REGISTRY` has carried `https://sparc.risk-sentinel.org/ns` since #1106 and Horizon's schema const was a DIFFERENT URI. Owner-decided: Horizon adopts SPARC's, so no SPARC export moves and #1106 is not reopened. The federation namespace UUID is the UUIDv5 DERIVED from that URI (`9f434272-f796-589b-b972-954790395630`), so a peer recomputes rather than copies it, and `GET /api/v1/federation/identity` serves both with the derivation recipe. #1162 fixed the API write and filter paths; its first item was misdiagnosed — the model has canonicalised since #911, and the real defect was the controller comparing RAW input against canonical storage, so a no-op update destroyed and recreated every link. **A second, older bug surfaced with it**: `evidence_control_links` had no `autosave`, so unlinking a control never took effect on either surface. | 3d |
 | **AH — Key grammar & dedup** ✅ **DELIVERED** | ~~#1161~~ ~~#1159~~ | **#1161** ports the UUIDv5 key grammar to Ruby and Python with a shared test vector file — the deliverable that matters most, because three independent implementations of a hashing grammar will disagree eventually and vectors make agreement *measured* rather than assumed. Four details drift silently: the `\x1f` separator (a printable one makes `("a|b","c")` and `("a","b|c")` collide), the grammar version being part of the hashed input, control-id canonicalisation, and NFC normalisation. **#1159** is the security half: the namespace is shared and the grammar is public, so **any peer can precompute another boundary's object UUID and claim it**. Dedup must key on **(object UUID, originating party)**, and two parties asserting one UUID is a conflict to surface, not a duplicate to collapse. Ships after #1161 because the rule is only true if runtimes derive the same UUID. **DELIVERED 2026-09-21.** The vectors were NOT authored here — Horizon already shipped 26 of them, declaring themselves provisional and naming #1155 as the blocker, so this adopted them, regenerated every uuid under the registered namespace, and made the field lists MACHINE-READABLE (upstream they were only implied by each vector's `canonical-fields`). Deriving them surfaced three rules the normative table does not state: **`vocabulary` is never hashed and decides whether a control id may be canonicalised** — under an opaque vocabulary `ACM.1` and `acm.1` are two Security Hub controls, and the first field lists written here canonicalised unconditionally until vector 26 caught it; the 11 rejections are a **validation** spec needing field types, not just presence checks; and an AO decision's `period` is a DATE. SPARC had no dedup code at all, so #1159 establishes the rule rather than fixing a bug, and `FederationBundleSigningService.verify` now returns the verified party so the scoping value comes from verification rather than the payload. | 5d |
 | **AK — Deviation approval, mechanized** ✅ **DELIVERED** — PR #1174, merged 2026-09-23 (with #1175) | ~~#871~~ | **Next after AH.** A single admin cannot approve their own PR, so `deviation-requested` -> `deviation-approved` is structurally unreachable and the only route is an admin merge past a red gate. AH hit this for real: six base-image HIGH findings that are present but unreachable and have no upstream fix need a `risk_adjustment`, and there is no way to grant it. **PR #1173 merges by override, so `main` carries six `deviation-requested` entries and the container gate stays RED until this lands.** The flow is an admin commenting `/approve-deviation` — a comment is not a review, so the self-approval block never applies — with a workflow that verifies the commenter, flips the state and pushes with an App or PAT token, because a `GITHUB_TOKEN` push does not trigger workflow runs. Two properties must hold: workflow AND logic come from `main` (a PR that supplies its own `apply_deviation_approval.rb` would self-approve), and `action: created` only. **The escape hatch it retires, `admin-merge-bypass`, has ZERO spec coverage today** while carrying 8 retired entries. #871's own PR carries no deviation so nothing blocks it; the first deviation PR after it is the live test, and #1173's six are already queued to be it. **IN FLIGHT 2026-09-22.** Opening it found that **#1173 had broken `apply_deviation_approval.rb`**: the script edits the register line by line — deliberately, because a YAML round-trip destroys its comments — and #1173's round-trip re-indented the file, so its depth-pinned matchers matched nothing and it refused every approval. Sixteen green specs missed it because each built its own fixture at the old depth; **the fixture was never the artifact**. Repaired, and four specs now drive the applier against the committed register itself. The flow departs from the issue text in one place: the mechanism is recorded as `approve-deviation-comment`, not `review`, because no review occurs and the gate corroborates against the COMMENT list. **Delivered 2026-09-23. First live use 2026-09-28, on PR #1188** — the owner's `/approve-deviation` approved the CVE-2026-54876 risk_adjustment (run 36460001382; bot commit `4354d12c`, `approval_mechanism: approve-deviation-comment`), and the App-token push re-triggered CI as designed. **That first use surfaced two defects AK's own specs could not:** the converter's mechanism list omitted `approve-deviation-comment`, so the approval would have been refused and the gate left red (fixed in PR #1188, `8b560539`, with an applier → converter spec proved red first); and the `SPARC Deviation Approval` App was never INSTALLED on `sparc` — the secrets were set, the token mint returned `Not Found` (run 36433514543) — installed by the owner 2026-09-28. The six #1173 entries remain `admin-merge-bypass`. | 3d |
 
-**The ordering that matters now is AI + AL** (in flight, one bundle), with **AJ**
+**The ordering that matters now is AN (#1200)**, the last open item on
+v1.17.0. AI + AL, AE and AF are delivered; AJ moved to v1.18.0. (Superseded
+text follows.) Previously: **the ordering that mattered was AI + AL** (in flight, one bundle), with **AJ**
 and the **AM** spike independent. AE and AF are delivered. AG → AH, the identity
 chain AI depended on, is complete.
 
@@ -134,7 +171,7 @@ chain AI depended on, is complete.
    `/up/ready`, which behind ECS would replace the whole fleet on a database
    blip (PR #1188 review) — verify deploys against `/up/ready`, and enable
    `deployment_circuit_breaker`.
-5. **Two items the owner flagged during #1185 are still not written up:** the
+5. **Filed 2026-09-29 as #1198** (owner asked): the build-time OSCAL schema download. Two items the owner flagged during #1185 were not written up until then: the
    image build downloads the OSCAL JSON schemas from GitHub at build time (one
    CDN 500 failed a whole build) — `lib/oscal_schemas_bundle/` is **git-ignored**,
    not committed as this item used to say (measured 2026-09-29); the tracked
@@ -160,8 +197,8 @@ figure. The large single item inside it is the reconciliation engine.
 
 ## Open work — measured 2026-09-29
 
-Re-measured against the live repository, not carried forward. **568 issues**;
-**534 are closed**, **34 open**. What remains:
+Re-measured against the live repository, not carried forward. **575 issues**;
+**539 are closed**, **36 open** (2026-09-30). What remains:
 
 > **This section read 36 open for part of a day.** That figure was measured
 > minutes before #1162 was filed, and then quoted rather than re-measured. It is
@@ -197,13 +234,22 @@ Re-measured against the live repository, not carried forward. **568 issues**;
 
 | State | Count |
 | --- | --- |
-| Closed | **534** |
+| Closed | **539** |
 | Open, on `ci.v0.0.1` / `v1.16.0` / `v1.16.1` | **0** — all shipped (22, 87 and 22 issues) |
-| Open, on `v1.17.0` | **6** — #1109 #1154 #1178 #1179 #1181 #1189 (bundles in Phase 19) |
-| Open, on `v1.17.1` | **10** — #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 |
-| **Open, on NO milestone** | **18** (19 on 09-22, 27 on 09-20, 24 on 09-17, 22 on 09-05, 25 on 09-03, 10 on 08-25) — see below |
+| Open, on `v1.17.0` | **3** — #1200 #1202 #1204 (bundle AN, PR #1201) |
+| Open, on `v1.18.0` | **1** — #1109 (AJ; milestone created 2026-09-29, owner) |
+| Open, on `v1.17.1` | **13** — #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208 |
+| **Open, on NO milestone** | **21** (19 on 09-30 before #1205 / #1206, 18 on 09-29 before #1198, 19 on 09-22, 27 on 09-20, 24 on 09-17, 22 on 09-05, 25 on 09-03, 10 on 08-25) — see below |
 
-The reconciliation, from one grouped query on 2026-09-29: **6 + 10 + 18 = 34,
+The reconciliation, from one grouped query on 2026-10-01:
+**3 + 13 + 1 + 21 = 38, and 539 + 38 = 577.** Since 09-30: **#1207** (PIV-stack paired page-load timeouts) and **#1208** (a POA&M with an overdue risk cannot be converted to HDF amendments) filed onto v1.17.1, and **#1203** moved from v1.17.0 to v1.17.1 (owner). Before that, on 09-30:
+**4 + 10 + 1 + 21 = 36, and 539 + 36 = 575.** Since 09-29: **#1202**, **#1203** and **#1204** filed onto v1.17.0; **#1205** and **#1206** filed with no milestone. Before that, on 09-29 (after PR #1197):
+**1 + 10 + 1 + 19 = 31, and 539 + 31 = 570.** Since the previous pass the same
+day: **#1154, #1178, #1179, #1181** closed (PR #1197) and **#1189** closed (spike
+result); **#1198** (no milestone) and **#1200** (v1.17.0) were filed; **#1109**
+moved to the new **v1.18.0**.
+
+Before that, the reconciliation read: **6 + 10 + 18 = 34,
 and 534 + 34 = 568.** Since 09-28: **#1115, #1172, #1193, #1194, #1195** closed
 (PR #1192); **#1196** filed onto v1.17.1. Between 09-27 and 09-28: **#1151, #1184, #1186** closed (PR #1188);
 **#1193, #1194, #1195** filed onto v1.17.0 out of PR #1192. Between 09-22 and 09-27: **#1172** was already counted; **#1184 and
@@ -223,7 +269,7 @@ closed by in-flight work; **#871, #1159, #1161** closed.
 > closed here; it is recorded because an open milestone with nothing in it reads
 > as work in flight to anyone scanning the milestone list.
 
-### The eighteen with no milestone
+### The twenty-one with no milestone
 
 These are invisible to every milestone count, which is exactly how **#950 went
 missing**: it sat open with no milestone, appeared in no bundle, and was only
@@ -258,6 +304,9 @@ v1.17.0 on 09-27; #1175, #1177 and #1180 arrived and closed in flight.
 | **#1105** | 2026-09-05 | chore(oscal): review OSCAL 1.2.3 and decide whether to adopt it (SPARC ships 1.2.2) |
 | **#1108** | 2026-09-05 | audit(oscal): re-run the seven-model conformance sweep against OSCAL 1.2.3, after #1105 decides adoption |
 | **#1121** | 2026-09-11 | Sample-data generation through the API, not around it — YAML-driven endpoint exerciser (moved from sparc-validate#3) |
+| **#1198** | 2026-09-29 | chore(build): vendor the OSCAL schema bundle and verify it offline — the image build makes 81 GitHub requests and fails on any one |
+| **#1205** | 2026-09-30 | hdf-system export: label the boundary as `system` (not `system_id`) and give components a … |
+| **#1206** | 2026-09-30 | Publish a C4 component model (docs/c4/components.yml) for sparc-iac's Level 3 diagrams |
 
 **How they group, offered as a starting point rather than a decision:**
 
@@ -268,7 +317,8 @@ v1.17.0 on 09-27; #1175, #1177 and #1180 arrived and closed in flight.
   the owner to confirm the interpretation), #1101 (the ATO wizard re-asks settled
   answers).
 - **OSCAL 1.2.3:** #1105 decides adoption; #1108 re-runs the conformance sweep
-  after it.
+  after it. **Both look settled by PR #1197** (1.2.3 became the default, and
+  every record was validated under 1.2.2 and 1.2.3); closing them is the owner's call.
 - **CI-pipeline work, the `ci.v0.0.1` shape:** #752, #776, #838, #864, #953.
 - **Operator docs:** #1097 (custom-CA trust for derived images), #1098
   (OIDC discovery through a proxy).
@@ -304,15 +354,16 @@ whenever the milestone changes**: it last passed on 09-17, and was false by 09-2
 | 16 | **Complete** | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements, OSCAL fidelity (milestone `v1.16.0`) | **87 issues, 87 closed. Tagged `v1.16.0` 2026-08-24** from `main` @ `75b5bb3b`. The full closed list is the milestone itself — do not maintain a second copy here | **SHIPPED.** Bundles ran #939 → O → S → P → T → Q → hdf pin → U → W → V → R → X. Bundle X merged as [PR #1049](https://github.com/risk-sentinel/sparc/pull/1049) → `9ae84a84`; [PR #1055](https://github.com/risk-sentinel/sparc/pull/1055) → `75b5bb3b` then fixed four defects Bundle X had merged, found by running the FULL suites against a built prod image. Release verification (measured, on the tagged tree): rspec **6230/0**, API **2742 passed** over TLS and again over non-TLS, ui-smoke **524 passed / 0 failed**, rubocop + brakeman + bundle-audit clean. The milestone grew **53 → 86 because the sweeps FOUND things**, not through scope creep. Wiki published and release notes carry the measured table |
 | 17 | **Complete** | `ci.v0.0.1` — evidence and gates | **22 issues, 0 open** (+ 8 PRs on the milestone page) | Closed **2026-08-30**. Detail archived in [`implemented.md`](implemented.md) |
 | 18 | **Complete** | v1.16.1 — the patch release (+ v1.16.2 / v1.16.3 hotfixes) | **22 issues, 0 open. Tagged `v1.16.1` 2026-09-17**; v1.16.2 and v1.16.3 tagged 2026-09-18 | Bundles Y → Z → AA → AB → AC → AD. Detail, and the v1.16.2 un-upgradable record, archived in [`implemented.md`](implemented.md) |
-| 19 | **Current** | v1.17.0 — unblock Horizon, fix what customers hit | **6 open, 17 closed** (2026-09-29): open #1109 #1154 #1178 #1179 #1181 #1189. Delivered: AG, AH, AK, AE, AF (+ #1193 #1194 #1195), and #1103 #1180 #1183 #1175 #1177 in flight. **AI + AL in flight** (one bundle, with OSCAL 1.2.3 and the web↔API parity spec); **AJ** (#1109) and the **AM** spike (#1189) in parallel | AI + AL ~11–12d · AJ 3d. The bundle list lives in Phase 19; do not maintain a second copy here |
-| 20 | Planned | v1.17.1 — the deferred wave | **10 open, 0 closed** (2026-09-29): #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196. Sonar backlog, gates that must mean something, two UI tails, **#1176** (service accounts on non-expiring static tokens; broker short-lived IdP credentials), and **#1196** (a confidence-score for control mappings — for discussion) | est. TBD — scope when v1.17.0 is cut |
+| 19 | **Current** | v1.17.0 — unblock Horizon, fix what customers hit | **3 open, 22 closed** (2026-10-01): open #1200 #1202 #1204 (AN, PR #1201); #1203 (AO, design) moved to v1.17.1. Delivered: AG, AH, AK, AE, AF (+ #1193 #1194 #1195), AI + AL (PR #1197), the AM spike (#1189), and #1103 #1180 #1183 #1175 #1177 in flight. **AN (#1200, the hardened UBI 10 image) in flight**; AJ (#1109) moved to v1.18.0 | AN ~3–4d. The bundle list lives in Phase 19; do not maintain a second copy here |
+| 21 | Planned | v1.18.0 — created 2026-09-29 (owner) | **1 open**: #1109 (AJ, the inline-style tail blocking removal of `style-src 'unsafe-inline'`) | 3–4d (re-measured: ~300 sites, 45 in JavaScript) |
+| 20 | Planned | v1.17.1 — the deferred wave | **13 open, 0 closed** (2026-10-01): #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208. Joined since 09-29: **#1203** (AO, per-boundary SSP/SAP/SAR representation — design, NIST-validate first; moved from v1.17.0), **#1207** (PIV-stack page-load timeouts) and **#1208** (overdue POA&M risks refused by the HDF amendments translation). Sonar backlog, gates that must mean something, two UI tails, **#1176** (service accounts on non-expiring static tokens; broker short-lived IdP credentials), and **#1196** (a confidence-score for control mappings — for discussion) | est. TBD — scope when v1.17.0 is cut |
 
 <!-- markdownlint-enable MD013 -->
 
-**Re-measured 2026-09-29** (grouped open query + `gh issue list --state closed --limit 1000`): **568
-issues total — 534 closed, 34 open.** Open splits **6** on `v1.17.0`, **10** on
-`v1.17.1`, **0** on every shipped milestone, and **18** with no milestone:
-6 + 10 + 18 = 34, and 534 + 34 = 568. *(09-28: 567 total, 529 closed, 38 open. 09-27: 564 total, 526 closed, 38 open. 09-20: 551 total, 514 closed, 37 open.
+**Re-measured 2026-10-01** (grouped open query + `gh issue list --state all --limit 2000`): **577
+issues total — 539 closed, 38 open.** Open splits **3** on `v1.17.0`, **13** on
+`v1.17.1`, **1** on `v1.18.0`, **0** on every shipped milestone, and **21** with no milestone:
+3 + 13 + 1 + 21 = 38, and 539 + 38 = 577. *(09-30: 575 / 539 / 36. 09-29 after PR #1197: 570 / 539 / 31. Earlier on 09-29: 568 total, 534 closed, 34 open. 09-28: 567 total, 529 closed, 38 open. 09-27: 564 total, 526 closed, 38 open. 09-20: 551 total, 514 closed, 37 open.
 09-17: 540 / 510 / 30. 09-05: 525 / 488 / 37.)*
 
 > This footer previously read "503 issues total — 478 closed, 28 open", which

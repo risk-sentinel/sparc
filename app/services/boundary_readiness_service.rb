@@ -108,12 +108,12 @@ class BoundaryReadinessService
   end
 
   def classification_detail(level, types, conflict)
-    return "No FIPS-199 categorization, and no information types to derive one from" if level.blank?
+    return "No system categorization, and no information types to derive one from" if level.blank?
 
     # The stored value is `fips-199-moderate`; a person reads "Moderate". This
     # string is rendered verbatim on the boundary screen, so it must not leak
     # the storage vocabulary.
-    base = "#{SspInformationType.impact_label(level)} (FIPS-199 high water mark)"
+    base = "#{SspInformationType.impact_label(level)} (high water mark)"
     return "#{base}, but the recorded objectives CONTRADICT the information types" if conflict
     return "#{base}, recorded directly — no SP 800-60 information types justify it" if types.zero?
 

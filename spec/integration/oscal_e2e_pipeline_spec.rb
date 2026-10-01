@@ -578,7 +578,13 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
     # never with an exporter fallback — a synthesised statement yields a
     # schema-valid POA&M that misrepresents the risk, which is worse than a
     # failed export. Mirrors db/seeds/sample_artifacts.rb.
-    def authored_poam
+    #
+    # The deadline is RELATIVE to the run. It was the literal 2026-10-01, and on
+    # that day `hdf amend verify` began rejecting the derived amendment as
+    # expired, failing the round-trip example on every branch at once. A fixture
+    # that means "a commitment still in force" has to stay in the future; the
+    # overdue case is pinned on its own, below, by passing a past deadline.
+    def authored_poam(deadline: 1.year.from_now.beginning_of_day)
       poam = create(:poam_document, authorization_boundary: create(:authorization_boundary))
       item = PoamItem.create!(
         poam_document: poam, title: "Incident response plan not tested in 12 months",
@@ -599,7 +605,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
         # "conversion time + 1 year", 3.4.1 fails loud instead (#764). The
         # deadline is authored here for the same reason risk/statement is —
         # it is substantive content, not something a tool should invent.
-        deadline: Time.zone.parse("2026-10-01T00:00:00Z")
+        deadline: deadline
       )
       finding = PoamFinding.create!(
         poam_document: poam, title: "Finding: IR exercise overdue",
@@ -810,6 +816,29 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
           round_tripped = service.oscal_poam_from_hdf_amendments(f.path)
           expect(round_tripped).to have_key("plan-of-action-and-milestones")
         end
+      end
+
+      # ── What happens to an OVERDUE risk today, pinned as observed ─────────
+      #
+      # The service verifies the amendments it has just produced, and
+      # `hdf amend verify` rejects one whose expiry has passed. So a POA&M
+      # holding a risk past its deadline does not convert: the service raises,
+      # and the translations endpoint answers with the converter failure. An
+      # overdue item is an ordinary state for a POA&M, so whether this refusal
+      # is wanted is an open product question (#1208); this example records the
+      # behaviour so a change to it, in SPARC or in hdf-cli, is deliberate.
+      # hdf-cli 3.7.0 is explicit that expiry is a failure with no flag to pass
+      # it, so the choice that can change is SPARC's: whether to verify here.
+      it "refuses a POA&M whose risk deadline has passed — the amendment verifies as expired" do
+        service = HdfOscalTranslationService.new
+
+        expect {
+          Tempfile.create([ "sparc-poam-overdue-", ".json" ]) do |src|
+            src.write(OscalPoamExportService.new(authored_poam(deadline: 1.day.ago)).export)
+            src.flush
+            service.oscal_poam_to_hdf_amendments(src.path)
+          end
+        }.to raise_error(HdfRunner::Error, /verification failed: 1 expired/)
       end
 
       # ── mitre/hdf-libs#236, pinned at its MINIMUM ─────────────────────────

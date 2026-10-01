@@ -1,18 +1,36 @@
-# grype-container — SCA inventory, NOT a severity gate.
+# grype-container — GATED at HIGH (#1200, #1064).
 #
-# Ungated because `anchoregrype2hdf` CANNOT EXPRESS a gating severity:
-# measured 2026-08-24 on main@a8991ae7, every impact it emits caps at 0.5
-# (observed values 0.0, 0.3, 0.5 across 79 failed controls). 0.5 is the medium
-# bucket, so no grype finding can ever reach the high or critical band no
-# matter how severe it is. A band above 0.5 would be decorative; a band at
-# medium would fire on everything.
+# This was ungated, on the measurement (2026-08-24, main@a8991ae7) that
+# `anchoregrype2hdf` capped every impact at 0.5, so no grype finding could reach
+# the high band. Re-measured 2026-09-29 with the pinned saf 1.6.0 on the UBI 10
+# image: grype severity maps straight through — High -> 0.7 (2 controls),
+# Medium -> 0.5 (44), Low -> 0.3 (32). The earlier scan most likely held no
+# High at all; a cap cannot be told apart from an absence on a scan with none.
 #
-# Saying so by omitting the severity keys is more honest than publishing a
-# threshold that looks like policy and is not — the exact defect #1048 was
-# filed about. Note "ungated" cannot be written `max: -1`: saf compares
-# `count > max`, so -1 fails on a count of zero.
+# Why it must gate now: on a UBI 10 (RHEL 10.2) base, Trivy — the container
+# gate until now — reports ZERO vulnerabilities (0.69.3 in CI, 0.74.0 locally),
+# while grype reads Red Hat's own el10 data (`redhat:distro:redhat:10`) and
+# reports the base's HIGH findings. Left ungated, the base would pass a gate
+# that could not see it. Trivy stays gated too; the two are complementary.
 #
-# Rebasing grype impact, or declaring grype inventory-only for good, is #1064.
+# Dispositions reach this gate because the register emits each identifier in
+# grype's `Grype/<id>` form as well as the bare id (#1200). Proven both ways on
+# the UBI 10 image: with that form, the two pcre2 HIGHs (approved deviations)
+# are notApplicable and the gate passes; without it, `failed.high.max: received
+# 2, allowed 0`.
+#
+# Medium and Low are inventory, not gated: 76 of them on the UBI 10 image, all
+# but one `not-fixed` upstream (the exception is the Ruby-shipped on-disk `json`
+# copy the register already carries; Bundler loads a patched one). Gating them
+# would fire on every build for nothing anyone can act on.
+#
+# RATCHET: high may only ever go DOWN. At 0, any new undispositioned HIGH or
+# CRITICAL fails the build.
+failed:
+  critical:
+    max: 0
+  high:
+    max: 0
 error:
   total:
     max: 0

@@ -392,11 +392,21 @@ end
 # Emitting one override per known identifier makes a disposition independent
 # of which scanner's vocabulary happens to reach the gate. Overrides are keyed
 # lookups, so ids that match nothing are inert.
+#
+# #1200 — grype's converter (saf anchoregrype2hdf) names every requirement
+# `Grype/<id>`, so a bare id matched NO grype requirement and the register never
+# reached the grype gate at all. That was harmless only while grype-container
+# was ungated; once it gates (it must: on UBI 10, Trivy reports 0 findings and
+# grype is the scanner that sees the base), an approved disposition has to
+# suppress there too. Each identifier is therefore also emitted in grype's form.
+GRYPE_REQUIREMENT_PREFIX = "Grype/".freeze
+
 def finding_identifiers(finding)
-  ([ finding["cve_id"] ] + Array(finding["also_known_as"]))
+  ids = ([ finding["cve_id"] ] + Array(finding["also_known_as"]))
     .map { |id| id.to_s.strip }
     .reject(&:empty?)
     .uniq
+  ids + ids.map { |id| "#{GRYPE_REQUIREMENT_PREFIX}#{id}" }
 end
 
 def disposition_to_override(finding)

@@ -243,6 +243,25 @@ def create_ssp(boundary_id: int) -> dict[str, Any]:
         return r.json()["data"]
 
 
+def _create_boundary_document(resource: str, key: str, boundary_id: int) -> dict[str, Any]:
+    with _client() as c:
+        r = c.post(
+            f"/api/v1/{resource}",
+            json={key: {"name": _name(key.split("_")[0]), "description": "ui-smoke",
+                        "authorization_boundary_id": boundary_id}},
+        )
+        r.raise_for_status()
+        return r.json()["data"]
+
+
+def create_sap(boundary_id: int) -> dict[str, Any]:
+    return _create_boundary_document("sap_documents", "sap_document", boundary_id)
+
+
+def create_sar(boundary_id: int) -> dict[str, Any]:
+    return _create_boundary_document("sar_documents", "sar_document", boundary_id)
+
+
 def add_boundary_member(boundary_id: Any, user_name: str, role: str) -> dict[str, Any]:
     """A roster entry on a boundary (#1134). Removed with its boundary."""
     with _client() as c:

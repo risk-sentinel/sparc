@@ -18,6 +18,11 @@ See [Docker Deployment](docs/DOCKER.md) for full details.
 
 ## Local Development
 
+> `pg` is compiled from source against your PostgreSQL client library (the precompiled gem bundles its own
+> libpq and OpenSSL, which scanners cannot see; see #1204), so `bundle install` needs `pg_config` on your
+> `PATH`: Postgres.app (`/Applications/Postgres.app/Contents/Versions/latest/bin`) on macOS, `libpq-dev` on
+> Debian/Ubuntu, `libpq-devel` on RHEL/Fedora.
+
 ```bash
 git clone https://github.com/risk-sentinel/sparc.git
 cd sparc

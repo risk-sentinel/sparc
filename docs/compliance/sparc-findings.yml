@@ -1,6 +1,18 @@
 # SPARC finding dispositions — the register `bin/sparc_findings_to_hdf_amendments.rb`
 # turns into HDF amendments.
 #
+# ── REBASED ON UBI 10 (#1200, 2026-09-29) ─────────────────────────────────
+#
+# The image moved to ubi10/ubi-minimal (RHEL 10.2) with a runtime strip. Of the
+# 33 entries carried against the UBI9 base, 28 are no longer in the image and
+# moved to sparc-findings.retired.yml, each with the package evidence read from
+# the image's rpm database and `verified_absent_on` / `verified_by`. The five
+# that remain (systemd-libs, openldap, sqlite-libs, pcre2 x2) are re-verified
+# present on el10 and still not-fixed; their review dates and deviations are
+# unchanged. Each identifier now also reaches the grype gate as `Grype/<id>`,
+# and that gate is live (thresholds/grype-container.yml) — on el10, Trivy
+# reports nothing, so grype is the scanner that sees the base.
+#
 # ── THE TWO DELIBERATE ABSENCES ARE RESOLVED (#1065, 2026-08-28) ──────────
 #
 # This block used to say: do NOT "fix" resolv and uri by adding entries here.
@@ -59,85 +71,13 @@
 # waits on upstream Ruby.
 #
 findings:
-- cve_id: CVE-2025-30258
-  package: gnupg2
-  installed_version: 2.3.3-5.el9_7
-  fixed_version: none available upstream (not-fixed)
-  severity: LOW
-  disposition: deferred
-  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): gnupg2 2.3.3-5.el9_7 [rpm]. No fix is available
-    upstream (not-fixed), so this is a POA&M deferral rather than a waiver; LOW is grype''s grading of these
-    RPMs. Presence re-measured 2026-09-27 (a measurement, not a review): `rpm -q` in a UBI9 image built from
-    PR #1188 reports exactly these versions, and main''s security scan (run 36055248647) still reports the CVE
-    in both trivy and grype. REVIEW RECORD (owner): deferred 2026-08-20 under #1001, release-blocking until
-    fixed or documented as having no upstream fix; re-reviewed 2026-09-04 (accepted to 2026-09-25) and
-    2026-09-21 (accepted to 2026-10-19), each on a grype 0.114.0 scan of the IMAGE, not an SBOM (#862;
-    vulnerability DBs built 2026-09-03 and 2026-09-21T06:39:24Z), which found it still present, still
-    not-fixed and unchanged in severity. DEBIAN HISTORY, for the audit trail only: before the UBI9 migration
-    this entry described the Debian package ''dirmngr 2.2.40-1.1+deb12u2'' and was marked remediated when that
-    package left the image. It was re-verified against the UBI9 image on 2026-08-20, found present in the RPM
-    above, and rewritten; discovery_date is that date. Its severity was corrected MEDIUM -> LOW at that
-    rewrite: MEDIUM graded the Debian package, LOW is how grype grades the RPM.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
-  superseded_debian_finding: dirmngr 2.2.40-1.1+deb12u2 (removed with the Debian base image)
-- cve_id: CVE-2025-68972
-  package: gnupg2
-  installed_version: 2.3.3-5.el9_7
-  fixed_version: none available upstream (not-fixed)
-  severity: MEDIUM
-  disposition: deferred
-  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): gnupg2 2.3.3-5.el9_7 [rpm]. No fix is available
-    upstream (not-fixed), so this is a POA&M deferral rather than a waiver; MEDIUM is grype''s grading of
-    these RPMs. Presence re-measured 2026-09-27 (a measurement, not a review): `rpm -q` in a UBI9 image built
-    from PR #1188 reports exactly these versions, and main''s security scan (run 36055248647) still reports
-    the CVE in both trivy and grype. REVIEW RECORD (owner): deferred 2026-08-20 under #1001, release-blocking
-    until fixed or documented as having no upstream fix; re-reviewed 2026-09-04 (accepted to 2026-09-25) and
-    2026-09-21 (accepted to 2026-10-19), each on a grype 0.114.0 scan of the IMAGE, not an SBOM (#862;
-    vulnerability DBs built 2026-09-03 and 2026-09-21T06:39:24Z), which found it still present, still
-    not-fixed and unchanged in severity. DEBIAN HISTORY, for the audit trail only: before the UBI9 migration
-    this entry described the Debian package ''dirmngr 2.2.40-1.1+deb12u2'' and was marked remediated when that
-    package left the image. It was re-verified against the UBI9 image on 2026-08-20, found present in the RPM
-    above, and rewritten; discovery_date is that date.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
-  superseded_debian_finding: dirmngr 2.2.40-1.1+deb12u2 (removed with the Debian base image)
-- cve_id: CVE-2023-50495
-  package: ncurses-base/ncurses-libs
-  installed_version: 6.2-12.20210508.el9
-  fixed_version: none available upstream (not-fixed)
-  severity: LOW
-  disposition: deferred
-  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): ncurses-base 6.2-12.20210508.el9; ncurses-libs
-    6.2-12.20210508.el9 [rpm]. No fix is available upstream (not-fixed), so this is a POA&M deferral rather
-    than a waiver; LOW is grype''s grading of these RPMs. Presence re-measured 2026-09-27 (a measurement, not
-    a review): `rpm -q` in a UBI9 image built from PR #1188 reports exactly these versions, and main''s
-    security scan (run 36055248647) still reports the CVE in both trivy and grype. REVIEW RECORD (owner):
-    deferred 2026-08-20 under #1001, release-blocking until fixed or documented as having no upstream fix;
-    re-reviewed 2026-09-04 (accepted to 2026-09-25) and 2026-09-21 (accepted to 2026-10-19), each on a grype
-    0.114.0 scan of the IMAGE, not an SBOM (#862; vulnerability DBs built 2026-09-03 and
-    2026-09-21T06:39:24Z), which found it still present, still not-fixed and unchanged in severity. DEBIAN
-    HISTORY, for the audit trail only: before the UBI9 migration this entry described the Debian package
-    ''libncursesw6 6.4-4'' and was marked remediated when that package left the image. It was re-verified
-    against the UBI9 image on 2026-08-20, found present in the RPM above, and rewritten; discovery_date is
-    that date. Its severity was corrected MEDIUM -> LOW at that rewrite: MEDIUM graded the Debian package, LOW
-    is how grype grades the RPM.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
-  superseded_debian_finding: libncursesw6 6.4-4 (removed with the Debian base image)
 - cve_id: CVE-2026-4105
   package: systemd-libs
-  installed_version: 252-67.el9_8.6
+  installed_version: 257-23.el10_2.2
   fixed_version: none available upstream (not-fixed)
   severity: MEDIUM
   disposition: deferred
-  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): systemd-libs 252-67.el9_8.6 [rpm]. No fix is
+  rationale: 'RE-VERIFIED ON UBI 10 (#1200, 2026-09-29). Present as systemd-libs 257-23.el10_2.2 in the UBI 10 image and still not-fixed upstream (grype, Red Hat el10 data); the UBI9 detail below is history. PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): systemd-libs 252-67.el9_8.6 [rpm]. No fix is
     available upstream (not-fixed), so this is a POA&M deferral rather than a waiver; MEDIUM is grype''s
     grading of these RPMs. Presence re-measured 2026-09-27 (a measurement, not a review): `rpm -q` in a UBI9
     image built from PR #1188 reports exactly these versions, and main''s security scan (run 36055248647)
@@ -154,83 +94,13 @@ findings:
   discovery_date: '2026-08-20'
   next_review_date: '2026-10-19'
   superseded_debian_finding: libsystemd0 252.39-1~deb12u1 (removed with the Debian base image)
-- cve_id: CVE-2026-27171
-  package: zlib
-  installed_version: 1.2.11-40.el9
-  fixed_version: none available upstream (not-fixed)
-  severity: LOW
-  disposition: deferred
-  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): zlib 1.2.11-40.el9 [rpm]. No fix is available
-    upstream (not-fixed), so this is a POA&M deferral rather than a waiver; LOW is grype''s grading of these
-    RPMs. Presence re-measured 2026-09-27 (a measurement, not a review): `rpm -q` in a UBI9 image built from
-    PR #1188 reports exactly these versions, and main''s security scan (run 36055248647) still reports the CVE
-    in both trivy and grype. REVIEW RECORD (owner): deferred 2026-08-20 under #1001, release-blocking until
-    fixed or documented as having no upstream fix; re-reviewed 2026-09-04 (accepted to 2026-09-25) and
-    2026-09-21 (accepted to 2026-10-19), each on a grype 0.114.0 scan of the IMAGE, not an SBOM (#862;
-    vulnerability DBs built 2026-09-03 and 2026-09-21T06:39:24Z), which found it still present, still
-    not-fixed and unchanged in severity. DEBIAN HISTORY, for the audit trail only: before the UBI9 migration
-    this entry described the Debian package ''zlib1g 1:1.2.13.dfsg-1'' and was marked remediated when that
-    package left the image. It was re-verified against the UBI9 image on 2026-08-20, found present in the RPM
-    above, and rewritten; discovery_date is that date. Its severity was corrected MEDIUM -> LOW at that
-    rewrite: MEDIUM graded the Debian package, LOW is how grype grades the RPM.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
-  superseded_debian_finding: zlib1g 1:1.2.13.dfsg-1 (removed with the Debian base image)
-- cve_id: CVE-2022-3219
-  package: gnupg2
-  installed_version: 2.3.3-5.el9_7
-  fixed_version: none available upstream (not-fixed)
-  severity: LOW
-  disposition: deferred
-  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): gnupg2 2.3.3-5.el9_7 [rpm]. No fix is available
-    upstream (not-fixed), so this is a POA&M deferral rather than a waiver; LOW is grype''s grading of these
-    RPMs. Presence re-measured 2026-09-27 (a measurement, not a review): `rpm -q` in a UBI9 image built from
-    PR #1188 reports exactly these versions, and main''s security scan (run 36055248647) still reports the CVE
-    in both trivy and grype. REVIEW RECORD (owner): deferred 2026-08-20 under #1001, release-blocking until
-    fixed or documented as having no upstream fix; re-reviewed 2026-09-04 (accepted to 2026-09-25) and
-    2026-09-21 (accepted to 2026-10-19), each on a grype 0.114.0 scan of the IMAGE, not an SBOM (#862;
-    vulnerability DBs built 2026-09-03 and 2026-09-21T06:39:24Z), which found it still present, still
-    not-fixed and unchanged in severity. DEBIAN HISTORY, for the audit trail only: before the UBI9 migration
-    this entry described the Debian package ''dirmngr 2.2.40-1.1+deb12u2'' and was marked remediated when that
-    package left the image. It was re-verified against the UBI9 image on 2026-08-20, found present in the RPM
-    above, and rewritten; discovery_date is that date.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
-  superseded_debian_finding: dirmngr 2.2.40-1.1+deb12u2 (removed with the Debian base image)
-- cve_id: CVE-2022-27943
-  package: libgcc/libstdc++
-  installed_version: 11.5.0-14.el9
-  fixed_version: none available upstream (not-fixed)
-  severity: LOW
-  disposition: deferred
-  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): libgcc 11.5.0-14.el9; libstdc++ 11.5.0-14.el9
-    [rpm]. No fix is available upstream (not-fixed), so this is a POA&M deferral rather than a waiver; LOW is
-    grype''s grading of these RPMs. Presence re-measured 2026-09-27 (a measurement, not a review): `rpm -q` in
-    a UBI9 image built from PR #1188 reports exactly these versions, and main''s security scan (run
-    36055248647) still reports the CVE in both trivy and grype. REVIEW RECORD (owner): deferred 2026-08-20
-    under #1001, release-blocking until fixed or documented as having no upstream fix; re-reviewed 2026-09-04
-    (accepted to 2026-09-25) and 2026-09-21 (accepted to 2026-10-19), each on a grype 0.114.0 scan of the
-    IMAGE, not an SBOM (#862; vulnerability DBs built 2026-09-03 and 2026-09-21T06:39:24Z), which found it
-    still present, still not-fixed and unchanged in severity. DEBIAN HISTORY, for the audit trail only: before
-    the UBI9 migration this entry described the Debian package ''gcc-12-base 12.2.0-14+deb12u1'' and was
-    marked remediated when that package left the image. It was re-verified against the UBI9 image on
-    2026-08-20, found present in the RPM above, and rewritten; discovery_date is that date.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
-  superseded_debian_finding: gcc-12-base 12.2.0-14+deb12u1 (removed with the Debian base image)
 - cve_id: CVE-2026-22185
   package: openldap
-  installed_version: 2.6.8-4.el9
+  installed_version: 2.6.10-1.el10
   fixed_version: none available upstream (not-fixed)
   severity: MEDIUM
   disposition: deferred
-  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): openldap 2.6.8-4.el9 [rpm]. No fix is available
+  rationale: 'RE-VERIFIED ON UBI 10 (#1200, 2026-09-29). Present as openldap 2.6.10-1.el10 in the UBI 10 image and still not-fixed upstream (grype, Red Hat el10 data); the UBI9 detail below is history. PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): openldap 2.6.8-4.el9 [rpm]. No fix is available
     upstream (not-fixed), so this is a POA&M deferral rather than a waiver; MEDIUM is grype''s grading of
     these RPMs. Presence re-measured 2026-09-27 (a measurement, not a review): `rpm -q` in a UBI9 image built
     from PR #1188 reports exactly these versions, and main''s security scan (run 36055248647) still reports
@@ -250,11 +120,11 @@ findings:
   superseded_debian_finding: libldap-2.5-0 2.5.13+dfsg-5 (removed with the Debian base image)
 - cve_id: CVE-2025-70873
   package: sqlite-libs
-  installed_version: 3.34.1-11.el9_8
+  installed_version: 3.46.1-6.el10_2
   fixed_version: none available upstream (not-fixed)
   severity: LOW
   disposition: deferred
-  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): sqlite-libs 3.34.1-11.el9_8 [rpm]. No fix is
+  rationale: 'RE-VERIFIED ON UBI 10 (#1200, 2026-09-29). Present as sqlite-libs 3.46.1-6.el10_2 in the UBI 10 image and still not-fixed upstream (grype, Red Hat el10 data); the UBI9 detail below is history. PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): sqlite-libs 3.34.1-11.el9_8 [rpm]. No fix is
     available upstream (not-fixed), so this is a POA&M deferral rather than a waiver; LOW is grype''s grading
     of these RPMs. Presence re-measured 2026-09-27 (a measurement, not a review): `rpm -q` in a UBI9 image
     built from PR #1188 reports exactly these versions, and main''s security scan (run 36055248647) still
@@ -271,481 +141,13 @@ findings:
   discovery_date: '2026-08-20'
   next_review_date: '2026-10-19'
   superseded_debian_finding: libsqlite3-0 3.40.1-2+deb12u2 (removed with the Debian base image)
-- cve_id: CVE-2026-27456
-  package: libblkid/libmount/libsmartcols/libuuid
-  installed_version: 2.37.4-25.el9
-  fixed_version: none available upstream (not-fixed)
-  severity: MEDIUM
-  disposition: deferred
-  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): libblkid 2.37.4-25.el9; libmount 2.37.4-25.el9;
-    libsmartcols 2.37.4-25.el9; libuuid 2.37.4-25.el9 [rpm]. No fix is available upstream (not-fixed), so this
-    is a POA&M deferral rather than a waiver; MEDIUM is grype''s grading of these RPMs. Presence re-measured
-    2026-09-27 (a measurement, not a review): `rpm -q` in a UBI9 image built from PR #1188 reports exactly
-    these versions, and main''s security scan (run 36055248647) still reports the CVE in both trivy and grype.
-    REVIEW RECORD (owner): deferred 2026-08-20 under #1001, release-blocking until fixed or documented as
-    having no upstream fix; re-reviewed 2026-09-04 (accepted to 2026-09-25) and 2026-09-21 (accepted to
-    2026-10-19), each on a grype 0.114.0 scan of the IMAGE, not an SBOM (#862; vulnerability DBs built
-    2026-09-03 and 2026-09-21T06:39:24Z), which found it still present, still not-fixed and unchanged in
-    severity. DEBIAN HISTORY, for the audit trail only: before the UBI9 migration this entry described the
-    Debian package ''bsdutils 1:2.38.1-5+deb12u3'' and was marked remediated when that package left the image.
-    It was re-verified against the UBI9 image on 2026-08-20, found present in the RPM above, and rewritten;
-    discovery_date is that date. Its severity was corrected INFORMATIONAL -> MEDIUM at that rewrite:
-    INFORMATIONAL graded the Debian package, MEDIUM is how grype grades the RPM.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
-  superseded_debian_finding: bsdutils 1:2.38.1-5+deb12u3 (removed with the Debian base image)
-- cve_id: CVE-2026-34743
-  package: xz-libs
-  installed_version: 5.2.5-8.el9_0
-  fixed_version: none available upstream (not-fixed)
-  severity: MEDIUM
-  disposition: deferred
-  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): xz-libs 5.2.5-8.el9_0 [rpm]. No fix is available
-    upstream (not-fixed), so this is a POA&M deferral rather than a waiver; MEDIUM is grype''s grading of
-    these RPMs. Presence re-measured 2026-09-27 (a measurement, not a review): `rpm -q` in a UBI9 image built
-    from PR #1188 reports exactly these versions, and main''s security scan (run 36055248647) still reports
-    the CVE in both trivy and grype. REVIEW RECORD (owner): deferred 2026-08-20 under #1001, release-blocking
-    until fixed or documented as having no upstream fix; re-reviewed 2026-09-04 (accepted to 2026-09-25) and
-    2026-09-21 (accepted to 2026-10-19), each on a grype 0.114.0 scan of the IMAGE, not an SBOM (#862;
-    vulnerability DBs built 2026-09-03 and 2026-09-21T06:39:24Z), which found it still present, still
-    not-fixed and unchanged in severity. DEBIAN HISTORY, for the audit trail only: before the UBI9 migration
-    this entry described the Debian package ''liblzma5 5.4.1-1'' and was marked remediated when that package
-    left the image. It was re-verified against the UBI9 image on 2026-08-20, found present in the RPM above,
-    and rewritten; discovery_date is that date. Its severity was corrected INFORMATIONAL -> MEDIUM at that
-    rewrite: INFORMATIONAL graded the Debian package, MEDIUM is how grype grades the RPM.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
-  superseded_debian_finding: liblzma5 5.4.1-1 (removed with the Debian base image)
-- cve_id: CVE-2026-53613
-  package: libblkid/libmount/libsmartcols/libuuid
-  installed_version: 2.37.4-25.el9
-  fixed_version: none
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-08-20 (#1001). util-linux
-    TOCTOU in mount(8): with an /etc/fstab entry carrying the `user`/`users` option, mount validates the
-    target before the syscall, and a local unprivileged user with write access to an ancestor of the target
-    can swap it to redirect the mount. MEASURED in the shipping image, not argued: `command -v mount`
-    finds no mount(8), there is no /etc/fstab at all, and the runtime user is uid=1000(rails) non-root.
-    Only the shared libraries from the util-linux source package are present, pulled in as dependencies;
-    the vulnerable executable is not in the image. No fix is available upstream, so this would otherwise
-    defer indefinitely against a program we do not ship.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-14662
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
-    Arbitrary code execution via integer wraparound in tsvector and tsquery functions This is executed
-    by the PostgreSQL server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres`
-    reports only postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package
-    — and `command -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through
-    the `pg` gem and libpq against a SEPARATE Postgres container, so the vulnerable program is not in
-    this image at all — the same basis as CVE-2026-53613, where the util-linux libraries are present but
-    mount(8) is not. No fix is available upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-14664
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
-    Arbitrary code execution via heap buffer overflow in regexp This is executed by the PostgreSQL server
-    backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only postgresql-13.23-5.el9_8
-    and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command -v` finds no postgres,
-    postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem and libpq against a
-    SEPARATE Postgres container, so the vulnerable program is not in this image at all — the same basis
-    as CVE-2026-53613, where the util-linux libraries are present but mount(8) is not. No fix is available
-    upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-14668
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
-    Information disclosure via type confusion in ctid selectivity estimator This is executed by the PostgreSQL
-    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
-    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
-    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
-    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
-    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
-    not. No fix is available upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-14669
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
-    Arbitrary code execution via long POSIX timezone abbreviation This is executed by the PostgreSQL server
-    backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only postgresql-13.23-5.el9_8
-    and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command -v` finds no postgres,
-    postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem and libpq against a
-    SEPARATE Postgres container, so the vulnerable program is not in this image at all — the same basis
-    as CVE-2026-53613, where the util-linux libraries are present but mount(8) is not. No fix is available
-    upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-14670
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
-    Arbitrary code execution via plperl tied hash heap buffer overflow This is executed by the PostgreSQL
-    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
-    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
-    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
-    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
-    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
-    not. No fix is available upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-14671
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
-    Arbitrary code execution via type confusion in ''refint'' module This is executed by the PostgreSQL
-    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
-    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
-    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
-    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
-    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
-    not. No fix is available upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-14677
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). pltcl:
-    plperl: PostgreSQL: Arbitrary code execution in 32-bit pltcl and plperl This is executed by the PostgreSQL
-    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
-    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
-    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
-    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
-    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
-    not. No fix is available upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-14679
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
-    Stack buffer overflow via OUT parameter count manipulation This is executed by the PostgreSQL server
-    backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only postgresql-13.23-5.el9_8
-    and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command -v` finds no postgres,
-    postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem and libpq against a
-    SEPARATE Postgres container, so the vulnerable program is not in this image at all — the same basis
-    as CVE-2026-53613, where the util-linux libraries are present but mount(8) is not. No fix is available
-    upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-14680
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
-    Arbitrary code execution via type confusion with "internal" arguments This is executed by the PostgreSQL
-    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
-    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
-    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
-    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
-    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
-    not. No fix is available upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-15741
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
-    Privilege escalation via SQL injection in EXTRACT() deparse This is executed by the PostgreSQL server
-    backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only postgresql-13.23-5.el9_8
-    and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command -v` finds no postgres,
-    postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem and libpq against a
-    SEPARATE Postgres container, so the vulnerable program is not in this image at all — the same basis
-    as CVE-2026-53613, where the util-linux libraries are present but mount(8) is not. No fix is available
-    upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-15742
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL
-    fuzzystrmatch: Arbitrary code execution via integer wraparound This is executed by the PostgreSQL
-    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
-    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
-    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
-    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
-    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
-    not. No fix is available upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-16239
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
-    Arbitrary code execution via type confusion in cursor lifecycle This is executed by the PostgreSQL
-    server backend. MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only
-    postgresql-13.23-5.el9_8 and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command
-    -v` finds no postgres, postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem
-    and libpq against a SEPARATE Postgres container, so the vulnerable program is not in this image at
-    all — the same basis as CVE-2026-53613, where the util-linux libraries are present but mount(8) is
-    not. No fix is available upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-6471
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). PostgreSQL:
-    Arbitrary code execution via logical decoding plugin This is executed by the PostgreSQL server backend.
-    MEASURED in the shipping image, not argued: `rpm -qa | grep -i postgres` reports only postgresql-13.23-5.el9_8
-    and postgresql-private-libs-13.23-5.el9_8 — the CLIENT package — and `command -v` finds no postgres,
-    postmaster, pg_ctl or initdb. SPARC reaches its database through the `pg` gem and libpq against a
-    SEPARATE Postgres container, so the vulnerable program is not in this image at all — the same basis
-    as CVE-2026-53613, where the util-linux libraries are present but mount(8) is not. No fix is available
-    upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-74860
-  package: libxml2
-  installed_version: 2.9.13-14.el9_8.4
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: false_positive
-  rationale: 'NOT APPLICABLE (vulnerable program absent) — first dispositioned 2026-09-21 (#1173). double-free/UAF
-    in libxml2 Python bindings MEASURED: the image carries only libxml2-2.9.13-14.el9_8.4; `libxml2-python`
-    is NOT installed and there is no python3 interpreter in the image at all (`command -v python3` finds
-    nothing), so the Python bindings this finding describes cannot be loaded. No fix is available upstream
-    (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-- cve_id: CVE-2026-18408
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-09-21 (#1173). PostgreSQL: Arbitrary code execution via untrusted
-    data inclusion in pg_dump Unlike the server-side findings in this batch, `pg_dump` IS present in the
-    image — deliberately NOT dispositioned as not-applicable, because the claim would be about reachability
-    rather than absence, and reachability is a property of code that can change silently. SPARC reaches
-    Postgres through the `pg` gem and libpq and does not shell out to `pg_dump` on any request path, so
-    the exposure requires an operator to run it against untrusted input. No fix is available upstream
-    (not-fixed), so there is no remediation to apply. Scanned the IMAGE, not an SBOM (#862).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: '@clem-field'
-    approved_in: risk-sentinel/sparc#1173
-    approved_at: '2026-09-22T00:33:13Z'
-    approval_mechanism: admin-merge-bypass
-    adjusted_severity: LOW
-    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
-      program against untrusted input. The mitigating factors below are properties of THIS image, measured
-      rather than argued. No upstream fix exists, so remediation is not available and the residual is
-      what is being accepted.
-    mitigating_factors:
-    - description: 'no PostgreSQL server in the image: postgres, postmaster, pg_ctl and initdb are all
-        absent (command -v)'
-    - description: SPARC reaches its database through the `pg` gem and libpq against a SEPARATE Postgres
-        container; no application code path shells out to pg_dump
-    - description: pg_dump acts on a database an OPERATOR points it at, so exploitation requires an operator
-        to run it against a hostile server rather than any request reaching it
-    kev_checked: '2026-09-21'
-    kev_listed: false
-- cve_id: CVE-2026-19385
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-09-21 (#1173). PostgreSQL pg_dump: Arbitrary code execution via crafted
-    transform lists Unlike the server-side findings in this batch, `pg_dump` IS present in the image —
-    deliberately NOT dispositioned as not-applicable, because the claim would be about reachability rather
-    than absence, and reachability is a property of code that can change silently. SPARC reaches Postgres
-    through the `pg` gem and libpq and does not shell out to `pg_dump` on any request path, so the exposure
-    requires an operator to run it against untrusted input. No fix is available upstream (not-fixed),
-    so there is no remediation to apply. Scanned the IMAGE, not an SBOM (#862).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: '@clem-field'
-    approved_in: risk-sentinel/sparc#1173
-    approved_at: '2026-09-22T00:33:13Z'
-    approval_mechanism: admin-merge-bypass
-    adjusted_severity: LOW
-    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
-      program against untrusted input. The mitigating factors below are properties of THIS image, measured
-      rather than argued. No upstream fix exists, so remediation is not available and the residual is
-      what is being accepted.
-    mitigating_factors:
-    - description: 'no PostgreSQL server in the image: postgres, postmaster, pg_ctl and initdb are all
-        absent (command -v)'
-    - description: SPARC reaches its database through the `pg` gem and libpq; no application code path
-        shells out to pg_dump
-    - description: the transform list is supplied on the pg_dump command line, so it is operator-controlled
-        input and not attacker-controlled request data
-    kev_checked: '2026-09-21'
-    kev_listed: false
-- cve_id: CVE-2026-6464
-  package: postgresql/postgresql-private-libs
-  installed_version: 13.23-5.el9_8
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-09-21 (#1173). PostgreSQL psql: Arbitrary command execution via untrusted
-    data in COPY FROM STDIN Unlike the server-side findings in this batch, `psql` IS present in the image
-    — deliberately NOT dispositioned as not-applicable, because the claim would be about reachability
-    rather than absence, and reachability is a property of code that can change silently. SPARC reaches
-    Postgres through the `pg` gem and libpq and does not shell out to `psql` on any request path, so the
-    exposure requires an operator to run it against untrusted input. No fix is available upstream (not-fixed),
-    so there is no remediation to apply. Scanned the IMAGE, not an SBOM (#862).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: '@clem-field'
-    approved_in: risk-sentinel/sparc#1173
-    approved_at: '2026-09-22T00:33:13Z'
-    approval_mechanism: admin-merge-bypass
-    adjusted_severity: LOW
-    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
-      program against untrusted input. The mitigating factors below are properties of THIS image, measured
-      rather than argued. No upstream fix exists, so remediation is not available and the residual is
-      what is being accepted.
-    mitigating_factors:
-    - description: 'no PostgreSQL server in the image: postgres, postmaster, pg_ctl and initdb are all
-        absent (command -v)'
-    - description: SPARC reaches its database through the `pg` gem and libpq; no application code path
-        invokes psql
-    - description: COPY FROM STDIN requires an operator to run psql interactively against a hostile server;
-        no request path reaches it
-    kev_checked: '2026-09-21'
-    kev_listed: false
-- cve_id: CVE-2026-86140
-  package: libxml2
-  installed_version: 2.9.13-14.el9_8.4
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-09-21 (#1173). libxml2: Arbitrary code execution via stack-based buffer
-    overflow in xmlSnprintfElements The system library IS present (/usr/lib64/libxml2.so.2), so this is
-    not dispositioned as absent. It is however not on SPARC''s XML path: nokogiri ships as the precompiled
-    `aarch64-linux-gnu` native gem and statically bundles its own libxml2 — `ldd` on nokogiri.so shows
-    NO dynamic libxml2 link — so application XML parsing does not enter this copy. Recorded as accepted
-    risk rather than not-applicable because that is a statement about reachability, which can change.
-    No fix is available upstream (not-fixed).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: '@clem-field'
-    approved_in: risk-sentinel/sparc#1173
-    approved_at: '2026-09-22T00:33:13Z'
-    approval_mechanism: admin-merge-bypass
-    adjusted_severity: LOW
-    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
-      program against untrusted input. The mitigating factors below are properties of THIS image, measured
-      rather than argued. No upstream fix exists, so remediation is not available and the residual is
-      what is being accepted.
-    mitigating_factors:
-    - description: no package in the image requires libxml2 (rpm -q --whatrequires libxml2 returns nothing)
-        — it is a base-image leftover with no consumer
-    - description: nokogiri ships as the precompiled aarch64-linux-gnu native gem and statically bundles
-        its OWN libxml2; ldd on nokogiri.so shows no dynamic libxml2 linkage, so application XML parsing
-        never enters this copy
-    - description: libpq does not link libxml2 either (ldd), so the database path does not reach it
-    kev_checked: '2026-09-21'
-    kev_listed: false
 - cve_id: CVE-2026-86145
   package: pcre2/pcre2-syntax
-  installed_version: 10.40-6.el9
+  installed_version: 10.44-1.el10.3
   fixed_version: none available upstream (not-fixed)
   severity: HIGH
   disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-09-21 (#1173). PCRE2: Out-of-bounds write allows arbitrary code execution
+  rationale: 'RE-VERIFIED ON UBI 10 (#1200, 2026-09-29). Present as pcre2 and pcre2-syntax 10.44-1.el10.3 in the UBI 10 image and still not-fixed upstream (grype, Red Hat el10 data); the UBI9 detail below is history. POA&M / DEFERRED 2026-09-21 (#1173). PCRE2: Out-of-bounds write allows arbitrary code execution
     via crafted regular expressions pcre2-10.40-6.el9 and pcre2-syntax are present and used by system
     tooling in the image. Not dispositioned as absent, because they are not absent. No fix is available
     upstream (not-fixed), so there is no remediation to apply and the finding is accepted for review.
@@ -776,11 +178,11 @@ findings:
     kev_listed: false
 - cve_id: CVE-2026-89161
   package: pcre2/pcre2-syntax
-  installed_version: 10.40-6.el9
+  installed_version: 10.44-1.el10.3
   fixed_version: none available upstream (not-fixed)
   severity: HIGH
   disposition: deferred
-  rationale: 'POA&M / DEFERRED 2026-09-21 (#1173). PCRE2: Memory corruption vulnerability in pcre2_jit_match
+  rationale: 'RE-VERIFIED ON UBI 10 (#1200, 2026-09-29). Present as pcre2 and pcre2-syntax 10.44-1.el10.3 in the UBI 10 image and still not-fixed upstream (grype, Red Hat el10 data); the UBI9 detail below is history. POA&M / DEFERRED 2026-09-21 (#1173). PCRE2: Memory corruption vulnerability in pcre2_jit_match
     pcre2-10.40-6.el9 and pcre2-syntax are present and used by system tooling in the image. Not dispositioned
     as absent, because they are not absent. No fix is available upstream (not-fixed), so there is no remediation
     to apply and the finding is accepted for review. Scanned the IMAGE, not an SBOM (#862).'
@@ -809,60 +211,6 @@ findings:
         sees untrusted input
     kev_checked: '2026-09-21'
     kev_listed: false
-- cve_id: CVE-2026-54876
-  package: openssl-libs
-  installed_version: 1:3.5.8-1.el9_8
-  fixed_version: none available upstream (Red Hat status under_investigation)
-  severity: HIGH
-  disposition: deferred
-  rationale: 'PRESENT IN THE SHIPPING UBI9 IMAGE (RHEL 9.8): openssl-libs 1:3.5.8-1.el9_8 [rpm]. OpenSSL: a memory
-    leak in OCSP RESPONSE CHECKING can be driven into denial of service (CVSS 3.1 7.5, AV:N/AC:L/PR:N/UI:N/C:N/I:N/A:H
-    - availability only). Red Hat grades it HIGH and its status is under_investigation, so no fixed el9 package
-    exists to take; upstream OpenSSL has fixed it (155b5fe0, d8c51048). NOT INTRODUCED BY A CODE CHANGE: the image
-    carried the same openssl-libs in main''s 2026-09-24 scan (trivy 0.69.3) with no finding; Red Hat''s advisory data
-    reached the vulnerability DB after that, and trivy first reports it on 2026-09-28 (PR #1188 run 36363884426, and
-    main''s scheduled run 36387546128). Deferred as a POA&M with a risk_adjustment deviation until Red Hat ships a fix.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-28'
-  next_review_date: '2026-10-28'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: "@clem-field"
-    approved_in: "risk-sentinel/sparc#1188"
-    approved_at: "2026-09-28"
-    approval_mechanism: approve-deviation-comment
-    adjusted_severity: LOW
-    adjustment_rationale: HIGH is the grading for a deployment that CHECKS OCSP responses from an untrusted source.
-      The vulnerable function is in the image, loaded with libcrypto, but nothing in SPARC calls it - measured
-      from source on 2026-09-28, below. Impact is availability only. No fix exists to apply, so the residual is
-      what is being accepted until Red Hat ships one.
-    mitigating_factors:
-    - description: SPARC's own code never performs OCSP - 0 references to OCSP in app/, lib/, config/ or bin/
-        (measured 2026-09-28)
-    - description: no installed gem performs OCSP response checking - the only OCSP reference in the bundle is
-        the openssl gem's Certificate#ocsp_uris, which reads OCSP URLs from a certificate's AIA extension and
-        verifies no response (measured 2026-09-28)
-    - description: availability-only impact (C:N/I:N/A:H) - no confidentiality or integrity exposure
-    kev_checked: '2026-09-28'
-    kev_listed: false
-# ── CodeQL SAST rules (#1186) — dispositioned per RESULT, not per rule ───────
-#
-# hdf-cli 3.5.1 graded CodeQL results from `problem.severity` and flattened
-# every one of these to MEDIUM; 3.7.0 reads the rules' declared
-# `security-severity` (8.8 and 7.5), so both became HIGH and breached
-# `codeql.yml failed.high.max: 0` on the first 3.7.0 run (PR #1185, 2026-09-24).
-# Nothing in the code changed: the gate was given the wrong severity before.
-#
-# An override matches a CodeQL RULE, so each entry pins the exact results it
-# was reviewed against (`pinned_results`, CodeQL's primaryLocationLineHash).
-# bin/codeql_pin_check.rb fails the gate if the live results differ in either
-# direction, so a new instance of either rule still breaches.
-#
-# Drafted with the traced rationale below; `reviewed_by` was authored by the
-# reviewer (@clem-field, 2026-09-27), not by the drafter. The converter refuses
-# a register entry without it, which is what held security_gate red until then.
 - cve_id: rb/csrf-protection-disabled
   package: sparc (application code — CodeQL rb/csrf-protection-disabled)
   installed_version: n/a
@@ -923,3 +271,81 @@ findings:
     line_hash: 96ec6e7986178e77:1
   - path: app/services/ssp_wizard_service.rb
     line_hash: 65a9810537cf814d:1
+- cve_id: CVE-2026-75804
+  package: openssl-libs
+  installed_version: 1:3.5.8-1.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'OpenSSL: QUIC connection-level flow control is not enforced, allowing a remote peer to force excess buffering (DoS). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2): openssl-libs 1:3.5.8-1.el10_2, and equally in the shipping v1.16.3 UBI9 image (1:3.5.8-1.el9_8), so not introduced by the base change. Red Hat lists it affected with no fix (not-fixed) on el9 and el10. Surfaced by the grype-container gate made live in #1200 (grype 0.115.0, DB built 2026-09-30T06:32Z); Trivy does not report it. openssl-libs cannot be stripped: Ruby''s OpenSSL bindings and every outbound TLS client need it. Proposed 2026-09-30 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation. Separate from the OpenSSL copy the pg gem bundles, tracked in #1204.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-30'
+  next_review_date: '2026-10-30'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1201"
+    approved_at: "2026-10-01"
+    approval_mechanism: approve-deviation-comment
+    adjusted_severity: LOW
+    adjustment_rationale: 'HIGH grades the flaw where the affected protocol is in use. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
+    mitigating_factors:
+    - description: "the flaw is in OpenSSL's QUIC stack; Ruby's OpenSSL extension exposes no QUIC API (no QUIC constants in OpenSSL::SSL, no stream methods on SSLSocket), and no gem in the bundle implements QUIC"
+    - description: "SPARC serves HTTP/1.1 through Puma behind the deployment's TLS terminator; the image runs no QUIC or HTTP/3 endpoint and makes no QUIC connections"
+    kev_checked: '2026-09-30'
+    kev_listed: false
+- cve_id: CVE-2026-84782
+  package: openssl-libs
+  installed_version: 1:3.5.8-1.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'OpenSSL: DTLS retransmission mishandles a suspended handshake write (buffer over-read / state overwrite). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2): openssl-libs 1:3.5.8-1.el10_2, and equally in the shipping v1.16.3 UBI9 image (1:3.5.8-1.el9_8), so not introduced by the base change. Red Hat lists it affected with no fix (not-fixed) on el9 and el10. Surfaced by the grype-container gate made live in #1200 (grype 0.115.0, DB built 2026-09-30T06:32Z); Trivy does not report it. openssl-libs cannot be stripped: Ruby''s OpenSSL bindings and every outbound TLS client need it. Proposed 2026-09-30 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation. Separate from the OpenSSL copy the pg gem bundles, tracked in #1204.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-30'
+  next_review_date: '2026-10-30'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1201"
+    approved_at: "2026-10-01"
+    approval_mechanism: approve-deviation-comment
+    adjusted_severity: LOW
+    adjustment_rationale: 'HIGH grades the flaw where the affected protocol is in use. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
+    mitigating_factors:
+    - description: "the flaw is in DTLS retransmission; Ruby's OpenSSL extension exposes no DTLS API (no DTLS constants in OpenSSL::SSL)"
+    - description: "Puma's only DTLS code is its client engine (MiniSSL::Engine.client), which Puma's server never calls; Puma's own TLS listener is development-only (config/puma.rb, SSL_DEV) and production terminates TLS upstream"
+    - description: "every TLS connection the app makes is TLS over TCP (Net::HTTP, libpq); none uses DTLS"
+    kev_checked: '2026-09-30'
+    kev_listed: false
+- cve_id: CVE-2026-103111
+  package: pcre2/pcre2-syntax
+  installed_version: 10.44-1.el10.3
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PCRE2: out-of-bounds write through certain JIT compiler interfaces when the regular expression is attacker-controlled (NVD: PCRE2 before 10.49). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2) as pcre2 and pcre2-syntax 10.44-1.el10.3, not-fixed in Red Hat''s el10 data. First reported by the rescan of the final image on 2026-10-01 (grype 0.114.0, DB built 2026-10-01), on the same packages that carry CVE-2026-86145 and CVE-2026-89161. Not dispositioned as absent, because the packages are not absent. No fix is available upstream, so there is no remediation to apply and the finding is deferred for review. Scanned the IMAGE, not an SBOM (#862).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-10-01'
+  next_review_date: '2026-10-31'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1201"
+    approved_at: "2026-10-01"
+    approval_mechanism: approve-deviation-comment
+    adjusted_severity: LOW
+    adjustment_rationale: 'HIGH grades the flaw in a deployment that hands an attacker-controlled pattern to the affected JIT interfaces. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
+    mitigating_factors:
+    - description: "Ruby does not link pcre2: ldd on /usr/local/bin/ruby and on libruby.so.3.4 shows no pcre2 library, and Ruby evaluates regular expressions with Onigmo, so no application regular expression reaches this library"
+    - description: "the only direct users of libpcre2-8 in the image are libselinux and grep (rpm --whatrequires against the shipped rpm database); the library is mapped into the app process only through pg -> libpq -> krb5 -> libselinux"
+    - description: "libselinux compiles patterns only from SELinux file-context policy, and the image ships none (no file_contexts file anywhere on its filesystem)"
+    - description: "no application code runs grep (no shell-out to grep in app/, lib/, config/ or the container entrypoint), so no request data becomes a pcre2 pattern"
+    kev_checked: '2026-10-01'
+    kev_listed: false

@@ -1,8 +1,81 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-08-08 (v1.15.5 — catalog lineage, boundary-roster authorization fix)
+**Last reviewed:** 2026-09-29 (v1.17.0 line — UBI 10 base and runtime strip, #1200)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **UBI 10 rebase (#1200, 2026-09-29):** the production image moved to Red Hat
+> **UBI 10 minimal** (RHEL 10.2), with a runtime strip that removes the package
+> manager, rpm itself, glib2 and the util-linux libraries (nothing at runtime
+> loads them; the rpm DATABASE stays, and both scanners enumerate every package
+> recorded in it — 85 packages, 85 from grype, 85 from Trivy, none missing; the
+> database's other 3 rows are `gpg-pubkey` entries). Real rescan of the built
+> image, not an SBOM:
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype 0.114.0 (image, DB v6.1.9 built 2026-09-29) | **0** | **2** | 44 | 32 |
+> | Trivy 0.74.0 (image, `--severity CRITICAL,HIGH,MEDIUM`) | 0 | 0 | 0 | — |
+>
+> Distinct CVEs, not package matches. **The two scanners disagree completely
+> on el10, and Trivy is the one that is wrong.** Grype reads Red Hat's own el10
+> advisory data (`redhat:distro:redhat:10`); Trivy reports zero at every
+> severity on RHEL 10.2, in CI (0.69.3) and locally (0.74.0), including on an
+> unstripped image carrying HIGHs grype attributes to Red Hat's data. So the
+> grype-container gate is now LIVE at HIGH (`thresholds/grype-container.yml`)
+> and register dispositions reach it as `Grype/<id>`; Trivy stays gated but
+> cannot see this base.
+>
+> The two HIGHs are **pcre2** CVE-2026-86145 and CVE-2026-89161 (10.44-1.el10.3,
+> `not-fixed` upstream), both `deferred` with an approved `risk_adjustment`
+> deviation whose mitigating factors re-measure true on el10 (Ruby uses Onigmo,
+> not pcre2; libselinux is the only package requiring it). Every Medium and Low
+> is `not-fixed` upstream except one: the Ruby-shipped on-disk `json` copy
+> (GHSA-x2f5-4prf-w687, LOW), which Bundler shadows with a patched version.
+>
+> **Added 2026-09-30, after the grype gate went live in CI:** two more HIGH,
+> both **openssl-libs 3.5.8, not-fixed** in Red Hat's el10 **and** el9 data
+> (so v1.16.3 carries them too): CVE-2026-75804 (QUIC flow control) and
+> CVE-2026-84782 (DTLS retransmission). They arrived in grype's DB built
+> 2026-09-30, a day after the rescan above. Both are `deferred` with a
+> `risk_adjustment` deviation awaiting the owner's approval. Measured: Ruby's
+> OpenSSL exposes no QUIC or DTLS API, Puma never calls its DTLS client engine,
+> and every TLS connection the app makes is TLS over TCP. Neither is in CISA KEV
+> (catalog 2026.09.29).
+>
+> **Added 2026-10-01, rescan of the final image** (`sparc:v1.17.0`, grype
+> 0.114.0, DB v6.1.9 built 2026-10-01): 0 Critical, **5 High**, 54 Medium,
+> 35 Low distinct CVEs. One High is new: **pcre2 CVE-2026-103111** (JIT
+> out-of-bounds write on an attacker-controlled pattern; 10.44-1.el10.3,
+> `not-fixed` in Red Hat's el10 data), on the same packages as the two pcre2
+> entries above. It is `deferred` with a `risk_adjustment` deviation awaiting
+> the owner's approval. Measured on the image: Ruby and libruby do not link
+> pcre2; the only direct users of `libpcre2-8` are libselinux and grep; the
+> image ships no SELinux file-context policy for libselinux to compile; and no
+> application code runs grep. Not in CISA KEV (catalog 2026.09.30). The other
+> four High are the two pcre2 and two openssl-libs entries already recorded.
+>
+> **Removed (#1204):** the precompiled `pg` gem bundled its own libpq with
+> **OpenSSL 3.6.0** built in, and that is what the app's database connections
+> loaded, invisible to every scanner (by CPE: 5 critical / 26 high, all fixed
+> upstream). `pg` is now built from source: measured in the image,
+> `require "pg"` maps `/usr/lib64/libpq.so.5.16`, `libssl.so.3.5.8` and
+> `libcrypto.so.3.5.8` (Red Hat's), and no `libpq-ruby-pg` exists. The build
+> fails if one returns (proven with the precompiled gem).
+>
+> **Still bundled, recorded for an owner decision:** `nokogiri` 1.19.4 vendors
+> libxml2 2.13.9 and libxslt 1.1.43 (`source=packaged`, statically linked, 6
+> libxml2 patches). By CPE, libxml2 matches 17 (10 high) and libxslt 3 (2 high),
+> though nokogiri's patches may cover some. Scanners see only the gem. Every
+> other native gem (`openssl`, `puma`, `zlib`) links the system libraries.
+>
+> Register effect: of the 33 entries carried against the UBI9 base, **28
+> retired** to `sparc-findings.retired.yml` with the package evidence from the
+> image's rpm database (gnupg2 absent; PostgreSQL client 13 → 16; libxml2
+> 2.9 → 2.12; util-linux libraries stripped; …) and **5 remain** (systemd-libs,
+> openldap, sqlite-libs, pcre2 ×2), re-verified present and still not-fixed.
+> `sparc-findings.yml` now holds 7 entries (those 5 plus the two CodeQL rule
+> dispositions). Full measurement: #1189 (spike) and #1200.
 
 > **v1.12.0 base-image migration (#742):** the production image moved from
 > Debian `ruby:3.4.4-slim` to Red Hat **UBI9 minimal**. This retired the entire

@@ -31,6 +31,11 @@ roles, the FedRAMP 20x KSI catalog, and the framework converters.
 
 ## 3. Local development (without Docker)
 
+`pg` is compiled from source against your PostgreSQL client library (the precompiled gem bundles its own
+libpq and OpenSSL, which scanners cannot see; see #1204), so `bundle install` needs `pg_config` on your
+`PATH`: Postgres.app (`/Applications/Postgres.app/Contents/Versions/latest/bin`) on macOS, `libpq-dev` on
+Debian/Ubuntu, `libpq-devel` on RHEL/Fedora.
+
 ```bash
 bundle install
 bin/rails db:create db:migrate db:seed

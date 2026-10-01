@@ -5,6 +5,10 @@ require "open3"
 require "tmpdir"
 require "json"
 
+# Loaded in-process as well as run as a subprocess below, so the identifier
+# logic is exercised where coverage can see it (the script guards `main`).
+require Rails.root.join("bin/sparc_findings_to_hdf_amendments.rb").to_s
+
 # #1048 — a disposition must suppress its finding whichever identifier the
 # scanner that found it happens to use.
 #
@@ -65,8 +69,12 @@ RSpec.describe "HDF amendment identifier aliases (#1048)" do
     overrides = amend(finding(cve: "GHSA-q339-8rmv-2mhv", also_known_as: "CVE-2026-41316"))
     ids = overrides.map { |o| o["requirementId"] }
 
-    # grype reports the GHSA; trivy reports the CVE. Both must be suppressed.
-    expect(ids).to contain_exactly("GHSA-q339-8rmv-2mhv", "CVE-2026-41316")
+    # grype reports the GHSA; trivy reports the CVE. Both must be suppressed —
+    # and each also in grype's own `Grype/<id>` form (#1200).
+    expect(ids).to contain_exactly(
+      "GHSA-q339-8rmv-2mhv", "CVE-2026-41316",
+      "Grype/GHSA-q339-8rmv-2mhv", "Grype/CVE-2026-41316"
+    )
   end
 
   it "gives the alias override the same disposition as the primary" do
@@ -91,10 +99,10 @@ RSpec.describe "HDF amendment identifier aliases (#1048)" do
       .to eq(primary.reject { |k, _| positional.include?(k) })
   end
 
-  it "emits exactly one override when there is no alias" do
+  it "emits the id and its grype form, and nothing else, when there is no alias" do
     overrides = amend(finding(cve: "CVE-2026-0001"))
 
-    expect(overrides.map { |o| o["requirementId"] }).to eq([ "CVE-2026-0001" ])
+    expect(overrides.map { |o| o["requirementId"] }).to eq([ "CVE-2026-0001", "Grype/CVE-2026-0001" ])
   end
 
   # Mutation guard: this is the assertion that fails if `finding_identifiers`
@@ -103,5 +111,34 @@ RSpec.describe "HDF amendment identifier aliases (#1048)" do
     overrides = amend(finding(cve: "GHSA-g857-hhfv-j68w", also_known_as: "CVE-2026-27820"))
 
     expect(overrides.map { |o| o["requirementId"] }).to include("CVE-2026-27820")
+  end
+
+  # #1200 — grype names requirements `Grype/<id>`. Without this, no disposition
+  # in the register reached the grype gate, which is the scanner that sees a
+  # UBI 10 base (Trivy reports 0 there). Mutation guard: fails if the grype form
+  # is dropped from `finding_identifiers`.
+  it "suppresses under grype's requirement name, with the same disposition" do
+    overrides = amend(finding(cve: "CVE-2026-86145"))
+    bare  = overrides.find { |o| o["requirementId"] == "CVE-2026-86145" }
+    grype = overrides.find { |o| o["requirementId"] == "Grype/CVE-2026-86145" }
+
+    expect(grype).not_to be_nil
+    positional = %w[requirementId previousChecksum]
+    expect(grype.reject { |k, _| positional.include?(k) }).to eq(bare.reject { |k, _| positional.include?(k) })
+  end
+
+  describe "finding_identifiers, in process (#1200)" do
+    it "returns every known id in the bare form and in grype's `Grype/<id>` form" do
+      ids = finding_identifiers("cve_id" => " GHSA-q339-8rmv-2mhv ", "also_known_as" => [ "CVE-2026-41316", "" ])
+
+      expect(ids).to eq([ "GHSA-q339-8rmv-2mhv", "CVE-2026-41316",
+                          "Grype/GHSA-q339-8rmv-2mhv", "Grype/CVE-2026-41316" ])
+    end
+
+    it "does not duplicate an alias that repeats the primary id" do
+      ids = finding_identifiers("cve_id" => "CVE-2026-0001", "also_known_as" => [ "CVE-2026-0001" ])
+
+      expect(ids).to eq([ "CVE-2026-0001", "Grype/CVE-2026-0001" ])
+    end
   end
 end
