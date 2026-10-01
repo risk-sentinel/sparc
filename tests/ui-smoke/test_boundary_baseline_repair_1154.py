@@ -218,6 +218,23 @@ class TestPoamRiskDecisionFields:
     def _edit(self, page, poam, risk):
         page.goto(f"/poam_documents/{poam['slug']}/poam_risks/{risk['id']}/edit")
 
+    def _submit(self, page):
+        """Click Update and return the server's answer to the form submit.
+
+        Turbo submits this form with fetch and swaps the body in place, so there
+        is no new document and `wait_for_load_state("networkidle")` returns at
+        once: that state was already reached when the edit page loaded. The
+        assertions then raced the request. On a quick server they won; on the
+        v1.17.0 release runner the save was still in flight and "Risk updated"
+        was not on the page yet. For the refusal test the race ran the other
+        way and could pass before the server had answered at all.
+        """
+        with page.expect_response(
+            lambda r: r.request.method != "GET" and "/poam_risks/" in r.url
+        ) as answered:
+            page.get_by_role("button", name="Update Risk").click()
+        return answered.value
+
     def test_the_decision_fields_and_remediating_save(self, authed_page, risk):
         poam, r = risk
         page = authed_page
@@ -228,10 +245,11 @@ class TestPoamRiskDecisionFields:
         page.locator("#poam_risk_blocks_ato").select_option("true")
         page.locator("#poam_risk_condition_expires").fill("2027-06-30")
         page.locator("#poam_risk_reopen_trigger").fill("score<0.85")
-        page.get_by_role("button", name="Update Risk").click()
-        page.wait_for_load_state("networkidle")
+        response = self._submit(page)
 
-        assert "Risk updated" in page.content()
+        assert response.status in (302, 303), f"the save answered {response.status}"
+        # The flash is on the page the redirect lands on, so wait for IT.
+        page.get_by_text("Risk updated").first.wait_for()
         saved = get_json(f"/api/v1/poam_risks/{r['id']}")
         assert saved.get("status") == "remediating"
         assert saved.get("blocks_ato") is True
@@ -247,9 +265,12 @@ class TestPoamRiskDecisionFields:
 
         page.locator("#poam_risk_blocks_ato").select_option("true")
         page.locator("#poam_risk_reopen_trigger").fill("when it feels right")
-        page.get_by_role("button", name="Update Risk").click()
-        page.wait_for_load_state("networkidle")
+        response = self._submit(page)
 
+        # The refusal itself, from the server, before anything is read off the
+        # page: nothing below can pass because the request had not finished.
+        assert response.status == 422, f"a malformed trigger answered {response.status}"
+        page.wait_for_load_state("networkidle")
         assert "Risk updated" not in page.content()
         assert "trigger" in page.content().lower()
         saved = get_json(f"/api/v1/poam_risks/{r['id']}")
