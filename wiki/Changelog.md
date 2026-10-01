@@ -4,7 +4,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
-## v1.17.0 -- Hardened Image, Delivery API, Upgrade Safety (pending tag)
+## v1.17.0 -- Hardened Image, Delivery API, Upgrade Safety (2026-10-01)
 
 A minor release with three threads: the container image is rebuilt on a hardened base, the API now delivers what an evidence pipeline needs to consume SPARC's output, and a deployment can no longer start on a database its code does not match.
 
