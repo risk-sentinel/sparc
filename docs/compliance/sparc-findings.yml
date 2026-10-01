@@ -314,3 +314,26 @@ findings:
     - description: "every TLS connection the app makes is TLS over TCP (Net::HTTP, libpq); none uses DTLS"
     kev_checked: '2026-09-30'
     kev_listed: false
+- cve_id: CVE-2026-103111
+  package: pcre2/pcre2-syntax
+  installed_version: 10.44-1.el10.3
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PCRE2: out-of-bounds write through certain JIT compiler interfaces when the regular expression is attacker-controlled (NVD: PCRE2 before 10.49). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2) as pcre2 and pcre2-syntax 10.44-1.el10.3, not-fixed in Red Hat''s el10 data. First reported by the rescan of the final image on 2026-10-01 (grype 0.114.0, DB built 2026-10-01), on the same packages that carry CVE-2026-86145 and CVE-2026-89161. Not dispositioned as absent, because the packages are not absent. No fix is available upstream, so there is no remediation to apply and the finding is deferred for review. Scanned the IMAGE, not an SBOM (#862).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-10-01'
+  next_review_date: '2026-10-31'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: 'HIGH grades the flaw in a deployment that hands an attacker-controlled pattern to the affected JIT interfaces. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
+    mitigating_factors:
+    - description: "Ruby does not link pcre2: ldd on /usr/local/bin/ruby and on libruby.so.3.4 shows no pcre2 library, and Ruby evaluates regular expressions with Onigmo, so no application regular expression reaches this library"
+    - description: "the only direct users of libpcre2-8 in the image are libselinux and grep (rpm --whatrequires against the shipped rpm database); the library is mapped into the app process only through pg -> libpq -> krb5 -> libselinux"
+    - description: "libselinux compiles patterns only from SELinux file-context policy, and the image ships none (no file_contexts file anywhere on its filesystem)"
+    - description: "no application code runs grep (no shell-out to grep in app/, lib/, config/ or the container entrypoint), so no request data becomes a pcre2 pattern"
+    kev_checked: '2026-10-01'
+    kev_listed: false

@@ -43,6 +43,18 @@ or whenever a new suppression is added.
 > and every TLS connection the app makes is TLS over TCP. Neither is in CISA KEV
 > (catalog 2026.09.29).
 >
+> **Added 2026-10-01, rescan of the final image** (`sparc:v1.17.0`, grype
+> 0.114.0, DB v6.1.9 built 2026-10-01): 0 Critical, **5 High**, 54 Medium,
+> 35 Low distinct CVEs. One High is new: **pcre2 CVE-2026-103111** (JIT
+> out-of-bounds write on an attacker-controlled pattern; 10.44-1.el10.3,
+> `not-fixed` in Red Hat's el10 data), on the same packages as the two pcre2
+> entries above. It is `deferred` with a `risk_adjustment` deviation awaiting
+> the owner's approval. Measured on the image: Ruby and libruby do not link
+> pcre2; the only direct users of `libpcre2-8` are libselinux and grep; the
+> image ships no SELinux file-context policy for libselinux to compile; and no
+> application code runs grep. Not in CISA KEV (catalog 2026.09.30). The other
+> four High are the two pcre2 and two openssl-libs entries already recorded.
+>
 > **Removed (#1204):** the precompiled `pg` gem bundled its own libpq with
 > **OpenSSL 3.6.0** built in, and that is what the app's database connections
 > loaded, invisible to every scanner (by CPE: 5 critical / 26 high, all fixed
