@@ -4,7 +4,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
-## v1.17.0 -- Hardened Image, Delivery API, Upgrade Safety (2026-10-01)
+## v1.17.0 -- Hardened Image, Delivery API, Upgrade Safety (2026-10-02)
 
 A minor release with three threads: the container image is rebuilt on a hardened base, the API now delivers what an evidence pipeline needs to consume SPARC's output, and a deployment can no longer start on a database its code does not match.
 
@@ -17,6 +17,8 @@ A minor release with three threads: the container image is rebuilt on a hardened
 - **The boundary filter means the same thing on every list** ([#1202](https://github.com/risk-sentinel/sparc/issues/1202)). The SSP, SAP and SAR lists ignored the boundary the sidebar sent; the sidebar, the web lists and the API now read one definition.
 - **Every object's UUID is on screen, copyable** ([#1180](https://github.com/risk-sentinel/sparc/issues/1180)).
 - **CDEF uploads resolve their NIST mappings** ([#1103](https://github.com/risk-sentinel/sparc/issues/1103)) — the upload path skipped the enrichment the import path applied.
+- **Demo data opens on a fresh install.** The review-queue demo profile was seeded at `pending`, so its page showed only a "processing" banner, and the demo SSPs were seeded with one implementation statement per control, so the per-statement editor had nothing to edit. Both are fixed for new installs and healed in place on existing ones; nothing outside the demo documents is touched.
+- **Dependencies:** Rails 8.1.4, json 3.0.2 (which needs that Rails release), and the pending Bundler patch and minor updates.
 
 **Behaviour changes:** A container whose database does not structurally match its code **does not start serving**; before, it started and failed on the first affected page. The image is built on RHEL 10.2 and contains **no package manager or `rpm`**: nothing changes for a deployment (same ports, environment variables, custom-CA mounts and database), but if you build your own image on top of SPARC's, install packages in your own build stage. Control identifiers sent to the API are **normalised to the catalog form on receipt**: `AC-1`, `ac-1` and `AC-01` are the same control. OSCAL **1.2.3** is the default version SPARC writes.
 
