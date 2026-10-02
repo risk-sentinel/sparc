@@ -64,7 +64,7 @@ psql "$DATABASE_URL" -f sparc-drift-check.sql
 
 > **Generating this check from a v1.16.3 or earlier image? It cannot report a missing _table_ — only missing columns on tables that already exist.** If an upgrade skipped a migration that creates a table, the check from those images stays silent about it. Run the table check below as well.
 >
-> Images after v1.16.3 report both, each row tagged `missing table` or `missing column`. `db:verify_schema` has always detected missing tables and is the authoritative check once you are on v1.16.3 or later.
+> Images from v1.17.0 on report both, each row tagged `missing table` or `missing column`. `db:verify_schema` has always detected missing tables and is the authoritative check once you are on v1.16.3 or later.
 
 ### Also check for missing tables
 
@@ -172,7 +172,7 @@ It compares the live database against the schema the code expects and **exits no
 
 Available from v1.16.3 onward. For anything older, use the [SQL drift check](#step-4--check-for-drift-recommended), which works against any database.
 
-In releases after v1.16.3 it also checks each column's **type**, foreign keys and extensions, and with `STRICT=1` each column's nullability and default and each index's shape:
+From v1.17.0 it also checks each column's **type**, foreign keys and extensions, and with `STRICT=1` each column's nullability and default and each index's shape:
 
 ```bash
 docker compose exec web env STRICT=1 bin/rails db:verify_schema
@@ -180,9 +180,9 @@ docker compose exec web env STRICT=1 bin/rails db:verify_schema
 
 ---
 
-## The boot gate (releases after v1.16.3)
+## The boot gate (v1.17.0 and later)
 
-From the release after v1.16.3, **a container checks its own schema before it serves**. After `db:prepare`, and before the web server binds its port, the entrypoint runs:
+From v1.17.0, **a container checks its own schema before it serves**. After `db:prepare`, and before the web server binds its port, the entrypoint runs:
 
 1. **`db:reconcile_schema`** — creates whatever `db/schema.rb` declares and the database lacks: extensions, tables, columns, indexes, foreign keys. **Additive only**: it never drops, renames or retypes anything. It runs in one transaction, so it either repairs completely or changes nothing, and it **refuses** — changing nothing — when the drift cannot be fixed by adding (a column of the wrong type), when a missing `NOT NULL` column has no default and its table has rows, or when any statement fails (for example a unique index over duplicate data). Every repair or refusal is written to the **audit log** (`schema_reconciled` / `schema_reconciliation_refused`), with the exact SQL.
 2. **`db:verify_schema`** — fails on any remaining structural drift.
@@ -228,8 +228,7 @@ This is why the schema check exists, and why it is the step that actually tells 
 
 | Release | Note |
 |---|---|
-| **v1.17.0** | Rebuilds the FedRAMP 20x KSI catalog from FedRAMP's published rules. FedRAMP has renamed every indicator (`ksi-iam-02` is now `KSI-IAM-ELP`), and the catalog is re-keyed automatically, a few seconds after the first boot. Ten indicators are renamed in place, and their assessments move with them. The other 44 old indicators, and the `AUTH` theme, are **retired, not deleted**: their assessments are kept and shown as history. New assessments go on the current indicators. To preview the change first, run `bin/rails 'ksi:import[true]'`.  Also: OSCAL **1.2.3** becomes the default version SPARC writes (every record validated identically under 1.2.2 and 1.2.3); new nullable columns hold the authorizing official's decision on a risk — three on POA&M risks, one on SAR risks — with no backfill, so existing risks export unchanged. The container image is now built on **Red Hat UBI 10 minimal** (RHEL 10.2) instead of UBI 9. Nothing changes for a deployment: same ports, environment variables, custom-CA mounts and database. The image's PostgreSQL client tools move from 13 to 16, and the image no longer contains a package manager or `rpm`. If you build your own image on top of SPARC's, install packages in your own build stage rather than in the SPARC image. |
-| **after v1.16.3** | Adds the [boot gate](#the-boot-gate-releases-after-v1163), `db:reconcile_schema`, the `/up` and `/up/ready` health probes, and definition-level checks in `db:verify_schema` (`STRICT=1`). `bin/schema_drift_sql` reports missing tables. |
+| **v1.17.0** | Adds the [boot gate](#the-boot-gate-v1170-and-later), `db:reconcile_schema`, the `/up` and `/up/ready` health probes, and definition-level checks in `db:verify_schema` (`STRICT=1`). `bin/schema_drift_sql` reports missing tables. Rebuilds the FedRAMP 20x KSI catalog from FedRAMP's published rules. FedRAMP has renamed every indicator (`ksi-iam-02` is now `KSI-IAM-ELP`), and the catalog is re-keyed automatically, a few seconds after the first boot. Ten indicators are renamed in place, and their assessments move with them. The other 44 old indicators, and the `AUTH` theme, are **retired, not deleted**: their assessments are kept and shown as history. New assessments go on the current indicators. To preview the change first, run `bin/rails 'ksi:import[true]'`.  Also: OSCAL **1.2.3** becomes the default version SPARC writes (every record validated identically under 1.2.2 and 1.2.3); new nullable columns hold the authorizing official's decision on a risk — three on POA&M risks, one on SAR risks — with no backfill, so existing risks export unchanged. The container image is now built on **Red Hat UBI 10 minimal** (RHEL 10.2) instead of UBI 9. Nothing changes for a deployment: same ports, environment variables, custom-CA mounts and database. The image's PostgreSQL client tools move from 13 to 16, and the image no longer contains a package manager or `rpm`. If you build your own image on top of SPARC's, install packages in your own build stage rather than in the SPARC image. |
 | **v1.16.3** | Repairs databases affected by v1.16.2. Adds `db:verify_schema` and `bin/schema_drift_sql`. |
 | **v1.16.2** | **Do not upgrade an existing deployment into this release.** Fresh installs are unaffected. Go to v1.16.3. |
 | **v1.16.1** | Introduced the migration squash. The last release reachable directly from v1.15.x is **v1.16.0**, not this one. |

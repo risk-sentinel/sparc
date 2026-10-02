@@ -967,16 +967,16 @@ Development mode (`Rails.env.development?`) does not set `force_ssl`, so `http:/
 
 The Docker image serves HTTP on port **3000**. HTTPS termination is handled at the reverse proxy / load balancer layer (Nginx, Caddy, Traefik, ALB).
 
-**Health probes** (releases after v1.16.3) — both answer over plain HTTP and need no credentials:
+**Health probes** (v1.17.0 and later) — both answer over plain HTTP and need no credentials:
 
 | Path | Use it for | Answers |
 |---|---|---|
 | `/up` | **liveness** — restart the container if it stops answering | `200` while the process serves; never touches the database |
 | `/up/ready` | **readiness** — deploy verification, alarms, and Kubernetes readiness | `200` when the database answers, no migration is pending and the schema matches; otherwise `503` with counts only |
 
-Point a load balancer or ECS target-group health check at **`/up`**, and use **`/up/ready`** to verify a deploy and to alarm. Behind ECS a failing target is replaced, so a readiness check there would restart every task during a brief database outage. Either way, a proxy-level check such as an NGINX `/nginx-health` is not enough — it proves only that the proxy is listening. When v1.16.2 left existing databases missing seven columns, every layer of that kind reported healthy while boundary pages returned 500. Earlier versions of this page said `/up` answered probes; no route served it until the release after v1.16.3.
+Point a load balancer or ECS target-group health check at **`/up`**, and use **`/up/ready`** to verify a deploy and to alarm. Behind ECS a failing target is replaced, so a readiness check there would restart every task during a brief database outage. Either way, a proxy-level check such as an NGINX `/nginx-health` is not enough — it proves only that the proxy is listening. When v1.16.2 left existing databases missing seven columns, every layer of that kind reported healthy while boundary pages returned 500. Earlier versions of this page said `/up` answered probes; no route served it until v1.17.0.
 
-The container also **refuses to start** its web server when the database schema does not match the image — see [Upgrading](Upgrading#the-boot-gate-releases-after-v1163).
+The container also **refuses to start** its web server when the database schema does not match the image — see [Upgrading](Upgrading#the-boot-gate-v1170-and-later).
 
 ### Version Constant
 
