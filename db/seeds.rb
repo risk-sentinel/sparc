@@ -2076,6 +2076,21 @@ puts "Done! Demo SSP and SAR documents seeded."
 end # SeedRunner demo_ssp_sar
 end # if SEED_DEMO (ssp/sar)
 
+# ══════════════════════════════════════════════════════════════════════
+# DEMO: statement sub-parts for the demo SSPs (#1100)
+# ══════════════════════════════════════════════════════════════════════
+# The version carries `demo_ssp_sar`'s: that section re-imports its SSPs from
+# OSCAL whenever it re-runs, which takes the sub-part statements with them, so
+# this one has to follow it every time.
+if SEED_DEMO
+SeedRunner.run_section(
+  "demo_ssp_statement_parts",
+  version: "#{SeedRunner::CURRENT_VERSIONS["demo_ssp_statement_parts"]}+ssp#{SeedRunner::CURRENT_VERSIONS["demo_ssp_sar"]}"
+) do
+load Rails.root.join("db/seeds/ssp_statement_parts.rb")
+end # SeedRunner demo_ssp_statement_parts
+end # if SEED_DEMO (statement sub-parts)
+
 
 # ══════════════════════════════════════════════════════════════════════
 # REQUIRED: Remediation-timeline (SLA) defaults (#809)

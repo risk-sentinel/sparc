@@ -76,6 +76,9 @@ else
     revision.description      = "DEMO/SAMPLE — a proposed revision awaiting review, so the " \
                                 "review queue is not empty on a demo instance (#984)."
     revision.lifecycle_status = "in_progress"
+    # Seeded, not imported: no parse job will ever run for it, so it must not
+    # sit at the import default of `pending`.
+    revision.status           = "completed"
     revision.save!
 
     if source_profile
@@ -83,6 +86,14 @@ else
       ProfileControlSelectionService.new(revision).update(control_ids) if control_ids.any?
     end
   end
+
+  # Healed on an existing row too. This fixture was created at the import
+  # default, `pending`, and nothing ever moved it: the profile's page rendered
+  # only the "processing" banner — no controls, no UUID, no exports — on every
+  # freshly seeded instance. The v1.17.0 release gate caught it as "Profile show
+  # page has no UUID badge"; an instance that has since been used could have
+  # hidden it, because the newest profile on the list is then a different one.
+  revision.update!(status: "completed") unless revision.completed?
 
   # Re-applied even on an existing row: a previous run of the demo seed may have
   # created it, and someone may since have approved it in the UI. The queue is
