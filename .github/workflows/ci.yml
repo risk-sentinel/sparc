@@ -527,6 +527,16 @@ jobs:
           # tests/, so its 126 lines were indexed as production source and drove
           # new-code coverage to 24.5%. A test tree anywhere else needs adding
           # here too — the list is literal, not a pattern.
+          #
+          # sonar.coverage.exclusions=db/** keeps Sonar's coverage measure in
+          # step with the tool that produces it. spec/spec_helper.rb tells
+          # SimpleCov to skip "/db/", so coverage.json holds NO data for
+          # migrations or seeds, and Sonar read every new line there as
+          # uncovered. A PR whose only new Ruby was seed code scored "0.0%
+          # Coverage on New Code" (15 of 15 lines, PR #1210) while specs that
+          # load those seed files passed. The files are still ANALYSED for
+          # bugs and smells — only the coverage demand is dropped. If SimpleCov
+          # ever starts tracking db/, remove this so the two agree again.
           args: >
             -Dsonar.projectKey=risk-sentinel_sparc
             -Dsonar.organization=risk-sentinel
@@ -536,3 +546,4 @@ jobs:
             -Dsonar.tests=spec,tests,lib/federation/python/tests
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=spec/**,tests/**,lib/federation/python/tests/**,lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.ico,**/*.svg,**/*.mp4,**/*.xlsx,**/*.rdb,**/*.pdf,**/*.woff,**/*.woff2
+            -Dsonar.coverage.exclusions=db/**
