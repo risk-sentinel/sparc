@@ -45,6 +45,12 @@ module SeedRunner
     # took the second SSP and BOTH SARs with it. Re-run so any database that
     # failed this section, or holds a boundary-less SSP, is healed.
     "demo_ssp_sar"         => "2.1.0",
+    # #1100 — a freshly seeded demo SSP had one statement per control, because
+    # the backfill that adds the catalog's sub-parts is a one-time migration and
+    # a fresh install never runs it. `demo_ssp_sar`'s version is appended to
+    # this at run time, so re-importing the demo SSPs re-runs it. Bump the base
+    # to force it on its own.
+    "demo_ssp_statement_parts" => "1.0.0",
     # #946 — pinned UUID so the SSP fixtures' import-profile href resolves.
     "demo_published_profile" => "1.1.0",
     "demo_catalog_guidance" => "1.0.0",
