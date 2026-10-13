@@ -161,7 +161,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Gitleaks SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         continue-on-error: true
         with:
@@ -169,7 +169,7 @@ jobs:
           category: gitleaks
 
       - name: Upload Gitleaks SARIF as artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: gitleaks-sarif
@@ -190,7 +190,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: .ruby-version
           bundler-cache: true
@@ -202,7 +202,7 @@ jobs:
 
       - name: Upload Brakeman SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
-        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         continue-on-error: true
         with:
           sarif_file: brakeman-results.sarif
@@ -210,7 +210,7 @@ jobs:
 
       - name: Upload Brakeman SARIF artifact
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: brakeman-sarif
           path: brakeman-results.sarif
@@ -235,7 +235,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           languages: ruby
           config: |
@@ -250,7 +250,7 @@ jobs:
               - node_modules
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           output: codeql-results
           category: codeql-sast
@@ -270,7 +270,7 @@ jobs:
 
       - name: Upload CodeQL SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
-        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         continue-on-error: true
         with:
           sarif_file: codeql-results.sarif
@@ -278,7 +278,7 @@ jobs:
 
       - name: Upload CodeQL SARIF artifact
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: codeql-sarif
           path: codeql-results.sarif
@@ -316,7 +316,7 @@ jobs:
 
       - name: Upload Semgrep SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
-        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         continue-on-error: true
         with:
           sarif_file: semgrep-results.sarif
@@ -324,7 +324,7 @@ jobs:
 
       - name: Upload Semgrep SARIF artifact
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: semgrep-sarif
           path: semgrep-results.sarif
@@ -343,7 +343,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: .ruby-version
           bundler-cache: true
@@ -363,7 +363,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload bundler-audit results as artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: bundler-audit-json
@@ -387,7 +387,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: .ruby-version
 
@@ -406,7 +406,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: .ruby-version
           bundler-cache: true
@@ -449,7 +449,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy FS SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         continue-on-error: true
         with:
@@ -463,7 +463,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy FS artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: trivy-fs-results
@@ -560,7 +560,7 @@ jobs:
             --image sparc:${{ github.sha }}
 
       - name: Upload Trivy container SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         continue-on-error: true
         with:
@@ -617,7 +617,7 @@ jobs:
       # `curl … | sh`, which executes a downloaded script unverified
       # (Sonar githubactions:S8482 / S6506). The syft version is still pinned.
       - name: Generate Syft SBOM of the container image
-        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
         with:
           image: sparc:${{ github.sha }}
           format: syft-json
@@ -680,7 +680,7 @@ jobs:
           echo "Source-RPM mappings and distro present — Grype can resolve RHEL advisories."
 
       - name: Upload Syft container SBOM
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: syft-container-sbom
@@ -689,7 +689,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload Trivy container artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: trivy-container-results
@@ -717,13 +717,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: .ruby-version
           bundler-cache: true
 
       - name: Set up Node 22 (for cdxgen)
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
           node-version: '22'
 
@@ -758,7 +758,7 @@ jobs:
           jq '{bomFormat, specVersion, components: (.components | length)}' sbom-ruby.cdx.json
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: sbom-cyclonedx
@@ -799,7 +799,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (ignore-list generator only — no bundle)
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: 3.4
 
@@ -877,13 +877,13 @@ jobs:
             grype-db-${{ runner.os }}-${{ env.GRYPE_VERSION }}-
 
       - name: Download Ruby SBOM (sbom_generation)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: sbom-cyclonedx
           path: sboms/ruby/
 
       - name: Download Trivy FS SBOM
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: trivy-fs-results
           path: sboms/trivy-fs/
@@ -894,7 +894,7 @@ jobs:
       # because it omits source-RPM mappings (hiding real RHEL advisories) and
       # reports packages from superseded layers that are not in the final image.
       - name: Download Syft container SBOM
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: syft-container-sbom
           path: sboms/syft-container/
@@ -930,21 +930,21 @@ jobs:
 
       - name: Upload Ruby SBOM SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-ruby.sarif') != ''
-        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: grype-results/grype-ruby.sarif
           category: grype-sbom-ruby
 
       - name: Upload Trivy FS SBOM SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-fs.sarif') != ''
-        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: grype-results/grype-fs.sarif
           category: grype-sbom-trivy-fs
 
       - name: Upload container SBOM SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-container.sarif') != ''
-        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: grype-results/grype-container.sarif
           # Category deliberately unchanged (#873). The SBOM behind it switched
@@ -954,7 +954,7 @@ jobs:
           category: grype-sbom-trivy-container
 
       - name: Upload Grype artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: grype-sbom-results
@@ -1010,24 +1010,24 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (matches the rest of the security workflow)
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: "3.4"
 
       - name: Download Ruby SBOM
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: sbom-cyclonedx
           path: sboms/ruby/
 
       - name: Download Trivy FS SBOM
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: trivy-fs-results
           path: sboms/trivy-fs/
 
       - name: Download Trivy container SBOM
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: trivy-container-results
           path: sboms/trivy-container/
@@ -1055,7 +1055,7 @@ jobs:
 
       - name: Upload license inventory artifact
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: license-inventory
           path: license-results/
@@ -1101,36 +1101,36 @@ jobs:
       # Ruby for the two in-repo translation helpers below. Stdlib only — no
       # bundle install, same posture as the security_gate converter step.
       - name: Set up Ruby (translation helpers only — no bundle)
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: '3.4'
 
       - name: Download SARIF scan artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: scan-results/
           pattern: '*-sarif'
 
       - name: Download Trivy scan artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: scan-results/
           pattern: 'trivy-*-results'
 
       - name: Download SBOM artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: scan-results/
           name: sbom-cyclonedx
 
       - name: Download bundler-audit artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: scan-results/
           name: bundler-audit-json
 
       - name: Download Grype SBOM scan artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: scan-results/
           name: grype-sbom-results
@@ -1151,7 +1151,7 @@ jobs:
       # with MODULE_NOT_FOUND. Pin Node 22 + a known-good @mitre/saf version.
       - name: Set up Node 22 (required by @mitre/saf transitive deps)
         if: always()
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
           node-version: '22'
 
@@ -1540,7 +1540,7 @@ jobs:
 
       - name: Upload conversion logs (debug)
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: hdf-conversion-logs
           path: hdf-conversion-logs/
@@ -1549,7 +1549,7 @@ jobs:
 
       - name: Upload HDF results
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: hdf-results
           path: hdf-results/
@@ -1569,51 +1569,51 @@ jobs:
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
       - name: Download HDF results
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: hdf-results
           path: hdf-results/
         continue-on-error: true
 
       - name: Download SARIF artifacts for archive
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: all-results/
           pattern: '*-sarif'
 
       - name: Download Trivy artifacts for archive
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: all-results/
           pattern: 'trivy-*-results'
 
       - name: Download SBOM artifact for archive
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: all-results/
           name: sbom-cyclonedx
 
       - name: Download bundler-audit artifact for archive
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: all-results/
           name: bundler-audit-json
 
       - name: Download Grype SBOM artifacts for archive
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: all-results/
           name: grype-sbom-results
 
       - name: Download license inventory for archive
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: all-results/
           name: license-inventory
         continue-on-error: true
 
       - name: Download HDF results for archive
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: all-results/
           name: hdf-results
@@ -1713,7 +1713,7 @@ jobs:
 
       - name: Upload combined archive
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: security-scan-archive
           path: security-scan-results.zip
@@ -1773,12 +1773,12 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (converter only — no bundle)
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: 3.4
 
       - name: Download HDF results
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: hdf-results
           path: hdf-results/
@@ -1786,7 +1786,7 @@ jobs:
       # #1186 — the HDF carries only `path LINE n` for a CodeQL result; the
       # fingerprints the register pins to are in the SARIF.
       - name: Download CodeQL SARIF (for the disposition pin check)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: codeql-sarif
           path: codeql-sarif/
@@ -1962,7 +1962,7 @@ jobs:
       # Every file is evaluated before the job fails, so one breach does not
       # hide the rest.
       - name: Install SAF CLI (pinned — same version normalize_hdf uses)
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
           node-version: '22'
 
@@ -2137,7 +2137,7 @@ jobs:
       # is exactly when knowing a finding is now fixable is most useful.
       - name: Download the container scan (fixability cross-check)
         if: always()
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: trivy-container-results
           path: scan/
@@ -2167,7 +2167,7 @@ jobs:
 
       - name: Upload threshold logs (debug)
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: threshold-logs
           path: threshold-*.log
@@ -2179,7 +2179,7 @@ jobs:
       # documents the gate actually graded are published beside it.
       - name: Upload amended HDFs
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: amended-hdfs
           path: |
@@ -2229,21 +2229,21 @@ jobs:
             docs/compliance/oscal/cdefs
 
       - name: Download HDF results
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: hdf-results
           path: hdf-results/
         continue-on-error: true
 
       - name: Download SBOM artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: sbom-cyclonedx
           path: sbom/
         continue-on-error: true
 
       - name: Download SARIF results
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: '*-results'
           path: sarif-results/
@@ -2251,7 +2251,7 @@ jobs:
         continue-on-error: true
 
       - name: Download license inventory
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: license-inventory
           path: licenses/
@@ -2316,7 +2316,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Upload sparc-compliance-latest artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: sparc-compliance-latest
           path: sparc-compliance/
@@ -2472,7 +2472,7 @@ jobs:
         run: python scripts/ci/generate_pipeline_chart.py
 
       - name: Upload metrics artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: pipeline-metrics
           path: |
