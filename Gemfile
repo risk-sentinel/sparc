@@ -14,7 +14,7 @@ gem "propshaft"
 # system libpq it uses Red Hat's patched libpq and openssl-libs, which errata
 # reach and scanners inventory. Needs `pg_config` to build: postgresql-devel in
 # the image builder, libpq-dev in CI, Postgres.app locally.
-gem "pg", "~> 1.1", force_ruby_platform: true
+gem "pg", "~> 1.7", force_ruby_platform: true
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 # Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
@@ -35,7 +35,7 @@ gem "roo", "~> 3.0.0"              # .xlsx file parsing (MIT)
 gem "rubyzip", "~> 3.7.0"          # ZIP file handling
 gem "activerecord-import"           # Bulk imports
 gem "caxlsx", "~> 4.5"             # Excel .xlsx generation
-gem "pagy", "~> 43.6"              # Pagination
+gem "pagy", "~> 43.7"              # Pagination
 gem "sidekiq"                       # Background jobs
 gem "redis", "~> 6.0"              # For Sidekiq
 gem "aws-sdk-s3"                    # File storage
