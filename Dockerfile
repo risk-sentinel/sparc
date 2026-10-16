@@ -8,7 +8,7 @@
 ARG RUBY_VERSION=3.4.10
 ARG RUBY_MAJOR=3.4
 ARG JEMALLOC_VERSION=5.3.0
-ARG HDF_LIBS_VERSION=3.7.0
+ARG HDF_LIBS_VERSION=3.7.2
 # Digest-pinned manifest-list (multi-arch: amd64, arm64, ppc64le, s390x) for
 # reproducibility (#742 / folded #639 pinning policy). Currently ubi-minimal 10.2.
 # Digest-only (no version tag) so the reference is unambiguous (SonarQube

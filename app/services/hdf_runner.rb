@@ -36,7 +36,12 @@ class HdfRunner
   # document against v3 schemas. Both are false passes we were relying on.
   # 3.7.0 enforces the vocabulary and detects v2, which is what surfaced the
   # non-conformant amendments this pin ships alongside.
-  PINNED_VERSION = "3.7.0".freeze
+  #
+  # 3.7.2 (2026-10-16, v1.17.1) — upstream's fixes to filter-value handling,
+  # component selector guards and CSV effective impact. Its embedded
+  # hdf-system schema is byte-identical to 3.7.0's and still carries the
+  # v3.7.0 $id, so Hdf::SystemSchema::VERSION (the SCHEMA version) stays 3.7.0.
+  PINNED_VERSION = "3.7.2".freeze
   DEFAULT_BINARY = "hdf".freeze
 
   class Error < StandardError

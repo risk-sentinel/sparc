@@ -63,7 +63,7 @@ env:
   # rather than in either job. The previous single-job pin drifted to 3.4.1
   # while the image baked 3.5.1; a second hardcoded copy is exactly how that
   # recurs. Dockerfile carries the same ARG — grep repo-wide before changing.
-  HDF_LIBS_VERSION: '3.7.0'
+  HDF_LIBS_VERSION: '3.7.2'
   # golang.org/x/text FLOOR, not a forced version. 3.5.1 pinned v0.27.0
   # (CVE-2026-56852, HIGH) and this job forced v0.39.0 ahead of upstream;
   # 3.7.0 ships v0.39.0 itself. Forcing it now would DOWNGRADE a future
