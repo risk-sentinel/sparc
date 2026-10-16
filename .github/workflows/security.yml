@@ -69,12 +69,15 @@ env:
   # 3.7.0 ships v0.39.0 itself. Forcing it now would DOWNGRADE a future
   # v0.40.x while an equality check reported success, so the requirement is
   # gone and the floor is asserted against the built binary instead.
-  XTEXT_VERSION: '0.39.0'
+  # v0.41.0 (v1.17.1): GO-2026-6629; no hdf-libs release ships it yet, so the
+  # Dockerfile raises the requirement when the clone is below this floor.
+  XTEXT_VERSION: '0.41.0'
   # 3.5.1's published binary was built with go1.26.5 and the GO-2026-5026 fix
   # line is go1.26.6, so a download could not clear a stdlib CVE. 3.7.0's
   # published binary is built with go1.26.6; we still compile, so the
   # toolchain stays ours to choose rather than upstream's to change.
-  HDF_GO_VERSION: '1.26.6'
+  # 1.26.9 (v1.17.1): go1.26.6 carries 3 CRITICAL / 21 HIGH stdlib advisories.
+  HDF_GO_VERSION: '1.26.9'
   # #873 — Syft produces the container SBOM the Grype gate consumes. Pinned:
   # the gate's correctness depends on this tool emitting source-RPM (upstream=)
   # purl qualifiers, so the version is not something to float.
