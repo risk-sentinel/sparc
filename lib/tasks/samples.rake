@@ -8,6 +8,18 @@
 # Prerequisites: run `rails db:seed` first to populate the database.
 
 namespace :samples do
+  # #1218 — needs no database: built from the bundled NIST catalog and baselines.
+  desc "Regenerate the Rev 5 ODP worksheets in docs/api/samples/"
+  task odp_worksheets: :environment do
+    builder = OdpWorksheetBuilder.new
+    builder.write!
+    builder.worksheets.each do |name, sheet|
+      about = sheet["_about"]
+      puts "  #{name}: #{about['controls']} controls, #{about['parameters']} parameters, " \
+           "#{about['selections']} selections (#{about['aggregate_parameters_omitted']} aggregates omitted)"
+    end
+  end
+
   desc "Generate all sample OSCAL files from seeded data"
   task generate: :environment do
     Rake::Task["samples:generate_traditional"].invoke

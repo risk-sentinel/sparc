@@ -75,16 +75,27 @@ class BaselineParameterService
     validation_errors = []
     params_updated = 0
     selections_updated = 0
-
-    known_param_ids = extract_raw_parameters.map { |p| p["id"] }.to_set
+    skipped = []
+    resolved_aliases = []
 
     # Update parameters
     (payload[:parameters] || payload["parameters"] || []).each do |param_entry|
-      param_id = param_entry[:param_id] || param_entry["param_id"]
+      given_id = param_entry[:param_id] || param_entry["param_id"]
       value = param_entry[:value] || param_entry["value"]
 
-      unless known_param_ids.include?(param_id)
-        validation_errors << { param_id: param_id, error: "Unknown parameter ID" }
+      param_id = resolve_param_id(given_id)
+      if param_id.nil?
+        validation_errors << { param_id: given_id, error: "Unknown parameter ID" }
+        next
+      end
+      resolved_aliases << { given: given_id, param_id: param_id } if param_id != given_id
+
+      # #1218 — `null` means "not provided", not "clear it". A worksheet carries
+      # every parameter of a baseline, and a team fills in the ones it decides;
+      # sending the untouched rest used to blank whatever was already stored.
+      # An explicit "" still clears.
+      if value.nil?
+        skipped << { param_id: param_id, reason: "value is null (not provided)" }
         next
       end
 
@@ -92,7 +103,7 @@ class BaselineParameterService
         params_updated += 1
       else
         # #1007 — nothing was written, so nothing is counted. Not reachable
-        # today: `known_param_ids` and `find_control_id_for_param` read the same
+        # today: `resolve_param_id` and `find_control_id_for_param` read the same
         # extraction, and both extractors always set `_control_id`, so a param
         # that passes the guard above resolves here. It is kept because the
         # counter must never be able to run ahead of the writes again — that is
@@ -108,21 +119,30 @@ class BaselineParameterService
 
     # Update selections
     (payload[:selections] || payload["selections"] || []).each do |sel_entry|
-      select_id = sel_entry[:select_id] || sel_entry["select_id"]
-      selected = sel_entry[:selected] || sel_entry["selected"] || []
+      given_id = sel_entry[:select_id] || sel_entry["select_id"]
+      selected = sel_entry[:selected] || sel_entry["selected"]
 
       # #994 — an entry naming nothing cannot report which id was not found, so
       # it says what it is missing instead of reporting `select_id: null` under
       # "Unknown selection ID", which described the wrong problem. Callers reach
       # this through BaselineParameterPayload, which resolves the `selection_id`
       # alias; this is the guard for every other caller.
-      if select_id.blank?
+      if given_id.blank?
         validation_errors << { select_id: nil, error: "Selection entry is missing select_id" }
         next
       end
 
-      unless known_param_ids.include?(select_id)
-        validation_errors << { select_id: select_id, error: "Unknown selection ID" }
+      select_id = resolve_param_id(given_id)
+      if select_id.nil?
+        validation_errors << { select_id: given_id, error: "Unknown selection ID" }
+        next
+      end
+      resolved_aliases << { given: given_id, select_id: select_id } if select_id != given_id
+
+      # #1218 — see the parameter loop: `null` is "not provided". `[]` still
+      # clears the selection.
+      if selected.nil?
+        skipped << { select_id: select_id, reason: "selected is null (not provided)" }
         next
       end
 
@@ -170,8 +190,28 @@ class BaselineParameterService
       baseline_id: profile.slug,
       parameters_updated: params_updated,
       selections_updated: selections_updated,
+      skipped: skipped,
+      resolved_aliases: resolved_aliases,
       validation_errors: validation_errors
     }
+  end
+
+  # #1218 — the id a value is stored against, for an id as a caller wrote it.
+  #
+  # NIST's Rev 5 catalog names each organization-defined parameter
+  # `ac-01_odp.03` and keeps the Rev 4-style id it replaced (`ac-1_prm_2`) as an
+  # `alt-identifier` prop. Callers carrying Rev 4 tooling, Rev 4 examples, or the
+  # id they read off the catalog's props sent the alias and got "Unknown
+  # parameter ID" for a parameter the profile has. The form is normalised, the
+  # vocabulary is not: an alias resolves only to the parameter that declares it,
+  # and a real id always wins over an alias spelled the same way.
+  #
+  # @return [String, nil] the stored id, or nil when the profile has neither
+  def resolve_param_id(id)
+    id = id.to_s.strip
+    return id if parameter_index[:ids].include?(id)
+
+    parameter_index[:aliases][id]
   end
 
   # Exports the parameter schema in the requested format.
@@ -194,6 +234,23 @@ class BaselineParameterService
   end
 
   private
+
+  # #1218 — every stored id, and alias => id for each `alt-identifier` prop.
+  # Memoised per service instance: the catalog does not change mid-request.
+  def parameter_index
+    @parameter_index ||= begin
+      raw = extract_raw_parameters
+      ids = raw.map { |p| p["id"] }.to_set
+      aliases = raw.each_with_object({}) do |param, map|
+        alt_identifiers(param).each { |alias_id| map[alias_id] ||= param["id"] unless ids.include?(alias_id) }
+      end
+      { ids: ids, aliases: aliases }
+    end
+  end
+
+  def alt_identifiers(param)
+    Array(param["props"]).select { |prop| prop["name"] == "alt-identifier" }.filter_map { |prop| prop["value"].presence }
+  end
 
   # Extracts raw OSCAL parameter definitions from catalog controls or resolved JSON.
   def extract_raw_parameters(family: nil)
@@ -295,6 +352,8 @@ class BaselineParameterService
 
     {
       param_id: param_id,
+      # #1218 — the Rev 4-style id the API also accepts for this parameter.
+      alt_identifier: alt_identifiers(param).first,
       control_id: control_id,
       control_title: control_title,
       label: param["label"],
@@ -328,6 +387,7 @@ class BaselineParameterService
 
     {
       select_id: param_id,
+      alt_identifier: alt_identifiers(param).first,
       control_id: control_id,
       control_title: control_title,
       label: param["label"],

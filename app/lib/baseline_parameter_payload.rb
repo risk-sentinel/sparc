@@ -161,7 +161,9 @@ class BaselineParameterPayload
         next
       end
 
-      @selections << { select_id: select_id, selected: Array(selected) }
+      # #1218 — nil is kept: `selected: null` means "not provided" and is
+      # skipped by the service, where `[]` clears the selection.
+      @selections << { select_id: select_id, selected: selected }
     end
   end
 

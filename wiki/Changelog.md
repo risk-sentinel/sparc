@@ -4,13 +4,15 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
-## v1.17.1 -- OIDC Sign-In
+## v1.17.1 -- OIDC Sign-In, Rev 5 Parameter Worksheets
 
-A patch release with a single fix.
+A patch release: OIDC sign-in works again, and tailoring a NIST Rev 5 baseline over the API gets ready-to-fill worksheets and accepts the parameter ids teams actually have.
 
-- **OIDC sign-in works again.** On v1.17.0, signing in through an OIDC provider (Okta, Keycloak, Entra ID, or any other `SPARC_ENABLE_OIDC` provider) failed before the browser ever reached the IdP. v1.17.0 moved to json 3.0.2, which no longer accepts the way faraday 2.14.3 passed it parsing options, and the OIDC libraries read every IdP response through faraday. The provider's discovery document therefore failed to parse, and so did the token response. faraday is now 2.14.4, which supports json 3, and a regression spec runs the IdP's discovery, signing-key and token responses through the OIDC libraries' real HTTP stack. GitHub and GitLab sign-in, and API authentication with OIDC JWTs, were not affected.
+- **OIDC sign-in works again** ([#1217](https://github.com/risk-sentinel/sparc/issues/1217)). On v1.17.0, signing in through an OIDC provider (Okta, Keycloak, Entra ID, or any other `SPARC_ENABLE_OIDC` provider) failed before the browser reached the IdP, with "Authentication failed: Unknown error". v1.17.0 moved to json 3.0.2, which no longer accepts the way faraday 2.14.3 passed it parsing options, and the OIDC libraries read every IdP response through faraday, so the provider's discovery document failed to parse, and so did the token response. faraday is now 2.14.4, which supports json 3. GitHub and GitLab sign-in, and API authentication with OIDC JWTs, were not affected.
+- **Rev 5 parameter worksheets** ([#1218](https://github.com/risk-sentinel/sparc/issues/1218)). [`docs/api/samples/`](https://github.com/risk-sentinel/sparc/tree/main/docs/api/samples) now holds organization-defined parameter worksheets for the full NIST SP 800-53 Rev 5 catalog and for the LOW, MODERATE and HIGH baselines: every parameter and selection, with NIST's guidance and the allowed choices. Each is a request body for `PUT /api/v1/profile_documents/:id/parameters` and the parameter file import: fill in what you have decided and send it as it is.
+- **Rev 4-style parameter ids are accepted** ([#1218](https://github.com/risk-sentinel/sparc/issues/1218)). Rev 5 names a parameter `ac-01_odp.03` and keeps the id it replaced, `ac-1_prm_2`, as an `alt-identifier`. The API refused that alias as "Unknown parameter ID"; it now stores the value against the parameter that declares it and reports the mapping under `resolved_aliases`. `GET .../parameters` shows each parameter's `alt_identifier`. The API documentation's examples used Rev 4 ids that do not exist in Rev 5; they are corrected.
 
-**Behaviour changes:** none. No migrations and no configuration changes; upgrading from v1.17.0 is an image swap.
+**Behaviour changes:** In a parameter update or ODP file import, a `null` value (or a `null` / absent `selected`) now means **not provided**: the entry is skipped and listed under `skipped`, and the stored value is kept. It used to **clear** the stored value. Send `""` or `[]` to clear. No migrations and no configuration changes; upgrading from v1.17.0 is an image swap.
 
 [Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.1).
 

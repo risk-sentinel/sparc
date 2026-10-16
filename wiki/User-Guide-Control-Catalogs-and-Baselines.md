@@ -229,6 +229,16 @@ API equivalent: `PUT /api/v1/profile_documents/:id/parameters`, and
 `GET .../parameters` to read the whole schema. Bulk ODP files can be uploaded
 through `POST .../parameters/import/preview` and `.../import/confirm`.
 
+To tailor a whole NIST Rev 5 baseline at once, start from a worksheet:
+[`docs/api/samples/`](https://github.com/risk-sentinel/sparc/tree/main/docs/api/samples)
+holds one for the full Rev 5 catalog and one each for the LOW, MODERATE and
+HIGH baselines, listing every parameter and selection with NIST's guidance and
+the allowed choices. Fill in the values you have decided and send the file as
+it is to either endpoint above; entries you leave `null` are skipped, so they
+do not overwrite anything. Rev 5 parameter ids look like `ac-01_odp.03`; the
+older `ac-1_prm_2` form NIST kept alongside each one is accepted too. See the
+[Baseline Parameters API](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/baseline-parameters.md).
+
 ### How to export a baseline
 
 On the baseline detail page: **JSON** for the raw document, or **OSCAL**
