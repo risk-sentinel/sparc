@@ -80,6 +80,17 @@ list: the 422 is correct, and the docs now say to check `lifecycle_status`
 rather than `status`. **Left for v1.17.2:** a guard on aggregate parameters
 (`ac-1_prm_1`), and a 422 that today also means "the valid entries were stored".
 
+**Folded in (owner, 2026-10-16): image findings and hdf-libs 3.7.2.** The
+release rescan (grype DB built 2026-10-16) found 3 Critical / 25 High on v1.17.0
+and v1.17.1 alike, which the live grype-container gate (High, max 0) would fail
+on: Go stdlib in the `hdf` binary (go1.26.6), x/text GO-2026-6629, and pcre2.
+Taken: UBI 10 digest 552f8cc1, hdf builder on golang 1.26.9 with an x/text
+floor of v0.41.0 (the owner approved the matching `security.yml` values), and
+hdf-libs 3.7.2 (owner, for its upstream fixes; schema unchanged). One High
+remains, gnutls CVE-2026-88647 (not-fixed, nothing loads it), registered as
+deferred; its deviation awaits `/approve-deviation` on the PR. See
+`docs/security/SCANNER_FINDINGS_AUDIT.md`.
+
 > **Milestones moved 2026-10-16 (owner):** the 13 issues planned for `v1.17.1`
 > moved to a new **`v1.17.2`** milestone, so `v1.17.1` holds only #1217. The
 > v1.17.1 wave keeps its scope under the new name; where this file or the

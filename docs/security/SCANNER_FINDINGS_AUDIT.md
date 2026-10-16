@@ -1,8 +1,43 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-09-29 (v1.17.0 line — UBI 10 base and runtime strip, #1200)
+**Last reviewed:** 2026-10-16 (v1.17.1 — UBI 10 digest bump, hdf toolchain, hdf-libs 3.7.2)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **v1.17.1 rescan (2026-10-16).** Real rescan of the built `sparc:v1.17.1`
+> image (arm64), not an SBOM, with grype 0.114.0 (DB v6.1.10 built 2026-10-16)
+> and Trivy 0.74.0.
+>
+> **Before the fixes**, the same database reported **3 Critical and 25 High**
+> on both v1.17.0 and the first v1.17.1 build (identical apart from one openssl
+> CVE). None came from the release's code; the advisory data had moved:
+>
+> - **Go stdlib in `/usr/local/bin/hdf`** (built with go1.26.6): 3 Critical,
+>   21 High (e.g. CVE-2026-78663, GO-2026-6604, GO-2026-6612), fixed in
+>   go1.26.9; plus **golang.org/x/text** GO-2026-6629 (High), fixed in v0.41.0.
+> - **pcre2** CVE-2026-86145, -89161, -103111: now fixed by Red Hat in
+>   10.44-1.5.el10_2.
+> - **gnutls** CVE-2026-88647 (High): `not-fixed`.
+>
+> **Taken in this release:** UBI 10 digest a9f9316e → 552f8cc1 (pcre2
+> 10.44-1.5.el10_2, gnutls -5, glibc -142, openssl-libs -2); the hdf build
+> stage on golang 1.26.9 with an x/text floor of v0.41.0, raised only when the
+> upstream requirement is lower; hdf-libs 3.7.0 → 3.7.2.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype 0.114.0 (image, DB v6.1.10 built 2026-10-16) | **0** | **1** | 52 | 32 |
+> | Trivy 0.74.0 (image, vuln scanner) | 0 | 0 | 0 | 1 |
+>
+> Distinct CVEs. 42 findings cleared; none new. The one High is the gnutls CVE,
+> `deferred` with a `risk_adjustment` deviation awaiting the owner's approval:
+> measured on the image, no installed package requires gnutls (the runtime
+> strip removed its consumers), no executable or shared library links
+> libgnutls, and every TLS connection the app makes uses OpenSSL. Not in CISA
+> KEV (catalog 2026.10.16). Register effect: the three pcre2 entries and
+> openssl-libs CVE-2026-84782 (cleared by openssl-libs -2) retired to
+> `sparc-findings.retired.yml` with `verified_absent_on: 2026-10-16`;
+> CVE-2026-75804 (openssl-libs, QUIC) is still reported and stays.
 
 > **UBI 10 rebase (#1200, 2026-09-29):** the production image moved to Red Hat
 > **UBI 10 minimal** (RHEL 10.2), with a runtime strip that removes the package
