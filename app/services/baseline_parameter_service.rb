@@ -72,127 +72,19 @@ class BaselineParameterService
   # @param payload [Hash] with :parameters [{param_id:, value:}] and :selections [{select_id:, selected:[]}]
   # @return [Hash] summary with :status, :parameters_updated, :selections_updated, :validation_errors
   def update_parameters(payload)
-    validation_errors = []
-    params_updated = 0
-    selections_updated = 0
-    skipped = []
-    resolved_aliases = []
+    result = { parameters_updated: 0, selections_updated: 0, skipped: [], resolved_aliases: [], validation_errors: [] }
 
-    # Update parameters
-    (payload[:parameters] || payload["parameters"] || []).each do |param_entry|
-      given_id = param_entry[:param_id] || param_entry["param_id"]
-      value = param_entry[:value] || param_entry["value"]
-
-      param_id = resolve_param_id(given_id)
-      if param_id.nil?
-        validation_errors << { param_id: given_id, error: "Unknown parameter ID" }
-        next
-      end
-      resolved_aliases << { given: given_id, param_id: param_id } if param_id != given_id
-
-      # #1218 — `null` means "not provided", not "clear it". A worksheet carries
-      # every parameter of a baseline, and a team fills in the ones it decides;
-      # sending the untouched rest used to blank whatever was already stored.
-      # An explicit "" still clears.
-      if value.nil?
-        skipped << { param_id: param_id, reason: "value is null (not provided)" }
-        next
-      end
-
-      if upsert_parameter_field(param_id, value.to_s)
-        params_updated += 1
-      else
-        # #1007 — nothing was written, so nothing is counted. Not reachable
-        # today: `resolve_param_id` and `find_control_id_for_param` read the same
-        # extraction, and both extractors always set `_control_id`, so a param
-        # that passes the guard above resolves here. It is kept because the
-        # counter must never be able to run ahead of the writes again — that is
-        # what made the old code report success for an update it had skipped —
-        # and a future extractor that omits `_control_id` would otherwise
-        # reintroduce it silently.
-        validation_errors << {
-          param_id: param_id,
-          error: "Parameter is not attached to any control in this profile; nothing was written"
-        }
-      end
-    end
-
-    # Update selections
-    (payload[:selections] || payload["selections"] || []).each do |sel_entry|
-      given_id = sel_entry[:select_id] || sel_entry["select_id"]
-      selected = sel_entry[:selected] || sel_entry["selected"]
-
-      # #994 — an entry naming nothing cannot report which id was not found, so
-      # it says what it is missing instead of reporting `select_id: null` under
-      # "Unknown selection ID", which described the wrong problem. Callers reach
-      # this through BaselineParameterPayload, which resolves the `selection_id`
-      # alias; this is the guard for every other caller.
-      if given_id.blank?
-        validation_errors << { select_id: nil, error: "Selection entry is missing select_id" }
-        next
-      end
-
-      select_id = resolve_param_id(given_id)
-      if select_id.nil?
-        validation_errors << { select_id: given_id, error: "Unknown selection ID" }
-        next
-      end
-      resolved_aliases << { given: given_id, select_id: select_id } if select_id != given_id
-
-      # #1218 — see the parameter loop: `null` is "not provided". `[]` still
-      # clears the selection.
-      if selected.nil?
-        skipped << { select_id: select_id, reason: "selected is null (not provided)" }
-        next
-      end
-
-      # #994 — a non-array `selected` used to be coerced with `to_s` and
-      # PERSISTED, reporting `selections_updated: 1` for a value the catalog
-      # never offered as a choice. Refused rather than repaired: there is no
-      # honest way to tell whether "a, b" was one choice or two.
-      unless selected.is_a?(Array)
-        validation_errors << {
-          select_id: select_id,
-          error: "selected must be an array of choice strings, even for a single choice"
-        }
-        next
-      end
-
-      # #942 — a choice can contain a comma (insert markup always does), so the
-      # values are joined with a separator that cannot appear in OSCAL prose.
-      value = ParameterValueList.join(selected)
-      unless upsert_parameter_field(select_id, value)
-        validation_errors << {
-          select_id: select_id,
-          error: "Selection is not attached to any control in this profile; nothing was written"
-        }
-        next
-      end
-      selections_updated += 1
-
-      # #942 — a chosen branch can carry its own parameter ("establish
-      # {{ insert: param, ac-20_odp.02 }}" is answered by odp.02). Accepting the
-      # selection while that parameter is still blank stores a half-answered
-      # question that reads as complete, and the gap only surfaces once the
-      # resolved baseline is generated. Reported, not refused: the operator may
-      # be supplying the two in either order, or in separate calls.
-      unanswered_references(select_id, Array(selected)).each do |missing|
-        validation_errors << {
-          select_id: select_id,
-          param_id: missing,
-          error: "Selected choice references parameter #{missing}, which has no value"
-        }
-      end
-    end
+    (payload[:parameters] || payload["parameters"] || []).each { |entry| apply_parameter_entry(entry, result) }
+    (payload[:selections] || payload["selections"] || []).each { |entry| apply_selection_entry(entry, result) }
 
     {
-      status: validation_errors.empty? ? "updated" : "partial",
+      status: result[:validation_errors].empty? ? "updated" : "partial",
       baseline_id: profile.slug,
-      parameters_updated: params_updated,
-      selections_updated: selections_updated,
-      skipped: skipped,
-      resolved_aliases: resolved_aliases,
-      validation_errors: validation_errors
+      parameters_updated: result[:parameters_updated],
+      selections_updated: result[:selections_updated],
+      skipped: result[:skipped],
+      resolved_aliases: result[:resolved_aliases],
+      validation_errors: result[:validation_errors]
     }
   end
 
@@ -234,6 +126,113 @@ class BaselineParameterService
   end
 
   private
+
+  # One `parameters` entry of #update_parameters; records its outcome in `result`.
+  def apply_parameter_entry(param_entry, result)
+    given_id = param_entry[:param_id] || param_entry["param_id"]
+    value = param_entry[:value] || param_entry["value"]
+
+    param_id = resolve_param_id(given_id)
+    if param_id.nil?
+      result[:validation_errors] << { param_id: given_id, error: "Unknown parameter ID" }
+      return
+    end
+    result[:resolved_aliases] << { given: given_id, param_id: param_id } if param_id != given_id
+
+    # #1218 — `null` means "not provided", not "clear it". A worksheet carries
+    # every parameter of a baseline, and a team fills in the ones it decides;
+    # sending the untouched rest used to blank whatever was already stored.
+    # An explicit "" still clears.
+    if value.nil?
+      result[:skipped] << { param_id: param_id, reason: "value is null (not provided)" }
+      return
+    end
+
+    if upsert_parameter_field(param_id, value.to_s)
+      result[:parameters_updated] += 1
+    else
+      # #1007 — nothing was written, so nothing is counted. Not reachable
+      # today: `resolve_param_id` and `find_control_id_for_param` read the same
+      # extraction, and both extractors always set `_control_id`, so a param
+      # that passes the guard above resolves here. It is kept because the
+      # counter must never be able to run ahead of the writes again — that is
+      # what made the old code report success for an update it had skipped —
+      # and a future extractor that omits `_control_id` would otherwise
+      # reintroduce it silently.
+      result[:validation_errors] << {
+        param_id: param_id,
+        error: "Parameter is not attached to any control in this profile; nothing was written"
+      }
+    end
+  end
+
+  # One `selections` entry of #update_parameters; records its outcome in `result`.
+  def apply_selection_entry(sel_entry, result)
+    given_id = sel_entry[:select_id] || sel_entry["select_id"]
+    selected = sel_entry[:selected] || sel_entry["selected"]
+
+    # #994 — an entry naming nothing cannot report which id was not found, so
+    # it says what it is missing instead of reporting `select_id: null` under
+    # "Unknown selection ID", which described the wrong problem. Callers reach
+    # this through BaselineParameterPayload, which resolves the `selection_id`
+    # alias; this is the guard for every other caller.
+    if given_id.blank?
+      result[:validation_errors] << { select_id: nil, error: "Selection entry is missing select_id" }
+      return
+    end
+
+    select_id = resolve_param_id(given_id)
+    if select_id.nil?
+      result[:validation_errors] << { select_id: given_id, error: "Unknown selection ID" }
+      return
+    end
+    result[:resolved_aliases] << { given: given_id, select_id: select_id } if select_id != given_id
+
+    # #1218 — see apply_parameter_entry: `null` is "not provided". `[]` still
+    # clears the selection.
+    if selected.nil?
+      result[:skipped] << { select_id: select_id, reason: "selected is null (not provided)" }
+      return
+    end
+
+    # #994 — a non-array `selected` used to be coerced with `to_s` and
+    # PERSISTED, reporting `selections_updated: 1` for a value the catalog
+    # never offered as a choice. Refused rather than repaired: there is no
+    # honest way to tell whether "a, b" was one choice or two.
+    unless selected.is_a?(Array)
+      result[:validation_errors] << {
+        select_id: select_id,
+        error: "selected must be an array of choice strings, even for a single choice"
+      }
+      return
+    end
+
+    # #942 — a choice can contain a comma (insert markup always does), so the
+    # values are joined with a separator that cannot appear in OSCAL prose.
+    value = ParameterValueList.join(selected)
+    unless upsert_parameter_field(select_id, value)
+      result[:validation_errors] << {
+        select_id: select_id,
+        error: "Selection is not attached to any control in this profile; nothing was written"
+      }
+      return
+    end
+    result[:selections_updated] += 1
+
+    # #942 — a chosen branch can carry its own parameter ("establish
+    # {{ insert: param, ac-20_odp.02 }}" is answered by odp.02). Accepting the
+    # selection while that parameter is still blank stores a half-answered
+    # question that reads as complete, and the gap only surfaces once the
+    # resolved baseline is generated. Reported, not refused: the operator may
+    # be supplying the two in either order, or in separate calls.
+    unanswered_references(select_id, Array(selected)).each do |missing|
+      result[:validation_errors] << {
+        select_id: select_id,
+        param_id: missing,
+        error: "Selected choice references parameter #{missing}, which has no value"
+      }
+    end
+  end
 
   # #1218 — every stored id, and alias => id for each `alt-identifier` prop.
   # Memoised per service instance: the catalog does not change mid-request.

@@ -98,16 +98,12 @@ WORKDIR /src/hdf-cli
 # binary below.
 #
 # 2026-10-16 (v1.17.1): the floor is v0.41.0 for GO-2026-6629 (the Nickname
-# profile panics on a short destination buffer), and no hdf-libs release ships
-# it yet — v3.7.2 still requires v0.39.0. So the requirement is RAISED here, but
-# only when the clone sits below the floor: `go get` runs on a lower version and
-# is skipped on an equal or higher one, so a future hdf-libs on v0.42.x is never
-# pulled back down. The assertion below still reads the emitted binary.
+# profile panics on a short destination buffer). hdf-libs v3.7.2 builds through
+# a Go workspace (go.work at the repo root), and the workspace resolves x/text
+# to v0.42.0 even though hdf-cli/go.mod alone still says v0.39.0 — so the
+# release already clears the floor, nothing is forced, and the assertion below
+# reads what the emitted binary actually carries.
 ARG XTEXT_VERSION=0.41.0
-RUN have="$(go list -m -f '{{.Version}}' golang.org/x/text | sed 's/^v//')" \
-    && if [ "$(printf '%s\n%s\n' "${XTEXT_VERSION}" "${have}" | sort -V | head -1)" != "${XTEXT_VERSION}" ]; then \
-         go get "golang.org/x/text@v${XTEXT_VERSION}"; \
-       fi
 
 # hadolint ignore=DL3003
 RUN COMMIT="$(git -C /src rev-parse --short HEAD)" \
@@ -124,7 +120,7 @@ RUN COMMIT="$(git -C /src rev-parse --short HEAD)" \
 RUN ACTUAL="$(go version -m /out/hdf | awk '$2 == "golang.org/x/text" { print $3 }' | sed 's/^v//')" \
     && [ -n "${ACTUAL}" ] \
     && [ "$(printf '%s\n%s\n' "${XTEXT_VERSION}" "${ACTUAL}" | sort -V | head -1)" = "${XTEXT_VERSION}" ] \
-      || { echo "FAIL: /out/hdf carries x/text v${ACTUAL:-<none>}, below the v${XTEXT_VERSION} floor (CVE-2026-56852)" >&2; \
+      || { echo "FAIL: /out/hdf carries x/text v${ACTUAL:-<none>}, below the v${XTEXT_VERSION} floor (GO-2026-6629)" >&2; \
            go version -m /out/hdf | grep "golang.org/x/text" >&2; exit 1; }
 # And assert the toolchain, which is the finding this stage exists to close.
 # `go build` silently uses whatever toolchain the image carries; if the FROM

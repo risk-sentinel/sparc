@@ -21,8 +21,8 @@ or whenever a new suppression is added.
 >
 > **Taken in this release:** UBI 10 digest a9f9316e → 552f8cc1 (pcre2
 > 10.44-1.5.el10_2, gnutls -5, glibc -142, openssl-libs -2); the hdf build
-> stage on golang 1.26.9 with an x/text floor of v0.41.0, raised only when the
-> upstream requirement is lower; hdf-libs 3.7.0 → 3.7.2.
+> stage on golang 1.26.9; hdf-libs 3.7.0 → 3.7.2, whose Go workspace resolves
+> x/text to v0.42.0 (the binary is asserted at or above a v0.41.0 floor).
 >
 > | Scanner | Critical | High | Medium | Low |
 > |---|---|---|---|---|
