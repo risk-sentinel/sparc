@@ -174,8 +174,8 @@ POST /api/v1/oscal/poam_from_amendments
 > left unconstrained.
 >
 > **Fixed upstream.** [mitre/hdf-libs#236](https://github.com/mitre/hdf-libs/issues/236)
-> was closed on 2026-09-08 and the fix ships in **hdf-cli 3.7.0**, which SPARC now
-> pins. Re-measured on that same reproducer against both binaries: 3.5.1 gives 3
+> was closed on 2026-09-08 and the fix ships in **hdf-cli 3.7.0**; SPARC now
+> pins 3.7.2. Re-measured on that same reproducer against both binaries: 3.5.1 gives 3
 > violations on OSCAL 1.1.2 and 7 on 1.2.2; **3.7.0 is valid on both**. A regression
 > is pinned by an integration example that runs the minimal reproducer, so it would
 > surface as a red build rather than as a silently returning `502`.
