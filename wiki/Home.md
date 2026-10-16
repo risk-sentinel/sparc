@@ -10,9 +10,9 @@ Welcome to the official SPARC wiki. SPARC is a Rails 8.1 application for managin
 | Releases | [All releases](https://github.com/risk-sentinel/sparc/releases) |
 | Issues | [Open issues](https://github.com/risk-sentinel/sparc/issues) |
 | Documentation index | [`docs/MAP.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/MAP.md) — full `docs/` inventory |
-| Current Version | **v1.17.0** |
+| Current Version | **v1.17.1** |
 
-> **Versioning note:** SPARC's public release line is **v1.x** (current: v1.17.0).
+> **Versioning note:** SPARC's public release line is **v1.x** (current: v1.17.1).
 > Older `v2.x`–`v3.x` entries in the [Changelog](Changelog) are the project's
 > pre-reset numbering, retained for historical traceability.
 
@@ -78,7 +78,7 @@ Full release history — the current v1.x line plus the legacy v2.x–v3.x entri
 
 | Component | Technology |
 |-----------|-----------|
-| Framework | Ruby 3.4.10, Rails 8.1.3 |
+| Framework | Ruby 3.4.10, Rails 8.1.4 |
 | Database | PostgreSQL 15 |
 | Background Jobs | Solid Queue (default) · Sidekiq + Redis (optional) |
 | Frontend | Hotwire (Turbo + Stimulus), Bootstrap 5.3 |

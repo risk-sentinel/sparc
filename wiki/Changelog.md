@@ -4,6 +4,16 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.17.1 -- OIDC Sign-In
+
+A patch release with a single fix.
+
+- **OIDC sign-in works again.** On v1.17.0, signing in through an OIDC provider (Okta, Keycloak, Entra ID, or any other `SPARC_ENABLE_OIDC` provider) failed before the browser ever reached the IdP. v1.17.0 moved to json 3.0.2, which no longer accepts the way faraday 2.14.3 passed it parsing options, and the OIDC libraries read every IdP response through faraday. The provider's discovery document therefore failed to parse, and so did the token response. faraday is now 2.14.4, which supports json 3, and a regression spec runs the IdP's discovery, signing-key and token responses through the OIDC libraries' real HTTP stack. GitHub and GitLab sign-in, and API authentication with OIDC JWTs, were not affected.
+
+**Behaviour changes:** none. No migrations and no configuration changes; upgrading from v1.17.0 is an image swap.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.1).
+
 ## v1.17.0 -- Hardened Image, Delivery API, Upgrade Safety (2026-10-02)
 
 A minor release with three threads: the container image is rebuilt on a hardened base, the API now delivers what an evidence pipeline needs to consume SPARC's output, and a deployment can no longer start on a database its code does not match.

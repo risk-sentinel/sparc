@@ -87,6 +87,11 @@ gem "omniauth-rails_csrf_protection", "~> 2.0" # CSRF protection for OmniAuth PO
 gem "omniauth-github", "~> 2.0"                # GitHub OAuth
 gem "omniauth-gitlab", "~> 4.0"                # GitLab OAuth
 gem "omniauth_openid_connect", "~> 0.8"        # Generic OIDC (Okta, Keycloak, Entra ID)
+# faraday is transitive (openid_connect, swd, webfinger, rack-oauth2), but its
+# floor is load-bearing: json 3 rejects a positional options hash, and faraday
+# < 2.14.4 calls `JSON.parse(body, {})` in its JSON response middleware. That
+# raised on every OIDC discovery request and broke OIDC sign-in in v1.17.0.
+gem "faraday", ">= 2.14.4"
 gem "net-ldap", "~> 0.19"                      # LDAP authentication
 gem "jwt", "~> 3.3"                            # JWT decoding for OIDC API token validation
 gem "webauthn", "~> 3.1"                       # FIDO2/WebAuthn passwordless + 2FA (#779)
