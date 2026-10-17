@@ -1,7 +1,7 @@
 # HDF System API
 
 Export an authorization boundary as an HDF **`hdf-system`** document (schema
-v3.7.0, the hdf-libs release SPARC pins). Added in #1179.
+v3.7.0; SPARC pins hdf-libs 3.7.2, which embeds the same schema). Added in #1179.
 
 `hdf-system` is the document every other HDF v3 document points at through
 `systemRef` — results, amendments, evidence packages. It states what the

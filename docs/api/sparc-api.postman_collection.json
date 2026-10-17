@@ -2445,7 +2445,7 @@
                 "parameters"
               ]
             },
-            "description": "Bulk-update a profile's organization-defined parameters.\n\n`parameters` and `selections` are ARRAYS of objects. The body this request used to carry was an object map (`{\"ac-2_prm_1\": \"30 days\"}`), which the endpoint refuses with 422 — and before #994 answered `200 {\"status\":\"updated\"}` while writing nothing. See #995.\n\nA published profile is read-only and returns 422 (#1008); tailor a draft.",
+            "description": "Bulk-update a profile's organization-defined parameters.\n\n`parameters` and `selections` are ARRAYS of objects. The body this request used to carry was an object map (`{\"ac-2_prm_1\": \"30 days\"}`), which the endpoint refuses with 422 — and before #994 answered `200 {\"status\":\"updated\"}` while writing nothing. See #995.\n\nA published profile is read-only and returns 422 (#1008); tailor a draft.\n\nIds are the catalog's own: for Rev 5 the `ac-01_odp.03` form. A Rev 4-style `alt-identifier` NIST kept (`ac-1_prm_3` → `ac-01_odp.04`) is accepted and reported under `resolved_aliases`. `ac-01_odp.03` is a selection, so it goes under `selections`. `null` means not provided and is skipped; `\"\"` or `[]` clears. Ready-to-fill Rev 5 catalog, LOW, MODERATE and HIGH worksheets are in docs/api/samples/rev5-*-odp.json.",
             "body": {
               "mode": "raw",
               "options": {
@@ -2453,7 +2453,7 @@
                   "language": "json"
                 }
               },
-              "raw": "{\n  \"parameters\": [\n    {\n      \"param_id\": \"ac-1_prm_1\",\n      \"value\": \"30 days\"\n    }\n  ],\n  \"selections\": [\n    {\n      \"select_id\": \"ac-2_prm_1\",\n      \"selected\": [\n        \"removes\"\n      ]\n    }\n  ]\n}"
+              "raw": "{\n  \"parameters\": [\n    {\n      \"param_id\": \"ac-01_odp.01\",\n      \"value\": \"ISSO and System Owner\"\n    },\n    {\n      \"param_id\": \"ac-1_prm_3\",\n      \"value\": \"Chief Information Security Officer\"\n    },\n    {\n      \"param_id\": \"ac-01_odp.05\",\n      \"value\": null\n    }\n  ],\n  \"selections\": [\n    {\n      \"select_id\": \"ac-01_odp.03\",\n      \"selected\": [\n        \"system-level\"\n      ]\n    }\n  ]\n}"
             }
           }
         },

@@ -79,28 +79,43 @@ class OdpImportService
     rows = []
 
     Array(payload[:parameters]).each do |entry|
-      pid = entry[:param_id]
+      given = entry[:param_id]
+      pid = @service.resolve_param_id(given) || given
       known = params_by_id[pid]
       if known.nil?
-        rows << Row.new(param_id: pid, kind: "parameter", new_value: entry[:value].to_s,
+        rows << Row.new(param_id: given, kind: "parameter", new_value: entry[:value].to_s,
                         status: "unknown", message: "Unknown parameter ID for this baseline")
+        next
+      end
+      if entry[:value].nil?
+        rows << Row.new(param_id: pid, control_id: known[:control_id], kind: "parameter",
+                        current_value: known[:current_value].to_s, status: "skipped",
+                        message: alias_note(given, pid, "value is null (not provided)"))
         next
       end
       current = known[:current_value].to_s
       new_value = entry[:value].to_s
       rows << Row.new(param_id: pid, control_id: known[:control_id], kind: "parameter",
                       current_value: current, new_value: new_value,
-                      status: current == new_value ? "unchanged" : "change")
+                      status: current == new_value ? "unchanged" : "change",
+                      message: alias_note(given, pid))
     end
 
     Array(payload[:selections]).each do |entry|
-      sid = entry[:select_id]
+      given = entry[:select_id]
+      sid = @service.resolve_param_id(given) || given
       selected = Array(entry[:selected]).map(&:to_s)
       new_value = selected.join(", ")
       known = selects_by_id[sid]
       if known.nil?
-        rows << Row.new(param_id: sid, kind: "selection", new_value: new_value,
+        rows << Row.new(param_id: given, kind: "selection", new_value: new_value,
                         status: "unknown", message: "Unknown selection ID for this baseline")
+        next
+      end
+      if entry[:selected].nil?
+        rows << Row.new(param_id: sid, control_id: known[:control_id], kind: "selection",
+                        current_value: Array(known[:selected]).join(", "), status: "skipped",
+                        message: alias_note(given, sid, "selected is null (not provided)"))
         next
       end
       current = Array(known[:selected]).join(", ")
@@ -112,7 +127,8 @@ class OdpImportService
       else
         rows << Row.new(param_id: sid, control_id: known[:control_id], kind: "selection",
                         current_value: current, new_value: new_value,
-                        status: current == new_value ? "unchanged" : "change")
+                        status: current == new_value ? "unchanged" : "change",
+                        message: alias_note(given, sid))
       end
     end
 
@@ -137,8 +153,17 @@ class OdpImportService
       changes:   rows.count { |r| r.status == "change" },
       unchanged: rows.count { |r| r.status == "unchanged" },
       unknown:   rows.count { |r| r.status == "unknown" },
-      invalid:   rows.count { |r| r.status == "invalid" }
+      invalid:   rows.count { |r| r.status == "invalid" },
+      skipped:   rows.count { |r| r.status == "skipped" }
     }
+  end
+
+  # #1218 — say so when the file named a parameter by its Rev 4-style alias, so
+  # the row the caller reads back is not silently a different id from the one
+  # they wrote.
+  def alias_note(given, resolved, note = nil)
+    aliased = "#{given} is an alt-identifier for #{resolved}" if given != resolved
+    [ note, aliased ].compact.join("; ").presence
   end
 
   # Strip selection entries whose choices aren't in the baseline schema so
@@ -147,8 +172,9 @@ class OdpImportService
     schema = @service.extract_schema
     selects_by_id = schema[:selections].index_by { |s| s[:select_id] }
     cleaned = Array(payload[:selections]).reject do |entry|
-      known = selects_by_id[entry[:select_id]]
+      known = selects_by_id[@service.resolve_param_id(entry[:select_id]) || entry[:select_id]]
       next false if known.nil? # unknown ids are handled/validated downstream
+      next false if entry[:selected].nil? # "not provided" — skipped downstream
       (Array(entry[:selected]).map(&:to_s) - Array(known[:choices]).map(&:to_s)).any?
     end
     { parameters: Array(payload[:parameters]), selections: cleaned }
@@ -255,7 +281,7 @@ class OdpImportService
   def self.coerce_select_list(list)
     Array(list).map do |s|
       s = s.with_indifferent_access
-      { select_id: (s[:select_id] || s[:id]).to_s, selected: Array(s[:selected]) }
+      { select_id: (s[:select_id] || s[:id]).to_s, selected: selected_or_nil(s[:selected]) }
     end
   end
   private_class_method :coerce_select_list
@@ -267,8 +293,15 @@ class OdpImportService
                           .partition { |row| row[:select_id].nil? && row[:selected].nil? }
     [
       params.map { |row| { param_id: (row[:param_id] || row[:id]).to_s, value: row[:value] } },
-      selects.map { |row| { select_id: (row[:select_id] || row[:id]).to_s, selected: Array(row[:selected]) } }
+      selects.map { |row| { select_id: (row[:select_id] || row[:id]).to_s, selected: selected_or_nil(row[:selected]) } }
     ]
   end
   private_class_method :partition_rows
+
+  # #1218 — `selected: null` (or a row with no `selected` at all) is "not
+  # provided" and must reach the service as nil so it is skipped; `[]` clears.
+  def self.selected_or_nil(value)
+    value.nil? ? nil : Array(value)
+  end
+  private_class_method :selected_or_nil
 end

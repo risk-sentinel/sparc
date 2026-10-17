@@ -79,7 +79,7 @@ the admin UI or API. The recurring job becomes a no-op.
 | **Copyright** | Copyright © 2025 The MITRE Corporation. Approved for Public Release; Distribution Unlimited. Case Number 18-3678. |
 | **License** | Apache License, Version 2.0 |
 | **License text** | [`LICENSES/MITRE-HDF-LIBS-LICENSE`](../../LICENSES/MITRE-HDF-LIBS-LICENSE) |
-| **Provisioning** | Compiled from source at the signed `v3.7.0` tag by the `hdf-builder` stage in `Dockerfile` and by the `security_gate` job, against a pinned Go toolchain (#1001). `script/dev/install-hdf.sh` (downloads + SHA-256 verifies the release binary) remains for local development only. |
+| **Provisioning** | Compiled from source at the signed `v3.7.2` tag by the `hdf-builder` stage in `Dockerfile` and by the `security_gate` job, against a pinned Go toolchain (#1001). `script/dev/install-hdf.sh` (downloads + SHA-256 verifies the release binary) remains for local development only. |
 | **Install path** | `/usr/local/bin/hdf` in the SPARC container image |
 | **Used by** | `security_gate` job (HDF amendments + threshold validation); the SPARC runtime, for HDF <-> OSCAL translation |
 | **NIST control alignment** | RA-3(1) Supply Chain Risk Assessment, SR-3 Supply Chain Controls, SR-11 Component Authenticity (build from the signed upstream tag, with the emitted binary's toolchain and `x/text` version asserted at build time; SHA-256 verification of the release tarball on the local-dev path) |
@@ -124,11 +124,11 @@ and not itemized individually in the license inventory (the relevant
 
 | Field | Value |
 | --- | --- |
-| **Source repo** | [`mitre/hdf-libs`](https://github.com/mitre/hdf-libs) @ `v3.7.0` (`537505a07abb0032ea5bc9b9e68fec62a1a49981`) |
+| **Source repo** | [`mitre/hdf-libs`](https://github.com/mitre/hdf-libs) @ `v3.7.2` (`7f77277dbd8df860272b7ffad29c5b73acb2604f`); the schema is unchanged since `v3.7.0` and keeps that version in its name and `$id` |
 | **Source files** | `hdf-validators/go/schemas/hdf-system.schema.json` (the self-contained copy the `hdf` CLI embeds) |
 | **Copyright** | © 2025 The MITRE Corporation |
 | **License** | Apache-2.0, with MITRE's public-release terms (see upstream `LICENSE.md`) |
-| **License text** | mitre/hdf-libs `LICENSE.md` at `v3.7.0` |
+| **License text** | mitre/hdf-libs `LICENSE.md` at `v3.7.2` (identical to `v3.7.0`) |
 | **Vendored as** | `lib/data/hdf/hdf-system.v3.7.0.schema.json`, byte-for-byte, with provenance in `hdf-system.v3.7.0.provenance.json` |
 | **Re-vendor task** | When the hdf-cli pin (`Dockerfile` `HDF_LIBS_VERSION`) moves, fetch the same path at the new tag and update the sidecar |
 | **Used by** | `HdfSystemExportService` — validates the `hdf-system` export in-process; stricter than `hdf validate --type system` at 3.7.0, which does not enforce `unevaluatedProperties` or `uri-reference` (#1179) |

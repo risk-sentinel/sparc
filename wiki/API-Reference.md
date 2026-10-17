@@ -109,7 +109,7 @@ The **HDF ↔ OSCAL bridge** adds three stateless endpoints — `oscal/sar_from_
 > [mitre/hdf-libs#184](https://github.com/mitre/hdf-libs/issues/184). **hdf-cli
 > 3.5.1 fixed it**, and the endpoint now returns `200` with schema-valid
 > assessment-results, verified against the production image (re-verified on
-> hdf-cli 3.7.0, the current pin). The `502` contract
+> hdf-cli 3.7.0, and again on 3.7.2, the current pin). The `502` contract
 > above still stands as the behaviour for any future converter regression: SPARC
 > does not fill the gaps in — `reviewed-controls` is *what the assessment
 > covered*, and synthesising it would produce a document that passes the schema
@@ -128,8 +128,8 @@ The **HDF ↔ OSCAL bridge** adds three stateless endpoints — `oscal/sar_from_
 > - `metadata.parties[].name` was `""`, the same violation
 >
 > Filed as [mitre/hdf-libs#236](https://github.com/mitre/hdf-libs/issues/236),
-> **closed upstream on 2026-09-08 and fixed in hdf-cli 3.7.0**, which SPARC now
-> pins. Re-measured on the same reproducer against both binaries: 3.5.1 produces
+> **closed upstream on 2026-09-08 and fixed in hdf-cli 3.7.0**; SPARC now
+> pins 3.7.2. Re-measured on the same reproducer against both binaries: 3.5.1 produces
 > 3 violations on OSCAL 1.1.2 and 7 on 1.2.2; 3.7.0 is valid on both.
 >
 > The `502` contract above still stands for any future converter regression —

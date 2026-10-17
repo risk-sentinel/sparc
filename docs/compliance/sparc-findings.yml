@@ -7,11 +7,19 @@
 # 33 entries carried against the UBI9 base, 28 are no longer in the image and
 # moved to sparc-findings.retired.yml, each with the package evidence read from
 # the image's rpm database and `verified_absent_on` / `verified_by`. The five
-# that remain (systemd-libs, openldap, sqlite-libs, pcre2 x2) are re-verified
+# that remained (systemd-libs, openldap, sqlite-libs, pcre2 x2) were re-verified
 # present on el10 and still not-fixed; their review dates and deviations are
 # unchanged. Each identifier now also reaches the grype gate as `Grype/<id>`,
 # and that gate is live (thresholds/grype-container.yml) — on el10, Trivy
 # reports nothing, so grype is the scanner that sees the base.
+#
+# ── v1.17.1 BASE BUMP (2026-10-16) ─────────────────────────────────────────
+#
+# UBI 10 digest a9f9316e -> 552f8cc1. Rescanned (grype 0.114.0, DB v6.1.10
+# built 2026-10-16): pcre2 10.44-1.5.el10_2 clears CVE-2026-86145, -89161 and
+# -103111, and openssl-libs 1:3.5.8-2.el10_2 clears CVE-2026-84782; all four
+# moved to sparc-findings.retired.yml with `verified_absent_on`. CVE-2026-75804
+# (openssl-libs, QUIC) is still reported at -2 and stays.
 #
 # ── THE TWO DELIBERATE ABSENCES ARE RESOLVED (#1065, 2026-08-28) ──────────
 #
@@ -141,76 +149,6 @@ findings:
   discovery_date: '2026-08-20'
   next_review_date: '2026-10-19'
   superseded_debian_finding: libsqlite3-0 3.40.1-2+deb12u2 (removed with the Debian base image)
-- cve_id: CVE-2026-86145
-  package: pcre2/pcre2-syntax
-  installed_version: 10.44-1.el10.3
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: deferred
-  rationale: 'RE-VERIFIED ON UBI 10 (#1200, 2026-09-29). Present as pcre2 and pcre2-syntax 10.44-1.el10.3 in the UBI 10 image and still not-fixed upstream (grype, Red Hat el10 data); the UBI9 detail below is history. POA&M / DEFERRED 2026-09-21 (#1173). PCRE2: Out-of-bounds write allows arbitrary code execution
-    via crafted regular expressions pcre2-10.40-6.el9 and pcre2-syntax are present and used by system
-    tooling in the image. Not dispositioned as absent, because they are not absent. No fix is available
-    upstream (not-fixed), so there is no remediation to apply and the finding is accepted for review.
-    Scanned the IMAGE, not an SBOM (#862).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: '@clem-field'
-    approved_in: risk-sentinel/sparc#1173
-    approved_at: '2026-09-22T00:33:13Z'
-    approval_mechanism: admin-merge-bypass
-    adjusted_severity: LOW
-    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
-      program against untrusted input. The mitigating factors below are properties of THIS image, measured
-      rather than argued. No upstream fix exists, so remediation is not available and the residual is
-      what is being accepted.
-    mitigating_factors:
-    - description: Ruby does not link pcre2 — it uses Onigmo — verified by ldd on the ruby binary, so
-        no application regular expression is evaluated by this library
-    - description: the only package requiring pcre2 is libselinux, which does not process untrusted input
-        at runtime
-    - description: no attacker-controlled pattern reaches pcre2 on any request path
-    kev_checked: '2026-09-21'
-    kev_listed: false
-- cve_id: CVE-2026-89161
-  package: pcre2/pcre2-syntax
-  installed_version: 10.44-1.el10.3
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: deferred
-  rationale: 'RE-VERIFIED ON UBI 10 (#1200, 2026-09-29). Present as pcre2 and pcre2-syntax 10.44-1.el10.3 in the UBI 10 image and still not-fixed upstream (grype, Red Hat el10 data); the UBI9 detail below is history. POA&M / DEFERRED 2026-09-21 (#1173). PCRE2: Memory corruption vulnerability in pcre2_jit_match
-    pcre2-10.40-6.el9 and pcre2-syntax are present and used by system tooling in the image. Not dispositioned
-    as absent, because they are not absent. No fix is available upstream (not-fixed), so there is no remediation
-    to apply and the finding is accepted for review. Scanned the IMAGE, not an SBOM (#862).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-09-21'
-  next_review_date: '2026-10-19'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: '@clem-field'
-    approved_in: risk-sentinel/sparc#1173
-    approved_at: '2026-09-22T00:33:13Z'
-    approval_mechanism: admin-merge-bypass
-    adjusted_severity: LOW
-    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
-      program against untrusted input. The mitigating factors below are properties of THIS image, measured
-      rather than argued. No upstream fix exists, so remediation is not available and the residual is
-      what is being accepted.
-    mitigating_factors:
-    - description: Ruby does not link pcre2 — it uses Onigmo — verified by ldd on the ruby binary, so
-        no application regular expression is evaluated by this library
-    - description: the only package requiring pcre2 is libselinux, which does not process untrusted input
-        at runtime
-    - description: pcre2_jit_match is reached only through a pcre2 caller, and the image has none that
-        sees untrusted input
-    kev_checked: '2026-09-21'
-    kev_listed: false
 - cve_id: rb/csrf-protection-disabled
   package: sparc (application code — CodeQL rb/csrf-protection-disabled)
   installed_version: n/a
@@ -273,11 +211,11 @@ findings:
     line_hash: 65a9810537cf814d:1
 - cve_id: CVE-2026-75804
   package: openssl-libs
-  installed_version: 1:3.5.8-1.el10_2
+  installed_version: 1:3.5.8-2.el10_2
   fixed_version: none available upstream (not-fixed)
   severity: HIGH
   disposition: deferred
-  rationale: 'OpenSSL: QUIC connection-level flow control is not enforced, allowing a remote peer to force excess buffering (DoS). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2): openssl-libs 1:3.5.8-1.el10_2, and equally in the shipping v1.16.3 UBI9 image (1:3.5.8-1.el9_8), so not introduced by the base change. Red Hat lists it affected with no fix (not-fixed) on el9 and el10. Surfaced by the grype-container gate made live in #1200 (grype 0.115.0, DB built 2026-09-30T06:32Z); Trivy does not report it. openssl-libs cannot be stripped: Ruby''s OpenSSL bindings and every outbound TLS client need it. Proposed 2026-09-30 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation. Separate from the OpenSSL copy the pg gem bundles, tracked in #1204.'
+  rationale: 'OpenSSL: QUIC connection-level flow control is not enforced, allowing a remote peer to force excess buffering (DoS). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2): openssl-libs 1:3.5.8-1.el10_2, and still present at 1:3.5.8-2.el10_2 after the v1.17.1 base bump (rescan 2026-10-16), and equally in the shipping v1.16.3 UBI9 image (1:3.5.8-1.el9_8), so not introduced by the base change. Red Hat lists it affected with no fix (not-fixed) on el9 and el10. Surfaced by the grype-container gate made live in #1200 (grype 0.115.0, DB built 2026-09-30T06:32Z); Trivy does not report it. openssl-libs cannot be stripped: Ruby''s OpenSSL bindings and every outbound TLS client need it. Proposed 2026-09-30 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation. Separate from the OpenSSL copy the pg gem bundles, tracked in #1204.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-09-30'
@@ -296,56 +234,29 @@ findings:
     - description: "SPARC serves HTTP/1.1 through Puma behind the deployment's TLS terminator; the image runs no QUIC or HTTP/3 endpoint and makes no QUIC connections"
     kev_checked: '2026-09-30'
     kev_listed: false
-- cve_id: CVE-2026-84782
-  package: openssl-libs
-  installed_version: 1:3.5.8-1.el10_2
+- cve_id: CVE-2026-88647
+  package: gnutls
+  installed_version: 3.8.10-5.el10_2
   fixed_version: none available upstream (not-fixed)
   severity: HIGH
   disposition: deferred
-  rationale: 'OpenSSL: DTLS retransmission mishandles a suspended handshake write (buffer over-read / state overwrite). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2): openssl-libs 1:3.5.8-1.el10_2, and equally in the shipping v1.16.3 UBI9 image (1:3.5.8-1.el9_8), so not introduced by the base change. Red Hat lists it affected with no fix (not-fixed) on el9 and el10. Surfaced by the grype-container gate made live in #1200 (grype 0.115.0, DB built 2026-09-30T06:32Z); Trivy does not report it. openssl-libs cannot be stripped: Ruby''s OpenSSL bindings and every outbound TLS client need it. Proposed 2026-09-30 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation. Separate from the OpenSSL copy the pg gem bundles, tracked in #1204.'
+  rationale: 'GnuTLS: a crafted certificate can bypass the Common Name fallback in hostname verification (CVSS 3.1 AV:N/AC:H/PR:N/UI:N/C:H/I:H/A:N). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2) as gnutls 3.8.10-5.el10_2, the version the v1.17.1 base bump (digest 552f8cc1) ships; Red Hat lists it not-fixed on el10. First reported by the rescan of the v1.17.1 image on 2026-10-16 (grype 0.114.0, DB v6.1.10 built 2026-10-16); Trivy does not report it. Not dispositioned as absent, because the package is not absent: gnutls is a base-image package whose consumers the runtime strip removed. Scanned the IMAGE, not an SBOM (#862). Proposed 2026-10-16 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation.'
   nist_control: si-2
   reviewed_by: '@clem-field'
-  discovery_date: '2026-09-30'
-  next_review_date: '2026-10-30'
+  discovery_date: '2026-10-16'
+  next_review_date: '2026-11-15'
   deviation:
     type: risk_adjustment
     risk_status: deviation-approved
     approved_by: "@clem-field"
-    approved_in: "risk-sentinel/sparc#1201"
-    approved_at: "2026-10-01"
+    approved_in: "risk-sentinel/sparc#1219"
+    approved_at: "2026-10-16"
     approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
-    adjustment_rationale: 'HIGH grades the flaw where the affected protocol is in use. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
+    adjustment_rationale: 'HIGH grades the flaw where GnuTLS verifies a peer certificate. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
     mitigating_factors:
-    - description: "the flaw is in DTLS retransmission; Ruby's OpenSSL extension exposes no DTLS API (no DTLS constants in OpenSSL::SSL)"
-    - description: "Puma's only DTLS code is its client engine (MiniSSL::Engine.client), which Puma's server never calls; Puma's own TLS listener is development-only (config/puma.rb, SSL_DEV) and production terminates TLS upstream"
-    - description: "every TLS connection the app makes is TLS over TCP (Net::HTTP, libpq); none uses DTLS"
-    kev_checked: '2026-09-30'
-    kev_listed: false
-- cve_id: CVE-2026-103111
-  package: pcre2/pcre2-syntax
-  installed_version: 10.44-1.el10.3
-  fixed_version: none available upstream (not-fixed)
-  severity: HIGH
-  disposition: deferred
-  rationale: 'PCRE2: out-of-bounds write through certain JIT compiler interfaces when the regular expression is attacker-controlled (NVD: PCRE2 before 10.49). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2) as pcre2 and pcre2-syntax 10.44-1.el10.3, not-fixed in Red Hat''s el10 data. First reported by the rescan of the final image on 2026-10-01 (grype 0.114.0, DB built 2026-10-01), on the same packages that carry CVE-2026-86145 and CVE-2026-89161. Not dispositioned as absent, because the packages are not absent. No fix is available upstream, so there is no remediation to apply and the finding is deferred for review. Scanned the IMAGE, not an SBOM (#862).'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-10-01'
-  next_review_date: '2026-10-31'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: "@clem-field"
-    approved_in: "risk-sentinel/sparc#1201"
-    approved_at: "2026-10-01"
-    approval_mechanism: approve-deviation-comment
-    adjusted_severity: LOW
-    adjustment_rationale: 'HIGH grades the flaw in a deployment that hands an attacker-controlled pattern to the affected JIT interfaces. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
-    mitigating_factors:
-    - description: "Ruby does not link pcre2: ldd on /usr/local/bin/ruby and on libruby.so.3.4 shows no pcre2 library, and Ruby evaluates regular expressions with Onigmo, so no application regular expression reaches this library"
-    - description: "the only direct users of libpcre2-8 in the image are libselinux and grep (rpm --whatrequires against the shipped rpm database); the library is mapped into the app process only through pg -> libpq -> krb5 -> libselinux"
-    - description: "libselinux compiles patterns only from SELinux file-context policy, and the image ships none (no file_contexts file anywhere on its filesystem)"
-    - description: "no application code runs grep (no shell-out to grep in app/, lib/, config/ or the container entrypoint), so no request data becomes a pcre2 pattern"
-    kev_checked: '2026-10-01'
+    - description: "no installed package requires gnutls: rpm --whatrequires for gnutls and libgnutls.so.30 against the shipped rpm database returns nothing (the runtime strip removed its consumers)"
+    - description: "no executable or shared library in the image links libgnutls: ldd over every executable and .so on the image filesystem finds none"
+    - description: "every TLS connection the app makes goes through OpenSSL: Ruby's openssl extension, Net::HTTP and pg/libpq map /usr/lib64/libssl.so.3.5.8 (Red Hat's), and nothing in app/, lib/, config/, bin/ or Gemfile.lock references GnuTLS"
+    kev_checked: '2026-10-16'
     kev_listed: false

@@ -2593,3 +2593,134 @@ findings:
 # a register entry without it, which is what held security_gate red until then.
   verified_absent_on: '2026-09-29'
   verified_by: 'grype 0.114.0, DB v6.1.9 built 2026-09-29T06:32Z (image scan of the UBI 10 image, RHEL 10.2, built for #1200); package state read from the image rpm database'
+- cve_id: CVE-2026-86145
+  package: pcre2/pcre2-syntax
+  installed_version: 10.44-1.el10.3
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED (v1.17.1, 2026-10-16): the UBI 10 digest bump to 552f8cc1 ships pcre2 and pcre2-syntax 10.44-1.5.el10_2, and the rescan of the v1.17.1 image no longer reports this CVE. Prior text follows. RE-VERIFIED ON UBI 10 (#1200, 2026-09-29). Present as pcre2 and pcre2-syntax 10.44-1.el10.3 in the UBI 10 image and still not-fixed upstream (grype, Red Hat el10 data); the UBI9 detail below is history. POA&M / DEFERRED 2026-09-21 (#1173). PCRE2: Out-of-bounds write allows arbitrary code execution
+    via crafted regular expressions pcre2-10.40-6.el9 and pcre2-syntax are present and used by system
+    tooling in the image. Not dispositioned as absent, because they are not absent. No fix is available
+    upstream (not-fixed), so there is no remediation to apply and the finding is accepted for review.
+    Scanned the IMAGE, not an SBOM (#862).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#1173
+    approved_at: '2026-09-22T00:33:13Z'
+    approval_mechanism: admin-merge-bypass
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
+      program against untrusted input. The mitigating factors below are properties of THIS image, measured
+      rather than argued. No upstream fix exists, so remediation is not available and the residual is
+      what is being accepted.
+    mitigating_factors:
+    - description: Ruby does not link pcre2 — it uses Onigmo — verified by ldd on the ruby binary, so
+        no application regular expression is evaluated by this library
+    - description: the only package requiring pcre2 is libselinux, which does not process untrusted input
+        at runtime
+    - description: no attacker-controlled pattern reaches pcre2 on any request path
+    kev_checked: '2026-09-21'
+    kev_listed: false
+  verified_absent_on: '2026-10-16'
+  verified_by: 'grype 0.114.0, DB v6.1.10 built 2026-10-16T06:29Z (image scan of sparc:v1.17.1, UBI 10 minimal @sha256:552f8cc1, RHEL 10.2); package version read from the image rpm database'
+- cve_id: CVE-2026-89161
+  package: pcre2/pcre2-syntax
+  installed_version: 10.44-1.el10.3
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED (v1.17.1, 2026-10-16): the UBI 10 digest bump to 552f8cc1 ships pcre2 and pcre2-syntax 10.44-1.5.el10_2, and the rescan of the v1.17.1 image no longer reports this CVE. Prior text follows. RE-VERIFIED ON UBI 10 (#1200, 2026-09-29). Present as pcre2 and pcre2-syntax 10.44-1.el10.3 in the UBI 10 image and still not-fixed upstream (grype, Red Hat el10 data); the UBI9 detail below is history. POA&M / DEFERRED 2026-09-21 (#1173). PCRE2: Memory corruption vulnerability in pcre2_jit_match
+    pcre2-10.40-6.el9 and pcre2-syntax are present and used by system tooling in the image. Not dispositioned
+    as absent, because they are not absent. No fix is available upstream (not-fixed), so there is no remediation
+    to apply and the finding is accepted for review. Scanned the IMAGE, not an SBOM (#862).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-21'
+  next_review_date: '2026-10-19'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: '@clem-field'
+    approved_in: risk-sentinel/sparc#1173
+    approved_at: '2026-09-22T00:33:13Z'
+    approval_mechanism: admin-merge-bypass
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH is the grading of the vulnerability in a deployment that RUNS the affected
+      program against untrusted input. The mitigating factors below are properties of THIS image, measured
+      rather than argued. No upstream fix exists, so remediation is not available and the residual is
+      what is being accepted.
+    mitigating_factors:
+    - description: Ruby does not link pcre2 — it uses Onigmo — verified by ldd on the ruby binary, so
+        no application regular expression is evaluated by this library
+    - description: the only package requiring pcre2 is libselinux, which does not process untrusted input
+        at runtime
+    - description: pcre2_jit_match is reached only through a pcre2 caller, and the image has none that
+        sees untrusted input
+    kev_checked: '2026-09-21'
+    kev_listed: false
+  verified_absent_on: '2026-10-16'
+  verified_by: 'grype 0.114.0, DB v6.1.10 built 2026-10-16T06:29Z (image scan of sparc:v1.17.1, UBI 10 minimal @sha256:552f8cc1, RHEL 10.2); package version read from the image rpm database'
+- cve_id: CVE-2026-84782
+  package: openssl-libs
+  installed_version: 1:3.5.8-1.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED (v1.17.1, 2026-10-16): the UBI 10 digest bump to 552f8cc1 ships openssl-libs 1:3.5.8-2.el10_2, and the rescan of the v1.17.1 image no longer reports this CVE. Prior text follows. OpenSSL: DTLS retransmission mishandles a suspended handshake write (buffer over-read / state overwrite). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2): openssl-libs 1:3.5.8-1.el10_2, and equally in the shipping v1.16.3 UBI9 image (1:3.5.8-1.el9_8), so not introduced by the base change. Red Hat lists it affected with no fix (not-fixed) on el9 and el10. Surfaced by the grype-container gate made live in #1200 (grype 0.115.0, DB built 2026-09-30T06:32Z); Trivy does not report it. openssl-libs cannot be stripped: Ruby''s OpenSSL bindings and every outbound TLS client need it. Proposed 2026-09-30 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation. Separate from the OpenSSL copy the pg gem bundles, tracked in #1204.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-09-30'
+  next_review_date: '2026-10-30'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1201"
+    approved_at: "2026-10-01"
+    approval_mechanism: approve-deviation-comment
+    adjusted_severity: LOW
+    adjustment_rationale: 'HIGH grades the flaw where the affected protocol is in use. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
+    mitigating_factors:
+    - description: "the flaw is in DTLS retransmission; Ruby's OpenSSL extension exposes no DTLS API (no DTLS constants in OpenSSL::SSL)"
+    - description: "Puma's only DTLS code is its client engine (MiniSSL::Engine.client), which Puma's server never calls; Puma's own TLS listener is development-only (config/puma.rb, SSL_DEV) and production terminates TLS upstream"
+    - description: "every TLS connection the app makes is TLS over TCP (Net::HTTP, libpq); none uses DTLS"
+    kev_checked: '2026-09-30'
+    kev_listed: false
+  verified_absent_on: '2026-10-16'
+  verified_by: 'grype 0.114.0, DB v6.1.10 built 2026-10-16T06:29Z (image scan of sparc:v1.17.1, UBI 10 minimal @sha256:552f8cc1, RHEL 10.2); package version read from the image rpm database'
+- cve_id: CVE-2026-103111
+  package: pcre2/pcre2-syntax
+  installed_version: 10.44-1.el10.3
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: remediated
+  rationale: 'REMEDIATED (v1.17.1, 2026-10-16): the UBI 10 digest bump to 552f8cc1 ships pcre2 and pcre2-syntax 10.44-1.5.el10_2, and the rescan of the v1.17.1 image no longer reports this CVE. Prior text follows. PCRE2: out-of-bounds write through certain JIT compiler interfaces when the regular expression is attacker-controlled (NVD: PCRE2 before 10.49). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2) as pcre2 and pcre2-syntax 10.44-1.el10.3, not-fixed in Red Hat''s el10 data. First reported by the rescan of the final image on 2026-10-01 (grype 0.114.0, DB built 2026-10-01), on the same packages that carry CVE-2026-86145 and CVE-2026-89161. Not dispositioned as absent, because the packages are not absent. No fix is available upstream, so there is no remediation to apply and the finding is deferred for review. Scanned the IMAGE, not an SBOM (#862).'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-10-01'
+  next_review_date: '2026-10-31'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1201"
+    approved_at: "2026-10-01"
+    approval_mechanism: approve-deviation-comment
+    adjusted_severity: LOW
+    adjustment_rationale: 'HIGH grades the flaw in a deployment that hands an attacker-controlled pattern to the affected JIT interfaces. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
+    mitigating_factors:
+    - description: "Ruby does not link pcre2: ldd on /usr/local/bin/ruby and on libruby.so.3.4 shows no pcre2 library, and Ruby evaluates regular expressions with Onigmo, so no application regular expression reaches this library"
+    - description: "the only direct users of libpcre2-8 in the image are libselinux and grep (rpm --whatrequires against the shipped rpm database); the library is mapped into the app process only through pg -> libpq -> krb5 -> libselinux"
+    - description: "libselinux compiles patterns only from SELinux file-context policy, and the image ships none (no file_contexts file anywhere on its filesystem)"
+    - description: "no application code runs grep (no shell-out to grep in app/, lib/, config/ or the container entrypoint), so no request data becomes a pcre2 pattern"
+    kev_checked: '2026-10-01'
+    kev_listed: false
+  verified_absent_on: '2026-10-16'
+  verified_by: 'grype 0.114.0, DB v6.1.10 built 2026-10-16T06:29Z (image scan of sparc:v1.17.1, UBI 10 minimal @sha256:552f8cc1, RHEL 10.2); package version read from the image rpm database'

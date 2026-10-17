@@ -8,7 +8,7 @@
 ARG RUBY_VERSION=3.4.10
 ARG RUBY_MAJOR=3.4
 ARG JEMALLOC_VERSION=5.3.0
-ARG HDF_LIBS_VERSION=3.7.0
+ARG HDF_LIBS_VERSION=3.7.2
 # Digest-pinned manifest-list (multi-arch: amd64, arm64, ppc64le, s390x) for
 # reproducibility (#742 / folded #639 pinning policy). Currently ubi-minimal 10.2.
 # Digest-only (no version tag) so the reference is unambiguous (SonarQube
@@ -35,7 +35,11 @@ ARG HDF_LIBS_VERSION=3.7.0
 # NOTE "DISA-aligned" describes the UBI LINEAGE, not the source: this pulls Red
 # Hat's PUBLIC registry, not registry1.dso.mil. Nothing here holds Iron Bank
 # pull credentials.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:a9f9316ec3a1419a2de6ce4d2d9f034d477e97cdf2a16d6f04b7bd632ac753c4
+#
+# Bumped 2026-10-16 (v1.17.1): pcre2 10.44-1.el10.3 -> 10.44-1.5.el10_2 clears
+# CVE-2026-86145, -89161 and -103111 (the three deferred pcre2 HIGHs); the same
+# digest moves gnutls -4 -> -5, glibc -128 -> -142 and openssl-libs -1 -> -2.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:552f8cc1ddb0bc9e411065c78499aa4dbc2c4ea9bd057aa0e6e44940db13acb5
 
 # ── hdf-builder: hdf-cli compiled from source, toolchain pinned (#1001) ──────
 # This used to be a release-tarball download (script/dev/install-hdf.sh, then
@@ -66,9 +70,12 @@ ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:a9f9316ec3a141
 # the same way this stage does, so no surface that gates or ships a
 # release depends on the published binary any more.
 #
-# Pin the patch (golang:1.26.6), not the minor (golang:1.26) — a floating minor
+# Pin the patch (golang:1.26.9), not the minor (golang:1.26) — a floating minor
 # does not deterministically clear a stdlib CVE, which is the entire point.
-FROM --platform=$BUILDPLATFORM golang:1.26.6-bookworm AS hdf-builder
+# 1.26.6 -> 1.26.9 (2026-10-16, v1.17.1): go1.26.6 carries 3 CRITICAL and 21
+# HIGH stdlib advisories by grype (e.g. CVE-2026-78663, GO-2026-6604,
+# GO-2026-6612), fixed in go1.26.9.
+FROM --platform=$BUILDPLATFORM golang:1.26.9-bookworm AS hdf-builder
 ARG HDF_LIBS_VERSION
 ARG TARGETOS
 ARG TARGETARCH
@@ -89,7 +96,14 @@ WORKDIR /src/hdf-cli
 #
 # So the requirement is gone and the floor stays, asserted against the emitted
 # binary below.
-ARG XTEXT_VERSION=0.39.0
+#
+# 2026-10-16 (v1.17.1): the floor is v0.41.0 for GO-2026-6629 (the Nickname
+# profile panics on a short destination buffer). hdf-libs v3.7.2 builds through
+# a Go workspace (go.work at the repo root), and the workspace resolves x/text
+# to v0.42.0 even though hdf-cli/go.mod alone still says v0.39.0 — so the
+# release already clears the floor, nothing is forced, and the assertion below
+# reads what the emitted binary actually carries.
+ARG XTEXT_VERSION=0.41.0
 
 # hadolint ignore=DL3003
 RUN COMMIT="$(git -C /src rev-parse --short HEAD)" \
@@ -106,7 +120,7 @@ RUN COMMIT="$(git -C /src rev-parse --short HEAD)" \
 RUN ACTUAL="$(go version -m /out/hdf | awk '$2 == "golang.org/x/text" { print $3 }' | sed 's/^v//')" \
     && [ -n "${ACTUAL}" ] \
     && [ "$(printf '%s\n%s\n' "${XTEXT_VERSION}" "${ACTUAL}" | sort -V | head -1)" = "${XTEXT_VERSION}" ] \
-      || { echo "FAIL: /out/hdf carries x/text v${ACTUAL:-<none>}, below the v${XTEXT_VERSION} floor (CVE-2026-56852)" >&2; \
+      || { echo "FAIL: /out/hdf carries x/text v${ACTUAL:-<none>}, below the v${XTEXT_VERSION} floor (GO-2026-6629)" >&2; \
            go version -m /out/hdf | grep "golang.org/x/text" >&2; exit 1; }
 # And assert the toolchain, which is the finding this stage exists to close.
 # `go build` silently uses whatever toolchain the image carries; if the FROM
@@ -114,7 +128,7 @@ RUN ACTUAL="$(go version -m /out/hdf | awk '$2 == "golang.org/x/text" { print $3
 # A real version comparison, not a pattern match: `sort -V -C` succeeds only
 # when the floor sorts at or before what the binary reports, so a newer Go
 # (1.27.0, 1.30.x) passes while anything below the fix line fails.
-ARG GO_FIX_LINE=1.26.6
+ARG GO_FIX_LINE=1.26.9
 RUN actual="$(go version -m /out/hdf | head -1 | awk '{ print $2 }' | sed 's/^go//')" \
     && printf '%s\n%s\n' "${GO_FIX_LINE}" "${actual}" | sort -V -C \
       || { echo "FAIL: /out/hdf built with go${actual}, older than the GO-2026-5026 fix line go${GO_FIX_LINE}" >&2; \

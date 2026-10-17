@@ -995,12 +995,20 @@ jobs:
           git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
             https://github.com/mitre/hdf-libs.git /tmp/hdf-src
           cd /tmp/hdf-src/hdf-cli
-          go mod edit -require="golang.org/x/text@v${XTEXT_VERSION}"
-          go mod download golang.org/x/text
           PKG="github.com/mitre/hdf-libs/hdf-cli/v3/cmd/hdf/cmd"
           CGO_ENABLED=0 go build -trimpath \
             -ldflags "-s -w -X ${PKG}.version=${HDF_LIBS_VERSION}" \
             -o /usr/local/bin/hdf ./cmd/hdf
+          # Read x/text back out of the binary and require it at or ABOVE the
+          # floor: hdf-libs 3.7.2 builds through a Go workspace that resolves a newer
+          # x/text (v0.42.0) than hdf-cli/go.mod names, so an exact match or a forced
+          # `go mod edit -require` would be wrong. Same check as the Dockerfile.
+          ACTUAL="$(go version -m /usr/local/bin/hdf | awk '$2 == "golang.org/x/text" { print $3 }' | sed 's/^v//')"
+          if [ -z "${ACTUAL}" ] || \
+             [ "$(printf '%s\n%s\n' "${XTEXT_VERSION}" "${ACTUAL}" | sort -V | head -1)" != "${XTEXT_VERSION}" ]; then
+            echo "::error::hdf carries x/text v${ACTUAL:-<none>}, below the v${XTEXT_VERSION} floor"
+            exit 1
+          fi
 
       - name: Scan the published image for the vulnerability predicate
         run: |

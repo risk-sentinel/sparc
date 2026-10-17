@@ -277,6 +277,109 @@ class TestUpdate:
         )
 
 
+@pytest.fixture
+def rev5_profile(admin_client: httpx.Client) -> Iterator[str]:
+    """A draft profile on the Rev 5 catalog with AC-1 selected; yields its slug.
+
+    #1218 — Rev 5 is the catalog whose ids differ from their Rev 4 spelling, so
+    the alias rules can only be exercised against it. Built here, like
+    `tailorable_parameter`, never borrowed from seed data.
+    """
+    catalogs = admin_client.get("/api/v1/control_catalogs", params={"items": 50})
+    assert catalogs.status_code == 200, catalogs.text
+    catalog = next(
+        (c for c in catalogs.json()["data"] if "Rev 5" in (c.get("name") or "")), None
+    )
+    # Hard failure, not a skip: the Rev 5 catalog is a required seed.
+    assert catalog, "no NIST SP 800-53 Rev 5 catalog on this instance"
+
+    created = admin_client.post(
+        PROFILES_PATH,
+        json={
+            "profile_document": {
+                "name": f"odp-rev5-ids-{uuid.uuid4().hex[:8]}",
+                "control_catalog_id": catalog["id"],
+                "baseline_level": "low",
+            }
+        },
+    )
+    assert created.status_code == 201, created.text
+    slug = created.json()["data"]["slug"]
+    try:
+        selected = admin_client.put(
+            f"{PROFILES_PATH}/{slug}/controls", json={"control_ids": ["ac-1"]}
+        )
+        assert selected.status_code == 200, selected.text
+        yield slug
+    finally:
+        admin_client.delete(f"{PROFILES_PATH}/{slug}")
+
+
+class TestRev5ParameterIds:
+    """#1218 — NIST's Rev 4-style `alt-identifier` resolves, and `null` is "not provided"."""
+
+    @staticmethod
+    def _current(admin_client: httpx.Client, slug: str) -> dict[str, Any]:
+        data = admin_client.get(_path(slug), params={"family": "ac"}).json()["data"]
+        return {
+            **{p["param_id"]: p.get("current_value") for p in data["parameters"]},
+            **{s["select_id"]: s.get("selected") for s in data["selections"]},
+        }
+
+    @pytest.mark.happy
+    def test_schema_shows_the_alias_beside_the_id(
+        self, admin_client: httpx.Client, rev5_profile: str
+    ) -> None:
+        data = admin_client.get(_path(rev5_profile), params={"family": "ac"}).json()["data"]
+        selection = next(s for s in data["selections"] if s["select_id"] == "ac-01_odp.03")
+        assert selection["alt_identifier"] == "ac-1_prm_2", selection
+
+    @pytest.mark.happy
+    def test_alias_is_stored_against_the_real_id(
+        self, admin_client: httpx.Client, rev5_profile: str
+    ) -> None:
+        value = f"alias-{uuid.uuid4().hex[:8]}"
+        response = admin_client.put(
+            _path(rev5_profile),
+            json={
+                "parameters": [{"param_id": "ac-1_prm_3", "value": value}],
+                "selections": [{"select_id": "ac-1_prm_2", "selected": ["system-level"]}],
+            },
+        )
+        assert response.status_code == 200, response.text
+        result = response.json()["data"]
+        assert result["validation_errors"] == [], result
+        resolved = {"given": "ac-1_prm_3", "param_id": "ac-01_odp.04"}
+        assert resolved in result["resolved_aliases"], result
+
+        current = self._current(admin_client, rev5_profile)
+        assert current["ac-01_odp.04"] == value
+        assert current["ac-01_odp.03"] == ["system-level"]
+
+    @pytest.mark.happy
+    def test_null_is_skipped_and_the_stored_value_kept(
+        self, admin_client: httpx.Client, rev5_profile: str
+    ) -> None:
+        value = f"kept-{uuid.uuid4().hex[:8]}"
+        first = admin_client.put(
+            _path(rev5_profile), json={"parameters": [{"param_id": "ac-01_odp.04", "value": value}]}
+        )
+        assert first.status_code == 200, first.text
+
+        response = admin_client.put(
+            _path(rev5_profile),
+            json={
+                "parameters": [{"param_id": "ac-01_odp.04", "value": None}],
+                "selections": [{"select_id": "ac-01_odp.03", "selected": None}],
+            },
+        )
+        assert response.status_code == 200, response.text
+        result = response.json()["data"]
+        assert result["parameters_updated"] == 0, result
+        assert len(result["skipped"]) == 2, result
+        assert self._current(admin_client, rev5_profile)["ac-01_odp.04"] == value
+
+
 class TestExport:
     @pytest.mark.happy
     def test_admin_exports_json(

@@ -1,0 +1,4196 @@
+{
+  "_about": {
+    "title": "NIST SP 800-53 Rev 5 LOW baseline — organization-defined parameters",
+    "source": "NIST SP 800-53 Rev 5 catalog v5.2.0, NIST LOW baseline profile",
+    "how_to_use": "Set `value` (parameters) or `selected` (selections, an array of choices) for the entries you have decided, then send this file unchanged to PUT /api/v1/profile_documents/:id/parameters, or upload it to .../parameters/import/preview and .../import/confirm. Entries left null are skipped; \"\" or [] clears a stored value. Every other key is reference and is ignored.",
+    "controls": 149,
+    "parameters": 364,
+    "selections": 41,
+    "aggregate_parameters_omitted": 40
+  },
+  "parameters": [
+    {
+      "param_id": "ac-01_odp.01",
+      "value": null,
+      "control_id": "ac-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the access control policy is to be disseminated is/are defined;",
+      "assessment_label": "AC-01_ODP[01]"
+    },
+    {
+      "param_id": "ac-01_odp.02",
+      "value": null,
+      "control_id": "ac-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the access control procedures are to be disseminated is/are defined;",
+      "assessment_label": "AC-01_ODP[02]"
+    },
+    {
+      "param_id": "ac-01_odp.04",
+      "value": null,
+      "control_id": "ac-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the access control policy and procedures is defined;",
+      "assessment_label": "AC-01_ODP[04]",
+      "alt_identifier": "ac-1_prm_3"
+    },
+    {
+      "param_id": "ac-01_odp.05",
+      "value": null,
+      "control_id": "ac-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current access control policy is reviewed and updated is defined;",
+      "assessment_label": "AC-01_ODP[05]",
+      "alt_identifier": "ac-1_prm_4"
+    },
+    {
+      "param_id": "ac-01_odp.06",
+      "value": null,
+      "control_id": "ac-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current access control policy to be reviewed and updated are defined;",
+      "assessment_label": "AC-01_ODP[06]",
+      "alt_identifier": "ac-1_prm_5"
+    },
+    {
+      "param_id": "ac-01_odp.07",
+      "value": null,
+      "control_id": "ac-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current access control procedures are reviewed and updated is defined;",
+      "assessment_label": "AC-01_ODP[07]",
+      "alt_identifier": "ac-1_prm_6"
+    },
+    {
+      "param_id": "ac-01_odp.08",
+      "value": null,
+      "control_id": "ac-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require procedures to be reviewed and updated are defined;",
+      "assessment_label": "AC-01_ODP[08]",
+      "alt_identifier": "ac-1_prm_7"
+    },
+    {
+      "param_id": "ac-02_odp.01",
+      "value": null,
+      "control_id": "ac-2",
+      "control_title": "Account Management",
+      "label": "prerequisites and criteria",
+      "guidance": "prerequisites and criteria for group and role membership are defined;",
+      "assessment_label": "AC-02_ODP[01]",
+      "alt_identifier": "ac-2_prm_1"
+    },
+    {
+      "param_id": "ac-02_odp.02",
+      "value": null,
+      "control_id": "ac-2",
+      "control_title": "Account Management",
+      "label": "attributes (as required)",
+      "guidance": "attributes (as required) for each account are defined;",
+      "assessment_label": "AC-02_ODP[02]",
+      "alt_identifier": "ac-2_prm_2"
+    },
+    {
+      "param_id": "ac-02_odp.03",
+      "value": null,
+      "control_id": "ac-2",
+      "control_title": "Account Management",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles required to approve requests to create accounts is/are defined;",
+      "assessment_label": "AC-02_ODP[03]",
+      "alt_identifier": "ac-2_prm_3"
+    },
+    {
+      "param_id": "ac-02_odp.04",
+      "value": null,
+      "control_id": "ac-2",
+      "control_title": "Account Management",
+      "label": "policy, procedures, prerequisites, and criteria",
+      "guidance": "policy, procedures, prerequisites, and criteria for account creation, enabling, modification, disabling, and removal are defined;",
+      "assessment_label": "AC-02_ODP[04]",
+      "alt_identifier": "ac-2_prm_4"
+    },
+    {
+      "param_id": "ac-02_odp.05",
+      "value": null,
+      "control_id": "ac-2",
+      "control_title": "Account Management",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to be notified is/are defined;",
+      "assessment_label": "AC-02_ODP[05]",
+      "alt_identifier": "ac-2_prm_5"
+    },
+    {
+      "param_id": "ac-02_odp.06",
+      "value": null,
+      "control_id": "ac-2",
+      "control_title": "Account Management",
+      "label": "time period",
+      "guidance": "time period within which to notify account managers when accounts are no longer required is defined;",
+      "assessment_label": "AC-02_ODP[06]",
+      "alt_identifier": "ac-2_prm_6"
+    },
+    {
+      "param_id": "ac-02_odp.07",
+      "value": null,
+      "control_id": "ac-2",
+      "control_title": "Account Management",
+      "label": "time period",
+      "guidance": "time period within which to notify account managers when users are terminated or transferred is defined; ",
+      "assessment_label": "AC-02_ODP[07]",
+      "alt_identifier": "ac-2_prm_7"
+    },
+    {
+      "param_id": "ac-02_odp.08",
+      "value": null,
+      "control_id": "ac-2",
+      "control_title": "Account Management",
+      "label": "time period",
+      "guidance": "time period within which to notify account managers when system usage or the need to know changes for an individual is defined;",
+      "assessment_label": "AC-02_ODP[08]",
+      "alt_identifier": "ac-2_prm_8"
+    },
+    {
+      "param_id": "ac-02_odp.09",
+      "value": null,
+      "control_id": "ac-2",
+      "control_title": "Account Management",
+      "label": "attributes (as required)",
+      "guidance": "attributes needed to authorize system access (as required) are defined;",
+      "assessment_label": "AC-02_ODP[09]",
+      "alt_identifier": "ac-2_prm_9"
+    },
+    {
+      "param_id": "ac-02_odp.10",
+      "value": null,
+      "control_id": "ac-2",
+      "control_title": "Account Management",
+      "label": "frequency",
+      "guidance": "the frequency of account review is defined;",
+      "assessment_label": "AC-02_ODP[10]",
+      "alt_identifier": "ac-2_prm_10"
+    },
+    {
+      "param_id": "ac-07_odp.01",
+      "value": null,
+      "control_id": "ac-7",
+      "control_title": "Unsuccessful Logon Attempts",
+      "label": "number",
+      "guidance": "the number of consecutive invalid logon attempts by a user allowed during a time period is defined;",
+      "assessment_label": "AC-07_ODP[01]",
+      "alt_identifier": "ac-7_prm_1"
+    },
+    {
+      "param_id": "ac-07_odp.02",
+      "value": null,
+      "control_id": "ac-7",
+      "control_title": "Unsuccessful Logon Attempts",
+      "label": "time period",
+      "guidance": "the time period to which the number of consecutive invalid logon attempts by a user is limited is defined;",
+      "assessment_label": "AC-07_ODP[02]",
+      "alt_identifier": "ac-7_prm_2"
+    },
+    {
+      "param_id": "ac-07_odp.04",
+      "value": null,
+      "control_id": "ac-7",
+      "control_title": "Unsuccessful Logon Attempts",
+      "label": "time period",
+      "guidance": "time period for an account or node to be locked is defined (if selected);",
+      "assessment_label": "AC-07_ODP[04]",
+      "alt_identifier": "ac-7_prm_4"
+    },
+    {
+      "param_id": "ac-07_odp.05",
+      "value": null,
+      "control_id": "ac-7",
+      "control_title": "Unsuccessful Logon Attempts",
+      "label": "delay algorithm",
+      "guidance": "delay algorithm for the next logon prompt is defined (if selected);",
+      "assessment_label": "AC-07_ODP[05]",
+      "alt_identifier": "ac-7_prm_5"
+    },
+    {
+      "param_id": "ac-07_odp.06",
+      "value": null,
+      "control_id": "ac-7",
+      "control_title": "Unsuccessful Logon Attempts",
+      "label": "action",
+      "guidance": "other action to be taken when the maximum number of unsuccessful attempts is exceeded is defined (if selected);",
+      "assessment_label": "AC-07_ODP[06]",
+      "alt_identifier": "ac-7_prm_6"
+    },
+    {
+      "param_id": "ac-08_odp.01",
+      "value": null,
+      "control_id": "ac-8",
+      "control_title": "System Use Notification",
+      "label": "system use notification",
+      "guidance": "system use notification message or banner to be displayed by the system to users before granting access to the system is defined;",
+      "assessment_label": "AC-08_ODP[01]",
+      "alt_identifier": "ac-8_prm_1"
+    },
+    {
+      "param_id": "ac-08_odp.02",
+      "value": null,
+      "control_id": "ac-8",
+      "control_title": "System Use Notification",
+      "label": "conditions",
+      "guidance": "conditions for system use to be displayed by the system before granting further access are defined;",
+      "assessment_label": "AC-08_ODP[02]",
+      "alt_identifier": "ac-8_prm_2"
+    },
+    {
+      "param_id": "ac-14_odp",
+      "value": null,
+      "control_id": "ac-14",
+      "control_title": "Permitted Actions Without Identification or Authentication",
+      "label": "user actions",
+      "guidance": "user actions that can be performed on the system without identification or authentication are defined;",
+      "assessment_label": "AC-14_ODP",
+      "alt_identifier": "ac-14_prm_1"
+    },
+    {
+      "param_id": "ac-20_odp.02",
+      "value": null,
+      "control_id": "ac-20",
+      "control_title": "Use of External Systems",
+      "label": "terms and conditions",
+      "guidance": "terms and conditions consistent with the trust relationships established with other organizations owning, operating, and/or maintaining external systems are defined (if selected);",
+      "assessment_label": "AC-20_ODP[02]",
+      "alt_identifier": "ac-20_prm_2"
+    },
+    {
+      "param_id": "ac-20_odp.03",
+      "value": null,
+      "control_id": "ac-20",
+      "control_title": "Use of External Systems",
+      "label": "controls asserted",
+      "guidance": "controls asserted to be implemented on external systems consistent with the trust relationships established with other organizations owning, operating, and/or maintaining external systems are defined (if selected);",
+      "assessment_label": "AC-20_ODP[03]",
+      "alt_identifier": "ac-20_prm_3"
+    },
+    {
+      "param_id": "ac-20_odp.04",
+      "value": null,
+      "control_id": "ac-20",
+      "control_title": "Use of External Systems",
+      "label": "prohibited types of external systems",
+      "guidance": "types of external systems prohibited from use are defined;",
+      "assessment_label": "AC-20_ODP[04]",
+      "alt_identifier": "ac-20_prm_4"
+    },
+    {
+      "param_id": "ac-22_odp",
+      "value": null,
+      "control_id": "ac-22",
+      "control_title": "Publicly Accessible Content",
+      "label": "frequency",
+      "guidance": "the frequency at which to review the content on the publicly accessible system for non-public information is defined;",
+      "assessment_label": "AC-22_ODP",
+      "alt_identifier": "ac-22_prm_1"
+    },
+    {
+      "param_id": "at-01_odp.01",
+      "value": null,
+      "control_id": "at-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the awareness and training policy is to be disseminated is/are defined;",
+      "assessment_label": "AT-01_ODP[01]"
+    },
+    {
+      "param_id": "at-01_odp.02",
+      "value": null,
+      "control_id": "at-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the awareness and training procedures are to be disseminated is/are defined;",
+      "assessment_label": "AT-01_ODP[02]"
+    },
+    {
+      "param_id": "at-01_odp.04",
+      "value": null,
+      "control_id": "at-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the awareness and training policy and procedures is defined;",
+      "assessment_label": "AT-01_ODP[04]",
+      "alt_identifier": "at-1_prm_3"
+    },
+    {
+      "param_id": "at-01_odp.05",
+      "value": null,
+      "control_id": "at-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current awareness and training policy is reviewed and updated is defined;",
+      "assessment_label": "AT-01_ODP[05]",
+      "alt_identifier": "at-1_prm_4"
+    },
+    {
+      "param_id": "at-01_odp.06",
+      "value": null,
+      "control_id": "at-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current awareness and training policy to be reviewed and updated are defined;",
+      "assessment_label": "AT-01_ODP[06]",
+      "alt_identifier": "at-1_prm_5"
+    },
+    {
+      "param_id": "at-01_odp.07",
+      "value": null,
+      "control_id": "at-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current awareness and training procedures are reviewed and updated is defined;",
+      "assessment_label": "AT-01_ODP[07]",
+      "alt_identifier": "at-1_prm_6"
+    },
+    {
+      "param_id": "at-01_odp.08",
+      "value": null,
+      "control_id": "at-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require procedures to be reviewed and updated are defined;",
+      "assessment_label": "AT-01_ODP[08]",
+      "alt_identifier": "at-1_prm_7"
+    },
+    {
+      "param_id": "at-02_odp.01",
+      "value": null,
+      "control_id": "at-2",
+      "control_title": "Literacy Training and Awareness",
+      "label": "frequency",
+      "guidance": "the frequency at which to provide security literacy training to system users (including managers, senior executives, and contractors) after initial training is defined;",
+      "assessment_label": "AT-02_ODP[01]"
+    },
+    {
+      "param_id": "at-02_odp.02",
+      "value": null,
+      "control_id": "at-2",
+      "control_title": "Literacy Training and Awareness",
+      "label": "frequency",
+      "guidance": "the frequency at which to provide privacy literacy training to system users (including managers, senior executives, and contractors) after initial training is defined;",
+      "assessment_label": "AT-02_ODP[02]"
+    },
+    {
+      "param_id": "at-02_odp.03",
+      "value": null,
+      "control_id": "at-2",
+      "control_title": "Literacy Training and Awareness",
+      "label": "events",
+      "guidance": "events that require security literacy training for system users are defined;",
+      "assessment_label": "AT-02_ODP[03]"
+    },
+    {
+      "param_id": "at-02_odp.04",
+      "value": null,
+      "control_id": "at-2",
+      "control_title": "Literacy Training and Awareness",
+      "label": "events",
+      "guidance": "events that require privacy literacy training for system users are defined;",
+      "assessment_label": "AT-02_ODP[04]"
+    },
+    {
+      "param_id": "at-02_odp.05",
+      "value": null,
+      "control_id": "at-2",
+      "control_title": "Literacy Training and Awareness",
+      "label": "awareness techniques",
+      "guidance": "techniques to be employed to increase the security and privacy awareness of system users are defined;",
+      "assessment_label": "AT-02_ODP[05]",
+      "alt_identifier": "at-2_prm_3"
+    },
+    {
+      "param_id": "at-02_odp.06",
+      "value": null,
+      "control_id": "at-2",
+      "control_title": "Literacy Training and Awareness",
+      "label": "frequency",
+      "guidance": "the frequency at which to update literacy training and awareness content is defined;",
+      "assessment_label": "AT-02_ODP[06]",
+      "alt_identifier": "at-2_prm_4"
+    },
+    {
+      "param_id": "at-02_odp.07",
+      "value": null,
+      "control_id": "at-2",
+      "control_title": "Literacy Training and Awareness",
+      "label": "events",
+      "guidance": "events that would require literacy training and awareness content to be updated are defined;",
+      "assessment_label": "AT-02_ODP[07]",
+      "alt_identifier": "at-2_prm_5"
+    },
+    {
+      "param_id": "at-03_odp.01",
+      "value": null,
+      "control_id": "at-3",
+      "control_title": "Role-based Training",
+      "label": "roles and responsibilities",
+      "guidance": "roles and responsibilities for role-based security training are defined;",
+      "assessment_label": "AT-03_ODP[01]"
+    },
+    {
+      "param_id": "at-03_odp.02",
+      "value": null,
+      "control_id": "at-3",
+      "control_title": "Role-based Training",
+      "label": "roles and responsibilities",
+      "guidance": "roles and responsibilities for role-based privacy training are defined;",
+      "assessment_label": "AT-03_ODP[02]"
+    },
+    {
+      "param_id": "at-03_odp.03",
+      "value": null,
+      "control_id": "at-3",
+      "control_title": "Role-based Training",
+      "label": "frequency",
+      "guidance": "the frequency at which to provide role-based security and privacy training to assigned personnel after initial training is defined;",
+      "assessment_label": "AT-03_ODP[03]",
+      "alt_identifier": "at-3_prm_2"
+    },
+    {
+      "param_id": "at-03_odp.04",
+      "value": null,
+      "control_id": "at-3",
+      "control_title": "Role-based Training",
+      "label": "frequency",
+      "guidance": "the frequency at which to update role-based training content is defined;",
+      "assessment_label": "AT-03_ODP[04]",
+      "alt_identifier": "at-3_prm_3"
+    },
+    {
+      "param_id": "at-03_odp.05",
+      "value": null,
+      "control_id": "at-3",
+      "control_title": "Role-based Training",
+      "label": "events",
+      "guidance": "events that require role-based training content to be updated are defined;",
+      "assessment_label": "AT-03_ODP[05]",
+      "alt_identifier": "at-3_prm_4"
+    },
+    {
+      "param_id": "at-04_odp",
+      "value": null,
+      "control_id": "at-4",
+      "control_title": "Training Records",
+      "label": "time period",
+      "guidance": "time period for retaining individual training records is defined;",
+      "assessment_label": "AT-04_ODP",
+      "alt_identifier": "at-4_prm_1"
+    },
+    {
+      "param_id": "au-01_odp.01",
+      "value": null,
+      "control_id": "au-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the audit and accountability policy is to be disseminated is/are defined;",
+      "assessment_label": "AU-01_ODP[01]"
+    },
+    {
+      "param_id": "au-01_odp.02",
+      "value": null,
+      "control_id": "au-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the audit and accountability procedures are to be disseminated is/are defined;",
+      "assessment_label": "AU-01_ODP[02]"
+    },
+    {
+      "param_id": "au-01_odp.04",
+      "value": null,
+      "control_id": "au-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the audit and accountability policy and procedures is defined;",
+      "assessment_label": "AU-01_ODP[04]",
+      "alt_identifier": "au-1_prm_3"
+    },
+    {
+      "param_id": "au-01_odp.05",
+      "value": null,
+      "control_id": "au-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current audit and accountability policy is reviewed and updated is defined;",
+      "assessment_label": "AU-01_ODP[05]",
+      "alt_identifier": "au-1_prm_4"
+    },
+    {
+      "param_id": "au-01_odp.06",
+      "value": null,
+      "control_id": "au-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current audit and accountability policy to be reviewed and updated are defined;",
+      "assessment_label": "AU-01_ODP[06]",
+      "alt_identifier": "au-1_prm_5"
+    },
+    {
+      "param_id": "au-01_odp.07",
+      "value": null,
+      "control_id": "au-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current audit and accountability procedures are reviewed and updated is defined;",
+      "assessment_label": "AU-01_ODP[07]",
+      "alt_identifier": "au-1_prm_6"
+    },
+    {
+      "param_id": "au-01_odp.08",
+      "value": null,
+      "control_id": "au-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require audit and accountability procedures to be reviewed and updated are defined;",
+      "assessment_label": "AU-01_ODP[08]",
+      "alt_identifier": "au-1_prm_7"
+    },
+    {
+      "param_id": "au-02_odp.01",
+      "value": null,
+      "control_id": "au-2",
+      "control_title": "Event Logging",
+      "label": "event types",
+      "guidance": "the event types that the system is capable of logging in support of the audit function are defined;",
+      "assessment_label": "AU-02_ODP[01]",
+      "alt_identifier": "au-2_prm_1"
+    },
+    {
+      "param_id": "au-02_odp.02",
+      "value": null,
+      "control_id": "au-2",
+      "control_title": "Event Logging",
+      "label": "event types (subset of AU-02_ODP[01])",
+      "guidance": "the event types (subset of AU-02_ODP[01]) for logging within the system are defined;",
+      "assessment_label": "AU-02_ODP[02]"
+    },
+    {
+      "param_id": "au-02_odp.03",
+      "value": null,
+      "control_id": "au-2",
+      "control_title": "Event Logging",
+      "label": "frequency or situation",
+      "guidance": "the frequency or situation requiring logging for each specified event type is defined;",
+      "assessment_label": "AU-02_ODP[03]"
+    },
+    {
+      "param_id": "au-02_odp.04",
+      "value": null,
+      "control_id": "au-2",
+      "control_title": "Event Logging",
+      "label": "frequency",
+      "guidance": "the frequency of event types selected for logging are reviewed and updated;",
+      "assessment_label": "AU-02_ODP[04]",
+      "alt_identifier": "au-2_prm_3"
+    },
+    {
+      "param_id": "au-04_odp",
+      "value": null,
+      "control_id": "au-4",
+      "control_title": "Audit Log Storage Capacity",
+      "label": "audit log retention requirements",
+      "guidance": "audit log retention requirements are defined;",
+      "assessment_label": "AU-04_ODP",
+      "alt_identifier": "au-4_prm_1"
+    },
+    {
+      "param_id": "au-05_odp.01",
+      "value": null,
+      "control_id": "au-5",
+      "control_title": "Response to Audit Logging Process Failures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles receiving audit logging process failure alerts are defined;",
+      "assessment_label": "AU-05_ODP[01]",
+      "alt_identifier": "au-5_prm_1"
+    },
+    {
+      "param_id": "au-05_odp.02",
+      "value": null,
+      "control_id": "au-5",
+      "control_title": "Response to Audit Logging Process Failures",
+      "label": "time period",
+      "guidance": "time period for personnel or roles receiving audit logging process failure alerts is defined;",
+      "assessment_label": "AU-05_ODP[02]",
+      "alt_identifier": "au-5_prm_2"
+    },
+    {
+      "param_id": "au-05_odp.03",
+      "value": null,
+      "control_id": "au-5",
+      "control_title": "Response to Audit Logging Process Failures",
+      "label": "additional actions",
+      "guidance": "additional actions to be taken in the event of an audit logging process failure are defined;",
+      "assessment_label": "AU-05_ODP[03]",
+      "alt_identifier": "au-5_prm_3"
+    },
+    {
+      "param_id": "au-06_odp.01",
+      "value": null,
+      "control_id": "au-6",
+      "control_title": "Audit Record Review, Analysis, and Reporting",
+      "label": "frequency",
+      "guidance": "frequency at which system audit records are reviewed and analyzed is defined;",
+      "assessment_label": "AU-06_ODP[01]",
+      "alt_identifier": "au-6_prm_1"
+    },
+    {
+      "param_id": "au-06_odp.02",
+      "value": null,
+      "control_id": "au-6",
+      "control_title": "Audit Record Review, Analysis, and Reporting",
+      "label": "inappropriate or unusual activity",
+      "guidance": "inappropriate or unusual activity is defined;",
+      "assessment_label": "AU-06_ODP[02]",
+      "alt_identifier": "au-6_prm_2"
+    },
+    {
+      "param_id": "au-06_odp.03",
+      "value": null,
+      "control_id": "au-6",
+      "control_title": "Audit Record Review, Analysis, and Reporting",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to receive findings from reviews and analyses of system records is/are defined;",
+      "assessment_label": "AU-06_ODP[03]",
+      "alt_identifier": "au-6_prm_3"
+    },
+    {
+      "param_id": "au-08_odp",
+      "value": null,
+      "control_id": "au-8",
+      "control_title": "Time Stamps",
+      "label": "granularity of time measurement",
+      "guidance": "granularity of time measurement for audit record timestamps is defined;",
+      "assessment_label": "AU-08_ODP",
+      "alt_identifier": "au-8_prm_1"
+    },
+    {
+      "param_id": "au-09_odp",
+      "value": null,
+      "control_id": "au-9",
+      "control_title": "Protection of Audit Information",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to be alerted upon detection of unauthorized access, modification, or deletion of audit information is/are defined;",
+      "assessment_label": "AU-09_ODP",
+      "alt_identifier": "au-9_prm_1"
+    },
+    {
+      "param_id": "au-11_odp",
+      "value": null,
+      "control_id": "au-11",
+      "control_title": "Audit Record Retention",
+      "label": "time period",
+      "guidance": "a time period to retain audit records that is consistent with the records retention policy is defined;",
+      "assessment_label": "AU-11_ODP",
+      "alt_identifier": "au-11_prm_1"
+    },
+    {
+      "param_id": "au-12_odp.01",
+      "value": null,
+      "control_id": "au-12",
+      "control_title": "Audit Record Generation",
+      "label": "system components",
+      "guidance": "system components that provide an audit record generation capability for the events types (defined in AU-02_ODP[02]) are defined;",
+      "assessment_label": "AU-12_ODP[01]",
+      "alt_identifier": "au-12_prm_1"
+    },
+    {
+      "param_id": "au-12_odp.02",
+      "value": null,
+      "control_id": "au-12",
+      "control_title": "Audit Record Generation",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles allowed to select the event types that are to be logged by specific components of the system is/are defined;",
+      "assessment_label": "AU-12_ODP[02]",
+      "alt_identifier": "au-12_prm_2"
+    },
+    {
+      "param_id": "ca-01_odp.01",
+      "value": null,
+      "control_id": "ca-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the assessment, authorization, and monitoring policy is to be disseminated is/are defined;",
+      "assessment_label": "CA-01_ODP[01]"
+    },
+    {
+      "param_id": "ca-01_odp.02",
+      "value": null,
+      "control_id": "ca-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the assessment, authorization, and monitoring procedures are to be disseminated is/are defined;",
+      "assessment_label": "CA-01_ODP[02]"
+    },
+    {
+      "param_id": "ca-01_odp.04",
+      "value": null,
+      "control_id": "ca-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the assessment, authorization, and monitoring policy and procedures is defined;",
+      "assessment_label": "CA-01_ODP[04]",
+      "alt_identifier": "ca-1_prm_3"
+    },
+    {
+      "param_id": "ca-01_odp.05",
+      "value": null,
+      "control_id": "ca-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current assessment, authorization, and monitoring policy is reviewed and updated is defined;",
+      "assessment_label": "CA-01_ODP[05]",
+      "alt_identifier": "ca-1_prm_4"
+    },
+    {
+      "param_id": "ca-01_odp.06",
+      "value": null,
+      "control_id": "ca-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current assessment, authorization, and monitoring policy to be reviewed and updated are defined;",
+      "assessment_label": "CA-01_ODP[06]",
+      "alt_identifier": "ca-1_prm_5"
+    },
+    {
+      "param_id": "ca-01_odp.07",
+      "value": null,
+      "control_id": "ca-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current assessment, authorization, and monitoring procedures are reviewed and updated is defined;",
+      "assessment_label": "CA-01_ODP[07]",
+      "alt_identifier": "ca-1_prm_6"
+    },
+    {
+      "param_id": "ca-01_odp.08",
+      "value": null,
+      "control_id": "ca-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require assessment, authorization, and monitoring procedures to be reviewed and updated are defined;",
+      "assessment_label": "CA-01_ODP[08]",
+      "alt_identifier": "ca-1_prm_7"
+    },
+    {
+      "param_id": "ca-02_odp.01",
+      "value": null,
+      "control_id": "ca-2",
+      "control_title": "Control Assessments",
+      "label": "assessment frequency",
+      "guidance": "the frequency at which to assess controls in the system and its environment of operation is defined;",
+      "assessment_label": "CA-02_ODP[01]",
+      "alt_identifier": "ca-2_prm_1"
+    },
+    {
+      "param_id": "ca-02_odp.02",
+      "value": null,
+      "control_id": "ca-2",
+      "control_title": "Control Assessments",
+      "label": "individuals or roles",
+      "guidance": "individuals or roles to whom control assessment results are to be provided are defined;",
+      "assessment_label": "CA-02_ODP[02]",
+      "alt_identifier": "ca-2_prm_2"
+    },
+    {
+      "param_id": "ca-03_odp.02",
+      "value": null,
+      "control_id": "ca-3",
+      "control_title": "Information Exchange",
+      "label": "type of agreement",
+      "guidance": "the type of agreement used to approve and manage the exchange of information is defined (if selected);",
+      "assessment_label": "CA-03_ODP[02]",
+      "alt_identifier": "ca-3_prm_2"
+    },
+    {
+      "param_id": "ca-03_odp.03",
+      "value": null,
+      "control_id": "ca-3",
+      "control_title": "Information Exchange",
+      "label": "frequency",
+      "guidance": "the frequency at which to review and update agreements is defined;",
+      "assessment_label": "CA-03_ODP[03]",
+      "alt_identifier": "ca-3_prm_3"
+    },
+    {
+      "param_id": "ca-05_odp",
+      "value": null,
+      "control_id": "ca-5",
+      "control_title": "Plan of Action and Milestones",
+      "label": "frequency",
+      "guidance": "the frequency at which to update an existing plan of action and milestones based on the findings from control assessments, independent audits or reviews, and continuous monitoring activities is defined;",
+      "assessment_label": "CA-05_ODP",
+      "alt_identifier": "ca-5_prm_1"
+    },
+    {
+      "param_id": "ca-06_odp",
+      "value": null,
+      "control_id": "ca-6",
+      "control_title": "Authorization",
+      "label": "frequency",
+      "guidance": "frequency at which to update the authorizations is defined;",
+      "assessment_label": "CA-06_ODP",
+      "alt_identifier": "ca-6_prm_1"
+    },
+    {
+      "param_id": "ca-07_odp.01",
+      "value": null,
+      "control_id": "ca-7",
+      "control_title": "Continuous Monitoring",
+      "label": "system-level metrics",
+      "guidance": "system-level metrics to be monitored are defined;",
+      "assessment_label": "CA-07_ODP[01]",
+      "alt_identifier": "ca-7_prm_1"
+    },
+    {
+      "param_id": "ca-07_odp.02",
+      "value": null,
+      "control_id": "ca-7",
+      "control_title": "Continuous Monitoring",
+      "label": "frequencies",
+      "guidance": "frequencies at which to monitor control effectiveness are defined;",
+      "assessment_label": "CA-07_ODP[02]",
+      "alt_identifier": "ca-7_prm_2"
+    },
+    {
+      "param_id": "ca-07_odp.03",
+      "value": null,
+      "control_id": "ca-7",
+      "control_title": "Continuous Monitoring",
+      "label": "frequencies",
+      "guidance": "frequencies at which to assess control effectiveness are defined;",
+      "assessment_label": "CA-07_ODP[03]",
+      "alt_identifier": "ca-7_prm_3"
+    },
+    {
+      "param_id": "ca-07_odp.04",
+      "value": null,
+      "control_id": "ca-7",
+      "control_title": "Continuous Monitoring",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the security status of the system is reported are defined;",
+      "assessment_label": "CA-07_ODP[04]"
+    },
+    {
+      "param_id": "ca-07_odp.05",
+      "value": null,
+      "control_id": "ca-7",
+      "control_title": "Continuous Monitoring",
+      "label": "frequency",
+      "guidance": "frequency at which the security status of the system is reported is defined;",
+      "assessment_label": "CA-07_ODP[05]"
+    },
+    {
+      "param_id": "ca-07_odp.06",
+      "value": null,
+      "control_id": "ca-7",
+      "control_title": "Continuous Monitoring",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the privacy status of the system is reported are defined;",
+      "assessment_label": "CA-07_ODP[06]"
+    },
+    {
+      "param_id": "ca-07_odp.07",
+      "value": null,
+      "control_id": "ca-7",
+      "control_title": "Continuous Monitoring",
+      "label": "frequency",
+      "guidance": "frequency at which the privacy status of the system is reported is defined;",
+      "assessment_label": "CA-07_ODP[07]"
+    },
+    {
+      "param_id": "ca-09_odp.01",
+      "value": null,
+      "control_id": "ca-9",
+      "control_title": "Internal System Connections",
+      "label": "system components",
+      "guidance": "system components or classes of components requiring internal connections to the system are defined;",
+      "assessment_label": "CA-09_ODP[01]",
+      "alt_identifier": "ca-9_prm_1"
+    },
+    {
+      "param_id": "ca-09_odp.02",
+      "value": null,
+      "control_id": "ca-9",
+      "control_title": "Internal System Connections",
+      "label": "conditions",
+      "guidance": "conditions requiring termination of internal connections are defined;",
+      "assessment_label": "CA-09_ODP[02]",
+      "alt_identifier": "ca-9_prm_2"
+    },
+    {
+      "param_id": "ca-09_odp.03",
+      "value": null,
+      "control_id": "ca-9",
+      "control_title": "Internal System Connections",
+      "label": "frequency",
+      "guidance": "frequency at which to review the continued need for each internal connection is defined;",
+      "assessment_label": "CA-09_ODP[03]",
+      "alt_identifier": "ca-9_prm_3"
+    },
+    {
+      "param_id": "cm-01_odp.01",
+      "value": null,
+      "control_id": "cm-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the configuration management policy is to be disseminated is/are defined;",
+      "assessment_label": "CM-01_ODP[01]"
+    },
+    {
+      "param_id": "cm-01_odp.02",
+      "value": null,
+      "control_id": "cm-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the configuration management procedures are to be disseminated is/are defined;",
+      "assessment_label": "CM-01_ODP[02]"
+    },
+    {
+      "param_id": "cm-01_odp.04",
+      "value": null,
+      "control_id": "cm-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the configuration management policy and procedures is defined;",
+      "assessment_label": "CM-01_ODP[04]",
+      "alt_identifier": "cm-1_prm_3"
+    },
+    {
+      "param_id": "cm-01_odp.05",
+      "value": null,
+      "control_id": "cm-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current configuration management policy is reviewed and updated is defined;",
+      "assessment_label": "CM-01_ODP[05]",
+      "alt_identifier": "cm-1_prm_4"
+    },
+    {
+      "param_id": "cm-01_odp.06",
+      "value": null,
+      "control_id": "cm-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current configuration management policy to be reviewed and updated are defined;",
+      "assessment_label": "CM-01_ODP[06]",
+      "alt_identifier": "cm-1_prm_5"
+    },
+    {
+      "param_id": "cm-01_odp.07",
+      "value": null,
+      "control_id": "cm-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current configuration management procedures are reviewed and updated is defined;",
+      "assessment_label": "CM-01_ODP[07]",
+      "alt_identifier": "cm-1_prm_6"
+    },
+    {
+      "param_id": "cm-01_odp.08",
+      "value": null,
+      "control_id": "cm-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require configuration management procedures to be reviewed and updated are defined;",
+      "assessment_label": "CM-01_ODP[08]",
+      "alt_identifier": "cm-1_prm_7"
+    },
+    {
+      "param_id": "cm-02_odp.01",
+      "value": null,
+      "control_id": "cm-2",
+      "control_title": "Baseline Configuration",
+      "label": "frequency",
+      "guidance": "the frequency of baseline configuration review and update is defined;",
+      "assessment_label": "CM-02_ODP[01]",
+      "alt_identifier": "cm-2_prm_1"
+    },
+    {
+      "param_id": "cm-02_odp.02",
+      "value": null,
+      "control_id": "cm-2",
+      "control_title": "Baseline Configuration",
+      "label": "circumstances",
+      "guidance": "the circumstances requiring baseline configuration review and update are defined;",
+      "assessment_label": "CM-02_ODP[02]",
+      "alt_identifier": "cm-2_prm_2"
+    },
+    {
+      "param_id": "cm-06_odp.01",
+      "value": null,
+      "control_id": "cm-6",
+      "control_title": "Configuration Settings",
+      "label": "common secure configurations",
+      "guidance": "common secure configurations to establish and document configuration settings for components employed within the system are defined;",
+      "assessment_label": "CM-06_ODP[01]",
+      "alt_identifier": "cm-6_prm_1"
+    },
+    {
+      "param_id": "cm-06_odp.02",
+      "value": null,
+      "control_id": "cm-6",
+      "control_title": "Configuration Settings",
+      "label": "system components",
+      "guidance": "system components for which approval of deviations is needed are defined;",
+      "assessment_label": "CM-06_ODP[02]",
+      "alt_identifier": "cm-6_prm_2"
+    },
+    {
+      "param_id": "cm-06_odp.03",
+      "value": null,
+      "control_id": "cm-6",
+      "control_title": "Configuration Settings",
+      "label": "operational requirements",
+      "guidance": "operational requirements necessitating approval of deviations are defined;",
+      "assessment_label": "CM-06_ODP[03]",
+      "alt_identifier": "cm-6_prm_3"
+    },
+    {
+      "param_id": "cm-07_odp.01",
+      "value": null,
+      "control_id": "cm-7",
+      "control_title": "Least Functionality",
+      "label": "mission-essential capabilities",
+      "guidance": "mission-essential capabilities for the system are defined;",
+      "assessment_label": "CM-07_ODP[01]",
+      "alt_identifier": "cm-7_prm_1"
+    },
+    {
+      "param_id": "cm-07_odp.02",
+      "value": null,
+      "control_id": "cm-7",
+      "control_title": "Least Functionality",
+      "label": "functions",
+      "guidance": "functions to be prohibited or restricted are defined;",
+      "assessment_label": "CM-07_ODP[02]"
+    },
+    {
+      "param_id": "cm-07_odp.03",
+      "value": null,
+      "control_id": "cm-7",
+      "control_title": "Least Functionality",
+      "label": "ports",
+      "guidance": "ports to be prohibited or restricted are defined;",
+      "assessment_label": "CM-07_ODP[03]"
+    },
+    {
+      "param_id": "cm-07_odp.04",
+      "value": null,
+      "control_id": "cm-7",
+      "control_title": "Least Functionality",
+      "label": "protocols",
+      "guidance": "protocols to be prohibited or restricted are defined;",
+      "assessment_label": "CM-07_ODP[04]"
+    },
+    {
+      "param_id": "cm-07_odp.05",
+      "value": null,
+      "control_id": "cm-7",
+      "control_title": "Least Functionality",
+      "label": "software",
+      "guidance": "software to be prohibited or restricted is defined;",
+      "assessment_label": "CM-07_ODP[05]"
+    },
+    {
+      "param_id": "cm-07_odp.06",
+      "value": null,
+      "control_id": "cm-7",
+      "control_title": "Least Functionality",
+      "label": "services",
+      "guidance": "services to be prohibited or restricted are defined;",
+      "assessment_label": "CM-07_ODP[06]"
+    },
+    {
+      "param_id": "cm-08_odp.01",
+      "value": null,
+      "control_id": "cm-8",
+      "control_title": "System Component Inventory",
+      "label": "information",
+      "guidance": "information deemed necessary to achieve effective system component accountability is defined;",
+      "assessment_label": "CM-08_ODP[01]",
+      "alt_identifier": "cm-8_prm_1"
+    },
+    {
+      "param_id": "cm-08_odp.02",
+      "value": null,
+      "control_id": "cm-8",
+      "control_title": "System Component Inventory",
+      "label": "frequency",
+      "guidance": "frequency at which to review and update the system component inventory is defined;",
+      "assessment_label": "CM-08_ODP[02]",
+      "alt_identifier": "cm-8_prm_2"
+    },
+    {
+      "param_id": "cm-11_odp.01",
+      "value": null,
+      "control_id": "cm-11",
+      "control_title": "User-installed Software",
+      "label": "policies",
+      "guidance": "policies governing the installation of software by users are defined;",
+      "assessment_label": "CM-11_ODP[01]",
+      "alt_identifier": "cm-11_prm_1"
+    },
+    {
+      "param_id": "cm-11_odp.02",
+      "value": null,
+      "control_id": "cm-11",
+      "control_title": "User-installed Software",
+      "label": "methods",
+      "guidance": "methods used to enforce software installation policies are defined;",
+      "assessment_label": "CM-11_ODP[02]",
+      "alt_identifier": "cm-11_prm_2"
+    },
+    {
+      "param_id": "cm-11_odp.03",
+      "value": null,
+      "control_id": "cm-11",
+      "control_title": "User-installed Software",
+      "label": "frequency",
+      "guidance": "frequency with which to monitor compliance is defined;",
+      "assessment_label": "CM-11_ODP[03]",
+      "alt_identifier": "cm-11_prm_3"
+    },
+    {
+      "param_id": "cp-01_odp.01",
+      "value": null,
+      "control_id": "cp-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the contingency planning policy is to be disseminated is/are defined;",
+      "assessment_label": "CP-01_ODP[01]"
+    },
+    {
+      "param_id": "cp-01_odp.02",
+      "value": null,
+      "control_id": "cp-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the contingency planning procedures are to be disseminated is/are defined;",
+      "assessment_label": "CP-01_ODP[02]"
+    },
+    {
+      "param_id": "cp-01_odp.04",
+      "value": null,
+      "control_id": "cp-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the contingency planning policy and procedures is defined;",
+      "assessment_label": "CP-01_ODP[04]",
+      "alt_identifier": "cp-1_prm_3"
+    },
+    {
+      "param_id": "cp-01_odp.05",
+      "value": null,
+      "control_id": "cp-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current contingency planning policy is reviewed and updated is defined;",
+      "assessment_label": "CP-01_ODP[05]",
+      "alt_identifier": "cp-1_prm_4"
+    },
+    {
+      "param_id": "cp-01_odp.06",
+      "value": null,
+      "control_id": "cp-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current contingency planning policy to be reviewed and updated are defined;",
+      "assessment_label": "CP-01_ODP[06]",
+      "alt_identifier": "cp-1_prm_5"
+    },
+    {
+      "param_id": "cp-01_odp.07",
+      "value": null,
+      "control_id": "cp-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current contingency planning procedures are reviewed and updated is defined;",
+      "assessment_label": "CP-01_ODP[07]",
+      "alt_identifier": "cp-1_prm_6"
+    },
+    {
+      "param_id": "cp-01_odp.08",
+      "value": null,
+      "control_id": "cp-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require procedures to be reviewed and updated are defined;",
+      "assessment_label": "CP-01_ODP[08]",
+      "alt_identifier": "cp-1_prm_7"
+    },
+    {
+      "param_id": "cp-02_odp.01",
+      "value": null,
+      "control_id": "cp-2",
+      "control_title": "Contingency Plan",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to review a contingency plan is/are defined;",
+      "assessment_label": "CP-02_ODP[01]"
+    },
+    {
+      "param_id": "cp-02_odp.02",
+      "value": null,
+      "control_id": "cp-2",
+      "control_title": "Contingency Plan",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to approve a contingency plan is/are defined;",
+      "assessment_label": "CP-02_ODP[02]"
+    },
+    {
+      "param_id": "cp-02_odp.03",
+      "value": null,
+      "control_id": "cp-2",
+      "control_title": "Contingency Plan",
+      "label": "key contingency personnel",
+      "guidance": "key contingency personnel (identified by name and/or by role) to whom copies of the contingency plan are distributed are defined;",
+      "assessment_label": "CP-02_ODP[03]"
+    },
+    {
+      "param_id": "cp-02_odp.04",
+      "value": null,
+      "control_id": "cp-2",
+      "control_title": "Contingency Plan",
+      "label": "organizational elements",
+      "guidance": "key contingency organizational elements to which copies of the contingency plan are distributed are defined;",
+      "assessment_label": "CP-02_ODP[04]"
+    },
+    {
+      "param_id": "cp-02_odp.05",
+      "value": null,
+      "control_id": "cp-2",
+      "control_title": "Contingency Plan",
+      "label": "frequency",
+      "guidance": "frequency of contingency plan review is defined;",
+      "assessment_label": "CP-02_ODP[05]",
+      "alt_identifier": "cp-2_prm_3"
+    },
+    {
+      "param_id": "cp-02_odp.06",
+      "value": null,
+      "control_id": "cp-2",
+      "control_title": "Contingency Plan",
+      "label": "key contingency personnel",
+      "guidance": "key contingency personnel (identified by name and/or by role) to communicate changes to are defined;",
+      "assessment_label": "CP-02_ODP[06]"
+    },
+    {
+      "param_id": "cp-02_odp.07",
+      "value": null,
+      "control_id": "cp-2",
+      "control_title": "Contingency Plan",
+      "label": "organizational elements",
+      "guidance": "key contingency organizational elements to communicate changes to are defined;",
+      "assessment_label": "CP-02_ODP[07]"
+    },
+    {
+      "param_id": "cp-03_odp.01",
+      "value": null,
+      "control_id": "cp-3",
+      "control_title": "Contingency Training",
+      "label": "time period",
+      "guidance": "the time period within which to provide contingency training after assuming a contingency role or responsibility is defined;",
+      "assessment_label": "CP-03_ODP[01]",
+      "alt_identifier": "cp-3_prm_1"
+    },
+    {
+      "param_id": "cp-03_odp.02",
+      "value": null,
+      "control_id": "cp-3",
+      "control_title": "Contingency Training",
+      "label": "frequency",
+      "guidance": "frequency at which to provide training to system users with a contingency role or responsibility is defined;",
+      "assessment_label": "CP-03_ODP[02]",
+      "alt_identifier": "cp-3_prm_2"
+    },
+    {
+      "param_id": "cp-03_odp.03",
+      "value": null,
+      "control_id": "cp-3",
+      "control_title": "Contingency Training",
+      "label": "frequency",
+      "guidance": "frequency at which to review and update contingency training content is defined;",
+      "assessment_label": "CP-03_ODP[03]",
+      "alt_identifier": "cp-3_prm_3"
+    },
+    {
+      "param_id": "cp-03_odp.04",
+      "value": null,
+      "control_id": "cp-3",
+      "control_title": "Contingency Training",
+      "label": "events",
+      "guidance": "events necessitating review and update of contingency training are defined;",
+      "assessment_label": "CP-03_ODP[04]",
+      "alt_identifier": "cp-3_prm_4"
+    },
+    {
+      "param_id": "cp-04_odp.01",
+      "value": null,
+      "control_id": "cp-4",
+      "control_title": "Contingency Plan Testing",
+      "label": "frequency",
+      "guidance": "frequency of testing the contingency plan for the system is defined;",
+      "assessment_label": "CP-04_ODP[01]",
+      "alt_identifier": "cp-4_prm_1"
+    },
+    {
+      "param_id": "cp-04_odp.02",
+      "value": null,
+      "control_id": "cp-4",
+      "control_title": "Contingency Plan Testing",
+      "label": "tests",
+      "guidance": "tests for determining the effectiveness of the contingency plan are defined;",
+      "assessment_label": "CP-04_ODP[02]"
+    },
+    {
+      "param_id": "cp-04_odp.03",
+      "value": null,
+      "control_id": "cp-4",
+      "control_title": "Contingency Plan Testing",
+      "label": "tests",
+      "guidance": "tests for determining readiness to execute the contingency plan are defined;",
+      "assessment_label": "CP-04_ODP[03]"
+    },
+    {
+      "param_id": "cp-09_odp.01",
+      "value": null,
+      "control_id": "cp-9",
+      "control_title": "System Backup",
+      "label": "system components",
+      "guidance": "system components for which to conduct backups of user-level information is defined;",
+      "assessment_label": "CP-09_ODP[01]",
+      "alt_identifier": "cp-9_prm_1"
+    },
+    {
+      "param_id": "cp-09_odp.02",
+      "value": null,
+      "control_id": "cp-9",
+      "control_title": "System Backup",
+      "label": "frequency",
+      "guidance": "frequency at which to conduct backups of user-level information consistent with recovery time and recovery point objectives is defined;",
+      "assessment_label": "CP-09_ODP[02]",
+      "alt_identifier": "cp-9_prm_2"
+    },
+    {
+      "param_id": "cp-09_odp.03",
+      "value": null,
+      "control_id": "cp-9",
+      "control_title": "System Backup",
+      "label": "frequency",
+      "guidance": "frequency at which to conduct backups of system-level information consistent with recovery time and recovery point objectives is defined;",
+      "assessment_label": "CP-09_ODP[03]",
+      "alt_identifier": "cp-9_prm_3"
+    },
+    {
+      "param_id": "cp-09_odp.04",
+      "value": null,
+      "control_id": "cp-9",
+      "control_title": "System Backup",
+      "label": "frequency",
+      "guidance": "frequency at which to conduct backups of system documentation consistent with recovery time and recovery point objectives is defined;",
+      "assessment_label": "CP-09_ODP[04]",
+      "alt_identifier": "cp-9_prm_4"
+    },
+    {
+      "param_id": "cp-10_odp.01",
+      "value": null,
+      "control_id": "cp-10",
+      "control_title": "System Recovery and Reconstitution",
+      "label": "time period",
+      "guidance": "time period consistent with recovery time and recovery point objectives for the recovery of the system is determined;",
+      "assessment_label": "CP-10_ODP[01]"
+    },
+    {
+      "param_id": "cp-10_odp.02",
+      "value": null,
+      "control_id": "cp-10",
+      "control_title": "System Recovery and Reconstitution",
+      "label": "time period",
+      "guidance": "time period consistent with recovery time and recovery point objectives for the reconstitution of the system is determined;",
+      "assessment_label": "CP-10_ODP[02]"
+    },
+    {
+      "param_id": "ia-01_odp.01",
+      "value": null,
+      "control_id": "ia-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the identification and authentication policy is to be disseminated are defined;",
+      "assessment_label": "IA-01_ODP[01]"
+    },
+    {
+      "param_id": "ia-01_odp.02",
+      "value": null,
+      "control_id": "ia-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the identification and authentication procedures are to be disseminated is/are defined;",
+      "assessment_label": "IA-01_ODP[02]"
+    },
+    {
+      "param_id": "ia-01_odp.04",
+      "value": null,
+      "control_id": "ia-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the identification and authentication policy and procedures is defined;",
+      "assessment_label": "IA-01_ODP[04]",
+      "alt_identifier": "ia-1_prm_3"
+    },
+    {
+      "param_id": "ia-01_odp.05",
+      "value": null,
+      "control_id": "ia-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current identification and authentication policy is reviewed and updated is defined;",
+      "assessment_label": "IA-01_ODP[05]",
+      "alt_identifier": "ia-1_prm_4"
+    },
+    {
+      "param_id": "ia-01_odp.06",
+      "value": null,
+      "control_id": "ia-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current identification and authentication policy to be reviewed and updated are defined;",
+      "assessment_label": "IA-01_ODP[06]",
+      "alt_identifier": "ia-1_prm_5"
+    },
+    {
+      "param_id": "ia-01_odp.07",
+      "value": null,
+      "control_id": "ia-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current identification and authentication procedures are reviewed and updated is defined;",
+      "assessment_label": "IA-01_ODP[07]",
+      "alt_identifier": "ia-1_prm_6"
+    },
+    {
+      "param_id": "ia-01_odp.08",
+      "value": null,
+      "control_id": "ia-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require identification and authentication procedures to be reviewed and updated are defined;",
+      "assessment_label": "IA-01_ODP[08]",
+      "alt_identifier": "ia-1_prm_7"
+    },
+    {
+      "param_id": "ia-04_odp.01",
+      "value": null,
+      "control_id": "ia-4",
+      "control_title": "Identifier Management",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles from whom authorization must be received to assign an identifier are defined;",
+      "assessment_label": "IA-04_ODP[01]",
+      "alt_identifier": "ia-4_prm_1"
+    },
+    {
+      "param_id": "ia-04_odp.02",
+      "value": null,
+      "control_id": "ia-4",
+      "control_title": "Identifier Management",
+      "label": "time period",
+      "guidance": "a time period for preventing reuse of identifiers is defined;",
+      "assessment_label": "IA-04_ODP[02]",
+      "alt_identifier": "ia-4_prm_2"
+    },
+    {
+      "param_id": "ia-05_odp.01",
+      "value": null,
+      "control_id": "ia-5",
+      "control_title": "Authenticator Management",
+      "label": "time period by authenticator type",
+      "guidance": "a time period for changing or refreshing authenticators by authenticator type is defined;",
+      "assessment_label": "IA-05_ODP[01]",
+      "alt_identifier": "ia-5_prm_1"
+    },
+    {
+      "param_id": "ia-05_odp.02",
+      "value": null,
+      "control_id": "ia-5",
+      "control_title": "Authenticator Management",
+      "label": "events",
+      "guidance": "events that trigger the change or refreshment of authenticators are defined;",
+      "assessment_label": "IA-05_ODP[02]",
+      "alt_identifier": "ia-5_prm_2"
+    },
+    {
+      "param_id": "ia-05.01_odp.01",
+      "value": null,
+      "control_id": "ia-5.1",
+      "control_title": "Password-based Authentication",
+      "label": "frequency",
+      "guidance": "the frequency at which to update the list of commonly used, expected, or compromised passwords is defined;",
+      "assessment_label": "IA-05(01)_ODP[01]",
+      "alt_identifier": "ia-5.1_prm_1"
+    },
+    {
+      "param_id": "ia-05.01_odp.02",
+      "value": null,
+      "control_id": "ia-5.1",
+      "control_title": "Password-based Authentication",
+      "label": "composition and complexity rules",
+      "guidance": "authenticator composition and complexity rules are defined;",
+      "assessment_label": "IA-05(01)_ODP[02]",
+      "alt_identifier": "ia-5.1_prm_2"
+    },
+    {
+      "param_id": "ia-08.04_odp",
+      "value": null,
+      "control_id": "ia-8.4",
+      "control_title": "Use of Defined Profiles",
+      "label": "identity management profiles",
+      "guidance": "identity management profiles are defined;",
+      "assessment_label": "IA-08(04)_ODP",
+      "alt_identifier": "ia-8.4_prm_1"
+    },
+    {
+      "param_id": "ia-11_odp",
+      "value": null,
+      "control_id": "ia-11",
+      "control_title": "Re-authentication",
+      "label": "circumstances or situations",
+      "guidance": "circumstances or situations requiring re-authentication are defined;",
+      "assessment_label": "IA-11_ODP",
+      "alt_identifier": "ia-11_prm_1"
+    },
+    {
+      "param_id": "ir-01_odp.01",
+      "value": null,
+      "control_id": "ir-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the incident response policy is to be disseminated is/are defined;",
+      "assessment_label": "IR-01_ODP[01]"
+    },
+    {
+      "param_id": "ir-01_odp.02",
+      "value": null,
+      "control_id": "ir-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the incident response procedures are to be disseminated is/are defined;",
+      "assessment_label": "IR-01_ODP[02]"
+    },
+    {
+      "param_id": "ir-01_odp.04",
+      "value": null,
+      "control_id": "ir-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the incident response policy and procedures is defined;",
+      "assessment_label": "IR-01_ODP[04]",
+      "alt_identifier": "ir-1_prm_3"
+    },
+    {
+      "param_id": "ir-01_odp.05",
+      "value": null,
+      "control_id": "ir-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current incident response policy is reviewed and updated is defined;",
+      "assessment_label": "IR-01_ODP[05]",
+      "alt_identifier": "ir-1_prm_4"
+    },
+    {
+      "param_id": "ir-01_odp.06",
+      "value": null,
+      "control_id": "ir-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current incident response policy to be reviewed and updated are defined;",
+      "assessment_label": "IR-01_ODP[06]",
+      "alt_identifier": "ir-1_prm_5"
+    },
+    {
+      "param_id": "ir-01_odp.07",
+      "value": null,
+      "control_id": "ir-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current incident response procedures are reviewed and updated is defined;",
+      "assessment_label": "IR-01_ODP[07]",
+      "alt_identifier": "ir-1_prm_6"
+    },
+    {
+      "param_id": "ir-01_odp.08",
+      "value": null,
+      "control_id": "ir-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the incident response procedures to be reviewed and updated are defined;",
+      "assessment_label": "IR-01_ODP[08]",
+      "alt_identifier": "ir-1_prm_7"
+    },
+    {
+      "param_id": "ir-02_odp.01",
+      "value": null,
+      "control_id": "ir-2",
+      "control_title": "Incident Response Training",
+      "label": "time period",
+      "guidance": "a time period within which incident response training is to be provided to system users assuming an incident response role or responsibility is defined;",
+      "assessment_label": "IR-02_ODP[01]",
+      "alt_identifier": "ir-2_prm_1"
+    },
+    {
+      "param_id": "ir-02_odp.02",
+      "value": null,
+      "control_id": "ir-2",
+      "control_title": "Incident Response Training",
+      "label": "frequency",
+      "guidance": "frequency at which to provide incident response training to users is defined;",
+      "assessment_label": "IR-02_ODP[02]",
+      "alt_identifier": "ir-2_prm_2"
+    },
+    {
+      "param_id": "ir-02_odp.03",
+      "value": null,
+      "control_id": "ir-2",
+      "control_title": "Incident Response Training",
+      "label": "frequency",
+      "guidance": "frequency at which to review and update incident response training content is defined;",
+      "assessment_label": "IR-02_ODP[03]",
+      "alt_identifier": "ir-2_prm_3"
+    },
+    {
+      "param_id": "ir-02_odp.04",
+      "value": null,
+      "control_id": "ir-2",
+      "control_title": "Incident Response Training",
+      "label": "events",
+      "guidance": "events that initiate a review of the incident response training content are defined;",
+      "assessment_label": "IR-02_ODP[04]",
+      "alt_identifier": "ir-2_prm_4"
+    },
+    {
+      "param_id": "ir-06_odp.01",
+      "value": null,
+      "control_id": "ir-6",
+      "control_title": "Incident Reporting",
+      "label": "time period",
+      "guidance": "time period for personnel to report suspected incidents to the organizational incident response capability is defined;",
+      "assessment_label": "IR-06_ODP[01]",
+      "alt_identifier": "ir-6_prm_1"
+    },
+    {
+      "param_id": "ir-06_odp.02",
+      "value": null,
+      "control_id": "ir-6",
+      "control_title": "Incident Reporting",
+      "label": "authorities",
+      "guidance": "authorities to whom incident information is to be reported are defined;",
+      "assessment_label": "IR-06_ODP[02]",
+      "alt_identifier": "ir-6_prm_2"
+    },
+    {
+      "param_id": "ir-08_odp.01",
+      "value": null,
+      "control_id": "ir-8",
+      "control_title": "Incident Response Plan",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles that review and approve the incident response plan is/are identified;",
+      "assessment_label": "IR-08_ODP[01]",
+      "alt_identifier": "ir-8_prm_1"
+    },
+    {
+      "param_id": "ir-08_odp.02",
+      "value": null,
+      "control_id": "ir-8",
+      "control_title": "Incident Response Plan",
+      "label": "frequency",
+      "guidance": "the frequency at which to review and approve the incident response plan is defined;",
+      "assessment_label": "IR-08_ODP[02]",
+      "alt_identifier": "ir-8_prm_2"
+    },
+    {
+      "param_id": "ir-08_odp.03",
+      "value": null,
+      "control_id": "ir-8",
+      "control_title": "Incident Response Plan",
+      "label": "entities, personnel, or roles",
+      "guidance": "entities, personnel, or roles with designated responsibility for incident response are defined;",
+      "assessment_label": "IR-08_ODP[03]",
+      "alt_identifier": "ir-8_prm_3"
+    },
+    {
+      "param_id": "ir-08_odp.04",
+      "value": null,
+      "control_id": "ir-8",
+      "control_title": "Incident Response Plan",
+      "label": "incident response personnel",
+      "guidance": "incident response personnel (identified by name and/or by role) to whom copies of the incident response plan are to be distributed is/are defined;",
+      "assessment_label": "IR-08_ODP[04]",
+      "alt_identifier": "ir-8_prm_4"
+    },
+    {
+      "param_id": "ir-08_odp.05",
+      "value": null,
+      "control_id": "ir-8",
+      "control_title": "Incident Response Plan",
+      "label": "organizational elements",
+      "guidance": "organizational elements to which copies of the incident response plan are to be distributed are defined;",
+      "assessment_label": "IR-08_ODP[05]"
+    },
+    {
+      "param_id": "ir-08_odp.06",
+      "value": null,
+      "control_id": "ir-8",
+      "control_title": "Incident Response Plan",
+      "label": "incident response personnel",
+      "guidance": "incident response personnel (identified by name and/or by role) to whom changes to the incident response plan is/are communicated are defined;",
+      "assessment_label": "IR-08_ODP[06]"
+    },
+    {
+      "param_id": "ir-08_odp.07",
+      "value": null,
+      "control_id": "ir-8",
+      "control_title": "Incident Response Plan",
+      "label": "organizational elements",
+      "guidance": "organizational elements to which changes to the incident response plan are communicated are defined;",
+      "assessment_label": "IR-08_ODP[07]"
+    },
+    {
+      "param_id": "ma-01_odp.01",
+      "value": null,
+      "control_id": "ma-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the maintenance policy is to be disseminated is/are defined;",
+      "assessment_label": "MA-01_ODP[01]"
+    },
+    {
+      "param_id": "ma-01_odp.02",
+      "value": null,
+      "control_id": "ma-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the maintenance procedures are to be disseminated is/are defined;",
+      "assessment_label": "MA-01_ODP[02]"
+    },
+    {
+      "param_id": "ma-01_odp.04",
+      "value": null,
+      "control_id": "ma-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the maintenance policy and procedures is defined;",
+      "assessment_label": "MA-01_ODP[04]",
+      "alt_identifier": "ma-1_prm_3"
+    },
+    {
+      "param_id": "ma-01_odp.05",
+      "value": null,
+      "control_id": "ma-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency with which the current maintenance policy is reviewed and updated is defined;",
+      "assessment_label": "MA-01_ODP[05]",
+      "alt_identifier": "ma-1_prm_4"
+    },
+    {
+      "param_id": "ma-01_odp.06",
+      "value": null,
+      "control_id": "ma-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current maintenance policy to be reviewed and updated are defined;",
+      "assessment_label": "MA-01_ODP[06]",
+      "alt_identifier": "ma-1_prm_5"
+    },
+    {
+      "param_id": "ma-01_odp.07",
+      "value": null,
+      "control_id": "ma-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency with which the current maintenance procedures are reviewed and updated is defined;",
+      "assessment_label": "MA-01_ODP[07]",
+      "alt_identifier": "ma-1_prm_6"
+    },
+    {
+      "param_id": "ma-01_odp.08",
+      "value": null,
+      "control_id": "ma-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the maintenance procedures to be reviewed and updated are defined;",
+      "assessment_label": "MA-01_ODP[08]",
+      "alt_identifier": "ma-1_prm_7"
+    },
+    {
+      "param_id": "ma-02_odp.01",
+      "value": null,
+      "control_id": "ma-2",
+      "control_title": "Controlled Maintenance",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles required to explicitly approve the removal of the system or system components from organizational facilities for off-site maintenance or repairs is/are defined;",
+      "assessment_label": "MA-02_ODP[01]",
+      "alt_identifier": "ma-2_prm_1"
+    },
+    {
+      "param_id": "ma-02_odp.02",
+      "value": null,
+      "control_id": "ma-2",
+      "control_title": "Controlled Maintenance",
+      "label": "information",
+      "guidance": "information to be removed from associated media prior to removal from organizational facilities for off-site maintenance, repair, or replacement is defined;",
+      "assessment_label": "MA-02_ODP[02]",
+      "alt_identifier": "ma-2_prm_2"
+    },
+    {
+      "param_id": "ma-02_odp.03",
+      "value": null,
+      "control_id": "ma-2",
+      "control_title": "Controlled Maintenance",
+      "label": "information",
+      "guidance": "information to be included in organizational maintenance records is defined;",
+      "assessment_label": "MA-02_ODP[03]",
+      "alt_identifier": "ma-2_prm_3"
+    },
+    {
+      "param_id": "mp-01_odp.01",
+      "value": null,
+      "control_id": "mp-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the media protection policy is to be disseminated is/are defined;",
+      "assessment_label": "MP-01_ODP[01]"
+    },
+    {
+      "param_id": "mp-01_odp.02",
+      "value": null,
+      "control_id": "mp-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the media protection procedures are to be disseminated is/are defined;",
+      "assessment_label": "MP-01_ODP[02]"
+    },
+    {
+      "param_id": "mp-01_odp.04",
+      "value": null,
+      "control_id": "mp-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the media protection policy and procedures is defined;",
+      "assessment_label": "MP-01_ODP[04]",
+      "alt_identifier": "mp-1_prm_3"
+    },
+    {
+      "param_id": "mp-01_odp.05",
+      "value": null,
+      "control_id": "mp-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency with which the current media protection policy is reviewed and updated is defined;",
+      "assessment_label": "MP-01_ODP[05]",
+      "alt_identifier": "mp-1_prm_4"
+    },
+    {
+      "param_id": "mp-01_odp.06",
+      "value": null,
+      "control_id": "mp-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current media protection policy to be reviewed and updated are defined;",
+      "assessment_label": "MP-01_ODP[06]",
+      "alt_identifier": "mp-1_prm_5"
+    },
+    {
+      "param_id": "mp-01_odp.07",
+      "value": null,
+      "control_id": "mp-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency with which the current media protection procedures are reviewed and updated is defined;",
+      "assessment_label": "MP-01_ODP[07]",
+      "alt_identifier": "mp-1_prm_6"
+    },
+    {
+      "param_id": "mp-01_odp.08",
+      "value": null,
+      "control_id": "mp-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require media protection procedures to be reviewed and updated are defined;",
+      "assessment_label": "MP-01_ODP[08]",
+      "alt_identifier": "mp-1_prm_7"
+    },
+    {
+      "param_id": "mp-02_odp.01",
+      "value": null,
+      "control_id": "mp-2",
+      "control_title": "Media Access",
+      "label": "types of digital media",
+      "guidance": "types of digital media to which access is restricted are defined;",
+      "assessment_label": "MP-02_ODP[01]"
+    },
+    {
+      "param_id": "mp-02_odp.02",
+      "value": null,
+      "control_id": "mp-2",
+      "control_title": "Media Access",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles authorized to access digital media is/are defined;",
+      "assessment_label": "MP-02_ODP[02]"
+    },
+    {
+      "param_id": "mp-02_odp.03",
+      "value": null,
+      "control_id": "mp-2",
+      "control_title": "Media Access",
+      "label": "types of non-digital media",
+      "guidance": "types of non-digital media to which access is restricted are defined;",
+      "assessment_label": "MP-02_ODP[03]"
+    },
+    {
+      "param_id": "mp-02_odp.04",
+      "value": null,
+      "control_id": "mp-2",
+      "control_title": "Media Access",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles authorized to access non-digital media is/are defined;",
+      "assessment_label": "MP-02_ODP[04]"
+    },
+    {
+      "param_id": "mp-06_odp.01",
+      "value": null,
+      "control_id": "mp-6",
+      "control_title": "Media Sanitization",
+      "label": "system media",
+      "guidance": "system media to be sanitized prior to disposal is defined;",
+      "assessment_label": "MP-06_ODP[01]"
+    },
+    {
+      "param_id": "mp-06_odp.02",
+      "value": null,
+      "control_id": "mp-6",
+      "control_title": "Media Sanitization",
+      "label": "system media",
+      "guidance": "system media to be sanitized prior to release from organizational control is defined;",
+      "assessment_label": "MP-06_ODP[02]"
+    },
+    {
+      "param_id": "mp-06_odp.03",
+      "value": null,
+      "control_id": "mp-6",
+      "control_title": "Media Sanitization",
+      "label": "system media",
+      "guidance": "system media to be sanitized prior to release for reuse is defined;",
+      "assessment_label": "MP-06_ODP[03]"
+    },
+    {
+      "param_id": "mp-06_odp.04",
+      "value": null,
+      "control_id": "mp-6",
+      "control_title": "Media Sanitization",
+      "label": "sanitization techniques and procedures",
+      "guidance": "sanitization techniques and procedures to be used for sanitization prior to disposal are defined;",
+      "assessment_label": "MP-06_ODP[04]"
+    },
+    {
+      "param_id": "mp-06_odp.05",
+      "value": null,
+      "control_id": "mp-6",
+      "control_title": "Media Sanitization",
+      "label": "sanitization techniques and procedures",
+      "guidance": "sanitization techniques and procedures to be used for sanitization prior to release from organizational control are defined;",
+      "assessment_label": "MP-06_ODP[05]"
+    },
+    {
+      "param_id": "mp-06_odp.06",
+      "value": null,
+      "control_id": "mp-6",
+      "control_title": "Media Sanitization",
+      "label": "sanitization techniques and procedures",
+      "guidance": "sanitization techniques and procedures to be used for sanitization prior to release for reuse are defined;",
+      "assessment_label": "MP-06_ODP[06]"
+    },
+    {
+      "param_id": "mp-07_odp.01",
+      "value": null,
+      "control_id": "mp-7",
+      "control_title": "Media Use",
+      "label": "types of system media",
+      "guidance": "types of system media to be restricted or prohibited from use on systems or system components are defined;",
+      "assessment_label": "MP-07_ODP[01]",
+      "alt_identifier": "mp-7_prm_2"
+    },
+    {
+      "param_id": "mp-07_odp.03",
+      "value": null,
+      "control_id": "mp-7",
+      "control_title": "Media Use",
+      "label": "systems or system components",
+      "guidance": "systems or system components on which the use of specific types of system media to be restricted or prohibited are defined;",
+      "assessment_label": "MP-07_ODP[03]",
+      "alt_identifier": "mp-7_prm_3"
+    },
+    {
+      "param_id": "mp-07_odp.04",
+      "value": null,
+      "control_id": "mp-7",
+      "control_title": "Media Use",
+      "label": "controls",
+      "guidance": "controls to restrict or prohibit the use of specific types of system media on systems or system components are defined;",
+      "assessment_label": "MP-07_ODP[04]",
+      "alt_identifier": "mp-7_prm_4"
+    },
+    {
+      "param_id": "pe-01_odp.01",
+      "value": null,
+      "control_id": "pe-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the physical and environmental protection policy is to be disseminated is/are defined;",
+      "assessment_label": "PE-01_ODP[01]"
+    },
+    {
+      "param_id": "pe-01_odp.02",
+      "value": null,
+      "control_id": "pe-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the physical and environmental protection procedures are to be disseminated is/are defined;",
+      "assessment_label": "PE-01_ODP[02]"
+    },
+    {
+      "param_id": "pe-01_odp.04",
+      "value": null,
+      "control_id": "pe-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the physical and environmental protection policy and procedures is defined;",
+      "assessment_label": "PE-01_ODP[04]",
+      "alt_identifier": "pe-1_prm_3"
+    },
+    {
+      "param_id": "pe-01_odp.05",
+      "value": null,
+      "control_id": "pe-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current physical and environmental protection policy is reviewed and updated is defined;",
+      "assessment_label": "PE-01_ODP[05]",
+      "alt_identifier": "pe-1_prm_4"
+    },
+    {
+      "param_id": "pe-01_odp.06",
+      "value": null,
+      "control_id": "pe-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current physical and environmental protection policy to be reviewed and updated are defined;",
+      "assessment_label": "PE-01_ODP[06]",
+      "alt_identifier": "pe-1_prm_5"
+    },
+    {
+      "param_id": "pe-01_odp.07",
+      "value": null,
+      "control_id": "pe-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current physical and environmental protection procedures are reviewed and updated is defined;",
+      "assessment_label": "PE-01_ODP[07]",
+      "alt_identifier": "pe-1_prm_6"
+    },
+    {
+      "param_id": "pe-01_odp.08",
+      "value": null,
+      "control_id": "pe-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the physical and environmental protection procedures to be reviewed and updated are defined;",
+      "assessment_label": "PE-01_ODP[08]",
+      "alt_identifier": "pe-1_prm_7"
+    },
+    {
+      "param_id": "pe-02_odp",
+      "value": null,
+      "control_id": "pe-2",
+      "control_title": "Physical Access Authorizations",
+      "label": "frequency",
+      "guidance": "frequency at which to review the access list detailing authorized facility access by individuals is defined;",
+      "assessment_label": "PE-02_ODP",
+      "alt_identifier": "pe-2_prm_1"
+    },
+    {
+      "param_id": "pe-03_odp.01",
+      "value": null,
+      "control_id": "pe-3",
+      "control_title": "Physical Access Control",
+      "label": "entry and exit points",
+      "guidance": "entry and exit points to the facility in which the system resides are defined;",
+      "assessment_label": "PE-03_ODP[01]",
+      "alt_identifier": "pe-3_prm_1"
+    },
+    {
+      "param_id": "pe-03_odp.03",
+      "value": null,
+      "control_id": "pe-3",
+      "control_title": "Physical Access Control",
+      "label": "systems or devices",
+      "guidance": "physical access control systems or devices used to control ingress and egress to the facility are defined (if selected);",
+      "assessment_label": "PE-03_ODP[03]",
+      "alt_identifier": "pe-3_prm_3"
+    },
+    {
+      "param_id": "pe-03_odp.04",
+      "value": null,
+      "control_id": "pe-3",
+      "control_title": "Physical Access Control",
+      "label": "entry or exit points",
+      "guidance": "entry or exit points for which physical access logs are maintained are defined;",
+      "assessment_label": "PE-03_ODP[04]",
+      "alt_identifier": "pe-3_prm_4"
+    },
+    {
+      "param_id": "pe-03_odp.05",
+      "value": null,
+      "control_id": "pe-3",
+      "control_title": "Physical Access Control",
+      "label": "physical access controls",
+      "guidance": "physical access controls to control access to areas within the facility designated as publicly accessible are defined;",
+      "assessment_label": "PE-03_ODP[05]",
+      "alt_identifier": "pe-3_prm_5"
+    },
+    {
+      "param_id": "pe-03_odp.06",
+      "value": null,
+      "control_id": "pe-3",
+      "control_title": "Physical Access Control",
+      "label": "circumstances",
+      "guidance": "circumstances requiring visitor escorts and control of visitor activity are defined;",
+      "assessment_label": "PE-03_ODP[06]",
+      "alt_identifier": "pe-3_prm_6"
+    },
+    {
+      "param_id": "pe-03_odp.07",
+      "value": null,
+      "control_id": "pe-3",
+      "control_title": "Physical Access Control",
+      "label": "physical access devices",
+      "guidance": "physical access devices to be inventoried are defined;",
+      "assessment_label": "PE-03_ODP[07]",
+      "alt_identifier": "pe-3_prm_7"
+    },
+    {
+      "param_id": "pe-03_odp.08",
+      "value": null,
+      "control_id": "pe-3",
+      "control_title": "Physical Access Control",
+      "label": "frequency",
+      "guidance": "frequency at which to inventory physical access devices is defined;",
+      "assessment_label": "PE-03_ODP[08]",
+      "alt_identifier": "pe-3_prm_8"
+    },
+    {
+      "param_id": "pe-03_odp.09",
+      "value": null,
+      "control_id": "pe-3",
+      "control_title": "Physical Access Control",
+      "label": "frequency",
+      "guidance": "frequency at which to change combinations is defined;",
+      "assessment_label": "PE-03_ODP[09]"
+    },
+    {
+      "param_id": "pe-03_odp.10",
+      "value": null,
+      "control_id": "pe-3",
+      "control_title": "Physical Access Control",
+      "label": "frequency",
+      "guidance": "frequency at which to change keys is defined;",
+      "assessment_label": "PE-03_ODP[10]"
+    },
+    {
+      "param_id": "pe-06_odp.01",
+      "value": null,
+      "control_id": "pe-6",
+      "control_title": "Monitoring Physical Access",
+      "label": "frequency",
+      "guidance": "the frequency at which to review physical access logs is defined;",
+      "assessment_label": "PE-06_ODP[01]",
+      "alt_identifier": "pe-6_prm_1"
+    },
+    {
+      "param_id": "pe-06_odp.02",
+      "value": null,
+      "control_id": "pe-6",
+      "control_title": "Monitoring Physical Access",
+      "label": "events",
+      "guidance": "events or potential indication of events requiring physical access logs to be reviewed are defined;",
+      "assessment_label": "PE-06_ODP[02]",
+      "alt_identifier": "pe-6_prm_2"
+    },
+    {
+      "param_id": "pe-08_odp.01",
+      "value": null,
+      "control_id": "pe-8",
+      "control_title": "Visitor Access Records",
+      "label": "time period",
+      "guidance": "time period for which to maintain visitor access records for the facility where the system resides is defined;",
+      "assessment_label": "PE-08_ODP[01]",
+      "alt_identifier": "pe-8_prm_1"
+    },
+    {
+      "param_id": "pe-08_odp.02",
+      "value": null,
+      "control_id": "pe-8",
+      "control_title": "Visitor Access Records",
+      "label": "frequency",
+      "guidance": "the frequency at which to review visitor access records is defined;",
+      "assessment_label": "PE-08_ODP[02]",
+      "alt_identifier": "pe-8_prm_2"
+    },
+    {
+      "param_id": "pe-08_odp.03",
+      "value": null,
+      "control_id": "pe-8",
+      "control_title": "Visitor Access Records",
+      "label": "personnel",
+      "guidance": "personnel to whom visitor access records anomalies are reported to is/are defined;",
+      "assessment_label": "PE-08_ODP[03]",
+      "alt_identifier": "pe-8_prm_3"
+    },
+    {
+      "param_id": "pe-14_odp.02",
+      "value": null,
+      "control_id": "pe-14",
+      "control_title": "Environmental Controls",
+      "label": "environmental control",
+      "guidance": "environmental control(s) for which to maintain a specified level in the facility where the system resides are defined (if selected);",
+      "assessment_label": "PE-14_ODP[02]",
+      "alt_identifier": "pe-14_prm_2"
+    },
+    {
+      "param_id": "pe-14_odp.03",
+      "value": null,
+      "control_id": "pe-14",
+      "control_title": "Environmental Controls",
+      "label": "acceptable levels",
+      "guidance": "acceptable levels for environmental controls are defined;",
+      "assessment_label": "PE-14_ODP[03]",
+      "alt_identifier": "pe-14_prm_3"
+    },
+    {
+      "param_id": "pe-14_odp.04",
+      "value": null,
+      "control_id": "pe-14",
+      "control_title": "Environmental Controls",
+      "label": "frequency",
+      "guidance": "frequency at which to monitor environmental control levels is defined;",
+      "assessment_label": "PE-14_ODP[04]",
+      "alt_identifier": "pe-14_prm_4"
+    },
+    {
+      "param_id": "pe-16_odp.01",
+      "value": null,
+      "control_id": "pe-16",
+      "control_title": "Delivery and Removal",
+      "label": "types of system components",
+      "guidance": "types of system components to be authorized and controlled when entering the facility are defined;",
+      "assessment_label": "PE-16_ODP[01]"
+    },
+    {
+      "param_id": "pe-16_odp.02",
+      "value": null,
+      "control_id": "pe-16",
+      "control_title": "Delivery and Removal",
+      "label": "types of system components",
+      "guidance": "types of system components to be authorized and controlled when exiting the facility are defined;",
+      "assessment_label": "PE-16_ODP[02]"
+    },
+    {
+      "param_id": "pl-01_odp.01",
+      "value": null,
+      "control_id": "pl-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the planning policy is to be disseminated is/are defined;",
+      "assessment_label": "PL-01_ODP[01]"
+    },
+    {
+      "param_id": "pl-01_odp.02",
+      "value": null,
+      "control_id": "pl-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the planning procedures are to be disseminated is/are defined;",
+      "assessment_label": "PL-01_ODP[02]"
+    },
+    {
+      "param_id": "pl-01_odp.04",
+      "value": null,
+      "control_id": "pl-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the planning policy and procedures is defined;",
+      "assessment_label": "PL-01_ODP[04]",
+      "alt_identifier": "pl-1_prm_3"
+    },
+    {
+      "param_id": "pl-01_odp.05",
+      "value": null,
+      "control_id": "pl-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency with which the current planning policy is reviewed and updated is defined;",
+      "assessment_label": "PL-01_ODP[05]",
+      "alt_identifier": "pl-1_prm_4"
+    },
+    {
+      "param_id": "pl-01_odp.06",
+      "value": null,
+      "control_id": "pl-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current planning policy to be reviewed and updated are defined;",
+      "assessment_label": "PL-01_ODP[06]",
+      "alt_identifier": "pl-1_prm_5"
+    },
+    {
+      "param_id": "pl-01_odp.07",
+      "value": null,
+      "control_id": "pl-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency with which the current planning procedures are reviewed and updated is defined;",
+      "assessment_label": "PL-01_ODP[07]",
+      "alt_identifier": "pl-1_prm_6"
+    },
+    {
+      "param_id": "pl-01_odp.08",
+      "value": null,
+      "control_id": "pl-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require procedures to be reviewed and updated are defined;",
+      "assessment_label": "PL-01_ODP[08]",
+      "alt_identifier": "pl-1_prm_7"
+    },
+    {
+      "param_id": "pl-02_odp.01",
+      "value": null,
+      "control_id": "pl-2",
+      "control_title": "System Security and Privacy Plans",
+      "label": "individuals or groups",
+      "guidance": "individuals or groups with whom security and privacy-related activities affecting the system that require planning and coordination is/are assigned;",
+      "assessment_label": "PL-02_ODP[01]",
+      "alt_identifier": "pl-2_prm_1"
+    },
+    {
+      "param_id": "pl-02_odp.02",
+      "value": null,
+      "control_id": "pl-2",
+      "control_title": "System Security and Privacy Plans",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to receive distributed copies of the system security and privacy plans is/are assigned;",
+      "assessment_label": "PL-02_ODP[02]",
+      "alt_identifier": "pl-2_prm_2"
+    },
+    {
+      "param_id": "pl-02_odp.03",
+      "value": null,
+      "control_id": "pl-2",
+      "control_title": "System Security and Privacy Plans",
+      "label": "frequency",
+      "guidance": "frequency to review system security and privacy plans is defined;",
+      "assessment_label": "PL-02_ODP[03]",
+      "alt_identifier": "pl-2_prm_3"
+    },
+    {
+      "param_id": "pl-04_odp.01",
+      "value": null,
+      "control_id": "pl-4",
+      "control_title": "Rules of Behavior",
+      "label": "frequency",
+      "guidance": "frequency for reviewing and updating the rules of behavior is defined;",
+      "assessment_label": "PL-04_ODP[01]",
+      "alt_identifier": "pl-4_prm_1"
+    },
+    {
+      "param_id": "pl-04_odp.03",
+      "value": null,
+      "control_id": "pl-4",
+      "control_title": "Rules of Behavior",
+      "label": "frequency",
+      "guidance": "frequency for individuals to read and re-acknowledge the rules of behavior is defined (if selected);",
+      "assessment_label": "PL-04_ODP[03]",
+      "alt_identifier": "pl-4_prm_3"
+    },
+    {
+      "param_id": "ps-01_odp.01",
+      "value": null,
+      "control_id": "ps-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the personnel security policy is to be disseminated is/are defined;",
+      "assessment_label": "PS-01_ODP[01]"
+    },
+    {
+      "param_id": "ps-01_odp.02",
+      "value": null,
+      "control_id": "ps-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the personnel security procedures are to be disseminated is/are defined;",
+      "assessment_label": "PS-01_ODP[02]"
+    },
+    {
+      "param_id": "ps-01_odp.04",
+      "value": null,
+      "control_id": "ps-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the personnel security policy and procedures is defined;",
+      "assessment_label": "PS-01_ODP[04]",
+      "alt_identifier": "ps-1_prm_3"
+    },
+    {
+      "param_id": "ps-01_odp.05",
+      "value": null,
+      "control_id": "ps-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current personnel security policy is reviewed and updated is defined;",
+      "assessment_label": "PS-01_ODP[05]",
+      "alt_identifier": "ps-1_prm_4"
+    },
+    {
+      "param_id": "ps-01_odp.06",
+      "value": null,
+      "control_id": "ps-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current personnel security policy to be reviewed and updated are defined;",
+      "assessment_label": "PS-01_ODP[06]",
+      "alt_identifier": "ps-1_prm_5"
+    },
+    {
+      "param_id": "ps-01_odp.07",
+      "value": null,
+      "control_id": "ps-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current personnel security procedures are reviewed and updated is defined;",
+      "assessment_label": "PS-01_ODP[07]",
+      "alt_identifier": "ps-1_prm_6"
+    },
+    {
+      "param_id": "ps-01_odp.08",
+      "value": null,
+      "control_id": "ps-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the personnel security procedures to be reviewed and updated are defined;",
+      "assessment_label": "PS-01_ODP[08]",
+      "alt_identifier": "ps-1_prm_7"
+    },
+    {
+      "param_id": "ps-02_odp",
+      "value": null,
+      "control_id": "ps-2",
+      "control_title": "Position Risk Designation",
+      "label": "frequency",
+      "guidance": "the frequency at which to review and update position risk designations is defined;",
+      "assessment_label": "PS-02_ODP",
+      "alt_identifier": "ps-2_prm_1"
+    },
+    {
+      "param_id": "ps-03_odp.01",
+      "value": null,
+      "control_id": "ps-3",
+      "control_title": "Personnel Screening",
+      "label": "conditions requiring rescreening",
+      "guidance": "conditions requiring rescreening of individuals are defined;",
+      "assessment_label": "PS-03_ODP[01]"
+    },
+    {
+      "param_id": "ps-03_odp.02",
+      "value": null,
+      "control_id": "ps-3",
+      "control_title": "Personnel Screening",
+      "label": "frequency",
+      "guidance": "the frequency of rescreening individuals where it is so indicated is defined;",
+      "assessment_label": "PS-03_ODP[02]"
+    },
+    {
+      "param_id": "ps-04_odp.01",
+      "value": null,
+      "control_id": "ps-4",
+      "control_title": "Personnel Termination",
+      "label": "time period",
+      "guidance": "a time period within which to disable system access is defined;",
+      "assessment_label": "PS-04_ODP[01]",
+      "alt_identifier": "ps-4_prm_1"
+    },
+    {
+      "param_id": "ps-04_odp.02",
+      "value": null,
+      "control_id": "ps-4",
+      "control_title": "Personnel Termination",
+      "label": "information security topics",
+      "guidance": "information security topics to be discussed when conducting exit interviews are defined;",
+      "assessment_label": "PS-04_ODP[02]",
+      "alt_identifier": "ps-4_prm_2"
+    },
+    {
+      "param_id": "ps-05_odp.01",
+      "value": null,
+      "control_id": "ps-5",
+      "control_title": "Personnel Transfer",
+      "label": "transfer or reassignment actions",
+      "guidance": "transfer or reassignment actions to be initiated following transfer or reassignment are defined;",
+      "assessment_label": "PS-05_ODP[01]",
+      "alt_identifier": "ps-5_prm_1"
+    },
+    {
+      "param_id": "ps-05_odp.02",
+      "value": null,
+      "control_id": "ps-5",
+      "control_title": "Personnel Transfer",
+      "label": "time period following the formal transfer action",
+      "guidance": "the time period within which transfer or reassignment actions must occur following transfer or reassignment is defined;",
+      "assessment_label": "PS-05_ODP[02]",
+      "alt_identifier": "ps-5_prm_2"
+    },
+    {
+      "param_id": "ps-05_odp.03",
+      "value": null,
+      "control_id": "ps-5",
+      "control_title": "Personnel Transfer",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to be notified when individuals are reassigned or transferred to other positions within the organization is/are defined;",
+      "assessment_label": "PS-05_ODP[03]",
+      "alt_identifier": "ps-5_prm_3"
+    },
+    {
+      "param_id": "ps-05_odp.04",
+      "value": null,
+      "control_id": "ps-5",
+      "control_title": "Personnel Transfer",
+      "label": "time period",
+      "guidance": "time period within which to notify organization-defined personnel or roles when individuals are reassigned or transferred to other positions within the organization is defined;",
+      "assessment_label": "PS-05_ODP[04]",
+      "alt_identifier": "ps-5_prm_4"
+    },
+    {
+      "param_id": "ps-06_odp.01",
+      "value": null,
+      "control_id": "ps-6",
+      "control_title": "Access Agreements",
+      "label": "frequency",
+      "guidance": "the frequency at which to review and update access agreements is defined;",
+      "assessment_label": "PS-06_ODP[01]",
+      "alt_identifier": "ps-6_prm_1"
+    },
+    {
+      "param_id": "ps-06_odp.02",
+      "value": null,
+      "control_id": "ps-6",
+      "control_title": "Access Agreements",
+      "label": "frequency",
+      "guidance": "the frequency at which to re-sign access agreements to maintain access to organizational information is defined;",
+      "assessment_label": "PS-06_ODP[02]",
+      "alt_identifier": "ps-6_prm_2"
+    },
+    {
+      "param_id": "ps-07_odp.01",
+      "value": null,
+      "control_id": "ps-7",
+      "control_title": "External Personnel Security",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to be notified of any personnel transfers or terminations of external personnel who possess organizational credentials and/or badges or who have system privileges is/are defined;",
+      "assessment_label": "PS-07_ODP[01]",
+      "alt_identifier": "ps-7_prm_1"
+    },
+    {
+      "param_id": "ps-07_odp.02",
+      "value": null,
+      "control_id": "ps-7",
+      "control_title": "External Personnel Security",
+      "label": "time period",
+      "guidance": "time period within which third-party providers are required to notify organization-defined personnel or roles of any personnel transfers or terminations of external personnel who possess organizational credentials and/or badges or who have system privileges is defined;",
+      "assessment_label": "PS-07_ODP[02]",
+      "alt_identifier": "ps-7_prm_2"
+    },
+    {
+      "param_id": "ps-08_odp.01",
+      "value": null,
+      "control_id": "ps-8",
+      "control_title": "Personnel Sanctions",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to be notified when a formal employee sanctions process is initiated is/are defined;",
+      "assessment_label": "PS-08_ODP[01]",
+      "alt_identifier": "ps-8_prm_1"
+    },
+    {
+      "param_id": "ps-08_odp.02",
+      "value": null,
+      "control_id": "ps-8",
+      "control_title": "Personnel Sanctions",
+      "label": "time period",
+      "guidance": "the time period within which organization-defined personnel or roles must be notified when a formal employee sanctions process is initiated is defined;",
+      "assessment_label": "PS-08_ODP[02]",
+      "alt_identifier": "ps-8_prm_2"
+    },
+    {
+      "param_id": "ra-01_odp.01",
+      "value": null,
+      "control_id": "ra-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the risk assessment policy is to be disseminated is/are defined;",
+      "assessment_label": "RA-01_ODP[01]"
+    },
+    {
+      "param_id": "ra-01_odp.02",
+      "value": null,
+      "control_id": "ra-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the risk assessment procedures are to be disseminated is/are defined;",
+      "assessment_label": "RA-01_ODP[02]"
+    },
+    {
+      "param_id": "ra-01_odp.04",
+      "value": null,
+      "control_id": "ra-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the risk assessment policy and procedures is defined;",
+      "assessment_label": "RA-01_ODP[04]",
+      "alt_identifier": "ra-1_prm_3"
+    },
+    {
+      "param_id": "ra-01_odp.05",
+      "value": null,
+      "control_id": "ra-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current risk assessment policy is reviewed and updated is defined;",
+      "assessment_label": "RA-01_ODP[05]",
+      "alt_identifier": "ra-1_prm_4"
+    },
+    {
+      "param_id": "ra-01_odp.06",
+      "value": null,
+      "control_id": "ra-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current risk assessment policy to be reviewed and updated are defined;",
+      "assessment_label": "RA-01_ODP[06]",
+      "alt_identifier": "ra-1_prm_5"
+    },
+    {
+      "param_id": "ra-01_odp.07",
+      "value": null,
+      "control_id": "ra-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current risk assessment procedures are reviewed and updated is defined;",
+      "assessment_label": "RA-01_ODP[07]",
+      "alt_identifier": "ra-1_prm_6"
+    },
+    {
+      "param_id": "ra-01_odp.08",
+      "value": null,
+      "control_id": "ra-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require risk assessment procedures to be reviewed and updated are defined;",
+      "assessment_label": "RA-01_ODP[08]",
+      "alt_identifier": "ra-1_prm_7"
+    },
+    {
+      "param_id": "ra-03_odp.02",
+      "value": null,
+      "control_id": "ra-3",
+      "control_title": "Risk Assessment",
+      "label": "document",
+      "guidance": "a document in which risk assessment results are to be documented (if not documented in the security and privacy plans or risk assessment report) is defined (if selected);",
+      "assessment_label": "RA-03_ODP[02]",
+      "alt_identifier": "ra-3_prm_2"
+    },
+    {
+      "param_id": "ra-03_odp.03",
+      "value": null,
+      "control_id": "ra-3",
+      "control_title": "Risk Assessment",
+      "label": "frequency",
+      "guidance": "the frequency to review risk assessment results is defined;",
+      "assessment_label": "RA-03_ODP[03]",
+      "alt_identifier": "ra-3_prm_3"
+    },
+    {
+      "param_id": "ra-03_odp.04",
+      "value": null,
+      "control_id": "ra-3",
+      "control_title": "Risk Assessment",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom risk assessment results are to be disseminated is/are defined;",
+      "assessment_label": "RA-03_ODP[04]",
+      "alt_identifier": "ra-3_prm_4"
+    },
+    {
+      "param_id": "ra-03_odp.05",
+      "value": null,
+      "control_id": "ra-3",
+      "control_title": "Risk Assessment",
+      "label": "frequency",
+      "guidance": "the frequency to update the risk assessment is defined;",
+      "assessment_label": "RA-03_ODP[05]",
+      "alt_identifier": "ra-3_prm_5"
+    },
+    {
+      "param_id": "ra-03.01_odp.01",
+      "value": null,
+      "control_id": "ra-3.1",
+      "control_title": "Supply Chain Risk Assessment",
+      "label": "systems, system components, and system services",
+      "guidance": "systems, system components, and system services to assess supply chain risks are defined;",
+      "assessment_label": "RA-03(01)_ODP[01]",
+      "alt_identifier": "ra-3.1_prm_1"
+    },
+    {
+      "param_id": "ra-03.01_odp.02",
+      "value": null,
+      "control_id": "ra-3.1",
+      "control_title": "Supply Chain Risk Assessment",
+      "label": "frequency",
+      "guidance": "the frequency at which to update the supply chain risk assessment is defined;",
+      "assessment_label": "RA-03(01)_ODP[02]",
+      "alt_identifier": "ra-3.1_prm_2"
+    },
+    {
+      "param_id": "ra-05_odp.01",
+      "value": null,
+      "control_id": "ra-5",
+      "control_title": "Vulnerability Monitoring and Scanning",
+      "label": "frequency and/or randomly in accordance with organization-defined process",
+      "guidance": "frequency for monitoring systems and hosted applications for vulnerabilities is defined;",
+      "assessment_label": "RA-05_ODP[01]"
+    },
+    {
+      "param_id": "ra-05_odp.02",
+      "value": null,
+      "control_id": "ra-5",
+      "control_title": "Vulnerability Monitoring and Scanning",
+      "label": "frequency and/or randomly in accordance with organization-defined process",
+      "guidance": "frequency for scanning systems and hosted applications for vulnerabilities is defined;",
+      "assessment_label": "RA-05_ODP[02]"
+    },
+    {
+      "param_id": "ra-05_odp.03",
+      "value": null,
+      "control_id": "ra-5",
+      "control_title": "Vulnerability Monitoring and Scanning",
+      "label": "response times",
+      "guidance": "response times to remediate legitimate vulnerabilities in accordance with an organizational assessment of risk are defined;",
+      "assessment_label": "RA-05_ODP[03]",
+      "alt_identifier": "ra-5_prm_2"
+    },
+    {
+      "param_id": "ra-05_odp.04",
+      "value": null,
+      "control_id": "ra-5",
+      "control_title": "Vulnerability Monitoring and Scanning",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles with whom information obtained from the vulnerability scanning process and control assessments is to be shared;",
+      "assessment_label": "RA-05_ODP[04]",
+      "alt_identifier": "ra-5_prm_3"
+    },
+    {
+      "param_id": "ra-05.02_odp.02",
+      "value": null,
+      "control_id": "ra-5.2",
+      "control_title": "Update Vulnerabilities to Be Scanned",
+      "label": "frequency",
+      "guidance": "the frequency for updating the system vulnerabilities to be scanned is defined (if selected);",
+      "assessment_label": "RA-05(02)_ODP[02]",
+      "alt_identifier": "ra-5.2_prm_2"
+    },
+    {
+      "param_id": "sa-01_odp.01",
+      "value": null,
+      "control_id": "sa-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the system and services acquisition policy is to be disseminated is/are defined;",
+      "assessment_label": "SA-01_ODP[01]"
+    },
+    {
+      "param_id": "sa-01_odp.02",
+      "value": null,
+      "control_id": "sa-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the system and services acquisition procedures are to be disseminated is/are defined;",
+      "assessment_label": "SA-01_ODP[02]"
+    },
+    {
+      "param_id": "sa-01_odp.04",
+      "value": null,
+      "control_id": "sa-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the system and services acquisition policy and procedures is defined;",
+      "assessment_label": "SA-01_ODP[04]",
+      "alt_identifier": "sa-1_prm_3"
+    },
+    {
+      "param_id": "sa-01_odp.05",
+      "value": null,
+      "control_id": "sa-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current system and services acquisition policy is reviewed and updated is defined;",
+      "assessment_label": "SA-01_ODP[05]",
+      "alt_identifier": "sa-1_prm_4"
+    },
+    {
+      "param_id": "sa-01_odp.06",
+      "value": null,
+      "control_id": "sa-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current system and services acquisition policy to be reviewed and updated are defined;",
+      "assessment_label": "SA-01_ODP[06]",
+      "alt_identifier": "sa-1_prm_5"
+    },
+    {
+      "param_id": "sa-01_odp.07",
+      "value": null,
+      "control_id": "sa-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current system and services acquisition procedures are reviewed and updated is defined;",
+      "assessment_label": "SA-01_ODP[07]",
+      "alt_identifier": "sa-1_prm_6"
+    },
+    {
+      "param_id": "sa-01_odp.08",
+      "value": null,
+      "control_id": "sa-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the system and services acquisition procedures to be reviewed and updated are defined;",
+      "assessment_label": "SA-01_ODP[08]",
+      "alt_identifier": "sa-1_prm_7"
+    },
+    {
+      "param_id": "sa-03_odp",
+      "value": null,
+      "control_id": "sa-3",
+      "control_title": "System Development Life Cycle",
+      "label": "system-development life cycle",
+      "guidance": "system development life cycle is defined;",
+      "assessment_label": "SA-03_ODP",
+      "alt_identifier": "sa-3_prm_1"
+    },
+    {
+      "param_id": "sa-04_odp.02",
+      "value": null,
+      "control_id": "sa-4",
+      "control_title": "Acquisition Process",
+      "label": "contract language",
+      "guidance": "contract language is defined (if selected);",
+      "assessment_label": "SA-04_ODP[02]",
+      "alt_identifier": "sa-4_prm_2"
+    },
+    {
+      "param_id": "sa-05_odp.01",
+      "value": null,
+      "control_id": "sa-5",
+      "control_title": "System Documentation",
+      "label": "actions",
+      "guidance": "actions to take when system, system component, or system service documentation is either unavailable or nonexistent are defined;",
+      "assessment_label": "SA-05_ODP[01]",
+      "alt_identifier": "sa-5_prm_1"
+    },
+    {
+      "param_id": "sa-05_odp.02",
+      "value": null,
+      "control_id": "sa-5",
+      "control_title": "System Documentation",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to distribute system documentation to is/are defined;",
+      "assessment_label": "SA-05_ODP[02]",
+      "alt_identifier": "sa-5_prm_2"
+    },
+    {
+      "param_id": "sa-08_odp.01",
+      "value": null,
+      "control_id": "sa-8",
+      "control_title": "Security and Privacy Engineering Principles",
+      "label": "systems security engineering principles",
+      "guidance": "systems security engineering principles are defined;",
+      "assessment_label": "SA-08_ODP[01]"
+    },
+    {
+      "param_id": "sa-08_odp.02",
+      "value": null,
+      "control_id": "sa-8",
+      "control_title": "Security and Privacy Engineering Principles",
+      "label": "privacy engineering principles",
+      "guidance": "privacy engineering principles are defined;",
+      "assessment_label": "SA-08_ODP[02]"
+    },
+    {
+      "param_id": "sa-09_odp.01",
+      "value": null,
+      "control_id": "sa-9",
+      "control_title": "External System Services",
+      "label": "controls",
+      "guidance": "controls to be employed by external system service providers are defined;",
+      "assessment_label": "SA-09_ODP[01]",
+      "alt_identifier": "sa-9_prm_1"
+    },
+    {
+      "param_id": "sa-09_odp.02",
+      "value": null,
+      "control_id": "sa-9",
+      "control_title": "External System Services",
+      "label": "processes, methods, and techniques",
+      "guidance": "processes, methods, and techniques employed to monitor control compliance by external service providers are defined;",
+      "assessment_label": "SA-09_ODP[02]",
+      "alt_identifier": "sa-9_prm_2"
+    },
+    {
+      "param_id": "sa-22_odp.02",
+      "value": null,
+      "control_id": "sa-22",
+      "control_title": "Unsupported System Components",
+      "label": "support from external providers",
+      "guidance": "support from external providers is defined (if selected);",
+      "assessment_label": "SA-22_ODP[02]",
+      "alt_identifier": "sa-22_prm_2"
+    },
+    {
+      "param_id": "sc-01_odp.01",
+      "value": null,
+      "control_id": "sc-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the system and communications protection policy is to be disseminated is/are defined;",
+      "assessment_label": "SC-01_ODP[01]"
+    },
+    {
+      "param_id": "sc-01_odp.02",
+      "value": null,
+      "control_id": "sc-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the system and communications protection procedures are to be disseminated is/are defined;",
+      "assessment_label": "SC-01_ODP[02]"
+    },
+    {
+      "param_id": "sc-01_odp.04",
+      "value": null,
+      "control_id": "sc-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the system and communications protection policy and procedures is defined;",
+      "assessment_label": "SC-01_ODP[04]",
+      "alt_identifier": "sc-1_prm_3"
+    },
+    {
+      "param_id": "sc-01_odp.05",
+      "value": null,
+      "control_id": "sc-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current system and communications protection policy is reviewed and updated is defined;",
+      "assessment_label": "SC-01_ODP[05]",
+      "alt_identifier": "sc-1_prm_4"
+    },
+    {
+      "param_id": "sc-01_odp.06",
+      "value": null,
+      "control_id": "sc-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current system and communications protection policy to be reviewed and updated are defined;",
+      "assessment_label": "SC-01_ODP[06]",
+      "alt_identifier": "sc-1_prm_5"
+    },
+    {
+      "param_id": "sc-01_odp.07",
+      "value": null,
+      "control_id": "sc-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current system and communications protection procedures are reviewed and updated is defined;",
+      "assessment_label": "SC-01_ODP[07]",
+      "alt_identifier": "sc-1_prm_6"
+    },
+    {
+      "param_id": "sc-01_odp.08",
+      "value": null,
+      "control_id": "sc-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the system and communications protection procedures to be reviewed and updated are defined;",
+      "assessment_label": "SC-01_ODP[08]",
+      "alt_identifier": "sc-1_prm_7"
+    },
+    {
+      "param_id": "sc-05_odp.01",
+      "value": null,
+      "control_id": "sc-5",
+      "control_title": "Denial-of-service Protection",
+      "label": "types of denial-of-service events",
+      "guidance": "types of denial-of-service events to be protected against or limited are defined;",
+      "assessment_label": "SC-05_ODP[01]",
+      "alt_identifier": "sc-5_prm_2"
+    },
+    {
+      "param_id": "sc-05_odp.03",
+      "value": null,
+      "control_id": "sc-5",
+      "control_title": "Denial-of-service Protection",
+      "label": "controls by type of denial-of-service event",
+      "guidance": "controls to achieve the denial-of-service objective by type of denial-of-service event are defined;",
+      "assessment_label": "SC-05_ODP[03]",
+      "alt_identifier": "sc-5_prm_3"
+    },
+    {
+      "param_id": "sc-12_odp",
+      "value": null,
+      "control_id": "sc-12",
+      "control_title": "Cryptographic Key Establishment and Management",
+      "label": "requirements",
+      "guidance": "requirements for key generation, distribution, storage, access, and destruction are defined;",
+      "assessment_label": "SC-12_ODP",
+      "alt_identifier": "sc-12_prm_1"
+    },
+    {
+      "param_id": "sc-13_odp.01",
+      "value": null,
+      "control_id": "sc-13",
+      "control_title": "Cryptographic Protection",
+      "label": "cryptographic uses",
+      "guidance": "cryptographic uses are defined;",
+      "assessment_label": "SC-13_ODP[01]",
+      "alt_identifier": "sc-13_prm_1"
+    },
+    {
+      "param_id": "sc-13_odp.02",
+      "value": null,
+      "control_id": "sc-13",
+      "control_title": "Cryptographic Protection",
+      "label": "types of cryptography",
+      "guidance": "types of cryptography for each specified cryptographic use are defined;",
+      "assessment_label": "SC-13_ODP[02]",
+      "alt_identifier": "sc-13_prm_2"
+    },
+    {
+      "param_id": "sc-15_odp",
+      "value": null,
+      "control_id": "sc-15",
+      "control_title": "Collaborative Computing Devices and Applications",
+      "label": "exceptions where remote activation is to be allowed",
+      "guidance": "exceptions where remote activation is to be allowed are defined;",
+      "assessment_label": "SC-15_ODP",
+      "alt_identifier": "sc-15_prm_1"
+    },
+    {
+      "param_id": "si-01_odp.01",
+      "value": null,
+      "control_id": "si-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the system and information integrity policy is to be disseminated is/are defined;",
+      "assessment_label": "SI-01_ODP[01]"
+    },
+    {
+      "param_id": "si-01_odp.02",
+      "value": null,
+      "control_id": "si-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom the system and information integrity procedures are to be disseminated is/are defined;",
+      "assessment_label": "SI-01_ODP[02]"
+    },
+    {
+      "param_id": "si-01_odp.04",
+      "value": null,
+      "control_id": "si-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the system and information integrity policy and procedures is defined;",
+      "assessment_label": "SI-01_ODP[04]",
+      "alt_identifier": "si-1_prm_3"
+    },
+    {
+      "param_id": "si-01_odp.05",
+      "value": null,
+      "control_id": "si-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current system and information integrity policy is reviewed and updated is defined;",
+      "assessment_label": "SI-01_ODP[05]",
+      "alt_identifier": "si-1_prm_4"
+    },
+    {
+      "param_id": "si-01_odp.06",
+      "value": null,
+      "control_id": "si-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the current system and information integrity policy to be reviewed and updated are defined;",
+      "assessment_label": "SI-01_ODP[06]",
+      "alt_identifier": "si-1_prm_5"
+    },
+    {
+      "param_id": "si-01_odp.07",
+      "value": null,
+      "control_id": "si-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current system and information integrity procedures are reviewed and updated is defined;",
+      "assessment_label": "SI-01_ODP[07]",
+      "alt_identifier": "si-1_prm_6"
+    },
+    {
+      "param_id": "si-01_odp.08",
+      "value": null,
+      "control_id": "si-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that would require the system and information integrity procedures to be reviewed and updated are defined;",
+      "assessment_label": "SI-01_ODP[08]",
+      "alt_identifier": "si-1_prm_7"
+    },
+    {
+      "param_id": "si-02_odp",
+      "value": null,
+      "control_id": "si-2",
+      "control_title": "Flaw Remediation",
+      "label": "time period",
+      "guidance": "time period within which to install security-relevant software updates after the release of the updates is defined;",
+      "assessment_label": "SI-02_ODP",
+      "alt_identifier": "si-2_prm_1"
+    },
+    {
+      "param_id": "si-03_odp.02",
+      "value": null,
+      "control_id": "si-3",
+      "control_title": "Malicious Code Protection",
+      "label": "frequency",
+      "guidance": "the frequency at which malicious code protection mechanisms perform scans is defined;",
+      "assessment_label": "SI-03_ODP[02]",
+      "alt_identifier": "si-3_prm_2"
+    },
+    {
+      "param_id": "si-03_odp.05",
+      "value": null,
+      "control_id": "si-3",
+      "control_title": "Malicious Code Protection",
+      "label": "action",
+      "guidance": "action to be taken in response to malicious code detection are defined (if selected);",
+      "assessment_label": "SI-03_ODP[05]",
+      "alt_identifier": "si-3_prm_5"
+    },
+    {
+      "param_id": "si-03_odp.06",
+      "value": null,
+      "control_id": "si-3",
+      "control_title": "Malicious Code Protection",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to be alerted when malicious code is detected is/are defined;",
+      "assessment_label": "SI-03_ODP[06]",
+      "alt_identifier": "si-3_prm_6"
+    },
+    {
+      "param_id": "si-04_odp.01",
+      "value": null,
+      "control_id": "si-4",
+      "control_title": "System Monitoring",
+      "label": "monitoring objectives",
+      "guidance": "monitoring objectives to detect attacks and indicators of potential attacks on the system are defined;",
+      "assessment_label": "SI-04_ODP[01]",
+      "alt_identifier": "si-4_prm_1"
+    },
+    {
+      "param_id": "si-04_odp.02",
+      "value": null,
+      "control_id": "si-4",
+      "control_title": "System Monitoring",
+      "label": "techniques and methods",
+      "guidance": "techniques and methods used to identify unauthorized use of the system are defined;",
+      "assessment_label": "SI-04_ODP[02]",
+      "alt_identifier": "si-4_prm_2"
+    },
+    {
+      "param_id": "si-04_odp.03",
+      "value": null,
+      "control_id": "si-4",
+      "control_title": "System Monitoring",
+      "label": "system monitoring information",
+      "guidance": "system monitoring information to be provided to personnel or roles is defined;",
+      "assessment_label": "SI-04_ODP[03]",
+      "alt_identifier": "si-4_prm_3"
+    },
+    {
+      "param_id": "si-04_odp.04",
+      "value": null,
+      "control_id": "si-4",
+      "control_title": "System Monitoring",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom system monitoring information is to be provided is/are defined;",
+      "assessment_label": "SI-04_ODP[04]",
+      "alt_identifier": "si-4_prm_4"
+    },
+    {
+      "param_id": "si-04_odp.06",
+      "value": null,
+      "control_id": "si-4",
+      "control_title": "System Monitoring",
+      "label": "frequency",
+      "guidance": "a frequency for providing system monitoring to personnel or roles is defined (if selected);",
+      "assessment_label": "SI-04_ODP[06]",
+      "alt_identifier": "si-4_prm_6"
+    },
+    {
+      "param_id": "si-05_odp.01",
+      "value": null,
+      "control_id": "si-5",
+      "control_title": "Security Alerts, Advisories, and Directives",
+      "label": "external organizations",
+      "guidance": "external organizations from whom system security alerts, advisories, and directives are to be received on an ongoing basis are defined;",
+      "assessment_label": "SI-05_ODP[01]",
+      "alt_identifier": "si-5_prm_1"
+    },
+    {
+      "param_id": "si-05_odp.03",
+      "value": null,
+      "control_id": "si-5",
+      "control_title": "Security Alerts, Advisories, and Directives",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom security alerts, advisories, and directives are to be disseminated is/are defined (if selected);",
+      "assessment_label": "SI-05_ODP[03]",
+      "alt_identifier": "si-5_prm_3"
+    },
+    {
+      "param_id": "si-05_odp.04",
+      "value": null,
+      "control_id": "si-5",
+      "control_title": "Security Alerts, Advisories, and Directives",
+      "label": "elements",
+      "guidance": "elements within the organization to whom security alerts, advisories, and directives are to be disseminated are defined (if selected);",
+      "assessment_label": "SI-05_ODP[04]",
+      "alt_identifier": "si-5_prm_4"
+    },
+    {
+      "param_id": "si-05_odp.05",
+      "value": null,
+      "control_id": "si-5",
+      "control_title": "Security Alerts, Advisories, and Directives",
+      "label": "external organizations",
+      "guidance": "external organizations to whom security alerts, advisories, and directives are to be disseminated are defined (if selected);",
+      "assessment_label": "SI-05_ODP[05]",
+      "alt_identifier": "si-5_prm_5"
+    },
+    {
+      "param_id": "sr-01_odp.01",
+      "value": null,
+      "control_id": "sr-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom supply chain risk management policy is to be disseminated to is/are defined;",
+      "assessment_label": "SR-01_ODP[01]"
+    },
+    {
+      "param_id": "sr-01_odp.02",
+      "value": null,
+      "control_id": "sr-1",
+      "control_title": "Policy and Procedures",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom supply chain risk management procedures are disseminated to is/are defined;",
+      "assessment_label": "SR-01_ODP[02]"
+    },
+    {
+      "param_id": "sr-01_odp.04",
+      "value": null,
+      "control_id": "sr-1",
+      "control_title": "Policy and Procedures",
+      "label": "official",
+      "guidance": "an official to manage the development, documentation, and dissemination of the supply chain risk management policy and procedures is defined;",
+      "assessment_label": "SR-01_ODP[04]",
+      "alt_identifier": "sr-1_prm_3"
+    },
+    {
+      "param_id": "sr-01_odp.05",
+      "value": null,
+      "control_id": "sr-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current supply chain risk management policy is reviewed and updated is defined;",
+      "assessment_label": "SR-01_ODP[05]",
+      "alt_identifier": "sr-1_prm_4"
+    },
+    {
+      "param_id": "sr-01_odp.06",
+      "value": null,
+      "control_id": "sr-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that require the current supply chain risk management policy to be reviewed and updated are defined;",
+      "assessment_label": "SR-01_ODP[06]",
+      "alt_identifier": "sr-1_prm_5"
+    },
+    {
+      "param_id": "sr-01_odp.07",
+      "value": null,
+      "control_id": "sr-1",
+      "control_title": "Policy and Procedures",
+      "label": "frequency",
+      "guidance": "the frequency at which the current supply chain risk management procedure is reviewed and updated is defined;",
+      "assessment_label": "SR-01_ODP[07]",
+      "alt_identifier": "sr-1_prm_6"
+    },
+    {
+      "param_id": "sr-01_odp.08",
+      "value": null,
+      "control_id": "sr-1",
+      "control_title": "Policy and Procedures",
+      "label": "events",
+      "guidance": "events that require the supply chain risk management procedures to be reviewed and updated are defined;",
+      "assessment_label": "SR-01_ODP[08]",
+      "alt_identifier": "sr-1_prm_7"
+    },
+    {
+      "param_id": "sr-02_odp.01",
+      "value": null,
+      "control_id": "sr-2",
+      "control_title": "Supply Chain Risk Management Plan",
+      "label": "systems, system components, or system services",
+      "guidance": "systems, system components, or system services for which a supply chain risk management plan is developed are defined;",
+      "assessment_label": "SR-02_ODP[01]",
+      "alt_identifier": "sr-2_prm_1"
+    },
+    {
+      "param_id": "sr-02_odp.02",
+      "value": null,
+      "control_id": "sr-2",
+      "control_title": "Supply Chain Risk Management Plan",
+      "label": "frequency",
+      "guidance": "the frequency at which to review and update the supply chain risk management plan is defined;",
+      "assessment_label": "SR-02_ODP[02]",
+      "alt_identifier": "sr-2_prm_2"
+    },
+    {
+      "param_id": "sr-02.01_odp.01",
+      "value": null,
+      "control_id": "sr-2.1",
+      "control_title": "Establish SCRM Team",
+      "label": "personnel, roles and responsibilities",
+      "guidance": "the personnel, roles, and responsibilities of the supply chain risk management team are defined;",
+      "assessment_label": "SR-02(01)_ODP[01]",
+      "alt_identifier": "sr-2.1_prm_1"
+    },
+    {
+      "param_id": "sr-02.01_odp.02",
+      "value": null,
+      "control_id": "sr-2.1",
+      "control_title": "Establish SCRM Team",
+      "label": "supply chain risk management activities",
+      "guidance": "supply chain risk management activities are defined;",
+      "assessment_label": "SR-02(01)_ODP[02]",
+      "alt_identifier": "sr-2.1_prm_2"
+    },
+    {
+      "param_id": "sr-03_odp.01",
+      "value": null,
+      "control_id": "sr-3",
+      "control_title": "Supply Chain Controls and Processes",
+      "label": "system or system component",
+      "guidance": "the system or system component requiring a process or processes to identify and address weaknesses or deficiencies is defined;",
+      "assessment_label": "SR-03_ODP[01]",
+      "alt_identifier": "sr-3_prm_1"
+    },
+    {
+      "param_id": "sr-03_odp.02",
+      "value": null,
+      "control_id": "sr-3",
+      "control_title": "Supply Chain Controls and Processes",
+      "label": "supply chain personnel",
+      "guidance": "supply chain personnel with whom to coordinate the process or processes to identify and address weaknesses or deficiencies in the supply chain elements and processes is/are defined;",
+      "assessment_label": "SR-03_ODP[02]",
+      "alt_identifier": "sr-3_prm_2"
+    },
+    {
+      "param_id": "sr-03_odp.03",
+      "value": null,
+      "control_id": "sr-3",
+      "control_title": "Supply Chain Controls and Processes",
+      "label": "supply chain controls",
+      "guidance": "supply chain controls employed to protect against supply chain risks to the system, system component, or system service and to limit the harm or consequences from supply chain-related events are defined;",
+      "assessment_label": "SR-03_ODP[03]",
+      "alt_identifier": "sr-3_prm_3"
+    },
+    {
+      "param_id": "sr-03_odp.05",
+      "value": null,
+      "control_id": "sr-3",
+      "control_title": "Supply Chain Controls and Processes",
+      "label": "document",
+      "guidance": "the document identifying the selected and implemented supply chain processes and controls is defined (if selected);",
+      "assessment_label": "SR-03_ODP[05]",
+      "alt_identifier": "sr-3_prm_5"
+    },
+    {
+      "param_id": "sr-05_odp",
+      "value": null,
+      "control_id": "sr-5",
+      "control_title": "Acquisition Strategies, Tools, and Methods",
+      "label": "strategies, tools, and methods",
+      "guidance": "acquisition strategies, contract tools, and procurement methods to protect against, identify, and mitigate supply chain risks are defined;",
+      "assessment_label": "SR-05_ODP",
+      "alt_identifier": "sr-5_prm_1"
+    },
+    {
+      "param_id": "sr-08_odp.02",
+      "value": null,
+      "control_id": "sr-8",
+      "control_title": "Notification Agreements",
+      "label": "results of assessments or audits",
+      "guidance": "information for which agreements and procedures are to be established are defined (if selected);",
+      "assessment_label": "SR-08_ODP[02]",
+      "alt_identifier": "sr-8_prm_2"
+    },
+    {
+      "param_id": "sr-10_odp.01",
+      "value": null,
+      "control_id": "sr-10",
+      "control_title": "Inspection of Systems or Components",
+      "label": "systems or system components",
+      "guidance": "systems or system components that require inspection are defined;",
+      "assessment_label": "SR-10_ODP[01]",
+      "alt_identifier": "sr-10_prm_4"
+    },
+    {
+      "param_id": "sr-10_odp.03",
+      "value": null,
+      "control_id": "sr-10",
+      "control_title": "Inspection of Systems or Components",
+      "label": "frequency",
+      "guidance": "frequency at which to inspect systems or system components is defined (if selected);",
+      "assessment_label": "SR-10_ODP[03]",
+      "alt_identifier": "sr-10_prm_2"
+    },
+    {
+      "param_id": "sr-10_odp.04",
+      "value": null,
+      "control_id": "sr-10",
+      "control_title": "Inspection of Systems or Components",
+      "label": "indications of need for inspection",
+      "guidance": "indications of the need for an inspection of systems or system components are defined (if selected);",
+      "assessment_label": "SR-10_ODP[04]",
+      "alt_identifier": "sr-10_prm_3"
+    },
+    {
+      "param_id": "sr-11_odp.02",
+      "value": null,
+      "control_id": "sr-11",
+      "control_title": "Component Authenticity",
+      "label": "external reporting organizations",
+      "guidance": "external reporting organizations to whom counterfeit system components are to be reported is/are defined (if selected);",
+      "assessment_label": "SR-11_ODP[02]",
+      "alt_identifier": "sr-11_prm_2"
+    },
+    {
+      "param_id": "sr-11_odp.03",
+      "value": null,
+      "control_id": "sr-11",
+      "control_title": "Component Authenticity",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles to whom counterfeit system components are to be reported is/are defined (if selected);",
+      "assessment_label": "SR-11_ODP[03]",
+      "alt_identifier": "sr-11_prm_3"
+    },
+    {
+      "param_id": "sr-11.01_odp",
+      "value": null,
+      "control_id": "sr-11.1",
+      "control_title": "Anti-counterfeit Training",
+      "label": "personnel or roles",
+      "guidance": "personnel or roles requiring training to detect counterfeit system components (including hardware, software, and firmware) is/are defined;",
+      "assessment_label": "SR-11(01)_ODP",
+      "alt_identifier": "sr-11.1_prm_1"
+    },
+    {
+      "param_id": "sr-11.02_odp",
+      "value": null,
+      "control_id": "sr-11.2",
+      "control_title": "Configuration Control for Component Service and Repair",
+      "label": "system components",
+      "guidance": "system components requiring configuration control are defined;",
+      "assessment_label": "SR-11(02)_ODP",
+      "alt_identifier": "sr-11.2_prm_1"
+    },
+    {
+      "param_id": "sr-12_odp.01",
+      "value": null,
+      "control_id": "sr-12",
+      "control_title": "Component Disposal",
+      "label": "data, documentation, tools, or system components",
+      "guidance": "data, documentation, tools, or system components to be disposed of are defined;",
+      "assessment_label": "SR-12_ODP[01]",
+      "alt_identifier": "sr-12_prm_1"
+    },
+    {
+      "param_id": "sr-12_odp.02",
+      "value": null,
+      "control_id": "sr-12",
+      "control_title": "Component Disposal",
+      "label": "techniques and methods",
+      "guidance": "techniques and methods for disposing of data, documentation, tools, or system components are defined;",
+      "assessment_label": "SR-12_ODP[02]",
+      "alt_identifier": "sr-12_prm_2"
+    }
+  ],
+  "selections": [
+    {
+      "select_id": "ac-01_odp.03",
+      "selected": null,
+      "control_id": "ac-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "AC-01_ODP[03]",
+      "alt_identifier": "ac-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "ac-07_odp.03",
+      "selected": null,
+      "control_id": "ac-7",
+      "control_title": "Unsuccessful Logon Attempts",
+      "assessment_label": "AC-07_ODP[03]",
+      "alt_identifier": "ac-7_prm_3",
+      "how_many": "one-or-more",
+      "choices": [
+        "lock the account or node for {{ insert: param, ac-07_odp.04 }} ",
+        "lock the account or node until released by an administrator",
+        "delay next logon prompt per {{ insert: param, ac-07_odp.05 }} ",
+        "notify system administrator",
+        "take other {{ insert: param, ac-07_odp.06 }} "
+      ],
+      "depends_on": [
+        "ac-07_odp.04",
+        "ac-07_odp.05",
+        "ac-07_odp.06"
+      ]
+    },
+    {
+      "select_id": "ac-20_odp.01",
+      "selected": null,
+      "control_id": "ac-20",
+      "control_title": "Use of External Systems",
+      "assessment_label": "AC-20_ODP[01]",
+      "alt_identifier": "ac-20_prm_1",
+      "how_many": "one-or-more",
+      "choices": [
+        "establish {{ insert: param, ac-20_odp.02 }} ",
+        "identify {{ insert: param, ac-20_odp.03 }} "
+      ],
+      "depends_on": [
+        "ac-20_odp.02",
+        "ac-20_odp.03"
+      ]
+    },
+    {
+      "select_id": "at-01_odp.03",
+      "selected": null,
+      "control_id": "at-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "AT-01_ODP[03]",
+      "alt_identifier": "at-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "au-01_odp.03",
+      "selected": null,
+      "control_id": "au-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "AU-01_ODP[03]",
+      "alt_identifier": "au-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "ca-01_odp.03",
+      "selected": null,
+      "control_id": "ca-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "CA-01_ODP[03]",
+      "alt_identifier": "ca-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "ca-03_odp.01",
+      "selected": null,
+      "control_id": "ca-3",
+      "control_title": "Information Exchange",
+      "assessment_label": "CA-03_ODP[01]",
+      "alt_identifier": "ca-3_prm_1",
+      "how_many": "one-or-more",
+      "choices": [
+        "interconnection security agreements",
+        "information exchange security agreements",
+        "memoranda of understanding or agreement",
+        "service level agreements",
+        "user agreements",
+        "non-disclosure agreements",
+        "{{ insert: param, ca-03_odp.02 }} "
+      ],
+      "depends_on": [
+        "ca-03_odp.02"
+      ]
+    },
+    {
+      "select_id": "cm-01_odp.03",
+      "selected": null,
+      "control_id": "cm-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "CM-01_ODP[03]",
+      "alt_identifier": "cm-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "cp-01_odp.03",
+      "selected": null,
+      "control_id": "cp-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "CP-01_ODP[03]",
+      "alt_identifier": "cp-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "ia-01_odp.03",
+      "selected": null,
+      "control_id": "ia-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "IA-01_ODP[03]",
+      "alt_identifier": "ia-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "ia-02.08_odp",
+      "selected": null,
+      "control_id": "ia-2.8",
+      "control_title": "Access to Accounts — Replay Resistant",
+      "assessment_label": "IA-02(08)_ODP",
+      "alt_identifier": "ia-2.8_prm_1",
+      "how_many": "one-or-more",
+      "choices": [
+        "privileged accounts",
+        "non-privileged accounts"
+      ]
+    },
+    {
+      "select_id": "ir-01_odp.03",
+      "selected": null,
+      "control_id": "ir-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "IR-01_ODP[03]",
+      "alt_identifier": "ir-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "ma-01_odp.03",
+      "selected": null,
+      "control_id": "ma-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "MA-01_ODP[03]",
+      "alt_identifier": "ma-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "mp-01_odp.03",
+      "selected": null,
+      "control_id": "mp-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "MP-01_ODP[03]",
+      "alt_identifier": "mp-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "mp-07_odp.02",
+      "selected": null,
+      "control_id": "mp-7",
+      "control_title": "Media Use",
+      "assessment_label": "MP-07_ODP[02]",
+      "alt_identifier": "mp-7_prm_1",
+      "how_many": "one",
+      "choices": [
+        "restrict",
+        "prohibit"
+      ]
+    },
+    {
+      "select_id": "pe-01_odp.03",
+      "selected": null,
+      "control_id": "pe-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "PE-01_ODP[03]",
+      "alt_identifier": "pe-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "pe-03_odp.02",
+      "selected": null,
+      "control_id": "pe-3",
+      "control_title": "Physical Access Control",
+      "assessment_label": "PE-03_ODP[02]",
+      "alt_identifier": "pe-3_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "{{ insert: param, pe-03_odp.03 }} ",
+        "guards"
+      ],
+      "depends_on": [
+        "pe-03_odp.03"
+      ]
+    },
+    {
+      "select_id": "pe-14_odp.01",
+      "selected": null,
+      "control_id": "pe-14",
+      "control_title": "Environmental Controls",
+      "assessment_label": "PE-14_ODP[01]",
+      "alt_identifier": "pe-14_prm_1",
+      "how_many": "one-or-more",
+      "choices": [
+        "temperature",
+        "humidity",
+        "pressure",
+        "radiation",
+        "{{ insert: param, pe-14_odp.02 }} "
+      ],
+      "depends_on": [
+        "pe-14_odp.02"
+      ]
+    },
+    {
+      "select_id": "pl-01_odp.03",
+      "selected": null,
+      "control_id": "pl-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "PL-01_ODP[03]",
+      "alt_identifier": "pl-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "pl-04_odp.02",
+      "selected": null,
+      "control_id": "pl-4",
+      "control_title": "Rules of Behavior",
+      "assessment_label": "PL-04_ODP[02]",
+      "alt_identifier": "pl-4_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "{{ insert: param, pl-04_odp.03 }} ",
+        "when the rules are revised or updated"
+      ],
+      "depends_on": [
+        "pl-04_odp.03"
+      ]
+    },
+    {
+      "select_id": "ps-01_odp.03",
+      "selected": null,
+      "control_id": "ps-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "PS-01_ODP[03]",
+      "alt_identifier": "ps-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "ra-01_odp.03",
+      "selected": null,
+      "control_id": "ra-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "RA-01_ODP[03]",
+      "alt_identifier": "ra-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "ra-03_odp.01",
+      "selected": null,
+      "control_id": "ra-3",
+      "control_title": "Risk Assessment",
+      "assessment_label": "RA-03_ODP[01]",
+      "alt_identifier": "ra-3_prm_1",
+      "how_many": "one",
+      "choices": [
+        "security and privacy plans",
+        "risk assessment report",
+        "{{ insert: param, ra-03_odp.02 }} "
+      ],
+      "depends_on": [
+        "ra-03_odp.02"
+      ]
+    },
+    {
+      "select_id": "ra-05.02_odp.01",
+      "selected": null,
+      "control_id": "ra-5.2",
+      "control_title": "Update Vulnerabilities to Be Scanned",
+      "assessment_label": "RA-05(02)_ODP[01]",
+      "alt_identifier": "ra-5.2_prm_1",
+      "how_many": "one-or-more",
+      "choices": [
+        "{{ insert: param, ra-05.02_odp.02 }} ",
+        "prior to a new scan",
+        "when new vulnerabilities are identified and reported"
+      ],
+      "depends_on": [
+        "ra-05.02_odp.02"
+      ]
+    },
+    {
+      "select_id": "sa-01_odp.03",
+      "selected": null,
+      "control_id": "sa-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "SA-01_ODP[03]",
+      "alt_identifier": "sa-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "sa-04_odp.01",
+      "selected": null,
+      "control_id": "sa-4",
+      "control_title": "Acquisition Process",
+      "assessment_label": "SA-04_ODP[01]",
+      "alt_identifier": "sa-4_prm_1",
+      "how_many": "one-or-more",
+      "choices": [
+        "standardized contract language",
+        "{{ insert: param, sa-04_odp.02 }} "
+      ],
+      "depends_on": [
+        "sa-04_odp.02"
+      ]
+    },
+    {
+      "select_id": "sa-22_odp.01",
+      "selected": null,
+      "control_id": "sa-22",
+      "control_title": "Unsupported System Components",
+      "assessment_label": "SA-22_ODP[01]",
+      "alt_identifier": "sa-22_prm_1",
+      "how_many": "one-or-more",
+      "choices": [
+        "in-house support",
+        "{{ insert: param, sa-22_odp.02 }} "
+      ],
+      "depends_on": [
+        "sa-22_odp.02"
+      ]
+    },
+    {
+      "select_id": "sc-01_odp.03",
+      "selected": null,
+      "control_id": "sc-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "SC-01_ODP[03]",
+      "alt_identifier": "sc-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business-process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "sc-05_odp.02",
+      "selected": null,
+      "control_id": "sc-5",
+      "control_title": "Denial-of-service Protection",
+      "assessment_label": "SC-05_ODP[02]",
+      "alt_identifier": "sc-5_prm_1",
+      "how_many": "one",
+      "choices": [
+        "protect against",
+        "limit"
+      ]
+    },
+    {
+      "select_id": "sc-07_odp",
+      "selected": null,
+      "control_id": "sc-7",
+      "control_title": "Boundary Protection",
+      "assessment_label": "SC-07_ODP",
+      "alt_identifier": "sc-7_prm_1",
+      "how_many": "one",
+      "choices": [
+        "physically",
+        "logically"
+      ]
+    },
+    {
+      "select_id": "si-01_odp.03",
+      "selected": null,
+      "control_id": "si-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "SI-01_ODP[03]",
+      "alt_identifier": "si-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "si-03_odp.01",
+      "selected": null,
+      "control_id": "si-3",
+      "control_title": "Malicious Code Protection",
+      "assessment_label": "SI-03_ODP[01]",
+      "alt_identifier": "si-3_prm_1",
+      "how_many": "one-or-more",
+      "choices": [
+        "signature-based",
+        "non-signature-based"
+      ]
+    },
+    {
+      "select_id": "si-03_odp.03",
+      "selected": null,
+      "control_id": "si-3",
+      "control_title": "Malicious Code Protection",
+      "assessment_label": "SI-03_ODP[03]",
+      "alt_identifier": "si-3_prm_3",
+      "how_many": "one-or-more",
+      "choices": [
+        "endpoint",
+        "network entry and exit points"
+      ]
+    },
+    {
+      "select_id": "si-03_odp.04",
+      "selected": null,
+      "control_id": "si-3",
+      "control_title": "Malicious Code Protection",
+      "assessment_label": "SI-03_ODP[04]",
+      "alt_identifier": "si-3_prm_4",
+      "how_many": "one-or-more",
+      "choices": [
+        "block malicious code",
+        "quarantine malicious code",
+        "take {{ insert: param, si-03_odp.05 }} "
+      ],
+      "depends_on": [
+        "si-03_odp.05"
+      ]
+    },
+    {
+      "select_id": "si-04_odp.05",
+      "selected": null,
+      "control_id": "si-4",
+      "control_title": "System Monitoring",
+      "assessment_label": "SI-04_ODP[05]",
+      "alt_identifier": "si-4_prm_5",
+      "how_many": "one-or-more",
+      "choices": [
+        "as needed",
+        "{{ insert: param, si-04_odp.06 }} "
+      ],
+      "depends_on": [
+        "si-04_odp.06"
+      ]
+    },
+    {
+      "select_id": "si-05_odp.02",
+      "selected": null,
+      "control_id": "si-5",
+      "control_title": "Security Alerts, Advisories, and Directives",
+      "assessment_label": "SI-05_ODP[02]",
+      "alt_identifier": "si-5_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "{{ insert: param, si-05_odp.03 }} ",
+        "{{ insert: param, si-05_odp.04 }} ",
+        "{{ insert: param, si-05_odp.05 }} "
+      ],
+      "depends_on": [
+        "si-05_odp.03",
+        "si-05_odp.04",
+        "si-05_odp.05"
+      ]
+    },
+    {
+      "select_id": "sr-01_odp.03",
+      "selected": null,
+      "control_id": "sr-1",
+      "control_title": "Policy and Procedures",
+      "assessment_label": "SR-01_ODP[03]",
+      "alt_identifier": "sr-1_prm_2",
+      "how_many": "one-or-more",
+      "choices": [
+        "organization-level",
+        "mission/business process-level",
+        "system-level"
+      ]
+    },
+    {
+      "select_id": "sr-03_odp.04",
+      "selected": null,
+      "control_id": "sr-3",
+      "control_title": "Supply Chain Controls and Processes",
+      "assessment_label": "SR-03_ODP[04]",
+      "alt_identifier": "sr-3_prm_4",
+      "how_many": "one-or-more",
+      "choices": [
+        "security and privacy plans",
+        "supply chain risk management plan",
+        "{{ insert: param, sr-03_odp.05 }} "
+      ],
+      "depends_on": [
+        "sr-03_odp.05"
+      ]
+    },
+    {
+      "select_id": "sr-08_odp.01",
+      "selected": null,
+      "control_id": "sr-8",
+      "control_title": "Notification Agreements",
+      "assessment_label": "SR-08_ODP[01]",
+      "alt_identifier": "sr-8_prm_1",
+      "how_many": "one-or-more",
+      "choices": [
+        "notification of supply chain compromises",
+        "{{ insert: param, sr-08_odp.02 }} "
+      ],
+      "depends_on": [
+        "sr-08_odp.02"
+      ]
+    },
+    {
+      "select_id": "sr-10_odp.02",
+      "selected": null,
+      "control_id": "sr-10",
+      "control_title": "Inspection of Systems or Components",
+      "assessment_label": "SR-10_ODP[02]",
+      "alt_identifier": "sr-10_prm_1",
+      "how_many": "one-or-more",
+      "choices": [
+        "at random",
+        "at {{ insert: param, sr-10_odp.03 }} ",
+        "upon {{ insert: param, sr-10_odp.04 }} "
+      ],
+      "depends_on": [
+        "sr-10_odp.03",
+        "sr-10_odp.04"
+      ]
+    },
+    {
+      "select_id": "sr-11_odp.01",
+      "selected": null,
+      "control_id": "sr-11",
+      "control_title": "Component Authenticity",
+      "assessment_label": "SR-11_ODP[01]",
+      "alt_identifier": "sr-11_prm_1",
+      "how_many": "one-or-more",
+      "choices": [
+        "source of counterfeit component",
+        "{{ insert: param, sr-11_odp.02 }} ",
+        "{{ insert: param, sr-11_odp.03 }} "
+      ],
+      "depends_on": [
+        "sr-11_odp.02",
+        "sr-11_odp.03"
+      ]
+    }
+  ]
+}

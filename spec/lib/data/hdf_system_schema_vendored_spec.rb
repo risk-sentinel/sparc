@@ -22,12 +22,16 @@ RSpec.describe Hdf::SystemSchema do
       expect(bytes.bytesize).to eq(provenance.dig("files", file, "bytes"))
     end
 
+    # The sidecar must record the PINNED release as its source, so moving the
+    # pin without re-fetching the schema fails here. The schema's own version
+    # is its $id, which need not equal the CLI's: hdf-libs 3.7.2 embeds the
+    # 3.7.0 schema unchanged.
     it "is the hdf-system schema of the pinned hdf-libs release" do
       expect(schema["$schema"]).to eq("https://json-schema.org/draft/2020-12/schema")
       expect(schema["$id"]).to eq("https://mitre.github.io/hdf-libs/schemas/hdf-system/v#{described_class::VERSION}")
       expect(provenance["schema_id"]).to eq(schema["$id"])
       expect(provenance["source_tag"]).to eq("v#{HdfRunner::PINNED_VERSION}")
-      expect(described_class::VERSION).to eq(HdfRunner::PINNED_VERSION)
+      expect(provenance.dig("files", file, "source_url")).to include("/v#{HdfRunner::PINNED_VERSION}/")
     end
 
     it "is self-contained (every primitive embedded), so validation needs no network" do
