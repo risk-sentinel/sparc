@@ -346,12 +346,12 @@ Re-measured against the live repository, not carried forward. **575 issues**;
 | Open, on `ci.v0.0.1` / `v1.16.0` / `v1.16.1` | **0** — all shipped (22, 87 and 22 issues) |
 | Open, on `v1.17.0` | **0** — shipped 2026-10-02 (#1200 #1202 #1204 closed by PR #1201) |
 | Open, on `v1.17.1` | **0** — shipped 2026-10-16 (#1217 #1218 closed by PR #1219) |
-| Open, on `v1.18.0` | **1** — #1109 (AJ; milestone created 2026-09-29, owner) |
+| Open, on `v1.18.0` | **2** — #1109 (AJ; milestone created 2026-09-29, owner), #1227 (service accounts as their own model, design; filed 2026-10-17, owner) |
 | Open, on `v1.17.2` | **15** — #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208 #1223 #1224 — bundled in *Phase 20* above |
 | **Open, on NO milestone** | **21** (22 on 10-17 before #1223 moved to v1.17.2, 21 on 10-16, 19 on 09-30 before #1205 / #1206, 18 on 09-29 before #1198, 19 on 09-22, 27 on 09-20, 24 on 09-17, 22 on 09-05, 25 on 09-03, 10 on 08-25) — see below |
 
-The reconciliation, from one grouped query on 2026-10-17, after **#1223** moved to v1.17.2 (owner) and PR #1225 merged:
-**0 + 0 + 15 + 1 + 21 = 37, and 544 + 37 = 581** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Earlier the same day:
+The reconciliation, from one grouped query on 2026-10-17, after **#1223** moved to v1.17.2 (owner), PR #1225 merged and **#1227** filed onto v1.18.0:
+**0 + 0 + 15 + 2 + 21 = 38, and 544 + 38 = 582** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Earlier the same day:
 **0 + 0 + 14 + 1 + 22 = 37, and 544 + 37 = 581** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Since the previous pass: **#1223** (rolling deploy: the previous release fails the new release's deferred data migrations, seen in the sparc-iac v1.16.3 → v1.17.1 upgrade) filed with no milestone; **#1224** (require OIDC sign-in in Chrome before an image can be published) filed onto v1.17.2, to be worked **last** in the wave after several PR cycles of the local gate (owner). Before that, on 2026-10-16 (after the v1.17.1 tag):
 **0 + 0 + 13 + 1 + 21 = 35, and 544 + 35 = 579** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Since the previous pass: **#1218** (Rev 5 parameter ids) filed onto v1.17.1, and **#1217** and **#1218** closed by PR #1219. Before that, on 2026-10-16:
 **0 + 1 + 13 + 1 + 21 = 36, and 542 + 36 = 578** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Since 10-01: **#1200, #1202, #1204** closed by PR #1201 (v1.17.0 shipped 10-02); **#1217** (OIDC sign-in, v1.17.0 regression) filed onto v1.17.1; the 13 planned v1.17.1 issues moved to **v1.17.2** (owner, 10-16). Before that, on 10-01:
@@ -468,7 +468,7 @@ whenever the milestone changes**: it last passed on 09-17, and was false by 09-2
 | 17 | **Complete** | `ci.v0.0.1` — evidence and gates | **22 issues, 0 open** (+ 8 PRs on the milestone page) | Closed **2026-08-30**. Detail archived in [`implemented.md`](implemented.md) |
 | 18 | **Complete** | v1.16.1 — the patch release (+ v1.16.2 / v1.16.3 hotfixes) | **22 issues, 0 open. Tagged `v1.16.1` 2026-09-17**; v1.16.2 and v1.16.3 tagged 2026-09-18 | Bundles Y → Z → AA → AB → AC → AD. Detail, and the v1.16.2 un-upgradable record, archived in [`implemented.md`](implemented.md) |
 | 19 | **Complete** | v1.17.0 — unblock Horizon, fix what customers hit (+ v1.17.1 hotfix) | **0 open, 28 closed. Tagged `v1.17.0` 2026-10-02.** v1.17.1 hotfix (#1217 OIDC sign-in, #1218 Rev 5 parameter ids) tagged 2026-10-16, 0 open, 2 closed | Bundles AE–AN delivered; AJ (#1109) moved to v1.18.0. Detail stays in Phase 19 until archived |
-| 21 | Planned | v1.18.0 — created 2026-09-29 (owner) | **1 open**: #1109 (AJ, the inline-style tail blocking removal of `style-src 'unsafe-inline'`) | 3–4d (re-measured: ~300 sites, 45 in JavaScript) |
+| 21 | Planned | v1.18.0 — created 2026-09-29 (owner) | **2 open**: #1109 (AJ, the inline-style tail blocking removal of `style-src 'unsafe-inline'`), #1227 (service accounts as their own model, design first) | 3–4d (re-measured: ~300 sites, 45 in JavaScript) |
 | 20 | **Next** | v1.17.2 — the deferred wave (milestone was `v1.17.1` until 2026-10-16, owner) | **15 open, 0 closed** (2026-10-17): #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208 #1223 #1224. **Bundled 2026-10-17 (owner: land in about a week): AP → AQ → AR → AS → AT (#1224, last), tag by 2026-10-24** — see *Phase 20*. Joined since 09-29: **#1203** (AO, per-boundary SSP/SAP/SAR representation — design, NIST-validate first; moved from v1.17.0), **#1207** (PIV-stack page-load timeouts) and **#1208** (overdue POA&M risks refused by the HDF amendments translation). Sonar backlog, gates that must mean something, two UI tails, **#1176** (service accounts on non-expiring static tokens; broker short-lived IdP credentials), and **#1196** (a confidence-score for control mappings — for discussion) | ~9–10d of work, tag by **2026-10-24** |
 
 <!-- markdownlint-enable MD013 -->
