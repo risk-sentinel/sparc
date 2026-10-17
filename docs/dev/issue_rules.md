@@ -300,7 +300,13 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
     `./Dockerfile` and self-seeds `SPARC_SEED_DEMO=true`), mint an `ApiToken`,
     then run **both** the full `tests/api` endpoint suite **and** the
     `tests/ui-smoke` Playwright suite against `localhost` (Chrome, zero CSP
-    violations). **Do NOT use the default `docker compose up`** — that builds the
+    violations). **OIDC sign-in is part of every run:** start the stack with
+    `-f dev/ubi9/compose.oidc-okta.yaml` and run ui-smoke with
+    `SPARC_SMOKE_OIDC_ISSUER` set to the container's issuer and
+    `SPARC_SMOKE_REQUIRE_POSTURES` including `oidc_idp_redirect`, so a stack
+    without OIDC fails instead of skipping. v1.17.0 shipped with every OIDC
+    sign-in broken (#1217) because no gate enabled OIDC and the #593 login test
+    aborts the IdP request before it can fail. **Do NOT use the default `docker compose up`** — that builds the
     Debian dev image (`Dockerfile_debian`), which is not what ships and hides
     OS-layer / locale / native-lib regressions (see #750). This catches
     boot/zeitwerk, routing, CSP, and prod-base regressions the rspec suite

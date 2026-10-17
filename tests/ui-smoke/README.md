@@ -179,6 +179,14 @@ than data — OIDC not configured, no consent banner, `SPARC_REQUIRE_DOCUMENT_AP
 off, PIV mTLS proxy absent, FIDO2 off, missing tokens. Those need the instance
 configured, not seeded, and no amount of fixture data will close them.
 
+**OIDC is not optional on the local gate (#1217).** `test_oidc_idp_redirect.py`
+(posture `oidc_idp_redirect`) clicks the OIDC sign-in button in Chrome and
+asserts the browser lands on the issuer's authorize endpoint, so it proves
+SPARC fetched discovery through its real HTTP stack. Start the stack with
+`-f dev/ubi9/compose.oidc-okta.yaml` (Okta's public issuer, throwaway client id,
+no credentials), then set `SPARC_SMOKE_OIDC_ISSUER` to the same issuer and put
+`oidc_idp_redirect` in `SPARC_SMOKE_REQUIRE_POSTURES`.
+
 See `docs/dev/reference_estate.md` for tiers, purge, the production posture and
 the committed OSCAL.
 

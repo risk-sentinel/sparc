@@ -267,7 +267,10 @@ def pytest_runtest_logreport(report):
     for name in postures:
         if report.skipped:
             _POSTURE_SKIPS.setdefault(name, []).append(report.nodeid)
-        elif report.passed:
+        # Only the CALL phase proves anything. A skipif skips in setup, so skips
+        # are counted there, but setup also "passes" for a test whose body then
+        # FAILS — counting that reported a failed check as PROVEN.
+        elif report.passed and report.when == "call":
             _POSTURE_PASSES.setdefault(name, []).append(report.nodeid)
 
 
