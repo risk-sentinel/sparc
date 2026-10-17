@@ -1,0 +1,25 @@
+# Local gate leg: OIDC sign-in in Chrome against a real Okta issuer (#1217).
+#
+# v1.17.0 shipped with every OIDC sign-in broken, and no gate enabled OIDC, so
+# nothing noticed. This overlay registers the provider against Okta's public
+# `default` authorization server. Discovery is public, so the client id and
+# secret are throwaways: the check only needs SPARC to fetch discovery through
+# its real HTTP stack and redirect the browser to Okta's authorize endpoint.
+# Nobody signs in, and tests/ui-smoke/test_oidc_idp_redirect.py aborts the
+# request at Okta before the page loads.
+#
+# Usage (add after the other overlays, then run the test with the same issuer):
+#   docker compose -f docker-compose.ubi9.yaml ... -f dev/ubi9/compose.oidc-okta.yaml \
+#     up -d --no-build web caddy redis
+#   SPARC_SMOKE_OIDC_ISSUER=https://okta.okta.com/oauth2/default \
+#     uv run pytest test_oidc_idp_redirect.py --browser chromium
+#
+# A real tenant works the same way: put its issuer here and in
+# SPARC_SMOKE_OIDC_ISSUER, with its credentials from your .env, never this file.
+services:
+  web:
+    environment:
+      SPARC_ENABLE_OIDC: "true"
+      SPARC_OIDC_ISSUER_URL: https://okta.okta.com/oauth2/default
+      SPARC_OIDC_CLIENT_ID: sparc-local-oidc-check
+      SPARC_OIDC_CLIENT_SECRET: not-a-secret-discovery-only  # gitleaks:allow
