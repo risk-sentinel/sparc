@@ -5,7 +5,17 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-10-16 — **`v1.17.1` shipped 2026-10-16** (PR #1219, tag on `cfa7935f`; #1217 OIDC sign-in, #1218 Rev 5 parameter ids and worksheets, image findings, hdf-libs 3.7.2). No branch in flight; the hot files it held (`Gemfile` / `Gemfile.lock`, `app/models/sparc_config.rb`, `app/services/baseline_parameter_service.rb`, `app/services/odp_import_service.rb`, `Dockerfile`, the hdf pins in `.github/workflows/*.yml`) are free. **`v1.17.0` shipped 2026-10-02.**
+**Last updated:** 2026-10-17 — **`v1.17.2` bundled** (see `Implementation_plan.md` Phase 20). The bundles run in sequence, AP → AQ → AR → AS → AT, one branch at a time. Hot files by bundle:
+
+- **AP:** `app/services/hdf_oscal_translation_service.rb`, `DeferredDataMigrationRunner` and its job, `app/assets/stylesheets/sparc-theme.css`.
+- **AQ:** `app/controllers/api_tokens_controller.rb`, `ApiToken`, `app/models/sparc_config.rb`.
+- **AR:** `app/models/sparc_config.rb` and `docs/ENVIRONMENT_VARIABLES.md` (starts after AQ merges), Sonar configuration, the files its findings touch.
+- **AS:** `tests/ui-smoke/`, `tests/api/`, `config/importmap.rb` and the layouts, if CDN assets are vendored.
+- **AT:** `.github/workflows/build-sign-publish.yml`.
+
+PR #1225 (OIDC in the local gate) merged 2026-10-17.
+
+Previously, 2026-10-16 — **`v1.17.1` shipped 2026-10-16** (PR #1219, tag on `cfa7935f`; #1217 OIDC sign-in, #1218 Rev 5 parameter ids and worksheets, image findings, hdf-libs 3.7.2). No branch in flight; the hot files it held (`Gemfile` / `Gemfile.lock`, `app/models/sparc_config.rb`, `app/services/baseline_parameter_service.rb`, `app/services/odp_import_service.rb`, `Dockerfile`, the hdf pins in `.github/workflows/*.yml`) are free. **`v1.17.0` shipped 2026-10-02.**
 
 ---
 
