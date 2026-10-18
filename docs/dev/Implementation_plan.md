@@ -107,8 +107,18 @@ deferred; the owner approved its deviation on the PR. See
 ### Phase 20: `v1.17.2` — the deferred wave, in bundles (target: tag by 2026-10-24)
 
 **Owner, 2026-10-17:** work v1.17.2 in bundles and land it in about a week.
-The milestone holds **15 open issues** (re-measured 2026-10-17): #1046 #1063
-#1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208 #1223 #1224.
+The milestone holds **16 open issues** (re-measured 2026-10-18): #1046 #1063
+#1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208 #1223 #1224 #1228.
+
+**#1228 joined on 2026-10-18 (owner):** NIST fixed SA-15(13), SA-24 and
+SI-02(07) on `usnistgov/oscal-content`'s `develop` branch (their PRs #345,
+#346, #347), unreleased. SPARC's bundled catalog carries all of those errors,
+including SA-15(13) showing SA-15(12)'s requirement. The owner's call: take
+the `develop` content now, flagged as pre-release, so the switch to NIST's
+release is caught when it ships, and add catalog integrity checks (label names
+its own control, `assessment-for` stays inside its own control,
+`activity-uuid` / `task-uuid` resolve). **Its bundle is the owner's call;**
+it needs a deferred data migration.
 
 **Fifteen issues do not fit in a week as filed.** Several are large on their own:
 - #1203 is a design to validate against NIST before any code.
@@ -347,10 +357,11 @@ Re-measured against the live repository, not carried forward. **575 issues**;
 | Open, on `v1.17.0` | **0** — shipped 2026-10-02 (#1200 #1202 #1204 closed by PR #1201) |
 | Open, on `v1.17.1` | **0** — shipped 2026-10-16 (#1217 #1218 closed by PR #1219) |
 | Open, on `v1.18.0` | **2** — #1109 (AJ; milestone created 2026-09-29, owner), #1227 (service accounts as their own model, design; filed 2026-10-17, owner) |
-| Open, on `v1.17.2` | **15** — #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208 #1223 #1224 — bundled in *Phase 20* above |
+| Open, on `v1.17.2` | **16** — #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208 #1223 #1224 #1228 — bundled in *Phase 20* above |
 | **Open, on NO milestone** | **21** (22 on 10-17 before #1223 moved to v1.17.2, 21 on 10-16, 19 on 09-30 before #1205 / #1206, 18 on 09-29 before #1198, 19 on 09-22, 27 on 09-20, 24 on 09-17, 22 on 09-05, 25 on 09-03, 10 on 08-25) — see below |
 
-The reconciliation, from one grouped query on 2026-10-17, after **#1223** moved to v1.17.2 (owner), PR #1225 merged and **#1227** filed onto v1.18.0:
+The reconciliation, from one grouped query on 2026-10-18, after **#1228** was filed onto v1.17.2 (owner):
+**0 + 0 + 16 + 2 + 21 = 39, and 544 + 39 = 583** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Before that, on 2026-10-17, after **#1223** moved to v1.17.2 (owner), PR #1225 merged and **#1227** filed onto v1.18.0:
 **0 + 0 + 15 + 2 + 21 = 38, and 544 + 38 = 582** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Earlier the same day:
 **0 + 0 + 14 + 1 + 22 = 37, and 544 + 37 = 581** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Since the previous pass: **#1223** (rolling deploy: the previous release fails the new release's deferred data migrations, seen in the sparc-iac v1.16.3 → v1.17.1 upgrade) filed with no milestone; **#1224** (require OIDC sign-in in Chrome before an image can be published) filed onto v1.17.2, to be worked **last** in the wave after several PR cycles of the local gate (owner). Before that, on 2026-10-16 (after the v1.17.1 tag):
 **0 + 0 + 13 + 1 + 21 = 35, and 544 + 35 = 579** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Since the previous pass: **#1218** (Rev 5 parameter ids) filed onto v1.17.1, and **#1217** and **#1218** closed by PR #1219. Before that, on 2026-10-16:
