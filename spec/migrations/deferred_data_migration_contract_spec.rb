@@ -53,7 +53,7 @@ RSpec.describe "Deferred data migration contract" do
 
     deferred_migration_files.each do |path|
       name = class_name_for(path)
-      resolved = runner.send(:resolve_migration_class, name)
+      resolved, = runner.send(:resolve_migration_class, name)
 
       expect(resolved).to be_present,
         "#{name} (#{File.basename(path)}) cannot be resolved by the runner, so it would be " \
@@ -79,7 +79,7 @@ RSpec.describe "Deferred data migration contract" do
     runner = DeferredDataMigrationRunner.new
 
     deferred_migration_files.each do |path|
-      klass = runner.send(:resolve_migration_class, class_name_for(path))
+      klass, = runner.send(:resolve_migration_class, class_name_for(path))
       expect(klass.data_migration_version).to be_present,
         "#{klass} must declare `data_migration_version` for operators to correlate runs"
     end

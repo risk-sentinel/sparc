@@ -96,6 +96,9 @@ module DeferredDataMigration
     DataMigrationRun.find_or_create_by!(name: name) do |run|
       run.version = version
       run.status  = "pending"
+      # #1223 — so an OLDER release's runner can see this row is not its own.
+      # Guarded: a database migrated by an older release lacks the column.
+      run.registered_release = SparcConfig::VERSION if run.has_attribute?(:registered_release)
     end
   end
 end

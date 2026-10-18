@@ -27,10 +27,37 @@ class DataMigrationRun < ApplicationRecord
 
   scope :recent, -> { order(created_at: :desc) }
 
+  # What a release before #1223 wrote when it could not load a class: the bare
+  # form, nothing after it. A rolling deploy produced it on rows the NEW release
+  # can run perfectly well. Current releases always say why after a colon.
+  LEGACY_NOT_LOADABLE = /\AClass \S+ not loadable\z/
+
+  # #1223 — rows a runner on THIS release should take up between boots:
+  # pending, or failed by an older release's worker during a rolling deploy.
+  # Not a genuine failure (those retry once per boot, as before), and not a row
+  # a newer release registered.
+  def self.awaiting_this_release
+    where(status: %w[pending failed]).select do |run|
+      (run.pending? || run.error_message.to_s.match?(LEGACY_NOT_LOADABLE)) && !run.registered_by_newer_release?
+    end
+  end
+
   def pending?   = status == "pending"
   def running?   = status == "running"
   def completed? = status == "completed"
   def failed?    = status == "failed"
+
+  # #1223 — registered by a release NEWER than this one. The class a container
+  # cannot load is then not a fault in the migration, only a sign the container
+  # is older than the row. Unknown (nil: registered before the column existed,
+  # or a database an older release migrated) is not newer.
+  def registered_by_newer_release?
+    return false unless has_attribute?(:registered_release) && registered_release.present?
+
+    Gem::Version.new(registered_release) > Gem::Version.new(SparcConfig::VERSION)
+  rescue ArgumentError
+    false
+  end
 
   # Total wall-clock time the runner spent on this migration,
   # if it has completed (or failed). Nil while pending / running.

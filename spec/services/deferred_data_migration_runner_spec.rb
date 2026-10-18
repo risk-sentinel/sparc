@@ -230,4 +230,101 @@ RSpec.describe DeferredDataMigrationRunner do
       expect(parsed.find { |p| p["phase"] == "completed" }["name"]).to eq("SpecDeferredA")
     end
   end
+
+  # #1223 — a rolling deploy runs the previous release beside the new one, on
+  # one database and one queue.
+  describe "rolling deploys (#1223)" do
+    let(:release) { SparcConfig::VERSION }
+    let(:newer)   { Gem::Version.new(release).bump.to_s + ".0" }
+    let(:older)   { "1.0.0" }
+
+    def row(name, registered_release:, status: "pending", error_message: nil)
+      DataMigrationRun.create!(name: name, status: status, registered_release: registered_release,
+                               error_message: error_message)
+    end
+
+    it "stamps a registered row with the release that registered it" do
+      define_migration(:SpecDeferredA) { def up = defer_data_migration { :ok } }
+      SpecDeferredA.new.up
+
+      expect(DataMigrationRun.find_by(name: "SpecDeferredA").registered_release).to eq(release)
+    end
+
+    describe "a class this container cannot load" do
+      it "leaves a row from a NEWER release pending, for that release to run" do
+        row("FromTheNextRelease", registered_release: newer)
+        logs = []
+        allow(Rails.logger).to receive(:info) { |m| logs << m }
+
+        described_class.run_all_pending
+
+        run = DataMigrationRun.find_by(name: "FromTheNextRelease")
+        expect(run.status).to eq("pending")
+        expect(run.error_message).to be_nil
+        expect(logs.join).to include('"phase":"deferred_to_newer_release"')
+      end
+
+      # Archived: the file is gone from the newest release too, so "pending"
+      # would mean waiting forever.
+      it "fails a row from this release or an older one, saying why" do
+        row("ArchivedFromThisRelease", registered_release: release)
+        row("ArchivedFromAnOlderRelease", registered_release: older)
+
+        described_class.run_all_pending
+
+        %w[ArchivedFromThisRelease ArchivedFromAnOlderRelease].each do |name|
+          run = DataMigrationRun.find_by(name: name)
+          expect(run.status).to eq("failed")
+          expect(run.error_message).to match(/not loadable: no migration file in this release/)
+        end
+      end
+
+      it "fails a row whose release is unknown, as before" do
+        row("RegisteredBeforeTheColumn", registered_release: nil)
+
+        described_class.run_all_pending
+
+        expect(DataMigrationRun.find_by(name: "RegisteredBeforeTheColumn").status).to eq("failed")
+      end
+
+      # A file that is THERE but raises is a fault, whoever registered it.
+      it "fails a row whose migration file raises on load, even from a newer release" do
+        Dir.mktmpdir do |dir|
+          File.write(File.join(dir, "20990101000000_spec_deferred_broken.rb"), "raise 'broken on load'\n")
+          allow(ActiveRecord::Migrator).to receive(:migrations_paths).and_return([ dir ])
+          row("SpecDeferredBroken", registered_release: newer)
+
+          described_class.run_all_pending
+        end
+
+        run = DataMigrationRun.find_by(name: "SpecDeferredBroken")
+        expect(run.status).to eq("failed")
+        expect(run.error_message).to match(/its migration file failed to load/)
+      end
+    end
+
+    describe ".enqueue_after_boot" do
+      include ActiveJob::TestHelper
+
+      before { row("Waiting", registered_release: release) }
+
+      # The entrypoint's db:prepare / reconcile / bootstrap / seed boots.
+      it "does not enqueue from a task, runner or console boot" do
+        expect(described_class.enqueue_after_boot(server: false)).to eq(:not_server)
+        expect(enqueued_jobs).to be_empty
+      end
+
+      it "enqueues from the web server boot when rows are waiting" do
+        expect(described_class.enqueue_after_boot(server: true)).to eq(:enqueued)
+        expect(enqueued_jobs.map { |j| j["job_class"] }).to eq([ "DeferredDataMigrationJob" ])
+      end
+
+      it "does not enqueue when nothing is waiting" do
+        DataMigrationRun.delete_all
+
+        expect(described_class.enqueue_after_boot(server: true)).to eq(:nothing_pending)
+        expect(enqueued_jobs).to be_empty
+      end
+    end
+  end
 end

@@ -6,8 +6,16 @@
 # in production is enabled in-Puma via SOLID_QUEUE_IN_PUMA=true per
 # bin/docker-entrypoint).
 #
-# Guards:
+# Guards (in DeferredDataMigrationRunner.enqueue_after_boot, where they are
+# specced):
 #   - Skip in test env (specs control enqueue explicitly)
+#   - #1223: enqueue from the WEB SERVER boot only. Every `bin/rails` task
+#     boots the app too, and bin/docker-entrypoint runs four before Puma
+#     starts (db:prepare, db:reconcile_schema, sparc:bootstrap_admin,
+#     db:seed). Those containers have no worker yet, so during a rolling
+#     deploy only the PREVIOUS release could take each job — and it marked the
+#     new release's rows failed, about every 3 seconds. That also covers the
+#     console, which the old `Rails::Console` check guarded.
 #   - Skip when DB isn't ready (e.g., rails console with no DB,
 #     asset compilation containers, etc.)
 #   - Skip when there's nothing pending (no extraneous job churn)
@@ -24,27 +32,6 @@ Rails.application.config.after_initialize do
   # queue. Tests stay in control; rake tasks like assets:precompile
   # shouldn't enqueue.
   next if Rails.env.test?
-  next if defined?(Rails::Console)
-  next if ENV["SPARC_SKIP_DEFERRED_DATA_MIGRATIONS"] == "true"
 
-  begin
-    next unless ActiveRecord::Base.connection.table_exists?("data_migration_runs")
-    pending_count = DataMigrationRun.where(status: %w[pending failed]).count
-    next if pending_count.zero?
-
-    Rails.logger.info(
-      {
-        deferred_data_migration: {
-          phase: "enqueued",
-          pending_count: pending_count,
-          note: "post-boot enqueue of DeferredDataMigrationJob"
-        }
-      }.to_json
-    )
-    DeferredDataMigrationJob.perform_later
-  rescue ActiveRecord::NoDatabaseError, ActiveRecord::ConnectionNotEstablished, PG::ConnectionBad
-    # No DB available (e.g., asset-compile-only container) — silent skip.
-  rescue StandardError => e
-    Rails.logger.error("[DeferredDataMigration] enqueue failed: #{e.class} — #{e.message}")
-  end
+  DeferredDataMigrationRunner.enqueue_after_boot(server: defined?(Rails::Server).present?)
 end
