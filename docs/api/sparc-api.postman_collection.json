@@ -7470,7 +7470,7 @@
                 "amendments_from_oscal_poam"
               ]
             },
-            "description": "Translate an OSCAL POA&M to HDF Amendments (#449).",
+            "description": "Translate an OSCAL POA&M to HDF Amendments (#449). Overdue amendments (risk deadline passed) are left out by default and counted in the X-SPARC-Overdue-Amendments response header, so the document still applies with `hdf amend apply`; add `?include_overdue=true` to receive them as well (#1208).",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"plan-of-action-and-milestones\": {\"uuid\": \"REPLACE\", \"metadata\": {\"oscal-version\": \"1.1.2\"}, \"poam-items\": []}\n}",

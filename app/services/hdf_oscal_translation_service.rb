@@ -53,22 +53,107 @@ class HdfOscalTranslationService
     validate_oscal!(:poam, enrich_back_matter(oscal, boundary))
   end
 
+  # The amendments document, plus the requirement ids of the overdue amendments
+  # it reports on — left out of `amendments` unless the caller asked for them.
+  AmendmentsResult = Struct.new(:amendments, :overdue_requirement_ids, :overdue_included, keyword_init: true)
+
+  # #1208 — refused because of overdue amendments ALONE, so the caller can fix
+  # it by asking for them (`include_overdue`). A subclass, so every existing
+  # HdfRunner::Error handler still catches it.
+  class OverdueAmendmentsError < HdfRunner::Error; end
+
   # OSCAL POAM → HDF Amendments
+  #
+  # #1208 — an overdue POA&M risk is ordinary input, not a reason to refuse the
+  # whole document. hdf-cli 3.7.2 measured: `amend verify` fails on an expired
+  # amendment with no flag to pass it, and `amend apply` refuses any document
+  # that holds one. So, by default, the overdue amendments are LEFT OUT and
+  # reported, and the document returned still applies cleanly — the same rule
+  # HdfAmendmentExportService follows. `include_overdue: true` returns them
+  # all, as a document `amend apply` will refuse (owner, option C).
+  #
+  # Structural faults are refused either way: a schema error, an invalid
+  # override, or a broken chain is something wrong with the document, where an
+  # expiry is only something true about it.
+  #
+  # `integrity.checksum` is the SHA-256 of the INPUT POA&M (measured), not of
+  # the overrides, so leaving overrides out does not falsify it.
+  #
+  # NIST SP 800-53 Rev 5: SI-10 (input validation), CA-5 (POA&M), SI-2.
   # @param oscal_input [String, IO] file path or IO of an OSCAL POAM JSON/XML
-  # @return [Hash] HDF Amendments document
-  def oscal_poam_to_hdf_amendments(oscal_input)
+  # @param include_overdue [Boolean] return overdue amendments too
+  # @return [AmendmentsResult]
+  def oscal_poam_to_hdf_amendments(oscal_input, include_overdue: false)
     amendments = @runner.convert(oscal_input, from: OSCAL_POAM)
-    # Defense-in-depth: round-trip the result through `hdf amend verify`
-    # so we don't serve a payload that won't `hdf amend apply` cleanly.
-    Tempfile.create([ "hdf-amendments-", ".json" ]) do |f|
-      f.write(JSON.generate(amendments))
-      f.flush
-      @runner.amend_verify(f.path)
+    report = with_amendments_file(amendments) { |path| @runner.amend_verify_report(path) }
+    refuse_structural_faults!(report)
+
+    overdue, current = Array(amendments["overrides"]).partition { |o| overdue?(o) }
+    unless overdue.size == report["expiredOverrides"].to_i
+      raise HdfRunner::Error.new(
+        "hdf amend verify counted #{report['expiredOverrides'].to_i} expired amendment(s); SPARC counted " \
+        "#{overdue.size}. Refusing rather than guessing which to leave out.",
+        command: "hdf amend verify --json", exit_code: 1, stderr: ""
+      )
     end
-    amendments
+    overdue_ids = overdue.map { |o| o["requirementId"] }
+
+    if include_overdue || overdue.empty?
+      return AmendmentsResult.new(amendments: amendments, overdue_requirement_ids: overdue_ids,
+                                  overdue_included: overdue.any?)
+    end
+
+    if current.empty?
+      raise OverdueAmendmentsError.new(
+        "every amendment in this POA&M is overdue (#{overdue_ids.join(', ')}), so no amendments document " \
+        "that `hdf amend apply` accepts can be produced. Pass include_overdue=true to receive them.",
+        command: "hdf amend verify", exit_code: 1, stderr: ""
+      )
+    end
+
+    filtered = amendments.merge("overrides" => current)
+    begin
+      with_amendments_file(filtered) { |path| @runner.amend_verify(path) }
+    rescue HdfRunner::Error => e
+      # Each amendment's checksum is recorded by the NEXT one on the same
+      # requirement, so leaving an overdue one out can break the chain.
+      raise OverdueAmendmentsError.new(
+        "leaving out the overdue amendment(s) (#{overdue_ids.join(', ')}) leaves a document that does not " \
+        "verify: #{e.message}. Pass include_overdue=true to receive the whole document.",
+        command: e.command, exit_code: e.exit_code, stderr: e.stderr
+      )
+    end
+
+    AmendmentsResult.new(amendments: filtered, overdue_requirement_ids: overdue_ids, overdue_included: false)
   end
 
   private
+
+  def with_amendments_file(amendments)
+    Tempfile.create([ "hdf-amendments-", ".json" ]) do |f|
+      f.write(JSON.generate(amendments))
+      f.flush
+      yield f.path
+    end
+  end
+
+  def refuse_structural_faults!(report)
+    faults = Array(report["schemaErrors"])
+    faults << "#{report['invalidOverrides']} invalid amendment(s)" if report["invalidOverrides"].to_i.positive?
+    faults << "the amendment chain is broken" if report.dig("chain", "valid") == false
+    return if faults.empty?
+
+    raise HdfRunner::Error.new("verification failed: #{faults.join('; ')}",
+                               command: "hdf amend verify --json", exit_code: 1, stderr: "")
+  end
+
+  # Past its expiresAt, as `amend verify` judges it. An override with no
+  # expiresAt is a schema error, already refused above.
+  def overdue?(override)
+    Time.iso8601(override["expiresAt"].to_s) <= Time.current
+  rescue ArgumentError
+    false
+  end
 
   # #831 — never hand back OSCAL that fails NIST's own schema.
   #

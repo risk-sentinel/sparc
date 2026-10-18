@@ -191,25 +191,102 @@ RSpec.describe HdfOscalTranslationService do
   end
 
   describe "#oscal_poam_to_hdf_amendments" do
-    it "shells `hdf convert --from oscal-poam` and verifies the result" do
-      amendments = { "overrides" => [ { "type" => "poam", "controlId" => "AC-2" } ] }
-      expect(runner).to receive(:convert).with("/tmp/poam.json", from: "oscal-poam")
-                                           .and_return(amendments)
-      expect(runner).to receive(:amend_verify).with(a_string_matching(%r{/hdf-amendments-.*\.json}))
+    let(:past)   { 1.day.ago.utc.iso8601 }
+    let(:future) { 1.year.from_now.utc.iso8601 }
 
-      result = service.oscal_poam_to_hdf_amendments("/tmp/poam.json")
-      expect(result).to eq(amendments)
+    def override(id, expires_at)
+      { "type" => "poam", "requirementId" => id, "status" => "failed", "expiresAt" => expires_at }
     end
 
-    it "propagates HdfRunner::Error if amend_verify fails" do
-      amendments = { "overrides" => [ { "type" => "invalid" } ] }
-      allow(runner).to receive(:convert).and_return(amendments)
+    def report(expired: 0, invalid: 0, schema_errors: [], chain_valid: true)
+      { "expiredOverrides" => expired, "invalidOverrides" => invalid,
+        "schemaErrors" => schema_errors, "chain" => { "established" => false, "valid" => chain_valid } }
+    end
+
+    def stub_conversion(overrides, verify_report)
+      allow(runner).to receive(:convert).with("/tmp/poam.json", from: "oscal-poam")
+                                         .and_return({ "name" => "p", "overrides" => overrides })
+      allow(runner).to receive(:amend_verify_report).and_return(verify_report)
+    end
+
+    it "returns the document whole when nothing is overdue" do
+      stub_conversion([ override("A", future) ], report)
+      expect(runner).not_to receive(:amend_verify)
+
+      result = service.oscal_poam_to_hdf_amendments("/tmp/poam.json")
+
+      expect(result.amendments["overrides"].map { |o| o["requirementId"] }).to eq([ "A" ])
+      expect(result.overdue_requirement_ids).to eq([])
+      expect(result.overdue_included).to be(false)
+    end
+
+    # #1208 — the default: one overdue risk no longer refuses the whole POA&M.
+    it "leaves the overdue amendments out, reports them, and re-verifies what remains" do
+      stub_conversion([ override("A", past), override("B", future) ], report(expired: 1))
+      expect(runner).to receive(:amend_verify) do |path|
+        expect(JSON.parse(File.read(path))["overrides"].map { |o| o["requirementId"] }).to eq([ "B" ])
+      end
+
+      result = service.oscal_poam_to_hdf_amendments("/tmp/poam.json")
+
+      expect(result.amendments["overrides"].map { |o| o["requirementId"] }).to eq([ "B" ])
+      expect(result.amendments["name"]).to eq("p")
+      expect(result.overdue_requirement_ids).to eq([ "A" ])
+      expect(result.overdue_included).to be(false)
+    end
+
+    it "returns them all when include_overdue is set" do
+      stub_conversion([ override("A", past), override("B", future) ], report(expired: 1))
+      expect(runner).not_to receive(:amend_verify)
+
+      result = service.oscal_poam_to_hdf_amendments("/tmp/poam.json", include_overdue: true)
+
+      expect(result.amendments["overrides"].map { |o| o["requirementId"] }).to eq(%w[A B])
+      expect(result.overdue_requirement_ids).to eq([ "A" ])
+      expect(result.overdue_included).to be(true)
+    end
+
+    # An amendments document with no overrides is schema-invalid (measured), so
+    # there is nothing valid to return by default. Say so, and say how.
+    it "refuses, naming them and the remedy, when every amendment is overdue" do
+      stub_conversion([ override("A", past) ], report(expired: 1))
+
+      expect { service.oscal_poam_to_hdf_amendments("/tmp/poam.json") }
+        .to raise_error(described_class::OverdueAmendmentsError, /every amendment.*\(A\).*include_overdue=true/)
+    end
+
+    it "refuses when leaving the overdue ones out breaks the chain" do
+      stub_conversion([ override("A", past), override("A", future) ], report(expired: 1))
       allow(runner).to receive(:amend_verify).and_raise(
-        HdfRunner::Error.new("schema mismatch", command: "hdf amend verify ...", exit_code: 1, stderr: "")
+        HdfRunner::Error.new("chain is broken", command: "hdf amend verify", exit_code: 1, stderr: "")
       )
-      expect {
-        service.oscal_poam_to_hdf_amendments("/tmp/poam.json")
-      }.to raise_error(HdfRunner::Error, /schema mismatch/)
+
+      expect { service.oscal_poam_to_hdf_amendments("/tmp/poam.json") }
+        .to raise_error(described_class::OverdueAmendmentsError, /chain is broken.*include_overdue=true/)
+    end
+
+    # Structural faults are refused with or without include_overdue: an
+    # expiry must never mask them. Both directions — each fault alone.
+    {
+      "a schema error" => { schema_errors: [ "overrides.1: requirementId is required" ] },
+      "an invalid override" => { invalid: 1 },
+      "a broken chain" => { chain_valid: false }
+    }.each do |fault, args|
+      it "refuses #{fault}, even alongside an overdue amendment and with include_overdue" do
+        stub_conversion([ override("A", past), override("B", future) ], report(expired: 1, **args))
+
+        expect { service.oscal_poam_to_hdf_amendments("/tmp/poam.json", include_overdue: true) }
+          .to raise_error(HdfRunner::Error, /verification failed/) { |e|
+            expect(e).not_to be_a(described_class::OverdueAmendmentsError)
+          }
+      end
+    end
+
+    it "refuses when hdf and SPARC disagree on how many are overdue" do
+      stub_conversion([ override("A", past), override("B", future) ], report(expired: 2))
+
+      expect { service.oscal_poam_to_hdf_amendments("/tmp/poam.json") }
+        .to raise_error(HdfRunner::Error, /counted 2 expired.*SPARC counted 1/)
     end
   end
 end
