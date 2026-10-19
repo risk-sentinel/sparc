@@ -55,16 +55,22 @@ class User < ApplicationRecord
   has_many :owned_service_accounts, class_name: "User", foreign_key: :owner_id, dependent: :nullify, inverse_of: :owner
 
   # ── Validations ─────────────────────────────────────────────────────────
-  # IA-4: email is the canonical identifier. normalize_email (below) downcases
-  # it and `case_sensitive: false` gives a friendly error on duplicates, but
-  # the DATABASE is the real guarantee: a functional unique index on
-  # LOWER(email) (migration 20260529000000, #593) rejects case-variant
-  # duplicates even under races or callback-bypassing writes — closing the
-  # "log in as Jane.Doe@x.com vs jane.doe@x.com" workaround when both local
-  # login and OIDC are enabled.
+  # IA-4: a PERSON's email is their canonical identifier. normalize_email
+  # (below) downcases it and `case_sensitive: false` gives a friendly error on
+  # duplicates, but the DATABASE is the real guarantee: a functional unique
+  # index on LOWER(email) over human accounts (#593, scoped by #1176) rejects
+  # case-variant duplicates even under races or callback-bypassing writes —
+  # closing the "log in as Jane.Doe@x.com vs jane.doe@x.com" workaround when
+  # both local login and OIDC are enabled.
+  #
+  # #1176 (owner, option A): a service account's email is a contact, not an
+  # identity. It authenticates only with its API token, and one team mailbox
+  # may own several accounts, so its email may repeat — including a person's.
+  # Every sign-in lookup therefore goes through `human_by_email`.
   validates :email, presence: true,
-                    uniqueness: { case_sensitive: false },
                     format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :email, uniqueness: { case_sensitive: false, conditions: -> { where(service_account: false) } },
+                    unless: :service_account?
 
   # Password validations only when a password is being set
   validates :password, length: { minimum: 12, message: "must be at least 12 characters (NIST 800-63B)" },
@@ -200,6 +206,18 @@ class User < ApplicationRecord
   scope :admins, -> { where(admin: true) }
   scope :service_accounts, -> { where(service_account: true) }
   scope :human_users, -> { where(service_account: false) }
+  scope :with_email, ->(email) { where("LOWER(email) = ?", email.to_s.downcase.strip) }
+
+  # #1176 — the one definition of "who signs in with this email". Only a
+  # person's email identifies them (a service account's may repeat, and may
+  # equal a person's), so sign-in, OIDC, LDAP, PIV, WebAuthn, the admin
+  # bootstrap and legacy membership linking all resolve a PERSON through here.
+  # Unique by the partial index, so `first` is the only match.
+  def self.human_by_email(email)
+    return nil if email.blank?
+
+    human_users.with_email(email).first
+  end
 
   # Users who have been active longer than `days` without signing in.
   # Includes users who have never signed in (uses created_at as fallback).

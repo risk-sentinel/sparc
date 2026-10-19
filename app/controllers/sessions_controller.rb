@@ -126,7 +126,9 @@ class SessionsController < ApplicationController
       return
     end
 
-    user = User.find_by("LOWER(email) = ?", params[:email].to_s.downcase.strip)
+    # A person first; a service account only so its refused attempt is audited
+    # below (#1176 — its email is not unique, so any match will do for that).
+    user = User.human_by_email(params[:email]) || User.service_accounts.with_email(params[:email]).first
 
     # Service accounts cannot log in via web UI — API tokens only
     if user&.service_account?
@@ -204,7 +206,7 @@ class SessionsController < ApplicationController
     result = LdapAuthService.authenticate(params[:username], params[:password])
 
     if result && result[:email].present?
-      user = User.find_by("LOWER(email) = ?", result[:email].downcase.strip)
+      user = User.human_by_email(result[:email])
 
       # Auto-create user from LDAP if not found
       if user.nil?

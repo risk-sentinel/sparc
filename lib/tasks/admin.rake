@@ -26,7 +26,8 @@ namespace :sparc do
 
     email = SparcConfig.admin_email
     desired_password = ENV["SPARC_ADMIN_PASSWORD"].presence
-    admin = User.find_or_initialize_by(email: email.downcase.strip)
+    # #1176 — a person: a service account may share the configured email.
+    admin = User.human_by_email(email) || User.new(email: email.downcase.strip)
 
     if admin.new_record? || !admin.password_digest.present?
       # New install or password was never set — prefer the SM-injected
@@ -169,7 +170,7 @@ namespace :sparc do
   desc "Regenerate admin password (destructive — use only when needed)"
   task reset_admin_password: :environment do
     email = SparcConfig.admin_email
-    admin = User.find_by(email: email.downcase.strip)
+    admin = User.human_by_email(email)
 
     unless admin
       puts "ERROR: No admin found with email #{email}"

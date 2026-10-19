@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_19_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1846,7 +1846,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.string "webauthn_id"
-    t.index "lower((email)::text)", name: "index_users_on_lower_email", unique: true
+    t.index "lower((email)::text)", name: "index_users_on_lower_email_human", unique: true, where: "(service_account = false)"
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["owner_id"], name: "index_users_on_owner_id"
     t.index ["password_reset_digest"], name: "index_users_on_password_reset_digest", unique: true, where: "(password_reset_digest IS NOT NULL)"
