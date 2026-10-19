@@ -93,6 +93,15 @@ The **HDF ↔ OSCAL bridge** adds three stateless endpoints — `oscal/sar_from_
 `oscal/poam_from_hdf`, and `hdf/amendments_from_oscal_poam` (see
 [Core Functions §18](Core-Functions#18-hdf--oscal-translation-bridge)).
 
+> **An overdue POA&M risk no longer refuses `hdf/amendments_from_oscal_poam` (v1.17.2, #1208).**
+> A risk past its `deadline` becomes an expired amendment, and `hdf amend apply`
+> refuses any document holding one. So by default SPARC **leaves overdue
+> amendments out** and returns a document that still applies, counting them in the
+> `X-SPARC-Overdue-Amendments` response header. Add `?include_overdue=true` to
+> receive them as well. Previously one overdue risk made the whole POA&M fail with
+> `verification failed: 1 expired`. Details in
+> [`docs/api/endpoints/translations.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/translations.md).
+
 > **`sar_from_hdf` validates before it returns (v1.15.2).** SPARC checks the
 > translated document against the NIST OSCAL schema and **will not return one
 > that fails** — previously it returned the converter's output as-is, so a caller

@@ -171,6 +171,18 @@ that **deferred** migrations (which run post-boot via a background job) have
 finished — each shows a state of pending, running, completed, or failed. Use
 this after a deploy that included a long-running backfill.
 
+**During a rolling deploy** (old and new containers running side by side), a
+migration the new release added can show **failed** with the bare message
+`Class … not loadable`. That is the *previous* release's container, which
+cannot run code it has never seen; it is not a fault in the migration. From
+v1.17.2 the new release picks such rows up again within **5 minutes** of the
+old container draining, without a restart. A release from v1.17.2 onward,
+running as the old container, leaves the row **pending** instead.
+
+A failure that says more after the colon (for example
+`not loadable: no migration file in this release`, or a Ruby error) is a real
+one. It is retried once at the next boot, not every 5 minutes.
+
 ---
 
 ## Tips & best practices
@@ -194,6 +206,7 @@ this after a deploy that included a long-running backfill.
 | A user can't access a boundary's docs | Role assigned at wrong scope | Assign the boundary-scoped role on the user's Edit screen |
 | Lost an API token | Plaintext is shown only once | Revoke it and issue a new token |
 | Backfill seems incomplete after deploy | Deferred migration still running | Check Data Migrations for its state |
+| A new migration shows failed: `Class … not loadable`, right after an upgrade | The previous release's container took it during a rolling deploy | Nothing to do: it re-runs within 5 minutes of the old container draining (v1.17.2+) |
 | Audit export is huge | No filters applied | Narrow by date range/user before **Export CSV** |
 
 ---

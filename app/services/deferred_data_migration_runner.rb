@@ -33,6 +33,42 @@ class DeferredDataMigrationRunner
 
   class LockUnavailable < StandardError; end
 
+  # Called once per boot by config/initializers/enqueue_data_migrations.rb.
+  #
+  # #1223 — only a WEB SERVER boot enqueues. A `bin/rails` task boots the app
+  # as well, and the container entrypoint runs four of them before Puma (and
+  # with it this container's Solid Queue worker) starts; during a rolling
+  # deploy each of those jobs could only be taken by the PREVIOUS release's
+  # worker, which marked the new release's rows failed. `server:` is
+  # `defined?(Rails::Server)`, which a task, the runner and the console never
+  # load.
+  def self.enqueue_after_boot(server:)
+    return :not_server unless server
+    return :disabled if ENV["SPARC_SKIP_DEFERRED_DATA_MIGRATIONS"] == "true"
+    return :no_table unless ActiveRecord::Base.connection.table_exists?("data_migration_runs")
+
+    pending_count = DataMigrationRun.where(status: %w[pending failed]).count
+    return :nothing_pending if pending_count.zero?
+
+    Rails.logger.info(
+      {
+        deferred_data_migration: {
+          phase: "enqueued",
+          pending_count: pending_count,
+          note: "post-boot enqueue of DeferredDataMigrationJob"
+        }
+      }.to_json
+    )
+    DeferredDataMigrationJob.perform_later
+    :enqueued
+  rescue ActiveRecord::NoDatabaseError, ActiveRecord::ConnectionNotEstablished, PG::ConnectionBad
+    # No DB available (e.g., asset-compile-only container) — silent skip.
+    :no_database
+  rescue StandardError => e
+    Rails.logger.error("[DeferredDataMigration] enqueue failed: #{e.class} — #{e.message}")
+    :error
+  end
+
   def self.run_all_pending(user: nil)
     new.run_all_pending(user: user)
   end
@@ -71,12 +107,17 @@ class DeferredDataMigrationRunner
   # Rails guarantees the filename matches the class name, so the class name is a
   # reliable key. Loading is attempted ONLY when the constant is missing, so the
   # in-process db:migrate path is unaffected.
+  #
+  # Returns `[klass, outcome]`. When klass is nil, outcome says why — and #1223
+  # turns on the difference: `:absent` (no file in this release) and
+  # `:load_error` (a file that raised) are not the same fault.
   def resolve_migration_class(name)
     existing = name.safe_constantize
-    return existing if existing
+    return [ existing, :loaded ] if existing
 
-    load_migration_file(name)
-    name.safe_constantize
+    outcome = load_migration_file(name)
+    klass = name.safe_constantize
+    [ klass, klass ? :loaded : outcome ]
   end
 
   # `load`, not `require`, and deliberately so: the path is discovered at
@@ -91,28 +132,41 @@ class DeferredDataMigrationRunner
   def load_migration_file(name)
     suffix = "_#{name.underscore}.rb"
 
-    Array(ActiveRecord::Migrator.migrations_paths).any? do |dir|
-      path = Dir.glob(Rails.root.join(dir, "*#{suffix}")).first
-      next false if path.nil?
+    path = Array(ActiveRecord::Migrator.migrations_paths)
+           .lazy.filter_map { |dir| Dir.glob(Rails.root.join(dir, "*#{suffix}")).first }.first
+    return :absent if path.nil?
 
-      load path
-      true
-    end
+    load path
+    :loaded
   rescue StandardError => e
     # A migration file that raises on load must not take the whole runner down
     # with it — the row is marked failed by the caller, and the remaining
     # migrations still get their turn.
     Rails.logger.error("[DeferredDataMigrationRunner] could not load #{name}: #{e.class}: #{e.message}")
-    false
+    :load_error
   end
 
+
   def execute(run, user:)
-    klass = resolve_migration_class(run.name)
+    klass, outcome = resolve_migration_class(run.name)
     if klass.nil?
-      run.update!(status: "failed", completed_at: Time.current,
-                  error_message: "Class #{run.name} not loadable")
-      emit_log(run, "failed",
-               error: "Class #{run.name} not loadable")
+      if outcome == :absent && run.registered_by_newer_release?
+        # Leave the row exactly as it is, for the release that can run it.
+        emit_log(run, "deferred_to_newer_release",
+                 note: "registered by #{run.registered_release}; this container is #{SparcConfig::VERSION}")
+        return
+      end
+
+      # Never the bare legacy "Class X not loadable": DataMigrationRun's sweep
+      # scope reads that exact form as an older release's misjudgement.
+      error = if outcome == :absent
+                "Class #{run.name} not loadable: no migration file in this release " \
+                "(#{SparcConfig::VERSION}); registered by #{run.try(:registered_release).presence || 'an unknown release'}"
+      else
+                "Class #{run.name} not loadable: its migration file failed to load"
+      end
+      run.update!(status: "failed", completed_at: Time.current, error_message: error)
+      emit_log(run, "failed", error: error)
       return
     end
 

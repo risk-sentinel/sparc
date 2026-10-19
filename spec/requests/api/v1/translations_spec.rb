@@ -230,18 +230,70 @@ RSpec.describe "Api::V1::Translations", type: :request do
 
   describe "POST /api/v1/hdf/amendments_from_oscal_poam" do
     let(:amendments) { { "overrides" => [ { "type" => "poam", "controlId" => "AC-2" } ] } }
+    let(:result) do
+      HdfOscalTranslationService::AmendmentsResult.new(amendments: amendments, overdue_requirement_ids: [],
+                                                       overdue_included: false)
+    end
 
     it "translates a raw JSON body to HDF amendments" do
-      expect(translation_service).to receive(:oscal_poam_to_hdf_amendments).and_return(amendments)
+      expect(translation_service).to receive(:oscal_poam_to_hdf_amendments)
+        .with(anything, include_overdue: false).and_return(result)
       post api_v1_amendments_from_oscal_poam_path,
            params: poam_payload,
            headers: auth_headers.merge(json_ct)
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)).to eq(amendments)
+      expect(response.headers["X-SPARC-Overdue-Amendments"]).to eq("0")
+    end
+
+    # #1208 — the body stays a bare amendments document; the overdue count
+    # rides a header, and the ids go to the audit event.
+    describe "overdue amendments" do
+      let(:result) do
+        HdfOscalTranslationService::AmendmentsResult.new(amendments: amendments, overdue_requirement_ids: %w[A B],
+                                                         overdue_included: false)
+      end
+
+      it "reports the count in a header and the ids in the audit event, without changing the body" do
+        allow(translation_service).to receive(:oscal_poam_to_hdf_amendments).and_return(result)
+        post api_v1_amendments_from_oscal_poam_path, params: poam_payload, headers: auth_headers.merge(json_ct)
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to eq(amendments)
+        expect(response.headers["X-SPARC-Overdue-Amendments"]).to eq("2")
+        expect(response.headers["X-SPARC-Overdue-Included"]).to eq("false")
+        event = AuditEvent.where(action: "translation_oscal_poam_to_hdf_amendments").last
+        expect(event.metadata).to include("overdue_count" => 2, "overdue_requirement_ids" => %w[A B],
+                                          "include_overdue" => false)
+      end
+
+      it "passes include_overdue=true through" do
+        expect(translation_service).to receive(:oscal_poam_to_hdf_amendments)
+          .with(anything, include_overdue: true).and_return(result)
+        post "#{api_v1_amendments_from_oscal_poam_path}?include_overdue=true",
+             params: poam_payload, headers: auth_headers.merge(json_ct)
+
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "422s with the remedy when the overdue amendments cannot be left out" do
+        allow(translation_service).to receive(:oscal_poam_to_hdf_amendments).and_raise(
+          HdfOscalTranslationService::OverdueAmendmentsError.new(
+            "every amendment in this POA&M is overdue (A)", command: "hdf amend verify", exit_code: 1, stderr: ""
+          )
+        )
+        post api_v1_amendments_from_oscal_poam_path, params: poam_payload, headers: auth_headers.merge(json_ct)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        body = JSON.parse(response.body)
+        expect(body["error"]).to eq("POA&M holds overdue amendments that cannot be left out")
+        expect(body["details"]).to include("(A)")
+        expect(body["note"]).to include("include_overdue=true")
+      end
     end
 
     it "audits the OSCAL POAM→amendments translation" do
-      allow(translation_service).to receive(:oscal_poam_to_hdf_amendments).and_return(amendments)
+      allow(translation_service).to receive(:oscal_poam_to_hdf_amendments).and_return(result)
       expect {
         post api_v1_amendments_from_oscal_poam_path,
              params: poam_payload,

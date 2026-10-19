@@ -134,16 +134,20 @@ class OscalConformanceService
     return unless part.is_a?(Hash)
 
     name = part["name"]
-    return unless OscalNamespace.nist?(part["ns"])
-    return if rules.fetch("part_names", {}).key?(name)
+    if OscalNamespace.nist?(part["ns"]) && !rules.fetch("part_names", {}).key?(name)
+      @findings << Finding.new(
+        severity: :violation, rule: "part-name-not-nist", location: path,
+        message: "part #{name.inspect} carries no `ns`, which claims NIST defines it for " \
+                 "#{@model}. Parts and props are separate vocabularies; NIST defines neither this name."
+      )
+    end
 
-    @findings << Finding.new(
-      severity: :violation, rule: "part-name-not-nist", location: path,
-      message: "part #{name.inspect} carries no `ns`, which claims NIST defines it for " \
-               "#{@model}. Parts and props are separate vocabularies; NIST defines neither this name."
-    )
-
-    Array(part["parts"]).each_with_index { |p, i| check_part(p, "#{path}/parts[#{i}]", rules) }
+    # #1131 — always descend, whatever this part's own verdict. The walk skips
+    # the `parts` key, so this is the only route to a part's props and child
+    # parts. Returning early on a valid or namespaced name left everything under
+    # it unchecked — `statement` > `item` > a bad name, the shape real catalogs
+    # have, reported clean.
+    walk(part, path, rules)
   end
 
   # Referential integrity — the half schema validation structurally cannot do.

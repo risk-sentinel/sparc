@@ -43,6 +43,9 @@ class Api::V1::TranslationsController < Api::V1::BaseController
     }, status: :bad_gateway
   end
 
+  OVERDUE_HEADER = "X-SPARC-Overdue-Amendments".freeze
+  OVERDUE_INCLUDED_HEADER = "X-SPARC-Overdue-Included".freeze
+
   rescue_from HdfRunner::Error do |e|
     # A "no converter found" failure means the bundled hdf-cli doesn't support
     # this translation path — currently raw hdf→oscal-poam, which 3.2.0 removed
@@ -59,7 +62,16 @@ class Api::V1::TranslationsController < Api::V1::BaseController
     #
     # Surface a clear 501 rather than a generic 422 so callers can distinguish
     # "unsupported path" from "bad input".
-    if e.message.include?("no converter found")
+    # #1208 — refused only because of overdue amendments; the caller can have
+    # them by asking. Says which, and how.
+    if e.is_a?(HdfOscalTranslationService::OverdueAmendmentsError)
+      render json: {
+        error: "POA&M holds overdue amendments that cannot be left out",
+        details: e.message,
+        note: "Pass include_overdue=true to receive the whole amendments document. " \
+              "`hdf amend apply` refuses a document holding an expired amendment."
+      }, status: :unprocessable_content
+    elsif e.message.include?("no converter found")
       render json: {
         error: "Translation path not available in the bundled hdf-cli",
         details: e.message,
@@ -129,11 +141,22 @@ class Api::V1::TranslationsController < Api::V1::BaseController
   end
 
   # POST /api/v1/hdf/amendments_from_oscal_poam
+  #
+  # #1208 — overdue amendments are left out by default, so the document still
+  # `hdf amend apply`s, and counted in OVERDUE_HEADER. `include_overdue=true`
+  # returns them in the document as well. The body stays a bare amendments
+  # document either way, so existing consumers see the same shape.
   def amendments_from_oscal_poam
+    include_overdue = ActiveModel::Type::Boolean.new.cast(params[:include_overdue]) || false
     with_uploaded_payload do |path|
-      result = translation_service.oscal_poam_to_hdf_amendments(path)
-      audit_log("translation_oscal_poam_to_hdf_amendments")
-      render json: result
+      result = translation_service.oscal_poam_to_hdf_amendments(path, include_overdue: include_overdue)
+      audit_log("translation_oscal_poam_to_hdf_amendments",
+                metadata: { include_overdue: include_overdue,
+                            overdue_count: result.overdue_requirement_ids.size,
+                            overdue_requirement_ids: result.overdue_requirement_ids })
+      response.set_header(OVERDUE_HEADER, result.overdue_requirement_ids.size.to_s)
+      response.set_header(OVERDUE_INCLUDED_HEADER, result.overdue_included.to_s)
+      render json: result.amendments
     end
   end
 

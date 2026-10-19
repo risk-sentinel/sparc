@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-10-17 — OIDC sign-in in Chrome joins the local gate; #1224 (publish gate) on v1.17.2, worked last; #1223 filed. Before that, 2026-10-16 — **v1.17.1 shipped 2026-10-16** (tag on `cfa7935f`, PR #1219): OIDC sign-in on json 3 (#1217), Rev 5 parameter ids and worksheets (#1218), image findings and hdf-libs 3.7.2; the planned v1.17.1 wave moved to **v1.17.2** (owner); milestone counts re-measured after the tag
+**Last updated:** 2026-10-17 — **v1.17.2 planned in bundles AP–AT, tag by 2026-10-24** (owner); #1223 moved to v1.17.2; OIDC sign-in in Chrome joins the local gate (PR #1225); #1224 (publish gate) on v1.17.2, worked last; #1223 filed. Before that, 2026-10-16 — **v1.17.1 shipped 2026-10-16** (tag on `cfa7935f`, PR #1219): OIDC sign-in on json 3 (#1217), Rev 5 parameter ids and worksheets (#1218), image findings and hdf-libs 3.7.2; the planned v1.17.1 wave moved to **v1.17.2** (owner); milestone counts re-measured after the tag
 
 ---
 
@@ -46,6 +46,7 @@ authentication mode coverage matrix.
 > **The most recent shipped phase is 18 — v1.16.1, tagged 2026-09-17**, followed by
 > the v1.16.2 / v1.16.3 hotfix pair on 2026-09-18. Phase 19 shipped as **v1.17.0**
 > on 2026-10-02; the latest release is **v1.17.1** (hotfix, tagged 2026-10-16), below.
+> **The current phase is 20 — v1.17.2**, planned in bundles on 2026-10-17 with a tag target of 2026-10-24.
 > Phases 17 and 18 moved there on **2026-09-27**, with a record of that hotfix
 > pair; their bundle detail, the Bundle Z sweep record and the cadence
 > re-measures are there, unedited.
@@ -103,6 +104,72 @@ deferred; the owner approved its deviation on the PR. See
 
 ---
 
+### Phase 20: `v1.17.2` — the deferred wave, in bundles (target: tag by 2026-10-24)
+
+**Owner, 2026-10-17:** work v1.17.2 in bundles and land it in about a week.
+The milestone holds **16 open issues** (re-measured 2026-10-18): #1046 #1063
+#1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208 #1223 #1224 #1228.
+
+**#1228 joined on 2026-10-18 (owner):** NIST fixed SA-15(13), SA-24 and
+SI-02(07) on `usnistgov/oscal-content`'s `develop` branch (their PRs #345,
+#346, #347), unreleased. SPARC's bundled catalog carries all of those errors,
+including SA-15(13) showing SA-15(12)'s requirement. The owner's call: take
+the `develop` content now, flagged as pre-release, so the switch to NIST's
+release is caught when it ships, and add catalog integrity checks (label names
+its own control, `assessment-for` stays inside its own control,
+`activity-uuid` / `task-uuid` resolve). **Its bundle is the owner's call;**
+it needs a deferred data migration.
+
+**Fifteen issues do not fit in a week as filed.** Several are large on their own:
+- #1203 is a design to validate against NIST before any code.
+- #1176's ask is IdP-brokered credentials.
+- #1063 is a read-every-test audit.
+- #1133 is 191 findings.
+- #1120 is 125 variables.
+
+The plan below lands every issue in one of three ways: **fixed**, **scoped to a
+deliverable that fits** (the remainder filed as a follow-up), or **decided**
+(a recorded decision, no code). Which issues take which path is the owner's
+call, listed under *Decisions* below; the bundles assume the recommended answer.
+
+**Ordering rules:**
+- One gate stack at a time, so the bundles run one after another, each its own PR.
+- Every PR runs the local gate, which now includes OIDC in Chrome (PR #1225).
+- **AT (#1224) is last** (owner, 10-17). By then AP to AS give it four PR cycles of the OIDC check on the local gate.
+- Collision constraint: AQ and AR both edit `app/models/sparc_config.rb`, so AR's #1120 work starts after AQ merges.
+
+<!-- markdownlint-disable MD013 -->
+
+| Bundle | Issues | Delivers | Est. | Window |
+| --- | --- | --- | --- | --- |
+| **AP — Correctness on the data path** | **#1208** **#1223** **#1107** **#1131** | **Plan approved (owner, 2026-10-18).** Order: #1131, #1107, #1208, #1223. **Status 2026-10-18: all four coded and committed on the branch, each guard mutation-checked; the local gate (full rspec, API + Chrome ui-smoke with OIDC, the #1223 two-version reproduction) is next.** #1131 also found that props inside parts were never checked (fixed in the same walk). **#1107:** the fix shipped in PR #1110 (2026-09-10); AP adds the acceptance tests and closes it. **#1208 (option C, owner 2026-10-18):** an overdue POA&M risk converts. Measured first: hdf 3.7.2's `amend verify --json` separates expiry from schema, invalid-override and chain failures, and `hdf amend apply` itself refuses any document holding an expired amendment. So the endpoint returns the CURRENT amendments by default (it still applies cleanly) and reports the overdue ones in a response header and the audit event; `?include_overdue=true` returns the full document, documented as one `amend apply` refuses. Structural faults are still refused. **#1223 (revised plan, owner 2026-10-18):** the loop is the entrypoint: every `bin/rails` task boot (`db:prepare`, `db:reconcile_schema`, `sparc:bootstrap_admin`, `db:seed`) enqueues the job before the new container has a worker, so only the OLD container can take it (measured on a scratch database). Fix: enqueue from the server boot only; a recurring Solid Queue entry re-enqueues every 5 minutes while rows are pending or failed (the only part that helps upgrades from releases already shipped); each row is stamped with the release that registered it, so a missing class from a NEWER release leaves the row `pending` while an archived one still fails. **#1107:** `.sparc-d-none` wins the cascade over the component classes that set `display`, proven on a component in Chrome. **#1131:** specs for `check_part`, mutation-checked. | 2.5d | 10-18 → 10-20 |
+| **AQ — Credential lifetime and service-account identity** | **#1176** (scoped) | **Plan approved (owner, 2026-10-18).** **Option A (owner, 2026-10-17):** a service account's email stops being its identity. The unique index on `lower(email)` covers human accounts only, and a service account's email becomes a contact that may repeat, because a team's group email is often the owner and contact of several accounts. The longer-term model (option C: service accounts as their own model, team ownership, scoped tokens) is **#1227** on v1.18.0. **Lifetime:** a service-account token cannot be created without an expiry on any path (account form, admin user page, `/api/v1/users/:id/api_tokens`, `/api/v1/service_accounts`); `SPARC_API_TOKEN_MAX_DAYS` (default 365) caps it. A person's own token keeps the "Never" choice (owner, 10-18). **Renew** issues a new token with the same endpoints, CIDRs and lifetime while the old one keeps working for a grace window, `SPARC_API_TOKEN_RENEWAL_GRACE_DAYS` (default 7, owner, 10-18). **Revoke and reissue** (today's regenerate) revokes at once but carries the limits over: today the admin Regenerate button drops endpoint and CIDR limits, widening the token. Expiring-soon tokens are flagged. Existing never-expiring tokens show on the account page and in the API; they are not revoked on upgrade. **Endpoints (owner, 10-17/18):** the free-text "Allowed Endpoints (optional)" box becomes a selectable list built from the `/api/v1` route inventory, grouped by resource, with **Read** and **Write** per row and an **All endpoints** row. Read/Write is classified by the route inventory (GET, previews, converts and translations are Read; other POST, PUT, PATCH, DELETE are Write), and a spec fails on an unclassified route. Raw HTTP-method boxes were rejected: many POSTs only compute, and updates arrive as PUT or PATCH. Existing path-only patterns mean Read + Write, so nothing narrows on upgrade; the API refuses a pattern that matches no route. One definition feeds the screens, the API and enforcement. IdP-brokered short-lived credentials, the issue's full ask, become a follow-up on v1.18.0. Tests both ways; Playwright on the new control; IA-5, AC-2, AC-3, AC-6 and AU-2 CDEF remarks updated. | 3.5d | 10-19 → 10-21 |
+| **AR — Config and Sonar hygiene** | **#1120** (scoped) **#1104** **#1133** · **#1046** (decide) | **#1120:** remove the variables that are read by nothing, and reconcile `docs/ENVIRONMENT_VARIABLES.md` with what `SparcConfig` reads (125 read vs 144 documented). Inferring one variable from a neighbour is listed, not done, unless trivial. **#1104:** the FIX items; WON'T-FIX recorded with reasons; any workflow edit is shown to the owner first. **#1133:** triage, answering demo-seed literals and contrast findings with exclusions or suppressions that carry reasons, and fixing the few with merit. **#1046:** close as decided (the owner accepts S7875 on `config/routes.rb` in the Sonar UI, 2026-08-23). | 2–3d | 10-20 → 10-22 |
+| **AS — Gate truth** | **#1087** **#1207** · **#1063** (scoped) | **#1087 / #1207:** one investigation, since both show a page's `load` waiting on cdn.jsdelivr.net. Measure, then remove the external dependency from page load if that is the cause (vendor the assets through importmap), and prove it on the PIV stack where #1207 reproduces. **#1063:** publish the both-directions matrix (per endpoint and per guarded screen: authorized success and rejection), fill the gaps it finds in security-relevant endpoints, and file the rest as a follow-up. | 2d | 10-21 → 10-22 |
+| **AT — OIDC in the publish gate** | **#1224** | The workflow edit described in the issue (owner approval at PR time), proven both ways: `PROVEN oidc_idp_redirect` in the workflow, and a deliberately broken issuer failing it before build-and-push, once, on a test branch. | 0.5–1d | 10-22 → 10-23 |
+| **Decide, no code** | **#1203** **#1196** | **#1203:** validate the per-boundary SSP / SAP / SAR model against the OSCAL assessment layer, SP 800-37 and SP 800-53A, and record the result on the issue. **#1196:** record the decision on mapping confidence. Recommended: both move to **v1.18.0** for implementation once decided, so v1.17.2 does not carry a data-model change in its last days. | — | during the week |
+| **Release** | — | Full local checklist on the final head, both architectures (with OIDC in Chrome); wait for main's actions; tag. | 1d | 10-23 → 10-24 |
+
+<!-- markdownlint-enable MD013 -->
+
+**Estimate: about 9–10 days of work into seven calendar days.** That fits only because:
+- AP, AQ and AS are small, and AS is mostly measurement.
+- The work in each bundle can be split into parallel lanes, with one gate run per bundle (the AI + AL pattern from v1.17.0).
+
+The cut line, if the week slips:
+- **AR and AS's #1063 slide first**: they are hygiene and audit, not defects.
+- **AP, AQ and AT are the release.**
+
+#### Decisions (owner)
+
+1. **#1176 scope:** cap token lifetime now and broker IdP credentials in v1.18.0 (recommended), or the full ask in v1.17.2. **Decided (owner, 10-17 and 10-18):** AQ takes option A, service-account email is not an identity; option C is #1227 (v1.18.0). Lifetime: expiry required for service-account tokens, renew with a 7-day grace, reissue keeps limits, endpoint list with Read/Write per resource; IdP brokering is v1.18.0.
+2. **#1203 and #1196:** decide during the week and implement in v1.18.0 (recommended).
+3. **#1046:** close as decided, given the S7875 acceptance.
+4. **#1120 scope:** dead-variable removal and docs reconciliation only (recommended).
+5. **#1104 / #1133:** confirm that rule exclusions in the Sonar configuration are acceptable answers for findings that should not be edited (demo-seed literals, contrast on deliberate palette values).
+
+---
+
 ### Phase 19: `v1.17.0` — unblock `sparc-horizon`, fix what customers hit
 
 > **Renamed 2026-09-17, owner:** the milestone was created as `v1.17.1` with no
@@ -114,7 +181,7 @@ deferred; the owner approved its deviation on the PR. See
 **Open: 3. Closed: 22.** Re-measured **2026-10-01** from one grouped query
 (`gh issue list --state open --limit 400 --json number,milestone`, grouped by
 milestone) and `gh issue list --milestone v1.17.0 --state closed --limit 300`.
-**This is the current phase.**
+**Shipped as v1.17.0 on 2026-10-02.** The current phase is 20 (v1.17.2), above.
 
 - **Closed on the milestone (22):** #871 #1103 #1115 #1144 #1151 #1154 #1155
   #1159 #1161 #1162 #1164 #1172 #1178 #1179 #1181 #1183 #1184 #1186 #1189
@@ -289,11 +356,13 @@ Re-measured against the live repository, not carried forward. **575 issues**;
 | Open, on `ci.v0.0.1` / `v1.16.0` / `v1.16.1` | **0** — all shipped (22, 87 and 22 issues) |
 | Open, on `v1.17.0` | **0** — shipped 2026-10-02 (#1200 #1202 #1204 closed by PR #1201) |
 | Open, on `v1.17.1` | **0** — shipped 2026-10-16 (#1217 #1218 closed by PR #1219) |
-| Open, on `v1.18.0` | **1** — #1109 (AJ; milestone created 2026-09-29, owner) |
-| Open, on `v1.17.2` | **14** — #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208 #1224 |
-| **Open, on NO milestone** | **22** (21 on 10-16 before #1223, 19 on 09-30 before #1205 / #1206, 18 on 09-29 before #1198, 19 on 09-22, 27 on 09-20, 24 on 09-17, 22 on 09-05, 25 on 09-03, 10 on 08-25) — see below |
+| Open, on `v1.18.0` | **2** — #1109 (AJ; milestone created 2026-09-29, owner), #1227 (service accounts as their own model, design; filed 2026-10-17, owner) |
+| Open, on `v1.17.2` | **16** — #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208 #1223 #1224 #1228 — bundled in *Phase 20* above |
+| **Open, on NO milestone** | **21** (22 on 10-17 before #1223 moved to v1.17.2, 21 on 10-16, 19 on 09-30 before #1205 / #1206, 18 on 09-29 before #1198, 19 on 09-22, 27 on 09-20, 24 on 09-17, 22 on 09-05, 25 on 09-03, 10 on 08-25) — see below |
 
-The reconciliation, from one grouped query on 2026-10-17:
+The reconciliation, from one grouped query on 2026-10-18, after **#1228** was filed onto v1.17.2 (owner):
+**0 + 0 + 16 + 2 + 21 = 39, and 544 + 39 = 583** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Before that, on 2026-10-17, after **#1223** moved to v1.17.2 (owner), PR #1225 merged and **#1227** filed onto v1.18.0:
+**0 + 0 + 15 + 2 + 21 = 38, and 544 + 38 = 582** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Earlier the same day:
 **0 + 0 + 14 + 1 + 22 = 37, and 544 + 37 = 581** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Since the previous pass: **#1223** (rolling deploy: the previous release fails the new release's deferred data migrations, seen in the sparc-iac v1.16.3 → v1.17.1 upgrade) filed with no milestone; **#1224** (require OIDC sign-in in Chrome before an image can be published) filed onto v1.17.2, to be worked **last** in the wave after several PR cycles of the local gate (owner). Before that, on 2026-10-16 (after the v1.17.1 tag):
 **0 + 0 + 13 + 1 + 21 = 35, and 544 + 35 = 579** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Since the previous pass: **#1218** (Rev 5 parameter ids) filed onto v1.17.1, and **#1217** and **#1218** closed by PR #1219. Before that, on 2026-10-16:
 **0 + 1 + 13 + 1 + 21 = 36, and 542 + 36 = 578** (v1.17.0, v1.17.1, v1.17.2, v1.18.0, none). Since 10-01: **#1200, #1202, #1204** closed by PR #1201 (v1.17.0 shipped 10-02); **#1217** (OIDC sign-in, v1.17.0 regression) filed onto v1.17.1; the 13 planned v1.17.1 issues moved to **v1.17.2** (owner, 10-16). Before that, on 10-01:
@@ -324,7 +393,7 @@ closed by in-flight work; **#871, #1159, #1161** closed.
 > closed here; it is recorded because an open milestone with nothing in it reads
 > as work in flight to anyone scanning the milestone list.
 
-### The twenty-two with no milestone
+### The twenty-one with no milestone
 
 These are invisible to every milestone count, which is exactly how **#950 went
 missing**: it sat open with no milestone, appeared in no bundle, and was only
@@ -362,7 +431,6 @@ v1.17.0 on 09-27; #1175, #1177 and #1180 arrived and closed in flight.
 | **#1198** | 2026-09-29 | chore(build): vendor the OSCAL schema bundle and verify it offline — the image build makes 81 GitHub requests and fails on any one |
 | **#1205** | 2026-09-30 | hdf-system export: label the boundary as `system` (not `system_id`) and give components a … |
 | **#1206** | 2026-09-30 | Publish a C4 component model (docs/c4/components.yml) for sparc-iac's Level 3 diagrams |
-| **#1223** | 2026-10-17 | bug(data-migrations): during a rolling deploy the previous release fails the new release's deferred data migrations ('Class … not loadable') |
 
 **How they group, offered as a starting point rather than a decision:**
 
@@ -411,8 +479,8 @@ whenever the milestone changes**: it last passed on 09-17, and was false by 09-2
 | 17 | **Complete** | `ci.v0.0.1` — evidence and gates | **22 issues, 0 open** (+ 8 PRs on the milestone page) | Closed **2026-08-30**. Detail archived in [`implemented.md`](implemented.md) |
 | 18 | **Complete** | v1.16.1 — the patch release (+ v1.16.2 / v1.16.3 hotfixes) | **22 issues, 0 open. Tagged `v1.16.1` 2026-09-17**; v1.16.2 and v1.16.3 tagged 2026-09-18 | Bundles Y → Z → AA → AB → AC → AD. Detail, and the v1.16.2 un-upgradable record, archived in [`implemented.md`](implemented.md) |
 | 19 | **Complete** | v1.17.0 — unblock Horizon, fix what customers hit (+ v1.17.1 hotfix) | **0 open, 28 closed. Tagged `v1.17.0` 2026-10-02.** v1.17.1 hotfix (#1217 OIDC sign-in, #1218 Rev 5 parameter ids) tagged 2026-10-16, 0 open, 2 closed | Bundles AE–AN delivered; AJ (#1109) moved to v1.18.0. Detail stays in Phase 19 until archived |
-| 21 | Planned | v1.18.0 — created 2026-09-29 (owner) | **1 open**: #1109 (AJ, the inline-style tail blocking removal of `style-src 'unsafe-inline'`) | 3–4d (re-measured: ~300 sites, 45 in JavaScript) |
-| 20 | **Next** | v1.17.2 — the deferred wave (milestone was `v1.17.1` until 2026-10-16, owner) | **14 open, 0 closed** (2026-10-17): #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208 #1224. **#1224** (OIDC sign-in in the publish gate) is worked **last**, after several PR cycles of the local OIDC gate (owner, 10-17). Joined since 09-29: **#1203** (AO, per-boundary SSP/SAP/SAR representation — design, NIST-validate first; moved from v1.17.0), **#1207** (PIV-stack page-load timeouts) and **#1208** (overdue POA&M risks refused by the HDF amendments translation). Sonar backlog, gates that must mean something, two UI tails, **#1176** (service accounts on non-expiring static tokens; broker short-lived IdP credentials), and **#1196** (a confidence-score for control mappings — for discussion) | est. TBD — scope after the v1.17.1 hotfix ships |
+| 21 | Planned | v1.18.0 — created 2026-09-29 (owner) | **2 open**: #1109 (AJ, the inline-style tail blocking removal of `style-src 'unsafe-inline'`), #1227 (service accounts as their own model, design first) | 3–4d (re-measured: ~300 sites, 45 in JavaScript) |
+| 20 | **Next** | v1.17.2 — the deferred wave (milestone was `v1.17.1` until 2026-10-16, owner) | **15 open, 0 closed** (2026-10-17): #1046 #1063 #1087 #1104 #1107 #1120 #1131 #1133 #1176 #1196 #1203 #1207 #1208 #1223 #1224. **Bundled 2026-10-17 (owner: land in about a week): AP → AQ → AR → AS → AT (#1224, last), tag by 2026-10-24** — see *Phase 20*. Joined since 09-29: **#1203** (AO, per-boundary SSP/SAP/SAR representation — design, NIST-validate first; moved from v1.17.0), **#1207** (PIV-stack page-load timeouts) and **#1208** (overdue POA&M risks refused by the HDF amendments translation). Sonar backlog, gates that must mean something, two UI tails, **#1176** (service accounts on non-expiring static tokens; broker short-lived IdP credentials), and **#1196** (a confidence-score for control mappings — for discussion) | ~9–10d of work, tag by **2026-10-24** |
 
 <!-- markdownlint-enable MD013 -->
 

@@ -55,3 +55,12 @@ production:
   artifact_storage_reaper:
     class: ArtifactStorageReaperJob
     schedule: every <%= ENV.fetch("SPARC_ARTIFACT_REAPER_INTERVAL_DAYS", "7").to_i.clamp(1, 90) %> days at 4am
+  # #1223 — deferred data migrations still waiting between boots. During a
+  # rolling deploy the previous release's worker can take the boot enqueue and
+  # mark the new release's rows failed; this re-runs them once that worker is
+  # gone. No-op unless a row is awaiting this release, so a genuine failure
+  # still retries only once per boot. Minutes, like the reaper above: the wait
+  # it bounds is a deploy's drain, not days.
+  deferred_data_migration_sweep:
+    class: DeferredDataMigrationSweepJob
+    schedule: every 5 minutes

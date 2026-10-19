@@ -805,7 +805,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
         amendments = Tempfile.create([ "sparc-poam-", ".json" ]) do |src|
           src.write(OscalPoamExportService.new(authored_poam).export)
           src.flush
-          service.oscal_poam_to_hdf_amendments(src.path)
+          service.oscal_poam_to_hdf_amendments(src.path).amendments
         end
         expect(amendments).to be_present
 
@@ -818,27 +818,76 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
         end
       end
 
-      # ── What happens to an OVERDUE risk today, pinned as observed ─────────
+      # ── #1208: an OVERDUE risk converts (owner, option C) ──────────────────
       #
-      # The service verifies the amendments it has just produced, and
-      # `hdf amend verify` rejects one whose expiry has passed. So a POA&M
-      # holding a risk past its deadline does not convert: the service raises,
-      # and the translations endpoint answers with the converter failure. An
-      # overdue item is an ordinary state for a POA&M, so whether this refusal
-      # is wanted is an open product question (#1208); this example records the
-      # behaviour so a change to it, in SPARC or in hdf-cli, is deliberate.
-      # hdf-cli 3.7.0 is explicit that expiry is a failure with no flag to pass
-      # it, so the choice that can change is SPARC's: whether to verify here.
-      it "refuses a POA&M whose risk deadline has passed — the amendment verifies as expired" do
-        service = HdfOscalTranslationService.new
+      # Real hdf-cli, end to end. 3.7.2 is explicit that an expired amendment
+      # fails `amend verify` with no flag to pass it, and `amend apply` refuses
+      # any document holding one. So by default the overdue amendment is left
+      # out and reported, and the document returned verifies; on request the
+      # whole document comes back. This used to be pinned as a refusal of the
+      # whole POA&M ("verification failed: 1 expired").
+      describe "a POA&M with an overdue risk (#1208)" do
+        # A second item, overdue, beside authored_poam's current one.
+        def poam_with_overdue_item
+          poam = authored_poam
+          item = PoamItem.create!(poam_document: poam, title: "Access review overdue",
+                                  description: "Quarterly access review missed.", poam_item_uuid: SecureRandom.uuid,
+                                  risk_status: "remediating", impact: "medium", likelihood: "low", row_order: 1)
+          risk = PoamRisk.create!(poam_document: poam, title: "Risk: stale access", uuid: SecureRandom.uuid,
+                                  description: "Accounts not reviewed.",
+                                  statement: "Unreviewed accounts may retain access no longer needed, so " \
+                                             "least privilege cannot be demonstrated for the review period.",
+                                  status: "remediating", likelihood: "low", impact: "medium",
+                                  deadline: 1.day.ago.beginning_of_day)
+          finding = PoamFinding.create!(poam_document: poam, title: "Finding: AC-2 review missed",
+                                        uuid: SecureRandom.uuid, description: "Review missed.",
+                                        target_data: { "type" => "statement-id", "target-id" => "ac-2_smt",
+                                                       "title" => "Objective for AC-2",
+                                                       "description" => "Review missed.",
+                                                       "status" => { "state" => "not-satisfied" } })
+          PoamItemRisk.create!(poam_item: item, poam_risk: risk)
+          PoamItemFinding.create!(poam_item: item, poam_finding: finding)
+          poam.reload
+        end
 
-        expect {
+        def convert(poam, **opts)
           Tempfile.create([ "sparc-poam-overdue-", ".json" ]) do |src|
-            src.write(OscalPoamExportService.new(authored_poam(deadline: 1.day.ago)).export)
+            src.write(OscalPoamExportService.new(poam).export)
             src.flush
-            service.oscal_poam_to_hdf_amendments(src.path)
+            HdfOscalTranslationService.new.oscal_poam_to_hdf_amendments(src.path, **opts)
           end
-        }.to raise_error(HdfRunner::Error, /verification failed: 1 expired/)
+        end
+
+        def verify_with_hdf(amendments)
+          Tempfile.create([ "amendments-", ".json" ]) do |f|
+            f.write(JSON.generate(amendments))
+            f.flush
+            HdfRunner.new.amend_verify(f.path)
+          end
+        end
+
+        it "converts by default, leaving the overdue amendment out, and what it returns verifies" do
+          result = convert(poam_with_overdue_item)
+
+          expect(result.amendments["overrides"].size).to eq(1)
+          expect(result.overdue_requirement_ids.size).to eq(1)
+          expect(result.overdue_included).to be(false)
+          expect(verify_with_hdf(result.amendments)).to be(true)
+        end
+
+        it "returns the whole document on request, which hdf-cli then refuses as expired" do
+          result = convert(poam_with_overdue_item, include_overdue: true)
+
+          expect(result.amendments["overrides"].size).to eq(2)
+          expect(result.overdue_included).to be(true)
+          expect { verify_with_hdf(result.amendments) }
+            .to raise_error(HdfRunner::Error, /verification failed: 1 expired/)
+        end
+
+        it "refuses with the remedy when the only risk is overdue" do
+          expect { convert(authored_poam(deadline: 1.day.ago)) }
+            .to raise_error(HdfOscalTranslationService::OverdueAmendmentsError, /include_overdue=true/)
+        end
       end
 
       # ── mitre/hdf-libs#236, pinned at its MINIMUM ─────────────────────────

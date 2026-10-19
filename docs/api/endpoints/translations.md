@@ -224,9 +224,32 @@ Converts an **HDF Amendments** document into an OSCAL POA&M via `hdf convert --f
 POST /api/v1/hdf/amendments_from_oscal_poam
 ```
 
-Converts an OSCAL POA&M document into an HDF **Amendments** document (`hdf convert --from oscal-poam`). The result is round-tripped through `hdf amend verify` before being returned, so the payload is guaranteed to `hdf amend apply` cleanly. No boundary enrichment applies.
+Converts an OSCAL POA&M document into an HDF **Amendments** document (`hdf convert --from oscal-poam`). The result is checked with `hdf amend verify` before it is returned. No boundary enrichment applies.
 
-**Response** `200 OK` — an HDF Amendments document.
+**Overdue risks (#1208).** A risk whose `deadline` has passed converts to an amendment whose `expiresAt` has passed. `hdf amend verify` reports that amendment as expired, and `hdf amend apply` refuses any document that holds one. An overdue item is ordinary POA&M content, so it does not refuse the conversion:
+
+- **By default**, overdue amendments are **left out** of the returned document, which therefore still `hdf amend apply`s cleanly. The response header `X-SPARC-Overdue-Amendments` gives how many were left out, and the audit event records their requirement ids.
+- **`?include_overdue=true`** returns every amendment, overdue ones included. That document is refused by `hdf amend apply` until the overdue amendments are reviewed and reissued.
+
+`X-SPARC-Overdue-Included` says which of the two you received (`true` / `false`). The body is a bare HDF Amendments document either way.
+
+**Query parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `include_overdue` | boolean | Return overdue amendments in the document as well. Default `false`. |
+
+**Response** `200 OK` — an HDF Amendments document, with:
+
+| Header | Value |
+|--------|-------|
+| `X-SPARC-Overdue-Amendments` | Number of overdue amendments in the POA&M (`0` when none) |
+| `X-SPARC-Overdue-Included` | `true` if they are in the returned document, `false` if they were left out |
+
+**`422`** when:
+- the document is structurally wrong: a schema error, an invalid amendment or a broken amendment chain. These are refused whether or not `include_overdue` is set; an expiry never masks them.
+- **every** amendment is overdue, so leaving them out leaves nothing valid (`error: "POA&M holds overdue amendments that cannot be left out"`). Pass `include_overdue=true` to receive them.
+- leaving the overdue amendments out would break the amendment chain on a requirement that also has a current amendment. Same error, same remedy.
 
 ---
 

@@ -124,6 +124,27 @@ class HdfRunner
     true
   end
 
+  # #1208 — `amend verify --json`, returned WHATEVER the exit code.
+  #
+  # `amend_verify` raises on any failure, which folds three different answers
+  # into one: an amendment past its expiresAt, an amendment that is invalid, and
+  # a broken chain. The JSON report keeps them apart (`expiredOverrides`,
+  # `invalidOverrides` + `schemaErrors`, `chain.valid`), and hdf-cli writes it
+  # to stdout on exit 1 as well. A report that is not JSON still raises: no
+  # report is not a clean report.
+  def amend_verify_report(amendments)
+    with_input_path(amendments) do |path|
+      cmd = build_cmd("amend", [ "verify", JSON_FLAG, path ])
+      stdout, stderr, status = Open3.capture3(*cmd)
+      begin
+        JSON.parse(stdout)
+      rescue JSON::ParserError
+        raise Error.new("hdf amend verify produced no report (exit #{status.exitstatus}): #{stderr.to_s.strip}",
+                        command: cmd.join(" "), exit_code: status.exitstatus, stderr: stderr.to_s)
+      end
+    end
+  end
+
   # Apply amendments to an HDF results file. Returns the amended HDF as a Hash.
   def amend_apply(results:, amendments:)
     with_input_path(results) do |results_path|

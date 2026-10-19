@@ -163,6 +163,131 @@ RSpec.describe OscalConformanceService do
     end
   end
 
+  # #1131 — parts are a separate vocabulary from props, and `check_part` was the
+  # one half of the check no spec reached. Catalog parts carry NIST's names
+  # (`statement`, `item`, `guidance`), so the catalog model is the natural target.
+  describe "part names" do
+    def catalog_doc(parts)
+      { "catalog" => {
+        "metadata" => { "oscal-version" => "1.2.2", "roles" => [], "parties" => [] },
+        "groups" => [ { "id" => "ac", "controls" => [ { "id" => "ac-1", "parts" => parts } ] } ]
+      } }
+    end
+
+    def check_catalog(parts) = check(catalog_doc(parts), model: "catalog")
+
+    it "accepts NIST-defined part names with no ns" do
+      result = check_catalog([ { "name" => "statement" }, { "name" => "guidance" } ])
+
+      expect(result).to be_conformant
+    end
+
+    it "rejects a name NIST does not define, emitted with no ns, at its exact location" do
+      result = check_catalog([ { "name" => "statement" }, { "name" => "assessment-schedule" } ])
+
+      expect(result.violations.map { |v| [ v.rule, v.location ] })
+        .to eq([ [ "part-name-not-nist", "/groups[0]/controls[0]/parts[1]" ] ])
+    end
+
+    it "accepts the same name once it carries the deployment namespace" do
+      result = check_catalog([ { "name" => "assessment-schedule", "ns" => OscalNamespace.instance } ])
+
+      expect(result).to be_conformant
+    end
+
+    # A prop name is not a part name. The dataset generator once recorded
+    # `statement` as a catalog PROP; the reverse confusion must not pass either.
+    it "rejects a prop name used as a part name" do
+      expect(check_catalog([ { "name" => "label" } ]).violations.map(&:rule)).to eq([ "part-name-not-nist" ])
+    end
+
+    it "reports a bad name nested under a bad parent, with its full path" do
+      result = check_catalog([ { "name" => "not-nist", "parts" => [ { "name" => "also-not-nist" } ] } ])
+
+      expect(result.violations.map(&:location))
+        .to eq([ "/groups[0]/controls[0]/parts[0]", "/groups[0]/controls[0]/parts[0]/parts[0]" ])
+    end
+
+    # The shape real catalogs have: `statement` holding `item`s. A bad name two
+    # levels under a GOOD parent must still be found.
+    it "reports a bad name nested under a NIST-defined parent" do
+      result = check_catalog([ { "name" => "statement", "parts" => [
+        { "name" => "item", "parts" => [ { "name" => "not-nist" } ] }
+      ] } ])
+
+      expect(result.violations.map(&:location))
+        .to eq([ "/groups[0]/controls[0]/parts[0]/parts[0]/parts[0]" ])
+    end
+
+    # A part in the deployment's namespace may still hold children with no `ns`,
+    # and each of those claims NIST defines its name.
+    it "reports a bad name with no ns nested under a namespaced parent" do
+      result = check_catalog([ { "name" => "local", "ns" => OscalNamespace.instance, "parts" => [
+        { "name" => "not-nist" }
+      ] } ])
+
+      expect(result.violations.map(&:location)).to eq([ "/groups[0]/controls[0]/parts[0]/parts[0]" ])
+    end
+
+    it "checks the props a part carries" do
+      result = check_catalog([ { "name" => "statement", "props" => [ { "name" => "not-a-nist-prop", "value" => "x" } ] } ])
+
+      expect(result.violations.map { |v| [ v.rule, v.location ] })
+        .to eq([ [ "prop-name-not-nist", "/groups[0]/controls[0]/parts[0]/props[0]" ] ])
+    end
+  end
+
+  describe "party-uuid (singular)" do
+    let(:declared) { "11111111-1111-4111-8111-111111111111" }
+
+    def doc_with_origin_party(uuid)
+      ssp_doc("metadata" => { "parties" => [ { "uuid" => declared } ],
+                              "responsible-parties" => [ { "role-id" => "x", "party-uuid" => uuid } ],
+                              "roles" => [ { "id" => "x" } ] })
+    end
+
+    it "reports one that resolves to no declared party" do
+      result = check(doc_with_origin_party("22222222-2222-4222-8222-222222222222"))
+
+      expect(result.violations.map { |v| [ v.rule, v.location ] })
+        .to eq([ [ "party-uuid-unresolved", "/metadata/responsible-parties[0]" ] ])
+    end
+
+    it "accepts one the metadata declares" do
+      expect(check(doc_with_origin_party(declared)).violations).to be_empty
+    end
+  end
+
+  describe "Result#summary" do
+    it "says conformant, with the advisory count" do
+      result = described_class::Result.new(findings: [
+        described_class::Finding.new(severity: :advisory, rule: "r", location: "/", message: "m")
+      ])
+
+      expect(result.summary).to eq("conformant (1 advisory)")
+    end
+
+    it "counts violations and advisories when not conformant" do
+      findings = %i[violation violation advisory].map do |s|
+        described_class::Finding.new(severity: s, rule: "r", location: "/", message: "m")
+      end
+
+      expect(described_class::Result.new(findings: findings).summary).to eq("2 violation(s), 1 advisory")
+    end
+  end
+
+  # Unreachable through real input by design: it guards against a reference KIND
+  # being added to `collect_references` and forgotten in `check_references`, so
+  # the condition has to be constructed.
+  describe "an unhandled reference kind" do
+    it "raises instead of dropping the reference silently" do
+      service = described_class.new(ssp_doc, model: "system-security-plan")
+      allow(service).to receive(:collect_references).and_return([ [ :component, "x", "/p" ] ])
+
+      expect { service.validate }.to raise_error(ArgumentError, /unhandled reference kind :component at \/p/)
+    end
+  end
+
   describe "an unknown OSCAL version" do
     it "is a violation, not a silent pass" do
       doc = ssp_doc("metadata" => { "oscal-version" => "9.9.9" })

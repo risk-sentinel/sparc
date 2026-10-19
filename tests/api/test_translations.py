@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import uuid
 from collections.abc import Iterator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +55,19 @@ def _oscal_poam_bytes() -> bytes:
 
 def _hdf_amendments_bytes() -> bytes:
     return _HDF_AMENDMENTS_FIXTURE.read_bytes()
+
+
+def _poam_with_deadline(deadline: datetime) -> bytes:
+    """The committed POA&M with its one risk's deadline set relative to now.
+
+    The fixture's own date was a literal (2027-06-30). #1208 began as exactly
+    that: a literal deadline in a spec passed, and on that day every branch
+    failed at once.
+    """
+    poam = json.loads(_oscal_poam_bytes())
+    for risk in poam["plan-of-action-and-milestones"]["risks"]:
+        risk["deadline"] = deadline.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return json.dumps(poam).encode()
 
 
 def _post_raw(client: httpx.Client, path: str, body: bytes) -> httpx.Response:
@@ -254,10 +268,14 @@ class TestAmendmentsFromOscalPoam:
         # chain off poam_from_hdf, but hdf-cli 3.2.0 removed hdf -> oscal-poam
         # (#648), so we feed a committed OSCAL POAM fixture directly. Still
         # proves the round-trip the controller guards with `hdf amend verify`.
-        response = _post_raw(admin_client, AMENDMENTS_PATH, _oscal_poam_bytes())
+        deadline = (datetime.now(UTC) + timedelta(days=200)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        response = _post_raw(admin_client, AMENDMENTS_PATH, _poam_with_deadline(deadline))
         assert response.status_code == 200, response.text
         body = response.json()
         assert isinstance(body, dict)
+        assert response.headers["X-SPARC-Overdue-Amendments"] == "0", response.headers
 
         # #764: the converter must carry the SOURCE deadline through, not a
         # fabricated one. hdf-cli 3.3.2 and earlier emitted conversion
@@ -265,10 +283,34 @@ class TestAmendmentsFromOscalPoam:
         # the exact value is what would catch a regression back to invention.
         overrides = body.get("overrides") or []
         assert overrides, f"expected at least one override, got: {body}"
-        assert overrides[0]["expiresAt"] == "2027-06-30T00:00:00Z", (
-            "expiresAt must equal the fixture's risks[].deadline, not a "
+        assert overrides[0]["expiresAt"] == deadline.strftime("%Y-%m-%dT%H:%M:%SZ"), (
+            "expiresAt must equal the POA&M's risks[].deadline, not a "
             f"generated date: {overrides[0].get('expiresAt')}"
         )
+
+    # #1208 — an overdue risk is ordinary POA&M content. The fixture holds one
+    # risk, so overdue it leaves nothing that `hdf amend apply` accepts: the
+    # default refuses and names the remedy, and the remedy works.
+    @pytest.mark.validation
+    def test_only_overdue_risk_refuses_with_the_remedy(self, admin_client: httpx.Client) -> None:
+        body = _poam_with_deadline(datetime.now(UTC) - timedelta(days=2))
+        response = _post_raw(admin_client, AMENDMENTS_PATH, body)
+
+        assert response.status_code == 422, response.text
+        assert response.json()["error"] == "POA&M holds overdue amendments that cannot be left out"
+        assert "include_overdue=true" in response.json()["note"], response.text
+
+    @pytest.mark.happy
+    def test_include_overdue_returns_the_overdue_amendment(
+        self, admin_client: httpx.Client
+    ) -> None:
+        body = _poam_with_deadline(datetime.now(UTC) - timedelta(days=2))
+        response = _post_raw(admin_client, f"{AMENDMENTS_PATH}?include_overdue=true", body)
+
+        assert response.status_code == 200, response.text
+        assert len(response.json()["overrides"]) == 1, response.text
+        assert response.headers["X-SPARC-Overdue-Amendments"] == "1", response.headers
+        assert response.headers["X-SPARC-Overdue-Included"] == "true", response.headers
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

@@ -166,6 +166,25 @@ RSpec.describe HdfRunner do
       end
     end
 
+    # #1208 — the report is wanted most exactly when verify FAILS.
+    describe "#amend_verify_report" do
+      let(:report) { '{"totalOverrides":2,"validOverrides":1,"expiredOverrides":1,"invalidOverrides":0}' }
+
+      it "returns the parsed report on a non-zero exit" do
+        stub_open3(stdout: report, stderr: "Error: verification failed: 1 expired", success: false, exit_code: 1)
+
+        expect(runner.amend_verify_report(amendments_path)).to include("expiredOverrides" => 1)
+        expect(Open3).to have_received(:capture3).with(fake_binary, "amend", "verify", "--json", amendments_path)
+      end
+
+      it "raises when there is no report to read" do
+        stub_open3(stdout: "", stderr: "Error: failed to read amendments file", success: false, exit_code: 1)
+
+        expect { runner.amend_verify_report(amendments_path) }
+          .to raise_error(HdfRunner::Error, /produced no report \(exit 1\): Error: failed to read/)
+      end
+    end
+
     describe "#amend_apply" do
       it "writes amended output to a tempfile and returns the parsed JSON" do
         stub_open3(stdout: "")

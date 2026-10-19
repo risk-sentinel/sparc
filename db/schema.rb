@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_120001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -630,6 +630,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_120001) do
     t.text "error_message"
     t.string "name", null: false
     t.integer "records_processed", default: 0, null: false
+    t.string "registered_release"
     t.datetime "started_at"
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
