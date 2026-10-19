@@ -44,11 +44,19 @@ https://sparc.example.com/api/v1/api_endpoints
     }
   ],
   "meta": {
+    "page": 1,
+    "pages": 1,
+    "count": 37,
+    "items": 37,
     "all_endpoints": "*",
     "note": "…"
   }
 }
 ```
+
+The catalog is returned **whole**, one row per route group, and `?items` is not
+applied: a client needs all of it to build a limit. `meta` carries the
+standard envelope for a whole collection.
 
 ## How a request is classified
 

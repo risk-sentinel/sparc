@@ -14,23 +14,30 @@
 class Api::V1::ApiEndpointsController < Api::V1::BaseController
   before_action :authorize_admin!
 
+  # The WHOLE catalog, unpaginated: a fixed set (one row per route group)
+  # that a client needs entire to build a limit. Standard envelope via
+  # whole_collection (#1019); listed in the contract sweep's
+  # UNPAGINATED_BY_DESIGN.
   def index
+    rows = ApiEndpointCatalog.groups.map do |group|
+      {
+        group: group.key,
+        label: group.label,
+        access_levels: group.access_levels,
+        entries: group.access_levels.map { |level| ApiEndpointCatalog.entry(group.key, level) }
+      }
+    end
+
     render json: {
-      data: ApiEndpointCatalog.groups.map do |group|
-        {
-          group: group.key,
-          label: group.label,
-          access_levels: group.access_levels,
-          entries: group.access_levels.map { |level| ApiEndpointCatalog.entry(group.key, level) }
-        }
-      end,
-      meta: {
+      data: rows,
+      meta: whole_collection(
+        rows,
         all_endpoints: ApiEndpointCatalog::ALL,
         note: "Send entries in allowed_endpoints. \"*\" (or an empty list) allows every endpoint. " \
               "Read covers GET and the POSTs that only compute (previews, translations, analysis); " \
               "Write covers every other POST, PUT, PATCH and DELETE. A path pattern such as " \
               "\"/api/v1/ssp_documents*\" is still accepted and grants Read and Write on the paths it matches."
-      }
+      )
     }
   end
 

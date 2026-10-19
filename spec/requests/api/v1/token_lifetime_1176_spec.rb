@@ -179,7 +179,10 @@ RSpec.describe "API token lifetime and limits (#1176)", type: :request do
       expect(ssp).to include("access_levels" => %w[read write],
                              "entries" => %w[ssp_documents:read ssp_documents:write])
       expect(response.parsed_body["data"].size).to eq(ApiEndpointCatalog.groups.size)
-      expect(response.parsed_body.dig("meta", "all_endpoints")).to eq("*")
+      # The standard envelope for a collection returned whole (#1019).
+      size = ApiEndpointCatalog.groups.size
+      expect(response.parsed_body["meta"]).to include("page" => 1, "pages" => 1, "count" => size,
+                                                      "items" => size, "all_endpoints" => "*")
     end
 
     it "is refused to a non-admin" do
