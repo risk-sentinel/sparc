@@ -95,7 +95,7 @@ RSpec.describe "Admin::ServiceAccounts", type: :request do
   describe "POST /admin/service_accounts/:id/regenerate_token" do
     it "revokes old tokens and generates new one" do
       sa = create(:user, service_account: true, owner: owner)
-      old_token = ApiToken.generate!(user: sa, name: "old")
+      old_token = ApiToken.generate!(user: sa, name: "old", expires_at: 30.days.from_now)
 
       post regenerate_token_admin_service_account_path(sa), params: { expires_in_days: "60" }
 

@@ -115,7 +115,10 @@ module ApiAuthentication
     @current_api_token.touch_usage!(ip: request.remote_ip)
 
     # AC-3: Endpoint scoping enforcement
-    unless @current_api_token.endpoint_allowed?(request.path)
+    # #1176 — the route the request reached fixes Read vs Write
+    # (ApiEndpointCatalog), not the verb alone.
+    unless @current_api_token.endpoint_allowed?(request.path, verb: request.request_method,
+                                                route_key: "#{controller_path}##{action_name}")
       render json: { error: "Token is not authorized for this endpoint" }, status: :forbidden
       @current_user = nil
       return
@@ -139,7 +142,8 @@ module ApiAuthentication
 
     # Look up user by email claim (preferred) or sub claim
     email = claims["email"] || claims["sub"]
-    @current_user = User.find_by(email: email)
+    # #1176 — a person only: a service account's email is not an identity.
+    @current_user = User.human_by_email(email)
 
     if @current_user.nil?
       render json: { error: "No SPARC user account found for OIDC identity" }, status: :unauthorized

@@ -45,6 +45,7 @@ DELETE /api/v1/users/:id
 DELETE /api/v1/users/:user_id/api_tokens/:id
 GET /api/v1/admin/reconciliation
 GET /api/v1/admin/remediation_timelines
+GET /api/v1/api_endpoints
 GET /api/v1/artifacts/:uuid
 GET /api/v1/artifacts/:uuid/freshness
 GET /api/v1/artifacts/:uuid/versions
@@ -307,6 +308,8 @@ POST /api/v1/ssp_documents/convert
 POST /api/v1/users
 POST /api/v1/users/:id/password_reset
 POST /api/v1/users/:user_id/api_tokens
+POST /api/v1/users/:user_id/api_tokens/:id/reissue
+POST /api/v1/users/:user_id/api_tokens/:id/renew
 PUT /api/v1/admin/remediation_timelines
 PUT /api/v1/authoritative_sources/:id
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id

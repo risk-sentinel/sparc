@@ -508,7 +508,14 @@ Rails.application.routes.draw do
         patch  :reset_password        # temporary password, handed over out of band
         patch  :email_password_reset  # emailed one-time link (requires SMTP)
       end
-      resources :api_tokens, only: [ :create, :destroy ], controller: "api_tokens"
+      resources :api_tokens, only: [ :create, :destroy ], controller: "api_tokens" do
+        # #1176 — renew overlaps the old token for a grace window; reissue
+        # revokes it at once. Both keep its endpoint and CIDR limits.
+        member do
+          post :renew
+          post :reissue
+        end
+      end
     end
     resources :service_accounts do
       member do
@@ -992,8 +999,18 @@ Rails.application.routes.draw do
         end
         # #1016 — issuing and revoking the credential the API authenticates
         # with was browser-only, so rotation required a human session.
-        resources :api_tokens, only: [ :index, :create, :destroy ]
+        resources :api_tokens, only: [ :index, :create, :destroy ] do
+          # #1176 — the same renew / reissue the admin user page offers.
+          member do
+            post :renew
+            post :reissue
+          end
+        end
       end
+
+      # #1176 — what a token's allowed_endpoints may name: the resource groups
+      # and their Read/Write levels, from the one definition enforcement uses.
+      get "api_endpoints", to: "api_endpoints#index"
       resources :authorization_boundaries, only: [ :index, :show, :create, :update, :destroy ] do
         # #1015 — a leveraged authorization records the ATO a system inherits
         # from, and OSCAL exports it on every SSP for the boundary. It was

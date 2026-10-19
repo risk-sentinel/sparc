@@ -15,6 +15,8 @@ module Admin
   #   IA-4 Identifier Management (UUID + sparc_sa_ prefix)
   #   IA-5 Authenticator Management (token generation, expiration, rotation)
   class ServiceAccountsController < ApplicationController
+    include ApiTokenLimits
+
     before_action :authorize_admin!
     before_action :set_service_account, only: [ :show, :edit, :update, :disable, :enable, :regenerate_token, :destroy ]
 
@@ -40,21 +42,8 @@ module Admin
       @service_account.password = SecureRandom.hex(32)
       @service_account.password_confirmation = @service_account.password
 
-      if @service_account.save
-        # Generate initial token
-        expires_at = params[:expires_in_days].present? ? params[:expires_in_days].to_i.days.from_now : 90.days.from_now
-        allowed_endpoints = parse_list_param(params[:allowed_endpoints])
-        allowed_cidrs = parse_list_param(params[:allowed_cidrs])
-
-        token = ApiToken.generate!(
-          user: @service_account,
-          name: "Initial token",
-          expires_at: expires_at,
-          created_by: current_user,
-          allowed_endpoints: allowed_endpoints,
-          allowed_cidrs: allowed_cidrs
-        )
-
+      token = create_with_initial_token
+      if token
         AuditEvent.log(
           user: current_user,
           action: "service_account_created",
@@ -68,6 +57,7 @@ module Admin
         redirect_to admin_service_account_path(@service_account), notice: "Service account created. Copy the API token now — it won't be shown again."
       else
         @human_users = User.human_users.active.order(:email)
+        @selected_endpoints = token_list_param(params[:allowed_endpoints]) || []
         render :new, status: :unprocessable_content
       end
     end
@@ -121,21 +111,15 @@ module Admin
       redirect_to admin_service_account_path(@service_account), notice: "Service account re-enabled."
     end
 
+    # Revoke every token and issue one. #1176: limits and lifetime the form
+    # does not send are carried over from the newest token. The button sends
+    # none, and before #1176 that issued a token with no limits at all.
     def regenerate_token
-      # Revoke all existing tokens
-      @service_account.api_tokens.destroy_all
-
-      expires_at = params[:expires_in_days].present? ? params[:expires_in_days].to_i.days.from_now : 90.days.from_now
-      allowed_endpoints = parse_list_param(params[:allowed_endpoints])
-      allowed_cidrs = parse_list_param(params[:allowed_cidrs])
-
-      token = ApiToken.generate!(
-        user: @service_account,
-        name: "Regenerated token",
-        expires_at: expires_at,
-        created_by: current_user,
-        allowed_endpoints: allowed_endpoints,
-        allowed_cidrs: allowed_cidrs
+      token = ApiToken.regenerate_for!(
+        @service_account, by: current_user,
+        expires_in_days: token_days_param(params[:expires_in_days]),
+        allowed_endpoints: token_list_param(params[:allowed_endpoints]),
+        allowed_cidrs: token_list_param(params[:allowed_cidrs])
       )
 
       AuditEvent.log(
@@ -149,6 +133,9 @@ module Admin
 
       flash[:api_token] = token.plaintext_token
       redirect_to admin_service_account_path(@service_account), notice: "Token regenerated. Copy the new API token now — it won't be shown again."
+    rescue ActiveRecord::RecordInvalid, ArgumentError => e
+      message = e.respond_to?(:record) ? e.record.errors.full_messages.to_sentence : e.message
+      redirect_to admin_service_account_path(@service_account), alert: "Token not regenerated: #{message}"
     end
 
     def destroy
@@ -178,9 +165,39 @@ module Admin
       params.require(:user).permit(:email, :first_name, :last_name, :display_name, :owner_id, :admin)
     end
 
-    def parse_list_param(param)
-      return [] if param.blank?
-      param.to_s.split(/[\r\n,]+/).map(&:strip).reject(&:blank?)
+    def submitted_endpoints
+      picked_endpoints(params[:allowed_endpoints]) || []
+    end
+
+    # #1176 — the account and its first token are checked, then saved,
+    # together. A token the rules refuse (an unknown endpoint, a lifetime past
+    # the cap) leaves no account behind, and its errors show on the form beside
+    # the account's. Returns the token, or nil with the errors on
+    # @service_account.
+    def create_with_initial_token
+      account_valid = @service_account.valid?
+      attrs = initial_token_attrs
+      return nil unless attrs
+
+      probe = ApiToken.new(attrs.merge(user: @service_account, token_digest: "validation-probe"))
+      unless probe.valid?
+        probe.errors.full_messages.each { |m| @service_account.errors.add(:base, "Token: #{m}") }
+      end
+      return nil unless account_valid && probe.errors.empty?
+
+      User.transaction do
+        @service_account.save!
+        ApiToken.generate!(user: @service_account, **attrs)
+      end
+    end
+
+    def initial_token_attrs
+      days = token_days_param(params[:expires_in_days]) || ApiToken::DEFAULT_SERVICE_ACCOUNT_DAYS
+      { name: "Initial token", expires_at: expiry_from_days(days), created_by: current_user,
+        allowed_endpoints: submitted_endpoints, allowed_cidrs: token_list_param(params[:allowed_cidrs]) || [] }
+    rescue ArgumentError => e
+      @service_account.errors.add(:base, "Token: #{e.message}")
+      nil
     end
   end
 end

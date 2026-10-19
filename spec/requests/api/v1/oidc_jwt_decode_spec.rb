@@ -93,6 +93,31 @@ RSpec.describe "API v1 OIDC JWT decode", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    # #1176 — a service account's email is not an identity, so an IdP token
+    # naming it resolves to nobody, never to the service account.
+    it "does not resolve a JWT to a service account carrying the email" do
+      create(:user, :service_account, email: "team@example.com")
+      payload = valid_payload.merge(sub: "team@example.com", email: "team@example.com")
+
+      get api_v1_ssp_documents_path, headers: auth_headers(encode(payload))
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.parsed_body["error"]).to include("No SPARC user account found")
+    end
+
+    # The other direction: the person is found even when a service account
+    # created EARLIER shares the email. That account is suspended, so resolving
+    # to it would answer 401 "not active" instead of 200.
+    it "resolves a JWT to the person when a service account shares their email" do
+      user.destroy!
+      create(:user, :service_account, email: "alice@example.com", status: "suspended")
+      create(:user, email: "alice@example.com")
+
+      get api_v1_ssp_documents_path, headers: auth_headers(encode(valid_payload))
+
+      expect(response).to have_http_status(:ok)
+    end
+
     it "rejects a JWT whose subject does not map to a SPARC user" do
       payload = valid_payload.merge(sub: "no-such-user@example.com",
                                     email: "no-such-user@example.com")

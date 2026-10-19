@@ -217,6 +217,21 @@ module SparcConfig
   def inactivity_days      = ENV.fetch("SPARC_INACTIVITY_DAYS", "30").to_i
   def password_expiry_days = ENV.fetch("SPARC_PASSWORD_EXPIRY_DAYS", "30").to_i
 
+  # #1176 — the longest a service-account API token may live. A service
+  # account's token must expire, and no path can create one beyond this.
+  # A person's token may still be set to never expire (owner, 2026-10-18).
+  # Clamped to 1..3650 so a typo cannot reopen the immortal-credential gap.
+  def api_token_max_days
+    ENV.fetch("SPARC_API_TOKEN_MAX_DAYS", "365").to_i.clamp(1, 3650)
+  end
+
+  # #1176 — after a token is renewed, how long the token it replaces keeps
+  # working, so the automation holding it can switch without an outage
+  # (owner, 2026-10-18: 7 days). 0 ends the old token at once. Clamped to 0..90.
+  def api_token_renewal_grace_days
+    ENV.fetch("SPARC_API_TOKEN_RENEWAL_GRACE_DAYS", "7").to_i.clamp(0, 90)
+  end
+
   # #548 — guard against meta-refresh trap on document show pages.
   # Documents in pending/processing for longer than this stop polling
   # and show a "stuck" message instead of looping every 3 seconds.

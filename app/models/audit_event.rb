@@ -298,6 +298,8 @@ class AuditEvent < ApplicationRecord
     organization_boundary_assigned
     api_token_created
     api_token_revoked
+    api_token_renewed
+    api_token_reissued
     ato_package_created
     ato_package_exported
 
@@ -527,7 +529,7 @@ class AuditEvent < ApplicationRecord
     "Translations" => %w[translation_hdf_to_oscal_sar translation_hdf_to_oscal_poam
                          translation_hdf_amendments_to_oscal_poam
                          translation_oscal_poam_to_hdf_amendments],
-    "API Tokens" => %w[api_token_created api_token_revoked],
+    "API Tokens" => %w[api_token_created api_token_revoked api_token_renewed api_token_reissued],
     "Back Matter" => %w[back_matter_resource_created back_matter_resource_updated
                         back_matter_resource_deleted back_matter_resource_linked
                         back_matter_resource_unlinked back_matter_resource_archived

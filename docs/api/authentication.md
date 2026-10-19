@@ -77,10 +77,23 @@ Service accounts provide scoped, non-human access for automation.
 
 1. Navigate to **Admin > Service Accounts**.
 2. Click **New Service Account** and provide a name and description.
-3. Optionally restrict access:
-   - **Endpoint scoping**: limit the account to specific API endpoints (e.g., only `GET /api/v1/ssp_documents`).
+3. Choose the token's expiry. A service account's token must expire, at most
+   `SPARC_API_TOKEN_MAX_DAYS` away (default 365) (#1176).
+4. Optionally restrict access:
+   - **Endpoint scoping**: **All endpoints**, or **Read** and/or **Write** per
+     resource (e.g., Read on System security plans only). The choices come
+     from [`GET /api/v1/api_endpoints`](endpoints/api-endpoints.md).
    - **CIDR scoping**: limit requests to specific IP ranges (e.g., `10.0.0.0/8`).
-4. Click **Create** and copy the generated token.
+5. Click **Create** and copy the generated token.
+
+A service account's email is a contact address, not an identity: it is never
+used to sign anyone in, and several accounts may share one team mailbox. An
+OIDC token naming that email resolves to the **person** with it, never to a
+service account (#1176).
+
+Renew a token before it expires (`POST /api/v1/users/:id/api_tokens/:token_id/renew`):
+the replacement keeps the limits and the old token keeps working for
+`SPARC_API_TOKEN_RENEWAL_GRACE_DAYS` (default 7). See [api-tokens.md](endpoints/api-tokens.md).
 
 ## cURL Examples
 

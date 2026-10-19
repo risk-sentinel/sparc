@@ -16,6 +16,7 @@ RSpec.describe "Service Account API Auth Enforcement", type: :request do
       token = ApiToken.generate!(
         user: service_account,
         name: "scoped",
+        expires_at: 30.days.from_now,
         allowed_endpoints: [ "/api/v1/available" ]
       )
       get "/api/v1/available", headers: { "Authorization" => "Bearer #{token.plaintext_token}" }
@@ -26,6 +27,7 @@ RSpec.describe "Service Account API Auth Enforcement", type: :request do
       token = ApiToken.generate!(
         user: service_account,
         name: "scoped",
+        expires_at: 30.days.from_now,
         allowed_endpoints: [ "/api/v1/ssp_documents" ]
       )
       get "/api/v1/available", headers: { "Authorization" => "Bearer #{token.plaintext_token}" }
@@ -37,6 +39,7 @@ RSpec.describe "Service Account API Auth Enforcement", type: :request do
       token = ApiToken.generate!(
         user: service_account,
         name: "wildcard",
+        expires_at: 30.days.from_now,
         allowed_endpoints: [ "/api/v1/*" ]
       )
       get "/api/v1/available", headers: { "Authorization" => "Bearer #{token.plaintext_token}" }
@@ -47,6 +50,7 @@ RSpec.describe "Service Account API Auth Enforcement", type: :request do
       token = ApiToken.generate!(
         user: service_account,
         name: "unrestricted",
+        expires_at: 30.days.from_now,
         allowed_endpoints: []
       )
       get "/api/v1/available", headers: { "Authorization" => "Bearer #{token.plaintext_token}" }
@@ -59,6 +63,7 @@ RSpec.describe "Service Account API Auth Enforcement", type: :request do
       token = ApiToken.generate!(
         user: service_account,
         name: "cidr-scoped",
+        expires_at: 30.days.from_now,
         allowed_cidrs: [ "10.0.0.0/8" ]
       )
       get "/api/v1/available", headers: { "Authorization" => "Bearer #{token.plaintext_token}" }
@@ -71,6 +76,7 @@ RSpec.describe "Service Account API Auth Enforcement", type: :request do
       token = ApiToken.generate!(
         user: service_account,
         name: "cidr-scoped",
+        expires_at: 30.days.from_now,
         allowed_cidrs: [ "127.0.0.0/8" ]
       )
       get "/api/v1/available", headers: { "Authorization" => "Bearer #{token.plaintext_token}" }
@@ -80,7 +86,7 @@ RSpec.describe "Service Account API Auth Enforcement", type: :request do
 
   describe "sparc_sa_ token prefix" do
     it "generates tokens with sparc_sa_ prefix for service accounts" do
-      token = ApiToken.generate!(user: service_account, name: "test")
+      token = ApiToken.generate!(user: service_account, name: "test", expires_at: 30.days.from_now)
       expect(token.plaintext_token).to start_with("sparc_sa_")
     end
 

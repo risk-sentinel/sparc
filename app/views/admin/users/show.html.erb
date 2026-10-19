@@ -191,6 +191,8 @@
           <thead>
             <tr>
               <th>Name</th>
+              <th>Status</th>
+              <th>Expires</th>
               <th>Created</th>
               <th>Last Used</th>
               <th>Actions</th>
@@ -200,18 +202,36 @@
             <% @user.api_tokens.order(created_at: :desc).each do |token| %>
               <tr>
                 <td><%= token.name %></td>
+                <td><%= token_status_badge(token) %></td>
+                <td class="small"><%= token.expires_at&.strftime("%Y-%m-%d %H:%M UTC") || "Never" %></td>
                 <td class="small"><%= token.created_at.strftime("%Y-%m-%d %H:%M UTC") %></td>
                 <td class="small"><%= token.last_used_at&.strftime("%Y-%m-%d %H:%M UTC") || "Never" %></td>
-                <td>
+                <td class="text-nowrap">
+                  <% unless token.expired? %>
+                    <%= button_to "Renew", renew_admin_user_api_token_path(@user, token),
+                          method: :post, form_class: "d-inline",
+                          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+                          data: { turbo_confirm: "Renew '#{token.name}'? A new token is issued with the same limits; this one keeps working for up to #{SparcConfig.api_token_renewal_grace_days} more days." } %>
+                  <% end %>
+                  <%= button_to "Reissue", reissue_admin_user_api_token_path(@user, token),
+                        method: :post, form_class: "d-inline",
+                        class: "sparc-action sparc-action--caution sparc-action--outline sparc-action--sm",
+                        data: { turbo_confirm: "Reissue '#{token.name}'? It stops working now, and a new token with the same limits replaces it." } %>
                   <%= button_to "Revoke", admin_user_api_token_path(@user, token),
-                        method: :delete,
+                        method: :delete, form_class: "d-inline",
                         class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
                         data: { turbo_confirm: "Revoke token '#{token.name}'?" } %>
                 </td>
               </tr>
+              <tr class="sparc-token-limits">
+                <td colspan="6" class="small text-body-secondary border-top-0 pt-0">
+                  <span class="fw-semibold">Endpoints:</span> <%= token.endpoint_summary.join("; ") %>
+                  &middot; <span class="fw-semibold">CIDRs:</span> <%= token.allowed_cidrs.presence&.join(", ") || "Any address" %>
+                </td>
+              </tr>
             <% end %>
             <% if @user.api_tokens.empty? %>
-              <tr><td colspan="4" class="text-center text-body-secondary small py-3">No API tokens.</td></tr>
+              <tr><td colspan="6" class="text-center text-body-secondary small py-3">No API tokens.</td></tr>
             <% end %>
           </tbody>
         </table>
@@ -219,20 +239,36 @@
 
       <hr>
 
-      <%= form_with url: admin_user_api_tokens_path(@user), method: :post, class: "row g-2 align-items-end" do |f| %>
-        <div class="col-auto">
-          <%= f.label :name, "Token Name", class: "form-label small" %>
-          <%= f.text_field :name, class: "form-control form-control-sm", placeholder: "e.g. CI Pipeline",
-                name: "api_token[name]" %>
+      <%= form_with url: admin_user_api_tokens_path(@user), method: :post do |f| %>
+        <div class="row g-2 align-items-end">
+          <div class="col-auto">
+            <%= f.label :name, "Token Name", class: "form-label small" %>
+            <%= f.text_field :name, class: "form-control form-control-sm", placeholder: "e.g. CI Pipeline",
+                  name: "api_token[name]" %>
+          </div>
+          <div class="col-auto">
+            <%= f.label :expires_in_days, "Expires", class: "form-label small" %>
+            <%= f.select :expires_in_days, token_expiry_options(service_account: @user.service_account?),
+                  { selected: @user.service_account? ? ApiToken::DEFAULT_SERVICE_ACCOUNT_DAYS : 30 },
+                  { class: "form-select form-select-sm", name: "api_token[expires_in_days]" } %>
+          </div>
+          <div class="col-auto">
+            <%= f.submit "Generate Token", class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm" %>
+          </div>
         </div>
-        <div class="col-auto">
-          <%= f.label :expires_in_days, "Expires", class: "form-label small" %>
-          <%= f.select :expires_in_days, [["30 days", 30], ["60 days", 60], ["90 days", 90], ["Never", 0]],
-                {}, { class: "form-select form-select-sm", name: "api_token[expires_in_days]" } %>
-        </div>
-        <div class="col-auto">
-          <%= f.submit "Generate Token", class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm" %>
-        </div>
+        <details class="mt-3">
+          <summary class="small">Limit endpoints and addresses (default: all endpoints, any address)</summary>
+          <div class="mt-2">
+            <%= render "admin/api_tokens/endpoint_picker", field: "api_token[allowed_endpoints]",
+                       selected: nil, id: "user_token_endpoints" %>
+            <div class="mb-2">
+              <label class="form-label small" for="api_token_allowed_cidrs">Allowed CIDRs <small class="text-muted">(optional)</small></label>
+              <textarea name="api_token[allowed_cidrs]" id="api_token_allowed_cidrs" class="form-control form-control-sm" rows="2"
+                        placeholder="10.0.0.0/8&#10;192.168.1.0/24"></textarea>
+              <div class="form-text">One CIDR per line. Leave empty to allow any IP.</div>
+            </div>
+          </div>
+        </details>
       <% end %>
     </div>
   </div>

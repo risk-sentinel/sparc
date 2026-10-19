@@ -760,6 +760,8 @@ controllers:
     mapped:
       create: ["POST /api/v1/users/:user_id/api_tokens"]
       destroy: ["DELETE /api/v1/users/:user_id/api_tokens/:id"]
+      renew: ["POST /api/v1/users/:user_id/api_tokens/:id/renew"]
+      reissue: ["POST /api/v1/users/:user_id/api_tokens/:id/reissue"]
 
   admin/audit_logs:
     gap:

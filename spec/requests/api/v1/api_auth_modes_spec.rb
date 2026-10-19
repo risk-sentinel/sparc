@@ -4,7 +4,7 @@ RSpec.describe "API Auth Modes", type: :request do
   let(:admin) { create(:user, :admin) }
   let(:service_user) { create(:user, service_account: true, owner: admin, email: "pipeline@service.local") }
   let(:sparc_token) { ApiToken.generate!(user: admin, name: "Test Token") }
-  let(:service_token) { ApiToken.generate!(user: service_user, name: "Pipeline Token") }
+  let(:service_token) { ApiToken.generate!(user: service_user, name: "Pipeline Token", expires_at: 30.days.from_now) }
   let(:sparc_headers) { { "Authorization" => "Bearer #{sparc_token.plaintext_token}" } }
   let(:service_headers) { { "Authorization" => "Bearer #{service_token.plaintext_token}" } }
   let(:jwt_headers) { { "Authorization" => "Bearer eyJhbGciOiJSUzI1NiJ9.fake.token" } }
