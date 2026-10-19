@@ -548,6 +548,8 @@ policies. These settings apply to all users unless noted otherwise.
 | --- | --- | --- | --- | --- |
 | SPARC_INACTIVITY_DAYS | Days of inactivity before an account is auto-deactivated. **Applies to ALL accounts — human and service (#785 Pass 2.1)** — except the break-glass admin, see below. | 30 | `90` | No |
 | SPARC_PASSWORD_EXPIRY_DAYS | Number of days before a local-auth user's password expires and must be reset. OAuth/SSO-only users are exempt, as is the break-glass admin (see below). | 30 | `90` | No |
+| SPARC_API_TOKEN_MAX_DAYS | The longest a **service account's** API token may live (#1176). A service-account token must expire, and no path (account form, admin user page, `/api/v1/users/:id/api_tokens`, `/api/v1/service_accounts`) can issue one further out; a request beyond it is refused, not shortened. A person's token may still be set to never expire. Clamped to 1–3650. Existing tokens are not changed on upgrade. | 365 | `180` | No |
+| SPARC_API_TOKEN_RENEWAL_GRACE_DAYS | After an API token is **renewed**, how long the token it replaces keeps working, so automation can switch without an outage (#1176). Never extends the old token past its own expiry. `0` ends it at once. Clamped to 0–90. | 7 | `3` | No |
 | SPARC_PROCESSING_STUCK_MINUTES | Minutes after which a document stuck in pending/processing stops auto-refreshing on its show page (#548). Without this guard, documents whose parsing job never ran trap the browser in a 3-second refresh loop. | 5 | `10` | No |
 
 The `InactivityCheckJob` should be scheduled via cron or your job

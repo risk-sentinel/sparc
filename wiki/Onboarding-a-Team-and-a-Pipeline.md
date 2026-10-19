@@ -100,13 +100,18 @@ identifiable in logs and in an audit review.
 
 | Constraint | Effect |
 |---|---|
-| `allowed_endpoints` | The token may call only these endpoints |
+| `allowed_endpoints` | The token may call only these resources: **Read**, **Write** or both per resource (`"evidences:write"`), from `GET /api/v1/api_endpoints` |
 | `allowed_cidrs` | The token is refused from outside these ranges |
-| `expires_at` | The token stops working, whether or not anyone remembers |
+| `expires_at` | The token stops working, whether or not anyone remembers. **Required** for a service account, at most `SPARC_API_TOKEN_MAX_DAYS` |
 | `scopes` | Per-permission limits |
 
 A CI token that can only POST scan results from your runner's egress range is a
 much smaller thing to lose than an unscoped one.
+
+**Rotate without an outage.** `POST /api/v1/users/:id/api_tokens/:token_id/renew`
+returns a new token with the same limits; the old one keeps working for
+`SPARC_API_TOKEN_RENEWAL_GRACE_DAYS` (default 7). Store the new token, then let
+the old one lapse. `…/reissue` ends the old one at once, for a suspected leak.
 
 **Store it as a CI secret**, never in the repository.
 
@@ -179,7 +184,7 @@ Confirm the integration end to end:
 |---|---|
 | Every API call 401s, regardless of token | `SPARC_API_AUTH=oidc` with a service-account token — use `hybrid` |
 | A person signs in but sees nothing | The grant named an org/boundary/role that does not exist; check **IdP Grants** |
-| 403 from one endpoint only | The token's `allowed_endpoints` does not include it |
+| 403 from one endpoint only | The token's `allowed_endpoints` does not include that resource, or has Read where the call needs Write |
 | 403 from CI but not from a laptop | `allowed_cidrs` does not cover the runner's egress |
 | Worked yesterday, 401 today | The token's `expires_at` passed |
 | Offboarded at the IdP, still signing in | They hold a local password as well |

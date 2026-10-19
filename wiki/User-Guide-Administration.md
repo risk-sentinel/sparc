@@ -146,10 +146,34 @@ UUID-based audit traceability.
 ## How to issue service accounts and API tokens
 
 1. Go to **Administration → Service Accounts** (`/admin/service_accounts`).
-2. Create a service account — a non-interactive identity for automation.
-3. Issue an **API token**; the plaintext `sparc_sa_<token>` is shown **once** at
-   creation (only a SHA-256 digest is stored), so copy it immediately.
-4. Revoke tokens from the same screen when they're no longer needed.
+2. Create a service account — a non-interactive identity for automation. Its
+   **email is a contact address**, not its identity: several accounts may share
+   one team mailbox, and it may be a person's address.
+3. Choose its **token expiry**. A service account's token must expire, at most
+   `SPARC_API_TOKEN_MAX_DAYS` away (default 365); there is no "Never".
+4. Choose **Allowed Endpoints**: **All endpoints**, or **Read** and/or **Write**
+   per resource. Read covers fetching and the requests that only compute
+   (previews, translations, analysis); Write covers everything that creates,
+   changes or deletes.
+5. The plaintext `sparc_sa_<token>` is shown **once** at creation (only a
+   SHA-256 digest is stored), so copy it immediately.
+
+Each token on the account page shows its status (**Active**, **Expires soon**
+within 14 days, **Never expires**, **Expired**), its endpoint and CIDR limits,
+and two buttons:
+
+- **Renew** issues a new token with the same limits and lifetime. The old one
+  keeps working for `SPARC_API_TOKEN_RENEWAL_GRACE_DAYS` (default 7) so the
+  automation using it can switch over. Use it before a token expires.
+- **Reissue** stops the token **now** and issues a replacement with the same
+  limits. Use it when a token may be exposed.
+
+**Regenerate Token** revokes every token on the account and issues one, keeping
+the newest token's limits. A person's tokens are managed the same way from
+their page under **Administration → Users**, where "Never" is still offered.
+
+A token issued before v1.17.2 may never expire; the account page says so. It
+keeps working — renew it to replace it with one that expires.
 
 Service accounts authenticate the REST API and can bridge to a UI session via
 `POST /api/v1/sessions/from_token`.
@@ -190,7 +214,9 @@ one. It is retried once at the next boot, not every 5 minutes.
 - Assign roles at the **narrowest scope** that works — prefer a boundary role
   over an instance role unless the person truly operates instance-wide.
 - **Copy the API token immediately** on creation; it can't be retrieved later,
-  only regenerated.
+  only renewed or reissued.
+- **Renew a token before it expires**, not after: the renewal overlap only
+  helps while the old token still works.
 - Prefer **Suspend** over deletion for users and **Deactivate** for
   organizations — both preserve the audit trail.
 - Use the audit log's **CSV export** with a date range for periodic access
@@ -204,7 +230,9 @@ one. It is retried once at the next boot, not every 5 minutes.
 |---|---|---|
 | No Administration menu | You aren't an Instance Admin | Only Instance Admins see it — request the role |
 | A user can't access a boundary's docs | Role assigned at wrong scope | Assign the boundary-scoped role on the user's Edit screen |
-| Lost an API token | Plaintext is shown only once | Revoke it and issue a new token |
+| Lost an API token | Plaintext is shown only once | **Reissue** it: the lost one stops, and the new one keeps its limits |
+| "Expires at is required for a service account's token" | "Never" or no expiry was asked for a service account | Pick a lifetime of at most `SPARC_API_TOKEN_MAX_DAYS` |
+| "Choose the endpoints this token may reach" | Nothing was ticked in Allowed Endpoints | Tick **All endpoints**, or Read/Write for the resources it needs |
 | Backfill seems incomplete after deploy | Deferred migration still running | Check Data Migrations for its state |
 | A new migration shows failed: `Class … not loadable`, right after an upgrade | The previous release's container took it during a rolling deploy | Nothing to do: it re-runs within 5 minutes of the old container draining (v1.17.2+) |
 | Audit export is huge | No filters applied | Narrow by date range/user before **Export CSV** |
