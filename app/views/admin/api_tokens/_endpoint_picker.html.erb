@@ -26,7 +26,10 @@
     <label class="form-check-label fw-semibold" for="<%= id %>_all">All endpoints</label>
   </div>
 
-  <div class="sparc-endpoint-picker__list border rounded">
+  <%# Focusable and named: a keyboard user must be able to scroll this list
+      (axe scrollable-region-focusable). %>
+  <div class="sparc-endpoint-picker__list border rounded" tabindex="0" role="region"
+       aria-label="API resources and access levels">
     <table class="table table-sm mb-0 align-middle">
       <thead>
         <tr><th scope="col">Resource</th><th scope="col" class="text-center">Read</th><th scope="col" class="text-center">Write</th></tr>
