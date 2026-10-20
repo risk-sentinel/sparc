@@ -46,7 +46,7 @@ CALLER_HDF_LIBS_VERSION="${HDF_LIBS_VERSION:-}"
 CALLER_XTEXT_VERSION="${XTEXT_VERSION:-}"
 CALLER_GO_FIX_LINE="${GO_FIX_LINE:-}"
 
-[ -f "$DOCKERFILE" ] || fail "$DOCKERFILE not found (is this running from the repo root, and is it in the sparse checkout?)"
+[[ -f "$DOCKERFILE" ]] || fail "$DOCKERFILE not found (is this running from the repo root, and is it in the sparse checkout?)"
 
 read_arg() {
   local name="$1" value
@@ -54,7 +54,7 @@ read_arg() {
   # An ARG that is renamed or removed must not silently resolve to empty — an
   # empty version would make `git clone --branch v` fail with a confusing error
   # a long way from the cause.
-  [ -n "$value" ] || fail "ARG ${name} not found in $DOCKERFILE"
+  [[ -n "$value" ]] || fail "ARG ${name} not found in $DOCKERFILE"
   printf '%s' "$value"
 }
 
@@ -66,20 +66,20 @@ GO_FIX_LINE="$(read_arg GO_FIX_LINE)"
 # It downloads a release binary rather than building, so it is not used by CI —
 # but a developer running it gets whatever it says, and "the version I tested
 # locally" silently differing from the image is the same class of defect.
-if [ -f "$INSTALL_SCRIPT" ]; then
+if [[ -f "$INSTALL_SCRIPT" ]]; then
   script_default="$(sed -n 's/^HDF_LIBS_VERSION="\${HDF_LIBS_VERSION:-\(.*\)}"$/\1/p' "$INSTALL_SCRIPT" | head -1)"
-  [ -n "$script_default" ] || fail "could not read the HDF_LIBS_VERSION default from $INSTALL_SCRIPT — its shape changed, so this check has stopped checking"
-  [ "$script_default" = "$HDF_LIBS_VERSION" ] || \
+  [[ -n "$script_default" ]] || fail "could not read the HDF_LIBS_VERSION default from $INSTALL_SCRIPT — its shape changed, so this check has stopped checking"
+  [[ "$script_default" = "$HDF_LIBS_VERSION" ]] || \
     fail "$INSTALL_SCRIPT defaults to ${script_default}, $DOCKERFILE says ${HDF_LIBS_VERSION}"
 fi
 
 # ── Assert mode: the caller restated the pins; they must agree ────────────────
-if [ "${1:-}" = "--assert" ]; then
+if [[ "${1:-}" = "--assert" ]]; then
   # Compares the CALLER's values (captured at entry) against the Dockerfile's.
   assert_pin() {
     local name="$1" actual="$2" expected="$3"
-    [ -n "$actual" ] || fail "--assert given but ${name} is unset in the environment"
-    [ "$actual" = "$expected" ] || fail "${name} drift — caller has '${actual}', $DOCKERFILE has '${expected}'"
+    [[ -n "$actual" ]] || fail "--assert given but ${name} is unset in the environment"
+    [[ "$actual" = "$expected" ]] || fail "${name} drift — caller has '${actual}', $DOCKERFILE has '${expected}'"
   }
   assert_pin HDF_LIBS_VERSION "$CALLER_HDF_LIBS_VERSION" "$HDF_LIBS_VERSION"
   assert_pin XTEXT_VERSION    "$CALLER_XTEXT_VERSION"    "$XTEXT_VERSION"
@@ -90,8 +90,8 @@ echo "HDF_LIBS_VERSION=${HDF_LIBS_VERSION}"
 echo "XTEXT_VERSION=${XTEXT_VERSION}"
 echo "GO_FIX_LINE=${GO_FIX_LINE}"
 
-if [ "${1:-}" = "--github-output" ]; then
-  [ -n "${GITHUB_OUTPUT:-}" ] || fail "--github-output given but GITHUB_OUTPUT is unset"
+if [[ "${1:-}" = "--github-output" ]]; then
+  [[ -n "${GITHUB_OUTPUT:-}" ]] || fail "--github-output given but GITHUB_OUTPUT is unset"
   {
     echo "hdf_libs_version=${HDF_LIBS_VERSION}"
     echo "xtext_version=${XTEXT_VERSION}"
