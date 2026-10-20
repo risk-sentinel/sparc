@@ -191,7 +191,7 @@ class Api::V1::ServiceAccountsController < Api::V1::BaseController
     {
       token: token.plaintext_token,
       token_expires_at: token.expires_at&.utc&.iso8601,
-      warning: "Copy this token now. It is not stored and cannot be retrieved again."
+      warning: ApiToken::COPY_NOW_WARNING
     }
   end
 

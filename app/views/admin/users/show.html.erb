@@ -182,7 +182,7 @@
         <div class="alert alert-success" role="alert">
           <strong>New API Token:</strong>
           <code class="user-select-all"><%= flash[:api_token] %></code>
-          <br><small>Copy this token now — it will not be shown again.</small>
+          <br><small><%= ApiToken::COPY_NOW_WARNING %></small>
         </div>
       <% end %>
 

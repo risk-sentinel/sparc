@@ -50,15 +50,19 @@ class ApiToken < ApplicationRecord
   # old path pattern that no longer matches a route does not block it.
   attr_accessor :limits_carried_over
 
+  # Shown wherever a token's plaintext is returned: the one moment it exists
+  # outside the caller's hands (the API responses and both admin pages).
+  COPY_NOW_WARNING = "Copy this token now. It is not stored and cannot be retrieved again."
+
   # Generate a new API token with a secure random value.
   # Returns the token record with `plaintext_token` set (available only now).
   # Service account tokens use `sparc_sa_` prefix for identification (IA-4).
-  def self.generate!(user:, name:, expires_at: nil, scopes: {}, created_by: nil, allowed_endpoints: [], allowed_cidrs: [],
-                     limits_carried_over: false)
+  # A block receives the unsaved record, for the rare attribute most callers
+  # never set (limits_carried_over, from renew / reissue / regenerate).
+  def self.generate!(user:, name:, expires_at: nil, scopes: {}, created_by: nil, allowed_endpoints: [], allowed_cidrs: [])
     prefix = user.service_account? ? "sparc_sa_" : "sparc_"
     plaintext = "#{prefix}#{SecureRandom.hex(32)}"
-    token = create!(
-      limits_carried_over: limits_carried_over,
+    token = new(
       user: user,
       name: name,
       token_digest: Digest::SHA256.hexdigest(plaintext),
@@ -68,6 +72,8 @@ class ApiToken < ApplicationRecord
       allowed_endpoints: allowed_endpoints || [],
       allowed_cidrs: allowed_cidrs || []
     )
+    yield token if block_given?
+    token.save!
     token.plaintext_token = plaintext
     token
   end
@@ -92,9 +98,8 @@ class ApiToken < ApplicationRecord
       generate!(
         user: account, name: "Regenerated token", created_by: by,
         expires_at: days.positive? ? days.days.from_now : nil,
-        allowed_endpoints: endpoints || [], allowed_cidrs: cidrs || [],
-        limits_carried_over: allowed_endpoints.nil?
-      )
+        allowed_endpoints: endpoints || [], allowed_cidrs: cidrs || []
+      ) { |token| token.limits_carried_over = allowed_endpoints.nil? }
     end
   end
 
@@ -186,9 +191,8 @@ class ApiToken < ApplicationRecord
     self.class.generate!(
       user: user, name: name, created_by: by,
       expires_at: days&.days&.from_now,
-      scopes: scopes, allowed_endpoints: allowed_endpoints, allowed_cidrs: allowed_cidrs,
-      limits_carried_over: true
-    )
+      scopes: scopes, allowed_endpoints: allowed_endpoints, allowed_cidrs: allowed_cidrs
+    ) { |token| token.limits_carried_over = true }
   end
 
   def endpoint_entries_known

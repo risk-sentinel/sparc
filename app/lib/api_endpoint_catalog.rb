@@ -98,7 +98,7 @@ module ApiEndpointCatalog
   Route = Struct.new(:verb, :spec, :key, :group, :access, keyword_init: true)
   Group = Struct.new(:key, :label, :access_levels, keyword_init: true)
 
-  module_function
+  extend self
 
   # Every /api/v1 route with its group and access level.
   def routes

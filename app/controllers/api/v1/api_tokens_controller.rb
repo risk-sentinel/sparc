@@ -57,7 +57,7 @@ class Api::V1::ApiTokensController < Api::V1::BaseController
     render json: {
       data: serialize(token).merge(
         token: token.plaintext_token,
-        warning: "Copy this token now. It is not stored and cannot be retrieved again."
+        warning: ApiToken::COPY_NOW_WARNING
       )
     }, status: :created
   end
@@ -80,7 +80,7 @@ class Api::V1::ApiTokensController < Api::V1::BaseController
         token: replacement.plaintext_token,
         replaced_token_id: @token.id,
         replaced_token_expires_at: @token.expires_at&.utc&.iso8601,
-        warning: "Copy this token now. It is not stored and cannot be retrieved again."
+        warning: ApiToken::COPY_NOW_WARNING
       )
     }, status: :created
   end
@@ -99,7 +99,7 @@ class Api::V1::ApiTokensController < Api::V1::BaseController
       data: serialize(replacement).merge(
         token: replacement.plaintext_token,
         revoked_token_id: @token.id,
-        warning: "Copy this token now. It is not stored and cannot be retrieved again."
+        warning: ApiToken::COPY_NOW_WARNING
       )
     }, status: :created
   end
