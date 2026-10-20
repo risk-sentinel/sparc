@@ -103,7 +103,11 @@ findings:
   next_review_date: '2026-11-16'
   deviation:
     type: operational_requirement
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1231"
+    approved_at: "2026-10-20"
+    approval_mechanism: approve-deviation-comment
     operational_justification: 'systemd-libs ships with the UBI 10 base image and Red Hat publishes no fix
       (grype 0.114.0 on sparc:v1.17.2, vulnerability DB built 2026-10-20T06:29:49Z: present, not-fixed,
       severity unchanged). The finding stays open in the POA&M and is re-reviewed each window until
@@ -137,7 +141,11 @@ findings:
   next_review_date: '2026-11-16'
   deviation:
     type: operational_requirement
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1231"
+    approved_at: "2026-10-20"
+    approval_mechanism: approve-deviation-comment
     operational_justification: 'openldap ships with the UBI 10 base image and Red Hat publishes no fix
       (grype 0.114.0 on sparc:v1.17.2, vulnerability DB built 2026-10-20T06:29:49Z: present, not-fixed,
       severity unchanged). The finding stays open in the POA&M and is re-reviewed each window until
