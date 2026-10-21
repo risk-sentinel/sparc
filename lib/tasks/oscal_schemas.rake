@@ -19,7 +19,7 @@ namespace :oscal do
   end
 
   def fetch_following_redirects(url, depth = 0)
-    raise "redirect loop (>#{MAX_REDIRECTS}) for #{url}" if depth > MAX_REDIRECTS
+    raise SparcHttp::Error, "redirect loop (>#{MAX_REDIRECTS}) for #{url}" if depth > MAX_REDIRECTS
 
     uri = URI(url)
     response = SparcHttp.start(uri) do |http|  # proxy-aware (#775)
@@ -32,7 +32,7 @@ namespace :oscal do
     when Net::HTTPRedirection
       fetch_following_redirects(response["location"], depth + 1)
     else
-      raise "HTTP #{response.code} from #{url}"
+      raise SparcHttp::Error, "HTTP #{response.code} from #{url}"
     end
   end
 
@@ -251,7 +251,7 @@ namespace :oscal do
       # this task correctly rejected it as not-XML, and the `exit 1` killed the
       # run at whatever point the random order had reached — 6246 examples one
       # run, 3869 the next, always "0 failures".
-      raise "OSCAL XSD fetch failed (#{failures.size} entries): #{failures.join('; ')}"
+      raise SparcHttp::Error, "OSCAL XSD fetch failed (#{failures.size} entries): #{failures.join('; ')}"
     end
   end
 

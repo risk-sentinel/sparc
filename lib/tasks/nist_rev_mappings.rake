@@ -15,7 +15,7 @@ namespace :nist_rev_mappings do
 
     src   = Rails.root.join("lib/data_mappings/sp800-53r4-to-r5-comparison-workbook.xlsx")
     dest  = Rails.root.join("lib/data_mappings/nist_sp800_53_rev5_to_rev4.json")
-    raise "Missing source workbook: #{src}" unless File.exist?(src)
+    raise Errno::ENOENT, "source workbook #{src}" unless File.exist?(src)
 
     xlsx = Roo::Spreadsheet.open(src.to_s)
     xlsx.sheet("Rev4 Rev5 Compared")

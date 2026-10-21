@@ -342,7 +342,7 @@ class OscalSspExportService
       [
         {
           "uuid"        => this_uuid,
-          "type"        => "this-system",
+          "type"        => SspComponent::THIS_SYSTEM,
           "title"       => @document.name,
           "description" => "The system described by this SSP.",
           "status"      => { "state" => "operational" }
@@ -789,7 +789,7 @@ class OscalSspExportService
   # which build_components derives the same way.
   def statement_component_uuid
     @statement_component_uuid ||=
-      @components.find { |c| c.component_type == "this-system" }&.uuid ||
+      @components.find { |c| c.component_type == SspComponent::THIS_SYSTEM }&.uuid ||
       @components.first&.uuid ||
       OscalUuidService.derived(@document.uuid, "ssp-this-system-component")
   end

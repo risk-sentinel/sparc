@@ -39,8 +39,7 @@
 # instead of bailing at the first syntax problem. All other callers use
 # the default strict: true.
 module XmlSecurity
-  module_function
-
+  extend self
   def parse(content, strict: true)
     Nokogiri::XML(content) do |config|
       config.noblanks.nonet

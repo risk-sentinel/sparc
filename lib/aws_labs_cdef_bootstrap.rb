@@ -28,8 +28,7 @@
 #   - The module is directly testable without replicating gating logic
 #     in specs.
 module AwsLabsCdefBootstrap
-  module_function
-
+  extend self
   LOCK_KEY = "aws_labs_cdef_bootstrap:fired"
   LOCK_TTL = 1.hour
 

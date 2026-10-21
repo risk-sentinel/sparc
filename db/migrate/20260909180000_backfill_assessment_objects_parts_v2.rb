@@ -101,9 +101,10 @@ class BackfillAssessmentObjectsPartsV2 < ActiveRecord::Migration[8.1]
     end
   end
 
-  # Deliberately empty. These rows are content the catalog always had and the
-  # importer dropped; there is no prior state worth restoring.
-  def down; end
+  def down
+    # Deliberately empty. These rows are content the catalog always had and the
+    # importer dropped; there is no prior state worth restoring.
+  end
 
   private
 

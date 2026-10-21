@@ -419,7 +419,7 @@ note which configuration is required for full coverage.
 
 | Control | Local-Only Login | OIDC/SAML Enabled | OIDC + JWT API Auth | Hybrid (OIDC + Service Tokens) | LDAP Enabled |
 | --------- | ----------------- | ------------------- | --------------------- | ------------------------------- | -------------- |
-| **IA-2** Identification & Auth | **Partial** — password only, no MFA | **Full** — IdP enforces MFA when `SPARC_OIDC_FORCE_MFA=true` | **Full** — Okta JWT validated via RS256; IdP MFA applies | **Full** — Okta JWT for humans (MFA via IdP); service accounts use SPARC tokens (no MFA, API-only) | **Partial** — depends on LDAP server MFA config |
+| **IA-2** Identification & Auth | **Partial** — password only, no MFA | **Full** — when the IdP's sign-on policy requires MFA and `SPARC_REQUIRE_AUTH_METHODS` refuses password-only sessions (#805); SPARC does not inspect the token for MFA | **Full** — Okta JWT validated via RS256; IdP MFA applies | **Full** — Okta JWT for humans (MFA via IdP); service accounts use SPARC tokens (no MFA, API-only) | **Partial** — depends on LDAP server MFA config |
 | **IA-2(1)** MFA to Privileged | **Not Met** — no MFA mechanism | **Full** — delegated to OIDC IdP | **Full** — JWT issued by IdP with MFA | **Full** — JWT issued by IdP with MFA; service accounts exempt (non-interactive) | **Partial** — depends on LDAP server |
 | **IA-2(2)** MFA to Non-Privileged | **Not Met** — no MFA mechanism | **Full** — delegated to OIDC IdP | **Full** — JWT issued by IdP with MFA | **Full** — JWT issued by IdP with MFA; service accounts exempt (non-interactive) | **Partial** — depends on LDAP server |
 | **IA-5(1)** Password-Based Auth | **Full** — bcrypt, 12-char min, expiry | **Full** — bcrypt for local + IdP for federated | **Full** — SHA-256 token digest + RS256 JWT sig | **Full** — RS256 JWT sig for humans + SHA-256 token digest for service accounts | **Partial** — LDAP manages passwords |
@@ -431,9 +431,11 @@ note which configuration is required for full coverage.
 For maximum FedRAMP control coverage:
 
 ```bash
-# Enable OIDC with MFA enforcement (covers IA-2, IA-2(1), IA-2(2), IA-8, IA-12)
+# Enable OIDC; the IdP's sign-on policy must require MFA (covers IA-2, IA-2(1),
+# IA-2(2), IA-8, IA-12). SPARC_OIDC_FORCE_MFA was never checked and is retired (#1120).
 SPARC_ENABLE_OIDC=true
-SPARC_OIDC_FORCE_MFA=true
+# Refuse a session from any method outside this list (#805)
+SPARC_REQUIRE_AUTH_METHODS=oidc
 
 # Enable JWT API authentication for SSO-based API access
 # Audience defaults to SPARC_OIDC_CLIENT_ID if not set
@@ -457,7 +459,7 @@ In OSCAL CDEFs, use the `remarks` field to note configuration dependencies:
 {
   "control-id": "ia-2",
   "description": "SPARC supports MFA via OIDC IdP delegation...",
-  "remarks": "Full IA-2 coverage requires SPARC_ENABLE_OIDC=true and SPARC_OIDC_FORCE_MFA=true. Local-only login (SPARC_ENABLE_LOCAL_LOGIN=true without OIDC) provides password authentication but does not satisfy MFA requirements. See docs/dev/issue_rules.md for the full auth mode coverage matrix."
+  "remarks": "Full IA-2 coverage requires SPARC_ENABLE_OIDC=true with an IdP that requires MFA, and SPARC_REQUIRE_AUTH_METHODS refusing password-only sessions. Local-only login (SPARC_ENABLE_LOCAL_LOGIN=true without OIDC) provides password authentication but does not satisfy MFA requirements. See docs/dev/issue_rules.md for the full auth mode coverage matrix."
 }
 ```
 

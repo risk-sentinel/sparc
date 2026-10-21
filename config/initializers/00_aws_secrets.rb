@@ -2,10 +2,16 @@
 
 # AWS Secrets Manager — App-Config JSON Blob Unpacker
 #
-# When SPARC_AWS_SECRETS_ENABLED=true, this initializer runs early in boot
+# When Secrets Manager is enabled, this initializer runs early in boot
 # (00_ prefix ensures it loads before other initializers that read ENV) to
 # fetch a JSON blob from Secrets Manager and inject each key-value pair
 # into ENV. Existing ENV vars take precedence — they are never overwritten.
+#
+# #1120 — enabled by SPARC_AWS_SECRETS_ENABLED=true, OR inferred from
+# SPARC_APP_CONFIG_SECRET_ARN being set; an explicit
+# SPARC_AWS_SECRETS_ENABLED=false still wins. This runs before autoload, so it
+# cannot call SparcConfig.aws_secrets_enabled? and repeats that inference.
+# Keep the two in step (spec/initializers/aws_secrets_spec.rb loads this file).
 #
 # Two-secret strategy (aligned with sparc-iac #22):
 #   Secret 1: sparc-{env}/admin-credentials  — break-glass admin password (MFA-gated, not read by app)
@@ -17,7 +23,23 @@
 #   CM-6  Configuration Settings (env var injection from centralized secret)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 
-if ENV["SPARC_AWS_SECRETS_ENABLED"] == "true"
+# #1133 — the boot cannot load its configuration from Secrets Manager. Defined
+# here because this file runs before autoload.
+module SparcSecrets
+  class Error < StandardError; end
+end
+
+raw_secrets_enabled = ENV.fetch("SPARC_AWS_SECRETS_ENABLED", nil)
+secrets_enabled =
+  if raw_secrets_enabled.present?
+    raw_secrets_enabled == "true"
+  else
+    ENV.fetch("SPARC_APP_CONFIG_SECRET_ARN", nil).present?
+  end
+
+if secrets_enabled
+  # Required here, not at the top (#1133): the SDK is loaded only when this
+  # deployment uses Secrets Manager, and this file runs before autoload.
   require "aws-sdk-secretsmanager"
   require "json"
 
@@ -27,7 +49,7 @@ if ENV["SPARC_AWS_SECRETS_ENABLED"] == "true"
   secret_arn = ENV.fetch("SPARC_APP_CONFIG_SECRET_ARN", nil)
 
   if secret_arn.blank?
-    raise <<~MSG
+    raise SparcSecrets::Error, <<~MSG
       SPARC_AWS_SECRETS_ENABLED=true but SPARC_APP_CONFIG_SECRET_ARN is not set.
       Set the ARN of the app-config secret in Secrets Manager, or disable
       Secrets Manager integration with SPARC_AWS_SECRETS_ENABLED=false.
@@ -57,12 +79,12 @@ if ENV["SPARC_AWS_SECRETS_ENABLED"] == "true"
                    "injected #{injected.size}")
     end
   rescue Aws::SecretsManager::Errors::ResourceNotFoundException => e
-    raise "SPARC_APP_CONFIG_SECRET_ARN references a secret that does not exist: #{e.message}"
+    raise SparcSecrets::Error, "SPARC_APP_CONFIG_SECRET_ARN references a secret that does not exist: #{e.message}"
   rescue Aws::SecretsManager::Errors::AccessDeniedException => e
-    raise "ECS task role lacks secretsmanager:GetSecretValue permission: #{e.message}"
+    raise SparcSecrets::Error, "ECS task role lacks secretsmanager:GetSecretValue permission: #{e.message}"
   rescue JSON::ParserError => e
-    raise "SPARC_APP_CONFIG_SECRET_ARN secret is not valid JSON: #{e.message}"
+    raise SparcSecrets::Error, "SPARC_APP_CONFIG_SECRET_ARN secret is not valid JSON: #{e.message}"
   rescue Aws::Errors::ServiceError => e
-    raise "Failed to retrieve secret from Secrets Manager: #{e.class} — #{e.message}"
+    raise SparcSecrets::Error, "Failed to retrieve secret from Secrets Manager: #{e.class} — #{e.message}"
   end
 end

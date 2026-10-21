@@ -26,8 +26,9 @@
     "high" => "#e74c3c", "very-high" => "#c0392b", "medium" => "#f39c12"
   }
   status_colors = {
-    "open" => "#e74c3c", "investigating" => "#e67e22", "remediating" => "#f39c12",
-    "deviation-requested" => "#d35400", "deviation-approved" => "#f39c12", "closed" => "#27ae60"
+    "open" => ApplicationHelper::COLOR_RED, "investigating" => ApplicationHelper::COLOR_CARROT,
+    "remediating" => ApplicationHelper::COLOR_ORANGE, "deviation-requested" => ApplicationHelper::COLOR_PUMPKIN,
+    "deviation-approved" => ApplicationHelper::COLOR_ORANGE, "closed" => ApplicationHelper::COLOR_GREEN
   }
   # WORM (#599 Round 3): semantic variant keys for .sparc-status--<variant>
   level_variants = {

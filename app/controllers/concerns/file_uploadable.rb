@@ -197,7 +197,7 @@ module FileUploadable
 
     actual_mb = (total / 1.megabyte.to_f).round(2)
     limit_mb  = (limit / 1.megabyte.to_f).round(2)
-    raise "File rejected: uncompressed XLSX size #{actual_mb} MB exceeds upload limit (#{limit_mb} MB). " \
+    raise UploadRejectedError, "File rejected: uncompressed XLSX size #{actual_mb} MB exceeds upload limit (#{limit_mb} MB). " \
           "Suspected zip bomb, or raise SPARC_MAX_UPLOAD_MB to accept larger payloads."
   end
 

@@ -149,6 +149,8 @@ class CdefDocumentsController < ApplicationController
   # `authorize_cdef_write!` guards as every other mutation, so an AWS-Labs
   # -sourced or published document stays read-only. Nothing here weakens them.
   def edit
+    # Renders the form. set_cdef_document loads the document and
+    # ensure_editable! refuses a read-only one; there is nothing more to prepare.
   end
 
   def update

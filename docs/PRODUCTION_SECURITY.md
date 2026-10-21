@@ -26,10 +26,10 @@ Copy-paste env-var block for a v1.7.0 production deployment with maximum hardeni
 # ── Application URL (drives userdata subdomain + mailer links) ─────────────
 SPARC_APP_URL=https://sparc.example.org
 
-# ── Authentication: OIDC only, MFA enforced ────────────────────────────────
+# ── Authentication: OIDC only; MFA by the IdP's sign-on policy ─────────────
 SPARC_ENABLE_OIDC=true
-SPARC_OIDC_FORCE_MFA=true
 SPARC_ENABLE_LOCAL_LOGIN=false
+SPARC_REQUIRE_AUTH_METHODS=oidc       # refuse a session from any other method (#805)
 SPARC_API_AUTH=hybrid                 # OIDC JWT for humans + service tokens for automation
 SPARC_OIDC_ISSUER_URL=https://your-idp.example.com/realms/main
 SPARC_OIDC_CLIENT_ID=sparc-prod
@@ -40,7 +40,6 @@ SPARC_MAX_UPLOAD_MB=50                # also caps zip-based-format uncompressed 
 SPARC_MAX_AVATAR_MB=2
 
 # ── Rate limiting (Rack::Attack thresholds; tune to your traffic) ──────────
-SPARC_RATE_LIMITING_ENABLED=true
 SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP=30
 SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER=100
 SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE=300
@@ -71,7 +70,7 @@ SPARC is **designed for internal-network deployment**, not public-facing SaaS. T
 | Defense layer | What stops the attack |
 |---|---|
 | Network perimeter | CIDR allowlist + VPN — only vetted operators reach the upload endpoint at all |
-| Authentication | OIDC + MFA when `SPARC_OIDC_FORCE_MFA=true` (no anonymous uploads) |
+| Authentication | OIDC, with MFA by the IdP's sign-on policy (no anonymous uploads) |
 | Ingest validation | Extension allowlist + magic-byte + executable-signature + syntactic parse (#509) + size + zip-bomb (#510) + XXE-safe XML (#511) |
 | Runtime detection | GuardDuty Runtime Monitoring on the ECS task (sparc-iac default) — detect-and-destroy on container escape |
 | Execution prevention | `disposition: "attachment"` everywhere, CSP enforce (#514), cookieless blob host (#515) |
@@ -88,7 +87,7 @@ SPARC is **designed for internal-network deployment**, not public-facing SaaS. T
 | Env var | Default | Recommended | Why |
 |---|---|---|---|
 | `SPARC_ENABLE_OIDC` | `false` | `true` | Delegates auth + MFA to your IdP (Okta, Keycloak, Entra ID) — avoids password storage |
-| `SPARC_OIDC_FORCE_MFA` | `false` | `true` | Enforces MFA via ACR claim — covers IA-2(1), IA-2(2) |
+| `SPARC_REQUIRE_AUTH_METHODS` | (empty) | `oidc` (or `oidc,webauthn`) | Refuses a session established by any other method, so a password-only sign-in cannot stand in for the IdP's MFA (#805). IA-2(1), IA-2(2) rest on the IdP enforcing MFA: SPARC does not inspect the token for it |
 | `SPARC_ENABLE_LOCAL_LOGIN` | `false` | `false` | Eliminates non-MFA password auth path |
 | `SPARC_API_AUTH` | `local` | `hybrid` | OIDC JWT for humans (MFA via IdP) + SPARC tokens for service accounts |
 | `SPARC_OIDC_ISSUER_URL` | (none) | required | Your IdP's issuer URL |
@@ -99,7 +98,7 @@ SPARC is **designed for internal-network deployment**, not public-facing SaaS. T
 
 **Auth mode coverage matrix:** see [`docs/dev/issue_rules.md`](dev/issue_rules.md) for the full Local-vs-OIDC-vs-LDAP-vs-Hybrid breakdown across every NIST IA-* control.
 
-**Avoid:** running `SPARC_ENABLE_LOCAL_LOGIN=true` without `SPARC_OIDC_FORCE_MFA=true` — the password path can bypass MFA enforcement.
+**Avoid:** running `SPARC_ENABLE_LOCAL_LOGIN=true` without `SPARC_REQUIRE_AUTH_METHODS` excluding `local` — the password path can bypass MFA enforcement. (`SPARC_OIDC_FORCE_MFA`, which older versions of this guide recommended, was never checked by anything and is retired in v1.17.2, #1120.)
 
 ---
 
@@ -219,11 +218,10 @@ SPARC does NOT ship an in-app content scanner (per the [§2 threat model](#2-thr
 
 | Env var | Default | Recommended | Why |
 |---|---|---|---|
-| `SPARC_RATE_LIMITING_ENABLED` | `true` | `true` (kill switch for emergencies) | Master toggle |
-| `SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP` | `30` | `30` (tune per traffic) | Bulk-upload abuse from a single source |
-| `SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER` | `100` | `100` | Compromised account flood |
+| `SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP` | `60` | `30` (tune per traffic) | Bulk-upload abuse from a single source |
+| `SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER` | `250` | `100` | Compromised account flood |
 | `SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE` | `300` | `300` | Runaway API import scripts |
-| `SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN` | `5` | `5` | Credential stuffing |
+| `SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN` | `3` | `3` | Credential stuffing |
 | `SPARC_RATE_LIMIT_SAFELIST_CIDRS` | `127.0.0.1,::1` | `127.0.0.1,::1,<internal-CIDRs>` | Internal health checks, NLB targets, bastion |
 
 Throttle hits return HTTP `429` with `Retry-After` and `X-RateLimit-Bucket` headers. Hits log `[rack-attack] THROTTLED` to Rails.logger (ingested by CloudWatch in prod). See [`docs/ENVIRONMENT_VARIABLES.md`](ENVIRONMENT_VARIABLES.md#rate-limiting-513) for the full bucket-discriminator table and response shape.
@@ -331,7 +329,7 @@ See the `risk-sentinel/sparc-validate` repo for the full validation rule set and
 Post-upgrade verification. Run through this list after deploying v1.7.0 to confirm every hardening layer is active.
 
 ### Authentication
-- [ ] `SPARC_ENABLE_OIDC=true` and `SPARC_OIDC_FORCE_MFA=true` set; local login disabled
+- [ ] `SPARC_ENABLE_OIDC=true` and `SPARC_REQUIRE_AUTH_METHODS=oidc` set; local login disabled; the IdP's sign-on policy requires MFA for SPARC
 - [ ] Test login: OIDC redirects to IdP, MFA challenge appears
 - [ ] Test API: `Authorization: Bearer <invalid>` returns 401 with no info leak
 

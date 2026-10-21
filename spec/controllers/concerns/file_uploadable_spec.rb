@@ -87,7 +87,8 @@ RSpec.describe FileUploadable do
                                  original_filename: "bomb.xlsx",
                                  path: tmp.path)
           expect { harness.reject_if_zip_bomb!(fake, "excel") }
-            .to raise_error(/uncompressed XLSX size.*MB exceeds upload limit.*MB.*SPARC_MAX_UPLOAD_MB/)
+            .to raise_error(FileUploadable::UploadRejectedError,
+                            /uncompressed XLSX size.*MB exceeds upload limit.*MB.*SPARC_MAX_UPLOAD_MB/)
         end
       end
     end

@@ -27,8 +27,7 @@ module Hdf
     # of which SPARC used to emit — are rejected.
     IDENTITY_TYPES = %w[email username system agent simple other].freeze
 
-    module_function
-
+    extend self
     # Map a person to a conformant identity.
     #
     #   "@handle"          -> username   (was "github", never in the vocabulary)

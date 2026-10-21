@@ -36,8 +36,7 @@ module AwsSecurityHub
                             "%s.html".freeze
     NIST_RX = /NIST\.800-53\.r5\s+([A-Z]{2}-\d+(?:\([^)]+\))*)/.freeze
 
-    module_function
-
+    extend self
     # Given the HTML of the controls-reference page, return an Array of
     # per-service slugs (e.g., "iam-controls", "s3-controls", ...).
     # De-duplicated and sorted for stable output.

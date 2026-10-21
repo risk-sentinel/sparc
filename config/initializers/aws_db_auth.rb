@@ -19,6 +19,8 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 
 if ENV["SPARC_AWS_IAM_DB_AUTH"] == "true"
+  # Required here, not at the top (#1133): the RDS SDK is loaded only when
+  # IAM database authentication is on.
   require "aws-sdk-rds"
 
   Rails.application.config.after_initialize do

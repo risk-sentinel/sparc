@@ -171,12 +171,17 @@
                 Notice
               </h5>
             </div>
+            <%# tabindex kept on purpose (#1133): the notice can be longer than the
+                modal, and a scrolling region must be reachable by keyboard (WCAG
+                2.1.1). Sonar's non-interactive tabindex rule is a false positive here. %>
             <div class="modal-body" id="consentBannerBody" tabindex="0">
               <%= @consent_banner_content.html_safe %>
             </div>
             <div class="modal-footer">
               <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost"
                       data-action="consent-banner#cancel">Cancel</button>
+              <%# autofocus kept on purpose (#1133): the modal's primary action, so
+                  a keyboard user can read the notice and accept without hunting. %>
               <button type="button" class="sparc-action sparc-action--primary sparc-action--solid"
                       data-action="consent-banner#proceed"
                       autofocus>Proceed</button>

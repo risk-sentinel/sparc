@@ -232,6 +232,7 @@ class CdefComponent < ApplicationRecord
       when /\Aus-gov-/ then PARTITION_GOV
       when /\Acn-/     then PARTITION_CN
       when /\A[a-z]{2}-/ then PARTITION_STD
+      else nil # not a region id; filter_map drops it
       end
     }.uniq.sort
   end

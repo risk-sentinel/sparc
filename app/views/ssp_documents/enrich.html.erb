@@ -61,7 +61,7 @@
     <%# System components from component definitions (boundary first, then org-wide) %>
     <% if @boundary_cdefs.any? || @org_cdefs.any? %>
       <%= form_with url: import_cdef_components_ssp_document_path(@ssp_document), method: :post do %>
-        <details<%= " open".html_safe if @ssp_document.ssp_components.where.not(component_type: "this-system").none? %>>
+        <details<%= " open".html_safe if @ssp_document.ssp_components.where.not(component_type: SspComponent::THIS_SYSTEM).none? %>>
           <summary class="small fw-semibold sparc-cursor-pointer">Import system components from component definitions (<%= @boundary_cdefs.size + @org_cdefs.size %>)</summary>
           <div class="mt-2 ms-2">
             <% if @boundary_cdefs.any? %>
@@ -294,7 +294,7 @@
         Components (<%= @components.count %>)
       </summary>
       <div class="sparc-p-1r-125r" id="components-container" data-ssp-enrich-target="componentsContainer">
-        <% @components.reject { |c| c.component_type == "this-system" }.each_with_index do |comp, comp_idx| %>
+        <% @components.reject { |c| c.component_type == SspComponent::THIS_SYSTEM }.each_with_index do |comp, comp_idx| %>
           <div class="component-entry sparc-enrich-item-card-alt">
             <input type="hidden" name="ssp_document[components][][id]" value="<%= comp.id %>">
             <div class="row row-cols-1 row-cols-md-2 g-2">
@@ -305,7 +305,7 @@
               <div class="form-group sparc-mb-025">
                 <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-type">Type</label>
                 <select id="ssp-component-<%= comp_idx %>-type" name="ssp_document[components][][component_type]" class="form-control sparc-fs-085">
-                  <% SspComponent::COMPONENT_TYPES.reject { |t| t == "this-system" }.each do |t| %>
+                  <% SspComponent::COMPONENT_TYPES.reject { |t| t == SspComponent::THIS_SYSTEM }.each do |t| %>
                     <option value="<%= t %>" <%= "selected" if comp.component_type == t %>><%= t.titleize %></option>
                   <% end %>
                 </select>

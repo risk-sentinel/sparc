@@ -25,8 +25,7 @@
 # handled separately via a curated transform table -- see #491.
 module AwsSecurityHub
   module NistIdNormalizer
-    module_function
-
+    extend self
     # Convert a MITRE-style id like "AC-2(1)" or "IA-5(1)(a)(d)" to one or
     # more OSCAL ids. Returns an Array<String> (multiple when subparts
     # are expanded).

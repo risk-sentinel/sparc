@@ -118,7 +118,6 @@ class AdminCredentialRotationService
     return Result.new(success: false, status_code: :failed_dependency,
                       error: "SPARC_ADMIN_CREDENTIALS_SECRET_ARN is not set") if arn.blank?
 
-    require "aws-sdk-secretsmanager"
     # #785 Pass 2 — through the accessor rather than duplicating the fallback
     # chain. (The 00_aws_secrets / aws_db_auth initializers keep their inline
     # ENV reads — they run pre-autoload and cannot call SparcConfig.)

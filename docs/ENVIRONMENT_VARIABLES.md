@@ -90,6 +90,8 @@ and will override a real default.
 | FORCE_SSL | Force HTTPS redirect and Strict-Transport-Security header | true (prod) | `true` | No |
 | RAILS_MAX_THREADS | Thread pool size for Puma and database connection pool | 5 | `10` | No |
 | SPARC_EXTRA_CA_CERTS | Path (file or directory of `.crt`/`.pem`/`.cer`) to custom/private CA certificates the container should trust for **outbound** TLS — LDAPS, OIDC behind a private CA, a corporate TLS-intercepting proxy, or DoD-PKI endpoints. Appended to the system trust store into a combined bundle at startup (public CAs stay trusted); covers all Ruby OpenSSL clients incl. the LDAP default store. See `certs/README.md`. Alternatively bake CAs in at build time via `certs/`. (#774) | (none) | `/rails/certs` | No |
+| SPARC_SYSTEM_CA_BUNDLE | The system trust store the custom CAs are appended to when the startup bundle is built (`bin/lib/ca-trust.sh`). Change it only for a base image that keeps its bundle elsewhere | `/etc/pki/tls/cert.pem` | `/etc/ssl/certs/ca-certificates.crt` | No |
+| SPARC_CA_BUNDLE_OUT | Where the combined CA bundle is written at startup. It must be writable by the container user | `/rails/tmp/ca-bundle.pem` | `/tmp/ca-bundle.pem` | No |
 | HTTPS_PROXY / HTTP_PROXY | Egress proxy for SPARC's **outbound** HTTP(S) calls (OIDC discovery/JWKS, federation sync, external-content refreshers). Honored **scheme-strictly** (#775): `HTTPS_PROXY` is used for `https://` requests — all of SPARC's outbound calls — and `HTTP_PROXY` only for `http://`. Set `HTTPS_PROXY` for a standard TLS egress proxy. Lowercase (`https_proxy`) also works. | (none) | `http://egress-proxy.internal:8080` | No |
 | NO_PROXY | Comma-separated hosts/domains that bypass the proxy (e.g. internal federation peers on a trusted network). Honored for all outbound calls. Lowercase (`no_proxy`) also works. | (none) | `.internal,10.0.0.0/8,localhost` | No |
 
@@ -260,7 +262,6 @@ approach). Enable one or more to activate the login page at `/login`.
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
 | SPARC_ENABLE_LOCAL_LOGIN | Enable email/password login | false | `true` | No |
-| SPARC_ENABLE_EMAIL_CONFIRMATION | Require email confirmation for new local accounts | false | `true` | No |
 | SPARC_SESSION_TIMEOUT_MINUTES | Inactivity timeout in minutes; reset by every request | 60 | `30` | No |
 | SPARC_SESSION_MAX_HOURS | Absolute session lifetime in hours, measured from sign-in and never reset by activity. `0` disables the cap | 8 | `12` | No |
 | SPARC_PIV_OIDC_ACR_VALUES | Accepted `acr` claim values proving the IdP performed certificate-based auth. Empty = accept none | *(empty)* | `http://idmanagement.gov/ns/assurance/aal/3` | No |
@@ -486,7 +487,6 @@ an Okta-specific configuration guide.
 | SPARC_OIDC_REDIRECT_URI | Callback URL registered with IdP (must match exactly) | (auto) | `https://sparc.yourdomain.com/auth/oidc/callback` | Yes (if enabled) |
 | SPARC_OIDC_SCOPES | Space-separated OIDC scopes to request | `openid profile email` | `openid profile email groups offline_access` | No |
 | SPARC_OIDC_PROVIDER_TITLE | Display name shown on login button and tab | SSO | `Corporate Login (Okta)` | No |
-| SPARC_OIDC_FORCE_MFA | **NOT IMPLEMENTED — setting it has no effect.** `SparcConfig#oidc_force_mfa?` exists and reads it, but that predicate has **zero call sites**: nothing consults it, so no MFA is forced. It defaults to `true`, which makes it look like an active control. It is listed here because it appears in older configuration examples and in some compliance prose. MFA enforcement is `SPARC_REQUIRE_AUTH_METHODS` (#805); phishing-resistant hardware keys are `SPARC_REQUIRE_FIDO2` (#802). Setting this has no effect whatsoever. | (unread) | — | No |
 
 #### IdP-mediated entitlements (#860, v1.16.0)
 
@@ -526,8 +526,8 @@ entitlements.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| SPARC_ENABLE_LDAP | Enable LDAP authentication | false | `true` | No |
-| SPARC_LDAP_HOST | LDAP server hostname | (none) | `ldap.example.com` | Yes (if enabled) |
+| SPARC_ENABLE_LDAP | Enable LDAP authentication. **Inferred from `SPARC_LDAP_HOST` (#1120):** setting a host turns LDAP on, so this is needed only to turn it off (`false`) while keeping the host configured | (on when `SPARC_LDAP_HOST` is set) | `false` | No |
+| SPARC_LDAP_HOST | LDAP server hostname. Setting it enables LDAP sign-in | (none) | `ldap.example.com` | Yes (for LDAP) |
 | SPARC_LDAP_PORT | LDAP server port | 636 | `389` | No |
 | SPARC_LDAP_ENCRYPTION | Connection encryption (plain, start_tls, simple_tls) | simple_tls | `start_tls` | No |
 | SPARC_LDAP_BIND_DN | Bind DN for service account | (none) | `cn=sparc-svc,ou=services,dc=example,dc=com` | Yes (if enabled) |
@@ -551,6 +551,8 @@ policies. These settings apply to all users unless noted otherwise.
 | SPARC_API_TOKEN_MAX_DAYS | The longest a **service account's** API token may live (#1176). A service-account token must expire, and no path (account form, admin user page, `/api/v1/users/:id/api_tokens`, `/api/v1/service_accounts`) can issue one further out; a request beyond it is refused, not shortened. A person's token may still be set to never expire. Clamped to 1–3650. Existing tokens are not changed on upgrade. | 365 | `180` | No |
 | SPARC_API_TOKEN_RENEWAL_GRACE_DAYS | After an API token is **renewed**, how long the token it replaces keeps working, so automation can switch without an outage (#1176). Never extends the old token past its own expiry. `0` ends it at once. Clamped to 0–90. | 7 | `3` | No |
 | SPARC_PROCESSING_STUCK_MINUTES | Minutes after which a document stuck in pending/processing stops auto-refreshing on its show page (#548). Without this guard, documents whose parsing job never ran trap the browser in a 3-second refresh loop. | 5 | `10` | No |
+| SPARC_DOCUMENT_REAP_MINUTES | Minutes after which the stuck-document reaper moves a document still pending or processing, with no live parse job, to a terminal state (#618). Keep it above `SPARC_PROCESSING_STUCK_MINUTES` so a long parse is not reaped | 10 | `20` | No |
+| SPARC_PASSWORD_RESET_MINUTES | How long an administrator-issued password-reset token stays valid. Clamped to 5..1440 | 60 | `30` | No |
 
 The `InactivityCheckJob` should be scheduled via cron or your job
 scheduler (e.g., `rails runner "InactivityCheckJob.perform_now"`).
@@ -640,6 +642,21 @@ exports omit empty values rather than write blanks.
 | `SPARC_BANNER_MESSAGE` | **Deprecated (#909, v1.16.0)** — still honoured and warned. **Removal scheduled for 1.18.0** | Use `SPARC_BANNER=file:<path>` — the same path with a `file:` prefix |
 | `SPARC_BANNER_ENABLED` | **Retired (#867)** — read only to log that it is ignored; it cannot enable or disable the banner. **Removal scheduled for 1.18.0**, after which it is not read at all | Delete it. Content presence is the switch — unset `SPARC_BANNER` to hide the banner |
 
+## Retired settings (v1.17.2, #1120)
+
+SPARC no longer reads these. A deployment that still sets one gets a warning
+at boot naming what to use instead (`SparcConfig::RETIRED_VARIABLES`); delete
+it from the deployment configuration.
+
+| Variable | Why it was retired | Do this instead |
+|---|---|---|
+| ~~SPARC_OIDC_FORCE_MFA~~ | Nothing ever checked it. It defaulted to `true` and was cited for IA-2(1)/(2) coverage, but it never forced MFA | Require phishing-resistant sign-in with `SPARC_REQUIRE_AUTH_METHODS` (#805), or security keys with `SPARC_REQUIRE_FIDO2` (#802) |
+| ~~SPARC_ENABLE_EMAIL_CONFIRMATION~~ | Nothing ever read it; local accounts have never required email confirmation | Delete it |
+| ~~SPARC_WELCOME_TEXT~~ | The login page never showed it | Delete it. The login heading is fixed text; the tab title and logo text follow `SPARC_APP_NAME` |
+| ~~SPARC_RATE_LIMITING_ENABLED~~ | Removed in #785; rate limiting is always on | Tune the `SPARC_RATE_LIMIT_*` settings |
+| ~~SPARC_ARTIFACT_REAPER_ENABLED~~ | Never read; the reaper always runs and only reports unless told to purge | `SPARC_ARTIFACT_REAPER_PURGE`, `SPARC_ARTIFACT_REAPER_INTERVAL_DAYS` |
+| ~~SPARC_SA_INACTIVITY_DAYS~~ | Retired in #785; service accounts use the same window as people | `SPARC_INACTIVITY_DAYS` |
+
 ---
 
 ## DISA CCI Catalog Retrieval
@@ -661,7 +678,6 @@ Override the URL for air-gapped or mirror environments.
 | --- | --- | --- | --- | --- |
 | SPARC_APP_URL | Base public URL of the application (used in emails, links, redirects) | `http://localhost:3000` | `https://sparc.example.com` | Yes (prod) |
 | SPARC_APP_NAME | Human-readable name of the platform. Also the browser tab title fallback and the `og:site_name` in link previews (#936/#991) — a rebranded deployment gets its own name in tabs and in every shared link, with no further configuration. | SPARC | `SPARC Compliance Platform` | No |
-| SPARC_WELCOME_TEXT | Message displayed on the login page | Welcome to SPARC | `Welcome to ACME Compliance` | No |
 | SPARC_OSCAL_NS | Namespace for OSCAL properties **this deployment defines** — locally-coined props and organization-defined roles. Props under it are never conformance violations: SPARC validates claims about other authorities' vocabularies, not the operator's own (#1106). An OSCAL `ns` identifies WHOSE vocabulary a name belongs to, so set it to a URI your organization owns. The nine props sparc-horizon reads (`node-type`, `parent-uuid`, `next-decision-date`, `fips-199`, `blocks-ato`, `evidence-kind`, `signed-by`, `condition-expires`, `trigger` — #1154) are emitted under SPARC's registered URI `https://sparc.risk-sentinel.org/ns` **whatever this is set to**: Horizon's schema pins that URI with `const`, so they cannot follow a deployment's vocabulary without becoming invisible to it. SPARC's other product props (`sparc-status`, `control-type`, `provided-as`, `responsible-entities`, …) DO follow this setting today, so overriding it moves them out of the namespace a SPARC-aware consumer looks in | `https://sparc.risk-sentinel.org/ns` | `https://oscal.att.com/ns` | No |
 | SPARC_OSCAL_ORG_NAME | Organization named as the responsible party in every exported OSCAL artifact, and as the source of locally-authored CDEFs. SPARC is the tool, not the author — leave it unset and your SSP names "SPARC Export" as accountable for it (#1106) | `SPARC Export` | `AT&T Policy Department` | No |
 | SPARC_CONTACT_EMAIL | Support/admin email shown in UI and login page | (none) | `compliance-team@yourorg.com` | No |
@@ -690,6 +706,25 @@ that variable.
 
 ---
 
+## Documents, Artifacts and Translation
+
+Settings SPARC read without any of them being documented, found by
+`bin/env_inventory_check.rb` (#1120).
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_REQUIRE_DOCUMENT_APPROVAL | Trust-store documents (catalogs, profiles, baselines, CDEFs) must be approved before they can be published (#630). On by default (#785); `false` lets them publish without review | `true` | `false` | No |
+| SPARC_CDEF_AUTO_POPULATE | When a component backed by a CDEF is added to an SSP, fill the matching SSP statements with the CDEF's implementation text (#398) | `true` | `false` | No |
+| SPARC_OSCAL_RISK_SYSTEM | The OSCAL `system` URI for risk likelihood and impact facets SPARC authors, used only when the imported document named none. An imported risk keeps the system it came with | `http://csrc.nist.gov/ns/oscal` | `http://fedramp.gov/ns/oscal` | No |
+| SPARC_HDF_ALLOWED_VERSIONS | Comma-separated hdf-cli versions certified for the translation endpoints. Empty accepts the version built into the image; when set, translation refuses to run on any other | (empty) | `3.7.2` | No |
+| SPARC_AUTHORITATIVE_FETCH_ENABLED | Let SPARC fetch a back-matter resource's HTTPS link into stored evidence, so an export carries the content and not only a link. Off by default and never inferred, so an air-gapped deployment can guarantee no egress | `false` | `true` | No |
+| SPARC_ARTIFACT_COPY_PER_VERSION | Give every artifact version its own physical copy instead of sharing the current blob by reference (#686). For per-version immutability alongside S3 Object Lock, at the cost of storage | `false` | `true` | No |
+| SPARC_ARTIFACT_REAPER_INTERVAL_DAYS | How often the artifact-storage reaper runs (#690). Clamped to 1..90 | `7` | `14` | No |
+| SPARC_ARTIFACT_REAPER_PURGE | Let the reaper delete blobs nothing references. Off, it only reports them; coordinate turning it on with the bucket's lifecycle policy | `false` | `true` | No |
+| SPARC_ARTIFACT_REAPER_MIN_AGE_HOURS | Never reap a blob younger than this, so an upload still being saved is not taken for an orphan | `24` | `48` | No |
+
+---
+
 ## Email / SMTP Configuration
 
 Required for user registration confirmation, password resets,
@@ -697,7 +732,7 @@ notifications, etc.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| SPARC_ENABLE_SMTP | Enable SMTP email delivery | false | `true` | No |
+| SPARC_ENABLE_SMTP | Enable SMTP email delivery. **Inferred from `SPARC_SMTP_ADDRESS` (#785):** setting a server address turns delivery on, so this is needed only to turn it off (`false`) | (on when `SPARC_SMTP_ADDRESS` is set) | `false` | No |
 | SPARC_SMTP_ADDRESS | SMTP server hostname | (none) | `smtp.sendgrid.net` | Yes (if enabled) |
 | SPARC_SMTP_PORT | SMTP server port | 587 | `2525` | No |
 | SPARC_SMTP_USERNAME | SMTP authentication username | (none) | `apikey` | Yes (if enabled) |
@@ -787,11 +822,12 @@ Rack::Attack throttle thresholds. Counters live in `Rails.cache` (`solid_cache` 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
 | ~~SPARC_RATE_LIMITING_ENABLED~~ | **Removed (#785 Pass 2.1)** — rate limiting is now unconditional (best practice). The per-limit `SPARC_RATE_LIMIT_*` tuning knobs remain. | — | — | — |
-| SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP | Per-IP cap on upload endpoints (document creates + avatar + evidence). Defends against bulk-upload abuse. | `30` | `60` | No |
-| SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER | Per-authenticated-user cap on upload endpoints. Stops a compromised account from filling storage. | `100` | `500` | No |
+| SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP | Per-IP cap on upload endpoints (document creates + avatar + evidence). Defends against bulk-upload abuse. | `60` | `30` | No |
+| SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER | Per-authenticated-user cap on upload endpoints. Stops a compromised account from filling storage. | `250` | `500` | No |
 | SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE | Per-Bearer-token cap on `/api/v1` write methods (POST/PUT/PATCH/DELETE). Protects mass-import API consumers from runaway scripts. | `300` | `600` | No |
-| SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN | Per-IP cap on `POST /login` + `/auth/failure` within 1 minute. Credential-stuffing defense. | `5` | `3` | No |
+| SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN | Per-IP cap on `POST /login` + `/auth/failure` within 1 minute. Credential-stuffing defense. | `3` | `5` | No |
 | SPARC_RATE_LIMIT_CONTROLS_DOWNLOADS_PER_5MIN_PER_IP | Per-IP cap on Controls-layer document downloads (catalog/profile/mapping/CDEF `download_*`) within 5 minutes. These become anonymous when `SPARC_PUBLIC_CATALOGS=true` and are the most expensive read in the product — the full NIST 800-53 Rev 5 catalog export measures ~24s and ~3 MB — so the bucket stops a published instance being used as an amplifier. Screens and the API are unaffected. | `30` | `10` | No |
+| SPARC_RATE_LIMIT_CSP_REPORTS_PER_MIN | Per-IP cap on Content-Security-Policy violation reports per minute (#528), so a misbehaving or hostile client cannot flood the log. Generous, because one page with several violations sends a burst legitimately | `60` | `120` | No |
 | SPARC_RATE_LIMIT_SAFELIST_CIDRS | Comma-separated CIDR list. IPs in any listed CIDR bypass ALL throttles. Used for internal health-check IPs, NLB targets, etc. Loopback addresses safelisted by default for dev convenience. | `127.0.0.1,::1` | `127.0.0.1,::1,10.0.0.0/8` | No |
 
 <!-- markdownlint-enable MD013 -->
@@ -865,6 +901,7 @@ The `ServiceAccountMaintenanceJob` runs daily (3 AM, production) and auto-disabl
 | SPARC_SEED_DEMO | Seed illustrative demo records (organizations, boundaries, SSPs, SARs, evidence, sample artifacts) | false | `true` | No |
 | SPARC_SEED_REFERENCE | Seed the reference leveraged authorization estate at this tier (#845). Unset means do not seed it | (unset) | `lean`, `full` | No |
 | SPARC_ALLOW_REFERENCE_ESTATE | Permit the reference estate in a **production-mode** instance — for a disposable target such as an authenticated DAST run. Still refuses if the instance holds any non-estate authorization data | false | `true` | No |
+| SPARC_SKIP_DEFERRED_DATA_MIGRATIONS | Do not enqueue pending or failed deferred data migrations when the web server boots (#1223). For triage only: the migrations stay pending until a boot without it | false | `true` | No |
 
 The web container automatically runs `db:prepare` (which includes seeding) on startup. Use `SPARC_RUN_SEEDS=true` for Sidekiq or one-shot ECS tasks that need seed data without running the Rails server.
 
@@ -930,13 +967,13 @@ Two-secret strategy aligned with [sparc-iac #22](https://github.com/risk-sentine
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| SPARC_AWS_SECRETS_ENABLED | Enable Secrets Manager JSON blob injection at boot | `false` | `true` | No |
-| SPARC_APP_CONFIG_SECRET_ARN | ARN of the app-config JSON secret (all non-admin config) | (unset) | `arn:aws:secretsmanager:us-east-1:123:secret:sparc-prod/app-config` | When secrets enabled |
+| SPARC_AWS_SECRETS_ENABLED | Enable Secrets Manager JSON blob injection at boot. **Inferred from `SPARC_APP_CONFIG_SECRET_ARN` (#1120):** naming the secret turns injection on, so this is needed only to turn it off (`false`) while keeping the ARN set | (on when `SPARC_APP_CONFIG_SECRET_ARN` is set) | `false` | No |
+| SPARC_APP_CONFIG_SECRET_ARN | ARN of the app-config JSON secret (all non-admin config). Setting it enables injection: the secret is read at boot, and a missing secret, a denied read or invalid JSON stops the boot | (unset) | `arn:aws:secretsmanager:us-east-1:123:secret:sparc-prod/app-config` | For Secrets Manager |
 | SPARC_ADMIN_CREDENTIALS_SECRET_ARN | ARN of admin-credentials secret. ECS injects the `password` field as `SPARC_ADMIN_PASSWORD` at task start; the `sparc:rotate_admin_credentials` rake task writes back via `PutSecretValue`. SPARC's task role does NOT have `GetSecretValue` on this secret — ECS does the read on SPARC's behalf, preserving MFA-gated Console retrieval for break-glass. | (unset) | `arn:aws:secretsmanager:us-east-1:123:secret:sparc-prod/admin-credentials` | When using rotation |
 
 ### How It Works
 
-When `SPARC_AWS_SECRETS_ENABLED=true`, the `00_aws_secrets.rb` initializer:
+When Secrets Manager is enabled (`SPARC_APP_CONFIG_SECRET_ARN` is set, and `SPARC_AWS_SECRETS_ENABLED` is not `false`), the `00_aws_secrets.rb` initializer:
 1. Reads the JSON blob from `SPARC_APP_CONFIG_SECRET_ARN`
 2. Parses each key-value pair and injects into `ENV`
 3. **Never overwrites** existing ENV vars (manual ENV takes precedence)
@@ -992,6 +1029,7 @@ License compliance: top-level `NOTICE`, verbatim upstream LICENSE at
 | SPARC_AWS_LABS_OSCAL_VERSIONS | CSV of OSCAL spec versions to ingest. When unset, defaults to whatever versions SPARC's loaded `OscalSchema` rows already cover. | (auto-detect) | `1.1.2,1.0.4` | No |
 | SPARC_AWS_LABS_CDEF_REFRESH_INTERVAL_DAYS | How often the recurring job runs. AWS Labs content changes on the order of weeks; weekly default keeps audit logs quiet. Clamped to 1..90. | `7` | `30` | No |
 | SPARC_AWS_LABS_GITHUB_TOKEN | Optional PAT (GitHub fine-grained token with `contents:read` is enough). Raises rate limit from 60→5000 req/hr. | (unset) | `github_pat_…` | When refreshing frequently |
+| SPARC_SKIP_AWS_LABS_BOOTSTRAP | Skip the boot-time initial ingest. With the feature on and no AWS Labs CDEFs yet, each boot enqueues one; set `true` to leave it to the weekly job or a manual trigger | `false` | `true` | No |
 
 ### How It Works
 

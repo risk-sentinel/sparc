@@ -230,13 +230,11 @@ than removed. The break-glass bootstrap admin (`SPARC_ADMIN_EMAIL`) and service
 accounts are exempt from the gate, and removing the form outright would leave
 that account no way in during an IdP outage — exactly when it is needed.
 
-> **`SPARC_OIDC_FORCE_MFA` does nothing.** A predicate reads it
-> (`SparcConfig#oidc_force_mfa?`) but nothing calls that predicate, so the value
-> never reaches a decision. It defaults to `true`, which makes it read like an
-> active control it has never been.
+> **`SPARC_OIDC_FORCE_MFA` is retired (v1.17.2, #1120).** Nothing ever checked
+> it, so it never forced MFA, although it defaulted to `true` and read like an
+> active control. SPARC now warns at boot if it is still set.
 > MFA enforcement is `SPARC_REQUIRE_AUTH_METHODS`; hardware-key enforcement is
-> `SPARC_REQUIRE_FIDO2`. It survives in older examples and some compliance
-> prose, and setting it has no effect.
+> `SPARC_REQUIRE_FIDO2`.
 
 ## Compliance
 

@@ -82,7 +82,6 @@ class AwsConfigRefreshService
   end
 
   def fetch_mitre_source
-    require Rails.root.join("lib/aws_security_hub/mitre_mapping_porter")
     url = ENV["MITRE_TS_URL"] || AwsSecurityHub::MitreMappingPorter::UPSTREAM_TS_URL
     body = SparcHttp.get(url)  # proxy-aware (#775)
     raise Error, "Empty response from #{url}" if body.nil? || body.empty?
@@ -92,7 +91,6 @@ class AwsConfigRefreshService
   end
 
   def rebuild_vendored_data_file(ts_text)
-    require Rails.root.join("lib/aws_security_hub/mitre_mapping_porter")
     rows = AwsSecurityHub::MitreMappingPorter.parse_ts_source(ts_text)
     AwsSecurityHub::MitreMappingPorter.write!(rows, path: vendored_path)
   end

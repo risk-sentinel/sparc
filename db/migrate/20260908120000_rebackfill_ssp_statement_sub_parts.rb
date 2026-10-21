@@ -71,8 +71,9 @@ class RebackfillSspStatementSubParts < ActiveRecord::Migration[8.1]
     end
   end
 
-  # Deliberately empty, for the same reason as the original: the added rows are
-  # the structure these documents should always have had, and deleting them would
-  # take any prose authored against them since.
-  def down; end
+  def down
+    # Deliberately empty, for the same reason as the original: the added rows are
+    # the structure these documents should always have had, and deleting them would
+    # take any prose authored against them since.
+  end
 end

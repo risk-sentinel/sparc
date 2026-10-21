@@ -68,8 +68,9 @@ class BackfillAssessmentObjectives < ActiveRecord::Migration[8.1]
     end
   end
 
-  # Deliberately empty. The added rows are the structure these documents should
-  # always have had, and deleting them would take any assessment recorded against
-  # them since.
-  def down; end
+  def down
+    # Deliberately empty. The added rows are the structure these documents should
+    # always have had, and deleting them would take any assessment recorded against
+    # them since.
+  end
 end

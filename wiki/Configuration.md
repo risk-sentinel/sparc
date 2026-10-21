@@ -12,7 +12,6 @@ SPARC is configured via environment variables — most prefixed with `SPARC_`. A
 | `FORCE_SSL` | `true` (prod) | Enforce HTTPS redirects + HSTS header |
 | `SPARC_APP_URL` | `http://localhost:3000` | Application base public URL (used in emails, links, redirects) |
 | `SPARC_APP_NAME` | `SPARC` | Application display name. Since #936 this also sets the **browser tab title** on pages that do not set their own, and the `og:site_name` published in **link previews** — so a rebranded deployment no longer leaks "SPARC" into tabs or into links its staff share. |
-| `SPARC_WELCOME_TEXT` | `Welcome to SPARC` | Custom welcome text on the login page |
 | `SPARC_CONTACT_EMAIL` | (none) | Support/admin contact email shown in UI |
 | `SPARC_RESOURCES` | (adds to 9 shipped links) | JSON array of external resource links **added to** the shipped set (#914). Your entries appear first; duplicate `href`s collapse |
 | `SPARC_RESOURCES_REPLACE` | `false` | Set `true` to make `SPARC_RESOURCES` replace the shipped links instead of extending them |
@@ -133,9 +132,8 @@ All auth features default to **disabled**. Enable one or more to activate `/logi
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SPARC_ENABLE_LOCAL_LOGIN` | `false` | Enable email/password login |
-| `SPARC_ENABLE_EMAIL_CONFIRMATION` | `false` | Require email confirmation for new local accounts |
 | `SPARC_ENABLE_OIDC` | `false` | Enable OpenID Connect SSO |
-| `SPARC_ENABLE_LDAP` | `false` | Enable LDAP directory login |
+| `SPARC_ENABLE_LDAP` | on when `SPARC_LDAP_HOST` is set | Enable LDAP directory login. Setting a host turns it on (#1120); set `false` to turn it off |
 | `SPARC_FIDO2_ENABLED` | `false` | Enable FIDO2/WebAuthn security-key sign-in (passwordless; key + PIN = app-native MFA). Adds a **Security Keys** enrollment page + a "Sign in with a security key" option (#779) |
 | `SPARC_ENABLE_PIV` | `false` | Enable PIV / CAC smart-card sign-in (cert + PIN → NIST IA-2(12)). The mTLS + DoD-PKI validation happen at the proxy/ALB; SPARC consumes the forwarded validated cert and fails closed. Only enable behind a correctly-configured mTLS gateway (#779) |
 | `SPARC_ENABLE_USER_REGISTRATION` | `false` | Allow self-service registration (usually `false` in prod) |
@@ -163,7 +161,6 @@ Requires `SPARC_ENABLE_OIDC=true`. Provider-agnostic — compatible with Okta, K
 | `SPARC_OIDC_REDIRECT_URI` | (auto) | Callback URL (auto-derived from `SPARC_APP_URL`) |
 | `SPARC_OIDC_SCOPES` | `openid profile email` | Space-separated OIDC scopes |
 | `SPARC_OIDC_PROVIDER_TITLE` | `SSO` | Login-button/tab display name |
-| `SPARC_OIDC_FORCE_MFA` | `false` | Require MFA via ACR/amr claim validation |
 
 ### API Authentication Mode
 
@@ -178,7 +175,7 @@ Controls which auth method the REST API accepts (mutually exclusive).
 
 ## LDAP
 
-Requires `SPARC_ENABLE_LDAP=true`.
+Setting `SPARC_LDAP_HOST` turns LDAP on (v1.17.2, #1120); `SPARC_ENABLE_LDAP=false` turns it off.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -273,7 +270,7 @@ Required for registration confirmation, password resets, and notifications.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SPARC_ENABLE_SMTP` | `false` | Enable SMTP email delivery |
+| `SPARC_ENABLE_SMTP` | on when `SPARC_SMTP_ADDRESS` is set | Enable SMTP email delivery. Setting an address turns it on; set `false` to turn it off |
 | `SPARC_SMTP_ADDRESS` | (none) | SMTP server address |
 | `SPARC_SMTP_PORT` | `587` | SMTP server port |
 | `SPARC_SMTP_USERNAME` | (none) | SMTP username |
@@ -320,24 +317,23 @@ Rack::Attack throttle thresholds. Defaults are conservative; tighten for high-se
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SPARC_RATE_LIMITING_ENABLED` | `true` | Master kill switch for all throttles (set `false` for emergency triage) |
-| `SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP` | `30` | Per-IP cap on upload endpoints |
-| `SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER` | `100` | Per-user cap on upload endpoints |
+| `SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP` | `60` | Per-IP cap on upload endpoints |
+| `SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER` | `250` | Per-user cap on upload endpoints |
 | `SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE` | `300` | Per-token cap on `/api/v1` write methods |
-| `SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN` | `5` | Per-IP cap on login failures (credential-stuffing defense) |
+| `SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN` | `3` | Per-IP cap on login failures (credential-stuffing defense) |
 | `SPARC_RATE_LIMIT_CONTROLS_DOWNLOADS_PER_5MIN_PER_IP` | `30` | Per-IP cap on Controls-layer downloads in 5 minutes. Matters most with `SPARC_PUBLIC_CATALOGS=true`, when those downloads are anonymous and a full catalog export costs ~24s and ~3 MB |
+| `SPARC_RATE_LIMIT_CSP_REPORTS_PER_MIN` | `60` | Per-IP cap on Content-Security-Policy violation reports per minute |
 | `SPARC_RATE_LIMIT_SAFELIST_CIDRS` | `127.0.0.1,::1` | CIDRs that bypass all throttles (health checks, NLB targets) |
 
 ## Document Lifecycle & Workflow
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SPARC_REQUIRE_DOCUMENT_APPROVAL` | `false` | Require documents to pass an approval workflow before finalization |
+| `SPARC_REQUIRE_DOCUMENT_APPROVAL` | `true` | Catalogs, profiles, baselines and CDEFs must be approved before they can be published. Set `false` to publish without review |
 | `SPARC_INACTIVITY_DAYS` | `30` | Days of user inactivity before an account is auto-deactivated. The break-glass admin is exempt — see below |
 | `SPARC_PASSWORD_EXPIRY_DAYS` | `30` | Days before a local-auth password expires (SSO users exempt; break-glass admin exempt — see below) |
 | `SPARC_API_TOKEN_MAX_DAYS` | `365` | Longest a service account's API token may live. A service-account token must expire; a person's may still be set to never expire (#1176) |
 | `SPARC_API_TOKEN_RENEWAL_GRACE_DAYS` | `7` | After a token is renewed, how long the token it replaces keeps working. `0` ends it at once (#1176) |
-| ~~`SPARC_SA_INACTIVITY_DAYS`~~ | — | **Retired (#785).** Service accounts use `SPARC_INACTIVITY_DAYS` like everyone else |
 | `SPARC_PROCESSING_STUCK_MINUTES` | `5` | Minutes after which a stuck document stops auto-refreshing its show page |
 
 ### Administrator lockout protection (v1.15.4)
@@ -365,9 +361,24 @@ Controls automatic cleanup of orphaned upload artifacts and per-version copies.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SPARC_ARTIFACT_REAPER_ENABLED` | `true` | Enable the recurring artifact-reaper job that prunes orphaned blobs |
-| `SPARC_ARTIFACT_REAPER_INTERVAL_DAYS` | `7` | How often the artifact-reaper job runs |
-| `SPARC_ARTIFACT_COPY_PER_VERSION` | `true` | Keep a distinct artifact copy per document version for durable back-matter |
+| `SPARC_ARTIFACT_REAPER_INTERVAL_DAYS` | `7` | How often the artifact-reaper job runs (1–90) |
+| `SPARC_ARTIFACT_REAPER_PURGE` | `false` | Let the reaper delete blobs nothing references. Off, it only reports them |
+| `SPARC_ARTIFACT_REAPER_MIN_AGE_HOURS` | `24` | Never reap a blob younger than this, so an upload still being saved is not taken for an orphan |
+| `SPARC_ARTIFACT_COPY_PER_VERSION` | `false` | Give every artifact version its own physical copy instead of sharing the current blob by reference. For per-version immutability, at the cost of storage |
+
+## Retired Settings
+
+SPARC no longer reads these (v1.17.2, #1120). If one is still set, SPARC logs a
+warning at boot naming what to use instead. Delete it from your configuration.
+
+| Variable | Use instead |
+|----------|-------------|
+| ~~`SPARC_OIDC_FORCE_MFA`~~ | It never forced MFA. Use `SPARC_REQUIRE_AUTH_METHODS` or `SPARC_REQUIRE_FIDO2` |
+| ~~`SPARC_ENABLE_EMAIL_CONFIRMATION`~~ | Nothing; it was never read |
+| ~~`SPARC_WELCOME_TEXT`~~ | Nothing; the login page never showed it |
+| ~~`SPARC_RATE_LIMITING_ENABLED`~~ | Rate limiting is always on; tune the `SPARC_RATE_LIMIT_*` settings |
+| ~~`SPARC_ARTIFACT_REAPER_ENABLED`~~ | `SPARC_ARTIFACT_REAPER_PURGE` and `SPARC_ARTIFACT_REAPER_INTERVAL_DAYS` |
+| ~~`SPARC_SA_INACTIVITY_DAYS`~~ | `SPARC_INACTIVITY_DAYS`, which covers service accounts too |
 
 ## Dynamic Roles
 

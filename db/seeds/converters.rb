@@ -266,7 +266,6 @@ end
 # AwsLabsCdefImportService chains through this converter when AWS does
 # not publish a direct NIST mapping for a Sec Hub control.
 begin
-require Rails.root.join("lib/aws_security_hub/aws_config_mapping_loader")
 
 mitre_path = MAPPINGS_DIR.join("mitre_aws_config_to_nist.json")
 if mitre_path.exist?
@@ -331,7 +330,6 @@ end
 # import time by AwsLabsCdefImportService chaining through the AWS Config
 # Rule converter (above) via the aws_config_rule recorded in remarks.
 begin
-require Rails.root.join("lib/aws_security_hub/aws_security_hub_mapping_loader")
 
 aws_path = MAPPINGS_DIR.join("aws_security_hub_to_nist.json")
 if aws_path.exist?

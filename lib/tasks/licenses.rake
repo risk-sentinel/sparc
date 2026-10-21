@@ -124,7 +124,7 @@ namespace :licenses do
     SparcHttp.start(uri) do |http|  # proxy-aware (#775)
       http.read_timeout = 30
       response = http.get(uri.request_uri)
-      raise "HTTP #{response.code}" unless response.code.to_i == 200
+      raise SparcHttp::Error, "HTTP #{response.code} from #{url}" unless response.code.to_i == 200
       response.body.to_s.force_encoding("UTF-8")
     end
   end
