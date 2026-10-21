@@ -70,12 +70,13 @@ ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:552f8cc1ddb0bc
 # the same way this stage does, so no surface that gates or ships a
 # release depends on the published binary any more.
 #
-# Pin the patch (golang:1.26.9), not the minor (golang:1.26) — a floating minor
+# Pin the patch (golang:1.26.10), not the minor (golang:1.26) — a floating minor
 # does not deterministically clear a stdlib CVE, which is the entire point.
 # 1.26.6 -> 1.26.9 (2026-10-16, v1.17.1): go1.26.6 carries 3 CRITICAL and 21
 # HIGH stdlib advisories by grype (e.g. CVE-2026-78663, GO-2026-6604,
 # GO-2026-6612), fixed in go1.26.9.
-FROM --platform=$BUILDPLATFORM golang:1.26.9-bookworm AS hdf-builder
+# 1.26.9 -> 1.26.10 (2026-10-21, v1.17.2): CVE-2026-111943 (HIGH, stdlib).
+FROM --platform=$BUILDPLATFORM golang:1.26.10-bookworm AS hdf-builder
 ARG HDF_LIBS_VERSION
 ARG TARGETOS
 ARG TARGETARCH
@@ -128,7 +129,7 @@ RUN ACTUAL="$(go version -m /out/hdf | awk '$2 == "golang.org/x/text" { print $3
 # A real version comparison, not a pattern match: `sort -V -C` succeeds only
 # when the floor sorts at or before what the binary reports, so a newer Go
 # (1.27.0, 1.30.x) passes while anything below the fix line fails.
-ARG GO_FIX_LINE=1.26.9
+ARG GO_FIX_LINE=1.26.10
 RUN actual="$(go version -m /out/hdf | head -1 | awk '{ print $2 }' | sed 's/^go//')" \
     && printf '%s\n%s\n' "${GO_FIX_LINE}" "${actual}" | sort -V -C \
       || { echo "FAIL: /out/hdf built with go${actual}, older than the GO-2026-5026 fix line go${GO_FIX_LINE}" >&2; \

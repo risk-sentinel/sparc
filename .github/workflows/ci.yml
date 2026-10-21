@@ -174,7 +174,9 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 30 -> 45 (v1.17.2): the suite outgrew 30 minutes at ~7,800 examples and
+    # main timed out on every run from 2026-10-17.
+    timeout-minutes: 45
     needs: [ changes ]
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
 
