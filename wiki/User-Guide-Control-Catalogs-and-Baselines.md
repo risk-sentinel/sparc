@@ -103,6 +103,29 @@ A catalog is not checked for control **priority** or **baseline impact**. Those
 belong to a baseline (profile), which sets them for its own controls. NIST's
 catalogs carry neither. The NIST catalogs SPARC seeds are already published.
 
+### How to add your organization's own controls
+
+Write them as an OSCAL catalog of their own, not as edits to a copy of NIST's.
+An OSCAL profile can change an existing control but cannot add one, so a
+baseline that mixes NIST and your controls is a profile importing both
+catalogs.
+
+Two skeletons to copy are in
+[`docs/api/samples/`](https://github.com/risk-sentinel/sparc/tree/main/docs/api/samples):
+
+- **`custom-controls-catalog.json`**: one family (`DP`), one control with a
+  parameter, statement, guidance and assessment objectives, and one
+  enhancement. Replace the Example values, keep a control-id prefix of your own
+  so it never collides with a NIST family, and import it as above. It imports
+  with no warnings.
+- **`custom-controls-profile.json`**: a baseline that selects a few NIST Rev 5
+  controls and the custom ones, and sets the custom parameter.
+
+Both are valid OSCAL 1.2.3. **Current limit:** SPARC links a baseline to the
+first catalog it imports, so the custom controls in a mixed baseline arrive
+without titles and export as if they came from NIST. This is tracked in
+[#1234](https://github.com/risk-sentinel/sparc/issues/1234).
+
 ### How to edit families and controls
 
 - Open a catalog and drill into a **family** to see its controls; use **Edit**

@@ -73,7 +73,7 @@ CDEFs, and control catalogs — with a REST API and OSCAL import/export at
 | [api/INVENTORY.md](api/INVENTORY.md) | **Index of all endpoints** (links the per-resource docs in `api/endpoints/`) |
 | [api/errors.md](api/errors.md) · [api/pagination.md](api/pagination.md) | Error format & pagination conventions |
 | [api/README.md](api/README.md) | Postman collection + local/prod environments |
-| [api/samples/](api/samples/) | Request bodies: the field-import SSP sample, and the NIST Rev 5 ODP worksheets (catalog, LOW, MODERATE, HIGH) for `PUT .../parameters` — see [api/endpoints/baseline-parameters.md](api/endpoints/baseline-parameters.md) |
+| [api/samples/](api/samples/) | Request bodies: the field-import SSP sample, and the NIST Rev 5 ODP worksheets (catalog, LOW, MODERATE, HIGH) for `PUT .../parameters` — see [api/endpoints/baseline-parameters.md](api/endpoints/baseline-parameters.md); and OSCAL skeletons for an organization's own controls (`custom-controls-catalog.json`, `custom-controls-profile.json`) |
 | [API.md](API.md) | Top-level REST API summary |
 
 ### Compliance & OSCAL artifacts
