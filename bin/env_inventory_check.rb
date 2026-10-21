@@ -189,24 +189,28 @@ module EnvInventory
     "#{read.size} variables read in code; #{documented.size} documented as current and " \
       "#{struck.size} as retired in #{REFERENCE}; #{retired.size} in SparcConfig::RETIRED_VARIABLES"
   end
+
+  # The command: prints the report and returns the exit status (1 on drift,
+  # unless --report).
+  def main(argv)
+    if argv.include?("--list")
+      puts list
+      puts
+      puts summary
+      return 0
+    end
+
+    found = problems
+    puts summary
+    if found.empty?
+      puts "No drift between the code and the documents."
+      return 0
+    end
+
+    puts "#{found.size} drift finding(s):"
+    found.each { |problem| puts "  - #{problem}" }
+    argv.include?("--report") ? 0 : 1
+  end
 end
 
-if $PROGRAM_NAME == __FILE__
-  if ARGV.include?("--list")
-    puts EnvInventory.list
-    puts
-    puts EnvInventory.summary
-    exit 0
-  end
-
-  found = EnvInventory.problems
-  puts EnvInventory.summary
-  if found.empty?
-    puts "No drift between the code and the documents."
-    exit 0
-  end
-
-  puts "#{found.size} drift finding(s):"
-  found.each { |problem| puts "  - #{problem}" }
-  exit(ARGV.include?("--report") ? 0 : 1)
-end
+exit EnvInventory.main(ARGV) if $PROGRAM_NAME == __FILE__
