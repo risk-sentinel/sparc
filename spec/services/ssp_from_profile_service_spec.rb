@@ -202,12 +202,15 @@ RSpec.describe SspFromProfileService do
       expect(field.field_value).to include("general security policy")
     end
 
-    it "creates editable placeholder fields with default status Deferred" do
+    # Unanswered until the author answers it. A "Deferred" placeholder could
+    # not be told from an author's decision to defer, which SAR generation
+    # reads as a known finding.
+    it "creates the status field unanswered" do
       ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = ssp.ssp_controls.find_by(control_id: "ac-1")
       status = ac1.ssp_control_fields.find_by(field_name: "status")
-      expect(status.field_value).to eq("Deferred")
+      expect(status.field_value).to eq("")
     end
 
     it "creates empty editable placeholder fields for implementation" do

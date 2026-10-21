@@ -123,6 +123,7 @@ controllers:
       download_oscal: ["GET /api/v1/sar_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
       download_oscal_validated: ["GET /api/v1/sar_documents/:id/export?format=oscal"]  # #1181 / #1154 part 2 — promoted from gap
       download_oscal_unvalidated: ["GET /api/v1/sar_documents/:id/export?format=oscal&validate=false"]  # #1181 / #1154 part 2 — promoted from gap
+      update_objective: ["PATCH /api/v1/sar_documents/:sar_document_id/objectives/:id"]  # v1.17.2 — promoted from gap
       download_xml: ["GET /api/v1/sar_documents/:id/export?format=oscal-xml"]  # #1181 / #1154 part 2 — promoted from gap
       download_yaml: ["GET /api/v1/sar_documents/:id/export?format=oscal-yaml"]  # #1181 / #1154 part 2 — promoted from gap
     ui_only:
@@ -165,9 +166,6 @@ controllers:
       associate_source:
         reason: "API PATCH sets source ids but does not backfill objectives or copy back-matter from the linked sources"
         would_be: "PATCH /api/v1/sar_documents/:id/associate_source"
-      update_objective:
-        reason: "per-objective assessment status/assessor/notes are not writable via API"
-        would_be: "PATCH /api/v1/sar_documents/:sar_document_id/objectives/:id"
       publish:
         reason: "API PATCH lifecycle_status bypasses publication validation, approval gate, version bump and published timestamp"
         would_be: "POST /api/v1/sar_documents/:id/publish"

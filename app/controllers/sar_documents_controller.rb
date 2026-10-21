@@ -484,12 +484,9 @@ class SarDocumentsController < ApplicationController
     permitted = params.require(:sar_control_objective)
                       .permit(:status, :assessor_name, :assessor_notes)
 
-    if permitted[:status] == "passing" || permitted[:status] == "failed"
-      permitted[:assessed_at] = Time.current
-    end
-
-    if objective.update(permitted)
-      @sar_document.regenerate_oscal_uuid!
+    # SarObjectiveDetermination keeps the control's risk in step, so a failed
+    # objective reaches the POA&M. The API calls the same service.
+    if SarObjectiveDetermination.new(objective).record(**permitted.to_h.symbolize_keys)
       audit_log("sar_objective_updated", subject: @sar_document,
                 metadata: { objective_id: objective.objective_id, status: objective.status })
       flash[:success] = "Objective #{objective.label.presence || objective.objective_id} updated."

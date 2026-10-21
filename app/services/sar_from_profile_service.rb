@@ -48,7 +48,10 @@ class SarFromProfileService
 
     build_controls_from_catalog(catalog)
     create_default_result
-    create_default_findings
+    # No findings: a baseline makes no claim about any system, so nothing is
+    # known before the assessment. Every control used to be recorded
+    # not-satisfied. An assessor's determinations become findings
+    # (SarObjectiveDetermination).
     ControlObjectiveExtractorService.backfill_generated!(@document)
 
     @document
@@ -120,27 +123,6 @@ class SarFromProfileService
       start_time:  Time.current,
       position:    0
     )
-  end
-
-  # ── Default findings per control ────────────────────────────────
-
-  def create_default_findings
-    @document.sar_controls.each do |sar_ctrl|
-      next if sar_ctrl.control_id.blank?
-
-      control_id = normalize_control_id(sar_ctrl.control_id)
-
-      @result.sar_findings.create!(
-        uuid:        OscalUuidService.derived(@result.uuid, "sar-finding", control_id),
-        title:       "Finding for #{sar_ctrl.control_id}",
-        description: "Assessment finding for control #{sar_ctrl.control_id}",
-        target_data: {
-          "type"      => "statement-id",
-          "target-id" => "#{control_id}_smt",
-          "status"    => { "state" => "not-satisfied" }
-        }
-      )
-    end
   end
 
   # ── Helpers ──────────────────────────────────────────────────────

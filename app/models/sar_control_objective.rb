@@ -10,6 +10,10 @@ class SarControlObjective < ApplicationRecord
   validates :uuid, presence: true
   validates :status, inclusion: { in: OBJECTIVE_STATUSES }
 
+  # A determination decides whether the control's risk, and so its POA&M item,
+  # is open (SarControlRiskSync). Every path that records one runs this.
+  after_update_commit -> { SarControlRiskSync.new(sar_control).sync! }, if: :saved_change_to_status?
+
   # #1114 — NIST's 800-53A tree has CONTAINER nodes above the determination
   # statements: `ac-1_obj`, `ac-1_obj.a`, `ac-1_obj.a.1` carry a label and NO
   # prose, and exist to group the leaves beneath them.

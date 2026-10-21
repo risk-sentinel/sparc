@@ -16,7 +16,8 @@ class SarWizardService
       link_sap_document
       create_default_result
       populate_controls_from_sap if @sap_document.present?
-      create_default_findings if @sap_document.present?
+      # No findings: a plan states what will be assessed, not an outcome.
+      # Every control used to be recorded not-satisfied before anyone looked.
       @document.update!(status: "completed")
     end
     ControlObjectiveExtractorService.backfill_generated!(@document)
@@ -100,27 +101,6 @@ class SarWizardService
         field_name:  fname,
         field_value: fvalue,
         editable:    %w[result working_status notes_weakness recommended_fix working_comments].include?(fname)
-      )
-    end
-  end
-
-  # ── Default findings from SAP controls ──────────────────────────
-
-  def create_default_findings
-    @document.sar_controls.each do |sar_ctrl|
-      next if sar_ctrl.control_id.blank?
-
-      control_id = normalize_control_id(sar_ctrl.control_id)
-
-      @result.sar_findings.create!(
-        uuid:        SecureRandom.uuid,
-        title:       "Finding for #{sar_ctrl.control_id}",
-        description: "Assessment finding for control #{sar_ctrl.control_id}",
-        target_data: {
-          "type"      => "statement-id",
-          "target-id" => "#{control_id}_smt",
-          "status"    => { "state" => "not-satisfied" }
-        }
       )
     end
   end

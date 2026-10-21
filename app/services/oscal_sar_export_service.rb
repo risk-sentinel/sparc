@@ -360,8 +360,12 @@ class OscalSarExportService
   # These were emitted only by the synthesized-result fallback, and every SAR
   # SPARC generates HAS a result, so an assessor's per-objective
   # determinations never reached the export.
+  # An objective SarObjectiveDetermination already stored a finding for (a
+  # failure linked to its risk) is emitted once, from that stored finding.
   def determined_objective_findings
+    stored = @results.flat_map { |r| r.sar_findings.map { |f| f.target_data.to_h["target-id"] } }.compact.to_set
     @controls.flat_map { |control| build_objective_findings(control, nil) }
+             .reject { |finding| stored.include?(finding.dig("target", TARGET_ID)) }
   end
 
   def build_objective_findings(control, obs_uuid)

@@ -647,6 +647,12 @@ Rails.application.routes.draw do
         # HTML enrich form, which permitted title/description/status and nothing
         # else. The OSCAL rating (impact/likelihood) could not be set anywhere.
         resources :risks, only: [ :index, :create ], controller: "sar_risks"
+        # Per-objective determinations (800-53A). Web-only before; a failure
+        # keeps the control's risk, and so the POA&M, in step.
+        # OSCAL objective ids carry dots (ac-1_obj.a-1), which Rails would read
+        # as a format suffix.
+        resources :objectives, only: [ :index, :update ], controller: "sar_objectives",
+                               constraints: { id: %r{[^/]+} }
         member do
           put :update_fields
           get :export

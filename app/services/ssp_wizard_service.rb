@@ -125,7 +125,7 @@ class SspWizardService
 
   def create_default_ssp_fields(ssp_ctrl)
     default_fields = {
-      "status"                 => "Deferred",
+      "status"                 => "",
       "control_application"            => "",
       "coverage_level"            => "",
       "control_type"    => "",
@@ -185,7 +185,7 @@ class SspWizardService
       ssp_field_map["implementation_statement"]&.update!(field_value: narrative)
     end
 
-    if narrative.present? && ssp_field_map["status"]&.field_value == "Deferred"
+    if narrative.present? && ssp_field_map["status"]&.field_value.blank?
       ssp_field_map["status"]&.update!(field_value: "Implemented")
     end
 

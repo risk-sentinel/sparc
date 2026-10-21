@@ -208,24 +208,14 @@ RSpec.describe SarFromProfileService do
       expect(result.start_time).to be_present
     end
 
-    it "creates a SarFinding for each control" do
+    # A baseline makes no claim about any system, so nothing is known before
+    # the assessment. Every control used to be recorded not-satisfied.
+    it "records no finding and no risk before anyone assesses" do
       sar = described_class.new(profile, authorization_boundary: boundary).create
 
       result = sar.sar_results.first
-      expect(result.sar_findings.count).to eq(4)
-    end
-
-    it "creates findings with target_data referencing the control" do
-      sar = described_class.new(profile, authorization_boundary: boundary).create
-
-      result = sar.sar_results.first
-      finding = result.sar_findings.find_by(title: "Finding for ac-1")
-      expect(finding).to be_present
-      # The control's statement, named as a statement: `ac-1` is not an
-      # objective id, and the finding used to call it one.
-      expect(finding.target_data["type"]).to eq("statement-id")
-      expect(finding.target_data["target-id"]).to eq("ac-1_smt")
-      expect(finding.target_data["status"]["state"]).to eq("not-satisfied")
+      expect(result.sar_findings).to be_empty
+      expect(result.sar_risks).to be_empty
     end
 
     it "stores import_metadata with source profile info" do

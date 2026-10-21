@@ -189,7 +189,10 @@ class SspFromProfileService
       end
 
       # Editable placeholder fields
-      field_entries << [ idx, "status", "Deferred" ]
+      # Unanswered until the author answers it. "Deferred" here was a
+      # placeholder indistinguishable from an author's decision to defer, which
+      # SAR generation reads as a known finding.
+      field_entries << [ idx, "status", "" ]
       field_entries << [ idx, "control_type", "" ]
       field_entries << [ idx, "responsible_entities", "" ]
       field_entries << [ idx, "implementation_statement", "" ]
