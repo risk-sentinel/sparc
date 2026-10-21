@@ -16,8 +16,7 @@ require "json"
 # without needing a separate bridge table.
 module AwsSecurityHub
   module AwsSecurityHubMappingLoader
-    module_function
-
+    extend self
     # Takes a parsed aws_security_hub_to_nist.json doc. Returns an
     # Array<Hash> of rows ready for ConverterEntry.insert_all.
     # Each scraped entry produces one row per OSCAL NIST id (fanout).

@@ -80,9 +80,12 @@ TEST_MODULE_EXCEPTIONS = {
     .to_h { |controller| [ controller, POAM_SUBRESOURCE_MODULE ] }
 ).freeze
 
+# #1133 — the route table could not be read, so there is nothing to compare.
+class RoutesUnavailableError < StandardError; end
+
 def load_routes
   raw = `bin/rails routes 2>/dev/null`
-  raise "bin/rails routes failed" if raw.empty?
+  raise RoutesUnavailableError, "bin/rails routes failed" if raw.empty?
 
   rows = []
   raw.each_line do |line|

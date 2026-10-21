@@ -21,7 +21,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import matplotlib.ticker as ticker
 import numpy as np
 from datetime import datetime
 
@@ -219,8 +218,10 @@ def generate_chart(output_path: Path, runs):
         post_x = x_values[opt_idx:]
         post_y = totals_min[opt_idx:]
 
-        pre_mr, pre_xbar, pre_mrbar, pre_ucl, pre_lcl, _ = compute_xmr(pre_y)
-        post_mr, post_xbar, post_mrbar, post_ucl, post_lcl, _ = compute_xmr(post_y)
+        # Only the pre-optimization limits are drawn; the post series is plotted
+        # against them, so its own limits and moving ranges are not needed here.
+        _, pre_xbar, _, pre_ucl, pre_lcl, _ = compute_xmr(pre_y)
+        _, post_xbar, _, _, _, _ = compute_xmr(post_y)
 
         ax_x.plot(pre_x, pre_y, "o-", color=PRE_COLOR, markersize=4, linewidth=1.2,
                   label=f"Pre (n={len(pre_y)}, X\u0304={pre_xbar:.1f}m)")
@@ -239,7 +240,6 @@ def generate_chart(output_path: Path, runs):
                      linestyle="--", label="Optimization deployed")
     else:
         # No optimization split — single series
-        colors = [PRE_COLOR] * len(runs)
         ax_x.plot(x_values, totals_min, "o-", color=PRE_COLOR, markersize=4,
                   linewidth=1.2, label=f"n={len(runs)}, X\u0304={x_bar:.1f}m")
         ax_x.axhline(x_bar, color=MEAN_COLOR, linewidth=1, linestyle="--",

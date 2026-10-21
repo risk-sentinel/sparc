@@ -23,6 +23,12 @@
 #   CM-6  Configuration Settings (env var injection from centralized secret)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 
+# #1133 — the boot cannot load its configuration from Secrets Manager. Defined
+# here because this file runs before autoload.
+module SparcSecrets
+  class Error < StandardError; end
+end
+
 raw_secrets_enabled = ENV.fetch("SPARC_AWS_SECRETS_ENABLED", nil)
 secrets_enabled =
   if raw_secrets_enabled.present?
@@ -32,6 +38,8 @@ secrets_enabled =
   end
 
 if secrets_enabled
+  # Required here, not at the top (#1133): the SDK is loaded only when this
+  # deployment uses Secrets Manager, and this file runs before autoload.
   require "aws-sdk-secretsmanager"
   require "json"
 
@@ -41,7 +49,7 @@ if secrets_enabled
   secret_arn = ENV.fetch("SPARC_APP_CONFIG_SECRET_ARN", nil)
 
   if secret_arn.blank?
-    raise <<~MSG
+    raise SparcSecrets::Error, <<~MSG
       SPARC_AWS_SECRETS_ENABLED=true but SPARC_APP_CONFIG_SECRET_ARN is not set.
       Set the ARN of the app-config secret in Secrets Manager, or disable
       Secrets Manager integration with SPARC_AWS_SECRETS_ENABLED=false.
@@ -71,12 +79,12 @@ if secrets_enabled
                    "injected #{injected.size}")
     end
   rescue Aws::SecretsManager::Errors::ResourceNotFoundException => e
-    raise "SPARC_APP_CONFIG_SECRET_ARN references a secret that does not exist: #{e.message}"
+    raise SparcSecrets::Error, "SPARC_APP_CONFIG_SECRET_ARN references a secret that does not exist: #{e.message}"
   rescue Aws::SecretsManager::Errors::AccessDeniedException => e
-    raise "ECS task role lacks secretsmanager:GetSecretValue permission: #{e.message}"
+    raise SparcSecrets::Error, "ECS task role lacks secretsmanager:GetSecretValue permission: #{e.message}"
   rescue JSON::ParserError => e
-    raise "SPARC_APP_CONFIG_SECRET_ARN secret is not valid JSON: #{e.message}"
+    raise SparcSecrets::Error, "SPARC_APP_CONFIG_SECRET_ARN secret is not valid JSON: #{e.message}"
   rescue Aws::Errors::ServiceError => e
-    raise "Failed to retrieve secret from Secrets Manager: #{e.class} — #{e.message}"
+    raise SparcSecrets::Error, "Failed to retrieve secret from Secrets Manager: #{e.class} — #{e.message}"
   end
 end

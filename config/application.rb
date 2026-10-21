@@ -25,7 +25,8 @@ DbUrl.reconcile_database_url!
 # renders (same pre-autoload reason as DbUrl).
 require_relative "../lib/storage_url/config"
 
-# Skip dotenv in production/containers
+# Skip dotenv in production/containers. Conditional on purpose (#1133): the gem
+# is not in a production image, and .env must load before configuration reads ENV.
 if Rails.env.development? || Rails.env.test?
   begin
     require "dotenv/load"

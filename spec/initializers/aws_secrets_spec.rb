@@ -104,7 +104,7 @@ RSpec.describe "AWS Secrets Manager Integration" do
 
     it "refuses to boot when the flag is on but no ARN is set" do
       with_env("SPARC_AWS_SECRETS_ENABLED" => "true", "SPARC_APP_CONFIG_SECRET_ARN" => nil) do
-        expect { load initializer }.to raise_error(RuntimeError, /SPARC_APP_CONFIG_SECRET_ARN is not set/)
+        expect { load initializer }.to raise_error(SparcSecrets::Error, /SPARC_APP_CONFIG_SECRET_ARN is not set/)
       end
     end
 

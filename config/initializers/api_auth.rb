@@ -17,14 +17,14 @@ Rails.application.config.after_initialize do
   mode = SparcConfig.api_auth_mode
 
   unless SparcConfig::API_AUTH_MODES.include?(mode)
-    raise <<~MSG
+    raise SparcConfig::ConfigurationError, <<~MSG
       Invalid SPARC_API_AUTH value: "#{mode}"
       Valid values: #{SparcConfig::API_AUTH_MODES.join(', ')}
     MSG
   end
 
   if %w[oidc hybrid].include?(mode) && SparcConfig.oidc_issuer_url.blank?
-    raise <<~MSG
+    raise SparcConfig::ConfigurationError, <<~MSG
       SPARC_API_AUTH=#{mode} requires SPARC_OIDC_ISSUER_URL to be set.
       The API needs the OIDC issuer URL to validate JWT tokens.
       Set SPARC_OIDC_ISSUER_URL or change SPARC_API_AUTH to "local".

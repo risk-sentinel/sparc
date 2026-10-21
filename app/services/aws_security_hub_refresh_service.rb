@@ -40,7 +40,6 @@ class AwsSecurityHubRefreshService
     validate_converter!
 
     update_stage!(:fetching_index)
-    require Rails.root.join("lib/aws_security_hub/control_scraper")
     index_html = fetch(AwsSecurityHub::ControlScraper::REFERENCE_PAGE)
     slugs = AwsSecurityHub::ControlScraper.discover_service_pages(index_html)
 

@@ -76,9 +76,10 @@ class BackfillCatalogControlParts < ActiveRecord::Migration[8.1]
     end
   end
 
-  # Deliberately empty. These rows were absent because of the defect, not by
-  # anyone's choice, so there is no prior state to restore.
-  def down; end
+  def down
+    # Deliberately empty. These rows were absent because of the defect, not by
+    # anyone's choice, so there is no prior state to restore.
+  end
 
   private
 

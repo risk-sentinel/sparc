@@ -24,11 +24,14 @@ raw = File.read(THEME_FILE)
 
 # Pull the two theme blocks (light + dark). The selectors are exact and
 # the blocks are the FIRST `{ ... }` after them.
+# #1133 — the theme file is not shaped the way this check reads it.
+class ThemeParseError < StandardError; end
+
 def extract_block(raw, selector)
   idx = raw.index(selector)
-  raise "selector not found: #{selector}" unless idx
+  raise ThemeParseError, "selector not found: #{selector}" unless idx
   start = raw.index("{", idx)
-  raise "open brace not found after #{selector}" unless start
+  raise ThemeParseError, "open brace not found after #{selector}" unless start
   depth = 0
   i = start
   while i < raw.length
@@ -42,7 +45,7 @@ def extract_block(raw, selector)
     end
     i += 1
   end
-  raise "unbalanced braces in #{selector}"
+  raise ThemeParseError, "unbalanced braces in #{selector}"
 end
 
 def parse_tokens(block)

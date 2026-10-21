@@ -59,8 +59,9 @@ class RepairCdefControlFamilies < ActiveRecord::Migration[8.1]
     end
   end
 
-  # Deliberately empty. The prior values were the wrong vocabulary in the wrong
-  # column, and the Security Hub rule they held is still on `source_control_id`
-  # — there is nothing worth restoring.
-  def down; end
+  def down
+    # Deliberately empty. The prior values were the wrong vocabulary in the wrong
+    # column, and the Security Hub rule they held is still on `source_control_id`
+    # — there is nothing worth restoring.
+  end
 end

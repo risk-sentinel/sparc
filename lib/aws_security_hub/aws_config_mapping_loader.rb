@@ -14,8 +14,7 @@ require "json"
 # alone (unique-pair index dedupes naturally).
 module AwsSecurityHub
   module AwsConfigMappingLoader
-    module_function
-
+    extend self
     # Takes a parsed mitre_aws_config_to_nist.json doc. Returns an
     # Array<Hash> of rows ready for ConverterEntry.insert_all.
     # Each MITRE row produces one row per OSCAL NIST id (fanout).

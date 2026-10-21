@@ -24,6 +24,10 @@
 #
 # NIST SC-8 (transmission) / AC-4 (controlled egress via the mandated proxy).
 module SparcHttp
+  # #1133 — a fetch that did not return the content asked for: a non-success
+  # status, a redirect loop, or a batch with failed entries.
+  class Error < StandardError; end
+
   class << self
     # Open a proxy-aware, TLS-verifying Net::HTTP session for `uri` and yield it,
     # mirroring Net::HTTP.start's block form so call sites port with minimal

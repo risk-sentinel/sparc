@@ -63,8 +63,9 @@ class BackfillSspStatementSubParts < ActiveRecord::Migration[8.1]
     end
   end
 
-  # Deliberately empty. The added rows are the structure these documents should
-  # always have had; there is no prior state worth restoring, and deleting them
-  # would take any prose authored against them since.
-  def down; end
+  def down
+    # Deliberately empty. The added rows are the structure these documents should
+    # always have had; there is no prior state worth restoring, and deleting them
+    # would take any prose authored against them since.
+  end
 end

@@ -67,6 +67,9 @@ end
 # Fails closed on a pinned rule's result with no fingerprint — it could not be
 # matched — but ignores fingerprint gaps in rules the register does not pin,
 # which this check has no business failing the gate over (PR #1188 review).
+# #1133 — a SARIF result this check cannot pin, so it cannot vouch for it.
+class UnpinnableResultError < StandardError; end
+
 def sarif_results(sarif_path, pinned_rules)
   sarif = JSON.parse(File.read(sarif_path))
   sarif.fetch("runs").each_with_object(Hash.new { |h, k| h[k] = Set.new }) do |run, acc|
@@ -75,7 +78,7 @@ def sarif_results(sarif_path, pinned_rules)
 
       location = result.dig("locations", 0, "physicalLocation", "artifactLocation", "uri")
       line_hash = result.dig("partialFingerprints", "primaryLocationLineHash")
-      raise "a #{result['ruleId']} result has no location or line hash — cannot pin it" unless location && line_hash
+      raise UnpinnableResultError, "a #{result['ruleId']} result has no location or line hash — cannot pin it" unless location && line_hash
 
       acc[result["ruleId"]] << [ location, line_hash ]
     end

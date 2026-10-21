@@ -23,6 +23,9 @@ module SparcConfig
 
   extend self
 
+  # #1133 — a setting, or a combination of settings, SPARC refuses to start with.
+  class ConfigurationError < StandardError; end
+
   def version = VERSION
 
   # ── Database ──────────────────────────────────────────────────────────────

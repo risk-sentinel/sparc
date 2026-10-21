@@ -15,6 +15,9 @@
         <%= form_tag password_reset_path(token: @token), method: :patch do %>
           <div class="mb-3">
             <label for="new_password" class="form-label fw-semibold small">New Password</label>
+            <%# autofocus kept on purpose (#1133): this page has one task and this is its
+              first field, so focus starts where the user must type. Sonar's
+              autofocus rule targets busy pages; accepted as won't-fix there. %>
             <input type="password" name="new_password" id="new_password"
                    class="form-control" required autofocus minlength="12"
                    autocomplete="new-password">
