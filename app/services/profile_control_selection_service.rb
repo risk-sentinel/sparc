@@ -61,11 +61,20 @@ class ProfileControlSelectionService
         row_order: max_order + idx + 1
       )
 
-      cc.effective_params_list.each do |param|
-        label = param["label"].to_s
-        pc.profile_control_fields.create!(field_name: "parameter:#{param['id']}", field_value: label)
-        pc.profile_control_fields.create!(field_name: "parameter_label:#{param['id']}", field_value: label)
-      end
+      self.class.seed_parameter_fields(pc, cc)
+    end
+  end
+
+  # A selected control's parameters, as fields: the value starts EMPTY because
+  # nobody has set it yet. It used to start as the catalog's label ("personnel
+  # or roles"), which every reader took for an answer: the screens showed it as
+  # the baseline's value and the OSCAL export listed it under `set-parameters`
+  # as tailoring nobody made. The label is kept, as the label. Both ways of
+  # building a baseline from a catalog call this.
+  def self.seed_parameter_fields(profile_control, catalog_control)
+    catalog_control.effective_params_list.each do |param|
+      profile_control.profile_control_fields.create!(field_name: "parameter:#{param['id']}", field_value: "")
+      profile_control.profile_control_fields.create!(field_name: "parameter_label:#{param['id']}", field_value: param["label"].to_s)
     end
   end
 end

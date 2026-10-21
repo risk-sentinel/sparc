@@ -132,9 +132,14 @@ class SspDocumentsController < ApplicationController
     # Normalisation (AC-1 -> AC-01) bridges documents that use unpadded IDs
     # against the catalog which stores zero-padded IDs.
     normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
-    @catalog_guidance = CatalogControl
-                          .where(control_id: normalized_ids)
-                          .index_by(&:control_id)
+    @catalog_guidance = CatalogControl.guidance_index(
+      normalized_ids, catalog: @ssp_document.profile_document&.control_catalog
+    )
+
+    # The requirement each control and each of its parts states, with the
+    # baseline's parameter values applied: the text beside every response row.
+    @requirement_text = ControlRequirementText.for_profile(@ssp_document.profile_document)
+                                              .for_controls(@controls.map(&:control_id))
 
     # #997 — the ODP values the SSP's baseline has set, so the screen can show
     # the control language WITH them substituted rather than raw

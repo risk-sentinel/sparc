@@ -473,6 +473,16 @@ class SspJsonParserService
     "_pub"  => "implementation_summary"
   }.freeze
 
+  # The response to a part: the by-component description, which is where
+  # OSCAL (and SPARC's export) carries an implementation. Earlier SPARC exports
+  # put it in the statement's `remarks`, so that is the fallback. The export's
+  # marker-only placeholder is not anybody's answer.
+  def statement_narrative(stmt_id, stmt)
+    description = stmt.dig(BY_COMPONENTS, 0, "description").presence
+    description = nil if description == OscalSspExportService.synthetic_statement_description(stmt_id)
+    description || stmt["remarks"]
+  end
+
   def synthesised_statement_field(stmt_id)
     suffix = SYNTHESISED_STATEMENT_FIELDS.keys.find { |s| stmt_id.to_s.end_with?(s) }
     suffix && SYNTHESISED_STATEMENT_FIELDS[suffix]
@@ -483,7 +493,7 @@ class SspJsonParserService
       stmt_id = stmt["statement-id"]
       next if stmt_id.blank?
 
-      narrative = stmt["remarks"] || stmt.dig(BY_COMPONENTS, 0, "description")
+      narrative = statement_narrative(stmt_id, stmt)
 
       if (field_name = synthesised_statement_field(stmt_id))
         if narrative.present?

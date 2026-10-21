@@ -102,11 +102,24 @@ RSpec.describe OscalSspExportService, "#958 statement set-parameters" do
 
   it "adds no by-components when the statement carries nothing" do
     create(:ssp_control_statement, ssp_control: control, statement_id: "ac-2_smt",
-           set_parameters_data: [])
+           implementation_prose: nil, set_parameters_data: [])
 
     statement = statement_for(OscalSspExportService.new(ssp.reload).export, "ac-2_smt")
 
     expect(statement).not_to have_key("by-components")
+  end
+
+  # The response to a part is how this system implements it: OSCAL carries
+  # that as the by-component description, not as the statement's remarks.
+  it "exports a part's response as this system's by-component description" do
+    create(:ssp_control_statement, ssp_control: control, statement_id: "ac-2_smt",
+           implementation_prose: "Accounts are reviewed monthly by the ISSO.", remarks: nil,
+           set_parameters_data: [])
+
+    statement = statement_for(OscalSspExportService.new(ssp.reload).export, "ac-2_smt")
+
+    expect(statement.dig("by-components", 0, "description")).to eq("Accounts are reviewed monthly by the ISSO.")
+    expect(statement).not_to have_key("remarks")
   end
 
   it "names a component that actually exists in the document" do

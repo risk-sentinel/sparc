@@ -107,15 +107,23 @@ class ProfileJsonParserService
     end
   end
 
-  # Store matching set-parameters as fields (raw OSCAL IDs in param keys).
+  # Store the set-parameters this control owns as fields, under each
+  # parameter's real id. Ownership is ProfileParameterOwner's: a prefix test
+  # dropped every zero-padded Rev 5 id (`ac-01_odp.05` under `ac-1`).
   def append_param_fields(raw_id, idx, param_map, field_entries)
     param_map.each do |param_id, param_data|
-      next unless param_id.start_with?("#{raw_id}_")
+      next unless parameter_owner.belongs_to?(param_id, raw_id)
+
+      stored_id = parameter_owner.resolve(param_id).param_id
       values = Array(param_data["values"]).join(", ")
-      field_entries << [ idx, "parameter:#{param_id}", values ] if values.present?
+      field_entries << [ idx, "parameter:#{stored_id}", values ] if values.present?
       label = param_data["label"]
-      field_entries << [ idx, "parameter_label:#{param_id}", label ] if label.present?
+      field_entries << [ idx, "parameter_label:#{stored_id}", label ] if label.present?
     end
+  end
+
+  def parameter_owner
+    @parameter_owner ||= ProfileParameterOwner.new(@document.reload.control_catalog)
   end
 
   def update_document_metadata(metadata, imports, profile)

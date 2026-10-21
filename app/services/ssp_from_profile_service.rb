@@ -88,6 +88,14 @@ class SspFromProfileService
     @catalog ||= @profile.resolved_catalog_json
   end
 
+  def requirement_text
+    @requirement_text ||= begin
+      ids = []
+      ResolvedCatalog.wrap(catalog).each_control { |control, _group| ids << control["id"] }
+      ControlRequirementText.for_profile(@profile).for_controls(ids)
+    end
+  end
+
   def metadata
     @metadata ||= catalog.dig("catalog", "metadata") || {}
   end
@@ -159,8 +167,11 @@ class SspFromProfileService
         row_order:  row_order
       }
 
-      # Pre-populated read-only fields
-      statement = extract_part_prose(control, "statement")
+      # Pre-populated read-only fields. The statement is the WHOLE requirement,
+      # lettered items included (ControlRequirementText); a statement's own
+      # top-level prose is empty for every NIST control written as items.
+      statement = requirement_text[ControlId.canonical(control["id"])]&.full.presence ||
+                  extract_part_prose(control, "statement")
       guidance  = extract_part_prose(control, "guidance")
 
       field_entries << [ idx, "stated_requirement", statement ] if statement.present?

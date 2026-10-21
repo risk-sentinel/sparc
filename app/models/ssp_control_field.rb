@@ -49,6 +49,11 @@ class SspControlField < ApplicationRecord
   ].freeze
 
   # Display order for the view mode (editable fields first, then supplemental).
+  # Control-level narratives. An SSP is answered part by part
+  # (ssp_control_statements); these are no longer offered for new answers, and
+  # one that already holds text is still shown and exported.
+  CONTROL_LEVEL_NARRATIVES = %w[implementation_statement implementation_summary].freeze
+
   FIELD_DISPLAY_ORDER = %w[
     status
     control_application

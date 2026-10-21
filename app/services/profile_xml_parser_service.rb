@@ -60,10 +60,12 @@ class ProfileXmlParserService
         end
       end
 
-      # Store matching parameters as fields
+      # Store the parameters this control owns (ProfileParameterOwner: a prefix
+      # test dropped every zero-padded Rev 5 id), under each one's real id.
       param_map.each do |param_id, values|
-        next unless param_id.start_with?("#{control_id}_")
-        field_entries << [ idx, "parameter:#{param_id}", values ] if values.present?
+        next unless parameter_owner.belongs_to?(param_id, control_id)
+
+        field_entries << [ idx, "parameter:#{parameter_owner.resolve(param_id).param_id}", values ] if values.present?
       end
 
       row_order += 1
@@ -127,6 +129,10 @@ class ProfileXmlParserService
       map[cid] = alter if cid
     end
     map
+  end
+
+  def parameter_owner
+    @parameter_owner ||= ProfileParameterOwner.new(@document.reload.control_catalog)
   end
 
   def build_param_map(profile)

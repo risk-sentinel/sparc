@@ -7,7 +7,10 @@
     Locals:
       control      - SspControl instance (must have ssp_control_statements loaded)
       ssp_document - SspDocument instance (for routing)
+      requirement  - ControlRequirementText::Text for the control, or nil: the
+                     text each row answers, parameter values applied
 %>
+<% requirement = local_assigns[:requirement] %>
 <%
   statements = control.ssp_control_statements.sort_by { |s| s.row_order || 0 }
   answered   = statements.count { |s| s.implementation_prose.present? }
@@ -72,6 +75,14 @@
                 <% end %>
               </td>
               <td class="sparc-stmt-d<%= depth %>">
+                <%# What this row answers. Without it a row read "a." or "(b)"
+                    and nothing else, and the author could not tell which
+                    requirement the box was for. A container part with no
+                    prose of its own (ac-1_smt) stands for the control as a whole. %>
+                <% part_text = requirement&.for_part(stmt.statement_id) %>
+                <div class="sparc-fs-078 sparc-color-body sparc-mb-025" data-statement-requirement>
+                  <%= part_text.presence || content_tag(:span, "The control as a whole", class: "text-body-secondary") %>
+                </div>
                 <%# ── Read view ── %>
                 <div data-statement-edit-target="read">
                   <%= stmt.implementation_prose.presence ||

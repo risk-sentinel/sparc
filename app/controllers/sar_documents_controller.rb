@@ -121,7 +121,9 @@ class SarDocumentsController < ApplicationController
 
     # Catalog guidance lookup (only for the current page)
     normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
-    @catalog_guidance = CatalogControl.where(control_id: normalized_ids).index_by(&:control_id)
+    @catalog_guidance = CatalogControl.guidance_index(
+      normalized_ids, catalog: (@sar_document.profile_document || @sar_document.ssp_document&.profile_document)&.control_catalog
+    )
 
     # #1114 — the control text an assessor reads must be the TAILORED text.
     #
