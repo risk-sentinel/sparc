@@ -32,6 +32,9 @@ class SspComponent < ApplicationRecord
   validate :validation_fields_belong_to_a_validation_component
   validate :validation_target_is_a_sibling
 
+  # The OSCAL component type of the system the SSP describes.
+  THIS_SYSTEM = "this-system".freeze
+
   COMPONENT_TYPES = %w[
     this-system software hardware service policy
     process-procedure plan guidance standard validation
@@ -39,7 +42,7 @@ class SspComponent < ApplicationRecord
 
   STATUS_STATES = %w[operational under-development disposition other].freeze
 
-  scope :this_system, -> { where(component_type: "this-system") }
+  scope :this_system, -> { where(component_type: THIS_SYSTEM) }
   scope :validations_only, -> { where(component_type: "validation") }
 
   def validation? = component_type == "validation"

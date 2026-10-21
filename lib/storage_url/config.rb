@@ -31,6 +31,10 @@ require "uri"
 module StorageUrl
   DEFAULT_REGION = "us-east-1"
 
+  # #1104 — raised at boot when production would store uploads on local disk
+  # without SPARC_ALLOW_LOCAL_STORAGE (config/initializers/zz_storage_posture.rb).
+  class UnsafeLocalStorageError < StandardError; end
+
   extend self
 
   # The raw SPARC_STORAGE_URL, or nil when unset/blank.

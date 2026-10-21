@@ -126,8 +126,8 @@ export default class SubmitFeedbackController extends Controller {
 
     const alert = document.createElement("div")
     alert.className = "alert alert-danger alert-dismissible fade show flash"
-    alert.setAttribute("data-flash-target", "message")
-    alert.setAttribute("data-flash-key", "error")
+    alert.dataset.flashTarget = "message"
+    alert.dataset.flashKey = "error"
     alert.setAttribute("role", "alert")
     alert.setAttribute("aria-live", "assertive")
     alert.textContent = message
@@ -135,7 +135,7 @@ export default class SubmitFeedbackController extends Controller {
     const close = document.createElement("button")
     close.type = "button"
     close.className = "btn-close"
-    close.setAttribute("data-action", "click->flash#dismiss")
+    close.dataset.action = "click->flash#dismiss"
     close.setAttribute("aria-label", "Dismiss error")
 
     alert.appendChild(close)
@@ -148,7 +148,7 @@ export default class SubmitFeedbackController extends Controller {
 
     const container = document.createElement("div")
     container.className = "flash-container"
-    container.setAttribute("data-controller", "flash")
+    container.dataset.controller = "flash"
     document.body.appendChild(container)
     return container
   }

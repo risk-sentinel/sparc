@@ -53,7 +53,7 @@ class SspWizardService
   def create_this_system_component
     @document.ssp_components.create!(
       uuid:           SecureRandom.uuid,
-      component_type: "this-system",
+      component_type: SspComponent::THIS_SYSTEM,
       title:          @document.name,
       description:    @document.description.presence || "The system described by this SSP.",
       status_state:   @document.system_status

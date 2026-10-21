@@ -30,7 +30,7 @@ Rails.application.config.after_initialize do
   allowed = ENV.fetch("SPARC_ALLOW_LOCAL_STORAGE", "false") == "true"
 
   if local && !allowed
-    raise <<~MSG
+    raise StorageUrl::UnsafeLocalStorageError, <<~MSG
       [SPARC] Object storage resolves to LOCAL DISK in production.
       On ECS/EKS the container filesystem is ephemeral — every uploaded document,
       evidence file, and artifact would be lost on the next redeploy.

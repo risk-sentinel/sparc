@@ -38,7 +38,7 @@ class CdefComponentIndexer
 
   # Replaces this document's component rows. Idempotent: same input, same rows.
   def index!
-    body = @oscal["component-definition"] || @oscal
+    body = @oscal[OscalSchema::COMPONENT_DEFINITION] || @oscal
     components = Array(body["components"])
 
     rows = components.filter_map { |component| build_row(component) }
@@ -138,7 +138,7 @@ class CdefComponentIndexer
     return 1 if props.key?(CONFIG_RULE_PROP)
 
     if component["type"].to_s == "service"
-      @document_check_count ||= Array(@oscal.dig("component-definition", "components"))
+      @document_check_count ||= Array(@oscal.dig(OscalSchema::COMPONENT_DEFINITION, "components"))
         .count { |c| index_props(c["props"]).key?(CONFIG_RULE_PROP) }
       return @document_check_count
     end
@@ -167,7 +167,7 @@ class CdefComponentIndexer
 
     return [] unless component["type"].to_s == "service"
 
-    @document_check_ids ||= Array(@oscal.dig("component-definition", "components"))
+    @document_check_ids ||= Array(@oscal.dig(OscalSchema::COMPONENT_DEFINITION, "components"))
       .filter_map { |c| index_props(c["props"])[CONFIG_RULE_PROP].presence&.to_s }
       .uniq
       .sort

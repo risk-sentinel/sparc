@@ -65,7 +65,7 @@ class SspFromProfileService
     @document = document
     ActiveRecord::Base.transaction do
       document.update!(profile_link_attrs(document))
-      @this_system = document.ssp_components.find_by(component_type: "this-system") ||
+      @this_system = document.ssp_components.find_by(component_type: SspComponent::THIS_SYSTEM) ||
                      create_this_system_component
       create_default_information_type unless document.ssp_information_types.exists?
       create_default_user unless document.ssp_users.exists?
@@ -120,8 +120,8 @@ class SspFromProfileService
   # seeded from the document plus what they are, not from randomness.
   def create_this_system_component
     @document.ssp_components.create!(
-      uuid:           OscalUuidService.derived(@document.uuid, "ssp-component", "this-system"),
-      component_type: "this-system",
+      uuid:           OscalUuidService.derived(@document.uuid, "ssp-component", SspComponent::THIS_SYSTEM),
+      component_type: SspComponent::THIS_SYSTEM,
       title:          @document.name,
       description:    "This system — #{@document.name}",
       status_state:   "under-development"

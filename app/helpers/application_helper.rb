@@ -69,6 +69,10 @@ module ApplicationHelper
   # namespaced admin controllers work) to the slug of the User Guide that best
   # covers it. Keys must stay in sync with wiki/User-Guide-*.md filenames; the
   # "?" nav link falls back to the Help Center index when a screen isn't mapped.
+  # Guide pages more than one screen points at.
+  GUIDE_CATALOGS_AND_BASELINES = "control-catalogs-and-baselines".freeze
+  GUIDE_TRUST_STORE = "trust-store".freeze
+
   CONTEXTUAL_GUIDE = {
     "home"                     => "getting-oriented",
     "ssp_documents"            => "system-security-plans",
@@ -77,15 +81,15 @@ module ApplicationHelper
     "poam_documents"           => "poam",
     "cdef_documents"           => "component-definitions",
     "cdef_coverage"            => "cdef-coverage",
-    "profile_documents"        => "control-catalogs-and-baselines",
-    "control_catalogs"         => "control-catalogs-and-baselines",
-    "control_mappings"         => "control-catalogs-and-baselines",
+    "profile_documents"        => GUIDE_CATALOGS_AND_BASELINES,
+    "control_catalogs"         => GUIDE_CATALOGS_AND_BASELINES,
+    "control_mappings"         => GUIDE_CATALOGS_AND_BASELINES,
     "converters"               => "converters-and-imports",
     "authorization_boundaries" => "authorization-boundaries",
     "hdf_triage"               => "hdf-amendment-triage",
     "evidences"                => "evidence-and-attestations",
-    "authoritative_sources"    => "trust-store",
-    "promotion_queue"          => "trust-store",
+    "authoritative_sources"    => GUIDE_TRUST_STORE,
+    "promotion_queue"          => GUIDE_TRUST_STORE,
     "webauthn_credentials"     => "security-keys",
     "admin/users"              => "administration",
     "admin/roles"              => "administration",
@@ -196,6 +200,12 @@ module ApplicationHelper
   COLOR_VIOLET    = "#8e44ad".freeze  # continuous / deep purple
   COLOR_TEAL      = "#16a085".freeze  # authoritative sources
   COLOR_OCEAN     = "#2980b9".freeze  # federation peers
+  # #1104 — the rest of the accent vocabulary, so every ACCENT_TOKENS key is a
+  # name and a colour has one definition however many maps use it.
+  COLOR_EMERALD   = "#2ecc71".freeze  # SCAP/OVAL converter
+  COLOR_SILVER    = "#bdc3c7".freeze  # not applicable / not assessed
+  COLOR_CARROT    = "#e67e22".freeze  # assessment layer / investigating
+  COLOR_PUMPKIN   = "#d35400".freeze  # deviation requested
 
   LABEL_NONE           = "(None)".freeze
   LABEL_NOT_APPLICABLE = "Not Applicable".freeze
@@ -209,7 +219,7 @@ module ApplicationHelper
     # Legacy values kept for backward compatibility with existing data
     "Partially Implemented"    => COLOR_ORANGE,
     "Planned"                  => COLOR_BLUE,
-    "Alternative Implementation" => "#9b59b6",
+    "Alternative Implementation" => COLOR_PURPLE,
     "Not Implemented"          => COLOR_RED
   }.freeze
 
@@ -227,7 +237,7 @@ module ApplicationHelper
     "Partial"               => COLOR_ORANGE,
     "Fail"                  => COLOR_RED,
     "Not Tested"            => COLOR_GRAY,
-    LABEL_NOT_APPLICABLE        => "#bdc3c7"
+    LABEL_NOT_APPLICABLE        => COLOR_SILVER
   }.freeze
 
   # #1047 — a decorative colour delivered as a CLASS instead of an interpolated
@@ -251,19 +261,16 @@ module ApplicationHelper
     COLOR_RED       => "red",
     COLOR_GRAY      => "gray",
     COLOR_GRAY_DARK => "slate",
-    # The four literals below have no COLOR_* constant because nothing outside
-    # this map names them — this IS their definition site. The rest read as
-    # constants because other code refers to those colours by name.
-    "#2ecc71"       => "emerald",
+    COLOR_EMERALD   => "emerald",
     COLOR_PURPLE    => "purple",
     COLOR_VIOLET    => "violet",
     COLOR_TEAL      => "teal",
     COLOR_OCEAN     => "ocean",
-    "#bdc3c7"       => "silver",
+    COLOR_SILVER    => "silver",
     # POA&M risk_status uses two oranges the other status maps do not: without
     # these, accent_class falls back to slate and silently greys them.
-    "#e67e22"       => "carrot",
-    "#d35400"       => "pumpkin"
+    COLOR_CARROT    => "carrot",
+    COLOR_PUMPKIN   => "pumpkin"
   }.freeze
 
   # `accent_class(ssp_status_color(status))` -> "sparc-accent--green".
@@ -333,7 +340,7 @@ module ApplicationHelper
   # palette, which is a separate, deliberately different vocabulary
   # (`sparc-theme.css:3886`).
   SSP_COMPONENT_TYPE_VARIANTS = {
-    "this-system"       => "purple",
+    SspComponent::THIS_SYSTEM => "purple",
     "validation"        => "success",
     "software"          => "info",
     "hardware"          => "info",
@@ -412,7 +419,7 @@ module ApplicationHelper
     "pending"        => COLOR_GRAY,
     "passing"        => COLOR_GREEN,
     "not_applicable" => COLOR_GRAY_DARK,
-    "not_assessed"   => "#bdc3c7"
+    "not_assessed"   => COLOR_SILVER
   }.freeze
 
   def sap_objective_status_color(status)

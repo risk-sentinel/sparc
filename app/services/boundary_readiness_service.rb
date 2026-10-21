@@ -152,7 +152,7 @@ class BoundaryReadinessService
     with_protocols = all.reject { |c| c.protocols_data.blank? }.size
 
     status = if count.zero? then :absent
-    elsif typed == [ "this-system" ] || with_protocols.zero? then :partial
+    elsif typed == [ SspComponent::THIS_SYSTEM ] || with_protocols.zero? then :partial
     else :complete
     end
 

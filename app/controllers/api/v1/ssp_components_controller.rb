@@ -79,7 +79,7 @@ class Api::V1::SspComponentsController < Api::V1::BaseController
   # for the same reason; an API that could delete it would leave a document
   # that cannot be exported and no obvious way back.
   def destroy
-    if @component.component_type == "this-system"
+    if @component.component_type == SspComponent::THIS_SYSTEM
       return render json: {
         error: "The `this-system` component describes the system itself and cannot be deleted. " \
                "Change its title or description instead."
