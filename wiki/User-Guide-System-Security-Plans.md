@@ -153,13 +153,20 @@ The SSP detail page (`/ssp_documents/:id`) is where the real work happens.
      sub-parts (`ac-1a`, `ac-1a.1`, …) — with the same values substituted.
 
      ![The read-only What This Baseline Requires panel on an SSP control card, showing the resolved control statement, parameters, guidance and implementation statements](images/ssp-baseline-requires.png)
-3. Click **Edit** on the card to open the inline form and set:
-   - **Status** (implementation status)
+3. Answer each **statement part** and each **enhancement** in its own row (see
+   below). The rows are there whether the card is in view or edit mode.
+4. Click **Edit** on the card to set the control's own attributes:
+   - **Status** (implementation status). A new SSP starts with **no status**:
+     choose one when you answer the control. Choose **Deferred** or **Will Not
+     Implement** only when that is the system's actual position: an assessment
+     generated from this SSP records those as known findings.
    - **Control application** and **coverage level**
    - **Control type**
    - **Expected completion** date (for planned items)
-   - Narrative text areas (implementation statement, etc.)
-4. Save the card. The **compliance percentage** and progress bar at the top
+
+   An SSP is answered part by part, so the card no longer offers a control-level
+   narrative. One written before v1.17.2 is still shown, and still exported.
+5. Save the card. The **compliance percentage** and progress bar at the top
    update as you go.
 
 ### Answering a control statement by statement
@@ -169,10 +176,13 @@ NIST divides most controls into lettered **statements** — `ac-1a`, `ac-1a.1`,
 **each one**, not the control as a whole. AC-1 alone has nine.
 
 The **Statements** table on a control card lists them individually, indented to
-show nesting, each with its own response and its own responsible roles. Write
+show nesting. **Each row shows the requirement it answers**, with the
+baseline's organization-defined values filled in, beside its own response and
+responsible roles. The table is on the card in both view and edit mode. Write
 against the statement you are answering rather than describing the whole control
 in one box, and the export will say exactly which requirement each response
-covers.
+covers. Each **enhancement** (AC-2(1), …) is a control card of its own, with its
+own rows.
 
 A few things worth knowing:
 
@@ -185,10 +195,10 @@ A few things worth knowing:
 - **Existing plans were filled in automatically.** A plan written before this
   gained one row per statement, and anything already written was kept — no
   response was replaced or discarded.
-- **The export follows.** The OSCAL `system-security-plan` now emits one
-  `statement` per addressable part under each `implemented-requirement`, each
-  carrying its own `by-components`, instead of one statement standing for the
-  whole control.
+- **The export follows.** The OSCAL `system-security-plan` emits one
+  `statement` per addressable part under each `implemented-requirement`. Your
+  response is that statement's **by-component description** for this system,
+  which is where OSCAL tools look for an implementation.
 
 For heads-down editing, open the dedicated **Editor**
 (`/ssp_documents/:id/editor`), which updates control fields inline via Turbo
