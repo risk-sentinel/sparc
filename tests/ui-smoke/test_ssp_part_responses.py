@@ -84,10 +84,13 @@ def test_the_part_rows_stay_answerable_in_edit_mode(authed_page):
 
 def test_an_enhancement_has_its_own_answerable_row(authed_page):
     authed_page.goto(_ssp_with_part_rows(authed_page))
-    if not _card(authed_page, "ac-2.1").count():
-        pytest.skip("this SSP's baseline does not include ac-2.1")
-    card = _open_card(authed_page, "ac-2.1")
+    # Whichever enhancement the baseline includes (LOW has no ac-2.1).
+    ids = authed_page.locator(".control-card .sparc-ctrl-id").all_text_contents()
+    enhancement = next((i.strip() for i in ids if "." in i), None)
+    assert enhancement, "this SSP shows no enhancement at all"
+    card = _open_card(authed_page, enhancement)
 
     row = card.locator(ROW).first
-    assert row.locator(REQUIREMENT).inner_text().strip(), "ac-2.1's row shows no requirement"
+    requirement = row.locator(REQUIREMENT).inner_text().strip()
+    assert requirement, f"{enhancement}'s row shows no requirement"
     assert row.get_by_role("button", name="Edit").is_visible()
