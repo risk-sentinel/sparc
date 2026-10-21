@@ -56,6 +56,7 @@ class SarFromSspService
       create_default_findings
     end
 
+    ControlObjectiveExtractorService.backfill_generated!(@document)
     @document
   end
 
@@ -180,9 +181,11 @@ class SarFromSspService
         uuid:        OscalUuidService.derived(@result.uuid, "sar-finding", control_id),
         title:       "Finding for #{sar_ctrl.control_id}",
         description: "Assessment finding for control #{sar_ctrl.control_id}",
+        # The control's statement, named as one: `ac-1` is not an objective id,
+        # and calling it one was a false statement in the artifact.
         target_data: {
-          "type"      => "objective-id",
-          "target-id" => control_id,
+          "type"      => "statement-id",
+          "target-id" => "#{control_id}_smt",
           "status"    => { "state" => state }
         }
       )

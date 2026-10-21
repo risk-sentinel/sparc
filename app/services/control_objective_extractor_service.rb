@@ -79,6 +79,20 @@ class ControlObjectiveExtractorService
     @document = document
   end
 
+  # The per-objective rows a newly generated SAP or SAR needs. Non-fatal: a
+  # document whose catalog cannot be resolved yet is flagged for backfill
+  # rather than failing its generation. Every generator calls this one method;
+  # the SAR generators used to call nothing, so a SAR built in SPARC had zero
+  # objectives (1,795 for the Rev 5 MODERATE baseline) and an assessor could
+  # only record one result per control.
+  def self.backfill_generated!(document)
+    new(document).backfill!
+  rescue StandardError => e
+    Rails.logger.warn("[ControlObjectiveExtractorService] objective backfill failed for " \
+                      "#{document.class.name} ##{document.id}: #{e.class}: #{e.message}")
+    0
+  end
+
   # Backfills objective records for all controls of the document. No-ops if
   # objectives already exist for a given control. Returns the number of
   # objective records inserted.

@@ -86,7 +86,10 @@ RSpec.describe OscalAssessmentPlanExportService do
   end
 
   describe "include-controls statement-ids" do
-    it "emits statement-ids for controls with sap_control_objectives" do
+    # Objectives are named as objectives, in control-objective-selections.
+    # `statement-ids` names statement parts; objective ids written there were
+    # read as statements that do not exist.
+    it "names a control's objectives in control-objective-selections, not as statement-ids" do
       ctrl = sap.sap_controls.find_by(control_id: "ac-1")
       create(:sap_control_objective, sap_control: ctrl, objective_id: "ac-1_obj.a-1", row_order: 0)
       create(:sap_control_objective, sap_control: ctrl, objective_id: "ac-1_obj.a-2", row_order: 1)
@@ -98,7 +101,11 @@ RSpec.describe OscalAssessmentPlanExportService do
                               .first["include-controls"]
                               .find { |c| c["control-id"] == "ac-1" }
 
-      expect(include_entry["statement-ids"]).to eq([ "ac-1_obj.a-1", "ac-1_obj.a-2" ])
+      expect(include_entry).not_to have_key("statement-ids")
+
+      selections = data.dig("assessment-plan", "reviewed-controls", "control-objective-selections")
+      expect(selections.first["include-objectives"].map { |o| o["objective-id"] }).to eq([ "ac-1_obj.a-1", "ac-1_obj.a-2" ])
+      expect(OscalSchemaValidationService.validate(:assessment_plan, data, version: "1.2.3").errors).to be_empty
     end
 
     it "omits statement-ids for controls without objectives" do

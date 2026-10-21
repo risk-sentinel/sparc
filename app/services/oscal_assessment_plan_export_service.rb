@@ -189,17 +189,12 @@ class OscalAssessmentPlanExportService
     { "activities" => activities }
   end
 
-  # Builds an OSCAL include-controls[] entry. When the SapControl has
-  # discrete objective records, emits statement-ids so consumers can scope
-  # the assessment to specific objectives rather than the whole control.
-  # Objective IDs are passed through as-is (they already use the OSCAL
-  # canonical form like "ac-1_obj.a-1"); normalize_control_id is lossy and
-  # would corrupt them.
+  # Builds an OSCAL include-controls[] entry. `statement-ids` names STATEMENT
+  # parts (`ac-1_smt.a`); objective ids (`ac-1_obj.a-1`) used to be written
+  # there, which an OSCAL reader takes as statements that do not exist. The
+  # objectives are named in `control-objective-selections` instead.
   def build_include_control(ctrl)
-    entry = { "control-id" => normalize_control_id(ctrl.control_id) }
-    objective_ids = ctrl.sap_control_objectives.order(:row_order).pluck(:objective_id)
-    entry["statement-ids"] = objective_ids if objective_ids.any?
-    entry
+    { "control-id" => normalize_control_id(ctrl.control_id) }
   end
 
   # ── Terms and Conditions ───────────────────────────────────────────
@@ -242,18 +237,20 @@ class OscalAssessmentPlanExportService
     controls = @document.sap_controls.order(:row_order)
 
     control_selections = [ {
-      "include-controls" => controls.map do |ctrl|
-        entry = { "control-id" => normalize_control_id(ctrl.control_id) }
-        if ctrl.objective.present?
-          entry["statement-ids"] = [ "#{normalize_control_id(ctrl.control_id)}_obj" ]
-        end
-        entry
-      end
+      "include-controls" => controls.map { |ctrl| { "control-id" => normalize_control_id(ctrl.control_id) } }
     } ]
 
-    {
-      "control-selections" => control_selections
-    }
+    selections = { "control-selections" => control_selections }
+
+    # The 800-53A objectives this plan assesses, named as objectives.
+    objective_ids = SapControlObjective.where(sap_control_id: controls.map(&:id))
+                                       .order(:sap_control_id, :row_order).pluck(:objective_id)
+    if objective_ids.any?
+      selections["control-objective-selections"] = [
+        { "include-objectives" => objective_ids.map { |id| { "objective-id" => id } } }
+      ]
+    end
+    selections
   end
 
   # ── Assessment Subjects ────────────────────────────────────────────

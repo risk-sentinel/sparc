@@ -432,7 +432,8 @@
     # Pre-populate objective from catalog assessment data if blank
     default_objective = @control.objective.presence
     if default_objective.blank? && @control.control_id.present?
-      cat_ctrl = CatalogControl.find_by(control_id: @control.control_id)
+      cat_ctrl = CatalogControl.guidance_index([ @control.control_id ],
+                   catalog: (@sap_document.profile_document || @sap_document.ssp_document&.profile_document)&.control_catalog)[@control.control_id]
       if cat_ctrl
         guidance = cat_ctrl.guidance_data.is_a?(Hash) ? cat_ctrl.guidance_data : {}
 

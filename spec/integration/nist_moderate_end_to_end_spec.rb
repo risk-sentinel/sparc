@@ -177,6 +177,62 @@ RSpec.describe "NIST Rev 5 MODERATE, end to end", type: :request do
     expect(Array(JSON.parse(OscalProfileExportService.new(built).export_unvalidated).dig("profile", "modify", "set-parameters"))).to be_empty
   end
 
+  describe "the assessment plan and results" do
+    # 800-53A assessment objectives the catalog defines for the baseline.
+    let(:catalog_objective_count) do
+      CatalogControlPart.joins(catalog_control: :control_family)
+                        .where(control_families: { control_catalog_id: rev5.id })
+                        .where(catalog_controls: { control_id: control_ids })
+                        .where(part_name: "assessment-objective").count
+    end
+
+    let(:sap) { SapGeneratorService.new(name: "E2E plan", ssp_document: ssp).generate }
+
+    it "plans every objective of every control and enhancement, named as objectives, in valid OSCAL" do
+      objectives = SapControlObjective.joins(:sap_control).where(sap_controls: { sap_document_id: sap.id })
+      expect(objectives.count).to eq(catalog_objective_count)
+      enhancements = sap.sap_controls.select { |c| c.control_id.include?(".") }
+      expect(enhancements.size).to eq(110)
+
+      data = JSON.parse(OscalAssessmentPlanExportService.new(sap.reload).export_unvalidated)
+      expect(OscalSchemaValidationService.validate(:assessment_plan, data, version: "1.2.3").errors).to be_empty
+
+      named = data.dig("assessment-plan", "reviewed-controls", "control-objective-selections", 0, "include-objectives").map { |o| o["objective-id"] }
+      expect(named.size).to eq(catalog_objective_count)
+      statement_ids = data.to_json.scan(/"statement-ids":\[[^\]]*\]/).join
+      expect(statement_ids).not_to include("_obj")
+    end
+
+    it "gives a SAR built from the SSP every objective, the whole requirement, and exports what an assessor determined" do
+      sar = SarFromSspService.new(ssp).create
+      objectives = SarControlObjective.joins(:sar_control).where(sar_controls: { sar_document_id: sar.id })
+      expect(objectives.count).to eq(catalog_objective_count)
+
+      leaves = objectives.reject(&:container?)
+      leaves.first.update!(status: "passing")
+      leaves.second.update!(status: "failed")
+
+      data = JSON.parse(OscalSarExportService.new(sar.reload).export_unvalidated)
+      expect(OscalSchemaValidationService.validate(:assessment_results, data, version: "1.2.3").errors).to be_empty
+
+      targets = data.dig("assessment-results", "results", 0, "findings").map { |f| f["target"] }
+      determined = targets.select { |t| t["type"] == "objective-id" }.to_h { |t| [ t["target-id"], t.dig("status", "state") ] }
+      expect(determined).to eq(leaves.first.objective_id => "satisfied", leaves.second.objective_id => "not-satisfied")
+
+      # A control id is never presented as an objective.
+      expect(targets.select { |t| t["type"] == "objective-id" }.map { |t| t["target-id"] }).to all(include("_obj"))
+    end
+
+    it "gives a SAR built from the baseline the whole requirement of every control" do
+      sar = SarFromProfileService.new(profile, authorization_boundary: create(:authorization_boundary)).create
+      blank = sar.sar_controls.includes(:sar_control_fields).reject do |c|
+        c.sar_control_fields.find { |f| f.field_name == "stated_requirement" }&.field_value.present?
+      end
+      expect(blank.map(&:control_id)).to be_empty
+      expect(SarControlObjective.joins(:sar_control).where(sar_controls: { sar_document_id: sar.id }).count).to eq(catalog_objective_count)
+    end
+  end
+
   describe "the SSP screen" do
     before { sign_in_as(create(:user, :admin)) }
 

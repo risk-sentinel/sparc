@@ -121,9 +121,7 @@ class SarDocumentsController < ApplicationController
 
     # Catalog guidance lookup (only for the current page)
     normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
-    @catalog_guidance = CatalogControl.guidance_index(
-      normalized_ids, catalog: (@sar_document.profile_document || @sar_document.ssp_document&.profile_document)&.control_catalog
-    )
+    @catalog_guidance = CatalogControl.guidance_index(normalized_ids, catalog: sar_catalog)
 
     # #1114 — the control text an assessor reads must be the TAILORED text.
     #
@@ -406,7 +404,7 @@ class SarDocumentsController < ApplicationController
     @catalog_guidance = {}
     normalized = normalize_ctrl_id(@control.control_id)
     if normalized
-      ctrl = CatalogControl.find_by(control_id: normalized)
+      ctrl = CatalogControl.guidance_index([ normalized ], catalog: sar_catalog)[normalized]
       @catalog_guidance[normalized] = ctrl if ctrl
     end
 
@@ -516,6 +514,13 @@ class SarDocumentsController < ApplicationController
   end
 
   private
+
+  # The catalog this assessment's controls come from, through its baseline.
+  def sar_catalog
+    return @sar_catalog if defined?(@sar_catalog)
+
+    @sar_catalog = (@sar_document.profile_document || @sar_document.ssp_document&.profile_document)&.control_catalog
+  end
 
   # #1114 — the SAR control filters, one question each.
   #
@@ -639,9 +644,11 @@ class SarDocumentsController < ApplicationController
       end
     end
 
-    # No plan linked — fall back to what 800-53A itself prescribes.
+    # No plan linked — fall back to what 800-53A itself prescribes, in this
+    # assessment's own catalog when it has one.
     CatalogControlPart
-      .joins(:catalog_control)
+      .joins(catalog_control: :control_family)
+      .where(sar_catalog ? { control_families: { control_catalog_id: sar_catalog.id } } : {})
       .where(part_name: "assessment-method")
       .pluck(Arel.sql("catalog_controls.control_id"), :props_data)
       .each_with_object(Hash.new { |h, k| h[k] = [] }) do |(cid, props), acc|
@@ -699,9 +706,9 @@ class SarDocumentsController < ApplicationController
     json = profile&.resolved_catalog_json
     return {} if json.blank? || controls.blank?
 
-    catalog = json.is_a?(Hash) ? (json["catalog"] || json) : {}
-    nodes = Array(catalog["controls"]) +
-            Array(catalog["groups"]).flat_map { |g| Array(g["controls"]) }
+    # Enhancements included: they are nested under their parent control.
+    nodes = []
+    ResolvedCatalog.wrap(json).each_control { |control, _group| nodes << control }
     by_id = nodes.index_by { |c| ControlId.canonical(c["id"]).to_s.downcase }
 
     controls.each_with_object({}) do |control, acc|

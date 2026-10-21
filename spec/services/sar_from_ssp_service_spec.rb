@@ -163,7 +163,10 @@ RSpec.describe SarFromSspService do
       result = sar.sar_results.first
       finding = result.sar_findings.find_by(title: "Finding for ac-1")
       expect(finding).to be_present
-      expect(finding.target_data["target-id"]).to eq("ac-1")
+      # The control's statement, named as a statement: `ac-1` is not an
+      # objective id, and the finding used to call it one.
+      expect(finding.target_data["type"]).to eq("statement-id")
+      expect(finding.target_data["target-id"]).to eq("ac-1_smt")
       expect(finding.target_data["status"]["state"]).to eq("not-satisfied")
     end
 
@@ -249,8 +252,8 @@ RSpec.describe SarFromSspService do
             [ f.target_data["target-id"], f.target_data["status"]["state"] ]
           end
 
-          expect(states["ac-1"]).to eq("satisfied")
-          expect(states["sc-7"]).to eq("not-satisfied")
+          expect(states["ac-1_smt"]).to eq("satisfied")
+          expect(states["sc-7_smt"]).to eq("not-satisfied")
         end
 
         it "creates no risk for a satisfied control" do
@@ -279,7 +282,7 @@ RSpec.describe SarFromSspService do
             f.target_data["status"]["state"] == "satisfied"
           end
 
-          expect(satisfied.map { |f| f.target_data["target-id"] }).to contain_exactly("ac-1")
+          expect(satisfied.map { |f| f.target_data["target-id"] }).to contain_exactly("ac-1_smt")
         end
 
         it "still assesses everything not-satisfied when given none" do

@@ -49,6 +49,7 @@ class SarFromProfileService
     build_controls_from_catalog(catalog)
     create_default_result
     create_default_findings
+    ControlObjectiveExtractorService.backfill_generated!(@document)
 
     @document
   end
@@ -74,8 +75,11 @@ class SarFromProfileService
         row_order:  row_order
       }
 
-      # Pre-populated read-only fields
-      statement = extract_part_prose(control, "statement")
+      # Pre-populated read-only fields. The WHOLE requirement, items included
+      # (ControlRequirementText): a statement's own prose is empty for every
+      # NIST control written as lettered items.
+      statement = requirement_text(catalog)[ControlId.canonical(control["id"])]&.full.presence ||
+                  extract_part_prose(control, "statement")
       guidance  = extract_part_prose(control, "guidance")
 
       field_entries << [ idx, "stated_requirement", statement ] if statement.present?
@@ -131,8 +135,8 @@ class SarFromProfileService
         title:       "Finding for #{sar_ctrl.control_id}",
         description: "Assessment finding for control #{sar_ctrl.control_id}",
         target_data: {
-          "type"      => "objective-id",
-          "target-id" => control_id,
+          "type"      => "statement-id",
+          "target-id" => "#{control_id}_smt",
           "status"    => { "state" => "not-satisfied" }
         }
       )
@@ -140,6 +144,14 @@ class SarFromProfileService
   end
 
   # ── Helpers ──────────────────────────────────────────────────────
+
+  def requirement_text(catalog)
+    @requirement_text ||= begin
+      ids = []
+      ResolvedCatalog.wrap(catalog).each_control { |control, _group| ids << control["id"] }
+      ControlRequirementText.for_profile(@profile).for_controls(ids)
+    end
+  end
 
   def extract_part_prose(control, part_name)
     parts = control["parts"]

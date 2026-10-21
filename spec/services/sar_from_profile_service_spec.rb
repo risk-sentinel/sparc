@@ -221,7 +221,10 @@ RSpec.describe SarFromProfileService do
       result = sar.sar_results.first
       finding = result.sar_findings.find_by(title: "Finding for ac-1")
       expect(finding).to be_present
-      expect(finding.target_data["target-id"]).to eq("ac-1")
+      # The control's statement, named as a statement: `ac-1` is not an
+      # objective id, and the finding used to call it one.
+      expect(finding.target_data["type"]).to eq("statement-id")
+      expect(finding.target_data["target-id"]).to eq("ac-1_smt")
       expect(finding.target_data["status"]["state"]).to eq("not-satisfied")
     end
 
