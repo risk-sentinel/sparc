@@ -335,7 +335,9 @@ Rack::Attack throttle thresholds. Defaults are conservative; tighten for high-se
 | `SPARC_REQUIRE_DOCUMENT_APPROVAL` | `false` | Require documents to pass an approval workflow before finalization |
 | `SPARC_INACTIVITY_DAYS` | `30` | Days of user inactivity before an account is auto-deactivated. The break-glass admin is exempt — see below |
 | `SPARC_PASSWORD_EXPIRY_DAYS` | `30` | Days before a local-auth password expires (SSO users exempt; break-glass admin exempt — see below) |
-| `SPARC_SA_INACTIVITY_DAYS` | `90` | Days of inactivity before a service account is auto-disabled |
+| `SPARC_API_TOKEN_MAX_DAYS` | `365` | Longest a service account's API token may live. A service-account token must expire; a person's may still be set to never expire (#1176) |
+| `SPARC_API_TOKEN_RENEWAL_GRACE_DAYS` | `7` | After a token is renewed, how long the token it replaces keeps working. `0` ends it at once (#1176) |
+| ~~`SPARC_SA_INACTIVITY_DAYS`~~ | — | **Retired (#785).** Service accounts use `SPARC_INACTIVITY_DAYS` like everyone else |
 | `SPARC_PROCESSING_STUCK_MINUTES` | `5` | Minutes after which a stuck document stops auto-refreshing its show page |
 
 ### Administrator lockout protection (v1.15.4)

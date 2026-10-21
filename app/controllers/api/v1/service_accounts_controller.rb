@@ -29,7 +29,7 @@
 #   AU-12 Audit Record Generation
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class Api::V1::ServiceAccountsController < Api::V1::BaseController
-  DEFAULT_TOKEN_LIFETIME_DAYS = 90
+  include ApiTokenLimits
 
   before_action :authorize_admin!
   before_action :set_service_account,
@@ -69,9 +69,14 @@ class Api::V1::ServiceAccountsController < Api::V1::BaseController
     # the record satisfies the same validations every user does.
     account.password = SecureRandom.hex(32)
     account.password_confirmation = account.password
-    account.save!
 
-    token = issue_token(account, name: "Initial token")
+    # One transaction: a token the rules refuse (#1176 — no expiry, past the
+    # cap, an unknown endpoint) must not leave an account with no credential.
+    token = nil
+    User.transaction do
+      account.save!
+      token = issue_token(account, name: "Initial token")
+    end
 
     audit_log("service_account_created", subject: account,
               metadata: { name: account.display_label, owner: account.owner&.email })
@@ -111,12 +116,17 @@ class Api::V1::ServiceAccountsController < Api::V1::BaseController
   # POST /api/v1/service_accounts/:id/regenerate_token
   #
   # Revokes EVERY existing token before issuing the new one. Rotation that
-  # leaves the old credential working is not rotation.
+  # leaves the old credential working is not rotation. Limits and lifetime
+  # not given in the request are carried over from the newest token (#1176) —
+  # before, an omitted field meant "no limit", so rotating widened the token.
   def regenerate_token
     revoked = @service_account.api_tokens.count
-    @service_account.api_tokens.destroy_all
-
-    token = issue_token(@service_account, name: "Regenerated token")
+    token = ApiToken.regenerate_for!(
+      @service_account, by: current_user,
+      expires_in_days: token_days_param(raw_token_param(:expires_in_days)),
+      allowed_endpoints: token_list_param(raw_token_param(:allowed_endpoints)),
+      allowed_cidrs: token_list_param(raw_token_param(:allowed_cidrs))
+    )
 
     audit_log("service_account_token_regenerated", subject: @service_account,
               metadata: { token_prefix: token.plaintext_token[0..11], revoked: revoked })
@@ -156,39 +166,32 @@ class Api::V1::ServiceAccountsController < Api::V1::BaseController
     )
   end
 
+  # Defaults to 90 days rather than never expiring: a non-expiring credential
+  # for an unattended identity is the one most likely to outlive its purpose.
+  # "0" asks for no expiry, which ApiToken refuses for a service account
+  # (#1176); so does anything past SPARC_API_TOKEN_MAX_DAYS.
   def issue_token(account, name:)
+    days = token_days_param(raw_token_param(:expires_in_days)) || ApiToken::DEFAULT_SERVICE_ACCOUNT_DAYS
     ApiToken.generate!(
       user: account,
       name: name,
-      expires_at: token_expiry,
+      expires_at: expiry_from_days(days),
       created_by: current_user,
-      allowed_endpoints: list_param(:allowed_endpoints),
-      allowed_cidrs: list_param(:allowed_cidrs)
+      allowed_endpoints: token_list_param(raw_token_param(:allowed_endpoints)) || [],
+      allowed_cidrs: token_list_param(raw_token_param(:allowed_cidrs)) || []
     )
   end
 
-  # Defaults to 90 days rather than never expiring: a non-expiring credential
-  # for an unattended identity is the one most likely to outlive its purpose.
-  def token_expiry
-    days = params.dig(:service_account, :expires_in_days).presence || params[:expires_in_days].presence
-    (days ? days.to_i : DEFAULT_TOKEN_LIFETIME_DAYS).days.from_now
-  end
-
-  # Accepts a JSON array (the natural API shape) or the web form's
-  # comma/newline-separated string.
-  def list_param(key)
-    raw = params.dig(:service_account, key) || params[key]
-    return [] if raw.blank?
-    return raw.map(&:to_s).map(&:strip).reject(&:blank?) if raw.respond_to?(:map)
-
-    raw.to_s.split(/[\r\n,]+/).map(&:strip).reject(&:blank?)
+  # Token fields arrive inside `service_account` or at the top level.
+  def raw_token_param(key)
+    params.dig(:service_account, key) || params[key]
   end
 
   def token_payload(token)
     {
       token: token.plaintext_token,
       token_expires_at: token.expires_at&.utc&.iso8601,
-      warning: "Copy this token now. It is not stored and cannot be retrieved again."
+      warning: ApiToken::COPY_NOW_WARNING
     }
   end
 
@@ -211,7 +214,10 @@ class Api::V1::ServiceAccountsController < Api::V1::BaseController
       data[:tokens] = account.api_tokens.order(created_at: :desc).map do |token|
         { id: token.id, name: token.name,
           expires_at: token.expires_at&.utc&.iso8601,
+          never_expires: token.never_expires?,
+          expiring_soon: token.expiring_soon?,
           allowed_endpoints: token.allowed_endpoints,
+          allowed_endpoints_summary: token.endpoint_summary,
           allowed_cidrs: token.allowed_cidrs,
           created_at: token.created_at.utc.iso8601 }
       end

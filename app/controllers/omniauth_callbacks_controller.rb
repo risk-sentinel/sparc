@@ -40,7 +40,7 @@ class OmniauthCallbacksController < ApplicationController
       return
     end
 
-    user = identity.user || User.find_by("LOWER(email) = ?", email)
+    user = identity.user || User.human_by_email(email)
 
     if user.nil?
       # Auto-create user from OAuth — no password needed

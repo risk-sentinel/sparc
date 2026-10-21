@@ -170,7 +170,7 @@ class AuthorizationBoundaryMembership < ApplicationRecord
   def link_to_user!
     return true if user_id.present?
 
-    matched_user = User.find_by("LOWER(email) = ?", user_email.to_s.downcase.strip)
+    matched_user = User.human_by_email(user_email)
     if matched_user
       update!(user_id: matched_user.id)
       true

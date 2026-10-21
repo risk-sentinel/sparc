@@ -46,6 +46,9 @@
 #   LOW            -> 120 days
 #   INFORMATIONAL  -> 60 days
 #
+# The window runs from discovery_date to next_review_date, or from an APPROVED
+# deviation's approved_at when there is one (see review_window_start).
+#
 # CRITICAL findings with disposition=accepted|false_positive|deferred
 # are rejected by the validator — must be remediated, not suppressed.
 #
@@ -363,11 +366,14 @@ def validate_review_cadence(finding, errors, severity:, disposition:, discovery:
   return if disposition == "false_positive"
 
   cve_id = finding["cve_id"]
+  window_start, counted_from = review_window_start(finding, discovery)
 
-  if discovery && next_rev && MAX_REVIEW_DAYS.key?(severity)
-    actual_days = (next_rev - discovery).to_i
+  if window_start && next_rev && MAX_REVIEW_DAYS.key?(severity)
+    actual_days = (next_rev - window_start).to_i
     max_days = MAX_REVIEW_DAYS[severity]
-    errors << "#{cve_id}: review window is #{actual_days}d — policy max for #{severity} is #{max_days}d" if actual_days > max_days
+    if actual_days > max_days
+      errors << "#{cve_id}: review window is #{actual_days}d from #{counted_from} — policy max for #{severity} is #{max_days}d"
+    end
   end
 
   if next_rev && next_rev < today
@@ -376,6 +382,28 @@ def validate_review_cadence(finding, errors, severity:, disposition:, discovery:
   end
 
   errors
+end
+
+# Where the review window is counted from. Normally the discovery date. An
+# APPROVED deviation counts from its approved_at instead: the approval is a
+# fresh signed-off review, so the clock restarts there. Without this a deferral
+# with no upstream fix could never outlive its first window — a MEDIUM found on
+# 2026-08-20 could not be accepted past 2026-10-19 however often it was
+# re-reviewed. The maximum stays the finding's own severity's, and a REQUESTED
+# (unapproved) deviation still counts from discovery, so the restart only ever
+# follows a real approval (scripts/ci/apply_deviation_approval.rb writes
+# approved_at from the approval event).
+def review_window_start(finding, discovery)
+  dev = finding["deviation"]
+  if dev.is_a?(Hash) && dev["risk_status"] == DEVIATION_APPROVED
+    approved = begin
+      parse_date(dev["approved_at"])
+    rescue Date::Error
+      nil # reported by validate_deviation_approval / the approval check
+    end
+    return [ approved, "approval #{approved.iso8601}" ] if approved
+  end
+  [ discovery, "discovery #{discovery&.iso8601}" ]
 end
 
 # Every identifier this finding may be reported under.

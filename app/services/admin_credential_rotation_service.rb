@@ -96,7 +96,7 @@ class AdminCredentialRotationService
   private
 
   def admin
-    @admin ||= User.find_by(email: @admin_email.downcase.strip)
+    @admin ||= User.human_by_email(@admin_email)
   end
 
   def update_admin!

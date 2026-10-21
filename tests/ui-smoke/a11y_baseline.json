@@ -398,6 +398,7 @@
     "color-contrast::tr:nth-child(9) > .text-end > .btn-outline-secondary.btn[href$=\"edit\"]",
     "color-contrast::tr:nth-child(9) > td:nth-child(1) > code"
   ],
+  "admin_service_account_new": [],
   "admin_service_accounts": [
     "color-contrast::.btn-outline-secondary"
   ],

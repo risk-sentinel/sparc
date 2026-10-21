@@ -49,7 +49,8 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
     [ status.exitstatus, stdout, overrides ]
   end
 
-  def finding(cve: "CVE-2026-0001", severity: "CRITICAL", disposition: "deferred", deviation: nil)
+  def finding(cve: "CVE-2026-0001", severity: "CRITICAL", disposition: "deferred", deviation: nil,
+              discovery: "2026-07-29", next_review: "2026-08-28")
     <<~YAML
       findings:
         - cve_id: #{cve}
@@ -61,8 +62,8 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
           rationale: "Test fixture."
           nist_control: si-2
           reviewed_by: "@clem-field"
-          discovery_date: "2026-07-29"
-          next_review_date: "2026-08-28"
+          discovery_date: "#{discovery}"
+          next_review_date: "#{next_review}"
       #{deviation}
     YAML
   end
@@ -83,6 +84,60 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
       lines << "      approved_at: \"2026-07-29\""
     end
     lines.join("\n")
+  end
+
+  def operational_requirement(status: "deviation-approved", approved_at: "2026-07-29")
+    lines = []
+    lines << "    deviation:"
+    lines << "      type: operational_requirement"
+    lines << "      risk_status: #{status}"
+    lines << "      operational_justification: \"no upstream fix; the package ships with the base image\""
+    if status == "deviation-approved"
+      lines << "      approved_by: \"@risk-sentinel/sparc-admin\""
+      lines << "      approved_in: \"risk-sentinel/sparc#1231\""
+      lines << "      approval_mechanism: approve-deviation-comment"
+    end
+    # Written even on a REQUESTED deviation, so a rule that restarted the clock
+    # for any dated deviation, approved or not, is caught.
+    lines << "      approved_at: \"#{approved_at}\""
+    lines.join("\n")
+  end
+
+  # A deferral with no upstream fix outlives its first review window. The window
+  # counts from the discovery date until a deviation is APPROVED, then from the
+  # approval. Found 2026-05-01 and re-reviewed 2026-07-29, a MEDIUM may run to
+  # 2026-09-20 (53 days from approval, 142 from discovery) — but only approved.
+  describe "the review window (#1231)" do
+    def medium(deviation)
+      finding(severity: "MEDIUM", discovery: "2026-05-01", next_review: "2026-09-20", deviation: deviation)
+    end
+
+    it "counts from an APPROVED deviation's approval date" do
+      code, out, _ = amend(write("f.yml", medium(operational_requirement)))
+
+      expect(code).to eq(0), out
+    end
+
+    it "still counts from discovery while the deviation is only REQUESTED, whatever date it carries" do
+      code, out, _ = amend(write("f.yml", medium(operational_requirement(status: "deviation-requested"))))
+
+      expect(code).to eq(2)
+      expect(out).to include("review window is 142d from discovery 2026-05-01 — policy max for MEDIUM is 60d")
+    end
+
+    it "counts from discovery with no deviation at all" do
+      code, out, _ = amend(write("f.yml", medium(nil)))
+
+      expect(code).to eq(2)
+      expect(out).to include("review window is 142d from discovery 2026-05-01")
+    end
+
+    it "keeps the severity's maximum after approval" do
+      code, out, _ = amend(write("f.yml", medium(operational_requirement(approved_at: "2026-07-15"))))
+
+      expect(code).to eq(2)
+      expect(out).to include("review window is 67d from approval 2026-07-15 — policy max for MEDIUM is 60d")
+    end
   end
 
   describe "risk_status drives the gating status" do

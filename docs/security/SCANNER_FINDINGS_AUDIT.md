@@ -213,7 +213,7 @@ For each scanner: what it covers, what threshold it gates on, what's suppressed 
 | Rubocop | 0 (style-only via `rubocop-rails-omakase`) | `cops_to_omit` from omakase | `.rubocop.yml` |
 | Bundler-audit / dependency-audit | 5 (all `mcp`, dev-only transitive) | any vulnerable gem fails | `Gemfile.lock` + `.bundler-audit.yml` |
 | Secrets scan | 0 | any secret fails | (no ignore file present) |
-| Trivy filesystem | 0 CVEs + 1 misconfig (DS-0002, dev tooling) | CRITICAL + HIGH + MEDIUM | `.trivyignore` |
+| Trivy filesystem | 0 (DS-0002 retired 2026-10-20) | CRITICAL + HIGH + MEDIUM | `.trivyignore` |
 | Trivy container | 0 CVEs in `.trivyignore` (9 Debian-era entries removed as obsolete on UBI9, v1.12.2); container CVE dispositions tracked in `sparc-findings.yml` | CRITICAL + HIGH | `.trivyignore` + `docs/compliance/sparc-findings.yml` |
 | Grype SBOM | 0 explicit per-CVE suppressions; **threshold ramp** = CRITICAL only | CRITICAL (ramp; intent is HIGH after baseline triage) | `.github/workflows/security.yml` (`GRYPE_FAIL_ON`) |
 
@@ -275,8 +275,7 @@ For each scanner: what it covers, what threshold it gates on, what's suppressed 
 
 - **Covers:** vulnerabilities in any package or config detectable from the source tree (gems, npm if present, Dockerfile lints, etc.) plus secrets and misconfigurations.
 - **Threshold:** scans CRITICAL + HIGH + **MEDIUM** — strictest tier of the Trivy jobs.
-- **Suppressions (1 — misconfig only):**
-  - **DS-0002** — Trivy fs flag against `tests/api/Dockerfile` (dev / CI tooling image runs as root). Classified FALSE POSITIVE for production: this is a test-runner image used by GitHub Actions to execute pytest against deployed SPARC instances, never deployed to prod. The production `./Dockerfile` already runs as non-root UID 1000 (hardened in #342). Reviewed 2026-05-06.
+- **Suppressions: none.** DS-0002 ("image runs as root", raised against `tests/api/Dockerfile`) was suppressed as a false positive for production from 2026-05-06. It was retired on 2026-10-20: that image now runs as `USER 1000:1000`, and trivy 0.74.0 finds DS-0002 in no tracked Dockerfile.
 
 ### Trivy container (`trivy image`)
 

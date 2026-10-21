@@ -347,7 +347,7 @@ RSpec.describe "Api::V1::Evidences", type: :request do
     # charged to the human who owns that account.
     context "when submitted with a service-account token" do
       let(:service_account) { create(:user, :service_account) }
-      let(:sa_token)        { ApiToken.generate!(user: service_account, name: "Pipeline") }
+      let(:sa_token)        { ApiToken.generate!(user: service_account, name: "Pipeline", expires_at: 1.day.from_now) }
       let(:sa_headers)      { { "Authorization" => "Bearer #{sa_token.plaintext_token}" } }
 
       before { allow_any_instance_of(User).to receive(:has_permission?).and_return(true) }

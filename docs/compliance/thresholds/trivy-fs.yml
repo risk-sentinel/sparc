@@ -4,8 +4,8 @@
 #
 # Measured 2026-08-24 on main@a8991ae7: 1 medium (DS-0013, "RUN should not be
 # used to change directory" at Dockerfile:143 — a style finding about using
-# WORKDIR instead of `cd`). DS-0002 is suppressed in .trivyignore with a
-# recorded justification.
+# WORKDIR instead of `cd`). The DS-0002 suppression in .trivyignore was retired
+# 2026-10-20: tests/api/Dockerfile now runs as UID 1000 and no Dockerfile raises it.
 failed:
   critical:
     max: 0

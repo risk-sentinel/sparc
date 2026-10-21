@@ -42,20 +42,29 @@ every time.
 
 | Field | Type | Description |
 |---|---|---|
-| `email` | string | Required |
+| `email` | string | Required. A contact address, **not** an identity: it need not be unique, so one team mailbox may own several accounts, and it may equal a person's email (#1176). A service account authenticates only with its token |
 | `first_name`, `last_name`, `display_name` | string | Identifying detail |
 | `owner_id` | integer | The human accountable for the account |
 | `admin` | boolean | Opt-in only, never implicit (AC-6) |
-| `expires_in_days` | integer | Token lifetime. **Defaults to 90** |
-| `allowed_endpoints` | array | Restrict the token to these paths (AC-3) |
+| `expires_in_days` | integer | Token lifetime in whole days. **Defaults to 90.** At most `SPARC_API_TOKEN_MAX_DAYS` (default 365); `0` (never) is refused (#1176) |
+| `allowed_endpoints` | array | What the token may reach (AC-3): `"<group>:read"` / `"<group>:write"` entries from [`GET /api/v1/api_endpoints`](api-endpoints.md), or `"*"` for every endpoint. A path pattern (`"/api/v1/ssp_documents*"`) still works as Read and Write on its paths |
 | `allowed_cidrs` | array | Restrict the token to these networks (AC-17) |
 
 `allowed_endpoints` and `allowed_cidrs` accept a JSON array — the natural API
 shape — or the web form's comma/newline-separated string.
 
-**The token expiry defaults to 90 days rather than never.** A non-expiring
-credential for an unattended identity is the one most likely to outlive its
-purpose.
+**The token expiry defaults to 90 days, and a service account's token cannot
+be issued without one (#1176).** A non-expiring credential for an unattended
+identity is the one most likely to outlive its purpose.
+
+The account and its first token are created together or not at all: a token
+the rules refuse (no expiry, past the cap, an endpoint entry that names
+nothing) leaves no account behind.
+
+Renew or reissue a single token with
+[`/api/v1/users/:id/api_tokens/:token_id/renew` and `/reissue`](api-tokens.md):
+a service account is a user. Renewal keeps the old token working for
+`SPARC_API_TOKEN_RENEWAL_GRACE_DAYS` (default 7) so automation can switch over.
 
 The response carries `token` **once**. Only the SHA-256 digest is stored; it
 cannot be retrieved again by any endpoint.
@@ -65,6 +74,13 @@ cannot be retrieved again by any endpoint.
 **Revokes every existing token before issuing the new one.** Rotation that
 leaves the old credential working is not rotation. The response reports
 `tokens_revoked` alongside the new `token`.
+
+`expires_in_days`, `allowed_endpoints` and `allowed_cidrs` may be sent, at the
+top level or inside `service_account`. **Anything not sent is carried over
+from the account's newest token**, preferring one still active (#1176).
+Before #1176 an omitted field meant "no limit", so rotating a limited token
+issued an unlimited one. Send `"allowed_endpoints": []` to lift the limit on
+purpose.
 
 ### DELETE /api/v1/service_accounts/:id
 
@@ -97,6 +113,7 @@ of what it did. The response says so explicitly in `note`.
 ## NIST 800-53 Controls
 
 - **AC-2** Account Management · **AC-3** Access Enforcement · **AC-6** Least Privilege
+- **IA-5** Authenticator Management — required, capped token lifetime; renewal with a grace window (#1176)
 - **AC-17** Remote Access — CIDR allowlist
 - **IA-4** Identifier Management · **IA-5** Authenticator Management
 - **AU-12** Audit Record Generation

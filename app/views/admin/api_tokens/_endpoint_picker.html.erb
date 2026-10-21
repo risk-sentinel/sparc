@@ -1,0 +1,64 @@
+<%#
+  #1176 — which API endpoints a token may reach. One row per resource group
+  from ApiEndpointCatalog (the definition enforcement reads), Read and Write
+  per row, and an "All endpoints" row.
+
+  locals:
+    field    — the param name, e.g. "allowed_endpoints" or "api_token[allowed_endpoints]"
+    selected — submitted entries to re-show, or nil for a fresh form (All)
+    id       — a prefix for element ids, unique on the page
+%>
+<% field = local_assigns.fetch(:field) %>
+<% selected = local_assigns[:selected] %>
+<% id = local_assigns.fetch(:id, "endpoint_picker") %>
+<fieldset class="mb-3" data-controller="endpoint-picker" id="<%= id %>">
+  <legend class="form-label fs-6 mb-1">Allowed Endpoints</legend>
+  <%# Present on every submission, so the server can tell "nothing ticked"
+      (refused) from a client that never showed this list. %>
+  <input type="hidden" name="endpoint_picker" value="1">
+  <input type="hidden" name="<%= field %>[]" value="">
+
+  <div class="form-check mb-2">
+    <input class="form-check-input" type="checkbox" name="<%= field %>[]"
+           value="<%= ApiEndpointCatalog::ALL %>" id="<%= id %>_all"
+           <%= "checked" if endpoint_picker_all?(selected) %>
+           data-endpoint-picker-target="all" data-action="change->endpoint-picker#sync">
+    <label class="form-check-label fw-semibold" for="<%= id %>_all">All endpoints</label>
+  </div>
+
+  <%# Focusable and named: a keyboard user must be able to scroll this list
+      (axe scrollable-region-focusable). %>
+  <section class="sparc-endpoint-picker__list border rounded" tabindex="0"
+           aria-label="API resources and access levels">
+    <table class="table table-sm mb-0 align-middle">
+      <thead>
+        <tr><th scope="col">Resource</th><th scope="col" class="text-center">Read</th><th scope="col" class="text-center">Write</th></tr>
+      </thead>
+      <tbody>
+        <% ApiEndpointCatalog.groups.each do |group| %>
+          <tr>
+            <th scope="row" class="fw-normal"><%= group.label %></th>
+            <% ApiEndpointCatalog::ACCESS_LEVELS.each do |level| %>
+              <td class="text-center">
+                <% if group.access_levels.include?(level) %>
+                  <% value = ApiEndpointCatalog.entry(group.key, level) %>
+                  <input class="form-check-input" type="checkbox" name="<%= field %>[]" value="<%= value %>"
+                         id="<%= id %>_<%= group.key %>_<%= level %>"
+                         aria-label="<%= level.capitalize %>: <%= group.label %>"
+                         <%= "checked" if selected&.include?(value) %>
+                         data-endpoint-picker-target="entry">
+                <% else %>
+                  <span class="text-body-secondary" aria-label="<%= group.label %> has no <%= level %> endpoints">—</span>
+                <% end %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+  <div class="form-text">
+    Read covers fetching and the requests that only compute (previews, translations, analysis).
+    Write covers everything that creates, changes or deletes.
+  </div>
+</fieldset>

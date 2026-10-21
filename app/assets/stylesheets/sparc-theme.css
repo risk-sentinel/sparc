@@ -4277,3 +4277,10 @@ a.link-purple { color: var(--sparc-purple); }
   padding-top: 0.45rem;
   padding-bottom: 0.45rem;
 }
+
+/* #1176 — the API token endpoint picker: one row per resource group, so the
+   list scrolls inside the form instead of pushing the submit button away. */
+.sparc-endpoint-picker__list {
+  max-height: 18rem;
+  overflow-y: auto;
+}

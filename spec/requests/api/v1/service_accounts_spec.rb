@@ -14,7 +14,7 @@ RSpec.describe "Api::V1::ServiceAccounts", type: :request do
   let(:owner)     { create(:user) }
 
   def headers_for(user)
-    { "Authorization" => "Bearer #{ApiToken.generate!(user: user, name: 'T').plaintext_token}" }
+    { "Authorization" => "Bearer #{ApiToken.generate!(user: user, name: 'T', expires_at: 1.day.from_now).plaintext_token}" }
   end
 
   before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
@@ -172,7 +172,7 @@ RSpec.describe "Api::V1::ServiceAccounts", type: :request do
 
     it "never returns a token value" do
       account = create(:user, :service_account)
-      token = ApiToken.generate!(user: account, name: "Existing")
+      token = ApiToken.generate!(user: account, name: "Existing", expires_at: 30.days.from_now)
 
       get api_v1_service_account_path(account), headers: headers_for(admin)
 

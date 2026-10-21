@@ -8,7 +8,7 @@ RSpec.describe "Api::V1::Sessions", type: :request do
   let(:owner)           { create(:user, :admin) }
   let(:admin_sa)        { create(:user, :admin, service_account: true, owner: owner, email: "sa@example.com") }
   let(:api_token)       { ApiToken.generate!(user: admin,    name: "Test bridge") }
-  let(:sa_token)        { ApiToken.generate!(user: admin_sa, name: "Test SA bridge") }
+  let(:sa_token)        { ApiToken.generate!(user: admin_sa, name: "Test SA bridge", expires_at: 1.day.from_now) }
   let(:auth_headers)    { { "Authorization" => "Bearer #{api_token.plaintext_token}" } }
   let(:sa_auth_headers) { { "Authorization" => "Bearer #{sa_token.plaintext_token}" } }
 

@@ -89,7 +89,7 @@ class WebauthnSessionsController < ApplicationController
   def allow_credentials_for(email)
     return [] if email.blank?
 
-    user = User.find_by("LOWER(email) = ?", email.to_s.downcase.strip)
+    user = User.human_by_email(email)
     user ? user.webauthn_credentials.pluck(:external_id) : []
   end
 

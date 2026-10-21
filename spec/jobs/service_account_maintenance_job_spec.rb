@@ -19,7 +19,10 @@ RSpec.describe ServiceAccountMaintenanceJob, type: :job do
     )
     sa.update_column(:created_at, created_at) if created_at
 
-    token = ApiToken.generate!(user: sa, name: "#{name}-token", expires_at: token_expires_at)
+    # A nil expiry is a token issued before #1176, which no path can create
+    # now: issue it with one, then clear it, as upgraded data looks.
+    token = ApiToken.generate!(user: sa, name: "#{name}-token", expires_at: token_expires_at || 1.day.from_now)
+    token.update_column(:expires_at, nil) if token_expires_at.nil?
     token.update_column(:last_used_at, last_used_at) if last_used_at
     sa
   end

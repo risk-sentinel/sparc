@@ -91,8 +91,8 @@ findings:
     image built from PR #1188 reports exactly these versions, and main''s security scan (run 36055248647)
     still reports the CVE in both trivy and grype. REVIEW RECORD (owner): deferred 2026-08-20 under #1001,
     release-blocking until fixed or documented as having no upstream fix; re-reviewed 2026-09-04 (accepted to
-    2026-09-25) and 2026-09-21 (accepted to 2026-10-19), each on a grype 0.114.0 scan of the IMAGE, not an
-    SBOM (#862; vulnerability DBs built 2026-09-03 and 2026-09-21T06:39:24Z), which found it still present,
+    2026-09-25), 2026-09-21 (accepted to 2026-10-19) and 2026-10-20 (deferred to 2026-11-16 as an operational_requirement deviation, below), each on a grype 0.114.0 scan of the IMAGE, not an
+    SBOM (#862; vulnerability DBs built 2026-09-03, 2026-09-21T06:39:24Z and 2026-10-20T06:29:49Z, the last on sparc:v1.17.2), which found it still present,
     still not-fixed and unchanged in severity. DEBIAN HISTORY, for the audit trail only: before the UBI9
     migration this entry described the Debian package ''libsystemd0 252.39-1~deb12u1'' and was marked
     remediated when that package left the image. It was re-verified against the UBI9 image on 2026-08-20,
@@ -100,7 +100,21 @@ findings:
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
+  next_review_date: '2026-11-16'
+  deviation:
+    type: operational_requirement
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1231"
+    approved_at: "2026-10-20"
+    approval_mechanism: approve-deviation-comment
+    operational_justification: 'systemd-libs ships with the UBI 10 base image and Red Hat publishes no fix
+      (grype 0.114.0 on sparc:v1.17.2, vulnerability DB built 2026-10-20T06:29:49Z: present, not-fixed,
+      severity unchanged). The finding stays open in the POA&M and is re-reviewed each window until
+      Red Hat ships a fix, which the next image build then takes. Owner decision 2026-10-20 (#1231):
+      the 60-day MEDIUM window from discovery ended 2026-10-19, so continued deferral is a deviation.'
+    kev_checked: '2026-10-20'
+    kev_listed: false
   superseded_debian_finding: libsystemd0 252.39-1~deb12u1 (removed with the Debian base image)
 - cve_id: CVE-2026-22185
   package: openldap
@@ -113,9 +127,9 @@ findings:
     these RPMs. Presence re-measured 2026-09-27 (a measurement, not a review): `rpm -q` in a UBI9 image built
     from PR #1188 reports exactly these versions, and main''s security scan (run 36055248647) still reports
     the CVE in both trivy and grype. REVIEW RECORD (owner): deferred 2026-08-20 under #1001, release-blocking
-    until fixed or documented as having no upstream fix; re-reviewed 2026-09-04 (accepted to 2026-09-25) and
-    2026-09-21 (accepted to 2026-10-19), each on a grype 0.114.0 scan of the IMAGE, not an SBOM (#862;
-    vulnerability DBs built 2026-09-03 and 2026-09-21T06:39:24Z), which found it still present, still
+    until fixed or documented as having no upstream fix; re-reviewed 2026-09-04 (accepted to 2026-09-25), 2026-09-21
+    (accepted to 2026-10-19) and 2026-10-20 (deferred to 2026-11-16 as an operational_requirement deviation, below), each on a grype 0.114.0 scan of the IMAGE, not an SBOM (#862;
+    vulnerability DBs built 2026-09-03, 2026-09-21T06:39:24Z and 2026-10-20T06:29:49Z, the last on sparc:v1.17.2), which found it still present, still
     not-fixed and unchanged in severity. DEBIAN HISTORY, for the audit trail only: before the UBI9 migration
     this entry described the Debian package ''libldap-2.5-0 2.5.13+dfsg-5'' and was marked remediated when
     that package left the image. It was re-verified against the UBI9 image on 2026-08-20, found present in the
@@ -124,7 +138,21 @@ findings:
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
+  next_review_date: '2026-11-16'
+  deviation:
+    type: operational_requirement
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1231"
+    approved_at: "2026-10-20"
+    approval_mechanism: approve-deviation-comment
+    operational_justification: 'openldap ships with the UBI 10 base image and Red Hat publishes no fix
+      (grype 0.114.0 on sparc:v1.17.2, vulnerability DB built 2026-10-20T06:29:49Z: present, not-fixed,
+      severity unchanged). The finding stays open in the POA&M and is re-reviewed each window until
+      Red Hat ships a fix, which the next image build then takes. Owner decision 2026-10-20 (#1231):
+      the 60-day MEDIUM window from discovery ended 2026-10-19, so continued deferral is a deviation.'
+    kev_checked: '2026-10-20'
+    kev_listed: false
   superseded_debian_finding: libldap-2.5-0 2.5.13+dfsg-5 (removed with the Debian base image)
 - cve_id: CVE-2025-70873
   package: sqlite-libs
@@ -138,8 +166,8 @@ findings:
     built from PR #1188 reports exactly these versions, and main''s security scan (run 36055248647) still
     reports the CVE in both trivy and grype. REVIEW RECORD (owner): deferred 2026-08-20 under #1001,
     release-blocking until fixed or documented as having no upstream fix; re-reviewed 2026-09-04 (accepted to
-    2026-09-25) and 2026-09-21 (accepted to 2026-10-19), each on a grype 0.114.0 scan of the IMAGE, not an
-    SBOM (#862; vulnerability DBs built 2026-09-03 and 2026-09-21T06:39:24Z), which found it still present,
+    2026-09-25), 2026-09-21 (accepted to 2026-10-19) and 2026-10-20 (accepted to 2026-11-16), each on a grype 0.114.0 scan of the IMAGE, not an
+    SBOM (#862; vulnerability DBs built 2026-09-03, 2026-09-21T06:39:24Z and 2026-10-20T06:29:49Z, the last on sparc:v1.17.2), which found it still present,
     still not-fixed and unchanged in severity. DEBIAN HISTORY, for the audit trail only: before the UBI9
     migration this entry described the Debian package ''libsqlite3-0 3.40.1-2+deb12u2'' and was marked
     remediated when that package left the image. It was re-verified against the UBI9 image on 2026-08-20,
@@ -147,7 +175,7 @@ findings:
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-08-20'
-  next_review_date: '2026-10-19'
+  next_review_date: '2026-11-16'
   superseded_debian_finding: libsqlite3-0 3.40.1-2+deb12u2 (removed with the Debian base image)
 - cve_id: rb/csrf-protection-disabled
   package: sparc (application code — CodeQL rb/csrf-protection-disabled)

@@ -9,17 +9,8 @@
 #   FALSE POSITIVE — Not a vulnerability; expected behavior or wrong context
 # ============================================================================
 
-# DS-0002 — Trivy filesystem misconfiguration: image runs as root
-# Classification: FALSE POSITIVE for production
-# Description: Trivy fs scan reports DS-0002 against tests/api/Dockerfile,
-#   the dev/CI test-runner image used to execute the Python pytest suite
-#   against a deployed SPARC instance. tests/api/Dockerfile is NOT the
-#   production image — it's CI tooling that runs ephemerally in GitHub
-#   Actions. The production Dockerfile (./Dockerfile, Red Hat UBI9 minimal
-#   base since #742/v1.12.0) already runs as non-root UID 1000 and is
-#   properly hardened.
-# Mitigation: dev/test image isolation; never deployed to production.
-#   Reviewed annually as part of test-tooling audit.
-# Reference: trivy-fs scan run 25409853872 against tests/api/Dockerfile
-# Reviewed: 2026-07-20
-DS-0002
+# DS-0002 (image runs as root) — suppression RETIRED 2026-10-20. It was
+#   raised only against tests/api/Dockerfile, which now runs as USER 1000:1000.
+#   Re-measured with trivy 0.74.0 (`trivy config --ignorefile /dev/null`) over
+#   every tracked Dockerfile: none raises DS-0002, so the entry suppressed
+#   nothing. Removed rather than re-dated; if it returns, it is a new finding.

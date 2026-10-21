@@ -198,3 +198,80 @@ class TestRevoke:
             assert issued.get("/api/v1/available").status_code == 200, (
                 "a refused revocation revoked the token anyway"
             )
+
+
+def _works(base_url: str, token: str) -> bool:
+    with httpx.Client(
+        base_url=base_url,
+        headers={"Authorization": f"Bearer {token}"},
+        verify=False,
+        timeout=30.0,
+    ) as client:
+        return client.get("/api/v1/available").status_code == 200
+
+
+def _limited_token(admin_client: httpx.Client, user_id: Any) -> dict[str, Any]:
+    response = admin_client.post(
+        _path(user_id),
+        json={"api_token": {"name": "limited", "expires_in_days": 30,
+                            "allowed_endpoints": ["available:read"],
+                            "allowed_cidrs": ["0.0.0.0/0"]}},
+    )
+    assert response.status_code == 201, response.text
+    return response.json()["data"]
+
+
+class TestRenewAndReissue:
+    """#1176 — renew overlaps for the grace window; reissue ends the old token
+    at once. Both keep the token's endpoint and CIDR limits."""
+
+    @pytest.mark.happy
+    def test_renew_overlaps_and_keeps_the_limits(
+        self, base_url: str, admin_client: httpx.Client, token_owner: dict[str, Any]
+    ) -> None:
+        old = _limited_token(admin_client, token_owner["id"])
+
+        response = admin_client.post(f"{_path(token_owner['id'])}/{old['id']}/renew")
+        assert response.status_code == 201, response.text
+        data = response.json()["data"]
+
+        assert data["allowed_endpoints"] == ["available:read"]
+        assert data["allowed_cidrs"] == ["0.0.0.0/0"]
+        assert data["replaced_token_id"] == old["id"]
+        assert data["replaced_token_expires_at"], data
+        assert _works(base_url, data["token"]), "the renewed token must work"
+        assert _works(base_url, old["token"]), (
+            "the old token must keep working through the grace window"
+        )
+
+    @pytest.mark.happy
+    def test_reissue_ends_the_old_token_and_keeps_the_limits(
+        self, base_url: str, admin_client: httpx.Client, token_owner: dict[str, Any]
+    ) -> None:
+        old = _limited_token(admin_client, token_owner["id"])
+
+        response = admin_client.post(f"{_path(token_owner['id'])}/{old['id']}/reissue")
+        assert response.status_code == 201, response.text
+        data = response.json()["data"]
+
+        assert data["allowed_endpoints"] == ["available:read"]
+        assert data["revoked_token_id"] == old["id"]
+        assert _works(base_url, data["token"])
+        assert not _works(base_url, old["token"]), "a reissued token must stop at once"
+
+    @pytest.mark.authz
+    def test_a_non_admin_can_neither_renew_nor_reissue(
+        self, base_url: str, admin_client: httpx.Client, user_client: httpx.Client,
+        token_owner: dict[str, Any]
+    ) -> None:
+        old = _limited_token(admin_client, token_owner["id"])
+        before = len(admin_client.get(_path(token_owner["id"])).json()["data"])
+
+        for action in ("renew", "reissue"):
+            response = user_client.post(f"{_path(token_owner['id'])}/{old['id']}/{action}")
+            assert response.status_code in (401, 403), response.text
+
+        after = len(admin_client.get(_path(token_owner["id"])).json()["data"])
+        assert after == before, "a refused renewal issued a token anyway"
+        assert _works(base_url, old["token"]), "a refused reissue revoked the token anyway"
+

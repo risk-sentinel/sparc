@@ -360,6 +360,13 @@ def deactivate_user(user_id: Any) -> None:
         c.delete(f"/api/v1/users/{user_id}")
 
 
+def deactivate_service_account(account_id: Any) -> None:
+    """Cleanup for service accounts a smoke creates (#1176). DELETE
+    deactivates, keeping the audit trail, exactly as the web path does."""
+    with _client() as c:
+        c.delete(f"/api/v1/service_accounts/{account_id}")
+
+
 # ── #1154 / production repair (2026-09-29) ─────────────────────────────────
 
 

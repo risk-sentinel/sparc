@@ -299,7 +299,7 @@ class PivAuthService
     def user_by_email(email)
       return nil if email.blank?
 
-      User.find_by("LOWER(email) = ?", email.downcase.strip)
+      User.human_by_email(email)
     end
   end
 end

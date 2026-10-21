@@ -63,9 +63,41 @@ end
 # `accept_consent_banner` performs the real "Proceed" click that reveals the
 # login form (consent_banner_controller#proceed). Call it right after visiting
 # a page that shows the banner (e.g. /login), before touching the login form.
+#
+# It decides from the CONFIGURATION, never from what happens to be on screen.
+# It used to return quietly when no "Proceed" appeared within 5s, so a slow
+# page or a banner script that never connected read as "banner off", and the
+# spec failed a step later on a login form that was still hidden (#1229's CI
+# failure). Now:
+#   * banner configured, not yet accepted this browser session — the banner
+#     must appear; it is accepted and the login form must be revealed;
+#   * banner configured, already accepted (#824 remembers it per session) —
+#     the login form must already be revealed;
+#   * banner not configured — no banner, and the login form is shown.
 module SystemConsentBanner
+  CONSENT_WAIT = 15 # seconds; a cold CI page can take longer than 5
+  CONSENT_MODAL = "[data-consent-banner-target='modal']"
+  CONSENT_LOGIN_CARD = "[data-consent-banner-target='loginCard']"
+
   def accept_consent_banner
-    return unless page.has_button?("Proceed", wait: 5)
+    unless SparcConfig.banner_enabled?
+      # With no banner the login card carries no consent target, so prove the
+      # form itself is on screen (system specs force local login on, below).
+      expect(page).to have_no_css(CONSENT_MODAL)
+      expect(page).to have_field("email", wait: CONSENT_WAIT),
+                      "no consent banner is configured, but the login form is not shown"
+      return
+    end
+
+    if consent_already_accepted?
+      expect(page).to have_css("#{CONSENT_LOGIN_CARD}:not(.d-none)", wait: CONSENT_WAIT),
+                      "consent was accepted earlier this session, but the login form is still hidden"
+      return
+    end
+
+    expect(page).to have_button("Proceed", wait: CONSENT_WAIT),
+                    "the consent banner is configured (SPARC_BANNER) but was not shown " \
+                    "within #{CONSENT_WAIT}s, so the login form stays hidden"
 
     click_button "Proceed"
     # proceed() synchronously un-hides the login card (so the form is ready)
@@ -86,6 +118,19 @@ module SystemConsentBanner
     JS
     expect(page).to have_no_css(".modal.show")
     expect(page).to have_no_css(".modal-backdrop")
+    expect(page).to have_css("#{CONSENT_LOGIN_CARD}:not(.d-none)"),
+                    "Proceed was clicked but the login form was not revealed"
+  end
+
+  private
+
+  # The controller's own record of consent (consent_banner_controller.js,
+  # STORAGE_KEY), read the way it reads it.
+  def consent_already_accepted?
+    page.evaluate_script(
+      "(() => { try { return window.sessionStorage.getItem('sparc.consent.accepted') === '1' } " \
+      "catch (e) { return false } })()"
+    )
   end
 end
 

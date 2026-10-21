@@ -24,7 +24,7 @@
     <div class="alert alert-warning">
       <h5><i class="bi bi-key"></i> API Token (shown once)</h5>
       <code class="user-select-all d-block p-2 bg-dark text-light rounded" style="word-break: break-all;"><%= flash[:api_token] %></code>
-      <small class="text-muted mt-2 d-block">Copy this token now. It will not be displayed again.</small>
+      <small class="text-muted mt-2 d-block"><%= ApiToken::COPY_NOW_WARNING %></small>
     </div>
   <% end %>
 
@@ -62,26 +62,28 @@
           <h5 class="mb-0">API Tokens</h5>
           <%= button_to "Regenerate Token", regenerate_token_admin_service_account_path(@service_account),
                 method: :post, class: "sparc-action sparc-action--caution sparc-action--solid sparc-action--sm",
-                data: { turbo_confirm: "Regenerate token? The current token will be permanently revoked." } %>
+                data: { turbo_confirm: "Regenerate token? Every current token is revoked at once. The new token keeps the newest token's endpoint and CIDR limits and lifetime." } %>
         </div>
         <div class="card-body">
+          <% if @tokens.any?(&:never_expires?) %>
+            <%# Rendered with the page, not updated live, so no live-region role. %>
+            <div class="alert alert-warning small">
+              This account holds a token that never expires, issued before service-account tokens
+              had to. Renew it to replace it with one that expires
+              (<%= ApiToken::DEFAULT_SERVICE_ACCOUNT_DAYS %> days) and keeps its limits.
+            </div>
+          <% end %>
           <% if @tokens.any? %>
-            <table class="table table-sm mb-0">
+            <table class="table table-sm mb-0 align-middle">
               <thead>
-                <tr><th>Name</th><th>Status</th><th>Expires</th><th>Last Used</th></tr>
+                <tr><th>Name</th><th>Status</th><th>Expires</th><th>Last Used</th><th><span class="visually-hidden">Actions</span></th></tr>
               </thead>
               <tbody>
                 <% @tokens.each do |token| %>
                   <tr>
                     <td><%= token.name %></td>
-                    <td>
-                      <% if token.expired? %>
-                        <span class="badge bg-danger">Expired</span>
-                      <% else %>
-                        <span class="badge bg-success">Active</span>
-                      <% end %>
-                    </td>
-                    <td><%= token.expires_at&.strftime("%Y-%m-%d") || "Never" %></td>
+                    <td><%= token_status_badge(token) %></td>
+                    <td><%= token.expires_at&.strftime("%Y-%m-%d %H:%M UTC") || "Never" %></td>
                     <td>
                       <% if token.last_used_at %>
                         <%= time_ago_in_words(token.last_used_at) %> ago
@@ -90,37 +92,28 @@
                         Never
                       <% end %>
                     </td>
+                    <td class="text-end text-nowrap">
+                      <% unless token.expired? %>
+                        <%= button_to "Renew", renew_admin_user_api_token_path(@service_account, token),
+                              method: :post, form_class: "d-inline",
+                              class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+                              data: { turbo_confirm: "Renew '#{token.name}'? A new token is issued with the same limits; this one keeps working for up to #{SparcConfig.api_token_renewal_grace_days} more days." } %>
+                      <% end %>
+                      <%= button_to "Reissue", reissue_admin_user_api_token_path(@service_account, token),
+                            method: :post, form_class: "d-inline",
+                            class: "sparc-action sparc-action--caution sparc-action--outline sparc-action--sm",
+                            data: { turbo_confirm: "Reissue '#{token.name}'? It stops working now, and a new token with the same limits replaces it." } %>
+                    </td>
+                  </tr>
+                  <tr class="sparc-token-limits">
+                    <td colspan="5" class="small text-body-secondary border-top-0 pt-0">
+                      <span class="fw-semibold">Endpoints:</span> <%= token.endpoint_summary.join("; ") %>
+                      &middot; <span class="fw-semibold">CIDRs:</span> <%= token.allowed_cidrs.presence&.join(", ") || "Any address" %>
+                    </td>
                   </tr>
                 <% end %>
               </tbody>
             </table>
-
-            <%# Endpoint restrictions %>
-            <% active_token = @tokens.select { |t| !t.expired? }.first %>
-            <% if active_token %>
-              <hr>
-              <h6>Allowed Endpoints</h6>
-              <% if active_token.allowed_endpoints.present? %>
-                <ul class="list-unstyled mb-0">
-                  <% active_token.allowed_endpoints.each do |ep| %>
-                    <li><code><%= ep %></code></li>
-                  <% end %>
-                </ul>
-              <% else %>
-                <span class="text-muted">All endpoints (unrestricted)</span>
-              <% end %>
-
-              <h6 class="mt-3">Allowed CIDRs</h6>
-              <% if active_token.allowed_cidrs.present? %>
-                <ul class="list-unstyled mb-0">
-                  <% active_token.allowed_cidrs.each do |cidr| %>
-                    <li><code><%= cidr %></code></li>
-                  <% end %>
-                </ul>
-              <% else %>
-                <span class="text-muted">All IPs (unrestricted)</span>
-              <% end %>
-            <% end %>
           <% else %>
             <p class="text-muted mb-0">No tokens generated.</p>
           <% end %>

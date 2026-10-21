@@ -29,7 +29,7 @@ RSpec.describe "Api::V1::Admin::Credentials", type: :request do
   let!(:service_user_role) do
     UserRole.create!(user: service_account, role: rotation_role)
   end
-  let(:lambda_token) { ApiToken.generate!(user: service_account, name: "Lambda Token") }
+  let(:lambda_token) { ApiToken.generate!(user: service_account, name: "Lambda Token", expires_at: 1.day.from_now) }
   let(:auth_headers) { { "Authorization" => "Bearer #{lambda_token.plaintext_token}" } }
 
   before do

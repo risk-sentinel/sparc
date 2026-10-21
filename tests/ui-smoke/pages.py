@@ -76,6 +76,7 @@ FORM_PAGES = [
     ("federation_peer_new", "/federation_peers/new"),
     ("authoritative_source_new", "/authoritative_sources/new"),
     ("admin_user_new", "/admin/users/new"),  # #877 — no password fields
+    ("admin_service_account_new", "/admin/service_accounts/new"),  # #1176 — endpoint picker
     ("profile_edit", "/profile/edit"),
     ("password_edit", "/password/edit"),
 ]
