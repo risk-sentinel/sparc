@@ -207,13 +207,26 @@ class SarXmlParserService
     reviewed_controls_to_hash(node)
   end
 
+  # #1133 — the assessment log and the risk log share their first fields but
+  # not the rest, so each has its own entry parser. One parser for both
+  # silently dropped logged-by, related-task, status-change and
+  # related-response, which the JSON importer keeps and the exporter emits.
   def assessment_log_to_hash(node)
     return nil unless node
     {
-      "entries" => node.xpath("xmlns:entry", ns).map { |e| log_entry_to_hash(e) }
+      "entries" => node.xpath("xmlns:entry", ns).map { |e| assessment_log_entry_to_hash(e) }
     }.compact
   end
 
+  def assessment_log_entry_to_hash(node)
+    log_entry_to_hash(node).merge(
+      "related-tasks" => node.xpath("xmlns:related-task", ns).map { |t| related_task_to_hash(t) }.presence
+    ).compact
+  end
+
+  # The fields both logs' entries carry, in schema order; remarks come last.
+  # Empty props and links are left out: the schema gives both minItems 1, and
+  # the exporter emits the entry as stored.
   def log_entry_to_hash(node)
     {
       "uuid"        => node["uuid"],
@@ -221,9 +234,61 @@ class SarXmlParserService
       "description" => text(node, "description"),
       "start"       => text(node, "start"),
       "end"         => text(node, "end"),
-      "props"       => parse_props(node),
-      "links"       => parse_links(node),
+      "props"       => parse_props(node).presence,
+      "links"       => parse_links(node).presence,
+      "logged-by"   => node.xpath("xmlns:logged-by", ns).map { |l| logged_by_to_hash(l) }.presence,
       "remarks"     => text(node, "remarks")
+    }.compact
+  end
+
+  def logged_by_to_hash(node)
+    {
+      "party-uuid" => node["party-uuid"],
+      ROLE_ID      => node[ROLE_ID],
+      "remarks"    => text(node, "remarks")
+    }.compact
+  end
+
+  def related_task_to_hash(node)
+    identified = node.at_xpath("xmlns:identified-subject", ns)
+    {
+      "task-uuid"           => node["task-uuid"],
+      "props"               => parse_props(node).presence,
+      "links"               => parse_links(node).presence,
+      "responsible-parties" => node.xpath("xmlns:responsible-party", ns).map { |rp| responsible_party_to_hash(rp) }.presence,
+      "subjects"            => node.xpath("xmlns:subject", ns).map { |s| assessment_subject_to_hash(s) }.presence,
+      "identified-subject"  => identified && {
+        "subject-placeholder-uuid" => identified["subject-placeholder-uuid"],
+        "subjects"                 => identified.xpath("xmlns:subject", ns).map { |s| assessment_subject_to_hash(s) }
+      },
+      "remarks"             => text(node, "remarks")
+    }.compact
+  end
+
+  # An assessment subject (a selection of subjects), not a subject reference.
+  def assessment_subject_to_hash(node)
+    {
+      "type"             => node["type"],
+      "description"      => text(node, "description"),
+      "props"            => parse_props(node).presence,
+      "links"            => parse_links(node).presence,
+      "include-all"      => node.at_xpath("xmlns:include-all", ns) ? {} : nil,
+      "include-subjects" => node.xpath("xmlns:include-subject", ns).map { |r| subject_reference_to_hash(r) }.presence,
+      "exclude-subjects" => node.xpath("xmlns:exclude-subject", ns).map { |r| subject_reference_to_hash(r) }.presence,
+      "remarks"          => text(node, "remarks")
+    }.compact
+  end
+
+  # The schema gives props and links minItems 1, so an empty list is left out
+  # rather than emitted on export.
+  def subject_reference_to_hash(node)
+    {
+      "subject-uuid" => node["subject-uuid"],
+      "type"         => node["type"],
+      "title"        => text(node, "title"),
+      "props"        => parse_props(node).presence,
+      "links"        => parse_links(node).presence,
+      "remarks"      => text(node, "remarks")
     }.compact
   end
 
@@ -347,7 +412,24 @@ class SarXmlParserService
   def risk_log_to_hash(node)
     return nil unless node
     {
-      "entries" => node.xpath("xmlns:entry", ns).map { |e| log_entry_to_hash(e) }
+      "entries" => node.xpath("xmlns:entry", ns).map { |e| risk_log_entry_to_hash(e) }
+    }.compact
+  end
+
+  def risk_log_entry_to_hash(node)
+    log_entry_to_hash(node).merge(
+      "status-change"     => text(node, "status-change"),
+      "related-responses" => node.xpath("xmlns:related-response", ns).map { |r| related_response_to_hash(r) }.presence
+    ).compact
+  end
+
+  def related_response_to_hash(node)
+    {
+      "response-uuid" => node["response-uuid"],
+      "props"         => parse_props(node).presence,
+      "links"         => parse_links(node).presence,
+      "related-tasks" => node.xpath("xmlns:related-task", ns).map { |t| related_task_to_hash(t) }.presence,
+      "remarks"       => text(node, "remarks")
     }.compact
   end
 
