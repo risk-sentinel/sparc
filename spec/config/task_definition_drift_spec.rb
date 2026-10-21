@@ -81,7 +81,6 @@ RSpec.describe "ECS task definition drift", :drift do
   # boot-file reads (puma, database.yml) have no accessor and are skipped.
   COMPARABLE = {
     "SPARC_APP_NAME" => :app_name,
-    "SPARC_WELCOME_TEXT" => :welcome_text,
     "SPARC_INACTIVITY_DAYS" => :inactivity_days,
     "SPARC_PASSWORD_EXPIRY_DAYS" => :password_expiry_days,
     "SPARC_SESSION_TIMEOUT_MINUTES" => :session_timeout,

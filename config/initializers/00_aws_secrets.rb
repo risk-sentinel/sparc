@@ -2,10 +2,16 @@
 
 # AWS Secrets Manager — App-Config JSON Blob Unpacker
 #
-# When SPARC_AWS_SECRETS_ENABLED=true, this initializer runs early in boot
+# When Secrets Manager is enabled, this initializer runs early in boot
 # (00_ prefix ensures it loads before other initializers that read ENV) to
 # fetch a JSON blob from Secrets Manager and inject each key-value pair
 # into ENV. Existing ENV vars take precedence — they are never overwritten.
+#
+# #1120 — enabled by SPARC_AWS_SECRETS_ENABLED=true, OR inferred from
+# SPARC_APP_CONFIG_SECRET_ARN being set; an explicit
+# SPARC_AWS_SECRETS_ENABLED=false still wins. This runs before autoload, so it
+# cannot call SparcConfig.aws_secrets_enabled? and repeats that inference.
+# Keep the two in step (spec/initializers/aws_secrets_spec.rb loads this file).
 #
 # Two-secret strategy (aligned with sparc-iac #22):
 #   Secret 1: sparc-{env}/admin-credentials  — break-glass admin password (MFA-gated, not read by app)
@@ -17,7 +23,15 @@
 #   CM-6  Configuration Settings (env var injection from centralized secret)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 
-if ENV["SPARC_AWS_SECRETS_ENABLED"] == "true"
+raw_secrets_enabled = ENV.fetch("SPARC_AWS_SECRETS_ENABLED", nil)
+secrets_enabled =
+  if raw_secrets_enabled.present?
+    raw_secrets_enabled == "true"
+  else
+    ENV.fetch("SPARC_APP_CONFIG_SECRET_ARN", nil).present?
+  end
+
+if secrets_enabled
   require "aws-sdk-secretsmanager"
   require "json"
 

@@ -30,9 +30,8 @@
 - Custom scopes via `SPARC_OIDC_SCOPES` (default: `"openid profile email"`)
 - Button text via `SPARC_OIDC_PROVIDER_TITLE` (default: `"SSO"`)
 - MFA enforcement: `SPARC_REQUIRE_AUTH_METHODS` (#805), or `SPARC_REQUIRE_FIDO2`
-  for hardware keys. **`SPARC_OIDC_FORCE_MFA` does nothing** — a predicate reads
-  it but nothing calls that predicate, so the value never reaches a decision.
-  It defaults to `true`, which makes it read like an active control (#1120)
+  for hardware keys. `SPARC_OIDC_FORCE_MFA` never did anything and is retired
+  in v1.17.2; SPARC warns at boot if it is still set (#1120)
 - Related: [Issue #33](https://github.com/risk-sentinel/sparc/issues/33) (Okta), [Issue #35](https://github.com/risk-sentinel/sparc/issues/35) (generic OIDC)
 
 #### Asking the IdP for more than the default scopes
@@ -277,7 +276,7 @@ which provisions the AWS infrastructure as Terraform and deploys the
 container image published by this repo's CI:
 
 - **AWS ECS** behind an Application Load Balancer, running the signed SPARC container image.
-- Database credentials and the `SPARC_HASH` master secret sourced from **AWS Secrets Manager** (`SPARC_AWS_SECRETS_ENABLED`), with optional **IAM database authentication** (`SPARC_AWS_IAM_DB_AUTH`).
+- Database credentials and the `SPARC_HASH` master secret sourced from **AWS Secrets Manager** (on when `SPARC_APP_CONFIG_SECRET_ARN` is set, #1120), with optional **IAM database authentication** (`SPARC_AWS_IAM_DB_AUTH`).
 - Active Storage backed by **Amazon S3** (`ACTIVE_STORAGE_SERVICE=amazon`).
 - The application consumes the compliance evidence bundle (`sparc-compliance-latest`) published by this repo's `security.yml` workflow.
 

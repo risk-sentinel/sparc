@@ -35,7 +35,7 @@ RSpec.describe "SparcConfig enable-vs-require (#1082)" do
     end
 
     it "leaves an unrelated method alone" do
-      with_env("SPARC_REQUIRE_AUTH_METHODS" => "piv", "SPARC_ENABLE_LDAP" => nil) do
+      with_env("SPARC_REQUIRE_AUTH_METHODS" => "piv", "SPARC_ENABLE_LDAP" => nil, "SPARC_LDAP_HOST" => nil) do
         expect(SparcConfig.enable_ldap?).to be(false)
       end
     end
@@ -45,6 +45,43 @@ RSpec.describe "SparcConfig enable-vs-require (#1082)" do
     it "an explicit SPARC_ENABLE_*=false still wins over the requirement" do
       with_env("SPARC_REQUIRE_AUTH_METHODS" => "piv", "SPARC_ENABLE_PIV" => "false") do
         expect(SparcConfig.enable_piv?).to be(false)
+      end
+    end
+  end
+
+  # #1120 — the directory host is the setting LDAP cannot work without, so
+  # setting it enables LDAP, the same rule OIDC follows for its client id.
+  describe "LDAP is inferred from its host" do
+    it "enables LDAP when a host is set and SPARC_ENABLE_LDAP never was" do
+      with_env("SPARC_LDAP_HOST" => "ldap.example.gov", "SPARC_ENABLE_LDAP" => nil,
+               "SPARC_REQUIRE_AUTH_METHODS" => nil) do
+        expect(SparcConfig.enable_ldap?).to be(true)
+        expect(SparcConfig.auth_method_usable?("ldap")).to be(true)
+      end
+    end
+
+    it "an explicit SPARC_ENABLE_LDAP=false still wins over the host" do
+      with_env("SPARC_LDAP_HOST" => "ldap.example.gov", "SPARC_ENABLE_LDAP" => "false",
+               "SPARC_REQUIRE_AUTH_METHODS" => nil) do
+        expect(SparcConfig.enable_ldap?).to be(false)
+      end
+    end
+
+    it "stays off with neither a host nor the flag" do
+      with_env("SPARC_LDAP_HOST" => nil, "SPARC_ENABLE_LDAP" => nil, "SPARC_REQUIRE_AUTH_METHODS" => nil) do
+        expect(SparcConfig.enable_ldap?).to be(false)
+      end
+    end
+
+    it "a blank host is no host" do
+      with_env("SPARC_LDAP_HOST" => "", "SPARC_ENABLE_LDAP" => nil, "SPARC_REQUIRE_AUTH_METHODS" => nil) do
+        expect(SparcConfig.enable_ldap?).to be(false)
+      end
+    end
+
+    it "requiring ldap still enables it without a host (#1082)" do
+      with_env("SPARC_LDAP_HOST" => nil, "SPARC_ENABLE_LDAP" => nil, "SPARC_REQUIRE_AUTH_METHODS" => "ldap") do
+        expect(SparcConfig.enable_ldap?).to be(true)
       end
     end
   end

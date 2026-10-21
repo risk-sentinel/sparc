@@ -84,7 +84,40 @@ module SparcConfig
   DEFAULT_ADMIN_EMAIL = "admin@sparc.local"
 
   def admin_email = ENV.fetch("SPARC_ADMIN_EMAIL", nil).presence || DEFAULT_ADMIN_EMAIL
-  def welcome_text  = ENV.fetch("SPARC_WELCOME_TEXT", "Welcome to SPARC")
+
+  # ── Retired settings (#1120) ──────────────────────────────────────────────
+  #
+  # Variables SPARC no longer reads, with what to do instead. Each was either
+  # read by nothing or documented for behaviour that no longer exists, so a
+  # deployment setting one believed it had configured something it had not.
+  # SPARC_OIDC_FORCE_MFA was the worst of them: it defaulted to true and was
+  # cited for IA-2(1)/(2) coverage while nothing ever checked it.
+  #
+  # They are listed rather than forgotten so a deployment still setting one is
+  # told at boot (config/initializers/zz_retired_settings_posture.rb). Nothing
+  # else may read these names; bin/env_inventory_check.rb enforces that.
+  #
+  # NIST 800-53: CM-6 (configuration settings), CM-7 (least functionality).
+  RETIRED_VARIABLES = {
+    "SPARC_ENABLE_EMAIL_CONFIRMATION" => "nothing ever read it; local accounts have never required email confirmation",
+    "SPARC_OIDC_FORCE_MFA" => "nothing ever checked it, so it never forced MFA. Require phishing-resistant " \
+                              "methods with SPARC_REQUIRE_AUTH_METHODS, or security keys with SPARC_REQUIRE_FIDO2",
+    "SPARC_WELCOME_TEXT" => "the login page never showed it",
+    "SPARC_RATE_LIMITING_ENABLED" => "rate limiting is always on (#785); tune it with the SPARC_RATE_LIMIT_* settings",
+    "SPARC_ARTIFACT_REAPER_ENABLED" => "the artifact reaper always runs and only reports unless " \
+                                       "SPARC_ARTIFACT_REAPER_PURGE=true; set its cadence with " \
+                                       "SPARC_ARTIFACT_REAPER_INTERVAL_DAYS",
+    "SPARC_SA_INACTIVITY_DAYS" => "service accounts use SPARC_INACTIVITY_DAYS like everyone else (#785)"
+  }.freeze
+
+  def retired_variables_in_use = RETIRED_VARIABLES.keys.select { |name| ENV.fetch(name, nil).present? }
+
+  def retired_variable_warnings
+    retired_variables_in_use.map do |name|
+      "[Config] #{name} is set but SPARC no longer reads it (#1120): #{RETIRED_VARIABLES.fetch(name)}. " \
+        "Remove it from the deployment configuration."
+    end
+  end
 
   # Configurable resources list — JSON array of {display_text, href} objects.
   #
@@ -279,7 +312,16 @@ module SparcConfig
     oidc_client_id.present?
   end
 
-  def enable_ldap?         = auth_switch_enabled?("SPARC_ENABLE_LDAP", "ldap")
+  # #1120 — inferred from the directory host, the same rule as OIDC (#785): a
+  # host is the one setting LDAP cannot work without, so setting it is the
+  # statement of intent. A requirement still enables it (#1082), and an
+  # explicit SPARC_ENABLE_LDAP=false still wins.
+  def enable_ldap?
+    raw = ENV.fetch("SPARC_ENABLE_LDAP", nil)
+    return raw == "true" if raw.present?
+
+    ldap_host.present? || auth_switch_enabled?("SPARC_ENABLE_LDAP", "ldap")
+  end
 
   # #785 — was read raw in authoritative_source_fetch_service.rb. Outbound
   # content fetching stays explicit (never inferred): an air-gapped deployment
@@ -661,10 +703,6 @@ module SparcConfig
     ENV.fetch("SPARC_OIDC_INSTANCE_ROLES", "").split(",").map { |r| r.strip.downcase }.reject(&:empty?)
   end
   def oidc_provider_title = ENV.fetch("SPARC_OIDC_PROVIDER_TITLE", "SSO")
-  # #785 — defaults true. Only consulted on the OIDC path, so a true default is
-  # inert for deployments that don't use OIDC, and security-positive for those
-  # that do. Set explicitly to "false" to opt out.
-  def oidc_force_mfa?    = ENV.fetch("SPARC_OIDC_FORCE_MFA", "true") == "true"
 
   # ── LDAP ──────────────────────────────────────────────────────────────────
 
@@ -1117,20 +1155,24 @@ module SparcConfig
 
   # ── Service Account Lifecycle ────────────────────────────────────────────
 
-  # #785 Pass 2.1 — service-account inactivity now uses the SAME window as human
-  # accounts (SPARC_INACTIVITY_DAYS), aligning account expiration regardless of
-  # owner. SPARC_SA_INACTIVITY_DAYS is retired; `sa_inactivity_days` remains as a
-  # deprecated alias so nothing breaks, and resolves to inactivity_days.
-  # NOTE behaviour change: the SA window was 90 days, now defaults to 30. Raise
-  # SPARC_INACTIVITY_DAYS to lengthen both.
-  def sa_inactivity_days = inactivity_days
 
   # ── AWS Secrets Manager ──────────────────────────────────────────────────
   # Two-secret strategy aligned with sparc-iac #22:
   #   Secret 1: admin-credentials (break-glass, MFA-gated)
   #   Secret 2: app-config (JSON blob, ECS task role reads at boot)
 
-  def aws_secrets_enabled?          = ENV.fetch("SPARC_AWS_SECRETS_ENABLED", "false") == "true"
+  # #1120 — inferred from the app-config secret's ARN: naming the secret to
+  # load is the statement of intent, and the flag on its own cannot work
+  # without it. An explicit SPARC_AWS_SECRETS_ENABLED=false still wins.
+  # NOTE: config/initializers/00_aws_secrets.rb runs before autoload and cannot
+  # call this accessor, so it repeats the same inference. Keep them in step.
+  def aws_secrets_enabled?
+    raw = ENV.fetch("SPARC_AWS_SECRETS_ENABLED", nil)
+    return raw == "true" if raw.present?
+
+    app_config_secret_arn.present?
+  end
+
   def aws_iam_db_auth_enabled?      = ENV.fetch("SPARC_AWS_IAM_DB_AUTH", "false") == "true"
   def app_config_secret_arn         = ENV.fetch("SPARC_APP_CONFIG_SECRET_ARN", nil)
   def admin_credentials_secret_arn  = ENV.fetch("SPARC_ADMIN_CREDENTIALS_SECRET_ARN", nil)
