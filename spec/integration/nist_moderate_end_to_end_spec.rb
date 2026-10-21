@@ -193,6 +193,9 @@ RSpec.describe "NIST Rev 5 MODERATE, end to end", type: :request do
       expect(objectives.count).to eq(catalog_objective_count)
       enhancements = sap.sap_controls.select { |c| c.control_id.include?(".") }
       expect(enhancements.size).to eq(110)
+      # An enhancement's objective carries the consumer's values too: the plan
+      # used to index only top-level controls of the resolved catalog.
+      expect(sap.sap_controls.find_by(control_id: "ac-2.3").objective).to include("TAILORED[ac-02.03_odp.01]")
 
       data = JSON.parse(OscalAssessmentPlanExportService.new(sap.reload).export_unvalidated)
       expect(OscalSchemaValidationService.validate(:assessment_plan, data, version: "1.2.3").errors).to be_empty
