@@ -125,8 +125,8 @@ Both are valid OSCAL 1.2.3. Import your catalog first, then the baseline.
 
 ### How a baseline that imports several catalogs is linked
 
-Each of a baseline's imports is matched to a loaded catalog on its own, by the
-first of these that fits:
+Each of a baseline's imports is matched to a loaded catalog on its own, whether
+the baseline is OSCAL JSON, YAML or XML, by the first of these that fits:
 
 1. the catalog's OSCAL UUID, in the import's `href` or its back-matter link;
 2. for NIST, the SP 800-53 revision named in the back-matter link;

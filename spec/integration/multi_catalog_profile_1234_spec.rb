@@ -149,3 +149,55 @@ RSpec.describe "A profile importing two catalogs (#1234)" do
     end
   end
 end
+
+# #1234 — owner, 2026-10-21: JSON, YAML and XML must all be honoured. The same
+# two-catalog profile in each format links each import to its own catalog.
+RSpec.describe "A two-catalog profile in every format (#1234)" do
+  let(:fixtures) { Rails.root.join("spec/fixtures/files") }
+  let(:samples) { Rails.root.join("docs/api/samples") }
+  let(:data) { JSON.parse(File.read(samples.join("custom-controls-profile.json"))) }
+
+  let!(:nist) do
+    name = "NIST_SP-800-53_rev5_catalog.json"
+    CatalogImportService.call(File.open(fixtures.join("catalogs", name)), name)[:catalog]
+  end
+  let!(:custom) do
+    CatalogImportService.call(File.open(samples.join("custom-controls-catalog.json")), "custom-controls-catalog.json")[:catalog]
+  end
+
+  def import_as(ext, content, parser)
+    path = Rails.root.join("tmp", "two-catalog-#{SecureRandom.hex(4)}.#{ext}")
+    File.write(path, content)
+    doc = create(:profile_document, status: "processing", file_type: ext, original_filename: File.basename(path),
+                                    control_catalog: nil)
+    parser.new(doc, path.to_s).parse
+    doc.reload
+  ensure
+    FileUtils.rm_f(path) if path
+  end
+
+  def expect_both_catalogs_linked(doc)
+    expect(doc.control_catalog).to eq(nist)
+    expect(doc.profile_controls.order(:row_order).pluck(:control_id, :source_catalog_id)).to eq(
+      [ [ "ac-1", nist.id ], [ "ac-2", nist.id ], [ "au-2", nist.id ], [ "dp-1", custom.id ], [ "dp-1.1", custom.id ] ]
+    )
+    expect(doc.profile_controls.pluck(:title)).to all(be_present)
+    dp1 = doc.profile_controls.find_by(control_id: "dp-1")
+    expect(dp1.profile_control_fields.find_by(field_name: "parameter:dp-01_odp")&.field_value).to eq("quarterly")
+  end
+
+  it "imports from YAML" do
+    expect_both_catalogs_linked(import_as("yaml", data.to_yaml, ProfileYamlParserService))
+  end
+
+  it "imports from XML, and records that the file was XML" do
+    xml = OscalJsonToXmlConverter.new(:profile, data).convert
+    expect(OscalSchemaValidationService.validate_xml(:profile, xml).errors).to be_empty
+
+    doc = import_as("xml", xml, ProfileXmlParserService)
+
+    expect_both_catalogs_linked(doc)
+    expect(doc.import_metadata["format"]).to eq("oscal_profile_xml")
+    expect(doc.import_metadata["imports"].size).to eq(2)
+  end
+end
