@@ -46,11 +46,12 @@ GET /api/v1/authorization_boundaries/acme-prod/readiness
         "title": "Personnel and roles",
         "status": "complete",
         "count": 7,
-        "detail": "7 on the roster: assessor, authorizing_official, ciso, isso, …",
+        "detail": "7 on the roster: Assessor, Authorizing Official, CISO, ISSO, …",
+        "roles": ["assessor", "authorizing_official", "ciso", "isso", "…"],
         "guide_anchor": "1-who-is-on-the-team-and-what-are-their-roles"
       }
     ],
-    "summary": { "complete": 4, "partial": 1, "absent": 5, "not_modelled": 0 }
+    "summary": { "complete": 4, "partial": 1, "absent": 4, "not_modelled": 0, "optional_none": 1 }
   }
 }
 ```
@@ -66,6 +67,17 @@ GET /api/v1/authorization_boundaries/acme-prod/readiness
 
 `not_modelled` exists so a report never implies "nothing to do" when the truth is
 "nobody can tell". No section returns it today.
+
+**Personnel (v1.17.2, #1250)** counts distinct people granted access either way,
+by admin role assignment or on the legacy roster, the same figure as the
+boundary list's Members column and `members_count`. It used to read the legacy
+roster only, so a boundary staffed by role assignment reported "No one is on the
+roster". `detail` names roles by display name; `roles` carries the raw keys.
+
+**Optional sections (v1.17.2, #1250).** A section where having nothing is
+legitimate (today: `leveraged`, since a system may inherit nothing) is still
+reported `absent`, but `summary` counts it under `optional_none` rather than
+`absent`, so `absent` counts only what is actually missing.
 
 ### Sections
 

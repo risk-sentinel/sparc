@@ -7,7 +7,9 @@
 <div class="card sparc-of-hidden">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Authorization Boundaries</h2>
-    <%= link_to "New Authorization Boundary", new_authorization_boundary_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
+    <% if can_create_boundary? %>
+      <%= link_to "New Authorization Boundary", new_authorization_boundary_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
+    <% end %>
   </div>
 
   <div data-controller="bulk-select">
@@ -36,10 +38,10 @@
               title: authorization_boundary.name,
               url: authorization_boundary_path(authorization_boundary),
               badges: [ { text: authorization_boundary.status.to_s.titleize,
-                          class: "sparc-status sparc-status--#{authorization_boundary.status == 'active' ? 'success' : 'neutral'}" } ],
+                          class: "sparc-status sparc-status--#{ab_status_variant(authorization_boundary.status)}" } ],
               description: authorization_boundary.description,
-              metrics: [ { value: authorization_boundary.authorization_boundary_memberships.count, label: "personnel" },
-                         { value: authorization_boundary.boundaries.count, label: "boundaries" } ],
+              metrics: [ { value: authorization_boundary.people_count, label: "personnel" },
+                         { value: authorization_boundary.boundaries.count, label: "environments" } ],
               footer: "Updated #{authorization_boundary.updated_at.strftime('%Y-%m-%d')}",
               select: (render("authorization_boundaries/bulk_checkbox", boundary: authorization_boundary) if can_bulk_delete?),
               actions: render("authorization_boundaries/item_actions", authorization_boundary: authorization_boundary) %>
@@ -65,7 +67,7 @@
           <th>Description</th>
           <th>Status</th>
           <th>Members</th>
-          <th>Boundaries</th>
+          <th>Environments</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -82,17 +84,12 @@
               <%= authorization_boundary.description.presence || "—" %>
             </td>
             <td>
-              <% badge_class = case authorization_boundary.status
-                               when "authorized" then "badge-ok"
-                               when "active" then "badge-ok"
-                               when "draft" then "badge-warn"
-                               else "badge-warn"
-                               end %>
-              <span class="<%= badge_class %> rounded fw-semibold sparc-p-02-06 sparc-fs-085">
+              <%# #1247 — one colour per status everywhere: ab_status_variant. %>
+              <span class="sparc-status sparc-status--<%= ab_status_variant(authorization_boundary.status) %>">
                 <%= authorization_boundary.status.titleize %>
               </span>
             </td>
-            <td><%= authorization_boundary.authorization_boundary_memberships.count %></td>
+            <td><%= authorization_boundary.people_count %></td>
             <td><%= authorization_boundary.boundaries.count %></td>
             <td>
               <%= render "authorization_boundaries/item_actions", authorization_boundary: authorization_boundary %>
@@ -102,7 +99,11 @@
       </tbody>
     </table>
   <% else %>
-    <p class="text-center p-4 text-body-secondary">No authorization boundaries yet. Create your first authorization boundary to organize RMF artifacts and personnel.</p>
+    <% if can_create_boundary? %>
+      <p class="text-center p-4 text-body-secondary">No authorization boundaries yet. Create your first authorization boundary to organize RMF artifacts and personnel.</p>
+    <% else %>
+      <p class="text-center p-4 text-body-secondary">You have no role on any authorization boundary yet. An administrator, or a boundary's ISSO or ISSM, can add you.</p>
+    <% end %>
   <% end %>
   </div>
 

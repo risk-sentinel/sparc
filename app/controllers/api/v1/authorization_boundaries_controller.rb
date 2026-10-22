@@ -183,7 +183,9 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
       # #770 bug 3 — count the full roster (canonical user_roles + legacy
       # memberships), matching what the boundary screen now shows. members_count
       # previously reflected only legacy memberships.
-      data[:members_count] = ab.personnel_roster.size
+      # #1247 — distinct PEOPLE (AuthorizationBoundary#people_count), the list
+      # page's Members figure. Roster rows counted a person with two roles twice.
+      data[:members_count] = ab.people_count
       # #770 bug 5 — boundary-scoped evidence artifacts (OSCAL back-matter source).
       data[:evidences_count] = ab.evidences.count
       data[:environments] = ab.boundaries.map { |b|

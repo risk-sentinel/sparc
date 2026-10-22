@@ -63,7 +63,7 @@ and the detail) carries these fields:
 | `created_at` / `updated_at` | string (ISO 8601) | Timestamps |
 
 The detail (`GET /api/v1/authorization_boundaries/:id`) additionally carries
-`artifact_summary`, `organization` (the organization's name), `members_count`,
+`artifact_summary`, `organization` (the organization's name), `members_count` (distinct people, by role assignment or legacy roster; v1.17.2),
 `evidences_count`, and `environments`.
 
 ---

@@ -30,7 +30,7 @@
                 `sidebar_controller.js` persists its state like every other
                 section, with no new JavaScript and no inline handler.
               %>
-              <% boundaries = org.authorization_boundaries.order(:name).to_a %>
+              <% boundaries = sidebar_boundaries(org).to_a %>
               <% shown, overflow = boundaries.first(ApplicationHelper::SIDEBAR_BOUNDARY_PAGE_SIZE), boundaries.drop(ApplicationHelper::SIDEBAR_BOUNDARY_PAGE_SIZE) %>
               <% shown.each do |ab| %>
                 <%= render "shared/sidebar_boundary", ab: ab %>
@@ -48,7 +48,7 @@
                   <%= overflow.size %> more <%= "boundary".pluralize(overflow.size) %>
                 </button>
               <% end %>
-              <% if org.authorization_boundaries.empty? %>
+              <% if boundaries.empty? %>
                 <div class="sparc-sidebar-indent-2 text-body-tertiary small py-1 ps-4">No boundaries</div>
               <% end %>
             </div>

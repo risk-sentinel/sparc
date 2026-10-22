@@ -124,7 +124,7 @@
         <% poam_count = @summary[:poam_count] %>
         <%= link_to (poam_count.to_i.zero? ?
                       attach_document_authorization_boundary_path(@authorization_boundary, type: "poam") :
-                      poam_documents_path),
+                      BoundaryScopedList.path(:poam, @authorization_boundary)), # #1250 — keeps the boundary
               class: "sparc-hero-tile-link d-block text-decoration-none" do %>
           <div class="sparc-hero-tile">
             <div class="sparc-hero-tile-label">POA&amp;Ms</div>

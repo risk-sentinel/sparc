@@ -23,8 +23,8 @@
 module AuthorizationBoundaryAccess
   extend ActiveSupport::Concern
 
-  READ_KEY  = "authorization_boundaries.read"
-  WRITE_KEY = "authorization_boundaries.write"
+  READ_KEY  = AuthorizationBoundary::READ_PERMISSION
+  WRITE_KEY = AuthorizationBoundary::WRITE_PERMISSION
 
   private
 

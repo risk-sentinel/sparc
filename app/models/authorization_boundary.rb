@@ -13,6 +13,32 @@ class AuthorizationBoundary < ApplicationRecord
   has_many :assigned_users, through: :user_roles, source: :user
   has_many :cdef_documents, through: :boundaries
 
+  # #1244/#1245/#1247 — the permission that lets someone see a boundary at all.
+  # AuthorizationBoundaryAccess guards show with it, and visible_to lists by it.
+  READ_PERMISSION  = "authorization_boundaries.read"
+  WRITE_PERMISSION = "authorization_boundaries.write"
+
+  # #1245/#1247 — the boundaries `user` may see, as ONE definition for every
+  # surface that lists boundaries: the sidebar, the Enterprise menu, the
+  # boundary list and its tiles, and the homepage counts. It answers exactly
+  # what the show page's guard answers, so a listed boundary always opens and an
+  # unlisted one never does:
+  #
+  #   * auth disabled, an administrator, or an instance-level read grant
+  #     (Global Viewer): every boundary;
+  #   * otherwise: the boundaries a role grants read on.
+  #
+  # Before this, the sidebar listed every boundary in the user's organizations
+  # and the boundary list listed the whole instance, disclosing other systems'
+  # names and statuses to people with no role on them.
+  def self.visible_to(user)
+    return all unless SparcConfig.any_auth_enabled?
+    return none if user.nil?
+    return all if user.has_permission?(READ_PERMISSION)
+
+    where(id: user.boundary_ids_granting(READ_PERMISSION))
+  end
+
   # #940 S3 — the information types that DETERMINE this boundary's FIPS-199
   # categorization. Inputs to the categorization, so they belong with it.
   has_many :information_types, class_name: "SspInformationType", dependent: :nullify
@@ -252,6 +278,26 @@ class AuthorizationBoundary < ApplicationRecord
   # (user_role) entries are managed in admin and render read-only here; legacy
   # entries keep their inline edit/remove.
   PersonnelEntry = Struct.new(:name, :email, :role_label, :source, :membership, keyword_init: true)
+
+  # #1247/#1250 — how many PEOPLE have access to these boundaries, counted
+  # once each, as ONE definition for the list's Members column and tile and the
+  # Completeness checklist. People are granted access two ways: admin role
+  # assignment (user_roles, which the permission checks read) and the legacy
+  # membership roster. Counting either table's ROWS is wrong both ways: a
+  # person with two roles has two rows, and someone recorded both ways is in
+  # both. A person is identified by their account's email, else the
+  # membership's email, else its name.
+  def self.person_keys(boundary_ids)
+    assigned = User.joins(:user_roles).where(user_roles: { authorization_boundary_id: boundary_ids })
+                   .distinct.pluck(:email)
+    legacy = AuthorizationBoundaryMembership.where(authorization_boundary_id: boundary_ids)
+                                            .left_joins(:user)
+                                            .pluck("users.email", :user_email, :user_name)
+                                            .map { |account, email, name| account.presence || email.presence || "name:#{name}" }
+    (assigned + legacy).map { |key| key.to_s.downcase.strip }.uniq
+  end
+
+  def people_count = self.class.person_keys([ id ]).size
 
   def personnel_roster
     canonical = user_roles.includes(:user, :role).map do |ur|

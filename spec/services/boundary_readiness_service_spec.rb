@@ -199,8 +199,11 @@ RSpec.describe BoundaryReadinessService do
     it "summarises by state" do
       summary = described_class.new(boundary).report[:summary]
 
-      expect(summary.keys).to match_array(described_class::STATES)
+      # #1250 — every section is counted exactly once: in its state, or, if it
+      # is an optional section that is absent, under optional_none instead.
+      expect(summary.keys).to match_array(described_class::STATES + [ :optional_none ])
       expect(summary.values.sum).to eq(described_class.new(boundary).sections.size)
+      expect(summary[:optional_none]).to eq(1) # no leveraged authorizations here
     end
 
     it "is read-only — it mutates nothing" do

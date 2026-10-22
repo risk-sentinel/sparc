@@ -33,4 +33,18 @@ module AuthorizationHelper
   def can_bulk_delete?
     !SparcConfig.any_auth_enabled? || current_user&.instance_administrator?
   end
+
+  # #1247 — the boundary list shows an action only to someone the server would
+  # let do it. These mirror AuthorizationBoundaryAccess and the destroy guard;
+  # hiding a button is not access control, the guards are (#1244).
+  def can_edit_boundary?(boundary)
+    !SparcConfig.any_auth_enabled? ||
+      current_user&.has_permission?(AuthorizationBoundary::WRITE_PERMISSION, authorization_boundary_id: boundary.id)
+  end
+
+  def can_create_boundary?
+    !SparcConfig.any_auth_enabled? || current_user&.has_permission?(AuthorizationBoundary::WRITE_PERMISSION)
+  end
+
+  def can_delete_boundary? = can_bulk_delete?
 end

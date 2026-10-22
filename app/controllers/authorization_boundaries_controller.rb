@@ -25,10 +25,13 @@ class AuthorizationBoundariesController < ApplicationController
   before_action :authorize_admin!,           only: %i[destroy bulk_destroy]
 
   def index
-    scope = AuthorizationBoundary.order(updated_at: :desc)
+    # #1247 — only the boundaries this user may see (visible_to, the sidebar's
+    # set), and the tiles count those. The list and tiles covered the whole
+    # instance, disclosing other systems to people with no role on them.
+    scope = AuthorizationBoundary.visible_to(current_user).order(updated_at: :desc)
     @total_count = scope.count
     @active_count = scope.where(status: "active").count
-    @member_count = AuthorizationBoundaryMembership.count
+    @member_count = AuthorizationBoundary.person_keys(scope.reorder(nil).select(:id)).size
 
     # #672 — filter listed rows; the tiles above keep showing totals.
     scope = scope.search_text(params[:q])

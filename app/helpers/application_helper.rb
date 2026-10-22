@@ -40,12 +40,16 @@ module ApplicationHelper
   # posture, not an omission — red would tell a truthful boundary it is broken.
   # It still shows AMBER, because "we inherit nothing" should be a decision
   # someone made rather than a field nobody filled in.
-  ABSENT_IS_NOT_A_FAILURE = %i[leveraged].freeze
+  #
+  # #1250 — it read "Not started" in amber while the header still counted it
+  # red. It now reads "None (optional)" in a neutral colour, and the summary
+  # leaves it out of the red count. The list is BoundaryReadinessService's.
+  ABSENT_IS_NOT_A_FAILURE = BoundaryReadinessService::OPTIONAL_SECTIONS
 
   def readiness_badge(status, section_key = nil)
     state = status.to_s.to_sym
     if state == :absent && ABSENT_IS_NOT_A_FAILURE.include?(section_key.to_s.to_sym)
-      return [ "badge-warn", "Not started" ]
+      return [ "badge-neutral", "None (optional)" ]
     end
 
     READINESS_BADGES.fetch(state, [ "badge-info", status.to_s.humanize ])
@@ -470,16 +474,13 @@ module ApplicationHelper
     "deauthorized"  => COLOR_RED
   }.freeze
 
-  # Returns the authorization boundaries to display in the navbar.
-  # Admins see all boundaries; regular users see only their assigned ones.
+  # The authorization boundaries the Enterprise menu lists: the ones this user
+  # may see (#1245, AuthorizationBoundary.visible_to), the same set as the
+  # sidebar and the boundary list.
   def nav_authorization_boundaries
     return [] unless defined?(current_user) && current_user
 
-    if current_user.instance_administrator?
-      AuthorizationBoundary.order(:name).limit(10)
-    else
-      current_user.authorization_boundaries.order(:name).limit(10)
-    end
+    AuthorizationBoundary.visible_to(current_user).order(:name).limit(10)
   end
 
   def ab_status_color(status)
@@ -546,16 +547,26 @@ module ApplicationHelper
     false
   end
 
-  # Sidebar: organizations with authorization boundaries for current user
+  # Sidebar: the organizations to list. An administrator sees every active
+  # one. Anyone else sees their own, plus any organization holding a boundary
+  # they may see (#1245): a Global Viewer reads every boundary, and those must
+  # have somewhere to appear.
   def sidebar_organizations
     return [] unless defined?(current_user) && current_user
+    return Organization.where(status: :active).order(:name) if current_user.instance_administrator?
 
-    orgs = if current_user.instance_administrator?
-      Organization.where(status: :active).includes(:authorization_boundaries).order(:name)
-    else
-      current_user.organizations.where(status: :active).includes(:authorization_boundaries).order(:name)
-    end
-    orgs || []
+    visible_org_ids = AuthorizationBoundary.visible_to(current_user).where.not(organization_id: nil)
+                                           .distinct.pluck(:organization_id)
+    Organization.where(status: :active)
+                .where(id: current_user.organization_ids + visible_org_ids)
+                .order(:name)
+  end
+
+  # #1245 — an organization's boundaries in the sidebar: only those this user
+  # may see. It listed every boundary in the organization, disclosing other
+  # systems' names and statuses to people with no role on them.
+  def sidebar_boundaries(organization)
+    AuthorizationBoundary.visible_to(current_user).where(organization: organization).order(:name)
   end
 
   # How many boundaries an organization shows before the rest fold away (#951).
