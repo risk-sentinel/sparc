@@ -5,6 +5,7 @@
 
     No inline handlers (CSP): Delete confirms through Turbo's data attribute,
     and the Close/Reopen note is a <details> disclosure holding a plain form. %>
+<div data-testid="poam-record-sections">
 <% sections.each do |section| %>
   <details class="card sparc-mb-075" data-testid="poam-section-<%= section.key %>" <%= "open" if section.rows.any? && section.key == "risks" %>>
     <summary class="sparc-statement-label sparc-cursor-pointer">
@@ -63,3 +64,4 @@
     <% end %>
   </details>
 <% end %>
+</div>

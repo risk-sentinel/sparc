@@ -95,6 +95,8 @@ button that opens a nested form.
   and anything already in place that reduces it. They work as on the SAR risk
   card; see [Assessment Results](User-Guide-Assessment-Results).
 
+  ![A POA&M risk's Threat IDs and Mitigating Factors section, with one threat ID given as two URIs and one mitigating factor](images/poam-risk-collections.png)
+
   ![The risk's decision fields: Blocks the ATO?, Condition expires and Reopen trigger](images/poam-risk-decision-fields.png)
 - **Remediation** (`.../poam_remediations/new`) — OSCAL `response`: lifecycle,
   title, description, remarks. **Milestones** are nested under a remediation
@@ -113,6 +115,10 @@ a section for each kind of record (**Risks**, **Remediations**, **Observations**
 **Findings**, **Components**), headed with its count. Every record has a row
 there with **Edit** and **Delete**, including a risk that no item links to yet.
 Risks inside an item card also have an **Edit** link.
+
+![The POA&M page's record sections: risks with Edit, Delete and Close, a closed risk with its badge, and remediations with Mark completed](images/poam-record-sections.png)
+
+*The record sections below the items. One risk is closed, and one remediation is completed.*
 
 ### Resolving, not deleting
 

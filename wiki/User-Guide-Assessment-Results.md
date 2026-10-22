@@ -152,9 +152,9 @@ way OSCAL does:
 | **Mitigating Factors** | Anything already in place that reduces the risk — a compensating control, a network restriction, a manual check. |
 | **Remediations** | What is recommended, planned or done about the risk: a title, a description and a lifecycle (**Recommendation**, **Planned** or **Completed**). OSCAL requires the title and the description, so a row with only one is refused on save. |
 
-![A risk card on the SAR Enrich screen, with title, status, description, statement, impact and likelihood, and the expanded Threat IDs and Mitigating Factors section below them](images/sar-enrich-risk-collections.png)
+![A risk card on the SAR Enrich screen, with title, status, description, statement, impact, likelihood and deadline, and the expanded Threat IDs, Mitigating Factors and Remediations section below them](images/sar-enrich-risk-collections.png)
 
-*A risk card on the Enrich screen, with its Threat IDs and Mitigating Factors expanded.*
+*A risk card on the Enrich screen, with its Threat IDs, Mitigating Factors and Remediations expanded.*
 
 **Threat IDs**, **Mitigating Factors** and **Remediations** live under a
 collapsed *Threat IDs, Mitigating Factors and Remediations* heading inside the
