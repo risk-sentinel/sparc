@@ -179,6 +179,34 @@ class TestRemediationsAndMilestones:
         shown = admin_client.get(f"{remediations}/{remediation['id']}").json()["data"]
         assert shown["milestone_count"] == 1
 
+    @pytest.mark.happy
+    def test_mark_completed_sets_the_lifecycle_once(
+        self, admin_client: httpx.Client, poam: dict[str, Any]
+    ) -> None:
+        """v1.17.2 — the web's Mark completed: OSCAL `lifecycle` becomes `completed`."""
+        risk = admin_client.post(
+            f"/api/v1/poam_documents/{poam['slug']}/risks",
+            json={"poam_risk": {"title": "Weak TLS", "description": "TLS 1.0 enabled",
+                                "statement": "Risk statement", "status": "open",
+                                "deadline": date.today().isoformat()}},
+        )
+        assert risk.status_code == 201, risk.text
+        remediations = f"/api/v1/poam_documents/{poam['slug']}/remediations"
+        created = admin_client.post(
+            remediations,
+            json={"poam_remediation": {"title": "Disable TLS 1.0", "description": "Config change",
+                                       "poam_risk_id": risk.json()["data"]["id"],
+                                       "lifecycle": "planned"}},
+        )
+        assert created.status_code == 201, created.text
+        path = f"{remediations}/{created.json()['data']['id']}/complete"
+
+        done = admin_client.post(path)
+        assert done.status_code == 200, done.text
+        assert done.json()["data"]["lifecycle"] == "completed"
+
+        assert_error_envelope(admin_client.post(path), expected_status=422)
+
     @pytest.mark.authz
     def test_a_risk_on_another_poam_cannot_be_attached(
         self, admin_client: httpx.Client, poam: dict[str, Any], seeded_boundary_id: int

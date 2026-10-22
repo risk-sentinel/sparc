@@ -7,7 +7,29 @@
 # therefore scoped through the document's risks, which also makes
 # cross-document access impossible by construction rather than by a check.
 class Api::V1::PoamRemediationsController < Api::V1::PoamSubresourcesController
+  # A callback of its OWN name. Re-declaring `before_action :authorize_poam_write!,
+  # only: :complete` here would REPLACE the base class's declaration (Rails
+  # de-duplicates callbacks by name), leaving create/update/destroy unguarded.
+  before_action :authorize_and_load_for_complete, only: :complete
+
+  # POST /api/v1/poam_documents/:poam_document_id/remediations/:id/complete
+  #
+  # v1.17.2 — the web's Mark completed: OSCAL `lifecycle` becomes `completed`.
+  # Already completed is a 422 and nothing changes.
+  def complete
+    PoamResolutionService.complete!(@record)
+    audit_log("poam_remediation_completed", subject: @record, metadata: audit_metadata(@record))
+    render json: { data: serialize(@record, detailed: true) }
+  rescue PoamResolutionService::Refused => e
+    render json: { error: e.message }, status: :unprocessable_content
+  end
+
   private
+
+  def authorize_and_load_for_complete
+    authorize_poam_write!
+    set_record
+  end
 
   def model = PoamRemediation
 

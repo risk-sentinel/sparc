@@ -23,9 +23,9 @@ class Api::V1::PoamRisksController < Api::V1::BaseController
   include RiskCollectionParams
 
   before_action :set_document, only: %i[index create]
-  before_action :set_risk,     only: %i[show update destroy]
+  before_action :set_risk,     only: %i[show update destroy close reopen]
   before_action :authorize_read!,  only: %i[index show]
-  before_action :authorize_write!, only: %i[create update destroy]
+  before_action :authorize_write!, only: %i[create update destroy close reopen]
 
   # GET /api/v1/poam_documents/:poam_document_id/risks
   def index
@@ -70,7 +70,26 @@ class Api::V1::PoamRisksController < Api::V1::BaseController
     render json: { data: { id: @risk.id, uuid: @risk.uuid, deleted: true } }
   end
 
+  # POST /api/v1/poam_risks/:id/close   { "note": "why it is resolved" }
+  # POST /api/v1/poam_risks/:id/reopen  { "note": "why it is open again" }
+  #
+  # v1.17.2 — the web's Close and Reopen. Status becomes `closed` (or `open`)
+  # and a risk-log entry records when and why. The note is required; a risk in
+  # the wrong state, or with no note, is a 422 and nothing changes.
+  def close  = change_status(:close!, "poam_risk_closed")
+  def reopen = change_status(:reopen!, "poam_risk_reopened")
+
   private
+
+  def change_status(transition, event)
+    note = params[:note].to_s
+    PoamResolutionService.public_send(transition, @risk, note: note)
+    audit_log(event, subject: @risk,
+              metadata: { poam_document_id: @risk.poam_document_id, uuid: @risk.uuid, note: note.strip })
+    render json: { data: serialize(@risk, detailed: true) }
+  rescue PoamResolutionService::Refused => e
+    render json: { error: e.message }, status: :unprocessable_content
+  end
 
   # #1010 — slug OR id. A POA&M document is slug-addressed everywhere else
   # (`GET /api/v1/poam_documents/:slug`), so a caller who lists documents and

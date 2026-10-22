@@ -19,7 +19,7 @@ class PoamRisksController < ApplicationController
   # of them require poam.write on the parent document's boundary. Runs AFTER
   # set_poam_document, which is what resolves that boundary.
   before_action :authorize_poam_write!
-  before_action :set_poam_risk, only: %i[edit update destroy]
+  before_action :set_poam_risk, only: %i[edit update destroy close reopen]
 
   def new
     @poam_risk = @poam_document.poam_risks.build
@@ -72,7 +72,30 @@ class PoamRisksController < ApplicationController
     redirect_to poam_document_path(@poam_document)
   end
 
+  # v1.17.2 — resolving a risk keeps it: Close sets OSCAL status `closed` and
+  # records why in its risk log; Reopen reverses it the same way. Delete stays
+  # for an entry that should never have existed. See PoamResolutionService.
+  def close
+    change_status(:close!, "poam_risk_closed", "closed")
+    redirect_to poam_document_path(@poam_document)
+  end
+
+  def reopen
+    change_status(:reopen!, "poam_risk_reopened", "reopened")
+    redirect_to poam_document_path(@poam_document)
+  end
+
   private
+
+  def change_status(transition, event, verb)
+    note = params[:note].to_s
+    PoamResolutionService.public_send(transition, @poam_risk, note: note)
+    audit_log(event, subject: @poam_risk,
+              metadata: { title: @poam_risk.title, poam_document_id: @poam_document.id, note: note.strip })
+    flash[:success] = "Risk \"#{@poam_risk.title}\" #{verb}"
+  rescue PoamResolutionService::Refused, ActiveRecord::RecordInvalid => e
+    flash[:error] = e.message
+  end
 
   def set_poam_document
     @poam_document = PoamDocument.find_by!(slug: params[:poam_document_id])

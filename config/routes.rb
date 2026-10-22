@@ -305,8 +305,17 @@ Rails.application.routes.draw do
     end
     resources :poam_items, only: [ :new, :create, :edit, :update, :destroy ]
     # POAM child entities (#423) — full admin UI for OSCAL extensibility
-    resources :poam_risks, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :poam_risks, only: [ :new, :create, :edit, :update, :destroy ] do
+      # v1.17.2 — resolving a risk is not deleting it (PoamResolutionService).
+      member do
+        patch :close, to: "poam_risks#close"
+        patch :reopen, to: "poam_risks#reopen"
+      end
+    end
     resources :poam_remediations, only: [ :new, :create, :edit, :update, :destroy ] do
+      member do
+        patch :complete, to: "poam_remediations#complete"
+      end
       resources :poam_milestones, only: [ :new, :create, :edit, :update, :destroy ]
     end
     resources :poam_observations, only: [ :new, :create, :edit, :update, :destroy ]
@@ -716,11 +725,21 @@ Rails.application.routes.draw do
                   controller: "poam_local_components"
         resources :remediations, only: [ :index, :show, :create, :update, :destroy ],
                   controller: "poam_remediations" do
+          # v1.17.2 — the web's Mark completed (PoamResolutionService).
+          member do
+            post :complete, to: "poam_remediations#complete"
+          end
           resources :milestones, only: [ :index, :show, :create, :update, :destroy ],
                     controller: "poam_milestones"
         end
       end
-      resources :poam_risks, only: [ :show, :update, :destroy ]
+      resources :poam_risks, only: [ :show, :update, :destroy ] do
+        # v1.17.2 — the web's Close and Reopen (PoamResolutionService).
+        member do
+          post :close, to: "poam_risks#close"
+          post :reopen, to: "poam_risks#reopen"
+        end
+      end
       resources :sar_risks, only: [ :show, :update, :destroy ]
       # #1100 — a statement is addressed by its own id once a client has listed
       # it, the same shape the risk sub-resources use.

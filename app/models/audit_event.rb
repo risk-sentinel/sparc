@@ -220,12 +220,15 @@ class AuditEvent < ApplicationRecord
     poam_risk_created
     poam_risk_updated
     poam_risk_deleted
+    poam_risk_closed
+    poam_risk_reopened
     sar_risk_created
     sar_risk_updated
     sar_risk_deleted
     poam_remediation_created
     poam_remediation_updated
     poam_remediation_deleted
+    poam_remediation_completed
     poam_milestone_created
     poam_milestone_updated
     poam_milestone_deleted
@@ -477,8 +480,10 @@ class AuditEvent < ApplicationRecord
                            poam_document_exported poam_document_imported poam_item_created
                            poam_item_updated poam_item_deleted
                            poam_risk_created poam_risk_updated poam_risk_deleted
+                           poam_risk_closed poam_risk_reopened
                            sar_risk_created sar_risk_updated sar_risk_deleted
                            poam_remediation_created poam_remediation_updated poam_remediation_deleted
+                           poam_remediation_completed
                            poam_milestone_created poam_milestone_updated poam_milestone_deleted
                            poam_observation_created poam_observation_updated poam_observation_deleted
                            poam_finding_created poam_finding_updated poam_finding_deleted

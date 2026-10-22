@@ -271,10 +271,13 @@ POST /api/v1/poam_documents/:poam_document_id/items
 POST /api/v1/poam_documents/:poam_document_id/local_components
 POST /api/v1/poam_documents/:poam_document_id/observations
 POST /api/v1/poam_documents/:poam_document_id/remediations
+POST /api/v1/poam_documents/:poam_document_id/remediations/:id/complete
 POST /api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones
 POST /api/v1/poam_documents/:poam_document_id/risks
 POST /api/v1/poam_documents/generate
 POST /api/v1/poam_documents/import
+POST /api/v1/poam_risks/:id/close
+POST /api/v1/poam_risks/:id/reopen
 POST /api/v1/profile_documents
 POST /api/v1/profile_documents/:id/approve
 POST /api/v1/profile_documents/:id/reject

@@ -108,8 +108,34 @@ button that opens a nested form.
   by the POA&M but not defined in a linked SSP (type, title, description,
   status).
 
-Each entity has **New** and **Edit** forms; edit from its row in the relevant
-section.
+Each entity has **New** and **Edit** forms. Below the items, the detail page has
+a section for each kind of record (**Risks**, **Remediations**, **Observations**,
+**Findings**, **Components**), headed with its count. Every record has a row
+there with **Edit** and **Delete**, including a risk that no item links to yet.
+Risks inside an item card also have an **Edit** link.
+
+### Resolving, not deleting
+
+**Delete** is for a record that should never have existed. A risk or remediation
+that was dealt with is **resolved**, and the POA&M keeps it. NIST SP 800-53 CA-5
+and PM-4 have the POA&M document the remedial action taken, and deleting the
+record erases that.
+
+- **Close this risk…** asks how it was resolved. The note is required. The risk's
+  status becomes **closed**, and an entry is added to its OSCAL *risk log* with
+  the note, the time and the status change. The exported POA&M carries it.
+  Closed risks stay listed, with a *closed* badge.
+- **Reopen this risk…** reverses it, again with a note, and adds its own risk-log
+  entry. The earlier entry is kept, so the log reads as the risk's history.
+- **Mark completed** on a remediation sets its OSCAL lifecycle to **completed**.
+- Observations, findings and components have no status in OSCAL, so they have
+  Edit and Delete only. Their resolution is recorded on the risk they relate to.
+- The other risk statuses (*Investigating*, *Remediating*, the deviations) are
+  set on the risk's **Edit** form.
+
+Deleting a risk also deletes its remediations and their milestones. The
+confirmation says so and points you at **Close** instead. Every close, reopen,
+completion and delete is in the audit log.
 
 ## How to filter and review
 

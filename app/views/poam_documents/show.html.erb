@@ -31,14 +31,8 @@
     "deviation-approved" => ApplicationHelper::COLOR_ORANGE, "closed" => ApplicationHelper::COLOR_GREEN
   }
   # WORM (#599 Round 3): semantic variant keys for .sparc-status--<variant>
-  level_variants = {
-    "very-low" => "info", "low" => "info", "moderate" => "warning",
-    "high" => "orange", "very-high" => "danger", "medium" => "warning"
-  }
-  status_variants = {
-    "open" => "danger", "investigating" => "orange", "remediating" => "warning",
-    "deviation-requested" => "orange", "deviation-approved" => "warning", "closed" => "success"
-  }
+  level_variants = PoamDocumentsHelper::LEVEL_VARIANTS
+  status_variants = PoamDocumentsHelper::STATUS_VARIANTS
 
   risk_status_options = [
     ["Open", "open"], ["Investigating", "investigating"], ["Remediating", "remediating"],
@@ -315,6 +309,8 @@
                   <% rscv = status_variants[risk.status] || "neutral" %>
                   <span class="sparc-tag-outline sparc-status--<%= rscv %>"><%= risk.status %></span>
                   <span class="fw-semibold sparc-fs-088 sparc-color-body"><%= risk.title %></span>
+                  <%= link_to "Edit", edit_poam_document_poam_risk_path(@poam_document, risk),
+                        class: "sparc-action sparc-action--primary sparc-action--outline sparc-p-03-07 sparc-fs-078" %>
                 </div>
                 <% if risk.description.present? %>
                   <div class="text-body-secondary sparc-fs-082 sparc-mb-03"><%= truncate(risk.description, length: 300) %></div>
@@ -448,6 +444,8 @@
     No items match the current filters. <%= link_to "Clear filters", poam_document_path(@poam_document) %>.
   </div>
 <% end %>
+
+<%= render "record_sections", sections: poam_record_sections(@poam_document) %>
 
 <% end %>
 
