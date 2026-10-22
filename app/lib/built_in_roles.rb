@@ -52,8 +52,17 @@ module BuiltInRoles
   # an instance-scoped attest grant to exactly that case: it does NOT let Policy
   # sign for an individual boundary's evidence, which remains the accountable
   # boundary roles' job. See Attestation.attestable_roles_for.
+  #
+  # #1257 — and `cdef.write`. Every CDEF write is checked at instance level
+  # (#738/#1032), and every other built-in role holding the key is
+  # boundary-scoped, so before this only an instance administrator could create
+  # or edit a component definition. An organization-wide CDEF is the kind of
+  # enterprise policy artifact this role maintains. Making a CDEF available
+  # INSTANCE-wide stays instance-administrator only (#980), and approving one
+  # stays with `cdef.approve` / this role, unchanged.
   PERM_POLICY_MANAGER = PERM_ALL_READ.merge(
     "catalogs.write" => true, "profiles.write" => true, "mappings.write" => true,
+    K_CDEF_WRITE => true,
     K_EVIDENCE_ATTEST => true
   ).freeze
 

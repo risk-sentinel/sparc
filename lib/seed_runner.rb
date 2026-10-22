@@ -24,7 +24,11 @@ module SeedRunner
     # is a re-import for the same reason 3.0.0 was.
     "nist_rev5_catalog"    => "3.1.0",
     "nist_rev4_catalog"    => "3.1.0",
-    "roles"                => "1.4.0",  # #1044 instance_admin role carrying admin.administer
+    # #1044 — 1.4.0: the instance_admin role carrying admin.administer.
+    # #1257 — 1.5.0: Policy Manager gains cdef.write. Since #1259 a bump applies
+    # shipped defaults only to values no administrator has set
+    # (BuiltInRoleSeeder), so it no longer discards local role amendments.
+    "roles"                => "1.5.0",
     "admin_user"           => "1.1.0",
     # #1115 — built from the vendored FedRAMP/rules snapshot by
     # FedrampKsiImportService instead of the hand-written seed; re-keys an

@@ -148,13 +148,32 @@ RSpec.describe "Seeded permission grants (#919)" do
     end
   end
 
+  # #1257 — Policy Manager authors organization-wide component definitions.
+  # Every CDEF write is checked at instance level and every other role holding
+  # the key is boundary-scoped, so without this grant only an instance
+  # administrator could create or edit a CDEF.
+  describe "Policy Manager and component definitions (#1257)" do
+    it "holds cdef.write" do
+      expect(perm_hash_keys("PERM_POLICY_MANAGER")).to include("cdef.write")
+      expect(BuiltInRoles.default_for("policy_manager", "cdef.write")).to be(true)
+    end
+
+    it "is still the only instance-scoped built-in role holding it" do
+      holders = BuiltInRoles.all.values.select { |d| d[:scope] == "instance" && d[:permissions]["cdef.write"] }
+
+      expect(holders.map { |d| d[:name] }).to eq(%w[policy_manager])
+    end
+  end
+
   # 1.3.0 -> 1.4.0 for #1044, which adds the `instance_admin` role carrying
   # `admin.administer`. Without the bump SeedRunner skips the section on every
   # existing database, so the role an IdP is supposed to grant would not exist
   # to grant — the grant would resolve to "role not found" and the feature would
   # appear broken on exactly the deployments that already run SPARC.
   it "requires a seed version that reflects the seeded grants" do
-    expect(SeedRunner::CURRENT_VERSIONS["roles"]).to eq("1.4.0"),
+    # 1.4.0 -> 1.5.0 for #1257 (Policy Manager gains cdef.write). Since #1259 a
+    # bump no longer overwrites what an administrator set on a built-in role.
+    expect(SeedRunner::CURRENT_VERSIONS["roles"]).to eq("1.5.0"),
       "The roles seed version must be bumped whenever these grants change, or " \
       "SeedRunner skips the section on every existing database. If you changed the " \
       "grants above, bump the version AND update this expectation."

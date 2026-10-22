@@ -242,7 +242,7 @@ role, never on what the vocabulary contains.
 Any role can be granted or denied the key from **Admin → Roles**, so an
 organization whose process differs can express it.
 
-> **Note on seeded assignments (updated #919).** The permission *keys* above are the full set the platform can enforce, and — with one deliberate exception — every one is now granted to at least one seeded role. Before #919, eleven keys were enforced by code but granted to **no** role; because Instance Admins bypass permission checks entirely, that silently made back-matter authoring, promotion, and catalog/profile/CDEF approval **admin-only out of the box**. Nobody decided that, it fell out of the seeds. The current posture: **boundary-scoped back-matter** (`back_matter.write`, `.promote`, `.archive`, `.bulk_import`, and `converters.write`) is granted to the fourteen boundary roles that already write documents — excluding **Assessor / 3PAO** (separation of duties: an assessor must not edit the provenance it assesses), **View Only**, and the three oversight roles that write no document at all. **Instance-tier back-matter** (`back_matter.approve_promotion`, `.federate`) plus `catalogs.approve` and `profiles.approve` go to **Policy Manager**: a boundary *requests* promotion and the instance *approves* it, so granting both legs to one role would defeat the review queue. `cdef.approve` goes to ISSM / ISSO / SO-ISO **and** Policy Manager. `authorization_boundaries.write` and `authorization_boundaries.manage_members` are delegated to **ISSM / ISSO / SO-ISO**, so roster management is no longer admin-only. The one exception is `admin.rotate_credentials`, which remains Instance-Admin-only by design. `converters.read` was **removed** — any authenticated user may read converters, so a key implying a restriction that does not exist is worse than no key. `catalogs.read`, `profiles.read` and `mappings.read` were removed for the same reason (v1.17.2): reading the control library is governed by sign-in, or open to everyone when `SPARC_PUBLIC_CATALOGS=true`, and through the API by any valid token. No role ever needed them to read.
+> **Note on seeded assignments (updated #919).** The permission *keys* above are the full set the platform can enforce, and — with one deliberate exception — every one is now granted to at least one seeded role. Before #919, eleven keys were enforced by code but granted to **no** role; because Instance Admins bypass permission checks entirely, that silently made back-matter authoring, promotion, and catalog/profile/CDEF approval **admin-only out of the box**. Nobody decided that, it fell out of the seeds. The current posture: **boundary-scoped back-matter** (`back_matter.write`, `.promote`, `.archive`, `.bulk_import`, and `converters.write`) is granted to the fourteen boundary roles that already write documents — excluding **Assessor / 3PAO** (separation of duties: an assessor must not edit the provenance it assesses), **View Only**, and the three oversight roles that write no document at all. **Instance-tier back-matter** (`back_matter.approve_promotion`, `.federate`) plus `catalogs.approve` and `profiles.approve` go to **Policy Manager**: a boundary *requests* promotion and the instance *approves* it, so granting both legs to one role would defeat the review queue. `cdef.approve` goes to ISSM / ISSO / SO-ISO **and** Policy Manager, and since v1.17.2 (#1257) Policy Manager also holds `cdef.write`. `authorization_boundaries.write` and `authorization_boundaries.manage_members` are delegated to **ISSM / ISSO / SO-ISO**, so roster management is no longer admin-only. The one exception is `admin.rotate_credentials`, which remains Instance-Admin-only by design. `converters.read` was **removed** — any authenticated user may read converters, so a key implying a restriction that does not exist is worse than no key. `catalogs.read`, `profiles.read` and `mappings.read` were removed for the same reason (v1.17.2): reading the control library is governed by sign-in, or open to everyone when `SPARC_PUBLIC_CATALOGS=true`, and through the API by any valid token. No role ever needed them to read.
 
 ---
 
@@ -335,6 +335,19 @@ above for what bounds it, and for the two things it deliberately cannot do.
 
 Full CRUD on catalogs and profiles. Controls enterprise baselines and organizational policy overlays.
 
+Since v1.17.2 (#1257) also creates, edits and publishes **component definitions**
+(`cdef.write`), and makes them available to its organization (organization-wide)
+or to a boundary. Every CDEF write is checked at instance level, and the other
+built-in roles holding `cdef.write` are boundary-scoped, so before this only an
+instance administrator could author a CDEF. Making a CDEF available
+**instance-wide** stays instance-administrator only (#980), and an
+organization-wide request from someone in no organization is refused rather than
+widened. Approving a CDEF is unchanged (`cdef.approve`, which this role already
+holds; nobody approves their own submission). An existing install receives the
+grant on upgrade unless an administrator had already set Policy Manager's
+`cdef.write` either way — see
+[Shipped Defaults and Administrator Overrides](#shipped-defaults-and-administrator-overrides).
+
 ### Global Viewer
 
 Read-only access to all shared catalogs, profiles, and organizational resources. Intended for auditors and oversight staff who need visibility without modification rights.
@@ -379,7 +392,7 @@ Columns cover the resources the default seeds touch. **Catalogs, Profiles, Mappi
 
 | Role | Catalogs | Profiles | Auth Boundaries | SSP | SAR | SAP | POA&M | CDEF | Evidence | Mappings | Conv | Back |
 |------|----------|----------|-----------------|-----|-----|-----|-------|------|----------|----------|------|------|
-| Policy Manager | W | W | R | R | R | R | R | R | R | W | - | R |
+| Policy Manager | W | W | R | R | R | R | R | W | R | W | - | R |
 | Global Viewer | - | - | R | R | R | R | R | R | R | - | - | R |
 | Senior Accountable Official | - | - | R | R | R | R | R | R | R | - | - | - |
 | SAOP | - | - | R | R | R | R | R | R | R | - | - | - |

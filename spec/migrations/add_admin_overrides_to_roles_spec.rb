@@ -122,6 +122,51 @@ RSpec.describe AddAdminOverridesToRoles do
     expect(AuditEvent.where(action: "role_override_recorded").map { |e| e.metadata["role_name"] }).to eq([ "view_only" ])
   end
 
+  # #1257 ships Policy Manager's cdef.write as a default change on top of the
+  # 1.4.0 snapshot. These run the real shipped defaults, no stubs: the upgrade,
+  # then the roles section.
+  describe "Policy Manager's cdef.write on an existing install (#1257)" do
+    def upgrade
+      migration.up
+      BuiltInRoleSeeder.call
+      Role.find_by!(name: "policy_manager")
+    end
+
+    it "reaches a Policy Manager role nobody edited, and is audited" do
+      seed_as_before("policy_manager")
+
+      expect(upgrade.has_permission?("cdef.write")).to be(true)
+      event = AuditEvent.where(action: "role_default_applied").sole
+      expect(event.metadata).to include("role_name" => "policy_manager", "key" => "cdef.write", "to" => true)
+    end
+
+    it "reaches a Policy Manager role an administrator edited elsewhere" do
+      pm = seed_as_before("policy_manager")
+      pm.update_columns(permissions: pm.permissions.merge("ssp.write" => true)) # granted, cdef.write untouched
+
+      role = upgrade
+
+      expect(role.has_permission?("cdef.write")).to be(true)
+      expect(role.has_permission?("ssp.write")).to be(true)
+    end
+
+    it "keeps an administrator's revoke, and reports the skipped grant" do
+      editor_save(seed_as_before("policy_manager")) # the editor wrote cdef.write => false
+
+      expect(upgrade.has_permission?("cdef.write")).to be(false)
+      skip_event = AuditEvent.where(action: "role_default_skipped").sole
+      expect(skip_event.metadata).to include("role_name" => "policy_manager", "key" => "cdef.write",
+                                             "value" => false, "shipped" => true)
+    end
+
+    it "keeps an administrator's earlier grant without reporting a skip" do
+      editor_save(seed_as_before("policy_manager"), "cdef.write" => true)
+
+      expect(upgrade.has_permission?("cdef.write")).to be(true)
+      expect(AuditEvent.where(action: "role_default_skipped")).to be_empty
+    end
+  end
+
   it "then lets the roles seed section keep every recorded choice" do
     isso = seed_as_before("isso")
     editor_save(isso, "ssp.write" => false)
