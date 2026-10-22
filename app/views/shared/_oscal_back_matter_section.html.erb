@@ -15,6 +15,14 @@
 <% imported_resources = document.respond_to?(:import_metadata) ? (document.import_metadata&.dig("back_matter") || []) : [] %>
 <% editable = local_assigns.fetch(:editable) { (document.respond_to?(:draft?) ? document.draft? : true) && signed_in? } %>
 
+<%# `bare: true` (#1251) renders the body only, for a page that wraps it in its
+    own collapsible section (shared/_collapsible_section); the card and its
+    +/- toggle are the default. %>
+<% bare = local_assigns.fetch(:bare, false) %>
+<% if bare %>
+<div data-controller="oscal-back-matter">
+  <div>
+<% else %>
 <div class="card mt-4" data-controller="oscal-back-matter">
   <div class="card-header d-flex justify-content-between align-items-center"
        style="cursor: pointer;"
@@ -24,6 +32,7 @@
   </div>
 
   <div id="oscal-back-matter-body" class="card-body d-none" data-oscal-back-matter-target="body">
+<% end %>
 
     <%# ── Managed Resources ──────────────────────────────────────── %>
     <div class="mb-4">

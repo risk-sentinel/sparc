@@ -75,6 +75,24 @@ module AuthorizationHelper
 
   def can_delete_boundary? = can_bulk_delete?
 
+  # #1251 — `key` on this boundary (or instance-wide), the check
+  # authorize_permission!(key, authorization_boundary_id:) makes. For a link or
+  # button whose target controller enforces exactly that.
+  def boundary_permission?(key, boundary)
+    !SparcConfig.any_auth_enabled? ||
+      current_user&.has_permission?(key, authorization_boundary_id: boundary.id) || false
+  end
+
+  # #1251 — LeveragedAuthorizationsController#authorize_leveraging_boundary!:
+  # membership of the leveraging boundary, not a permission key (#919 memo).
+  def can_manage_leveraged_authorizations?(boundary)
+    return true unless SparcConfig.any_auth_enabled?
+    return false unless current_user
+    return true if current_user.instance_administrator?
+
+    boundary.assigned_users.exists?(id: current_user.id)
+  end
+
   # #1249 — the boundary page's Back Matter section: shown to someone who may
   # read it, editable by someone who may write it, both on THIS boundary. The
   # same keys Api::V1::BoundaryBackMatterResourcesController and the web

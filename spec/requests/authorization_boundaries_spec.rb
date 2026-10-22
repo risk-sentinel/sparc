@@ -63,7 +63,11 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
       expect(response.body).to include("System Owner")
     end
 
+    # #1251 — the roster's Edit/Remove appear only to someone the memberships
+    # controller admits (authorization_boundaries.manage_members), so this
+    # example grants that key; it relied on the controls showing to anyone.
     it "still shows legacy memberships with their edit/remove controls" do
+      grant_permission(user, "authorization_boundaries.manage_members", authorization_boundary: ab)
       create(:authorization_boundary_membership, authorization_boundary: ab,
              user_name: "Legacy Member", user_email: "legacy@example.com")
 
@@ -77,10 +81,13 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
   end
 
   # #770 bug 5 — boundary-scoped artifacts (evidence) surfaced on the screen.
-  describe "GET /authorization_boundaries/:id (Artifacts card)" do
+  # #1251 renamed the section "Evidence" and offers Add Evidence only with
+  # evidence.write on the boundary, so this example grants it.
+  describe "GET /authorization_boundaries/:id (Evidence section)" do
     before { sign_in_as(user) }
 
     it "lists evidence tied to the boundary with a pre-scoped Add link" do
+      grant_permission(user, "evidence.write", authorization_boundary: ab)
       create(:evidence, authorization_boundary: ab, title: "Scan Result Q3")
       get authorization_boundary_path(ab)
 
@@ -89,9 +96,9 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
       expect(response.body).to include(new_evidence_path(authorization_boundary_id: ab.id))
     end
 
-    it "shows an empty state when the boundary has no artifacts" do
+    it "shows an empty state when the boundary has no evidence" do
       get authorization_boundary_path(ab)
-      expect(response.body).to include("No artifacts attached")
+      expect(response.body).to include("No evidence attached")
     end
   end
 

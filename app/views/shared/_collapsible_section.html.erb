@@ -1,0 +1,55 @@
+<%#
+  #1251 — one collapsible page section, so every section on a page collapses,
+  counts and remembers the same way. Render it as a layout and put the body in
+  the block: render layout: "shared/collapsible_section", locals: { id:,
+  title:, count: } do ... end.
+
+  It must sit inside an element carrying data-controller="collapse-memory",
+  which remembers each section's open/closed state (collapse_memory_controller.js).
+  Bootstrap's collapse does the toggling; no inline handlers.
+
+  Locals:
+    id           — the section's DOM id (an anchor; links may target it). The
+                   body is "<id>-body", which is also the storage key.
+    title        — heading text
+    count        — optional, shown as "(n)" after the title
+    summary      — optional safe HTML beside the title (e.g. a status summary)
+    open         — open when rendered, before any remembered choice (default false)
+    pinned_open  — always open, ignoring remembered choices (default false)
+    actions      — optional safe HTML at the right of the header (buttons that
+                   act on the section; they stay visible while it is collapsed)
+%>
+<% body_id = "#{id}-body" %>
+<% open = local_assigns.fetch(:open, false) || local_assigns.fetch(:pinned_open, false) %>
+<section id="<%= id %>" class="card mb-3 sparc-collapsible" data-section="<%= id %>">
+  <div class="sparc-collapsible__head">
+    <h2 class="sparc-collapsible__heading">
+      <button type="button"
+              class="sparc-collapsible__toggle <%= "collapsed" unless open %>"
+              data-bs-toggle="collapse"
+              data-bs-target="#<%= body_id %>"
+              aria-expanded="<%= open %>"
+              aria-controls="<%= body_id %>">
+        <span class="sparc-collapsible__chevron" aria-hidden="true"></span>
+        <span class="sparc-collapsible__title"><%= local_assigns[:title] %></span>
+        <% unless local_assigns[:count].nil? %>
+          <span class="sparc-collapsible__count" data-section-count>(<%= local_assigns[:count] %>)</span>
+        <% end %>
+      </button>
+    </h2>
+    <% if local_assigns[:summary].present? %>
+      <div class="sparc-collapsible__summary"><%= local_assigns[:summary] %></div>
+    <% end %>
+    <% if local_assigns[:actions].present? %>
+      <div class="sparc-collapsible__actions"><%= local_assigns[:actions] %></div>
+    <% end %>
+  </div>
+  <div id="<%= body_id %>"
+       class="collapse <%= "show" if open %>"
+       data-collapse-memory-target="section"
+       <% if local_assigns[:pinned_open] %>data-collapse-memory-pinned="open"<% end %>>
+    <div class="sparc-collapsible__body">
+      <%= yield %>
+    </div>
+  </div>
+</section>
