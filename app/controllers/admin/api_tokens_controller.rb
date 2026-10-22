@@ -9,7 +9,7 @@ class Admin::ApiTokensController < ApplicationController
 
   before_action :authorize_admin!
   before_action :set_user
-  before_action :set_token, only: %i[destroy renew reissue]
+  before_action :set_token, only: %i[edit update destroy renew reissue]
 
   def create
     token = ApiToken.generate!(
@@ -29,6 +29,34 @@ class Admin::ApiTokensController < ApplicationController
   rescue ActiveRecord::RecordInvalid, ArgumentError => e
     flash[:error] = "Token not created: #{e.respond_to?(:record) ? e.record.errors.full_messages.to_sentence : e.message}"
     redirect_back_to_owner
+  end
+
+  # #1233 — change an existing token's endpoint and CIDR limits in place. The
+  # token keeps its value, so no client has to swap credentials.
+  def edit
+    return unless @token.expired?
+
+    flash[:error] = "An expired token's limits cannot be changed. Renew or reissue it."
+    redirect_back_to_owner
+  end
+
+  def update
+    change = @token.update_limits!(
+      allowed_endpoints: picked_endpoints(token_attrs[:allowed_endpoints]) || [],
+      allowed_cidrs: token_list_param(token_attrs[:allowed_cidrs]) || []
+    )
+
+    audit_log("api_token_limits_changed", subject: @user,
+              metadata: { token_name: @token.name, token_id: @token.id }.merge(change))
+
+    flash[:success] = "Limits for '#{@token.name}' updated. They apply from the token's next request."
+    redirect_back_to_owner
+  rescue ActiveRecord::RecordInvalid, ArgumentError => e
+    @error = e.respond_to?(:record) ? e.record.errors.full_messages.to_sentence : e.message
+    @submitted_endpoints = token_list_param(token_attrs[:allowed_endpoints])
+    @submitted_cidrs = token_list_param(token_attrs[:allowed_cidrs])
+    flash.now[:error] = "Limits not changed: #{@error}"
+    render :edit, status: :unprocessable_content
   end
 
   # #1176 — a new token with the same limits; this one keeps working for the

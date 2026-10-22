@@ -275,3 +275,85 @@ class TestRenewAndReissue:
         assert after == before, "a refused renewal issued a token anyway"
         assert _works(base_url, old["token"]), "a refused reissue revoked the token anyway"
 
+
+
+GATE_REFUSAL = "Token is not authorized for this endpoint"
+
+
+def _passes_gate(base_url: str, token: str, path: str) -> bool:
+    """True when the token's endpoint limits let `path` through.
+
+    The token owner holds no role, so a request past the gate may still be
+    refused by role permissions; only the gate's own refusal counts here.
+    """
+    with httpx.Client(
+        base_url=base_url,
+        headers={"Authorization": f"Bearer {token}"},
+        verify=False,
+        timeout=30.0,
+    ) as client:
+        response = client.get(path)
+    if response.status_code != 403:
+        return True
+    return response.json().get("error") != GATE_REFUSAL
+
+
+class TestEditLimits:
+    """#1233 — a token's limits change in place: the same value keeps working,
+    and the new limits apply from its next request, in both directions."""
+
+    @pytest.mark.happy
+    def test_widening_and_narrowing_apply_to_the_same_token(
+        self, base_url: str, admin_client: httpx.Client, token_owner: dict[str, Any]
+    ) -> None:
+        token = _limited_token(admin_client, token_owner["id"])
+        path = f"{_path(token_owner['id'])}/{token['id']}"
+        assert not _passes_gate(base_url, token["token"], "/api/v1/control_catalogs")
+
+        widened = admin_client.patch(
+            path,
+            json={"api_token": {"allowed_endpoints": ["available:read", "control_catalogs:read"]}},
+        )
+        assert widened.status_code == 200, widened.text
+        data = widened.json()["data"]
+        assert data["allowed_endpoints"] == ["available:read", "control_catalogs:read"]
+        assert data["allowed_cidrs"] == ["0.0.0.0/0"], "an omitted field must keep its value"
+        assert "token" not in data, "editing limits must not return or change the token value"
+        assert _passes_gate(base_url, token["token"], "/api/v1/control_catalogs")
+        assert _works(base_url, token["token"]), "the same token must keep working"
+
+        narrowed = admin_client.patch(
+            path, json={"api_token": {"allowed_endpoints": ["available:read"]}}
+        )
+        assert narrowed.status_code == 200, narrowed.text
+        assert not _passes_gate(base_url, token["token"], "/api/v1/control_catalogs")
+
+    @pytest.mark.validation
+    def test_an_unknown_entry_is_refused_and_nothing_changes(
+        self, admin_client: httpx.Client, token_owner: dict[str, Any]
+    ) -> None:
+        token = _limited_token(admin_client, token_owner["id"])
+        path = f"{_path(token_owner['id'])}/{token['id']}"
+
+        response = admin_client.patch(
+            path, json={"api_token": {"allowed_endpoints": ["no_such_group:read"]}}
+        )
+        assert response.status_code == 422, response.text
+
+        listed = {t["id"]: t for t in admin_client.get(_path(token_owner["id"])).json()["data"]}
+        assert listed[token["id"]]["allowed_endpoints"] == ["available:read"]
+
+    @pytest.mark.authz
+    def test_a_non_admin_cannot_change_limits(
+        self, user_client: httpx.Client, admin_client: httpx.Client, token_owner: dict[str, Any]
+    ) -> None:
+        token = _limited_token(admin_client, token_owner["id"])
+
+        response = user_client.patch(
+            f"{_path(token_owner['id'])}/{token['id']}",
+            json={"api_token": {"allowed_endpoints": []}},
+        )
+        assert response.status_code == 403, response.text
+
+        listed = {t["id"]: t for t in admin_client.get(_path(token_owner["id"])).json()["data"]}
+        assert listed[token["id"]]["allowed_endpoints"] == ["available:read"]

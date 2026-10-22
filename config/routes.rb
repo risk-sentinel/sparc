@@ -508,7 +508,8 @@ Rails.application.routes.draw do
         patch  :reset_password        # temporary password, handed over out of band
         patch  :email_password_reset  # emailed one-time link (requires SMTP)
       end
-      resources :api_tokens, only: [ :create, :destroy ], controller: "api_tokens" do
+      # #1233 — edit/update change a token's endpoint and CIDR limits in place.
+      resources :api_tokens, only: [ :create, :destroy, :edit, :update ], controller: "api_tokens" do
         # #1176 — renew overlaps the old token for a grace window; reissue
         # revokes it at once. Both keep its endpoint and CIDR limits.
         member do
@@ -1005,7 +1006,8 @@ Rails.application.routes.draw do
         end
         # #1016 — issuing and revoking the credential the API authenticates
         # with was browser-only, so rotation required a human session.
-        resources :api_tokens, only: [ :index, :create, :destroy ] do
+        # #1233 — update changes a token's endpoint and CIDR limits in place.
+        resources :api_tokens, only: [ :index, :create, :update, :destroy ] do
           # #1176 — the same renew / reissue the admin user page offers.
           member do
             post :renew

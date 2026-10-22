@@ -205,6 +205,7 @@ PATCH /api/v1/ssp_documents/:id
 PATCH /api/v1/ssp_documents/:ssp_document_id/components/:id
 PATCH /api/v1/ssp_documents/:ssp_document_id/roles/:id
 PATCH /api/v1/users/:id
+PATCH /api/v1/users/:user_id/api_tokens/:id
 POST /api/v1/admin/refresh_credentials
 POST /api/v1/authoritative_sources
 POST /api/v1/authoritative_sources/:id/restore
@@ -352,3 +353,4 @@ PUT /api/v1/ssp_documents/:id/update_fields
 PUT /api/v1/ssp_documents/:ssp_document_id/components/:id
 PUT /api/v1/ssp_documents/:ssp_document_id/roles/:id
 PUT /api/v1/users/:id
+PUT /api/v1/users/:user_id/api_tokens/:id

@@ -6,6 +6,7 @@
 #   POST   /api/v1/users/:user_id/api_tokens
 #   POST   /api/v1/users/:user_id/api_tokens/:id/renew     (#1176)
 #   POST   /api/v1/users/:user_id/api_tokens/:id/reissue   (#1176)
+#   PATCH  /api/v1/users/:user_id/api_tokens/:id           (#1233, limits only)
 #   DELETE /api/v1/users/:user_id/api_tokens/:id
 #
 # Found by the missing-endpoint axis of #995: the credential the API itself
@@ -28,7 +29,7 @@ class Api::V1::ApiTokensController < Api::V1::BaseController
 
   before_action :authorize_admin!
   before_action :set_user
-  before_action :set_token, only: %i[destroy renew reissue]
+  before_action :set_token, only: %i[update destroy renew reissue]
 
   # GET /api/v1/users/:user_id/api_tokens
   def index
@@ -60,6 +61,32 @@ class Api::V1::ApiTokensController < Api::V1::BaseController
         warning: ApiToken::COPY_NOW_WARNING
       )
     }, status: :created
+  end
+
+  # PATCH /api/v1/users/:user_id/api_tokens/:id
+  #
+  # #1233 — change the token's `allowed_endpoints` and `allowed_cidrs` in place;
+  # the token keeps its value. Each field is optional: one left out keeps its
+  # current value, and an empty list means every endpoint / any address, as at
+  # creation. Entries are validated as at creation. Nothing else is writable.
+  def update
+    endpoints = token_list_param(limit_params[:allowed_endpoints])
+    cidrs = token_list_param(limit_params[:allowed_cidrs])
+    if endpoints.nil? && cidrs.nil?
+      return render json: { error: "Send allowed_endpoints, allowed_cidrs, or both" }, status: :unprocessable_content
+    end
+
+    change = @token.update_limits!(
+      allowed_endpoints: endpoints.nil? ? @token.allowed_endpoints : endpoints,
+      allowed_cidrs: cidrs.nil? ? @token.allowed_cidrs : cidrs
+    )
+
+    audit_log("api_token_limits_changed", subject: @user,
+              metadata: { token_name: @token.name, token_id: @token.id }.merge(change))
+
+    render json: { data: serialize(@token.reload) }
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: "Limits not changed", details: e.record.errors.full_messages }, status: :unprocessable_content
   end
 
   # POST /api/v1/users/:user_id/api_tokens/:id/renew
@@ -131,6 +158,8 @@ class Api::V1::ApiTokensController < Api::V1::BaseController
   TOKEN_FIELDS = [ :name, :expires_in_days, :allowed_endpoints, :allowed_cidrs,
                    { allowed_endpoints: [], allowed_cidrs: [] } ].freeze
 
+  LIMIT_FIELDS = [ :allowed_endpoints, :allowed_cidrs, { allowed_endpoints: [], allowed_cidrs: [] } ].freeze
+
   def token_params
     @token_params ||=
       if params[:api_token].present?
@@ -138,6 +167,11 @@ class Api::V1::ApiTokensController < Api::V1::BaseController
       else
         ActionController::Parameters.new.permit(*TOKEN_FIELDS)
       end
+  end
+
+  # #1233 — `update` accepts the two limit fields and nothing else.
+  def limit_params
+    @limit_params ||= permit_strictly(:api_token, *LIMIT_FIELDS)
   end
 
   def token_name

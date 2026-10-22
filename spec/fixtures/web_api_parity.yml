@@ -760,6 +760,10 @@ controllers:
       destroy: ["DELETE /api/v1/users/:user_id/api_tokens/:id"]
       renew: ["POST /api/v1/users/:user_id/api_tokens/:id/renew"]
       reissue: ["POST /api/v1/users/:user_id/api_tokens/:id/reissue"]
+      update: ["PATCH /api/v1/users/:user_id/api_tokens/:id"]  # #1233 — limits in place
+    ui_only:
+      - reason: "HTML form page; the API takes the same fields as a JSON body"
+        actions: [edit]
 
   admin/audit_logs:
     gap:

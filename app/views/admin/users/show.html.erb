@@ -208,6 +208,10 @@
                 <td class="small"><%= token.last_used_at&.strftime("%Y-%m-%d %H:%M UTC") || "Never" %></td>
                 <td class="text-nowrap">
                   <% unless token.expired? %>
+                    <%# #1233 — change this token's limits without reissuing it. %>
+                    <%= link_to "Edit limits", edit_admin_user_api_token_path(@user, token),
+                          class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm",
+                          data: { testid: "edit-token-limits" } %>
                     <%= button_to "Renew", renew_admin_user_api_token_path(@user, token),
                           method: :post, form_class: "d-inline",
                           class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
