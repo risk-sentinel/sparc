@@ -250,61 +250,62 @@ export default class PublishModalController extends Controller {
     return `<div class="text-body-secondary" style="margin-bottom: 0.35rem;">${icon} ${label} ${ok ? "(set)" : "(will be auto-generated)"}</div>`
   }
 
-  async confirmPublish() {
+  // Submits a real form so the BROWSER follows the server's redirect and shows
+  // its flash. This used fetch() and then navigated: fetch followed the
+  // redirect itself, the page it fetched consumed the flash, and the second
+  // navigation rendered without it, so a refused publish ("needs approval",
+  // "missing metadata") left the document in Draft with no reason shown.
+  confirmPublish() {
     this.publishBtnTarget.disabled = true
     this.publishBtnTarget.textContent = "Publishing..."
 
-    try {
-      const formData = new FormData()
-      formData.append("_method", "PATCH")
-      formData.append("authenticity_token", this.csrfTokenValue)
+    const form = document.createElement("form")
+    form.method = "post"
+    form.action = this.publishUrlValue
+    form.dataset.turbo = "false"
+    form.hidden = true
 
-      // Gather inline fixes if the fix fields are visible
-      if (isVisible(this.fixFieldsTarget)) {  // #1047 — computed, not the attribute
-        const creatorName = this.hasCreatorNameTarget ? this.creatorNameTarget.value.trim() : ""
-        const contactName = this.hasContactNameTarget ? this.contactNameTarget.value.trim() : ""
-        const contactEmail = this.hasContactEmailTarget ? this.contactEmailTarget.value.trim() : ""
-        const contactType = this.hasContactTypeTarget ? this.contactTypeTarget.value : "organization"
-
-        if (creatorName) {
-          formData.append("metadata_fixes[roles]", JSON.stringify([
-            { "id": "prepared-by", "title": creatorName }
-          ]))
-        }
-
-        if (contactName) {
-          const partyUuid = crypto.randomUUID()
-          const party = {
-            "uuid": partyUuid,
-            "type": contactType,
-            "name": contactName
-          }
-          if (contactEmail) party["email-addresses"] = [contactEmail]
-
-          formData.append("metadata_fixes[parties]", JSON.stringify([party]))
-          formData.append("metadata_fixes[responsible_parties]", JSON.stringify([
-            { "role-id": "prepared-by", "party-uuids": [partyUuid] }
-          ]))
-        }
-      }
-
-      const response = await fetch(this.publishUrlValue, {
-        method: "POST",
-        body: formData
-      })
-
-      // Follow redirect (Turbo will handle this, but fallback for non-Turbo)
-      if (response.redirected) {
-        window.location.href = response.url
-      } else {
-        window.location.reload()
-      }
-    } catch (error) {
-      console.error("Publication failed:", error)
-      this.publishBtnTarget.disabled = false
-      this.publishBtnTarget.textContent = "Retry Publish"
-      alert("Publication failed. Please try again.")
+    const field = (name, value) => {
+      const input = document.createElement("input")
+      input.type = "hidden"
+      input.name = name
+      input.value = value
+      form.appendChild(input)
     }
+    field("_method", "PATCH")
+    field("authenticity_token", this.csrfTokenValue)
+
+    // Gather inline fixes if the fix fields are visible
+    if (isVisible(this.fixFieldsTarget)) {  // #1047 — computed, not the attribute
+      const creatorName = this.hasCreatorNameTarget ? this.creatorNameTarget.value.trim() : ""
+      const contactName = this.hasContactNameTarget ? this.contactNameTarget.value.trim() : ""
+      const contactEmail = this.hasContactEmailTarget ? this.contactEmailTarget.value.trim() : ""
+      const contactType = this.hasContactTypeTarget ? this.contactTypeTarget.value : "organization"
+
+      if (creatorName) {
+        field("metadata_fixes[roles]", JSON.stringify([
+          { "id": "prepared-by", "title": creatorName }
+        ]))
+      }
+
+      if (contactName) {
+        const partyUuid = crypto.randomUUID()
+        const party = {
+          "uuid": partyUuid,
+          "type": contactType,
+          "name": contactName
+        }
+        if (contactEmail) party["email-addresses"] = [contactEmail]
+
+        field("metadata_fixes[parties]", JSON.stringify([party]))
+        field("metadata_fixes[responsible_parties]", JSON.stringify([
+          { "role-id": "prepared-by", "party-uuids": [partyUuid] }
+        ]))
+      }
+    }
+
+    document.body.appendChild(form)
+    form.submit()
   }
 
   scrollToMetadata() {
