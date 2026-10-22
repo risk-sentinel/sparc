@@ -83,10 +83,22 @@ class CdefScopeService
       cdef
     end
 
+    # #1257 — "global" with no organization to own it used to store
+    # `globally_available: true, organization_id: NULL`, which IS the instance
+    # tier: a requester with `cdef.write` and no organization membership asked
+    # for organization-wide and made the CDEF instance-wide, past the #980
+    # refusal of "instance". Organization-wide now needs an organization.
     def apply_global(cdef, organization_id:)
+      owner = organization_id || cdef.organization_id
+      if owner.nil?
+        raise ArgumentError,
+              "Organization-wide needs an organization to own the component definition, " \
+              "and none was found. Join an organization, or choose a boundary."
+      end
+
       ActiveRecord::Base.transaction do
         unlink_previous_boundary(cdef)
-        cdef.update!(globally_available: true, organization_id: organization_id || cdef.organization_id)
+        cdef.update!(globally_available: true, organization_id: owner)
         write_metadata_boundary(cdef, nil)
       end
       cdef

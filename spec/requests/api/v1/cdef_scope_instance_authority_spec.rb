@@ -27,9 +27,23 @@ RSpec.describe "Api::V1 CDEF scope: instance-wide is instance authority", type: 
   end
 
   it "still lets a non-admin writer choose a non-instance scope" do
+    create(:organization_membership, user: writer)
+
     patch "/api/v1/cdef_documents/#{cdef.slug}/scope", params: { scope: "global" }, headers: headers_for(writer)
 
     expect(response).to have_http_status(:ok)
+    expect(cdef.reload.scope_tier).to eq(:organization)
+  end
+
+  # #1257 — "global" with no organization to own it was stored with a NULL
+  # organization, which is the instance tier: this writer reached instance-wide
+  # through the scope it IS allowed, past the refusal above.
+  it "refuses organization-wide to a writer with no organization, instead of widening it" do
+    patch "/api/v1/cdef_documents/#{cdef.slug}/scope", params: { scope: "global" }, headers: headers_for(writer)
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(cdef.reload.globally_available).not_to be(true)
+    expect(cdef.scope_tier).not_to eq(:instance)
   end
 
   it "allows an instance administrator" do

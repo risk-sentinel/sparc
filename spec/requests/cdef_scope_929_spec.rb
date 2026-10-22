@@ -30,6 +30,10 @@ RSpec.describe "CDEF scope re-assignment (#929)", type: :request do
     end
 
     it "makes a CDEF globally available" do
+      # #1257 — organization-wide is owned by the requester's organization; a
+      # request with none used to land as the instance tier. Membership given
+      # here, and the tier asserted, so this cannot pass by widening.
+      create(:organization_membership, user: writer)
       sign_in_as(writer)
       CdefScopeService.apply(cdef, scope: "boundary", authorization_boundary_id: target.id)
 
@@ -37,6 +41,7 @@ RSpec.describe "CDEF scope re-assignment (#929)", type: :request do
             params: { cdef_document: { scope: "global" } }
 
       expect(cdef.reload.globally_available).to be(true)
+      expect(cdef.scope_tier).to eq(:organization)
       expect(BoundaryCdefDocument.where(cdef_document_id: cdef.id)).to be_empty
     end
 
