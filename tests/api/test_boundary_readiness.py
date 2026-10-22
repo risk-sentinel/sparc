@@ -67,7 +67,10 @@ def test_summary_counts_every_section(admin_client: httpx.Client) -> None:
 
     data = admin_client.get(f"{BOUNDARIES}/{boundary_id}/readiness").json()["data"]
 
-    assert set(data["summary"]) == VALID_STATUSES
+    # #1250 — `optional_none` counts absent sections where absence is legitimate
+    # (leveraged authorizations), kept out of `absent`. Every section is still
+    # counted exactly once.
+    assert set(data["summary"]) == VALID_STATUSES | {"optional_none"}
     assert sum(data["summary"].values()) == len(data["sections"])
 
 
