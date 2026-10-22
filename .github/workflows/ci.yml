@@ -176,7 +176,10 @@ jobs:
     runs-on: ubuntu-latest
     # 30 -> 45 (v1.17.2): the suite outgrew 30 minutes at ~7,800 examples and
     # main timed out on every run from 2026-10-17.
-    timeout-minutes: 45
+    # 45 -> 60 (v1.17.2): at ~8,200 examples main ran 37-40 minutes and a PR
+    # was cancelled at 45 while still passing. The suite runs as one process
+    # on a 4-CPU runner; running it in parallel is the lasting fix.
+    timeout-minutes: 60
     needs: [ changes ]
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
 
