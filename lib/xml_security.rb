@@ -38,11 +38,18 @@
 # validator can run against partially-parsed input and report all errors
 # instead of bailing at the first syntax problem. All other callers use
 # the default strict: true.
+#
+# == When to use keep_blanks: true
+#
+# Only for a reader of MIXED content, where a blank text node is a word
+# boundary: `<em>A</em> <a href="…">B</a>` loses the space under `noblanks`.
+# OscalCatalogXmlToJson passes it (#1228). It changes no security flag.
 module XmlSecurity
   extend self
-  def parse(content, strict: true)
+  def parse(content, strict: true, keep_blanks: false)
     Nokogiri::XML(content) do |config|
-      config.noblanks.nonet
+      config.nonet
+      config.noblanks unless keep_blanks
       config.strict if strict
     end
   end
