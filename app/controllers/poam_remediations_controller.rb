@@ -14,7 +14,7 @@ class PoamRemediationsController < ApplicationController
   # of them require poam.write on the parent document's boundary. Runs AFTER
   # set_poam_document, which is what resolves that boundary.
   before_action :authorize_poam_write!
-  before_action :set_poam_remediation, only: %i[edit update destroy]
+  before_action :set_poam_remediation, only: %i[edit update destroy complete]
 
   def new
     @poam_remediation = PoamRemediation.new(poam_risk_id: params[:poam_risk_id])
@@ -58,6 +58,20 @@ class PoamRemediationsController < ApplicationController
     audit_log("poam_remediation_deleted", subject: @poam_remediation, metadata: { title: title })
     @poam_remediation.destroy
     flash[:success] = "Remediation \"#{title}\" removed"
+    redirect_to poam_document_path(@poam_document)
+  end
+
+  # v1.17.2 — a remediation that was carried out is marked completed (OSCAL
+  # `lifecycle`), not deleted. See PoamResolutionService.
+  def complete
+    begin
+      PoamResolutionService.complete!(@poam_remediation)
+      audit_log("poam_remediation_completed", subject: @poam_remediation,
+                metadata: { title: @poam_remediation.title, poam_document_id: @poam_document.id })
+      flash[:success] = "Remediation \"#{@poam_remediation.title}\" marked completed"
+    rescue PoamResolutionService::Refused, ActiveRecord::RecordInvalid => e
+      flash[:error] = e.message
+    end
     redirect_to poam_document_path(@poam_document)
   end
 

@@ -205,6 +205,7 @@ PATCH /api/v1/ssp_documents/:id
 PATCH /api/v1/ssp_documents/:ssp_document_id/components/:id
 PATCH /api/v1/ssp_documents/:ssp_document_id/roles/:id
 PATCH /api/v1/users/:id
+PATCH /api/v1/users/:user_id/api_tokens/:id
 POST /api/v1/admin/refresh_credentials
 POST /api/v1/authoritative_sources
 POST /api/v1/authoritative_sources/:id/restore
@@ -270,10 +271,13 @@ POST /api/v1/poam_documents/:poam_document_id/items
 POST /api/v1/poam_documents/:poam_document_id/local_components
 POST /api/v1/poam_documents/:poam_document_id/observations
 POST /api/v1/poam_documents/:poam_document_id/remediations
+POST /api/v1/poam_documents/:poam_document_id/remediations/:id/complete
 POST /api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones
 POST /api/v1/poam_documents/:poam_document_id/risks
 POST /api/v1/poam_documents/generate
 POST /api/v1/poam_documents/import
+POST /api/v1/poam_risks/:id/close
+POST /api/v1/poam_risks/:id/reopen
 POST /api/v1/profile_documents
 POST /api/v1/profile_documents/:id/approve
 POST /api/v1/profile_documents/:id/reject
@@ -352,3 +356,4 @@ PUT /api/v1/ssp_documents/:id/update_fields
 PUT /api/v1/ssp_documents/:ssp_document_id/components/:id
 PUT /api/v1/ssp_documents/:ssp_document_id/roles/:id
 PUT /api/v1/users/:id
+PUT /api/v1/users/:user_id/api_tokens/:id

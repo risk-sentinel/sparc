@@ -147,18 +147,22 @@ way OSCAL does:
 | **Statement** | What could happen, and to what. OSCAL requires it on every risk. |
 | **Status** | `Open`, `Investigating`, `Remediating`, `Deviation Requested`, `Deviation Approved`, `Closed` — the six values the OSCAL `risk-status` vocabulary defines, and the only six. |
 | **Impact** / **Likelihood** | The rating, on the five-level scale NIST SP 800-30 and FedRAMP use: **Very Low, Low, Moderate, High, Very High**. Both are exported as OSCAL risk *characterization facets*, so a rating chosen here reaches the artifact. |
-| **Threat IDs** | The threat this risk realises, as a published catalogue names it — the catalogue's address plus the identifier inside it, e.g. `https://attack.mitre.org` + `T1078`, or `https://cve.mitre.org` + `CVE-2026-80212`. |
+| **Deadline** | When the risk must be resolved. Optional on an assessment result; clearing the date clears it. |
+| **Threat IDs** | The threat this risk realises, as a published catalogue names it: the catalogue's address and the threat's own address, **both as full URIs**, which OSCAL requires. For example `https://attack.mitre.org` + `https://attack.mitre.org/techniques/T1078`, or `https://www.cve.org` + `https://www.cve.org/CVERecord?id=CVE-2026-80212`. A bare code such as `T1078` is refused on save, with a message naming it. |
 | **Mitigating Factors** | Anything already in place that reduces the risk — a compensating control, a network restriction, a manual check. |
+| **Remediations** | What is recommended, planned or done about the risk: a title, a description and a lifecycle (**Recommendation**, **Planned** or **Completed**). OSCAL requires the title and the description, so a row with only one is refused on save. |
 
-![A risk card on the SAR Enrich screen, with title, status, description, statement, impact and likelihood, and the expanded Threat IDs and Mitigating Factors section below them](images/sar-enrich-risk-collections.png)
+![A risk card on the SAR Enrich screen, with title, status, description, statement, impact, likelihood and deadline, and the expanded Threat IDs, Mitigating Factors and Remediations section below them](images/sar-enrich-risk-collections.png)
 
-*A risk card on the Enrich screen, with its Threat IDs and Mitigating Factors expanded.*
+*A risk card on the Enrich screen, with its Threat IDs, Mitigating Factors and Remediations expanded.*
 
-**Threat IDs** and **Mitigating Factors** live under a collapsed *Threat IDs and
-Mitigating Factors* heading inside the risk card you are already editing. Each is
-a repeatable row: **+ Add** appends one, **×** removes one, and removing the last
-row and saving clears the collection. You do not manage OSCAL identifiers by
-hand — SPARC assigns and preserves them.
+**Threat IDs**, **Mitigating Factors** and **Remediations** live under a
+collapsed *Threat IDs, Mitigating Factors and Remediations* heading inside the
+risk card you are already editing. Each is a repeatable row: **+ Add** appends
+one, **×** removes one, and removing the last row and saving clears the
+collection. You do not manage OSCAL identifiers by hand — SPARC assigns and
+preserves them. Content the form does not show, such as the props or links on an
+imported mitigating factor or remediation, is kept when you save.
 
 Two further OSCAL collections a risk can carry — **origins** (attribution for a
 rating) and the append-only **risk log** — are authorable through

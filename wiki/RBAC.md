@@ -164,14 +164,12 @@ A custom role configured through `SPARC_AUTH_BOUNDARY_ROLES` that matches no can
 
 ## Permission Keys
 
-SPARC defines **35 permission keys** across 14 resource areas (`Role::PERMISSION_KEYS` in `app/models/role.rb`). Each key is a `resource.action` string and controls a specific operation on a resource type. Permissions are stored as a JSONB `"resource.action" => boolean` hash on each `Role`.
+SPARC defines **33 permission keys** across 14 resource areas (`Role::PERMISSION_KEYS` in `app/models/role.rb`). Each key is a `resource.action` string and controls a specific operation on a resource type. Permissions are stored as a JSONB `"resource.action" => boolean` hash on each `Role`.
 
 | Key | Description |
 |-----|-------------|
-| `catalogs.read` | View control catalogs |
 | `catalogs.write` | Create / edit control catalogs |
 | `catalogs.approve` | Approve / publish a control catalog |
-| `profiles.read` | View baselines / profiles |
 | `profiles.write` | Create / edit baselines / profiles |
 | `profiles.approve` | Approve / publish a baseline / profile |
 | `authorization_boundaries.read` | View authorization boundaries |
@@ -191,7 +189,6 @@ SPARC defines **35 permission keys** across 14 resource areas (`Role::PERMISSION
 | `evidence.read` | View evidence artifacts |
 | `evidence.write` | Upload / edit / link evidence artifacts |
 | `evidence.attest` | Sign an attestation — assert, as an accountable role, that evidence is accurate |
-| `mappings.read` | View control mappings |
 | `mappings.write` | Create / edit control mappings |
 | `converters.write` | Configure / manage converter definitions |
 | `back_matter.read` | View back-matter resources |
@@ -245,7 +242,7 @@ role, never on what the vocabulary contains.
 Any role can be granted or denied the key from **Admin → Roles**, so an
 organization whose process differs can express it.
 
-> **Note on seeded assignments (updated #919).** The permission *keys* above are the full set the platform can enforce, and — with one deliberate exception — every one is now granted to at least one seeded role. Before #919, eleven keys were enforced by code but granted to **no** role; because Instance Admins bypass permission checks entirely, that silently made back-matter authoring, promotion, and catalog/profile/CDEF approval **admin-only out of the box**. Nobody decided that, it fell out of the seeds. The current posture: **boundary-scoped back-matter** (`back_matter.write`, `.promote`, `.archive`, `.bulk_import`, and `converters.write`) is granted to the fourteen boundary roles that already write documents — excluding **Assessor / 3PAO** (separation of duties: an assessor must not edit the provenance it assesses), **View Only**, and the three oversight roles that write no document at all. **Instance-tier back-matter** (`back_matter.approve_promotion`, `.federate`) plus `catalogs.approve` and `profiles.approve` go to **Policy Manager**: a boundary *requests* promotion and the instance *approves* it, so granting both legs to one role would defeat the review queue. `cdef.approve` goes to ISSM / ISSO / SO-ISO **and** Policy Manager. `authorization_boundaries.write` and `authorization_boundaries.manage_members` are delegated to **ISSM / ISSO / SO-ISO**, so roster management is no longer admin-only. The one exception is `admin.rotate_credentials`, which remains Instance-Admin-only by design. `converters.read` was **removed** — any authenticated user may read converters, so a key implying a restriction that does not exist is worse than no key.
+> **Note on seeded assignments (updated #919).** The permission *keys* above are the full set the platform can enforce, and — with one deliberate exception — every one is now granted to at least one seeded role. Before #919, eleven keys were enforced by code but granted to **no** role; because Instance Admins bypass permission checks entirely, that silently made back-matter authoring, promotion, and catalog/profile/CDEF approval **admin-only out of the box**. Nobody decided that, it fell out of the seeds. The current posture: **boundary-scoped back-matter** (`back_matter.write`, `.promote`, `.archive`, `.bulk_import`, and `converters.write`) is granted to the fourteen boundary roles that already write documents — excluding **Assessor / 3PAO** (separation of duties: an assessor must not edit the provenance it assesses), **View Only**, and the three oversight roles that write no document at all. **Instance-tier back-matter** (`back_matter.approve_promotion`, `.federate`) plus `catalogs.approve` and `profiles.approve` go to **Policy Manager**: a boundary *requests* promotion and the instance *approves* it, so granting both legs to one role would defeat the review queue. `cdef.approve` goes to ISSM / ISSO / SO-ISO **and** Policy Manager. `authorization_boundaries.write` and `authorization_boundaries.manage_members` are delegated to **ISSM / ISSO / SO-ISO**, so roster management is no longer admin-only. The one exception is `admin.rotate_credentials`, which remains Instance-Admin-only by design. `converters.read` was **removed** — any authenticated user may read converters, so a key implying a restriction that does not exist is worse than no key. `catalogs.read`, `profiles.read` and `mappings.read` were removed for the same reason (v1.17.2): reading the control library is governed by sign-in, or open to everyone when `SPARC_PUBLIC_CATALOGS=true`, and through the API by any valid token. No role ever needed them to read.
 
 ---
 
@@ -328,20 +325,20 @@ Provisional Authority to Operate (P-ATO) reviews. Read access to all resources f
 
 ### Instance-Scoped Permission Matrix
 
-Columns cover the resources the default seeds touch. The approval / back-matter-write / promotion / `converters.write` / `admin.rotate_credentials` keys are not granted by any seed and are omitted. `Conv` = Converters, `Back` = Back-Matter Resources.
+Columns cover the resources the default seeds touch. **Catalogs, Profiles, Mappings and Converters show only W**: every signed-in user reads them (and everyone does when `SPARC_PUBLIC_CATALOGS=true`), so no role grants their read. The approval / back-matter-write / promotion / `converters.write` / `admin.rotate_credentials` keys are not granted by any seed and are omitted. `Conv` = Converters, `Back` = Back-Matter Resources.
 
 | Role | Catalogs | Profiles | Auth Boundaries | SSP | SAR | SAP | POA&M | CDEF | Evidence | Mappings | Conv | Back |
 |------|----------|----------|-----------------|-----|-----|-----|-------|------|----------|----------|------|------|
-| Policy Manager | R/W | R/W | R | R | R | R | R | R | R | R/W | R | R |
-| Global Viewer | R | R | R | R | R | R | R | R | R | R | R | R |
-| Senior Accountable Official | R | R | R | R | R | R | R | R | R | R | - | - |
-| SAOP | R | R | R | R | R | R | R | R | R | R | - | - |
-| Head of Agency / CEO | R | R | R | R | R | R | R | R | R | R | R | R |
-| Risk Executive | R | R | R | R | R | R | R | R | R | R | R | R |
-| CIO | R | R | R | R | R | R | R | R | R | R | R | R |
-| Chief Acquisition Officer | R | R | R | - | - | - | - | R | R | R | - | - |
-| FedRAMP PMO | R | R | R | R | R | R | R | R | R | R | R | R |
-| JAB | R | R | R | R | R | R | R | R | R | R | R | R |
+| Policy Manager | W | W | R | R | R | R | R | R | R | W | - | R |
+| Global Viewer | - | - | R | R | R | R | R | R | R | - | - | R |
+| Senior Accountable Official | - | - | R | R | R | R | R | R | R | - | - | - |
+| SAOP | - | - | R | R | R | R | R | R | R | - | - | - |
+| Head of Agency / CEO | - | - | R | R | R | R | R | R | R | - | - | R |
+| Risk Executive | - | - | R | R | R | R | R | R | R | - | - | R |
+| CIO | - | - | R | R | R | R | R | R | R | - | - | R |
+| Chief Acquisition Officer | - | - | R | - | - | - | - | R | R | - | - | - |
+| FedRAMP PMO | - | - | R | R | R | R | R | R | R | - | - | R |
+| JAB | - | - | R | R | R | R | R | R | R | - | - | R |
 
 ---
 
@@ -433,14 +430,14 @@ No authorization-boundary-scoped role is granted `converters.*` or `back_matter.
 
 | Role | Catalogs | Profiles | Auth Boundaries | SSP | SAR | SAP | POA&M | CDEF | Evidence | Mappings | Amd |
 |------|----------|----------|-----------------|-----|-----|-----|-------|------|----------|----------|-----|
-| Authorizing Official (AO) | - | - | R | R | R | R | R/W | R | R | R | ✓ |
-| Agency Authorizing Official | - | - | R | R | R | R | R/W | R | R | R | ✓ |
-| System Owner (SO/ISO) | - | - | R | R/W | R | R | R/W | R/W | R/W | R | - |
-| CISO | R | R | R | R | R | R | R | R | R | R | - |
-| ISSM | - | - | R | R/W | R | R | R/W | R | R/W | R | ✓ |
-| ISSO | - | - | R | R/W | R/W | R/W | R/W | R | R/W | R | - |
-| CSP | - | - | R | R/W | R | R | R/W | R/W | R/W | R | - |
-| Assessor / 3PAO | - | - | R | R | R/W | R/W | R | R | R | R | - |
+| Authorizing Official (AO) | - | - | R | R | R | R | R/W | R | R | - | ✓ |
+| Agency Authorizing Official | - | - | R | R | R | R | R/W | R | R | - | ✓ |
+| System Owner (SO/ISO) | - | - | R | R/W | R | R | R/W | R/W | R/W | - | - |
+| CISO | - | - | R | R | R | R | R | R | R | - | - |
+| ISSM | - | - | R | R/W | R | R | R/W | R | R/W | - | ✓ |
+| ISSO | - | - | R | R/W | R/W | R/W | R/W | R | R/W | - | - |
+| CSP | - | - | R | R/W | R | R | R/W | R/W | R/W | - | - |
+| Assessor / 3PAO | - | - | R | R | R/W | R/W | R | R | R | - | - |
 | Common Control Provider | - | - | R | R/W | - | - | - | R/W | R/W | - | - |
 | System Architect / Engineer | - | - | R | R/W | - | - | - | R/W | R | - | - |
 | Component Supplier / Product Engineer | - | - | R | - | - | - | - | R/W | R/W | - | - |
@@ -448,9 +445,9 @@ No authorization-boundary-scoped role is granted `converters.*` or `back_matter.
 | Information Owner / Steward | - | - | R | R | - | - | - | R | R | - | - |
 | Vendor Dependency Manager | - | - | R | R | - | - | - | R/W | R/W | - | - |
 | Solution Evaluator | - | - | R | R | R | - | - | R | R | - | - |
-| Team Member | - | R | R | R/W | - | - | R/W | R/W | R/W | - | - |
-| SPARC SME | R | R | R | R/W | R/W | R/W | R/W | R/W | R/W | R | - |
-| Evidence Integration Engineer | R | R | R | R | R/W | R | R | R | R/W | R | - |
+| Team Member | - | - | R | R/W | - | - | R/W | R/W | R/W | - | - |
+| SPARC SME | - | - | R | R/W | R/W | R/W | R/W | R/W | R/W | - | - |
+| Evidence Integration Engineer | - | - | R | R | R/W | R | R | R | R/W | - | - |
 | View Only | - | - | R | R | R | - | R | R | R | - | - |
 
 ---

@@ -199,7 +199,7 @@ Create a new component definition document.
 | `cdef_version` | string | No | Version of the component definition |
 | `benchmark_id` | string | No | XCCDF benchmark identifier |
 | `oscal_version` | string | No | OSCAL schema version. No column default; an unset value falls back to `OscalSchema::DEFAULT_VERSION` on export |
-| `lifecycle_status` | string | No | Status: `draft`, `published`, `archived` (default: `draft`) |
+| `lifecycle_status` | string | No | `started`, `in_progress` (default) or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
 | `file_type` | string | No | Source format: `oscal_json`, `oscal_yaml`, `oscal_xml`, `xccdf` |
 
 **Example Request**

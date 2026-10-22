@@ -90,3 +90,64 @@ class TestDiscovery:
     def test_unrecognized_token_returns_401(self, bad_token_client: httpx.Client) -> None:
         response = bad_token_client.get(PATH)
         assert_error_envelope(response, expected_status=401)
+
+
+class TestCompleteInventory:
+    """#1233 — discovery lists every route the caller may call, built from the
+    route inventory, instead of 45 of the 202 paths a hand-kept registry held."""
+
+    @pytest.mark.happy
+    def test_admin_inventory_covers_the_whole_api(self, admin_client: httpx.Client) -> None:
+        endpoints = admin_client.get(PATH).json()["endpoints"]
+        groups = {e.get("group") for e in endpoints}
+
+        assert len(endpoints) > 150, f"only {len(endpoints)} paths listed"
+        for group in ("roles", "back_matter_resources", "evidences", "service_accounts",
+                      "organizations", "guides", "poam_risks", "scanner_findings"):
+            assert group in groups, f"discovery omits the {group} group"
+
+    @pytest.mark.authz
+    def test_every_listed_get_answers_the_caller(
+        self, user_client: httpx.Client
+    ) -> None:
+        """What discovery lists must actually be callable: a 403 on a listed GET
+        means discovery advertised something the controller refuses."""
+        endpoints = user_client.get(PATH).json()["endpoints"]
+        gets = [e["path"] for e in endpoints if "GET" in e["methods"] and ":" not in e["path"]]
+        assert gets, "a non-admin was listed no parameterless GET at all"
+
+        refused = [p for p in gets if user_client.get(p).status_code == 403]
+        assert not refused, f"listed but refused for this caller: {refused}"
+
+    @pytest.mark.authz
+    def test_a_limited_token_sees_only_its_resources(
+        self, base_url: str, admin_client: httpx.Client
+    ) -> None:
+        me = admin_client.get("/api/v1/users", params={"items": 100}).json()["data"]
+        owner = next((u for u in me if not u.get("service_account")), None)
+        if owner is None:
+            pytest.skip("no person on this instance to hang a token off")
+        created = admin_client.post(
+            f"/api/v1/users/{owner['id']}/api_tokens",
+            json={"api_token": {"name": "phase2-discovery-1233", "expires_in_days": 1,
+                                "allowed_endpoints": ["available:read", "ssp_documents:read"]}},
+        )
+        assert created.status_code == 201, created.text
+        token = created.json()["data"]
+        try:
+            with httpx.Client(base_url=base_url, verify=False, timeout=30.0,
+                              headers={"Authorization": f"Bearer {token['token']}"}) as limited:
+                listed = limited.get(PATH)
+            assert listed.status_code == 200, listed.text
+            groups = {e.get("group") for e in listed.json()["endpoints"]}
+            assert groups <= {"available", "ssp_documents"}, (
+                f"a token limited to SSP Read was shown {sorted(groups)}"
+            )
+            for entry in listed.json()["endpoints"]:
+                writes = set(entry["methods"]) & {"PUT", "PATCH", "DELETE"}
+                assert not writes, f"a Read limit advertised {entry}"
+                # A POST under Read is a compute-only request (a preview).
+                if "POST" in entry["methods"]:
+                    assert "preview" in entry["path"], f"a Read limit advertised {entry}"
+        finally:
+            admin_client.delete(f"/api/v1/users/{owner['id']}/api_tokens/{token['id']}")

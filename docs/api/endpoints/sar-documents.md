@@ -157,7 +157,7 @@ None.
 | `sar_document[sap_document_id]` | integer | no | Related Security Assessment Plan |
 | `sar_document[profile_document_id]` | integer | no | Associated profile/baseline |
 | `sar_document[ssp_document_id]` | integer | no | Related System Security Plan |
-| `sar_document[lifecycle_status]` | string | no | Lifecycle status (e.g., `active`, `draft`) |
+| `sar_document[lifecycle_status]` | string | no | `started`, `in_progress` or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
 
 #### Response Body
 

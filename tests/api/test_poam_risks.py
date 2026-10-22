@@ -254,3 +254,49 @@ class TestAuth:
         assert resp.status_code in (403, 404), (
             f"a non-admin created a POA&M risk: {resp.status_code} {resp.text}"
         )
+
+
+class TestCloseAndReopen:
+    """v1.17.2 — resolving a risk keeps it.
+
+    Close sets OSCAL status `closed` and appends a risk-log entry carrying the
+    required note; Reopen reverses it the same way. Delete stays for a risk that
+    should never have existed.
+    """
+
+    @pytest.mark.happy
+    def test_close_then_reopen_records_both_in_the_risk_log(
+        self, admin_client: httpx.Client, risk: dict[str, Any]
+    ) -> None:
+        closed = admin_client.post(f"{_RISKS}/{risk['id']}/close", json={"note": "Patched in 4.2"})
+        assert closed.status_code == 200, closed.text
+        data = closed.json()["data"]
+        assert data["status"] == "closed"
+        entry = data["risk_log"]["entries"][-1]
+        assert entry["status-change"] == "closed"
+        assert entry["description"] == "Patched in 4.2"
+
+        reopened = admin_client.post(f"{_RISKS}/{risk['id']}/reopen", json={"note": "Regressed"})
+        assert reopened.status_code == 200, reopened.text
+        changes = [e["status-change"] for e in reopened.json()["data"]["risk_log"]["entries"]]
+        assert changes[-2:] == ["closed", "open"]
+
+    @pytest.mark.negative
+    def test_a_blank_note_is_refused_and_nothing_changes(
+        self, admin_client: httpx.Client, risk: dict[str, Any]
+    ) -> None:
+        response = admin_client.post(f"{_RISKS}/{risk['id']}/close", json={"note": " "})
+        assert_error_envelope(response, expected_status=422)
+        assert admin_client.get(f"{_RISKS}/{risk['id']}").json()["data"]["status"] == "open"
+
+    @pytest.mark.negative
+    def test_reopening_a_risk_that_is_not_closed_is_refused(
+        self, admin_client: httpx.Client, risk: dict[str, Any]
+    ) -> None:
+        response = admin_client.post(f"{_RISKS}/{risk['id']}/reopen", json={"note": "why"})
+        assert_error_envelope(response, expected_status=422)
+
+    @pytest.mark.authz
+    def test_no_token_returns_401(self, anon_client: httpx.Client, risk: dict[str, Any]) -> None:
+        response = anon_client.post(f"{_RISKS}/{risk['id']}/close", json={"note": "x"})
+        assert_error_envelope(response, expected_status=401)

@@ -220,12 +220,15 @@ class AuditEvent < ApplicationRecord
     poam_risk_created
     poam_risk_updated
     poam_risk_deleted
+    poam_risk_closed
+    poam_risk_reopened
     sar_risk_created
     sar_risk_updated
     sar_risk_deleted
     poam_remediation_created
     poam_remediation_updated
     poam_remediation_deleted
+    poam_remediation_completed
     poam_milestone_created
     poam_milestone_updated
     poam_milestone_deleted
@@ -300,6 +303,8 @@ class AuditEvent < ApplicationRecord
     api_token_revoked
     api_token_renewed
     api_token_reissued
+    api_token_limits_changed
+    api_publication_refused
     ato_package_created
     ato_package_exported
 
@@ -397,7 +402,7 @@ class AuditEvent < ApplicationRecord
                            password_reset_redeemed
                             webauthn_key_registered webauthn_key_revoked
                             api_session_bridged api_session_bridge_failed],
-    "Authorization" => %w[authorization_failure],
+    "Authorization" => %w[authorization_failure api_publication_refused],
     "User Management" => %w[user_created user_suspended user_reactivated user_deactivated
                             user_auto_deactivated user_deactivate_refused user_suspend_refused
                             user_password_expired admin_bootstrap
@@ -475,8 +480,10 @@ class AuditEvent < ApplicationRecord
                            poam_document_exported poam_document_imported poam_item_created
                            poam_item_updated poam_item_deleted
                            poam_risk_created poam_risk_updated poam_risk_deleted
+                           poam_risk_closed poam_risk_reopened
                            sar_risk_created sar_risk_updated sar_risk_deleted
                            poam_remediation_created poam_remediation_updated poam_remediation_deleted
+                           poam_remediation_completed
                            poam_milestone_created poam_milestone_updated poam_milestone_deleted
                            poam_observation_created poam_observation_updated poam_observation_deleted
                            poam_finding_created poam_finding_updated poam_finding_deleted
@@ -529,7 +536,7 @@ class AuditEvent < ApplicationRecord
     "Translations" => %w[translation_hdf_to_oscal_sar translation_hdf_to_oscal_poam
                          translation_hdf_amendments_to_oscal_poam
                          translation_oscal_poam_to_hdf_amendments],
-    "API Tokens" => %w[api_token_created api_token_revoked api_token_renewed api_token_reissued],
+    "API Tokens" => %w[api_token_created api_token_revoked api_token_renewed api_token_reissued api_token_limits_changed],
     "Back Matter" => %w[back_matter_resource_created back_matter_resource_updated
                         back_matter_resource_deleted back_matter_resource_linked
                         back_matter_resource_unlinked back_matter_resource_archived

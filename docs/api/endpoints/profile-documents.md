@@ -175,7 +175,7 @@ None.
 | `profile_document[profile_version]` | string | no | Profile version string |
 | `profile_document[oscal_version]` | string | no | OSCAL schema version |
 | `profile_document[control_catalog_id]` | integer | no | Associated control catalog ID |
-| `profile_document[lifecycle_status]` | string | no | Lifecycle status (e.g., `active`, `draft`) |
+| `profile_document[lifecycle_status]` | string | no | `started`, `in_progress` or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
 | `profile_document[file_type]` | string | no | File type (e.g., `catalog`, `profile`) |
 
 #### Response Body

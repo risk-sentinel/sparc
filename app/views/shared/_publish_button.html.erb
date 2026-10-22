@@ -49,6 +49,17 @@
           </div>
         </div>
 
+        <%# #1235 — the import's quality warnings. Advisory: publishing is still
+            allowed; Revalidate on the document refreshes them. Filled by JS. %>
+        <div data-publish-modal-target="advisory" data-testid="publish-advisory-warnings"
+             class="sparc-d-none sparc-mb-1r">
+          <h6 class="fw-semibold sparc-fs-09 sparc-mb-05">Quality Warnings (advisory)</h6>
+          <ul data-publish-modal-target="advisoryList" class="sparc-fs-088 sparc-mb-05"></ul>
+          <p class="text-body-secondary sparc-fs-082 mb-0">
+            You can publish with these. Correct them first if they matter, then Revalidate.
+          </p>
+        </div>
+
         <%# Inline fix fields (shown when metadata is incomplete) %>
         <div data-publish-modal-target="fixFields" class="sparc-d-none sparc-modal-fixfields">
           <h6 class="fw-semibold sparc-fs-09 sparc-mb-075">Complete Required Metadata</h6>

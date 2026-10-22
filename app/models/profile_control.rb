@@ -3,6 +3,9 @@ class ProfileControl < ApplicationRecord
   canonicalises_control_id :control_id
 
   belongs_to :profile_document
+  # #1234 — the catalog this control's import resolved to (nil: the profile's
+  # primary catalog applies, or the import matched no loaded catalog).
+  belongs_to :source_catalog, class_name: "ControlCatalog", optional: true
   has_many :profile_control_fields, dependent: :delete_all
   has_many :control_back_matter_links, as: :linkable, dependent: :destroy
   has_many :back_matter_resources, through: :control_back_matter_links

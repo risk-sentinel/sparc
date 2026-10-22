@@ -67,6 +67,7 @@ All six support the same five actions.
 | `GET` | `/api/v1/poam_documents/:poam_document_id/remediations/:id` | Show, including the OSCAL arrays |
 | `PATCH`/`PUT` | `/api/v1/poam_documents/:poam_document_id/remediations/:id` | Update |
 | `DELETE` | `/api/v1/poam_documents/:poam_document_id/remediations/:id` | Delete |
+| `POST` | `/api/v1/poam_documents/:poam_document_id/remediations/:id/complete` | Mark completed: OSCAL `lifecycle` becomes `completed` (v1.17.2). No body. Audited as `poam_remediation_completed`; already completed is a 422. |
 | `GET` | `/api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones` | List a remediation's milestones |
 | `POST` | `/api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones` | Create a milestone |
 | `GET` | `/api/v1/poam_documents/:poam_document_id/remediations/:remediation_id/milestones/:id` | Show one |

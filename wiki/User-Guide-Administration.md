@@ -160,8 +160,14 @@ UUID-based audit traceability.
 
 Each token on the account page shows its status (**Active**, **Expires soon**
 within 14 days, **Never expires**, **Expired**), its endpoint and CIDR limits,
-and two buttons:
+and these actions:
 
+- **Edit limits** changes the token's allowed endpoints and CIDRs **in place**.
+  The token keeps its value, so nothing using it has to change, and the new
+  limits apply from its next request. Only an instance administrator can edit
+  limits, and every change is audited (`api_token_limits_changed`, with the
+  limits before and after). The API equivalent is
+  `PATCH /api/v1/users/:user_id/api_tokens/:id`.
 - **Renew** issues a new token with the same limits and lifetime. The old one
   keeps working for `SPARC_API_TOKEN_RENEWAL_GRACE_DAYS` (default 7) so the
   automation using it can switch over. Use it before a token expires.

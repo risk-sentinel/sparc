@@ -870,7 +870,10 @@ class SarDocumentsController < ApplicationController
       }
 
       if f_params[:id].present?
-        record = SarFinding.find_by(id: f_params[:id])
+        # Scoped to THIS document. A bare `SarFinding.find_by(id:)` let anyone who
+        # may edit one SAR overwrite a finding in another, by id. (AC-3)
+        record = SarFinding.joins(:sar_result).where(sar_results: { sar_document_id: @sar_document.id })
+                           .find_by(id: f_params[:id])
         record&.update!(
           title: f_params[:title],
           description: f_params[:description],
@@ -887,6 +890,12 @@ class SarDocumentsController < ApplicationController
     end
   end
 
+  SAR_RISK_FORM_COLLECTIONS = %i[threat_ids_data mitigating_factors_data remediations_data].freeze
+
+  def document_risks
+    SarRisk.joins(:sar_result).where(sar_results: { sar_document_id: @sar_document.id })
+  end
+
   def sync_risks
     incoming = params.dig(:sar_document, :risks) || []
     return if incoming.empty?
@@ -901,21 +910,27 @@ class SarDocumentsController < ApplicationController
       # put in `characterizations`.
       # #1092 — the OSCAL collections the form now offers. Shapes come from
       # RiskCollectionParams so the form and Api::V1 accept the same thing.
+      # v1.17.2 — deadline and remediations, the last two OSCAL risk fields the
+      # card could not author. The API has accepted both since #1092.
       r_params = r_params.permit(:id, :sar_result_id, :title, :description, :status,
-                                 :statement, :impact, :likelihood, :collections_present,
+                                 :statement, :impact, :likelihood, :deadline, :collections_present,
                                  threat_ids_data: RiskCollectionParams::THREAT_IDS,
-                                 mitigating_factors_data: RiskCollectionParams::MITIGATING_FACTORS)
+                                 mitigating_factors_data: RiskCollectionParams::MITIGATING_FACTORS,
+                                 remediations_data: RiskCollectionParams::REMEDIATIONS)
       result = if r_params[:sar_result_id].present?
         @sar_document.sar_results.find_by(id: r_params[:sar_result_id]) || default_result
       else
         default_result
       end
 
-      attrs = normalise_risk_collections(r_params)
+      # Scoped to THIS document, as results and observations already were: a
+      # bare `SarRisk.find_by(id:)` let anyone who may edit one SAR overwrite a
+      # risk in another, by id. (AC-3)
+      record = document_risks.find_by(id: r_params[:id]) if r_params[:id].present?
+      attrs = normalise_form_risk_collections(r_params, record: record, collections: SAR_RISK_FORM_COLLECTIONS)
 
       if r_params[:id].present?
-        record = SarRisk.find_by(id: r_params[:id])
-        record&.update!(attrs.except(:id, :sar_result_id, :collections_present))
+        record&.update!(attrs.except(:id, :sar_result_id))
       else
         result.sar_risks.create!(
           uuid: SecureRandom.uuid,
@@ -925,46 +940,13 @@ class SarDocumentsController < ApplicationController
           impact: r_params[:impact].presence,
           likelihood: r_params[:likelihood].presence,
           status: r_params[:status].presence || "open",
+          deadline: r_params[:deadline].presence,
           threat_ids_data: attrs[:threat_ids_data] || [],
-          mitigating_factors_data: attrs[:mitigating_factors_data] || []
+          mitigating_factors_data: attrs[:mitigating_factors_data] || [],
+          remediations_data: attrs[:remediations_data] || []
         )
       end
     end
-  end
-
-  # #1092 — two things the raw params cannot express on their own.
-  #
-  # DELETION. An absent key means "unchanged" to `update!`, so removing the last
-  # threat-id row would silently leave the old value in place — the same trap
-  # Rails solves for checkboxes with a hidden field. The form emits
-  # `collections_present`, so an absent collection alongside it means EMPTY
-  # rather than untouched.
-  #
-  # UUIDs. OSCAL requires one on every mitigating-factor, and it is not the
-  # operator's business to type it. A row cloned from the <template> carries
-  # none (a template cannot mint a distinct id per clone), so it is assigned
-  # here. An existing factor keeps the uuid it already had.
-  def normalise_risk_collections(r_params)
-    attrs = r_params.to_h.symbolize_keys
-
-    if attrs[:collections_present].present?
-      attrs[:threat_ids_data] ||= []
-      attrs[:mitigating_factors_data] ||= []
-    end
-
-    if attrs[:threat_ids_data]
-      attrs[:threat_ids_data] = Array(attrs[:threat_ids_data]).map { |t| t.to_h.stringify_keys }
-                                    .reject { |t| t["system"].blank? && t["id"].blank? }
-    end
-
-    if attrs[:mitigating_factors_data]
-      attrs[:mitigating_factors_data] =
-        Array(attrs[:mitigating_factors_data]).map { |f| f.to_h.stringify_keys }
-             .reject { |f| f["description"].blank? }
-             .map { |f| f.merge("uuid" => f["uuid"].presence || SecureRandom.uuid) }
-    end
-
-    attrs
   end
 
   def auto_generate_from_excel

@@ -163,7 +163,7 @@ None.
 | `ssp_document[security_objective_confidentiality]` | string | no | Confidentiality objective (low/moderate/high) |
 | `ssp_document[security_objective_integrity]` | string | no | Integrity objective (low/moderate/high) |
 | `ssp_document[security_objective_availability]` | string | no | Availability objective (low/moderate/high) |
-| `ssp_document[lifecycle_status]` | string | no | Lifecycle status (e.g., `active`, `draft`) |
+| `ssp_document[lifecycle_status]` | string | no | `started`, `in_progress` or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
 
 #### Response Body
 

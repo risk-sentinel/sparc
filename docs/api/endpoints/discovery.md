@@ -1,6 +1,11 @@
 # Discovery
 
-The discovery endpoint returns an authorization-scoped inventory of all available API endpoints. Use it to dynamically determine which resources and HTTP methods the authenticated caller is permitted to access. All authenticated users (including service accounts) can call this endpoint. Admin users see the full endpoint registry; non-admin users see only endpoints matching their assigned permissions.
+The discovery endpoint returns an authorization-scoped inventory of every API endpoint the caller may use. Use it to determine which resources and HTTP methods the authenticated caller is permitted to access. All authenticated users (including service accounts) can call this endpoint.
+
+Since v1.17.2 (#1233) the inventory is built from the API's own route table, the same one token limits are enforced against, so it lists **every** route (before, a hand-kept list covered 45 of the API's paths). A route is listed when both hold:
+
+- **the token's limits allow it.** A token limited to some resources sees only those, with the access level it holds. A token with no limits sees every resource its caller may use.
+- **the caller's permissions allow it.** Each route is listed under the permission its controller checks, as recorded in `app/lib/api_route_permissions.rb` (catalog, profile, CDEF and mapping reads are listed under their read permission). Instance administrators see everything. A collection read of boundary-scoped documents (SSP, SAP, SAR, POA&M) is listed only to a caller holding that document type's read permission; without it the list would be empty.
 
 ## Endpoints
 
@@ -12,7 +17,9 @@ The discovery endpoint returns an authorization-scoped inventory of all availabl
 
 ### GET /api/v1/available
 
-Returns the full set of API endpoints the authenticated caller is authorized to use. Each entry includes the path, allowed HTTP methods, and a human-readable description. Endpoints where the caller has no permitted methods are omitted entirely.
+Returns the full set of API endpoints the authenticated caller is authorized to use. Each entry includes the path, allowed HTTP methods, a human-readable description, and the resource `group` (the name a token's `allowed_endpoints` uses, e.g. `ssp_documents`) with its `group_label`. Endpoints where the caller has no permitted methods are omitted entirely.
+
+Paths are shown as the route declares them, except the 45 the earlier list carried, which keep the spelling it used (for example `/api/v1/ssp_documents/:slug`), so a consumer matching on them sees no change.
 
 #### Path Parameters
 
@@ -34,12 +41,16 @@ None.
     {
       "path": "/api/v1/available",
       "methods": ["GET"],
-      "description": "API discovery — lists available endpoints scoped to caller permissions"
+      "description": "API discovery — lists available endpoints scoped to caller permissions",
+      "group": "available",
+      "group_label": "Discovery"
     },
     {
       "path": "/api/v1/ssp_documents",
       "methods": ["GET", "POST"],
-      "description": "System Security Plans"
+      "description": "System Security Plans",
+      "group": "ssp_documents",
+      "group_label": "System security plans (SSP)"
     },
     {
       "path": "/api/v1/ssp_documents/:slug",
@@ -80,7 +91,7 @@ None.
 }
 ```
 
-> **Note:** The example above is truncated. The actual response includes all endpoints the caller can access. Admin users will see write methods on admin-only resources (e.g., `control_catalogs`, `users`). Non-admin users will only see endpoints and methods matching their role permissions.
+> **Note:** The example above is truncated. The actual response includes all endpoints the caller can access. Admin users see every route, including administration (`users`, `roles`, `service_accounts`, ...). Non-admin users see only endpoints and methods matching their role permissions and their token's limits. Reference endpoints any authenticated caller may read, such as the guides and the federation identity, are listed for everyone. Catalog, profile, CDEF and mapping reads are listed for every caller too: reading the control library needs only a valid token. Their write methods still need the matching write key (`catalogs.write`, `profiles.write`, `cdef.write`, `mappings.write`), and the CDEF coverage analysis needs `cdef.read`.
 
 #### Status Codes
 

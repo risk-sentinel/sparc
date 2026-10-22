@@ -105,6 +105,14 @@
                     placeholder: "Additional context, links to assessments, etc." %>
   </div>
 
+  <%# v1.17.2 — threat IDs and mitigating factors, the same section the SAR
+      risk card uses. Remediations are not here: a POA&M keeps its responses as
+      real rows, with their own screens. %>
+  <div class="mt-3" data-testid="poam-risk-collections">
+    <%= render "shared/risk_oscal_collections",
+               param_base: "poam_risk", risk: poam_risk %>
+  </div>
+
   <%# OSCAL extensibility arrays — shared partials (slice 0). %>
   <hr class="border-top" style="border: none; margin: 1.5rem 0;">
 

@@ -16,12 +16,12 @@ RSpec.describe "Control Mappings Authorization", type: :request do
 
   let(:policy_manager_role) do
     create(:role, name: "policy_manager", scope: "instance",
-           permissions: { "mappings.read" => true, "mappings.write" => true })
+           permissions: { "mappings.write" => true })
   end
 
   let(:viewer_role) do
     create(:role, name: "global_viewer", scope: "instance",
-           permissions: { "mappings.read" => true })
+           permissions: {})
   end
 
   let(:policy_user) do

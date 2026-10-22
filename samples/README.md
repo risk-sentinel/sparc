@@ -90,6 +90,9 @@ bin/rails samples:generate_20x
 
 ## File Format
 
-All files are valid **OSCAL v1.1.2 JSON** unless otherwise noted. Traditional
+Every OSCAL file here validates against the **OSCAL 1.2.3** schema and conforms
+to NIST's 1.2.2 and 1.2.3 vocabularies; `spec/integration/oscal_1_2_3_conformance_sweep_1108_spec.rb`
+checks every one. Each declares the `oscal-version` of the document it was
+exported from (`oscal_version` is per document), so some still say 1.1.2. Traditional
 artifacts conform to NIST OSCAL schemas. FedRAMP 20x artifacts use SPARC's
 KSI export format.

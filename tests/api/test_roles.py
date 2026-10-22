@@ -69,7 +69,7 @@ class TestCreate:
         self, admin_client: httpx.Client
     ) -> None:
         body = _payload()
-        body["role"]["permissions"] = {"catalogs.read": True, "catalogs.write": False}
+        body["role"]["permissions"] = {"catalogs.approve": True, "catalogs.write": False}
 
         created = admin_client.post(PATH, json=body)
         assert created.status_code == 201, created.text
@@ -81,7 +81,7 @@ class TestCreate:
             assert shown.status_code == 200, shown.text
 
             granted = shown.json()["data"]["permissions"]
-            assert granted == ["catalogs.read"], granted
+            assert granted == ["catalogs.approve"], granted
         finally:
             admin_client.delete(f"{PATH}/{record['id']}")
 
@@ -90,7 +90,7 @@ class TestCreate:
         self, admin_client: httpx.Client
     ) -> None:
         body = _payload()
-        body["role"]["permissions"] = {"catalogs.read": True, "invented.superpower": True}
+        body["role"]["permissions"] = {"catalogs.approve": True, "invented.superpower": True}
 
         created = admin_client.post(PATH, json=body)
         assert created.status_code == 201, created.text
@@ -138,21 +138,21 @@ class TestUpdate:
     ) -> None:
         grant = admin_client.patch(
             f"{PATH}/{role['id']}",
-            json={"role": {"permissions": {"catalogs.read": True, "catalogs.write": True}}},
+            json={"role": {"permissions": {"catalogs.approve": True, "catalogs.write": True}}},
         )
         assert grant.status_code == 200, grant.text
         assert set(admin_client.get(f"{PATH}/{role['id']}").json()["data"]["permissions"]) == {
-            "catalogs.read",
+            "catalogs.approve",
             "catalogs.write",
         }
 
         narrow = admin_client.patch(
-            f"{PATH}/{role['id']}", json={"role": {"permissions": {"catalogs.read": True}}}
+            f"{PATH}/{role['id']}", json={"role": {"permissions": {"catalogs.approve": True}}}
         )
         assert narrow.status_code == 200, narrow.text
 
         after = admin_client.get(f"{PATH}/{role['id']}").json()["data"]["permissions"]
-        assert after == ["catalogs.read"], (
+        assert after == ["catalogs.approve"], (
             f"omitting a key must revoke it; still granted: {after}"
         )
 

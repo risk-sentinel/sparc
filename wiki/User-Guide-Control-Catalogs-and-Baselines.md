@@ -87,7 +87,61 @@ the value on the record and SPARC will not overwrite it on a later import.
 
 1. From the catalog list, click **Import** (`/control_catalogs/import`).
 2. Upload a catalog file — **JSON or XML** OSCAL catalog format.
-3. Submit. The catalog is created with its families and controls populated.
+3. Submit. The catalog is created with its families and controls populated, as a
+   **Draft**. Importing again into an existing catalog also returns it to Draft.
+4. Review the **quality warnings** SPARC raises after the import: controls with
+   no statement or no assessment objective, parameters a statement uses but the
+   catalog never defines, and empty families. They are advisory. Correct what
+   matters while the catalog is a Draft, then click **Revalidate** to refresh
+   them.
+5. Click **Publish**. The dialog lists any remaining warnings, and you can
+   publish with them. When document approval is required
+   (`SPARC_REQUIRE_DOCUMENT_APPROVAL`), the catalog must be submitted and
+   approved first, like any other document. Publishing makes it read-only.
+
+A catalog is not checked for control **priority** or **baseline impact**. Those
+belong to a baseline (profile), which sets them for its own controls. NIST's
+catalogs carry neither. The NIST catalogs SPARC seeds are already published.
+
+### How to add your organization's own controls
+
+Write them as an OSCAL catalog of their own, not as edits to a copy of NIST's.
+An OSCAL profile can change an existing control but cannot add one, so a
+baseline that mixes NIST and your controls is a profile importing both
+catalogs.
+
+Two skeletons to copy are in
+[`docs/api/samples/`](https://github.com/risk-sentinel/sparc/tree/main/docs/api/samples):
+
+- **`custom-controls-catalog.json`**: one family (`DP`), one control with a
+  parameter, statement, guidance and assessment objectives, and one
+  enhancement. Replace the Example values, keep a control-id prefix of your own
+  so it never collides with a NIST family, and import it as above. It imports
+  with no warnings.
+- **`custom-controls-profile.json`**: a baseline that selects a few NIST Rev 5
+  controls and the custom ones, and sets the custom parameter.
+
+Both are valid OSCAL 1.2.3. Import your catalog first, then the baseline.
+
+### How a baseline that imports several catalogs is linked
+
+Each of a baseline's imports is matched to a loaded catalog on its own, whether
+the baseline is OSCAL JSON, YAML or XML, by the first of these that fits:
+
+1. the catalog's OSCAL UUID, in the import's `href` or its back-matter link;
+2. for NIST, the SP 800-53 revision named in the back-matter link;
+3. the back-matter resource's **title**, when exactly one loaded catalog has
+   that name.
+
+Every control records the catalog it came from, takes its title from that
+catalog, and exports under that catalog's own import, so NIST's controls and
+yours are never attributed to each other. The baseline's **source catalog** is
+the first import that matched.
+
+An import that matches nothing (its catalog is not loaded, or two catalogs share
+its title) is left unlinked: its controls import without titles and the import
+is listed on the baseline's page. Load the catalog, or give it a unique name,
+and import the baseline again.
 
 ### How to edit families and controls
 

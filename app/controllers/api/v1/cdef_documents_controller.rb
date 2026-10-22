@@ -94,6 +94,8 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   # POST /api/v1/cdef_documents
   def create
     cdef = CdefDocument.new(cdef_params)
+    return if refuse_unauthorized_publication!(cdef, cdef_params)
+
     # #498 slice 2 — route through CdefMutationService for post-save
     # OSCAL validation. Empty-CDEF creates skip validation legitimately
     # (the service handles that), so a metadata-only create still works.
@@ -114,6 +116,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     # component claims to implement controls FROM something. Refuse the edit
     # until it says what. Declaring the profile is itself permitted.
     return unless enforce_reconciliation!(@cdef, cdef_params)
+    return if refuse_unauthorized_publication!(@cdef, cdef_params)
 
     # #498 slice 1 — route the mutation through CdefMutationService so
     # the post-mutation OSCAL hash is validated against the NIST

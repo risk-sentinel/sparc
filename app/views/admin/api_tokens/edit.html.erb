@@ -1,0 +1,34 @@
+<%# #1233 — change an existing token's endpoint and CIDR limits in place.
+    The same picker token creation uses; the token keeps its value. %>
+<% owner_path = @user.service_account? ? admin_service_account_path(@user) : admin_user_path(@user) %>
+<% selected = @submitted_endpoints || @token.allowed_endpoints.presence %>
+<% cidrs = @submitted_cidrs || @token.allowed_cidrs %>
+<div class="container-fluid py-4">
+  <h2>Edit Token Limits</h2>
+  <p class="text-body-secondary">
+    <strong><%= @token.name %></strong> for <%= @user.display_label %>.
+    The token keeps working with its current value; the new limits apply from its next request.
+  </p>
+
+  <%= form_with url: admin_user_api_token_path(@user, @token), method: :patch, local: true,
+                data: { testid: "edit-token-limits-form" } do |f| %>
+    <div class="card sparc-card sparc-maxw-760">
+      <div class="card-body">
+        <%= render "admin/api_tokens/endpoint_picker", field: "api_token[allowed_endpoints]",
+                   selected: selected, id: "edit_token_endpoints" %>
+
+        <div class="mb-3">
+          <label class="form-label" for="api_token_allowed_cidrs">Allowed CIDRs <small class="text-muted">(optional)</small></label>
+          <textarea name="api_token[allowed_cidrs]" id="api_token_allowed_cidrs" class="form-control" rows="3"
+                    placeholder="10.0.0.0/8&#10;192.168.1.0/24"><%= Array(cidrs).join("\n") %></textarea>
+          <div class="form-text">One CIDR per line. Leave empty to allow any IP.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+      <%= f.submit "Save Limits", class: "sparc-action sparc-action--positive sparc-action--solid" %>
+      <%= link_to "Cancel", owner_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
+    </div>
+  <% end %>
+</div>

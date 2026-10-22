@@ -35,14 +35,28 @@ RSpec.describe "Api::V1::Discovery", type: :request do
     end
 
     context "as admin" do
-      it "sees all endpoints" do
+      # #1233 — every /api/v1 route, not the 45 a hand-kept registry listed.
+      it "sees every API route" do
         get "/api/v1/available", headers: admin_headers
-        parsed = JSON.parse(response.body)
-        endpoints = parsed["endpoints"]
+        listed = JSON.parse(response.body)["endpoints"].map { |e| e["path"] }
 
-        # Admin should see every registered endpoint
-        registry_count = Api::V1::DiscoveryController::ENDPOINT_REGISTRY.length
-        expect(endpoints.length).to eq(registry_count)
+        expected = ApiEndpointCatalog.routes.map do |r|
+          path = r.spec.delete_suffix("(.:format)")
+          Api::V1::DiscoveryController::LEGACY_PATHS.fetch(path, path)
+        end.uniq
+        expect(listed).to match_array(expected)
+        expect(listed.size).to be > 150
+      end
+
+      # sparc-iac matches on these; the registry's spelling is kept.
+      it "keeps the paths the registry listed, spelled as it spelled them" do
+        get "/api/v1/available", headers: admin_headers
+        listed = JSON.parse(response.body)["endpoints"].index_by { |e| e["path"] }
+
+        Api::V1::DiscoveryController::DESCRIPTIONS.each do |path, description|
+          expect(listed[path]).to be_present, "#{path} is no longer listed"
+          expect(listed[path]["description"]).to eq(description)
+        end
       end
 
       it "sees all HTTP methods including POST, PUT, DELETE" do
@@ -73,8 +87,7 @@ RSpec.describe "Api::V1::Discovery", type: :request do
       let(:read_role) do
         create(:role, :authorization_boundary_scoped, permissions: {
           "ssp.read" => true,
-          "sar.read" => true,
-          "catalogs.read" => true
+          "sar.read" => true
         })
       end
       let!(:user_role) { create(:user_role, user: reader, role: read_role, authorization_boundary_id: boundary.id) }
@@ -126,7 +139,6 @@ RSpec.describe "Api::V1::Discovery", type: :request do
         create(:role, :authorization_boundary_scoped, permissions: {
           "ssp.read" => true,
           "ssp.write" => true,
-          "profiles.read" => true,
           "profiles.write" => true
         })
       end
@@ -146,14 +158,17 @@ RSpec.describe "Api::V1::Discovery", type: :request do
         expect(ssp_member["methods"]).to include("GET", "PUT", "DELETE")
       end
 
-      it "does not see write methods for admin-only resources" do
+      it "sees catalog reads but not catalog writes without catalogs.write" do
         get "/api/v1/available", headers: writer_headers
         parsed = JSON.parse(response.body)
         endpoints = parsed["endpoints"]
 
-        # Catalogs are admin-only for writes
+        # Library reads need only a token (owner, 2026-10-22); writes still need
+        # the write key, which this user holds for profiles but not catalogs.
         catalogs_ep = endpoints.find { |e| e["path"] == "/api/v1/control_catalogs" }
-        expect(catalogs_ep).to be_nil # No catalogs.read permission either
+        expect(catalogs_ep["methods"]).to eq(%w[GET])
+        profiles_ep = endpoints.find { |e| e["path"] == "/api/v1/profile_documents" }
+        expect(profiles_ep["methods"]).to include("GET", "POST")
       end
     end
 
@@ -162,7 +177,7 @@ RSpec.describe "Api::V1::Discovery", type: :request do
     context "as a non-admin holding mappings.write" do
       let(:mapper) do
         role = create(:role, name: "mapper_probe", scope: "instance",
-                             permissions: { "mappings.read" => true, "mappings.write" => true })
+                             permissions: { "mappings.write" => true })
         create(:user).tap { |u| create(:user_role, user: u, role: role) }
       end
 
@@ -181,14 +196,75 @@ RSpec.describe "Api::V1::Discovery", type: :request do
       let(:no_perm_token) { ApiToken.generate!(user: no_perm_user, name: "No Perm Token") }
       let(:no_perm_headers) { { "Authorization" => "Bearer #{no_perm_token.plaintext_token}" } }
 
-      it "sees only the discovery endpoint" do
+      it "sees discovery, and nothing that needs a permission it lacks" do
         get "/api/v1/available", headers: no_perm_headers
-        parsed = JSON.parse(response.body)
-        endpoints = parsed["endpoints"]
+        paths = JSON.parse(response.body)["endpoints"].map { |e| e["path"] }
 
-        # Only discovery (nil permissions = always visible)
-        expect(endpoints.length).to eq(1)
-        expect(endpoints.first["path"]).to eq("/api/v1/available")
+        expect(paths).to include("/api/v1/available")
+        expect(paths).not_to include("/api/v1/ssp_documents", "/api/v1/poam_documents",
+                                     "/api/v1/evidences", "/api/v1/users", "/api/v1/roles")
+      end
+
+      # Owner, 2026-10-22: reading the control library needs a signed-in caller
+      # and nothing more, so a token with no permissions is shown the library's
+      # reads, and only its reads.
+      it "sees the control library's reads, without their write methods" do
+        get "/api/v1/available", headers: no_perm_headers
+        endpoints = JSON.parse(response.body)["endpoints"].index_by { |e| e["path"] }
+
+        %w[/api/v1/control_catalogs /api/v1/profile_documents
+           /api/v1/control_mappings /api/v1/cdef_documents].each do |path|
+          expect(endpoints[path]).to be_present, "#{path} is readable by any token but discovery hides it"
+          expect(endpoints[path]["methods"]).to eq(%w[GET]), "#{path} advertises a write this caller lacks"
+        end
+      end
+
+      # #1233 — the table restates the controllers' checks, so what discovery
+      # lists must actually answer. Every listed GET without a path parameter
+      # is called with the same token; a 403 means the table is wrong.
+      it "lists only GET routes this caller is actually allowed to call" do
+        get "/api/v1/available", headers: no_perm_headers
+        gets = JSON.parse(response.body)["endpoints"]
+                   .select { |e| e["methods"].include?("GET") && !e["path"].include?(":") }
+                   .map { |e| e["path"] }
+        expect(gets).not_to be_empty
+
+        gets.each do |path|
+          get path, headers: no_perm_headers
+          expect(response).not_to have_http_status(:forbidden), "discovery lists GET #{path}, which refused this caller"
+        end
+      end
+
+      # The other direction: what it hides, it is refused.
+      it "is refused what discovery hides" do
+        %w[/api/v1/users /api/v1/roles /api/v1/service_accounts /api/v1/organizations /api/v1/evidences].each do |path|
+          get path, headers: no_perm_headers
+          expect(response).to have_http_status(:forbidden), "GET #{path} was allowed but discovery hides it"
+        end
+      end
+    end
+
+    # #1233 — discovery reads the token's own limits, with the check enforcement makes.
+    context "with a token limited to one resource" do
+      let(:limited_token) do
+        ApiToken.generate!(user: admin, name: "Limited",
+                           allowed_endpoints: [ "available:read", "ssp_documents:read" ])
+      end
+
+      it "lists only the routes the token may reach" do
+        get "/api/v1/available", headers: { "Authorization" => "Bearer #{limited_token.plaintext_token}" }
+        endpoints = JSON.parse(response.body)["endpoints"]
+
+        expect(endpoints.map { |e| e["group"] }.uniq).to contain_exactly("available", "ssp_documents")
+        ssp = endpoints.find { |e| e["path"] == "/api/v1/ssp_documents" }
+        expect(ssp["methods"]).to eq(%w[GET]), "a Read limit must not advertise POST"
+      end
+
+      it "lists everything for the same caller when the token has no limits" do
+        get "/api/v1/available", headers: admin_headers
+        groups = JSON.parse(response.body)["endpoints"].map { |e| e["group"] }.uniq
+
+        expect(groups.size).to eq(ApiEndpointCatalog.groups.size)
       end
     end
 

@@ -80,6 +80,8 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   # POST /api/v1/profile_documents
   def create
     profile = ProfileDocument.new(profile_params)
+    return if refuse_unauthorized_publication!(profile, profile_params)
+
     profile.save!
     finalize_unprocessed_create(profile)   # #618 — no file to parse ⇒ don't hang in `pending`
 
@@ -93,6 +95,7 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
     # unresolved one is the worst case: every SSP, SAP and SAR beneath it
     # inherits the break. Declaring the catalog is itself permitted.
     return unless enforce_reconciliation!(@profile, profile_params)
+    return if refuse_unauthorized_publication!(@profile, profile_params)
 
     # #928 — the web refuses to repoint a PUBLISHED profile at a different
     # catalog; this surface permitted it silently. `profile_params` has always

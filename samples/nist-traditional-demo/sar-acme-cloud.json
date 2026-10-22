@@ -1,11 +1,11 @@
 {
   "assessment-results": {
-    "uuid": "0f6dd49e-4068-4fe9-8ebb-df5c5ac8a973",
+    "uuid": "e7944701-9356-431d-9f96-b9fc9f3cf0eb",
     "metadata": {
       "title": "ACME Cloud Platform — Annual Security Assessment (Rev 5)",
       "version": "1.0.0",
       "oscal-version": "1.1.2",
-      "last-modified": "2026-03-21T11:29:58Z",
+      "last-modified": "2026-10-22T01:38:12Z",
       "roles": [
         {
           "id": "assessor",
@@ -14,9 +14,16 @@
       ],
       "parties": [
         {
-          "uuid": "a63c27e4-a1ef-4733-b2f8-aef0e781dd5a",
+          "uuid": "87c8ba3e-66a4-4c0c-9ba4-f7e15b5f6ab2",
           "type": "organization",
-          "name": "SPARC Export"
+          "name": "SPARC Export",
+          "props": [
+            {
+              "name": "node-type",
+              "ns": "https://sparc.risk-sentinel.org/ns",
+              "value": "organization"
+            }
+          ]
         }
       ]
     },
@@ -25,1458 +32,3627 @@
     },
     "results": [
       {
-        "uuid": "69a1561a-75ab-4991-b4a4-d2895e2c19c2",
+        "uuid": "6d2ed488-c632-4e8f-96ff-f3587bc93371",
         "title": "Assessment Results for ACME Cloud Platform — Annual Security Assessment (Rev 5)",
-        "description": "Synthesized from Excel assessment data.",
-        "start": "2026-03-21T11:27:38Z",
-        "end": "2026-03-21T11:29:58Z",
+        "description": "Assessment results generated from SSP ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate).",
+        "start": "2026-10-22T01:38:14Z",
+        "risks": [
+          {
+            "uuid": "759d8042-3b62-4ae9-9ccd-7a764a8a2100",
+            "title": "Risk for ac-4",
+            "description": "Control ac-4 is not implemented, as the SSP reports before the assessment.",
+            "statement": "ac-4 is reported in the SSP as Deferred. The control requires: Enforce approved authorizations for controlling the flow of information within the system and between connected systems based on information flow control policies. The SSP states: Network-level information flow controls are in place via firewall rules. Application-level data flow labeling is in progress.",
+            "status": "open"
+          },
+          {
+            "uuid": "fa6ffba5-0d8b-429c-b2ff-534c319e6649",
+            "title": "Risk for ac-6",
+            "description": "Control ac-6 is not implemented, as the SSP reports before the assessment.",
+            "statement": "ac-6 is reported in the SSP as Deferred. The control requires: Employ the principle of least privilege, allowing only authorized accesses for users (or processes acting on behalf of users) that are necessary to accomplish assigned organizational tasks. The SSP states: Least privilege is enforced at the OS and application layer. Admin account review is scheduled quarterly; last review identified 4 accounts requiring privilege reduction.",
+            "status": "open"
+          },
+          {
+            "uuid": "0c1a64e0-3340-490c-b043-db03c4e44835",
+            "title": "Risk for at-3",
+            "description": "Control at-3 is not implemented, as the SSP reports before the assessment.",
+            "statement": "at-3 is reported in the SSP as Deferred. The control requires: a. Provide role-based security and privacy training to personnel with the following roles and responsibilities: organization-defined roles and responsibilities:\n    1. Before authorizing access to the system, information, or performing assigned duties, and frequency thereafter; and\n    2. When required by system changes;\n  b. Update role-based training content frequency and following events ; and\n  c. Incorporate lessons learned from internal or external security incidents or breaches into role-based training. The SSP states: Role-based training is available for system administrators, security engineers, and developers. Training for data owners is under development.",
+            "status": "open"
+          },
+          {
+            "uuid": "d11c7b5f-e526-4ca5-8ecc-ad221a70fe2c",
+            "title": "Risk for au-5",
+            "description": "Control au-5 is not implemented, as the SSP reports before the assessment.",
+            "statement": "au-5 is reported in the SSP as Deferred. The control requires: a. Alert personnel or roles within time period in the event of an audit logging process failure; and\n  b. Take the following additional actions: additional actions. The SSP states: Automated alerts are configured for SIEM pipeline failures. Manual failover to local logging is documented but not fully tested.",
+            "status": "open"
+          },
+          {
+            "uuid": "00e218c7-6e4b-469e-ade9-9c37e835f29f",
+            "title": "Risk for au-6",
+            "description": "Control au-6 is not implemented, as the SSP reports before the assessment.",
+            "statement": "au-6 is reported in the SSP as Deferred. The control requires: a. Review and analyze system audit records frequency for indications of inappropriate or unusual activity and the potential impact of the inappropriate or unusual activity;\n  b. Report findings to personnel or roles ; and\n  c. Adjust the level of audit record review, analysis, and reporting within the system when there is a change in risk based on law enforcement information, intelligence information, or other credible sources of information. The SSP states: SIEM-driven alert triage is operational. Automated weekly audit review reports are under development; target deployment Q1 2026.",
+            "status": "open"
+          },
+          {
+            "uuid": "64630d2a-1e66-4b2d-b08a-aa0c9b70136a",
+            "title": "Risk for ca-3",
+            "description": "Control ca-3 is not implemented, as the SSP reports before the assessment.",
+            "statement": "ca-3 is reported in the SSP as Deferred. The control requires: a. Approve and manage the exchange of information between the system and other systems using interconnection security agreements information exchange security agreements memoranda of understanding or agreement service level agreements user agreements non-disclosure agreements type of agreement;\n  b. Document, as part of each exchange agreement, the interface characteristics, security and privacy requirements, controls, and responsibilities for each system, and the impact level of the information communicated; and\n  c. Review and update the agreements frequency. The SSP states: ISAs are established with external systems. Annual review process is defined but one ISA (with Partner System B) is overdue for renewal.",
+            "status": "open"
+          },
+          {
+            "uuid": "fc25b85d-e701-4f9a-a0a7-11883b7355ca",
+            "title": "Risk for ca-7",
+            "description": "Control ca-7 is not implemented, as the SSP reports before the assessment.",
+            "statement": "ca-7 is reported in the SSP as Deferred. The control requires: Develop a system-level continuous monitoring strategy and implement continuous monitoring in accordance with the organization-level continuous monitoring strategy that includes:\n  a. Establishing the following system-level metrics to be monitored: system-level metrics;\n  b. Establishing frequencies for monitoring and frequencies for assessment of control effectiveness;\n  c. Ongoing control assessments in accordance with the continuous monitoring strategy;\n  d. Ongoing monitoring of system and organization-defined metrics in accordance with the continuous monitoring strategy;\n  e. Correlation and analysis of information generated by control assessments and monitoring;\n  f. Response actions to address results of the analysis of control assessment and monitoring information; and\n  g. Reporting the security and privacy status of the system to organization-defined personnel or roles organization-defined frequency. The SSP states: Continuous monitoring strategy is documented. Automated vulnerability scanning is operational; configuration drift detection is planned for Q2 2026.",
+            "status": "open"
+          },
+          {
+            "uuid": "f5337d53-f50e-4e71-95b7-84b1c106ba48",
+            "title": "Risk for cm-4",
+            "description": "Control cm-4 is not implemented, as the SSP reports before the assessment.",
+            "statement": "cm-4 is reported in the SSP as Deferred. The control requires: Analyze changes to the system to determine potential security and privacy impacts prior to change implementation. The SSP states: Security impact analysis is required for all major changes. Minor change impact analysis process is not yet formalized.",
+            "status": "open"
+          },
+          {
+            "uuid": "4b30f737-0f7a-4430-8b5a-bca968d5ad59",
+            "title": "Risk for cm-8",
+            "description": "Control cm-8 is not implemented, as the SSP reports before the assessment.",
+            "statement": "cm-8 is reported in the SSP as Deferred. The control requires: a. Develop and document an inventory of system components that:\n    1. Accurately reflects the system;\n    2. Includes all components within the system;\n    3. Does not include duplicate accounting of components or components assigned to any other system;\n    4. Is at the level of granularity deemed necessary for tracking and reporting; and\n    5. Includes the following information to achieve system component accountability: information ; and\n  b. Review and update the system component inventory frequency. The SSP states: System inventory is maintained in the CMDB. Cloud assets are auto-discovered. On-premises components require manual updates; last update 6 months ago.",
+            "status": "open"
+          },
+          {
+            "uuid": "6864580f-dc80-4219-a223-e6ac8967511d",
+            "title": "Risk for cp-4",
+            "description": "Control cp-4 is not implemented, as the SSP reports before the assessment.",
+            "statement": "cp-4 is reported in the SSP as Deferred. The control requires: a. Test the contingency plan for the system frequency using the following tests to determine the effectiveness of the plan and the readiness to execute the plan: organization-defined tests.\n  b. Review the contingency plan test results; and\n  c. Initiate corrective actions, if needed. The SSP states: Annual tabletop exercises are conducted. Full failover test is scheduled for Q2 2026 following environment migration.",
+            "status": "open"
+          },
+          {
+            "uuid": "445cc03b-d30c-48d1-bdac-fd8d03a7ffd8",
+            "title": "Risk for ia-3",
+            "description": "Control ia-3 is not implemented, as the SSP reports before the assessment.",
+            "statement": "ia-3 is reported in the SSP as Deferred. The control requires: Uniquely identify and authenticate devices and/or types of devices before establishing a local remote network connection. The SSP states: Managed devices use certificate-based authentication. BYOD device authentication policy is under review.",
+            "status": "open"
+          },
+          {
+            "uuid": "8fb8aa8a-0425-4da7-95eb-b89fdc04661c",
+            "title": "Risk for ir-5",
+            "description": "Control ir-5 is not implemented, as the SSP reports before the assessment.",
+            "statement": "ir-5 is reported in the SSP as Deferred. The control requires: Track and document incidents. The SSP states: SIEM-based incident detection is operational. Automated response playbooks are in development for the top 5 incident types.",
+            "status": "open"
+          }
+        ],
+        "findings": [
+          {
+            "uuid": "b3b9e787-6851-447b-83f9-bd062db91ee8",
+            "title": "Finding for ac-1",
+            "description": "Assessment finding for control ac-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-1_smt"
+            }
+          },
+          {
+            "uuid": "84e211ba-11cf-489e-943a-2a3ab7e81436",
+            "title": "Finding for ac-11",
+            "description": "Assessment finding for control ac-11: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-11_smt"
+            }
+          },
+          {
+            "uuid": "6ee13fa8-1cac-4d08-b0a0-0f129012502e",
+            "title": "Finding for ac-11.1",
+            "description": "Assessment finding for control ac-11.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-11.1_smt"
+            }
+          },
+          {
+            "uuid": "a244d65a-4ad9-46d9-b9cc-c5c548960cd4",
+            "title": "Finding for ac-12",
+            "description": "Assessment finding for control ac-12: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-12_smt"
+            }
+          },
+          {
+            "uuid": "bb8a7a0c-3a97-41a5-a936-152684c0f052",
+            "title": "Finding for ac-14",
+            "description": "Assessment finding for control ac-14: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-14_smt"
+            }
+          },
+          {
+            "uuid": "24f3fd6c-7824-40f7-8ab5-ed1a1865dc69",
+            "title": "Finding for ac-17",
+            "description": "Assessment finding for control ac-17: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-17_smt"
+            }
+          },
+          {
+            "uuid": "cf463cd1-fbd5-40e4-a5af-438bda49ba31",
+            "title": "Finding for ac-17.1",
+            "description": "Assessment finding for control ac-17.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-17.1_smt"
+            }
+          },
+          {
+            "uuid": "9401cf09-e284-475b-9bcb-ef976a06094e",
+            "title": "Finding for ac-17.2",
+            "description": "Assessment finding for control ac-17.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-17.2_smt"
+            }
+          },
+          {
+            "uuid": "c700f466-65a6-447f-8aba-5d8bb32905c3",
+            "title": "Finding for ac-17.3",
+            "description": "Assessment finding for control ac-17.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-17.3_smt"
+            }
+          },
+          {
+            "uuid": "0a6e402d-6899-4d79-b22f-b9e046c23457",
+            "title": "Finding for ac-17.4",
+            "description": "Assessment finding for control ac-17.4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-17.4_smt"
+            }
+          },
+          {
+            "uuid": "47ea3b5d-a2a9-4b55-b5a1-3bc2b5a3476a",
+            "title": "Finding for ac-18",
+            "description": "Assessment finding for control ac-18: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-18_smt"
+            }
+          },
+          {
+            "uuid": "95e39183-4b4c-46d1-952c-c721e25362a3",
+            "title": "Finding for ac-18.1",
+            "description": "Assessment finding for control ac-18.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-18.1_smt"
+            }
+          },
+          {
+            "uuid": "7491c774-c013-461e-b7d1-d9666ee01a41",
+            "title": "Finding for ac-18.3",
+            "description": "Assessment finding for control ac-18.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-18.3_smt"
+            }
+          },
+          {
+            "uuid": "f3edf433-e3f8-4b46-92b4-d208c6176819",
+            "title": "Finding for ac-19",
+            "description": "Assessment finding for control ac-19: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-19_smt"
+            }
+          },
+          {
+            "uuid": "5a99db09-8e7e-4d76-b3ec-f76ab2cf3e84",
+            "title": "Finding for ac-19.5",
+            "description": "Assessment finding for control ac-19.5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-19.5_smt"
+            }
+          },
+          {
+            "uuid": "bc6bd52c-007c-4127-bba4-5be1b706278e",
+            "title": "Finding for ac-2",
+            "description": "Assessment finding for control ac-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-2_smt"
+            }
+          },
+          {
+            "uuid": "eed8e173-f881-43a7-8fe5-8524553a175d",
+            "title": "Finding for ac-2.1",
+            "description": "Assessment finding for control ac-2.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-2.1_smt"
+            }
+          },
+          {
+            "uuid": "b519fa32-3139-478b-943f-52c4e61da095",
+            "title": "Finding for ac-2.13",
+            "description": "Assessment finding for control ac-2.13: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-2.13_smt"
+            }
+          },
+          {
+            "uuid": "ad004fa5-db5d-4951-86e7-6d6409c8edd4",
+            "title": "Finding for ac-2.2",
+            "description": "Assessment finding for control ac-2.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-2.2_smt"
+            }
+          },
+          {
+            "uuid": "1ee11776-7231-48a4-ac03-09cf223708e7",
+            "title": "Finding for ac-2.3",
+            "description": "Assessment finding for control ac-2.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-2.3_smt"
+            }
+          },
+          {
+            "uuid": "300aee49-1596-4f2f-9770-a17dbb61b921",
+            "title": "Finding for ac-2.4",
+            "description": "Assessment finding for control ac-2.4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-2.4_smt"
+            }
+          },
+          {
+            "uuid": "f7e70873-ed2d-4377-934f-8e65fd8c6b81",
+            "title": "Finding for ac-2.5",
+            "description": "Assessment finding for control ac-2.5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-2.5_smt"
+            }
+          },
+          {
+            "uuid": "33315269-800e-47f0-9285-bb35a3fa5f41",
+            "title": "Finding for ac-20",
+            "description": "Assessment finding for control ac-20: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-20_smt"
+            }
+          },
+          {
+            "uuid": "b7e6c823-a527-404c-87fb-30555dc13b5c",
+            "title": "Finding for ac-20.1",
+            "description": "Assessment finding for control ac-20.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-20.1_smt"
+            }
+          },
+          {
+            "uuid": "09b44265-b41d-4a35-8a5d-36cb1b750ab5",
+            "title": "Finding for ac-20.2",
+            "description": "Assessment finding for control ac-20.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-20.2_smt"
+            }
+          },
+          {
+            "uuid": "6a42738b-8ae3-4d35-b226-c850a896c38f",
+            "title": "Finding for ac-21",
+            "description": "Assessment finding for control ac-21: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-21_smt"
+            }
+          },
+          {
+            "uuid": "9036a9e2-a66e-4375-b287-71ddca3d339b",
+            "title": "Finding for ac-22",
+            "description": "Assessment finding for control ac-22: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-22_smt"
+            }
+          },
+          {
+            "uuid": "59938255-3d18-49d9-8cd1-1d1868c1715b",
+            "title": "Finding for ac-3",
+            "description": "Assessment finding for control ac-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-3_smt"
+            }
+          },
+          {
+            "uuid": "e2510f1a-bce2-46c5-9f0f-6c51e9d0af6d",
+            "title": "Finding for ac-4",
+            "description": "Reported in the SSP as Deferred before the assessment started (control ac-4).",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "ac-4_smt"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "759d8042-3b62-4ae9-9ccd-7a764a8a2100"
+              }
+            ]
+          },
+          {
+            "uuid": "07235349-c132-4a7f-9f39-10905f8e672e",
+            "title": "Finding for ac-5",
+            "description": "Assessment finding for control ac-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-5_smt"
+            }
+          },
+          {
+            "uuid": "2dc21cb7-5828-44d4-a263-8b1243e43bf6",
+            "title": "Finding for ac-6",
+            "description": "Reported in the SSP as Deferred before the assessment started (control ac-6).",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "ac-6_smt"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "fa6ffba5-0d8b-429c-b2ff-534c319e6649"
+              }
+            ]
+          },
+          {
+            "uuid": "e84cfebe-03e1-4a8b-8a20-0d69b62a77b5",
+            "title": "Finding for ac-6.1",
+            "description": "Assessment finding for control ac-6.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-6.1_smt"
+            }
+          },
+          {
+            "uuid": "62e80905-d31e-4054-afe2-d3123093b2a0",
+            "title": "Finding for ac-6.10",
+            "description": "Assessment finding for control ac-6.10: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-6.10_smt"
+            }
+          },
+          {
+            "uuid": "8772aee3-0ce8-46b7-875d-51c9abba5ed9",
+            "title": "Finding for ac-6.2",
+            "description": "Assessment finding for control ac-6.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-6.2_smt"
+            }
+          },
+          {
+            "uuid": "d79601e4-5289-4b78-a3eb-6abfc745e0b2",
+            "title": "Finding for ac-6.5",
+            "description": "Assessment finding for control ac-6.5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-6.5_smt"
+            }
+          },
+          {
+            "uuid": "da52d5ff-53ab-4e34-ac3c-cbd2f16e5422",
+            "title": "Finding for ac-6.7",
+            "description": "Assessment finding for control ac-6.7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-6.7_smt"
+            }
+          },
+          {
+            "uuid": "651aa3dc-b772-4d70-bc76-79cf0ab2f63b",
+            "title": "Finding for ac-6.9",
+            "description": "Assessment finding for control ac-6.9: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-6.9_smt"
+            }
+          },
+          {
+            "uuid": "3ac62f4e-6eb5-4f00-a3e8-478ab7f69d06",
+            "title": "Finding for ac-7",
+            "description": "Assessment finding for control ac-7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-7_smt"
+            }
+          },
+          {
+            "uuid": "5d19d032-b497-483d-8c8f-a9db28653b2a",
+            "title": "Finding for ac-8",
+            "description": "Assessment finding for control ac-8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ac-8_smt"
+            }
+          },
+          {
+            "uuid": "9d67699a-d87f-40f0-8eb0-8ad7eb099bf8",
+            "title": "Finding for at-1",
+            "description": "Assessment finding for control at-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "at-1_smt"
+            }
+          },
+          {
+            "uuid": "61cbd676-6361-49fe-8265-81b9ebfc5ebc",
+            "title": "Finding for at-2",
+            "description": "Assessment finding for control at-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "at-2_smt"
+            }
+          },
+          {
+            "uuid": "2831c13f-c391-47a1-90f0-8d35b53b7772",
+            "title": "Finding for at-2.2",
+            "description": "Assessment finding for control at-2.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "at-2.2_smt"
+            }
+          },
+          {
+            "uuid": "8f653f7a-bbc0-47e3-94e9-c3ba5e6907c7",
+            "title": "Finding for at-2.3",
+            "description": "Assessment finding for control at-2.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "at-2.3_smt"
+            }
+          },
+          {
+            "uuid": "15453b88-502b-4898-b9bc-8f2659315bce",
+            "title": "Finding for at-3",
+            "description": "Reported in the SSP as Deferred before the assessment started (control at-3).",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "at-3_smt"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "0c1a64e0-3340-490c-b043-db03c4e44835"
+              }
+            ]
+          },
+          {
+            "uuid": "09dfd7b1-92f6-4f71-a97c-fcceefff0b47",
+            "title": "Finding for at-4",
+            "description": "Assessment finding for control at-4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "at-4_smt"
+            }
+          },
+          {
+            "uuid": "5ae3fab2-f7c9-4289-b035-5c3f8a62de99",
+            "title": "Finding for au-1",
+            "description": "Assessment finding for control au-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-1_smt"
+            }
+          },
+          {
+            "uuid": "81f2863b-7e36-4afd-b2c9-db7e613bed7d",
+            "title": "Finding for au-11",
+            "description": "Assessment finding for control au-11: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-11_smt"
+            }
+          },
+          {
+            "uuid": "4ef6a895-1bbe-478b-bd2e-dca12ae7b27c",
+            "title": "Finding for au-12",
+            "description": "Assessment finding for control au-12: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-12_smt"
+            }
+          },
+          {
+            "uuid": "9077b2f2-c748-4819-923d-ed21bd3ac8b2",
+            "title": "Finding for au-2",
+            "description": "Assessment finding for control au-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-2_smt"
+            }
+          },
+          {
+            "uuid": "3f89f062-7a29-494a-8c2a-08ab706eca6a",
+            "title": "Finding for au-3",
+            "description": "Assessment finding for control au-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-3_smt"
+            }
+          },
+          {
+            "uuid": "b0a20428-63ae-435a-85c1-e7ff21db6a07",
+            "title": "Finding for au-3.1",
+            "description": "Assessment finding for control au-3.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-3.1_smt"
+            }
+          },
+          {
+            "uuid": "fad877c0-c8c8-4786-a752-1aaac07a22b8",
+            "title": "Finding for au-4",
+            "description": "Assessment finding for control au-4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-4_smt"
+            }
+          },
+          {
+            "uuid": "905dee6a-964c-477d-99e6-14c7bcc46c3b",
+            "title": "Finding for au-5",
+            "description": "Reported in the SSP as Deferred before the assessment started (control au-5).",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "au-5_smt"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "d11c7b5f-e526-4ca5-8ecc-ad221a70fe2c"
+              }
+            ]
+          },
+          {
+            "uuid": "a438a87a-435e-4f42-b4c8-153d60617813",
+            "title": "Finding for au-6",
+            "description": "Reported in the SSP as Deferred before the assessment started (control au-6).",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "au-6_smt"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "00e218c7-6e4b-469e-ade9-9c37e835f29f"
+              }
+            ]
+          },
+          {
+            "uuid": "5d9d3314-e8a3-4244-9ae5-95e13f25c1af",
+            "title": "Finding for au-6.1",
+            "description": "Assessment finding for control au-6.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-6.1_smt"
+            }
+          },
+          {
+            "uuid": "a3a79f46-08da-421a-86e3-c344c78c1861",
+            "title": "Finding for au-6.3",
+            "description": "Assessment finding for control au-6.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-6.3_smt"
+            }
+          },
+          {
+            "uuid": "25532122-45af-4423-b23b-98d29b80566b",
+            "title": "Finding for au-7",
+            "description": "Assessment finding for control au-7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-7_smt"
+            }
+          },
+          {
+            "uuid": "bdea7a6a-85d8-47e5-b5d9-df96756a998f",
+            "title": "Finding for au-7.1",
+            "description": "Assessment finding for control au-7.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-7.1_smt"
+            }
+          },
+          {
+            "uuid": "1dbca80d-64e8-45ef-840f-03297561aa37",
+            "title": "Finding for au-8",
+            "description": "Assessment finding for control au-8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-8_smt"
+            }
+          },
+          {
+            "uuid": "b06a01ec-a888-4d3e-9dad-518d67d27c58",
+            "title": "Finding for au-9",
+            "description": "Assessment finding for control au-9: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-9_smt"
+            }
+          },
+          {
+            "uuid": "7ac0db2f-6893-42a2-b7b0-e42e81c6c0f3",
+            "title": "Finding for au-9.4",
+            "description": "Assessment finding for control au-9.4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "au-9.4_smt"
+            }
+          },
+          {
+            "uuid": "027f2547-8791-48d4-9b8c-724c7c6d7213",
+            "title": "Finding for ca-1",
+            "description": "Assessment finding for control ca-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ca-1_smt"
+            }
+          },
+          {
+            "uuid": "dfa4ca49-95cc-4117-9f9f-0455cb69a357",
+            "title": "Finding for ca-2",
+            "description": "Assessment finding for control ca-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ca-2_smt"
+            }
+          },
+          {
+            "uuid": "be447464-4d1a-4ab6-8997-8a0e7fbe917a",
+            "title": "Finding for ca-2.1",
+            "description": "Assessment finding for control ca-2.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ca-2.1_smt"
+            }
+          },
+          {
+            "uuid": "1ab02aa2-7564-4754-8c50-995d3f3e150a",
+            "title": "Finding for ca-3",
+            "description": "Reported in the SSP as Deferred before the assessment started (control ca-3).",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "ca-3_smt"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "64630d2a-1e66-4b2d-b08a-aa0c9b70136a"
+              }
+            ]
+          },
+          {
+            "uuid": "0db38fea-d923-4eee-8aa3-391024b76d58",
+            "title": "Finding for ca-5",
+            "description": "Assessment finding for control ca-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ca-5_smt"
+            }
+          },
+          {
+            "uuid": "447203e1-40fa-4d63-a247-9f85641f576a",
+            "title": "Finding for ca-6",
+            "description": "Assessment finding for control ca-6: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ca-6_smt"
+            }
+          },
+          {
+            "uuid": "1443f8f8-5ff6-4591-87f0-ecb177638b3f",
+            "title": "Finding for ca-7",
+            "description": "Reported in the SSP as Deferred before the assessment started (control ca-7).",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "ca-7_smt"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "fc25b85d-e701-4f9a-a0a7-11883b7355ca"
+              }
+            ]
+          },
+          {
+            "uuid": "a557ed53-8e3d-4005-a665-a1176737385f",
+            "title": "Finding for ca-7.1",
+            "description": "Assessment finding for control ca-7.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ca-7.1_smt"
+            }
+          },
+          {
+            "uuid": "5550966b-8972-4ca0-8ada-57a7bc88cf31",
+            "title": "Finding for ca-7.4",
+            "description": "Assessment finding for control ca-7.4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ca-7.4_smt"
+            }
+          },
+          {
+            "uuid": "cc357d52-6eb5-4d9f-b98e-b28b76017b0a",
+            "title": "Finding for ca-9",
+            "description": "Assessment finding for control ca-9: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ca-9_smt"
+            }
+          },
+          {
+            "uuid": "30e45399-88ff-499d-9999-ca3e1ced22b0",
+            "title": "Finding for cm-1",
+            "description": "Assessment finding for control cm-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-1_smt"
+            }
+          },
+          {
+            "uuid": "6e8368fe-133d-4d9d-a141-0be33ba6cbf8",
+            "title": "Finding for cm-10",
+            "description": "Assessment finding for control cm-10: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-10_smt"
+            }
+          },
+          {
+            "uuid": "72b095e6-9585-4a93-a01f-c64a2427c7d4",
+            "title": "Finding for cm-11",
+            "description": "Assessment finding for control cm-11: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-11_smt"
+            }
+          },
+          {
+            "uuid": "d3efe538-290f-44e4-9c57-2bbc9c553e1a",
+            "title": "Finding for cm-12",
+            "description": "Assessment finding for control cm-12: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-12_smt"
+            }
+          },
+          {
+            "uuid": "32aed265-a6f4-4344-9985-9a636b0eaad6",
+            "title": "Finding for cm-12.1",
+            "description": "Assessment finding for control cm-12.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-12.1_smt"
+            }
+          },
+          {
+            "uuid": "5d7c21f9-b7d1-41ea-9c3c-184fe277ceee",
+            "title": "Finding for cm-2",
+            "description": "Assessment finding for control cm-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-2_smt"
+            }
+          },
+          {
+            "uuid": "b46bbfc0-0a60-4ce6-b886-2fbf377c7ae4",
+            "title": "Finding for cm-2.2",
+            "description": "Assessment finding for control cm-2.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-2.2_smt"
+            }
+          },
+          {
+            "uuid": "93742257-18c1-4547-8649-3d5dc54063f0",
+            "title": "Finding for cm-2.3",
+            "description": "Assessment finding for control cm-2.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-2.3_smt"
+            }
+          },
+          {
+            "uuid": "26c5b2ab-0840-40bc-95cc-b78c63e8bd1e",
+            "title": "Finding for cm-2.7",
+            "description": "Assessment finding for control cm-2.7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-2.7_smt"
+            }
+          },
+          {
+            "uuid": "a06f26cc-ba72-42cd-ae9f-1a53a829c49b",
+            "title": "Finding for cm-3",
+            "description": "Assessment finding for control cm-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-3_smt"
+            }
+          },
+          {
+            "uuid": "887ac883-df26-4b9d-a17b-74cabbcd6ba9",
+            "title": "Finding for cm-3.2",
+            "description": "Assessment finding for control cm-3.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-3.2_smt"
+            }
+          },
+          {
+            "uuid": "6684d706-9bdb-442f-9989-072a51648d6c",
+            "title": "Finding for cm-3.4",
+            "description": "Assessment finding for control cm-3.4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-3.4_smt"
+            }
+          },
+          {
+            "uuid": "cb409a79-fcb2-43a0-9eff-ad8285e5c8a8",
+            "title": "Finding for cm-4",
+            "description": "Reported in the SSP as Deferred before the assessment started (control cm-4).",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "cm-4_smt"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "f5337d53-f50e-4e71-95b7-84b1c106ba48"
+              }
+            ]
+          },
+          {
+            "uuid": "612c92e0-b403-4ea3-b4e8-e7a08aaf0a71",
+            "title": "Finding for cm-4.2",
+            "description": "Assessment finding for control cm-4.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-4.2_smt"
+            }
+          },
+          {
+            "uuid": "061acb5a-faa1-4311-9151-19a9eb3f87dd",
+            "title": "Finding for cm-5",
+            "description": "Assessment finding for control cm-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-5_smt"
+            }
+          },
+          {
+            "uuid": "dcac63af-aaeb-495c-ac07-47c08825c005",
+            "title": "Finding for cm-6",
+            "description": "Assessment finding for control cm-6: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-6_smt"
+            }
+          },
+          {
+            "uuid": "c95182ea-11ce-4756-b074-8f3906104071",
+            "title": "Finding for cm-7",
+            "description": "Assessment finding for control cm-7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-7_smt"
+            }
+          },
+          {
+            "uuid": "5ebd16e5-2e20-4322-a91a-4978a003ac8b",
+            "title": "Finding for cm-7.1",
+            "description": "Assessment finding for control cm-7.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-7.1_smt"
+            }
+          },
+          {
+            "uuid": "b75632ad-4c8c-4e87-bf00-07e9bc71ebd3",
+            "title": "Finding for cm-7.2",
+            "description": "Assessment finding for control cm-7.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-7.2_smt"
+            }
+          },
+          {
+            "uuid": "bb395287-ea53-4b6a-8761-3a8ac8ca8ce8",
+            "title": "Finding for cm-7.5",
+            "description": "Assessment finding for control cm-7.5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-7.5_smt"
+            }
+          },
+          {
+            "uuid": "c92ec3c5-647c-454e-9e64-c345c4f98af1",
+            "title": "Finding for cm-8",
+            "description": "Reported in the SSP as Deferred before the assessment started (control cm-8).",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "cm-8_smt"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "4b30f737-0f7a-4430-8b5a-bca968d5ad59"
+              }
+            ]
+          },
+          {
+            "uuid": "1d6f7d2b-b21f-4c36-93c0-6d7886fcafdf",
+            "title": "Finding for cm-8.1",
+            "description": "Assessment finding for control cm-8.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-8.1_smt"
+            }
+          },
+          {
+            "uuid": "04656b71-d1f6-4504-8e4e-1330b2b6f5a2",
+            "title": "Finding for cm-8.3",
+            "description": "Assessment finding for control cm-8.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-8.3_smt"
+            }
+          },
+          {
+            "uuid": "86102ac3-4e98-4d2d-a879-e78a2f644768",
+            "title": "Finding for cm-9",
+            "description": "Assessment finding for control cm-9: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cm-9_smt"
+            }
+          },
+          {
+            "uuid": "31f95a77-ee4b-4ca1-b11e-63e93684df66",
+            "title": "Finding for cp-1",
+            "description": "Assessment finding for control cp-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-1_smt"
+            }
+          },
+          {
+            "uuid": "0cd5deff-0b7d-44b0-842e-876f035f3a47",
+            "title": "Finding for cp-10",
+            "description": "Assessment finding for control cp-10: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-10_smt"
+            }
+          },
+          {
+            "uuid": "bb47ae7a-4587-4328-a07a-5be114f91577",
+            "title": "Finding for cp-10.2",
+            "description": "Assessment finding for control cp-10.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-10.2_smt"
+            }
+          },
+          {
+            "uuid": "bf91a044-53e4-490c-93e3-caf39d609611",
+            "title": "Finding for cp-2",
+            "description": "Assessment finding for control cp-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-2_smt"
+            }
+          },
+          {
+            "uuid": "5409d88b-0d03-4479-9ad6-787729bcb520",
+            "title": "Finding for cp-2.1",
+            "description": "Assessment finding for control cp-2.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-2.1_smt"
+            }
+          },
+          {
+            "uuid": "f863d1c1-dcce-43d2-b2ef-96c26315e8ad",
+            "title": "Finding for cp-2.3",
+            "description": "Assessment finding for control cp-2.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-2.3_smt"
+            }
+          },
+          {
+            "uuid": "34889986-bbd2-47bd-8233-6426f8a89e3d",
+            "title": "Finding for cp-2.8",
+            "description": "Assessment finding for control cp-2.8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-2.8_smt"
+            }
+          },
+          {
+            "uuid": "93f0715e-aa28-4265-bcff-a90cfbe8a3c6",
+            "title": "Finding for cp-3",
+            "description": "Assessment finding for control cp-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-3_smt"
+            }
+          },
+          {
+            "uuid": "fc4ebfa1-04c9-44fc-98b5-8a2b8676d52b",
+            "title": "Finding for cp-4",
+            "description": "Reported in the SSP as Deferred before the assessment started (control cp-4).",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "cp-4_smt"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "6864580f-dc80-4219-a223-e6ac8967511d"
+              }
+            ]
+          },
+          {
+            "uuid": "685264b9-c1ad-4323-9ebb-5d73ff4c13dd",
+            "title": "Finding for cp-4.1",
+            "description": "Assessment finding for control cp-4.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-4.1_smt"
+            }
+          },
+          {
+            "uuid": "16f9ec27-d716-4fc1-b8f0-f12a08afb298",
+            "title": "Finding for cp-6",
+            "description": "Assessment finding for control cp-6: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-6_smt"
+            }
+          },
+          {
+            "uuid": "d21c9aee-37f9-4e99-a77c-8d33b35fb689",
+            "title": "Finding for cp-6.1",
+            "description": "Assessment finding for control cp-6.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-6.1_smt"
+            }
+          },
+          {
+            "uuid": "cb4868eb-77e1-4aef-bd62-7966fe13b296",
+            "title": "Finding for cp-6.3",
+            "description": "Assessment finding for control cp-6.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-6.3_smt"
+            }
+          },
+          {
+            "uuid": "0d0f1b2d-6a2c-4d59-9f30-23dd011a095d",
+            "title": "Finding for cp-7",
+            "description": "Assessment finding for control cp-7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-7_smt"
+            }
+          },
+          {
+            "uuid": "ed45012c-d5a6-489e-b79d-3c9cb297b661",
+            "title": "Finding for cp-7.1",
+            "description": "Assessment finding for control cp-7.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-7.1_smt"
+            }
+          },
+          {
+            "uuid": "76598296-7951-404d-a8e0-9f1014499a92",
+            "title": "Finding for cp-7.2",
+            "description": "Assessment finding for control cp-7.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-7.2_smt"
+            }
+          },
+          {
+            "uuid": "075936e6-ea64-4922-950b-a30f5cb78fdb",
+            "title": "Finding for cp-7.3",
+            "description": "Assessment finding for control cp-7.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-7.3_smt"
+            }
+          },
+          {
+            "uuid": "0653dbd9-f94d-4638-9188-69f7de2408f8",
+            "title": "Finding for cp-8",
+            "description": "Assessment finding for control cp-8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-8_smt"
+            }
+          },
+          {
+            "uuid": "c719c3d0-5a7f-471a-83d8-1263071627b7",
+            "title": "Finding for cp-8.1",
+            "description": "Assessment finding for control cp-8.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-8.1_smt"
+            }
+          },
+          {
+            "uuid": "6a8c225f-3cb2-4e0d-9dfd-4654f947c1ba",
+            "title": "Finding for cp-8.2",
+            "description": "Assessment finding for control cp-8.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-8.2_smt"
+            }
+          },
+          {
+            "uuid": "3a0a1fb5-9ad9-44e1-97e3-ec891bbeeb61",
+            "title": "Finding for cp-9",
+            "description": "Assessment finding for control cp-9: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-9_smt"
+            }
+          },
+          {
+            "uuid": "c5a9893a-5847-4da6-b65b-e820f4a63682",
+            "title": "Finding for cp-9.1",
+            "description": "Assessment finding for control cp-9.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-9.1_smt"
+            }
+          },
+          {
+            "uuid": "99899edf-0c36-4c14-be16-a731c9494e72",
+            "title": "Finding for cp-9.8",
+            "description": "Assessment finding for control cp-9.8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "cp-9.8_smt"
+            }
+          },
+          {
+            "uuid": "0bd6f805-057a-47aa-b840-1c2f371c4c38",
+            "title": "Finding for ia-1",
+            "description": "Assessment finding for control ia-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-1_smt"
+            }
+          },
+          {
+            "uuid": "47fcef8f-d9de-428b-b33e-da4596884fd3",
+            "title": "Finding for ia-11",
+            "description": "Assessment finding for control ia-11: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-11_smt"
+            }
+          },
+          {
+            "uuid": "b24bcf85-197f-4a29-a86b-c9f61c8a32f5",
+            "title": "Finding for ia-12",
+            "description": "Assessment finding for control ia-12: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-12_smt"
+            }
+          },
+          {
+            "uuid": "f01c6462-16ba-4d8f-919b-559296d7f7f0",
+            "title": "Finding for ia-12.2",
+            "description": "Assessment finding for control ia-12.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-12.2_smt"
+            }
+          },
+          {
+            "uuid": "98bbfc93-fe04-4dab-805f-f861c0a4c97a",
+            "title": "Finding for ia-12.3",
+            "description": "Assessment finding for control ia-12.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-12.3_smt"
+            }
+          },
+          {
+            "uuid": "1a8db595-1300-49b0-afc5-f07aaf4d31df",
+            "title": "Finding for ia-12.5",
+            "description": "Assessment finding for control ia-12.5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-12.5_smt"
+            }
+          },
+          {
+            "uuid": "4099c381-5ec8-4861-9886-666863759f42",
+            "title": "Finding for ia-2",
+            "description": "Assessment finding for control ia-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-2_smt"
+            }
+          },
+          {
+            "uuid": "cd147f7f-d67f-406d-9d17-47aec63e089b",
+            "title": "Finding for ia-2.1",
+            "description": "Assessment finding for control ia-2.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-2.1_smt"
+            }
+          },
+          {
+            "uuid": "529d6c02-b656-4c91-80ee-70ecde8c99f9",
+            "title": "Finding for ia-2.12",
+            "description": "Assessment finding for control ia-2.12: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-2.12_smt"
+            }
+          },
+          {
+            "uuid": "f4d61b73-8c9b-4225-9b0c-908c4e17693b",
+            "title": "Finding for ia-2.2",
+            "description": "Assessment finding for control ia-2.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-2.2_smt"
+            }
+          },
+          {
+            "uuid": "d3f5d1fb-2568-423d-a071-8dc5d2c8c60b",
+            "title": "Finding for ia-2.8",
+            "description": "Assessment finding for control ia-2.8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-2.8_smt"
+            }
+          },
+          {
+            "uuid": "712a651e-7491-452c-bb53-5a077a433793",
+            "title": "Finding for ia-3",
+            "description": "Reported in the SSP as Deferred before the assessment started (control ia-3).",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "ia-3_smt"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "445cc03b-d30c-48d1-bdac-fd8d03a7ffd8"
+              }
+            ]
+          },
+          {
+            "uuid": "d0b69f38-0d1d-4e61-a8e0-f8eee739a9d0",
+            "title": "Finding for ia-4",
+            "description": "Assessment finding for control ia-4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-4_smt"
+            }
+          },
+          {
+            "uuid": "8f5ab326-857f-408c-96f5-9f6fd6c8daa0",
+            "title": "Finding for ia-4.4",
+            "description": "Assessment finding for control ia-4.4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-4.4_smt"
+            }
+          },
+          {
+            "uuid": "f9d05531-ba73-4795-9fd2-6f14eceec895",
+            "title": "Finding for ia-5",
+            "description": "Assessment finding for control ia-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-5_smt"
+            }
+          },
+          {
+            "uuid": "7c1589c8-07d7-4b6d-995e-8b830a266ae1",
+            "title": "Finding for ia-5.1",
+            "description": "Assessment finding for control ia-5.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-5.1_smt"
+            }
+          },
+          {
+            "uuid": "5b9e1eac-092d-4af4-8917-0513a4da24bd",
+            "title": "Finding for ia-5.2",
+            "description": "Assessment finding for control ia-5.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-5.2_smt"
+            }
+          },
+          {
+            "uuid": "9853fd21-50fa-4265-a681-9b3f989bce9f",
+            "title": "Finding for ia-5.6",
+            "description": "Assessment finding for control ia-5.6: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-5.6_smt"
+            }
+          },
+          {
+            "uuid": "ceae197a-8fcf-48c1-b342-4ca1152def14",
+            "title": "Finding for ia-6",
+            "description": "Assessment finding for control ia-6: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-6_smt"
+            }
+          },
+          {
+            "uuid": "2d32ac0b-9746-4fce-bbc9-8bebad43bb3c",
+            "title": "Finding for ia-7",
+            "description": "Assessment finding for control ia-7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-7_smt"
+            }
+          },
+          {
+            "uuid": "4acc739a-7137-4952-bfaa-8d733928d6aa",
+            "title": "Finding for ia-8",
+            "description": "Assessment finding for control ia-8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-8_smt"
+            }
+          },
+          {
+            "uuid": "75049736-bb53-4c87-a86e-fb5ceb917651",
+            "title": "Finding for ia-8.1",
+            "description": "Assessment finding for control ia-8.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-8.1_smt"
+            }
+          },
+          {
+            "uuid": "24bbd73c-fcc0-48ff-b2e4-f01dd4eab466",
+            "title": "Finding for ia-8.2",
+            "description": "Assessment finding for control ia-8.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-8.2_smt"
+            }
+          },
+          {
+            "uuid": "42293851-0997-4123-b5c3-33f9f7b5141f",
+            "title": "Finding for ia-8.4",
+            "description": "Assessment finding for control ia-8.4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ia-8.4_smt"
+            }
+          },
+          {
+            "uuid": "78514fec-ed8a-4c24-9a37-c5d7daae151c",
+            "title": "Finding for ir-1",
+            "description": "Assessment finding for control ir-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-1_smt"
+            }
+          },
+          {
+            "uuid": "1b4496a8-2e1b-4fac-bd30-399d7070742b",
+            "title": "Finding for ir-2",
+            "description": "Assessment finding for control ir-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-2_smt"
+            }
+          },
+          {
+            "uuid": "8d7f4b71-7233-4241-b497-584aeb88ea65",
+            "title": "Finding for ir-3",
+            "description": "Assessment finding for control ir-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-3_smt"
+            }
+          },
+          {
+            "uuid": "aa29a6e2-d900-411c-bb3b-9fd1034e82c8",
+            "title": "Finding for ir-3.2",
+            "description": "Assessment finding for control ir-3.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-3.2_smt"
+            }
+          },
+          {
+            "uuid": "ea1a33f0-17a4-4a75-b98d-c6b11fac83f9",
+            "title": "Finding for ir-4",
+            "description": "Assessment finding for control ir-4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-4_smt"
+            }
+          },
+          {
+            "uuid": "8503c2ea-e9bd-437f-b795-139b79334e98",
+            "title": "Finding for ir-4.1",
+            "description": "Assessment finding for control ir-4.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-4.1_smt"
+            }
+          },
+          {
+            "uuid": "84cd9436-482d-48ab-a095-63180a0bb49a",
+            "title": "Finding for ir-5",
+            "description": "Reported in the SSP as Deferred before the assessment started (control ir-5).",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "not-satisfied"
+              },
+              "target-id": "ir-5_smt"
+            },
+            "related-risks": [
+              {
+                "risk-uuid": "8fb8aa8a-0425-4da7-95eb-b89fdc04661c"
+              }
+            ]
+          },
+          {
+            "uuid": "1adacd9f-af15-45c1-96c6-dfae77a74d7e",
+            "title": "Finding for ir-6",
+            "description": "Assessment finding for control ir-6: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-6_smt"
+            }
+          },
+          {
+            "uuid": "4d4a30e2-554d-4fc6-9997-85c9164c0246",
+            "title": "Finding for ir-6.1",
+            "description": "Assessment finding for control ir-6.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-6.1_smt"
+            }
+          },
+          {
+            "uuid": "cefd8ad3-d978-4659-8086-dcd67f30c0ef",
+            "title": "Finding for ir-6.3",
+            "description": "Assessment finding for control ir-6.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-6.3_smt"
+            }
+          },
+          {
+            "uuid": "d69363ff-b36f-4a7e-99e9-a0b7c4f4acbd",
+            "title": "Finding for ir-7",
+            "description": "Assessment finding for control ir-7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-7_smt"
+            }
+          },
+          {
+            "uuid": "f86fa613-27f1-4824-8dc5-e44e8acd196d",
+            "title": "Finding for ir-7.1",
+            "description": "Assessment finding for control ir-7.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-7.1_smt"
+            }
+          },
+          {
+            "uuid": "2e5e882a-649a-411d-a055-65ecd2f3a286",
+            "title": "Finding for ir-8",
+            "description": "Assessment finding for control ir-8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ir-8_smt"
+            }
+          },
+          {
+            "uuid": "87340f81-b49b-43d5-8c33-7dbd9e140c8a",
+            "title": "Finding for ma-1",
+            "description": "Assessment finding for control ma-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ma-1_smt"
+            }
+          },
+          {
+            "uuid": "dad44bf1-f18e-4193-9a54-a312e577a811",
+            "title": "Finding for ma-2",
+            "description": "Assessment finding for control ma-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ma-2_smt"
+            }
+          },
+          {
+            "uuid": "081c9c7b-0fc7-4d8f-9cc7-ec8ddd9374aa",
+            "title": "Finding for ma-3",
+            "description": "Assessment finding for control ma-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ma-3_smt"
+            }
+          },
+          {
+            "uuid": "6432d5a0-c482-4be0-9004-61a28e1dcfb3",
+            "title": "Finding for ma-3.1",
+            "description": "Assessment finding for control ma-3.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ma-3.1_smt"
+            }
+          },
+          {
+            "uuid": "6b4bb699-0837-4358-9e0e-753c8407b6ed",
+            "title": "Finding for ma-3.2",
+            "description": "Assessment finding for control ma-3.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ma-3.2_smt"
+            }
+          },
+          {
+            "uuid": "c1c2f7c1-c856-45c7-a4e8-1cb71006cf25",
+            "title": "Finding for ma-3.3",
+            "description": "Assessment finding for control ma-3.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ma-3.3_smt"
+            }
+          },
+          {
+            "uuid": "6d230b43-86e9-4aee-95cc-98f23117db0d",
+            "title": "Finding for ma-4",
+            "description": "Assessment finding for control ma-4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ma-4_smt"
+            }
+          },
+          {
+            "uuid": "acde016a-b571-4328-a928-92b299873fc0",
+            "title": "Finding for ma-5",
+            "description": "Assessment finding for control ma-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ma-5_smt"
+            }
+          },
+          {
+            "uuid": "0f9e4775-468a-4e62-a7e4-1205e284c2f8",
+            "title": "Finding for ma-6",
+            "description": "Assessment finding for control ma-6: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ma-6_smt"
+            }
+          },
+          {
+            "uuid": "d3fd6a96-49e5-4b48-a869-03c34a95a6a2",
+            "title": "Finding for mp-1",
+            "description": "Assessment finding for control mp-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "mp-1_smt"
+            }
+          },
+          {
+            "uuid": "a1890b93-b469-4261-ae00-58d22ae006ee",
+            "title": "Finding for mp-2",
+            "description": "Assessment finding for control mp-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "mp-2_smt"
+            }
+          },
+          {
+            "uuid": "ae24d0d3-7314-4667-8b57-3aaa073c8677",
+            "title": "Finding for mp-3",
+            "description": "Assessment finding for control mp-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "mp-3_smt"
+            }
+          },
+          {
+            "uuid": "f7697bd4-73ed-4653-906e-53b77735494d",
+            "title": "Finding for mp-4",
+            "description": "Assessment finding for control mp-4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "mp-4_smt"
+            }
+          },
+          {
+            "uuid": "7c7ac1a4-a922-40e0-bb52-20e909d235f7",
+            "title": "Finding for mp-5",
+            "description": "Assessment finding for control mp-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "mp-5_smt"
+            }
+          },
+          {
+            "uuid": "91e057c7-00f7-4266-923a-ab80a879410e",
+            "title": "Finding for mp-6",
+            "description": "Assessment finding for control mp-6: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "mp-6_smt"
+            }
+          },
+          {
+            "uuid": "c1253b6e-6e85-4eea-8964-08aec8286048",
+            "title": "Finding for mp-7",
+            "description": "Assessment finding for control mp-7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "mp-7_smt"
+            }
+          },
+          {
+            "uuid": "46745950-dd0a-4fc6-b5e7-970526a5946b",
+            "title": "Finding for pe-1",
+            "description": "Assessment finding for control pe-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-1_smt"
+            }
+          },
+          {
+            "uuid": "6ba503b2-cecd-4232-9851-f143b02653d7",
+            "title": "Finding for pe-10",
+            "description": "Assessment finding for control pe-10: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-10_smt"
+            }
+          },
+          {
+            "uuid": "c4e2765a-d857-4e12-a0a5-a84efcb8ec41",
+            "title": "Finding for pe-11",
+            "description": "Assessment finding for control pe-11: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-11_smt"
+            }
+          },
+          {
+            "uuid": "34324f72-c467-4c86-9cf4-727b9388c40d",
+            "title": "Finding for pe-12",
+            "description": "Assessment finding for control pe-12: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-12_smt"
+            }
+          },
+          {
+            "uuid": "2933610b-43f1-4c4a-a958-b2139c121b6c",
+            "title": "Finding for pe-13",
+            "description": "Assessment finding for control pe-13: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-13_smt"
+            }
+          },
+          {
+            "uuid": "8f6ad9a1-7d55-45aa-ba27-ff4e6fd22a3c",
+            "title": "Finding for pe-13.1",
+            "description": "Assessment finding for control pe-13.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-13.1_smt"
+            }
+          },
+          {
+            "uuid": "f072a43f-bf09-4fb4-b8e2-a796c5d51423",
+            "title": "Finding for pe-14",
+            "description": "Assessment finding for control pe-14: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-14_smt"
+            }
+          },
+          {
+            "uuid": "40659b08-25d3-412d-af5d-84c4b4ca42c1",
+            "title": "Finding for pe-15",
+            "description": "Assessment finding for control pe-15: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-15_smt"
+            }
+          },
+          {
+            "uuid": "7502dfb9-1df7-4c0c-8c94-22be350cf080",
+            "title": "Finding for pe-16",
+            "description": "Assessment finding for control pe-16: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-16_smt"
+            }
+          },
+          {
+            "uuid": "c0d335a1-4f6c-4f14-b784-bac1fb097b06",
+            "title": "Finding for pe-17",
+            "description": "Assessment finding for control pe-17: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-17_smt"
+            }
+          },
+          {
+            "uuid": "4b720d50-177a-4ee1-a345-242408030e02",
+            "title": "Finding for pe-2",
+            "description": "Assessment finding for control pe-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-2_smt"
+            }
+          },
+          {
+            "uuid": "5c450c5a-ee29-4bfc-92a3-a5e7c70b6f08",
+            "title": "Finding for pe-3",
+            "description": "Assessment finding for control pe-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-3_smt"
+            }
+          },
+          {
+            "uuid": "b9cf666a-c9e9-4ff8-baae-195460b9a131",
+            "title": "Finding for pe-4",
+            "description": "Assessment finding for control pe-4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-4_smt"
+            }
+          },
+          {
+            "uuid": "ab2b2ea0-abd2-423b-a11d-6c1f14e7e987",
+            "title": "Finding for pe-5",
+            "description": "Assessment finding for control pe-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-5_smt"
+            }
+          },
+          {
+            "uuid": "27436fe4-33b9-4a30-9836-01de2e3dc46a",
+            "title": "Finding for pe-6",
+            "description": "Assessment finding for control pe-6: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-6_smt"
+            }
+          },
+          {
+            "uuid": "bc6c3b3c-ea59-4344-8a8b-5bd8039eff48",
+            "title": "Finding for pe-6.1",
+            "description": "Assessment finding for control pe-6.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-6.1_smt"
+            }
+          },
+          {
+            "uuid": "b0b7a7de-04ed-403e-9695-19b11556dc2b",
+            "title": "Finding for pe-8",
+            "description": "Assessment finding for control pe-8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-8_smt"
+            }
+          },
+          {
+            "uuid": "63c39998-ea3d-42cf-9571-b6ccd9cef72d",
+            "title": "Finding for pe-9",
+            "description": "Assessment finding for control pe-9: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pe-9_smt"
+            }
+          },
+          {
+            "uuid": "24cb82e5-62db-4870-8097-911523ce4a6f",
+            "title": "Finding for pl-1",
+            "description": "Assessment finding for control pl-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pl-1_smt"
+            }
+          },
+          {
+            "uuid": "983a4355-f6cd-4b4f-a9be-1b81014b02a4",
+            "title": "Finding for pl-10",
+            "description": "Assessment finding for control pl-10: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pl-10_smt"
+            }
+          },
+          {
+            "uuid": "5575e89b-3a98-4d19-b08b-f1545590e11b",
+            "title": "Finding for pl-11",
+            "description": "Assessment finding for control pl-11: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pl-11_smt"
+            }
+          },
+          {
+            "uuid": "445dfbb2-2901-47e9-b4ba-9f494e9415e0",
+            "title": "Finding for pl-2",
+            "description": "Assessment finding for control pl-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pl-2_smt"
+            }
+          },
+          {
+            "uuid": "2635130b-7732-4437-a88c-ff5320df76ce",
+            "title": "Finding for pl-4",
+            "description": "Assessment finding for control pl-4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pl-4_smt"
+            }
+          },
+          {
+            "uuid": "a59027d0-65e4-4106-8f1c-9e030548005a",
+            "title": "Finding for pl-4.1",
+            "description": "Assessment finding for control pl-4.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pl-4.1_smt"
+            }
+          },
+          {
+            "uuid": "96334aac-9a28-44f3-80d3-f16c602b6ac7",
+            "title": "Finding for pl-8",
+            "description": "Assessment finding for control pl-8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "pl-8_smt"
+            }
+          },
+          {
+            "uuid": "f741ae29-a123-4d57-abe4-4241787fff2c",
+            "title": "Finding for ps-1",
+            "description": "Assessment finding for control ps-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ps-1_smt"
+            }
+          },
+          {
+            "uuid": "1aadac69-ada1-4202-890d-17b2910710cb",
+            "title": "Finding for ps-2",
+            "description": "Assessment finding for control ps-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ps-2_smt"
+            }
+          },
+          {
+            "uuid": "f83a3ddd-95ad-43d6-941b-8ca2ff366cf4",
+            "title": "Finding for ps-3",
+            "description": "Assessment finding for control ps-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ps-3_smt"
+            }
+          },
+          {
+            "uuid": "d6747697-2a33-4234-a9c1-e7f6b943038e",
+            "title": "Finding for ps-4",
+            "description": "Assessment finding for control ps-4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ps-4_smt"
+            }
+          },
+          {
+            "uuid": "adf02466-44a2-4e04-97e1-717f8cd40b1a",
+            "title": "Finding for ps-5",
+            "description": "Assessment finding for control ps-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ps-5_smt"
+            }
+          },
+          {
+            "uuid": "555c35b8-fe33-41e7-976f-bbc86ad661a1",
+            "title": "Finding for ps-6",
+            "description": "Assessment finding for control ps-6: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ps-6_smt"
+            }
+          },
+          {
+            "uuid": "bcb8fdc0-bc88-455e-8fda-46841e26b231",
+            "title": "Finding for ps-7",
+            "description": "Assessment finding for control ps-7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ps-7_smt"
+            }
+          },
+          {
+            "uuid": "bc05d372-5bf6-42d0-9c86-51bcac4239d7",
+            "title": "Finding for ps-8",
+            "description": "Assessment finding for control ps-8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ps-8_smt"
+            }
+          },
+          {
+            "uuid": "826aaa87-94c9-4bc2-94f7-8be478e57a66",
+            "title": "Finding for ps-9",
+            "description": "Assessment finding for control ps-9: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ps-9_smt"
+            }
+          },
+          {
+            "uuid": "c2c53b0a-c1b3-4b5b-99a9-8b45a533091d",
+            "title": "Finding for ra-1",
+            "description": "Assessment finding for control ra-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ra-1_smt"
+            }
+          },
+          {
+            "uuid": "1d2e7bc7-d2d1-4fc1-8e6e-86640741a7cf",
+            "title": "Finding for ra-2",
+            "description": "Assessment finding for control ra-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ra-2_smt"
+            }
+          },
+          {
+            "uuid": "6ebb6651-ef8c-4cad-9291-b10a09f7df6b",
+            "title": "Finding for ra-3",
+            "description": "Assessment finding for control ra-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ra-3_smt"
+            }
+          },
+          {
+            "uuid": "a70ef031-eece-47e3-809d-a4f39050a704",
+            "title": "Finding for ra-3.1",
+            "description": "Assessment finding for control ra-3.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ra-3.1_smt"
+            }
+          },
+          {
+            "uuid": "947cb20e-ae0c-40ce-aa6e-bc912c472044",
+            "title": "Finding for ra-5",
+            "description": "Assessment finding for control ra-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ra-5_smt"
+            }
+          },
+          {
+            "uuid": "93ba0c32-b0de-47e3-9c31-f421e87431ed",
+            "title": "Finding for ra-5.11",
+            "description": "Assessment finding for control ra-5.11: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ra-5.11_smt"
+            }
+          },
+          {
+            "uuid": "35de7a7d-2190-4d80-92ee-9dbd5edc1cb3",
+            "title": "Finding for ra-5.2",
+            "description": "Assessment finding for control ra-5.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ra-5.2_smt"
+            }
+          },
+          {
+            "uuid": "f2c8905c-133c-4b75-9b44-639e26018f36",
+            "title": "Finding for ra-5.5",
+            "description": "Assessment finding for control ra-5.5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ra-5.5_smt"
+            }
+          },
+          {
+            "uuid": "a6ac31f1-4fe5-46fc-a2e0-5082818194e8",
+            "title": "Finding for ra-7",
+            "description": "Assessment finding for control ra-7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ra-7_smt"
+            }
+          },
+          {
+            "uuid": "68f4fa5e-3ed6-45ea-a83b-58de284dce83",
+            "title": "Finding for ra-9",
+            "description": "Assessment finding for control ra-9: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "ra-9_smt"
+            }
+          },
+          {
+            "uuid": "48dd4680-38c1-4535-a7cb-f609877d34ca",
+            "title": "Finding for sa-1",
+            "description": "Assessment finding for control sa-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-1_smt"
+            }
+          },
+          {
+            "uuid": "1bbf7223-90e8-4d2c-a42d-bab4cdd678a7",
+            "title": "Finding for sa-10",
+            "description": "Assessment finding for control sa-10: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-10_smt"
+            }
+          },
+          {
+            "uuid": "9d64f994-ec53-46e9-ab7d-4f7049048fcb",
+            "title": "Finding for sa-11",
+            "description": "Assessment finding for control sa-11: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-11_smt"
+            }
+          },
+          {
+            "uuid": "6619e26f-9a65-4b02-a0ce-4c28b9c57c5f",
+            "title": "Finding for sa-15",
+            "description": "Assessment finding for control sa-15: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-15_smt"
+            }
+          },
+          {
+            "uuid": "a3c51980-48e2-4d07-aa85-09bd968dd261",
+            "title": "Finding for sa-15.3",
+            "description": "Assessment finding for control sa-15.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-15.3_smt"
+            }
+          },
+          {
+            "uuid": "9ecc6932-71ef-472d-8fcc-1b7c9daa3ba1",
+            "title": "Finding for sa-2",
+            "description": "Assessment finding for control sa-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-2_smt"
+            }
+          },
+          {
+            "uuid": "fc25c045-70e1-4a44-8c58-af162e9cf6ec",
+            "title": "Finding for sa-22",
+            "description": "Assessment finding for control sa-22: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-22_smt"
+            }
+          },
+          {
+            "uuid": "3e30a462-9f09-4973-9235-921f61319e90",
+            "title": "Finding for sa-3",
+            "description": "Assessment finding for control sa-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-3_smt"
+            }
+          },
+          {
+            "uuid": "21df9d86-2d5d-44bd-8c41-3069a4da1c68",
+            "title": "Finding for sa-4",
+            "description": "Assessment finding for control sa-4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-4_smt"
+            }
+          },
+          {
+            "uuid": "cc8bd4e4-244b-428c-97dc-4e1f54f34296",
+            "title": "Finding for sa-4.1",
+            "description": "Assessment finding for control sa-4.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-4.1_smt"
+            }
+          },
+          {
+            "uuid": "c9b12c5b-1c85-4020-ba75-bf486979dffe",
+            "title": "Finding for sa-4.10",
+            "description": "Assessment finding for control sa-4.10: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-4.10_smt"
+            }
+          },
+          {
+            "uuid": "7023f003-4af3-4a52-8022-50705b5bb1ea",
+            "title": "Finding for sa-4.2",
+            "description": "Assessment finding for control sa-4.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-4.2_smt"
+            }
+          },
+          {
+            "uuid": "1354ffc0-fd78-4e64-b3bd-08e6811f240a",
+            "title": "Finding for sa-4.9",
+            "description": "Assessment finding for control sa-4.9: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-4.9_smt"
+            }
+          },
+          {
+            "uuid": "914a7801-86a9-4ff3-85bc-7d47eb84aa01",
+            "title": "Finding for sa-5",
+            "description": "Assessment finding for control sa-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-5_smt"
+            }
+          },
+          {
+            "uuid": "d5a1c596-95e2-473c-b58f-fffb7b4e2a2c",
+            "title": "Finding for sa-8",
+            "description": "Assessment finding for control sa-8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-8_smt"
+            }
+          },
+          {
+            "uuid": "d406d827-ca40-49a4-9352-dd3426f8f0c0",
+            "title": "Finding for sa-9",
+            "description": "Assessment finding for control sa-9: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-9_smt"
+            }
+          },
+          {
+            "uuid": "e2133ea0-9984-4fdd-85f9-bd9da1f8252a",
+            "title": "Finding for sa-9.2",
+            "description": "Assessment finding for control sa-9.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sa-9.2_smt"
+            }
+          },
+          {
+            "uuid": "7d083799-9a96-446b-9cb4-80d05666bfd7",
+            "title": "Finding for sc-1",
+            "description": "Assessment finding for control sc-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-1_smt"
+            }
+          },
+          {
+            "uuid": "4c13a46b-7eb1-4b16-981f-0059ac3a2e0b",
+            "title": "Finding for sc-10",
+            "description": "Assessment finding for control sc-10: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-10_smt"
+            }
+          },
+          {
+            "uuid": "0037646f-c6a6-4f78-a56c-961c9c094655",
+            "title": "Finding for sc-12",
+            "description": "Assessment finding for control sc-12: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-12_smt"
+            }
+          },
+          {
+            "uuid": "29bca3e9-0e8c-4eb9-ad0e-f8007b576dd4",
+            "title": "Finding for sc-13",
+            "description": "Assessment finding for control sc-13: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-13_smt"
+            }
+          },
+          {
+            "uuid": "ade7cbd4-b6bf-4600-b8a7-7ddb5b5712e2",
+            "title": "Finding for sc-15",
+            "description": "Assessment finding for control sc-15: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-15_smt"
+            }
+          },
+          {
+            "uuid": "bde964e1-2094-486b-baa3-873d84a0e6d8",
+            "title": "Finding for sc-17",
+            "description": "Assessment finding for control sc-17: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-17_smt"
+            }
+          },
+          {
+            "uuid": "7a4bfa92-677b-43e4-bdef-0729fd9ba01e",
+            "title": "Finding for sc-18",
+            "description": "Assessment finding for control sc-18: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-18_smt"
+            }
+          },
+          {
+            "uuid": "550ffc2d-39df-47e3-9764-17b61e774e43",
+            "title": "Finding for sc-2",
+            "description": "Assessment finding for control sc-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-2_smt"
+            }
+          },
+          {
+            "uuid": "792550c7-9809-46a8-839d-3d3e905769f5",
+            "title": "Finding for sc-20",
+            "description": "Assessment finding for control sc-20: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-20_smt"
+            }
+          },
+          {
+            "uuid": "3c341059-36b2-4963-8b54-198842b3ba49",
+            "title": "Finding for sc-21",
+            "description": "Assessment finding for control sc-21: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-21_smt"
+            }
+          },
+          {
+            "uuid": "d81f2b0f-a713-4e5d-a0bd-df0ee51c88e5",
+            "title": "Finding for sc-22",
+            "description": "Assessment finding for control sc-22: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-22_smt"
+            }
+          },
+          {
+            "uuid": "bd3f7999-5047-477b-af68-9863e1ec08ac",
+            "title": "Finding for sc-23",
+            "description": "Assessment finding for control sc-23: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-23_smt"
+            }
+          },
+          {
+            "uuid": "78d6edf5-fa1c-43ad-8f18-05e42f9d6477",
+            "title": "Finding for sc-28",
+            "description": "Assessment finding for control sc-28: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-28_smt"
+            }
+          },
+          {
+            "uuid": "4838df9b-b4ee-471b-8a82-59b59086ef37",
+            "title": "Finding for sc-28.1",
+            "description": "Assessment finding for control sc-28.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-28.1_smt"
+            }
+          },
+          {
+            "uuid": "60d892ea-0211-481f-99ed-4a11a007609b",
+            "title": "Finding for sc-39",
+            "description": "Assessment finding for control sc-39: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-39_smt"
+            }
+          },
+          {
+            "uuid": "3f896081-a751-4c31-beaa-7a38153935ba",
+            "title": "Finding for sc-4",
+            "description": "Assessment finding for control sc-4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-4_smt"
+            }
+          },
+          {
+            "uuid": "e0c48af1-706e-4f66-a60d-5f6ca3d08dde",
+            "title": "Finding for sc-5",
+            "description": "Assessment finding for control sc-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-5_smt"
+            }
+          },
+          {
+            "uuid": "18ef7aad-2bc8-4cc2-a6cb-9ad0240b266e",
+            "title": "Finding for sc-7",
+            "description": "Assessment finding for control sc-7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-7_smt"
+            }
+          },
+          {
+            "uuid": "1960d18e-3cd8-4d23-8f4a-e54606a2ea55",
+            "title": "Finding for sc-7.3",
+            "description": "Assessment finding for control sc-7.3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-7.3_smt"
+            }
+          },
+          {
+            "uuid": "592d540e-0dff-435f-be94-248bb3517fff",
+            "title": "Finding for sc-7.4",
+            "description": "Assessment finding for control sc-7.4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-7.4_smt"
+            }
+          },
+          {
+            "uuid": "c9104107-8401-405d-ad92-2abf8a51d602",
+            "title": "Finding for sc-7.5",
+            "description": "Assessment finding for control sc-7.5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-7.5_smt"
+            }
+          },
+          {
+            "uuid": "d0da42dc-1e4f-4f55-aabb-6e4a3ad0b8ed",
+            "title": "Finding for sc-7.7",
+            "description": "Assessment finding for control sc-7.7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-7.7_smt"
+            }
+          },
+          {
+            "uuid": "edbb3df9-6132-421f-a69c-4db8dbbf4fdf",
+            "title": "Finding for sc-7.8",
+            "description": "Assessment finding for control sc-7.8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-7.8_smt"
+            }
+          },
+          {
+            "uuid": "65bcff3c-c8b0-4820-9b42-5c5edefe332d",
+            "title": "Finding for sc-8",
+            "description": "Assessment finding for control sc-8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-8_smt"
+            }
+          },
+          {
+            "uuid": "4587ca83-aa23-49d8-b1a5-9d007cac0e59",
+            "title": "Finding for sc-8.1",
+            "description": "Assessment finding for control sc-8.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sc-8.1_smt"
+            }
+          },
+          {
+            "uuid": "69c48911-1f74-4421-9089-543779fd4d1a",
+            "title": "Finding for si-1",
+            "description": "Assessment finding for control si-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-1_smt"
+            }
+          },
+          {
+            "uuid": "485e1fc7-1f55-4b73-8f47-31b8a6c69666",
+            "title": "Finding for si-10",
+            "description": "Assessment finding for control si-10: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-10_smt"
+            }
+          },
+          {
+            "uuid": "2edc3733-d76c-4718-ac81-44591dcf68ed",
+            "title": "Finding for si-11",
+            "description": "Assessment finding for control si-11: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-11_smt"
+            }
+          },
+          {
+            "uuid": "458efd01-1b1a-4189-9339-1f2d390bdae2",
+            "title": "Finding for si-12",
+            "description": "Assessment finding for control si-12: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-12_smt"
+            }
+          },
+          {
+            "uuid": "155d10cd-f69e-461e-a9bc-bb19b0f8ebd0",
+            "title": "Finding for si-16",
+            "description": "Assessment finding for control si-16: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-16_smt"
+            }
+          },
+          {
+            "uuid": "173905c2-9557-4f33-b07d-b41d75f57887",
+            "title": "Finding for si-2",
+            "description": "Assessment finding for control si-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-2_smt"
+            }
+          },
+          {
+            "uuid": "a6242c4e-0bdb-4297-9c76-06d228a2e5c6",
+            "title": "Finding for si-2.2",
+            "description": "Assessment finding for control si-2.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-2.2_smt"
+            }
+          },
+          {
+            "uuid": "51599e7f-8f9d-4036-8366-60233b0a22b7",
+            "title": "Finding for si-3",
+            "description": "Assessment finding for control si-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-3_smt"
+            }
+          },
+          {
+            "uuid": "348d3df6-2cfa-40ff-89cb-0c71afc11e53",
+            "title": "Finding for si-4",
+            "description": "Assessment finding for control si-4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-4_smt"
+            }
+          },
+          {
+            "uuid": "68848c6d-ea7f-47ab-99f3-5c8d8e610e13",
+            "title": "Finding for si-4.2",
+            "description": "Assessment finding for control si-4.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-4.2_smt"
+            }
+          },
+          {
+            "uuid": "f862b77d-8d5c-4269-9f5e-b9d18ae9090f",
+            "title": "Finding for si-4.4",
+            "description": "Assessment finding for control si-4.4: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-4.4_smt"
+            }
+          },
+          {
+            "uuid": "e29b061b-6067-46c8-b647-3c34c49c2337",
+            "title": "Finding for si-4.5",
+            "description": "Assessment finding for control si-4.5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-4.5_smt"
+            }
+          },
+          {
+            "uuid": "245be73a-7605-4ca4-a710-84f652799620",
+            "title": "Finding for si-5",
+            "description": "Assessment finding for control si-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-5_smt"
+            }
+          },
+          {
+            "uuid": "1834088a-7c93-4337-9750-46236ce9863b",
+            "title": "Finding for si-7",
+            "description": "Assessment finding for control si-7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-7_smt"
+            }
+          },
+          {
+            "uuid": "95558724-f4e3-44dc-98d9-440a6c0fb600",
+            "title": "Finding for si-7.1",
+            "description": "Assessment finding for control si-7.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-7.1_smt"
+            }
+          },
+          {
+            "uuid": "e222a1ad-2875-45a3-987e-85b03a9a02c0",
+            "title": "Finding for si-7.7",
+            "description": "Assessment finding for control si-7.7: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-7.7_smt"
+            }
+          },
+          {
+            "uuid": "81af7f0a-17ad-4717-8f99-548bdd4a22b0",
+            "title": "Finding for si-8",
+            "description": "Assessment finding for control si-8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-8_smt"
+            }
+          },
+          {
+            "uuid": "8a5c681b-64e5-4221-8cd8-44a2c9383bf7",
+            "title": "Finding for si-8.2",
+            "description": "Assessment finding for control si-8.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "si-8.2_smt"
+            }
+          },
+          {
+            "uuid": "e946ae09-f998-4280-8f02-d293c6760fb1",
+            "title": "Finding for sr-1",
+            "description": "Assessment finding for control sr-1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-1_smt"
+            }
+          },
+          {
+            "uuid": "7d0bc40e-89d0-419f-8094-741ff2cae9b6",
+            "title": "Finding for sr-10",
+            "description": "Assessment finding for control sr-10: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-10_smt"
+            }
+          },
+          {
+            "uuid": "96704c0f-b2c6-4f05-a33d-d6dc7f410aa5",
+            "title": "Finding for sr-11",
+            "description": "Assessment finding for control sr-11: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-11_smt"
+            }
+          },
+          {
+            "uuid": "06bcf97a-b9b5-4e78-a525-9211da935895",
+            "title": "Finding for sr-11.1",
+            "description": "Assessment finding for control sr-11.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-11.1_smt"
+            }
+          },
+          {
+            "uuid": "1b3081aa-1e6e-4adc-b78d-ac5925319358",
+            "title": "Finding for sr-11.2",
+            "description": "Assessment finding for control sr-11.2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-11.2_smt"
+            }
+          },
+          {
+            "uuid": "721864bd-8a0c-4243-804b-0de87ef97f12",
+            "title": "Finding for sr-12",
+            "description": "Assessment finding for control sr-12: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-12_smt"
+            }
+          },
+          {
+            "uuid": "64b339bb-4e21-4aee-81db-04eef8aad654",
+            "title": "Finding for sr-2",
+            "description": "Assessment finding for control sr-2: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-2_smt"
+            }
+          },
+          {
+            "uuid": "67aefdb1-fd77-44a4-9aea-924075de62f6",
+            "title": "Finding for sr-2.1",
+            "description": "Assessment finding for control sr-2.1: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-2.1_smt"
+            }
+          },
+          {
+            "uuid": "3c92abc1-b9d2-4f1d-87e7-6e12e8570587",
+            "title": "Finding for sr-3",
+            "description": "Assessment finding for control sr-3: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-3_smt"
+            }
+          },
+          {
+            "uuid": "49e63691-01d2-430c-8088-2541a4331f62",
+            "title": "Finding for sr-5",
+            "description": "Assessment finding for control sr-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-5_smt"
+            }
+          },
+          {
+            "uuid": "b62110a1-9f12-4bfd-a3b2-5fd32fafb96b",
+            "title": "Finding for sr-6",
+            "description": "Assessment finding for control sr-6: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-6_smt"
+            }
+          },
+          {
+            "uuid": "d7089ab4-d2a5-4148-b1bb-6b96a78194c8",
+            "title": "Finding for sr-8",
+            "description": "Assessment finding for control sr-8: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "sr-8_smt"
+            }
+          },
+          {
+            "uuid": "e336f394-7dd8-4b6e-97da-f55483c9f5db",
+            "title": "Finding for at-5",
+            "description": "Assessment finding for control at-5: known satisfied before the assessment.",
+            "target": {
+              "type": "statement-id",
+              "status": {
+                "state": "satisfied"
+              },
+              "target-id": "at-5_smt"
+            }
+          }
+        ],
         "reviewed-controls": {
           "control-selections": [
             {
               "include-all": {}
             }
           ]
-        },
-        "observations": [
-          {
-            "uuid": "fe22e55e-6d4d-4651-a9fa-d9354eb2f5d9",
-            "title": "Assessment of AC-01",
-            "description": "Control: AC-01\nResult: Pass\nNotes: Policy and procedure documentation reviewed; current versions on file dated September 2025.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "6a5097e7-1885-42ec-a56c-e01c8fceb8fd",
-            "title": "Assessment of AC-02",
-            "description": "Control: AC-02\nResult: Pass\nNotes: Account management procedures verified through HR termination records, access review logs, and identity management system audit trail.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "142b84fc-4482-4e58-9fed-c8cd115f75d6",
-            "title": "Assessment of AC-03",
-            "description": "Control: AC-03\nResult: Pass\nNotes: Tested 15 user roles; all access decisions enforced correctly. No unauthorized access paths discovered.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "059c1c7a-ef73-4def-a1a9-5f17cc48bd0e",
-            "title": "Assessment of AC-04",
-            "description": "Control: AC-04\nResult: Failed\nNotes: Network flow controls verified. Application-level DLP controls are incomplete; three data paths lack enforced classification labels.\nRecommendation: Complete application-level data classification labeling by Q1 2026. Track in POA&M item AC-4-001.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "b4659192-2420-4202-901a-7ac95790cfcf",
-            "title": "Assessment of AC-05",
-            "description": "Control: AC-05\nResult: Pass\nNotes: Role matrix reviewed; no violations of separation of duties found across all 342 active accounts.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "dfccaa12-7be2-410c-86ca-1c154d839d60",
-            "title": "Assessment of AC-06",
-            "description": "Control: AC-06\nResult: Failed\nNotes: OS and application privilege verified. Four service accounts with excessive privilege identified; remediation in progress.\nRecommendation: Reduce privilege on service accounts SA-DB-01, SA-APP-03, SA-NET-02, SA-MON-01 by December 2025.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "e0bb519a-45dd-4fb0-a0a7-775bfa910d6f",
-            "title": "Assessment of AC-07",
-            "description": "Control: AC-07\nResult: Pass\nNotes: Lockout behavior confirmed via manual testing; account locked at 5th failed attempt and released after 30 minutes.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "8ea5f0d8-58a6-4470-91fc-eaf0f3d2a135",
-            "title": "Assessment of AC-08",
-            "description": "Control: AC-08\nResult: Pass\nNotes: Banner text verified against legal-approved language. Acknowledgment flow confirmed for web, API, and CLI interfaces.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "0f49eed3-dd3a-43b0-be22-09db9ddabfe1",
-            "title": "Assessment of AC-11",
-            "description": "Control: AC-11\nResult: Pass\nNotes: Endpoint management policy verified on sample of 20 managed devices; all comply with 15-minute timeout.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "fefc6782-0fe1-4cb2-bf7b-05a34ab5d5ef",
-            "title": "Assessment of AC-14",
-            "description": "Control: AC-14\nResult: Not Applicable\nNotes: Not applicable — system requires authentication for all functions.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "d9bc48b0-7374-4060-b6dc-c68dee137509",
-            "title": "Assessment of AC-17",
-            "description": "Control: AC-17\nResult: Pass\nNotes: VPN configuration, MFA enforcement, and session logging verified. All remote sessions encrypted with TLS 1.3.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "651fe41b-af60-4f47-b5c0-298b1a5882ac",
-            "title": "Assessment of AC-18",
-            "description": "Control: AC-18\nResult: Not Applicable\nNotes: Not applicable — no wireless infrastructure in scope for this system.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "e57bf8e2-e785-4028-b44d-9888dd746c5e",
-            "title": "Assessment of AT-01",
-            "description": "Control: AT-01\nResult: Pass\nNotes: Policy and procedures documentation current; reviewed and approved November 2025.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "83c38336-b981-4d21-ae7a-d545ed649279",
-            "title": "Assessment of AT-02",
-            "description": "Control: AT-02\nResult: Pass\nNotes: LMS records reviewed; 97% completion rate for FY2025 security awareness training. Non-completions tracked via HR escalation process.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "62aa0316-5d39-446f-988a-302d3cbfccc8",
-            "title": "Assessment of AT-03",
-            "description": "Control: AT-03\nResult: Failed\nNotes: Training records reviewed for privileged roles. Data owner training curriculum not yet finalized; expected Q2 2026.\nRecommendation: Develop and deploy data owner role-based training by March 2026. Track in POA&M AT-3-001.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "eb3ee26f-2a48-4806-9a96-422f2e62bf6a",
-            "title": "Assessment of AT-04",
-            "description": "Control: AT-04\nResult: Pass\nNotes: LMS training records verified for completeness and retention period compliance.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "1126dce5-3407-4679-9438-5cf35acfae24",
-            "title": "Assessment of AT-05",
-            "description": "Control: AT-05\nResult: Not Applicable\nNotes: Not applicable at system level.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "19785927-657e-4d57-b58c-cf651b8323c1",
-            "title": "Assessment of AU-01",
-            "description": "Control: AU-01\nResult: Pass\nNotes: Policy documentation current and consistent with NIST guidance.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "1e3387c6-eb9b-4120-9949-244cb9a09ef0",
-            "title": "Assessment of AU-02",
-            "description": "Control: AU-02\nResult: Pass\nNotes: Audit event categories verified against policy. All 12 required event types confirmed active in SIEM.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "249d8218-a466-4683-b414-dffd46020ef0",
-            "title": "Assessment of AU-03",
-            "description": "Control: AU-03\nResult: Pass\nNotes: Sample of 50 audit records reviewed; all required fields present in 100% of records.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "174580d4-623d-42c6-8a2c-d028d60479b9",
-            "title": "Assessment of AU-04",
-            "description": "Control: AU-04\nResult: Pass\nNotes: Cloud storage auto-scaling confirmed active; no capacity alerts triggered in past 12 months. Retention validated.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "c31f770f-23cc-4ff2-953e-bcf91ff8dfb7",
-            "title": "Assessment of AU-05",
-            "description": "Control: AU-05\nResult: Failed\nNotes: Alert notification verified. Manual failover procedure exists but last tested 18 months ago; exceeds 12-month test cycle requirement.\nRecommendation: Conduct failover test by January 2026. Update PROC-AU-005 with test results.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "0cdb4df4-94d0-41d2-be1e-2848d45973b9",
-            "title": "Assessment of AU-06",
-            "description": "Control: AU-06\nResult: Not Specified\nNotes: Capability not yet implemented; scheduled for Q1 2026.\nRecommendation: Deploy automated audit review reporting by March 2026. Track in POA&M AU-6-001.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "24ea41f1-dbaf-4858-8634-dcd0a9ec48cf",
-            "title": "Assessment of AU-08",
-            "description": "Control: AU-08\nResult: Pass\nNotes: NTP synchronization verified across all system components. Time drift under 500ms.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "2ac37a47-69e2-4b02-bfbb-07b8395a7840",
-            "title": "Assessment of AU-09",
-            "description": "Control: AU-09\nResult: Pass\nNotes: Logging account permissions verified; access limited to 3 authorized security personnel. Hash integrity check active.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "1b4efb41-797e-4c25-8bf9-d14df87e28cb",
-            "title": "Assessment of AU-11",
-            "description": "Control: AU-11\nResult: Pass\nNotes: Storage configuration and retention rules verified. Spot-checked records from 13 months ago confirm availability.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "5378b81a-54ba-4d8b-ab96-f3a68a88a898",
-            "title": "Assessment of AU-12",
-            "description": "Control: AU-12\nResult: Pass\nNotes: Audit record generation verified on 100% of in-scope components. SIEM coverage confirmed.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "1bac9bb6-82e3-495d-bdca-1fabb7144b49",
-            "title": "Assessment of CA-01",
-            "description": "Control: CA-01\nResult: Pass\nNotes: Policy documentation current and approved by CISO August 2025.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "29d5b2d7-1432-4f7b-9458-c9411581a4af",
-            "title": "Assessment of CA-02",
-            "description": "Control: CA-02\nResult: Pass\nNotes: Assessment documentation reviewed; independent assessment conducted in August 2025 by third-party assessor.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "f110a686-0b0d-4d40-b7db-9b34da763372",
-            "title": "Assessment of CA-03",
-            "description": "Control: CA-03\nResult: Failed\nNotes: ISA inventory reviewed. ISA with Partner System B expired July 2025; renewal initiated but not complete.\nRecommendation: Renew ISA with Partner System B by November 2025. Track in POA&M CA-3-001.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "22dca896-7a71-416c-9a37-035d1b4df572",
-            "title": "Assessment of CA-05",
-            "description": "Control: CA-05\nResult: Pass\nNotes: POA&M reviewed; all open items have assigned owners and milestone dates. Monthly update cadence confirmed.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "fe0cfe1a-6b1c-4200-8906-b610b00c2fed",
-            "title": "Assessment of CA-06",
-            "description": "Control: CA-06\nResult: Pass\nNotes: ATO documentation verified; authorization valid and current.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "c36c0f19-b46b-43bd-8a3c-73e95ea9bc54",
-            "title": "Assessment of CA-07",
-            "description": "Control: CA-07\nResult: Not Specified\nNotes: Continuous monitoring program partially operational. Configuration drift detection not yet implemented.\nRecommendation: Deploy configuration drift detection tooling by June 2026. Track in POA&M CA-7-001.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "803f9e0b-83e0-4fe1-b6d9-9ce502808f2a",
-            "title": "Assessment of CM-01",
-            "description": "Control: CM-01\nResult: Pass\nNotes: CM policy and procedures documentation reviewed and current.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "60fa90b9-02b3-408b-803c-2cfb42391408",
-            "title": "Assessment of CM-02",
-            "description": "Control: CM-02\nResult: Pass\nNotes: Baseline configuration documentation verified for 100% of in-scope components. Last review completed October 2025.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "10b0aad4-de9e-4578-ba4a-f92a89a36674",
-            "title": "Assessment of CM-03",
-            "description": "Control: CM-03\nResult: Pass\nNotes: Sample of 20 change records reviewed; all required approvals present. No unauthorized changes detected.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "9e088540-9a1c-43d4-8265-34e6343146b6",
-            "title": "Assessment of CM-04",
-            "description": "Control: CM-04\nResult: Failed\nNotes: Major change impact analyses reviewed and found complete. Minor change impact analysis not consistently documented.\nRecommendation: Formalize minor change impact analysis process in PROC-CM-004 by January 2026.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "b4e97699-f122-42a2-bb8e-57e3f7409a82",
-            "title": "Assessment of CM-06",
-            "description": "Control: CM-06\nResult: Pass\nNotes: Configuration compliance scan results reviewed. 98.4% compliance rate; 3 open non-critical findings being tracked.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "abbad5d5-0645-4d96-9a35-c07224f506b7",
-            "title": "Assessment of CM-07",
-            "description": "Control: CM-07\nResult: Pass\nNotes: Port and service audit performed; no unauthorized services detected. Firewall rules reviewed and current.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "a2b126e5-20ff-41b2-84d0-2a438c3704f5",
-            "title": "Assessment of CM-08",
-            "description": "Control: CM-08\nResult: Failed\nNotes: Cloud asset inventory verified via automated discovery. On-prem inventory has 12 unreconciled entries dating to last manual update.\nRecommendation: Reconcile on-premises CMDB entries and establish monthly automated reconciliation by February 2026.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "2d3d04c9-783c-40fe-a7c1-2df4048ebc45",
-            "title": "Assessment of CP-01",
-            "description": "Control: CP-01\nResult: Pass\nNotes: Policy documentation reviewed and current as of July 2025.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "8314791d-30cd-422d-af65-bbda269ae08c",
-            "title": "Assessment of CP-02",
-            "description": "Control: CP-02\nResult: Pass\nNotes: Contingency plan documentation reviewed; current version dated June 2025. RTO/RPO objectives documented and achievable.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "6c0e7077-b2a2-4a3b-8b4a-07c2bdc8dea7",
-            "title": "Assessment of CP-04",
-            "description": "Control: CP-04\nResult: Not Specified\nNotes: Full failover test not yet conducted for current environment version; scheduled for Q2 2026.\nRecommendation: Conduct full failover test by June 2026. Track in POA&M CP-4-001.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "062631c7-1e3b-4132-b671-3ac2b298e6a1",
-            "title": "Assessment of CP-09",
-            "description": "Control: CP-09\nResult: Pass\nNotes: Backup job logs reviewed for past 90 days; 100% success rate. Restore test performed; RTO objective met.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "30e8427c-6c51-4c9a-9433-182435922543",
-            "title": "Assessment of IA-01",
-            "description": "Control: IA-01\nResult: Pass\nNotes: Policy documentation current and in compliance with NIST SP 800-63B requirements.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "dd8b7e04-d035-4219-baeb-8044b5362bc4",
-            "title": "Assessment of IA-02",
-            "description": "Control: IA-02\nResult: Pass\nNotes: MFA enforcement verified for all 342 active organizational accounts. No accounts with MFA bypass exceptions.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "e98d396b-a2c0-4677-8a0d-f88aa859f073",
-            "title": "Assessment of IA-03",
-            "description": "Control: IA-03\nResult: Failed\nNotes: Certificate-based auth verified for managed fleet. BYOD policy not finalized; 12 unmanaged devices detected accessing the network.\nRecommendation: Finalize BYOD policy and enforce device authentication by February 2026. Track in POA&M IA-3-001.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "72db3076-a8c0-4703-9201-e7515e9a1001",
-            "title": "Assessment of IA-04",
-            "description": "Control: IA-04\nResult: Pass\nNotes: Identifier management procedures verified. No reused identifiers found. Inactive account policy confirmed active.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "c250c476-1dd4-4161-8074-5ca9443603a7",
-            "title": "Assessment of IA-05",
-            "description": "Control: IA-05\nResult: Pass\nNotes: Password policy configuration verified. Breach detection API integration confirmed active and operational.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "9de20624-2d05-46bd-b3e9-3bda3def535f",
-            "title": "Assessment of IA-06",
-            "description": "Control: IA-06\nResult: Pass\nNotes: Authentication feedback behavior verified on login forms; passwords masked and error messages generic.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "7c29616f-ec66-4eb8-b00b-5b19a5625fa9",
-            "title": "Assessment of IR-01",
-            "description": "Control: IR-01\nResult: Pass\nNotes: IR policy and procedure documentation reviewed and current.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "ab2602ff-03ab-469c-a24c-0d249c4f0624",
-            "title": "Assessment of IR-02",
-            "description": "Control: IR-02\nResult: Pass\nNotes: Training completion records verified for all security team members. Tabletop exercise conducted September 2025.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "42142db0-0c5d-4442-a53f-38b96dba5405",
-            "title": "Assessment of IR-04",
-            "description": "Control: IR-04\nResult: Pass\nNotes: Incident handling procedures and 5 past incident records reviewed. Escalation paths followed correctly in all cases.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "e35495aa-b590-4215-a5bf-14777b718fa2",
-            "title": "Assessment of IR-05",
-            "description": "Control: IR-05\nResult: Failed\nNotes: SIEM monitoring confirmed active. Only 2 of 5 planned automated playbooks deployed; remaining 3 in development.\nRecommendation: Deploy remaining 3 automated incident response playbooks by January 2026.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          },
-          {
-            "uuid": "56c8605b-304e-4440-9e70-5ae32782049c",
-            "title": "Assessment of IR-06",
-            "description": "Control: IR-06\nResult: Pass\nNotes: Reporting procedures reviewed. One incident from past year required US-CERT notification; confirmed reported within 1 hour of detection.",
-            "methods": [
-              "TEST"
-            ],
-            "collected": "2026-03-21T11:27:38Z"
-          }
-        ],
-        "findings": [
-          {
-            "uuid": "92fb4a44-b793-4907-9be0-41141c3a39df",
-            "title": "Finding for AC-01",
-            "description": "Assessment finding for control AC-01: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ac-01",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "fe22e55e-6d4d-4651-a9fa-d9354eb2f5d9"
-              }
-            ]
-          },
-          {
-            "uuid": "43324001-79ae-450d-a6dd-951a93fed9ed",
-            "title": "Finding for AC-02",
-            "description": "Assessment finding for control AC-02: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ac-02",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "6a5097e7-1885-42ec-a56c-e01c8fceb8fd"
-              }
-            ]
-          },
-          {
-            "uuid": "03968ab2-bf76-4353-93eb-e7efb525aa22",
-            "title": "Finding for AC-03",
-            "description": "Assessment finding for control AC-03: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ac-03",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "142b84fc-4482-4e58-9fed-c8cd115f75d6"
-              }
-            ]
-          },
-          {
-            "uuid": "b1cf8527-6c21-40c0-a2f7-7c889f190209",
-            "title": "Finding for AC-04",
-            "description": "Assessment finding for control AC-04: Failed",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ac-04",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "059c1c7a-ef73-4def-a1a9-5f17cc48bd0e"
-              }
-            ]
-          },
-          {
-            "uuid": "5f619dd9-1169-48af-93f5-3d39e6a5de3a",
-            "title": "Finding for AC-05",
-            "description": "Assessment finding for control AC-05: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ac-05",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "b4659192-2420-4202-901a-7ac95790cfcf"
-              }
-            ]
-          },
-          {
-            "uuid": "4bde119e-aec6-4dcd-b7d9-4300bcd898b6",
-            "title": "Finding for AC-06",
-            "description": "Assessment finding for control AC-06: Failed",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ac-06",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "dfccaa12-7be2-410c-86ca-1c154d839d60"
-              }
-            ]
-          },
-          {
-            "uuid": "c8bfdd57-e85d-4586-9b44-89b2ffa821b9",
-            "title": "Finding for AC-07",
-            "description": "Assessment finding for control AC-07: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ac-07",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "e0bb519a-45dd-4fb0-a0a7-775bfa910d6f"
-              }
-            ]
-          },
-          {
-            "uuid": "0b7daa4c-b6bd-486c-860c-77eb2c30c168",
-            "title": "Finding for AC-08",
-            "description": "Assessment finding for control AC-08: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ac-08",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "8ea5f0d8-58a6-4470-91fc-eaf0f3d2a135"
-              }
-            ]
-          },
-          {
-            "uuid": "b109d5e9-35fa-43b8-8d0d-f8d88aa8715a",
-            "title": "Finding for AC-11",
-            "description": "Assessment finding for control AC-11: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ac-11",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "0f49eed3-dd3a-43b0-be22-09db9ddabfe1"
-              }
-            ]
-          },
-          {
-            "uuid": "a9b0f2eb-1ee4-451f-bd56-7c7dfc05d74b",
-            "title": "Finding for AC-14",
-            "description": "Assessment finding for control AC-14: Not Applicable",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ac-14",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "fefc6782-0fe1-4cb2-bf7b-05a34ab5d5ef"
-              }
-            ]
-          },
-          {
-            "uuid": "0108c8c5-82c3-4b17-995d-611c4b4be3f4",
-            "title": "Finding for AC-17",
-            "description": "Assessment finding for control AC-17: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ac-17",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "d9bc48b0-7374-4060-b6dc-c68dee137509"
-              }
-            ]
-          },
-          {
-            "uuid": "96bbb350-165c-40a4-8e7d-98987bdf4629",
-            "title": "Finding for AC-18",
-            "description": "Assessment finding for control AC-18: Not Applicable",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ac-18",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "651fe41b-af60-4f47-b5c0-298b1a5882ac"
-              }
-            ]
-          },
-          {
-            "uuid": "23a86148-2198-4737-a5ed-7af1bd07c788",
-            "title": "Finding for AT-01",
-            "description": "Assessment finding for control AT-01: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "at-01",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "e57bf8e2-e785-4028-b44d-9888dd746c5e"
-              }
-            ]
-          },
-          {
-            "uuid": "31a0b195-0f1a-4970-8263-d433abda6573",
-            "title": "Finding for AT-02",
-            "description": "Assessment finding for control AT-02: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "at-02",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "83c38336-b981-4d21-ae7a-d545ed649279"
-              }
-            ]
-          },
-          {
-            "uuid": "1f8a65cb-1ee4-45d2-bbdb-50a137654a68",
-            "title": "Finding for AT-03",
-            "description": "Assessment finding for control AT-03: Failed",
-            "target": {
-              "type": "objective-id",
-              "target-id": "at-03",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "62aa0316-5d39-446f-988a-302d3cbfccc8"
-              }
-            ]
-          },
-          {
-            "uuid": "d4d008d1-a7a6-4b0e-bb01-a247d3245140",
-            "title": "Finding for AT-04",
-            "description": "Assessment finding for control AT-04: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "at-04",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "eb3ee26f-2a48-4806-9a96-422f2e62bf6a"
-              }
-            ]
-          },
-          {
-            "uuid": "0d529ef9-9dec-4789-8aa9-a2fc94d03976",
-            "title": "Finding for AT-05",
-            "description": "Assessment finding for control AT-05: Not Applicable",
-            "target": {
-              "type": "objective-id",
-              "target-id": "at-05",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "1126dce5-3407-4679-9438-5cf35acfae24"
-              }
-            ]
-          },
-          {
-            "uuid": "44f8a0e8-8af1-4d57-a184-244483379eae",
-            "title": "Finding for AU-01",
-            "description": "Assessment finding for control AU-01: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "au-01",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "19785927-657e-4d57-b58c-cf651b8323c1"
-              }
-            ]
-          },
-          {
-            "uuid": "df082884-ee7c-424c-a742-0de6204c0d26",
-            "title": "Finding for AU-02",
-            "description": "Assessment finding for control AU-02: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "au-02",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "1e3387c6-eb9b-4120-9949-244cb9a09ef0"
-              }
-            ]
-          },
-          {
-            "uuid": "a4120499-7cf2-481d-a2a6-920c4f565fa1",
-            "title": "Finding for AU-03",
-            "description": "Assessment finding for control AU-03: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "au-03",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "249d8218-a466-4683-b414-dffd46020ef0"
-              }
-            ]
-          },
-          {
-            "uuid": "657341a4-cd5d-4c93-a0dc-4351040dccd7",
-            "title": "Finding for AU-04",
-            "description": "Assessment finding for control AU-04: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "au-04",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "174580d4-623d-42c6-8a2c-d028d60479b9"
-              }
-            ]
-          },
-          {
-            "uuid": "d6725eb5-6f43-4b92-a99e-0068b174bb87",
-            "title": "Finding for AU-05",
-            "description": "Assessment finding for control AU-05: Failed",
-            "target": {
-              "type": "objective-id",
-              "target-id": "au-05",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "c31f770f-23cc-4ff2-953e-bcf91ff8dfb7"
-              }
-            ]
-          },
-          {
-            "uuid": "624891a9-ffcc-44ff-9d94-06d57aaef501",
-            "title": "Finding for AU-06",
-            "description": "Assessment finding for control AU-06: Not Specified",
-            "target": {
-              "type": "objective-id",
-              "target-id": "au-06",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "0cdb4df4-94d0-41d2-be1e-2848d45973b9"
-              }
-            ]
-          },
-          {
-            "uuid": "954ba9e9-92c0-46fe-b920-f23853ba8aca",
-            "title": "Finding for AU-08",
-            "description": "Assessment finding for control AU-08: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "au-08",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "24ea41f1-dbaf-4858-8634-dcd0a9ec48cf"
-              }
-            ]
-          },
-          {
-            "uuid": "4473625a-bafe-4bd8-b75c-6247e69aa434",
-            "title": "Finding for AU-09",
-            "description": "Assessment finding for control AU-09: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "au-09",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "2ac37a47-69e2-4b02-bfbb-07b8395a7840"
-              }
-            ]
-          },
-          {
-            "uuid": "2570ce87-4a48-46b4-9cb9-13b25fa7979e",
-            "title": "Finding for AU-11",
-            "description": "Assessment finding for control AU-11: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "au-11",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "1b4efb41-797e-4c25-8bf9-d14df87e28cb"
-              }
-            ]
-          },
-          {
-            "uuid": "955ca3bf-88c2-46c3-a0f2-c321c7bf5246",
-            "title": "Finding for AU-12",
-            "description": "Assessment finding for control AU-12: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "au-12",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "5378b81a-54ba-4d8b-ab96-f3a68a88a898"
-              }
-            ]
-          },
-          {
-            "uuid": "a4701681-95e8-422c-aeac-5e1d70e44355",
-            "title": "Finding for CA-01",
-            "description": "Assessment finding for control CA-01: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ca-01",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "1bac9bb6-82e3-495d-bdca-1fabb7144b49"
-              }
-            ]
-          },
-          {
-            "uuid": "e8e42f91-6915-4882-a469-7b1d1139efbf",
-            "title": "Finding for CA-02",
-            "description": "Assessment finding for control CA-02: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ca-02",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "29d5b2d7-1432-4f7b-9458-c9411581a4af"
-              }
-            ]
-          },
-          {
-            "uuid": "d22641f6-d34b-4918-bbe7-30a8add58db3",
-            "title": "Finding for CA-03",
-            "description": "Assessment finding for control CA-03: Failed",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ca-03",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "f110a686-0b0d-4d40-b7db-9b34da763372"
-              }
-            ]
-          },
-          {
-            "uuid": "f998fb03-832a-4404-b41b-57e6cdc327b9",
-            "title": "Finding for CA-05",
-            "description": "Assessment finding for control CA-05: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ca-05",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "22dca896-7a71-416c-9a37-035d1b4df572"
-              }
-            ]
-          },
-          {
-            "uuid": "67297602-2190-4178-b538-f3cab91cb299",
-            "title": "Finding for CA-06",
-            "description": "Assessment finding for control CA-06: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ca-06",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "fe0cfe1a-6b1c-4200-8906-b610b00c2fed"
-              }
-            ]
-          },
-          {
-            "uuid": "25901ef4-0b3b-470b-9017-41f7b8d74972",
-            "title": "Finding for CA-07",
-            "description": "Assessment finding for control CA-07: Not Specified",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ca-07",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "c36c0f19-b46b-43bd-8a3c-73e95ea9bc54"
-              }
-            ]
-          },
-          {
-            "uuid": "992ce6f2-2527-4d2d-946d-3aba0587cb8b",
-            "title": "Finding for CM-01",
-            "description": "Assessment finding for control CM-01: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "cm-01",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "803f9e0b-83e0-4fe1-b6d9-9ce502808f2a"
-              }
-            ]
-          },
-          {
-            "uuid": "03d4f7fd-6e35-4220-a0c3-c57c101173ec",
-            "title": "Finding for CM-02",
-            "description": "Assessment finding for control CM-02: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "cm-02",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "60fa90b9-02b3-408b-803c-2cfb42391408"
-              }
-            ]
-          },
-          {
-            "uuid": "154a8996-a740-4ccc-98aa-b83d6c54134d",
-            "title": "Finding for CM-03",
-            "description": "Assessment finding for control CM-03: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "cm-03",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "10b0aad4-de9e-4578-ba4a-f92a89a36674"
-              }
-            ]
-          },
-          {
-            "uuid": "e3f91e26-ecce-4a14-bfa3-d9d1e53bc237",
-            "title": "Finding for CM-04",
-            "description": "Assessment finding for control CM-04: Failed",
-            "target": {
-              "type": "objective-id",
-              "target-id": "cm-04",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "9e088540-9a1c-43d4-8265-34e6343146b6"
-              }
-            ]
-          },
-          {
-            "uuid": "4943bbab-c250-4e28-9192-5d6200acec3d",
-            "title": "Finding for CM-06",
-            "description": "Assessment finding for control CM-06: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "cm-06",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "b4e97699-f122-42a2-bb8e-57e3f7409a82"
-              }
-            ]
-          },
-          {
-            "uuid": "5ec1b2cd-d89c-4ac4-b46b-402574c532ee",
-            "title": "Finding for CM-07",
-            "description": "Assessment finding for control CM-07: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "cm-07",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "abbad5d5-0645-4d96-9a35-c07224f506b7"
-              }
-            ]
-          },
-          {
-            "uuid": "ad347770-7309-4794-b9c6-4ff9360b9b66",
-            "title": "Finding for CM-08",
-            "description": "Assessment finding for control CM-08: Failed",
-            "target": {
-              "type": "objective-id",
-              "target-id": "cm-08",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "a2b126e5-20ff-41b2-84d0-2a438c3704f5"
-              }
-            ]
-          },
-          {
-            "uuid": "a83749df-7f37-47e3-b07d-8ef6de7bbf75",
-            "title": "Finding for CP-01",
-            "description": "Assessment finding for control CP-01: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "cp-01",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "2d3d04c9-783c-40fe-a7c1-2df4048ebc45"
-              }
-            ]
-          },
-          {
-            "uuid": "cea46126-81a9-43fa-9f65-8cabe32152b8",
-            "title": "Finding for CP-02",
-            "description": "Assessment finding for control CP-02: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "cp-02",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "8314791d-30cd-422d-af65-bbda269ae08c"
-              }
-            ]
-          },
-          {
-            "uuid": "250f74a9-60f3-4ded-a030-e62f64f80c01",
-            "title": "Finding for CP-04",
-            "description": "Assessment finding for control CP-04: Not Specified",
-            "target": {
-              "type": "objective-id",
-              "target-id": "cp-04",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "6c0e7077-b2a2-4a3b-8b4a-07c2bdc8dea7"
-              }
-            ]
-          },
-          {
-            "uuid": "861e0180-c349-4c2c-be2d-b4f90bf7832e",
-            "title": "Finding for CP-09",
-            "description": "Assessment finding for control CP-09: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "cp-09",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "062631c7-1e3b-4132-b671-3ac2b298e6a1"
-              }
-            ]
-          },
-          {
-            "uuid": "5aae0e91-4de2-4898-a943-e0f824f8a011",
-            "title": "Finding for IA-01",
-            "description": "Assessment finding for control IA-01: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ia-01",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "30e8427c-6c51-4c9a-9433-182435922543"
-              }
-            ]
-          },
-          {
-            "uuid": "27407664-246c-44cf-b571-ec432cb1801e",
-            "title": "Finding for IA-02",
-            "description": "Assessment finding for control IA-02: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ia-02",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "dd8b7e04-d035-4219-baeb-8044b5362bc4"
-              }
-            ]
-          },
-          {
-            "uuid": "378eef74-b909-4318-89bb-5d5c55461aea",
-            "title": "Finding for IA-03",
-            "description": "Assessment finding for control IA-03: Failed",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ia-03",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "e98d396b-a2c0-4677-8a0d-f88aa859f073"
-              }
-            ]
-          },
-          {
-            "uuid": "30233b30-26f0-44f2-8950-f67331a5f5bd",
-            "title": "Finding for IA-04",
-            "description": "Assessment finding for control IA-04: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ia-04",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "72db3076-a8c0-4703-9201-e7515e9a1001"
-              }
-            ]
-          },
-          {
-            "uuid": "78ba998c-4a8c-427b-b83f-5af4c482ecec",
-            "title": "Finding for IA-05",
-            "description": "Assessment finding for control IA-05: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ia-05",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "c250c476-1dd4-4161-8074-5ca9443603a7"
-              }
-            ]
-          },
-          {
-            "uuid": "886abe4b-125e-4187-88a1-51650235cef8",
-            "title": "Finding for IA-06",
-            "description": "Assessment finding for control IA-06: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ia-06",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "9de20624-2d05-46bd-b3e9-3bda3def535f"
-              }
-            ]
-          },
-          {
-            "uuid": "dff47d11-ab85-446f-a765-0ace4b740631",
-            "title": "Finding for IR-01",
-            "description": "Assessment finding for control IR-01: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ir-01",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "7c29616f-ec66-4eb8-b00b-5b19a5625fa9"
-              }
-            ]
-          },
-          {
-            "uuid": "113b0c7b-35e7-4c10-acf3-3583e76949f3",
-            "title": "Finding for IR-02",
-            "description": "Assessment finding for control IR-02: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ir-02",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "ab2602ff-03ab-469c-a24c-0d249c4f0624"
-              }
-            ]
-          },
-          {
-            "uuid": "046470b4-d475-40d8-9c9d-5e394af2ed60",
-            "title": "Finding for IR-04",
-            "description": "Assessment finding for control IR-04: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ir-04",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "42142db0-0c5d-4442-a53f-38b96dba5405"
-              }
-            ]
-          },
-          {
-            "uuid": "0e651c0f-7df6-4e71-b7db-efff3295e14f",
-            "title": "Finding for IR-05",
-            "description": "Assessment finding for control IR-05: Failed",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ir-05",
-              "status": {
-                "state": "not-satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "e35495aa-b590-4215-a5bf-14777b718fa2"
-              }
-            ]
-          },
-          {
-            "uuid": "187db474-a756-4570-898e-cee971af3329",
-            "title": "Finding for IR-06",
-            "description": "Assessment finding for control IR-06: Pass",
-            "target": {
-              "type": "objective-id",
-              "target-id": "ir-06",
-              "status": {
-                "state": "satisfied"
-              }
-            },
-            "related-observations": [
-              {
-                "observation-uuid": "56c8605b-304e-4440-9e70-5ae32782049c"
-              }
-            ]
-          }
-        ]
+        }
       }
     ],
     "back-matter": {
       "resources": [
         {
-          "uuid": "e5c7c857-39e2-4f62-bed9-6b66a7655a08",
+          "uuid": "aa8e069f-dcbd-455b-b34b-9c0d0a79cfcb",
           "title": "SPARC Document Source",
           "description": "Managed by SPARC",
           "rlinks": [

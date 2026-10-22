@@ -170,7 +170,7 @@ None.
 | `control_catalog[version]` | string | no | Catalog version string |
 | `control_catalog[source]` | string | no | Origin of the catalog (e.g., `NIST`, `CIS`) |
 | `control_catalog[oscal_version]` | string | no | OSCAL schema version |
-| `control_catalog[lifecycle_status]` | string | no | Lifecycle status (e.g., `active`, `draft`) |
+| `control_catalog[lifecycle_status]` | string | no | `started`, `in_progress` or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
 
 #### Response Body
 

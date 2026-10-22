@@ -1,11 +1,34 @@
 {
   "plan-of-action-and-milestones": {
-    "uuid": "c7e67715-0551-4dda-9c14-ad7eb046da12",
+    "uuid": "9d1c9333-f210-4812-a399-663da47bed42",
     "metadata": {
       "title": "ACME Cloud Platform — Plan of Action & Milestones",
       "version": "1.0",
       "oscal-version": "1.1.2",
-      "last-modified": "2026-03-21T11:29:59Z"
+      "last-modified": "2026-10-22T01:38:40Z",
+      "roles": [
+        {
+          "id": "prepared-by",
+          "title": "Prepared By"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "87c8ba3e-66a4-4c0c-9ba4-f7e15b5f6ab2",
+          "type": "organization",
+          "name": "SPARC Export",
+          "props": [
+            {
+              "name": "node-type",
+              "ns": "https://sparc.risk-sentinel.org/ns",
+              "value": "organization"
+            }
+          ]
+        }
+      ]
+    },
+    "import-ssp": {
+      "href": "uuid:309d77ab-9c0a-4232-9ed4-7d46556bf3bd"
     },
     "system-id": {
       "identifier-type": "http://ietf.org/rfc/rfc4122",
@@ -13,162 +36,372 @@
     },
     "risks": [
       {
-        "uuid": "7470c804-6494-4f83-833b-e3d890bd84b8",
-        "title": "Risk: Session Timeout Not Configured for Web Application",
-        "description": "Risk associated with session timeout not configured for web application.",
-        "status": "closed"
-      },
-      {
-        "uuid": "9794b0d7-e478-4109-a5e3-0e1efa9589bc",
-        "title": "Risk: Encryption Key Rotation Not Automated",
-        "description": "Risk associated with encryption key rotation not automated.",
-        "status": "deviation-requested"
-      },
-      {
-        "uuid": "1169e9d1-ead5-40b2-b5dd-4d03b24966c4",
-        "title": "Risk: Missing Vulnerability Scan Coverage for Container Images",
-        "description": "Risk associated with missing vulnerability scan coverage for container images.",
-        "status": "investigating"
-      },
-      {
-        "uuid": "8f7f4262-ef04-4392-bcb4-46dd3e698a85",
-        "title": "Risk: Incomplete Audit Log Retention Configuration",
-        "description": "Risk associated with incomplete audit log retention configuration.",
-        "status": "open"
-      },
-      {
-        "uuid": "a918f30f-5ead-46a6-92ec-fbfa8a1abc8e",
+        "uuid": "74c65529-af83-40f6-b406-b0a1c0465d55",
         "title": "Risk: Multifactor Authentication Not Enforced for All Privileged Users",
         "description": "Risk associated with multifactor authentication not enforced for all privileged users.",
-        "status": "remediating"
+        "statement": "Privileged accounts reachable without a second factor allow a single stolen or guessed credential to yield full administrative control of the system, defeating the account-compromise protections IA-2(1) is relied upon to provide.",
+        "status": "remediating",
+        "characterizations": [
+          {
+            "origin": {
+              "actors": [
+                {
+                  "type": "tool",
+                  "actor-uuid": "2d0e5c01-d808-422b-afef-787b29c17141"
+                }
+              ]
+            },
+            "facets": [
+              {
+                "name": "likelihood",
+                "system": "http://csrc.nist.gov/ns/oscal",
+                "value": "medium"
+              },
+              {
+                "name": "impact",
+                "system": "http://csrc.nist.gov/ns/oscal",
+                "value": "high"
+              }
+            ]
+          }
+        ],
+        "deadline": "2026-04-30T00:00:00Z"
       },
       {
-        "uuid": "70c1c477-38cd-4a1f-89d2-878b89d13e17",
+        "uuid": "8c42351d-3194-4ccc-8ee0-b88bb66a624f",
+        "title": "Risk: Incomplete Audit Log Retention Configuration",
+        "description": "Risk associated with incomplete audit log retention configuration.",
+        "statement": "Audit records aged out before the required retention period leave incidents undetectable and unreconstructable after the fact, undermining the accountability AU-11 depends on and removing the evidence an investigation would need.",
+        "status": "open",
+        "characterizations": [
+          {
+            "origin": {
+              "actors": [
+                {
+                  "type": "tool",
+                  "actor-uuid": "2d0e5c01-d808-422b-afef-787b29c17141"
+                }
+              ]
+            },
+            "facets": [
+              {
+                "name": "likelihood",
+                "system": "http://csrc.nist.gov/ns/oscal",
+                "value": "low"
+              },
+              {
+                "name": "impact",
+                "system": "http://csrc.nist.gov/ns/oscal",
+                "value": "medium"
+              }
+            ]
+          }
+        ],
+        "deadline": "2026-03-31T00:00:00Z"
+      },
+      {
+        "uuid": "2b577d1a-d709-4283-803c-0099cea503c9",
+        "title": "Risk: Missing Vulnerability Scan Coverage for Container Images",
+        "description": "Risk associated with missing vulnerability scan coverage for container images.",
+        "statement": "Images promoted to production without vulnerability scanning may carry known, exploitable CVEs into the authorization boundary, and the absence of scan evidence prevents RA-5 continuous-monitoring reporting from reflecting true system exposure.",
+        "status": "investigating",
+        "characterizations": [
+          {
+            "origin": {
+              "actors": [
+                {
+                  "type": "tool",
+                  "actor-uuid": "2d0e5c01-d808-422b-afef-787b29c17141"
+                }
+              ]
+            },
+            "facets": [
+              {
+                "name": "likelihood",
+                "system": "http://csrc.nist.gov/ns/oscal",
+                "value": "high"
+              },
+              {
+                "name": "impact",
+                "system": "http://csrc.nist.gov/ns/oscal",
+                "value": "high"
+              }
+            ]
+          }
+        ],
+        "deadline": "2026-05-15T00:00:00Z"
+      },
+      {
+        "uuid": "da119f06-cf6a-4de0-bcbc-bb098db29720",
+        "title": "Risk: Session Timeout Not Configured for Web Application",
+        "description": "Risk associated with session timeout not configured for web application.",
+        "statement": "Sessions that persist beyond the 15-minute idle limit leave authenticated browsers open to hijacking on unattended or shared workstations, extending the window in which an unauthorized user can act as a legitimate one.",
+        "status": "closed",
+        "characterizations": [
+          {
+            "origin": {
+              "actors": [
+                {
+                  "type": "tool",
+                  "actor-uuid": "2d0e5c01-d808-422b-afef-787b29c17141"
+                }
+              ]
+            },
+            "facets": [
+              {
+                "name": "likelihood",
+                "system": "http://csrc.nist.gov/ns/oscal",
+                "value": "medium"
+              },
+              {
+                "name": "impact",
+                "system": "http://csrc.nist.gov/ns/oscal",
+                "value": "medium"
+              }
+            ]
+          }
+        ],
+        "deadline": "2026-01-15T00:00:00Z"
+      },
+      {
+        "uuid": "1b209dee-9a98-4cf9-85e6-dc7dec651eef",
+        "title": "Risk: Encryption Key Rotation Not Automated",
+        "description": "Risk associated with encryption key rotation not automated.",
+        "statement": "Manual key rotation exceeding the 12-month requirement prolongs the period a single compromised key can decrypt stored data, and depends on an operator action that has already been shown to slip.",
+        "status": "deviation-requested",
+        "characterizations": [
+          {
+            "origin": {
+              "actors": [
+                {
+                  "type": "tool",
+                  "actor-uuid": "2d0e5c01-d808-422b-afef-787b29c17141"
+                }
+              ]
+            },
+            "facets": [
+              {
+                "name": "likelihood",
+                "system": "http://csrc.nist.gov/ns/oscal",
+                "value": "low"
+              },
+              {
+                "name": "impact",
+                "system": "http://csrc.nist.gov/ns/oscal",
+                "value": "low"
+              }
+            ]
+          }
+        ],
+        "deadline": "2026-06-30T00:00:00Z"
+      },
+      {
+        "uuid": "c56084c5-cf59-438f-bda1-91301012638b",
         "title": "Risk: Incident Response Plan Not Tested in 12 Months",
         "description": "Risk associated with incident response plan not tested in 12 months.",
-        "status": "remediating"
+        "statement": "An untested incident response plan is unproven under load: response times, escalation paths, and contact accuracy remain unverified, so the organization cannot demonstrate it can contain an incident within its stated objectives.",
+        "status": "remediating",
+        "characterizations": [
+          {
+            "origin": {
+              "actors": [
+                {
+                  "type": "tool",
+                  "actor-uuid": "2d0e5c01-d808-422b-afef-787b29c17141"
+                }
+              ]
+            },
+            "facets": [
+              {
+                "name": "likelihood",
+                "system": "http://csrc.nist.gov/ns/oscal",
+                "value": "low"
+              },
+              {
+                "name": "impact",
+                "system": "http://csrc.nist.gov/ns/oscal",
+                "value": "medium"
+              }
+            ]
+          }
+        ],
+        "deadline": "2026-04-15T00:00:00Z"
       }
     ],
     "findings": [
       {
-        "uuid": "0929ce5b-6d1c-4e93-93f6-f04897ac20a0",
-        "title": "Finding: Session Timeout Not Configured for Web Application",
-        "description": "Verified session timeout now enforced at 15 minutes."
-      },
-      {
-        "uuid": "422c9f81-1288-447a-8f9d-52dbbb08e8b2",
-        "title": "Finding: Incident Response Plan Not Tested in 12 Months",
-        "description": "Last IR exercise was conducted 18 months ago."
-      },
-      {
-        "uuid": "52c7377b-cf62-4d37-b8a0-51e623ed178a",
-        "title": "Finding: Incomplete Audit Log Retention Configuration",
-        "description": "Automated scan identified 4 log groups with non-compliant retention."
-      },
-      {
-        "uuid": "6646351c-a14d-43c1-b57b-7f938141407f",
+        "uuid": "ae5fbe4c-c82d-48bd-88f3-890dd67954f3",
         "title": "Finding: Multifactor Authentication Not Enforced for All Privileged Users",
-        "description": "3PAO testing confirmed 3 of 12 admin accounts lack MFA enrollment."
+        "description": "3PAO testing confirmed 3 of 12 admin accounts lack MFA enrollment.",
+        "target": {
+          "type": "statement-id",
+          "title": "Assessment objective for IA-2",
+          "status": {
+            "state": "not-satisfied"
+          },
+          "target-id": "ia-2_smt",
+          "description": "3PAO testing confirmed 3 of 12 admin accounts lack MFA enrollment."
+        }
       },
       {
-        "uuid": "aa23aaaa-ce2f-428e-86eb-e6369406b2be",
+        "uuid": "d7203936-375c-49de-91db-79948cce0cc8",
+        "title": "Finding: Incomplete Audit Log Retention Configuration",
+        "description": "Automated scan identified 4 log groups with non-compliant retention.",
+        "target": {
+          "type": "statement-id",
+          "title": "Assessment objective for AU-11",
+          "status": {
+            "state": "not-satisfied"
+          },
+          "target-id": "au-11_smt",
+          "description": "Automated scan identified 4 log groups with non-compliant retention."
+        }
+      },
+      {
+        "uuid": "513837dc-881e-49e4-bacb-516b90fe2f2d",
         "title": "Finding: Missing Vulnerability Scan Coverage for Container Images",
-        "description": "Assessment team confirmed no container scanning is performed pre-deployment."
+        "description": "Assessment team confirmed no container scanning is performed pre-deployment.",
+        "target": {
+          "type": "statement-id",
+          "title": "Assessment objective for RA-5",
+          "status": {
+            "state": "not-satisfied"
+          },
+          "target-id": "ra-5_smt",
+          "description": "Assessment team confirmed no container scanning is performed pre-deployment."
+        }
       },
       {
-        "uuid": "ab4f21e2-e74b-469e-a32d-858381858e2a",
+        "uuid": "6fa782c9-25f5-4ad5-a50a-151e1aee4b5f",
+        "title": "Finding: Session Timeout Not Configured for Web Application",
+        "description": "Verified session timeout now enforced at 15 minutes.",
+        "target": {
+          "type": "statement-id",
+          "title": "Assessment objective for AC-11",
+          "status": {
+            "state": "satisfied"
+          },
+          "target-id": "ac-11_smt",
+          "description": "Verified session timeout now enforced at 15 minutes."
+        }
+      },
+      {
+        "uuid": "4f09e243-92d2-4791-bb93-040a42fd9d06",
         "title": "Finding: Encryption Key Rotation Not Automated",
-        "description": "Key rotation history shows manual rotation every 18 months, exceeding 12-month requirement."
+        "description": "Key rotation history shows manual rotation every 18 months, exceeding 12-month requirement.",
+        "target": {
+          "type": "statement-id",
+          "title": "Assessment objective for SC-12",
+          "status": {
+            "state": "not-satisfied"
+          },
+          "target-id": "sc-12_smt",
+          "description": "Key rotation history shows manual rotation every 18 months, exceeding 12-month requirement."
+        }
+      },
+      {
+        "uuid": "701f8b1a-f383-4606-8058-fa9ecb77020b",
+        "title": "Finding: Incident Response Plan Not Tested in 12 Months",
+        "description": "Last IR exercise was conducted 18 months ago.",
+        "target": {
+          "type": "statement-id",
+          "title": "Assessment objective for IR-3",
+          "status": {
+            "state": "not-satisfied"
+          },
+          "target-id": "ir-3_smt",
+          "description": "Last IR exercise was conducted 18 months ago."
+        }
       }
     ],
     "poam-items": [
       {
-        "uuid": "7ad5b3a7-e25b-4d4f-8550-56ca9e0fb8ac",
+        "uuid": "bbbfce39-fd1f-44b0-81cb-7bf47eba44b6",
         "title": "Multifactor Authentication Not Enforced for All Privileged Users",
         "description": "Privileged accounts on legacy admin portal do not require MFA. Emergency access accounts bypass MFA controls.",
         "related-risks": [
           {
-            "risk-uuid": "a918f30f-5ead-46a6-92ec-fbfa8a1abc8e"
+            "risk-uuid": "74c65529-af83-40f6-b406-b0a1c0465d55"
           }
         ],
         "related-findings": [
           {
-            "finding-uuid": "6646351c-a14d-43c1-b57b-7f938141407f"
+            "finding-uuid": "ae5fbe4c-c82d-48bd-88f3-890dd67954f3"
           }
         ]
       },
       {
-        "uuid": "f38bc324-348c-42ad-b523-df4c0539c34d",
+        "uuid": "e0e344b7-8ae6-4384-84fc-cc4c5411d885",
         "title": "Incomplete Audit Log Retention Configuration",
         "description": "CloudWatch log groups for application tier set to 90-day retention instead of required 365 days.",
         "related-risks": [
           {
-            "risk-uuid": "8f7f4262-ef04-4392-bcb4-46dd3e698a85"
+            "risk-uuid": "8c42351d-3194-4ccc-8ee0-b88bb66a624f"
           }
         ],
         "related-findings": [
           {
-            "finding-uuid": "52c7377b-cf62-4d37-b8a0-51e623ed178a"
+            "finding-uuid": "d7203936-375c-49de-91db-79948cce0cc8"
           }
         ]
       },
       {
-        "uuid": "034da7ea-a4d7-4d2b-8538-01ad6438b7fb",
+        "uuid": "52091728-b89f-4cad-9e7f-daef1bbfcc10",
         "title": "Missing Vulnerability Scan Coverage for Container Images",
         "description": "Container images in ECR are not scanned for vulnerabilities before deployment to production.",
         "related-risks": [
           {
-            "risk-uuid": "1169e9d1-ead5-40b2-b5dd-4d03b24966c4"
+            "risk-uuid": "2b577d1a-d709-4283-803c-0099cea503c9"
           }
         ],
         "related-findings": [
           {
-            "finding-uuid": "aa23aaaa-ce2f-428e-86eb-e6369406b2be"
+            "finding-uuid": "513837dc-881e-49e4-bacb-516b90fe2f2d"
           }
         ]
       },
       {
-        "uuid": "dabc8ce7-3111-4048-8695-b8e277fc3b7a",
+        "uuid": "79d04751-d498-4a6c-a6f6-fafbfe408335",
         "title": "Session Timeout Not Configured for Web Application",
         "description": "Web application sessions do not expire after the required 15-minute idle timeout.",
         "related-risks": [
           {
-            "risk-uuid": "7470c804-6494-4f83-833b-e3d890bd84b8"
+            "risk-uuid": "da119f06-cf6a-4de0-bcbc-bb098db29720"
           }
         ],
         "related-findings": [
           {
-            "finding-uuid": "0929ce5b-6d1c-4e93-93f6-f04897ac20a0"
+            "finding-uuid": "6fa782c9-25f5-4ad5-a50a-151e1aee4b5f"
           }
         ]
       },
       {
-        "uuid": "2306c615-2b79-49ad-a2d5-bd0c2bdb084d",
+        "uuid": "c4654a3f-6f24-4d0f-87c9-9ca092d928a6",
         "title": "Encryption Key Rotation Not Automated",
         "description": "KMS customer-managed keys for database encryption are rotated manually instead of automatically.",
         "related-risks": [
           {
-            "risk-uuid": "9794b0d7-e478-4109-a5e3-0e1efa9589bc"
+            "risk-uuid": "1b209dee-9a98-4cf9-85e6-dc7dec651eef"
           }
         ],
         "related-findings": [
           {
-            "finding-uuid": "ab4f21e2-e74b-469e-a32d-858381858e2a"
+            "finding-uuid": "4f09e243-92d2-4791-bb93-040a42fd9d06"
           }
         ]
       },
       {
-        "uuid": "7e7c5e85-ecbe-4c6f-a9d8-cea92eea9329",
+        "uuid": "31b3b075-ba0b-45c7-8c28-4ecf2841c0bb",
         "title": "Incident Response Plan Not Tested in 12 Months",
         "description": "The IR plan has not been exercised through tabletop or functional testing within the past year.",
         "related-risks": [
           {
-            "risk-uuid": "70c1c477-38cd-4a1f-89d2-878b89d13e17"
+            "risk-uuid": "c56084c5-cf59-438f-bda1-91301012638b"
           }
         ],
         "related-findings": [
           {
-            "finding-uuid": "422c9f81-1288-447a-8f9d-52dbbb08e8b2"
+            "finding-uuid": "701f8b1a-f383-4606-8058-fa9ecb77020b"
           }
         ]
       }
@@ -176,7 +409,7 @@
     "back-matter": {
       "resources": [
         {
-          "uuid": "7bb7c630-390b-4059-af96-bd8f67599250",
+          "uuid": "2e899cb4-354b-445b-bef1-3c91f56107ab",
           "title": "SPARC Document Source",
           "description": "Managed by SPARC",
           "rlinks": [

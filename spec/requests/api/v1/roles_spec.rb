@@ -27,7 +27,7 @@ RSpec.describe "Api::V1::Roles", type: :request do
       expect {
         post api_v1_roles_path,
           params: { role: valid_attributes.merge(
-            permissions: { "catalogs.read" => true, "catalogs.write" => false }
+            permissions: { "catalogs.approve" => true, "catalogs.write" => false }
           ) },
           headers: headers_for(admin), as: :json
       }.to change(Role, :count).by(1)
@@ -35,38 +35,38 @@ RSpec.describe "Api::V1::Roles", type: :request do
       expect(response).to have_http_status(:created)
 
       role = Role.find(response.parsed_body.dig("data", "id"))
-      expect(role.has_permission?("catalogs.read")).to be(true)
+      expect(role.has_permission?("catalogs.approve")).to be(true)
       expect(role.has_permission?("catalogs.write")).to be(false)
 
       # The response lists granted keys only, so a reader sees what the role
       # does rather than scanning every boolean.
-      expect(response.parsed_body.dig("data", "permissions")).to include("catalogs.read")
+      expect(response.parsed_body.dig("data", "permissions")).to include("catalogs.approve")
       expect(response.parsed_body.dig("data", "permissions")).not_to include("catalogs.write")
     end
 
     it "accepts JSON booleans, not only the web form's \"1\"" do
       post api_v1_roles_path,
-        params: { role: valid_attributes.merge(permissions: { "catalogs.read" => true }) },
+        params: { role: valid_attributes.merge(permissions: { "catalogs.approve" => true }) },
         headers: headers_for(admin), as: :json
 
       role = Role.find(response.parsed_body.dig("data", "id"))
-      expect(role.has_permission?("catalogs.read")).to be(true)
+      expect(role.has_permission?("catalogs.approve")).to be(true)
     end
 
     it "grants nothing a role was not given" do
       post api_v1_roles_path,
-        params: { role: valid_attributes.merge(permissions: { "catalogs.read" => true }) },
+        params: { role: valid_attributes.merge(permissions: { "catalogs.approve" => true }) },
         headers: headers_for(admin), as: :json
 
       role = Role.find(response.parsed_body.dig("data", "id"))
       granted = role.permissions.to_h.select { |_k, v| v }.keys
-      expect(granted).to eq([ "catalogs.read" ])
+      expect(granted).to eq([ "catalogs.approve" ])
     end
 
     it "cannot write a permission key the application does not enforce" do
       post api_v1_roles_path,
         params: { role: valid_attributes.merge(
-          permissions: { "catalogs.read" => true, "invented.superpower" => true }
+          permissions: { "catalogs.approve" => true, "invented.superpower" => true }
         ) },
         headers: headers_for(admin), as: :json
 
@@ -121,15 +121,15 @@ RSpec.describe "Api::V1::Roles", type: :request do
     let(:role) { create(:role, :authorization_boundary_scoped) }
 
     it "replaces the permission set wholesale, so an omitted key is revoked" do
-      role.assign_permissions("catalogs.read" => true, "catalogs.write" => true)
+      role.assign_permissions("catalogs.approve" => true, "catalogs.write" => true)
       role.save!
 
       patch api_v1_role_path(role),
-        params: { role: { permissions: { "catalogs.read" => true } } },
+        params: { role: { permissions: { "catalogs.approve" => true } } },
         headers: headers_for(admin), as: :json
 
       expect(response).to have_http_status(:ok)
-      expect(role.reload.has_permission?("catalogs.read")).to be(true)
+      expect(role.reload.has_permission?("catalogs.approve")).to be(true)
       expect(role.has_permission?("catalogs.write")).to be(false)
     end
 

@@ -68,7 +68,14 @@ RSpec.describe Role, type: :model do
 
   describe "PERMISSION_KEYS" do
     it "contains expected permission keys" do
-      expect(Role::PERMISSION_KEYS).to include("ssp.read", "ssp.write", "catalogs.read")
+      expect(Role::PERMISSION_KEYS).to include("ssp.read", "ssp.write", "catalogs.write")
+    end
+
+    # Owner, 2026-10-22: reading the control library is governed by sign-in
+    # (or SPARC_PUBLIC_CATALOGS), never by a per-type key, so these keys would
+    # advertise a restriction that does not exist — as converters.read did (#919).
+    it "does not define read keys for the control library" do
+      expect(Role::PERMISSION_KEYS).not_to include("catalogs.read", "profiles.read", "mappings.read")
     end
 
     it "groups permissions by resource" do

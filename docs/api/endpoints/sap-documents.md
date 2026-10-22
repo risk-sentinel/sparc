@@ -207,7 +207,7 @@ None.
 | `sap_document[assessment_start]` | date | no | Assessment start date (ISO 8601) |
 | `sap_document[assessment_end]` | date | no | Assessment end date (ISO 8601) |
 | `sap_document[sap_version]` | string | no | SAP document version |
-| `sap_document[lifecycle_status]` | string | no | Lifecycle status (e.g., `active`, `draft`) |
+| `sap_document[lifecycle_status]` | string | no | `started`, `in_progress` or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
 
 #### Response Body
 

@@ -1,0 +1,67 @@
+<%# v1.17.2 — every record a POA&M holds besides its items, each with Edit and
+    Delete; risks and remediations also resolve (Close / Reopen, Mark
+    completed), because resolving keeps the record and Delete does not. Built
+    by PoamDocumentsHelper#poam_record_sections, one shell for all five.
+
+    No inline handlers (CSP): Delete confirms through Turbo's data attribute,
+    and the Close/Reopen note is a <details> disclosure holding a plain form. %>
+<div data-testid="poam-record-sections">
+<% sections.each do |section| %>
+  <details class="card sparc-mb-075" data-testid="poam-section-<%= section.key %>" <%= "open" if section.rows.any? && section.key == "risks" %>>
+    <summary class="sparc-statement-label sparc-cursor-pointer">
+      <%= section.title %> (<%= section.rows.size %>)
+    </summary>
+
+    <% if section.rows.empty? %>
+      <p class="text-body-secondary sparc-fs-082 sparc-mt-05">None recorded.</p>
+    <% end %>
+
+    <% section.rows.each do |row| %>
+      <div class="bg-body-secondary rounded sparc-poam-subcard sparc-mt-05" data-testid="poam-record-row">
+        <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="fw-semibold sparc-fs-088 sparc-color-body"><%= row.title %></span>
+            <% row.badges.each do |text, variant| %>
+              <span class="sparc-tag-outline sparc-status--<%= variant %>"><%= text %></span>
+            <% end %>
+          </div>
+
+          <div class="d-flex flex-shrink-0 sparc-gap-035 flex-wrap">
+            <%= link_to "Edit", row.edit_path, class: "sparc-action sparc-action--primary sparc-action--outline sparc-p-03-07 sparc-fs-078" %>
+
+            <% if row.kind == :remediation && row.record.lifecycle != "completed" %>
+              <%= button_to "Mark completed",
+                    complete_poam_document_poam_remediation_path(@poam_document, row.record),
+                    method: :patch,
+                    class: "sparc-action sparc-action--positive sparc-action--outline sparc-p-03-07 sparc-fs-078" %>
+            <% end %>
+
+            <%= button_to "Delete", row.delete_path, method: :delete,
+                  data: { turbo_confirm: row.delete_confirm },
+                  class: "sparc-action sparc-action--danger sparc-action--outline sparc-p-03-07 sparc-fs-078" %>
+          </div>
+        </div>
+
+        <% if row.kind == :risk %>
+          <% closing = row.record.status != PoamResolutionService::CLOSED %>
+          <details class="sparc-mt-05" data-testid="<%= closing ? "close-risk" : "reopen-risk" %>">
+            <summary class="sparc-fs-08 sparc-cursor-pointer"><%= closing ? "Close this risk…" : "Reopen this risk…" %></summary>
+            <%= form_with url: (closing ? close_poam_document_poam_risk_path(@poam_document, row.record) : reopen_poam_document_poam_risk_path(@poam_document, row.record)),
+                          method: :patch, class: "sparc-mt-05" do %>
+              <label class="sparc-fs-075" for="risk-<%= row.record.id %>-note">
+                <%= closing ? "How was it resolved?" : "Why is it open again?" %>
+                Recorded in the risk's OSCAL risk log.
+              </label>
+              <textarea id="risk-<%= row.record.id %>-note" name="note" rows="2" required
+                        class="form-control sparc-fs-085" aria-label="<%= closing ? "Closing note" : "Reopening note" %>"></textarea>
+              <button type="submit" class="sparc-action sparc-action--<%= closing ? "positive" : "neutral" %> sparc-action--solid sparc-mt-05">
+                <%= closing ? "Close risk" : "Reopen risk" %>
+              </button>
+            <% end %>
+          </details>
+        <% end %>
+      </div>
+    <% end %>
+  </details>
+<% end %>
+</div>

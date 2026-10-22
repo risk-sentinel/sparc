@@ -3,262 +3,142 @@
 # Enables sparc-iac and other consumers to dynamically discover available
 # endpoints and allowed HTTP methods before making API calls.
 #
+# #1233 — built from ApiEndpointCatalog.routes, the route inventory the token
+# picker and enforcement read, instead of a hand-kept registry that listed 45
+# of the 202 paths. Each route is listed when BOTH hold:
+#
+#   * the token's own limits let it through (ApiEndpointCatalog.permits?, the
+#     check enforcement makes), so a limited token is not shown endpoints it
+#     will be refused; and
+#   * the caller meets the route's rule in ApiRoutePermissions.
+#
+# The response shape is unchanged (`path`, `methods`, `description` per
+# endpoint); `group` and `group_label` are added.
+#
 # NIST SP 800-53 Controls:
 #   AC-3  Access Enforcement — response is scoped to caller's permissions
 #   AC-6  Least Privilege — write methods hidden from read-only callers
 #   PM-5  Information System Inventory — machine-readable API surface catalog
 #
 class Api::V1::DiscoveryController < Api::V1::BaseController
-  # API permission scopes (mirror Role::PERMISSION_KEYS) — referenced across
-  # the endpoint inventory below.
-  SCOPE_SSP_READ  = "ssp.read".freeze
-  SCOPE_SSP_WRITE = "ssp.write".freeze
-  SCOPE_SAR_READ  = "sar.read".freeze
-  SCOPE_SAR_WRITE = "sar.write".freeze
-  SCOPE_CATALOGS_READ  = "catalogs.read".freeze
-  SCOPE_CATALOGS_WRITE = "catalogs.write".freeze
-  SCOPE_PROFILES_READ  = "profiles.read".freeze
-  SCOPE_PROFILES_WRITE = "profiles.write".freeze
-  SCOPE_AB_READ  = "authorization_boundaries.read".freeze
-  SCOPE_AB_WRITE = "authorization_boundaries.write".freeze
-  SCOPE_POAM_READ  = "poam.read".freeze
-  SCOPE_POAM_WRITE = "poam.write".freeze
-  SCOPE_MAPPINGS_READ  = "mappings.read".freeze
-  SCOPE_MAPPINGS_WRITE = "mappings.write".freeze
+  # Descriptions the hand-kept registry carried, kept so a consumer reading
+  # them sees no change. Any other path is described by its group's label.
+  DESCRIPTIONS = {
+    "/api/v1/available" => "API discovery — lists available endpoints scoped to caller permissions",
+    "/api/v1/sessions/from_token" => "Exchange a Bearer API token for a Rails session cookie (UI test automation)",
+    "/api/v1/ssp_documents" => "System Security Plans",
+    "/api/v1/ssp_documents/:slug" => "Single SSP document",
+    "/api/v1/ssp_documents/convert" => "Parse Excel file into SSP",
+    "/api/v1/ssp_documents/:slug/update_fields" => "Bulk update SSP control fields",
+    "/api/v1/ssp_documents/:slug/export" => "Export SSP as JSON",
+    "/api/v1/sar_documents" => "Security Assessment Results",
+    "/api/v1/sar_documents/:slug" => "Single SAR document",
+    "/api/v1/sar_documents/convert" => "Parse Excel file into SAR",
+    "/api/v1/sar_documents/:slug/update_fields" => "Bulk update SAR control fields",
+    "/api/v1/sar_documents/:slug/export" => "Export SAR as JSON",
+    "/api/v1/sap_documents" => "Security Assessment Plans",
+    "/api/v1/sap_documents/:slug" => "Single SAP document",
+    "/api/v1/poam_documents" => "Plans of Action and Milestones",
+    "/api/v1/poam_documents/:slug" => "Single POA&M document",
+    "/api/v1/poam_documents/:slug/export" => "Export a POA&M: fields JSON (default) or OSCAL (format=oscal|oscal-yaml|oscal-xml); ETag/304",
+    "/api/v1/control_catalogs" => "NIST and custom control catalogs",
+    "/api/v1/control_catalogs/:id" => "Single control catalog",
+    "/api/v1/profile_documents" => "Baselines and resolved profiles",
+    "/api/v1/profile_documents/:slug" => "Single profile document",
+    "/api/v1/profile_documents/:slug/parameters" => "Baseline parameter and enumeration management",
+    "/api/v1/profile_documents/:slug/parameters/export" => "Export baseline parameters as JSON, YAML, or XML",
+    "/api/v1/cdef_documents" => "Component Definitions",
+    "/api/v1/cdef_documents/:slug" => "Single component definition",
+    "/api/v1/control_mappings" => "Cross-framework control mappings",
+    "/api/v1/control_mappings/:id" => "Single control mapping",
+    "/api/v1/control_mappings/:id/export" => "Export a control mapping as OSCAL mapping-collection (format=oscal|oscal-yaml); ETag/304",
+    "/api/v1/ksi_catalog/themes" => "FedRAMP 20x KSI themes",
+    "/api/v1/ksi_catalog/indicators" => "FedRAMP 20x Key Security Indicators",
+    "/api/v1/ksi_catalog/indicators/:id" => "Single KSI indicator with mapped NIST controls",
+    "/api/v1/ksi_catalog/mappings" => "KSI-to-NIST 800-53 control mappings",
+    "/api/v1/ksi_catalog/import" => "Import the FedRAMP 20x KSI catalog from the vendored FedRAMP/rules snapshot",
+    "/api/v1/authorization_boundaries" => "Authorization boundaries",
+    "/api/v1/authorization_boundaries/:id" => "Single authorization boundary",
+    "/api/v1/authorization_boundaries/:id/ksi_validations" => "KSI validation records for an authorization boundary",
+    "/api/v1/authorization_boundaries/:id/ksi_validations/:vid" => "Single KSI validation record",
+    "/api/v1/authorization_boundaries/:id/ksi_validations/summary" => "KSI validation summary for an authorization boundary",
+    "/api/v1/authorization_boundaries/:id/ksi_validations/export" => "Export KSI compliance report (JSON, YAML, XML)",
+    "/api/v1/authorization_boundaries/:id/hdf_system" => "The boundary as an HDF hdf-system document (v3.7.0); also requires ssp.read",
+    "/api/v1/users" => "User management",
+    "/api/v1/users/:id" => "Single user",
+    "/api/v1/oscal/sar_from_hdf" => "Translate HDF results to OSCAL SAR (stateless)",
+    "/api/v1/oscal/poam_from_hdf" => "Translate HDF results to OSCAL POAM (stateless)",
+    "/api/v1/hdf/amendments_from_oscal_poam" => "Translate OSCAL POAM to HDF Amendments (stateless; for `hdf amend apply`)"
+  }.freeze
+
+  # Paths the registry spelled with other placeholder names than the route
+  # (`:slug` for `:id`, ...). Shown as the registry spelled them, so a consumer
+  # matching on them (sparc-iac) sees no change; every other path is shown as
+  # the route declares it.
+  LEGACY_PATHS = {
+    "/api/v1/ssp_documents/:id" => "/api/v1/ssp_documents/:slug",
+    "/api/v1/ssp_documents/:id/update_fields" => "/api/v1/ssp_documents/:slug/update_fields",
+    "/api/v1/ssp_documents/:id/export" => "/api/v1/ssp_documents/:slug/export",
+    "/api/v1/sar_documents/:id" => "/api/v1/sar_documents/:slug",
+    "/api/v1/sar_documents/:id/update_fields" => "/api/v1/sar_documents/:slug/update_fields",
+    "/api/v1/sar_documents/:id/export" => "/api/v1/sar_documents/:slug/export",
+    "/api/v1/sap_documents/:id" => "/api/v1/sap_documents/:slug",
+    "/api/v1/poam_documents/:id" => "/api/v1/poam_documents/:slug",
+    "/api/v1/poam_documents/:id/export" => "/api/v1/poam_documents/:slug/export",
+    "/api/v1/profile_documents/:id" => "/api/v1/profile_documents/:slug",
+    "/api/v1/profile_documents/:profile_document_id/parameters" => "/api/v1/profile_documents/:slug/parameters",
+    "/api/v1/profile_documents/:profile_document_id/parameters/export" => "/api/v1/profile_documents/:slug/parameters/export",
+    "/api/v1/cdef_documents/:id" => "/api/v1/cdef_documents/:slug",
+    "/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations" => "/api/v1/authorization_boundaries/:id/ksi_validations",
+    "/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id" => "/api/v1/authorization_boundaries/:id/ksi_validations/:vid",
+    "/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/summary" => "/api/v1/authorization_boundaries/:id/ksi_validations/summary",
+    "/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/export" => "/api/v1/authorization_boundaries/:id/ksi_validations/export",
+    "/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_system" => "/api/v1/authorization_boundaries/:id/hdf_system"
+  }.freeze
 
   # GET /api/v1/available
   def available
-    endpoints = scoped_endpoints_for(current_user)
-
     render json: {
       api_version: "v1",
       system_id: "sparc-application",
       authenticated_as: current_user.display_label,
       auth_mode: SparcConfig.api_auth_mode,
-      endpoints: endpoints
+      endpoints: scoped_endpoints_for(current_user, current_api_token)
     }
   end
 
   private
 
-  # AC-3 / AC-6: Filter endpoint registry to only methods the caller
-  # is authorized to use. Omits entire endpoints when no methods remain.
-  def scoped_endpoints_for(user)
-    ENDPOINT_REGISTRY.filter_map do |ep|
-      methods = allowed_methods(user, ep)
-      next if methods.empty?
+  # AC-3 / AC-6: every route the token's limits and the caller's permissions
+  # allow, one entry per path with the methods allowed on it.
+  def scoped_endpoints_for(user, token)
+    allowed = ApiEndpointCatalog.routes.select do |route|
+      token_allows?(token, route, route.spec.to_s.delete_suffix("(.:format)")) && ApiRoutePermissions.satisfied?(user, ApiRoutePermissions.rule_for(route))
+    end
 
+    allowed.group_by { |route| display_path(route.spec) }.sort.map do |path, routes|
+      group = routes.first.group
+      label = ApiEndpointCatalog::GROUP_LABELS.fetch(group, group)
       {
-        path: ep[:path],
-        methods: methods,
-        description: ep[:description]
+        path: path,
+        methods: routes.map(&:verb).uniq.sort_by { |v| METHOD_ORDER.index(v) || METHOD_ORDER.size },
+        description: DESCRIPTIONS.fetch(path, label),
+        group: group,
+        group_label: label
       }
     end
   end
 
-  def allowed_methods(user, ep)
-    return ep[:methods] if user.instance_administrator?
+  METHOD_ORDER = %w[GET POST PUT PATCH DELETE].freeze
 
-    # Admin-only endpoints are invisible to non-admins entirely
-    return [] if ep[:admin_only]
+  def token_allows?(token, route, path)
+    return true if token.nil?
 
-    ep[:methods].select do |method|
-      case method
-      when "GET"
-        ep[:permission_read].nil? || user.has_any_permission?(ep[:permission_read])
-      when "POST", "PUT", "PATCH", "DELETE"
-        ep[:permission_write].present? && user.has_any_permission?(ep[:permission_write])
-      else
-        false
-      end
-    end
+    ApiEndpointCatalog.permits?(token.allowed_endpoints, path: path, verb: route.verb, route_key: route.key)
   end
 
-  # Complete registry of all API v1 endpoints with their permission requirements.
-  # Each entry defines which permission keys gate read (GET) and write (mutating) access.
-  ENDPOINT_REGISTRY = [
-    # --- Discovery ---
-    { path: "/api/v1/available", methods: %w[GET],
-      description: "API discovery — lists available endpoints scoped to caller permissions",
-      permission_read: nil, permission_write: nil, admin_only: false },
-
-    # NOTE: /api/v1/federation/identity (#1155) is intentionally omitted for the
-    # same reason as /api/v1/guides below — it is permission-free reference
-    # data (two federation constants), not part of the scoped compliance-data
-    # surface this registry advertises, and listing it would dilute the
-    # least-privilege view a no-permission caller sees. It is documented in
-    # docs/api/endpoints/federation-identity.md and the Postman collection.
-
-    # --- Session bridge (#573) ---
-    { path: "/api/v1/sessions/from_token", methods: %w[POST],
-      description: "Exchange a Bearer API token for a Rails session cookie (UI test automation)",
-      permission_read: nil, permission_write: nil, admin_only: false },
-    # NOTE: /api/v1/guides (#784) is intentionally omitted here — discovery
-    # advertises the scoped compliance-data surface (PM-5 inventory), and the
-    # permission-free help endpoints would otherwise dilute the least-privilege
-    # view a no-permission caller sees. The guides API is documented separately.
-
-    # --- SSP Documents ---
-    { path: "/api/v1/ssp_documents", methods: %w[GET POST],
-      description: "System Security Plans",
-      permission_read: SCOPE_SSP_READ, permission_write: SCOPE_SSP_WRITE, admin_only: false },
-    { path: "/api/v1/ssp_documents/:slug", methods: %w[GET PUT DELETE],
-      description: "Single SSP document",
-      permission_read: SCOPE_SSP_READ, permission_write: SCOPE_SSP_WRITE, admin_only: false },
-    { path: "/api/v1/ssp_documents/convert", methods: %w[POST],
-      description: "Parse Excel file into SSP",
-      permission_read: nil, permission_write: SCOPE_SSP_WRITE, admin_only: false },
-    { path: "/api/v1/ssp_documents/:slug/update_fields", methods: %w[PUT],
-      description: "Bulk update SSP control fields",
-      permission_read: nil, permission_write: SCOPE_SSP_WRITE, admin_only: false },
-    { path: "/api/v1/ssp_documents/:slug/export", methods: %w[GET],
-      description: "Export SSP as JSON",
-      permission_read: SCOPE_SSP_READ, permission_write: nil, admin_only: false },
-
-    # --- SAR Documents ---
-    { path: "/api/v1/sar_documents", methods: %w[GET POST],
-      description: "Security Assessment Results",
-      permission_read: SCOPE_SAR_READ, permission_write: SCOPE_SAR_WRITE, admin_only: false },
-    { path: "/api/v1/sar_documents/:slug", methods: %w[GET PUT DELETE],
-      description: "Single SAR document",
-      permission_read: SCOPE_SAR_READ, permission_write: SCOPE_SAR_WRITE, admin_only: false },
-    { path: "/api/v1/sar_documents/convert", methods: %w[POST],
-      description: "Parse Excel file into SAR",
-      permission_read: nil, permission_write: SCOPE_SAR_WRITE, admin_only: false },
-    { path: "/api/v1/sar_documents/:slug/update_fields", methods: %w[PUT],
-      description: "Bulk update SAR control fields",
-      permission_read: nil, permission_write: SCOPE_SAR_WRITE, admin_only: false },
-    { path: "/api/v1/sar_documents/:slug/export", methods: %w[GET],
-      description: "Export SAR as JSON",
-      permission_read: SCOPE_SAR_READ, permission_write: nil, admin_only: false },
-
-    # --- SAP Documents ---
-    { path: "/api/v1/sap_documents", methods: %w[GET POST],
-      description: "Security Assessment Plans",
-      permission_read: "sap.read", permission_write: "sap.write", admin_only: false },
-    { path: "/api/v1/sap_documents/:slug", methods: %w[GET PUT DELETE],
-      description: "Single SAP document",
-      permission_read: "sap.read", permission_write: "sap.write", admin_only: false },
-
-    # --- POA&M Documents ---
-    { path: "/api/v1/poam_documents", methods: %w[GET POST],
-      description: "Plans of Action and Milestones",
-      permission_read: SCOPE_POAM_READ, permission_write: SCOPE_POAM_WRITE, admin_only: false },
-    { path: "/api/v1/poam_documents/:slug", methods: %w[GET PUT DELETE],
-      description: "Single POA&M document",
-      permission_read: SCOPE_POAM_READ, permission_write: SCOPE_POAM_WRITE, admin_only: false },
-    { path: "/api/v1/poam_documents/:slug/export", methods: %w[GET],
-      description: "Export a POA&M: fields JSON (default) or OSCAL (format=oscal|oscal-yaml|oscal-xml); ETag/304",
-      permission_read: SCOPE_POAM_READ, permission_write: nil, admin_only: false },
-
-    # --- Control Catalogs ---
-    { path: "/api/v1/control_catalogs", methods: %w[GET POST],
-      description: "NIST and custom control catalogs",
-      permission_read: SCOPE_CATALOGS_READ, permission_write: SCOPE_CATALOGS_WRITE, admin_only: true },
-    { path: "/api/v1/control_catalogs/:id", methods: %w[GET PUT DELETE],
-      description: "Single control catalog",
-      permission_read: SCOPE_CATALOGS_READ, permission_write: SCOPE_CATALOGS_WRITE, admin_only: true },
-
-    # --- Profile Documents ---
-    { path: "/api/v1/profile_documents", methods: %w[GET POST],
-      description: "Baselines and resolved profiles",
-      permission_read: SCOPE_PROFILES_READ, permission_write: SCOPE_PROFILES_WRITE, admin_only: false },
-    { path: "/api/v1/profile_documents/:slug", methods: %w[GET PUT DELETE],
-      description: "Single profile document",
-      permission_read: SCOPE_PROFILES_READ, permission_write: SCOPE_PROFILES_WRITE, admin_only: false },
-
-    # --- Baseline Parameters ---
-    { path: "/api/v1/profile_documents/:slug/parameters", methods: %w[GET PUT],
-      description: "Baseline parameter and enumeration management",
-      permission_read: SCOPE_PROFILES_READ, permission_write: SCOPE_PROFILES_WRITE, admin_only: false },
-    { path: "/api/v1/profile_documents/:slug/parameters/export", methods: %w[GET],
-      description: "Export baseline parameters as JSON, YAML, or XML",
-      permission_read: SCOPE_PROFILES_READ, permission_write: nil, admin_only: false },
-
-    # --- CDEF Documents ---
-    { path: "/api/v1/cdef_documents", methods: %w[GET POST],
-      description: "Component Definitions",
-      permission_read: "cdef.read", permission_write: "cdef.write", admin_only: false },
-    { path: "/api/v1/cdef_documents/:slug", methods: %w[GET PUT DELETE],
-      description: "Single component definition",
-      permission_read: "cdef.read", permission_write: "cdef.write", admin_only: false },
-
-    # --- Control Mappings ---
-    # Writes need admin OR mappings.write (Api::V1::ControlMappingsController);
-    # `admin_only: true` hid these rows from mappings.write holders, which was
-    # wrong (#1154 part 2). Reads are open to any authenticated caller, but —
-    # like /guides and /federation/identity — permission-free reference data is
-    # advertised only to callers holding the read scope, so a no-permission
-    # caller's view stays least-privilege.
-    { path: "/api/v1/control_mappings", methods: %w[GET POST],
-      description: "Cross-framework control mappings",
-      permission_read: SCOPE_MAPPINGS_READ, permission_write: SCOPE_MAPPINGS_WRITE, admin_only: false },
-    { path: "/api/v1/control_mappings/:id", methods: %w[GET PUT DELETE],
-      description: "Single control mapping",
-      permission_read: SCOPE_MAPPINGS_READ, permission_write: SCOPE_MAPPINGS_WRITE, admin_only: false },
-    { path: "/api/v1/control_mappings/:id/export", methods: %w[GET],
-      description: "Export a control mapping as OSCAL mapping-collection (format=oscal|oscal-yaml); ETag/304",
-      permission_read: SCOPE_MAPPINGS_READ, permission_write: nil, admin_only: false },
-
-    # --- KSI Catalog ---
-    { path: "/api/v1/ksi_catalog/themes", methods: %w[GET],
-      description: "FedRAMP 20x KSI themes",
-      permission_read: SCOPE_CATALOGS_READ, permission_write: nil, admin_only: false },
-    { path: "/api/v1/ksi_catalog/indicators", methods: %w[GET],
-      description: "FedRAMP 20x Key Security Indicators",
-      permission_read: SCOPE_CATALOGS_READ, permission_write: nil, admin_only: false },
-    { path: "/api/v1/ksi_catalog/indicators/:id", methods: %w[GET],
-      description: "Single KSI indicator with mapped NIST controls",
-      permission_read: SCOPE_CATALOGS_READ, permission_write: nil, admin_only: false },
-    { path: "/api/v1/ksi_catalog/mappings", methods: %w[GET],
-      description: "KSI-to-NIST 800-53 control mappings",
-      permission_read: SCOPE_CATALOGS_READ, permission_write: nil, admin_only: false },
-    { path: "/api/v1/ksi_catalog/import", methods: %w[POST],
-      description: "Import the FedRAMP 20x KSI catalog from the vendored FedRAMP/rules snapshot",
-      permission_read: nil, permission_write: SCOPE_CATALOGS_WRITE, admin_only: false },
-
-    # --- Authorization Boundaries ---
-    { path: "/api/v1/authorization_boundaries", methods: %w[GET POST],
-      description: "Authorization boundaries",
-      permission_read: SCOPE_AB_READ, permission_write: SCOPE_AB_WRITE, admin_only: false },
-    { path: "/api/v1/authorization_boundaries/:id", methods: %w[GET PUT DELETE],
-      description: "Single authorization boundary",
-      permission_read: SCOPE_AB_READ, permission_write: SCOPE_AB_WRITE, admin_only: false },
-
-    # --- KSI Validations ---
-    { path: "/api/v1/authorization_boundaries/:id/ksi_validations", methods: %w[GET POST],
-      description: "KSI validation records for an authorization boundary",
-      permission_read: SCOPE_AB_READ, permission_write: SCOPE_AB_WRITE, admin_only: false },
-    { path: "/api/v1/authorization_boundaries/:id/ksi_validations/:vid", methods: %w[GET PUT DELETE],
-      description: "Single KSI validation record",
-      permission_read: SCOPE_AB_READ, permission_write: SCOPE_AB_WRITE, admin_only: false },
-    { path: "/api/v1/authorization_boundaries/:id/ksi_validations/summary", methods: %w[GET],
-      description: "KSI validation summary for an authorization boundary",
-      permission_read: SCOPE_AB_READ, permission_write: nil, admin_only: false },
-    { path: "/api/v1/authorization_boundaries/:id/ksi_validations/export", methods: %w[GET],
-      description: "Export KSI compliance report (JSON, YAML, XML)",
-      permission_read: SCOPE_AB_READ, permission_write: nil, admin_only: false },
-    { path: "/api/v1/authorization_boundaries/:id/hdf_system", methods: %w[GET],
-      description: "The boundary as an HDF hdf-system document (v3.7.0); also requires ssp.read",
-      permission_read: SCOPE_AB_READ, permission_write: nil, admin_only: false },
-
-    # --- Users ---
-    { path: "/api/v1/users", methods: %w[GET POST],
-      description: "User management",
-      permission_read: nil, permission_write: nil, admin_only: true },
-    { path: "/api/v1/users/:id", methods: %w[GET PUT DELETE],
-      description: "Single user",
-      permission_read: nil, permission_write: nil, admin_only: true },
-
-    # --- HDF ↔ OSCAL Translation Bridge (#449) ---
-    { path: "/api/v1/oscal/sar_from_hdf", methods: %w[POST],
-      description: "Translate HDF results to OSCAL SAR (stateless)",
-      permission_read: nil, permission_write: nil, admin_only: false },
-    { path: "/api/v1/oscal/poam_from_hdf", methods: %w[POST],
-      description: "Translate HDF results to OSCAL POAM (stateless)",
-      permission_read: nil, permission_write: nil, admin_only: false },
-    { path: "/api/v1/hdf/amendments_from_oscal_poam", methods: %w[POST],
-      description: "Translate OSCAL POAM to HDF Amendments (stateless; for `hdf amend apply`)",
-      permission_read: nil, permission_write: nil, admin_only: false }
-  ].freeze
+  def display_path(spec)
+    path = spec.to_s.delete_suffix("(.:format)")
+    LEGACY_PATHS.fetch(path, path)
+  end
 end

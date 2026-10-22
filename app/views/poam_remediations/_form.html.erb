@@ -32,11 +32,8 @@
   <div class="form-group mt-3">
     <%= f.label :lifecycle, class: "fw-semibold" %>
     <%= f.select :lifecycle,
-          options_for_select([
-            [ "Recommendation", "recommendation" ],
-            [ "Planned", "planned" ],
-            [ "Completed", "completed" ]
-          ], poam_remediation.lifecycle),
+          options_for_select(RiskCollectionParams::REMEDIATION_LIFECYCLES.map { |l| [ l.titleize, l ] },
+                             poam_remediation.lifecycle),
           { include_blank: "— Select —" }, class: "form-control" %>
   </div>
 

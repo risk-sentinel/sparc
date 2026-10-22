@@ -9,6 +9,7 @@ class Api::V1::BaseController < ActionController::API
   include ApiAuthentication
   include Authorization
   include Pagy::Method
+  include ApiPublicationGuard
 
   before_action :authenticate_api_token!
 

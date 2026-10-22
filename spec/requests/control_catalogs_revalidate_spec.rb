@@ -13,7 +13,7 @@ RSpec.describe "Catalog Revalidate (#237)", type: :request do
 
   let(:viewer_role) do
     create(:role, name: "global_viewer", scope: "instance",
-           permissions: { "catalogs.read" => true })
+           permissions: {})
   end
 
   let(:viewer_user) do

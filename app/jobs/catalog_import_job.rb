@@ -10,6 +10,8 @@ class CatalogImportJob < ApplicationJob
 
   def perform(catalog_id, file_path, original_filename)
     catalog = ControlCatalog.find(catalog_id)
+    # #1235 — the URL the upload redirected to, and the processing page polls.
+    url_uuid = catalog.oscal_uuid
 
     catalog.update!(
       status: "processing",
@@ -28,6 +30,9 @@ class CatalogImportJob < ApplicationJob
       # If so, clean up the shell record and use the resolved catalog going forward.
       resolved_catalog = stats[:catalog]
       if resolved_catalog.id != catalog.id
+        # Recorded before the placeholder goes, so its address never resolves
+        # to nothing.
+        remember_upload_url!(resolved_catalog, url_uuid)
         catalog.destroy if catalog.control_families.empty?
         catalog = resolved_catalog
       end
@@ -42,8 +47,12 @@ class CatalogImportJob < ApplicationJob
       )
       validation_result = CatalogImportValidationService.new(catalog).validate
 
+      # #1235 — an upload lands as Draft, a re-import into an existing catalog
+      # included (owner, 2026-10-21): the user reviews the warnings and
+      # publishes through `publish`, so the approval gate applies.
       catalog.update!(
         status: "completed",
+        lifecycle_status: "in_progress",
         metadata_extra: (catalog.metadata_extra || {}).merge(
           validation_result,
           "processing_stage"        => "complete",
@@ -70,5 +79,23 @@ class CatalogImportJob < ApplicationJob
     ensure
       FileUtils.rm_f(file_path)
     end
+  end
+
+  private
+
+  # #1235 — the upload redirects to its placeholder record's random uuid, and
+  # the processing page polls that URL. When the import resolves to the
+  # catalog that already owns the file's uuid, the placeholder is deleted and
+  # the next poll found nothing: "Catalog not found — it may have been merged
+  # during re-import". The owner records the placeholder's uuid, so
+  # ControlCatalog.find_for_url resolves it. (When the placeholder itself is
+  # given the file's uuid, ControlCatalog#remember_superseded_oscal_uuid
+  # records the old one in the same save.)
+  def remember_upload_url!(catalog, url_uuid)
+    return if url_uuid.blank? || catalog.oscal_uuid == url_uuid
+
+    extra = catalog.metadata_extra || {}
+    superseded = (Array(extra["superseded_oscal_uuids"]) | [ url_uuid ])
+    catalog.update!(metadata_extra: extra.merge("superseded_oscal_uuids" => superseded))
   end
 end

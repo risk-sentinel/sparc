@@ -11,6 +11,7 @@
 # preserves imported UUIDs).
 class PoamRisksController < ApplicationController
   include OscalExtensibilityParams
+  include RiskCollectionParams
 
   before_action :set_poam_document
   include PoamChildAuthorization
@@ -18,10 +19,20 @@ class PoamRisksController < ApplicationController
   # of them require poam.write on the parent document's boundary. Runs AFTER
   # set_poam_document, which is what resolves that boundary.
   before_action :authorize_poam_write!
-  before_action :set_poam_risk, only: %i[edit update destroy]
+  before_action :set_poam_risk, only: %i[edit update destroy close reopen]
 
   def new
     @poam_risk = @poam_document.poam_risks.build
+  end
+
+  # A threat ID the form cannot store as valid OSCAL is refused: nothing is
+  # saved, and the form comes back with a message naming the value and with the
+  # operator's other fields as typed.
+  rescue_from RiskCollectionParams::FormRowInvalid do |e|
+    @poam_risk ||= @poam_document.poam_risks.build
+    @poam_risk.assign_attributes(params.require(:poam_risk).permit(*SCALAR_FIELDS))
+    flash.now[:error] = e.message
+    render(@poam_risk.persisted? ? :edit : :new, status: :unprocessable_content)
   end
 
   def create
@@ -61,7 +72,30 @@ class PoamRisksController < ApplicationController
     redirect_to poam_document_path(@poam_document)
   end
 
+  # v1.17.2 — resolving a risk keeps it: Close sets OSCAL status `closed` and
+  # records why in its risk log; Reopen reverses it the same way. Delete stays
+  # for an entry that should never have existed. See PoamResolutionService.
+  def close
+    change_status(:close!, "poam_risk_closed", "closed")
+    redirect_to poam_document_path(@poam_document)
+  end
+
+  def reopen
+    change_status(:reopen!, "poam_risk_reopened", "reopened")
+    redirect_to poam_document_path(@poam_document)
+  end
+
   private
+
+  def change_status(transition, event, verb)
+    note = params[:note].to_s
+    PoamResolutionService.public_send(transition, @poam_risk, note: note)
+    audit_log(event, subject: @poam_risk,
+              metadata: { title: @poam_risk.title, poam_document_id: @poam_document.id, note: note.strip })
+    flash[:success] = "Risk \"#{@poam_risk.title}\" #{verb}"
+  rescue PoamResolutionService::Refused, ActiveRecord::RecordInvalid => e
+    flash[:error] = e.message
+  end
 
   def set_poam_document
     @poam_document = PoamDocument.find_by!(slug: params[:poam_document_id])
@@ -71,15 +105,25 @@ class PoamRisksController < ApplicationController
     @poam_risk = @poam_document.poam_risks.find(params[:id])
   end
 
+  POAM_RISK_FORM_COLLECTIONS = %i[threat_ids_data mitigating_factors_data].freeze
+  SCALAR_FIELDS = %i[title description statement status impact likelihood deadline remarks
+                     blocks_ato condition_expires reopen_trigger].freeze
+
   def poam_risk_params
     permitted = params.require(:poam_risk).permit(
-      :title, :description, :statement, :status,
-      :impact, :likelihood, :deadline, :remarks,
-      :blocks_ato, :condition_expires, :reopen_trigger, # #1154
+      *SCALAR_FIELDS, # #1154 added blocks_ato, condition_expires, reopen_trigger
+      :collections_present,
       props_data:   [ :name, :value, :class, :ns, :uuid, :remarks ],
       links_data:   [ :href, :rel, :media_type, :text ],
-      origins_data: [ :actor_type, :actor_uuid, :role_id ]
+      origins_data: [ :actor_type, :actor_uuid, :role_id ],
+      # v1.17.2 — threat IDs and mitigating factors, through the same partial
+      # and the same normaliser as the SAR risk card. The API has accepted
+      # both since #1092.
+      threat_ids_data: THREAT_IDS,
+      mitigating_factors_data: MITIGATING_FACTORS
     )
+    permitted = normalise_form_risk_collections(permitted, record: @poam_risk,
+                                                           collections: POAM_RISK_FORM_COLLECTIONS)
 
     permitted[:props_data]   = compact_props(permitted[:props_data])     if permitted.key?(:props_data)
     permitted[:links_data]   = compact_links(permitted[:links_data])     if permitted.key?(:links_data)

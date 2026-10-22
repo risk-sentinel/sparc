@@ -609,12 +609,15 @@ SAP selector and assessment date configuration.
 
 Form for adding OSCAL assessment result metadata: results, observations, findings, and risks. Each section is an independently collapsible `<details>` block.
 
-**Risk card fields**: title, status (the six OSCAL `risk-status` values), description, statement, impact and likelihood (five levels -- `very-low`, `low`, `moderate`, `high`, `very-high` -- from `RiskRating::LEVELS`, exported as characterization facets).
+**Risk card fields**: title, status (the six OSCAL `risk-status` values), description, statement, impact and likelihood (five levels -- `very-low`, `low`, `moderate`, `high`, `very-high` -- from `RiskRating::LEVELS`, exported as characterization facets), and deadline (v1.17.2, optional).
 
-**Threat IDs and Mitigating Factors** (#1092) -- a nested collapsible inside each risk card, rendered by `shared/_risk_oscal_collections`. Both are repeatable rows with **+ Add** / **x** controls driven by the `oscal-repeater` Stimulus controller:
+**Threat IDs, Mitigating Factors and Remediations** (#1092; remediations v1.17.2) -- a nested collapsible inside each risk card, rendered by `shared/_risk_oscal_collections`. All are repeatable rows with **+ Add** / **x** controls driven by the `oscal-repeater` Stimulus controller:
 
-- **Threat ID** -- `system` (the threat catalogue's address, e.g. `https://attack.mitre.org`) and `id` (the identifier within it, e.g. `T1078`).
+- **Threat ID** -- `system` and `id`, both full URIs as OSCAL requires (e.g. `https://attack.mitre.org` and `https://attack.mitre.org/techniques/T1078`). A non-URI value is refused on save with a message.
 - **Mitigating Factor** -- a free-text `description`; its OSCAL `uuid` rides along in a hidden field and is preserved rather than regenerated per render.
+- **Remediation** -- `title`, `description` and `lifecycle` (`recommendation`, `planned`, `completed`); both text fields are required, so a half-filled row is refused on save.
+
+Saving keeps whatever a stored entry carries that the form does not edit (props, links, origins, required-assets), matching rows back by uuid (`RiskCollectionParams#normalise_form_risk_collections`, shared with the POA&M risk form). Risks and findings are matched only within the SAR being edited.
 
 A hidden `collections_present` marker distinguishes "the form rendered these and they are now empty" from "unchanged", so removing the last row and saving clears the collection instead of silently keeping the old value.
 
@@ -708,7 +711,7 @@ Summary tiles with document and item counts. Lists all POA&M documents with name
 | **Controller** | `PoamDocumentsController#show` |
 | **Auth** | Required |
 
-Items displayed with pagination. Filter options for risk status and impact level. **Risk Status x Impact** heat map: its columns come from `RiskRating::LEVELS`, so all five impact tiers are always drawn and a tier with no risks renders an empty column with a dash rather than disappearing (#1095). An unrecognised legacy value is appended as an extra column rather than dropped. Editable metadata via inline toggle. Publish/publish-check actions. Export buttons: OSCAL (validated/unvalidated), JSON, YAML, XML. Sections for each child-entity type (items, risks, remediations, observations, findings, local components) with "New" buttons linking to the nested forms below. Nested back-matter resource management.
+Items displayed with pagination. Filter options for risk status and impact level. **Risk Status x Impact** heat map: its columns come from `RiskRating::LEVELS`, so all five impact tiers are always drawn and a tier with no risks renders an empty column with a dash rather than disappearing (#1095). An unrecognised legacy value is appended as an extra column rather than dropped. Editable metadata via inline toggle. Publish/publish-check actions. Export buttons: OSCAL (validated/unvalidated), JSON, YAML, XML. "+ Add" buttons for each child-entity type (items, risks, remediations, observations, findings, local components) linking to the nested forms below. Below the item cards, one collapsible section per child type (`poam_documents/_record_sections`, built by `PoamDocumentsHelper#poam_record_sections`), each headed with its count, with **Edit** and **Delete** on every record (v1.17.2). Before this, only items could be edited from the page, and a risk linked to no item was not shown at all. Risks also have **Close this risk…** / **Reopen this risk…**, a disclosure holding a required note: `PATCH .../poam_risks/:id/close` and `/reopen` set the OSCAL status and append a `risk-log` entry. Remediations have **Mark completed** (`PATCH .../poam_remediations/:id/complete`, OSCAL `lifecycle: completed`). All three go through `PoamResolutionService`, as do the API's `POST /api/v1/poam_risks/:id/close`, `/reopen` and `.../remediations/:id/complete`. The Delete confirmation names what goes with the record. Item cards' related risks carry an **Edit** link. Nested back-matter resource management.
 
 #### POA&M Item Create / Edit
 
@@ -728,7 +731,7 @@ Form fields: risk ID, finding source, status, impact level, remediation plan, sc
 | **Controller** | `PoamRisksController#new`, `#edit` |
 | **Auth** | Required |
 
-OSCAL `risk` form: title, description, statement, status, deadline, threat/characterization fields, and the impact/likelihood rating on the five-level `RiskRating::LEVELS` scale (`very-low`, `low`, `moderate`, `high`, `very-high`), exported as characterization facets.
+OSCAL `risk` form: title, description, statement, status, deadline, the impact/likelihood rating on the five-level `RiskRating::LEVELS` scale (`very-low`, `low`, `moderate`, `high`, `very-high`, exported as characterization facets), and (v1.17.2) **Threat IDs and Mitigating Factors**, the same section and rules as the SAR risk card. Remediations are not on this form: a POA&M keeps them as rows with their own screens. There is no link to the edit route from the POA&M page yet; it is reached by URL.
 
 #### POA&M Remediation Create / Edit (with nested Milestones)
 
@@ -1012,11 +1015,11 @@ Manage organization entities (UUID-based audit traceability) for multi-org insta
 
 | | |
 |---|---|
-| **Routes** | `GET /admin/service_accounts` (full CRUD); nested `POST/DELETE /admin/service_accounts/:id/api_tokens` |
+| **Routes** | `GET /admin/service_accounts` (full CRUD); tokens under `/admin/users/:user_id/api_tokens`: `POST` (issue), `DELETE …/:id` (revoke), `POST …/:id/renew`, `POST …/:id/reissue`, `GET …/:id/edit` + `PATCH …/:id` (edit limits in place, #1233) |
 | **Controller** | `Admin::ServiceAccountsController`, `Admin::ApiTokensController` |
 | **Auth** | Instance Admin |
 
-Create non-interactive automation identities and issue/revoke their `sparc_sa_<token>` Bearer tokens. The plaintext token is shown **once** on creation; only a SHA-256 digest is stored. Service accounts authenticate the REST API and can bridge to a UI session via `POST /api/v1/sessions/from_token`.
+Create non-interactive automation identities and issue, renew, reissue and revoke their `sparc_sa_<token>` Bearer tokens. **Edit limits** changes a token's allowed endpoints and CIDRs without reissuing it. The plaintext token is shown **once** on creation; only a SHA-256 digest is stored. Service accounts authenticate the REST API and can bridge to a UI session via `POST /api/v1/sessions/from_token`.
 
 #### Data Migrations
 

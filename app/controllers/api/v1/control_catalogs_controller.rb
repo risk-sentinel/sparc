@@ -53,6 +53,8 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
   # POST /api/v1/control_catalogs
   def create
     catalog = ControlCatalog.new(catalog_params)
+    return if refuse_unauthorized_publication!(catalog, catalog_params)
+
     catalog.save!
 
     audit_log("control_catalog_created", subject: catalog, metadata: { name: catalog.name })
@@ -61,6 +63,8 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
 
   # PATCH /api/v1/control_catalogs/:id
   def update
+    return if refuse_unauthorized_publication!(@catalog, catalog_params)
+
     @catalog.update!(catalog_params)
 
     audit_log("control_catalog_updated", subject: @catalog, metadata: { name: @catalog.name })

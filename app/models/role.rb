@@ -40,6 +40,14 @@ class Role < ApplicationRecord
   # that does not exist. A permission that grants nothing is worse than no
   # permission, because the role catalog implies a restriction a reader will trust.
   # Entries left in stored `roles.permissions` JSONB become inert.
+  #
+  # `catalogs.read`, `profiles.read` and `mappings.read` went the same way, for
+  # the same reason (owner, 2026-10-22). Reading the control library is governed
+  # by sign-in, or by nothing when SPARC_PUBLIC_CATALOGS=true
+  # (Authentication#public_controls_read), and through the API by any valid
+  # token. No code ever consulted the three keys; the old discovery listing was
+  # the only thing that read them, so a role without them still read every
+  # catalog, profile and mapping.
   # #1044 — `admin.administer` is instance-administrator AUTHORITY, grantable
   # from an IdP so an operator can hold it for a bounded window rather than
   # permanently. It sits in the `admin` namespace, already labelled "Instance
@@ -52,10 +60,8 @@ class Role < ApplicationRecord
   # ever produces user_roles and organization_memberships), and still the only
   # thing the separation-of-duties carve-outs accept.
   PERMISSION_KEYS = %w[
-    catalogs.read
     catalogs.write
     catalogs.approve
-    profiles.read
     profiles.write
     profiles.approve
     authorization_boundaries.read
@@ -75,7 +81,6 @@ class Role < ApplicationRecord
     evidence.read
     evidence.write
     evidence.attest
-    mappings.read
     mappings.write
     converters.write
     back_matter.read
@@ -116,9 +121,9 @@ class Role < ApplicationRecord
     permissions[key] == true
   end
 
-  # Bulk-set permissions from form params ({ "catalogs.read" => "1", ... })
+  # Bulk-set permissions from form params ({ "ssp.read" => "1", ... })
   # Accepts the web form's "1"/absent convention AND real booleans, so the API
-  # (#1014) can send `{"catalogs.read": true}` — the natural JSON shape — while
+  # (#1014) can send `{"ssp.read": true}` — the natural JSON shape — while
   # the checkbox params the UI submits keep behaving exactly as before. An
   # unchecked box is absent, casts to nil, and lands as false either way.
   def assign_permissions(perm_params)

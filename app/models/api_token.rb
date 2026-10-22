@@ -160,6 +160,27 @@ class ApiToken < ApplicationRecord
     end
   end
 
+  # #1233 — change this token's endpoint and CIDR limits in place, without
+  # reissuing it (owner, 2026-10-21). Before this, the only way to widen or
+  # narrow what an account could reach was Regenerate, which made every client
+  # swap credentials. The entries are validated exactly as at creation, and the
+  # change takes effect on the token's next request: enforcement reads the
+  # stored limits every time. Returns `{ before:, after: }` for the audit
+  # record. Raises RecordInvalid for an unknown entry or an expired token.
+  #
+  #   AC-3 / AC-6 (what the credential may reach), AC-17 (CIDR allowlist)
+  def update_limits!(allowed_endpoints:, allowed_cidrs:)
+    if expired?
+      errors.add(:base, "An expired token's limits cannot be changed. Renew or reissue it.")
+      raise ActiveRecord::RecordInvalid, self
+    end
+
+    before = { allowed_endpoints: self.allowed_endpoints.dup, allowed_cidrs: self.allowed_cidrs.dup }
+    self.limits_carried_over = false
+    update!(allowed_endpoints: allowed_endpoints || [], allowed_cidrs: allowed_cidrs || [])
+    { before: before, after: { allowed_endpoints: self.allowed_endpoints, allowed_cidrs: self.allowed_cidrs } }
+  end
+
   def endpoint_summary = ApiEndpointCatalog.describe(allowed_endpoints)
 
   # AC-3: Check if the request is allowed by this token's endpoint limits.

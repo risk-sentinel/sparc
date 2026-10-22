@@ -41,6 +41,8 @@ Permissions are scoped to the authorization boundary of the parent POA&M documen
 | `GET` | `/api/v1/poam_risks/:id` | Show a single risk (detailed) |
 | `PATCH/PUT` | `/api/v1/poam_risks/:id` | Update a risk |
 | `DELETE` | `/api/v1/poam_risks/:id` | Delete a risk (audit-logged) |
+| `POST` | `/api/v1/poam_risks/:id/close` | Close a resolved risk, with a required note (v1.17.2) |
+| `POST` | `/api/v1/poam_risks/:id/reopen` | Reopen a closed risk, with a required note (v1.17.2) |
 
 ---
 
@@ -142,6 +144,33 @@ which reports every incomplete risk grouped by document, with the exact fields e
 ## Status values
 
 `open`, `investigating`, `remediating`, `deviation-requested`, `deviation-approved`, `closed`
+
+## Closing and reopening a risk (v1.17.2)
+
+Delete is for a risk that should never have been recorded. A risk that was dealt
+with is **closed**, and the POA&M keeps it: NIST SP 800-53 CA-5 and PM-4a.2 have
+the POA&M document the remedial action taken.
+
+```http
+POST /api/v1/poam_risks/42/close
+Content-Type: application/json
+
+{ "note": "Patched in release 4.2; verified by rescan." }
+```
+
+- `status` becomes `closed` (`reopen`: `open`).
+- An entry is appended to the risk's OSCAL `risk-log`: a new `uuid`, `title`
+  `Closed` or `Reopened`, the note as `description`, `start` (now) and
+  `status-change`. Earlier entries are kept, so the log is the history.
+- The response is the risk, detailed, including `risk_log`.
+- Audited as `poam_risk_closed` / `poam_risk_reopened`, with the note.
+
+**Refused with 422, and nothing changes,** when the note is missing or blank,
+when closing a risk that is already closed, or when reopening one that is not
+closed. Requires `poam.write` on the POA&M's boundary (403 otherwise).
+
+The other statuses (`investigating`, `remediating`, the deviations) are set
+through `PATCH /api/v1/poam_risks/:id`.
 
 ## Decision fields (#1154)
 

@@ -5,6 +5,12 @@
 #
 # Returns structured warnings stored in metadata_extra["import_warnings"].
 # Import always succeeds — warnings are advisory (soft failure).
+
+# #1235 — no priority or baseline-impact check. A catalog defines controls; the
+# baseline (which controls, at what impact level) and the priority are what a
+# profile sets, and profile publication already requires a priority on every
+# profile control. NIST's own catalogs carry neither, so every NIST import
+# warned about every control and nothing in the file could clear it.
 #
 class CatalogImportValidationService
   MAX_CONTROL_IDS = 50
@@ -16,8 +22,6 @@ class CatalogImportValidationService
   def validate
     warnings = []
 
-    warnings.concat(check_missing_priorities)
-    warnings.concat(check_missing_baselines)
     warnings.concat(check_missing_statements)
     warnings.concat(check_missing_assessment_objectives)
     warnings.concat(check_missing_parameters)
@@ -42,30 +46,6 @@ class CatalogImportValidationService
     @top_level_controls ||= @catalog.catalog_controls
       .joins(:control_family)
       .top_level
-  end
-
-  def check_missing_priorities
-    ids = base_controls.where(priority: [ nil, "" ]).pluck(:control_id)
-    return [] if ids.empty?
-
-    [ build_warning(
-      category: "missing_priority",
-      severity: "warning",
-      message: "#{ids.size} base control#{'s' if ids.size != 1} missing priority designation (P1/P2/P3)",
-      control_ids: ids
-    ) ]
-  end
-
-  def check_missing_baselines
-    ids = top_level_controls.where(baseline_impact: [ nil, "" ]).pluck(:control_id)
-    return [] if ids.empty?
-
-    [ build_warning(
-      category: "missing_baseline",
-      severity: "warning",
-      message: "#{ids.size} control#{'s' if ids.size != 1} missing baseline impact level (LOW/MODERATE/HIGH)",
-      control_ids: ids
-    ) ]
   end
 
   def check_missing_statements

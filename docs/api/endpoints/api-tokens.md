@@ -44,6 +44,7 @@ back by `index`. Copy it at creation or issue a new one.
 | `POST` | `/api/v1/users/:user_id/api_tokens` | Issue a token; the plaintext is in this response only |
 | `POST` | `/api/v1/users/:user_id/api_tokens/:id/renew` | Issue a replacement with the same limits; the old token keeps working for the grace window (#1176) |
 | `POST` | `/api/v1/users/:user_id/api_tokens/:id/reissue` | Revoke the token now and issue a replacement with the same limits (#1176) |
+| `PATCH` | `/api/v1/users/:user_id/api_tokens/:id` | Change the token's endpoint and CIDR limits in place; the token keeps its value (#1233) |
 | `DELETE` | `/api/v1/users/:user_id/api_tokens/:id` | Revoke a token immediately |
 
 ## Lifetime (#1176)
@@ -160,6 +161,33 @@ Revokes the token **now** and issues a replacement with the same name, limits
 and lifetime. Use it when the token may be exposed. The response carries the
 new plaintext and `revoked_token_id`. `201 Created` on success.
 
+### PATCH /api/v1/users/:user_id/api_tokens/:id
+
+Changes what an existing token may reach, **without reissuing it**: no client
+has to swap credentials (#1233). The new limits apply from the token's next
+request. Instance admins only.
+
+```json
+{
+  "api_token": {
+    "allowed_endpoints": ["ssp_documents:read", "control_catalogs:read"],
+    "allowed_cidrs": ["10.0.0.0/8"]
+  }
+}
+```
+
+- Send either field or both. A field left out keeps its current value; an
+  empty list means every endpoint, or any address, as at creation.
+- Entries are validated exactly as at creation: an unknown entry is refused
+  with `422` and nothing changes. `GET /api/v1/api_endpoints`
+  lists what may be named.
+- No other field is accepted (`422` for one). Rename, lifetime and value
+  changes are `renew` / `reissue`.
+- An expired token is refused with `422`: renew or reissue it.
+
+`200 OK` returns the token's metadata, as `GET` lists it. No token value is
+returned.
+
 ### GET /api/v1/users/:user_id/api_tokens
 
 Paginated list of the user's tokens, newest first. Carries `id`, `name`,
@@ -188,6 +216,7 @@ A token belonging to a different user returns `404` and is left untouched.
 | `api_token_revoked` | A token is revoked; metadata carries `token_name` |
 | `api_token_renewed` | A token is renewed; metadata carries `replaced_token_id`, `new_token_id` and `old_token_expires_at` |
 | `api_token_reissued` | A token is reissued; metadata carries `revoked_token_id` and `new_token_id` |
+| `api_token_limits_changed` | A token's limits are edited; metadata carries `token_id`, `token_name`, and `before` / `after` (`allowed_endpoints`, `allowed_cidrs`) |
 
 ## NIST 800-53 Controls
 

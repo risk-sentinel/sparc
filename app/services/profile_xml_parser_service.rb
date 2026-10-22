@@ -1,7 +1,6 @@
 require "tempfile"
 
 class ProfileXmlParserService
-  include BatchInsertable
   include ProgressTrackable
 
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0".freeze
@@ -12,6 +11,13 @@ class ProfileXmlParserService
     @file_path = file_path
   end
 
+  # #1234 — an OSCAL profile in XML is converted to the JSON model and parsed
+  # by ProfileJsonParserService, as the YAML parser already does. The XML path
+  # had its own reduced import: it read the first import's href only, linked no
+  # catalog at all, gave controls no titles and dropped the back-matter, so a
+  # baseline imported from XML could not even name its catalog. One parser for
+  # the three formats means each import links its own catalog, whatever the
+  # file's format (owner, 2026-10-21: JSON, YAML and XML must all be honoured).
   def parse
     update_processing_stage!(:reading_file)
     doc = XmlSecurity.parse(File.read(@file_path))
@@ -25,130 +31,66 @@ class ProfileXmlParserService
 
     profile = doc.at_xpath("//profile") || raise(DocumentParseError, "Invalid OSCAL Profile XML: missing <profile> element")
 
-    update_document_metadata(profile)
-
-    selected_ids = extract_selected_control_ids(profile)
-    alter_map    = build_alter_map(profile)
-    param_map    = build_param_map(profile)
-
-    control_attrs = []
-    field_entries = []
-    row_order     = 0
-
-    selected_ids.each do |control_id|
-      alter    = alter_map[control_id]
-      priority = extract_priority(alter)
-
-      attrs = {
-        control_id:     control_id,
-        title:          nil,
-        priority:       priority,
-        control_family: control_id.split("-").first.upcase.presence,
-        row_order:      row_order
-      }
-
-      idx = control_attrs.size
-      control_attrs << attrs
-
-      # Store alter props as fields (skip priority — stored on control)
-      if alter
-        alter.xpath(".//add/prop").each do |prop|
-          name  = prop["name"]
-          value = prop["value"] || prop.text.strip
-          next if name == "priority"
-          field_entries << [ idx, "prop:#{name}", value ] if value.present?
-        end
-      end
-
-      # Store the parameters this control owns (ProfileParameterOwner: a prefix
-      # test dropped every zero-padded Rev 5 id), under each one's real id.
-      param_map.each do |param_id, values|
-        next unless parameter_owner.belongs_to?(param_id, control_id)
-
-        field_entries << [ idx, "parameter:#{parameter_owner.resolve(param_id).param_id}", values ] if values.present?
-      end
-
-      row_order += 1
-    end
-
-    update_processing_stage!(:creating_records)
-    batch_insert_records(
-      control_class: ProfileControl,
-      field_class:   ProfileControlField,
-      document_fk:   :profile_document_id,
-      control_attrs: control_attrs,
-      field_entries: field_entries
-    )
+    delegate_to_json({ "profile" => xml_profile_to_json(profile) })
+    @document.reload.update_column(:import_metadata, (@document.import_metadata || {}).merge("format" => "oscal_profile_xml"))
   end
 
   private
 
-  def update_document_metadata(profile)
-    metadata = profile.at_xpath("metadata")
-    title    = metadata&.at_xpath("title")&.text || ""
+  def delegate_to_json(data)
+    tmp = Tempfile.new([ "profile_xml_", ".json" ])
+    tmp.write(JSON.generate(data))
+    tmp.close
 
-    baseline = case title
-    when /LOW/i      then "LOW"
-    when /MODERATE/i then "MODERATE"
-    when /HIGH/i     then "HIGH"
-    else nil # title without a baseline keyword
-    end
-
-    catalog_ref = profile.at_xpath("import")&.[]("href")
-    merge_el    = profile.at_xpath("merge")
-    merge_data  = if merge_el&.at_xpath("as-is")
-                    { "as-is" => true }
-    end
-
-    @document.update!(
-      description:     title,
-      baseline_level:  baseline,
-      profile_version: metadata&.at_xpath("version")&.text,
-      oscal_version:   metadata&.at_xpath(OSCAL_VERSION)&.text,
-      import_metadata: {
-        "format"       => "oscal_profile_xml",
-        "uuid"         => profile["uuid"],
-        "catalog_href" => catalog_ref,
-        "merge"        => merge_data
-      }.compact
-    )
+    ProfileJsonParserService.new(@document, tmp.path).parse
+  ensure
+    tmp&.unlink
   end
 
-  def extract_selected_control_ids(profile)
-    ids = []
-    profile.xpath("import/include-controls/with-id").each do |node|
-      ids << node.text.strip
+  # The parts of an OSCAL <profile> the JSON parser reads, in the JSON model's
+  # shape: metadata, imports, merge, modify and back-matter.
+  def xml_profile_to_json(profile)
+    {
+      "uuid"        => profile["uuid"],
+      "metadata"    => (xml_metadata_to_json(profile.at_xpath("metadata")) if profile.at_xpath("metadata")),
+      "imports"     => profile.xpath("import").map { |imp| xml_import_to_json(imp) },
+      "merge"       => xml_merge_to_json(profile.at_xpath("merge")),
+      "modify"      => xml_modify_to_json(profile.at_xpath("modify")),
+      "back-matter" => (xml_back_matter_to_json(profile.at_xpath("back-matter")) if profile.at_xpath("back-matter"))
+    }.compact
+  end
+
+  def xml_import_to_json(imp)
+    h = { "href" => imp["href"] }
+    includes = imp.xpath("include-controls").map { |ic| { "with-ids" => ic.xpath("with-id").map { |w| w.text.strip } } }
+    h["include-controls"] = includes if includes.any?
+    h["include-all"] = {} if imp.at_xpath("include-all")
+    h
+  end
+
+  def xml_merge_to_json(merge_el)
+    return nil unless merge_el&.at_xpath("as-is")
+
+    { "as-is" => true }
+  end
+
+  def xml_modify_to_json(modify)
+    return nil unless modify
+
+    set_params = modify.xpath("set-parameter").map do |param|
+      h = { "param-id" => param["param-id"], "values" => param.xpath("value").map { |v| v.text.strip } }
+      label = param.at_xpath("label")&.text
+      h["label"] = label if label.present?
+      h
     end
-    ids.uniq
-  end
-
-  def build_alter_map(profile)
-    map = {}
-    profile.xpath("modify/alter").each do |alter|
-      cid = alter["control-id"]
-      map[cid] = alter if cid
+    alters = modify.xpath("alter").map do |alter|
+      adds = alter.xpath("add").map do |add|
+        { "position" => add["position"], "props" => add.xpath("prop").map { |p| xml_prop_to_json(p) } }.compact
+      end
+      { "control-id" => alter["control-id"], "adds" => adds }
     end
-    map
-  end
 
-  def parameter_owner
-    @parameter_owner ||= ProfileParameterOwner.new(@document.reload.control_catalog)
-  end
-
-  def build_param_map(profile)
-    map = {}
-    profile.xpath("modify/set-parameter").each do |param|
-      pid = param["param-id"]
-      values = param.xpath("value").map(&:text).join(", ")
-      map[pid] = values if pid && values.present?
-    end
-    map
-  end
-
-  def extract_priority(alter)
-    return nil unless alter
-    prop = alter.xpath(".//add/prop[@name='priority']").first
-    prop && (prop["value"] || prop.text.strip)
+    { "set-parameters" => (set_params if set_params.any?), "alters" => (alters if alters.any?) }.compact.presence
   end
 
   # Detect whether a <catalog> element is a resolved profile catalog.

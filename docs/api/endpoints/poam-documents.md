@@ -215,7 +215,7 @@ None.
 | `poam_document[authorization_boundary_id]` | integer | no | Associated authorization boundary |
 | `poam_document[poam_version]` | string | no | POA&M document version |
 | `poam_document[system_id]` | string | no | System identifier |
-| `poam_document[lifecycle_status]` | string | no | Lifecycle status (e.g., `active`, `draft`) |
+| `poam_document[lifecycle_status]` | string | no | `started`, `in_progress` or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
 
 #### Response Body
 

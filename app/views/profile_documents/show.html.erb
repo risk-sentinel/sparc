@@ -56,6 +56,27 @@
   </div>
 <% end %>
 
+<%# #1234 — imports that matched no loaded catalog: their controls carry no
+    title or source until the catalog is loaded and the baseline re-imported. %>
+<% unlinked_imports = Array(@profile_document.import_metadata&.dig("unlinked_imports")) %>
+<% if unlinked_imports.any? %>
+  <div class="alert alert-warning mt-2 mb-0" data-testid="unlinked-imports">
+    <strong>
+      <%= pluralize(unlinked_imports.size, "import") %> matched no loaded catalog.
+    </strong>
+    Their controls have no title and no source catalog. Load the catalog (or give
+    it a name no other catalog has) and import this baseline again.
+    <ul class="mb-0 mt-1">
+      <% unlinked_imports.each do |imp| %>
+        <li>
+          <%= imp["title"].presence || imp["href"] %>:
+          <%= Array(imp["control_ids"]).first(10).join(", ") %><%= " …" if Array(imp["control_ids"]).size > 10 %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-dashboard-header">
 

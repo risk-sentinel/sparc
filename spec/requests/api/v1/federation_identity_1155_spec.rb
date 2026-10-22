@@ -109,17 +109,16 @@ RSpec.describe "Api::V1::FederationIdentities (#1155)", type: :request do
     end
   end
 
-  # Deliberately absent from discovery, following the precedent /api/v1/guides
-  # set: that registry advertises the scoped compliance-data surface, and
-  # permission-free reference endpoints dilute the least-privilege view a
-  # no-permission caller sees. Asserted rather than left implicit, so adding it
-  # there later is a conscious decision and not an accident.
+  # Deliberately absent while discovery was a hand-kept registry of the
+  # compliance-data surface. #1233 (owner, 2026-10-21) made discovery list
+  # every route the caller may call and named this group among the missing
+  # ones. It needs no permission, so the plain caller sees it.
   describe "API discovery" do
-    it "does not dilute the least-privilege view with this endpoint" do
+    it "lists this endpoint, which the caller may call" do
       get "/api/v1/available", headers: plain_headers
 
       paths = response.parsed_body["endpoints"].map { |e| e["path"] }
-      expect(paths).not_to include("/api/v1/federation/identity")
+      expect(paths).to include("/api/v1/federation/identity")
     end
 
     it "still serves the endpoint itself to that same caller" do

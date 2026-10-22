@@ -15,6 +15,7 @@ class ControlCatalog < ApplicationRecord
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
 
   before_validation :ensure_oscal_uuid
+  before_save :remember_superseded_oscal_uuid, if: :will_save_change_to_oscal_uuid?
 
   validates :name, presence: true
 
@@ -64,10 +65,35 @@ class ControlCatalog < ApplicationRecord
     return nil if identifier.blank?
     find_by(oscal_uuid: identifier) ||
       find_by(slug: identifier) ||
-      (identifier.to_s.match?(/\A\d+\z/) ? find_by(id: identifier) : nil)
+      (identifier.to_s.match?(/\A\d+\z/) ? find_by(id: identifier) : nil) ||
+      find_superseded(identifier)
+  end
+
+  # #1235 — a uuid the catalog held before an import replaced it: the address
+  # the upload redirected to (CatalogImportJob#remember_upload_url!). Resolved
+  # so the page, and any link to it, reaches the catalog rather than a 404.
+  def self.find_superseded(identifier)
+    return nil unless identifier.to_s.match?(/\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/)
+
+    where("jsonb_exists(COALESCE(metadata_extra -> 'superseded_oscal_uuids', '[]'::jsonb), ?)", identifier.to_s)
+      .order(:id).first
   end
 
   private
+
+  # #1235 — recorded in the SAME save that replaces the uuid, so there is no
+  # moment at which the old address resolves to nothing. An import assigns the
+  # file's uuid while replacing metadata_extra wholesale, so the list is
+  # carried over from the stored value too.
+  def remember_superseded_oscal_uuid
+    old = oscal_uuid_in_database
+    return if old.blank?
+
+    stored = Array((metadata_extra_in_database || {})["superseded_oscal_uuids"])
+    current = Array((metadata_extra || {})["superseded_oscal_uuids"])
+    list = (stored | current | [ old ]) - [ oscal_uuid ]
+    self.metadata_extra = (metadata_extra || {}).merge("superseded_oscal_uuids" => list)
+  end
 
   def ensure_oscal_uuid
     self.oscal_uuid ||= SecureRandom.uuid

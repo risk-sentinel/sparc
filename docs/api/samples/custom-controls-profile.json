@@ -1,0 +1,61 @@
+{
+  "profile": {
+    "uuid": "c68055e9-98cb-4704-9cf3-5cc1c2a2557a",
+    "metadata": {
+      "title": "Example Organization Baseline",
+      "last-modified": "2026-10-21T00:00:00Z",
+      "version": "1.0",
+      "oscal-version": "1.2.3",
+      "remarks": "A skeleton OSCAL profile that builds one baseline from two catalogs: NIST SP 800-53 Rev 5 and the organization's own (custom-controls-catalog.json). Each import names a back-matter resource that points at its catalog, and selects controls by id. modify sets the custom control's parameter. Replace every Example and example.com value, and list the NIST controls your baseline needs. SPARC links each import to its own catalog, so import the custom catalog before this profile."
+    },
+    "imports": [
+      {
+        "href": "#4d0f523d-d7b7-45a4-9b3e-0b2cf2b74730",
+        "include-controls": [
+          { "with-ids": [ "ac-1", "ac-2", "au-2" ] }
+        ]
+      },
+      {
+        "href": "#e2ddf42f-70f9-45d1-adf8-af43c2c959a6",
+        "include-controls": [
+          { "with-ids": [ "dp-1", "dp-1.1" ] }
+        ]
+      }
+    ],
+    "merge": {
+      "as-is": true
+    },
+    "modify": {
+      "set-parameters": [
+        {
+          "param-id": "dp-01_odp",
+          "values": [ "quarterly" ]
+        }
+      ]
+    },
+    "back-matter": {
+      "resources": [
+        {
+          "uuid": "4d0f523d-d7b7-45a4-9b3e-0b2cf2b74730",
+          "title": "NIST SP 800-53 Rev 5 catalog",
+          "rlinks": [
+            {
+              "href": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+              "media-type": "application/oscal.catalog+json"
+            }
+          ]
+        },
+        {
+          "uuid": "e2ddf42f-70f9-45d1-adf8-af43c2c959a6",
+          "title": "Example Organization Custom Controls",
+          "rlinks": [
+            {
+              "href": "https://example.com/oscal/custom-controls-catalog.json",
+              "media-type": "application/oscal.catalog+json"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
