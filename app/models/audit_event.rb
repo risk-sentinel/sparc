@@ -301,6 +301,7 @@ class AuditEvent < ApplicationRecord
     api_token_renewed
     api_token_reissued
     api_token_limits_changed
+    api_publication_refused
     ato_package_created
     ato_package_exported
 
@@ -398,7 +399,7 @@ class AuditEvent < ApplicationRecord
                            password_reset_redeemed
                             webauthn_key_registered webauthn_key_revoked
                             api_session_bridged api_session_bridge_failed],
-    "Authorization" => %w[authorization_failure],
+    "Authorization" => %w[authorization_failure api_publication_refused],
     "User Management" => %w[user_created user_suspended user_reactivated user_deactivated
                             user_auto_deactivated user_deactivate_refused user_suspend_refused
                             user_password_expired admin_bootstrap

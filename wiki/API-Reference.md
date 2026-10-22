@@ -39,6 +39,14 @@ attestations, the KSI catalog and validations, admin credentials, users,
 federation identity, and discovery. Common verbs include `convert`,
 `update_fields`, and `export`.
 
+> **Changed: publishing through the API needs approval (v1.17.2).** Setting
+> `lifecycle_status: "published"` is accepted for a catalog, profile or CDEF
+> only once it is approved, or from a caller who may approve it (the type's
+> `.approve` permission, `policy_manager`, or an instance administrator); an
+> SSP, SAP, SAR or POA&M must pass the same publication checks as the
+> **Publish** button. Anything else is `403` and audited. Full details in
+> [`docs/api/publication.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/publication.md).
+
 > **Changed: discovery lists the whole API (v1.17.2).** `GET /api/v1/available`
 > was a hand-kept list of 45 paths; it now lists every route the caller may
 > use, from the same route table token limits are enforced against. A token

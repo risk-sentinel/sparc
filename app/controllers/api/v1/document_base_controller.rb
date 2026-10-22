@@ -45,6 +45,8 @@ class Api::V1::DocumentBaseController < Api::V1::BaseController
   # POST /api/v1/{resource}
   def create
     doc = document_class.new(document_params)
+    return if refuse_unauthorized_publication!(doc, document_params)
+
     doc.save!
     finalize_unprocessed_create(doc)   # #618 — no file to parse ⇒ don't hang in `pending`
 
@@ -58,6 +60,7 @@ class Api::V1::DocumentBaseController < Api::V1::BaseController
     # #911 layer 2 — refuse until the document declares the baseline its
     # controls descend from. Supplying that baseline is itself permitted.
     return unless enforce_reconciliation!(@document, document_params)
+    return if refuse_unauthorized_publication!(@document, document_params)
 
     @document.update!(document_params)
 
