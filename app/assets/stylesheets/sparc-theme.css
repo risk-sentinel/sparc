@@ -4377,6 +4377,26 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-collapsible__body {
   padding: 0 1rem 1rem;
 }
+/* #1251 — the section supplies its own head/body padding. `.card` adds 2rem on
+   every side, which made a collapsed section ~100px tall for one line. */
+.card.sparc-collapsible {
+  padding: 0;
+}
+
+/* #1251 — artifact tiles on a LIGHT card (the boundary page). The base tile is
+   styled for the dark gradient hero (translucent white, 75% white label), so
+   on a white card the labels "SSP", "SAP", "SAR" and "POA&Ms" disappeared. */
+.sparc-hero-tile--on-light {
+  background: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+}
+.sparc-hero-tile-link:hover .sparc-hero-tile--on-light {
+  background: var(--bs-secondary-bg);
+}
+.sparc-hero-tile--on-light .sparc-hero-tile-label {
+  color: var(--bs-secondary-color);
+  font-weight: 600;
+}
 
 /* #1251 — the boundary page header: what the boundary IS, before what it lacks. */
 .sparc-boundary-facts {

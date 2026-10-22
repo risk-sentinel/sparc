@@ -149,7 +149,7 @@
       <div class="col">
         <%= link_to (a[:doc] ? polymorphic_path(a[:doc]) : a[:index]),
               class: "sparc-hero-tile-link d-block text-decoration-none" do %>
-          <div class="sparc-hero-tile">
+          <div class="sparc-hero-tile sparc-hero-tile--on-light">
             <div class="sparc-hero-tile-label"><%= a[:label] %></div>
             <div class="sparc-hero-tile-count" style="font-size: 1rem;">
               <% if a[:doc] %>
@@ -169,7 +169,7 @@
                     attach_document_authorization_boundary_path(boundary, type: "poam") :
                     BoundaryScopedList.path(:poam, boundary)), # #1250 — keeps the boundary
             class: "sparc-hero-tile-link d-block text-decoration-none" do %>
-        <div class="sparc-hero-tile">
+        <div class="sparc-hero-tile sparc-hero-tile--on-light">
           <div class="sparc-hero-tile-label">POA&amp;Ms</div>
           <div class="sparc-hero-tile-count" style="font-size: 1rem;">
             <% if poam_count.zero? %>
