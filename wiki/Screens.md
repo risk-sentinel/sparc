@@ -1012,11 +1012,11 @@ Manage organization entities (UUID-based audit traceability) for multi-org insta
 
 | | |
 |---|---|
-| **Routes** | `GET /admin/service_accounts` (full CRUD); nested `POST/DELETE /admin/service_accounts/:id/api_tokens` |
+| **Routes** | `GET /admin/service_accounts` (full CRUD); tokens under `/admin/users/:user_id/api_tokens`: `POST` (issue), `DELETE …/:id` (revoke), `POST …/:id/renew`, `POST …/:id/reissue`, `GET …/:id/edit` + `PATCH …/:id` (edit limits in place, #1233) |
 | **Controller** | `Admin::ServiceAccountsController`, `Admin::ApiTokensController` |
 | **Auth** | Instance Admin |
 
-Create non-interactive automation identities and issue/revoke their `sparc_sa_<token>` Bearer tokens. The plaintext token is shown **once** on creation; only a SHA-256 digest is stored. Service accounts authenticate the REST API and can bridge to a UI session via `POST /api/v1/sessions/from_token`.
+Create non-interactive automation identities and issue, renew, reissue and revoke their `sparc_sa_<token>` Bearer tokens. **Edit limits** changes a token's allowed endpoints and CIDRs without reissuing it. The plaintext token is shown **once** on creation; only a SHA-256 digest is stored. Service accounts authenticate the REST API and can bridge to a UI session via `POST /api/v1/sessions/from_token`.
 
 #### Data Migrations
 

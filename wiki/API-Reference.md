@@ -39,6 +39,20 @@ attestations, the KSI catalog and validations, admin credentials, users,
 federation identity, and discovery. Common verbs include `convert`,
 `update_fields`, and `export`.
 
+> **Changed: discovery lists the whole API (v1.17.2).** `GET /api/v1/available`
+> was a hand-kept list of 45 paths; it now lists every route the caller may
+> use, from the same route table token limits are enforced against. A token
+> limited to some resources sees only those, and each entry carries the
+> resource `group` a token's `allowed_endpoints` names. The paths it listed
+> before are still listed, spelled as before. Full details in
+> [`docs/api/endpoints/discovery.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/discovery.md).
+
+> **New: editing a token's limits (v1.17.2).**
+> `PATCH /api/v1/users/:user_id/api_tokens/:id` changes a token's
+> `allowed_endpoints` and `allowed_cidrs` in place, without reissuing it.
+> Instance administrators only. Full details in
+> [`docs/api/endpoints/api-tokens.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/api-tokens.md).
+
 > **New: federation identity.** `GET /api/v1/federation/identity` publishes the
 > two constants every peer derives object identity against — the namespace URI
 > and the federation namespace UUID. Object UUIDs are UUIDv5 derived against

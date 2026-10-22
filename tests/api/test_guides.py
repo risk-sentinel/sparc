@@ -10,9 +10,8 @@ the CONTRACT and the relationship between the two endpoints rather than any
 particular guide's text — a guide renamed in the wiki must not fail the API
 suite.
 
-Deliberately omitted from `/api/v1/available`; see the note in
-`discovery_controller.rb`. That is why this module resolves a slug from the
-index rather than from discovery.
+Listed in `/api/v1/available` since #1233; this module still resolves a slug
+from the index, which is the endpoint under test.
 """
 
 from __future__ import annotations

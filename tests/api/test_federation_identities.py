@@ -96,16 +96,16 @@ class TestIdentity:
 
 class TestDiscovery:
     @pytest.mark.happy
-    def test_not_listed_in_discovery(self, admin_client: httpx.Client) -> None:
-        """Deliberately absent, following the precedent /api/v1/guides set.
+    def test_listed_in_discovery(self, user_client: httpx.Client) -> None:
+        """Listed since #1233 (owner, 2026-10-21).
 
-        That registry advertises the scoped compliance-data surface; a
-        permission-free reference endpoint listed there would dilute the
-        least-privilege view a no-permission caller sees. Asserted so that
-        adding it later is a decision rather than an accident.
+        It was deliberately absent while discovery was a hand-kept registry of
+        the compliance-data surface. #1233 made discovery list every route the
+        caller may call, and named this group among the missing ones. It needs
+        no permission, so a non-admin sees it too.
         """
-        response = admin_client.get("/api/v1/available")
+        response = user_client.get("/api/v1/available")
         assert response.status_code == 200, response.text
 
         paths = [endpoint["path"] for endpoint in response.json()["endpoints"]]
-        assert PATH not in paths
+        assert PATH in paths
