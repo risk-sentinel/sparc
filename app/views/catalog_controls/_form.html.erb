@@ -1,4 +1,14 @@
-<%= form_with model: catalog_control.new_record? ? [control_family, catalog_control] : catalog_control, local: true do |f| %>
+<%# An existing control saves to its catalog-scoped address: `to_param` is the
+    canonical id (#881), which the shallow /catalog_controls/:id route reads as
+    a database id, so the save 404'd. %>
+<% form_target = if catalog_control.new_record?
+                   { model: [control_family, catalog_control] }
+                 else
+                   { model: catalog_control,
+                     url: control_catalog_control_path(catalog_control.control_family.control_catalog.url_id, catalog_control),
+                     method: :patch }
+                 end %>
+<%= form_with **form_target, local: true do |f| %>
   <% if catalog_control.errors.any? %>
     <div class="flash error mb-4">
       <strong><%= pluralize(catalog_control.errors.count, "error") %>:</strong>

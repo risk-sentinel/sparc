@@ -40,6 +40,20 @@ RSpec.describe "catalog parameter values (#1241)", type: :request do
       expect(page.css("[data-testid='catalog-param-label']").map { |td| td.text.strip }).to include("frequency")
     end
 
+    # The form's own action, not a hand-built path: the shallow /catalog_controls/:id
+    # route reads the canonical id as a database id, and the save 404'd.
+    it "saves through the address the edit form posts to" do
+      get control_catalog_edit_control_path(catalog.url_id, control)
+      form = Nokogiri::HTML(response.body).css("form").find { |f| f.at_css("input[name^='catalog_control[params_values]']") }
+      expect(form["action"]).to eq(control_catalog_control_path(catalog.url_id, control))
+      expect(form.at_css("input[name='_method']")&.[]("value")).to eq("patch")
+
+      patch form["action"], params: { catalog_control: { params_values: { "ex-01_odp.01" => "quarterly-invented" } } }
+
+      expect(response).to redirect_to(family)
+      expect(params_by_id["ex-01_odp.01"]["values"]).to eq([ "quarterly-invented" ])
+    end
+
     it "stores the values and leaves every label as it was" do
       patch control_catalog_control_path(catalog.url_id, control), params: { catalog_control: { params_values: {
         "ex-01_odp.01" => "quarterly-invented",
