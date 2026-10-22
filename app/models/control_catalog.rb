@@ -64,7 +64,18 @@ class ControlCatalog < ApplicationRecord
     return nil if identifier.blank?
     find_by(oscal_uuid: identifier) ||
       find_by(slug: identifier) ||
-      (identifier.to_s.match?(/\A\d+\z/) ? find_by(id: identifier) : nil)
+      (identifier.to_s.match?(/\A\d+\z/) ? find_by(id: identifier) : nil) ||
+      find_superseded(identifier)
+  end
+
+  # #1235 — a uuid the catalog held before an import replaced it: the address
+  # the upload redirected to (CatalogImportJob#remember_upload_url!). Resolved
+  # so the page, and any link to it, reaches the catalog rather than a 404.
+  def self.find_superseded(identifier)
+    return nil unless identifier.to_s.match?(/\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/)
+
+    where("jsonb_exists(COALESCE(metadata_extra -> 'superseded_oscal_uuids', '[]'::jsonb), ?)", identifier.to_s)
+      .order(:id).first
   end
 
   private

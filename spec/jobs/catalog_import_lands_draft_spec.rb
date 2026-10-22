@@ -97,3 +97,55 @@ RSpec.describe "Catalog import lands as Draft (#1235)", type: :request do
     end
   end
 end
+
+# #1235 — the processing page polls the URL the upload redirected to, the
+# placeholder's random uuid. The import replaces that uuid with the file's own,
+# and the next poll used to land on "Catalog not found — it may have been
+# merged during re-import", losing the catalog the user had just uploaded.
+RSpec.describe "The upload's address keeps working after import (#1235)", type: :request do
+  let(:admin) { create(:user, :admin) }
+
+  def upload(fixture, catalog)
+    source = Rails.root.join("spec/fixtures/files/catalogs", fixture)
+    tmp = Rails.root.join("tmp", "catalog_url_spec_#{SecureRandom.hex(4)}_#{fixture}")
+    FileUtils.cp(source, tmp)
+    CatalogImportJob.perform_now(catalog.id, tmp.to_s, fixture)
+  end
+
+  before do
+    allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
+    sign_in_as(admin)
+  end
+
+  it "redirects the placeholder's address to the imported catalog" do
+    shell = create(:control_catalog, name: "Uploaded", status: "pending")
+    old_uuid = shell.oscal_uuid
+
+    upload("basic-catalog.yaml", shell)
+    catalog = ControlCatalog.find(shell.id)
+    expect(catalog.oscal_uuid).not_to eq(old_uuid)
+
+    get control_catalog_path(old_uuid)
+
+    expect(response).to redirect_to(control_catalog_path(catalog.oscal_uuid))
+    expect(response).to have_http_status(:moved_permanently)
+  end
+
+  it "resolves it to the catalog that already owned the file's uuid when the placeholder is merged away" do
+    owner = create(:control_catalog, name: "Owner", status: "pending")
+    upload("basic-catalog.yaml", owner)
+    shell = create(:control_catalog, name: "Second upload", status: "pending")
+    old_uuid = shell.oscal_uuid
+
+    upload("basic-catalog.yaml", shell)
+
+    expect(ControlCatalog.find_by(id: shell.id)).to be_nil
+    expect(ControlCatalog.find_for_url(old_uuid)).to eq(owner.reload)
+  end
+
+  it "still sends an address no catalog ever held to the index" do
+    get control_catalog_path(SecureRandom.uuid)
+
+    expect(response).to redirect_to(control_catalogs_path)
+  end
+end

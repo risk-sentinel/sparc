@@ -10,6 +10,8 @@ class CatalogImportJob < ApplicationJob
 
   def perform(catalog_id, file_path, original_filename)
     catalog = ControlCatalog.find(catalog_id)
+    # #1235 — the URL the upload redirected to, and the processing page polls.
+    url_uuid = catalog.oscal_uuid
 
     catalog.update!(
       status: "processing",
@@ -41,6 +43,8 @@ class CatalogImportJob < ApplicationJob
         )
       )
       validation_result = CatalogImportValidationService.new(catalog).validate
+
+      remember_upload_url!(catalog, url_uuid)
 
       # #1235 — an upload lands as Draft, a re-import into an existing catalog
       # included (owner, 2026-10-21): the user reviews the warnings and
@@ -74,5 +78,22 @@ class CatalogImportJob < ApplicationJob
     ensure
       FileUtils.rm_f(file_path)
     end
+  end
+
+  private
+
+  # #1235 — the upload redirects to its placeholder record's random uuid, and
+  # the processing page polls that URL. The import then gives the catalog the
+  # FILE's uuid (or resolves to the catalog that already owns it and deletes
+  # the placeholder), so the next poll found nothing and sent the user to the
+  # index: "Catalog not found — it may have been merged during re-import".
+  # Recording the old uuid lets ControlCatalog.find_for_url resolve it, and
+  # the canonical redirect then takes the page to the catalog's real address.
+  def remember_upload_url!(catalog, url_uuid)
+    return if url_uuid.blank? || catalog.oscal_uuid == url_uuid
+
+    extra = catalog.metadata_extra || {}
+    superseded = (Array(extra["superseded_oscal_uuids"]) | [ url_uuid ])
+    catalog.update!(metadata_extra: extra.merge("superseded_oscal_uuids" => superseded))
   end
 end
