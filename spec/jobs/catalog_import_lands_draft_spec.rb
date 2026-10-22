@@ -149,3 +149,19 @@ RSpec.describe "The upload's address keeps working after import (#1235)", type: 
     expect(response).to redirect_to(control_catalogs_path)
   end
 end
+
+RSpec.describe ControlCatalog, "superseded uuids (#1235)" do
+  it "records the old uuid in the same save that replaces it, even when metadata_extra is replaced" do
+    catalog = create(:control_catalog)
+    first = catalog.oscal_uuid
+    second = SecureRandom.uuid
+
+    catalog.update!(oscal_uuid: second, metadata_extra: { "catalog_uuid" => second })
+    expect(described_class.find_for_url(first)).to eq(catalog)
+
+    catalog.update!(oscal_uuid: SecureRandom.uuid, metadata_extra: {})
+    expect(described_class.find_for_url(first)).to eq(catalog)
+    expect(described_class.find_for_url(second)).to eq(catalog)
+    expect(catalog.reload.metadata_extra["superseded_oscal_uuids"]).not_to include(catalog.oscal_uuid)
+  end
+end

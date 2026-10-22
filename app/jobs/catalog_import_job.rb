@@ -30,6 +30,9 @@ class CatalogImportJob < ApplicationJob
       # If so, clean up the shell record and use the resolved catalog going forward.
       resolved_catalog = stats[:catalog]
       if resolved_catalog.id != catalog.id
+        # Recorded before the placeholder goes, so its address never resolves
+        # to nothing.
+        remember_upload_url!(resolved_catalog, url_uuid)
         catalog.destroy if catalog.control_families.empty?
         catalog = resolved_catalog
       end
@@ -43,8 +46,6 @@ class CatalogImportJob < ApplicationJob
         )
       )
       validation_result = CatalogImportValidationService.new(catalog).validate
-
-      remember_upload_url!(catalog, url_uuid)
 
       # #1235 — an upload lands as Draft, a re-import into an existing catalog
       # included (owner, 2026-10-21): the user reviews the warnings and
@@ -83,12 +84,13 @@ class CatalogImportJob < ApplicationJob
   private
 
   # #1235 — the upload redirects to its placeholder record's random uuid, and
-  # the processing page polls that URL. The import then gives the catalog the
-  # FILE's uuid (or resolves to the catalog that already owns it and deletes
-  # the placeholder), so the next poll found nothing and sent the user to the
-  # index: "Catalog not found — it may have been merged during re-import".
-  # Recording the old uuid lets ControlCatalog.find_for_url resolve it, and
-  # the canonical redirect then takes the page to the catalog's real address.
+  # the processing page polls that URL. When the import resolves to the
+  # catalog that already owns the file's uuid, the placeholder is deleted and
+  # the next poll found nothing: "Catalog not found — it may have been merged
+  # during re-import". The owner records the placeholder's uuid, so
+  # ControlCatalog.find_for_url resolves it. (When the placeholder itself is
+  # given the file's uuid, ControlCatalog#remember_superseded_oscal_uuid
+  # records the old one in the same save.)
   def remember_upload_url!(catalog, url_uuid)
     return if url_uuid.blank? || catalog.oscal_uuid == url_uuid
 

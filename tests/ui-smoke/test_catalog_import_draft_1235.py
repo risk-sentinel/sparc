@@ -71,6 +71,16 @@ def _wait_for_import(catalog_ref: str) -> dict:
         time.sleep(2)
 
 
+def _dismiss_import_warnings(page) -> None:
+    """The generated catalog always raises a warning, so the warnings modal
+    opens (animated) on first view; wait for it, dismiss it, and wait until its
+    backdrop is gone, or it intercepts every click behind it."""
+    ack = page.get_by_role("button", name="Acknowledge & Dismiss")
+    ack.wait_for(state="visible", timeout=10_000)
+    ack.click()
+    page.locator(".modal-backdrop").wait_for(state="detached", timeout=10_000)
+
+
 @pytest.fixture
 def uploaded_catalog(authed_page):
     page = authed_page
@@ -104,10 +114,7 @@ def test_an_uploaded_catalog_is_a_draft_with_advisory_warnings(uploaded_catalog)
     )
 
     page.reload()
-    # The warnings modal opens on first view until acknowledged.
-    ack = page.get_by_role("button", name="Acknowledge & Dismiss")
-    if ack.is_visible():
-        ack.click()
+    _dismiss_import_warnings(page)
 
     page.get_by_role("button", name="Publish", exact=True).click()
     advisory = page.get_by_test_id("publish-advisory-warnings")
@@ -131,9 +138,7 @@ def test_publishing_an_uploaded_catalog_goes_through_publish(uploaded_catalog):
     ).json()
 
     page.reload()
-    ack = page.get_by_role("button", name="Acknowledge & Dismiss")
-    if ack.is_visible():
-        ack.click()
+    _dismiss_import_warnings(page)
     page.get_by_role("button", name="Publish", exact=True).click()
     page.locator("[data-publish-modal-target='publishBtn']").click()
     page.wait_for_load_state("load")

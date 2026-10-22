@@ -15,6 +15,7 @@ class ControlCatalog < ApplicationRecord
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
 
   before_validation :ensure_oscal_uuid
+  before_save :remember_superseded_oscal_uuid, if: :will_save_change_to_oscal_uuid?
 
   validates :name, presence: true
 
@@ -79,6 +80,20 @@ class ControlCatalog < ApplicationRecord
   end
 
   private
+
+  # #1235 — recorded in the SAME save that replaces the uuid, so there is no
+  # moment at which the old address resolves to nothing. An import assigns the
+  # file's uuid while replacing metadata_extra wholesale, so the list is
+  # carried over from the stored value too.
+  def remember_superseded_oscal_uuid
+    old = oscal_uuid_in_database
+    return if old.blank?
+
+    stored = Array((metadata_extra_in_database || {})["superseded_oscal_uuids"])
+    current = Array((metadata_extra || {})["superseded_oscal_uuids"])
+    list = (stored | current | [ old ]) - [ oscal_uuid ]
+    self.metadata_extra = (metadata_extra || {}).merge("superseded_oscal_uuids" => list)
+  end
 
   def ensure_oscal_uuid
     self.oscal_uuid ||= SecureRandom.uuid
