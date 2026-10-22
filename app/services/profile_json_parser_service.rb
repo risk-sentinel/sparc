@@ -32,6 +32,7 @@ class ProfileJsonParserService
     update_document_metadata(metadata, imports, profile)
 
     selected_ids = extract_selected_control_ids(imports)
+    source_catalog_ids = source_catalog_ids_by_control
     alter_map    = build_alter_map(modify["alters"] || [])
     param_map    = build_param_map(modify["set-parameters"] || [])
 
@@ -42,6 +43,7 @@ class ProfileJsonParserService
     selected_ids.each do |raw_id|
       # Store the raw OSCAL id directly — it now matches catalog_controls.control_id natively.
       append_control_entry(raw_id, row_order, alter_map, param_map, control_attrs, field_entries)
+      control_attrs.last[:source_catalog_id] = source_catalog_ids[raw_id]
       row_order += 1
     end
 
@@ -54,7 +56,7 @@ class ProfileJsonParserService
       field_entries: field_entries
     )
 
-    # Enrich profile controls with titles from the linked catalog
+    # Enrich profile controls with titles from each control's own catalog
     enrich_titles_from_catalog
 
     # #935 — derived last, when the catalog link and the controls both exist:
@@ -122,8 +124,26 @@ class ProfileJsonParserService
     end
   end
 
+  # #1234 — every catalog the imports resolved to, so a custom catalog's
+  # parameter (`dp-01_odp`) is owned as its catalog declares it.
   def parameter_owner
-    @parameter_owner ||= ProfileParameterOwner.new(@document.reload.control_catalog)
+    @parameter_owner ||= ProfileParameterOwner.new(import_catalogs.presence || @document.reload.control_catalog)
+  end
+
+  def import_catalogs
+    catalogs = Array(@import_resolutions).filter_map(&:catalog)
+    primary = @document.reload.control_catalog
+    ([ primary ] + catalogs).compact.uniq
+  end
+
+  # control id -> the catalog its import resolved to. A control two imports
+  # both select keeps the first, as the selection order does.
+  def source_catalog_ids_by_control
+    Array(@import_resolutions).each_with_object({}) do |resolution, map|
+      next unless resolution.linked?
+
+      resolution.control_ids.each { |id| map[id] ||= resolution.catalog.id }
+    end
   end
 
   def update_document_metadata(metadata, imports, profile)
@@ -137,6 +157,7 @@ class ProfileJsonParserService
 
     catalog_ref  = imports.first&.dig("href")
     back_matter  = profile.dig("back-matter", "resources") || []
+    @import_resolutions = ProfileImportCatalogResolver.new(back_matter).resolve(imports)
 
     # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
     metadata_extra = metadata.except("title", "version", OSCAL_VERSION, "last-modified")
@@ -151,7 +172,9 @@ class ProfileJsonParserService
         "format"       => "oscal_profile",
         "uuid"         => profile["uuid"],
         "catalog_href" => catalog_ref,
-        "merge"        => profile["merge"]
+        "merge"        => profile["merge"],
+        "imports"      => import_records,
+        "unlinked_imports" => unlinked_import_records.presence
       }.compact
     )
     @document.assign_oscal_uuid!(profile["uuid"])
@@ -162,8 +185,29 @@ class ProfileJsonParserService
     # in the raw resources to find a matching ControlCatalog.
     promote_back_matter_resources(back_matter)
 
-    # Auto-link to the source catalog if one is already imported
-    link_source_catalog(catalog_ref, back_matter) unless @document.control_catalog_id.present?
+    # Auto-link to the source catalog if one is already imported. #1234 — the
+    # first import that resolved, not only the first import: a profile that
+    # imports only an organization's own catalog links to it.
+    return if @document.control_catalog_id.present?
+
+    primary = @import_resolutions.find(&:linked?)&.catalog
+    @document.update_column(:control_catalog_id, primary.id) if primary
+  end
+
+  # #1234 — each import and the catalog it resolved to, for export and review.
+  def import_records
+    @import_resolutions.map do |r|
+      { "href" => r.href, "title" => r.label, "control_ids" => r.control_ids,
+        "catalog_id" => r.catalog&.id, "matched_by" => r.matched_by }.compact
+    end
+  end
+
+  # The imports no loaded catalog matched: their controls stay without a title
+  # or a source until the catalog is loaded and the profile re-imported.
+  def unlinked_import_records
+    @import_resolutions.reject(&:linked?).map do |r|
+      { "href" => r.href, "title" => r.label, "control_ids" => r.control_ids }
+    end
   end
 
   # Attempt to find a matching ControlCatalog for this imported profile.
@@ -447,16 +491,23 @@ class ProfileJsonParserService
 
   # Populate profile control titles from the matched source catalog.
   # OSCAL profiles only reference controls by ID; titles live in the catalog.
+  #
+  # #1234 — from the control's own source catalog, falling back to the
+  # profile's primary catalog for a control with none recorded.
   def enrich_titles_from_catalog
     @document.reload
-    catalog = @document.control_catalog
-    return unless catalog
-
-    title_map = catalog.catalog_controls.pluck(:control_id, :title).to_h
-    return if title_map.empty?
+    primary_id = @document.control_catalog_id
+    titles = Hash.new do |memo, catalog_id|
+      memo[catalog_id] = CatalogControl.joins(:control_family)
+                                       .where(control_families: { control_catalog_id: catalog_id })
+                                       .pluck(:control_id, :title).to_h
+    end
 
     @document.profile_controls.where(title: nil).find_each do |pc|
-      mapped_title = title_map[pc.control_id]
+      catalog_id = pc.source_catalog_id || primary_id
+      next unless catalog_id
+
+      mapped_title = titles[catalog_id][pc.control_id]
       pc.update_column(:title, mapped_title) if mapped_title.present?
     end
   end

@@ -58,36 +58,47 @@ class OscalResolvedProfileCatalogService
     }.compact
   end
 
+  # #1234 — controls come from every catalog the profile imports, each from
+  # its own source (a control with none recorded comes from the primary
+  # catalog, as before). Primary catalog first; a family id two catalogs share
+  # becomes one group, since OSCAL group ids are unique within a catalog.
   def build_groups
     profile_controls = @profile.profile_controls
                                .order(:row_order)
                                .includes(:profile_control_fields)
 
-    # Build a lookup of profile control data keyed by control_id
     profile_lookup = profile_controls.index_by(&:control_id)
-    selected_ids = profile_lookup.keys.to_set
+    selected_by_catalog = profile_controls.group_by { |pc| pc.source_catalog_id || @catalog.id }
+                                          .transform_values { |pcs| pcs.map(&:control_id).to_set }
 
-    # Group catalog controls by family, filtered to selected controls
-    families = @catalog.control_families
-                       .includes(:catalog_controls)
-                       .order(:sort_order)
+    groups = {}
+    source_catalogs.each do |catalog|
+      selected_ids = selected_by_catalog[catalog.id] || Set.new
+      next if selected_ids.empty?
 
-    groups = families.filter_map do |family|
-      selected_controls = family.catalog_controls
-                                .select { |cc| selected_ids.include?(cc.control_id) }
-                                .sort_by(&:control_id)
+      catalog.control_families.includes(:catalog_controls).order(:sort_order).each do |family|
+        selected_controls = family.catalog_controls
+                                  .select { |cc| selected_ids.include?(cc.control_id) }
+                                  .sort_by(&:control_id)
+        next if selected_controls.empty?
 
-      next if selected_controls.empty?
-
-      {
-        "id"       => family.code.downcase,
-        "class"    => "family",
-        "title"    => family.name,
-        "controls" => nest_enhancements(selected_controls, profile_lookup)
-      }
+        group = groups[family.code.downcase] ||= {
+          "id" => family.code.downcase, "class" => "family", "title" => family.name, "controls" => []
+        }
+        group["controls"].concat(nest_enhancements(selected_controls, profile_lookup))
+      end
     end
 
-    groups.presence
+    groups.values.presence
+  end
+
+  # The primary catalog, then each other catalog a control records as its source.
+  def source_catalogs
+    @source_catalogs ||= begin
+      others = @profile.profile_controls.where.not(source_catalog_id: [ nil, @catalog.id ])
+                       .distinct.pluck(:source_catalog_id)
+      [ @catalog ] + ControlCatalog.where(id: others).order(:id).to_a
+    end
   end
 
   # An enhancement id carries its parent: `ac-2.1` belongs inside `ac-2`.
@@ -412,13 +423,15 @@ class OscalResolvedProfileCatalogService
       "rlinks"      => [ { "href" => "#{@profile.name.parameterize}.json", MEDIA_TYPE => "application/json" } ]
     }
 
-    # Source catalog resource
-    resources << {
-      "uuid"        => @catalog.oscal_uuid,
-      "title"       => @catalog.name,
-      "description" => "Source catalog referenced by the profile",
-      "rlinks"      => [ { "href" => "#{@catalog.name.parameterize}.json", MEDIA_TYPE => "application/json" } ]
-    }
+    # Source catalog resources (#1234: one per imported catalog)
+    source_catalogs.each do |catalog|
+      resources << {
+        "uuid"        => catalog.oscal_uuid,
+        "title"       => catalog.name,
+        "description" => "Source catalog referenced by the profile",
+        "rlinks"      => [ { "href" => "#{catalog.name.parameterize}.json", MEDIA_TYPE => "application/json" } ]
+      }
+    end
 
     # SPARC identifying resource
     resources << {

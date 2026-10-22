@@ -20,9 +20,11 @@
 class ProfileParameterOwner
   Entry = Struct.new(:param_id, :control_id, keyword_init: true)
 
-  # @param catalog [ControlCatalog, nil] the profile's linked catalog
-  def initialize(catalog)
-    @index = catalog ? build_index(catalog) : {}
+  # @param catalogs [ControlCatalog, Array<ControlCatalog>, nil] the profile's
+  #   linked catalog, or (#1234) every catalog its imports resolved to; the
+  #   first declaring a parameter id owns it
+  def initialize(catalogs)
+    @index = Array(catalogs).compact.reverse.reduce({}) { |index, catalog| index.merge(build_index(catalog)) }
   end
 
   # @return [Entry] the stored id and the canonical id of the owning control

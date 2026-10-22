@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_21_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_21_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1096,6 +1096,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_130000) do
     t.string "priority"
     t.bigint "profile_document_id", null: false
     t.integer "row_order", default: 0, null: false
+    t.bigint "source_catalog_id"
     t.string "title"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
@@ -1103,6 +1104,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_130000) do
     t.index ["profile_document_id", "control_id"], name: "idx_profile_controls_on_doc_ctrl", unique: true
     t.index ["profile_document_id", "row_order"], name: "idx_profile_controls_on_doc_row"
     t.index ["profile_document_id"], name: "index_profile_controls_on_profile_document_id"
+    t.index ["source_catalog_id"], name: "index_profile_controls_on_source_catalog_id"
     t.index ["uuid"], name: "index_profile_controls_on_uuid", unique: true
   end
 
@@ -1952,6 +1954,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_130000) do
   add_foreign_key "poam_risk_observations", "poam_risks", on_delete: :cascade
   add_foreign_key "poam_risks", "poam_documents", on_delete: :cascade
   add_foreign_key "profile_control_fields", "profile_controls", on_delete: :cascade
+  add_foreign_key "profile_controls", "control_catalogs", column: "source_catalog_id", on_delete: :nullify
   add_foreign_key "profile_controls", "profile_documents", on_delete: :cascade
   add_foreign_key "profile_documents", "control_catalogs", on_delete: :nullify
   add_foreign_key "profile_documents", "profile_documents", column: "source_profile_id"

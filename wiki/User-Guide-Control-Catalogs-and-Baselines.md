@@ -121,10 +121,27 @@ Two skeletons to copy are in
 - **`custom-controls-profile.json`**: a baseline that selects a few NIST Rev 5
   controls and the custom ones, and sets the custom parameter.
 
-Both are valid OSCAL 1.2.3. **Current limit:** SPARC links a baseline to the
-first catalog it imports, so the custom controls in a mixed baseline arrive
-without titles and export as if they came from NIST. This is tracked in
-[#1234](https://github.com/risk-sentinel/sparc/issues/1234).
+Both are valid OSCAL 1.2.3. Import your catalog first, then the baseline.
+
+### How a baseline that imports several catalogs is linked
+
+Each of a baseline's imports is matched to a loaded catalog on its own, by the
+first of these that fits:
+
+1. the catalog's OSCAL UUID, in the import's `href` or its back-matter link;
+2. for NIST, the SP 800-53 revision named in the back-matter link;
+3. the back-matter resource's **title**, when exactly one loaded catalog has
+   that name.
+
+Every control records the catalog it came from, takes its title from that
+catalog, and exports under that catalog's own import, so NIST's controls and
+yours are never attributed to each other. The baseline's **source catalog** is
+the first import that matched.
+
+An import that matches nothing (its catalog is not loaded, or two catalogs share
+its title) is left unlinked: its controls import without titles and the import
+is listed on the baseline's page. Load the catalog, or give it a unique name,
+and import the baseline again.
 
 ### How to edit families and controls
 

@@ -6,7 +6,7 @@
       "last-modified": "2026-10-21T00:00:00Z",
       "version": "1.0",
       "oscal-version": "1.2.3",
-      "remarks": "A skeleton OSCAL profile that builds one baseline from two catalogs: NIST SP 800-53 Rev 5 and the organization's own (custom-controls-catalog.json). Each import names a back-matter resource that points at its catalog, and selects controls by id. modify sets the custom control's parameter. Replace every Example and example.com value, and list the NIST controls your baseline needs. SPARC today links a profile to its first imported catalog only, so the custom controls import without titles and export as though they came from NIST: see issue #1234. The file itself is valid OSCAL and is the pattern to keep."
+      "remarks": "A skeleton OSCAL profile that builds one baseline from two catalogs: NIST SP 800-53 Rev 5 and the organization's own (custom-controls-catalog.json). Each import names a back-matter resource that points at its catalog, and selects controls by id. modify sets the custom control's parameter. Replace every Example and example.com value, and list the NIST controls your baseline needs. SPARC links each import to its own catalog, so import the custom catalog before this profile."
     },
     "imports": [
       {

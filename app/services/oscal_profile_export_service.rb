@@ -70,26 +70,52 @@ class OscalProfileExportService
     )
   end
 
+  # #1234 — one import per source catalog, each selecting its own controls.
+  # A profile that imports NIST plus an organization's own catalog exported a
+  # single NIST import listing the custom controls too, which said NIST
+  # published them. A control with no recorded source belongs to the primary
+  # catalog, as every profile imported before #1234 does.
   def build_imports
-    # #395 P2: prefer `uuid:<catalog.oscal_uuid>` so the catalog reference
-    # is round-trip-stable. Fall back to the round-trip
-    # `import_metadata["catalog_href"]`, then to the legacy `#anchor`
-    # form, then to "#" as the schema-required last resort.
-    catalog = @document.control_catalog
-    catalog_href =
-      (catalog&.oscal_uuid.presence && "uuid:#{catalog.oscal_uuid}") ||
+    controls = @document.profile_controls.order(:row_order).to_a
+    primary  = @document.control_catalog
+    groups   = controls.group_by { |c| c.source_catalog_id || primary&.id }
+
+    groups.map do |catalog_id, members|
+      catalog = source_catalogs[catalog_id]
+      {
+        "href" => import_href(catalog, members),
+        "include-controls" => [ {
+          # #852 — with-ids is TokenDatatype; a profile control stored as
+          # "AC-2 (1)" would otherwise fail the profile schema at export.
+          "with-ids" => members.map { |c| ControlId.canonical(c.control_id) }
+        } ]
+      }
+    end.presence || [ { "href" => import_href(primary, []), "include-controls" => [ { "with-ids" => [] } ] } ]
+  end
+
+  # #395 P2: prefer `uuid:<catalog.oscal_uuid>` so the catalog reference is
+  # round-trip-stable. Without a catalog, the import's own href as the file
+  # gave it (#1234: per import, so an unlinked one keeps its own), then the
+  # first import's, then "#" as the schema-required last resort.
+  def import_href(catalog, members)
+    return "uuid:#{catalog.oscal_uuid}" if catalog&.oscal_uuid.present?
+
+    ids = members.map(&:control_id)
+    recorded = Array(@document.import_metadata&.dig("imports"))
+                 .find { |imp| (Array(imp["control_ids"]) & ids).any? }
+    recorded&.dig("href").presence ||
       @document.import_metadata&.dig("catalog_href") ||
       (catalog ? "##{catalog.oscal_uuid}" : "#")
-    controls = @document.profile_controls.order(:row_order)
+  end
 
-    [ {
-      "href" => catalog_href,
-      "include-controls" => [ {
-        # #852 — with-ids is TokenDatatype; a profile control stored as
-        # "AC-2 (1)" would otherwise fail the profile schema at export.
-        "with-ids" => controls.pluck(:control_id).map { |id| ControlId.canonical(id) }
-      } ]
-    } ]
+  # Every catalog the profile's controls come from, by id: the primary
+  # catalog and each recorded source.
+  def source_catalogs
+    @source_catalogs ||= begin
+      ids = @document.profile_controls.distinct.pluck(:source_catalog_id).compact
+      ids << @document.control_catalog_id if @document.control_catalog_id
+      ControlCatalog.where(id: ids.uniq).index_by(&:id)
+    end
   end
 
   def build_merge
@@ -173,9 +199,10 @@ class OscalProfileExportService
     base = @document.build_oscal_back_matter
     resources = base["resources"] || []
 
-    # Add source catalog resource entry so the import href resolves
-    catalog = @document.control_catalog
-    if catalog
+    # Add a resource entry per source catalog so each import href resolves
+    # (#1234: every imported catalog, primary first, not only the primary).
+    primary_id = @document.control_catalog_id
+    source_catalogs.values.sort_by { |c| [ c.id == primary_id ? 0 : 1, c.id ] }.reverse_each do |catalog|
       resources.unshift({
         "uuid"        => catalog.oscal_uuid,
         "title"       => catalog.name,
