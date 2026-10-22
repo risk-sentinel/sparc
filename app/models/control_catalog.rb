@@ -12,6 +12,13 @@ class ControlCatalog < ApplicationRecord
   has_many :source_mappings, class_name: "ControlMapping", foreign_key: :source_catalog_id
   has_many :target_mappings, class_name: "ControlMapping", foreign_key: :target_catalog_id
 
+  # #1243 — the catalog page's Families and Controls tiles and the homepage's
+  # Control Catalogs card read these, so the two figures cannot drift apart.
+  # Distinct codes and control ids: the same family or control in two catalog
+  # revisions counts once.
+  def self.family_count = ControlFamily.distinct.count(:code)
+  def self.control_count = CatalogControl.distinct.count(:control_id)
+
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
 
   before_validation :ensure_oscal_uuid

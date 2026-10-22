@@ -244,11 +244,12 @@
                   </button>
                   <ul class="dropdown-menu sparc-dropdown-menu">
                     <li class="sparc-dropdown-header sparc-dropdown-header-boundaries">Enterprise</li>
-                    <%# #1245 — Organizations and Federation Peers are administrator
-                        screens (authorize_admin! / require_admin), so they are
-                        listed only for administrators: a link that always refuses
-                        is not navigation. %>
-                    <% if current_user&.instance_administrator? %>
+                    <%# #1245 — a link that always refuses is not navigation.
+                        #1243 — each link shows exactly when its screen admits the
+                        user: Organizations and Service Accounts through
+                        authorize_admin! (admin_access?), Federation Peers through
+                        back_matter.federate (can_federate?). %>
+                    <% if admin_access? %>
                       <li><%= link_to admin_organizations_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
                         <span>&#127970;</span> Organizations
                         <span class="badge bg-secondary ms-auto" style="font-size: 0.65rem;"><%= Organization.count %></span>
@@ -292,7 +293,7 @@
                     <li><%= link_to leveraged_poam_documents_path, class: "dropdown-item" do %>
                       <span class="sparc-dropdown-icon">&#128203;</span> Leveraged POA&amp;Ms
                     <% end %></li>
-                    <% if current_user&.instance_administrator? %>
+                    <% if can_federate? %>
                       <li><%= link_to federation_peers_path, class: "dropdown-item" do %>
                         <span class="sparc-dropdown-icon">&#128279;</span> Federation Peers
                       <% end %></li>

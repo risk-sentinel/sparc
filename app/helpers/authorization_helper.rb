@@ -28,10 +28,37 @@ module AuthorizationHelper
     !SparcConfig.any_auth_enabled? || current_user&.instance_administrator? || current_user&.has_permission?("converters.write")
   end
 
+  # #1243 — THE answer to "would authorize_admin! let this person in?": auth
+  # disabled, or an instance administrator. Every link or control leading to
+  # an administrator screen reads this, so it shows exactly when the screen
+  # admits the user (the homepage's Organizations card, the Enterprise menu).
+  def admin_access?
+    !SparcConfig.any_auth_enabled? || current_user&.instance_administrator? || false
+  end
+
+  # #1243 — the Federation Peers screen is guarded by `back_matter.federate`
+  # (FederationPeersController#require_admin), not by authorize_admin!, so its
+  # links follow that key. An administrator holds every key.
+  def can_federate?
+    !SparcConfig.any_auth_enabled? || current_user&.has_permission?("back_matter.federate") || false
+  end
+
   # #629 — bulk delete is instance-admin-only; mirror authorize_admin! so the
   # UI only renders the controls when the action would actually be allowed.
-  def can_bulk_delete?
-    !SparcConfig.any_auth_enabled? || current_user&.instance_administrator?
+  def can_bulk_delete? = admin_access?
+
+  # #1243 — CdefDocumentsController#authorize_cdef_write!: instance-level.
+  def can_write_cdefs?
+    !SparcConfig.any_auth_enabled? || current_user&.has_permission?("cdef.write") || false
+  end
+
+  # #1243 — may this person create a document of a boundary-scoped type
+  # anywhere? Create is authorized against the boundary the new document joins
+  # (BoundaryScopedDocument#authorize_document_write!), so the write key on ANY
+  # boundary, or instance-wide, is what makes "New" lead somewhere that works.
+  # The key is the controller's own declaration.
+  def can_create_boundary_document?(controller_class)
+    !SparcConfig.any_auth_enabled? || current_user&.has_any_permission?(controller_class.bsd_write_key) || false
   end
 
   # #1247 — the boundary list shows an action only to someone the server would

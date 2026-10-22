@@ -4284,3 +4284,26 @@ a.link-purple { color: var(--sparc-purple); }
   max-height: 18rem;
   overflow-y: auto;
 }
+
+/* #1243 — the count on a homepage layer card. A link to the same page as the
+   card's View button, so it reads as a pill that can be clicked, coloured by
+   the card's accent. */
+.sparc-count-badge {
+  display: inline-block;
+  min-width: 1.6rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+  color: var(--bs-body-color);
+  background: color-mix(in srgb, var(--sparc-accent, var(--bs-secondary)) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sparc-accent, var(--bs-secondary)) 45%, transparent);
+}
+.sparc-count-badge:hover,
+.sparc-count-badge:focus-visible {
+  background: color-mix(in srgb, var(--sparc-accent, var(--bs-secondary)) 32%, transparent);
+  color: var(--bs-body-color);
+}

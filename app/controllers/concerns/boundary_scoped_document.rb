@@ -51,17 +51,32 @@ module BoundaryScopedDocument
     end
   end
 
-  private
-
   # Index scope: admin -> all; else records in the user's boundaries, plus
   # globals (nil) only for a type that can legitimately BE global (#952).
-  def boundary_scoped_relation(relation)
+  #
+  # #1243 — a module function, so a surface that shows an index page's count
+  # somewhere else (the homepage's card badges) counts the SAME relation the
+  # page lists. The instance method below delegates here.
+  def self.scope(relation, user:, global_fallback:)
     return relation unless SparcConfig.any_auth_enabled?
-    return relation if current_user&.instance_administrator?
+    return relation if user&.instance_administrator?
 
-    boundary_ids = current_user ? current_user.authorization_boundaries.ids : []
-    boundary_ids += [ nil ] if bsd_global_fallback
+    boundary_ids = user ? user.authorization_boundaries.ids : []
+    boundary_ids += [ nil ] if global_fallback
     relation.where(authorization_boundary_id: boundary_ids)
+  end
+
+  # The relation `controller_class`'s index lists for `user`, from that
+  # controller's own `boundary_scoped` declaration (its model and its
+  # global_fallback), so a count taken here always equals the page's.
+  def self.index_relation(controller_class, user)
+    scope(controller_class.bsd_model.all, user: user, global_fallback: controller_class.bsd_global_fallback)
+  end
+
+  private
+
+  def boundary_scoped_relation(relation)
+    BoundaryScopedDocument.scope(relation, user: current_user, global_fallback: bsd_global_fallback)
   end
 
   # The loaded record for a member action (e.g. @ssp_document), by naming convention.
