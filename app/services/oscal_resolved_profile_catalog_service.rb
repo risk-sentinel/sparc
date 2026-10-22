@@ -164,7 +164,19 @@ class OscalResolvedProfileCatalogService
     parts = build_control_parts(catalog_control, profile_control)
     result["parts"] = parts if parts.any?
 
-    result
+    apply_alters(result, catalog_control, profile_control)
+  end
+
+  # #1252 — the profile's removes and added parts, applied last so they see the
+  # control exactly as the catalog and the other modifications built it. SSP
+  # generation reads this document, so a removed statement item yields no
+  # response row and an added one does.
+  def apply_alters(result, catalog_control, profile_control)
+    alters = Array(profile_control&.alters)
+    return result if alters.empty?
+
+    resolver = parameter_resolver(catalog_control, profile_control)
+    ProfileAlterations.new(alters, resolve: ->(text) { resolver.resolve_text(text) }).apply!(result)
   end
 
   # #999 — SPARC emitted `links` on none of its 287 controls where NIST emits

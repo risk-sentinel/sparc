@@ -71,6 +71,29 @@
         <li>
           <%= imp["title"].presence || imp["href"] %>:
           <%= Array(imp["control_ids"]).first(10).join(", ") %><%= " …" if Array(imp["control_ids"]).size > 10 %>
+          <%# #1252 — these select from the catalog itself, so without it they select nothing. %>
+          <% if Array(imp["unresolved_selectors"]).any? %>
+            <div data-testid="unresolved-selectors">
+              Not applied until the catalog is loaded: <%= Array(imp["unresolved_selectors"]).join(", ") %>.
+            </div>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%# #1252 — ids a profile names that its catalog does not hold. A profile can
+    tailor a control but cannot add one, so these select nothing. %>
+<% unknown_imports = Array(@profile_document.import_metadata&.dig("imports")).select { |imp| Array(imp["unknown_ids"]).any? } %>
+<% if unknown_imports.any? %>
+  <div class="alert alert-warning mt-2 mb-0" data-testid="unknown-control-ids">
+    <strong>This baseline names controls its catalog does not have.</strong>
+    <ul class="mb-0 mt-1">
+      <% unknown_imports.each do |imp| %>
+        <li>
+          <%= imp["title"].presence || imp["href"] %>:
+          <%= Array(imp["unknown_ids"]).first(10).join(", ") %><%= " …" if Array(imp["unknown_ids"]).size > 10 %>
         </li>
       <% end %>
     </ul>
@@ -315,7 +338,8 @@
                           values: param_values, priority: control.priority,
                           sub_parts: sub_parts) %>
             <% prop_fields  = field_map.select { |k, _| k.start_with?("prop:") } %>
-            <% has_details  = detail&.any? || prop_fields.any? || sub_parts&.any? %>
+            <% alters       = Array(control.alters) %>
+            <% has_details  = detail&.any? || prop_fields.any? || sub_parts&.any? || alters.any? %>
             <% if has_details %>
               <details class="card-details sparc-mt-035">
                 <%# #997 — the toggle used to be a bare arrow, so nothing said
@@ -342,6 +366,13 @@
                           editable: signed_in? && can_write_profiles? && !@profile_document.published_lifecycle?,
                           form_url: parameters_profile_document_profile_control_path(@profile_document, control),
                           anchor_id: "control-#{control.id}" %>
+                  <% end %>
+
+                  <%# #1252 — what this baseline removes from and adds to the
+                      catalog's control. The resolved catalog, requirement text
+                      and SSP generation all apply it (ProfileAlterations). %>
+                  <% if alters.any? %>
+                    <%= render "profile_documents/control_alters", alters: alters %>
                   <% end %>
 
                   <% if prop_fields.any? %>

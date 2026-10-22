@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_22_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1100,6 +1100,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.string "title"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.jsonb "alters", default: [], null: false
     t.index ["profile_document_id", "control_family"], name: "idx_profile_controls_on_doc_family"
     t.index ["profile_document_id", "control_id"], name: "idx_profile_controls_on_doc_ctrl", unique: true
     t.index ["profile_document_id", "row_order"], name: "idx_profile_controls_on_doc_row"
