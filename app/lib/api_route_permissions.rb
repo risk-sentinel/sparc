@@ -76,6 +76,7 @@ module ApiRoutePermissions
     "ssp_roles"              => { read: [ "ssp.read" ], write: [ "ssp.write" ] },
     "sap_documents"          => { read: [ "sap.read" ], write: [ "sap.write" ] },
     "sar_documents"          => { read: [ "sar.read" ], write: [ "sar.write" ] },
+    "sar_objectives"         => { read: [ "sar.read" ], write: [ "sar.write" ] },
     "sar_risks"              => { read: [ "sar.read" ], write: [ "sar.write" ] },
     "poam_documents"         => { read: [ "poam.read" ], write: [ "poam.write" ] },
     "poam_risks"             => { read: [ "poam.read" ], write: [ "poam.write" ] },
