@@ -58,6 +58,33 @@ RSpec.describe BaselineParameterService do
       expect(param[:value]).to eq("System Administrators")
     end
 
+    # #1241 — the catalog's assigned value is reported beside the baseline's,
+    # never as it: `current_value` and `value` are what THIS baseline set, and a
+    # client that writes the schema back must not turn the catalog's value into
+    # tailoring.
+    it "reports the catalog's value as catalog_value and not as the baseline's value" do
+      params = control_with_params.params_data.deep_dup
+      params.first["values"] = [ "quarterly-invented" ]
+      control_with_params.update!(params_data: params)
+
+      param = service.extract_schema[:parameters].find { |p| p[:param_id] == params.first["id"] }
+
+      expect(param[:catalog_value]).to eq("quarterly-invented")
+      expect(param[:current_value]).to be_nil
+      expect(param[:value]).to eq("")
+    end
+
+    it "reports a selection's catalog choices apart from what the baseline selected" do
+      params = control_with_select.params_data.deep_dup
+      params.first["values"] = [ params.first.dig("select", "choice").first ]
+      control_with_select.update!(params_data: params)
+
+      selection = service.extract_schema[:selections].first
+
+      expect(selection[:catalog_selected]).to eq([ params.first.dig("select", "choice").first ])
+      expect(selection[:selected]).to eq([])
+    end
+
     it "filters by control family" do
       create(:catalog_control, :with_params,
         control_family: other_family,

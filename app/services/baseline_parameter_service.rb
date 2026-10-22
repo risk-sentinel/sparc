@@ -360,6 +360,12 @@ class BaselineParameterService
       type: infer_type(param),
       constraint: constraint,
       current_value: current_values[param_id],
+      # #1241 — the value the CATALOG assigns, shown beside the baseline's own.
+      # Deliberately not folded into `current_value`/`value`: those are what
+      # this baseline set, and a write-back of this schema must not turn the
+      # catalog's assignment into tailoring nobody made (the label mistake
+      # ClearSeededParameterLabels had to undo).
+      catalog_value: ParameterValueList.join(param["values"]).presence,
       value: current_values[param_id] || ""
     }
   end
@@ -397,7 +403,10 @@ class BaselineParameterService
       # The union across every choice — what this selection could require,
       # regardless of which branch is taken.
       depends_on: details.flat_map { |detail| detail[:references] }.uniq,
-      selected: selected
+      selected: selected,
+      # #1241 — the choices the catalog assigns, kept apart from `selected`
+      # for the reason given on `catalog_value` above.
+      catalog_selected: Array(param["values"]).map(&:to_s).reject(&:blank?)
     }
   end
 
@@ -548,6 +557,7 @@ class BaselineParameterService
             builder.description(param[:description]) if param[:description]
             builder.constraint(param[:constraint]) if param[:constraint]
             builder.tag!("current-value", param[:current_value]) if param[:current_value]
+            builder.tag!("catalog-value", param[:catalog_value]) if param[:catalog_value]
             builder.value(param[:value])
           end
         end
@@ -571,6 +581,7 @@ class BaselineParameterService
               builder.choice(detail[:text], **attrs)
             end
             sel[:selected].each { |s| builder.selected(s) }
+            Array(sel[:catalog_selected]).each { |s| builder.tag!("catalog-selected", s) }
           end
         end
       end

@@ -182,4 +182,30 @@ RSpec.describe BaselineControlDetail do
       expect(described_class.new(control, values: {})).to be_any
     end
   end
+
+  # #1241 — a catalog that ASSIGNS a parameter shows that value on the baseline
+  # screen, and says it is the catalog's; the baseline's own value still wins.
+  describe "a parameter the catalog assigns" do
+    before do
+      control.update!(params_data: [
+        { "id" => "ac-20_odp.01", "label" => "terms and conditions", "values" => [ "invented terms of use" ] }
+      ])
+    end
+
+    it "reads the catalog's value into the statement and marks it as the catalog's" do
+      detail = described_class.new(control, values: {})
+      param = detail.parameters.first
+
+      expect(detail.statement).to include("Establish invented terms of use,")
+      expect(param).to be_catalog_assigned
+      expect(param.display).to eq("invented terms of use")
+    end
+
+    it "lets the baseline's value win" do
+      detail = described_class.new(control, values: { "ac-20_odp.01" => "invented baseline terms" })
+
+      expect(detail.statement).to include("Establish invented baseline terms,")
+      expect(detail.parameters.first).not_to be_catalog_assigned
+    end
+  end
 end

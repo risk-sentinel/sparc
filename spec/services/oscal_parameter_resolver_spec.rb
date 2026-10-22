@@ -132,4 +132,55 @@ RSpec.describe OscalParameterResolver do
       expect(resolver.resolve_text(nil)).to eq("")
     end
   end
+
+  # #1241 — a catalog that ASSIGNS a parameter carries it in `values`. Order:
+  # a set value (SSP or profile), then the catalog's values, then aggregate,
+  # guidelines and label. Values are invented.
+  describe "the catalog's own values (#1241)" do
+    let(:params) do
+      [
+        { "id" => "ex-01_odp.01", "label" => "personnel or roles",
+          "guidelines" => [ { "prose" => "personnel or roles are defined;" } ],
+          "values" => [ "Example Agency personnel" ] },
+        { "id" => "ex-01_odp.02", "label" => "personnel or roles", "values" => [ "Example auditors" ] },
+        { "id" => "ex-1_prm_1", "label" => "organization-defined personnel or roles",
+          "props" => [ { "name" => "aggregates", "ns" => "http://csrc.nist.gov/ns/rmf", "value" => "ex-01_odp.01" },
+                       { "name" => "aggregates", "ns" => "http://csrc.nist.gov/ns/rmf", "value" => "ex-01_odp.02" } ] },
+        { "id" => "ex-01_odp.03",
+          "select" => { "how-many" => "one-or-more", "choice" => [ "organization-level", "system-level" ] },
+          "values" => [ "system-level" ] },
+        { "id" => "ex-01_odp.04",
+          "select" => { "how-many" => "one", "choice" => [ "daily", "weekly" ] } }
+      ]
+    end
+
+    it "uses the catalog's value when nothing is set, ahead of guidelines and label" do
+      expect(resolver.resolve_param("ex-01_odp.01")).to eq("Example Agency personnel")
+    end
+
+    it "lets a set value win over the catalog's" do
+      expect(resolver("ex-01_odp.01" => "Invented ISSO").resolve_param("ex-01_odp.01")).to eq("Invented ISSO")
+    end
+
+    it "resolves an aggregate from its parts' catalog values" do
+      expect(resolver.resolve_param("ex-1_prm_1")).to eq("Example Agency personnel, Example auditors")
+    end
+
+    it "prefers a set part over that part's catalog value inside an aggregate" do
+      expect(resolver("ex-01_odp.02" => "Invented assessors").resolve_param("ex-1_prm_1"))
+        .to eq("Example Agency personnel, Invented assessors")
+    end
+
+    it "takes a select's catalog values instead of listing every choice" do
+      expect(resolver.resolve_param("ex-01_odp.03")).to eq("system-level")
+    end
+
+    it "still lists every choice for a select nobody answered" do
+      expect(resolver.resolve_param("ex-01_odp.04")).to eq("daily weekly")
+    end
+
+    it "lets a set selection win over the catalog's" do
+      expect(resolver("ex-01_odp.03" => "organization-level").resolve_param("ex-01_odp.03")).to eq("organization-level")
+    end
+  end
 end
