@@ -131,6 +131,12 @@ class TestMoreMenu:
             delete_doc("authorization_boundaries", record["slug"])
 
 
+def _settled(page):
+    """Wait out Bootstrap's collapse transition (~350ms). It ignores a click made
+    while a section is still animating, as a person's second click would be."""
+    expect(page.locator(".collapsing")).to_have_count(0)
+
+
 class TestCollapsibleSections:
     def test_choice_survives_reload_and_carries_to_another_boundary(
         self, authed_page, base_url, boundary, active_boundary
@@ -142,6 +148,7 @@ class TestCollapsibleSections:
         toggle = _toggle(page, "personnel")
         expect(toggle).to_have_attribute("aria-expanded", "false")
         toggle.click()
+        _settled(page)
         expect(toggle).to_have_attribute("aria-expanded", "true")
 
         page.reload()
@@ -154,6 +161,7 @@ class TestCollapsibleSections:
 
         # Close it again, and the next page load remembers that too.
         _toggle(page, "personnel").click()
+        _settled(page)
         expect(_toggle(page, "personnel")).to_have_attribute("aria-expanded", "false")
         page.reload()
         page.wait_for_load_state("domcontentloaded")
@@ -171,8 +179,10 @@ class TestCollapsibleSections:
         completeness = _toggle(page, "completeness")
         if completeness.get_attribute("aria-expanded") == "false":
             completeness.click()
+            _settled(page)
             expect(completeness).to_have_attribute("aria-expanded", "true")
         completeness.click()
+        _settled(page)
         expect(completeness).to_have_attribute("aria-expanded", "false")
 
         # A Draft boundary still opens it.

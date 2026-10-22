@@ -27,8 +27,11 @@ export default class CollapseMemoryController extends Controller {
     this.onShown = (event) => this.record(event, true)
     this.onHidden = (event) => this.record(event, false)
     this.onHashChange = () => this.openFor(window.location.hash)
-    this.element.addEventListener("shown.bs.collapse", this.onShown)
-    this.element.addEventListener("hidden.bs.collapse", this.onHidden)
+    // Recorded when the toggle STARTS (show/hide), not when its ~350ms
+    // transition ends (shown/hidden): a reload or a link followed inside that
+    // window used to lose the choice. Found by the ui-smoke gate.
+    this.element.addEventListener("show.bs.collapse", this.onShown)
+    this.element.addEventListener("hide.bs.collapse", this.onHidden)
     window.addEventListener("hashchange", this.onHashChange)
 
     this.restore()
@@ -36,8 +39,8 @@ export default class CollapseMemoryController extends Controller {
   }
 
   disconnect() {
-    this.element.removeEventListener("shown.bs.collapse", this.onShown)
-    this.element.removeEventListener("hidden.bs.collapse", this.onHidden)
+    this.element.removeEventListener("show.bs.collapse", this.onShown)
+    this.element.removeEventListener("hide.bs.collapse", this.onHidden)
     window.removeEventListener("hashchange", this.onHashChange)
   }
 
@@ -88,7 +91,9 @@ export default class CollapseMemoryController extends Controller {
     const state = this.read()
     state[section.id] = open
     this.write(state)
-    this.sync(section)
+    // At the start of a toggle the `show` class has not changed yet, so state
+    // the toggles from the event rather than from the class.
+    this.setToggles(section, open)
   }
 
   openFor(hash) {
@@ -106,7 +111,10 @@ export default class CollapseMemoryController extends Controller {
   }
 
   sync(section) {
-    const open = section.classList.contains("show")
+    this.setToggles(section, section.classList.contains("show"))
+  }
+
+  setToggles(section, open) {
     this.element.querySelectorAll(`[aria-controls="${section.id}"]`).forEach((toggle) => {
       toggle.setAttribute("aria-expanded", String(open))
       toggle.classList.toggle("collapsed", !open)

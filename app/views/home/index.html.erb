@@ -77,7 +77,10 @@
             <div class="card-body d-flex flex-row align-items-center gap-3 sparc-p-035-085">
               <div class="sparc-fs-22r sparc-flex-shrink-0"><%= s[:icon].html_safe %></div>
               <div class="flex-grow-1 sparc-minw-0">
-                <h5 class="mb-0 sparc-fs-095 d-flex align-items-center gap-2">
+                <%# flex-wrap: in a narrow card the badge wraps under the title instead
+                    of overflowing beneath the View button, which took its clicks
+                    (found by the ui-smoke gate). %>
+                <h5 class="mb-0 sparc-fs-095 d-flex flex-wrap align-items-center gap-2">
                   <span><%= s[:title] %></span>
                   <% count = @counts.fetch(s[:key]) %>
                   <%= link_to number_with_delimiter(count), s[:path],
