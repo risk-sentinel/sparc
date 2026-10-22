@@ -259,9 +259,23 @@ RUN rm /tmp/sparc-version-key.rb \
 # update-ca-trust. Mechanism 2 (runtime volume mount, no rebuild) lives in
 # bin/lib/ca-trust.sh. Runs as root here — the runtime user (UID 1000) cannot.
 COPY certs/ /etc/pki/ca-trust/source/anchors/sparc-custom/
+# CVE-2026-114406 (RHSB-2026-012): roots that signed intermediates with weak
+# eMudhra keys stay trusted in ca-certificates until Red Hat ships the fix.
+# Of the two Red Hat names, only emSign ECC Root CA - G3 is a TLS anchor in the
+# UBI 10 store (Comodo "AAA Certificate Services" is not), so it is
+# distrusted here; the build fails if it is still in the TLS bundle afterwards.
+# Remove once a ca-certificates build without it ships. NIST SC-12, SC-17, SI-2.
+COPY config/ca-trust/blocklist/ /etc/pki/ca-trust/source/blocklist/
 RUN find /etc/pki/ca-trust/source/anchors/sparc-custom/ -type f \
       ! \( -name '*.crt' -o -name '*.pem' -o -name '*.cer' \) -delete 2>/dev/null || true; \
-    update-ca-trust
+    update-ca-trust \
+    && for pem in /etc/pki/ca-trust/source/blocklist/*.pem; do \
+         [ -f "$pem" ] || continue; \
+         key="$(sed -n '2p' "$pem")"; \
+         if grep -qF "$key" /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem; then \
+           echo "distrusted root still in the TLS bundle: $pem" >&2; exit 1; \
+         fi; \
+       done
 
 # ── Database TLS trust (#785, NIST SC-8(1)) ──────────────────────────────────
 # libpq does NOT honour SSL_CERT_FILE, so the runtime CA mechanism above (which
