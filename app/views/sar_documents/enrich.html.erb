@@ -284,9 +284,15 @@
                   <% end %>
                 </select>
               </div>
+              <%# v1.17.2 — OSCAL's `deadline`: when the risk must be resolved. Optional
+                  on a SAR risk (a POA&M requires one); clearing the field clears it. %>
+              <div class="form-group sparc-mb-025">
+                <label class="sparc-fs-075" for="sar-risk-<%= idx %>-deadline">Deadline</label>
+                <input type="date" id="sar-risk-<%= idx %>-deadline" name="sar_document[risks][][deadline]" value="<%= risk.deadline&.to_date&.iso8601 %>" class="form-control sparc-fs-085" aria-label="Risk Deadline" data-testid="sar-risk-deadline">
+              </div>
             </div>
             <%= render "shared/risk_oscal_collections",
-                  param_base: "sar_document[risks][]", risk: risk %>
+                  param_base: "sar_document[risks][]", risk: risk, remediations: true %>
           </div>
         <% end %>
         <template data-sar-enrich-target="riskTemplate">
@@ -311,9 +317,13 @@
                 <span class="sparc-enrich-grid-label">Description</span>
                 <input type="text" name="sar_document[risks][][description]" class="form-control sparc-fs-085" placeholder="Risk description" aria-label="Risk Description">
               </div>
+              <div class="form-group sparc-mb-025">
+                <span class="sparc-enrich-grid-label">Deadline</span>
+                <input type="date" name="sar_document[risks][][deadline]" class="form-control sparc-fs-085" aria-label="Risk Deadline">
+              </div>
             </div>
             <%= render "shared/risk_oscal_collections",
-                  param_base: "sar_document[risks][]", risk: nil %>
+                  param_base: "sar_document[risks][]", risk: nil, remediations: true %>
           </div>
         </template>
         <button type="button" data-action="sar-enrich#addRisk" class="sparc-action sparc-action--positive sparc-action--solid sparc-enrich-item-action">

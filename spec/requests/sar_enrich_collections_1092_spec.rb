@@ -43,12 +43,12 @@ RSpec.describe "SAR enrich risk collections (#1092)", type: :request do
 
   it "saves threat IDs and mitigating factors typed into the card" do
     submit(base_attrs(
-      threat_ids_data: [ { system: "http://fedramp.gov/ns/oscal", id: "TA-0001" } ],
+      threat_ids_data: [ { system: "http://fedramp.gov/ns/oscal", id: "http://fedramp.gov/ns/oscal/TA-0001" } ],
       mitigating_factors_data: [ { description: "Egress restricted to a proxy." } ]
     ))
 
     risk.reload
-    expect(risk.threat_ids_data.first["id"]).to eq("TA-0001")
+    expect(risk.threat_ids_data.first["id"]).to eq("http://fedramp.gov/ns/oscal/TA-0001")
     expect(risk.threat_ids_data.first["system"]).to eq("http://fedramp.gov/ns/oscal")
     expect(risk.mitigating_factors_data.first["description"]).to eq("Egress restricted to a proxy.")
   end
@@ -76,7 +76,7 @@ RSpec.describe "SAR enrich risk collections (#1092)", type: :request do
 
   # The deletion case, which is the one an absent key would silently break.
   it "clears a collection when every row is removed" do
-    risk.update!(threat_ids_data: [ { "system" => "http://x", "id" => "T-1" } ])
+    risk.update!(threat_ids_data: [ { "system" => "http://x", "id" => "http://x/T-1" } ])
 
     submit(base_attrs) # no threat_ids_data key at all, but collections_present
 
@@ -86,22 +86,22 @@ RSpec.describe "SAR enrich risk collections (#1092)", type: :request do
   # ...and the other direction: a form that never rendered them must not wipe
   # them, which is what protects the API-authored values.
   it "leaves a collection untouched when the form did not render it" do
-    risk.update!(threat_ids_data: [ { "system" => "http://x", "id" => "T-1" } ])
+    risk.update!(threat_ids_data: [ { "system" => "http://x", "id" => "http://x/T-1" } ])
 
     submit(base_attrs.except(:collections_present))
 
-    expect(risk.reload.threat_ids_data.first["id"]).to eq("T-1")
+    expect(risk.reload.threat_ids_data.first["id"]).to eq("http://x/T-1")
   end
 
   it "drops a blank row rather than storing an empty object" do
     submit(base_attrs(
-      threat_ids_data: [ { system: "", id: "" }, { system: "http://x", id: "T-2" } ],
+      threat_ids_data: [ { system: "", id: "" }, { system: "http://x", id: "http://x/T-2" } ],
       mitigating_factors_data: [ { description: "" } ]
     ))
 
     risk.reload
     expect(risk.threat_ids_data.length).to eq(1)
-    expect(risk.threat_ids_data.first["id"]).to eq("T-2")
+    expect(risk.threat_ids_data.first["id"]).to eq("http://x/T-2")
     expect(risk.mitigating_factors_data).to eq([])
   end
 
@@ -113,16 +113,16 @@ RSpec.describe "SAR enrich risk collections (#1092)", type: :request do
                                      description: "d", statement: "s", status: "open")
 
     patch update_enrich_sar_document_path(document), params: { sar_document: { risks: [
-      base_attrs(threat_ids_data: [ { system: "http://x", id: "T-1" } ]),
+      base_attrs(threat_ids_data: [ { system: "http://x", id: "http://x/T-1" } ]),
       { id: second.id, sar_result_id: second.sar_result_id, title: second.title,
         description: "d", statement: "s", status: "open", collections_present: "1" },
       { id: third.id, sar_result_id: third.sar_result_id, title: third.title,
         description: "d", statement: "s", status: "open", collections_present: "1",
-        threat_ids_data: [ { system: "http://x", id: "T-3" } ] }
+        threat_ids_data: [ { system: "http://x", id: "http://x/T-3" } ] }
     ] } }
 
-    expect(risk.reload.threat_ids_data.first["id"]).to eq("T-1")
+    expect(risk.reload.threat_ids_data.first["id"]).to eq("http://x/T-1")
     expect(second.reload.threat_ids_data).to eq([])
-    expect(third.reload.threat_ids_data.first["id"]).to eq("T-3")
+    expect(third.reload.threat_ids_data.first["id"]).to eq("http://x/T-3")
   end
 end

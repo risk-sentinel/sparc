@@ -609,12 +609,15 @@ SAP selector and assessment date configuration.
 
 Form for adding OSCAL assessment result metadata: results, observations, findings, and risks. Each section is an independently collapsible `<details>` block.
 
-**Risk card fields**: title, status (the six OSCAL `risk-status` values), description, statement, impact and likelihood (five levels -- `very-low`, `low`, `moderate`, `high`, `very-high` -- from `RiskRating::LEVELS`, exported as characterization facets).
+**Risk card fields**: title, status (the six OSCAL `risk-status` values), description, statement, impact and likelihood (five levels -- `very-low`, `low`, `moderate`, `high`, `very-high` -- from `RiskRating::LEVELS`, exported as characterization facets), and deadline (v1.17.2, optional).
 
-**Threat IDs and Mitigating Factors** (#1092) -- a nested collapsible inside each risk card, rendered by `shared/_risk_oscal_collections`. Both are repeatable rows with **+ Add** / **x** controls driven by the `oscal-repeater` Stimulus controller:
+**Threat IDs, Mitigating Factors and Remediations** (#1092; remediations v1.17.2) -- a nested collapsible inside each risk card, rendered by `shared/_risk_oscal_collections`. All are repeatable rows with **+ Add** / **x** controls driven by the `oscal-repeater` Stimulus controller:
 
-- **Threat ID** -- `system` (the threat catalogue's address, e.g. `https://attack.mitre.org`) and `id` (the identifier within it, e.g. `T1078`).
+- **Threat ID** -- `system` and `id`, both full URIs as OSCAL requires (e.g. `https://attack.mitre.org` and `https://attack.mitre.org/techniques/T1078`). A non-URI value is refused on save with a message.
 - **Mitigating Factor** -- a free-text `description`; its OSCAL `uuid` rides along in a hidden field and is preserved rather than regenerated per render.
+- **Remediation** -- `title`, `description` and `lifecycle` (`recommendation`, `planned`, `completed`); both text fields are required, so a half-filled row is refused on save.
+
+Saving keeps whatever a stored entry carries that the form does not edit (props, links, origins, required-assets), matching rows back by uuid (`RiskCollectionParams#normalise_form_risk_collections`, shared with the POA&M risk form). Risks and findings are matched only within the SAR being edited.
 
 A hidden `collections_present` marker distinguishes "the form rendered these and they are now empty" from "unchanged", so removing the last row and saving clears the collection instead of silently keeping the old value.
 
@@ -728,7 +731,7 @@ Form fields: risk ID, finding source, status, impact level, remediation plan, sc
 | **Controller** | `PoamRisksController#new`, `#edit` |
 | **Auth** | Required |
 
-OSCAL `risk` form: title, description, statement, status, deadline, threat/characterization fields, and the impact/likelihood rating on the five-level `RiskRating::LEVELS` scale (`very-low`, `low`, `moderate`, `high`, `very-high`), exported as characterization facets.
+OSCAL `risk` form: title, description, statement, status, deadline, the impact/likelihood rating on the five-level `RiskRating::LEVELS` scale (`very-low`, `low`, `moderate`, `high`, `very-high`, exported as characterization facets), and (v1.17.2) **Threat IDs and Mitigating Factors**, the same section and rules as the SAR risk card. Remediations are not on this form: a POA&M keeps them as rows with their own screens. There is no link to the edit route from the POA&M page yet; it is reached by URL.
 
 #### POA&M Remediation Create / Edit (with nested Milestones)
 

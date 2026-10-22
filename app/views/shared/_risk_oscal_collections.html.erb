@@ -1,8 +1,10 @@
 <%# #1092 — the OSCAL collections a risk carries, as repeatable rows.
 
     Locals:
-      param_base : the risk's param prefix, e.g. "sar_document[risks][]"
-      risk       : the SarRisk, or nil when rendering the add-risk template
+      param_base   : the risk's param prefix, e.g. "sar_document[risks][]"
+      risk         : the risk, or nil when rendering the add-risk template
+      remediations : true to offer `remediations` too (SAR risks only: a POA&M
+                     keeps its responses as real rows with their own screens)
 
     NESTED REPEATABLES INSIDE AN EMPTY-BRACKET ARRAY WORK. `sar_document[risks][]
     [threat_ids_data][][id]` groups correctly per risk — verified against
@@ -23,17 +25,18 @@
     Api::V1 for an integrator migrating a register, neither is something to type
     into a form. No inline `style=` — this file is inside the #1047 sweep.
 %>
+<% remediations = local_assigns.fetch(:remediations, false) %>
 <input type="hidden" name="<%= param_base %>[collections_present]" value="1">
 
 <details class="sparc-enrich-section sparc-enrich-section--tight">
   <summary class="sparc-fs-08 sparc-cursor-pointer">
-    Threat IDs and Mitigating Factors
+    Threat IDs, Mitigating Factors<%= " and Remediations" if remediations %>
   </summary>
 
   <div class="sparc-enrich-section-body">
     <div data-controller="oscal-repeater" class="sparc-mb-025">
       <span class="sparc-enrich-grid-label">Threat IDs</span>
-      <p class="sparc-enrich-field-hint">The threat this risk realises, as it is named in a published threat catalogue. Give the catalogue's address and the threat's identifier inside it &mdash; for example <code class="sparc-code-plain">https://attack.mitre.org</code> and <code class="sparc-code-plain">T1078</code>, or <code class="sparc-code-plain">https://cve.mitre.org</code> and <code class="sparc-code-plain">CVE-2026-80212</code>.</p>
+      <p class="sparc-enrich-field-hint">The threat this risk realises, as it is named in a published threat catalogue. Give the catalogue's address and the threat's own address, both as full URIs (OSCAL requires it) &mdash; for example <code class="sparc-code-plain">https://attack.mitre.org</code> and <code class="sparc-code-plain">https://attack.mitre.org/techniques/T1078</code>, or <code class="sparc-code-plain">https://www.cve.org</code> and <code class="sparc-code-plain">https://www.cve.org/CVERecord?id=CVE-2026-80212</code>.</p>
 
       <template data-oscal-repeater-target="template">
         <div class="repeater-row d-flex gap-2 mb-2">
@@ -42,7 +45,7 @@
                  placeholder="https://attack.mitre.org" aria-label="Threat ID system">
           <input type="text" name="<%= param_base %>[threat_ids_data][][id]"
                  class="form-control form-control-sm sparc-fs-085"
-                 placeholder="T1078" aria-label="Threat ID">
+                 placeholder="https://attack.mitre.org/techniques/T1078" aria-label="Threat ID">
           <button type="button" data-action="click->oscal-repeater#remove"
                   class="sparc-action sparc-action--danger sparc-action--outline"
                   aria-label="Remove threat ID">&times;</button>
@@ -59,7 +62,7 @@
             <input type="text" name="<%= param_base %>[threat_ids_data][][id]"
                    value="<%= threat["id"] %>"
                    class="form-control form-control-sm sparc-fs-085"
-                   placeholder="T1078" aria-label="Threat ID">
+                   placeholder="https://attack.mitre.org/techniques/T1078" aria-label="Threat ID">
             <button type="button" data-action="click->oscal-repeater#remove"
                     class="sparc-action sparc-action--danger sparc-action--outline"
                     aria-label="Remove threat ID">&times;</button>
@@ -109,5 +112,65 @@
       <button type="button" data-action="click->oscal-repeater#add"
               class="sparc-action sparc-action--positive sparc-action--solid sparc-enrich-item-action">+ Add mitigating factor</button>
     </div>
+    <% if remediations %>
+      <%# v1.17.2 — OSCAL `remediations` (a risk's responses). Title and
+          description are both required by OSCAL; a row with only one is refused
+          on save rather than stored invalid. The uuid rides along hidden, as on
+          mitigating factors, and props/origins/required-assets an imported
+          response carries are kept (RiskCollectionParams::FORM_FIELDS). %>
+      <div data-controller="oscal-repeater" class="sparc-mt-05" data-testid="risk-remediations">
+        <span class="sparc-enrich-grid-label">Remediations</span>
+        <p class="sparc-enrich-field-hint">What is recommended, planned or done about this risk.</p>
+
+        <template data-oscal-repeater-target="template">
+          <div class="repeater-row d-flex gap-2 mb-2">
+            <input type="text" name="<%= param_base %>[remediations_data][][title]"
+                   class="form-control form-control-sm sparc-fs-085"
+                   placeholder="e.g. Enforce TLS 1.2 minimum" aria-label="Remediation title">
+            <input type="text" name="<%= param_base %>[remediations_data][][description]"
+                   class="form-control form-control-sm sparc-fs-085 sparc-flex-1"
+                   placeholder="What will be done" aria-label="Remediation description">
+            <select name="<%= param_base %>[remediations_data][][lifecycle]"
+                    class="form-control form-control-sm sparc-fs-085" aria-label="Remediation lifecycle">
+              <% RiskCollectionParams::REMEDIATION_LIFECYCLES.each do |lifecycle| %>
+                <option value="<%= lifecycle %>"><%= lifecycle.titleize %></option>
+              <% end %>
+            </select>
+            <button type="button" data-action="click->oscal-repeater#remove"
+                    class="sparc-action sparc-action--danger sparc-action--outline"
+                    aria-label="Remove remediation">&times;</button>
+          </div>
+        </template>
+
+        <div data-oscal-repeater-target="rows">
+          <% Array(risk&.remediations_data).each do |response| %>
+            <div class="repeater-row d-flex gap-2 mb-2">
+              <input type="hidden" name="<%= param_base %>[remediations_data][][uuid]"
+                     value="<%= response["uuid"].presence || SecureRandom.uuid %>">
+              <input type="text" name="<%= param_base %>[remediations_data][][title]"
+                     value="<%= response["title"] %>"
+                     class="form-control form-control-sm sparc-fs-085"
+                     placeholder="e.g. Enforce TLS 1.2 minimum" aria-label="Remediation title">
+              <input type="text" name="<%= param_base %>[remediations_data][][description]"
+                     value="<%= response["description"] %>"
+                     class="form-control form-control-sm sparc-fs-085 sparc-flex-1"
+                     placeholder="What will be done" aria-label="Remediation description">
+              <select name="<%= param_base %>[remediations_data][][lifecycle]"
+                      class="form-control form-control-sm sparc-fs-085" aria-label="Remediation lifecycle">
+                <% RiskCollectionParams::REMEDIATION_LIFECYCLES.each do |lifecycle| %>
+                  <option value="<%= lifecycle %>" <%= "selected" if response["lifecycle"] == lifecycle %>><%= lifecycle.titleize %></option>
+                <% end %>
+              </select>
+              <button type="button" data-action="click->oscal-repeater#remove"
+                      class="sparc-action sparc-action--danger sparc-action--outline"
+                      aria-label="Remove remediation">&times;</button>
+            </div>
+          <% end %>
+        </div>
+
+        <button type="button" data-action="click->oscal-repeater#add"
+                class="sparc-action sparc-action--positive sparc-action--solid sparc-enrich-item-action">+ Add remediation</button>
+      </div>
+    <% end %>
   </div>
 </details>

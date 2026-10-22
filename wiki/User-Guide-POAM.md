@@ -89,6 +89,11 @@ button that opens a nested form.
   a number, for example `score<0.85` or `blockers>0`. All three are exported on
   the risk for dashboards such as sparc-horizon. The status list includes
   **Remediating**.
+  Under **Threat IDs and Mitigating Factors** you record the threat the risk
+  realises (the catalogue and the threat, both as full URIs, for example
+  `https://attack.mitre.org` and `https://attack.mitre.org/techniques/T1078`)
+  and anything already in place that reduces it. They work as on the SAR risk
+  card; see [Assessment Results](User-Guide-Assessment-Results).
 
   ![The risk's decision fields: Blocks the ATO?, Condition expires and Reopen trigger](images/poam-risk-decision-fields.png)
 - **Remediation** (`.../poam_remediations/new`) — OSCAL `response`: lifecycle,

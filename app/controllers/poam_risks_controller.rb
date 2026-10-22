@@ -11,6 +11,7 @@
 # preserves imported UUIDs).
 class PoamRisksController < ApplicationController
   include OscalExtensibilityParams
+  include RiskCollectionParams
 
   before_action :set_poam_document
   include PoamChildAuthorization
@@ -22,6 +23,16 @@ class PoamRisksController < ApplicationController
 
   def new
     @poam_risk = @poam_document.poam_risks.build
+  end
+
+  # A threat ID the form cannot store as valid OSCAL is refused: nothing is
+  # saved, and the form comes back with a message naming the value and with the
+  # operator's other fields as typed.
+  rescue_from RiskCollectionParams::FormRowInvalid do |e|
+    @poam_risk ||= @poam_document.poam_risks.build
+    @poam_risk.assign_attributes(params.require(:poam_risk).permit(*SCALAR_FIELDS))
+    flash.now[:error] = e.message
+    render(@poam_risk.persisted? ? :edit : :new, status: :unprocessable_content)
   end
 
   def create
@@ -71,15 +82,25 @@ class PoamRisksController < ApplicationController
     @poam_risk = @poam_document.poam_risks.find(params[:id])
   end
 
+  POAM_RISK_FORM_COLLECTIONS = %i[threat_ids_data mitigating_factors_data].freeze
+  SCALAR_FIELDS = %i[title description statement status impact likelihood deadline remarks
+                     blocks_ato condition_expires reopen_trigger].freeze
+
   def poam_risk_params
     permitted = params.require(:poam_risk).permit(
-      :title, :description, :statement, :status,
-      :impact, :likelihood, :deadline, :remarks,
-      :blocks_ato, :condition_expires, :reopen_trigger, # #1154
+      *SCALAR_FIELDS, # #1154 added blocks_ato, condition_expires, reopen_trigger
+      :collections_present,
       props_data:   [ :name, :value, :class, :ns, :uuid, :remarks ],
       links_data:   [ :href, :rel, :media_type, :text ],
-      origins_data: [ :actor_type, :actor_uuid, :role_id ]
+      origins_data: [ :actor_type, :actor_uuid, :role_id ],
+      # v1.17.2 — threat IDs and mitigating factors, through the same partial
+      # and the same normaliser as the SAR risk card. The API has accepted
+      # both since #1092.
+      threat_ids_data: THREAT_IDS,
+      mitigating_factors_data: MITIGATING_FACTORS
     )
+    permitted = normalise_form_risk_collections(permitted, record: @poam_risk,
+                                                           collections: POAM_RISK_FORM_COLLECTIONS)
 
     permitted[:props_data]   = compact_props(permitted[:props_data])     if permitted.key?(:props_data)
     permitted[:links_data]   = compact_links(permitted[:links_data])     if permitted.key?(:links_data)
