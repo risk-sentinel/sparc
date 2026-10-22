@@ -47,6 +47,10 @@ module Publishable
       readiness[:ready] &&= approved if SparcConfig.require_document_approval?
     end
 
+    # #1235 — the import's quality warnings, shown in the dialog as ADVISORY:
+    # they never change `ready`, so the user can publish after seeing them.
+    readiness[:advisory_warnings] = advisory_warnings_for(doc)
+
     render json: readiness
   end
 
@@ -104,6 +108,19 @@ module Publishable
   end
 
   private
+
+  # The stored import warnings (`metadata_extra["import_warnings"]`, written by
+  # CatalogImportValidationService and refreshed by Revalidate), as
+  # `{ category:, message: }`. Empty for a document that stores none.
+  def advisory_warnings_for(doc)
+    extra = doc.respond_to?(:metadata_extra) ? doc.metadata_extra : nil
+    warnings = extra.is_a?(Hash) ? Array(extra["import_warnings"]) : []
+    warnings.filter_map do |w|
+      next unless w.is_a?(Hash) && w["message"].present?
+
+      { category: w["category"], message: w["message"] }
+    end
+  end
 
   # Hook for controllers to run custom logic before publication.
   # Return nil to proceed, or { error: "message" } to abort.

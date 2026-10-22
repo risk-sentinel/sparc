@@ -45,6 +45,9 @@ if File.exist?(oscal_rev5_path)
   result = CatalogImportService.call(file_io, File.basename(oscal_rev5_path))
   file_io.close
   catalog = result[:catalog]
+  # #1235 — CatalogImportService no longer publishes; NIST's reference catalog
+  # is published here, exactly as the import used to leave it.
+  catalog.update!(lifecycle_status: "published") unless catalog.published_lifecycle?
   puts "  Imported #{result[:families]} families, #{catalog.catalog_controls.count} controls"
 else
   puts "  ⚠ OSCAL fixture not found at #{oscal_rev5_path}"
@@ -510,6 +513,8 @@ if File.exist?(oscal_rev4_path)
   file_io = File.open(oscal_rev4_path)
   result = CatalogImportService.call(file_io, File.basename(oscal_rev4_path), existing_catalog: catalog_r4)
   file_io.close
+  # #1235 — published here; the import service no longer does it.
+  result[:catalog].update!(lifecycle_status: "published") unless result[:catalog].published_lifecycle?
   puts "  Imported #{result[:families]} families, #{result[:catalog].catalog_controls.count} controls (with enhancements and sub-parts)"
 else
   puts "  ⚠ OSCAL fixture not found at #{oscal_rev4_path}"

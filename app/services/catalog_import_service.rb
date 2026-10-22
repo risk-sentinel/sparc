@@ -85,10 +85,17 @@ class CatalogImportService
       raise ImportError, "Unrecognised format. Upload an OSCAL JSON (.json), OSCAL YAML (.yaml/.yml), OSCAL XML (.xml), or NIST XML (.xml) catalog file."
     end
 
-    # Store content digest for traceability and set catalog as published
+    # Store content digest for traceability.
+    #
+    # #1235 — this used to set `lifecycle_status: "published"` on every import,
+    # before the quality warnings were even computed, so an uploaded catalog
+    # was published, read-only and trusted without review. The service no
+    # longer touches the lifecycle: an upload lands as Draft (CatalogImportJob)
+    # and is published through `publish`, approval gate included. A re-import
+    # run by a data migration leaves a published catalog published.
     catalog = stats[:catalog]
     digest = Digest::SHA256.hexdigest(@content)
-    catalog.update!(catalog_content_digest: digest, lifecycle_status: "published")
+    catalog.update!(catalog_content_digest: digest)
     derive_framework!(catalog)
 
       # #393: populate catalog_control_parts from the freshly imported

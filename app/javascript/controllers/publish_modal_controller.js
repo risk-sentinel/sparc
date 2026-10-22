@@ -13,7 +13,8 @@ import { isVisible, setVisible } from "controllers/visibility"
 export default class PublishModalController extends Controller {
   static targets = [
     "modal", "backdrop", "checklist", "fixFields", "publishBtn",
-    "creatorName", "contactName", "contactEmail", "contactType"
+    "creatorName", "contactName", "contactEmail", "contactType",
+    "advisory", "advisoryList"
   ]
 
   static values = {
@@ -200,6 +201,7 @@ export default class PublishModalController extends Controller {
     checklistHtml += this.infoItem("OSCAL version", checks.oscal_version)
 
     this.checklistTarget.innerHTML = checklistHtml
+    this.renderAdvisoryWarnings(data.advisory_warnings || [])
 
     // Show/hide inline fix fields
     const defaults = data.defaults || {}
@@ -222,6 +224,19 @@ export default class PublishModalController extends Controller {
 
     // Update publish button state
     this.publishBtnTarget.textContent = data.ready ? "Confirm & Publish" : "Fix & Publish"
+  }
+
+  // #1235 — advisory only: these never change `ready` or the button. Built
+  // with textContent because a message can quote content from the upload.
+  renderAdvisoryWarnings(warnings) {
+    if (!this.hasAdvisoryTarget || !this.hasAdvisoryListTarget) return
+
+    this.advisoryListTarget.replaceChildren(...warnings.map(w => {
+      const li = document.createElement("li")
+      li.textContent = w.message
+      return li
+    }))
+    setVisible(this.advisoryTarget, warnings.length > 0)
   }
 
   checkItem(label, ok) {

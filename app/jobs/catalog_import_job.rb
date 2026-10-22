@@ -42,8 +42,12 @@ class CatalogImportJob < ApplicationJob
       )
       validation_result = CatalogImportValidationService.new(catalog).validate
 
+      # #1235 — an upload lands as Draft, a re-import into an existing catalog
+      # included (owner, 2026-10-21): the user reviews the warnings and
+      # publishes through `publish`, so the approval gate applies.
       catalog.update!(
         status: "completed",
+        lifecycle_status: "in_progress",
         metadata_extra: (catalog.metadata_extra || {}).merge(
           validation_result,
           "processing_stage"        => "complete",

@@ -27,39 +27,21 @@ RSpec.describe CatalogImportValidationService do
       end
     end
 
-    context "missing priorities" do
+    # #1235 — a catalog carries neither: the profile sets both. NIST's own
+    # catalogs have no priority or impact-level props, so these checks warned
+    # about every control of every NIST import.
+    context "controls with no priority and no baseline impact" do
       before do
         create(:catalog_control, control_family: family, control_id: "ac-1", priority: nil,
-          baseline_impact: "LOW", guidance_data: { "statement" => "text", "assessment_objective" => "obj" })
+          baseline_impact: nil, guidance_data: { "statement" => "text", "assessment_objective" => "obj" })
         create(:catalog_control, control_family: family, control_id: "ac-2", priority: "",
-          baseline_impact: "LOW", guidance_data: { "statement" => "text", "assessment_objective" => "obj" })
-        create(:catalog_control, control_family: family, control_id: "ac-3", priority: "P1",
-          baseline_impact: "LOW", guidance_data: { "statement" => "text", "assessment_objective" => "obj" })
+          baseline_impact: "", guidance_data: { "statement" => "text", "assessment_objective" => "obj" })
       end
 
-      it "flags base controls with nil or blank priority" do
+      it "raises no warning, because priority and baseline belong to a profile" do
         result = service.validate
-        warning = result["import_warnings"].find { |w| w["category"] == "missing_priority" }
-        expect(warning).to be_present
-        expect(warning["count"]).to eq(2)
-        expect(warning["control_ids"]).to contain_exactly("ac-1", "ac-2")
-        expect(warning["severity"]).to eq("warning")
-      end
-    end
-
-    context "enhancements excluded from priority check" do
-      before do
-        create(:catalog_control, control_family: family, control_id: "ac-2", priority: "P1",
-          baseline_impact: "LOW", guidance_data: { "statement" => "text", "assessment_objective" => "obj" })
-        # Enhancement — should NOT be flagged for missing priority
-        create(:catalog_control, control_family: family, control_id: "ac-2.1", priority: nil,
-          baseline_impact: "LOW", guidance_data: { "statement" => "text", "assessment_objective" => "obj" })
-      end
-
-      it "does not flag enhancements for missing priority" do
-        result = service.validate
-        priority_warning = result["import_warnings"].find { |w| w["category"] == "missing_priority" }
-        expect(priority_warning).to be_nil
+        expect(result["import_warnings"]).to be_empty
+        expect(result["import_warnings_summary"]["total_warnings"]).to eq(0)
       end
     end
 
@@ -77,23 +59,6 @@ RSpec.describe CatalogImportValidationService do
       it "does not flag sub-parts in any check" do
         result = service.validate
         expect(result["import_warnings"]).to be_empty
-      end
-    end
-
-    context "missing baselines" do
-      before do
-        create(:catalog_control, control_family: family, control_id: "ac-1", priority: "P1",
-          baseline_impact: nil, guidance_data: { "statement" => "text", "assessment_objective" => "obj" })
-        create(:catalog_control, control_family: family, control_id: "ac-2", priority: "P1",
-          baseline_impact: "", guidance_data: { "statement" => "text", "assessment_objective" => "obj" })
-      end
-
-      it "flags controls with nil or blank baseline_impact" do
-        result = service.validate
-        warning = result["import_warnings"].find { |w| w["category"] == "missing_baseline" }
-        expect(warning).to be_present
-        expect(warning["count"]).to eq(2)
-        expect(warning["severity"]).to eq("warning")
       end
     end
 
@@ -190,16 +155,16 @@ RSpec.describe CatalogImportValidationService do
 
     context "control ID truncation for large catalogs" do
       before do
-        # Create 60 controls missing priority
+        # Create 60 controls missing a statement
         60.times do |i|
-          create(:catalog_control, control_family: family, control_id: "ac-#{i + 1}", priority: nil,
-            baseline_impact: "LOW", guidance_data: { "statement" => "text", "assessment_objective" => "obj" })
+          create(:catalog_control, control_family: family, control_id: "ac-#{i + 1}", priority: "P1",
+            baseline_impact: "LOW", guidance_data: { "assessment_objective" => "obj" })
         end
       end
 
       it "truncates control_ids to 50 and notes the total in the message" do
         result = service.validate
-        warning = result["import_warnings"].find { |w| w["category"] == "missing_priority" }
+        warning = result["import_warnings"].find { |w| w["category"] == "missing_statement" }
         expect(warning["control_ids"].size).to eq(50)
         expect(warning["count"]).to eq(60)
         expect(warning["message"]).to include("showing first 50 of 60")

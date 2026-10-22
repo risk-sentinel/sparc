@@ -87,7 +87,21 @@ the value on the record and SPARC will not overwrite it on a later import.
 
 1. From the catalog list, click **Import** (`/control_catalogs/import`).
 2. Upload a catalog file — **JSON or XML** OSCAL catalog format.
-3. Submit. The catalog is created with its families and controls populated.
+3. Submit. The catalog is created with its families and controls populated, as a
+   **Draft**. Importing again into an existing catalog also returns it to Draft.
+4. Review the **quality warnings** SPARC raises after the import: controls with
+   no statement or no assessment objective, parameters a statement uses but the
+   catalog never defines, and empty families. They are advisory. Correct what
+   matters while the catalog is a Draft, then click **Revalidate** to refresh
+   them.
+5. Click **Publish**. The dialog lists any remaining warnings, and you can
+   publish with them. When document approval is required
+   (`SPARC_REQUIRE_DOCUMENT_APPROVAL`), the catalog must be submitted and
+   approved first, like any other document. Publishing makes it read-only.
+
+A catalog is not checked for control **priority** or **baseline impact**. Those
+belong to a baseline (profile), which sets them for its own controls. NIST's
+catalogs carry neither. The NIST catalogs SPARC seeds are already published.
 
 ### How to edit families and controls
 
