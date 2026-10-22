@@ -9,6 +9,7 @@
 #   OSCAL XML — NIST OSCAL 1.x catalog schema (XML serialization)
 #     Source: https://github.com/usnistgov/oscal-content
 #     Example: NIST_SP-800-53_rev5_catalog.xml
+#     Converted to the JSON model (OscalCatalogXmlToJson) and imported as JSON (#1228)
 #
 #   NIST XML (Legacy) — SP 800-53 SCAP feed schema v2.0
 #     Source: https://csrc.nist.gov/projects/risk-management/sp800-53-controls/downloads
@@ -29,7 +30,6 @@ require "yaml"
 class CatalogImportService
   include ProgressTrackable
 
-  HOW_MANY = "how-many".freeze
   # Same spelling and same convention as OscalResolvedProfileCatalogService,
   # SapXmlParserService and SspXmlParserService — OSCAL hyphenates it, so it
   # cannot be a symbol and a bare literal repeated is a typo waiting to happen.
@@ -68,6 +68,9 @@ class CatalogImportService
 
   def initialize(file_io, original_filename, existing_catalog: nil)
     @content  = file_io.read.force_encoding("UTF-8")
+    # The bytes as uploaded. The YAML and XML imports replace @content with the
+    # JSON they convert to; the digest must describe the file, not that JSON.
+    @source_content = @content
     @filename = original_filename.to_s.downcase
     @existing_catalog = existing_catalog
     @document = existing_catalog  # alias for ProgressTrackable
@@ -94,7 +97,8 @@ class CatalogImportService
     # and is published through `publish`, approval gate included. A re-import
     # run by a data migration leaves a published catalog published.
     catalog = stats[:catalog]
-    digest = Digest::SHA256.hexdigest(@content)
+    # #1228 — the ORIGINAL file's bytes, whatever its format.
+    digest = Digest::SHA256.hexdigest(@source_content)
     catalog.update!(catalog_content_digest: digest)
     derive_framework!(catalog)
 
@@ -199,7 +203,8 @@ class CatalogImportService
     metadata    = cat_data.fetch("metadata", {})
     groups      = cat_data.fetch("groups") { raise ImportError, "No 'groups' found in catalog." }
 
-    catalog_name  = metadata["title"].presence || File.basename(@filename, ".json").titleize
+    # Any extension: YAML and XML catalogs arrive here too (#1228).
+    catalog_name  = metadata["title"].presence || File.basename(@filename, ".*").titleize
     version       = metadata["version"].presence || metadata["last-modified"]&.first(10)
     oscal_version = metadata["oscal-version"]
     published     = metadata["published"]
@@ -263,53 +268,8 @@ class CatalogImportService
     priority   = oscal_prop(ctrl["props"], "priority")
     baselines  = oscal_prop_all(ctrl["props"], "impact-level")
     baseline   = baselines.join(", ").presence
-
-    # Statement: collect prose from all statement/item parts recursively (for the parent record)
-    statement = oscal_collect_prose(ctrl["parts"], names: %w[statement item])
-
-    # Guidance part
-    guidance_part = (ctrl["parts"] || []).find { |p| p["name"] == "guidance" }
-    supplemental  = guidance_part&.dig("prose").to_s.strip.presence
-
-    # Related controls.
-    #
-    # #999 — this read the GUIDANCE PART's links only, which is where Rev 4 puts
-    # them. Rev 5 puts them on the control itself, and the difference was never
-    # visible as an error: measured on the live instance, the Rev 5 catalog had
-    # `related_controls` on 7 of 2318 controls while its source file carries
-    # 3512 `related` links, and Rev 4 had 480 of 1682. So SPARC showed "Related
-    # Controls" as blank for essentially every Rev 5 control, on the screens and
-    # in every export, for as long as Rev 5 has been seeded.
-    #
-    # Both locations are read and unioned, so Rev 4 is unaffected.
+    guidance_data = oscal_guidance_data(ctrl)
     control_links = Array(ctrl["links"])
-    related = (Array(guidance_part&.dig("links")) + control_links)
-              .select { |l| l["rel"] == "related" }
-              .filter_map { |l| l["href"].to_s.delete_prefix("#").presence }
-              .uniq
-              .join(", ")
-
-    # Assessment methods (EXAMINE, INTERVIEW, TEST with objects prose)
-    # Rev 4: parts name="assessment" → props method + child parts name="objects"
-    # Rev 5: parts name="assessment-method" → props method + child parts name="assessment-objects"
-    assessment_parts = (ctrl["parts"] || []).select { |p| %w[assessment assessment-method].include?(p["name"]) }
-    assessment_data = assessment_parts.map do |ap|
-      method = (ap["props"] || []).find { |pr| pr["name"] == "method" }&.dig("value")
-      objects = (ap["parts"] || []).find { |pp| %w[objects assessment-objects].include?(pp["name"]) }&.dig("prose")
-      { "method" => method, "objects" => objects }.compact
-    end.reject(&:empty?)
-
-    # Assessment objectives (Rev 5: nested assessment-objective parts with labeled sub-items)
-    objective_part = (ctrl["parts"] || []).find { |p| p["name"] == "assessment-objective" }
-    assessment_objective = collect_assessment_objectives(objective_part) if objective_part
-
-    guidance_data = {
-      "statement"              => statement,
-      "supplemental_guidance"  => supplemental,
-      "related_controls"       => related.presence,
-      "assessment"             => assessment_data.presence,
-      "assessment_objective"   => assessment_objective.presence
-    }.compact.reject { |_, v| v.blank? }
 
     # Parameter definitions (Assignment/Selection placeholders for profiles to resolve)
     params_data = ctrl["params"].presence || []
@@ -351,6 +311,62 @@ class CatalogImportService
     end
 
     result
+  end
+
+  # The `guidance_data` an import stores for one OSCAL control node. Public so
+  # FixRev5DevelopCatalogParts (#1228) derives NIST's corrected values exactly
+  # as an import would, rather than restating the rules.
+  def self.oscal_guidance_data(ctrl)
+    new(StringIO.new(""), "derive.json").oscal_guidance_data(ctrl)
+  end
+
+  def oscal_guidance_data(ctrl)
+    # Statement: collect prose from all statement/item parts recursively (for the parent record)
+    statement = oscal_collect_prose(ctrl["parts"], names: %w[statement item])
+
+    # Guidance part
+    guidance_part = (ctrl["parts"] || []).find { |p| p["name"] == "guidance" }
+    supplemental  = guidance_part&.dig("prose").to_s.strip.presence
+
+    # Related controls.
+    #
+    # #999 — this read the GUIDANCE PART's links only, which is where Rev 4 puts
+    # them. Rev 5 puts them on the control itself, and the difference was never
+    # visible as an error: measured on the live instance, the Rev 5 catalog had
+    # `related_controls` on 7 of 2318 controls while its source file carries
+    # 3512 `related` links, and Rev 4 had 480 of 1682. So SPARC showed "Related
+    # Controls" as blank for essentially every Rev 5 control, on the screens and
+    # in every export, for as long as Rev 5 has been seeded.
+    #
+    # Both locations are read and unioned, so Rev 4 is unaffected.
+    control_links = Array(ctrl["links"])
+    related = (Array(guidance_part&.dig("links")) + control_links)
+              .select { |l| l["rel"] == "related" }
+              .filter_map { |l| l["href"].to_s.delete_prefix("#").presence }
+              .uniq
+              .join(", ")
+
+    # Assessment methods (EXAMINE, INTERVIEW, TEST with objects prose)
+    # Rev 4: parts name="assessment" → props method + child parts name="objects"
+    # Rev 5: parts name="assessment-method" → props method + child parts name="assessment-objects"
+    assessment_parts = (ctrl["parts"] || []).select { |p| %w[assessment assessment-method].include?(p["name"]) }
+    assessment_data = assessment_parts.map do |ap|
+      method = (ap["props"] || []).find { |pr| pr["name"] == "method" }&.dig("value")
+      objects = (ap["parts"] || []).find { |pp| %w[objects assessment-objects].include?(pp["name"]) }&.dig("prose")
+      { "method" => method, "objects" => objects }.compact
+    end.reject(&:empty?)
+
+    # Assessment objectives (Rev 5: nested assessment-objective parts with labeled sub-items)
+    objective_part = (ctrl["parts"] || []).find { |p| p["name"] == "assessment-objective" }
+    assessment_objective = collect_assessment_objectives(objective_part) if objective_part
+
+    {
+      "statement"              => statement,
+      "supplemental_guidance"  => supplemental,
+      "related_controls"       => related.presence,
+      "assessment"             => assessment_data.presence,
+      "assessment_objective"   => assessment_objective.presence
+    }.compact.reject { |_, v| v.blank? }
   end
 
   # Persist `controls[].parts[]` verbatim for one control.
@@ -468,250 +484,36 @@ class CatalogImportService
 
   # ── OSCAL XML import ────────────────────────────────────────────────────────
   #
-  # Structure (identical to OSCAL JSON but in XML serialization):
-  #   <catalog uuid="…">
-  #     <metadata><title>…</title><version>…</version><oscal-version>…</oscal-version></metadata>
-  #     <group id="ac" class="family">
-  #       <title>Access Control</title>
-  #       <control id="ac-1">
-  #         <title>Policy and Procedures</title>
-  #         <param id="ac-01_odp.03">
-  #           <select how-many="one-or-more"><choice>…</choice></select>
-  #         </param>
-  #         <prop name="label" value="AC-1"/>
-  #         <prop name="sort-id" value="ac-01"/>
-  #         <part name="statement"><part name="item">…</part></part>
-  #         <part name="guidance"><p>…</p></part>
-  #         <control id="ac-1.1">…</control>  ← enhancements
+  # #1228 — an OSCAL catalog in XML is CONVERTED to the JSON model and imported
+  # by the JSON path, the move the YAML import makes and #1234 made for
+  # profiles. The XML path used to read the file with its own, smaller model:
+  # it dropped `<value>` (#1241), flattened guideline prose to plain text, kept
+  # no assessment data and stored no parts, so the same catalog imported
+  # differently by format. OscalCatalogXmlToJson's output deep-equals NIST's own
+  # JSON for the same release, so one import path now serves all three formats.
   #
+  # The file is schema-validated first, against the baked-in XSD set of SPARC's
+  # OSCAL version: a file that is not an OSCAL catalog is refused here rather
+  # than converted into something half-right.
   def import_oscal_xml
     update_processing_stage!(:parsing, "Parsing OSCAL XML catalog...")
 
-    doc = XmlSecurity.parse(@content)
-    doc.remove_namespaces!
-
-    catalog_node = doc.at_xpath("//catalog")
-    raise ImportError, "No <catalog> element found — not a valid OSCAL XML catalog." unless catalog_node
-
-    metadata_node = catalog_node.at_xpath("metadata")
-    groups        = catalog_node.xpath("group")
-    raise ImportError, "No <group> elements found in catalog." if groups.empty?
-
-    catalog_name  = metadata_node&.at_xpath("title")&.text.to_s.strip.presence ||
-                    File.basename(@filename, ".xml").titleize
-    version       = metadata_node&.at_xpath("version")&.text.to_s.strip.presence ||
-                    metadata_node&.at_xpath("last-modified")&.text.to_s.first(10)
-    oscal_version = metadata_node&.at_xpath("oscal-version")&.text.to_s.strip.presence
-    published     = metadata_node&.at_xpath("published")&.text.to_s.strip.presence
-
-    # Collect metadata extras (props, links, roles, parties, etc.)
-    metadata_extra = build_oscal_xml_metadata_extra(catalog_node)
-
-    catalog = if @existing_catalog
-      target = resolve_import_target(metadata_extra["catalog_uuid"])
-      attrs = { name: catalog_name, version: version, source: "OSCAL" }
-      attrs[:oscal_version] = oscal_version.presence || target.oscal_version
-      attrs[:published] = published.presence || target.published
-      attrs[:metadata_extra] = metadata_extra.present? ? metadata_extra : target.metadata_extra
-      attrs[:oscal_uuid] = metadata_extra["catalog_uuid"] if metadata_extra["catalog_uuid"].present?
-      target.update!(attrs)
-      target
-    else
-      upsert_catalog(catalog_name, version, "OSCAL",
-                     oscal_version: oscal_version, published: published,
-                     metadata_extra: metadata_extra)
-    end
-    stats = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
-    @catalog_for_back_matter = catalog
-
-    import_oscal_xml_groups(groups, catalog, stats)
-
-    stats
-  end
-
-  # Builds the metadata_extra hash for an OSCAL XML catalog (catalog uuid,
-  # import format, back-matter resources). Extracted to bound complexity.
-  def build_oscal_xml_metadata_extra(catalog_node)
-    extra = {}
-    extra["catalog_uuid"] = catalog_node["uuid"] if catalog_node["uuid"].present?
-    extra["import_format"] = "oscal_xml"
-
-    resources = extract_oscal_xml_back_matter(catalog_node.at_xpath("back-matter"))
-    @catalog_back_matter_resources = resources
-    extra["back_matter_resources"] = resources if resources.any?
-    extra
-  end
-
-  def extract_oscal_xml_back_matter(back_matter)
-    return [] unless back_matter
-
-    back_matter.xpath("resource").map do |r|
-      res = { "uuid" => r["uuid"] }
-      title_node = r.at_xpath("title")
-      res["title"] = title_node.text.strip if title_node
-      r.xpath("rlink").each do |rl|
-        res["rlinks"] ||= []
-        res["rlinks"] << { "href" => rl["href"], MEDIA_TYPE => rl[MEDIA_TYPE] }.compact
-      end
-      res
-    end
-  end
-
-  def import_oscal_xml_groups(groups, catalog, stats)
-    groups.each_with_index do |group, idx|
-      family_code = group["id"].to_s.upcase
-      family_name = group.at_xpath("title")&.text.to_s.strip
-      next if family_code.blank?
-
-      family = upsert_family(catalog, family_code, family_name, idx + 1)
-      stats[:families] += 1
-
-      group.xpath("control").each do |ctrl_node|
-        import_oscal_xml_control(family, ctrl_node, stats)
-      end
-    end
-  end
-
-  def import_oscal_xml_control(family, ctrl_node, stats)
-    control_id = ctrl_node["id"].to_s.strip
-    ctrl_label = oscal_xml_prop(ctrl_node, "label")
-    sort_id    = oscal_xml_prop(ctrl_node, "sort-id")
-    title      = ctrl_node.at_xpath("title")&.text.to_s.strip
-    priority   = oscal_xml_prop(ctrl_node, "priority")
-    baselines  = oscal_xml_prop_all(ctrl_node, "impact-level")
-    baseline   = baselines.join(", ").presence
-
-    # Statement prose
-    statement = oscal_xml_collect_prose(ctrl_node.xpath("part").select { |p| p["name"] == "statement" })
-
-    # Guidance part
-    guidance_node = ctrl_node.xpath("part").find { |p| p["name"] == "guidance" }
-    supplemental  = guidance_node ? xml_text_content(guidance_node).strip.presence : nil
-
-    # Related controls — guidance links and control-level links unioned, for
-    # the reason recorded on the JSON path above (#999).
-    control_links = ctrl_node.xpath("link").map do |l|
-      { "href" => l["href"], "rel" => l["rel"] }.compact
-    end
-    related_nodes = (guidance_node ? guidance_node.xpath("link").to_a : []) + ctrl_node.xpath("link").to_a
-    related = related_nodes.select { |l| l["rel"] == "related" }
-                           .filter_map { |l| l["href"].to_s.delete_prefix("#").presence }
-                           .uniq.join(", ").presence
-
-    guidance_data = {
-      "statement"             => statement,
-      "supplemental_guidance" => supplemental,
-      "related_controls"      => related
-    }.compact.reject { |_, v| v.blank? }
-
-    # Parameter definitions — the key addition for issue #162
-    params_data = oscal_xml_collect_params(ctrl_node)
-
-    result = upsert_catalog_control(family, control_id,
-                                    title: title, priority: priority, baseline: baseline,
-                                    guidance_data: guidance_data, params_data: params_data,
-                                    label: ctrl_label, sort_id: sort_id, links_data: control_links)
-    stats[:controls] += 1
-    stats[result]    += 1
-
-    # Sub-control records for statement item parts
-    stmt_parts = ctrl_node.xpath("part").select { |p| p["name"] == "statement" }
-    stmt_parts.each do |stmt|
-      import_oscal_xml_item_parts(family, control_id, sort_id, stmt.xpath("part"))
+    validation = OscalSchemaValidationService.validate_xml(:catalog, @content, version: OscalSchema::DEFAULT_VERSION)
+    unless validation.valid?
+      raise ImportError, "Not a valid OSCAL XML catalog (OSCAL #{validation.schema_version}): " \
+                         "#{validation.errors.first(3).join('; ')}"
     end
 
-    # Recurse into enhancements (nested <control> elements)
-    ctrl_node.xpath("control").each do |sub|
-      import_oscal_xml_control(family, sub, stats)
+    begin
+      data = OscalCatalogXmlToJson.convert(@content)
+    rescue OscalCatalogXmlToJson::ConversionError => e
+      raise ImportError, "Could not read the OSCAL XML catalog: #{e.message}"
     end
-  end
+    raise ImportError, "No <group> elements found in catalog." if data.dig("catalog", "groups").blank?
 
-  # Recursively create CatalogControl records for OSCAL XML statement item parts.
-  def import_oscal_xml_item_parts(family, parent_id, parent_sort_id, parts)
-    return if parts.nil? || parts.empty?
-    parts.each do |part|
-      next unless part["name"] == "item"
-      label = oscal_xml_prop(part, "label").to_s.strip
-      next if label.blank?
-
-      sub_id   = parent_id + label_to_suffix(label)
-      sub_sort = derived_sort_id(parent_sort_id, parent_id, sub_id)
-      prose    = xml_prose_with_inserts(part.at_xpath("p")).presence ||
-                 xml_text_content(part).strip.presence
-
-      # Not truncated — see #1003 and the JSON path above.
-      title = prose.presence || label
-
-      upsert_catalog_control(family, sub_id, title: title, sort_id: sub_sort,
-        guidance_data: prose.present? ? { "statement" => prose } : {})
-
-      # Recurse into nested item parts
-      import_oscal_xml_item_parts(family, sub_id, sub_sort, part.xpath("part"))
-    end
-  end
-
-  # ── OSCAL XML helpers ──────────────────────────────────────────────────────
-
-  # Extract a <prop> value by name from direct children of a node.
-  def oscal_xml_prop(node, name)
-    node.xpath("prop").find { |p| p["name"] == name }&.[]("value")
-  end
-
-  # Extract all <prop> values matching a name.
-  def oscal_xml_prop_all(node, name)
-    node.xpath("prop").select { |p| p["name"] == name }.map { |p| p["value"] }.compact
-  end
-
-  # Collect all <param> children from a control node into the OSCAL JSON-equivalent structure.
-  def oscal_xml_collect_params(ctrl_node)
-    ctrl_node.xpath("param").map do |param_node|
-      entry = { "id" => param_node["id"] }
-
-      # Props (label, alt-identifier, etc.)
-      props = param_node.xpath("prop").map do |p|
-        h = { "name" => p["name"], "value" => p["value"] }
-        h["class"] = p["class"] if p["class"]
-        h["ns"] = p["ns"] if p["ns"]
-        h
-      end
-      entry["props"] = props if props.any?
-
-      # Label
-      label_node = param_node.at_xpath("label")
-      entry["label"] = label_node.text.strip if label_node
-
-      # Select with choices
-      select_node = param_node.at_xpath("select")
-      if select_node
-        sel = {}
-        sel[HOW_MANY] = select_node[HOW_MANY] if select_node[HOW_MANY]
-        sel["choice"] = select_node.xpath("choice").map { |c| c.text.strip }
-        entry["select"] = sel
-      end
-
-      # Guidelines
-      guidelines = param_node.xpath("guideline").map do |g|
-        { "prose" => xml_text_content(g) }
-      end
-      entry["guidelines"] = guidelines if guidelines.any?
-
-      entry
-    end
-  end
-
-  # Recursively collect prose from OSCAL XML <part> elements matching statement/item names.
-  def oscal_xml_collect_prose(parts, depth: 0)
-    return "" if parts.nil? || parts.empty?
-    lines = []
-    parts.each do |part|
-      next unless %w[statement item].include?(part["name"])
-      label = oscal_xml_prop(part, "label")
-      prose = xml_prose_with_inserts(part.at_xpath("p"))
-      line  = [ label, prose ].select(&:present?).join(" ")
-      lines << ("  " * depth + line) if line.present?
-      lines << oscal_xml_collect_prose(part.xpath("part"), depth: depth + 1)
-    end
-    lines.reject(&:blank?).join("\n")
+    @content = JSON.generate(data)
+    @import_format_override = "oscal_xml"
+    import_oscal_json
   end
 
   # ── NIST XML import (Legacy SCAP feed) ─────────────────────────────────────
@@ -1217,19 +1019,6 @@ class CatalogImportService
   # Extract plain text from a Nokogiri node (strips HTML/inline tags like <p>, <i>).
   def xml_text_content(node)
     node.xpath(".//text()").map(&:text).join(" ").gsub(/\s+/, " ").strip
-  end
-
-  # Extract text from a <p> element, converting <insert type="param" id-ref="..."/>
-  # into {{ insert: param, ... }} template markup so parameter references are preserved.
-  def xml_prose_with_inserts(p_node)
-    return "" if p_node.nil?
-    p_node.children.map do |child|
-      if child.element? && child.name == "insert" && child["type"] == "param"
-        "{{ insert: param, #{child['id-ref']} }}"
-      else
-        child.text
-      end
-    end.join.gsub(/\s+/, " ").strip
   end
 
   # Best-effort: a parts failure must not fail an otherwise good catalog import,

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns="http://csrc.nist.gov/ns/oscal/1.0" uuid="6b0f3c6e-1a2b-4c3d-8e4f-5a6b7c8d9e01">
+  <metadata>
+    <title>Invented Values Catalog</title>
+    <last-modified>2026-10-22T00:00:00.000000-00:00</last-modified>
+    <version>1.0-invented</version>
+    <oscal-version>1.2.3</oscal-version>
+  </metadata>
+  <group id="ex" class="family">
+    <title>Example Family</title>
+    <control id="ex-1" class="SP800-53">
+      <title>Example Policy</title>
+      <param id="ex-01_odp.01">
+        <prop name="label" value="EX-01_ODP[01]" class="sp800-53a"/>
+        <label>personnel or roles</label>
+        <guideline>
+          <p>personnel or roles to whom the <em>example</em> policy is disseminated are defined;</p>
+        </guideline>
+        <value>Example Agency personnel</value>
+      </param>
+      <param id="ex-01_odp.02">
+        <prop name="label" value="EX-01_ODP[02]" class="sp800-53a"/>
+        <label>frequency</label>
+        <value>quarterly-invented</value>
+      </param>
+      <param id="ex-01_odp.03">
+        <select how-many="one">
+          <choice>organization-level</choice>
+          <choice>system-level</choice>
+        </select>
+      </param>
+      <param id="ex-01_odp.04">
+        <label>events</label>
+      </param>
+      <prop name="label" value="EX-1"/>
+      <prop name="sort-id" value="ex-01"/>
+      <link href="#ex-2" rel="related"/>
+      <part id="ex-1_smt" name="statement">
+        <part id="ex-1_smt.a" name="item">
+          <prop name="label" value="a."/>
+          <p>Disseminate a <insert type="param" id-ref="ex-01_odp.03"/> policy to <insert type="param" id-ref="ex-01_odp.01"/>; and</p>
+        </part>
+        <part id="ex-1_smt.b" name="item">
+          <prop name="label" value="b."/>
+          <p>Review it <insert type="param" id-ref="ex-01_odp.02"/> and after <insert type="param" id-ref="ex-01_odp.04"/>.</p>
+        </part>
+      </part>
+      <part id="ex-1_gdn" name="guidance">
+        <p>See <a href="#ex-2">EX-2</a> for the <q>invented</q> companion.</p>
+        <p>A second paragraph.</p>
+      </part>
+      <part id="ex-1_obj" name="assessment-objective">
+        <prop name="label" value="EX-01" class="sp800-53a"/>
+        <part id="ex-1_obj.a" name="assessment-objective">
+          <prop name="label" value="EX-01a." class="sp800-53a"/>
+          <p>the policy is disseminated;</p>
+          <link href="#ex-1_smt.a" rel="assessment-for"/>
+        </part>
+      </part>
+      <part id="ex-1_asm-examine" name="assessment-method">
+        <prop name="method" ns="http://csrc.nist.gov/ns/rmf" value="EXAMINE"/>
+        <prop name="label" value="EX-01-Examine" class="sp800-53a"/>
+        <part name="assessment-objects">
+          <p>Example policy;</p>
+          <p>other relevant documents or records</p>
+        </part>
+      </part>
+    </control>
+    <control id="ex-2" class="SP800-53">
+      <title>Example Companion</title>
+      <prop name="label" value="EX-2"/>
+      <prop name="sort-id" value="ex-02"/>
+      <part id="ex-2_smt" name="statement">
+        <p>Keep an invented record.</p>
+      </part>
+    </control>
+  </group>
+</catalog>
