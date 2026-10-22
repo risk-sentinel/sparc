@@ -173,6 +173,36 @@ its title) is left unlinked: its controls import without titles and the import
 is listed on the baseline's page. Load the catalog, or give it a unique name,
 and import the baseline again.
 
+### Which controls an imported baseline selects
+
+SPARC applies every OSCAL selection rule, against each import's own catalog, the
+same way for JSON, YAML and XML:
+
+| In the baseline file | What SPARC selects |
+|---|---|
+| `include-all` | every control in the catalog, enhancements included |
+| `include-controls` → `with-ids` | the named controls, in the order listed |
+| `include-controls` → `matching` | controls whose id matches the pattern (`*` any run of characters, `?` one character) |
+| `with-child-controls: yes` | also every enhancement of each selected control |
+| `exclude-controls` | the same selectors, removed after everything is included |
+
+What the baseline page tells you:
+
+- **This baseline names controls its catalog does not have.** An id the
+  baseline lists by name is not in the catalog. A baseline can tailor a control
+  but cannot add one, so fix the id or load the catalog that has it.
+- **Not applied until the catalog is loaded.** On an unlinked import, the
+  selectors that need the catalog (`include-all`, `matching`,
+  `with-child-controls`) select nothing; only the ids it names are kept. Load
+  the catalog and import the baseline again.
+
+A baseline's **alters** are applied too: parts it **removes** (by id, name,
+class, namespace or kind) and parts it **adds**, placed where it says. Open a
+control's details on the baseline page to see **Tailored by this baseline**. The
+resolved catalog, the requirement text an SSP author reads, and the response
+rows a new SSP gets all follow the same tailoring. An SSP generated before the
+baseline was imported keeps its rows.
+
 ### How to edit families and controls
 
 - Open a catalog and drill into a **family** to see its controls; use **Edit**
