@@ -264,6 +264,10 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
     @resource = BackMatterResource.find(params[:id])
   end
 
+  # #1249 — `resourceable_type` / `resourceable_id` are validated by the model
+  # (BackMatterResource::RESOURCEABLE_TYPES, and the owner must exist), so a
+  # create or update naming any other class, or a record that is not there,
+  # fails the save and answers 422 here. They were accepted unchecked.
   def resource_params
     permit_strictly(:back_matter_resource,
       :title, :description, :href, :media_type, :rel,

@@ -67,16 +67,14 @@ class BackMatterResourcesController < ApplicationController
   # ── Parent document resolution ──────────────────────────────────────
 
   # Maps Rails param key (from nested route) to model class.
-  # e.g., :ssp_document_id => SspDocument
-  PARENT_PARAMS = {
-    "ssp_document_id"      => SspDocument,
-    "sar_document_id"      => SarDocument,
-    "sap_document_id"      => SapDocument,
-    "cdef_document_id"     => CdefDocument,
-    "poam_document_id"     => PoamDocument,
-    "profile_document_id"  => ProfileDocument,
-    "control_catalog_id"   => ControlCatalog
-  }.freeze
+  # e.g., "ssp_document_id" => SspDocument
+  #
+  # #1249 — derived from BackMatterResource::RESOURCEABLE_TYPES, the one list of
+  # what may own back-matter. Not every owner has a screen of its own here:
+  # these types are written by services, never through these routes.
+  NOT_NESTED_HERE = %w[AuthorizationBoundary LeveragedAuthorization].freeze
+  PARENT_PARAMS = (BackMatterResource::RESOURCEABLE_TYPES - NOT_NESTED_HERE)
+                    .to_h { |type| [ "#{type.underscore}_id", type.constantize ] }.freeze
 
   def authorize_back_matter_write!
     authorize_permission!("back_matter.write",

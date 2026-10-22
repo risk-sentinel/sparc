@@ -81,6 +81,33 @@ class BackMatterResource < ApplicationRecord
   validates :promotion_status, inclusion: { in: PROMOTION_STATES }
   validate  :href_scheme_is_safe
 
+  # #1249 — what a back-matter resource may belong to, as ONE definition. The
+  # web controller's nested routes (BackMatterResourcesController::PARENT_PARAMS)
+  # derive from it, and the model refuses anything else, so every surface that
+  # writes `resourceable_*` (Api::V1 create/update, imports, services) is held
+  # to the same list.
+  #
+  # Api::V1::BackMatterResourcesController permitted `resourceable_type` and
+  # `resourceable_id` unchecked, so a caller could point a resource at ANY model
+  # class (User, ApiToken, ...) or at a record that did not exist, and reading
+  # `resourceable` would then load an arbitrary row. A resource with no owner
+  # (both nil) is a library entry and stays valid.
+  #
+  # NIST 800-53: SI-10 (input validation), AC-3 (access enforcement).
+  RESOURCEABLE_TYPES = %w[
+    SspDocument SarDocument SapDocument CdefDocument PoamDocument
+    ProfileDocument ControlCatalog AuthorizationBoundary LeveragedAuthorization
+  ].freeze
+
+  # A blank type from a form or JSON body means "no owner", not a type named "".
+  normalizes :resourceable_type, with: ->(value) { value.presence }
+
+  validates :resourceable_type, inclusion: { in: RESOURCEABLE_TYPES, message: "is not a type that can own back-matter" },
+                                allow_nil: true
+  # Only when the owner CHANGES, so a row whose owner was soft-deleted later
+  # stays editable.
+  validate :resourceable_exists, if: -> { will_save_change_to_resourceable_type? || will_save_change_to_resourceable_id? }
+
   # #897 — `href` is operator-writable on BOTH surfaces
   # (back_matter_resources_controller.rb permits it, as does the Api::V1
   # equivalent) and is rendered straight into an anchor's href attribute in four
@@ -112,6 +139,22 @@ class BackMatterResource < ApplicationRecord
     return if SAFE_HREF_SCHEMES.include?(match[1].downcase)
 
     errors.add(:href, "scheme must be http or https (got #{match[1].downcase}:)")
+  end
+
+  # #1249 — the owner must be named whole and must exist. The type is checked
+  # against RESOURCEABLE_TYPES by the inclusion validation above before it is
+  # ever turned into a class here.
+  def resourceable_exists
+    return if resourceable_type.nil? && resourceable_id.nil?
+
+    if resourceable_type.blank? || resourceable_id.blank?
+      errors.add(:resourceable, "must name both a type and an id")
+      return
+    end
+    return unless RESOURCEABLE_TYPES.include?(resourceable_type)
+    return if resourceable_type.constantize.exists?(id: resourceable_id)
+
+    errors.add(:resourceable, "#{resourceable_type} #{resourceable_id} does not exist")
   end
 
   scope :managed, -> { where(source: "managed") }
