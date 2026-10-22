@@ -158,7 +158,8 @@
                       <thead>
                         <tr>
                           <th class="sparc-bbw-1 sparc-p-02-04 sparc-w-25pct">Param ID</th>
-                          <th class="sparc-bbw-1 sparc-p-02-04 sparc-w-40pct">Label</th>
+                          <th class="sparc-bbw-1 sparc-p-02-04">Label</th>
+                          <th class="sparc-bbw-1 sparc-p-02-04">Value</th>
                           <th class="sparc-bbw-1 sparc-p-02-04">Constraint / Choices</th>
                         </tr>
                       </thead>
@@ -167,6 +168,8 @@
                           <tr>
                             <td class="sparc-color-bs-primary sparc-mono sparc-p-02-04"><%= param["id"] %></td>
                             <td class="sparc-p-02-04"><%= param["label"] %></td>
+                            <%# #1241 — the value the catalog assigns, if any. %>
+                            <td class="sparc-p-02-04"><%= Array(param["values"]).join(" | ").presence || "—" %></td>
                             <td class="sparc-p-02-04">
                               <% if param.dig("select", "choice").present? %>
                                 <span class="text-body-secondary">Select <%= param.dig("select", "how-many") || "one" %>:</span>

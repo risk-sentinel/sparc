@@ -33,8 +33,10 @@ class CatalogControlsController < ApplicationController
 
   def create
     permitted = catalog_control_params
-    @catalog_control = @control_family.catalog_controls.new(permitted.except(:params_labels))
+    @catalog_control = @control_family.catalog_controls.new(permitted.except(:params_labels, :params_values))
     apply_params_labels!(permitted)
+    return render_invalid_param_values(:new) unless apply_params_values!(permitted)
+
     if @catalog_control.save
       audit_log("catalog_control_created", subject: @catalog_control, metadata: { control_id: @catalog_control.control_id })
       redirect_to @control_family, notice: "Control '#{@catalog_control.control_id}' was added."
@@ -51,11 +53,16 @@ class CatalogControlsController < ApplicationController
   def update
     permitted = catalog_control_params
     apply_params_labels!(permitted)
+    unless apply_params_values!(permitted)
+      @control_family = @catalog_control.control_family
+      load_available_resources
+      return render_invalid_param_values(:edit)
+    end
     # #1113 — parts are authoritative for catalog prose. Applied FIRST, and the
     # mirror into guidance_data happens inside it, so a form submit has one
     # write path and the two stores cannot drift.
     part_edits = permitted.delete(:part_prose)
-    if @catalog_control.update(permitted.except(:params_labels))
+    if @catalog_control.update(permitted.except(:params_labels, :params_values))
       @catalog_control.apply_part_edits!(part_edits&.to_h)
       audit_log("catalog_control_updated", subject: @catalog_control, metadata: { control_id: @catalog_control.control_id })
       redirect_to @catalog_control.control_family, notice: "Control updated successfully."
@@ -178,7 +185,10 @@ class CatalogControlsController < ApplicationController
       guidance_data: {},
       params_labels: {},
       part_prose: {},
-      baseline_levels: []
+      baseline_levels: [],
+      # #1241 — one entry per parameter: a string, or an array from a
+      # multiple-choice select.
+      params_values: CatalogControl.params_values_filter(params.dig(:catalog_control, :params_values))
     )
 
     # Convert checkbox array to comma-separated string
@@ -197,6 +207,26 @@ class CatalogControlsController < ApplicationController
     return if labels.blank?
 
     @catalog_control.params_data = @catalog_control.merge_params_labels(labels.to_h)
+  end
+
+  # #1241 — merges the Value column into params_data. Returns false, with the
+  # reason in @param_value_error and NOTHING assigned, when a select value is
+  # not one of its choices; the same rule the API enforces, in the same model
+  # method.
+  def apply_params_values!(permitted)
+    values = permitted[:params_values]
+    return true if values.blank?
+
+    @catalog_control.params_data = @catalog_control.merge_params_values(values.to_h)
+    true
+  rescue CatalogControl::InvalidParamValue => e
+    @param_value_error = e.message
+    false
+  end
+
+  def render_invalid_param_values(template)
+    flash.now[:error] = "Parameter values were not saved: #{@param_value_error}"
+    render template, status: :unprocessable_content
   end
 
   def load_available_resources

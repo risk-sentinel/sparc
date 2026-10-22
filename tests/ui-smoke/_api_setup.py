@@ -403,3 +403,10 @@ def get_json(path: str) -> dict[str, Any]:
 def patch_json(path: str, body: dict[str, Any]) -> httpx.Response:
     with _client() as c:
         return c.patch(path, json=body)
+
+
+def post_json(path: str, body: dict[str, Any]) -> dict[str, Any]:
+    with _client() as c:
+        r = c.post(path, json=body)
+        r.raise_for_status()
+        return r.json()["data"]
