@@ -29,7 +29,14 @@
 #
 # NIST 800-53: CA-2 (assessments), CA-5 (POA&M), PM-5 (system inventory).
 class BoundaryReadinessService
-  Section = Struct.new(:key, :title, :status, :count, :detail, :guide_anchor, keyword_init: true)
+  # `roles` (#1250) carries the personnel row's raw role keys for API callers;
+  # `detail` is the sentence a person reads.
+  Section = Struct.new(:key, :title, :status, :count, :detail, :guide_anchor, :roles, keyword_init: true)
+
+  # #1250 — sections where "absent" is a legitimate answer, not a gap: a system
+  # may inherit nothing. Shown as "None (optional)" and kept out of the red
+  # "not started" count. One definition; the screen's badge reads it.
+  OPTIONAL_SECTIONS = %i[leveraged].freeze
 
   STATES = %i[complete partial absent not_modelled].freeze
 
@@ -67,23 +74,37 @@ class BoundaryReadinessService
   attr_reader :boundary, :ssp
 
   def summary
-    counts = sections.group_by(&:status).transform_values(&:size)
-    STATES.index_with { |state| counts.fetch(state, 0) }
+    optional_none, counted = sections.partition { |s| s.status == :absent && OPTIONAL_SECTIONS.include?(s.key) }
+    counts = counted.group_by(&:status).transform_values(&:size)
+    STATES.index_with { |state| counts.fetch(state, 0) }.merge(optional_none: optional_none.size)
   end
 
   # ── The adoption decisions, in the order the guide asks them ─────────────
 
   # "A boundary with no Authorizing Official is not one anyone can act on."
+  #
+  # #1250 — read BOTH ways people are granted access, as the roster, the
+  # #1040 authorization gate and the list's Members column do. This read only
+  # the legacy memberships, so a boundary staffed entirely by admin role
+  # assignment passed the gate and listed its people, while this row (and the
+  # API) said "No one is on the roster".
   def personnel
-    count = boundary.authorization_boundary_memberships.count
-    roles = boundary.authorization_boundary_memberships.distinct.pluck(:role).compact
+    count = boundary.people_count
+    roles = boundary.staffed_roles.sort
 
     Section.new(
-      key: :personnel, title: "Personnel and roles", count: count,
+      key: :personnel, title: "Personnel and roles", count: count, roles: roles,
       status: count.zero? ? :absent : (REQUIRED_ROLES.all? { |r| roles.include?(r) } ? :complete : :partial),
-      detail: count.zero? ? "No one is on the roster" : "#{count} on the roster: #{roles.sort.join(', ')}",
+      detail: count.zero? ? "No one is on the roster" : "#{count} on the roster: #{role_names(roles).join(', ')}",
       guide_anchor: "1-who-is-on-the-team-and-what-are-their-roles"
     )
+  end
+
+  # Display names for role keys ("authorizing_official" -> "Authorizing
+  # Official"), from the role catalog where the key is a role, else titleized.
+  def role_names(keys)
+    names = Role.where(name: keys).pluck(:name, :display_name).to_h
+    keys.map { |key| names[key].presence || key.to_s.titleize }
   end
 
   # FIPS-199, read from the BOUNDARY (#940 S3) — the categorization is of the

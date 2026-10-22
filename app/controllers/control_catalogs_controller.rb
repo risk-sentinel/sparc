@@ -22,9 +22,13 @@ class ControlCatalogsController < ApplicationController
   # Must run AFTER set_control_catalog — it needs the resolved record.
   before_action :redirect_catalog_to_uuid, only: [ :show ]
   before_action :ensure_editable!, only: [ :update, :update_baseline, :bulk_update_baselines, :publish ]
+  # #1244 — acknowledge_warnings writes the catalog's metadata and was missing
+  # here, so any signed-in user could mark a catalog's import warnings
+  # acknowledged. Found by the per-action authorization sweep.
   before_action :authorize_catalog_write!, only: [
     :new, :create, :edit, :update, :destroy, :import, :update_metadata, :revalidate,
-    :update_baseline, :bulk_update_baselines, :publish, :submit_for_review
+    :update_baseline, :bulk_update_baselines, :publish, :submit_for_review,
+    :acknowledge_warnings
   ]
 
   def index

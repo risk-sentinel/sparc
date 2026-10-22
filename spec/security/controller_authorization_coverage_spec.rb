@@ -136,6 +136,129 @@ RSpec.describe "Controller authorization coverage (#919)", type: :request do
     false
   end
 
+  # #1244 — PER ACTION, not per controller. A controller with ONE guarded action
+  # used to count as guarded: AuthorizationBoundariesController guarded only
+  # bulk_destroy, and its update, destroy and ATO package actions shipped open.
+  #
+  # Asked of Rails itself, not of the source text: for each routed mutating
+  # action, does a guard callback actually run for THAT action once its
+  # only:/except: conditions are applied? `only:`/`except:` are
+  # AbstractController::Callbacks::ActionFilter objects in the callback's
+  # if/unless lists, which answer `match?` for a controller whose action_name is
+  # set. Any other condition (a symbol or proc) cannot be evaluated here, so the
+  # guard counts as applying; this check is structural, and the behavioural
+  # proof is in the request specs.
+  #
+  # An action may also guard itself inline (`authorize_permission!` inside the
+  # method body), which a callback walk cannot see, so the method's own source
+  # is read as a fallback.
+  GUARD_FILTER = /\A(authorize_\w+!|require_admin!?|verify_authorized)\z/
+
+  # Actions with no guard of their own whose controller IS otherwise guarded.
+  # Same rules as ALLOWED_UNGUARDED: each needs a reason that survives being
+  # read aloud.
+  approval = "DocumentApprovalService#approve!/#reject! return forbidden unless " \
+             "can_approve? (the type's .approve key, policy_manager, or an instance " \
+             "administrator) before any change: service-layer enforcement, proven in " \
+             "spec/services/document_approval_service_spec.rb (#630)"
+  ALLOWED_UNGUARDED_ACTIONS = {
+    "control_catalogs#approve"             => approval,
+    "control_catalogs#reject"              => approval,
+    "profile_documents#approve"            => approval,
+    "profile_documents#reject"             => approval,
+    "cdef_documents#approve"               => approval,
+    "cdef_documents#reject"                => approval,
+    "api/v1/control_catalogs#approve"      => approval,
+    "api/v1/control_catalogs#reject"       => approval,
+    "api/v1/profile_documents#approve"     => approval,
+    "api/v1/profile_documents#reject"      => approval,
+    "api/v1/cdef_documents#approve"        => approval,
+    "api/v1/cdef_documents#reject"         => approval,
+    "api/v1/authorization_boundaries#assign_organization" =>
+      "BoundaryOrganizationAssigner applies the organization-admin matrix (#770) and " \
+      "raises MoveRequiresAdminError (403) before any change; proven in " \
+      "spec/services/boundary_organization_assigner_spec.rb",
+    "authoritative_sources#create"         =>
+      "any signed-in user may register an authoritative source (owner, 2026-10-21: " \
+      "correct as is); spec/requests/authoritative_sources_create_spec.rb",
+    "api/v1/authoritative_sources#create"  =>
+      "as the web action (owner, 2026-10-21); spec/requests/api/v1/authoritative_sources_spec.rb",
+    "api/v1/cdef_coverage#destroy_run"     =>
+      "deletes only a run the caller can see, through a scoped lookup (owner, " \
+      "2026-10-21: correct as is); spec/requests/api/v1/cdef_coverage_spec.rb"
+  }.freeze
+
+  def guard_applies?(callback, controller)
+    passes = Array(callback.instance_variable_get(:@if)).all? do |condition|
+      condition.respond_to?(:match?) ? condition.match?(controller) : true
+    end
+    blocked = Array(callback.instance_variable_get(:@unless)).any? do |condition|
+      condition.respond_to?(:match?) && condition.match?(controller)
+    end
+    passes && !blocked
+  end
+
+  def inline_guard?(klass, action)
+    return false unless klass.method_defined?(action) || klass.private_method_defined?(action)
+
+    file, line = klass.instance_method(action).source_location
+    return false unless file && File.exist?(file)
+
+    lines = File.readlines(file)[(line - 1)..]
+    indent = lines.first[/\A\s*/]
+    body = lines.take_while.with_index { |l, i| i.zero? || !l.start_with?("#{indent}end") }
+    body.join.match?(/authorize_\w+!|raise\s+NotAuthorizedError/)
+  end
+
+  def action_guarded?(controller_path, action)
+    klass = "#{controller_path.camelize}Controller".safe_constantize
+    return false unless klass
+
+    # A route to an action the controller does not define answers 404 (three
+    # import_json routes do): nothing runs, so there is nothing to guard.
+    return true unless klass.action_methods.include?(action)
+
+    controller = klass.new
+    controller.action_name = action
+    klass._process_action_callbacks.any? do |callback|
+      callback.kind == :before && callback.filter.is_a?(Symbol) &&
+        callback.filter.to_s.match?(GUARD_FILTER) && guard_applies?(callback, controller)
+    end || inline_guard?(klass, action)
+  end
+
+  it "every routed mutating action runs an authorization guard (#1244)" do
+    offenders = routed_controllers_with_mutating_actions.flat_map do |controller, actions|
+      next [] if ALLOWED_UNGUARDED.key?(controller)
+
+      actions.uniq.reject do |action|
+        ALLOWED_UNGUARDED_ACTIONS.key?("#{controller}##{action}") || action_guarded?(controller, action)
+      end.map { |action| "#{controller}##{action}" }
+    end.sort
+
+    expect(offenders).to be_empty, <<~MSG
+      These mutating actions run no authorization guard, though their controller
+      may guard others:
+
+        #{offenders.join("\n  ")}
+
+      Add the action to a guard's only:/except: list, guard it inline, or, if it is
+      genuinely safe, list it in ALLOWED_UNGUARDED_ACTIONS with a reason.
+    MSG
+  end
+
+  it "keeps the action allowlist honest — no entry is guarded, unrouted or undefined" do
+    routed = routed_controllers_with_mutating_actions
+    stale = ALLOWED_UNGUARDED_ACTIONS.keys.select do |entry|
+      controller, action = entry.split("#")
+      klass = "#{controller.camelize}Controller".safe_constantize
+      !routed[controller].include?(action) || klass.nil? ||
+        !klass.action_methods.include?(action) || action_guarded?(controller, action)
+    end
+
+    expect(stale).to be_empty,
+      "Remove these from ALLOWED_UNGUARDED_ACTIONS (now guarded, or gone): #{stale.join(', ')}"
+  end
+
   it "every routed controller with a mutating action declares authorization" do
     offenders = routed_controllers_with_mutating_actions.keys.reject do |controller|
       ALLOWED_UNGUARDED.key?(controller) || guarded?(controller)

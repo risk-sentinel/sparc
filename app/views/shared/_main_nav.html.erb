@@ -244,11 +244,15 @@
                   </button>
                   <ul class="dropdown-menu sparc-dropdown-menu">
                     <li class="sparc-dropdown-header sparc-dropdown-header-boundaries">Enterprise</li>
-                    <li><%= link_to admin_organizations_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
-                      <span>&#127970;</span> Organizations
-                      <span class="badge bg-secondary ms-auto" style="font-size: 0.65rem;"><%= Organization.count %></span>
-                    <% end %></li>
+                    <%# #1245 — Organizations and Federation Peers are administrator
+                        screens (authorize_admin! / require_admin), so they are
+                        listed only for administrators: a link that always refuses
+                        is not navigation. %>
                     <% if current_user&.instance_administrator? %>
+                      <li><%= link_to admin_organizations_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+                        <span>&#127970;</span> Organizations
+                        <span class="badge bg-secondary ms-auto" style="font-size: 0.65rem;"><%= Organization.count %></span>
+                      <% end %></li>
                       <li><%= link_to admin_service_accounts_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
                         <span>&#128272;</span> Service Accounts
                       <% end %></li>
@@ -288,9 +292,11 @@
                     <li><%= link_to leveraged_poam_documents_path, class: "dropdown-item" do %>
                       <span class="sparc-dropdown-icon">&#128203;</span> Leveraged POA&amp;Ms
                     <% end %></li>
-                    <li><%= link_to federation_peers_path, class: "dropdown-item" do %>
-                      <span class="sparc-dropdown-icon">&#128279;</span> Federation Peers
-                    <% end %></li>
+                    <% if current_user&.instance_administrator? %>
+                      <li><%= link_to federation_peers_path, class: "dropdown-item" do %>
+                        <span class="sparc-dropdown-icon">&#128279;</span> Federation Peers
+                      <% end %></li>
+                    <% end %>
                   </ul>
                 </li>
               <% else %>

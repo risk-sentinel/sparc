@@ -33,7 +33,9 @@ RSpec.describe "GET /api/v1/authorization_boundaries/:id/readiness", type: :requ
     get "/api/v1/authorization_boundaries/#{boundary.id}/readiness", headers: headers
 
     summary = response.parsed_body.dig("data", "summary")
-    expect(summary.keys).to match_array(%w[complete partial absent not_modelled])
+    # #1250 — optional_none: absent sections where absence is legitimate,
+    # kept out of `absent`.
+    expect(summary.keys).to match_array(%w[complete partial absent not_modelled optional_none])
   end
 
   # Environments are reported from the boundary's sub-boundaries, each of which

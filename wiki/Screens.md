@@ -795,7 +795,7 @@ Leveraging-side read-only view of POA&Ms inherited from a leveraged (underlying)
 | **Controller** | `AuthorizationBoundariesController#index` |
 | **Auth** | Required |
 
-Lists all authorization boundaries with name, description, member count. "Create New" button.
+Lists the authorization boundaries the user may see (v1.17.2, #1247): every boundary for an administrator or an instance-wide read grant, otherwise those a role grants read on, the same set as the sidebar and the Enterprise menu (`AuthorizationBoundary.visible_to`). The summary tiles count those boundaries. Columns: name, description, status (one colour per status, from `ab_status_variant`), **Members** (distinct people with access, by role assignment or legacy roster), and **Environments**. **Edit** shows only to someone with write on that boundary, **Delete** only to an administrator, and **New Authorization Boundary** only with an instance-level write grant.
 
 #### Authorization Boundary Detail
 

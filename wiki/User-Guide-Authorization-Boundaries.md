@@ -15,9 +15,21 @@ see [RBAC](RBAC). Instance Admins can also manage boundaries under
 
 ## Before you start
 
-- **Access:** a role that permits viewing/editing authorization boundaries.
+- **Access:** what you can do is decided per boundary:
+  - **View** a boundary, open its ATO wizard and download its ATO package: `authorization_boundaries.read` on that boundary.
+  - **Edit** it, attach documents and build its ATO package: `authorization_boundaries.write` on that boundary.
+  - **Create** a boundary: an instance-wide write grant.
+  - **Delete** one: an Instance Administrator.
 - **Where to find it:** *Authorization Boundaries* in the top nav
   (`/authorization_boundaries`), or expand an organization in the left sidebar.
+  The list, the sidebar and the Enterprise menu show only the boundaries you
+  may view. An administrator, or someone with an instance-wide read grant such
+  as Global Viewer, sees every boundary. Everyone else sees the boundaries they
+  hold a role on.
+- **Completeness:** the *Personnel and roles* row counts everyone with access,
+  whether added through Admin role assignment or the boundary's roster.
+  *Leveraged authorizations* with none recorded reads **None (optional)**: a
+  system may inherit nothing, so it is not counted as not started.
 
 ---
 

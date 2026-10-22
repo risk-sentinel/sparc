@@ -27,6 +27,9 @@
         <% if summary[:absent].to_i.positive? %>
           <span class="badge-fail rounded fw-semibold px-2 ms-1"><%= summary[:absent] %> not started</span>
         <% end %>
+        <% if summary[:optional_none].to_i.positive? %>
+          <span class="badge-neutral rounded fw-semibold px-2 ms-1"><%= summary[:optional_none] %> none (optional)</span>
+        <% end %>
       </div>
     </div>
 

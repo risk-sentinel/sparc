@@ -48,8 +48,11 @@ RSpec.describe "the readiness card on the boundary screen (#940)", type: :reques
       expect(helper_badge(:absent, :back_matter)).to eq([ "badge-fail", "Not started" ])
     end
 
-    it "gives ABSENT leveraged authorizations the WARNING badge, not failure" do
-      expect(helper_badge(:absent, :leveraged)).to eq([ "badge-warn", "Not started" ])
+    # #1250 — was amber "Not started" while the header counted it red. Having
+    # nothing to inherit is legitimate: neutral, labelled optional, and out of
+    # the red count (BoundaryReadinessService::OPTIONAL_SECTIONS).
+    it "gives ABSENT leveraged authorizations a neutral 'None (optional)', not failure" do
+      expect(helper_badge(:absent, :leveraged)).to eq([ "badge-neutral", "None (optional)" ])
     end
 
     it "gives a complete section the success badge" do

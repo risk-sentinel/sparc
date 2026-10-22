@@ -548,6 +548,13 @@ class User < ApplicationRecord
     role_scope.exists?
   end
 
+  # #1245 — the boundaries on which a role grants `permission_key`. Instance-level
+  # grants are not boundary ids; callers check those with has_permission? first.
+  def boundary_ids_granting(permission_key)
+    roles_granting(permission_key).where.not(authorization_boundary_id: nil)
+                                  .distinct.pluck(:authorization_boundary_id)
+  end
+
   # Check if the user has a permission in ANY boundary (or instance-level).
   # Used by the discovery endpoint to determine general capability.
   def has_any_permission?(permission_key)
