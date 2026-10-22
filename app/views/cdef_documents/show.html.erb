@@ -214,7 +214,8 @@
           published profile to import controls, parameters, and guidance.
         </p>
       </div>
-      <% if signed_in? %>
+      <%# #1238 — the picker requires cdef.write, as the Edit button does. %>
+      <% if signed_in? && (current_user.instance_administrator? || current_user.has_permission?("cdef.write")) %>
         <%= link_to "Populate from Profile",
               select_profile_source_cdef_document_path(@cdef_document),
               class: "sparc-action sparc-action--primary sparc-action--solid" %>

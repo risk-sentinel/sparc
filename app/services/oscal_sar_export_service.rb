@@ -182,7 +182,8 @@ class OscalSarExportService
       # differ. That breaks diffing, hashing and signing of artifacts.
       "observations"      => build_observations(result.sar_observations.order(:id)),
       "risks"             => build_risks(result.sar_risks.order(:id)),
-      "findings"          => build_findings(result.sar_findings.order(:id)),
+      "findings"          => (build_findings(result.sar_findings.order(:id)).to_a +
+                              (result == @results.first ? determined_objective_findings : [])).presence,
       "props"             => result.props_data.presence,
       "links"             => result.links_data.presence,
       "remarks"           => result.remarks
@@ -355,6 +356,18 @@ class OscalSarExportService
   # nobody established, which is the worst error an assessment artifact can make.
   # `not_applicable` is excluded for the same reason: it is a scoping decision,
   # not a determination that the objective is satisfied.
+  # Every determined objective of the document, once (on the first result).
+  # These were emitted only by the synthesized-result fallback, and every SAR
+  # SPARC generates HAS a result, so an assessor's per-objective
+  # determinations never reached the export.
+  # An objective SarObjectiveDetermination already stored a finding for (a
+  # failure linked to its risk) is emitted once, from that stored finding.
+  def determined_objective_findings
+    stored = @results.flat_map { |r| r.sar_findings.map { |f| f.target_data.to_h["target-id"] } }.compact.to_set
+    @controls.flat_map { |control| build_objective_findings(control, nil) }
+             .reject { |finding| stored.include?(finding.dig("target", TARGET_ID)) }
+  end
+
   def build_objective_findings(control, obs_uuid)
     # `determinable?` as well as `determined?`: a CONTAINER carries a label and no
     # prose, so there is nothing stated to determine about it. If one ever holds a
@@ -371,8 +384,8 @@ class OscalSarExportService
           TARGET_ID => objective.objective_id,
           "status"    => { "state" => objective.oscal_state }
         },
-        RELATED_OBSERVATIONS => [ { OBSERVATION_UUID => obs_uuid } ]
-      }
+        RELATED_OBSERVATIONS => obs_uuid && [ { OBSERVATION_UUID => obs_uuid } ]
+      }.compact
     end
   end
 

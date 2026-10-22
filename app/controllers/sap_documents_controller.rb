@@ -32,7 +32,7 @@ class SapDocumentsController < ApplicationController
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :edit, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :status, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :update_metadata, :associate_source, :update_objective, :publish, :attach_boundary ]
+  before_action :authorize_document_write!, only: [ :create, :set_baseline, :update, :destroy, :update_metadata, :associate_source, :update_objective, :publish, :attach_boundary ]
 
   METHOD_ORDER = %w[examine interview test].freeze
 
@@ -409,9 +409,11 @@ class SapDocumentsController < ApplicationController
     ids = controls.map { |c| ControlId.canonical(c.control_id) }.compact.uniq
     return {} if ids.empty?
 
+    catalog = (@sap_document.profile_document || @sap_document.ssp_document&.profile_document)&.control_catalog
     parts = CatalogControlPart
-              .joins(:catalog_control)
+              .joins(catalog_control: :control_family)
               .where(catalog_controls: { control_id: ids })
+              .where(catalog ? { control_families: { control_catalog_id: catalog.id } } : {})
               .where(part_name: [ ASSESSMENT_METHOD, ASSESSMENT_OBJECTS ])
               .select("catalog_control_parts.*, catalog_controls.control_id AS owner_control_id")
               .order(:row_order)

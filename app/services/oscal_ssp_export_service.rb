@@ -712,7 +712,7 @@ class OscalSspExportService
       entry = {
         STATEMENT_ID => stmt.statement_id,
         "uuid"         => stmt.uuid,
-        "remarks"      => stmt.implementation_prose.presence || stmt.remarks
+        "remarks"      => stmt.remarks.presence
       }
       entry[RESPONSIBLE_ROLES] = stmt.responsible_roles_data if stmt.responsible_roles_data.present?
 
@@ -746,7 +746,7 @@ class OscalSspExportService
     markers, real_params = Array(stmt.set_parameters_data).partition do |param|
       param.is_a?(Hash) && param.key?(STATEMENT_MARKER_KEY)
     end
-    return [] if markers.empty? && real_params.empty?
+    return [] if markers.empty? && real_params.empty? && stmt.implementation_prose.blank?
 
     component_uuid = statement_component_uuid
     return [] if component_uuid.blank?
@@ -755,7 +755,11 @@ class OscalSspExportService
     entry = {
       "component-uuid" => component_uuid,
       "uuid"           => OscalUuidService.derived(stmt.uuid, "ssp-statement-by-component"),
-      "description"    => "Implementation of #{stmt.statement_id} by this system."
+      # The author's response to this part IS how this system implements it,
+      # which OSCAL carries as the by-component's description. It used to ride
+      # in the statement's `remarks`: schema-valid, but not where an OSCAL
+      # reader looks for an implementation.
+      "description"    => stmt.implementation_prose.presence || synthetic_statement_description(stmt.statement_id)
     }
 
     # Both live under `by-component.export`, not directly on the by-component:
@@ -783,6 +787,13 @@ class OscalSspExportService
     entry["set-parameters"] = real_params if real_params.any?
     [ entry ]
   end
+
+  # The placeholder a by-component carries when it exists only for its
+  # provided / responsibility markers. The importer recognises it, so it never
+  # comes back as somebody's answer.
+  def self.synthetic_statement_description(statement_id) = "Implementation of #{statement_id} by this system."
+
+  def synthetic_statement_description(statement_id) = self.class.synthetic_statement_description(statement_id)
 
   # The by-component has to name a component that exists in `components`, or
   # the reference dangles. Falls back to the synthesized this-system uuid,

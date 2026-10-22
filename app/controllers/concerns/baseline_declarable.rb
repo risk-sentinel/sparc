@@ -23,7 +23,10 @@ module BaselineDeclarable
 
   # PATCH /<documents>/:id/set_baseline
   #
-  # Deliberately NOT gated: this is the write the gate exists to provoke.
+  # Deliberately NOT behind the reconciliation gate: this is the write the gate
+  # exists to provoke. It IS a write, though: each including controller lists
+  # it in its write-permission before_action (#1238; it was missing from all
+  # but the profile controller). (AC-3)
   def set_baseline
     document = baseline_document
     permitted = params.require(document.model_name.param_key).permit(

@@ -94,6 +94,34 @@ arrived in from the source spreadsheet. The ordering is applied by the query, so
 it holds across page boundaries rather than only within the page you are looking
 at.
 
+### Recording results per assessment objective
+
+NIST SP 800-53A divides each control into **assessment objectives**
+(`ac-1_obj.a-1`, …): AC-1 alone has seventeen to determine. A SAR built in
+SPARC carries every objective of every control and enhancement, and you record
+each one as **passing**, **failed** or **not applicable**, with your name and
+notes. Grouping nodes (`ac-1_obj.a`) carry no statement of their own and are
+not determined.
+
+- **A failed objective opens the control's risk**, linked to a finding on that
+  objective, so it appears in a POA&M generated from this SAR. When none of the
+  control's objectives is failing any more, the risk is closed.
+- A catalog without 800-53A objectives (Rev 4) is assessed per control: a
+  **Result** of `Failed` does the same.
+- The API records the same determinations:
+  `PATCH /api/v1/sar_documents/:id/objectives/:objective_id` (see the
+  [SAR Objectives API](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/sar-objectives.md)).
+
+### What a new SAR already contains
+
+A SAR generated from an SSP records a finding only where something is known
+before the assessment starts: a control the SSP reports **Deferred** or **Will
+Not Implement** is a not-satisfied finding with a risk, whose statement quotes
+the requirement and the SSP's own reason. A control the SSP reports
+**Implemented** has no finding until you assess it: an SSP's claim is not an
+assessment. A SAR generated from a baseline or from the wizard starts with no
+findings at all.
+
 ## How to enrich a SAR
 
 Enrichment adds the OSCAL assessment metadata that per-control results do not

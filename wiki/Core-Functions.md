@@ -396,8 +396,8 @@ The SSP Wizard allows users to create a System Security Plan from scratch rather
 3. **Create default information type** -- placeholder for system information.
 4. **Create default user** -- "General User" with the `system-owner` role.
 5. **Import CDEF components** (if selected) -- creates `SspDocumentCdefDocument` join records and corresponding `SspComponent` entries.
-6. **Populate controls from profile** -- iterates through the profile's controls, creating `SspControl` records with default fields (status defaults to "Deferred") and a `this-system` by-component entry.
-7. **Auto-fill from CDEFs** (if selected) -- matches CDEF controls to SSP controls by NIST ID, populates `implementation_statement` from the CDEF's `implementation_narrative`, upgrades status from "Deferred" to "Implemented" when narrative is present, and creates by-component entries.
+6. **Populate controls from profile** -- iterates through the profile's controls, creating `SspControl` records with default fields (status starts unanswered) and a `this-system` by-component entry.
+7. **Auto-fill from CDEFs** (if selected) -- matches CDEF controls to SSP controls by NIST ID, populates `implementation_statement` from the CDEF's `implementation_narrative`, sets status to "Implemented" when narrative is present and the status is still unanswered, and creates by-component entries.
 8. **Mark complete** -- sets `status: "completed"`.
 
 Control IDs are normalized for matching: lowercased, whitespace replaced with hyphens, parentheses converted to dots, and multiple dots collapsed.

@@ -232,6 +232,27 @@ class CatalogControl < ApplicationRecord
       scope.detect { |control| control.canonical_identifier == identifier }
   end
 
+  # The catalog control each id stands for on a document screen, keyed by
+  # control_id.
+  #
+  # Scoped to the document's catalog when it has one. A bare
+  # `where(control_id:).index_by` looked the id up in EVERY catalog and kept
+  # whichever row Postgres returned last; with NIST Rev 4 and Rev 5 both loaded
+  # (seeds load both) a Rev 5 SSP showed Rev 4 language for ac-2, au-2, cm-6
+  # and si-4, which Rev 5 parameters cannot fill. Without a catalog the newest
+  # OSCAL version wins, then the newest catalog, so the answer is the same on
+  # every request.
+  def self.guidance_index(control_ids, catalog: nil)
+    scope = unscoped.joins(control_family: :control_catalog).where(control_id: control_ids)
+    scope = if catalog
+      scope.where(control_families: { control_catalog_id: catalog.id })
+    else
+      # index_by keeps the LAST row per id, so the preferred catalog sorts last.
+      scope.order(Arel.sql("control_catalogs.oscal_version ASC NULLS FIRST, control_catalogs.id ASC"))
+    end
+    scope.index_by(&:control_id)
+  end
+
   default_scope { order(Arel.sql("COALESCE(sort_id, control_id)")) }
 
   # Scope to only base controls (e.g. "ac-1") and enhancements (e.g. "ac-2.1"),

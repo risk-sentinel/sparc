@@ -73,6 +73,9 @@ class OscalParameterResolver
     return resolve_text(set_value, depth) if set_value.present?
     return nil if param.nil?
 
+    aggregated = resolve_aggregate(param, depth)
+    return aggregated if aggregated
+
     prose = param.dig("guidelines", 0, "prose").presence
     return resolve_text(prose, depth) if prose
 
@@ -80,6 +83,23 @@ class OscalParameterResolver
   end
 
   private
+
+  # NIST Rev 5 writes some statements against an AGGREGATE parameter:
+  # ac-1's text inserts `ac-1_prm_1`, whose `aggregates` props name the two
+  # ODPs an organization actually sets (`ac-01_odp.01`, `ac-01_odp.02`). 142
+  # parameters in Rev 5 are aggregates. Setting the parts used to change
+  # nothing in the statement, which kept showing the aggregate's label.
+  #
+  # The aggregate stands for the values set on its parts, each resolved,
+  # without repeats. With none of its parts set it returns nil, so the
+  # caller's fallback (guidelines, then label) still applies.
+  def resolve_aggregate(param, depth)
+    part_ids = Array(param["props"]).select { |prop| prop["name"] == "aggregates" }.filter_map { |prop| prop["value"].presence }
+    return nil if part_ids.empty?
+
+    values = part_ids.filter_map { |id| @values[id].presence && resolve_param(id, depth + 1) }.uniq
+    values.presence&.join(", ")
+  end
 
   # The chosen branches, each resolved, assembled into one string.
   def resolve_selection(param, set_value, depth)

@@ -28,7 +28,7 @@ class CdefDocumentsController < ApplicationController
   # refreshes — gated on `converters.write` or admin.
   before_action :authorize_converter_write!, only: [ :refresh_aws_labs ]
   # #738: CDEF is global (no boundary); mutations require cdef.write (instance-level). (AC-3)
-  before_action :authorize_cdef_write!, only: %i[create update destroy update_field update_metadata copy create_from_profile source_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review update_scope]
+  before_action :authorize_cdef_write!, only: %i[create update edit set_baseline select_profile_source destroy update_field update_metadata copy create_from_profile source_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review update_scope]
 
 
   def index

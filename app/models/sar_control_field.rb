@@ -3,6 +3,11 @@ class SarControlField < ApplicationRecord
 
   validates :field_name, presence: true
 
+  # A control assessed as a whole (a catalog without 800-53A objectives, such
+  # as Rev 4) decides its risk through its `result` (SarControlRiskSync).
+  after_update_commit -> { SarControlRiskSync.new(sar_control).sync! },
+                      if: -> { field_name == "result" && saved_change_to_field_value? }
+
   # What an assessor RECORDS about a control.
   #
   # #1114 — this list is the legacy Test Plan Results SPREADSHEET vocabulary,

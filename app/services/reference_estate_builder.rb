@@ -412,6 +412,29 @@ class ReferenceEstateBuilder
       SarFromSspService.new(ssp, name: name, deadline: PINNED_DEADLINE,
                                  satisfied_control_ids: satisfied_control_ids,
                                  authorization_boundary: boundary).create
+                       .tap { |sar| record_assessed_failures(sar, satisfied_control_ids) }
+  end
+
+  # The simulated assessor's result for every control the evidence did not
+  # satisfy, recorded the way an assessor records it: a failed objective
+  # (SarObjectiveDetermination), which opens the control's risk and so its
+  # POA&M item. A generated SAR no longer marks every control not-satisfied
+  # before anyone looks. The first determinable objective stands for the
+  # control; deadlines are pinned so the estate regenerates byte-identically.
+  def record_assessed_failures(sar, satisfied_control_ids)
+    satisfied = Array(satisfied_control_ids).map { |id| ControlId.canonical(id) }.to_set
+    sar.sar_controls.includes(:sar_control_objectives).order(:row_order).each do |control|
+      next if satisfied.include?(ControlId.canonical(control.control_id))
+
+      objective = control.sar_control_objectives.reject(&:container?).min_by(&:row_order)
+      if objective
+        SarObjectiveDetermination.new(objective).record(status: "failed", assessor_name: "Reference estate assessor")
+      else
+        # No 800-53A objectives in this catalog: assessed as a whole.
+        control.sar_control_fields.find_by(field_name: "result")&.update!(field_value: SarControlRiskSync::FAILED_RESULT)
+      end
+    end
+    SarRisk.where(sar_result_id: sar.sar_results.select(:id)).update_all(deadline: PINNED_DEADLINE)
   end
 
   # Three POA&Ms with genuinely different postures, so screens that filter or

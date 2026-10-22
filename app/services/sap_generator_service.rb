@@ -62,11 +62,7 @@ class SapGeneratorService
     # have objectives, and flags a document whose catalog cannot be resolved.
     # Non-fatal — a plan that generates but cannot yet resolve its objectives is
     # a document to backfill, not a failed generation.
-    begin
-      ControlObjectiveExtractorService.new(sap).backfill!
-    rescue StandardError => e
-      Rails.logger.warn("[SapGeneratorService] objective backfill failed for ##{sap.id}: #{e.class}: #{e.message}")
-    end
+    ControlObjectiveExtractorService.backfill_generated!(sap)
 
     sap
   end
@@ -157,7 +153,7 @@ class SapGeneratorService
     return if control_ids.empty?
 
     resolved = resolved_catalog_controls
-    catalog_controls = CatalogControl.where(control_id: control_ids).index_by(&:control_id)
+    catalog_controls = CatalogControl.guidance_index(control_ids, catalog: (@profile || @ssp&.profile_document)&.control_catalog)
 
     controls_data.each do |cd|
       node = resolved[ControlId.canonical(cd[:control_id]).to_s.downcase]
@@ -190,9 +186,11 @@ class SapGeneratorService
     json = profile&.resolved_catalog_json
     return {} if json.blank?
 
-    catalog = json.is_a?(Hash) ? (json["catalog"] || json) : {}
-    nodes = Array(catalog["controls"]) +
-            Array(catalog["groups"]).flat_map { |g| Array(g["controls"]) }
+    # Every control, enhancements included: they sit NESTED under their parent
+    # in a resolved catalog, and indexing only each group's top level left all
+    # 110 MODERATE enhancements without their tailored text.
+    nodes = []
+    ResolvedCatalog.wrap(json).each_control { |control, _group| nodes << control }
     nodes.index_by { |c| ControlId.canonical(c["id"]).to_s.downcase }
   rescue StandardError
     {}

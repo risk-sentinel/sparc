@@ -326,11 +326,7 @@ class ProfileDocumentsController < ApplicationController
 
       # Inherit parameter definitions from catalog (including parent-control params
       # referenced by sub-controls via {{ insert: param, ... }} template markup)
-      cc.effective_params_list.each do |param|
-        label = param["label"].to_s
-        pc.profile_control_fields.create!(field_name: "parameter:#{param['id']}", field_value: label)
-        pc.profile_control_fields.create!(field_name: "parameter_label:#{param['id']}", field_value: label)
-      end
+      ProfileControlSelectionService.seed_parameter_fields(pc, cc)
     end
 
     audit_log("profile_document_created", subject: profile, metadata: { name: profile.name, creation_method: "catalog" })
@@ -446,7 +442,9 @@ class ProfileDocumentsController < ApplicationController
         profile_control_id: field.profile_control_id,
         field_name: field.field_name.sub("parameter:", "parameter_label:")
       )
-      count += 1 if label_field && field.field_value == label_field.field_value
+      # Unset is empty (a value is no longer seeded with the label) or, on a
+      # baseline built before that change, still equal to the label.
+      count += 1 if field.field_value.blank? || (label_field && field.field_value == label_field.field_value)
     end
     count
   end

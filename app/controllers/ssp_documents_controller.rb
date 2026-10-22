@@ -32,7 +32,7 @@ class SspDocumentsController < ApplicationController
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :validate_oscal_export, :status, :edit, :enrich, :attach_profile, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter, :attach_boundary ]
+  before_action :authorize_document_write!, only: [ :create, :set_baseline, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter, :attach_boundary ]
 
   def index
     scope = boundary_scoped_relation(SspDocument).order(created_at: :desc)
@@ -132,9 +132,14 @@ class SspDocumentsController < ApplicationController
     # Normalisation (AC-1 -> AC-01) bridges documents that use unpadded IDs
     # against the catalog which stores zero-padded IDs.
     normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
-    @catalog_guidance = CatalogControl
-                          .where(control_id: normalized_ids)
-                          .index_by(&:control_id)
+    @catalog_guidance = CatalogControl.guidance_index(
+      normalized_ids, catalog: @ssp_document.profile_document&.control_catalog
+    )
+
+    # The requirement each control and each of its parts states, with the
+    # baseline's parameter values applied: the text beside every response row.
+    @requirement_text = ControlRequirementText.for_profile(@ssp_document.profile_document)
+                                              .for_controls(@controls.map(&:control_id))
 
     # #997 — the ODP values the SSP's baseline has set, so the screen can show
     # the control language WITH them substituted rather than raw

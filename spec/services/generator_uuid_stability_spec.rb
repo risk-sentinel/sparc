@@ -111,6 +111,10 @@ RSpec.describe "generated document UUID stability (#957)" do
   describe "SarFromSspService" do
     it "derives result, control, finding and risk UUIDs from their parents" do
       ssp = SspFromProfileService.new(profile, name: "For SAR", authorization_boundary: boundary).create
+      # A finding exists only where the SSP reports the control not implemented
+      # (owner, 2026-10-21), so ac-1 is reported Deferred here.
+      ssp.ssp_controls.find_by(control_id: "ac-1").ssp_control_fields.find_by(field_name: "status")
+         .update!(field_value: "Deferred")
       sar = SarFromSspService.new(ssp, name: "SAR").create
 
       result = sar.sar_results.first
@@ -121,6 +125,8 @@ RSpec.describe "generated document UUID stability (#957)" do
 
       finding = result.sar_findings.find { |f| f.title.include?("ac-1") }
       expect(finding.uuid).to eq(OscalUuidService.derived(result.uuid, "sar-finding", "ac-1"))
+      expect(result.sar_risks.find_by(title: "Risk for ac-1").uuid)
+        .to eq(OscalUuidService.derived(result.uuid, "sar-risk", "ac-1"))
     end
   end
 

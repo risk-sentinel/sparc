@@ -3,10 +3,19 @@
 # (stated_requirement, description, ssp_status) and editable assessment
 # placeholder fields (result, working_status, notes_weakness, etc.).
 #
-# A default SarResult and a SarFinding per control are scaffolded so the SAR
-# is enrichment-ready. Each NOT-satisfied finding also gets a SarRisk, which
-# is what PoamGeneratorService sources from; a satisfied one does not, because
-# a control that passed is not a risk to the authorization.
+# A default SarResult is scaffolded, and a finding only where something is
+# KNOWN before the assessment starts (owner, 2026-10-21):
+#
+# - the SSP itself reports the control "Will Not Implement" or "Deferred":
+#   that is a known finding, not-satisfied, with a SarRisk (what
+#   PoamGeneratorService sources from) whose statement quotes the SSP's own
+#   answers, the system's stated reason;
+# - the caller already holds an outcome (satisfied_control_ids): satisfied,
+#   no risk;
+# - anything else, "Implemented" included, gets NO finding until an assessor
+#   determines its objectives. An SSP's claim is not an assessment, and every
+#   control used to be recorded not-satisfied with a risk before anyone looked
+#   (287 of 287 for MODERATE).
 #
 # Usage:
 #   service = SarFromSspService.new(ssp_document, name: "My SAR")
@@ -17,10 +26,12 @@
 #   SarFromSspService.new(ssp, satisfied_control_ids: %w[ac-1 sc-7]).create
 #
 class SarFromSspService
-  # A control is assessed not-satisfied until something says otherwise — that
-  # is what makes it a risk to the authorization.
   NOT_SATISFIED = "not-satisfied"
   SATISFIED     = "satisfied"
+
+  # SSP statuses that are a finding before the assessment starts: the system
+  # says, in its own plan, that the control is not in place.
+  KNOWN_NOT_IMPLEMENTED = [ "Will Not Implement", "Deferred" ].freeze
 
   # `deadline` is normally nil: PoamGeneratorService then resolves one from the
   # organisation's RemediationTimeline SLA, which is a policy lookup rather
@@ -56,6 +67,7 @@ class SarFromSspService
       create_default_findings
     end
 
+    ControlObjectiveExtractorService.backfill_generated!(@document)
     @document
   end
 
@@ -172,17 +184,23 @@ class SarFromSspService
       next if sar_ctrl.control_id.blank?
 
       control_id = normalize_control_id(sar_ctrl.control_id)
-      state      = @satisfied.include?(control_id) ? SATISFIED : NOT_SATISFIED
+      ssp_status = sar_ctrl.sar_control_fields.find { |f| f.field_name == "ssp_status" }&.field_value
+      state = if @satisfied.include?(control_id) then SATISFIED
+      elsif KNOWN_NOT_IMPLEMENTED.include?(ssp_status) then NOT_SATISFIED
+      end
+      next if state.nil?
 
       finding = @result.sar_findings.create!(
         # Seeded from the result and the control it assesses: regenerating the
         # same SAR from the same SSP must name the same finding.
         uuid:        OscalUuidService.derived(@result.uuid, "sar-finding", control_id),
         title:       "Finding for #{sar_ctrl.control_id}",
-        description: "Assessment finding for control #{sar_ctrl.control_id}",
+        description: finding_description(sar_ctrl, state, ssp_status),
+        # The control's statement, named as one: `ac-1` is not an objective id,
+        # and calling it one was a false statement in the artifact.
         target_data: {
-          "type"      => "objective-id",
-          "target-id" => control_id,
+          "type"      => "statement-id",
+          "target-id" => "#{control_id}_smt",
           "status"    => { "state" => state }
         }
       )
@@ -202,7 +220,7 @@ class SarFromSspService
       uuid:        OscalUuidService.derived(@result.uuid, "sar-risk",
                                             normalize_control_id(sar_ctrl.control_id)),
       title:       "Risk for #{sar_ctrl.control_id}",
-      description: "Control #{sar_ctrl.control_id} was assessed #{NOT_SATISFIED}.",
+      description: "Control #{sar_ctrl.control_id} is not implemented, as the SSP reports before the assessment.",
       statement:   risk_statement_for(sar_ctrl),
       status:      "open",
       deadline:    @deadline
@@ -211,17 +229,41 @@ class SarFromSspService
     SarFindingRisk.create!(sar_finding: finding, sar_risk: risk)
   end
 
+  def finding_description(sar_ctrl, state, ssp_status)
+    if state == SATISFIED
+      "Assessment finding for control #{sar_ctrl.control_id}: known satisfied before the assessment."
+    else
+      "Reported in the SSP as #{ssp_status} before the assessment started (control #{sar_ctrl.control_id})."
+    end
+  end
+
+  # The control's requirement, and the system's own stated reason: what the
+  # SSP answers for the control's parts.
   def risk_statement_for(sar_ctrl)
     requirement = sar_ctrl.sar_control_fields
                           .find { |field| field.field_name == "stated_requirement" }
                           &.field_value
+    status = sar_ctrl.sar_control_fields.find { |field| field.field_name == "ssp_status" }&.field_value
 
-    if requirement.present?
-      "#{sar_ctrl.control_id} is assessed #{NOT_SATISFIED}. The control requires: #{requirement}"
-    else
-      "#{sar_ctrl.control_id} is assessed #{NOT_SATISFIED}. " \
-        "The SSP records no stated requirement for this control."
+    text = "#{sar_ctrl.control_id} is reported in the SSP as #{status.presence || NOT_SATISFIED}."
+    text += " The control requires: #{requirement}" if requirement.present?
+    reason = ssp_reasons(sar_ctrl.control_id)
+    text += " The SSP states: #{reason}" if reason.present?
+    text += " The SSP records no reason." if reason.blank?
+    text
+  end
+
+  def ssp_reasons(control_id)
+    control = @ssp.ssp_controls.find_by(control_id: control_id)
+    return nil if control.nil?
+
+    answers = control.ssp_control_statements.order(:row_order).filter_map do |stmt|
+      prose = stmt.implementation_prose.presence
+      prose && "#{stmt.label.presence || stmt.statement_id} #{prose}"
     end
+    narrative = control.ssp_control_fields.where(field_name: SspControlField::CONTROL_LEVEL_NARRATIVES)
+                       .pluck(:field_value).compact_blank
+    (answers + narrative).join(" ").presence
   end
 
   # #852 — delegated to the one canonical implementation. This method used to

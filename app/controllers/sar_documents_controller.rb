@@ -32,7 +32,7 @@ class SarDocumentsController < ApplicationController
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective, :associate_source ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_excel, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :enrich, :edit_control, :status, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :create_from_ssp, :update, :update_enrich, :update_metadata, :associate_source, :update_objective, :publish, :destroy, :attach_boundary ]
+  before_action :authorize_document_write!, only: [ :create, :set_baseline, :create_from_wizard, :create_from_profile, :create_from_ssp, :update, :update_enrich, :update_metadata, :associate_source, :update_objective, :publish, :destroy, :attach_boundary ]
 
   helper_method :filter_params
 
@@ -121,7 +121,7 @@ class SarDocumentsController < ApplicationController
 
     # Catalog guidance lookup (only for the current page)
     normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
-    @catalog_guidance = CatalogControl.where(control_id: normalized_ids).index_by(&:control_id)
+    @catalog_guidance = CatalogControl.guidance_index(normalized_ids, catalog: sar_catalog)
 
     # #1114 — the control text an assessor reads must be the TAILORED text.
     #
@@ -404,7 +404,7 @@ class SarDocumentsController < ApplicationController
     @catalog_guidance = {}
     normalized = normalize_ctrl_id(@control.control_id)
     if normalized
-      ctrl = CatalogControl.find_by(control_id: normalized)
+      ctrl = CatalogControl.guidance_index([ normalized ], catalog: sar_catalog)[normalized]
       @catalog_guidance[normalized] = ctrl if ctrl
     end
 
@@ -484,12 +484,9 @@ class SarDocumentsController < ApplicationController
     permitted = params.require(:sar_control_objective)
                       .permit(:status, :assessor_name, :assessor_notes)
 
-    if permitted[:status] == "passing" || permitted[:status] == "failed"
-      permitted[:assessed_at] = Time.current
-    end
-
-    if objective.update(permitted)
-      @sar_document.regenerate_oscal_uuid!
+    # SarObjectiveDetermination keeps the control's risk in step, so a failed
+    # objective reaches the POA&M. The API calls the same service.
+    if SarObjectiveDetermination.new(objective).record(**permitted.to_h.symbolize_keys)
       audit_log("sar_objective_updated", subject: @sar_document,
                 metadata: { objective_id: objective.objective_id, status: objective.status })
       flash[:success] = "Objective #{objective.label.presence || objective.objective_id} updated."
@@ -514,6 +511,13 @@ class SarDocumentsController < ApplicationController
   end
 
   private
+
+  # The catalog this assessment's controls come from, through its baseline.
+  def sar_catalog
+    return @sar_catalog if defined?(@sar_catalog)
+
+    @sar_catalog = (@sar_document.profile_document || @sar_document.ssp_document&.profile_document)&.control_catalog
+  end
 
   # #1114 — the SAR control filters, one question each.
   #
@@ -637,9 +641,11 @@ class SarDocumentsController < ApplicationController
       end
     end
 
-    # No plan linked — fall back to what 800-53A itself prescribes.
+    # No plan linked — fall back to what 800-53A itself prescribes, in this
+    # assessment's own catalog when it has one.
     CatalogControlPart
-      .joins(:catalog_control)
+      .joins(catalog_control: :control_family)
+      .where(sar_catalog ? { control_families: { control_catalog_id: sar_catalog.id } } : {})
       .where(part_name: "assessment-method")
       .pluck(Arel.sql("catalog_controls.control_id"), :props_data)
       .each_with_object(Hash.new { |h, k| h[k] = [] }) do |(cid, props), acc|
@@ -697,9 +703,9 @@ class SarDocumentsController < ApplicationController
     json = profile&.resolved_catalog_json
     return {} if json.blank? || controls.blank?
 
-    catalog = json.is_a?(Hash) ? (json["catalog"] || json) : {}
-    nodes = Array(catalog["controls"]) +
-            Array(catalog["groups"]).flat_map { |g| Array(g["controls"]) }
+    # Enhancements included: they are nested under their parent control.
+    nodes = []
+    ResolvedCatalog.wrap(json).each_control { |control, _group| nodes << control }
     by_id = nodes.index_by { |c| ControlId.canonical(c["id"]).to_s.downcase }
 
     controls.each_with_object({}) do |control, acc|

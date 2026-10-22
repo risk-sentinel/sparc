@@ -48,7 +48,11 @@ class SarFromProfileService
 
     build_controls_from_catalog(catalog)
     create_default_result
-    create_default_findings
+    # No findings: a baseline makes no claim about any system, so nothing is
+    # known before the assessment. Every control used to be recorded
+    # not-satisfied. An assessor's determinations become findings
+    # (SarObjectiveDetermination).
+    ControlObjectiveExtractorService.backfill_generated!(@document)
 
     @document
   end
@@ -74,8 +78,11 @@ class SarFromProfileService
         row_order:  row_order
       }
 
-      # Pre-populated read-only fields
-      statement = extract_part_prose(control, "statement")
+      # Pre-populated read-only fields. The WHOLE requirement, items included
+      # (ControlRequirementText): a statement's own prose is empty for every
+      # NIST control written as lettered items.
+      statement = requirement_text(catalog)[ControlId.canonical(control["id"])]&.full.presence ||
+                  extract_part_prose(control, "statement")
       guidance  = extract_part_prose(control, "guidance")
 
       field_entries << [ idx, "stated_requirement", statement ] if statement.present?
@@ -118,28 +125,15 @@ class SarFromProfileService
     )
   end
 
-  # ── Default findings per control ────────────────────────────────
+  # ── Helpers ──────────────────────────────────────────────────────
 
-  def create_default_findings
-    @document.sar_controls.each do |sar_ctrl|
-      next if sar_ctrl.control_id.blank?
-
-      control_id = normalize_control_id(sar_ctrl.control_id)
-
-      @result.sar_findings.create!(
-        uuid:        OscalUuidService.derived(@result.uuid, "sar-finding", control_id),
-        title:       "Finding for #{sar_ctrl.control_id}",
-        description: "Assessment finding for control #{sar_ctrl.control_id}",
-        target_data: {
-          "type"      => "objective-id",
-          "target-id" => control_id,
-          "status"    => { "state" => "not-satisfied" }
-        }
-      )
+  def requirement_text(catalog)
+    @requirement_text ||= begin
+      ids = []
+      ResolvedCatalog.wrap(catalog).each_control { |control, _group| ids << control["id"] }
+      ControlRequirementText.for_profile(@profile).for_controls(ids)
     end
   end
-
-  # ── Helpers ──────────────────────────────────────────────────────
 
   def extract_part_prose(control, part_name)
     parts = control["parts"]
