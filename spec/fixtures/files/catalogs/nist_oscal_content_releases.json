@@ -1,0 +1,8 @@
+{
+  "description": "Recorded by bin/rails catalog:check_nist_release (#1228). spec/lib/nist_catalog_source_spec.rb reads it; the suite never calls the network. NOT YET RECORDED: run the task (it needs gh) and commit what it writes.",
+  "recorded_at": null,
+  "repository": "usnistgov/oscal-content",
+  "fix_commit": "d56011a5542e9de3ab1e0d4cf92d56aa715b4d62",
+  "fix_commit_date": null,
+  "releases": []
+}

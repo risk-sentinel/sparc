@@ -1,0 +1,38 @@
+{
+  "description": "Provenance for the vendored NIST SP 800-53 Rev 5 catalog. NIST_SP-800-53_rev5_catalog.xml is a byte-for-byte copy of NIST's XML source at a pinned commit of the oscal-content develop branch; NIST_SP-800-53_rev5_catalog.json is GENERATED from it by OscalCatalogXmlToJson (bin/rails catalog:build_rev5). NIST's own catalog metadata is left as NIST wrote it, so the record of where the file came from lives here (#1228).",
+  "source_repository": "https://github.com/usnistgov/oscal-content",
+  "source_branch": "develop",
+  "source_commit": "d56011a5542e9de3ab1e0d4cf92d56aa715b4d62",
+  "source_path": "src/nist.gov/SP800-53/rev5/xml/NIST_SP-800-53_rev5_catalog.xml",
+  "retrieved": "2026-10-22",
+  "pre_release": true,
+  "pre_release_reason": "NIST's fixes to SA-15(13), SA-24 and SI-02(07) are on develop, in the XML source only, and in no NIST release yet. The catalog stays flagged until a release carries them; spec/lib/nist_catalog_source_spec.rb fails once the recorded release data shows one.",
+  "fix_commits": [
+    "92f3985d",
+    "5c83a339",
+    "b6eb3ee9",
+    "d56011a5"
+  ],
+  "fixes": [
+    "usnistgov/oscal-content#345 (fixes #343): SA-15(13) statement and Examine label",
+    "usnistgov/oscal-content#346 (fixes #301): SA-24 assessment-for links pointed into AC-2",
+    "usnistgov/oscal-content#347 (fixes #305): SA-24b objectives [06]-[10], SI-02(07)c labels"
+  ],
+  "known_upstream_findings": [
+    "label-names-own-control: PL-08(01) assessment methods are labelled PL-08-Examine/-Interview/-Test",
+    "label-names-own-control: SC-32(01) assessment methods are labelled SC-32-Examine/-Interview/-Test"
+  ],
+  "release_data": "spec/fixtures/files/catalogs/nist_oscal_content_releases.json, written by bin/rails catalog:check_nist_release",
+  "converter": {
+    "name": "OscalCatalogXmlToJson",
+    "version": "1.0.0"
+  },
+  "files": {
+    "NIST_SP-800-53_rev5_catalog.xml": {
+      "source_url": "https://raw.githubusercontent.com/usnistgov/oscal-content/d56011a5542e9de3ab1e0d4cf92d56aa715b4d62/src/nist.gov/SP800-53/rev5/xml/NIST_SP-800-53_rev5_catalog.xml",
+      "sha256": "8a390e2590f2d5d2db6ee583773cfba4045c58845f9c6d7bfc6f8cd14a73b243",
+      "bytes": 5765331
+    }
+  },
+  "re_vendor": "When a NIST release carries these fixes: replace the XML with the released file (or take NIST's released JSON), update this sidecar (commit, sha256, bytes, pre_release false), run bin/rails catalog:build_rev5 and bin/rails samples:odp_worksheets, and commit what they write."
+}

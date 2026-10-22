@@ -67,6 +67,9 @@
                 <% ext_variant = { "JSON" => "info", "XML" => "success", "YAML" => "purple", "YML" => "purple" }[ext] || "neutral" %>
                 <span class="badge sparc-status--<%= ext_variant %> sparc-fs-065 sparc-va-middle sparc-ml-035"><%= ext %></span>
               <% end %>
+              <% if catalog.nist_pre_release? %>
+                <span class="badge sparc-status--warning sparc-fs-065 sparc-va-middle sparc-ml-035" title="Includes NIST corrections not yet in a NIST release">Pre-release</span>
+              <% end %>
             </td>
             <td><%= catalog.version.presence || "—" %></td>
             <td><%= catalog.source.presence || "—" %></td>

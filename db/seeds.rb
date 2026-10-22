@@ -20,7 +20,11 @@ puts SEED_DEMO ? "\n[SPARC] Seeding with DEMO data enabled.\n" : "\n[SPARC] Seed
 SeedRunner.run_section("nist_rev5_catalog") do
 puts "Seeding NIST SP 800-53 Rev 5 catalog from OSCAL fixture..."
 
-oscal_rev5_path = Rails.root.join("lib/data/catalogs/NIST_SP-800-53_rev5_catalog.json")
+# #1228 — through the one loader, which also knows where the JSON came from
+# (NIST's develop branch, pre-release). The version stays where it is: a
+# SeedRunner bump re-imports over every install's catalog, user edits included,
+# so existing installs take NIST's fixes from FixRev5DevelopCatalogParts.
+oscal_rev5_path = NistCatalogSource.json_path
 if File.exist?(oscal_rev5_path)
   # Check if the full OSCAL catalog is already imported (2,000+ controls)
   existing = ControlCatalog.where("name LIKE ?", "%800-53%Rev%5%").where("name LIKE ?", "%OSCAL%").first

@@ -36,6 +36,13 @@ class ControlCatalog < ApplicationRecord
     version
   end
 
+  # #1228 — does this catalog carry NIST's unreleased `develop` content? Read by
+  # the catalog screens and the API; the answer comes from the vendored
+  # catalog's provenance (NistCatalogSource), never from NIST's own metadata.
+  def nist_pre_release?
+    NistCatalogSource.pre_release_catalog?(self)
+  end
+
   # First 8 characters of the SHA-256 content digest for display.
   def short_digest
     catalog_content_digest&.slice(0, 8)

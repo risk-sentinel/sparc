@@ -30,7 +30,19 @@
           <% ext_variant = { "JSON" => "info", "XML" => "success", "YAML" => "purple", "YML" => "purple" }[ext] || "neutral" %>
           <span class="badge sparc-status--<%= ext_variant %>" style="font-size: 0.55rem; vertical-align: middle;"><%= ext %></span>
         <% end %>
+        <% if @control_catalog.nist_pre_release? %>
+          <span class="badge sparc-status--warning" style="font-size: 0.55rem; vertical-align: middle;" data-testid="nist-pre-release-badge">Pre-release</span>
+        <% end %>
       </h2>
+      <% if @control_catalog.nist_pre_release? %>
+        <% source = NistCatalogSource.provenance %>
+        <p class="text-body-secondary" style="margin-top: 0.5rem;" data-testid="nist-pre-release-note">
+          This catalog includes NIST corrections to SA-15(13), SA-24 and SI-02(07) that NIST has not released yet.
+          It was built from the <code><%= source["source_branch"] %></code> branch of
+          <%= link_to "usnistgov/oscal-content", source["source_repository"], target: "_blank", rel: "noopener" %>
+          at commit <code><%= source["source_commit"].to_s.first(8) %></code>, and will be replaced by NIST's release when it ships.
+        </p>
+      <% end %>
       <p class="text-body-secondary" style="margin-top: 0.5rem;">
         <% if @control_catalog.version.present? %>
           Version: <strong><%= @control_catalog.version %></strong> &nbsp;|&nbsp;

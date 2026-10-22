@@ -26,7 +26,8 @@
 # Regenerate with `bin/rails samples:odp_worksheets`;
 # spec/lib/odp_worksheet_builder_spec.rb fails when the committed files drift.
 class OdpWorksheetBuilder
-  CATALOG = "lib/data/catalogs/NIST_SP-800-53_rev5_catalog.json"
+  # #1228 — the bundled catalog, read through its one loader.
+  CATALOG = NistCatalogSource.json_path.relative_path_from(Rails.root).to_s
   # NIST's own baseline profiles, as published (OSCAL content v5.2.0).
   BASELINES = {
     "low"      => "spec/fixtures/files/profiles/NIST_SP-800-53_rev5_LOW-baseline_profile.json",
