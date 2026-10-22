@@ -22,7 +22,9 @@ RSpec.describe "Authorization boundary list (#1248)", type: :request do
   let(:admin) { create(:user, :admin) }
   let(:org_a) { create(:organization, name: "Agency Alpha") }
   let(:org_b) { create(:organization, name: "Agency Bravo") }
-  let(:page)  { Nokogiri::HTML(response.body) }
+  # A method, not a memoized let: an example that requests twice must
+  # read the SECOND response.
+  def page = Nokogiri::HTML(response.body)
 
   def boundary(name, next_decision: nil, org: org_a, **attrs)
     create(:authorization_boundary, name: name, organization: org, **attrs).tap do |b|

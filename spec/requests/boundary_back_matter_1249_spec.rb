@@ -33,7 +33,7 @@ RSpec.describe "Boundary back-matter (#1249)", type: :request do
   let(:form) { { back_matter_resource: { title: "Network diagram", rel: "diagram", href: "https://example.gov/d.pdf" } } }
 
   describe "the boundary page section" do
-    let(:page) { Nokogiri::HTML(response.body) }
+    def page = Nokogiri::HTML(response.body)
 
     it "is shown, with Add/Edit/Delete, to a reader who may write, in a non-draft boundary" do
       grant_reader

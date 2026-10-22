@@ -23,7 +23,9 @@ RSpec.describe "Boundary page (#1251)", type: :request do
   let(:admin)    { create(:user, :admin) }
   let(:reader)   { create(:user).tap { |u| grant_permission(u, AuthorizationBoundary::READ_PERMISSION, authorization_boundary: boundary) } }
   let(:boundary) { create(:authorization_boundary, name: "Page Sys", status: "active", description: "Payroll for HQ") }
-  let(:page)     { Nokogiri::HTML(response.body) }
+  # A method, not a memoized let: an example that requests twice must
+  # read the SECOND response.
+  def page = Nokogiri::HTML(response.body)
 
   def section_ids = page.css("section.sparc-collapsible").map { |s| s["id"] }
   def body_of(id) = page.at_css("##{id}-body")

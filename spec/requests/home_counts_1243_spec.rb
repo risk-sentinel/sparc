@@ -18,7 +18,9 @@ RSpec.describe "Homepage counts (#1243)", type: :request do
   let(:mine)   { create(:authorization_boundary, name: "Mine") }
   let(:theirs) { create(:authorization_boundary, name: "Theirs") }
   let(:user)   { create(:user) }
-  let(:page)   { Nokogiri::HTML(response.body) }
+  # A method, not a memoized let: an example that requests twice must
+  # read the SECOND response.
+  def page = Nokogiri::HTML(response.body)
 
   def badge(key) = page.at_css("a[data-home-count='#{key}']")
 
