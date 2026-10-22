@@ -250,7 +250,11 @@ findings:
   next_review_date: '2026-11-21'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1254"
+    approved_at: "2026-10-22"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: 'CRITICAL grades a system store that still trusts the roots behind the weak eMudhra intermediates. The mitigating factors below are properties of THIS image, measured rather than argued: the one such root that is a TLS anchor in the UBI 10 store is distrusted at build, and the build fails if it is still trusted. What remains is the package version the scanner matches, until Red Hat ships the fix.'
     mitigating_factors:
