@@ -54,6 +54,12 @@ def post(c, path, body=None):
 
 
 def shot(locator, name: str) -> None:
+    # The top navbar is `sticky-top`, so an element capture scrolled under it
+    # comes out with the navbar painted over its first rows. Unstick it for the
+    # capture: a CSSOM style change, which the CSP allows (no inline <style>).
+    locator.page.evaluate(
+        "document.querySelectorAll('nav.sticky-top').forEach(n => n.style.position = 'static')"
+    )
     locator.scroll_into_view_if_needed()
     path = OUT_DIR / f"{name}.png"
     locator.screenshot(path=str(path))

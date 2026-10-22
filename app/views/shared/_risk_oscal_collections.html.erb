@@ -30,7 +30,7 @@
 
 <details class="sparc-enrich-section sparc-enrich-section--tight">
   <summary class="sparc-fs-08 sparc-cursor-pointer">
-    Threat IDs, Mitigating Factors<%= " and Remediations" if remediations %>
+    <%= remediations ? "Threat IDs, Mitigating Factors and Remediations" : "Threat IDs and Mitigating Factors" %>
   </summary>
 
   <div class="sparc-enrich-section-body">
@@ -125,13 +125,13 @@
         <template data-oscal-repeater-target="template">
           <div class="repeater-row d-flex gap-2 mb-2">
             <input type="text" name="<%= param_base %>[remediations_data][][title]"
-                   class="form-control form-control-sm sparc-fs-085"
+                   class="form-control form-control-sm sparc-fs-085 sparc-flex-1"
                    placeholder="e.g. Enforce TLS 1.2 minimum" aria-label="Remediation title">
             <input type="text" name="<%= param_base %>[remediations_data][][description]"
                    class="form-control form-control-sm sparc-fs-085 sparc-flex-1"
                    placeholder="What will be done" aria-label="Remediation description">
             <select name="<%= param_base %>[remediations_data][][lifecycle]"
-                    class="form-control form-control-sm sparc-fs-085" aria-label="Remediation lifecycle">
+                    class="form-control form-control-sm sparc-fs-085 w-auto flex-shrink-0" aria-label="Remediation lifecycle">
               <% RiskCollectionParams::REMEDIATION_LIFECYCLES.each do |lifecycle| %>
                 <option value="<%= lifecycle %>"><%= lifecycle.titleize %></option>
               <% end %>
@@ -149,14 +149,14 @@
                      value="<%= response["uuid"].presence || SecureRandom.uuid %>">
               <input type="text" name="<%= param_base %>[remediations_data][][title]"
                      value="<%= response["title"] %>"
-                     class="form-control form-control-sm sparc-fs-085"
+                     class="form-control form-control-sm sparc-fs-085 sparc-flex-1"
                      placeholder="e.g. Enforce TLS 1.2 minimum" aria-label="Remediation title">
               <input type="text" name="<%= param_base %>[remediations_data][][description]"
                      value="<%= response["description"] %>"
                      class="form-control form-control-sm sparc-fs-085 sparc-flex-1"
                      placeholder="What will be done" aria-label="Remediation description">
               <select name="<%= param_base %>[remediations_data][][lifecycle]"
-                      class="form-control form-control-sm sparc-fs-085" aria-label="Remediation lifecycle">
+                      class="form-control form-control-sm sparc-fs-085 w-auto flex-shrink-0" aria-label="Remediation lifecycle">
                 <% RiskCollectionParams::REMEDIATION_LIFECYCLES.each do |lifecycle| %>
                   <option value="<%= lifecycle %>" <%= "selected" if response["lifecycle"] == lifecycle %>><%= lifecycle.titleize %></option>
                 <% end %>

@@ -41,6 +41,7 @@ RSpec.describe "Risk form collections (v1.17.2)", type: :request do
       expect(response.body.scan("sar_document[risks][][deadline]").size).to eq(2)
       expect(response.body.scan("sar_document[risks][][remediations_data][][title]").size).to be >= 2
       expect(response.body).to include("sar_document[risks][][remediations_data][][lifecycle]")
+      expect(response.body).to include("Threat IDs, Mitigating Factors and Remediations")
     end
 
     it "saves a deadline, and clears it when the field is emptied" do
@@ -218,6 +219,8 @@ RSpec.describe "Risk form collections (v1.17.2)", type: :request do
       expect(response.body).to include("poam_risk[mitigating_factors_data][][description]")
       expect(response.body).to include("poam_risk[collections_present]")
       expect(response.body).not_to include("poam_risk[remediations_data]")
+      expect(response.body).to include("Threat IDs and Mitigating Factors")
+      expect(response.body).not_to include("and Remediations")
     end
 
     it "keeps what was typed when a new risk's threat ID is refused" do
