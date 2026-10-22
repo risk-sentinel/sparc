@@ -102,7 +102,12 @@ def test_poam_page_edits_resolves_and_deletes_records(authed_page, base_url):
 
         # Mark the remediation completed.
         rem_row = _row(page, "remediations", f"{title} fix")
-        rem_row.get_by_role("button", name="Mark completed").click()
+        # Synchronise on the PATCH itself: the section was just expanded, and a
+        # click that lands before Turbo has bound the form submits nothing.
+        mark = rem_row.get_by_role("button", name="Mark completed")
+        expect(mark).to_be_enabled()
+        with page.expect_response(lambda r: r.url.endswith("/complete")):
+            mark.click()
         expect(page.get_by_text("marked completed")).to_be_visible()
         rem_row = _row(page, "remediations", f"{title} fix")
         expect(rem_row.get_by_role("button", name="Mark completed")).to_have_count(0)
@@ -110,22 +115,18 @@ def test_poam_page_edits_resolves_and_deletes_records(authed_page, base_url):
         # Edit reaches the risk's form.
         _row(page, "risks", title).get_by_role("link", name="Edit").click()
         page.wait_for_url(f"**/poam_risks/{risk_id}/edit")
-        expect(page.get_by_label("Title", exact=True)).to_have_value(title)
+        expect(page.locator("[name='poam_risk[title]']")).to_have_value(title)
         page.go_back()
         page.wait_for_load_state("domcontentloaded")
 
-        # Delete, accepting the confirmation that names what goes with it.
-        messages = []
-
-        def _accept(dialog):
-            messages.append(dialog.message)
-            dialog.accept()
-
-        page.once("dialog", _accept)
+        # Delete, confirming in SPARC's CSP-safe modal (not a native dialog, so
+        # `page.on("dialog")` never fires), which names what goes with it.
         _row(page, "risks", title).get_by_role("button", name="Delete").click()
+        modal = page.locator("#sparc-confirm-modal")
+        expect(modal).to_contain_text("Close it instead")
+        page.locator("#sparc-confirm-modal-confirm").click()
         expect(page.get_by_text(f'Risk "{title}" removed')).to_be_visible()
         deleted = True
-        assert messages and "Close it instead" in messages[0], messages
 
         assert_no_csp_violations(page, during="editing, resolving and deleting POA&M records")
     finally:

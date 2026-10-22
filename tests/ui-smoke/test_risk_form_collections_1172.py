@@ -83,9 +83,9 @@ def _find_risk_id(page, base_url, slug, title, token):
 
 
 def _fill_required(page, title):
-    page.get_by_label("Title", exact=True).fill(title)
-    page.get_by_label("Description", exact=True).fill("Created by the v1.17.2 smoke test.")
-    page.get_by_label("Statement", exact=True).fill("Asset X has weakness Y allowing Z.")
+    page.locator("[name='poam_risk[title]']").fill(title)
+    page.locator("[name='poam_risk[description]']").fill("Created by the v1.17.2 smoke test.")
+    page.locator("[name='poam_risk[statement]']").fill("Asset X has weakness Y allowing Z.")
     page.locator("select[name='poam_risk[status]']").select_option("open")
     page.locator("select[name='poam_risk[impact]']").select_option("high")
     page.locator("select[name='poam_risk[likelihood]']").select_option("moderate")
@@ -123,7 +123,7 @@ def test_poam_risk_form_authors_threat_ids_and_mitigating_factors(authed_page, b
         page.get_by_role("button", name="Add Risk").click()
         refusal = page.get_by_text(REFUSAL)
         expect(refusal).to_be_visible()
-        expect(page.get_by_label("Title", exact=True)).to_have_value(title)
+        expect(page.locator("[name='poam_risk[title]']")).to_have_value(title)
 
         # 2. Corrected, it saves. The refused rows are not kept, so add them again.
         section = page.get_by_test_id("poam-risk-collections")
