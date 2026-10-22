@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/migrate/20261022120000_add_admin_overrides_to_roles.rb")
+require Rails.root.join("db/migrate/20261022170000_add_admin_overrides_to_roles.rb")
 
 # #1259 — the upgrade cannot tell an administrator's past edit from the default
 # it replaced, so it records every current difference from what roles section
