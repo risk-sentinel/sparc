@@ -181,6 +181,7 @@ These are the *only* accepted fields, at every level. Anything else in the paylo
 | `guidance_data` | object | See below |
 | `params_data` | array | OSCAL parameter (ODP) definitions — see below |
 | `params_labels` | object | `{ "<param id>": "<new label>" }` — relabel ODPs without resending `params_data` |
+| `params_values` | object | `{ "<param id>": "<value>" \| ["<choice>", …] }` — set the value the **catalog** assigns an ODP (its OSCAL `values`), without resending `params_data`. See below |
 
 Only `LOW`, `MODERATE` and `HIGH` are accepted as baseline levels; anything else returns `422` rather than being stored.
 
@@ -219,6 +220,21 @@ curl -X PATCH "https://sparc.example.com/api/v1/control_catalogs/<uuid>/controls
 
 `params_data` is an **ordered array**, so sending it replaces it wholesale. Callers who only want to rename an ODP should send `params_labels` instead, which merges by parameter id and preserves each parameter's `guidelines`, `select` and `props`.
 
+**Setting a parameter's value — `params_values`** (#1241). A catalog can assign an organization-defined parameter a value, kept in the parameter's `values` and separate from its descriptive `label`. Wherever a baseline or SSP sets no value, SPARC uses the catalog's (a value they set still wins). `params_values` merges by parameter id and changes only `values`; the label is left as it is.
+
+```bash
+curl -X PATCH "https://sparc.example.com/api/v1/control_catalogs/<uuid>/controls/ac-1" \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"catalog_control": {"params_values": {"ac-01_odp.05": "annually", "ac-01_odp.03": ["organization-level"]}}}'
+```
+
+- A value is a string, or an array of strings. Several values in one string are separated by ` | ` (a comma is not a separator, so a value may contain one).
+- An empty string or empty array removes the catalog's value.
+- For a **selection**, every value must be one of its `select.choice` entries, and a selection whose `how-many` is `one` (or absent) takes a single value. Anything else returns `422` and nothing in the request is saved.
+- An id the control has no parameter for returns `422`; it is not ignored.
+- OSCAL lets a parameter carry `values` **or** `select`, not both, so in an OSCAL catalog export a selection the catalog has answered is emitted with its answer in `values` and without the `select` it was chosen from.
+
 Changing `control_id` moves the control's identifier, and therefore its URL — the response's `identifier` is the new address.
 
 **Errors**
@@ -229,7 +245,7 @@ Changing `control_id` moves the control's identifier, and therefore its URL — 
 | `401` | Missing or invalid Bearer token |
 | `403` | Caller lacks `catalogs.write` |
 | `404` | Catalog, family, or control not found **in this catalog** |
-| `422` | Missing/duplicate `control_id`, or an unknown baseline level |
+| `422` | Missing/duplicate `control_id`, an unknown baseline level, or a `params_values` entry that is not one of a selection's choices or names no parameter of this control |
 
 ---
 
