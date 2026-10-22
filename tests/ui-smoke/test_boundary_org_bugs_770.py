@@ -3,7 +3,8 @@ browser (page-load + interaction + zero CSP violations on interaction).
 
 Covers the new interactive controls added for #770:
   - Bug 4: Artifact Summary tiles are clickable links
-  - Bug 5: "Add Artifact" card on the boundary screen, pre-scoping the boundary
+  - Bug 5: "Add Evidence" on the boundary screen, pre-scoping the boundary
+    (the section was "Artifacts" and its button "Add Artifact" until #1251)
   - Bug 2: CDEF filter on the environment (sub-boundary) edit form
   - Bug 6: "Associate a boundary" form on the admin organization screen
 
@@ -53,17 +54,22 @@ class TestBoundaryShow:
         assert tiles.count() >= 4, "expected all four artifact tiles to be links"
         assert_no_csp_violations(authed_page, during="boundary show render")
 
-    def test_add_artifact_prescopes_the_boundary(self, authed_page):
-        """Bug 5 — the Artifacts card's Add link carries the boundary scope."""
+    def test_add_evidence_prescopes_the_boundary(self, authed_page):
+        """Bug 5 — the Evidence section's Add link carries the boundary scope.
+
+        #1251 renamed the section from "Artifacts" (and its button from "Add
+        Artifact"): the checklist already called it Evidence, and "Artifacts"
+        read as the same thing as the Artifact Summary above it.
+        """
         record_csp(authed_page)
         authed_page.goto(_first_boundary(authed_page))
         authed_page.wait_for_load_state("networkidle")
 
-        add = authed_page.get_by_role("link", name="Add Artifact")
-        assert add.count() >= 1, "Add Artifact control missing from the boundary screen"
+        add = authed_page.locator("#boundary-evidence").get_by_role("link", name="Add Evidence")
+        assert add.count() >= 1, "Add Evidence control missing from the boundary screen"
         href = add.first.get_attribute("href")
         assert "authorization_boundary_id=" in href, (
-            f"Add Artifact link is not pre-scoped to the boundary: {href}"
+            f"Add Evidence link is not pre-scoped to the boundary: {href}"
         )
 
         add.first.click()
@@ -72,7 +78,7 @@ class TestBoundaryShow:
         # The evidence form's boundary select should land pre-selected.
         selected = authed_page.locator("select#evidence_authorization_boundary_id option[selected]")
         assert selected.count() >= 1, "boundary was not pre-selected on the evidence form"
-        assert_no_csp_violations(authed_page, during="Add Artifact navigation")
+        assert_no_csp_violations(authed_page, during="Add Evidence navigation")
 
 
 class TestEnvironmentForm:

@@ -61,10 +61,11 @@ class TestTheAddTileLeadsSomewhereUseful:
         record_csp(page)
         page.goto(_boundary_path(boundary))
 
-        # The SSP tile, with no SSP attached, reads "Add…".
-        link = page.locator(
-            f'a[href*="/authorization_boundaries/{boundary["slug"]}/attach_document"]'
-        ).first
+        # The SSP tile, with no SSP attached, reads "Add…". Scoped to the
+        # Artifact Summary: since #1251 the Completeness checklist above it
+        # also links the attach screen ("Add SSP first").
+        attach = f"/authorization_boundaries/{boundary['slug']}/attach_document"
+        link = page.locator(f'#boundary-artifacts a[href*="{attach}"]').first
         assert link.count() > 0, "no Add… tile linked to the attach screen"
 
         link.click()

@@ -57,9 +57,13 @@ def _open_triage(page, base_url):
         return False
     page.goto(f"{base_url}{href}", wait_until="networkidle")
     # An href is what the button is FOR; a class is how it looks this quarter.
-    # Excluding .sparc-sidebar-leaf keeps the original intent — the header
-    # button, not the sidebar leaves, which carry the same destination and text.
-    link = page.locator('a[href$="/triage"]:not(.sparc-sidebar-leaf)').filter(
+    # The data-boundary-action hook keeps the original intent — the page's own
+    # control, not the sidebar leaves, which carry the same destination and text.
+    #
+    # #1251 moved the header actions into a "More" menu, so open it first; a
+    # menu item is in the DOM but not clickable until the menu is shown.
+    page.locator("[data-boundary-action='more']").click()
+    link = page.locator("[data-boundary-action='amendments'][href$='/triage']").filter(
         has_text="Amendments"
     )
     assert link.count() > 0, (
