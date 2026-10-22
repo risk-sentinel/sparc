@@ -32,7 +32,7 @@ class SarDocumentsController < ApplicationController
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective, :associate_source ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_excel, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :enrich, :edit_control, :status, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :create_from_ssp, :update, :update_enrich, :update_metadata, :associate_source, :update_objective, :publish, :destroy, :attach_boundary ]
+  before_action :authorize_document_write!, only: [ :create, :set_baseline, :create_from_wizard, :create_from_profile, :create_from_ssp, :update, :update_enrich, :update_metadata, :associate_source, :update_objective, :publish, :destroy, :attach_boundary ]
 
   helper_method :filter_params
 

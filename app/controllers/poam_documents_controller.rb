@@ -27,7 +27,7 @@ class PoamDocumentsController < ApplicationController
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :status, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :update_metadata, :publish, :attach_boundary ]
+  before_action :authorize_document_write!, only: [ :create, :set_baseline, :update, :destroy, :update_metadata, :publish, :attach_boundary ]
 
   RISK_STATUS_ORDER = %w[open investigating remediating deviation-requested deviation-approved closed].freeze
 
