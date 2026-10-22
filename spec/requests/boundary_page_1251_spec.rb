@@ -76,6 +76,20 @@ RSpec.describe "Boundary page (#1251)", type: :request do
       expect(page.at_css("[data-boundary-action='build_ato_package']")).to be_present
     end
 
+    # The roster's Edit/Remove follow the memberships controller's own key.
+    it "offers the roster's Edit and Add Member only with authorization_boundaries.manage_members" do
+      membership = create(:authorization_boundary_membership, authorization_boundary: boundary)
+      sign_in_as(reader)
+      get authorization_boundary_path(boundary)
+      expect(response.body).not_to include(edit_authorization_boundary_membership_path(boundary, membership))
+      expect(response.body).not_to include(new_authorization_boundary_membership_path(boundary))
+
+      grant_permission(reader, "authorization_boundaries.manage_members", authorization_boundary: boundary)
+      get authorization_boundary_path(boundary)
+      expect(response.body).to include(edit_authorization_boundary_membership_path(boundary, membership))
+      expect(response.body).to include(new_authorization_boundary_membership_path(boundary))
+    end
+
     it "explains a refused delete before the click, with the guard's own list" do
       create(:ssp_document, authorization_boundary: boundary)
       sign_in_as(admin)
