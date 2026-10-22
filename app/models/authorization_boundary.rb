@@ -139,6 +139,30 @@ class AuthorizationBoundary < ApplicationRecord
   # does not lock the record against an unrelated edit.
   validate :boundary_dates_are_iso_dates
 
+  # ── Sorting (#1248) ────────────────────────────────────────────────────
+  #
+  # The orders a caller may ask for, by name, as ONE allow-list the boundary
+  # list and GET /api/v1/authorization_boundaries both read. A `sort` value is
+  # never interpolated into SQL; only these fixed fragments are.
+  #
+  # Next decision is the "what is due?" view. The dates are ISO strings
+  # (YYYY-MM-DD) in boundary_metadata, so string order is date order, and
+  # comparing strings means a legacy value that is not a date sorts instead of
+  # raising. A boundary with no date sorts LAST in both directions: nothing is
+  # due, so it is never the most urgent row.
+  NEXT_DECISION_SQL = "NULLIF(authorization_boundaries.boundary_metadata->>'next_decision_date', '')"
+  SORTS = {
+    "next_decision"  => "#{NEXT_DECISION_SQL} ASC NULLS LAST, authorization_boundaries.name ASC",
+    "-next_decision" => "#{NEXT_DECISION_SQL} DESC NULLS LAST, authorization_boundaries.name ASC"
+  }.freeze
+
+  # The relation re-ordered by an allow-listed key. An unknown or blank key
+  # leaves the caller's own order in place.
+  def self.sorted_by(key)
+    sql = SORTS[key.to_s]
+    sql ? reorder(Arel.sql(sql)) : all
+  end
+
   # ── FIPS-199 categorization (#940 S3) ──────────────────────────────────
   #
   # The chain NIST actually defines, which SPARC had the pieces of and never

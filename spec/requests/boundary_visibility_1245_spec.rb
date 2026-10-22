@@ -110,12 +110,15 @@ RSpec.describe "Boundary visibility and the boundary list (#1245 #1247 #1250)", 
       expect(Nokogiri::HTML(response.body).at_css("form[action='#{authorization_boundary_path(mine)}']")).to be_nil
     end
 
-    it "shows Edit to a boundary writer, and New only with an instance-level write" do
+    # #1248 moved Edit (and Delete) off the list onto the boundary's page; the
+    # Edit half of this example now asserts it there.
+    it "shows Edit to a boundary writer on its page, and New only with an instance-level write" do
       grant_permission(user, "authorization_boundaries.write", authorization_boundary: mine)
       sign_in_as(user)
       get authorization_boundaries_path(view: "list")
-      expect(response.body).to include(edit_authorization_boundary_path(mine))
       expect(response.body).not_to include("New Authorization Boundary")
+      get authorization_boundary_path(mine)
+      expect(response.body).to include(edit_authorization_boundary_path(mine))
     end
 
     it "colours a status the same in both views, from ab_status_variant" do

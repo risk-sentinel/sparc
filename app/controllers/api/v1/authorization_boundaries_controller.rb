@@ -1,9 +1,10 @@
 # REST API for Authorization Boundary management.
 #
 # All endpoints require Bearer token authentication.
-# Non-admins see only boundaries they have roles on.
+# The list holds only the boundaries the caller may read
+# (AuthorizationBoundary.visible_to, #1248).
 #
-# GET    /api/v1/authorization_boundaries          — list
+# GET    /api/v1/authorization_boundaries          — list (?sort=next_decision|-next_decision)
 # GET    /api/v1/authorization_boundaries/:id      — show
 # POST   /api/v1/authorization_boundaries          — create
 # PATCH  /api/v1/authorization_boundaries/:id      — update
@@ -26,16 +27,30 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
 
   # GET /api/v1/authorization_boundaries
   def index
-    scope = if current_user.instance_administrator?
-      AuthorizationBoundary.all
-    else
-      current_user.authorization_boundaries.distinct
-    end
+    # #1248 — the boundaries this caller may see, from the one definition the
+    # web list, sidebar and menus use (AuthorizationBoundary.visible_to), so a
+    # boundary listed here always opens (show checks the same read grant). It
+    # listed every boundary the caller held ANY role on, which disagreed with
+    # show for a role without authorization_boundaries.read, and missed every
+    # boundary for an instance-wide read grant (Global Viewer).
+    scope = AuthorizationBoundary.visible_to(current_user)
 
     scope = scope.order(:name)
     scope = scope.where(status: params[:status]) if params[:status].present?
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
     scope = scope.search_text(params[:q]) if params[:q].present? # #672 free-text search
+
+    # #1248 — the list page's sort, from the same allow-list. An unknown value
+    # is refused rather than ignored: a misspelt sort that answered in the
+    # default order would look like it worked.
+    if params[:sort].present?
+      unless AuthorizationBoundary::SORTS.key?(params[:sort].to_s)
+        return render json: { error: "Unknown sort", details: [ "sort must be one of: #{AuthorizationBoundary::SORTS.keys.join(', ')}" ] },
+                      status: :unprocessable_content
+      end
+
+      scope = scope.sorted_by(params[:sort])
+    end
 
     # #1178 — every row now carries its organization's uuid; preload it.
     result = paginate(scope.includes(:organization))

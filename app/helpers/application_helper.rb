@@ -498,6 +498,42 @@ module ApplicationHelper
     AB_STATUS_VARIANTS[status.to_s] || "neutral"
   end
 
+  # #1248 — how close a boundary's next authorization decision is, as ONE rule
+  # the boundary list, its cards and the boundary page header all read (owner,
+  # 2026-10-22): a warning within 90 days, red once the date has passed.
+  NEXT_DECISION_WARNING_DAYS = 90
+  NEXT_DECISION_STATES = {
+    overdue:   { variant: "danger",  note: "Past due" },
+    due_soon:  { variant: "warning", note: "Due within #{NEXT_DECISION_WARNING_DAYS} days" },
+    scheduled: { variant: "neutral", note: nil },
+    unreadable: { variant: "neutral", note: "Not a YYYY-MM-DD date" }
+  }.freeze
+
+  # :none, :overdue, :due_soon, :scheduled, or :unreadable (a legacy value
+  # that is not an ISO date).
+  def next_decision_state(value, today: Date.current)
+    return :none if value.blank?
+
+    date = Date.iso8601(value.to_s)
+    return :overdue if date < today
+    return :due_soon if date <= today + NEXT_DECISION_WARNING_DAYS
+
+    :scheduled
+  rescue Date::Error
+    :unreadable
+  end
+
+  # The next decision date as a badge, or an em dash when there is none.
+  def next_decision_badge(boundary)
+    value = boundary.next_decision_date
+    state = next_decision_state(value)
+    return tag.span("—", class: "text-body-secondary", data: { next_decision: "none" }) if state == :none
+
+    style = NEXT_DECISION_STATES.fetch(state)
+    tag.span(value, class: "sparc-status sparc-status--#{style[:variant]}",
+                    title: style[:note], data: { next_decision: state })
+  end
+
   # Safe avatar image tag — falls back to initials if blob is missing from storage
   # #1056 — render the image only if the FILE is actually there.
   #

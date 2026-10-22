@@ -33,8 +33,19 @@ class AuthorizationBoundariesController < ApplicationController
     @active_count = scope.where(status: "active").count
     @member_count = AuthorizationBoundary.person_keys(scope.reorder(nil).select(:id)).size
 
+    # #1248 — the Organization column appears only when the boundaries this user
+    # may see span more than one organization; otherwise every row would say
+    # the same thing.
+    @show_organization = scope.reorder(nil).where.not(organization_id: nil)
+                              .distinct.count(:organization_id) > 1
+
     # #672 — filter listed rows; the tiles above keep showing totals.
     scope = scope.search_text(params[:q])
+
+    # #1248 — Next decision is sortable, through the model's allow-list (the
+    # API reads the same one). Anything else keeps the default order.
+    @sort = params[:sort].to_s if AuthorizationBoundary::SORTS.key?(params[:sort].to_s)
+    scope = scope.sorted_by(@sort).includes(:organization)
 
     # #888 — cards by default, remembered per screen, and paginated.
     @view_mode = resolve_view_mode(:authorization_boundaries)

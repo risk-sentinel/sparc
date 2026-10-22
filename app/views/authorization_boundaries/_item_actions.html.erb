@@ -2,6 +2,11 @@
   Actions on one authorization boundary, shared by the table row and the card (#888 §4)
   so an action cannot exist in one view and not the other.
 
+  #1248 — View only. The list is a place to find a system, not to destroy one
+  by misclick: Edit and Delete are on the boundary's own page, which can also
+  explain why a delete would be refused (#629). Bulk delete for administrators
+  stays on the list.
+
   Locals:
     authorization_boundary — the record
 %>
@@ -9,13 +14,4 @@
 
 <div class="d-flex flex-wrap gap-1 align-items-center">
   <%= link_to "View", authorization_boundary_path(authorization_boundary), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
-  <%# #1247 — Edit and Delete only for someone permitted to do them. %>
-  <% if can_edit_boundary?(authorization_boundary) %>
-    <%= link_to "Edit", edit_authorization_boundary_path(authorization_boundary), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
-  <% end %>
-  <% if can_delete_boundary? %>
-    <%= button_to "Delete", authorization_boundary_path(authorization_boundary), method: :delete,
-          class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
-          form: { data: { turbo_confirm: "Delete '#{authorization_boundary.name}'? This cannot be undone." }, style: "display: inline;" } %>
-  <% end %>
 </div>

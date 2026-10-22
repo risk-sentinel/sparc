@@ -34,13 +34,17 @@
   <% if @authorization_boundaries.any? && @view_mode == :card %>
     <div class="sparc-card-grid">
       <% @authorization_boundaries.each do |authorization_boundary| %>
+        <%# #1248 — the card carries the table's fields: organization, and the
+            next decision as a metric with the same warning style. %>
         <%= render "shared/item_card",
               title: authorization_boundary.name,
               url: authorization_boundary_path(authorization_boundary),
+              subtitle: (authorization_boundary.organization&.name if @show_organization),
               badges: [ { text: authorization_boundary.status.to_s.titleize,
                           class: "sparc-status sparc-status--#{ab_status_variant(authorization_boundary.status)}" } ],
               description: authorization_boundary.description,
-              metrics: [ { value: authorization_boundary.people_count, label: "personnel" },
+              metrics: [ { value: next_decision_badge(authorization_boundary), label: "next decision" },
+                         { value: authorization_boundary.people_count, label: "members" },
                          { value: authorization_boundary.boundaries.count, label: "environments" } ],
               footer: "Updated #{authorization_boundary.updated_at.strftime('%Y-%m-%d')}",
               select: (render("authorization_boundaries/bulk_checkbox", boundary: authorization_boundary) if can_bulk_delete?),
@@ -48,15 +52,23 @@
       <% end %>
     </div>
   <% elsif @authorization_boundaries.any? %>
+    <%# #1248 — the columns answer the questions people bring to this list:
+        whose system, its status, and when its next decision is due. The
+        description is the name's tooltip; Organization appears only when the
+        list spans more than one. Row actions are View only: Edit and Delete
+        are on the boundary's page, which can explain a refused delete. %>
+    <% sort_next = @sort == "next_decision" ? "-next_decision" : "next_decision" %>
+    <% aria_sort = { "next_decision" => "ascending", "-next_decision" => "descending" }.fetch(@sort.to_s, "none") %>
     <table class="table table-hover sparc-table-layout-fixed">
       <colgroup>
         <% if can_bulk_delete? %><col class="sparc-w-4pct"><% end %>
         <col class="sparc-w-22pct">
-        <col class="sparc-w-30pct">
+        <% if @show_organization %><col class="sparc-w-18pct"><% end %>
+        <col class="sparc-w-10pct">
+        <col class="sparc-w-14pct">
         <col class="sparc-w-10pct">
         <col class="sparc-w-10pct">
-        <col class="sparc-w-10pct">
-        <col class="sparc-w-18pct">
+        <col class="sparc-w-8pct">
       </colgroup>
       <thead>
         <tr>
@@ -64,8 +76,16 @@
             <th><%= render "authorization_boundaries/select_all_box" %></th>
           <% end %>
           <th>Name</th>
-          <th>Description</th>
+          <% if @show_organization %><th>Organization</th><% end %>
           <th>Status</th>
+          <th aria-sort="<%= aria_sort %>">
+            <%= link_to authorization_boundaries_path(request.query_parameters.slice("q", "view", "per_page").merge("sort" => sort_next)),
+                  class: "sparc-sort-link", data: { sort_column: "next_decision" },
+                  title: "Sort by next decision date (no date last)" do %>
+              Next decision
+              <span aria-hidden="true"><%= { "next_decision" => "&#9650;", "-next_decision" => "&#9660;" }.fetch(@sort.to_s, "&#8597;").html_safe %></span>
+            <% end %>
+          </th>
           <th>Members</th>
           <th>Environments</th>
           <th>Actions</th>
@@ -73,22 +93,23 @@
       </thead>
       <tbody>
         <% @authorization_boundaries.each do |authorization_boundary| %>
-          <tr>
+          <tr data-boundary-row="<%= authorization_boundary.slug %>">
             <% if can_bulk_delete? %>
               <td><%= render "authorization_boundaries/bulk_checkbox", boundary: authorization_boundary %></td>
             <% end %>
-            <td class="sparc-text-ellipsis" title="<%= authorization_boundary.name %>">
+            <td class="sparc-text-ellipsis" title="<%= authorization_boundary.description.presence || authorization_boundary.name %>">
               <%= link_to authorization_boundary.name, authorization_boundary_path(authorization_boundary) %>
             </td>
-            <td class="text-body-secondary sparc-text-ellipsis">
-              <%= authorization_boundary.description.presence || "—" %>
-            </td>
+            <% if @show_organization %>
+              <td class="sparc-text-ellipsis"><%= authorization_boundary.organization&.name || "—" %></td>
+            <% end %>
             <td>
               <%# #1247 — one colour per status everywhere: ab_status_variant. %>
               <span class="sparc-status sparc-status--<%= ab_status_variant(authorization_boundary.status) %>">
                 <%= authorization_boundary.status.titleize %>
               </span>
             </td>
+            <td><%= next_decision_badge(authorization_boundary) %></td>
             <td><%= authorization_boundary.people_count %></td>
             <td><%= authorization_boundary.boundaries.count %></td>
             <td>
