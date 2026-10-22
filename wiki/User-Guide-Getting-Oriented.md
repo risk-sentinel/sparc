@@ -42,24 +42,30 @@ model — the same content is always available at *About → OSCAL Overview*
 
 ## The dashboard
 
-![The SPARC Home dashboard showing statistics tiles for each compliance layer and quick-action cards](images/dashboard.png)
+![The SPARC Home dashboard showing a card for each area, grouped by layer](images/dashboard.png)
 
-*The SPARC dashboard — live counts grouped by layer (Controls, Implementation, Assessment, Enterprise) with quick-action cards.*
+*The SPARC dashboard — a card per area, grouped by layer (Controls, Implementation, Assessment, Enterprise).*
 
-After signing in you land on the **Home** dashboard (`/`), which has three
-parts:
+After signing in you land on the **Home** dashboard (`/`): a card for each
+area of SPARC, grouped by layer — Controls, Implementation, Assessment and
+Enterprise.
 
-1. **Statistics tiles** — a header card with live counts for Catalogs,
-   Families, Controls, Authorization Boundaries, Baselines, CDEFs, SSPs, SAPs,
-   SARs, POA&Ms, and Evidence. A quick health check of everything in the
-   instance.
-2. **Aggregate compliance heatmap** — a grid showing implementation status
-   across all SSPs, grouped by NIST control family (`AC`, `AU`, `SC`, …). Click
-   a family cell to drill down to the controls in that family
-   (`/dashboard/family/:family`).
-3. **Section navigation grid** — a card per document type with **View** and
-   **New** buttons, so you can jump straight into any area or start a new
-   document.
+- **The count beside each title** is how many records that area holds **that
+  you can see**, and it is a link: it opens the same list as the card's
+  **View** button, which shows the same number. SSPs, SAPs, SARs, Evidence,
+  POA&Ms and Auth Boundaries count only the boundaries you have access to
+  (Evidence also counts instance-wide evidence, which belongs to no boundary);
+  the shared library (catalogs, baselines, mappings, CDEFs, converters) counts
+  everything. Instance Admins see the whole instance.
+- **Control Catalogs** also shows how many control families and controls the
+  loaded catalogs hold.
+- **New** starts a new record. It appears only on the cards where you are
+  allowed to create one.
+- **Organizations** is an administrator screen, so its card appears only for
+  Instance Admins.
+
+Before v1.17.2 a row of statistics tiles sat above the cards. It counted the
+whole instance and its tiles were not links; the counts now live on the cards.
 
 ---
 

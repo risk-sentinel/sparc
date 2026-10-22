@@ -26,6 +26,9 @@ see [RBAC](RBAC). Instance Admins can also manage boundaries under
   may view. An administrator, or someone with an instance-wide read grant such
   as Global Viewer, sees every boundary. Everyone else sees the boundaries they
   hold a role on.
+- **What you see is what you may do:** buttons and links on the boundary page
+  appear only for actions you are permitted to take. A missing **Edit** or
+  **Add Member** means your role does not include it, not that it is broken.
 - **Completeness:** the *Personnel and roles* row counts everyone with access,
   whether added through Admin role assignment or the boundary's roster.
   *Leveraged authorizations* with none recorded reads **None (optional)**: a
@@ -48,6 +51,50 @@ flowchart TD
     DOCS --> ATO[ATO Package wizard]
     ATO --> ZIP[Downloadable ATO archive]
 ```
+
+---
+
+## Reading the boundary page
+
+The page opens with what the boundary **is**: its name, UUID, status, the
+description, and one line of ATO facts — **Authorization status**, **Next
+decision** (amber when it is within 90 days, red once it has passed) and the
+**Authorizing official**.
+
+**Build ATO Package** is the main button. Everything else is under **More**:
+**Amendments**, **CDEF Coverage**, **Download ATO Package** (once documents are
+attached), **Edit**, **Delete** and **All Authorization Boundaries**.
+
+Below the header, each section can be collapsed, and its header shows a count,
+for example *Personnel Roster (4)*, so the page stays readable with everything
+closed:
+
+1. **Boundary Completeness** — open while the boundary is **Draft**, collapsed
+   once it is Active, Authorized or Deauthorized. Its header summarises the
+   checklist, such as *3 of 11 complete*.
+2. **Artifact Summary** — open; the SSP, SAP, SAR and POA&M tiles.
+3. **Environments & Components**
+4. **Personnel Roster**
+5. **Evidence** (called *Artifacts* before v1.17.2)
+6. **Back Matter** — the boundary's own documents; see below.
+7. **Leveraged Authorizations**
+8. **Metadata sync status**
+
+SPARC remembers which sections you open or close, in this browser, and applies
+that choice on every boundary's page. A Draft boundary always opens Boundary
+Completeness, because that is what a team building one needs in view.
+
+### Working through Boundary Completeness
+
+Each row's title is a link to where that item is done in SPARC: *Personnel and
+roles* opens **Add Member**, *Profile / baseline* opens the boundary's **Edit**
+page, *Evidence* opens **Add Evidence**, *Scan results* opens **Amendments**,
+*Back-matter documents* opens the **Back Matter** section on this page, and so
+on. Until the boundary has an SSP, the rows that are worked on the SSP
+(categorization, components) link to **Add SSP first** instead. A row whose
+title is plain text is one you do not have permission to work on. The small
+**Guide** link beside each row opens the matching section of
+[Adopting OSCAL](Adopting-OSCAL).
 
 ---
 
@@ -84,7 +131,7 @@ Environments (dev, test, prod, …) are the system boundaries within an
 authorization boundary.
 
 1. Open the authorization boundary detail page.
-2. In the **System boundaries** section, click to add a new one
+2. In the **Environments & Components** section, click **Add Environment**
    (`/authorization_boundaries/:id/boundaries/new`).
 3. Fill in **name**, **description**, and the **environment classification**.
 4. Save. The environment now appears on the boundary, and can be referenced when
@@ -92,8 +139,8 @@ authorization boundary.
 
 ## How to add team members
 
-1. On the boundary detail page, find the **Team members** section.
-2. Click to add a member
+1. On the boundary detail page, find the **Personnel Roster** section.
+2. Click **Add Member**
    (`/authorization_boundaries/:id/authorization_boundary_memberships/new`).
 3. Choose the user and assign a **role** from the dropdown (the role governs what
    they can do *within this boundary* — see [RBAC](RBAC)).
@@ -121,6 +168,29 @@ Use this when your system inherits controls from an underlying authorized system
 
 The leveraging side can also view inherited POA&Ms read-only — see
 [POA&M](User-Guide-POAM).
+
+## How to register boundary documents (back-matter)
+
+Some documents describe the **system** rather than one of its documents: the
+boundary and data-flow diagrams, the hardware and software inventory, the PPSM,
+a customer responsibility matrix (CRM). Register them on the boundary itself.
+
+1. On the boundary detail page, expand **Back Matter** (or click the
+   *Back-matter documents* row in Boundary Completeness).
+2. Under **Add Resource**, enter a **Title**, choose the **Relationship** (for a
+   diagram, `diagram`), the **Media Type**, and the **Href** where the document
+   lives.
+3. Click **Add Resource**. The *Back-matter documents* row turns **Complete**.
+
+Use **Edit** and **Delete** on a resource's row to change or remove it. Unlike
+a document's back-matter, the boundary's can be changed in **any** status, so
+an authorized system can still gain a new diagram.
+
+You need `back_matter.read` (with read on the boundary) to see the section, and
+`back_matter.write` on the boundary to change it. When the boundary's SSP is
+exported as OSCAL, these resources are included in its back-matter. The same
+operations are available through the API at
+`/api/v1/authorization_boundaries/:id/back_matter_resources`.
 
 ## How to attach a document to this boundary
 
@@ -210,6 +280,8 @@ the wizard bundles their current state.
 | ATO package is missing a document | That document doesn't exist or isn't complete for the boundary | Create/complete the SSP/SAP/SAR/POA&M first, then rebuild |
 | "Populate" pulls nothing | The leveraged system reference is incomplete | Re-check the leveraged system name/ID on the leveraged authorization |
 | Can't create a boundary | Your role lacks the permission | Ask an Instance Admin ([Administration](User-Guide-Administration)) |
+| **Delete** in the More menu is greyed out | The boundary still holds SSP, SAP, SAR or POA&M documents; the menu names them | Detach or delete those documents first, then delete the boundary |
+| There is no Edit or Delete on the boundary list | The list offers **View** only, by design | Open the boundary; Edit and Delete are in its **More** menu |
 | A member can't see documents | Role assigned at the wrong scope | Confirm the boundary-scoped role in the Team members section |
 | An SSP/SAP/SAR/POA&M is missing from every list | It belongs to no boundary, so only Instance Admins can see it | Ask an Instance Admin to attach it from the boundary's Artifact Summary |
 | Upload form shows no boundary to pick | You are not on the roster of any boundary | Ask to be added — these document types cannot be created without one |
@@ -228,6 +300,16 @@ When several SSPs point at one boundary, its page names each of them:
 
 The authorization boundaries list opens as **cards**, with a **☰ List** toggle if you prefer a
 table. Your choice is remembered for this screen.
+
+The table shows each boundary's **Organization** (when the list spans more than
+one), **Status**, **Next decision**, **Members** and **Environments**; the
+description appears when you hover over the name. Click the **Next decision**
+header to see what is due first, and again for the reverse. Boundaries with no
+date come last either way. A next decision within 90 days is amber, and one
+that has passed is red. The cards show the same organization and next decision.
+
+Each row offers **View** only: edit or delete a boundary from its own page,
+which also tells you if a delete would be refused.
 
 Instance Admins can select boundaries for bulk delete in either view — the
 tick-boxes are on the cards as well as the table rows.
