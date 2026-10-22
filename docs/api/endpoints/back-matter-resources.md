@@ -152,9 +152,13 @@ Creates a new back-matter resource with a UUID v4 auto-generated.
 | `href` | string | No | URL or URI reference |
 | `globally_available` | boolean | No | Make available to all organizations (default: `false`) |
 | `organization_id` | integer | No | Scope to an organization (auto-set from user if omitted) |
-| `resourceable_type` | string | No | Parent document type (e.g., `SspDocument`) |
-| `resourceable_id` | integer | No | Parent document ID |
+| `resourceable_type` | string | No | The owner's type. One of `SspDocument`, `SarDocument`, `SapDocument`, `CdefDocument`, `PoamDocument`, `ProfileDocument`, `ControlCatalog`, `AuthorizationBoundary`, `LeveragedAuthorization`; any other value is refused with `422` (v1.17.2, #1249). Omit both owner fields for a library resource |
+| `resourceable_id` | integer | No | The owner's id. Must name a record that exists, and must be sent together with `resourceable_type`; otherwise `422` |
 | `source` | string | No | Source type: `managed` (default), `authoritative` (admin only) |
+
+The same owner rules apply to `PATCH`. A boundary's own back-matter also has
+nested routes, with the boundary's permissions: see
+[Boundary Back-Matter](boundary-back-matter.md).
 
 **Valid `rel` values:** `reference`, `depends-on`, `validation`, `proof-of-compliance`, `provided-by`, `used-by`, `uses-service`, `baseline-template`, `diagram`, `predecessor-version`, `successor-version`, `incorporated-into`
 

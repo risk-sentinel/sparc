@@ -101,6 +101,9 @@ module ApiRoutePermissions
     "hdf_systems"              => { read: { all: [ "authorization_boundaries.read", "ssp.read" ] } },
     # Membership of the leveraging boundary, checked by the controller.
     "leveraged_authorizations" => { read: :authenticated, write: :authenticated },
+    # #1249 — a boundary's own back-matter, checked against that boundary.
+    "boundary_back_matter_resources" => { read: { all: [ "authorization_boundaries.read", "back_matter.read" ] },
+                                          write: [ "back_matter.write" ] },
 
     # ── Evidence, scans, KSI validations, findings ──────────────────────
     "evidences"              => { read: [ "evidence.read" ], write: [ "evidence.write" ] },

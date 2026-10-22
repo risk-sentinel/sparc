@@ -18,6 +18,12 @@ class AuthorizationBoundary < ApplicationRecord
   READ_PERMISSION  = "authorization_boundaries.read"
   WRITE_PERMISSION = "authorization_boundaries.write"
 
+  # #1249 — who may see and change a boundary's own back-matter, on both
+  # surfaces (the boundary page and Api::V1::BoundaryBackMatterResourcesController),
+  # each checked against that boundary.
+  BACK_MATTER_READ_PERMISSIONS = [ READ_PERMISSION, "back_matter.read" ].freeze
+  BACK_MATTER_WRITE_PERMISSION = "back_matter.write"
+
   # #1245/#1247 — the boundaries `user` may see, as ONE definition for every
   # surface that lists boundaries: the sidebar, the Enterprise menu, the
   # boundary list and its tiles, and the homepage counts. It answers exactly
@@ -49,6 +55,12 @@ class AuthorizationBoundary < ApplicationRecord
   has_many :poam_documents, dependent: :nullify
   has_many :evidences, dependent: :nullify
   has_many :ksi_validations, dependent: :destroy
+  # #1249 — boundary-level back-matter (diagrams, inventory, PPSM, CRM): the
+  # documents that describe the SYSTEM rather than one of its documents. The
+  # boundary page manages them, the Completeness checklist counts them, and the
+  # SSP's OSCAL back-matter carries them (owner, 2026-08-20: the SSP export
+  # carries boundary-level back-matter).
+  has_many :back_matter_resources, as: :resourceable, dependent: :destroy
 
   # #447 — HDF Amendment triage layer, boundary-scoped.
   has_many :scan_runs, dependent: :destroy

@@ -682,6 +682,11 @@ controllers:
       create: ["POST /api/v1/back_matter_resources", "POST /api/v1/back_matter_resources/:id/link"]
       update: ["PATCH /api/v1/back_matter_resources/:id"]
       destroy: ["DELETE /api/v1/back_matter_resources/:id"]
+      # #1249 — the boundary page's Back Matter section, checked against that boundary.
+      "create@POST /authorization_boundaries/:authorization_boundary_id/back_matter_resources": ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/back_matter_resources"]
+      "update@PATCH /authorization_boundaries/:authorization_boundary_id/back_matter_resources/:id": ["PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/back_matter_resources/:id"]
+      "update@PUT /authorization_boundaries/:authorization_boundary_id/back_matter_resources/:id": ["PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/back_matter_resources/:id"]
+      "destroy@DELETE /authorization_boundaries/:authorization_boundary_id/back_matter_resources/:id": ["DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/back_matter_resources/:id"]
   control_back_matter_links:
     mapped:
       create: ["POST /api/v1/back_matter_resources", "POST /api/v1/back_matter_resources/:id/link"]

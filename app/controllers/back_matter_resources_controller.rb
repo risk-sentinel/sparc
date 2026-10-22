@@ -1,6 +1,7 @@
 # Polymorphic CRUD for BackMatterResource records nested under any
-# OSCAL document type. Handles create, update, and destroy of managed
-# back-matter resources from the document show page.
+# OSCAL document type, or under an authorization boundary (#1249). Handles
+# create, update, and destroy of managed back-matter resources from the
+# document (or boundary) show page.
 #
 # Routes expect a parent document identified by :document_type and
 # :document_id (slug). The controller resolves the polymorphic parent
@@ -70,15 +71,22 @@ class BackMatterResourcesController < ApplicationController
   # e.g., "ssp_document_id" => SspDocument
   #
   # #1249 — derived from BackMatterResource::RESOURCEABLE_TYPES, the one list of
-  # what may own back-matter. Not every owner has a screen of its own here:
-  # these types are written by services, never through these routes.
-  NOT_NESTED_HERE = %w[AuthorizationBoundary LeveragedAuthorization].freeze
+  # what may own back-matter. A leveraged authorization has no back-matter
+  # screen; its resources are reachable through Api::V1 only.
+  NOT_NESTED_HERE = %w[LeveragedAuthorization].freeze
   PARENT_PARAMS = (BackMatterResource::RESOURCEABLE_TYPES - NOT_NESTED_HERE)
                     .to_h { |type| [ "#{type.underscore}_id", type.constantize ] }.freeze
 
   def authorize_back_matter_write!
-    authorize_permission!("back_matter.write",
-                          authorization_boundary_id: @document.try(:authorization_boundary_id))
+    authorize_permission!(AuthorizationBoundary::BACK_MATTER_WRITE_PERMISSION, authorization_boundary_id: owning_boundary_id)
+  end
+
+  # The boundary a grant must be held on: the document's boundary, or, for
+  # boundary-level back-matter (#1249), the boundary itself.
+  def owning_boundary_id
+    return @document.id if @document.is_a?(AuthorizationBoundary)
+
+    @document.try(:authorization_boundary_id)
   end
 
   def set_document
@@ -96,7 +104,12 @@ class BackMatterResourcesController < ApplicationController
     @resource = @document.back_matter_resources.find(params[:id])
   end
 
+  # #1249 — boundary-level back-matter is editable in ANY boundary status
+  # (owner, 2026-10-22): a boundary's status is its authorization lifecycle, not
+  # a document draft, and an authorized system still gains diagrams and
+  # inventories.
   def require_draft
+    return if @document.is_a?(AuthorizationBoundary)
     return unless @document.respond_to?(:draft?)
     return if @document.draft?
 
@@ -136,6 +149,7 @@ class BackMatterResourcesController < ApplicationController
     when PoamDocument     then poam_document_path(@document)
     when ProfileDocument  then profile_document_path(@document)
     when ControlCatalog   then control_catalog_path(@document)
+    when AuthorizationBoundary then authorization_boundary_path(@document, anchor: "boundary-back-matter")
     else raise ArgumentError, "Unknown document type: #{@document.class}"
     end
   end

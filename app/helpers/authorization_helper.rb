@@ -47,4 +47,22 @@ module AuthorizationHelper
   end
 
   def can_delete_boundary? = can_bulk_delete?
+
+  # #1249 — the boundary page's Back Matter section: shown to someone who may
+  # read it, editable by someone who may write it, both on THIS boundary. The
+  # same keys Api::V1::BoundaryBackMatterResourcesController and the web
+  # BackMatterResourcesController enforce.
+  def can_read_boundary_back_matter?(boundary)
+    return true unless SparcConfig.any_auth_enabled?
+    return false unless current_user
+
+    AuthorizationBoundary::BACK_MATTER_READ_PERMISSIONS.all? do |key|
+      current_user.has_permission?(key, authorization_boundary_id: boundary.id)
+    end
+  end
+
+  def can_write_boundary_back_matter?(boundary)
+    !SparcConfig.any_auth_enabled? ||
+      current_user&.has_permission?(AuthorizationBoundary::BACK_MATTER_WRITE_PERMISSION, authorization_boundary_id: boundary.id)
+  end
 end

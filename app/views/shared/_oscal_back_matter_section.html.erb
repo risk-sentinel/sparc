@@ -1,13 +1,19 @@
-<%# OSCAL Back-Matter Section — shared across all document show pages.
+<%# OSCAL Back-Matter Section — shared across all document show pages, and
+    the authorization boundary page (#1249).
     Locals:
-      document      — the document record (SspDocument, SarDocument, etc.)
+      document      — the owning record (SspDocument, SarDocument, ...,
+                      or an AuthorizationBoundary)
       resources_path — the collection path for creating back-matter resources
                        (e.g., ssp_document_back_matter_resources_path(@ssp_document))
+      editable      — optional. Whether to offer add / edit / delete. Defaults
+                      to the document rule: a draft document, signed in. The
+                      boundary page passes its own answer (#1249: any status,
+                      for someone holding back_matter.write on the boundary).
 %>
 
 <% managed_resources = document.back_matter_resources.order(:title) %>
 <% imported_resources = document.respond_to?(:import_metadata) ? (document.import_metadata&.dig("back_matter") || []) : [] %>
-<% is_draft = document.respond_to?(:draft?) ? document.draft? : true %>
+<% editable = local_assigns.fetch(:editable) { (document.respond_to?(:draft?) ? document.draft? : true) && signed_in? } %>
 
 <div class="card mt-4" data-controller="oscal-back-matter">
   <div class="card-header d-flex justify-content-between align-items-center"
@@ -36,7 +42,7 @@
               <th>Media Type</th>
               <th>Href</th>
               <th>Source</th>
-              <% if is_draft && signed_in? %><th>Actions</th><% end %>
+              <% if editable %><th>Actions</th><% end %>
             </tr>
           </thead>
           <tbody>
@@ -61,7 +67,7 @@
                     <span class="badge bg-body-secondary text-body" title="Organization"><%= resource.organization.name %></span>
                   <% end %>
                 </td>
-                <% if is_draft && signed_in? %>
+                <% if editable %>
                   <td class="text-nowrap">
                     <button class="sparc-action sparc-action--primary sparc-action--outline sparc-action--sm"
                             type="button"
@@ -78,7 +84,7 @@
                   </td>
                 <% end %>
               </tr>
-              <% if is_draft && signed_in? %>
+              <% if editable %>
                 <tr id="edit-resource-<%= resource.id %>" class="d-none">
                   <td colspan="7">
                     <%= form_with(model: resource, url: [document, resource], method: :patch, class: "row g-2 align-items-end") do |f| %>
@@ -161,7 +167,7 @@
     <% end %>
 
     <%# ── Add New Resource Form (draft only) ─────────────────────── %>
-    <% if is_draft && signed_in? %>
+    <% if editable %>
       <hr>
       <%
         # Build control list for "Associate to Control" dropdown

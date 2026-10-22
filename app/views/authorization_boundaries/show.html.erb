@@ -243,6 +243,19 @@
   </div>
 </div>
 
+<%# ── Back Matter (#1249) ─────────────────────────────────── %>
+<%# The boundary's OWN back-matter (diagrams, inventory, PPSM, CRM), which the
+    Completeness row "Back-matter documents" counts and the SSP export carries.
+    Editable in any boundary status (owner). %>
+<% if can_read_boundary_back_matter?(@authorization_boundary) %>
+  <div id="boundary-back-matter" class="mb-4">
+    <%= render "shared/oscal_back_matter_section",
+          document: @authorization_boundary,
+          resources_path: authorization_boundary_back_matter_resources_path(@authorization_boundary),
+          editable: can_write_boundary_back_matter?(@authorization_boundary) %>
+  </div>
+<% end %>
+
 <%# #395 P3: per-document metadata sync status (green / yellow / red dots) %>
 <%= render "metadata_sync_status", boundary: @authorization_boundary %>
 

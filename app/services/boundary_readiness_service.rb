@@ -187,8 +187,11 @@ class BoundaryReadinessService
 
   # Register before you resolve — a profile resolving over dangling references
   # exports something that cites documents nobody registered.
+  #
+  # #1249 — read through the association the boundary page writes to, so the
+  # row can turn Complete from the screen.
   def back_matter
-    count = BackMatterResource.where(resourceable: boundary).count
+    count = boundary.back_matter_resources.count
 
     Section.new(
       key: :back_matter, title: "Back-matter documents", count: count,
