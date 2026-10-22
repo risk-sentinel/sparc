@@ -172,8 +172,8 @@ SPARC defines **33 permission keys** across 14 resource areas (`Role::PERMISSION
 | `catalogs.approve` | Approve / publish a control catalog |
 | `profiles.write` | Create / edit baselines / profiles |
 | `profiles.approve` | Approve / publish a baseline / profile |
-| `authorization_boundaries.read` | View authorization boundaries |
-| `authorization_boundaries.write` | Create / edit authorization boundaries |
+| `authorization_boundaries.read` | View an authorization boundary, its ATO wizard, and download its ATO package (on that boundary, or instance-wide) |
+| `authorization_boundaries.write` | Edit a boundary, attach documents, build its ATO package (on that boundary); create a boundary (instance-level only). Deleting one is Instance-Admin-only. |
 | `authorization_boundaries.manage_members` | Add / remove members and assign roles within a boundary |
 | `ssp.read` | View System Security Plans |
 | `ssp.write` | Create / edit System Security Plans |

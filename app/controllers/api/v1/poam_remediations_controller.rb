@@ -10,7 +10,7 @@ class Api::V1::PoamRemediationsController < Api::V1::PoamSubresourcesController
   # A callback of its OWN name. Re-declaring `before_action :authorize_poam_write!,
   # only: :complete` here would REPLACE the base class's declaration (Rails
   # de-duplicates callbacks by name), leaving create/update/destroy unguarded.
-  before_action :authorize_and_load_for_complete, only: :complete
+  before_action :authorize_and_load_for_complete!, only: :complete
 
   # POST /api/v1/poam_documents/:poam_document_id/remediations/:id/complete
   #
@@ -26,7 +26,7 @@ class Api::V1::PoamRemediationsController < Api::V1::PoamSubresourcesController
 
   private
 
-  def authorize_and_load_for_complete
+  def authorize_and_load_for_complete!
     authorize_poam_write!
     set_record
   end

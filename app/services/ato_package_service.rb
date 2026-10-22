@@ -8,8 +8,15 @@
 #   "skip"            → no action
 #
 # Usage:
-#   service = AtoPackageService.new(authorization_boundary, params)
+#   service = AtoPackageService.new(authorization_boundary, params, existing_scope: ->(klass) { ... })
 #   service.create  # => authorization_boundary (with linked documents)
+#
+# #1244 — "select_existing" looks the SSP/SAP/SAR/POA&M up inside
+# `existing_scope`, never across the instance. It used to `find` any document
+# by id and re-point it here, so a caller allowed to build one boundary's
+# package could pull another boundary's documents into it. The default scope is
+# this boundary's own documents; the controller widens it only to the
+# boundary-less documents its caller may attach.
 #
 class AtoPackageService
   # #843 — source risks the POA&M step could not convert, with the reason for
@@ -18,8 +25,9 @@ class AtoPackageService
   # generated POA&M is thinner than the assessment justified.
   attr_reader :poam_skipped
 
-  def initialize(authorization_boundary, params)
+  def initialize(authorization_boundary, params, existing_scope: nil)
     @ab = authorization_boundary
+    @existing_scope = existing_scope || ->(klass) { klass.where(authorization_boundary_id: authorization_boundary.id) }
     @params = params.to_h.with_indifferent_access
     @poam_skipped = []
   end
@@ -70,7 +78,7 @@ class AtoPackageService
   def resolve_ssp
     case @params[:ssp_mode]
     when "select_existing"
-      @ssp = SspDocument.find(@params[:ssp_document_id])
+      @ssp = @existing_scope.call(SspDocument).find(@params[:ssp_document_id])
       @ssp.update!(authorization_boundary: @ab)
     when "create_new"
       wizard_params = {
@@ -98,7 +106,7 @@ class AtoPackageService
   def resolve_sap
     case @params[:sap_mode]
     when "select_existing"
-      @sap = SapDocument.find(@params[:sap_document_id])
+      @sap = @existing_scope.call(SapDocument).find(@params[:sap_document_id])
       @sap.update!(authorization_boundary: @ab)
     when "create_new"
       @sap = SapGeneratorService.new(
@@ -121,7 +129,7 @@ class AtoPackageService
   def resolve_sar
     case @params[:sar_mode]
     when "select_existing"
-      @sar = SarDocument.find(@params[:sar_document_id])
+      @sar = @existing_scope.call(SarDocument).find(@params[:sar_document_id])
       @sar.update!(authorization_boundary: @ab)
     when "create_new"
       sar_params = {
@@ -143,7 +151,7 @@ class AtoPackageService
   def resolve_poam
     case @params[:poam_mode]
     when "select_existing"
-      @poam = PoamDocument.find(@params[:poam_document_id])
+      @poam = @existing_scope.call(PoamDocument).find(@params[:poam_document_id])
       @poam.update!(authorization_boundary: @ab)
     when "create_new"
       # #843 — POA&M used to be the one step in this wizard that produced an

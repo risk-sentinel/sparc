@@ -8,7 +8,16 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
     allow(SparcConfig).to receive(:enable_local_login?).and_return(true)
   end
 
-  let(:user) { create(:user) }
+  # #1244 — every action now checks the caller's permission on the boundary.
+  # These examples signed in a user holding nothing, and passed only because
+  # nothing was checked. They now grant what each action requires: read and
+  # write on `ab`. Destroy is administrator-only, so its example signs in one.
+  let(:user) do
+    create(:user).tap do |u|
+      grant_permission(u, "authorization_boundaries.read", authorization_boundary: ab)
+      grant_permission(u, "authorization_boundaries.write", authorization_boundary: ab)
+    end
+  end
   let(:ab) { create(:authorization_boundary) }
 
   # #770 bug 4 — Artifact Summary tiles are uniform and clickable. The POA&M
@@ -217,7 +226,7 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
 
   # #629 — single-delete now honors the referential guard (was: always "deleted").
   describe "DELETE /authorization_boundaries/:id (referential guard)" do
-    before { sign_in_as(user) }
+    before { sign_in_as(create(:user, :admin)) }
 
     it "blocks deletion when an SSP is attached and reports the reason" do
       boundary = create(:authorization_boundary)

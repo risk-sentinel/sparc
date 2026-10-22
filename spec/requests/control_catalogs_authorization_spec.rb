@@ -37,6 +37,23 @@ RSpec.describe "Catalog Authorization", type: :request do
   # ── ControlCatalogsController ──────────────────────────────────────────
 
   describe "ControlCatalogsController" do
+    # #1244 — found by the per-action sweep: acknowledge_warnings wrote the
+    # catalog's metadata with no write check.
+    context "acknowledge_warnings" do
+      it "refuses a viewer, and the warnings stay unacknowledged" do
+        sign_in_as(viewer_user)
+        patch acknowledge_warnings_control_catalog_path(catalog)
+        expect(response).to redirect_to(root_path)
+        expect(catalog.reload.metadata_extra.to_h["import_warnings_acknowledged"]).to be_nil
+      end
+
+      it "lets a catalogs.write holder acknowledge them" do
+        sign_in_as(policy_user)
+        patch acknowledge_warnings_control_catalog_path(catalog)
+        expect(catalog.reload.metadata_extra["import_warnings_acknowledged"]).to be(true)
+      end
+    end
+
     context "read actions (no write permission needed)" do
       it "allows viewer to access index" do
         sign_in_as(viewer_user)

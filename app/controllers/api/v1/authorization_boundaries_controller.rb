@@ -10,9 +10,16 @@
 # DELETE /api/v1/authorization_boundaries/:id      — delete
 #
 class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
+  # #1244 — the same rule as the web controller (AuthorizationBoundaryAccess).
+  # Update now takes a boundary-scoped write grant; it accepted only an
+  # instance-level one, refusing the boundary's own ISSO/ISSM (owner,
+  # 2026-10-22). Create still needs an instance-level grant.
+  include AuthorizationBoundaryAccess
+
   before_action :set_boundary, only: [ :show, :update, :destroy, :assign_organization ]
   before_action :authorize_boundary_read!, only: [ :show ]
-  before_action :authorize_boundary_write!, only: [ :create, :update ]
+  before_action :authorize_boundary_create!, only: [ :create ]
+  before_action :authorize_boundary_write!, only: [ :update ]
   before_action :authorize_admin!, only: [ :destroy, :bulk_destroy ]
   # assign_organization intentionally omits the generic write gate: its
   # authorization is the org-admin matrix in BoundaryOrganizationAssigner (#770).
@@ -136,19 +143,7 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
     end
   end
 
-  def authorize_boundary_read!
-    return if current_user.instance_administrator?
-    return if current_user.has_permission?("authorization_boundaries.read", authorization_boundary_id: @boundary.id)
-
-    raise NotAuthorizedError, "Not authorized to view this authorization boundary"
-  end
-
-  def authorize_boundary_write!
-    return if current_user.instance_administrator?
-    return if current_user.has_permission?("authorization_boundaries.write")
-
-    raise NotAuthorizedError, "Not authorized to modify authorization boundaries"
-  end
+  def access_boundary = @boundary
 
   def boundary_params
     permit_strictly(:authorization_boundary, :name, :description, :status, :authorization_boundary_description,

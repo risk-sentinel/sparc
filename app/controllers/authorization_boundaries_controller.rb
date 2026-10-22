@@ -1,6 +1,7 @@
 class AuthorizationBoundariesController < ApplicationController
   include CollectionViewable
   include BulkDestroyable
+  include AuthorizationBoundaryAccess
 
   before_action :set_authorization_boundary, only: [
     :show, :edit, :update, :destroy,
@@ -13,8 +14,15 @@ class AuthorizationBoundariesController < ApplicationController
   # absent: it has no such column, and its scope is re-pointed through
   # CdefScopeService instead.
   ATTACHABLE_TYPES = %w[ssp sap sar poam].freeze
-  # #629 — bulk delete is admin-only.
-  before_action :authorize_admin!, only: [ :bulk_destroy ]
+  # #1244 — every action checks the caller against THIS boundary
+  # (AuthorizationBoundaryAccess). Only bulk_destroy used to be guarded, so any
+  # signed-in user who knew a slug could read, edit or delete a boundary and
+  # build or download its ATO package. Delete is administrator-only, as on the
+  # API (#629 for bulk).
+  before_action :authorize_boundary_read!,   only: %i[show download_ato_package]
+  before_action :authorize_boundary_write!,  only: %i[edit update attach_document ato_wizard create_ato_package]
+  before_action :authorize_boundary_create!, only: %i[new create]
+  before_action :authorize_admin!,           only: %i[destroy bulk_destroy]
 
   def index
     scope = AuthorizationBoundary.order(updated_at: :desc)
@@ -142,10 +150,13 @@ class AuthorizationBoundariesController < ApplicationController
                                   .where.not(resolved_catalog_json: nil)
                                   .order(:name)
     @cdefs       = CdefDocument.where(status: "completed").order(:name)
-    @ssps        = SspDocument.where(status: "completed").order(:name)
-    @saps        = SapDocument.where(status: "completed").order(:name)
-    @sars        = SarDocument.where(status: "completed").order(:name)
-    @poams       = PoamDocument.where(status: "completed").order(:name)
+    # #1244 — this boundary's documents only (plus boundary-less ones for an
+    # administrator). The wizard listed every completed document on the
+    # instance, and "select existing" then moved the chosen one in.
+    @ssps        = ato_candidates(SspDocument).where(status: "completed").order(:name)
+    @saps        = ato_candidates(SapDocument).where(status: "completed").order(:name)
+    @sars        = ato_candidates(SarDocument).where(status: "completed").order(:name)
+    @poams       = ato_candidates(PoamDocument).where(status: "completed").order(:name)
 
     # Warn if required roles are missing
     roles = @memberships.pluck(:role)
@@ -155,7 +166,8 @@ class AuthorizationBoundariesController < ApplicationController
   end
 
   def create_ato_package
-    service = AtoPackageService.new(@authorization_boundary, ato_package_params)
+    service = AtoPackageService.new(@authorization_boundary, ato_package_params,
+                                    existing_scope: method(:ato_candidates))
     service.create
 
     audit_log("ato_package_created", subject: @authorization_boundary,
@@ -182,6 +194,17 @@ class AuthorizationBoundariesController < ApplicationController
   end
 
   private
+
+  def access_boundary = @authorization_boundary
+
+  # #1244 — the documents the ATO wizard may link: those already on this
+  # boundary, and boundary-less ones on the terms attach_document offers them.
+  # A document on ANOTHER boundary is never a candidate; moving one needs write
+  # on both boundaries, through the document's own attach_boundary.
+  def ato_candidates(document_class)
+    document_class.where(authorization_boundary_id: @authorization_boundary.id)
+                  .or(attachable_candidates(document_class).unscope(:order))
+  end
 
   def set_authorization_boundary
     @authorization_boundary = AuthorizationBoundary.find_by!(slug: params[:id])

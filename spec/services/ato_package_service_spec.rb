@@ -2,6 +2,10 @@
 
 require "rails_helper"
 
+# #1244 — "select_existing" picks documents already on THIS boundary (the
+# default scope), so these documents are created on `ab`. They used to come from
+# the factory's own boundaries and be moved in: the cross-boundary move #1244
+# removed. The refusal is pinned at the end of this file.
 RSpec.describe AtoPackageService do
   let(:ab) { create(:authorization_boundary) }
 
@@ -73,7 +77,7 @@ RSpec.describe AtoPackageService do
     end
 
     context "when selecting an existing SSP" do
-      let(:ssp) { create(:ssp_document) }
+      let(:ssp) { create(:ssp_document, authorization_boundary: ab) }
       let(:params) do
         {
           profile_mode: "skip",
@@ -96,7 +100,7 @@ RSpec.describe AtoPackageService do
     end
 
     context "when selecting an existing SAP" do
-      let(:sap) { create(:sap_document) }
+      let(:sap) { create(:sap_document, authorization_boundary: ab) }
       let(:params) do
         {
           profile_mode: "skip",
@@ -119,7 +123,7 @@ RSpec.describe AtoPackageService do
     end
 
     context "when selecting an existing SAR" do
-      let(:sar) { create(:sar_document) }
+      let(:sar) { create(:sar_document, authorization_boundary: ab) }
       let(:params) do
         {
           profile_mode: "skip",
@@ -142,7 +146,7 @@ RSpec.describe AtoPackageService do
     end
 
     context "when selecting an existing POAM" do
-      let(:poam) { create(:poam_document) }
+      let(:poam) { create(:poam_document, authorization_boundary: ab) }
       let(:params) do
         {
           profile_mode: "skip",
@@ -255,7 +259,7 @@ RSpec.describe AtoPackageService do
     end
 
     context "when creating a new SAP" do
-      let(:ssp) { create(:ssp_document) }
+      let(:ssp) { create(:ssp_document, authorization_boundary: ab) }
       let(:params) do
         {
           profile_mode: "skip",
@@ -292,7 +296,7 @@ RSpec.describe AtoPackageService do
     end
 
     context "when creating a new SAR" do
-      let(:sap) { create(:sap_document) }
+      let(:sap) { create(:sap_document, authorization_boundary: ab) }
       let(:params) do
         {
           profile_mode: "skip",
@@ -363,7 +367,7 @@ RSpec.describe AtoPackageService do
     end
 
     context "mixed mode: some create, some select, some skip" do
-      let(:existing_sap) { create(:sap_document) }
+      let(:existing_sap) { create(:sap_document, authorization_boundary: ab) }
       let(:cdef) { create(:cdef_document) }
       let(:params) do
         {
@@ -428,6 +432,19 @@ RSpec.describe AtoPackageService do
           described_class.new(ab, params).create
         }.to raise_error(ActiveRecord::RecordNotFound)
       end
+    end
+  end
+
+  describe "#1244 — a document on another boundary" do
+    let(:ab) { create(:authorization_boundary) }
+    let(:foreign_ssp) { create(:ssp_document, authorization_boundary: create(:authorization_boundary)) }
+
+    it "is not found by select_existing, and is not moved" do
+      params = { profile_mode: "skip", cdef_mode: "skip", ssp_mode: "select_existing",
+                 ssp_document_id: foreign_ssp.id, sap_mode: "skip", sar_mode: "skip", poam_mode: "skip" }
+
+      expect { described_class.new(ab, params).create }.to raise_error(ActiveRecord::RecordNotFound)
+      expect(foreign_ssp.reload.authorization_boundary).not_to eq(ab)
     end
   end
 end

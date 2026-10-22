@@ -18,10 +18,17 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 
 ## Authorization
 
-| Role | Access |
-|------|--------|
-| Admin | Full access to all boundaries |
-| Non-admin | Read/write access to own boundaries only |
+The same rule governs the web screens (`AuthorizationBoundaryAccess`, #1244):
+
+| Action | Requires |
+|--------|----------|
+| Show | `authorization_boundaries.read` on the boundary, or instance-wide |
+| Update | `authorization_boundaries.write` on the boundary, or instance-wide. A boundary's own ISSO/ISSM qualifies (v1.17.2; before, only an instance-level grant did). |
+| Create | `authorization_boundaries.write`, instance-level |
+| Delete, bulk delete | Instance administrator |
+| Assign organization | The organization-admin rules in `BoundaryOrganizationAssigner` (#770) |
+
+The list returns every boundary to an instance administrator, and otherwise only the boundaries the caller holds a role on. Anything else is a 403.
 
 ## Endpoints
 
