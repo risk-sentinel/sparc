@@ -28,10 +28,7 @@
             ],
             "props": [
               { "name": "label", "value": "DP-1" },
-              { "name": "sort-id", "value": "dp-01" },
-              { "name": "priority", "value": "P1" },
-              { "name": "impact-level", "value": "MODERATE" },
-              { "name": "impact-level", "value": "HIGH" }
+              { "name": "sort-id", "value": "dp-01" }
             ],
             "parts": [
               {
@@ -83,8 +80,7 @@
                 "title": "Automated Retention Enforcement",
                 "props": [
                   { "name": "label", "value": "DP-1(1)" },
-                  { "name": "sort-id", "value": "dp-01.01" },
-                  { "name": "impact-level", "value": "HIGH" }
+                  { "name": "sort-id", "value": "dp-01.01" }
                 ],
                 "parts": [
                   {

@@ -101,17 +101,42 @@ class OscalSspExportService
   # ── Top-level SSP envelope ─────────────────────────────────────────
 
   def build_ssp
-    {
-      "system-security-plan" => {
-        "uuid"                     => @document.uuid,
-        "metadata"                 => build_metadata,
-        "import-profile"           => build_import_profile,
-        "system-characteristics"   => build_system_characteristics,
-        "system-implementation"    => build_system_implementation,
-        "control-implementation"   => build_control_implementation,
-        "back-matter"              => build_back_matter
-      }.compact
-    }
+    ssp = {
+      "uuid"                     => @document.uuid,
+      "metadata"                 => build_metadata,
+      "import-profile"           => build_import_profile,
+      "system-characteristics"   => build_system_characteristics,
+      "system-implementation"    => build_system_implementation,
+      "control-implementation"   => build_control_implementation,
+      "back-matter"              => build_back_matter
+    }.compact
+    declare_leveraged_parties!(ssp)
+    { "system-security-plan" => ssp }
+  end
+
+  # #1108 — every leveraged-authorization `party-uuid` must resolve to a party
+  # in metadata.parties. default_parties declares the derived party of a
+  # boundary-level authorization, but a legacy SspLeveragedAuthorization
+  # carries its own stored party_uuid, and a boundary-level one may carry one
+  # in its metadata, and neither was declared: the sweep found the reference
+  # dangling in a freshly exported SSP. Checked once, on the assembled
+  # document, so no path can leave one unresolved.
+  def declare_leveraged_parties!(ssp)
+    entries = Array(ssp.dig("system-implementation", "leveraged-authorizations"))
+    return if entries.empty?
+
+    metadata = ssp["metadata"] ||= {}
+    parties = (metadata["parties"] ||= [])
+    declared = parties.map { |party| party["uuid"] }.to_set
+
+    entries.each do |entry|
+      uuid = entry[PARTY_UUID]
+      next if uuid.blank? || declared.include?(uuid)
+
+      parties << { "uuid" => uuid, "type" => "organization",
+                   "name" => "#{entry['title'].presence || 'Leveraged system'} provider" }
+      declared << uuid
+    end
   end
 
   # ── Metadata ───────────────────────────────────────────────────────

@@ -1,11 +1,11 @@
 {
   "assessment-plan": {
-    "uuid": "9824f12c-ded3-4449-bbd5-9d891daeaf21",
+    "uuid": "b59f5a35-cdd2-4f91-8adc-65a1c7a364d0",
     "metadata": {
       "title": "ACME Cloud Platform — Annual Assessment Plan (Rev 5)",
       "version": "1.0",
-      "oscal-version": "1.1.2",
-      "last-modified": "2026-03-21T11:29:58Z",
+      "oscal-version": "1.2.3",
+      "last-modified": "2026-10-22T01:38:39Z",
       "roles": [
         {
           "id": "assessor",
@@ -26,7 +26,7 @@
       ],
       "parties": [
         {
-          "uuid": "a4b47024-2542-4dd5-98c8-97d99e6e0244",
+          "uuid": "87c8ba3e-66a4-4c0c-9ba4-f7e15b5f6ab2",
           "type": "organization",
           "name": "Assessment Organization (SPARC Export)"
         }
@@ -34,18 +34,18 @@
       "props": [
         {
           "name": "assessment-type",
-          "ns": "https://sparc.local/ns",
+          "ns": "https://sparc.risk-sentinel.org/ns",
           "value": "annual"
         }
       ]
     },
     "import-ssp": {
-      "href": "#ssp-16"
+      "href": "uuid:309d77ab-9c0a-4232-9ed4-7d46556bf3bd"
     },
     "local-definitions": {
       "activities": [
         {
-          "uuid": "3c4d1a80-e165-4b0b-bf9c-1a2a5eec7795",
+          "uuid": "b8df7314-0e3c-4b3f-a484-e7f2ca3f9ab7",
           "title": "Examine Assessment Activities",
           "description": "Assessment activities using the examine method.",
           "props": [
@@ -56,29 +56,489 @@
           ],
           "steps": [
             {
-              "uuid": "c4e50142-68e7-4abb-8e2d-0be6ab620491",
+              "uuid": "6455435b-9219-4e19-9de9-b8af755a01ae",
               "title": "Assess ac-2",
               "description": "Assess ac-2 using examine method."
             },
             {
-              "uuid": "f237bdfe-900f-444f-9934-a442ab9298d9",
+              "uuid": "538a03b6-6bd5-4522-afd3-3d42be9f52f6",
               "title": "Assess au-2",
               "description": "Assess au-2 using examine method."
             },
             {
-              "uuid": "7c7012e5-a4a8-448b-9ea8-4e08bc77b9ec",
+              "uuid": "ebc24c74-5367-432f-81cf-5e03b7ef091a",
               "title": "Assess au-6",
               "description": "Assess au-6 using examine method."
             },
             {
-              "uuid": "d51ea750-bd91-49d9-8204-b7b06ccd81fe",
+              "uuid": "5e2d1e50-5309-4595-90e1-aa8197fc13a5",
               "title": "Assess ia-5",
               "description": "Assess ia-5 using examine method."
             },
             {
-              "uuid": "18ddd630-3789-4d14-81bb-8dc5edcf9f75",
+              "uuid": "1fc9c00a-e6aa-461f-a06a-efe64ac650ec",
               "title": "Assess cm-6",
               "description": "Assess cm-6 using examine method."
+            },
+            {
+              "uuid": "9de11c1e-523a-4cd3-8c0c-e40426c2cadb",
+              "title": "Assess ac-1",
+              "description": "Assess ac-1 using examine method."
+            },
+            {
+              "uuid": "d28d1b09-8b9a-4793-a15b-f5b3f470df0e",
+              "title": "Assess ac-12",
+              "description": "Assess ac-12 using examine method."
+            },
+            {
+              "uuid": "c5142223-62f9-46a8-b5dc-40602786082b",
+              "title": "Assess ac-17.1",
+              "description": "Assess ac-17.1 using examine method."
+            },
+            {
+              "uuid": "b3755359-3b96-4d1a-a5e4-1c853a6c837a",
+              "title": "Assess ac-17.4",
+              "description": "Assess ac-17.4 using examine method."
+            },
+            {
+              "uuid": "e35685aa-96b4-4a1a-bb8f-a031b479b3a3",
+              "title": "Assess ac-18.3",
+              "description": "Assess ac-18.3 using examine method."
+            },
+            {
+              "uuid": "8e2496d6-9621-4309-a078-b544c194af74",
+              "title": "Assess ac-2.1",
+              "description": "Assess ac-2.1 using examine method."
+            },
+            {
+              "uuid": "f6f0620d-b65e-40f8-80cd-5c56f5baebc0",
+              "title": "Assess ac-2.3",
+              "description": "Assess ac-2.3 using examine method."
+            },
+            {
+              "uuid": "7bee4472-79a1-4c1e-9b7b-b9673376bc09",
+              "title": "Assess ac-20",
+              "description": "Assess ac-20 using examine method."
+            },
+            {
+              "uuid": "2de70962-4eca-4096-a9c3-679a5df98f97",
+              "title": "Assess ac-21",
+              "description": "Assess ac-21 using examine method."
+            },
+            {
+              "uuid": "dd686a8e-43f1-4042-b080-c22eaeea0e12",
+              "title": "Assess ac-5",
+              "description": "Assess ac-5 using examine method."
+            },
+            {
+              "uuid": "986612c9-95fa-44f1-8ffe-b6b4a61002a9",
+              "title": "Assess ac-6.2",
+              "description": "Assess ac-6.2 using examine method."
+            },
+            {
+              "uuid": "ce189896-96b9-46fe-8515-dce96cf758e2",
+              "title": "Assess ac-6.9",
+              "description": "Assess ac-6.9 using examine method."
+            },
+            {
+              "uuid": "ccf1c12f-9f20-43ef-815d-c74826d4fd44",
+              "title": "Assess at-1",
+              "description": "Assess at-1 using examine method."
+            },
+            {
+              "uuid": "e78c80e7-51a5-4ab9-8ee4-74c563499a79",
+              "title": "Assess at-2.3",
+              "description": "Assess at-2.3 using examine method."
+            },
+            {
+              "uuid": "2726fac8-7e32-41ec-a0d5-38fe469e7d1d",
+              "title": "Assess au-1",
+              "description": "Assess au-1 using examine method."
+            },
+            {
+              "uuid": "9a496baf-c811-40c4-b9bd-1645bb1c0b46",
+              "title": "Assess au-3",
+              "description": "Assess au-3 using examine method."
+            },
+            {
+              "uuid": "9136a903-a323-4337-8e0e-24df486d6aa6",
+              "title": "Assess au-5",
+              "description": "Assess au-5 using examine method."
+            },
+            {
+              "uuid": "1ee57c6d-b318-4f5a-9c3c-1335cfa8d9f6",
+              "title": "Assess au-7",
+              "description": "Assess au-7 using examine method."
+            },
+            {
+              "uuid": "b52d79e6-9884-4642-a1dd-4f3a84cad31f",
+              "title": "Assess au-9",
+              "description": "Assess au-9 using examine method."
+            },
+            {
+              "uuid": "03686b9b-5b51-4027-8520-c994b60704ef",
+              "title": "Assess ca-2.1",
+              "description": "Assess ca-2.1 using examine method."
+            },
+            {
+              "uuid": "1fa80e37-b0f3-493f-9510-fb0cdfc03631",
+              "title": "Assess ca-6",
+              "description": "Assess ca-6 using examine method."
+            },
+            {
+              "uuid": "e94d2a1f-3190-4aa8-a425-d41d0af70427",
+              "title": "Assess ca-9",
+              "description": "Assess ca-9 using examine method."
+            },
+            {
+              "uuid": "86e7e60f-9b07-48fa-b212-2ea4de8acfcb",
+              "title": "Assess cm-11",
+              "description": "Assess cm-11 using examine method."
+            },
+            {
+              "uuid": "7f398e35-3044-4921-a44e-0beba64d9532",
+              "title": "Assess cm-2",
+              "description": "Assess cm-2 using examine method."
+            },
+            {
+              "uuid": "e814c91c-392d-4c3b-849b-8eaa50e9dc4a",
+              "title": "Assess cm-2.7",
+              "description": "Assess cm-2.7 using examine method."
+            },
+            {
+              "uuid": "ffc1d500-c9b1-42de-8293-7a802343dfee",
+              "title": "Assess cm-3.4",
+              "description": "Assess cm-3.4 using examine method."
+            },
+            {
+              "uuid": "fbedadce-0eca-4391-9400-025b68a1fce8",
+              "title": "Assess cm-5",
+              "description": "Assess cm-5 using examine method."
+            },
+            {
+              "uuid": "bb92bf51-f41e-4dd7-98ae-7f16d0d257fe",
+              "title": "Assess cm-7.2",
+              "description": "Assess cm-7.2 using examine method."
+            },
+            {
+              "uuid": "81a8bae6-49e6-410f-82cf-771448210612",
+              "title": "Assess cm-8.1",
+              "description": "Assess cm-8.1 using examine method."
+            },
+            {
+              "uuid": "140f83f5-ef79-4798-a8ac-772ff504d97c",
+              "title": "Assess cp-1",
+              "description": "Assess cp-1 using examine method."
+            },
+            {
+              "uuid": "44c76eb8-7525-4657-bccc-999ba4d667bb",
+              "title": "Assess cp-2",
+              "description": "Assess cp-2 using examine method."
+            },
+            {
+              "uuid": "671ffa2b-75cc-4263-844e-c453259b7882",
+              "title": "Assess cp-2.8",
+              "description": "Assess cp-2.8 using examine method."
+            },
+            {
+              "uuid": "7525fc7c-e559-47ac-9e25-336d86a449ed",
+              "title": "Assess cp-4.1",
+              "description": "Assess cp-4.1 using examine method."
+            },
+            {
+              "uuid": "85ac2404-5e63-4f42-ad5c-7f9869eb91ad",
+              "title": "Assess cp-6.3",
+              "description": "Assess cp-6.3 using examine method."
+            },
+            {
+              "uuid": "e324afaf-0a5d-4e14-bb4e-19d9545b92ac",
+              "title": "Assess cp-7.2",
+              "description": "Assess cp-7.2 using examine method."
+            },
+            {
+              "uuid": "a0b8cde3-68ed-4acd-8d27-7252c45c4a84",
+              "title": "Assess cp-8.1",
+              "description": "Assess cp-8.1 using examine method."
+            },
+            {
+              "uuid": "25cb3eb5-84f5-41e6-a632-1a27a43649e9",
+              "title": "Assess cp-9.1",
+              "description": "Assess cp-9.1 using examine method."
+            },
+            {
+              "uuid": "39b03fde-7035-4cbb-8b4a-fddcae38bccb",
+              "title": "Assess ia-11",
+              "description": "Assess ia-11 using examine method."
+            },
+            {
+              "uuid": "a1321050-d0e7-4f1f-ba78-3f0011de6e15",
+              "title": "Assess ia-12.3",
+              "description": "Assess ia-12.3 using examine method."
+            },
+            {
+              "uuid": "334c1948-bffd-44ea-be19-e030990b3d25",
+              "title": "Assess ia-2.12",
+              "description": "Assess ia-2.12 using examine method."
+            },
+            {
+              "uuid": "a3b50ed3-073e-406f-a632-4d02a2f817b7",
+              "title": "Assess ia-3",
+              "description": "Assess ia-3 using examine method."
+            },
+            {
+              "uuid": "ca801114-8579-46d5-b4a6-d8c8a1a24426",
+              "title": "Assess ia-5.1",
+              "description": "Assess ia-5.1 using examine method."
+            },
+            {
+              "uuid": "bba0f919-f972-4afa-9568-f6b7ea00ac23",
+              "title": "Assess ia-6",
+              "description": "Assess ia-6 using examine method."
+            },
+            {
+              "uuid": "0d4dda33-9e51-4a0b-b1de-89a4a0e0575d",
+              "title": "Assess ia-8.1",
+              "description": "Assess ia-8.1 using examine method."
+            },
+            {
+              "uuid": "14694f8a-d7ce-4e68-8cda-ade075ebb7f1",
+              "title": "Assess ir-1",
+              "description": "Assess ir-1 using examine method."
+            },
+            {
+              "uuid": "b481218d-bdbd-4a09-b637-2bc13847fb61",
+              "title": "Assess ir-3.2",
+              "description": "Assess ir-3.2 using examine method."
+            },
+            {
+              "uuid": "55b6a952-ab44-4832-8631-ee87e28b7ce9",
+              "title": "Assess ir-6",
+              "description": "Assess ir-6 using examine method."
+            },
+            {
+              "uuid": "1d4e3287-2ebf-4720-81ce-712e502a154c",
+              "title": "Assess ir-7",
+              "description": "Assess ir-7 using examine method."
+            },
+            {
+              "uuid": "ea70385c-3aa2-4f80-8d96-dedbac002535",
+              "title": "Assess ma-1",
+              "description": "Assess ma-1 using examine method."
+            },
+            {
+              "uuid": "53a3e7ba-cd73-4ef3-90bc-9b99125cd5fe",
+              "title": "Assess ma-3.1",
+              "description": "Assess ma-3.1 using examine method."
+            },
+            {
+              "uuid": "4ecd7d4e-05c9-451d-b13c-ea62fd844093",
+              "title": "Assess ma-4",
+              "description": "Assess ma-4 using examine method."
+            },
+            {
+              "uuid": "e14a3877-c525-4b5e-a88e-06b0438f97e8",
+              "title": "Assess mp-1",
+              "description": "Assess mp-1 using examine method."
+            },
+            {
+              "uuid": "7ac9b0ce-0141-4121-b5b6-941f2400761c",
+              "title": "Assess mp-4",
+              "description": "Assess mp-4 using examine method."
+            },
+            {
+              "uuid": "c75ff1b9-68b8-4085-8127-96d25d100e9a",
+              "title": "Assess mp-7",
+              "description": "Assess mp-7 using examine method."
+            },
+            {
+              "uuid": "a6b925ef-d42a-4e97-997d-f496cbe37b5c",
+              "title": "Assess pe-11",
+              "description": "Assess pe-11 using examine method."
+            },
+            {
+              "uuid": "1ef1aa17-5387-4124-96f7-ea58961b1794",
+              "title": "Assess pe-13.1",
+              "description": "Assess pe-13.1 using examine method."
+            },
+            {
+              "uuid": "7570825c-401c-473a-964c-588174331999",
+              "title": "Assess pe-16",
+              "description": "Assess pe-16 using examine method."
+            },
+            {
+              "uuid": "0c4eabd0-d9db-4a33-92ba-6db0f424ea16",
+              "title": "Assess pe-3",
+              "description": "Assess pe-3 using examine method."
+            },
+            {
+              "uuid": "8e25ca3e-1fe7-4707-88df-83cfa6066e54",
+              "title": "Assess pe-6",
+              "description": "Assess pe-6 using examine method."
+            },
+            {
+              "uuid": "b91f4812-7b40-435b-bbd3-4c3cbf5d46bd",
+              "title": "Assess pe-9",
+              "description": "Assess pe-9 using examine method."
+            },
+            {
+              "uuid": "deb7a92b-e152-4357-9f12-be4f5dcf357b",
+              "title": "Assess pl-11",
+              "description": "Assess pl-11 using examine method."
+            },
+            {
+              "uuid": "0a377294-8109-419b-a073-ac99c31d6ca6",
+              "title": "Assess pl-4.1",
+              "description": "Assess pl-4.1 using examine method."
+            },
+            {
+              "uuid": "3c7c60f1-c57d-4622-935c-cc3d519b551e",
+              "title": "Assess ps-2",
+              "description": "Assess ps-2 using examine method."
+            },
+            {
+              "uuid": "933ffeb9-01d1-4137-b2e4-ebe901e32ddd",
+              "title": "Assess ps-5",
+              "description": "Assess ps-5 using examine method."
+            },
+            {
+              "uuid": "dd77bfcc-0be7-410d-9132-2ab40942bd69",
+              "title": "Assess ps-8",
+              "description": "Assess ps-8 using examine method."
+            },
+            {
+              "uuid": "9b387ed0-e66f-4f16-aebe-cf3db01549ff",
+              "title": "Assess ra-2",
+              "description": "Assess ra-2 using examine method."
+            },
+            {
+              "uuid": "02fec4cf-80fe-4018-af19-899835254c53",
+              "title": "Assess ra-5.11",
+              "description": "Assess ra-5.11 using examine method."
+            },
+            {
+              "uuid": "c9192707-62a2-4077-909a-07963f7eeda3",
+              "title": "Assess ra-7",
+              "description": "Assess ra-7 using examine method."
+            },
+            {
+              "uuid": "b44af663-a48e-460c-b4ad-b6b3fb5a31c4",
+              "title": "Assess sa-10",
+              "description": "Assess sa-10 using examine method."
+            },
+            {
+              "uuid": "c72dd972-46dc-48a3-873c-f865d1a70957",
+              "title": "Assess sa-15.3",
+              "description": "Assess sa-15.3 using examine method."
+            },
+            {
+              "uuid": "f98be28e-7cb1-4258-b3d9-d05836dcdbd0",
+              "title": "Assess sa-3",
+              "description": "Assess sa-3 using examine method."
+            },
+            {
+              "uuid": "a7f77057-caf3-4bcb-a606-0221aed17d9f",
+              "title": "Assess sa-4.10",
+              "description": "Assess sa-4.10 using examine method."
+            },
+            {
+              "uuid": "37f9b684-230e-4f3d-8960-a014059c26b5",
+              "title": "Assess sa-5",
+              "description": "Assess sa-5 using examine method."
+            },
+            {
+              "uuid": "107afb48-dff6-4a68-8f6f-5d2ddc4c9930",
+              "title": "Assess sa-9.2",
+              "description": "Assess sa-9.2 using examine method."
+            },
+            {
+              "uuid": "697f52a9-081a-4629-a56b-2698acfdb7ff",
+              "title": "Assess sc-12",
+              "description": "Assess sc-12 using examine method."
+            },
+            {
+              "uuid": "9603fbac-a5fe-4865-aeb1-ba3c6f5be237",
+              "title": "Assess sc-18",
+              "description": "Assess sc-18 using examine method."
+            },
+            {
+              "uuid": "8ea6c423-260b-429f-9f15-263ea1d63204",
+              "title": "Assess sc-21",
+              "description": "Assess sc-21 using examine method."
+            },
+            {
+              "uuid": "fc59c5a3-068b-4c4f-8bdb-55b8f3e041ea",
+              "title": "Assess sc-28",
+              "description": "Assess sc-28 using examine method."
+            },
+            {
+              "uuid": "a6d11c5d-911e-4ec6-9483-80b74a39fa16",
+              "title": "Assess sc-4",
+              "description": "Assess sc-4 using examine method."
+            },
+            {
+              "uuid": "f5dfc87c-ea6c-4e79-9a07-228805f1014c",
+              "title": "Assess sc-7.3",
+              "description": "Assess sc-7.3 using examine method."
+            },
+            {
+              "uuid": "f9747622-00b5-4e7c-9460-6086d8b68b9e",
+              "title": "Assess sc-7.7",
+              "description": "Assess sc-7.7 using examine method."
+            },
+            {
+              "uuid": "4bd1bdda-b82e-4e38-96c3-c2c4ca462572",
+              "title": "Assess si-1",
+              "description": "Assess si-1 using examine method."
+            },
+            {
+              "uuid": "cac98af8-6ac8-43da-9fb7-c6517c826bbb",
+              "title": "Assess si-12",
+              "description": "Assess si-12 using examine method."
+            },
+            {
+              "uuid": "6b765d6d-5f87-4577-b551-5ff3530e7b96",
+              "title": "Assess si-2.2",
+              "description": "Assess si-2.2 using examine method."
+            },
+            {
+              "uuid": "f57883a4-9a0e-4370-8a1b-a7a04f3d1b27",
+              "title": "Assess si-4.2",
+              "description": "Assess si-4.2 using examine method."
+            },
+            {
+              "uuid": "3185705c-8932-4a92-8bdc-4c55a9390759",
+              "title": "Assess si-5",
+              "description": "Assess si-5 using examine method."
+            },
+            {
+              "uuid": "70b2c29d-65f3-4f79-9ee1-9656d6357ae7",
+              "title": "Assess si-7.7",
+              "description": "Assess si-7.7 using examine method."
+            },
+            {
+              "uuid": "37db23f1-90a4-4a95-99e2-3030d2dbc399",
+              "title": "Assess sr-1",
+              "description": "Assess sr-1 using examine method."
+            },
+            {
+              "uuid": "89e45f2d-faa0-4041-89cb-4f42c12df1aa",
+              "title": "Assess sr-11.1",
+              "description": "Assess sr-11.1 using examine method."
+            },
+            {
+              "uuid": "cbcab95a-1986-4a06-ae15-7f79efb02e1e",
+              "title": "Assess sr-2",
+              "description": "Assess sr-2 using examine method."
+            },
+            {
+              "uuid": "795b6b4a-bce8-4b4a-b0ae-85575f0345d7",
+              "title": "Assess sr-5",
+              "description": "Assess sr-5 using examine method."
+            },
+            {
+              "uuid": "6e37490b-4d55-488f-9c0a-9face51cdc3d",
+              "title": "Assess at-5",
+              "description": "Assess at-5 using examine method."
             }
           ],
           "related-controls": {
@@ -99,6 +559,282 @@
                   },
                   {
                     "control-id": "cm-6"
+                  },
+                  {
+                    "control-id": "ac-1"
+                  },
+                  {
+                    "control-id": "ac-12"
+                  },
+                  {
+                    "control-id": "ac-17.1"
+                  },
+                  {
+                    "control-id": "ac-17.4"
+                  },
+                  {
+                    "control-id": "ac-18.3"
+                  },
+                  {
+                    "control-id": "ac-2.1"
+                  },
+                  {
+                    "control-id": "ac-2.3"
+                  },
+                  {
+                    "control-id": "ac-20"
+                  },
+                  {
+                    "control-id": "ac-21"
+                  },
+                  {
+                    "control-id": "ac-5"
+                  },
+                  {
+                    "control-id": "ac-6.2"
+                  },
+                  {
+                    "control-id": "ac-6.9"
+                  },
+                  {
+                    "control-id": "at-1"
+                  },
+                  {
+                    "control-id": "at-2.3"
+                  },
+                  {
+                    "control-id": "au-1"
+                  },
+                  {
+                    "control-id": "au-3"
+                  },
+                  {
+                    "control-id": "au-5"
+                  },
+                  {
+                    "control-id": "au-7"
+                  },
+                  {
+                    "control-id": "au-9"
+                  },
+                  {
+                    "control-id": "ca-2.1"
+                  },
+                  {
+                    "control-id": "ca-6"
+                  },
+                  {
+                    "control-id": "ca-9"
+                  },
+                  {
+                    "control-id": "cm-11"
+                  },
+                  {
+                    "control-id": "cm-2"
+                  },
+                  {
+                    "control-id": "cm-2.7"
+                  },
+                  {
+                    "control-id": "cm-3.4"
+                  },
+                  {
+                    "control-id": "cm-5"
+                  },
+                  {
+                    "control-id": "cm-7.2"
+                  },
+                  {
+                    "control-id": "cm-8.1"
+                  },
+                  {
+                    "control-id": "cp-1"
+                  },
+                  {
+                    "control-id": "cp-2"
+                  },
+                  {
+                    "control-id": "cp-2.8"
+                  },
+                  {
+                    "control-id": "cp-4.1"
+                  },
+                  {
+                    "control-id": "cp-6.3"
+                  },
+                  {
+                    "control-id": "cp-7.2"
+                  },
+                  {
+                    "control-id": "cp-8.1"
+                  },
+                  {
+                    "control-id": "cp-9.1"
+                  },
+                  {
+                    "control-id": "ia-11"
+                  },
+                  {
+                    "control-id": "ia-12.3"
+                  },
+                  {
+                    "control-id": "ia-2.12"
+                  },
+                  {
+                    "control-id": "ia-3"
+                  },
+                  {
+                    "control-id": "ia-5.1"
+                  },
+                  {
+                    "control-id": "ia-6"
+                  },
+                  {
+                    "control-id": "ia-8.1"
+                  },
+                  {
+                    "control-id": "ir-1"
+                  },
+                  {
+                    "control-id": "ir-3.2"
+                  },
+                  {
+                    "control-id": "ir-6"
+                  },
+                  {
+                    "control-id": "ir-7"
+                  },
+                  {
+                    "control-id": "ma-1"
+                  },
+                  {
+                    "control-id": "ma-3.1"
+                  },
+                  {
+                    "control-id": "ma-4"
+                  },
+                  {
+                    "control-id": "mp-1"
+                  },
+                  {
+                    "control-id": "mp-4"
+                  },
+                  {
+                    "control-id": "mp-7"
+                  },
+                  {
+                    "control-id": "pe-11"
+                  },
+                  {
+                    "control-id": "pe-13.1"
+                  },
+                  {
+                    "control-id": "pe-16"
+                  },
+                  {
+                    "control-id": "pe-3"
+                  },
+                  {
+                    "control-id": "pe-6"
+                  },
+                  {
+                    "control-id": "pe-9"
+                  },
+                  {
+                    "control-id": "pl-11"
+                  },
+                  {
+                    "control-id": "pl-4.1"
+                  },
+                  {
+                    "control-id": "ps-2"
+                  },
+                  {
+                    "control-id": "ps-5"
+                  },
+                  {
+                    "control-id": "ps-8"
+                  },
+                  {
+                    "control-id": "ra-2"
+                  },
+                  {
+                    "control-id": "ra-5.11"
+                  },
+                  {
+                    "control-id": "ra-7"
+                  },
+                  {
+                    "control-id": "sa-10"
+                  },
+                  {
+                    "control-id": "sa-15.3"
+                  },
+                  {
+                    "control-id": "sa-3"
+                  },
+                  {
+                    "control-id": "sa-4.10"
+                  },
+                  {
+                    "control-id": "sa-5"
+                  },
+                  {
+                    "control-id": "sa-9.2"
+                  },
+                  {
+                    "control-id": "sc-12"
+                  },
+                  {
+                    "control-id": "sc-18"
+                  },
+                  {
+                    "control-id": "sc-21"
+                  },
+                  {
+                    "control-id": "sc-28"
+                  },
+                  {
+                    "control-id": "sc-4"
+                  },
+                  {
+                    "control-id": "sc-7.3"
+                  },
+                  {
+                    "control-id": "sc-7.7"
+                  },
+                  {
+                    "control-id": "si-1"
+                  },
+                  {
+                    "control-id": "si-12"
+                  },
+                  {
+                    "control-id": "si-2.2"
+                  },
+                  {
+                    "control-id": "si-4.2"
+                  },
+                  {
+                    "control-id": "si-5"
+                  },
+                  {
+                    "control-id": "si-7.7"
+                  },
+                  {
+                    "control-id": "sr-1"
+                  },
+                  {
+                    "control-id": "sr-11.1"
+                  },
+                  {
+                    "control-id": "sr-2"
+                  },
+                  {
+                    "control-id": "sr-5"
+                  },
+                  {
+                    "control-id": "at-5"
                   }
                 ]
               }
@@ -106,52 +842,7 @@
           }
         },
         {
-          "uuid": "ffba4a58-c766-4534-bc6e-416a4b61f5cb",
-          "title": "Interview Assessment Activities",
-          "description": "Assessment activities using the interview method.",
-          "props": [
-            {
-              "name": "method",
-              "value": "INTERVIEW"
-            }
-          ],
-          "steps": [
-            {
-              "uuid": "750f975a-b427-44b2-81ea-cd9ed85503da",
-              "title": "Assess ac-6",
-              "description": "Assess ac-6 using interview method."
-            },
-            {
-              "uuid": "89665be0-a730-4635-be5e-0beb285863f0",
-              "title": "Assess ca-2",
-              "description": "Assess ca-2 using interview method."
-            },
-            {
-              "uuid": "0c055ec6-cca3-421c-afac-2bbade7ce43c",
-              "title": "Assess ir-4",
-              "description": "Assess ir-4 using interview method."
-            }
-          ],
-          "related-controls": {
-            "control-selections": [
-              {
-                "include-controls": [
-                  {
-                    "control-id": "ac-6"
-                  },
-                  {
-                    "control-id": "ca-2"
-                  },
-                  {
-                    "control-id": "ir-4"
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "uuid": "2ea47994-c0a4-4252-b9d0-320d452ab314",
+          "uuid": "24a113b4-0bc6-42e8-bb19-11556947b073",
           "title": "Test Assessment Activities",
           "description": "Assessment activities using the test method.",
           "props": [
@@ -162,34 +853,489 @@
           ],
           "steps": [
             {
-              "uuid": "43656b82-a43c-4037-97a1-ba52c865e369",
+              "uuid": "a51324e1-9f61-4aec-bbb8-1cbb77572c0c",
               "title": "Assess ac-3",
               "description": "Assess ac-3 using test method."
             },
             {
-              "uuid": "d48b2751-4135-4ae4-895c-3b6bfe71a99c",
+              "uuid": "a5ea4215-9258-4fd0-a01c-7f6eb66ce235",
               "title": "Assess ca-7",
               "description": "Assess ca-7 using test method."
             },
             {
-              "uuid": "c563af62-8480-422c-8685-3aa363d08f46",
+              "uuid": "30e08cc6-8993-408d-bbf6-1af6efcf5258",
               "title": "Assess ia-2",
               "description": "Assess ia-2 using test method."
             },
             {
-              "uuid": "565927d5-8caa-47dc-9859-55fd2bb00243",
+              "uuid": "854faa39-ae50-40d6-8816-c2f04de33ae2",
               "title": "Assess sc-8",
               "description": "Assess sc-8 using test method."
             },
             {
-              "uuid": "7e01913c-a898-4310-87d8-b2f773889689",
+              "uuid": "1c2e4cda-5186-4b97-b74d-3692a0346449",
               "title": "Assess sc-13",
               "description": "Assess sc-13 using test method."
             },
             {
-              "uuid": "75e6c675-0885-4d3f-ac91-7a7b1bc0c177",
+              "uuid": "d503123b-2391-48c9-8a7f-bf6dd448deb8",
               "title": "Assess ra-5",
               "description": "Assess ra-5 using test method."
+            },
+            {
+              "uuid": "d9199f4c-3b68-45a1-954c-db38e91dda62",
+              "title": "Assess ac-11.1",
+              "description": "Assess ac-11.1 using test method."
+            },
+            {
+              "uuid": "0d28d30c-c121-4a2c-bd59-481838253993",
+              "title": "Assess ac-17",
+              "description": "Assess ac-17 using test method."
+            },
+            {
+              "uuid": "7986522a-a48d-4a1e-b770-487bebe7980d",
+              "title": "Assess ac-17.3",
+              "description": "Assess ac-17.3 using test method."
+            },
+            {
+              "uuid": "708e3c33-a1da-48b3-b81e-1259ba1d3f8a",
+              "title": "Assess ac-18.1",
+              "description": "Assess ac-18.1 using test method."
+            },
+            {
+              "uuid": "cad01267-99e5-46a7-a577-1ea241ad1e60",
+              "title": "Assess ac-19.5",
+              "description": "Assess ac-19.5 using test method."
+            },
+            {
+              "uuid": "5aadf6af-f48f-4f0c-bdd3-69c9acee65dd",
+              "title": "Assess ac-2.2",
+              "description": "Assess ac-2.2 using test method."
+            },
+            {
+              "uuid": "d8eef5e1-60e3-4e73-a99a-a86adb8ff413",
+              "title": "Assess ac-2.5",
+              "description": "Assess ac-2.5 using test method."
+            },
+            {
+              "uuid": "3bc08d65-476c-4d63-8ef6-a3b183076bee",
+              "title": "Assess ac-20.2",
+              "description": "Assess ac-20.2 using test method."
+            },
+            {
+              "uuid": "95e855fd-e25f-4d88-801e-78f226ee14cb",
+              "title": "Assess ac-4",
+              "description": "Assess ac-4 using test method."
+            },
+            {
+              "uuid": "15a21f0e-8c96-418a-a17d-2f5e009e3d2a",
+              "title": "Assess ac-6.10",
+              "description": "Assess ac-6.10 using test method."
+            },
+            {
+              "uuid": "21e7d01c-3f6d-40ab-8488-a9f891ca33b9",
+              "title": "Assess ac-6.7",
+              "description": "Assess ac-6.7 using test method."
+            },
+            {
+              "uuid": "394130dd-501d-4811-84d9-17694b6c1db3",
+              "title": "Assess ac-8",
+              "description": "Assess ac-8 using test method."
+            },
+            {
+              "uuid": "90f7e7f1-02ad-4da8-b166-e3298c3858c3",
+              "title": "Assess at-2.2",
+              "description": "Assess at-2.2 using test method."
+            },
+            {
+              "uuid": "305504c8-b6bc-404d-8d3f-3943f995bf7c",
+              "title": "Assess at-4",
+              "description": "Assess at-4 using test method."
+            },
+            {
+              "uuid": "6b9daf9a-05cd-4e13-bb4e-9a9c070ddd19",
+              "title": "Assess au-12",
+              "description": "Assess au-12 using test method."
+            },
+            {
+              "uuid": "247da142-5324-4bc4-a3b4-db03c34241e3",
+              "title": "Assess au-4",
+              "description": "Assess au-4 using test method."
+            },
+            {
+              "uuid": "38e81954-a613-4042-9fe3-65fa7bc735fb",
+              "title": "Assess au-6.3",
+              "description": "Assess au-6.3 using test method."
+            },
+            {
+              "uuid": "7caabfd0-b84c-4f06-88c9-d4dcb66c5ef6",
+              "title": "Assess au-8",
+              "description": "Assess au-8 using test method."
+            },
+            {
+              "uuid": "23abd333-ccd1-41b3-9b5c-b6af7111fdf7",
+              "title": "Assess ca-1",
+              "description": "Assess ca-1 using test method."
+            },
+            {
+              "uuid": "8a468278-d935-4812-b9d2-82020db93b71",
+              "title": "Assess ca-5",
+              "description": "Assess ca-5 using test method."
+            },
+            {
+              "uuid": "9265f4be-bb52-45a5-9171-d39066b7c4eb",
+              "title": "Assess ca-7.4",
+              "description": "Assess ca-7.4 using test method."
+            },
+            {
+              "uuid": "61c1e01d-57ef-43fc-ac6f-ec58774bccc9",
+              "title": "Assess cm-10",
+              "description": "Assess cm-10 using test method."
+            },
+            {
+              "uuid": "918edb1a-d390-4c22-90d9-c14f610934c0",
+              "title": "Assess cm-12.1",
+              "description": "Assess cm-12.1 using test method."
+            },
+            {
+              "uuid": "ba851f88-bb23-47b9-9d54-ce94940e7f63",
+              "title": "Assess cm-2.3",
+              "description": "Assess cm-2.3 using test method."
+            },
+            {
+              "uuid": "a8755f5f-7698-4b04-a221-385900f2be37",
+              "title": "Assess cm-3.2",
+              "description": "Assess cm-3.2 using test method."
+            },
+            {
+              "uuid": "da9e8ff9-7553-4622-9110-96b2e236c2e9",
+              "title": "Assess cm-4.2",
+              "description": "Assess cm-4.2 using test method."
+            },
+            {
+              "uuid": "f2a6a56a-3411-4d4f-8d3c-3ca96e371e83",
+              "title": "Assess cm-7.1",
+              "description": "Assess cm-7.1 using test method."
+            },
+            {
+              "uuid": "72387335-cd3b-40d1-8c2e-0df8c5fa3963",
+              "title": "Assess cm-8",
+              "description": "Assess cm-8 using test method."
+            },
+            {
+              "uuid": "9106b394-479d-4f69-a237-a3147fdb5db4",
+              "title": "Assess cm-9",
+              "description": "Assess cm-9 using test method."
+            },
+            {
+              "uuid": "f0e20f6e-9b84-4371-afe7-b6ff41453c2d",
+              "title": "Assess cp-10.2",
+              "description": "Assess cp-10.2 using test method."
+            },
+            {
+              "uuid": "dee0a819-0145-4f39-b3be-1637fb92bf0b",
+              "title": "Assess cp-2.3",
+              "description": "Assess cp-2.3 using test method."
+            },
+            {
+              "uuid": "9038de77-15c5-4976-9b50-92a3a352f328",
+              "title": "Assess cp-4",
+              "description": "Assess cp-4 using test method."
+            },
+            {
+              "uuid": "516fe3c6-1df0-4dae-8474-17edf4e528ca",
+              "title": "Assess cp-6.1",
+              "description": "Assess cp-6.1 using test method."
+            },
+            {
+              "uuid": "a090a9c5-7f77-4e88-b1bc-6405e08de7ed",
+              "title": "Assess cp-7.1",
+              "description": "Assess cp-7.1 using test method."
+            },
+            {
+              "uuid": "65ac0645-7ccc-4c49-a13c-42885a5dc82e",
+              "title": "Assess cp-8",
+              "description": "Assess cp-8 using test method."
+            },
+            {
+              "uuid": "f8a8cbab-0680-4f0d-9514-9a7b5b5b98db",
+              "title": "Assess cp-9",
+              "description": "Assess cp-9 using test method."
+            },
+            {
+              "uuid": "aa9588b3-b490-4018-941d-d3656ce82763",
+              "title": "Assess ia-1",
+              "description": "Assess ia-1 using test method."
+            },
+            {
+              "uuid": "d27c334b-5263-45c7-850d-3eff2c0be6d8",
+              "title": "Assess ia-12.2",
+              "description": "Assess ia-12.2 using test method."
+            },
+            {
+              "uuid": "245d58b9-d45a-4e98-8e44-3a92bbf51717",
+              "title": "Assess ia-2.1",
+              "description": "Assess ia-2.1 using test method."
+            },
+            {
+              "uuid": "dfa8f3c9-7d3a-4399-8d17-969fc6796b6f",
+              "title": "Assess ia-2.8",
+              "description": "Assess ia-2.8 using test method."
+            },
+            {
+              "uuid": "02960f7c-dc53-4e6f-ac63-49ee4ed08cc9",
+              "title": "Assess ia-4.4",
+              "description": "Assess ia-4.4 using test method."
+            },
+            {
+              "uuid": "a7aaeafb-bbde-4b37-aee3-243f611922bb",
+              "title": "Assess ia-5.6",
+              "description": "Assess ia-5.6 using test method."
+            },
+            {
+              "uuid": "e8733a93-af14-4afd-8e9f-c9fa0f35901e",
+              "title": "Assess ia-8",
+              "description": "Assess ia-8 using test method."
+            },
+            {
+              "uuid": "6918b4ec-0c2a-4b0b-afd3-d635dea0da65",
+              "title": "Assess ia-8.4",
+              "description": "Assess ia-8.4 using test method."
+            },
+            {
+              "uuid": "a61214b3-27a8-47d8-8eb4-6691cf5b3064",
+              "title": "Assess ir-3",
+              "description": "Assess ir-3 using test method."
+            },
+            {
+              "uuid": "9ea8c7aa-764c-4edd-aa78-119d432550be",
+              "title": "Assess ir-5",
+              "description": "Assess ir-5 using test method."
+            },
+            {
+              "uuid": "d58013ca-fa9b-4107-aeff-05060a8fd9e7",
+              "title": "Assess ir-6.3",
+              "description": "Assess ir-6.3 using test method."
+            },
+            {
+              "uuid": "d837d8b0-bef0-4a38-8dcd-9d30d551b5f1",
+              "title": "Assess ir-8",
+              "description": "Assess ir-8 using test method."
+            },
+            {
+              "uuid": "ec1284f2-bc08-4867-a2c0-a3ca77f5de3f",
+              "title": "Assess ma-3",
+              "description": "Assess ma-3 using test method."
+            },
+            {
+              "uuid": "2d6c13c7-5da5-4434-b00b-8b662e4ba2fa",
+              "title": "Assess ma-3.3",
+              "description": "Assess ma-3.3 using test method."
+            },
+            {
+              "uuid": "3cbcb0fb-2142-4ab8-b3b9-f25f7fdc572b",
+              "title": "Assess ma-6",
+              "description": "Assess ma-6 using test method."
+            },
+            {
+              "uuid": "49abe4b9-f480-47ac-b108-a49d27ea985e",
+              "title": "Assess mp-3",
+              "description": "Assess mp-3 using test method."
+            },
+            {
+              "uuid": "85219cd7-b0e8-4e42-9cfe-06a0a999fc15",
+              "title": "Assess mp-6",
+              "description": "Assess mp-6 using test method."
+            },
+            {
+              "uuid": "e32ec807-87e4-40a5-94fe-647502e87824",
+              "title": "Assess pe-10",
+              "description": "Assess pe-10 using test method."
+            },
+            {
+              "uuid": "d3d9acb3-c6ed-411f-b17a-cb65c13098af",
+              "title": "Assess pe-13",
+              "description": "Assess pe-13 using test method."
+            },
+            {
+              "uuid": "6ce4fb57-600c-4787-ac63-c7bfc1eedb22",
+              "title": "Assess pe-15",
+              "description": "Assess pe-15 using test method."
+            },
+            {
+              "uuid": "47537410-9d91-4f2a-9b57-a06845705011",
+              "title": "Assess pe-2",
+              "description": "Assess pe-2 using test method."
+            },
+            {
+              "uuid": "61ec9685-320d-426c-80af-1d79501a71bc",
+              "title": "Assess pe-5",
+              "description": "Assess pe-5 using test method."
+            },
+            {
+              "uuid": "3c52f366-20f5-46e9-a3fa-077828accbb5",
+              "title": "Assess pe-8",
+              "description": "Assess pe-8 using test method."
+            },
+            {
+              "uuid": "109a88bf-3672-4565-821e-758b899ffcf8",
+              "title": "Assess pl-10",
+              "description": "Assess pl-10 using test method."
+            },
+            {
+              "uuid": "3386adb9-9a8b-44ad-926d-301c93f2839a",
+              "title": "Assess pl-4",
+              "description": "Assess pl-4 using test method."
+            },
+            {
+              "uuid": "aec06a30-559d-46b9-b2ec-a1d37c8fe6c2",
+              "title": "Assess ps-1",
+              "description": "Assess ps-1 using test method."
+            },
+            {
+              "uuid": "23c4021c-15b8-4fc7-8f73-575f684d55d0",
+              "title": "Assess ps-4",
+              "description": "Assess ps-4 using test method."
+            },
+            {
+              "uuid": "e81d3d27-783f-467e-8936-de42f65be7a3",
+              "title": "Assess ps-7",
+              "description": "Assess ps-7 using test method."
+            },
+            {
+              "uuid": "0ecd8b5b-e5f9-4834-9950-7d1aaf45a3b3",
+              "title": "Assess ra-1",
+              "description": "Assess ra-1 using test method."
+            },
+            {
+              "uuid": "6a27263b-4cce-46e1-9cb8-f4187f105b64",
+              "title": "Assess ra-3.1",
+              "description": "Assess ra-3.1 using test method."
+            },
+            {
+              "uuid": "ef285cb7-e53c-4744-b38f-8035a0430f0f",
+              "title": "Assess ra-5.5",
+              "description": "Assess ra-5.5 using test method."
+            },
+            {
+              "uuid": "5fe34a51-c989-4c25-ae01-3d07d9374c5d",
+              "title": "Assess sa-1",
+              "description": "Assess sa-1 using test method."
+            },
+            {
+              "uuid": "f83f7bdd-24bc-43d4-90db-07170eb34350",
+              "title": "Assess sa-15",
+              "description": "Assess sa-15 using test method."
+            },
+            {
+              "uuid": "0feb1988-178f-488e-bebd-ca8de8bbb4d6",
+              "title": "Assess sa-22",
+              "description": "Assess sa-22 using test method."
+            },
+            {
+              "uuid": "8956c514-7fca-4794-bbf4-fd207e1a30d9",
+              "title": "Assess sa-4.1",
+              "description": "Assess sa-4.1 using test method."
+            },
+            {
+              "uuid": "41ce854d-1dd0-4831-a00f-9cb62d19e22d",
+              "title": "Assess sa-4.9",
+              "description": "Assess sa-4.9 using test method."
+            },
+            {
+              "uuid": "937451a9-570e-4f62-9808-ed131a42f332",
+              "title": "Assess sa-9",
+              "description": "Assess sa-9 using test method."
+            },
+            {
+              "uuid": "5bbb56fc-3ced-4c19-8e20-3a5bfa7fe77f",
+              "title": "Assess sc-10",
+              "description": "Assess sc-10 using test method."
+            },
+            {
+              "uuid": "16c7a3c0-983a-42e3-b8da-f2243e54af45",
+              "title": "Assess sc-17",
+              "description": "Assess sc-17 using test method."
+            },
+            {
+              "uuid": "28a2f1c1-f903-4df3-898d-4e264c9e2f6c",
+              "title": "Assess sc-20",
+              "description": "Assess sc-20 using test method."
+            },
+            {
+              "uuid": "9f74fcd6-25af-4093-9bc7-03e18cd7bb2d",
+              "title": "Assess sc-23",
+              "description": "Assess sc-23 using test method."
+            },
+            {
+              "uuid": "4b8c8c89-f1f2-49d8-bb1d-8b7fa3a34c14",
+              "title": "Assess sc-39",
+              "description": "Assess sc-39 using test method."
+            },
+            {
+              "uuid": "d1960121-3ecd-4110-8499-a17b50e7fc41",
+              "title": "Assess sc-7",
+              "description": "Assess sc-7 using test method."
+            },
+            {
+              "uuid": "9bf7bc75-b850-4d19-87f8-b1906d145d9a",
+              "title": "Assess sc-7.5",
+              "description": "Assess sc-7.5 using test method."
+            },
+            {
+              "uuid": "9fb476bc-9605-4748-873a-2dcb3d617fcb",
+              "title": "Assess sc-8.1",
+              "description": "Assess sc-8.1 using test method."
+            },
+            {
+              "uuid": "bedb3a59-daaa-4108-8f9a-1266b0cd8243",
+              "title": "Assess si-11",
+              "description": "Assess si-11 using test method."
+            },
+            {
+              "uuid": "6860fcf1-e574-4b5c-85a1-5c99b29d0684",
+              "title": "Assess si-2",
+              "description": "Assess si-2 using test method."
+            },
+            {
+              "uuid": "ed52e9f6-4547-4df0-8f6b-4609e4aacd79",
+              "title": "Assess si-4",
+              "description": "Assess si-4 using test method."
+            },
+            {
+              "uuid": "dde54d25-2ba9-4be4-9374-c1e318130358",
+              "title": "Assess si-4.5",
+              "description": "Assess si-4.5 using test method."
+            },
+            {
+              "uuid": "100680a7-b326-4764-ba97-4d4088c2c479",
+              "title": "Assess si-7.1",
+              "description": "Assess si-7.1 using test method."
+            },
+            {
+              "uuid": "1dc7c6ff-7998-43d9-9237-75f67ab4b5aa",
+              "title": "Assess si-8.2",
+              "description": "Assess si-8.2 using test method."
+            },
+            {
+              "uuid": "86a7dc02-ae4f-4671-a8d8-0b594bc432a3",
+              "title": "Assess sr-11",
+              "description": "Assess sr-11 using test method."
+            },
+            {
+              "uuid": "a6c122ed-09e2-4ddb-b3b5-74cdf9672200",
+              "title": "Assess sr-12",
+              "description": "Assess sr-12 using test method."
+            },
+            {
+              "uuid": "9c16e362-b05a-45d7-963a-5fc77ba8db11",
+              "title": "Assess sr-3",
+              "description": "Assess sr-3 using test method."
+            },
+            {
+              "uuid": "034421c9-5292-4608-8f37-6bac3ffb81f9",
+              "title": "Assess sr-8",
+              "description": "Assess sr-8 using test method."
             }
           ],
           "related-controls": {
@@ -213,6 +1359,1052 @@
                   },
                   {
                     "control-id": "ra-5"
+                  },
+                  {
+                    "control-id": "ac-11.1"
+                  },
+                  {
+                    "control-id": "ac-17"
+                  },
+                  {
+                    "control-id": "ac-17.3"
+                  },
+                  {
+                    "control-id": "ac-18.1"
+                  },
+                  {
+                    "control-id": "ac-19.5"
+                  },
+                  {
+                    "control-id": "ac-2.2"
+                  },
+                  {
+                    "control-id": "ac-2.5"
+                  },
+                  {
+                    "control-id": "ac-20.2"
+                  },
+                  {
+                    "control-id": "ac-4"
+                  },
+                  {
+                    "control-id": "ac-6.10"
+                  },
+                  {
+                    "control-id": "ac-6.7"
+                  },
+                  {
+                    "control-id": "ac-8"
+                  },
+                  {
+                    "control-id": "at-2.2"
+                  },
+                  {
+                    "control-id": "at-4"
+                  },
+                  {
+                    "control-id": "au-12"
+                  },
+                  {
+                    "control-id": "au-4"
+                  },
+                  {
+                    "control-id": "au-6.3"
+                  },
+                  {
+                    "control-id": "au-8"
+                  },
+                  {
+                    "control-id": "ca-1"
+                  },
+                  {
+                    "control-id": "ca-5"
+                  },
+                  {
+                    "control-id": "ca-7.4"
+                  },
+                  {
+                    "control-id": "cm-10"
+                  },
+                  {
+                    "control-id": "cm-12.1"
+                  },
+                  {
+                    "control-id": "cm-2.3"
+                  },
+                  {
+                    "control-id": "cm-3.2"
+                  },
+                  {
+                    "control-id": "cm-4.2"
+                  },
+                  {
+                    "control-id": "cm-7.1"
+                  },
+                  {
+                    "control-id": "cm-8"
+                  },
+                  {
+                    "control-id": "cm-9"
+                  },
+                  {
+                    "control-id": "cp-10.2"
+                  },
+                  {
+                    "control-id": "cp-2.3"
+                  },
+                  {
+                    "control-id": "cp-4"
+                  },
+                  {
+                    "control-id": "cp-6.1"
+                  },
+                  {
+                    "control-id": "cp-7.1"
+                  },
+                  {
+                    "control-id": "cp-8"
+                  },
+                  {
+                    "control-id": "cp-9"
+                  },
+                  {
+                    "control-id": "ia-1"
+                  },
+                  {
+                    "control-id": "ia-12.2"
+                  },
+                  {
+                    "control-id": "ia-2.1"
+                  },
+                  {
+                    "control-id": "ia-2.8"
+                  },
+                  {
+                    "control-id": "ia-4.4"
+                  },
+                  {
+                    "control-id": "ia-5.6"
+                  },
+                  {
+                    "control-id": "ia-8"
+                  },
+                  {
+                    "control-id": "ia-8.4"
+                  },
+                  {
+                    "control-id": "ir-3"
+                  },
+                  {
+                    "control-id": "ir-5"
+                  },
+                  {
+                    "control-id": "ir-6.3"
+                  },
+                  {
+                    "control-id": "ir-8"
+                  },
+                  {
+                    "control-id": "ma-3"
+                  },
+                  {
+                    "control-id": "ma-3.3"
+                  },
+                  {
+                    "control-id": "ma-6"
+                  },
+                  {
+                    "control-id": "mp-3"
+                  },
+                  {
+                    "control-id": "mp-6"
+                  },
+                  {
+                    "control-id": "pe-10"
+                  },
+                  {
+                    "control-id": "pe-13"
+                  },
+                  {
+                    "control-id": "pe-15"
+                  },
+                  {
+                    "control-id": "pe-2"
+                  },
+                  {
+                    "control-id": "pe-5"
+                  },
+                  {
+                    "control-id": "pe-8"
+                  },
+                  {
+                    "control-id": "pl-10"
+                  },
+                  {
+                    "control-id": "pl-4"
+                  },
+                  {
+                    "control-id": "ps-1"
+                  },
+                  {
+                    "control-id": "ps-4"
+                  },
+                  {
+                    "control-id": "ps-7"
+                  },
+                  {
+                    "control-id": "ra-1"
+                  },
+                  {
+                    "control-id": "ra-3.1"
+                  },
+                  {
+                    "control-id": "ra-5.5"
+                  },
+                  {
+                    "control-id": "sa-1"
+                  },
+                  {
+                    "control-id": "sa-15"
+                  },
+                  {
+                    "control-id": "sa-22"
+                  },
+                  {
+                    "control-id": "sa-4.1"
+                  },
+                  {
+                    "control-id": "sa-4.9"
+                  },
+                  {
+                    "control-id": "sa-9"
+                  },
+                  {
+                    "control-id": "sc-10"
+                  },
+                  {
+                    "control-id": "sc-17"
+                  },
+                  {
+                    "control-id": "sc-20"
+                  },
+                  {
+                    "control-id": "sc-23"
+                  },
+                  {
+                    "control-id": "sc-39"
+                  },
+                  {
+                    "control-id": "sc-7"
+                  },
+                  {
+                    "control-id": "sc-7.5"
+                  },
+                  {
+                    "control-id": "sc-8.1"
+                  },
+                  {
+                    "control-id": "si-11"
+                  },
+                  {
+                    "control-id": "si-2"
+                  },
+                  {
+                    "control-id": "si-4"
+                  },
+                  {
+                    "control-id": "si-4.5"
+                  },
+                  {
+                    "control-id": "si-7.1"
+                  },
+                  {
+                    "control-id": "si-8.2"
+                  },
+                  {
+                    "control-id": "sr-11"
+                  },
+                  {
+                    "control-id": "sr-12"
+                  },
+                  {
+                    "control-id": "sr-3"
+                  },
+                  {
+                    "control-id": "sr-8"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "uuid": "2082dfed-0758-46ca-bf94-dbfd5964240d",
+          "title": "Interview Assessment Activities",
+          "description": "Assessment activities using the interview method.",
+          "props": [
+            {
+              "name": "method",
+              "value": "INTERVIEW"
+            }
+          ],
+          "steps": [
+            {
+              "uuid": "693263e4-c3a2-4563-9f22-3888d05d0f91",
+              "title": "Assess ac-6",
+              "description": "Assess ac-6 using interview method."
+            },
+            {
+              "uuid": "7a63b949-5e93-4252-b576-f71e1289b3bb",
+              "title": "Assess ca-2",
+              "description": "Assess ca-2 using interview method."
+            },
+            {
+              "uuid": "b442b8a3-f0e5-4898-999a-56526e5f8c1e",
+              "title": "Assess ir-4",
+              "description": "Assess ir-4 using interview method."
+            },
+            {
+              "uuid": "462ac827-f016-4ec4-8268-c5adff7c1e3f",
+              "title": "Assess ac-11",
+              "description": "Assess ac-11 using interview method."
+            },
+            {
+              "uuid": "62d7c9ee-3a84-4b11-9802-9c008ada4a85",
+              "title": "Assess ac-14",
+              "description": "Assess ac-14 using interview method."
+            },
+            {
+              "uuid": "b13a349e-490c-4993-8fcc-5b924693ca91",
+              "title": "Assess ac-17.2",
+              "description": "Assess ac-17.2 using interview method."
+            },
+            {
+              "uuid": "c043de0e-c481-4632-9f9d-a3f21b293d74",
+              "title": "Assess ac-18",
+              "description": "Assess ac-18 using interview method."
+            },
+            {
+              "uuid": "bbffe22f-474d-4cd7-af99-05d595d2048f",
+              "title": "Assess ac-19",
+              "description": "Assess ac-19 using interview method."
+            },
+            {
+              "uuid": "dbba3c32-2720-4471-80b1-9ebea5d4e5f2",
+              "title": "Assess ac-2.13",
+              "description": "Assess ac-2.13 using interview method."
+            },
+            {
+              "uuid": "0370f196-93f7-4287-bfa2-63775f718b6b",
+              "title": "Assess ac-2.4",
+              "description": "Assess ac-2.4 using interview method."
+            },
+            {
+              "uuid": "239b77ae-2277-478b-bc36-7b526a11c13c",
+              "title": "Assess ac-20.1",
+              "description": "Assess ac-20.1 using interview method."
+            },
+            {
+              "uuid": "1e75b6e3-1b1a-4a91-8a99-a71e55734bfe",
+              "title": "Assess ac-22",
+              "description": "Assess ac-22 using interview method."
+            },
+            {
+              "uuid": "8e93d59e-dd38-4e1e-82e1-dbfd49ccb475",
+              "title": "Assess ac-6.1",
+              "description": "Assess ac-6.1 using interview method."
+            },
+            {
+              "uuid": "4ed00d9d-f94e-4373-a655-8ef5cb09af89",
+              "title": "Assess ac-6.5",
+              "description": "Assess ac-6.5 using interview method."
+            },
+            {
+              "uuid": "7e5a4363-8f06-453e-912e-891fcb614c1a",
+              "title": "Assess ac-7",
+              "description": "Assess ac-7 using interview method."
+            },
+            {
+              "uuid": "f9fbafba-d223-4ca5-b7a7-d253178d998b",
+              "title": "Assess at-2",
+              "description": "Assess at-2 using interview method."
+            },
+            {
+              "uuid": "dbb4d902-8ccb-4542-804e-6aa9bd450f2b",
+              "title": "Assess at-3",
+              "description": "Assess at-3 using interview method."
+            },
+            {
+              "uuid": "9f59c1ef-7317-435b-8ec8-095934db5738",
+              "title": "Assess au-11",
+              "description": "Assess au-11 using interview method."
+            },
+            {
+              "uuid": "c5d81f42-bca7-43d6-97d5-efa413bf4476",
+              "title": "Assess au-3.1",
+              "description": "Assess au-3.1 using interview method."
+            },
+            {
+              "uuid": "2e2f9432-4213-4e5d-8575-12fe8568f3b6",
+              "title": "Assess au-6.1",
+              "description": "Assess au-6.1 using interview method."
+            },
+            {
+              "uuid": "cec5b9b5-0f07-4a13-bbdf-41094d1b1897",
+              "title": "Assess au-7.1",
+              "description": "Assess au-7.1 using interview method."
+            },
+            {
+              "uuid": "9b7794fa-89df-4fc7-802c-cda08a35fd55",
+              "title": "Assess au-9.4",
+              "description": "Assess au-9.4 using interview method."
+            },
+            {
+              "uuid": "d9d44117-b259-4de8-a7cc-cce472cd2c79",
+              "title": "Assess ca-3",
+              "description": "Assess ca-3 using interview method."
+            },
+            {
+              "uuid": "78337ae6-f4ec-4077-8a3a-2c5591ac8bc3",
+              "title": "Assess ca-7.1",
+              "description": "Assess ca-7.1 using interview method."
+            },
+            {
+              "uuid": "d6ff23de-c6ef-4b52-be42-113efffb162f",
+              "title": "Assess cm-1",
+              "description": "Assess cm-1 using interview method."
+            },
+            {
+              "uuid": "b2626e53-dac8-44ea-8c13-1366c9aa9ae4",
+              "title": "Assess cm-12",
+              "description": "Assess cm-12 using interview method."
+            },
+            {
+              "uuid": "89380986-00a1-4a54-b1d5-c0fafd1045a7",
+              "title": "Assess cm-2.2",
+              "description": "Assess cm-2.2 using interview method."
+            },
+            {
+              "uuid": "05797236-867c-43ec-8abd-ab8fdb01e399",
+              "title": "Assess cm-3",
+              "description": "Assess cm-3 using interview method."
+            },
+            {
+              "uuid": "5ae83a35-a680-4b1a-ad31-2594510635d1",
+              "title": "Assess cm-4",
+              "description": "Assess cm-4 using interview method."
+            },
+            {
+              "uuid": "3a32fd35-6df4-49e8-8085-6151831e61f3",
+              "title": "Assess cm-7",
+              "description": "Assess cm-7 using interview method."
+            },
+            {
+              "uuid": "cc668bc4-8299-4b02-b8a8-77353fab3bbe",
+              "title": "Assess cm-7.5",
+              "description": "Assess cm-7.5 using interview method."
+            },
+            {
+              "uuid": "230b8d6c-ccd9-473c-87f6-cb5baa7af7e0",
+              "title": "Assess cm-8.3",
+              "description": "Assess cm-8.3 using interview method."
+            },
+            {
+              "uuid": "821efc6b-18c5-4254-8238-30cc39b5a9f0",
+              "title": "Assess cp-10",
+              "description": "Assess cp-10 using interview method."
+            },
+            {
+              "uuid": "83e97e63-17e6-419e-b080-cd1e1fd0b8ff",
+              "title": "Assess cp-2.1",
+              "description": "Assess cp-2.1 using interview method."
+            },
+            {
+              "uuid": "1ea66324-a91f-4be5-8b61-b0aea4ea3096",
+              "title": "Assess cp-3",
+              "description": "Assess cp-3 using interview method."
+            },
+            {
+              "uuid": "e4a7fbfa-22cf-4291-b668-f958f713e0e0",
+              "title": "Assess cp-6",
+              "description": "Assess cp-6 using interview method."
+            },
+            {
+              "uuid": "85273063-71da-4b73-bc80-bde81b3ca38b",
+              "title": "Assess cp-7",
+              "description": "Assess cp-7 using interview method."
+            },
+            {
+              "uuid": "1bf3cf1e-bf9a-468e-8217-81f544035083",
+              "title": "Assess cp-7.3",
+              "description": "Assess cp-7.3 using interview method."
+            },
+            {
+              "uuid": "c89b1221-84ef-4b97-aa93-36d5a646065b",
+              "title": "Assess cp-8.2",
+              "description": "Assess cp-8.2 using interview method."
+            },
+            {
+              "uuid": "dae13319-645a-423a-9314-6124e932c10d",
+              "title": "Assess cp-9.8",
+              "description": "Assess cp-9.8 using interview method."
+            },
+            {
+              "uuid": "7f4634c4-3681-4027-b464-613f5b7bc6e6",
+              "title": "Assess ia-12",
+              "description": "Assess ia-12 using interview method."
+            },
+            {
+              "uuid": "9d5806ee-cdfd-4465-aede-7828843f1f22",
+              "title": "Assess ia-12.5",
+              "description": "Assess ia-12.5 using interview method."
+            },
+            {
+              "uuid": "e9241e89-ffd1-4eac-bc84-91effc2bc9e7",
+              "title": "Assess ia-2.2",
+              "description": "Assess ia-2.2 using interview method."
+            },
+            {
+              "uuid": "d5b1784a-6e38-48b2-a7b6-5bea4a16a4ed",
+              "title": "Assess ia-4",
+              "description": "Assess ia-4 using interview method."
+            },
+            {
+              "uuid": "6f6875da-47d2-40aa-8a3d-f6a04ea1e512",
+              "title": "Assess ia-5.2",
+              "description": "Assess ia-5.2 using interview method."
+            },
+            {
+              "uuid": "a9166e5f-aefc-492e-82a9-af3135b8c65b",
+              "title": "Assess ia-7",
+              "description": "Assess ia-7 using interview method."
+            },
+            {
+              "uuid": "c5b2022d-f0e0-4ac8-94e0-23065c2fa741",
+              "title": "Assess ia-8.2",
+              "description": "Assess ia-8.2 using interview method."
+            },
+            {
+              "uuid": "33d45929-3ee6-41ae-8124-9351f288224e",
+              "title": "Assess ir-2",
+              "description": "Assess ir-2 using interview method."
+            },
+            {
+              "uuid": "ebc2259c-6b34-4ab6-8887-47d5c9c8b9e0",
+              "title": "Assess ir-4.1",
+              "description": "Assess ir-4.1 using interview method."
+            },
+            {
+              "uuid": "3998fdd3-ea6f-4a09-b1d5-abaf79b1c08f",
+              "title": "Assess ir-6.1",
+              "description": "Assess ir-6.1 using interview method."
+            },
+            {
+              "uuid": "c921dca6-8326-482a-8794-20c0339fab2e",
+              "title": "Assess ir-7.1",
+              "description": "Assess ir-7.1 using interview method."
+            },
+            {
+              "uuid": "449b873b-9a48-4cc9-bccb-ead51771571c",
+              "title": "Assess ma-2",
+              "description": "Assess ma-2 using interview method."
+            },
+            {
+              "uuid": "e46f981a-8d56-4557-a491-d9e8d1d7b5fb",
+              "title": "Assess ma-3.2",
+              "description": "Assess ma-3.2 using interview method."
+            },
+            {
+              "uuid": "75c718d1-b30c-4f2f-afe0-23469327319c",
+              "title": "Assess ma-5",
+              "description": "Assess ma-5 using interview method."
+            },
+            {
+              "uuid": "ace80e14-75be-433b-805d-db00f4c0c363",
+              "title": "Assess mp-2",
+              "description": "Assess mp-2 using interview method."
+            },
+            {
+              "uuid": "c645cd44-a9e2-4be7-83c4-bfe7686b0c1c",
+              "title": "Assess mp-5",
+              "description": "Assess mp-5 using interview method."
+            },
+            {
+              "uuid": "535ddd32-f570-425a-8d05-aba05a3da51c",
+              "title": "Assess pe-1",
+              "description": "Assess pe-1 using interview method."
+            },
+            {
+              "uuid": "a8339e37-368a-479b-a8cf-debd65fa0225",
+              "title": "Assess pe-12",
+              "description": "Assess pe-12 using interview method."
+            },
+            {
+              "uuid": "c63b08c3-c3dd-4147-9499-c2209228c5c2",
+              "title": "Assess pe-14",
+              "description": "Assess pe-14 using interview method."
+            },
+            {
+              "uuid": "614f1104-ad17-4bee-9334-8801a4d1104e",
+              "title": "Assess pe-17",
+              "description": "Assess pe-17 using interview method."
+            },
+            {
+              "uuid": "3ec5b77e-3421-4993-a563-353a4cb29170",
+              "title": "Assess pe-4",
+              "description": "Assess pe-4 using interview method."
+            },
+            {
+              "uuid": "64649239-9c72-4b6c-87bd-b36e2484bbfb",
+              "title": "Assess pe-6.1",
+              "description": "Assess pe-6.1 using interview method."
+            },
+            {
+              "uuid": "c044fbcb-6ace-477f-b955-80be16451ed5",
+              "title": "Assess pl-1",
+              "description": "Assess pl-1 using interview method."
+            },
+            {
+              "uuid": "a4c14135-ab6b-4503-921a-0b5829872b67",
+              "title": "Assess pl-2",
+              "description": "Assess pl-2 using interview method."
+            },
+            {
+              "uuid": "8e41f6b2-7b73-4f70-a0dc-5e011df46f9b",
+              "title": "Assess pl-8",
+              "description": "Assess pl-8 using interview method."
+            },
+            {
+              "uuid": "6d78daa8-2f8a-4353-be46-3e7a33d10fc8",
+              "title": "Assess ps-3",
+              "description": "Assess ps-3 using interview method."
+            },
+            {
+              "uuid": "1476310f-e483-4aca-9588-10a2d047a538",
+              "title": "Assess ps-6",
+              "description": "Assess ps-6 using interview method."
+            },
+            {
+              "uuid": "ab01103e-e3b9-419f-9e75-a7ed1015b949",
+              "title": "Assess ps-9",
+              "description": "Assess ps-9 using interview method."
+            },
+            {
+              "uuid": "99b2e004-95ae-4e87-ac22-b3a390c579aa",
+              "title": "Assess ra-3",
+              "description": "Assess ra-3 using interview method."
+            },
+            {
+              "uuid": "1177cc1a-1492-45c9-bad8-d3dd7876eb18",
+              "title": "Assess ra-5.2",
+              "description": "Assess ra-5.2 using interview method."
+            },
+            {
+              "uuid": "17e0020f-77cb-47f5-8fad-d85b7ef674e5",
+              "title": "Assess ra-9",
+              "description": "Assess ra-9 using interview method."
+            },
+            {
+              "uuid": "5e97f8a6-5735-4730-8fce-a2afd5e1930c",
+              "title": "Assess sa-11",
+              "description": "Assess sa-11 using interview method."
+            },
+            {
+              "uuid": "c8984207-850e-45b3-82d0-a321f940fed8",
+              "title": "Assess sa-2",
+              "description": "Assess sa-2 using interview method."
+            },
+            {
+              "uuid": "29aca7b9-a985-47d5-9d74-7b6adfe58245",
+              "title": "Assess sa-4",
+              "description": "Assess sa-4 using interview method."
+            },
+            {
+              "uuid": "d004971a-25d5-4dfd-be07-a54441affa68",
+              "title": "Assess sa-4.2",
+              "description": "Assess sa-4.2 using interview method."
+            },
+            {
+              "uuid": "83db6b15-1ecb-4f20-aa70-66aaaac226eb",
+              "title": "Assess sa-8",
+              "description": "Assess sa-8 using interview method."
+            },
+            {
+              "uuid": "41ef6edf-3818-41e1-92ab-379ec196ea1f",
+              "title": "Assess sc-1",
+              "description": "Assess sc-1 using interview method."
+            },
+            {
+              "uuid": "9321b9b0-cb51-425d-9fca-c923e898418c",
+              "title": "Assess sc-15",
+              "description": "Assess sc-15 using interview method."
+            },
+            {
+              "uuid": "5d91d560-c717-4d1f-af82-ab715df4d86a",
+              "title": "Assess sc-2",
+              "description": "Assess sc-2 using interview method."
+            },
+            {
+              "uuid": "94dc4806-052d-45aa-b639-3fc602bf9c39",
+              "title": "Assess sc-22",
+              "description": "Assess sc-22 using interview method."
+            },
+            {
+              "uuid": "eff9b1a7-1a5d-41b9-b3f4-b4272b15904c",
+              "title": "Assess sc-28.1",
+              "description": "Assess sc-28.1 using interview method."
+            },
+            {
+              "uuid": "b34d08ce-e8c6-4894-a729-bfb6d887bea4",
+              "title": "Assess sc-5",
+              "description": "Assess sc-5 using interview method."
+            },
+            {
+              "uuid": "1c26480a-0944-4e60-8b56-0722abec9253",
+              "title": "Assess sc-7.4",
+              "description": "Assess sc-7.4 using interview method."
+            },
+            {
+              "uuid": "d4734ab8-a80c-49d9-9c31-f6f0e3a59cb2",
+              "title": "Assess sc-7.8",
+              "description": "Assess sc-7.8 using interview method."
+            },
+            {
+              "uuid": "2fcac45d-4f0f-48b0-a4be-6513bf3f7b3e",
+              "title": "Assess si-10",
+              "description": "Assess si-10 using interview method."
+            },
+            {
+              "uuid": "3321dd73-c04a-4c40-8f43-aeb37ac8f1d9",
+              "title": "Assess si-16",
+              "description": "Assess si-16 using interview method."
+            },
+            {
+              "uuid": "3da314c3-794f-4f02-8dc6-3620442b5e64",
+              "title": "Assess si-3",
+              "description": "Assess si-3 using interview method."
+            },
+            {
+              "uuid": "2c6426eb-5d13-46e3-a4ee-80577fa20f48",
+              "title": "Assess si-4.4",
+              "description": "Assess si-4.4 using interview method."
+            },
+            {
+              "uuid": "adc51467-9037-42ea-a896-dfaadd398f13",
+              "title": "Assess si-7",
+              "description": "Assess si-7 using interview method."
+            },
+            {
+              "uuid": "153a9a7e-ba7c-449e-83fe-c9fbd6c52769",
+              "title": "Assess si-8",
+              "description": "Assess si-8 using interview method."
+            },
+            {
+              "uuid": "0c6dcf22-688b-4657-a895-bcbc3c348a00",
+              "title": "Assess sr-10",
+              "description": "Assess sr-10 using interview method."
+            },
+            {
+              "uuid": "3279fe7a-3c59-47ce-bcf0-f430f291078f",
+              "title": "Assess sr-11.2",
+              "description": "Assess sr-11.2 using interview method."
+            },
+            {
+              "uuid": "18930b9c-3e1a-49e7-911d-298b83e98391",
+              "title": "Assess sr-2.1",
+              "description": "Assess sr-2.1 using interview method."
+            },
+            {
+              "uuid": "2f419b14-3e2b-4871-b450-14e688f2d477",
+              "title": "Assess sr-6",
+              "description": "Assess sr-6 using interview method."
+            }
+          ],
+          "related-controls": {
+            "control-selections": [
+              {
+                "include-controls": [
+                  {
+                    "control-id": "ac-6"
+                  },
+                  {
+                    "control-id": "ca-2"
+                  },
+                  {
+                    "control-id": "ir-4"
+                  },
+                  {
+                    "control-id": "ac-11"
+                  },
+                  {
+                    "control-id": "ac-14"
+                  },
+                  {
+                    "control-id": "ac-17.2"
+                  },
+                  {
+                    "control-id": "ac-18"
+                  },
+                  {
+                    "control-id": "ac-19"
+                  },
+                  {
+                    "control-id": "ac-2.13"
+                  },
+                  {
+                    "control-id": "ac-2.4"
+                  },
+                  {
+                    "control-id": "ac-20.1"
+                  },
+                  {
+                    "control-id": "ac-22"
+                  },
+                  {
+                    "control-id": "ac-6.1"
+                  },
+                  {
+                    "control-id": "ac-6.5"
+                  },
+                  {
+                    "control-id": "ac-7"
+                  },
+                  {
+                    "control-id": "at-2"
+                  },
+                  {
+                    "control-id": "at-3"
+                  },
+                  {
+                    "control-id": "au-11"
+                  },
+                  {
+                    "control-id": "au-3.1"
+                  },
+                  {
+                    "control-id": "au-6.1"
+                  },
+                  {
+                    "control-id": "au-7.1"
+                  },
+                  {
+                    "control-id": "au-9.4"
+                  },
+                  {
+                    "control-id": "ca-3"
+                  },
+                  {
+                    "control-id": "ca-7.1"
+                  },
+                  {
+                    "control-id": "cm-1"
+                  },
+                  {
+                    "control-id": "cm-12"
+                  },
+                  {
+                    "control-id": "cm-2.2"
+                  },
+                  {
+                    "control-id": "cm-3"
+                  },
+                  {
+                    "control-id": "cm-4"
+                  },
+                  {
+                    "control-id": "cm-7"
+                  },
+                  {
+                    "control-id": "cm-7.5"
+                  },
+                  {
+                    "control-id": "cm-8.3"
+                  },
+                  {
+                    "control-id": "cp-10"
+                  },
+                  {
+                    "control-id": "cp-2.1"
+                  },
+                  {
+                    "control-id": "cp-3"
+                  },
+                  {
+                    "control-id": "cp-6"
+                  },
+                  {
+                    "control-id": "cp-7"
+                  },
+                  {
+                    "control-id": "cp-7.3"
+                  },
+                  {
+                    "control-id": "cp-8.2"
+                  },
+                  {
+                    "control-id": "cp-9.8"
+                  },
+                  {
+                    "control-id": "ia-12"
+                  },
+                  {
+                    "control-id": "ia-12.5"
+                  },
+                  {
+                    "control-id": "ia-2.2"
+                  },
+                  {
+                    "control-id": "ia-4"
+                  },
+                  {
+                    "control-id": "ia-5.2"
+                  },
+                  {
+                    "control-id": "ia-7"
+                  },
+                  {
+                    "control-id": "ia-8.2"
+                  },
+                  {
+                    "control-id": "ir-2"
+                  },
+                  {
+                    "control-id": "ir-4.1"
+                  },
+                  {
+                    "control-id": "ir-6.1"
+                  },
+                  {
+                    "control-id": "ir-7.1"
+                  },
+                  {
+                    "control-id": "ma-2"
+                  },
+                  {
+                    "control-id": "ma-3.2"
+                  },
+                  {
+                    "control-id": "ma-5"
+                  },
+                  {
+                    "control-id": "mp-2"
+                  },
+                  {
+                    "control-id": "mp-5"
+                  },
+                  {
+                    "control-id": "pe-1"
+                  },
+                  {
+                    "control-id": "pe-12"
+                  },
+                  {
+                    "control-id": "pe-14"
+                  },
+                  {
+                    "control-id": "pe-17"
+                  },
+                  {
+                    "control-id": "pe-4"
+                  },
+                  {
+                    "control-id": "pe-6.1"
+                  },
+                  {
+                    "control-id": "pl-1"
+                  },
+                  {
+                    "control-id": "pl-2"
+                  },
+                  {
+                    "control-id": "pl-8"
+                  },
+                  {
+                    "control-id": "ps-3"
+                  },
+                  {
+                    "control-id": "ps-6"
+                  },
+                  {
+                    "control-id": "ps-9"
+                  },
+                  {
+                    "control-id": "ra-3"
+                  },
+                  {
+                    "control-id": "ra-5.2"
+                  },
+                  {
+                    "control-id": "ra-9"
+                  },
+                  {
+                    "control-id": "sa-11"
+                  },
+                  {
+                    "control-id": "sa-2"
+                  },
+                  {
+                    "control-id": "sa-4"
+                  },
+                  {
+                    "control-id": "sa-4.2"
+                  },
+                  {
+                    "control-id": "sa-8"
+                  },
+                  {
+                    "control-id": "sc-1"
+                  },
+                  {
+                    "control-id": "sc-15"
+                  },
+                  {
+                    "control-id": "sc-2"
+                  },
+                  {
+                    "control-id": "sc-22"
+                  },
+                  {
+                    "control-id": "sc-28.1"
+                  },
+                  {
+                    "control-id": "sc-5"
+                  },
+                  {
+                    "control-id": "sc-7.4"
+                  },
+                  {
+                    "control-id": "sc-7.8"
+                  },
+                  {
+                    "control-id": "si-10"
+                  },
+                  {
+                    "control-id": "si-16"
+                  },
+                  {
+                    "control-id": "si-3"
+                  },
+                  {
+                    "control-id": "si-4.4"
+                  },
+                  {
+                    "control-id": "si-7"
+                  },
+                  {
+                    "control-id": "si-8"
+                  },
+                  {
+                    "control-id": "sr-10"
+                  },
+                  {
+                    "control-id": "sr-11.2"
+                  },
+                  {
+                    "control-id": "sr-2.1"
+                  },
+                  {
+                    "control-id": "sr-6"
                   }
                 ]
               }
@@ -225,11 +2417,13 @@
       "parts": [
         {
           "name": "assessment-schedule",
+          "ns": "https://sparc.risk-sentinel.org/ns",
           "title": "Assessment Schedule",
           "prose": "Start: 2026-01-15 | End: 2026-03-15"
         },
         {
           "name": "assessment-scope",
+          "ns": "https://sparc.risk-sentinel.org/ns",
           "title": "Assessment Scope",
           "prose": "DEMO/SAMPLE — Fictional annual security assessment plan for testing purposes only."
         }
@@ -280,6 +2474,828 @@
             },
             {
               "control-id": "ra-5"
+            },
+            {
+              "control-id": "ac-1"
+            },
+            {
+              "control-id": "ac-11"
+            },
+            {
+              "control-id": "ac-11.1"
+            },
+            {
+              "control-id": "ac-12"
+            },
+            {
+              "control-id": "ac-14"
+            },
+            {
+              "control-id": "ac-17"
+            },
+            {
+              "control-id": "ac-17.1"
+            },
+            {
+              "control-id": "ac-17.2"
+            },
+            {
+              "control-id": "ac-17.3"
+            },
+            {
+              "control-id": "ac-17.4"
+            },
+            {
+              "control-id": "ac-18"
+            },
+            {
+              "control-id": "ac-18.1"
+            },
+            {
+              "control-id": "ac-18.3"
+            },
+            {
+              "control-id": "ac-19"
+            },
+            {
+              "control-id": "ac-19.5"
+            },
+            {
+              "control-id": "ac-2.1"
+            },
+            {
+              "control-id": "ac-2.13"
+            },
+            {
+              "control-id": "ac-2.2"
+            },
+            {
+              "control-id": "ac-2.3"
+            },
+            {
+              "control-id": "ac-2.4"
+            },
+            {
+              "control-id": "ac-2.5"
+            },
+            {
+              "control-id": "ac-20"
+            },
+            {
+              "control-id": "ac-20.1"
+            },
+            {
+              "control-id": "ac-20.2"
+            },
+            {
+              "control-id": "ac-21"
+            },
+            {
+              "control-id": "ac-22"
+            },
+            {
+              "control-id": "ac-4"
+            },
+            {
+              "control-id": "ac-5"
+            },
+            {
+              "control-id": "ac-6.1"
+            },
+            {
+              "control-id": "ac-6.10"
+            },
+            {
+              "control-id": "ac-6.2"
+            },
+            {
+              "control-id": "ac-6.5"
+            },
+            {
+              "control-id": "ac-6.7"
+            },
+            {
+              "control-id": "ac-6.9"
+            },
+            {
+              "control-id": "ac-7"
+            },
+            {
+              "control-id": "ac-8"
+            },
+            {
+              "control-id": "at-1"
+            },
+            {
+              "control-id": "at-2"
+            },
+            {
+              "control-id": "at-2.2"
+            },
+            {
+              "control-id": "at-2.3"
+            },
+            {
+              "control-id": "at-3"
+            },
+            {
+              "control-id": "at-4"
+            },
+            {
+              "control-id": "au-1"
+            },
+            {
+              "control-id": "au-11"
+            },
+            {
+              "control-id": "au-12"
+            },
+            {
+              "control-id": "au-3"
+            },
+            {
+              "control-id": "au-3.1"
+            },
+            {
+              "control-id": "au-4"
+            },
+            {
+              "control-id": "au-5"
+            },
+            {
+              "control-id": "au-6.1"
+            },
+            {
+              "control-id": "au-6.3"
+            },
+            {
+              "control-id": "au-7"
+            },
+            {
+              "control-id": "au-7.1"
+            },
+            {
+              "control-id": "au-8"
+            },
+            {
+              "control-id": "au-9"
+            },
+            {
+              "control-id": "au-9.4"
+            },
+            {
+              "control-id": "ca-1"
+            },
+            {
+              "control-id": "ca-2.1"
+            },
+            {
+              "control-id": "ca-3"
+            },
+            {
+              "control-id": "ca-5"
+            },
+            {
+              "control-id": "ca-6"
+            },
+            {
+              "control-id": "ca-7.1"
+            },
+            {
+              "control-id": "ca-7.4"
+            },
+            {
+              "control-id": "ca-9"
+            },
+            {
+              "control-id": "cm-1"
+            },
+            {
+              "control-id": "cm-10"
+            },
+            {
+              "control-id": "cm-11"
+            },
+            {
+              "control-id": "cm-12"
+            },
+            {
+              "control-id": "cm-12.1"
+            },
+            {
+              "control-id": "cm-2"
+            },
+            {
+              "control-id": "cm-2.2"
+            },
+            {
+              "control-id": "cm-2.3"
+            },
+            {
+              "control-id": "cm-2.7"
+            },
+            {
+              "control-id": "cm-3"
+            },
+            {
+              "control-id": "cm-3.2"
+            },
+            {
+              "control-id": "cm-3.4"
+            },
+            {
+              "control-id": "cm-4"
+            },
+            {
+              "control-id": "cm-4.2"
+            },
+            {
+              "control-id": "cm-5"
+            },
+            {
+              "control-id": "cm-7"
+            },
+            {
+              "control-id": "cm-7.1"
+            },
+            {
+              "control-id": "cm-7.2"
+            },
+            {
+              "control-id": "cm-7.5"
+            },
+            {
+              "control-id": "cm-8"
+            },
+            {
+              "control-id": "cm-8.1"
+            },
+            {
+              "control-id": "cm-8.3"
+            },
+            {
+              "control-id": "cm-9"
+            },
+            {
+              "control-id": "cp-1"
+            },
+            {
+              "control-id": "cp-10"
+            },
+            {
+              "control-id": "cp-10.2"
+            },
+            {
+              "control-id": "cp-2"
+            },
+            {
+              "control-id": "cp-2.1"
+            },
+            {
+              "control-id": "cp-2.3"
+            },
+            {
+              "control-id": "cp-2.8"
+            },
+            {
+              "control-id": "cp-3"
+            },
+            {
+              "control-id": "cp-4"
+            },
+            {
+              "control-id": "cp-4.1"
+            },
+            {
+              "control-id": "cp-6"
+            },
+            {
+              "control-id": "cp-6.1"
+            },
+            {
+              "control-id": "cp-6.3"
+            },
+            {
+              "control-id": "cp-7"
+            },
+            {
+              "control-id": "cp-7.1"
+            },
+            {
+              "control-id": "cp-7.2"
+            },
+            {
+              "control-id": "cp-7.3"
+            },
+            {
+              "control-id": "cp-8"
+            },
+            {
+              "control-id": "cp-8.1"
+            },
+            {
+              "control-id": "cp-8.2"
+            },
+            {
+              "control-id": "cp-9"
+            },
+            {
+              "control-id": "cp-9.1"
+            },
+            {
+              "control-id": "cp-9.8"
+            },
+            {
+              "control-id": "ia-1"
+            },
+            {
+              "control-id": "ia-11"
+            },
+            {
+              "control-id": "ia-12"
+            },
+            {
+              "control-id": "ia-12.2"
+            },
+            {
+              "control-id": "ia-12.3"
+            },
+            {
+              "control-id": "ia-12.5"
+            },
+            {
+              "control-id": "ia-2.1"
+            },
+            {
+              "control-id": "ia-2.12"
+            },
+            {
+              "control-id": "ia-2.2"
+            },
+            {
+              "control-id": "ia-2.8"
+            },
+            {
+              "control-id": "ia-3"
+            },
+            {
+              "control-id": "ia-4"
+            },
+            {
+              "control-id": "ia-4.4"
+            },
+            {
+              "control-id": "ia-5.1"
+            },
+            {
+              "control-id": "ia-5.2"
+            },
+            {
+              "control-id": "ia-5.6"
+            },
+            {
+              "control-id": "ia-6"
+            },
+            {
+              "control-id": "ia-7"
+            },
+            {
+              "control-id": "ia-8"
+            },
+            {
+              "control-id": "ia-8.1"
+            },
+            {
+              "control-id": "ia-8.2"
+            },
+            {
+              "control-id": "ia-8.4"
+            },
+            {
+              "control-id": "ir-1"
+            },
+            {
+              "control-id": "ir-2"
+            },
+            {
+              "control-id": "ir-3"
+            },
+            {
+              "control-id": "ir-3.2"
+            },
+            {
+              "control-id": "ir-4.1"
+            },
+            {
+              "control-id": "ir-5"
+            },
+            {
+              "control-id": "ir-6"
+            },
+            {
+              "control-id": "ir-6.1"
+            },
+            {
+              "control-id": "ir-6.3"
+            },
+            {
+              "control-id": "ir-7"
+            },
+            {
+              "control-id": "ir-7.1"
+            },
+            {
+              "control-id": "ir-8"
+            },
+            {
+              "control-id": "ma-1"
+            },
+            {
+              "control-id": "ma-2"
+            },
+            {
+              "control-id": "ma-3"
+            },
+            {
+              "control-id": "ma-3.1"
+            },
+            {
+              "control-id": "ma-3.2"
+            },
+            {
+              "control-id": "ma-3.3"
+            },
+            {
+              "control-id": "ma-4"
+            },
+            {
+              "control-id": "ma-5"
+            },
+            {
+              "control-id": "ma-6"
+            },
+            {
+              "control-id": "mp-1"
+            },
+            {
+              "control-id": "mp-2"
+            },
+            {
+              "control-id": "mp-3"
+            },
+            {
+              "control-id": "mp-4"
+            },
+            {
+              "control-id": "mp-5"
+            },
+            {
+              "control-id": "mp-6"
+            },
+            {
+              "control-id": "mp-7"
+            },
+            {
+              "control-id": "pe-1"
+            },
+            {
+              "control-id": "pe-10"
+            },
+            {
+              "control-id": "pe-11"
+            },
+            {
+              "control-id": "pe-12"
+            },
+            {
+              "control-id": "pe-13"
+            },
+            {
+              "control-id": "pe-13.1"
+            },
+            {
+              "control-id": "pe-14"
+            },
+            {
+              "control-id": "pe-15"
+            },
+            {
+              "control-id": "pe-16"
+            },
+            {
+              "control-id": "pe-17"
+            },
+            {
+              "control-id": "pe-2"
+            },
+            {
+              "control-id": "pe-3"
+            },
+            {
+              "control-id": "pe-4"
+            },
+            {
+              "control-id": "pe-5"
+            },
+            {
+              "control-id": "pe-6"
+            },
+            {
+              "control-id": "pe-6.1"
+            },
+            {
+              "control-id": "pe-8"
+            },
+            {
+              "control-id": "pe-9"
+            },
+            {
+              "control-id": "pl-1"
+            },
+            {
+              "control-id": "pl-10"
+            },
+            {
+              "control-id": "pl-11"
+            },
+            {
+              "control-id": "pl-2"
+            },
+            {
+              "control-id": "pl-4"
+            },
+            {
+              "control-id": "pl-4.1"
+            },
+            {
+              "control-id": "pl-8"
+            },
+            {
+              "control-id": "ps-1"
+            },
+            {
+              "control-id": "ps-2"
+            },
+            {
+              "control-id": "ps-3"
+            },
+            {
+              "control-id": "ps-4"
+            },
+            {
+              "control-id": "ps-5"
+            },
+            {
+              "control-id": "ps-6"
+            },
+            {
+              "control-id": "ps-7"
+            },
+            {
+              "control-id": "ps-8"
+            },
+            {
+              "control-id": "ps-9"
+            },
+            {
+              "control-id": "ra-1"
+            },
+            {
+              "control-id": "ra-2"
+            },
+            {
+              "control-id": "ra-3"
+            },
+            {
+              "control-id": "ra-3.1"
+            },
+            {
+              "control-id": "ra-5.11"
+            },
+            {
+              "control-id": "ra-5.2"
+            },
+            {
+              "control-id": "ra-5.5"
+            },
+            {
+              "control-id": "ra-7"
+            },
+            {
+              "control-id": "ra-9"
+            },
+            {
+              "control-id": "sa-1"
+            },
+            {
+              "control-id": "sa-10"
+            },
+            {
+              "control-id": "sa-11"
+            },
+            {
+              "control-id": "sa-15"
+            },
+            {
+              "control-id": "sa-15.3"
+            },
+            {
+              "control-id": "sa-2"
+            },
+            {
+              "control-id": "sa-22"
+            },
+            {
+              "control-id": "sa-3"
+            },
+            {
+              "control-id": "sa-4"
+            },
+            {
+              "control-id": "sa-4.1"
+            },
+            {
+              "control-id": "sa-4.10"
+            },
+            {
+              "control-id": "sa-4.2"
+            },
+            {
+              "control-id": "sa-4.9"
+            },
+            {
+              "control-id": "sa-5"
+            },
+            {
+              "control-id": "sa-8"
+            },
+            {
+              "control-id": "sa-9"
+            },
+            {
+              "control-id": "sa-9.2"
+            },
+            {
+              "control-id": "sc-1"
+            },
+            {
+              "control-id": "sc-10"
+            },
+            {
+              "control-id": "sc-12"
+            },
+            {
+              "control-id": "sc-15"
+            },
+            {
+              "control-id": "sc-17"
+            },
+            {
+              "control-id": "sc-18"
+            },
+            {
+              "control-id": "sc-2"
+            },
+            {
+              "control-id": "sc-20"
+            },
+            {
+              "control-id": "sc-21"
+            },
+            {
+              "control-id": "sc-22"
+            },
+            {
+              "control-id": "sc-23"
+            },
+            {
+              "control-id": "sc-28"
+            },
+            {
+              "control-id": "sc-28.1"
+            },
+            {
+              "control-id": "sc-39"
+            },
+            {
+              "control-id": "sc-4"
+            },
+            {
+              "control-id": "sc-5"
+            },
+            {
+              "control-id": "sc-7"
+            },
+            {
+              "control-id": "sc-7.3"
+            },
+            {
+              "control-id": "sc-7.4"
+            },
+            {
+              "control-id": "sc-7.5"
+            },
+            {
+              "control-id": "sc-7.7"
+            },
+            {
+              "control-id": "sc-7.8"
+            },
+            {
+              "control-id": "sc-8.1"
+            },
+            {
+              "control-id": "si-1"
+            },
+            {
+              "control-id": "si-10"
+            },
+            {
+              "control-id": "si-11"
+            },
+            {
+              "control-id": "si-12"
+            },
+            {
+              "control-id": "si-16"
+            },
+            {
+              "control-id": "si-2"
+            },
+            {
+              "control-id": "si-2.2"
+            },
+            {
+              "control-id": "si-3"
+            },
+            {
+              "control-id": "si-4"
+            },
+            {
+              "control-id": "si-4.2"
+            },
+            {
+              "control-id": "si-4.4"
+            },
+            {
+              "control-id": "si-4.5"
+            },
+            {
+              "control-id": "si-5"
+            },
+            {
+              "control-id": "si-7"
+            },
+            {
+              "control-id": "si-7.1"
+            },
+            {
+              "control-id": "si-7.7"
+            },
+            {
+              "control-id": "si-8"
+            },
+            {
+              "control-id": "si-8.2"
+            },
+            {
+              "control-id": "sr-1"
+            },
+            {
+              "control-id": "sr-10"
+            },
+            {
+              "control-id": "sr-11"
+            },
+            {
+              "control-id": "sr-11.1"
+            },
+            {
+              "control-id": "sr-11.2"
+            },
+            {
+              "control-id": "sr-12"
+            },
+            {
+              "control-id": "sr-2"
+            },
+            {
+              "control-id": "sr-2.1"
+            },
+            {
+              "control-id": "sr-3"
+            },
+            {
+              "control-id": "sr-5"
+            },
+            {
+              "control-id": "sr-6"
+            },
+            {
+              "control-id": "sr-8"
+            },
+            {
+              "control-id": "at-5"
             }
           ]
         }
@@ -295,12 +3311,12 @@
     "assessment-assets": {
       "assessment-platforms": [
         {
-          "uuid": "d5f50992-36fe-4af3-ac1c-701395bea1a5",
+          "uuid": "a32b47fc-7cad-4fe3-9b85-de59329aa1fc",
           "title": "Assessment Platform",
           "props": [
             {
               "name": "type",
-              "ns": "https://sparc.local/ns",
+              "ns": "https://sparc.risk-sentinel.org/ns",
               "value": "manual"
             }
           ]
@@ -310,7 +3326,7 @@
     "back-matter": {
       "resources": [
         {
-          "uuid": "b085e9a8-e384-4387-951b-416b495f0978",
+          "uuid": "89cb71b3-1019-4cd5-ae04-5d9bb8fd207a",
           "title": "SPARC Document Source",
           "description": "Managed by SPARC",
           "rlinks": [
