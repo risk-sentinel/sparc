@@ -56,8 +56,8 @@ Every role is either `instance` (global) or `authorization_boundary`
     "display_name": "Custom Reviewer",
     "scope": "authorization_boundary",
     "permissions": {
-      "catalogs.read": true,
-      "catalogs.write": false
+      "ssp.read": true,
+      "ssp.write": false
     }
   }
 }
@@ -73,7 +73,9 @@ permission". Omit the `permissions` key entirely to leave the set untouched.
 A key that is not in `Role::PERMISSION_KEYS` is **ignored rather than refused** —
 the map is rebuilt from the canonical list, so a permission the application does
 not enforce cannot be written, and a stale key from an older instance should not
-fail an otherwise valid request. `available_permissions` on the show response is
+fail an otherwise valid request. That covers `catalogs.read`, `profiles.read` and
+`mappings.read`, removed in v1.17.2: reading the control library needs only a
+valid token, so the keys restricted nothing. `available_permissions` on the show response is
 the current canonical list.
 
 This is the one place `permit_strictly`'s refusal does not apply, and it is
@@ -92,8 +94,8 @@ reach the record at all.
     "sort_order": 42,
     "assignment_count": 3,
     "description": "Reviews things",
-    "permissions": ["catalogs.read"],
-    "available_permissions": ["catalogs.read", "catalogs.write", "..."],
+    "permissions": ["ssp.read"],
+    "available_permissions": ["catalogs.write", "catalogs.approve", "..."],
     "created_at": "2026-08-20T14:22:18Z",
     "updated_at": "2026-08-20T14:22:18Z"
   }

@@ -87,8 +87,7 @@ RSpec.describe "Api::V1::Discovery", type: :request do
       let(:read_role) do
         create(:role, :authorization_boundary_scoped, permissions: {
           "ssp.read" => true,
-          "sar.read" => true,
-          "catalogs.read" => true
+          "sar.read" => true
         })
       end
       let!(:user_role) { create(:user_role, user: reader, role: read_role, authorization_boundary_id: boundary.id) }
@@ -140,7 +139,6 @@ RSpec.describe "Api::V1::Discovery", type: :request do
         create(:role, :authorization_boundary_scoped, permissions: {
           "ssp.read" => true,
           "ssp.write" => true,
-          "profiles.read" => true,
           "profiles.write" => true
         })
       end
@@ -160,14 +158,17 @@ RSpec.describe "Api::V1::Discovery", type: :request do
         expect(ssp_member["methods"]).to include("GET", "PUT", "DELETE")
       end
 
-      it "does not see write methods for admin-only resources" do
+      it "sees catalog reads but not catalog writes without catalogs.write" do
         get "/api/v1/available", headers: writer_headers
         parsed = JSON.parse(response.body)
         endpoints = parsed["endpoints"]
 
-        # Catalogs are listed by catalogs.read / catalogs.write; this user holds neither
+        # Library reads need only a token (owner, 2026-10-22); writes still need
+        # the write key, which this user holds for profiles but not catalogs.
         catalogs_ep = endpoints.find { |e| e["path"] == "/api/v1/control_catalogs" }
-        expect(catalogs_ep).to be_nil
+        expect(catalogs_ep["methods"]).to eq(%w[GET])
+        profiles_ep = endpoints.find { |e| e["path"] == "/api/v1/profile_documents" }
+        expect(profiles_ep["methods"]).to include("GET", "POST")
       end
     end
 
@@ -176,7 +177,7 @@ RSpec.describe "Api::V1::Discovery", type: :request do
     context "as a non-admin holding mappings.write" do
       let(:mapper) do
         role = create(:role, name: "mapper_probe", scope: "instance",
-                             permissions: { "mappings.read" => true, "mappings.write" => true })
+                             permissions: { "mappings.write" => true })
         create(:user).tap { |u| create(:user_role, user: u, role: role) }
       end
 
@@ -202,6 +203,20 @@ RSpec.describe "Api::V1::Discovery", type: :request do
         expect(paths).to include("/api/v1/available")
         expect(paths).not_to include("/api/v1/ssp_documents", "/api/v1/poam_documents",
                                      "/api/v1/evidences", "/api/v1/users", "/api/v1/roles")
+      end
+
+      # Owner, 2026-10-22: reading the control library needs a signed-in caller
+      # and nothing more, so a token with no permissions is shown the library's
+      # reads, and only its reads.
+      it "sees the control library's reads, without their write methods" do
+        get "/api/v1/available", headers: no_perm_headers
+        endpoints = JSON.parse(response.body)["endpoints"].index_by { |e| e["path"] }
+
+        %w[/api/v1/control_catalogs /api/v1/profile_documents
+           /api/v1/control_mappings /api/v1/cdef_documents].each do |path|
+          expect(endpoints[path]).to be_present, "#{path} is readable by any token but discovery hides it"
+          expect(endpoints[path]["methods"]).to eq(%w[GET]), "#{path} advertises a write this caller lacks"
+        end
       end
 
       # #1233 — the table restates the controllers' checks, so what discovery

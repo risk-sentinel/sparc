@@ -34,23 +34,25 @@ module ApiRoutePermissions
     "translations"           => { read: :authenticated },
 
     # ── Catalogs, profiles, CDEFs, mappings: the shared library ─────────
-    # Reads are listed under the role vocabulary's read key, as discovery
-    # listed them before #1233. The API controllers themselves admit any
-    # authenticated caller to these reads; whether they should check the key
-    # is open (raised on #1233), so discovery keeps advertising them to the
-    # holders the vocabulary names.
-    "control_catalogs"        => { read: [ "catalogs.read" ], write: [ "catalogs.write" ],
+    # Reads follow the control-library model (owner, 2026-10-22): any signed-in
+    # caller, as on the web, where SPARC_PUBLIC_CATALOGS can also open them to
+    # the public. Through the API that means any valid token; the API stays
+    # token-only even when the library is public. There is no per-type read
+    # key: `catalogs.read`, `profiles.read` and `mappings.read` were removed
+    # (see Role::PERMISSION_KEYS), and `cdef.read` gates the coverage analysis,
+    # not reading a CDEF.
+    "control_catalogs"        => { read: :authenticated, write: [ "catalogs.write" ],
                                    actions: { "approve" => [ "catalogs.approve", "role:policy_manager" ],
                                               "reject"  => [ "catalogs.approve", "role:policy_manager" ] } },
-    "control_families"        => { read: [ "catalogs.read" ], write: [ "catalogs.write" ] },
-    "catalog_controls"        => { read: [ "catalogs.read" ], write: [ "catalogs.write" ] },
-    "ksi_catalog"             => { read: [ "catalogs.read" ], write: [ "catalogs.write" ] },
-    "profile_documents"       => { read: [ "profiles.read" ], write: [ "profiles.write" ],
+    "control_families"        => { read: :authenticated, write: [ "catalogs.write" ] },
+    "catalog_controls"        => { read: :authenticated, write: [ "catalogs.write" ] },
+    "ksi_catalog"             => { read: :authenticated, write: [ "catalogs.write" ] },
+    "profile_documents"       => { read: :authenticated, write: [ "profiles.write" ],
                                    actions: { "approve" => [ "profiles.approve", "role:policy_manager" ],
                                               "reject"  => [ "profiles.approve", "role:policy_manager" ] } },
-    "baseline_parameters"     => { read: [ "profiles.read" ], write: [ "profiles.write" ],
+    "baseline_parameters"     => { read: :authenticated, write: [ "profiles.write" ],
                                    actions: { "import_preview" => [ "profiles.write" ] } },
-    "cdef_documents"          => { read: [ "cdef.read" ], write: [ "cdef.write" ],
+    "cdef_documents"          => { read: :authenticated, write: [ "cdef.write" ],
                                    actions: { "approve"      => [ "cdef.approve", "role:policy_manager" ],
                                               "reject"       => [ "cdef.approve", "role:policy_manager" ],
                                               "bulk_destroy" => :admin,
@@ -61,8 +63,8 @@ module ApiRoutePermissions
     "cdef_coverage"           => { read: [ "cdef.read" ], write: [ "cdef.write" ],
                                    # Deletes any run the caller can see (scoped), with no permission check.
                                    actions: { "destroy_run" => :authenticated } },
-    "control_mappings"        => { read: [ "mappings.read" ], write: [ "mappings.write" ] },
-    "control_mapping_entries" => { read: [ "mappings.read" ], write: [ "mappings.write" ] },
+    "control_mappings"        => { read: :authenticated, write: [ "mappings.write" ] },
+    "control_mapping_entries" => { read: :authenticated, write: [ "mappings.write" ] },
     "converters"              => { read: :authenticated, write: [ "converters.write" ] },
     "converter_entries"       => { read: :authenticated, write: [ "converters.write" ] },
 

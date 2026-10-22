@@ -91,7 +91,7 @@ None.
 }
 ```
 
-> **Note:** The example above is truncated. The actual response includes all endpoints the caller can access. Admin users see every route, including administration (`users`, `roles`, `service_accounts`, ...). Non-admin users see only endpoints and methods matching their role permissions and their token's limits. Reference endpoints any authenticated caller may read, such as the guides and the federation identity, are listed for everyone. Catalog, profile, CDEF and mapping reads are listed to holders of `catalogs.read`, `profiles.read`, `cdef.read` and `mappings.read` respectively.
+> **Note:** The example above is truncated. The actual response includes all endpoints the caller can access. Admin users see every route, including administration (`users`, `roles`, `service_accounts`, ...). Non-admin users see only endpoints and methods matching their role permissions and their token's limits. Reference endpoints any authenticated caller may read, such as the guides and the federation identity, are listed for everyone. Catalog, profile, CDEF and mapping reads are listed for every caller too: reading the control library needs only a valid token. Their write methods still need the matching write key (`catalogs.write`, `profiles.write`, `cdef.write`, `mappings.write`), and the CDEF coverage analysis needs `cdef.read`.
 
 #### Status Codes
 

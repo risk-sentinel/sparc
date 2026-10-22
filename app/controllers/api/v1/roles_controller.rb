@@ -101,7 +101,7 @@ class Api::V1::RolesController < Api::V1::BaseController
       also_accepts: %i[permissions])
   end
 
-  # The permission map, as `{"catalogs.read" => true}`. Unknown keys are
+  # The permission map, as `{"ssp.read" => true}`. Unknown keys are
   # ignored rather than refused: `assign_permissions` builds the map from
   # Role::PERMISSION_KEYS, so a key the application does not enforce cannot be
   # written, and a stale key from an older instance should not fail an

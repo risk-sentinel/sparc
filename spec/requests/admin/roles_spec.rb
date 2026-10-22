@@ -107,11 +107,11 @@ RSpec.describe "Admin::Roles", type: :request do
       patch admin_role_path(role), params: {
         role: {
           display_name: role.display_name,
-          permissions: { "catalogs.read" => "1", "catalogs.write" => "1" }
+          permissions: { "catalogs.approve" => "1", "catalogs.write" => "1" }
         }
       }
       role.reload
-      expect(role.has_permission?("catalogs.read")).to be true
+      expect(role.has_permission?("catalogs.approve")).to be true
       expect(role.has_permission?("catalogs.write")).to be true
     end
 

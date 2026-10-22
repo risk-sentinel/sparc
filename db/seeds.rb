@@ -2127,7 +2127,6 @@ PERM_ALL_READ = Role::PERMISSION_KEYS.select { |k| k.end_with?(".read") }
 # Permission keys that recur across the role defaults below. Named once so the
 # role hashes reference a constant instead of repeating the literal (ruby:S1192).
 K_AUTHORIZATION_BOUNDARIES_READ = "authorization_boundaries.read"
-K_CATALOGS_READ                 = "catalogs.read"
 K_CDEF_READ                     = "cdef.read"
 K_CDEF_WRITE                    = "cdef.write"
 K_EVIDENCE_READ                 = "evidence.read"
@@ -2138,10 +2137,8 @@ K_EVIDENCE_WRITE                = "evidence.write"
 # hold this is deliberately configuration rather than a hardcoded list, so
 # organizations with different rule sets can express their own.
 K_EVIDENCE_ATTEST               = "evidence.attest"
-K_MAPPINGS_READ                 = "mappings.read"
 K_POAM_READ                     = "poam.read"
 K_POAM_WRITE                    = "poam.write"
-K_PROFILES_READ                 = "profiles.read"
 K_SAP_READ                      = "sap.read"
 K_SAP_WRITE                     = "sap.write"
 K_SAR_READ                      = "sar.read"
@@ -2166,7 +2163,7 @@ PERM_POLICY_MANAGER = PERM_ALL_READ.merge(
 PERM_AO = {
   K_AUTHORIZATION_BOUNDARIES_READ => true, K_SSP_READ => true, K_SAR_READ => true,
   K_SAP_READ => true, K_POAM_READ => true, K_POAM_WRITE => true,
-  K_CDEF_READ => true, K_EVIDENCE_READ => true, K_MAPPINGS_READ => true,
+  K_CDEF_READ => true, K_EVIDENCE_READ => true,
   K_EVIDENCE_ATTEST => true,
   "amendment.approve" => true
 }.freeze
@@ -2175,16 +2172,15 @@ PERM_SO_ISO = {
   K_AUTHORIZATION_BOUNDARIES_READ => true, K_SSP_READ => true, K_SSP_WRITE => true,
   K_SAR_READ => true, K_SAP_READ => true, K_POAM_READ => true,
   K_POAM_WRITE => true, K_CDEF_READ => true, K_CDEF_WRITE => true,
-  K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_MAPPINGS_READ => true,
+  K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
   K_EVIDENCE_ATTEST => true
 }.freeze
 
 PERM_CISO = {
-  K_CATALOGS_READ => true, K_PROFILES_READ => true,
   K_AUTHORIZATION_BOUNDARIES_READ => true, K_SSP_READ => true,
   K_SAR_READ => true, K_SAP_READ => true,
   K_POAM_READ => true, K_CDEF_READ => true, K_EVIDENCE_READ => true,
-  K_MAPPINGS_READ => true, K_EVIDENCE_ATTEST => true
+  K_EVIDENCE_ATTEST => true
 }.freeze
 
 PERM_ISSO = {
@@ -2193,11 +2189,11 @@ PERM_ISSO = {
   K_SAP_READ => true, K_SAP_WRITE => true,
   K_POAM_READ => true, K_POAM_WRITE => true,
   K_CDEF_READ => true, K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
-  K_MAPPINGS_READ => true, K_EVIDENCE_ATTEST => true
+  K_EVIDENCE_ATTEST => true
 }.freeze
 
 PERM_TEAM_MEMBER = {
-  K_AUTHORIZATION_BOUNDARIES_READ => true, K_PROFILES_READ => true,
+  K_AUTHORIZATION_BOUNDARIES_READ => true,
   K_SSP_READ => true, K_SSP_WRITE => true,
   K_POAM_READ => true, K_POAM_WRITE => true,
   K_CDEF_READ => true, K_CDEF_WRITE => true,
@@ -2208,8 +2204,7 @@ PERM_ASSESSOR = {
   K_AUTHORIZATION_BOUNDARIES_READ => true, K_SSP_READ => true,
   K_SAR_READ => true, K_SAR_WRITE => true,
   K_SAP_READ => true, K_SAP_WRITE => true,
-  K_POAM_READ => true, K_CDEF_READ => true, K_EVIDENCE_READ => true,
-  K_MAPPINGS_READ => true
+  K_POAM_READ => true, K_CDEF_READ => true, K_EVIDENCE_READ => true
 }.freeze
 
 PERM_VIEW_ONLY = {
@@ -2238,40 +2233,34 @@ PERM_COMMON_CONTROL = {
 }.freeze
 
 PERM_SAOP = {
-  K_CATALOGS_READ => true, K_PROFILES_READ => true,
   K_AUTHORIZATION_BOUNDARIES_READ => true, K_SSP_READ => true,
   K_SAR_READ => true, K_SAP_READ => true,
-  K_POAM_READ => true, K_CDEF_READ => true, K_EVIDENCE_READ => true,
-  K_MAPPINGS_READ => true
+  K_POAM_READ => true, K_CDEF_READ => true, K_EVIDENCE_READ => true
 }.freeze
 
 PERM_SPARC_SME = {
-  K_CATALOGS_READ => true, K_PROFILES_READ => true,
   K_AUTHORIZATION_BOUNDARIES_READ => true,
   K_SSP_READ => true, K_SSP_WRITE => true,
   K_SAR_READ => true, K_SAR_WRITE => true,
   K_SAP_READ => true, K_SAP_WRITE => true,
   K_POAM_READ => true, K_POAM_WRITE => true,
   K_CDEF_READ => true, K_CDEF_WRITE => true,
-  K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
-  K_MAPPINGS_READ => true
+  K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true
 }.freeze
 
 PERM_EVIDENCE_ENGINEER = {
-  K_CATALOGS_READ => true, K_PROFILES_READ => true,
   K_AUTHORIZATION_BOUNDARIES_READ => true,
   K_SSP_READ => true,
   K_SAR_READ => true, K_SAR_WRITE => true,
   K_SAP_READ => true,
   K_POAM_READ => true,
   K_CDEF_READ => true,
-  K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
-  K_MAPPINGS_READ => true
+  K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true
 }.freeze
 
 PERM_CHIEF_ACQUISITION_OFFICER = {
-  K_CATALOGS_READ => true, K_PROFILES_READ => true, K_AUTHORIZATION_BOUNDARIES_READ => true,
-  K_CDEF_READ => true, K_EVIDENCE_READ => true, K_MAPPINGS_READ => true
+  K_AUTHORIZATION_BOUNDARIES_READ => true,
+  K_CDEF_READ => true, K_EVIDENCE_READ => true
 }.freeze
 
 PERM_ISSM = {
@@ -2281,7 +2270,7 @@ PERM_ISSM = {
   K_POAM_READ => true, K_POAM_WRITE => true,
   K_CDEF_READ => true,
   K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
-  K_MAPPINGS_READ => true, K_EVIDENCE_ATTEST => true,
+  K_EVIDENCE_ATTEST => true,
   "amendment.approve" => true # #809 — ISSM reviews/approves amendments on the AO's behalf
 }.freeze
 
@@ -2291,8 +2280,7 @@ PERM_CSP = {
   K_SAR_READ => true, K_SAP_READ => true,
   K_POAM_READ => true, K_POAM_WRITE => true,
   K_CDEF_READ => true, K_CDEF_WRITE => true,
-  K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
-  K_MAPPINGS_READ => true
+  K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true
 }.freeze
 
 PERM_SYSTEM_ARCHITECT = {

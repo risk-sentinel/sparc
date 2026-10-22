@@ -14,12 +14,12 @@ RSpec.describe "Catalog Authorization", type: :request do
 
   let(:policy_manager_role) do
     create(:role, name: "policy_manager", scope: "instance",
-           permissions: { "catalogs.read" => true, "catalogs.write" => true })
+           permissions: { "catalogs.write" => true })
   end
 
   let(:viewer_role) do
     create(:role, name: "global_viewer", scope: "instance",
-           permissions: { "catalogs.read" => true })
+           permissions: {})
   end
 
   let(:policy_user) do
