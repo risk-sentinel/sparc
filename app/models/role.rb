@@ -132,4 +132,73 @@ class Role < ApplicationRecord
       hash[key] = caster.cast(perm_params[key]) || false
     end
   end
+
+  # ── Shipped defaults vs administrator overrides (#1259) ──────────────────
+  #
+  # A built-in role (BuiltInRoles) has a shipped default for every permission
+  # key and for each of BuiltInRoles::ATTRIBUTES. `admin_overrides` records the
+  # ones an instance administrator has set to something else, as
+  # `{ key => the shipped default when the choice was recorded }`. The roles
+  # seed section never changes a key recorded there (BuiltInRoleSeeder), and
+  # the shipped default stored with it is how the seeds tell a shipped change
+  # they are now skipping from one they already reported.
+  #
+  # NIST 800-53: AC-2, AC-3, AC-6, CM-6.
+
+  def built_in? = BuiltInRoles.built_in?(name)
+
+  # This role's shipped default for a permission key or attribute; nil for a
+  # role an administrator created.
+  def shipped_default(key) = BuiltInRoles.default_for(name, key)
+
+  # The role's current value for a permission key or attribute, in the form it
+  # is compared to the shipped default.
+  def current_value(key)
+    key = key.to_s
+    return permissions.to_h[key] == true unless BuiltInRoles::ATTRIBUTES.include?(key)
+
+    self.class.comparable(key, public_send(key))
+  end
+
+  def differs_from_default?(key)
+    built_in? && current_value(key) != self.class.comparable(key, shipped_default(key))
+  end
+
+  def admin_overridden?(key) = admin_overrides.to_h.key?(key.to_s)
+
+  # Called by the role editor and the API after an administrator's values are
+  # assigned, with the keys that request set. Each one that now differs from
+  # the shipped default is recorded as the administrator's choice; each one
+  # that matches it (a reset to default included) is released, so it follows
+  # the shipped default again. A role that is not built in has no defaults, so
+  # nothing differs from one and nothing is recorded.
+  def record_admin_choices(keys)
+    overrides = admin_overrides.to_h.dup
+    keys.map(&:to_s).each do |key|
+      if differs_from_default?(key)
+        overrides[key] = self.class.comparable(key, shipped_default(key))
+      else
+        overrides.delete(key)
+      end
+    end
+    self.admin_overrides = overrides
+  end
+
+  # The keys an edit request set: every permission key when it carried a
+  # permission map (the map is a complete statement of the role's rights), and
+  # each attribute it named.
+  def self.edited_keys(attribute_params, permissions_assigned:)
+    attrs = BuiltInRoles::ATTRIBUTES & attribute_params.to_h.keys.map(&:to_s)
+    permissions_assigned ? PERMISSION_KEYS + attrs : attrs
+  end
+
+  # A blank description and none at all are the same statement, and a form
+  # submits sort order as a string.
+  def self.comparable(key, value)
+    case key.to_s
+    when "sort_order" then value.to_i
+    when *BuiltInRoles::ATTRIBUTES then value.to_s
+    else value == true
+    end
+  end
 end

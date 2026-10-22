@@ -59,6 +59,9 @@ class AuditEvent < ApplicationRecord
     role_created
     role_updated
     role_deleted
+    role_default_applied
+    role_default_skipped
+    role_override_recorded
     authorization_boundary_member_added
     authorization_boundary_member_removed
     project_member_added
@@ -424,7 +427,8 @@ class AuditEvent < ApplicationRecord
                               api_control_family_deleted
                               api_catalog_control_created api_catalog_control_updated
                               api_catalog_control_deleted],
-    "Role Management" => %w[role_grant role_revoke role_created role_updated role_deleted],
+    "Role Management" => %w[role_grant role_revoke role_created role_updated role_deleted
+                             role_default_applied role_default_skipped role_override_recorded],
     "Auth Boundary Members" => %w[authorization_boundary_member_added authorization_boundary_member_removed
                                   authorization_boundary_membership_created authorization_boundary_membership_updated
                                   authorization_boundary_membership_deleted

@@ -1191,6 +1191,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_120000) do
   end
 
   create_table "roles", force: :cascade do |t|
+    t.jsonb "admin_overrides", default: {}, null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.string "display_name", null: false

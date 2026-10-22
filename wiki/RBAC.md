@@ -1,12 +1,12 @@
 # Role-Based Access Control (RBAC)
 
-_Reflects SPARC **v1.16.1**. Authoritative source: `app/models/role.rb` (permission keys) and the role seeds in `db/seeds.rb`._
+_Reflects SPARC **v1.16.1**. Authoritative source: `app/models/role.rb` (permission keys) and the built-in role defaults in `app/lib/built_in_roles.rb` (applied by the `roles` seed section)._
 
 ## Overview
 
 SPARC implements a granular Role-Based Access Control system with **30 roles** aligned with [NIST SP 800-37 Rev. 2](https://csrc.nist.gov/publications/detail/sp/800-37/rev-2/final) (Risk Management Framework). The system is designed to mirror real-world security authorization workflows, ensuring that each user in the compliance lifecycle has precisely the access they need and nothing more.
 
-The role taxonomy is grounded in the NIST RMF and aligns with **OSCAL (Open Security Controls Assessment Language) responsible-party definitions**. OSCAL does not define its own role taxonomy; instead it relies on standard RMF roles referenced in OSCAL metadata (`party` and `role` elements across Catalogs, Profiles, SSPs, Assessment Plans, SARs, and POA&Ms). The 30 roles represent the complete canonical set for OSCAL implementation, drawn from NIST SP 800-37 Rev. 2, OSCAL documentation, and FedRAMP-specific guidance (including FedRAMP Rev. 5 baselines and FedRAMP 20x automation). All roles are seeded via `db/seeds.rb` and manageable in the admin UI at `/admin/roles`.
+The role taxonomy is grounded in the NIST RMF and aligns with **OSCAL (Open Security Controls Assessment Language) responsible-party definitions**. OSCAL does not define its own role taxonomy; instead it relies on standard RMF roles referenced in OSCAL metadata (`party` and `role` elements across Catalogs, Profiles, SSPs, Assessment Plans, SARs, and POA&Ms). The 30 roles represent the complete canonical set for OSCAL implementation, drawn from NIST SP 800-37 Rev. 2, OSCAL documentation, and FedRAMP-specific guidance (including FedRAMP Rev. 5 baselines and FedRAMP 20x automation). All roles are seeded via `db/seeds.rb` from the shipped defaults in `app/lib/built_in_roles.rb`, and manageable in the admin UI at `/admin/roles`. An instance administrator's changes to a built-in role are kept across upgrades — see [Shipped Defaults and Administrator Overrides](#shipped-defaults-and-administrator-overrides).
 
 Authorization is enforced through **three layers**, evaluated in order:
 
@@ -243,6 +243,56 @@ Any role can be granted or denied the key from **Admin → Roles**, so an
 organization whose process differs can express it.
 
 > **Note on seeded assignments (updated #919).** The permission *keys* above are the full set the platform can enforce, and — with one deliberate exception — every one is now granted to at least one seeded role. Before #919, eleven keys were enforced by code but granted to **no** role; because Instance Admins bypass permission checks entirely, that silently made back-matter authoring, promotion, and catalog/profile/CDEF approval **admin-only out of the box**. Nobody decided that, it fell out of the seeds. The current posture: **boundary-scoped back-matter** (`back_matter.write`, `.promote`, `.archive`, `.bulk_import`, and `converters.write`) is granted to the fourteen boundary roles that already write documents — excluding **Assessor / 3PAO** (separation of duties: an assessor must not edit the provenance it assesses), **View Only**, and the three oversight roles that write no document at all. **Instance-tier back-matter** (`back_matter.approve_promotion`, `.federate`) plus `catalogs.approve` and `profiles.approve` go to **Policy Manager**: a boundary *requests* promotion and the instance *approves* it, so granting both legs to one role would defeat the review queue. `cdef.approve` goes to ISSM / ISSO / SO-ISO **and** Policy Manager. `authorization_boundaries.write` and `authorization_boundaries.manage_members` are delegated to **ISSM / ISSO / SO-ISO**, so roster management is no longer admin-only. The one exception is `admin.rotate_credentials`, which remains Instance-Admin-only by design. `converters.read` was **removed** — any authenticated user may read converters, so a key implying a restriction that does not exist is worse than no key. `catalogs.read`, `profiles.read` and `mappings.read` were removed for the same reason (v1.17.2): reading the control library is governed by sign-in, or open to everyone when `SPARC_PUBLIC_CATALOGS=true`, and through the API by any valid token. No role ever needed them to read.
+
+---
+
+## Shipped Defaults and Administrator Overrides
+
+_Added in v1.17.2 (#1259)._
+
+Every built-in role ships with a **default** for each permission key and for its
+display name, description, sort order and scope. An instance administrator can
+change any of them in **Admin → Roles** or through
+[`/api/v1/roles`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/roles.md).
+A value the administrator sets to something other than its default is an
+**administrator override**, and SPARC keeps it.
+
+When a release changes a built-in role (a new permission key, or a different
+default), the `roles` seed section that runs at start-up applies the change one
+value at a time:
+
+| The value is… | What an upgrade does |
+|---|---|
+| a permission key new in the release | adds it, with the shipped default |
+| one the administrator has not changed | moves it to the new shipped default |
+| an administrator override | **leaves it exactly as set**, and reports the shipped change it skipped |
+| the scope of a role that has assignments | never changes it — that would change what every holder's grant means |
+
+Each value the seeds change is written to the audit log as `role_default_applied`,
+and each shipped change skipped because of an override as `role_default_skipped`
+(both under **Role Management**, with no user: the actor is the deployment). A
+skipped change is reported once, not on every start-up. Roles an administrator
+created are never read or written by the seeds.
+
+**In the role editor**, a built-in role marks each value that differs from its
+shipped default with **Differs from default**, and offers **Reset to default**
+beside it. Reset puts the default back into the form; saving it releases the
+override, so the value follows the shipped default again from then on. The
+role's page lists the values that currently differ. Over the API, `GET
+/api/v1/roles/:id` returns `shipped_defaults` and `admin_overrides`; sending a
+value equal to its shipped default releases it.
+
+**Upgrading an install that predates v1.17.2.** Before #1259 nothing recorded
+which values an administrator had changed, and the seeds overwrote them. A past
+edit cannot be told apart from the default it replaced, so the upgrade treats
+**every** current difference from the defaults the previous release applied as
+an administrator override, records it, and writes a `role_override_recorded`
+audit event for each. Review them in the audit log or on each role's page, and
+use **Reset to default** for any that are not intended. For a key whose default
+changes in the release being installed, a value the role editor saved
+explicitly — granted or not — also counts as the administrator's choice; the
+editor saved every key whenever a role was saved, so this includes keys on a
+role whose save changed something else.
 
 ---
 

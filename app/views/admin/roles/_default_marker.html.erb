@@ -1,0 +1,10 @@
+<%# #1259 — shown while a built-in role's value differs from its shipped default.
+    `label` names the value for screen readers. Rendered hidden when the stored
+    value matches, and kept current by the role-defaults Stimulus controller. %>
+<% differs = role.persisted? && role.differs_from_default?(key) %>
+<span class="badge text-bg-warning ms-1" data-role-defaults-marker
+      data-testid="role-default-marker-<%= key %>"
+      title="Shipped default: <%= shipped_label %>"<%= " hidden" unless differs %>>Differs from default</span>
+<button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline" data-role-defaults-marker
+        data-action="role-defaults#reset" data-testid="role-default-reset-<%= key %>"
+        aria-label="Reset <%= label %> to its shipped default"<%= " hidden" unless differs %>>Reset to default</button>

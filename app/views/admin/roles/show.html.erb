@@ -43,6 +43,20 @@
       <div class="card">
         <div class="card-header fw-semibold">Permissions</div>
         <div class="card-body">
+          <% if @role.built_in? %>
+            <% overridden = BuiltInRoles::ATTRIBUTES.select { |key| @role.differs_from_default?(key) } +
+                            Role::PERMISSION_KEYS.select { |key| @role.differs_from_default?(key) } %>
+            <p class="small text-body-secondary mb-0" data-testid="role-defaults-summary">
+              Built-in role.
+              <% if overridden.any? %>
+                <%= pluralize(overridden.size, "value") %> differ<%= "s" if overridden.size == 1 %> from the shipped default
+                and <%= overridden.size == 1 ? "is" : "are" %> kept when SPARC is upgraded:
+                <%= safe_join(overridden.map { |key| tag.code(key) }, ", ") %>.
+              <% else %>
+                Every value matches the shipped default.
+              <% end %>
+            </p>
+          <% end %>
           <% Role::PERMISSION_GROUPS.each do |resource, keys| %>
             <h6 class="fw-semibold mt-3 mb-2"><%= Role::RESOURCE_LABELS[resource] || resource.titleize %></h6>
             <div class="d-flex flex-wrap gap-2 mb-2">
@@ -50,6 +64,11 @@
                 <% action = key.split(".").last %>
                 <span class="badge text-bg-<%= @role.has_permission?(key) ? 'success' : 'light border' %>">
                   <%= action.capitalize %>
+                  <%# #1259 — a built-in role's value that differs from its shipped default. %>
+                  <% if @role.differs_from_default?(key) %>
+                    <span class="badge text-bg-warning ms-1" data-testid="role-default-marker-<%= key %>"
+                          title="Shipped default: <%= @role.shipped_default(key) ? "granted" : "not granted" %>">differs from default</span>
+                  <% end %>
                 </span>
               <% end %>
             </div>
