@@ -11,8 +11,8 @@
 #   NistCatalogSource.xml_path    — NIST's XML source, vendored unchanged
 #   NistCatalogSource.json_path   — the JSON generated from it (committed)
 #   NistCatalogSource.provenance  — the sidecar: repo, branch, commit, sha256, …
-#   NistCatalogSource.pre_release? — true while the catalog comes from NIST's
-#                                   develop branch rather than a NIST release
+#   NistCatalogSource.pre_release? — true while the catalog comes from an
+#                                   oscal-content branch rather than a NIST release
 #
 # Regenerate the JSON with `bin/rails catalog:build_rev5`;
 # spec/lib/nist_catalog_source_spec.rb fails when the committed file drifts.
@@ -30,8 +30,13 @@ module NistCatalogSource
   # v5.2.0 file carries the first and a fresh install the second; both are the
   # same NIST catalog.
   RELEASED_V5_2_0_UUID = "5ba2a3ba-1aa2-47d8-ad69-5beef7372b98"
+  # NIST's May 2026 republish, which the develop pin carried (#1228).
   DEVELOP_UUID = "ea7c7688-79c5-463b-a91b-0650f2d98623"
-  CATALOG_UUIDS = [ RELEASED_V5_2_0_UUID, DEVELOP_UUID ].freeze
+  # NIST's OSCAL 1.2.3 regeneration on main, 2026-10-22: the bundled file now.
+  MAIN_1_2_3_UUID = "d3880008-f544-4620-8f66-aaa4dfeb1202"
+  # The uuids that carry NIST's unreleased fixes.
+  PRE_RELEASE_UUIDS = [ DEVELOP_UUID, MAIN_1_2_3_UUID ].freeze
+  CATALOG_UUIDS = [ RELEASED_V5_2_0_UUID, *PRE_RELEASE_UUIDS ].freeze
 
   module_function
 
@@ -90,8 +95,8 @@ module NistCatalogSource
     end
   end
 
-  # Does this catalog row carry NIST's unreleased develop content? True for a
-  # catalog imported from the develop file (its uuid says so) and for an older
+  # Does this catalog row carry NIST's unreleased fixes? True for a catalog
+  # imported from a pre-release file (its uuid says so) and for an older
   # install whose rows FixRev5DevelopCatalogParts patched (its stamp says so).
   # False for everything once the provenance stops calling the source
   # pre-release, which is the whole of "dropping the flag".
@@ -99,8 +104,8 @@ module NistCatalogSource
     return false unless pre_release? && control_catalog
 
     extra = control_catalog.metadata_extra.to_h
-    control_catalog.oscal_uuid == DEVELOP_UUID ||
-      extra["catalog_uuid"] == DEVELOP_UUID ||
+    PRE_RELEASE_UUIDS.include?(control_catalog.oscal_uuid) ||
+      PRE_RELEASE_UUIDS.include?(extra["catalog_uuid"]) ||
       extra["nist_develop_patch"].present?
   end
 end

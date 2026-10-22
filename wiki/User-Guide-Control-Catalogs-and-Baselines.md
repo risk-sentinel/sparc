@@ -118,7 +118,7 @@ still gets wrong:
   objectives pointed at AC-2's statement;
 - **SI-02(07)** — objectives c.[01] and c.[02] had no labels.
 
-The corrections are on NIST's `develop` branch and in no NIST release yet.
+The corrections are on NIST's `main` branch of oscal-content and in no NIST release yet.
 SPARC's bundled Rev 5 catalog includes them, so it is marked **Pre-release** on
 the catalog list and the catalog page, which names the NIST commit it was built
 from. The catalog's own OSCAL metadata stays exactly as NIST wrote it. When NIST

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # #1228 — the bundled NIST SP 800-53 Rev 5 catalog: build it, check it, and
-# notice when NIST releases what it currently takes from `develop`.
+# notice when NIST releases what it currently takes from an unreleased commit.
 #
 #   bin/rails catalog:build_rev5               — regenerate the committed JSON from the vendored XML
 #   bin/rails catalog:integrity[path]          — run the content checks over a catalog file
@@ -40,7 +40,7 @@ namespace :catalog do
   end
 
   # Network task, never run by the suite: the suite reads what this records.
-  desc "Record whether a usnistgov/oscal-content release carries the pinned develop fixes (needs gh)"
+  desc "Record whether a usnistgov/oscal-content release carries the pinned, unreleased fixes (needs gh)"
   task check_nist_release: :environment do
     repo = "usnistgov/oscal-content"
     commit = NistCatalogSource.source_commit

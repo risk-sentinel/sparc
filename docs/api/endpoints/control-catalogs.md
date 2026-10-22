@@ -136,7 +136,7 @@ None.
 }
 ```
 
-`nist_pre_release` (#1228) is `true` while the catalog carries NIST SP 800-53 Rev 5 corrections that NIST has not released yet: SPARC's bundled Rev 5 catalog is built from a pinned commit of NIST's `develop` branch, and an existing install's Rev 5 catalog takes the same corrections from a data migration. It is `false` for every other catalog, and for all catalogs once NIST releases the fixes. `short_digest` is the start of the SHA-256 of the file as uploaded, whatever its format.
+`nist_pre_release` (#1228) is `true` while the catalog carries NIST SP 800-53 Rev 5 corrections that NIST has not released yet: SPARC's bundled Rev 5 catalog is built from a pinned commit of NIST's oscal-content `main` branch, and an existing install's Rev 5 catalog takes the same corrections from a data migration. It is `false` for every other catalog, and for all catalogs once NIST releases the fixes. `short_digest` is the start of the SHA-256 of the file as uploaded, whatever its format.
 
 #### Status Codes
 

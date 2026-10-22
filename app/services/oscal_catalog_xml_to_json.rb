@@ -6,9 +6,10 @@
 #
 # Why SPARC converts at all:
 #
-# 1. NIST's fixes to SP 800-53 Rev 5 (SA-15(13), SA-24, SI-02(07)) exist on the
-#    oscal-content `develop` branch in the XML SOURCE only. The published JSON
-#    is regenerated at a release, so taking the fixes means converting the XML.
+# 1. NIST's fixes to SP 800-53 Rev 5 (SA-15(13), SA-24, SI-02(07)) were made in
+#    the oscal-content XML SOURCE, before any JSON carried them. SPARC vendors
+#    that XML and generates the JSON; at the pinned commit the result is
+#    identical to NIST's own published JSON (recorded in the provenance).
 # 2. The XML catalog import used to read the XML with its own, smaller model.
 #    It dropped `<value>`, flattened guideline prose to plain text and never
 #    stored parts, so an XML catalog imported differently from the same catalog

@@ -1,12 +1,12 @@
 {
-  "description": "Provenance for the vendored NIST SP 800-53 Rev 5 catalog. NIST_SP-800-53_rev5_catalog.xml is a byte-for-byte copy of NIST's XML source at a pinned commit of the oscal-content develop branch; NIST_SP-800-53_rev5_catalog.json is GENERATED from it by OscalCatalogXmlToJson (bin/rails catalog:build_rev5). NIST's own catalog metadata is left as NIST wrote it, so the record of where the file came from lives here (#1228).",
+  "description": "Provenance for the vendored NIST SP 800-53 Rev 5 catalog. NIST_SP-800-53_rev5_catalog.xml is a byte-for-byte copy of NIST's XML source at a pinned commit of the oscal-content main branch; NIST_SP-800-53_rev5_catalog.json is GENERATED from it by OscalCatalogXmlToJson (bin/rails catalog:build_rev5). NIST's own catalog metadata is left as NIST wrote it, so the record of where the file came from lives here (#1228).",
   "source_repository": "https://github.com/usnistgov/oscal-content",
-  "source_branch": "develop",
-  "source_commit": "d56011a5542e9de3ab1e0d4cf92d56aa715b4d62",
+  "source_branch": "main",
+  "source_commit": "f0de6d8d8c059d374f15e0ae07508d82e370fc1d",
   "source_path": "src/nist.gov/SP800-53/rev5/xml/NIST_SP-800-53_rev5_catalog.xml",
   "retrieved": "2026-10-22",
   "pre_release": true,
-  "pre_release_reason": "NIST's fixes to SA-15(13), SA-24 and SI-02(07) are on develop, in the XML source only, and in no NIST release yet. The catalog stays flagged until a release carries them; spec/lib/nist_catalog_source_spec.rb fails once the recorded release data shows one.",
+  "pre_release_reason": "NIST's fixes to SA-15(13), SA-24 and SI-02(07) are on oscal-content main (merged from develop and regenerated at OSCAL 1.2.3 on 2026-10-22) and in no NIST release yet. The catalog stays flagged until a release carries them; spec/lib/nist_catalog_source_spec.rb fails once the recorded release data shows one.",
   "fix_commits": [
     "92f3985d",
     "5c83a339",
@@ -29,10 +29,23 @@
   },
   "files": {
     "NIST_SP-800-53_rev5_catalog.xml": {
-      "source_url": "https://raw.githubusercontent.com/usnistgov/oscal-content/d56011a5542e9de3ab1e0d4cf92d56aa715b4d62/src/nist.gov/SP800-53/rev5/xml/NIST_SP-800-53_rev5_catalog.xml",
-      "sha256": "8a390e2590f2d5d2db6ee583773cfba4045c58845f9c6d7bfc6f8cd14a73b243",
-      "bytes": 5765331
+      "source_url": "https://raw.githubusercontent.com/usnistgov/oscal-content/f0de6d8d8c059d374f15e0ae07508d82e370fc1d/src/nist.gov/SP800-53/rev5/xml/NIST_SP-800-53_rev5_catalog.xml",
+      "sha256": "4181b9b7d7266c147de311290be219e251fc8a82dc210d753f52255f7b288a6d",
+      "bytes": 5766532
     }
   },
-  "re_vendor": "When a NIST release carries these fixes: replace the XML with the released file (or take NIST's released JSON), update this sidecar (commit, sha256, bytes, pre_release false), run bin/rails catalog:build_rev5 and bin/rails samples:odp_worksheets, and commit what they write."
+  "re_vendor": "When a NIST release carries these fixes: replace the XML with the released file (or take NIST's released JSON), update this sidecar (commit, sha256, bytes, pre_release false), run bin/rails catalog:build_rev5 and bin/rails samples:odp_worksheets, and commit what they write.",
+  "previous_pins": [
+    {
+      "source_branch": "develop",
+      "source_commit": "d56011a5542e9de3ab1e0d4cf92d56aa715b4d62",
+      "catalog_uuid": "ea7c7688-79c5-463b-a91b-0650f2d98623",
+      "note": "Same control content; NIST's OSCAL 1.2.3 regeneration on main changed only metadata (oscal-version, a revision entry, a back-matter resource, the document uuid)."
+    }
+  ],
+  "nist_published_json": {
+    "path": "nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+    "sha256": "64ca6b4161de51ab6af098a7d101d326f14c95e1abf721396cd8a049e8115eeb",
+    "verified": "2026-10-22: OscalCatalogXmlToJson's conversion of the vendored XML deep-equals NIST's own published JSON at this commit"
+  }
 }

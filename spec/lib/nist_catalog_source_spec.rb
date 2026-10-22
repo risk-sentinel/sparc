@@ -29,7 +29,7 @@ RSpec.describe NistCatalogSource do
     it "is NIST's catalog, metadata as NIST wrote it" do
       catalog = described_class.catalog["catalog"]
 
-      expect(catalog["uuid"]).to eq(described_class::DEVELOP_UUID)
+      expect(catalog["uuid"]).to eq(described_class::MAIN_1_2_3_UUID)
       expect(catalog.dig("metadata", "title")).to start_with("Electronic (OSCAL) Version of NIST SP 800-53 Rev 5")
       expect(catalog.to_json).not_to include("pre_release", "source_commit")
     end
@@ -50,7 +50,7 @@ RSpec.describe NistCatalogSource do
       expect(OscalSchemaValidationService.validate(:catalog, described_class.catalog, version: "1.2.3").errors).to be_empty
     end
 
-    it "carries NIST's three develop fixes" do
+    it "carries NIST's three unreleased fixes" do
       controls = described_class.catalog["catalog"]["groups"].flat_map { |g| g["controls"] }
                                 .flat_map { |c| [ c, *Array(c["controls"]) ] }.index_by { |c| c["id"] }
       sa_15_13 = controls.fetch("sa-15.13")
@@ -67,24 +67,27 @@ RSpec.describe NistCatalogSource do
     it "is flagged, from the sidecar" do
       expect(provenance["pre_release"]).to be(true)
       expect(described_class.pre_release?).to be(true)
-      expect(provenance).to include("source_branch" => "develop")
+      expect(provenance).to include("source_branch" => "main")
     end
 
-    it "flags a catalog from the develop file, or one the data migration patched, and nothing else" do
+    it "flags a catalog from either pre-release file, or one the data migration patched, and nothing else" do
       develop = build(:control_catalog, oscal_uuid: described_class::DEVELOP_UUID)
+      main = build(:control_catalog, metadata_extra: { "catalog_uuid" => described_class::MAIN_1_2_3_UUID })
       patched = build(:control_catalog, oscal_uuid: described_class::RELEASED_V5_2_0_UUID,
                                         metadata_extra: { "nist_develop_patch" => { "commit" => "d56011a5" } })
       released = build(:control_catalog, oscal_uuid: described_class::RELEASED_V5_2_0_UUID)
       other = build(:control_catalog, oscal_uuid: SecureRandom.uuid)
 
-      expect([ develop, patched, released, other ].map { |c| described_class.pre_release_catalog?(c) })
-        .to eq([ true, true, false, false ])
+      expect([ develop, main, patched, released, other ].map { |c| described_class.pre_release_catalog?(c) })
+        .to eq([ true, true, true, false, false ])
     end
 
     it "flags nothing once the sidecar stops calling the source pre-release" do
       allow(described_class).to receive(:pre_release?).and_return(false)
 
-      expect(described_class.pre_release_catalog?(build(:control_catalog, oscal_uuid: described_class::DEVELOP_UUID))).to be(false)
+      described_class::PRE_RELEASE_UUIDS.each do |uuid|
+        expect(described_class.pre_release_catalog?(build(:control_catalog, oscal_uuid: uuid))).to be(false)
+      end
     end
   end
 

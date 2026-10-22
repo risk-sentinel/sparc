@@ -36,7 +36,7 @@ class ControlCatalog < ApplicationRecord
     version
   end
 
-  # #1228 — does this catalog carry NIST's unreleased `develop` content? Read by
+  # #1228 — does this catalog carry NIST's unreleased fixes? Read by
   # the catalog screens and the API; the answer comes from the vendored
   # catalog's provenance (NistCatalogSource), never from NIST's own metadata.
   def nist_pre_release?

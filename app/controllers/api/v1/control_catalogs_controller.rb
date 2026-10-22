@@ -132,7 +132,7 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
       lifecycle_status: catalog.lifecycle_status,
       oscal_version: catalog.oscal_version,
       published: catalog.published,
-      # #1228 — true while the catalog carries NIST's unreleased develop content.
+      # #1228 — true while the catalog carries NIST's unreleased fixes.
       nist_pre_release: catalog.nist_pre_release?,
       created_at: catalog.created_at.iso8601,
       updated_at: catalog.updated_at.iso8601
