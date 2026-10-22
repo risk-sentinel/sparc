@@ -258,6 +258,65 @@ RSpec.describe OscalConformanceService do
     end
   end
 
+  # #1228 — check 3. NIST's own example assessment plan shipped a task whose
+  # activity-uuid resolved to nothing (usnistgov/oscal-content#349). The uuids
+  # below are invented.
+  describe "activity-uuid and task-uuid" do
+    let(:activity) { "aaaaaaaa-0000-4000-8000-000000000001" }
+    let(:task)     { "bbbbbbbb-0000-4000-8000-000000000001" }
+    let(:dangling) { "dddddddd-0000-4000-8000-00000000dead" }
+
+    def plan(activity_ref:, dependency_ref:)
+      {
+        "assessment-plan" => {
+          "metadata" => { "oscal-version" => "1.2.3", "roles" => [], "parties" => [] },
+          "local-definitions" => { "activities" => [ { "uuid" => activity, "description" => "Invented" } ] },
+          "tasks" => [
+            { "uuid" => task, "type" => "action", "title" => "Invented task",
+              "associated-activities" => [ { "activity-uuid" => activity_ref, "subjects" => [] } ],
+              "tasks" => [ { "uuid" => "cccccccc-0000-4000-8000-000000000001", "type" => "action", "title" => "Nested",
+                             "dependencies" => [ { "task-uuid" => dependency_ref } ] } ] }
+          ]
+        }
+      }
+    end
+
+    it "reports an activity-uuid that resolves to no declared activity, where it is" do
+      result = check(plan(activity_ref: dangling, dependency_ref: task), model: "assessment-plan")
+
+      expect(result.violations.map { |v| [ v.rule, v.location ] })
+        .to eq([ [ "activity-uuid-unresolved", "/tasks[0]/associated-activities[0]" ] ])
+    end
+
+    it "reports a task-uuid that resolves to no declared task" do
+      result = check(plan(activity_ref: activity, dependency_ref: dangling), model: "assessment-plan")
+
+      expect(result.violations.map(&:rule)).to eq([ "task-uuid-unresolved" ])
+    end
+
+    it "accepts references to an activity and a (nested-declaring) task the plan declares" do
+      expect(check(plan(activity_ref: activity, dependency_ref: task), model: "assessment-plan").violations).to be_empty
+    end
+
+    it "is advisory in assessment results, whose tasks may live in the imported plan" do
+      doc = { "assessment-results" => {
+        "metadata" => { "oscal-version" => "1.2.3", "roles" => [], "parties" => [] },
+        "results" => [ { "observations" => [ { "origins" => [ { "related-tasks" => [ { "task-uuid" => dangling } ] } ] } ] } ]
+      } }
+      result = check(doc, model: "assessment-results")
+
+      expect(result.violations).to be_empty
+      expect(result.advisories.map(&:rule)).to eq([ "task-uuid-unresolved" ])
+    end
+
+    it "flags NIST's own example plan, the error #349 fixed upstream" do
+      fixture = JSON.parse(Rails.root.join("spec/fixtures/files/sap/ifa_assessment-plan-example.json").read)
+      fixture["assessment-plan"]["metadata"]["oscal-version"] = "1.2.3"
+
+      expect(check(fixture, model: "assessment-plan").violations.map(&:rule)).to include("activity-uuid-unresolved")
+    end
+  end
+
   describe "Result#summary" do
     it "says conformant, with the advisory count" do
       result = described_class::Result.new(findings: [
