@@ -14,6 +14,15 @@ require "rails_helper"
 # resolutions (PoamResolutionService). The note is required (owner,
 # 2026-10-22) and lands in the risk's OSCAL risk-log, which the export carries.
 RSpec.describe "POA&M record sections and resolution (v1.17.2)", type: :request do
+  # The refusals below are only refusals with authentication on. Stubbed here,
+  # in this spec, so it does not depend on the developer's environment: CI runs
+  # with auth off, where authorize_permission! returns early and the "without
+  # poam.write" examples passed locally and failed there.
+  before do
+    allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
+    allow(SparcConfig).to receive(:enable_local_login?).and_return(true)
+  end
+
   let(:user) { create(:user) }
   let(:poam) { create(:poam_document, name: "Sections POAM") }
   let(:risk_attrs) do
