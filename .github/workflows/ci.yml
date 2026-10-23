@@ -180,8 +180,9 @@ jobs:
     # was cancelled at 45 while still passing. The suite runs as one process
     # on a 4-CPU runner; running it in parallel is the lasting fix.
     # 60 -> 75 (v1.17.2, owner): ten runs to 2026-10-23 took 35-48 minutes,
-    # rising with each bundle — 80% of the limit at worst. Room until the
-    # parallel run (#1256) and the test audit land.
+    # rising with each bundle, then 58.7 on PR #1262. Room until the parallel
+    # run (#1256) and the test audit (#1264) land. `TIMEOUT_MIN` in
+    # required-passed.yml waits on this job and must stay above it.
     timeout-minutes: 75
     needs: [ changes ]
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
