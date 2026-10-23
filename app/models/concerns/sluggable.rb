@@ -55,7 +55,13 @@ module Sluggable
     candidate = base
     counter = 1
 
-    while self.class.where(slug: candidate).where.not(id: id).exists?
+    # #1263 — `unscoped`: the slug column is unique across every row, deleted
+    # ones included (the validation runs unscoped and so does the index), but
+    # SoftDeletable's default scope hid deleted rows here, so a deleted
+    # document's slug was handed out as free and the save then failed with
+    # "Slug has already been taken". The deleted document keeps its slug, so
+    # restoring it cannot collide.
+    while self.class.unscoped.where(slug: candidate).where.not(id: id).exists?
       candidate = "#{base}-#{counter}"
       counter += 1
     end
