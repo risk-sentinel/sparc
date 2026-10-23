@@ -25,7 +25,7 @@ module SeedRunner
     "nist_rev5_catalog"    => "3.1.0",
     "nist_rev4_catalog"    => "3.1.0",
     # #1044 — 1.4.0: the instance_admin role carrying admin.administer.
-    # #1257 — 1.5.0: Policy Manager gains cdef.write. Since #1259 a bump applies
+    # #1257 — 1.5.0: Policy Manager gains cdef.write and cdef.scope_instance. Since #1259 a bump applies
     # shipped defaults only to values no administrator has set
     # (BuiltInRoleSeeder), so it no longer discards local role amendments.
     "roles"                => "1.5.0",

@@ -24,7 +24,24 @@
 class CdefScopeService
   METADATA_KEY = "authorization_boundary_id"
 
+  INSTANCE_SCOPE_PERMISSION = "cdef.scope_instance"
+  INSTANCE_SCOPE_REFUSAL =
+    "Making a component definition available instance-wide needs the #{INSTANCE_SCOPE_PERMISSION} " \
+    "permission (Policy Manager or instance administrator).".freeze
+
   class << self
+    # #980/#1257 — instance-wide publishes a CDEF to every organization on the
+    # instance, including ones the requester is not a member of, so it needs an
+    # INSTANCE-level grant of `cdef.scope_instance` (Policy Manager by default;
+    # an instance administrator always). A boundary-scoped grant of the key
+    # confers nothing here. Every HTTP surface and the scope picker read this
+    # one definition; `apply` itself does not, so the console and the seeds
+    # can still use it.
+    # NIST 800-53: AC-3 (access enforcement), AC-6 (least privilege).
+    def may_scope_instance?(user)
+      user.present? && user.has_permission?(INSTANCE_SCOPE_PERMISSION)
+    end
+
     # scope: "instance" | "global" | "boundary"
     #
     # #980 — the three tiers the CDEF model always described and only ever

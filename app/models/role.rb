@@ -78,6 +78,7 @@ class Role < ApplicationRecord
     cdef.read
     cdef.write
     cdef.approve
+    cdef.scope_instance
     evidence.read
     evidence.write
     evidence.attest

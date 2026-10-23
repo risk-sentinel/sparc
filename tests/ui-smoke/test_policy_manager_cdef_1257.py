@@ -2,17 +2,19 @@
 
 Before #1257 only an instance administrator could author a CDEF: every CDEF
 write is checked at instance level, and every other built-in role holding
-`cdef.write` is boundary-scoped. Policy Manager now ships with the key.
+`cdef.write` is boundary-scoped. Policy Manager now ships with the key, and
+with `cdef.scope_instance`: it curates which CDEFs every organization shares.
 
 Driven as the harness's second identity (SPARC_SMOKE_USER_TOKEN), a genuine
 non-administrator. The administrator session grants it the built-in Policy
 Manager role on Admin -> Users -> Edit, and teardown takes the role away again
 if it did not hold it before. As that user this authors a CDEF in the browser,
-asks for organization-wide scope, and checks the instance-wide tier is neither
-offered nor reached. The CDEF is deleted through the API afterwards.
+asks for organization-wide scope, then makes it instance-wide through the
+offered tier. The CDEF is deleted through the API afterwards.
 
-The authorization rules in both directions (web and API, instance-wide refused,
-a role without cdef.write refused, an administrator's revoke kept) are covered
+The authorization rules in both directions (web and API, instance-wide refused
+without cdef.scope_instance, a role without cdef.write refused, an
+administrator's revoke kept) are covered
 at the request layer: spec/requests/policy_manager_cdef_write_1257_spec.rb.
 
 Selectors verified against app/views/admin/users/edit.html.erb,
@@ -53,8 +55,11 @@ def _policy_manager_role_id() -> int:
     match = next((r for r in roles if r["name"] == "policy_manager"), None)
     if match is None:
         pytest.skip("the built-in Policy Manager role is not present on this instance")
-    if "cdef.write" not in get_json(f"/api/v1/roles/{match['id']}")["permissions"]:
-        pytest.skip("Policy Manager does not hold cdef.write here (revoked, or pre-#1257)")
+    granted = get_json(f"/api/v1/roles/{match['id']}")["permissions"]
+    missing = [key for key in ("cdef.write", "cdef.scope_instance") if key not in granted]
+    if missing:
+        held = ", ".join(missing)
+        pytest.skip(f"Policy Manager does not hold {held} here (revoked, or pre-#1257)")
     return match["id"]
 
 
@@ -69,7 +74,7 @@ def _set_policy_manager(admin_page, user_id: int, role_id: int, *, held: bool) -
         admin_page.get_by_role("button", name="Save Changes").click()
 
 
-def test_policy_manager_creates_a_cdef_and_cannot_make_it_instance_wide(
+def test_policy_manager_creates_a_cdef_and_makes_it_instance_wide(
     authed_page, user_authed_page
 ):
     admin, user = authed_page, user_authed_page
@@ -102,9 +107,8 @@ def test_policy_manager_creates_a_cdef_and_cannot_make_it_instance_wide(
         slug = user.url.rstrip("/").split("/")[-1]
         assert name in user.locator("body").inner_text()
 
-        # Instance-wide is instance-administrator only (#980): not offered.
-        assert user.locator(f"{SCOPE_INSTANCE}:not([disabled])").count() == 0, (
-            "the instance-wide tier must not be selectable by a Policy Manager"
+        assert user.locator(f"{SCOPE_INSTANCE}:not([disabled])").count() == 1, (
+            "a Policy Manager should be offered the instance-wide tier"
         )
 
         user.locator(SCOPE_GLOBAL).check()
@@ -117,6 +121,16 @@ def test_policy_manager_creates_a_cdef_and_cannot_make_it_instance_wide(
         assert ("Organization-wide —" in body) or ("needs an organization" in body), (
             "organization-wide should either apply (the user has an organization) or be "
             "refused naming the missing organization; got neither"
+        )
+
+        user.locator(SCOPE_INSTANCE).check()
+        with user.expect_navigation(wait_until="networkidle"):
+            user.get_by_role("button", name="Update Scope").click()
+        assert "Component definition scope updated." in user.locator("body").inner_text(), (
+            "a Policy Manager's instance-wide scope was not applied"
+        )
+        assert user.locator(f"{SCOPE_INSTANCE}:checked").count() == 1, (
+            "the picker should show the CDEF as instance-wide"
         )
         assert_no_csp_violations(user, during="a Policy Manager authoring and scoping a CDEF")
     finally:

@@ -186,6 +186,7 @@ SPARC defines **33 permission keys** across 14 resource areas (`Role::PERMISSION
 | `cdef.read` | View Component Definitions |
 | `cdef.write` | Create / edit Component Definitions |
 | `cdef.approve` | Approve / publish a Component Definition |
+| `cdef.scope_instance` | Make a Component Definition available instance-wide, to every organization (instance-level grants only) |
 | `evidence.read` | View evidence artifacts |
 | `evidence.write` | Upload / edit / link evidence artifacts |
 | `evidence.attest` | Sign an attestation — assert, as an accountable role, that evidence is accurate |
@@ -339,13 +340,19 @@ Since v1.17.2 (#1257) also creates, edits and publishes **component definitions*
 (`cdef.write`), and makes them available to its organization (organization-wide)
 or to a boundary. Every CDEF write is checked at instance level, and the other
 built-in roles holding `cdef.write` are boundary-scoped, so before this only an
-instance administrator could author a CDEF. Making a CDEF available
-**instance-wide** stays instance-administrator only (#980), and an
-organization-wide request from someone in no organization is refused rather than
-widened. Approving a CDEF is unchanged (`cdef.approve`, which this role already
-holds; nobody approves their own submission). An existing install receives the
-grant on upgrade unless an administrator had already set Policy Manager's
-`cdef.write` either way — see
+instance administrator could author a CDEF.
+
+It also makes a CDEF available **instance-wide** (`cdef.scope_instance`), to
+every organization on the instance. That tier is curated: one vetted CDEF
+serves every organization instead of each keeping its own copy, so it needs an
+instance-level grant of the key, which out of the box only this role (and the
+instance administrator) holds. Anyone else who wants a CDEF shared
+instance-wide asks a Policy Manager. An organization-wide request from someone
+in no organization is refused rather than widened to instance-wide. Approving a
+CDEF is unchanged: the Policy Manager role or `cdef.approve`, and nobody
+approves their own submission. An existing install receives both grants on
+upgrade unless an administrator had already set the key on Policy Manager
+either way — see
 [Shipped Defaults and Administrator Overrides](#shipped-defaults-and-administrator-overrides).
 
 ### Global Viewer
