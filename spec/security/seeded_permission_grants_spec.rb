@@ -16,43 +16,20 @@ require "rails_helper"
 # destroy the separation of duties the promotion queue exists for, and the entire
 # suite would stay green — the change is data, not behaviour.
 #
-# WHY THIS READS THE SEED SOURCE rather than a seeded database: the roles live in
-# a `SeedRunner.run_section("roles")` block inside db/seeds.rb alongside catalog
-# and demo-data sections. Loading that file to populate a test database would run
-# all of them. Extracting the roles into their own file so a spec could load it
-# is a refactor of shared seed infrastructure and needs its own decision, so this
-# pins the source instead. The constants below ARE the policy; asserting on them
-# catches the edit that would change who can do what.
+# #1259 — the role definitions moved out of db/seeds.rb into BuiltInRoles
+# (app/lib/built_in_roles.rb), which the running application loads: the role
+# editor reads the same shipped defaults to tell an administrator what differs.
+# This used to parse the seed source because nothing could load it; it now
+# asserts on the constants themselves. The constants below ARE the policy;
+# asserting on them catches the edit that would change who can do what.
 #
 # NIST 800-53: AC-2 (account management), AC-5 (separation of duties),
 # AC-6 (least privilege), CM-6 (configuration settings).
 RSpec.describe "Seeded permission grants (#919)" do
-  let(:seeds) { File.read(Rails.root.join("db/seeds.rb")) }
+  def word_list(name) = BuiltInRoles.const_get(name).sort
 
-  # Pulls a %w[...] list out of the seed source by constant name.
-  def word_list(name)
-    m = seeds.match(/#{name}\s*=\s*%w\[(.*?)\]/m)
-    raise "#{name} not found in db/seeds.rb — was it renamed?" unless m
-
-    m[1].split(/\s+/).reject(&:empty?).sort
-  end
-
-  # Pulls the granted keys of a permission constant, handling both forms the
-  # seeds use: a `{ "key" => true }.freeze` literal, and a
-  # `OTHER.merge("key" => true).freeze` derivation — where the result is the
-  # base's keys plus the merged ones, so the base has to be resolved too.
   def perm_hash_keys(name)
-    literal = seeds.match(/#{name}\s*=\s*\{(.*?)\}\.freeze/m)
-    return scan_keys(literal[1]) if literal
-
-    merged = seeds.match(/#{name}\s*=\s*(\w+)\.merge\((.*?)\)\.freeze/m)
-    raise "#{name} not found in db/seeds.rb — was it renamed?" unless merged
-
-    (perm_hash_keys(merged[1]) + scan_keys(merged[2])).uniq.sort
-  end
-
-  def scan_keys(fragment)
-    fragment.scan(/"([a-z_]+\.[a-z_]+)"\s*=>\s*true/).flatten.sort
+    BuiltInRoles.const_get(name).select { |_key, granted| granted == true }.keys.sort
   end
 
   describe "the boundary tier" do
@@ -156,18 +133,35 @@ RSpec.describe "Seeded permission grants (#919)" do
   # in the suite going red: the role is data, not behaviour.
   describe "the instance_admin role (#1044)" do
     it "is defined, instance-scoped, and carries admin.administer" do
-      block = seeds[/\{ name: "instance_admin".*?\},/m]
+      definition = BuiltInRoles::DEFINITIONS.find { |attrs| attrs[:name] == "instance_admin" }
 
-      expect(block).to be_present, "the instance_admin role is no longer seeded"
-      expect(block).to include('scope: "instance"'),
+      expect(definition).to be_present, "the instance_admin role is no longer seeded"
+      expect(definition[:scope]).to eq("instance"),
                        "a boundary-scoped grant confers boundary power, not instance authority"
-      expect(block).to include("PERM_INSTANCE_ADMIN")
+      expect(definition[:permissions]).to equal(BuiltInRoles::PERM_INSTANCE_ADMIN)
     end
 
     it "grants admin.administer and nothing else — the rest would be inert" do
-      expect(seeds).to match(/PERM_INSTANCE_ADMIN\s*=\s*\{\s*"admin\.administer"\s*=>\s*true\s*\}/),
+      expect(BuiltInRoles::PERM_INSTANCE_ADMIN).to eq("admin.administer" => true),
                        "admin.administer short-circuits has_permission?, so any other key " \
                        "listed here would imply it is doing work it is not"
+    end
+  end
+
+  # #1257 — Policy Manager authors organization-wide component definitions.
+  # Every CDEF write is checked at instance level and every other role holding
+  # the key is boundary-scoped, so without this grant only an instance
+  # administrator could create or edit a CDEF.
+  describe "Policy Manager and component definitions (#1257)" do
+    it "holds cdef.write" do
+      expect(perm_hash_keys("PERM_POLICY_MANAGER")).to include("cdef.write")
+      expect(BuiltInRoles.default_for("policy_manager", "cdef.write")).to be(true)
+    end
+
+    it "is still the only instance-scoped built-in role holding it" do
+      holders = BuiltInRoles.all.values.select { |d| d[:scope] == "instance" && d[:permissions]["cdef.write"] }
+
+      expect(holders.map { |d| d[:name] }).to eq(%w[policy_manager])
     end
   end
 
@@ -177,7 +171,9 @@ RSpec.describe "Seeded permission grants (#919)" do
   # to grant — the grant would resolve to "role not found" and the feature would
   # appear broken on exactly the deployments that already run SPARC.
   it "requires a seed version that reflects the seeded grants" do
-    expect(SeedRunner::CURRENT_VERSIONS["roles"]).to eq("1.4.0"),
+    # 1.4.0 -> 1.5.0 for #1257 (Policy Manager gains cdef.write). Since #1259 a
+    # bump no longer overwrites what an administrator set on a built-in role.
+    expect(SeedRunner::CURRENT_VERSIONS["roles"]).to eq("1.5.0"),
       "The roles seed version must be bumped whenever these grants change, or " \
       "SeedRunner skips the section on every existing database. If you changed the " \
       "grants above, bump the version AND update this expectation."

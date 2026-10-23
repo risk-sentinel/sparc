@@ -965,6 +965,8 @@ Shows assigned users and the full permission matrix for the role.
 
 Form fields: name, display name, scope selector (instance/authorization boundary), 20 permission checkboxes covering CRUD operations across document types and admin features.
 
+On a built-in role, each value that differs from its shipped default carries a **Differs from default** badge and a **Reset to default** button (`role-defaults` Stimulus controller), which puts the default back into the form; saving releases the override (#1259). The role detail page lists the values that differ.
+
 #### Admin Authorization Boundaries List
 
 | | |

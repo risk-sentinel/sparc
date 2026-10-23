@@ -1,33 +1,59 @@
-<%= form_with model: [:admin, role], local: true do |f| %>
+<%# #1259 — a built-in role marks each value that differs from its shipped
+    default and offers "Reset to default"; see the role-defaults controller. %>
+<% defaults = role.persisted? && role.built_in? %>
+<% field_data = ->(key) {
+     next {} unless defaults
+     shipped = role.shipped_default(key)
+     { role_defaults_target: "field", role_defaults_shipped_value: shipped.to_s }
+   } %>
+<% shipped_label = ->(key) {
+     shipped = role.shipped_default(key)
+     next(shipped ? "granted" : "not granted") if [ true, false ].include?(shipped)
+     shipped.to_s.truncate(80)
+   } %>
+<%= form_with model: [:admin, role], local: true,
+      data: (defaults ? { controller: "role-defaults", action: "change->role-defaults#changed input->role-defaults#changed" } : {}) do |f| %>
+  <% if defaults %>
+    <p class="small text-body-secondary mb-3" data-testid="role-defaults-explainer">
+      This is a built-in role. A value you set to something other than its shipped default is kept
+      when SPARC is upgraded; a value left at the default follows the default. Use
+      <em>Reset to default</em> to put a value back, then save.
+    </p>
+  <% end %>
   <div class="row mb-3">
     <div class="col-md-6">
       <%= f.label :name, class: "form-label fw-semibold small" %>
       <%= f.text_field :name, class: "form-control", placeholder: "e.g. security_reviewer" %>
       <div class="form-text">Lowercase snake_case identifier (must be unique).</div>
     </div>
-    <div class="col-md-6">
+    <%= tag.div class: "col-md-6", data: field_data.call("display_name") do %>
       <%= f.label :display_name, class: "form-label fw-semibold small" %>
-      <%= f.text_field :display_name, class: "form-control", placeholder: "e.g. Security Reviewer" %>
-    </div>
+      <% if defaults %><%= render "default_marker", role: role, key: "display_name", label: "display name", shipped_label: shipped_label.call("display_name") %><% end %>
+      <%= f.text_field :display_name, class: "form-control", placeholder: "e.g. Security Reviewer",
+            data: { role_defaults_input: true } %>
+    <% end %>
   </div>
 
   <div class="row mb-3">
-    <div class="col-md-6">
+    <%= tag.div class: "col-md-6", data: field_data.call("scope") do %>
       <%= f.label :scope, class: "form-label fw-semibold small" %>
+      <% if defaults %><%= render "default_marker", role: role, key: "scope", label: "scope", shipped_label: shipped_label.call("scope") %><% end %>
       <%= f.select :scope, [["Instance-wide", "instance"], ["Authorization Boundary-scoped", "authorization_boundary"]],
-            {}, class: "form-select" %>
+            {}, class: "form-select", data: { role_defaults_input: true } %>
       <div class="form-text">Instance roles apply globally. Authorization boundary roles require an authorization boundary assignment.</div>
-    </div>
-    <div class="col-md-6">
+    <% end %>
+    <%= tag.div class: "col-md-6", data: field_data.call("sort_order") do %>
       <%= f.label :sort_order, class: "form-label fw-semibold small" %>
-      <%= f.number_field :sort_order, class: "form-control", min: 0 %>
-    </div>
+      <% if defaults %><%= render "default_marker", role: role, key: "sort_order", label: "sort order", shipped_label: shipped_label.call("sort_order") %><% end %>
+      <%= f.number_field :sort_order, class: "form-control", min: 0, data: { role_defaults_input: true } %>
+    <% end %>
   </div>
 
-  <div class="mb-3">
+  <%= tag.div class: "mb-3", data: field_data.call("description") do %>
     <%= f.label :description, class: "form-label fw-semibold small" %>
-    <%= f.text_area :description, class: "form-control", rows: 2 %>
-  </div>
+    <% if defaults %><%= render "default_marker", role: role, key: "description", label: "description", shipped_label: shipped_label.call("description") %><% end %>
+    <%= f.text_area :description, class: "form-control", rows: 2, data: { role_defaults_input: true } %>
+  <% end %>
 
   <hr>
   <h5 class="fw-semibold mb-3">Permissions</h5>
@@ -40,16 +66,17 @@
       <div class="row g-2">
         <% keys.each do |key| %>
           <% action = key.split(".").last %>
-          <div class="col-auto">
+          <%= tag.div class: "col-auto", data: field_data.call(key) do %>
             <div class="form-check form-check-inline">
               <input type="checkbox" name="role[permissions][<%= key %>]" value="1"
-                     id="perm_<%= key.tr('.', '_') %>" class="form-check-input"
+                     id="perm_<%= key.tr('.', '_') %>" class="form-check-input" data-role-defaults-input
                      <%= "checked" if role.has_permission?(key) %>>
               <label for="perm_<%= key.tr('.', '_') %>" class="form-check-label small">
                 <%= action.capitalize %>
               </label>
+              <% if defaults %><%= render "default_marker", role: role, key: key, label: key, shipped_label: shipped_label.call(key) %><% end %>
             </div>
-          </div>
+          <% end %>
         <% end %>
       </div>
     </div>

@@ -101,4 +101,36 @@ RSpec.describe "CdefScopeService instance-wide tier" do
       expect(org_cdef).not_to be_instance_wide
     end
   end
+
+  # #1257 — who may choose the tier: whoever holds cdef.write across the
+  # instance. A role scoped to one boundary confers boundary power, not
+  # authority over every organization.
+  describe ".may_scope_instance?" do
+    def holder(permissions, boundary: nil)
+      role = create(:role, name: "probe_#{SecureRandom.hex(3)}", scope: boundary ? "authorization_boundary" : "instance",
+                           permissions: permissions)
+      create(:user).tap { |u| create(:user_role, user: u, role: role, authorization_boundary_id: boundary&.id) }
+    end
+
+    it "is false with no user" do
+      expect(CdefScopeService.may_scope_instance?(nil)).to be(false)
+    end
+
+    it "is false for an instance-level role without cdef.write" do
+      expect(CdefScopeService.may_scope_instance?(holder({ "cdef.read" => true }))).to be(false)
+    end
+
+    it "is false for cdef.write scoped to one boundary" do
+      boundary = create(:authorization_boundary)
+      expect(CdefScopeService.may_scope_instance?(holder({ "cdef.write" => true }, boundary: boundary))).to be(false)
+    end
+
+    it "is true for cdef.write across the instance" do
+      expect(CdefScopeService.may_scope_instance?(holder({ "cdef.write" => true }))).to be(true)
+    end
+
+    it "is true for an instance administrator" do
+      expect(CdefScopeService.may_scope_instance?(create(:user, :admin))).to be(true)
+    end
+  end
 end

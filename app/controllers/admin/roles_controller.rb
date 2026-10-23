@@ -22,6 +22,7 @@ module Admin
     def create
       @role = Role.new(role_params)
       @role.assign_permissions(params.dig(:role, :permissions) || {})
+      @role.record_admin_choices(Role.edited_keys(role_params, permissions_assigned: true))
 
       if @role.save
         audit_log("role_created", subject: @role,
@@ -40,10 +41,16 @@ module Admin
     def update
       @role.assign_attributes(role_params)
       @role.assign_permissions(params.dig(:role, :permissions) || {})
+      # #1259 — the form states every permission, so every key is reconsidered:
+      # one that now differs from the shipped default is the administrator's
+      # choice and the seeds will leave it alone; one put back to the default
+      # (the "Reset to default" control) follows the shipped default again.
+      @role.record_admin_choices(Role.edited_keys(role_params, permissions_assigned: true))
 
       if @role.save
         audit_log("role_updated", subject: @role,
-          metadata: { role_id: @role.id, role_name: @role.name })
+          metadata: { role_id: @role.id, role_name: @role.name,
+                      admin_overrides: @role.admin_overrides.keys.sort })
         redirect_to admin_role_path(@role), success: "Role updated."
       else
         flash.now[:error] = @role.errors.full_messages.to_sentence

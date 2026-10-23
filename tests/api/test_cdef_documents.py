@@ -673,11 +673,15 @@ class TestUpdateScope:
         )
 
     @pytest.mark.happy
-    def test_returning_to_global_is_confirmed_by_an_independent_read(
+    def test_unpinning_to_instance_wide_is_confirmed_by_an_independent_read(
         self, admin_client: httpx.Client, scoped_cdef
     ) -> None:
         """Both directions. Only asserting the pin would pass against a service
-        that pinned and could never unpin."""
+        that pinned and could never unpin.
+
+        Unpinned to instance-wide, the tier an administrator can always choose:
+        organization-wide needs an organization the caller belongs to (#1257),
+        which the administrator here may not have."""
         slug = scoped_cdef["cdef"]["slug"]
         admin_client.patch(
             f"/api/v1/cdef_documents/{slug}/scope",
@@ -685,14 +689,15 @@ class TestUpdateScope:
         )
 
         written = admin_client.patch(
-            f"/api/v1/cdef_documents/{slug}/scope", json={"scope": "global"}
+            f"/api/v1/cdef_documents/{slug}/scope", json={"scope": "instance"}
         )
         assert written.status_code == 200, written.text
 
         data = self._read_scope(admin_client, slug)
+        assert data["scope_tier"] == "instance", data
         assert data["scope"] == "global", data
         assert data["authorization_boundary_id"] is None, (
-            "the CDEF is global but still records a boundary"
+            "the CDEF is instance-wide but still records a boundary"
         )
         assert data["globally_available"] is True, data
 
@@ -714,15 +719,19 @@ class TestUpdateScope:
     ) -> None:
         """`CdefScopeService` raises rather than half-applying: a
         boundary-scoped CDEF with no boundary would be visible to nobody."""
+        slug = scoped_cdef["cdef"]["slug"]
+        before = self._read_scope(admin_client, slug)
         response = admin_client.patch(
-            f"/api/v1/cdef_documents/{scoped_cdef['cdef']['slug']}/scope",
+            f"/api/v1/cdef_documents/{slug}/scope",
             json={"scope": "boundary"},
         )
 
         assert response.status_code == 422, response.text
-        assert self._read_scope(admin_client, scoped_cdef["cdef"]["slug"])["scope"] == "global", (
-            "a refused scope change was applied anyway"
-        )
+        after = self._read_scope(admin_client, slug)
+        assert (after["scope_tier"], after["authorization_boundary_id"]) == (
+            before["scope_tier"],
+            before["authorization_boundary_id"],
+        ), "a refused scope change was applied anyway"
 
     @pytest.mark.authz
     def test_a_non_admin_without_cdef_write_is_refused(
@@ -730,6 +739,7 @@ class TestUpdateScope:
     ) -> None:
         """#1032 gated CDEF writes behind `cdef.write`; scope is a write."""
         slug = scoped_cdef["cdef"]["slug"]
+        before = self._read_scope(admin_client, slug)
 
         response = user_client.patch(
             f"/api/v1/cdef_documents/{slug}/scope",
@@ -737,7 +747,8 @@ class TestUpdateScope:
         )
 
         assert response.status_code == 403, response.text
-        assert self._read_scope(admin_client, slug)["scope"] == "global", (
+        after = self._read_scope(admin_client, slug)
+        assert after["authorization_boundary_id"] == before["authorization_boundary_id"], (
             "a refused caller changed the scope anyway"
         )
 

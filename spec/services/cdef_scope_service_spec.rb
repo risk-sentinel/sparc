@@ -77,11 +77,31 @@ RSpec.describe CdefScopeService do
     before { described_class.apply(cdef, scope: "boundary", authorization_boundary_id: source.id) }
 
     it "drops the boundary links and clears the recorded boundary" do
-      described_class.apply(cdef, scope: "global")
+      described_class.apply(cdef, scope: "global", organization_id: create(:organization).id)
 
       expect(cdef.reload.globally_available).to be(true)
+      expect(cdef.scope_tier).to eq(:organization)
       expect(linked_boundary_ids(cdef)).to be_empty
       expect(described_class.current_boundary_id(cdef)).to be_nil
+    end
+
+    # #1257 — with no organization to own it, "global" stored
+    # `organization_id: NULL`, which is the INSTANCE tier (#980).
+    it "refuses organization-wide when there is no organization to own it" do
+      expect { described_class.apply(cdef, scope: "global") }
+        .to raise_error(ArgumentError, /organization/i)
+      expect(cdef.reload.globally_available).to be(false)
+      expect(described_class.current_boundary_id(cdef)).to eq(source.id)
+    end
+
+    it "keeps the CDEF's own organization when the request names none" do
+      organization = create(:organization)
+      cdef.update!(organization: organization)
+
+      described_class.apply(cdef, scope: "global")
+
+      expect(cdef.reload.scope_tier).to eq(:organization)
+      expect(cdef.organization_id).to eq(organization.id)
     end
 
     it "records the organization so the org-wide composition scope resolves" do

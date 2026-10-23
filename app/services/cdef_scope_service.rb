@@ -24,7 +24,24 @@
 class CdefScopeService
   METADATA_KEY = "authorization_boundary_id"
 
+  INSTANCE_SCOPE_REFUSAL =
+    "Making a component definition available instance-wide needs cdef.write across the instance " \
+    "(Policy Manager or instance administrator).".freeze
+
   class << self
+    # #980/#1257 — instance-wide publishes a CDEF to every organization on the
+    # instance, including ones the requester is not a member of, so it needs
+    # `cdef.write` held at INSTANCE level: Policy Manager (the only built-in
+    # role holding it there) or an instance administrator. A boundary-scoped
+    # grant confers nothing here — `has_permission?` with no boundary counts
+    # instance-level roles only. Every HTTP surface and the scope picker read this
+    # one definition; `apply` itself does not, so the console and the seeds
+    # can still use it.
+    # NIST 800-53: AC-3 (access enforcement), AC-6 (least privilege).
+    def may_scope_instance?(user)
+      user.present? && user.has_permission?("cdef.write")
+    end
+
     # scope: "instance" | "global" | "boundary"
     #
     # #980 — the three tiers the CDEF model always described and only ever
@@ -83,10 +100,22 @@ class CdefScopeService
       cdef
     end
 
+    # #1257 — "global" with no organization to own it used to store
+    # `globally_available: true, organization_id: NULL`, which IS the instance
+    # tier: a requester with `cdef.write` and no organization membership asked
+    # for organization-wide and made the CDEF instance-wide, past the #980
+    # refusal of "instance". Organization-wide now needs an organization.
     def apply_global(cdef, organization_id:)
+      owner = organization_id || cdef.organization_id
+      if owner.nil?
+        raise ArgumentError,
+              "Organization-wide needs an organization to own the component definition, " \
+              "and none was found. Join an organization, or choose a boundary."
+      end
+
       ActiveRecord::Base.transaction do
         unlink_previous_boundary(cdef)
-        cdef.update!(globally_available: true, organization_id: organization_id || cdef.organization_id)
+        cdef.update!(globally_available: true, organization_id: owner)
         write_metadata_boundary(cdef, nil)
       end
       cdef

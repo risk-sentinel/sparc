@@ -133,6 +133,21 @@ account you no longer use while leaving your real one exposed to the sweep. See
 5. Save. Open a role (`/admin/roles/:id`) to see its assigned users and full
    permission matrix. Assign the role to users from the user's Edit screen.
 
+### Changing a built-in role
+
+The roles SPARC ships (Policy Manager, ISSO, View Only and the rest) can be
+edited the same way: open the role, click **Edit**, change any permission or
+field, and save. Your change is **kept when SPARC is upgraded** — a release that
+changes a built-in role's defaults applies them only to the values you have not
+changed, and records each change it skipped in the audit log.
+
+On the Edit screen of a built-in role, each value that differs from the shipped
+default is marked **Differs from default**, with **Reset to default** beside it.
+Reset puts the default back into the form; **save** to apply it. From then on
+that value follows the shipped default again. The role's page lists the values
+that currently differ. See
+[RBAC: Shipped Defaults and Administrator Overrides](RBAC#shipped-defaults-and-administrator-overrides).
+
 See [RBAC](RBAC) for how instance vs. boundary scope and the Instance Admin
 bypass work.
 

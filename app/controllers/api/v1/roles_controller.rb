@@ -50,6 +50,7 @@ class Api::V1::RolesController < Api::V1::BaseController
   def create
     role = Role.new(role_params)
     role.assign_permissions(permission_params)
+    role.record_admin_choices(Role.edited_keys(role_params, permissions_assigned: true))
     role.save!
 
     audit_log("role_created", subject: role,
@@ -64,11 +65,17 @@ class Api::V1::RolesController < Api::V1::BaseController
     # states the role's complete permission set, so a key omitted is a key
     # revoked. A partial merge would make "remove this permission" impossible
     # to express.
-    @role.assign_permissions(permission_params) if params[:role]&.key?(:permissions)
+    permissions_sent = params[:role]&.key?(:permissions)
+    @role.assign_permissions(permission_params) if permissions_sent
+    # #1259 — the same rule as the web editor (Role#record_admin_choices): a
+    # key this request set that differs from the shipped default is the
+    # administrator's choice, and one set back to the default is released.
+    @role.record_admin_choices(Role.edited_keys(role_params, permissions_assigned: permissions_sent))
     @role.save!
 
     audit_log("role_updated", subject: @role,
-              metadata: { role_id: @role.id, role_name: @role.name })
+              metadata: { role_id: @role.id, role_name: @role.name,
+                          admin_overrides: @role.admin_overrides.keys.sort })
     render json: { data: serialize(@role, detailed: true) }
   end
 
@@ -130,11 +137,27 @@ class Api::V1::RolesController < Api::V1::BaseController
       # scanning ~60 booleans for the true ones.
       data[:permissions] = role.permissions.to_h.select { |_key, granted| granted }.keys.sort
       data[:available_permissions] = Role::PERMISSION_KEYS
+      # #1259 — what the role would hold out of the box, and which keys an
+      # administrator has set to something else. The roles seed section never
+      # changes an overridden key; setting it back to its shipped default
+      # releases it. Both are null/empty for a role an administrator created.
+      data[:built_in] = role.built_in?
+      data[:shipped_defaults] = shipped_defaults(role)
+      data[:admin_overrides] = role.admin_overrides.keys.sort
       data[:created_at] = role.created_at.utc.iso8601
       data[:updated_at] = role.updated_at.utc.iso8601
     end
 
     data
+  end
+
+  def shipped_defaults(role)
+    definition = BuiltInRoles.definition(role.name)
+    return nil unless definition
+
+    definition.slice(*BuiltInRoles::ATTRIBUTES.map(&:to_sym)).merge(
+      permissions: definition[:permissions].select { |_key, granted| granted }.keys.sort
+    )
   end
 
   # #1044 — was a private authorize_admin! that SHADOWED the shared gate in

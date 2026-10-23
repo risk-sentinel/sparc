@@ -96,6 +96,9 @@ reach the record at all.
     "description": "Reviews things",
     "permissions": ["ssp.read"],
     "available_permissions": ["catalogs.write", "catalogs.approve", "..."],
+    "built_in": false,
+    "shipped_defaults": null,
+    "admin_overrides": [],
     "created_at": "2026-08-20T14:22:18Z",
     "updated_at": "2026-08-20T14:22:18Z"
   }
@@ -104,6 +107,51 @@ reach the record at all.
 
 `permissions` lists the **granted** keys only, so a reader sees what the role
 does rather than scanning every boolean for the true ones.
+
+### Built-in roles: shipped defaults and administrator overrides
+
+Added in [#1259](https://github.com/risk-sentinel/sparc/issues/1259). The roles
+SPARC ships (`built_in: true`) each have a **shipped default** for every
+permission key and for `display_name`, `description`, `sort_order` and `scope`.
+The show response reports them:
+
+```json
+{
+  "data": {
+    "name": "view_only",
+    "built_in": true,
+    "shipped_defaults": {
+      "display_name": "View Only",
+      "description": "Read-only access to assigned authorization boundary artifacts. ...",
+      "sort_order": 29,
+      "scope": "authorization_boundary",
+      "permissions": ["authorization_boundaries.read", "cdef.read", "..."]
+    },
+    "admin_overrides": ["ssp.write"]
+  }
+}
+```
+
+`admin_overrides` lists the keys and attributes an administrator has set to
+something other than the shipped default. **An upgrade never changes them**:
+the roles seed section brings every other value up to the new release's default
+and leaves these exactly as set, writing an audit event for each value it
+changes (`role_default_applied`) and for each shipped change it skipped because
+of an override (`role_default_skipped`).
+
+An update records the choice for each value it sets:
+
+- a permission key (when `permissions` is sent, every key is set) or attribute
+  whose new value **differs** from the shipped default is added to
+  `admin_overrides`;
+- one set **equal** to the shipped default is removed from it. That is how to
+  reset a value to its default: send the value in `shipped_defaults`. From then
+  on it follows the shipped default again.
+
+An update that omits `permissions` leaves the permission overrides untouched.
+`admin_overrides` itself cannot be written directly. A role an administrator
+created has `built_in: false`, `shipped_defaults: null` and no overrides; the
+seeds never read or write it.
 
 ### DELETE /api/v1/roles/:id
 

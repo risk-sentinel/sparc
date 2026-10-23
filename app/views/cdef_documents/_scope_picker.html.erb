@@ -19,10 +19,11 @@
   boundaries = assignable_boundaries(current_user)
   selected_boundary_id = local_assigns.fetch(:selected, nil).presence
   selected_scope = local_assigns.fetch(:scope, "boundary").to_s
-  # Only an instance admin may choose the instance tier — see update_scope.
-  # A non-admin looking at a CDEF that is ALREADY instance-wide still sees the
-  # option, disabled, rather than a picker that silently misreports the state.
-  may_scope_instance = current_user&.instance_administrator?
+  # The instance tier needs CdefScopeService.may_scope_instance? — see
+  # update_scope. Anyone else looking at a CDEF that is ALREADY instance-wide
+  # still sees the option, disabled, rather than a picker that silently
+  # misreports the state.
+  may_scope_instance = CdefScopeService.may_scope_instance?(current_user)
   instance_selected  = selected_scope == "instance"
 %>
 
@@ -65,7 +66,7 @@
         <strong>Instance-wide</strong> — every organization on this instance can
         compose this CDEF.
         <% unless may_scope_instance %>
-          <span class="text-body-secondary">(instance administrators only)</span>
+          <span class="text-body-secondary">(Policy Managers and instance administrators)</span>
         <% end %>
       </label>
     </div>

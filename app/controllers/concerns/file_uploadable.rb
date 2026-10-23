@@ -111,13 +111,34 @@ module FileUploadable
     end
 
     # CDEF scope picker: "global" sets globally_available + organization_id;
-    # "boundary" leaves them unset (boundary_cdef_documents rows are
-    # created in apply_post_create_scope!).
+    # "instance" sets globally_available with no organization; "boundary"
+    # leaves them unset (boundary_cdef_documents rows are created in
+    # apply_post_create_scope!).
     if document_class.column_names.include?("globally_available")
       scope = params.dig(param_key, :scope).presence
-      if scope == "global"
+      if scope == "instance"
+        # #1257 — the picker offers instance-wide to whoever may choose it;
+        # the upload used to ignore the choice and store an unscoped CDEF.
+        # Refused, never narrowed, for anyone else.
+        raise ArgumentError, CdefScopeService::INSTANCE_SCOPE_REFUSAL unless CdefScopeService.may_scope_instance?(current_user)
+
         attrs[:globally_available] = true
-        attrs[:organization_id]    = current_user.try(:organization_id)
+        attrs[:organization_id]    = nil
+        attrs.delete(:authorization_boundary_id)
+      elsif scope == "global"
+        # #1257 — `current_user.try(:organization_id)` was always nil (a user
+        # belongs to organizations through memberships and has no such
+        # column), so every "organization-wide" upload was stored with no
+        # organization, which is the INSTANCE tier (#980). Use the first
+        # organization the uploader belongs to, as update_scope does, and
+        # refuse rather than widen when there is none.
+        organization_id = current_user&.organizations&.first&.id
+        if organization_id.nil?
+          raise ArgumentError, "Organization-wide needs an organization you belong to; choose a boundary instead."
+        end
+
+        attrs[:globally_available] = true
+        attrs[:organization_id]    = organization_id
         attrs.delete(:authorization_boundary_id) if attrs.key?(:authorization_boundary_id)
       end
     end
