@@ -202,6 +202,11 @@ class CatalogImportService
     cat_data    = data.fetch("catalog") { raise ImportError, "Missing 'catalog' key — not a valid OSCAL catalog JSON." }
     metadata    = cat_data.fetch("metadata", {})
     groups      = cat_data.fetch("groups") { raise ImportError, "No 'groups' found in catalog." }
+    # #1252 — refused before anything is written: a catalog whose groups hold no
+    # control at any depth used to import as an empty catalog, with no reason.
+    if CatalogGroupTree.control_count(groups).zero?
+      raise ImportError, "The catalog's groups contain no controls at any depth, so there is nothing to import."
+    end
 
     # Any extension: YAML and XML catalogs arrive here too (#1228).
     catalog_name  = metadata["title"].presence || File.basename(@filename, ".*").titleize
@@ -245,11 +250,15 @@ class CatalogImportService
       family_name = group["title"].to_s.strip
       next if family_code.blank?
 
-      family = upsert_family(catalog, family_code, family_name, idx + 1)
+      family = upsert_family(catalog, family_code, family_name, idx + 1,
+                             group_data: CatalogGroupTree.definition(group))
       stats[:families] += 1
 
-      (group["controls"] || []).each do |ctrl|
-        result = import_oscal_control(family, ctrl)
+      # #1252 — the group's own controls, then each nested group's, at any
+      # depth. They all belong to this family; `group_id` records which nested
+      # group each sits in (nil: the family's group itself).
+      CatalogGroupTree.each_control(group) do |ctrl, group_id|
+        result = import_oscal_control(family, ctrl, group_id: group_id)
         stats[:controls] += 1
         stats[result]    += 1
       end
@@ -258,7 +267,7 @@ class CatalogImportService
     stats
   end
 
-  def import_oscal_control(family, ctrl, parent_control_id = nil)
+  def import_oscal_control(family, ctrl, parent_control_id = nil, group_id: nil)
     # Store the OSCAL canonical id as the primary key for cross-referencing.
     # The label prop is stored separately for display; sort-id for ordering.
     control_id = ctrl["id"].to_s.strip                         # "ac-1", "ac-2.1"
@@ -278,7 +287,8 @@ class CatalogImportService
                                     title: title, priority: priority, baseline: baseline,
                                     guidance_data: guidance_data, params_data: params_data,
                                     label: ctrl_label, sort_id: sort_id, links_data: control_links,
-                                    parent_control_id: parent_control_id, statement_item: false)
+                                    parent_control_id: parent_control_id, statement_item: false,
+                                    group_id: group_id)
 
     # #1100 — store the OSCAL parts TREE, from the node we already have in hand.
     #
@@ -304,11 +314,12 @@ class CatalogImportService
 
     # Create sub-control records for each statement item part (a., 1., (a), …)
     stmt_part = (ctrl["parts"] || []).find { |p| p["name"] == "statement" }
-    import_oscal_item_parts(family, control_id, sort_id, stmt_part&.[]("parts"), owner: control_id)
+    import_oscal_item_parts(family, control_id, sort_id, stmt_part&.[]("parts"), owner: control_id, group_id: group_id)
 
-    # Recurse into enhancements (sub-controls like AC-1(1), AC-1(2))
+    # Recurse into enhancements (sub-controls like AC-1(1), AC-1(2)), which sit
+    # in their parent's group.
     (ctrl["controls"] || []).each do |sub|
-      import_oscal_control(family, sub, control_id)
+      import_oscal_control(family, sub, control_id, group_id: group_id)
     end
 
     result
@@ -450,7 +461,7 @@ class CatalogImportService
   #   parent "ac-1" + label "a." → "ac-1a"
   #   parent "ac-1a" + label "1." → "ac-1a.1"
   #   parent "ac-1a.1" + label "(a)" → "ac-1a.1.(a)"
-  def import_oscal_item_parts(family, parent_id, parent_sort_id, parts, owner:)
+  def import_oscal_item_parts(family, parent_id, parent_sort_id, parts, owner:, group_id: nil)
     return if parts.blank?
     parts.each do |part|
       next unless part["name"] == "item"
@@ -476,11 +487,11 @@ class CatalogImportService
 
       upsert_catalog_control(family, sub_id, title: title, sort_id: sub_sort,
         guidance_data: prose.present? ? { "statement" => prose } : {},
-        parent_control_id: owner, statement_item: true)
+        parent_control_id: owner, statement_item: true, group_id: group_id)
 
       # Recurse into nested item parts. The sub-part's own derived key becomes
       # the base for its children, so depth keeps extending one padded string.
-      import_oscal_item_parts(family, sub_id, sub_sort, part["parts"], owner: owner)
+      import_oscal_item_parts(family, sub_id, sub_sort, part["parts"], owner: owner, group_id: group_id)
     end
   end
 
@@ -756,9 +767,12 @@ class CatalogImportService
     catalog.update_column(:framework, framework) if framework.present?
   end
 
-  def upsert_family(catalog, code, name, sort_order)
+  def upsert_family(catalog, code, name, sort_order, group_data: nil)
     family = catalog.control_families.find_or_initialize_by(code: code)
     family.assign_attributes(name: name, sort_order: sort_order)
+    # #1252 — only the OSCAL path knows the group it came from; the NIST XML
+    # path leaves what a family already records alone.
+    family.group_data = group_data unless group_data.nil?
     family.save!
     family
   end
@@ -769,7 +783,7 @@ class CatalogImportService
   # distinguished from one that had nothing to say.
   CONTROL_FIELDS = %i[title priority baseline guidance_data
                       params_data label sort_id links_data
-                      parent_control_id statement_item].freeze
+                      parent_control_id statement_item group_id].freeze
 
   # Six positional arguments plus four keywords was ten, which is more than
   # anyone can hold, and #999 was the change that pushed it over. The fields
@@ -799,6 +813,8 @@ class CatalogImportService
     # whether it is a statement item rather than a control.
     attrs[:parent_control_id] = fields[:parent_control_id] if fields.key?(:parent_control_id)
     attrs[:statement_item]    = fields[:statement_item] if fields.key?(:statement_item)
+    # #1252 — the nested group the row sits in (nil: the family's own group).
+    attrs[:group_id]          = fields[:group_id] if fields.key?(:group_id)
 
     ctrl.assign_attributes(attrs)
     ctrl.hierarchy_recorded = fields.key?(:parent_control_id)

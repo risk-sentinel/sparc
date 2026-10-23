@@ -63,15 +63,36 @@ class OscalCatalogExportService
 
   def build_groups
     @catalog.control_families.includes(:catalog_controls).order(:sort_order).map do |family|
+      # #1252 — a family imported from OSCAL records its group (id, class,
+      # props, parts, links, params) and its nested groups; one created in
+      # SPARC, or imported before that, records nothing and exports as a NIST
+      # family. The title is the family's current name, which an editor may
+      # have changed.
+      data = family.group_data.to_h
+      by_group = CatalogGroupTree.by_group(family.catalog_controls.reject(&:statement_item?), data)
+      props = [ *data["props"], *(family.retired? ? [ WITHDRAWN_PROP ] : []) ].uniq
       {
-        "id"       => family.code.downcase,
-        "class"    => "family",
+        "id"       => data["id"].presence || family.code.downcase,
+        "class"    => data.empty? ? "family" : data["class"],
         "title"    => family.name,
-        "props"    => (family.retired? ? [ WITHDRAWN_PROP ] : nil),
+        "params"   => data["params"],
+        "props"    => props.presence,
+        "links"    => data["links"],
+        "parts"    => data["parts"],
+        "groups"   => build_nested_groups(data["groups"], by_group).presence,
         # The schema requires a present `controls` to hold at least one; a
         # family with none omits the key rather than exporting an invalid [].
-        "controls" => build_controls(family).presence
+        "controls" => build_controls(by_group[nil]).presence
       }.compact
+    end
+  end
+
+  def build_nested_groups(definitions, by_group)
+    Array(definitions).map do |definition|
+      definition.except("groups", "key").merge(
+        "groups"   => build_nested_groups(definition["groups"], by_group).presence,
+        "controls" => build_controls(by_group[definition["key"] || definition["id"]]).presence
+      ).compact
     end
   end
 
@@ -80,9 +101,9 @@ class OscalCatalogExportService
   # the shape test exported no controls at all for a catalog with other ids
   # (FedRAMP 20x `ksi-auth-01`). OSCAL nests a child control (an enhancement)
   # inside its parent, at any depth; a control whose parent is not in this
-  # family is exported at the top level rather than dropped.
-  def build_controls(family)
-    controls = family.catalog_controls.reject(&:statement_item?).sort_by(&:control_id)
+  # group is exported at the group's top level rather than dropped.
+  def build_controls(group_controls)
+    controls = Array(group_controls).sort_by(&:control_id)
     ids = controls.to_set(&:control_id)
     children = controls.group_by { |c| ids.include?(c.parent_control_id) ? c.parent_control_id : nil }
 

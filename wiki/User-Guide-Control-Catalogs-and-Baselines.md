@@ -93,6 +93,11 @@ the value on the record and SPARC will not overwrite it on a later import.
    objectives and methods, and each parameter's assigned **values**.
 3. Submit. The catalog is created with its families and controls populated, as a
    **Draft**. Importing again into an existing catalog also returns it to Draft.
+   Each top-level group in the file becomes a family. A group may hold further
+   groups (OSCAL allows any depth, as in NIST's example catalog); their controls
+   join the top-level group's family, and the family page shows each nested
+   group as a heading over the controls it holds. A file whose groups hold no
+   controls at any depth is refused, with that reason.
 4. Review the **quality warnings** SPARC raises after the import: controls with
    no statement or no assessment objective, parameters a statement uses but the
    catalog never defines, and empty families. They are advisory. Correct what
@@ -225,7 +230,8 @@ baseline was imported keeps its rows.
 ### How to export a catalog
 
 On the catalog detail page use the **OSCAL** export buttons. Two variants are
-offered: **validated** (schema-checked) and **unvalidated**.
+offered: **validated** (schema-checked) and **unvalidated**. An imported catalog
+exports its groups as the file had them, nested groups included.
 
 ### What a "Retired" badge means
 

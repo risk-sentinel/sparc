@@ -83,6 +83,13 @@ RSpec.describe "Catalog control hierarchy (#1252)" do
       expect(oscal_tree(exported)).to eq(oscal_tree(@nist_json))
     end
 
+    it "the catalog export keeps each group's own fields as NIST's catalog has them" do
+      own = ->(groups) { groups.map { |g| g.slice(*CatalogGroupTree::FIELDS) } }
+      exported = JSON.parse(OscalCatalogExportService.new(@nist).export_unvalidated)
+
+      expect(own.call(exported.dig("catalog", "groups"))).to eq(own.call(@nist_json.dig("catalog", "groups")))
+    end
+
     it "the selection tree is every control with its parent" do
       expect(CatalogControlTree.for(@nist).to_h).to eq(oscal_tree(@nist_json))
     end

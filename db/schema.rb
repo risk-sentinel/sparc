@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_22_163000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_23_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -270,6 +270,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_163000) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.string "parent_control_id"
     t.boolean "statement_item", default: false, null: false
+    t.string "group_id"
     t.index ["control_family_id", "canonical_id"], name: "index_catalog_controls_on_family_and_canonical_id", unique: true
     t.index ["control_family_id", "control_id"], name: "index_catalog_controls_on_control_family_id_and_control_id", unique: true
     t.index ["control_family_id", "parent_control_id"], name: "idx_on_control_family_id_parent_control_id_d47f95e973"
@@ -533,6 +534,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_163000) do
     t.datetime "retired_at"
     t.integer "sort_order", default: 0
     t.datetime "updated_at", null: false
+    t.jsonb "group_data", default: {}, null: false
     t.index ["code"], name: "index_control_families_on_code"
     t.index ["control_catalog_id", "code"], name: "index_control_families_on_control_catalog_id_and_code", unique: true
     t.index ["control_catalog_id"], name: "index_control_families_on_control_catalog_id"

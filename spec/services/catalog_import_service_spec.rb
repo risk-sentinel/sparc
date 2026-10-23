@@ -360,7 +360,7 @@ RSpec.describe CatalogImportService do
       expect(described_class::CONTROL_FIELDS).to contain_exactly(
         :title, :priority, :baseline, :guidance_data,
         :params_data, :label, :sort_id, :links_data,
-        :parent_control_id, :statement_item
+        :parent_control_id, :statement_item, :group_id
       )
     end
   end

@@ -12,6 +12,11 @@ class ControlFamiliesController < ApplicationController
   def show
     @catalog_controls = @control_family.catalog_controls.order(:control_id)
     @control_catalog = @control_family.control_catalog
+    # #1252 — the family's own controls, then each nested group's under its
+    # heading, in the order the catalog file gave the groups.
+    by_group = CatalogGroupTree.by_group(@catalog_controls.to_a, @control_family.group_data)
+    @control_sections = [ { key: nil, title: nil, depth: 0 }, *CatalogGroupTree.sections(@control_family.group_data) ]
+                        .map { |section| section.merge(controls: by_group[section[:key]] || []) }
   end
 
   def new
