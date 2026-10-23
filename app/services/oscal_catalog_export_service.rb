@@ -75,25 +75,24 @@ class OscalCatalogExportService
     end
   end
 
+  # #1252 — the controls and their nesting come from the hierarchy imports
+  # record (`statement_item`, `parent_control_id`), not from NIST's id shape:
+  # the shape test exported no controls at all for a catalog with other ids
+  # (FedRAMP 20x `ksi-auth-01`). OSCAL nests a child control (an enhancement)
+  # inside its parent, at any depth; a control whose parent is not in this
+  # family is exported at the top level rather than dropped.
   def build_controls(family)
-    # Only include top-level controls (those without sub-part suffixes like "a", ".1", ".(a)")
-    top_level = family.catalog_controls.order(:control_id).select { |c| top_level_control?(c.control_id) }
+    controls = family.catalog_controls.reject(&:statement_item?).sort_by(&:control_id)
+    ids = controls.to_set(&:control_id)
+    children = controls.group_by { |c| ids.include?(c.parent_control_id) ? c.parent_control_id : nil }
 
-    # Separate base controls from enhancements and nest enhancements under parents.
-    # OSCAL requires enhancements (e.g., ac-2.1) nested as controls[] children of
-    # their parent (e.g., ac-2), not as siblings at the group level.
-    base_controls = top_level.select { |c| base_control?(c.control_id) }
-    enhancements  = top_level.reject { |c| base_control?(c.control_id) }
-    enh_by_parent = enhancements.group_by { |c| c.control_id.sub(/\.\d+\z/, "") }
-
-    base_controls.map do |control|
+    nest = lambda do |control|
       ctrl_hash = build_control(control)
-      children = enh_by_parent[control.control_id]
-      if children.present?
-        ctrl_hash["controls"] = children.map { |enh| build_control(enh) }
-      end
+      kids = children[control.control_id]
+      ctrl_hash["controls"] = kids.map(&nest) if kids.present?
       ctrl_hash
     end
+    Array(children[nil]).map(&nest)
   end
 
   def build_control(control)
@@ -184,15 +183,5 @@ class OscalCatalogExportService
     end
 
     parts
-  end
-
-  def top_level_control?(control_id)
-    # Top-level controls match canonical OSCAL format: "ac-1", "ac-2.1" but not "ac-1a" or "ac-1a.1"
-    control_id.match?(/\A[a-z]+-\d+(\.\d+)?\z/i)
-  end
-
-  def base_control?(control_id)
-    # Base controls have no enhancement suffix: "ac-1", "ac-2" but not "ac-2.1"
-    control_id.match?(/\A[a-z]+-\d+\z/i)
   end
 end

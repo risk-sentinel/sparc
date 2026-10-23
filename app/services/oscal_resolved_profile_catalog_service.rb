@@ -101,11 +101,9 @@ class OscalResolvedProfileCatalogService
     end
   end
 
-  # An enhancement id carries its parent: `ac-2.1` belongs inside `ac-2`.
-  # Statement sub-parts (`ac-1a`, `ac-1a.1`) do not match and stay where they
-  # are — they are parts of a statement, not controls, and nesting them here
-  # would assert a relationship OSCAL does not model that way.
-  ENHANCEMENT_ID = /\A([a-z]+-\d+(?:\.\d+)*)\.\d+\z/i
+  # #1252 — a child control's parent is the one the catalog import recorded
+  # (`parent_control_id`): `ac-2.1` inside `ac-2`, whatever the catalog's id
+  # shape. Statement items are not controls and are never nested here.
 
   # #999 — a conformant resolved catalog NESTS an enhancement inside its parent
   # control, exactly as NIST's own published resolved profile catalogs do:
@@ -130,8 +128,7 @@ class OscalResolvedProfileCatalogService
     end
 
     catalog_controls.each_with_object([]) do |cc, roots|
-      parent_id = cc.control_id.to_s[ENHANCEMENT_ID, 1]
-      parent    = parent_id && built[parent_id]
+      parent = cc.parent_control_id.present? && !cc.statement_item? && built[cc.parent_control_id]
 
       if parent
         (parent["controls"] ||= []) << built[cc.control_id]

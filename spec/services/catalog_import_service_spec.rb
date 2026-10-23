@@ -359,7 +359,8 @@ RSpec.describe CatalogImportService do
     it "names every field it will accept, so the list cannot drift from the method" do
       expect(described_class::CONTROL_FIELDS).to contain_exactly(
         :title, :priority, :baseline, :guidance_data,
-        :params_data, :label, :sort_id, :links_data
+        :params_data, :label, :sort_id, :links_data,
+        :parent_control_id, :statement_item
       )
     end
   end

@@ -258,7 +258,7 @@ class CatalogImportService
     stats
   end
 
-  def import_oscal_control(family, ctrl)
+  def import_oscal_control(family, ctrl, parent_control_id = nil)
     # Store the OSCAL canonical id as the primary key for cross-referencing.
     # The label prop is stored separately for display; sort-id for ordering.
     control_id = ctrl["id"].to_s.strip                         # "ac-1", "ac-2.1"
@@ -277,7 +277,8 @@ class CatalogImportService
     result = upsert_catalog_control(family, control_id,
                                     title: title, priority: priority, baseline: baseline,
                                     guidance_data: guidance_data, params_data: params_data,
-                                    label: ctrl_label, sort_id: sort_id, links_data: control_links)
+                                    label: ctrl_label, sort_id: sort_id, links_data: control_links,
+                                    parent_control_id: parent_control_id, statement_item: false)
 
     # #1100 — store the OSCAL parts TREE, from the node we already have in hand.
     #
@@ -303,11 +304,11 @@ class CatalogImportService
 
     # Create sub-control records for each statement item part (a., 1., (a), …)
     stmt_part = (ctrl["parts"] || []).find { |p| p["name"] == "statement" }
-    import_oscal_item_parts(family, control_id, sort_id, stmt_part&.[]("parts"))
+    import_oscal_item_parts(family, control_id, sort_id, stmt_part&.[]("parts"), owner: control_id)
 
     # Recurse into enhancements (sub-controls like AC-1(1), AC-1(2))
     (ctrl["controls"] || []).each do |sub|
-      import_oscal_control(family, sub)
+      import_oscal_control(family, sub, control_id)
     end
 
     result
@@ -449,7 +450,7 @@ class CatalogImportService
   #   parent "ac-1" + label "a." → "ac-1a"
   #   parent "ac-1a" + label "1." → "ac-1a.1"
   #   parent "ac-1a.1" + label "(a)" → "ac-1a.1.(a)"
-  def import_oscal_item_parts(family, parent_id, parent_sort_id, parts)
+  def import_oscal_item_parts(family, parent_id, parent_sort_id, parts, owner:)
     return if parts.blank?
     parts.each do |part|
       next unless part["name"] == "item"
@@ -474,11 +475,12 @@ class CatalogImportService
       title = prose.presence || label
 
       upsert_catalog_control(family, sub_id, title: title, sort_id: sub_sort,
-        guidance_data: prose.present? ? { "statement" => prose } : {})
+        guidance_data: prose.present? ? { "statement" => prose } : {},
+        parent_control_id: owner, statement_item: true)
 
       # Recurse into nested item parts. The sub-part's own derived key becomes
       # the base for its children, so depth keeps extending one padded string.
-      import_oscal_item_parts(family, sub_id, sub_sort, part["parts"])
+      import_oscal_item_parts(family, sub_id, sub_sort, part["parts"], owner: owner)
     end
   end
 
@@ -617,12 +619,13 @@ class CatalogImportService
 
     result = upsert_catalog_control(family, control_id,
                                     title: title, baseline: baseline, guidance_data: guidance_data,
-                                    label: ctrl_label, sort_id: sort_id)
+                                    label: ctrl_label, sort_id: sort_id,
+                                    parent_control_id: nil, statement_item: false)
     stats[:controls] += 1
     stats[result]    += 1
 
     # Create sub-control records from nested <statement> elements
-    import_xml_item_parts(family, control_id, sort_id, root_stmt) if root_stmt
+    import_xml_item_parts(family, control_id, sort_id, root_stmt, owner: control_id) if root_stmt
 
     # Import control enhancements (e.g., AC-2(1), AC-2(2))
     ctrl_node.xpath("control-enhancement").each do |enh_node|
@@ -658,12 +661,13 @@ class CatalogImportService
 
     result = upsert_catalog_control(family, control_id,
                                     title: title, baseline: baseline, guidance_data: guidance_data,
-                                    label: ctrl_label, sort_id: sort_id)
+                                    label: ctrl_label, sort_id: sort_id,
+                                    parent_control_id: control_id.sub(/\.\d+\z/, ""), statement_item: false)
     stats[:controls] += 1
     stats[result]    += 1
 
     # Enhancement sub-parts from nested <statement> elements
-    import_xml_item_parts(family, control_id, sort_id, root_stmt) if root_stmt
+    import_xml_item_parts(family, control_id, sort_id, root_stmt, owner: control_id) if root_stmt
   end
 
   # Recursively create CatalogControl records for XML nested statement elements.
@@ -674,7 +678,7 @@ class CatalogImportService
   #   "AC-1a.1.(a)"  → sub_id "ac-1a.1.(a)" (label: "AC-1a.1.(a)")
   #
   # We strip the trailing dot and lowercase for canonical format.
-  def import_xml_item_parts(family, parent_id, parent_sort_id, stmt_node)
+  def import_xml_item_parts(family, parent_id, parent_sort_id, stmt_node, owner:)
     return if stmt_node.nil?
     stmt_node.xpath("statement").each do |child|
       number = child.at_xpath("number")&.text.to_s.strip
@@ -699,10 +703,11 @@ class CatalogImportService
       title = prose.presence || label
 
       upsert_catalog_control(family, sub_id, title: title, label: label, sort_id: sub_sort,
-        guidance_data: prose ? { "statement" => prose } : {})
+        guidance_data: prose ? { "statement" => prose } : {},
+        parent_control_id: owner, statement_item: true)
 
       # Recurse into deeper nesting
-      import_xml_item_parts(family, sub_id, sub_sort, child)
+      import_xml_item_parts(family, sub_id, sub_sort, child, owner: owner)
     end
   end
 
@@ -763,7 +768,8 @@ class CatalogImportService
   # as #994: a call that silently discards what it did not recognise cannot be
   # distinguished from one that had nothing to say.
   CONTROL_FIELDS = %i[title priority baseline guidance_data
-                      params_data label sort_id links_data].freeze
+                      params_data label sort_id links_data
+                      parent_control_id statement_item].freeze
 
   # Six positional arguments plus four keywords was ten, which is more than
   # anyone can hold, and #999 was the change that pushed it over. The fields
@@ -789,8 +795,13 @@ class CatalogImportService
     # existing value alone rather than clearing it, matching params_data above:
     # a re-import from a partial source must not erase what a fuller one stored.
     attrs[:links_data]  = links if links.present?
+    # #1252 — the tree the import walked: the control this row sits under, and
+    # whether it is a statement item rather than a control.
+    attrs[:parent_control_id] = fields[:parent_control_id] if fields.key?(:parent_control_id)
+    attrs[:statement_item]    = fields[:statement_item] if fields.key?(:statement_item)
 
     ctrl.assign_attributes(attrs)
+    ctrl.hierarchy_recorded = fields.key?(:parent_control_id)
     ctrl.save!
     link_back_matter_references(ctrl, links)
     is_new ? :created : :updated
@@ -909,7 +920,11 @@ class CatalogImportService
   #   "a."  → "a"    (letter — appended directly: "ac-1" + "a" = "ac-1a")
   #   "1."  → ".1"   (digit  — dot separator:     "ac-1a" + ".1" = "ac-1a.1")
   #   "(a)" → ".(a)" (paren  — dot separator:     "ac-1a.1" + ".(a)" = "ac-1a.1.(a)")
-  def label_to_suffix(label)
+  def label_to_suffix(label) = self.class.label_suffix(label)
+
+  # Public so CatalogHierarchyBackfill (#1252) names an item row exactly as an
+  # import does.
+  def self.label_suffix(label)
     l = label.strip
     case l
     when /\A([a-z])\.\z/    then $1          # "a." → "a"

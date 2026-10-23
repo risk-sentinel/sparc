@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_22_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_22_163000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -268,8 +268,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_160000) do
     t.string "title"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.string "parent_control_id"
+    t.boolean "statement_item", default: false, null: false
     t.index ["control_family_id", "canonical_id"], name: "index_catalog_controls_on_family_and_canonical_id", unique: true
     t.index ["control_family_id", "control_id"], name: "index_catalog_controls_on_control_family_id_and_control_id", unique: true
+    t.index ["control_family_id", "parent_control_id"], name: "idx_on_control_family_id_parent_control_id_d47f95e973"
     t.index ["control_family_id"], name: "index_catalog_controls_on_control_family_id"
     t.index ["control_id"], name: "index_catalog_controls_on_control_id"
     t.index ["retired_at"], name: "index_catalog_controls_on_retired_at"
