@@ -24,7 +24,9 @@ Requires SPARC_SMOKE_SA_TOKEN; skipped otherwise.
 from __future__ import annotations
 
 import re
+import time
 import uuid
+from urllib.parse import urlparse
 
 import pytest
 
@@ -60,6 +62,31 @@ def _version_field(form):
     return form.locator('input[type="text"]').nth(1)
 
 
+def _save_and_follow(page, button, label: str, *, follow: bool = True) -> None:
+    """Click a metadata form's save button, and wait for the save itself.
+
+    The forms submit through Turbo: the click returns at once, the PATCH and
+    the redirect's page load happen after it. Reading the page straight after
+    the click read the OLD page, on a fixed build and on a broken one alike.
+    So wait for the update_metadata response, refuse an error status (a broken
+    form answers 400), then wait for the page the redirect names.
+    """
+    with page.expect_response(
+        lambda r: "/update_metadata" in r.url and r.request.method == "POST", timeout=15000
+    ) as info:
+        button.click()
+    response = info.value
+    assert response.status in (302, 303), (
+        f"{label}: the save was answered {response.status}, not a redirect to the saved document"
+    )
+    if not follow:
+        # The response is in, so the save is committed; the caller reloads.
+        return
+    target = urlparse(response.headers.get("location", "")).path
+    page.wait_for_url(lambda url: urlparse(url).path == target, timeout=15000)
+    page.wait_for_load_state("networkidle")
+
+
 def _rename(page, label: str, new_name: str, new_version: str) -> None:
     """Open the header editor, type a new name and version, and save."""
     # The header's Edit button; the form's own Cancel shares the action.
@@ -70,8 +97,7 @@ def _rename(page, label: str, new_name: str, new_version: str) -> None:
     form.wait_for(state="visible", timeout=5000)
     _name_field(form).fill(new_name)
     _version_field(form).fill(new_version)
-    form.get_by_role("button", name="Save").click()
-    page.wait_for_load_state("networkidle")
+    _save_and_follow(page, form.get_by_role("button", name="Save"), label)
     assert_no_csp_violations(page, during=f"{label} rename")
 
 
@@ -104,8 +130,13 @@ def test_copy_of_published_profile_can_be_renamed_and_reversioned(authed_page):
     page.get_by_role("button", name="Create Editable Copy").click()
     confirm = page.locator("#sparc-confirm-modal-confirm")
     confirm.wait_for(state="visible", timeout=5000)
+    started = time.monotonic()
     confirm.click()
-    page.wait_for_url(lambda url: f"/profile_documents/{source}" not in url, timeout=15000)
+    # Copying a NIST baseline duplicates every control and field in the one
+    # request; under memory pressure that has taken over 15 seconds. The time is
+    # printed, so a slow copy shows in the log rather than hiding in the limit.
+    page.wait_for_url(lambda url: f"/profile_documents/{source}" not in url, timeout=60000)
+    print(f"Create Editable Copy of {source}: {time.monotonic() - started:.1f}s")
     page.wait_for_load_state("networkidle")
     copy_slug = page.url.split("?")[0].rstrip("/").rsplit("/", 1)[-1]
     assert_no_csp_violations(page, during="create editable copy")
@@ -162,12 +193,13 @@ def test_oscal_metadata_form_saves_its_fields(authed_page, kind):
         form.get_by_label("OSCAL Version").fill("1.1.3")
         form.get_by_label("Published Date").fill("2026-10-01T00:00:00Z")
         form.get_by_label("Description").fill(DESCRIPTION)
-        form.get_by_role("button", name="Save Metadata").click()
-        page.wait_for_load_state("networkidle")
+        # The page is not followed: a catalog's redirect goes on to its UUID
+        # address, so the URL never equals the one the save names.
+        _save_and_follow(page, form.get_by_role("button", name="Save Metadata"), kind, follow=False)
         assert_no_csp_violations(page, during=f"{kind} metadata save")
 
-        # Read back from a fresh load of the page, not the page we typed into.
-        page.reload()
+        # Read back from a fresh load of the document, not the page we typed into.
+        page.goto(f"/{resource}/{ident}")
         page.wait_for_load_state("networkidle")
         form = page.locator(METADATA_FORM)
         expected = {
