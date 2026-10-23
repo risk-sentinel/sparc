@@ -31,10 +31,13 @@ class BaselineControlDetail
   # what the operator answered, and what that answer READS as once resolved.
   Parameter = Struct.new(
     :id, :label, :description, :select, :how_many, :choices, :value, :display,
+    :catalog_value,
     keyword_init: true
   ) do
     def select? = select.present?
     def answered? = value.present?
+    # #1241 — the catalog assigns a value this baseline has not overridden.
+    def catalog_assigned? = !answered? && catalog_value.present?
   end
 
   attr_reader :catalog_control, :priority
@@ -205,7 +208,10 @@ class BaselineControlDetail
       # option a person can choose between.
       choices:     Array(select && select["choice"]).map { |choice| resolver.resolve_text(choice).strip },
       value:       @values[id],
-      display:     resolver.resolve_param(id)
+      display:     resolver.resolve_param(id),
+      # #1241 — the catalog's own `values`; the resolver already falls back to
+      # them, and the screen says where the reading came from.
+      catalog_value: Array(param["values"]).join(" | ").presence
     )
   end
 end

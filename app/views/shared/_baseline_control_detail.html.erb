@@ -126,6 +126,9 @@
                         stores WHICH branches were chosen, which is not the text
                         the control ends up asserting. %>
                     <span><%= param.display.presence || param.value %></span>
+                  <% elsif param.catalog_assigned? %>
+                    <span><%= param.display.presence || param.catalog_value %></span>
+                    <span class="text-body-tertiary fst-italic sparc-fs-072">— the catalog's value; this baseline sets none</span>
                   <% else %>
                     <span class="text-body-tertiary fst-italic">Not set — the baseline default applies</span>
                   <% end %>

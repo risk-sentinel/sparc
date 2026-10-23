@@ -103,7 +103,9 @@ class OscalCatalogExportService
       "title" => control.title
     }
 
-    result["params"] = control.params_list if control.params_present?
+    # #1241 — through CatalogControl.oscal_param: a select the catalog answered
+    # is emitted as its answer, since OSCAL allows `values` or `select`, not both.
+    result["params"] = control.params_list.map { |param| CatalogControl.oscal_param(param) } if control.params_present?
 
     props = build_control_props(control)
     result["props"] = props if props.any?

@@ -99,6 +99,7 @@ curl -X GET "https://sparc.example.com/api/v1/profile_documents/my-moderate-base
         "type": "text",
         "constraint": null,
         "current_value": "Chief Information Security Officer",
+        "catalog_value": null,
         "value": "Chief Information Security Officer"
       }
     ],
@@ -118,12 +119,15 @@ curl -X GET "https://sparc.example.com/api/v1/profile_documents/my-moderate-base
           { "text": "system-level", "display": "system-level", "references": [] }
         ],
         "depends_on": [],
-        "selected": ["system-level"]
+        "selected": ["system-level"],
+        "catalog_selected": []
       }
     ]
   }
 }
 ```
+
+`catalog_value` / `catalog_selected` (#1241) are the value the **catalog** assigns the parameter (its OSCAL `values`), or `null` / `[]` when it assigns none. They are reported beside the baseline's own `current_value` / `selected` and never folded into them: those are what this baseline set, and sending the schema back must not turn the catalog's value into tailoring. Where the baseline sets nothing, statements are resolved with the catalog's value.
 
 `alt_identifier` is `null` for a parameter that has none. `choices` is the verbatim OSCAL text — what is written back — and `choice_details` adds the readable form and any parameter a choice embeds (`{{ insert: param, ... }}`).
 

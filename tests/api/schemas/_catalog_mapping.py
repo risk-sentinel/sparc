@@ -33,6 +33,8 @@ class ControlCatalogIndex(BaseModel):
     version: str | None = None
     source: str | None = None
     published: str | None = None
+    # #1228 — true while the catalog carries NIST's unreleased develop fixes.
+    nist_pre_release: bool
     back_matter_resources_count: Annotated[int, Field(ge=0)]
     created_at: datetime
     updated_at: datetime

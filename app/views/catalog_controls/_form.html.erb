@@ -1,4 +1,14 @@
-<%= form_with model: catalog_control.new_record? ? [control_family, catalog_control] : catalog_control, local: true do |f| %>
+<%# An existing control saves to its catalog-scoped address: `to_param` is the
+    canonical id (#881), which the shallow /catalog_controls/:id route reads as
+    a database id, so the save 404'd. %>
+<% form_target = if catalog_control.new_record?
+                   { model: [control_family, catalog_control] }
+                 else
+                   { model: catalog_control,
+                     url: control_catalog_control_path(catalog_control.control_family.control_catalog.url_id, catalog_control),
+                     method: :patch }
+                 end %>
+<%= form_with **form_target, local: true do |f| %>
   <% if catalog_control.errors.any? %>
     <div class="flash error mb-4">
       <strong><%= pluralize(catalog_control.errors.count, "error") %>:</strong>
@@ -128,14 +138,16 @@
       <div class="p-3">
         <p class="text-body-tertiary sparc-fs-078 sparc-mb-075">
           Parameters referenced by the control statement via <code>{{ insert: param, &lt;id&gt; }}</code>.
-          Edit the <strong>Label</strong> to customize organization-specific values.
-          Param IDs and structural constraints are read-only.
+          Set the <strong>Value</strong> the catalog assigns: it is used wherever a baseline or SSP sets none.
+          For a selection, the value must be one of its choices. Separate several values with <code>|</code>.
+          The label is the catalog's description of the parameter and is read-only here.
         </p>
-        <table class="table table-sm mb-0 sparc-fs-082">
+        <table class="table table-sm mb-0 sparc-fs-082" data-testid="catalog-param-table">
           <thead>
             <tr>
               <th class="sparc-w-22pct sparc-p-03-05">Param ID</th>
-              <th class="sparc-w-40pct sparc-p-03-05">Label</th>
+              <th class="sparc-p-03-05">Label</th>
+              <th class="sparc-w-40pct sparc-p-03-05">Value</th>
               <th class="sparc-p-03-05">Constraint / Choices</th>
             </tr>
           </thead>
@@ -145,11 +157,37 @@
                 <td class="sparc-p-03-05 sparc-monospace sparc-color-bs-primary">
                   <%= param["id"] %>
                 </td>
+                <%# #1241 — the label is shown, not edited: it describes the
+                    parameter, and a value typed into it was stored as a label.
+                    Existing labels are left exactly as they are (owner). %>
+                <td class="sparc-p-03-05 text-body-secondary" data-testid="catalog-param-label">
+                  <%= param["label"].presence || "—" %>
+                </td>
                 <td class="sparc-p-03-05">
-                  <%= text_field_tag "catalog_control[params_labels][#{param['id']}]",
-                      param["label"],
-                      class: "form-control form-control-sm sparc-fs-082",
-                      placeholder: "Organization-defined value..." %>
+                  <% values = Array(param["values"]) %>
+                  <% choices = Array(param.dig("select", "choice")) %>
+                  <% if choices.any? %>
+                    <% multiple = (param.dig("select", "how-many").presence || "one") != "one" %>
+                    <% field_name = "catalog_control[params_values][#{param['id']}]#{multiple ? '[]' : ''}" %>
+                    <%# An empty submission clears the value, including for a multiple select. %>
+                    <%= hidden_field_tag field_name, "", id: nil if multiple %>
+                    <%= select_tag field_name,
+                          options_for_select(choices, values),
+                          include_blank: !multiple,
+                          multiple: multiple,
+                          id: "catalog_control_params_values_#{param['id'].parameterize}",
+                          class: "form-select form-select-sm sparc-fs-082",
+                          data: { testid: "catalog-param-value" },
+                          "aria-label": "Value for #{param['id']}" %>
+                  <% else %>
+                    <%= text_field_tag "catalog_control[params_values][#{param['id']}]",
+                          values.join(" | "),
+                          id: "catalog_control_params_values_#{param['id'].parameterize}",
+                          class: "form-control form-control-sm sparc-fs-082",
+                          placeholder: "Organization-defined value...",
+                          data: { testid: "catalog-param-value" },
+                          "aria-label": "Value for #{param['id']}" %>
+                  <% end %>
                 </td>
                 <td class="sparc-p-03-05">
                   <% if param.dig("select", "choice").present? %>

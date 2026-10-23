@@ -101,8 +101,15 @@ RSpec.describe CatalogImportService do
       expect(ac1.title).to be_present
     end
 
-    it "imports a large number of controls" do
-      expect(result[:controls]).to be > 500
+    # #1228 — this asserted `> 500` because the XML-only import counted every
+    # enhancement in `stats[:controls]` while the JSON import counts the base
+    # controls (enhancements are imported, by recursion, but not counted). The
+    # same catalog reported different stats by format. XML now runs the JSON
+    # path, so it reports what JSON reports, and every control is still stored.
+    it "imports every control, and reports the count the JSON import reports" do
+      expect(result[:controls]).to eq(324)
+      expect(result[:catalog].catalog_controls.count).to be > 2000 # controls, enhancements and statement sub-parts
+      expect(CatalogControl.find_by(control_id: "sa-15.13")).to be_present
     end
 
     it "imports enhancements via recursion" do
@@ -320,8 +327,6 @@ RSpec.describe CatalogImportService do
     end
   end
 
-  # ── XML parameter helper unit tests ──────────────────────────────────────
-
   # ── The keyword bag is only safe if a typo is LOUD ──────────────────────
   #
   # Collapsing ten parameters into `**fields` traded one problem for another:
@@ -359,88 +364,11 @@ RSpec.describe CatalogImportService do
     end
   end
 
-  describe "#oscal_xml_collect_params" do
-    let(:service) { described_class.new(StringIO.new(""), "test.xml") }
-
-    it "extracts a simple label param from XML" do
-      xml = Nokogiri::XML(<<~XML).at_xpath("//control")
-        <catalog><control id="test-1">
-          <param id="test-1_odp.01">
-            <label>frequency</label>
-          </param>
-        </control></catalog>
-      XML
-
-      params = service.send(:oscal_xml_collect_params, xml)
-      expect(params.size).to eq(1)
-      expect(params.first["id"]).to eq("test-1_odp.01")
-      expect(params.first["label"]).to eq("frequency")
-    end
-
-    it "extracts a select param with choices" do
-      xml = Nokogiri::XML(<<~XML).at_xpath("//control")
-        <catalog><control id="test-1">
-          <param id="test-1_odp.02">
-            <select how-many="one-or-more">
-              <choice>daily</choice>
-              <choice>weekly</choice>
-              <choice>monthly</choice>
-            </select>
-          </param>
-        </control></catalog>
-      XML
-
-      params = service.send(:oscal_xml_collect_params, xml)
-      expect(params.size).to eq(1)
-      p = params.first
-      expect(p["select"]["how-many"]).to eq("one-or-more")
-      expect(p["select"]["choice"]).to eq(%w[daily weekly monthly])
-    end
-
-    it "extracts a param with guideline" do
-      xml = Nokogiri::XML(<<~XML).at_xpath("//control")
-        <catalog><control id="test-1">
-          <param id="test-1_odp.03">
-            <label>officials</label>
-            <guideline><p>officials managing the policy are defined</p></guideline>
-          </param>
-        </control></catalog>
-      XML
-
-      params = service.send(:oscal_xml_collect_params, xml)
-      expect(params.first["guidelines"]).to be_present
-      expect(params.first["guidelines"].first["prose"]).to include("officials managing")
-    end
-
-    it "extracts param props" do
-      xml = Nokogiri::XML(<<~XML).at_xpath("//control")
-        <catalog><control id="test-1">
-          <param id="test-1_odp.04">
-            <prop name="alt-identifier" value="test-1_prm_1"/>
-            <prop name="label" class="sp800-53a" value="TEST-01_ODP[04]"/>
-          </param>
-        </control></catalog>
-      XML
-
-      params = service.send(:oscal_xml_collect_params, xml)
-      expect(params.first["props"].size).to eq(2)
-      alt = params.first["props"].find { |p| p["name"] == "alt-identifier" }
-      expect(alt["value"]).to eq("test-1_prm_1")
-      label_prop = params.first["props"].find { |p| p["name"] == "label" }
-      expect(label_prop["class"]).to eq("sp800-53a")
-    end
-
-    it "returns empty array when no params present" do
-      xml = Nokogiri::XML(<<~XML).at_xpath("//control")
-        <catalog><control id="test-1">
-          <title>No Params</title>
-        </control></catalog>
-      XML
-
-      params = service.send(:oscal_xml_collect_params, xml)
-      expect(params).to eq([])
-    end
-  end
+  # The XML parameter cases that lived here tested `oscal_xml_collect_params`,
+  # which #1228 deleted with the rest of the XML-only import. They now run
+  # against the converter that replaced it, in
+  # spec/services/oscal_catalog_xml_to_json_spec.rb, and the formats are held
+  # to one result in spec/services/catalog_import_format_parity_spec.rb.
 
   # ── OSCAL YAML import ──────────────────────────────────────────────────
 

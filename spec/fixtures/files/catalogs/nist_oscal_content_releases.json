@@ -1,0 +1,44 @@
+{
+  "description": "Recorded by bin/rails catalog:check_nist_release (#1228). spec/lib/nist_catalog_source_spec.rb reads it; the suite never calls the network.",
+  "recorded_at": "2026-10-22T22:20:04Z",
+  "repository": "usnistgov/oscal-content",
+  "fix_commit": "f0de6d8d8c059d374f15e0ae07508d82e370fc1d",
+  "fix_commit_date": "2026-10-22T21:56:10Z",
+  "releases": [
+    {
+      "tag": "v1.5.0",
+      "published_at": "2026-05-13T16:29:20Z",
+      "contains_fix_commit": false
+    },
+    {
+      "tag": "v1.4.0",
+      "published_at": "2025-08-27T02:52:02Z",
+      "contains_fix_commit": false
+    },
+    {
+      "tag": "v1.3.0",
+      "published_at": "2024-02-13T23:59:38Z",
+      "contains_fix_commit": false
+    },
+    {
+      "tag": "v1.2.1",
+      "published_at": "2023-12-16T19:50:47Z",
+      "contains_fix_commit": false
+    },
+    {
+      "tag": "v1.2.0",
+      "published_at": "2023-12-05T22:50:36Z",
+      "contains_fix_commit": false
+    },
+    {
+      "tag": "v1.1.0",
+      "published_at": "2023-11-09T22:39:41Z",
+      "contains_fix_commit": false
+    },
+    {
+      "tag": "v1.0.0",
+      "published_at": "2021-06-10T17:36:21Z",
+      "contains_fix_commit": false
+    }
+  ]
+}

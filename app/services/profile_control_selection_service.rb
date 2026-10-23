@@ -71,6 +71,11 @@ class ProfileControlSelectionService
   # the baseline's value and the OSCAL export listed it under `set-parameters`
   # as tailoring nobody made. The label is kept, as the label. Both ways of
   # building a baseline from a catalog call this.
+  #
+  # #1241 — the same holds for a catalog's assigned `values`: they are the
+  # catalog's, and OscalParameterResolver already falls back to them when the
+  # baseline sets nothing. Copying them here would make them the baseline's own
+  # tailoring and export them as `set-parameters`.
   def self.seed_parameter_fields(profile_control, catalog_control)
     catalog_control.effective_params_list.each do |param|
       profile_control.profile_control_fields.create!(field_name: "parameter:#{param['id']}", field_value: "")

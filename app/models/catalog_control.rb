@@ -470,6 +470,82 @@ class CatalogControl < ApplicationRecord
     end
   end
 
+  # #1241 — a select value that is not one of the parameter's choices.
+  class InvalidParamValue < ArgumentError; end
+
+  # Merges a hash of { param_id => value } into params_data and returns the
+  # updated array, as merge_params_labels does for labels. Only the "values"
+  # key changes; the label in particular is left exactly as it is (owner,
+  # 2026-10-22: values typed into the old label field stay labels).
+  #
+  # A value is an Array, or a String with several values separated by " | "
+  # (ParameterValueList::SEPARATOR; a comma is NOT a separator here, because a
+  # value such as "Example Agency, Inc. personnel" is one value). A blank value
+  # removes the catalog's assignment.
+  #
+  # For a select parameter every value must be one of its choices, and "one"
+  # allows a single one. Anything else raises InvalidParamValue and nothing is
+  # merged, so a caller can refuse the whole edit.
+  def merge_params_values(values_hash)
+    return params_list if values_hash.blank?
+
+    values_hash = values_hash.to_h.stringify_keys
+    unknown = values_hash.keys - params_list.filter_map { |param| param["id"] }
+    raise InvalidParamValue, "no parameter #{unknown.join(', ')} on #{control_id}" if unknown.any?
+
+    params_list.map do |param|
+      next param unless values_hash.key?(param["id"])
+
+      values = self.class.param_values_from(values_hash[param["id"]])
+      validate_param_values!(param, values)
+      values.any? ? param.merge("values" => values) : param.except("values")
+    end
+  end
+
+  # Strong-parameters filter for `params_values`, shared by the web form and
+  # the API. The keys are parameter ids, so they are taken from the request
+  # (an unknown one then reaches merge_params_values and is refused, rather
+  # than vanishing in `permit`); each may be a string or an array of strings.
+  def self.params_values_filter(raw)
+    keys = raw.respond_to?(:keys) ? raw.keys.map(&:to_s) : []
+    # Not a hash at all: permit nothing, so the field is reported or ignored
+    # rather than reaching merge_params_values in a shape it cannot read.
+    return {} if keys.empty?
+
+    [ *keys, keys.index_with { [] } ]
+  end
+
+  def self.param_values_from(raw)
+    list = raw.is_a?(Array) ? raw : raw.to_s.split(ParameterValueList::SEPARATOR)
+    list.map { |value| value.to_s.strip }.reject(&:blank?)
+  end
+
+  # The parameter as OSCAL may carry it. OSCAL gives a parameter `values` OR a
+  # `select`, never both, so a select parameter the catalog has ANSWERED
+  # (through the catalog editor) is emitted with its answer in `values` and
+  # without the offer it was chosen from. One definition, read by every
+  # exporter that emits catalog parameters.
+  def self.oscal_param(param)
+    return param unless param["select"].present? && Array(param["values"]).any?
+
+    param.except("select")
+  end
+
+  private def validate_param_values!(param, values)
+    select = param["select"]
+    return if select.blank? || values.empty?
+
+    choices = Array(select["choice"])
+    stray = values - choices
+    if stray.any?
+      raise InvalidParamValue, "#{param['id']}: #{stray.map(&:inspect).join(', ')} is not one of its choices"
+    end
+    # OSCAL reads an absent how-many as "one".
+    return unless (select["how-many"].presence || "one") == "one" && values.size > 1
+
+    raise InvalidParamValue, "#{param['id']}: choose one value, not #{values.size}"
+  end
+
   # ── Baseline helpers ─────────────────────────────────────────────
   # baseline_impact can be stored in two formats:
   #   - Full names, comma-separated: "LOW, MODERATE, HIGH"

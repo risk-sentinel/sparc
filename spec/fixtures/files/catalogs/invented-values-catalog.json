@@ -1,0 +1,120 @@
+{
+  "catalog": {
+    "uuid": "6b0f3c6e-1a2b-4c3d-8e4f-5a6b7c8d9e01",
+    "metadata": {
+      "title": "Invented Values Catalog",
+      "last-modified": "2026-10-22T00:00:00.000000-00:00",
+      "version": "1.0-invented",
+      "oscal-version": "1.2.3"
+    },
+    "groups": [
+      {
+        "id": "ex",
+        "class": "family",
+        "title": "Example Family",
+        "controls": [
+          {
+            "id": "ex-1",
+            "class": "SP800-53",
+            "title": "Example Policy",
+            "params": [
+              {
+                "id": "ex-01_odp.01",
+                "props": [ { "name": "label", "value": "EX-01_ODP[01]", "class": "sp800-53a" } ],
+                "label": "personnel or roles",
+                "guidelines": [
+                  { "prose": "personnel or roles to whom the *example* policy is disseminated are defined;" }
+                ],
+                "values": [ "Example Agency personnel" ]
+              },
+              {
+                "id": "ex-01_odp.02",
+                "props": [ { "name": "label", "value": "EX-01_ODP[02]", "class": "sp800-53a" } ],
+                "label": "frequency",
+                "values": [ "quarterly-invented" ]
+              },
+              {
+                "id": "ex-01_odp.03",
+                "select": { "how-many": "one", "choice": [ "organization-level", "system-level" ] }
+              },
+              {
+                "id": "ex-01_odp.04",
+                "label": "events"
+              }
+            ],
+            "props": [
+              { "name": "label", "value": "EX-1" },
+              { "name": "sort-id", "value": "ex-01" }
+            ],
+            "links": [ { "href": "#ex-2", "rel": "related" } ],
+            "parts": [
+              {
+                "id": "ex-1_smt",
+                "name": "statement",
+                "parts": [
+                  {
+                    "id": "ex-1_smt.a",
+                    "name": "item",
+                    "props": [ { "name": "label", "value": "a." } ],
+                    "prose": "Disseminate a {{ insert: param, ex-01_odp.03 }} policy to {{ insert: param, ex-01_odp.01 }}; and"
+                  },
+                  {
+                    "id": "ex-1_smt.b",
+                    "name": "item",
+                    "props": [ { "name": "label", "value": "b." } ],
+                    "prose": "Review it {{ insert: param, ex-01_odp.02 }} and after {{ insert: param, ex-01_odp.04 }}."
+                  }
+                ]
+              },
+              {
+                "id": "ex-1_gdn",
+                "name": "guidance",
+                "prose": "See [EX-2](#ex-2) for the \"invented\" companion.\n\nA second paragraph."
+              },
+              {
+                "id": "ex-1_obj",
+                "name": "assessment-objective",
+                "props": [ { "name": "label", "value": "EX-01", "class": "sp800-53a" } ],
+                "parts": [
+                  {
+                    "id": "ex-1_obj.a",
+                    "name": "assessment-objective",
+                    "props": [ { "name": "label", "value": "EX-01a.", "class": "sp800-53a" } ],
+                    "prose": "the policy is disseminated;",
+                    "links": [ { "href": "#ex-1_smt.a", "rel": "assessment-for" } ]
+                  }
+                ]
+              },
+              {
+                "id": "ex-1_asm-examine",
+                "name": "assessment-method",
+                "props": [
+                  { "name": "method", "ns": "http://csrc.nist.gov/ns/rmf", "value": "EXAMINE" },
+                  { "name": "label", "value": "EX-01-Examine", "class": "sp800-53a" }
+                ],
+                "parts": [
+                  {
+                    "name": "assessment-objects",
+                    "prose": "Example policy;\n\nother relevant documents or records"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ex-2",
+            "class": "SP800-53",
+            "title": "Example Companion",
+            "props": [
+              { "name": "label", "value": "EX-2" },
+              { "name": "sort-id", "value": "ex-02" }
+            ],
+            "parts": [
+              { "id": "ex-2_smt", "name": "statement", "prose": "Keep an invented record." }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

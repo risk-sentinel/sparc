@@ -217,6 +217,14 @@ class OscalResolvedProfileCatalogService
       if param_values[param["id"]].present?
         resolved["label"] = resolver.resolve_param(param["id"]).presence ||
                             param_values[param["id"]]
+        # #1241 — the profile's value REPLACES the catalog's `values`, so the
+        # resolved catalog never states one value in `label` and another in
+        # `values`. Unset, the catalog's own `values` pass through untouched.
+        # A select carries no `values` in OSCAL (it is one or the other), so its
+        # answer stays in the label as before.
+        unless param["select"].present?
+          resolved["values"] = ParameterValueList.split(param_values[param["id"]]).map { |v| resolver.resolve_text(v) }
+        end
       end
 
       # The options a selection offers are prose a person reads too, and
@@ -230,7 +238,7 @@ class OscalResolvedProfileCatalogService
         resolved["select"] = select
       end
 
-      resolved
+      CatalogControl.oscal_param(resolved)
     end
   end
 

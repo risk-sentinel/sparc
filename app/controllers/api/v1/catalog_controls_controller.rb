@@ -52,6 +52,8 @@ class Api::V1::CatalogControlsController < Api::V1::BaseController
     return if render_invalid_baseline
 
     control = @control_family.catalog_controls.new(create_attributes)
+    return if render_invalid_param_values { apply_params_values(control) }
+
     control.save!
 
     audit_log("api_catalog_control_created", subject: control,
@@ -64,6 +66,8 @@ class Api::V1::CatalogControlsController < Api::V1::BaseController
     return if render_invalid_baseline
 
     @catalog_control.assign_attributes(update_attributes)
+    return if render_invalid_param_values { apply_params_values(@catalog_control) }
+
     @catalog_control.save!
 
     audit_log("api_catalog_control_updated", subject: @catalog_control,
@@ -152,8 +156,29 @@ class Api::V1::CatalogControlsController < Api::V1::BaseController
       baseline_levels: [],
       guidance_data: CatalogControl.guidance_params_filter,
       params_labels: {},
-      params_data: CatalogControl.params_data_filter
+      params_data: CatalogControl.params_data_filter,
+      params_values: CatalogControl.params_values_filter(params.dig(:catalog_control, :params_values))
     )
+  end
+
+  # #1241 — `params_values: { "<param id>" => "value" | ["choice", …] }` sets the
+  # catalog's own assigned values, through the same model method as the web
+  # form. Applied after params_data / params_labels in the same request.
+  def apply_params_values(control)
+    values = control_params[:params_values]
+    return if values.blank?
+
+    control.params_data = control.merge_params_values(values.to_h)
+  end
+
+  # A select value that is not one of its choices, or an unknown parameter,
+  # refuses the whole request: 422 and nothing saved.
+  def render_invalid_param_values
+    yield
+    false
+  rescue CatalogControl::InvalidParamValue => e
+    render json: { error: "Invalid parameter value: #{e.message}" }, status: :unprocessable_content
+    true
   end
 
   def create_attributes

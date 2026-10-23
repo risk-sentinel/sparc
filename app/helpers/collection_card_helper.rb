@@ -42,6 +42,12 @@ module CollectionCardHelper
       badges << { text: doc.lifecycle_label, class: "#{doc.lifecycle_badge_class} rounded fw-semibold" }
     end
 
+    # #1228 — a catalog carrying NIST's unreleased fixes says so here
+    # too, not only on its own page.
+    if doc.respond_to?(:nist_pre_release?) && doc.nist_pre_release?
+      badges << { text: "Pre-release", class: "badge sparc-status--warning rounded fw-semibold" }
+    end
+
     unless enriched.nil?
       badges << { text: enriched ? "Enriched" : "Basic",
                   class: enriched ? "sparc-oscal-enriched" : "sparc-oscal-basic" }

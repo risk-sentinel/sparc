@@ -86,7 +86,11 @@ the value on the record and SPARC will not overwrite it on a later import.
 ### How to import a catalog
 
 1. From the catalog list, click **Import** (`/control_catalogs/import`).
-2. Upload a catalog file — **JSON or XML** OSCAL catalog format.
+2. Upload a catalog file — an OSCAL catalog in **JSON, YAML or XML**. All three
+   import the same way: an XML catalog is first checked against the OSCAL schema
+   (a file that is not a valid OSCAL catalog is refused) and converted to the
+   JSON model, so it keeps everything a JSON catalog keeps — parts, assessment
+   objectives and methods, and each parameter's assigned **values**.
 3. Submit. The catalog is created with its families and controls populated, as a
    **Draft**. Importing again into an existing catalog also returns it to Draft.
 4. Review the **quality warnings** SPARC raises after the import: controls with
@@ -102,6 +106,32 @@ the value on the record and SPARC will not overwrite it on a later import.
 A catalog is not checked for control **priority** or **baseline impact**. Those
 belong to a baseline (profile), which sets them for its own controls. NIST's
 catalogs carry neither. The NIST catalogs SPARC seeds are already published.
+
+### What the "Pre-release" badge on NIST SP 800-53 Rev 5 means
+
+NIST has corrected three controls in SP 800-53 Rev 5 that its latest release
+still gets wrong:
+
+- **SA-15(13)** — the statement was SA-15(12)'s requirement, and its Examine
+  method was labelled `SA-15(12)-Examine`;
+- **SA-24** — assessment objectives b.[06]–b.[10] were missing, and six
+  objectives pointed at AC-2's statement;
+- **SI-02(07)** — objectives c.[01] and c.[02] had no labels.
+
+The corrections are on NIST's `main` branch of oscal-content and in no NIST release yet.
+SPARC's bundled Rev 5 catalog includes them, so it is marked **Pre-release** on
+the catalog list and the catalog page, which names the NIST commit it was built
+from. The catalog's own OSCAL metadata stays exactly as NIST wrote it. When NIST
+releases the fixes, SPARC moves to the released catalog and the badge goes away.
+
+An existing installation receives the three corrections automatically after the
+upgrade (a background data migration, listed on the admin *Data Migrations* page). Only those
+three controls change, and only where they still hold NIST's original text: if
+someone in your organization edited one of them, the edit is kept and the log
+names it. SSPs are never changed — the log lists any SSP whose SA-15(13)
+statement still carries the old text, so its author can update it.
+
+The API reports the same flag as `nist_pre_release` on each catalog.
 
 ### How to add your organization's own controls
 
@@ -149,6 +179,16 @@ and import the baseline again.
   on the family to change its code, name, or description.
 - **Edit** an individual control (`/catalog_controls/:id/edit`) to change its ID,
   title, description, or statement.
+- In the same form, the **OSCAL Parameters** table has a **Value** column: the
+  value the catalog itself assigns to an organization-defined parameter. Type it
+  for an ordinary parameter (separate several values with `|`); for a selection,
+  pick from its choices — a value that is not one of the choices is refused and
+  nothing is saved. Leave it empty to assign nothing. The catalog's value is used
+  wherever a baseline or SSP sets none; a value a baseline sets still wins.
+- The parameter's **Label** is shown read-only beside it. It describes the
+  parameter ("frequency", "personnel or roles"). Before v1.17.2 the form edited
+  the label, so a value typed there was stored as a label; those labels are left
+  as they are, and you can copy one across into **Value**.
 - To add many controls at once, use **Batch Create** on a family
   (`.../catalog_controls/batch_new`) — fill multiple rows and submit together.
 
@@ -253,8 +293,10 @@ It shows, for that control:
 
 You never see raw OSCAL markup such as `{{ insert: param, ac-20_odp.01 }}` —
 the values are substituted before the page renders, so what you read is what
-the baseline actually asserts. A parameter nobody has set reads *"Not set — the
-baseline default applies"* rather than being hidden.
+the baseline actually asserts. A parameter the baseline has not set but the
+catalog assigns shows the catalog's value, marked *"the catalog's value"*. A
+parameter nobody has set reads *"Not set — the baseline default applies"* rather
+than being hidden.
 
 The same panel appears on an SSP's controls, where it is **read-only**: an SSP
 consumes the baseline, it does not define it.
@@ -343,7 +385,8 @@ mapping in OSCAL form.
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| Import rejected | File isn't valid OSCAL JSON/XML | Validate the catalog file before importing |
+| Import rejected | File isn't valid OSCAL JSON/YAML/XML (an XML catalog is checked against the OSCAL schema first) | Validate the catalog file before importing |
+| "Parameter values were not saved" when editing a control | A selection's value is not one of its choices | Pick one of the listed choices, or leave the value empty |
 | OSCAL export fails validation | Missing required metadata on a control | Fix the flagged fields, then use the validated export |
 | Can't add a mapping entry / edit a control | View-only access | You need the write permission ([RBAC](RBAC)) |
 | Baseline shows no controls | None selected in the checklist step | Re-run **Create from Catalog** and select controls |

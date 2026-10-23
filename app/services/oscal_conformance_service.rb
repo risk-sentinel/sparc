@@ -12,6 +12,10 @@
 #   3. Every `role-id` must resolve to a role the document declares, and every
 #      `party-uuid` to a declared party. Schema validation cannot see this: the
 #      document is structurally perfect and still refers to nothing.
+#   4. In an assessment plan or assessment results, every `activity-uuid` and
+#      `task-uuid` must resolve to an activity or task the document declares
+#      (#1228). NIST's own example assessment plan shipped a task whose
+#      `activity-uuid` resolved to nothing (usnistgov/oscal-content#349).
 #
 # The vocabularies come from `lib/oscal_conformance/<version>/`, keyed by the
 # version THIS DOCUMENT declares — SPARC supports six and they differ (SAP value
@@ -156,6 +160,8 @@ class OscalConformanceService
     declared_roles     = Array(@root.dig("metadata", "roles")).filter_map { |r| r["id"] }.to_set
     declared_parties   = Array(@root.dig("metadata", "parties")).filter_map { |p| p["uuid"] }.to_set
     declared_locations = Array(@root.dig("metadata", "locations")).filter_map { |l| l["uuid"] }.to_set
+    declared_tasks      = declared_uuids(@root, "tasks")
+    declared_activities = declared_uuids(@root, "activities")
 
     collect_references(@root, "").each do |kind, value, path|
       case kind
@@ -181,6 +187,14 @@ class OscalConformanceService
           severity: :violation, rule: "location-uuid-unresolved", location: path,
           message: "location-uuid #{value.inspect} resolves to no location in metadata.locations"
         )
+      when :task
+        next if !assessment_model? || declared_tasks.include?(value)
+
+        @findings << assessment_reference_finding("task-uuid-unresolved", "task-uuid", value, path, "task")
+      when :activity
+        next if !assessment_model? || declared_activities.include?(value)
+
+        @findings << assessment_reference_finding("activity-uuid-unresolved", "activity-uuid", value, path, "activity")
       else
         # NOT a no-op. `collect_references` is where reference kinds are
         # produced; adding one there and forgetting it here would drop a whole
@@ -202,11 +216,14 @@ class OscalConformanceService
   #
   #   role-id, role-ids, party-uuid, party-uuids, location-uuids
   #
+  # And, in an assessment plan or assessment results only (#1228):
+  #
+  #   activity-uuid, task-uuid -> the activities and tasks the document declares
+  #
   # NOT resolved here, because their target is another SECTION of the document
   # rather than metadata, and checking them means walking that section:
   #
   #   component-uuid           -> system-implementation.components
-  #   activity-uuid, task-uuid -> the assessment plan's local definitions
   #   subject-uuid, subject-placeholder-uuid
   #   observation-uuid, risk-uuid, finding-uuid, response-uuid
   #   implementation-uuid, implementation-statement-uuid
@@ -236,6 +253,8 @@ class OscalConformanceService
         when "party-uuid"  then acc << [ :party, v, path ]
         when "location-uuids"
           Array(v).each_with_index { |u, i| acc << [ :location, u, "#{path}/location-uuids[#{i}]" ] }
+        when "task-uuid"     then acc << [ :task, v, path ]
+        when "activity-uuid" then acc << [ :activity, v, path ]
         else
           # Every other key: not a reference. Recursion below still descends
           # into it, so nothing is missed by not matching here.
@@ -250,5 +269,40 @@ class OscalConformanceService
       nil
     end
     acc
+  end
+
+  ASSESSMENT_MODELS = %w[assessment-plan assessment-results].freeze
+
+  def assessment_model? = ASSESSMENT_MODELS.include?(@model)
+
+  # The uuids of every object in an array under `key`, at any depth: tasks nest
+  # inside tasks, and assessment results declare them per result.
+  def declared_uuids(node, key, acc = Set.new)
+    case node
+    when Hash
+      node.each do |k, v|
+        if k == key
+          Array(v).each { |item| acc << item["uuid"] if item.is_a?(Hash) && item["uuid"] }
+        end
+        declared_uuids(v, key, acc)
+      end
+    when Array
+      node.each { |v| declared_uuids(v, key, acc) }
+    else
+      # Leaf scalar — declarations are always objects in an array.
+      nil
+    end
+    acc
+  end
+
+  # Assessment results may name a task or activity that the imported assessment
+  # PLAN declares, and this check does not load the plan. So an unresolved one
+  # is advisory in results, and a violation in a plan, where the document
+  # itself is the only place it can be declared.
+  def assessment_reference_finding(rule, key, value, path, kind)
+    in_plan = @model == "assessment-plan"
+    message = "#{key} #{value.inspect} resolves to no #{kind} this document declares"
+    message += " (it may be declared by the imported assessment plan, which is not checked here)" unless in_plan
+    Finding.new(severity: in_plan ? :violation : :advisory, rule: rule, location: path, message: message)
   end
 end

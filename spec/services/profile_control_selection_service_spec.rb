@@ -41,6 +41,18 @@ RSpec.describe ProfileControlSelectionService do
     expect(profile.profile_controls.first.priority).to be_present
   end
 
+  # #1241 — a catalog's assigned value is the catalog's. Copied into the
+  # profile it would become tailoring nobody made and be exported as
+  # `set-parameters`: the label mistake ClearSeededParameterLabels undid.
+  it "leaves a parameter the catalog assigns unset on the baseline" do
+    cc1.update!(params_data: [ { "id" => "ac-01_odp.05", "label" => "frequency", "values" => [ "quarterly-invented" ] } ])
+
+    described_class.new(profile).update([ "ac-1" ])
+    fields = profile.profile_controls.first.profile_control_fields.to_h { |f| [ f.field_name, f.field_value ] }
+
+    expect(fields).to eq("parameter:ac-01_odp.05" => "", "parameter_label:ac-01_odp.05" => "frequency")
+  end
+
   it "raises without a linked catalog" do
     orphan = create(:profile_document, control_catalog: nil)
     expect { described_class.new(orphan).update([ "ac-1" ]) }
