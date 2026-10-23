@@ -110,11 +110,17 @@ def test_policy_manager_creates_a_cdef_and_makes_it_instance_wide(
         user.locator(SCOPE_GLOBAL).check()
         with user.expect_navigation(wait_until="networkidle"):
             user.get_by_role("button", name="Update Scope").click()
-        body = user.locator("body").inner_text()
-        assert "Instance-wide — every organization" not in body, (
+        # The picker's labels are always on the page, so read which tier is
+        # SELECTED and what the server said, never whether a label appears.
+        assert user.locator(f"{SCOPE_INSTANCE}:checked").count() == 0, (
             "asking for organization-wide must never make the CDEF instance-wide"
         )
-        assert ("Organization-wide —" in body) or ("needs an organization" in body), (
+        body = user.locator("body").inner_text()
+        applied = (
+            user.locator(f"{SCOPE_GLOBAL}:checked").count() == 1
+            and "Component definition scope updated." in body
+        )
+        assert applied or "needs an organization" in body, (
             "organization-wide should either apply (the user has an organization) or be "
             "refused naming the missing organization; got neither"
         )

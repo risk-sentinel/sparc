@@ -165,6 +165,9 @@ class CdefDocumentShow(CdefDocumentIndex):
     # `scope` is derived: "boundary" when a boundary id is recorded, else
     # "global". DETAIL only, matching `description` and the #944 fields.
     scope: Literal["global", "boundary"]
+    # #1257 — `scope` reads "global" for organization-wide and instance-wide
+    # alike; `scope_tier` tells the three tiers apart.
+    scope_tier: Literal["boundary", "organization", "instance"]
     authorization_boundary_id: int | None = None
     globally_available: bool
     back_matter_resources: list[BackMatterResource] = Field(default_factory=list)
