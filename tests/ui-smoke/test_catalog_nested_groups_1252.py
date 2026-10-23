@@ -47,7 +47,7 @@ def _wait_for_import(ref: str) -> dict:
     deadline = time.time() + 90
     catalog: dict = {}
     while time.time() < deadline:
-        catalog = get_json(f"/api/v1/control_catalogs/{ref}")["data"]
+        catalog = get_json(f"/api/v1/control_catalogs/{ref}")
         if catalog.get("status") in ("completed", "failed"):
             return catalog
         time.sleep(1)
