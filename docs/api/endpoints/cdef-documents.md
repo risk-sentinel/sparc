@@ -23,6 +23,7 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | read — `index`, `show`, `export` | any authenticated user |
 | write — `create`, `update`, `destroy`, `import`, `source_from_profile`, `submit_for_review`, `scope` | `cdef.write` |
 | bulk field import — `fields/import/preview`, `fields/import/confirm` | `converters.write` |
+| `scope` with `"scope": "instance"` | also `cdef.scope_instance`, granted at instance level (Policy Manager by default), or instance admin |
 | `bulk` delete | instance admin |
 | `approve`, `reject` | `cdef.approve`, or instance admin — and never the submitter |
 
@@ -48,7 +49,7 @@ it previously received `201`/`200`.
 | `POST` | `/api/v1/cdef_documents/:id/submit_for_review` | Submit a CDEF for review |
 | `POST` | `/api/v1/cdef_documents/:id/approve` | Approve a CDEF under review |
 | `POST` | `/api/v1/cdef_documents/:id/reject` | Reject a CDEF under review |
-| `PATCH` | `/api/v1/cdef_documents/:id/scope` | Pin the CDEF to one authorization boundary, or return it to global |
+| `PATCH` | `/api/v1/cdef_documents/:id/scope` | Pin the CDEF to one authorization boundary, make it organization-wide (`global`), or instance-wide (`instance`). The response's `scope_tier` reads back `boundary`, `organization` or `instance` |
 | `GET` | `/api/v1/cdef_documents/:id/export` | Export the CDEF — see **Export formats** below for `format` and `validate` |
 
 ---

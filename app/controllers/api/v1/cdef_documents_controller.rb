@@ -138,7 +138,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   #
   # #929 — parity with the web `update_scope`, so the UI stays a thin client
   # over the API rather than the only place a CDEF's scope can be re-pointed.
-  # Body: { "scope": "global" | "boundary", "authorization_boundary_id": N }
+  # Body: { "scope": "instance" | "global" | "boundary", "authorization_boundary_id": N }
   def update_scope
     # #1032 — the inline `cdef.write` check that used to live here is now the
     # shared before_action above. It was correct, but it was one gate plus a
@@ -469,6 +469,11 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       data[:globally_available] = cdef.globally_available
       data[:authorization_boundary_id] = boundary_id
       data[:scope] = boundary_id.present? ? "boundary" : "global"
+      # #1257 — `scope` says "global" for organization-wide and instance-wide
+      # alike, so an instance-wide change could not be confirmed by a read.
+      # Added beside it, not in place of it: "boundary" | "organization" |
+      # "instance", from CdefDocument#scope_tier.
+      data[:scope_tier] = cdef.scope_tier.to_s
 
       # #944 — the component's own OSCAL fields, reported so a consumer can see
       # what will be exported rather than discovering the hardcoded defaults

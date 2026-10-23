@@ -51,4 +51,21 @@ RSpec.describe "Api::V1 CDEF scope: instance-wide is instance authority", type: 
 
     expect(response).to have_http_status(:ok)
   end
+
+  # #1257 — `scope` reads "global" for organization-wide and instance-wide
+  # alike; `scope_tier` tells them apart, so the change can be read back.
+  it "reports each tier on read as scope_tier" do
+    org = create(:organization)
+    create(:organization_membership, user: admin, organization: org)
+    read = lambda do
+      get "/api/v1/cdef_documents/#{cdef.slug}", headers: headers_for(admin)
+      response.parsed_body["data"].values_at("scope", "scope_tier")
+    end
+
+    patch "/api/v1/cdef_documents/#{cdef.slug}/scope", params: { scope: "instance" }, headers: headers_for(admin)
+    expect(read.call).to eq(%w[global instance])
+
+    patch "/api/v1/cdef_documents/#{cdef.slug}/scope", params: { scope: "global" }, headers: headers_for(admin)
+    expect(read.call).to eq(%w[global organization])
+  end
 end
