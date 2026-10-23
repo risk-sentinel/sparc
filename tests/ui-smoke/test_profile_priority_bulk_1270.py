@@ -11,6 +11,7 @@ showed after the click.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import pytest
@@ -76,6 +77,16 @@ def _card(page, control: str):
     return page.locator(f".control-card:has(select[aria-label='Priority for {control}'])")
 
 
+def _edit(page, control: str) -> None:
+    """Open a control's Edit screen and wait until the browser is ON it.
+
+    Turbo follows the link with fetch, so the click returns while the profile
+    page is still showing; reading the page then reads the profile.
+    """
+    _card(page, control).get_by_role("link", name="Edit", exact=True).click()
+    page.wait_for_url(re.compile(r"/profile_controls/\d+/edit$"), timeout=10000)
+
+
 class TestInlinePriority:
     def test_set_from_not_set_saves_without_a_reload(self, authed_page, profile):
         page = authed_page
@@ -114,7 +125,7 @@ class TestBulkBar:
 
         bar.locator("select[name=priority]").select_option("P1")
         with page.expect_navigation(wait_until="load"):
-            bar.get_by_role("button", name="Set priority").click()
+            bar.get_by_role("button", name="Set priority", exact=True).click()
 
         assert _priorities(profile["slug"]) == {"ac-1": "P1", "ac-2": "P1"}
         assert_no_csp_violations(page, during="setting a family's priority from the bulk bar")
@@ -128,12 +139,11 @@ class TestBulkBar:
         bar = page.locator(BAR)
         bar.locator("select[name=resource_id]").select_option(label=resource["title"])
         with page.expect_navigation(wait_until="load"):
-            bar.get_by_role("button", name="Link resource").click()
+            bar.get_by_role("button", name="Link resource", exact=True).click()
 
         for control in ("AC-1", "AC-2"):
             _open(page, profile["slug"])
-            _card(page, control).get_by_role("link", name="Edit").click()
-            page.wait_for_load_state("load")
+            _edit(page, control)
             assert resource["title"] in page.locator("body").inner_text(), (
                 f"{control}'s Edit screen does not list the resource the bulk bar linked"
             )
@@ -155,10 +165,9 @@ class TestEditScreen:
     def test_the_edit_screen_has_no_parameter_fields(self, authed_page, profile):
         page = authed_page
         _open(page, profile["slug"])
-        _card(page, "AC-1").get_by_role("link", name="Edit").click()
-        page.wait_for_load_state("load")
+        _edit(page, "AC-1")
 
-        assert page.get_by_label("Priority").is_visible()
+        assert page.get_by_label("Priority", exact=True).is_visible()
         assert page.locator("input[name^='param_values']").count() == 0, (
             "the Edit screen still carries the per-parameter table"
         )
