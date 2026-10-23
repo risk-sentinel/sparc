@@ -38,7 +38,7 @@ module NistCatalogSource
   PRE_RELEASE_UUIDS = [ DEVELOP_UUID, MAIN_1_2_3_UUID ].freeze
   CATALOG_UUIDS = [ RELEASED_V5_2_0_UUID, *PRE_RELEASE_UUIDS ].freeze
 
-  module_function
+  extend self
 
   def root = defined?(Rails) ? Rails.root : Pathname(__dir__).parent
 

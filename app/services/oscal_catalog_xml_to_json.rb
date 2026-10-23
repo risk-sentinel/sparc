@@ -50,6 +50,9 @@ class OscalCatalogXmlToJson
 
   BLOCK_ELEMENTS = %w[p h1 h2 h3 h4 h5 h6 ul ol pre table blockquote hr].freeze
 
+  MEDIA_TYPE = "media-type"
+  SHORT_NAME = "short-name"
+
   def self.convert(xml)
     new(xml).convert
   end
@@ -204,7 +207,7 @@ class OscalCatalogXmlToJson
   end
 
   def link(node)
-    obj = attrs(node, "href", "rel", "media-type", "resource-fragment")
+    obj = attrs(node, "href", "rel", MEDIA_TYPE, "resource-fragment")
     each_child(node) do |child, out|
       child.name == "text" ? obj["text"] = markup_line(child) : out.unknown!
     end
@@ -259,7 +262,7 @@ class OscalCatalogXmlToJson
     each_child(node) do |child, out|
       case child.name
       when "title"       then obj["title"] = markup_line(child)
-      when "short-name"  then obj["short-name"] = plain(child)
+      when SHORT_NAME    then obj[SHORT_NAME] = plain(child)
       when "description" then obj["description"] = markup_multiline(child)
       when "prop"        then push(obj, "props", prop(child))
       when "link"        then push(obj, "links", link(child))
@@ -292,7 +295,7 @@ class OscalCatalogXmlToJson
     obj = attrs(node, "uuid", "type")
     each_child(node) do |child, out|
       case child.name
-      when "name", "short-name" then obj[child.name] = plain(child)
+      when "name", SHORT_NAME   then obj[child.name] = plain(child)
       when "external-id"        then push(obj, "external-ids", attrs(child, "scheme").merge("id" => plain(child)))
       when "prop"               then push(obj, "props", prop(child))
       when "link"               then push(obj, "links", link(child))
@@ -370,7 +373,7 @@ class OscalCatalogXmlToJson
       when "document-id" then push(obj, "document-ids", document_id(child))
       when "citation"    then obj["citation"] = citation(child)
       when "rlink"       then push(obj, "rlinks", rlink(child))
-      when "base64"      then obj["base64"] = attrs(child, "filename", "media-type").merge("value" => plain(child))
+      when "base64"      then obj["base64"] = attrs(child, "filename", MEDIA_TYPE).merge("value" => plain(child))
       when "remarks"     then obj["remarks"] = markup_multiline(child)
       else out.unknown!
       end
@@ -392,7 +395,7 @@ class OscalCatalogXmlToJson
   end
 
   def rlink(node)
-    obj = attrs(node, "href", "media-type")
+    obj = attrs(node, "href", MEDIA_TYPE)
     each_child(node) do |child, out|
       child.name == "hash" ? push(obj, "hashes", attrs(child, "algorithm").merge("value" => plain(child))) : out.unknown!
     end

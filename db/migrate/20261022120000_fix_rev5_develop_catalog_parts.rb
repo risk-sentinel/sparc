@@ -45,13 +45,17 @@ class FixRev5DevelopCatalogParts < ActiveRecord::Migration[8.1]
   include DeferredDataMigration
   data_migration_version "1.0.0"
 
+  SA_15_13 = "sa-15.13"
+  SA_24 = "sa-24"
+  SI_2_7 = "si-2.7"
+
   OLD_SA_15_13_STATEMENT = "Require the developer of the system or system component to minimize the use of " \
                            "personally identifiable information in development and test environments."
 
   # NIST v5.2.0 (2025-08-26), as an import stored it: guidance_data keys.
   OLD_GUIDANCE = {
-    "sa-15.13" => { "statement" => OLD_SA_15_13_STATEMENT },
-    "sa-24" => {
+    SA_15_13 => { "statement" => OLD_SA_15_13_STATEMENT },
+    SA_24 => {
       "assessment_objective" => [
         "SA-24: Determine if:",
         *(1..5).map do |n|
@@ -70,7 +74,7 @@ class FixRev5DevelopCatalogParts < ActiveRecord::Migration[8.1]
         "risk management process of systems security engineering process."
       ].join("\n")
     },
-    "si-2.7" => {
+    SI_2_7 => {
       "assessment_objective" => [
         "SI-02(07): Determine if:",
         "SI-02(07)a.: Root cause analysis is conducted to identify underlying causes of issues or failures",
@@ -83,7 +87,7 @@ class FixRev5DevelopCatalogParts < ActiveRecord::Migration[8.1]
 
   # NIST v5.2.0, as an import stored them: catalog_control_parts rows.
   OLD_PARTS = {
-    "sa-15.13" => {
+    SA_15_13 => {
       "sa-15.13_smt" => { "label" => nil, "prose" => OLD_SA_15_13_STATEMENT, "props_data" => [] },
       "sa-15.13_asm-examine" => {
         "label" => "SA-15(12)-Examine", "prose" => nil,
@@ -93,7 +97,7 @@ class FixRev5DevelopCatalogParts < ActiveRecord::Migration[8.1]
         ]
       }
     },
-    "si-2.7" => {
+    SI_2_7 => {
       "si-2.7_obj.c-1" => { "label" => nil, "prose" => "The actions (defined in [SI-02(07)b.](#si-2.7_smt.b)) are implemented",
                             "props_data" => [] },
       "si-2.7_obj.c-2" => { "label" => nil, "prose" => "The implementation of actions is monitored for effectiveness.",
@@ -102,9 +106,9 @@ class FixRev5DevelopCatalogParts < ActiveRecord::Migration[8.1]
   }.freeze
 
   # Parts NIST added; absent from every v5.2.0 import.
-  NEW_PARTS = { "sa-24" => %w[sa-24_obj.b-6 sa-24_obj.b-7 sa-24_obj.b-8 sa-24_obj.b-9 sa-24_obj.b-10] }.freeze
+  NEW_PARTS = { SA_24 => %w[sa-24_obj.b-6 sa-24_obj.b-7 sa-24_obj.b-8 sa-24_obj.b-9 sa-24_obj.b-10] }.freeze
 
-  CONTROL_IDS = %w[sa-15.13 sa-24 si-2.7].freeze
+  CONTROL_IDS = [ SA_15_13, SA_24, SI_2_7 ].freeze
   PART_FIELDS = %w[label prose props_data].freeze
 
   def up
@@ -296,7 +300,7 @@ class FixRev5DevelopCatalogParts < ActiveRecord::Migration[8.1]
                      .where(ssp_documents: { deleted_at: nil })
                      .where("f.field_value LIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(OLD_SA_15_13_STATEMENT)}%")
                      .pluck("ssp_controls.control_id", "ssp_documents.id", "ssp_documents.name")
-                     .select { |control_id, _, _| ControlId.canonical(control_id) == "sa-15.13" }
+                     .select { |control_id, _, _| ControlId.canonical(control_id) == SA_15_13 }
     documents = rows.map { |_, id, name| [ id, name ] }.uniq
 
     say "SSPs whose SA-15(13) statement still carries SA-15(12)'s text: #{documents.size}"
