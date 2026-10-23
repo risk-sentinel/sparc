@@ -34,8 +34,8 @@ class ControlCatalogsController < ApplicationController
   def index
     scope = ControlCatalog.includes(:control_families).order(:name)
     @total_count = scope.size
-    @family_count = ControlFamily.distinct.count(:code)
-    @control_count = CatalogControl.distinct.count(:control_id)
+    @family_count = ControlCatalog.family_count
+    @control_count = ControlCatalog.control_count
     @revision_count = ControlCatalog.where.not(version: [ nil, "" ]).select(:version).distinct.count
 
     # #672 search + #908 facets, both through the shared query object so this

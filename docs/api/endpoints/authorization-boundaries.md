@@ -70,7 +70,11 @@ The detail (`GET /api/v1/authorization_boundaries/:id`) additionally carries
 
 ### GET List All Boundaries
 
-Returns a paginated list of authorization boundaries. Non-admin users see only boundaries they own or are members of.
+Returns a paginated list of the authorization boundaries the caller may read: every boundary for an
+instance administrator or an instance-wide `authorization_boundaries.read` grant, otherwise the boundaries
+a role grants that permission on (v1.17.2, #1248; the same set the boundary list and sidebar show, so every
+listed boundary also opens through `GET .../:id`). Before v1.17.2 it listed every boundary the caller held
+any role on.
 
 **Query Parameters**
 
@@ -81,6 +85,7 @@ Returns a paginated list of authorization boundaries. Non-admin users see only b
 | `status` | string | No | Filter by status (e.g., `active`, `inactive`, `pending`) |
 | `name` | string | No | Filter by name (partial match) |
 | `q` | string | No | Case-insensitive search across name and description (#672) |
+| `sort` | string | No | `next_decision` (soonest next authorization decision first) or `-next_decision` (latest first). Boundaries with no next decision date sort last either way. Default order is by name. Any other value is refused with `422` (v1.17.2, #1248) |
 
 **Example Request**
 
@@ -123,6 +128,7 @@ curl -X GET "https://sparc.example.com/api/v1/authorization_boundaries?status=ac
 |------|-------------|
 | `200` | Boundaries returned successfully |
 | `401` | Unauthorized -- missing or invalid token |
+| `422` | Unknown `sort` value |
 
 ---
 

@@ -158,13 +158,14 @@ Current password and new password fields. Also used for forced password reset on
 | **Controller** | `HomeController#index` |
 | **Auth** | Varies (public when auth disabled) |
 
-The dashboard consists of three main sections:
+The homepage is a grid of cards grouped by OSCAL layer (Controls, Implementation, Assessment, Enterprise), one per area: Control Catalogs, Baselines / Profiles, Control Mapping, SSPs, CDEFs, Converters, SAPs, Evidence, SARs, POA&Ms, Organizations and Auth Boundaries (v1.17.2, #1243).
 
-1. **Statistics Tiles** -- A gradient header card with a responsive grid (up to 10 columns on large screens) showing counts for: Catalogs, Families, Controls, Authorization Boundaries, Baselines, CDEFs, SSPs, SAPs, SARs, POA&Ms, and Evidence.
+- **Count badge** -- beside each card's title, a count that links to the same list as the card's **View** button. The count is the one that list shows the signed-in user: SSPs, SAPs, SARs, Evidence and POA&Ms through the same boundary scoping as their list pages, Auth Boundaries through the boundaries the user may see, and the shared library (catalogs, baselines, mappings, CDEFs, converters) in full, as their lists show it. An instance administrator, or a deployment with authentication disabled, sees full totals.
+- **Control Catalogs** carries the number of families and controls as secondary text (the same figures as the catalog list's tiles).
+- **New** -- shown only where the user may create that kind of record.
+- **Organizations** -- an administrator screen; the card shows only to someone it admits.
 
-2. **Aggregate Compliance Heatmap** -- An interactive heatmap showing compliance status across all SSPs, grouped by NIST control family. Uses `ssp_status_color` helper for color coding. Families are clickable, linking to the family drilldown view.
-
-3. **Section Navigation Grid** -- A card grid (5 columns on large screens) with "View" and "New" buttons for each major document type: Authorization Boundaries, Control Catalogs, Baselines, CDEFs, SSPs, SAPs, SARs, POA&Ms, and Evidence.
+The statistics header that used to sit above the cards was removed in v1.17.2: it repeated the cards, its tiles were not links, and it counted the whole instance.
 
 #### Family Drilldown
 
@@ -795,7 +796,21 @@ Leveraging-side read-only view of POA&Ms inherited from a leveraged (underlying)
 | **Controller** | `AuthorizationBoundariesController#index` |
 | **Auth** | Required |
 
-Lists the authorization boundaries the user may see (v1.17.2, #1247): every boundary for an administrator or an instance-wide read grant, otherwise those a role grants read on, the same set as the sidebar and the Enterprise menu (`AuthorizationBoundary.visible_to`). The summary tiles count those boundaries. Columns: name, description, status (one colour per status, from `ab_status_variant`), **Members** (distinct people with access, by role assignment or legacy roster), and **Environments**. **Edit** shows only to someone with write on that boundary, **Delete** only to an administrator, and **New Authorization Boundary** only with an instance-level write grant.
+Lists the authorization boundaries the user may see (v1.17.2, #1247): every boundary for an administrator or an instance-wide read grant, otherwise those a role grants read on, the same set as the sidebar and the Enterprise menu (`AuthorizationBoundary.visible_to`). The summary tiles count those boundaries. **New Authorization Boundary** shows only with an instance-level write grant.
+
+Table columns (v1.17.2, #1248):
+
+| Column | Shows |
+|---|---|
+| Name | Links to the boundary; the description is its tooltip |
+| Organization | The owning organization. Shown only when the listed boundaries span more than one organization |
+| Status | The lifecycle status, one colour per status (`ab_status_variant`) |
+| Next decision | The next authorization decision date: amber within 90 days, red once past, a dash when unset. Click the header to sort by it (soonest first, then latest first); boundaries with no date sort last either way. The sort is `?sort=next_decision` / `?sort=-next_decision`, the same values `GET /api/v1/authorization_boundaries` accepts |
+| Members | Distinct people with access, by role assignment or legacy roster |
+| Environments | Environments defined on the boundary |
+| Actions | **View** only. Edit and Delete are on the boundary's page |
+
+Cards show the same fields: the organization under the name, and the next decision as a metric. Administrators keep the checkboxes and **Delete (n selected)** for bulk delete.
 
 #### Authorization Boundary Detail
 
@@ -805,10 +820,25 @@ Lists the authorization boundaries the user may see (v1.17.2, #1247): every boun
 | **Controller** | `AuthorizationBoundariesController#show` |
 | **Auth** | Required |
 
-Shows authorization boundary details with:
-- System boundaries (with create/edit/delete)
-- Team members and their roles (with add/edit/remove)
-- Artifact summary linking to associated documents
+Header (v1.17.2, #1251): the name, the UUID (copy button), the status badge, the description, the authorization boundary description, and the key ATO facts on one line -- **Authorization status**, **Next decision** (the list's badge: amber within 90 days, red once past) and **Authorizing official**.
+
+Buttons: **Build ATO Package** (write on the boundary), and a **More** menu holding **Amendments**, **CDEF Coverage**, **Download ATO Package** (when documents are attached), **Edit** (write on the boundary), **Delete** (administrators) and **All Authorization Boundaries**. When the boundary still holds SSP, SAP, SAR or POA&M documents, Delete is shown disabled with the reason, before anyone clicks it; the delete confirmation is SPARC's dialog.
+
+Sections, in order, each collapsible with a count in its header:
+
+| Section | Default | Notes |
+|---|---|---|
+| (warning) | -- | Only when more than one SSP points at the boundary |
+| Boundary Completeness | Open while the boundary is **Draft** (always, then); collapsed otherwise | The header shows the summary (e.g. `3 of 11 complete`). Each row's title links to where that work is done in SPARC -- Add Member, the SSP's enrich page, Edit, Add Leveraged Authorization, Add Evidence, Amendments, Add Environment, CDEF Coverage, or the Back Matter section on this page -- shown only to someone who may act there. With no SSP, the SSP rows link to attaching one, labelled **Add SSP first**. **Guide** links to the adoption guide section |
+| Artifact Summary | Open | SSP, SAP, SAR and POA&M tiles |
+| Environments & Components | Collapsed | **Add Environment**, Edit and Delete for someone with write on the boundary |
+| Personnel Roster | Collapsed | **Add Member** and the roster's Edit / Remove for someone with `authorization_boundaries.manage_members` |
+| Evidence | Collapsed | Evidence tied to the boundary; **Add Evidence** with `evidence.write` on it. Called "Artifacts" before v1.17.2 |
+| Back Matter | Collapsed | The boundary's own back-matter -- diagrams, inventory, PPSM, CRM (#1249). Shown with `authorization_boundaries.read` and `back_matter.read` on the boundary; add, edit and delete with `back_matter.write`, in any boundary status. The SSP's OSCAL export carries these resources |
+| Leveraged Authorizations | Collapsed | Add, Resync and Remove for members of the boundary |
+| Metadata sync status | Collapsed | Each linked document's sync with the boundary's metadata |
+
+Your open/closed choice is remembered per section, in this browser, and applies on every boundary's page. A Draft boundary always opens Boundary Completeness.
 
 #### Boundaries
 
@@ -1097,7 +1127,7 @@ No HTML screen — resolves a stable back-matter UUID to a freshly-signed downlo
 
 | | |
 |---|---|
-| **Routes** | `POST/PATCH/DELETE /<document>/:id/back_matter_resources/...` on `ssp_documents`, `sar_documents`, `sap_documents`, `poam_documents`, `profile_documents`, `cdef_documents`, `control_catalogs` |
+| **Routes** | `POST/PATCH/DELETE /<document>/:id/back_matter_resources/...` on `ssp_documents`, `sar_documents`, `sap_documents`, `poam_documents`, `profile_documents`, `cdef_documents`, `control_catalogs`, and `authorization_boundaries` (v1.17.2, #1249: the boundary's own back-matter, editable in any boundary status) |
 | **Controller** | `BackMatterResourcesController` |
 | **Auth** | Required (document write permission) |
 

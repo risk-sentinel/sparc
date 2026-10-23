@@ -1,6 +1,7 @@
 # API v1 endpoint surface snapshot (drift guard) — see spec/requests/api/v1/endpoint_coverage_spec.rb
 # Regenerate intentionally: bin/rails runner script in that spec's header. Every entry should have a request spec.
 DELETE /api/v1/authoritative_sources/:id
+DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/back_matter_resources/:id
 DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/leveraged_authorizations/:id
 DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
@@ -55,6 +56,7 @@ GET /api/v1/authoritative_sources
 GET /api/v1/authoritative_sources/:id
 GET /api/v1/authoritative_sources/export
 GET /api/v1/authorization_boundaries
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/back_matter_resources
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_system
@@ -168,6 +170,7 @@ GET /api/v1/users
 GET /api/v1/users/:id
 GET /api/v1/users/:user_id/api_tokens
 PATCH /api/v1/authoritative_sources/:id
+PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/back_matter_resources/:id
 PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
 PATCH /api/v1/authorization_boundaries/:id
@@ -212,6 +215,7 @@ POST /api/v1/authoritative_sources/:id/restore
 POST /api/v1/authoritative_sources/import
 POST /api/v1/authorization_boundaries
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/aggregate
+POST /api/v1/authorization_boundaries/:authorization_boundary_id/back_matter_resources
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/leveraged_authorizations
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/leveraged_authorizations/:id/populate
@@ -318,6 +322,7 @@ POST /api/v1/users/:user_id/api_tokens/:id/reissue
 POST /api/v1/users/:user_id/api_tokens/:id/renew
 PUT /api/v1/admin/remediation_timelines
 PUT /api/v1/authoritative_sources/:id
+PUT /api/v1/authorization_boundaries/:authorization_boundary_id/back_matter_resources/:id
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
 PUT /api/v1/authorization_boundaries/:id

@@ -18,6 +18,12 @@ class AuthorizationBoundary < ApplicationRecord
   READ_PERMISSION  = "authorization_boundaries.read"
   WRITE_PERMISSION = "authorization_boundaries.write"
 
+  # #1249 — who may see and change a boundary's own back-matter, on both
+  # surfaces (the boundary page and Api::V1::BoundaryBackMatterResourcesController),
+  # each checked against that boundary.
+  BACK_MATTER_READ_PERMISSIONS = [ READ_PERMISSION, "back_matter.read" ].freeze
+  BACK_MATTER_WRITE_PERMISSION = "back_matter.write"
+
   # #1245/#1247 — the boundaries `user` may see, as ONE definition for every
   # surface that lists boundaries: the sidebar, the Enterprise menu, the
   # boundary list and its tiles, and the homepage counts. It answers exactly
@@ -49,6 +55,12 @@ class AuthorizationBoundary < ApplicationRecord
   has_many :poam_documents, dependent: :nullify
   has_many :evidences, dependent: :nullify
   has_many :ksi_validations, dependent: :destroy
+  # #1249 — boundary-level back-matter (diagrams, inventory, PPSM, CRM): the
+  # documents that describe the SYSTEM rather than one of its documents. The
+  # boundary page manages them, the Completeness checklist counts them, and the
+  # SSP's OSCAL back-matter carries them (owner, 2026-08-20: the SSP export
+  # carries boundary-level back-matter).
+  has_many :back_matter_resources, as: :resourceable, dependent: :destroy
 
   # #447 — HDF Amendment triage layer, boundary-scoped.
   has_many :scan_runs, dependent: :destroy
@@ -126,6 +138,30 @@ class AuthorizationBoundary < ApplicationRecord
   # SI-10 — only a CHANGED date is checked, so a legacy value already on a row
   # does not lock the record against an unrelated edit.
   validate :boundary_dates_are_iso_dates
+
+  # ── Sorting (#1248) ────────────────────────────────────────────────────
+  #
+  # The orders a caller may ask for, by name, as ONE allow-list the boundary
+  # list and GET /api/v1/authorization_boundaries both read. A `sort` value is
+  # never interpolated into SQL; only these fixed fragments are.
+  #
+  # Next decision is the "what is due?" view. The dates are ISO strings
+  # (YYYY-MM-DD) in boundary_metadata, so string order is date order, and
+  # comparing strings means a legacy value that is not a date sorts instead of
+  # raising. A boundary with no date sorts LAST in both directions: nothing is
+  # due, so it is never the most urgent row.
+  NEXT_DECISION_SQL = "NULLIF(authorization_boundaries.boundary_metadata->>'next_decision_date', '')"
+  SORTS = {
+    "next_decision"  => "#{NEXT_DECISION_SQL} ASC NULLS LAST, authorization_boundaries.name ASC",
+    "-next_decision" => "#{NEXT_DECISION_SQL} DESC NULLS LAST, authorization_boundaries.name ASC"
+  }.freeze
+
+  # The relation re-ordered by an allow-listed key. An unknown or blank key
+  # leaves the caller's own order in place.
+  def self.sorted_by(key)
+    sql = SORTS[key.to_s]
+    sql ? reorder(Arel.sql(sql)) : all
+  end
 
   # ── FIPS-199 categorization (#940 S3) ──────────────────────────────────
   #

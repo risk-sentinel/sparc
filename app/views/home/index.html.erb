@@ -1,71 +1,10 @@
-<%# ── Stat tiles grouped by OSCAL layer ── %>
-<div class="card sparc-gradient-header mb-3 sparc-p-085-1r sparc-br-05r">
-  <div class="d-flex flex-wrap justify-content-center gap-3">
-
-    <%# ── Controls Layer ── %>
-    <div class="sparc-home-group sparc-accent--blue">
-      <div class="text-center sparc-mb-035">
-        <span class="badge sparc-status--info sparc-fs-075 sparc-ls-005">CONTROLS</span>
-      </div>
-      <div class="d-flex gap-2">
-        <% [[@catalog_count, "Catalogs"], [@family_count, "Families"], [@control_count, "Controls"], [@profile_count, "Baselines"], [@mapping_count, "Mappings"]].each do |count, label| %>
-          <div class="sparc-hero-tile text-center sparc-minw-68px">
-            <div class="sparc-hero-tile-count"><%= count %></div>
-            <div class="sparc-hero-tile-label"><%= label %></div>
-          </div>
-        <% end %>
-      </div>
-    </div>
-
-    <%# ── Implementation Layer ── %>
-    <div class="sparc-home-group sparc-accent--green">
-      <div class="text-center sparc-mb-035">
-        <span class="badge sparc-status--success sparc-fs-075 sparc-ls-005">IMPLEMENTATION</span>
-      </div>
-      <div class="d-flex gap-2">
-        <% [[@ssp_count, "SSPs"], [@cdef_count, "CDEFs"], [@converter_count, "Converters"]].each do |count, label| %>
-          <div class="sparc-hero-tile text-center sparc-minw-68px">
-            <div class="sparc-hero-tile-count"><%= count %></div>
-            <div class="sparc-hero-tile-label"><%= label %></div>
-          </div>
-        <% end %>
-      </div>
-    </div>
-
-    <%# ── Assessment Layer ── %>
-    <div class="sparc-home-group sparc-accent--carrot">
-      <div class="text-center sparc-mb-035">
-        <span class="badge sparc-status--orange sparc-fs-075 sparc-ls-005">ASSESSMENT</span>
-      </div>
-      <div class="d-flex gap-2">
-        <% [[@sap_count, "SAPs"], [@evidence_count, "Evidence"], [@sar_count, "SARs"], [@poam_count, "POA&Ms"]].each do |count, label| %>
-          <div class="sparc-hero-tile text-center sparc-minw-68px">
-            <div class="sparc-hero-tile-count"><%= count %></div>
-            <div class="sparc-hero-tile-label"><%= label %></div>
-          </div>
-        <% end %>
-      </div>
-    </div>
-
-    <%# ── Enterprise ── %>
-    <div class="sparc-home-group sparc-accent--purple">
-      <div class="text-center sparc-mb-035">
-        <span class="badge sparc-status--purple sparc-fs-075 sparc-ls-005">ENTERPRISE</span>
-      </div>
-      <div class="d-flex gap-2">
-        <% [[@organization_count, "Organizations"], [@authorization_boundary_count, "Auth Boundaries"]].each do |count, label| %>
-          <div class="sparc-hero-tile text-center sparc-minw-68px">
-            <div class="sparc-hero-tile-count"><%= count %></div>
-            <div class="sparc-hero-tile-label"><%= label %></div>
-          </div>
-        <% end %>
-      </div>
-    </div>
-
-  </div>
-</div>
-
 <%# ── Section navigation grid grouped by OSCAL layers ── %>
+<%# #1243 — the scoreboard that sat above these cards is gone: it repeated the
+    same nouns in the same order, its tiles looked clickable and were not, and
+    it counted the whole instance. Each card now carries its own count as a
+    badge that opens the same page as View, and the count is the one that page
+    shows THIS user (HomeController#index). "New" appears only to someone the
+    create action would let through. %>
 <%
   layer_groups = [
     {
@@ -73,9 +12,13 @@
       color: ApplicationHelper::COLOR_BLUE,
       cls: "sparc-heading-controls",
       cards: [
-        { title: "Control Catalogs",     path: control_catalogs_path,   new_path: new_control_catalog_path,   icon: "&#128218;" },
-        { title: "Baselines / Profiles", path: profile_documents_path,  new_path: new_profile_document_path,  icon: "&#128203;" },
-        { title: "Control Mapping",      path: control_mappings_path,   new_path: new_control_mapping_path,   icon: "&#128279;" },
+        { key: :control_catalogs, title: "Control Catalogs", path: control_catalogs_path,
+          new_path: new_control_catalog_path, can_create: can_write_catalogs?, icon: "&#128218;",
+          secondary: "#{number_with_delimiter(@family_count)} families · #{number_with_delimiter(@control_count)} controls" },
+        { key: :profile_documents, title: "Baselines / Profiles", path: profile_documents_path,
+          new_path: new_profile_document_path, can_create: can_write_profiles?, icon: "&#128203;" },
+        { key: :control_mappings, title: "Control Mapping", path: control_mappings_path,
+          new_path: new_control_mapping_path, can_create: can_write_mappings?, icon: "&#128279;" },
       ]
     },
     {
@@ -83,9 +26,12 @@
       color: ApplicationHelper::COLOR_GREEN,
       cls: "sparc-heading-implementation",
       cards: [
-        { title: "SSPs",        path: ssp_documents_path,   new_path: new_ssp_document_path,   icon: "&#128196;" },
-        { title: "CDEFs",       path: cdef_documents_path,  new_path: new_cdef_document_path,  icon: "&#128737;" },
-        { title: "Converters",  path: converters_path,      new_path: new_converter_path,      icon: "&#128260;" },
+        { key: :ssp_documents, title: "SSPs", path: ssp_documents_path,
+          new_path: new_ssp_document_path, can_create: can_create_boundary_document?(SspDocumentsController), icon: "&#128196;" },
+        { key: :cdef_documents, title: "CDEFs", path: cdef_documents_path,
+          new_path: new_cdef_document_path, can_create: can_write_cdefs?, icon: "&#128737;" },
+        { key: :converters, title: "Converters", path: converters_path,
+          new_path: new_converter_path, can_create: can_write_converters?, icon: "&#128260;" },
       ]
     },
     {
@@ -93,10 +39,14 @@
       color: ApplicationHelper::COLOR_CARROT,
       cls: "sparc-heading-assessment",
       cards: [
-        { title: "SAPs",      path: sap_documents_path,  new_path: new_sap_document_path,  icon: "&#128221;" },
-        { title: "Evidence",   path: evidences_path,       new_path: new_evidence_path,      icon: "&#128274;" },
-        { title: "SARs",      path: sar_documents_path,   new_path: new_sar_document_path,  icon: "&#128203;" },
-        { title: "POA&Ms",    path: poam_documents_path,  new_path: new_poam_document_path, icon: "&#128270;" },
+        { key: :sap_documents, title: "SAPs", path: sap_documents_path,
+          new_path: new_sap_document_path, can_create: can_create_boundary_document?(SapDocumentsController), icon: "&#128221;" },
+        { key: :evidences, title: "Evidence", path: evidences_path,
+          new_path: new_evidence_path, can_create: can_create_boundary_document?(EvidencesController), icon: "&#128274;" },
+        { key: :sar_documents, title: "SARs", path: sar_documents_path,
+          new_path: new_sar_document_path, can_create: can_create_boundary_document?(SarDocumentsController), icon: "&#128203;" },
+        { key: :poam_documents, title: "POA&Ms", path: poam_documents_path,
+          new_path: new_poam_document_path, can_create: can_create_boundary_document?(PoamDocumentsController), icon: "&#128270;" },
       ]
     },
     {
@@ -104,9 +54,12 @@
       color: ApplicationHelper::COLOR_PURPLE,
       cls: "sparc-heading-enterprise",
       cards: [
-        { title: "Organizations",    path: admin_organizations_path,     new_path: new_admin_organization_path,     icon: "&#127970;" },
-        { title: "Auth Boundaries",  path: authorization_boundaries_path, new_path: new_authorization_boundary_path, icon: "&#128188;" },
-      ]
+        # An administrator screen: the card shows only where it would admit the user.
+        ({ key: :organizations, title: "Organizations", path: admin_organizations_path,
+           new_path: new_admin_organization_path, can_create: admin_access?, icon: "&#127970;" } if admin_access?),
+        { key: :authorization_boundaries, title: "Auth Boundaries", path: authorization_boundaries_path,
+          new_path: new_authorization_boundary_path, can_create: can_create_boundary?, icon: "&#128188;" },
+      ].compact
     }
   ]
 %>
@@ -123,10 +76,28 @@
           <div class="card sparc-section-card sparc-section-card--accented h-100 <%= accent_class(group[:color]) %>">
             <div class="card-body d-flex flex-row align-items-center gap-3 sparc-p-035-085">
               <div class="sparc-fs-22r sparc-flex-shrink-0"><%= s[:icon].html_safe %></div>
-              <h5 class="mb-0 flex-grow-1 sparc-fs-095"><%= s[:title] %></h5>
+              <div class="flex-grow-1 sparc-minw-0">
+                <%# flex-wrap: in a narrow card the badge wraps under the title instead
+                    of overflowing beneath the View button, which took its clicks
+                    (found by the ui-smoke gate). %>
+                <h5 class="mb-0 sparc-fs-095 d-flex flex-wrap align-items-center gap-2">
+                  <span><%= s[:title] %></span>
+                  <% count = @counts.fetch(s[:key]) %>
+                  <%= link_to number_with_delimiter(count), s[:path],
+                        class: "sparc-count-badge",
+                        data: { home_count: s[:key] },
+                        title: "Open #{s[:title]}",
+                        "aria-label": "#{number_with_delimiter(count)} #{s[:title]}: open the list" %>
+                </h5>
+                <% if s[:secondary] %>
+                  <div class="text-body-secondary sparc-fs-075" data-home-secondary="<%= s[:key] %>"><%= s[:secondary] %></div>
+                <% end %>
+              </div>
               <div class="d-flex gap-2 flex-shrink-0">
                 <%= link_to "View", s[:path], class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm px-3" %>
-                <%= link_to "New", s[:new_path], class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm px-3" %>
+                <% if s[:can_create] %>
+                  <%= link_to "New", s[:new_path], class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm px-3" %>
+                <% end %>
               </div>
             </div>
           </div>

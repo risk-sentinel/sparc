@@ -28,6 +28,11 @@ module SafeDestroyable
     before_destroy :check_deletion_dependencies
   end
 
+  # #1251 — what would refuse a destroy right now, for a screen that explains
+  # the refusal BEFORE the click (the boundary page's Delete). The same list the
+  # guard below checks, so the explanation and the refusal cannot disagree.
+  def deletion_blockers = deletion_dependencies
+
   private
 
   # Override in each model to return an array of dependency description strings.

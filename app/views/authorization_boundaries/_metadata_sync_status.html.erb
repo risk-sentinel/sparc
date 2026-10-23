@@ -9,13 +9,13 @@
   docs = boundary.linked_documents
   service = BoundaryMetadataSyncService.new(boundary)
 %>
-<div class="sparc-card sparc-mt-125r sparc-p-1r-125r">
-  <h3 class="sparc-fs-1r sparc-mb-075">
-    Document Metadata Sync
-    <span class="text-body-secondary sparc-fw-400 sparc-fs-08">
-      (boundary is the source of truth for system-level metadata)
-    </span>
-  </h3>
+<%# #1251 — a collapsible section, collapsed by default, counting the linked
+    documents. %>
+<%= render layout: "shared/collapsible_section",
+           locals: { id: "boundary-metadata-sync", title: "Metadata sync status", count: docs.size } do %>
+  <p class="text-body-secondary sparc-fs-085">
+    The boundary is the source of truth for system-level metadata.
+  </p>
 
   <% if docs.empty? %>
     <p class="text-body-secondary sparc-fs-0875">No linked documents yet.</p>
@@ -62,4 +62,4 @@
       </tbody>
     </table>
   <% end %>
-</div>
+<% end %>

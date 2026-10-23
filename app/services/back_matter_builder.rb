@@ -6,7 +6,8 @@
 #   2. Managed/imported BackMatterResource records attached to this
 #      document (resourceable: document) or linked through its
 #      controls (ControlBackMatterLink)
-#   3. SPARC identifier resource (persistent UUID per document)
+#   3. For an SSP, its authorization boundary's own back-matter (#1249)
+#   4. SPARC identifier resource (persistent UUID per document)
 #
 # As of #583 all back-matter lives in the back_matter_resources table —
 # the legacy `import_metadata["back_matter"]` stash has been promoted to
@@ -25,7 +26,7 @@ class BackMatterBuilder
   end
 
   def build
-    resources = authoritative_resources + managed_resources +
+    resources = authoritative_resources + managed_resources + boundary_resources +
                 component_definition_resources + [ sparc_resource ]
     { "resources" => resources.uniq { |r| r["uuid"] } }
   end
@@ -67,6 +68,27 @@ class BackMatterBuilder
       resource["description"] = cdef.description if cdef.description.present?
       resource
     end
+  end
+
+  # #1249 — an SSP carries its boundary's own back-matter: the diagrams,
+  # inventory, PPSM and CRM registered on the boundary page. Owner rule
+  # (2026-08-20): the SSP export carries boundary-level back-matter, referenced
+  # or not — it is the boundary's evidence set, not merely a link target. Only
+  # the SSP: a SAP, SAR or POA&M cites what it uses, and a profile is a reusable
+  # baseline that must never vary by boundary.
+  #
+  # Each resource keeps its own stored uuid, so the same boundary document is
+  # the same resource on every export.
+  def boundary_resources
+    return [] unless @document.is_a?(SspDocument)
+
+    boundary = @document.authorization_boundary
+    return [] unless boundary
+
+    boundary.back_matter_resources.active
+            .includes(EVIDENCE_INCLUDES)
+            .order(:id)
+            .map { |r| oscal_resource_for(r) }
   end
 
   # Authoritative resources (provider-published, highest priority) that THIS

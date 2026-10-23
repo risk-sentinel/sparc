@@ -6,60 +6,77 @@
 
     Four states, and `not_modelled` is the one that matters: it says SPARC
     CANNOT answer, rather than implying the boundary failed to do something.
-%>
-<div class="card mb-4">
-  <div class="card-body">
-    <div class="d-flex justify-content-between align-items-start mb-3">
-      <div>
-        <h5 class="card-title mb-1">Boundary Completeness</h5>
-        <p class="text-body-secondary small mb-0">
-          Each item links to the
-          <a href="https://github.com/risk-sentinel/sparc/wiki/Adopting-OSCAL"
-             target="_blank" rel="noopener">adoption guide</a> section that explains it.
-        </p>
-      </div>
-      <div class="text-end sparc-fs-085">
-        <% summary = readiness[:summary] %>
-        <span class="badge-ok rounded fw-semibold px-2"><%= summary[:complete] %> complete</span>
-        <% if summary[:partial].to_i.positive? %>
-          <span class="badge-warn rounded fw-semibold px-2 ms-1"><%= summary[:partial] %> partial</span>
-        <% end %>
-        <% if summary[:absent].to_i.positive? %>
-          <span class="badge-fail rounded fw-semibold px-2 ms-1"><%= summary[:absent] %> not started</span>
-        <% end %>
-        <% if summary[:optional_none].to_i.positive? %>
-          <span class="badge-neutral rounded fw-semibold px-2 ms-1"><%= summary[:optional_none] %> none (optional)</span>
-        <% end %>
-      </div>
-    </div>
 
-    <div class="table-responsive">
-      <table class="table table-sm align-middle mb-0">
-        <thead>
-          <tr class="sparc-fs-075 text-body-tertiary text-uppercase">
-            <th scope="col">Section</th>
-            <th scope="col">Status</th>
-            <th scope="col">Notes</th>
+    #1251 — a collapsible section. Open by default while the boundary is
+    Draft, and ALWAYS open then, whatever was remembered; collapsed by default
+    otherwise. The header carries the summary, so it is readable collapsed.
+    Each row's title links to where its work is done in SPARC
+    (completeness_action), shown only to someone who may act there; the
+    adoption guide is a secondary link.
+
+    Locals: readiness (the report), boundary
+%>
+<% summary = readiness[:summary] %>
+<% total = readiness[:sections].size %>
+<% draft = boundary.draft? %>
+<% summary_html = capture do %>
+  <span class="badge-ok rounded fw-semibold px-2" data-readiness-summary><%= summary[:complete] %> of <%= total %> complete</span>
+  <% if summary[:partial].to_i.positive? %>
+    <span class="badge-warn rounded fw-semibold px-2 ms-1"><%= summary[:partial] %> partial</span>
+  <% end %>
+  <% if summary[:absent].to_i.positive? %>
+    <span class="badge-fail rounded fw-semibold px-2 ms-1"><%= summary[:absent] %> not started</span>
+  <% end %>
+  <% if summary[:optional_none].to_i.positive? %>
+    <span class="badge-neutral rounded fw-semibold px-2 ms-1"><%= summary[:optional_none] %> none (optional)</span>
+  <% end %>
+<% end %>
+
+<%= render layout: "shared/collapsible_section",
+           locals: { id: "boundary-completeness", title: "Boundary Completeness",
+                     summary: summary_html, open: draft, pinned_open: draft } do %>
+  <p class="text-body-secondary small mb-2">
+    Each item links to where its work is done in SPARC. The
+    <a href="https://github.com/risk-sentinel/sparc/wiki/Adopting-OSCAL" target="_blank" rel="noopener">adoption guide</a>
+    explains each one.
+  </p>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead>
+        <tr class="sparc-fs-075 text-body-tertiary text-uppercase">
+          <th scope="col">Section</th>
+          <th scope="col">Status</th>
+          <th scope="col">Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% readiness[:sections].each do |section| %>
+          <% action = completeness_action(section, boundary) %>
+          <tr data-readiness-row="<%= section[:key] %>">
+            <td class="fw-semibold">
+              <% if action && action.prerequisite.nil? %>
+                <% link_data = { readiness_action: section[:key] } %>
+                <% link_data[:action] = "collapse-memory#reveal" if same_page_anchor(action.path) %>
+                <%= link_to section[:title], action.path, class: "text-decoration-none", data: link_data %>
+              <% else %>
+                <%= section[:title] %>
+                <% if action %>
+                  <%= link_to action.prerequisite, action.path,
+                        class: "small fw-normal ms-1", data: { readiness_action: section[:key], readiness_prerequisite: true } %>
+                <% end %>
+              <% end %>
+              <a href="https://github.com/risk-sentinel/sparc/wiki/Adopting-OSCAL#<%= section[:guide_anchor] %>"
+                 target="_blank" rel="noopener" class="small fw-normal text-body-secondary ms-1"
+                 title="Adoption guide: <%= section[:title] %>">Guide&nbsp;&#8599;</a>
+            </td>
+            <td class="text-nowrap sparc-w-150px">
+              <% badge, label = readiness_badge(section[:status], section[:key]) %>
+              <span class="<%= badge %> rounded fw-semibold px-2 sparc-fs-075"><%= label %></span>
+            </td>
+            <td class="text-body-secondary sparc-fs-085"><%= section[:detail] %></td>
           </tr>
-        </thead>
-        <tbody>
-          <% readiness[:sections].each do |section| %>
-            <tr>
-              <td class="fw-semibold">
-                <a href="https://github.com/risk-sentinel/sparc/wiki/Adopting-OSCAL#<%= section[:guide_anchor] %>"
-                   target="_blank" rel="noopener" class="text-decoration-none">
-                  <%= section[:title] %>
-                </a>
-              </td>
-              <td class="text-nowrap sparc-w-150px">
-                <% badge, label = readiness_badge(section[:status], section[:key]) %>
-                <span class="<%= badge %> rounded fw-semibold px-2 sparc-fs-075"><%= label %></span>
-              </td>
-              <td class="text-body-secondary sparc-fs-085"><%= section[:detail] %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
+        <% end %>
+      </tbody>
+    </table>
   </div>
-</div>
+<% end %>

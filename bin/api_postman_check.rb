@@ -56,6 +56,7 @@ CONTROLLER_TO_FOLDER = {
   "authorization_boundary_memberships" => "Boundary Memberships",
   "back_matter_resources"              => "Back-Matter Resources",
   "baseline_parameters"                => "Baseline Parameters",
+  "boundary_back_matter_resources"     => "Back-Matter Resources",
   "catalog_controls"                   => "Catalog Controls",
   "cdef_coverage"                      => "CDEF Coverage",
   "cdef_documents"                     => "CDEF Documents",

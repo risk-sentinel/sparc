@@ -91,6 +91,53 @@ class TestIndex:
         assert_error_envelope(anon_client.get(PATH), expected_status=401)
 
 
+class TestSort:
+    """#1248 — ?sort=next_decision|-next_decision, the boundary list's sort.
+
+    Dates are ISO strings, so order by the date; boundaries with no date come
+    last in BOTH directions. An unknown sort is refused, not ignored.
+    """
+
+    def _with_dates(self, admin_client: httpx.Client) -> list[dict[str, Any]]:
+        tag = uuid.uuid4().hex[:8]
+        made = []
+        for label, date in (("b", "2031-06-01"), ("a", "2030-01-15"), ("c", None)):
+            body = _new_payload(name=f"phase2-sort-{tag}-{label}")
+            if date:
+                body["authorization_boundary"]["next_decision_date"] = date
+            response = admin_client.post(PATH, json=body)
+            assert response.status_code == 201, response.text
+            made.append(response.json()["data"])
+        return made
+
+    def _names(self, admin_client: httpx.Client, sort: str, tag_prefix: str) -> list[str]:
+        response = admin_client.get(PATH, params={"sort": sort, "q": tag_prefix, "items": 200})
+        assert response.status_code == 200, response.text
+        rows = response.json()["data"]
+        return [row["name"] for row in rows if row["name"].startswith(tag_prefix)]
+
+    @pytest.mark.happy
+    def test_next_decision_both_directions_with_empty_dates_last(
+        self, admin_client: httpx.Client
+    ) -> None:
+        made = self._with_dates(admin_client)
+        prefix = made[0]["name"].rsplit("-", 1)[0]
+        try:
+            ascending = self._names(admin_client, "next_decision", prefix)
+            descending = self._names(admin_client, "-next_decision", prefix)
+            assert [n[-1] for n in ascending] == ["a", "b", "c"], ascending
+            assert [n[-1] for n in descending] == ["b", "a", "c"], descending
+        finally:
+            for record in made:
+                _delete(admin_client, record["id"])
+
+    @pytest.mark.validation
+    def test_unknown_sort_is_refused(self, admin_client: httpx.Client) -> None:
+        response = admin_client.get(PATH, params={"sort": "name; drop table users"})
+        assert response.status_code == 422, response.text
+        assert "next_decision" in " ".join(response.json()["details"])
+
+
 class TestShow:
     @pytest.mark.happy
     def test_admin_shows_boundary(

@@ -125,6 +125,9 @@ Rails.application.routes.draw do
         post :populate
       end
     end
+    # #1249 — boundary-level back-matter (diagrams, inventory, PPSM, CRM), from
+    # the boundary page's Back Matter section.
+    resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
 
   resources :ssp_documents do
@@ -1047,6 +1050,10 @@ Rails.application.routes.draw do
             post :populate
           end
         end
+        # #1249 — the boundary's own back-matter, the API side of the boundary
+        # page's Back Matter section.
+        resources :back_matter_resources, only: [ :index, :create, :update, :destroy ],
+                  controller: "boundary_back_matter_resources"
         # #770 bug 6 — assign/move/clear the boundary's organization, enforcing
         # the org-admin authorization matrix (instance admin may move; org_admin
         # may attach an unassigned boundary only).

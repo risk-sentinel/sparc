@@ -1,41 +1,112 @@
-<div class="d-flex justify-content-between align-items-start mb-3">
-  <div>
-    <h2 class="mb-1"><%= @authorization_boundary.name %></h2>
-    <%# #1180 — the boundary UUID was visible on NO screen, yet it is the
-        identifier the federation key grammar keys objects on and the value
-        sparc-horizon joins against. Under the name, same treatment as the
-        organization header. %>
-    <%= render "shared/uuid_badge", uuid: @authorization_boundary.uuid, label: "UUID", name: "boundary UUID" %>
-  </div>
-  <div class="d-flex gap-2">
-    <% if signed_in? %>
-      <%= link_to "Build ATO Package",
-            ato_wizard_authorization_boundary_path(@authorization_boundary),
-            class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm" %>
-      <%# #447 — HDF Amendment triage for scanner findings on this boundary. %>
-      <%= link_to "Amendments",
-            triage_authorization_boundary_path(@authorization_boundary),
-            class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
-      <%# #904 — "what CDEFs does this boundary need?", answered from the
-          Terraform it is built from. Its primary home is here, on the boundary,
-          because that is the question being asked. %>
-      <%= link_to "CDEF Coverage",
-            new_cdef_coverage_path(authorization_boundary_id: @authorization_boundary.id),
-            class: "btn btn-outline-info btn-sm" %>
-      <% has_documents = @authorization_boundary.ssp_document.present? ||
-                         @authorization_boundary.sap_document.present? ||
-                         @authorization_boundary.sar_document.present? ||
-                         @authorization_boundary.poam_documents.any? %>
-      <% if has_documents %>
-        <%= link_to "Download ATO Package",
-              download_ato_package_authorization_boundary_path(@authorization_boundary),
-              class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm" %>
+<%# #1251 — the boundary page says what the boundary IS before what it lacks.
+
+    Order: header (name, status, key ATO facts, description), the multiple-SSP
+    warning, Boundary Completeness, Artifact Summary, Environments &
+    Components, Personnel Roster, Evidence, Back Matter (#1249), Leveraged
+    Authorizations, Metadata sync status.
+
+    Every section after the warning is a shared/_collapsible_section with a
+    count in its header. Defaults: Completeness open while the boundary is
+    Draft (and always open then), collapsed otherwise; Artifact Summary open;
+    the rest collapsed. collapse-memory remembers a person's choice per
+    section across every boundary's page.
+
+    An action appears only to someone its controller would admit (#1247). %>
+<% boundary = @authorization_boundary %>
+<% may_edit = can_edit_boundary?(boundary) %>
+<div data-controller="collapse-memory" data-collapse-memory-key-value="boundary-page">
+
+<%# ── Header ─────────────────────────────────────────────────── %>
+<header class="mb-3">
+  <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+    <div class="sparc-minw-0">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <h2 class="mb-0"><%= boundary.name %></h2>
+        <span class="sparc-status sparc-status--<%= ab_status_variant(boundary.status) %>" data-boundary-status>
+          <%= boundary.status.titleize %>
+        </span>
+      </div>
+      <%# #1180 — the boundary UUID, the identifier the federation key grammar
+          keys objects on and sparc-horizon joins against. %>
+      <%= render "shared/uuid_badge", uuid: boundary.uuid, label: "UUID", name: "boundary UUID" %>
+      <p class="text-body-secondary mt-2 mb-1"><%= boundary.description.presence || "No description." %></p>
+      <% if boundary.authorization_boundary_description.present? %>
+        <p class="text-body-secondary small mb-1">
+          <strong>Authorization boundary:</strong> <%= boundary.authorization_boundary_description %>
+        </p>
       <% end %>
+      <% ao = boundary.authorizing_official.presence ||
+              @personnel.find { |p| p.role_label.to_s.casecmp?("Authorizing Official") }&.name %>
+      <dl class="sparc-boundary-facts mt-2 mb-0">
+        <div><dt>Authorization status</dt><dd data-boundary-fact="authorization_status"><%= boundary.authorization_status.presence || "—" %></dd></div>
+        <div><dt>Next decision</dt><dd data-boundary-fact="next_decision"><%= next_decision_badge(boundary) %></dd></div>
+        <div><dt>Authorizing official</dt><dd data-boundary-fact="authorizing_official"><%= ao.presence || "—" %></dd></div>
+      </dl>
+    </div>
+
+    <% if signed_in? %>
+      <div class="d-flex gap-2 align-items-start flex-shrink-0">
+        <% if may_edit %>
+          <%= link_to "Build ATO Package", ato_wizard_authorization_boundary_path(boundary),
+                class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm",
+                data: { boundary_action: "build_ato_package" } %>
+        <% end %>
+
+        <%# Bootstrap's dropdown (data-bs-toggle); no inline handlers. %>
+        <div class="dropdown">
+          <button type="button" class="sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm dropdown-toggle"
+                  data-bs-toggle="dropdown" aria-expanded="false" id="boundary-more-menu" data-boundary-action="more">
+            More
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="boundary-more-menu">
+            <%# #447 — HDF Amendment triage for scanner findings on this boundary. %>
+            <% if boundary_permission?("evidence.read", boundary) %>
+              <li><%= link_to "Amendments", triage_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "amendments" } %></li>
+            <% end %>
+            <%# #904 — which CDEFs this boundary needs, from the Terraform it is built from. %>
+            <% if !SparcConfig.any_auth_enabled? || current_user&.has_permission?("cdef.read") %>
+              <li><%= link_to "CDEF Coverage", new_cdef_coverage_path(authorization_boundary_id: boundary.id), class: "dropdown-item", data: { boundary_action: "cdef_coverage" } %></li>
+            <% end %>
+            <% has_documents = boundary.ssp_document.present? || boundary.sap_document.present? ||
+                               boundary.sar_document.present? || boundary.poam_documents.any? %>
+            <% if has_documents %>
+              <li><%= link_to "Download ATO Package", download_ato_package_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "download_ato_package" } %></li>
+            <% end %>
+            <% if may_edit || can_delete_boundary? %>
+              <li><hr class="dropdown-divider"></li>
+            <% end %>
+            <% if may_edit %>
+              <li><%= link_to "Edit", edit_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "edit" } %></li>
+            <% end %>
+            <% if can_delete_boundary? %>
+              <%# #629 — the guard refuses a delete while SSP/SAP/SAR/POA&M
+                  documents are attached; say so before the click rather than
+                  after it. deletion_blockers is the list the guard checks. %>
+              <% blockers = boundary.deletion_blockers %>
+              <% if blockers.any? %>
+                <li>
+                  <span class="dropdown-item disabled" aria-disabled="true" data-boundary-action="delete_refused">
+                    Delete
+                    <span class="sparc-menu-note">Cannot delete while linked to <%= blockers.to_sentence %>. Detach or delete those first.</span>
+                  </span>
+                </li>
+              <% else %>
+                <li>
+                  <%= button_to "Delete", authorization_boundary_path(boundary), method: :delete,
+                        class: "dropdown-item text-danger",
+                        data: { boundary_action: "delete" },
+                        form: { data: { turbo_confirm: "Delete '#{boundary.name}'? This cannot be undone." } } %>
+                </li>
+              <% end %>
+            <% end %>
+            <li><hr class="dropdown-divider"></li>
+            <li><%= link_to "All Authorization Boundaries", authorization_boundaries_path, class: "dropdown-item", data: { boundary_action: "all_boundaries" } %></li>
+          </ul>
+        </div>
+      </div>
     <% end %>
-    <%= link_to "Edit", edit_authorization_boundary_path(@authorization_boundary), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
-    <%= link_to "All Authorization Boundaries", authorization_boundaries_path, class: "btn btn-outline-primary btn-sm" %>
   </div>
-</div>
+</header>
 
 <% if @linked_ssps.size > 1 %>
   <%# More than one SSP claims this boundary; the SSP tile below shows only
@@ -53,198 +124,176 @@
   </div>
 <% end %>
 
-<%# ── Boundary Completeness (#940) — inline, above the details, because a team
-      onboarding needs to see what is missing before they read what is there. %>
-<%= render "readiness", readiness: @readiness %>
-
-<%# ── Authorization Boundary Details ──────────────────────────────────────── %>
-<div class="card mb-4">
-  <div class="card-body">
-    <div class="row">
-      <div class="col-md-6">
-        <p class="mb-1"><strong>Status:</strong>
-          <% badge_class = @authorization_boundary.authorized? ? "badge-ok" : "badge-warn" %>
-          <span class="<%= badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
-            <%= @authorization_boundary.status.titleize %>
-          </span>
-        </p>
-        <p class="mb-1 text-body-secondary"><%= @authorization_boundary.description.presence || "No description." %></p>
-      </div>
-      <div class="col-md-6">
-        <% if @authorization_boundary.authorization_boundary_description.present? %>
-          <p class="mb-1"><strong>Authorization Boundary:</strong></p>
-          <p class="text-body-secondary"><%= @authorization_boundary.authorization_boundary_description %></p>
-        <% end %>
-      </div>
-    </div>
-  </div>
-</div>
+<%# ── Boundary Completeness (#940) ─────────────────────────────── %>
+<%= render "readiness", readiness: @readiness, boundary: boundary %>
 
 <%# ── Artifact Summary ─────────────────────────────────────── %>
-<div class="card mb-4">
-  <div class="card-body">
-    <h4 class="mb-3">Artifact Summary</h4>
-    <%# #770 bug 4 — every tile is the same size and a clickable link. Single
-        artifacts (SSP/SAP/SAR) link to the document when present, else to the
-        attach screen; POA&Ms (many) show a count and link to the index.
-        #929 — "Add…" used to link to the unfiltered index of every document of
-        that type, dropping the boundary context entirely, so the tile promised
-        an action it could not perform. It now leads to a screen that can
-        actually attach a document to THIS boundary. %>
-    <div class="row row-cols-2 row-cols-md-4 g-3">
-      <% single_artifacts = [
-           { label: "SSP", doc: @authorization_boundary.ssp_document,
-             index: attach_document_authorization_boundary_path(@authorization_boundary, type: "ssp") },
-           { label: "SAP", doc: @authorization_boundary.sap_document,
-             index: attach_document_authorization_boundary_path(@authorization_boundary, type: "sap") },
-           { label: "SAR", doc: @authorization_boundary.sar_document,
-             index: attach_document_authorization_boundary_path(@authorization_boundary, type: "sar") }
-         ] %>
-      <% single_artifacts.each do |a| %>
-        <div class="col">
-          <%= link_to (a[:doc] ? polymorphic_path(a[:doc]) : a[:index]),
-                class: "sparc-hero-tile-link d-block text-decoration-none" do %>
-            <div class="sparc-hero-tile">
-              <div class="sparc-hero-tile-label"><%= a[:label] %></div>
-              <div class="sparc-hero-tile-count" style="font-size: 1rem;">
-                <% if a[:doc] %>
-                  <%= a[:doc].name %>
-                <% else %>
-                  <span class="text-body-secondary">Add…</span>
-                <% end %>
-              </div>
-            </div>
-          <% end %>
-        </div>
-      <% end %>
+<% single_artifacts = [
+     { label: "SSP", doc: boundary.ssp_document,
+       index: attach_document_authorization_boundary_path(boundary, type: "ssp") },
+     { label: "SAP", doc: boundary.sap_document,
+       index: attach_document_authorization_boundary_path(boundary, type: "sap") },
+     { label: "SAR", doc: boundary.sar_document,
+       index: attach_document_authorization_boundary_path(boundary, type: "sar") }
+   ] %>
+<% poam_count = @summary[:poam_count].to_i %>
+<%= render layout: "shared/collapsible_section",
+           locals: { id: "boundary-artifacts", title: "Artifact Summary", open: true,
+                     count: single_artifacts.count { |a| a[:doc] } + poam_count } do %>
+  <%# #770 bug 4 — every tile is the same size and a clickable link. Single
+      artifacts (SSP/SAP/SAR) link to the document when present, else to the
+      attach screen; POA&Ms (many) show a count and link to the index.
+      #929 — "Add…" leads to a screen that attaches a document to THIS boundary. %>
+  <div class="row row-cols-2 row-cols-md-4 g-3">
+    <% single_artifacts.each do |a| %>
       <div class="col">
-        <%# #929 — POA&Ms are many, so the tile keeps its count and its link to
-            the index. With none attached it behaves like the other tiles and
-            leads somewhere that can attach one. %>
-        <% poam_count = @summary[:poam_count] %>
-        <%= link_to (poam_count.to_i.zero? ?
-                      attach_document_authorization_boundary_path(@authorization_boundary, type: "poam") :
-                      BoundaryScopedList.path(:poam, @authorization_boundary)), # #1250 — keeps the boundary
+        <%= link_to (a[:doc] ? polymorphic_path(a[:doc]) : a[:index]),
               class: "sparc-hero-tile-link d-block text-decoration-none" do %>
-          <div class="sparc-hero-tile">
-            <div class="sparc-hero-tile-label">POA&amp;Ms</div>
+          <div class="sparc-hero-tile sparc-hero-tile--on-light">
+            <div class="sparc-hero-tile-label"><%= a[:label] %></div>
             <div class="sparc-hero-tile-count" style="font-size: 1rem;">
-              <% if poam_count.to_i.zero? %>
-                <span class="text-body-secondary">Add…</span>
+              <% if a[:doc] %>
+                <%= a[:doc].name %>
               <% else %>
-                <%= poam_count %>
+                <span class="text-body-secondary">Add…</span>
               <% end %>
             </div>
           </div>
         <% end %>
       </div>
-    </div>
-  </div>
-</div>
-
-<%# ── Environments & Components ────────────────────────────── %>
-<div class="card mb-4">
-  <div class="card-body">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">Environments &amp; Components</h4>
-      <%= link_to "Add Environment", new_authorization_boundary_boundary_path(@authorization_boundary), class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
-    </div>
-
-    <% if @boundaries.any? %>
-      <% @boundaries.each do |boundary| %>
-        <div class="card mb-2">
-          <div class="card-body py-2">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <strong><%= boundary.name %></strong>
-                <span class="badge bg-secondary ms-2"><%= boundary.environment_label %></span>
-                <% if boundary.description.present? %>
-                  <span class="text-body-secondary ms-2"><%= boundary.description %></span>
-                <% end %>
-              </div>
-              <div class="d-flex gap-1">
-                <%= link_to "Edit", edit_authorization_boundary_boundary_path(@authorization_boundary, boundary), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
-                <%= button_to "Delete", authorization_boundary_boundary_path(@authorization_boundary, boundary), method: :delete,
-                      class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
-                      form: { data: { turbo_confirm: "Delete this environment? This cannot be undone." }, style: "display: inline;" } %>
-              </div>
-            </div>
-            <% if boundary.cdef_documents.any? %>
-              <div class="mt-2">
-                <% boundary.cdef_documents.each do |cdef| %>
-                  <%= link_to cdef.name, cdef_document_path(cdef), class: "badge badge-info text-decoration-none me-1" %>
-                <% end %>
-              </div>
+    <% end %>
+    <div class="col">
+      <%# #929 — POA&Ms are many, so the tile keeps its count and its link to
+          the index. With none attached it leads somewhere that can attach one. %>
+      <%= link_to (poam_count.zero? ?
+                    attach_document_authorization_boundary_path(boundary, type: "poam") :
+                    BoundaryScopedList.path(:poam, boundary)), # #1250 — keeps the boundary
+            class: "sparc-hero-tile-link d-block text-decoration-none" do %>
+        <div class="sparc-hero-tile sparc-hero-tile--on-light">
+          <div class="sparc-hero-tile-label">POA&amp;Ms</div>
+          <div class="sparc-hero-tile-count" style="font-size: 1rem;">
+            <% if poam_count.zero? %>
+              <span class="text-body-secondary">Add…</span>
             <% else %>
-              <small class="text-body-secondary mt-1 d-block">No components assigned</small>
+              <%= poam_count %>
             <% end %>
           </div>
         </div>
       <% end %>
-    <% else %>
-      <p class="text-body-secondary text-center">No environments defined. Add an environment to associate components.</p>
-    <% end %>
+    </div>
   </div>
-</div>
+<% end %>
+
+<%# ── Environments & Components ────────────────────────────── %>
+<%= render layout: "shared/collapsible_section",
+           locals: { id: "boundary-environments", title: "Environments & Components", count: @boundaries.size,
+                     actions: (link_to("Add Environment", new_authorization_boundary_boundary_path(boundary),
+                                       class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm") if may_edit) } do %>
+  <% if @boundaries.any? %>
+    <% @boundaries.each do |environment| %>
+      <div class="card mb-2">
+        <div class="card-body py-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong><%= environment.name %></strong>
+              <span class="badge bg-secondary ms-2"><%= environment.environment_label %></span>
+              <% if environment.description.present? %>
+                <span class="text-body-secondary ms-2"><%= environment.description %></span>
+              <% end %>
+            </div>
+            <% if may_edit %>
+              <div class="d-flex gap-1">
+                <%= link_to "Edit", edit_authorization_boundary_boundary_path(boundary, environment), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
+                <%= button_to "Delete", authorization_boundary_boundary_path(boundary, environment), method: :delete,
+                      class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
+                      form: { data: { turbo_confirm: "Delete this environment? This cannot be undone." }, style: "display: inline;" } %>
+              </div>
+            <% end %>
+          </div>
+          <% if environment.cdef_documents.any? %>
+            <div class="mt-2">
+              <% environment.cdef_documents.each do |cdef| %>
+                <%= link_to cdef.name, cdef_document_path(cdef), class: "badge badge-info text-decoration-none me-1" %>
+              <% end %>
+            </div>
+          <% else %>
+            <small class="text-body-secondary mt-1 d-block">No components assigned</small>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <p class="text-body-secondary text-center mb-0">No environments defined. Add an environment to associate components.</p>
+  <% end %>
+<% end %>
 
 <%# ── Personnel Roster ─────────────────────────────────────── %>
-<div class="card mb-4">
-  <div class="card-body">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">Personnel Roster</h4>
-      <%= link_to "Add Member", new_authorization_boundary_membership_path(@authorization_boundary), class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
-    </div>
+<% may_manage_members = boundary_permission?("authorization_boundaries.manage_members", boundary) %>
+<%= render layout: "shared/collapsible_section",
+           locals: { id: "boundary-personnel", title: "Personnel Roster", count: boundary.people_count,
+                     actions: (link_to("Add Member", new_authorization_boundary_membership_path(boundary),
+                                       class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm") if may_manage_members) } do %>
+  <%# #869 — shared with the add-member screen. %>
+  <%= render "authorization_boundaries/roster_table",
+        personnel: @personnel, boundary: boundary, actions: may_manage_members %>
+<% end %>
 
-    <%# #869 — extracted so the add-member screen shows the same roster. %>
-    <%= render "authorization_boundaries/roster_table",
-          personnel: @personnel, boundary: @authorization_boundary, actions: true %>
-  </div>
-</div>
-
-<%# ── Boundary Artifacts (back-matter) ─────────────────────── %>
-<%# #770 bug 5 — evidence artifacts tied to this boundary. They already flow
-    into OSCAL back-matter (evidence -> back_matter_resource); this surfaces
-    add/list on the boundary screen. %>
-<div class="card mb-4">
-  <div class="card-body">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">Artifacts</h4>
-      <%= link_to "Add Artifact",
-            new_evidence_path(authorization_boundary_id: @authorization_boundary.id),
-            class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
-    </div>
-
-    <% if @evidences.any? %>
-      <table class="table table-hover mb-0">
-        <thead>
+<%# ── Evidence ─────────────────────────────────────────────── %>
+<%# #770 bug 5 — evidence tied to this boundary; it flows into OSCAL back-matter
+    (evidence -> back_matter_resource). #1251 — called "Evidence", as the
+    Completeness checklist calls it; "Artifacts" read as the same thing as the
+    Artifact Summary above. %>
+<%= render layout: "shared/collapsible_section",
+           locals: { id: "boundary-evidence", title: "Evidence", count: @evidences.size,
+                     actions: (link_to("Add Evidence", new_evidence_path(authorization_boundary_id: boundary.id),
+                                       class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm") if boundary_permission?("evidence.write", boundary)) } do %>
+  <% if @evidences.any? %>
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>File</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @evidences.each do |ev| %>
           <tr>
-            <th>Title</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>File</th>
+            <td><%= link_to ev.title, evidence_path(ev) %></td>
+            <td><span class="badge bg-secondary"><%= ev.type_label %></span></td>
+            <td><span class="badge bg-primary"><%= ev.status_label %></span></td>
+            <td class="text-body-secondary">
+              <%= ev.file.attached? ? (ev.original_filename.presence || "attached") : "—" %>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          <% @evidences.each do |ev| %>
-            <tr>
-              <td><%= link_to ev.title, evidence_path(ev) %></td>
-              <td><span class="badge bg-secondary"><%= ev.type_label %></span></td>
-              <td><span class="badge bg-primary"><%= ev.status_label %></span></td>
-              <td class="text-body-secondary">
-                <%= ev.file.attached? ? (ev.original_filename.presence || "attached") : "—" %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    <% else %>
-      <p class="text-body-secondary text-center mb-0">No artifacts attached. Add evidence to include it in this boundary's OSCAL back-matter.</p>
-    <% end %>
-  </div>
-</div>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-body-secondary text-center mb-0">No evidence attached. Add evidence to include it in this boundary's OSCAL back-matter.</p>
+  <% end %>
+<% end %>
+
+<%# ── Back Matter (#1249) ─────────────────────────────────── %>
+<%# The boundary's OWN back-matter (diagrams, inventory, PPSM, CRM), which the
+    Completeness row "Back-matter documents" counts and the SSP export carries.
+    Editable in any boundary status (owner). %>
+<% if can_read_boundary_back_matter?(boundary) %>
+  <%= render layout: "shared/collapsible_section",
+             locals: { id: "boundary-back-matter", title: "Back Matter",
+                       count: boundary.back_matter_resources.count } do %>
+    <%= render "shared/oscal_back_matter_section",
+          document: boundary, bare: true,
+          resources_path: authorization_boundary_back_matter_resources_path(boundary),
+          editable: can_write_boundary_back_matter?(boundary) %>
+  <% end %>
+<% end %>
+
+<%# #396: Leveraged Authorizations %>
+<%= render "leveraged_authorizations_card", boundary: boundary %>
 
 <%# #395 P3: per-document metadata sync status (green / yellow / red dots) %>
-<%= render "metadata_sync_status", boundary: @authorization_boundary %>
+<%= render "metadata_sync_status", boundary: boundary %>
 
-<%# #396: Leveraged Authorizations card %>
-<%= render "leveraged_authorizations_card", boundary: @authorization_boundary %>
+</div>

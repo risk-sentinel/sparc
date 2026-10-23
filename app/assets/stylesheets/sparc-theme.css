@@ -4284,3 +4284,145 @@ a.link-purple { color: var(--sparc-purple); }
   max-height: 18rem;
   overflow-y: auto;
 }
+
+/* #1243 — the count on a homepage layer card. A link to the same page as the
+   card's View button, so it reads as a pill that can be clicked, coloured by
+   the card's accent. */
+.sparc-count-badge {
+  display: inline-block;
+  min-width: 1.6rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+  color: var(--bs-body-color);
+  background: color-mix(in srgb, var(--sparc-accent, var(--bs-secondary)) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sparc-accent, var(--bs-secondary)) 45%, transparent);
+}
+.sparc-count-badge:hover,
+.sparc-count-badge:focus-visible {
+  background: color-mix(in srgb, var(--sparc-accent, var(--bs-secondary)) 32%, transparent);
+  color: var(--bs-body-color);
+}
+
+/* #1248 — a sortable column header on the boundary list: reads as the header
+   it is, with the sort direction beside it. */
+.sparc-sort-link {
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.sparc-sort-link:hover,
+.sparc-sort-link:focus-visible {
+  text-decoration: underline;
+}
+
+/* #1251 — one collapsible page section (shared/_collapsible_section). The
+   heading is a button, so the whole title row toggles and is keyboard
+   reachable; the chevron turns with Bootstrap's `collapsed` class, which
+   collapse_memory_controller.js keeps in step with remembered state. */
+.sparc-collapsible__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.6rem 1rem;
+}
+.sparc-collapsible__heading {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.sparc-collapsible__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.sparc-collapsible__toggle:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+.sparc-collapsible__chevron::before {
+  content: "\25BE"; /* ▾ open */
+  display: inline-block;
+  width: 1rem;
+  transition: transform 0.15s;
+}
+.sparc-collapsible__toggle.collapsed .sparc-collapsible__chevron::before {
+  transform: rotate(-90deg);
+}
+.sparc-collapsible__count {
+  color: var(--bs-secondary-color);
+  font-weight: 500;
+}
+.sparc-collapsible__summary {
+  font-size: 0.85rem;
+}
+.sparc-collapsible__actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.sparc-collapsible__body {
+  padding: 0 1rem 1rem;
+}
+/* #1251 — the section supplies its own head/body padding. `.card` adds 2rem on
+   every side, which made a collapsed section ~100px tall for one line. */
+.card.sparc-collapsible {
+  padding: 0;
+}
+
+/* #1251 — artifact tiles on a LIGHT card (the boundary page). The base tile is
+   styled for the dark gradient hero (translucent white, 75% white label), so
+   on a white card the labels "SSP", "SAP", "SAR" and "POA&Ms" disappeared. */
+.sparc-hero-tile--on-light {
+  background: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+}
+.sparc-hero-tile-link:hover .sparc-hero-tile--on-light {
+  background: var(--bs-secondary-bg);
+}
+.sparc-hero-tile--on-light .sparc-hero-tile-label {
+  color: var(--bs-secondary-color);
+  font-weight: 600;
+}
+
+/* #1251 — the boundary page header: what the boundary IS, before what it lacks. */
+.sparc-boundary-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1.25rem;
+  font-size: 0.9rem;
+}
+.sparc-boundary-facts dt {
+  display: inline;
+  font-weight: 600;
+  color: var(--bs-secondary-color);
+  margin-right: 0.3rem;
+}
+.sparc-boundary-facts dd {
+  display: inline;
+  margin: 0;
+}
+.sparc-boundary-facts > div { white-space: nowrap; }
+
+/* A disabled menu item that explains itself (a Delete the guard would refuse). */
+.sparc-menu-note {
+  display: block;
+  max-width: 22rem;
+  white-space: normal;
+  font-size: 0.8rem;
+  color: var(--bs-secondary-color);
+}
