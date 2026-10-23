@@ -14,7 +14,7 @@ gem "propshaft"
 # system libpq it uses Red Hat's patched libpq and openssl-libs, which errata
 # reach and scanners inventory. Needs `pg_config` to build: postgresql-devel in
 # the image builder, libpq-dev in CI, Postgres.app locally.
-gem "pg", "~> 1.1", force_ruby_platform: true
+gem "pg", "~> 1.7", force_ruby_platform: true
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 # Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
@@ -35,12 +35,12 @@ gem "roo", "~> 3.0.0"              # .xlsx file parsing (MIT)
 gem "rubyzip", "~> 3.7.0"          # ZIP file handling
 gem "activerecord-import"           # Bulk imports
 gem "caxlsx", "~> 4.5"             # Excel .xlsx generation
-gem "pagy", "~> 43.6"              # Pagination
+gem "pagy", "~> 43.8"              # Pagination
 gem "sidekiq"                       # Background jobs
 gem "redis", "~> 6.0"              # For Sidekiq
 gem "aws-sdk-s3"                    # File storage
-gem "aws-sdk-secretsmanager", "~> 1.136"  # Secrets Manager (ECS deployments)
-gem "aws-sdk-rds", "~> 1.323"           # IAM DB auth token generation
+gem "aws-sdk-secretsmanager", "~> 1.137"  # Secrets Manager (ECS deployments)
+gem "aws-sdk-rds", "~> 1.325"           # IAM DB auth token generation
 gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 # #620 / #1065 — pin patched versions of Ruby DEFAULT gems so Bundler loads them
 # instead of the copy Ruby ships. Two independent layers, and both are wanted:
@@ -92,7 +92,7 @@ gem "omniauth_openid_connect", "~> 0.8"        # Generic OIDC (Okta, Keycloak, E
 # < 2.14.4 calls `JSON.parse(body, {})` in its JSON response middleware. That
 # raised on every OIDC discovery request and broke OIDC sign-in in v1.17.0.
 gem "faraday", ">= 2.14.4"
-gem "net-ldap", "~> 0.19"                      # LDAP authentication
+gem "net-ldap", "~> 0.21"                      # LDAP authentication
 gem "jwt", "~> 3.3"                            # JWT decoding for OIDC API token validation
 gem "webauthn", "~> 3.1"                       # FIDO2/WebAuthn passwordless + 2FA (#779)
 # Pin the openssl *gem* (the thin Ruby binding, NOT the OpenSSL C library) to the
