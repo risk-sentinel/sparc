@@ -443,7 +443,7 @@ class SapDocumentsController < ApplicationController
   end
 
   def document_metadata_params
-    permitted = params.require(:sap_document).permit(:name, :sap_version, :oscal_version, :description,
+    permitted = params.require(:sap_document).permit(:name, :sap_version, :oscal_version, :description, :published,
       :assessment_type, :assessment_start, :assessment_end,
       # #929 — permitted by Api::V1 all along, but not here.
       :authorization_boundary_id)

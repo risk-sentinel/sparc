@@ -97,16 +97,9 @@
 
       <% if signed_in? %>
         <div class="sparc-d-none" id="doc-meta-edit" data-doc-meta-target="edit">
-          <%= form_with url: update_metadata_cdef_document_path(@cdef_document), method: :patch, local: true do |f| %>
-            <div class="d-flex gap-2 align-items-center flex-wrap">
-              <%= f.text_field :name, value: @cdef_document.name,
-                    class: "sparc-input-dark sparc-input-dark-lg" %>
-              <%= f.text_field :cdef_version, value: @cdef_document.cdef_version, placeholder: "Version",
-                    class: "sparc-input-dark sparc-input-dark-sm" %>
-              <%= f.submit "Save", class: "sparc-action sparc-action--primary sparc-action--solid" %>
-              <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--neutral sparc-action--ghost">Cancel</button>
-            </div>
-          <% end %>
+          <%= render "shared/document_name_form", document: @cdef_document,
+                update_path: update_metadata_cdef_document_path(@cdef_document),
+                version_field: :cdef_version %>
         </div>
       <% end %>
 

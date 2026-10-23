@@ -763,7 +763,7 @@ class SarDocumentsController < ApplicationController
 
   def document_metadata_params
     # #929 — permitted by Api::V1 all along, but not here.
-    permitted = params.require(:sar_document).permit(:name, :sar_version, :oscal_version, :description,
+    permitted = params.require(:sar_document).permit(:name, :sar_version, :oscal_version, :description, :published,
       :authorization_boundary_id)
     merge_metadata_extra(permitted, :sar_document)
   end

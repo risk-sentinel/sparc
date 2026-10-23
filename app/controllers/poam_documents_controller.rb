@@ -316,7 +316,7 @@ class PoamDocumentsController < ApplicationController
 
   def document_metadata_params
     # #929 — permitted by Api::V1 all along, but not here.
-    permitted = params.require(:poam_document).permit(:name, :poam_version, :oscal_version, :description,
+    permitted = params.require(:poam_document).permit(:name, :poam_version, :oscal_version, :description, :published,
       :authorization_boundary_id)
     merge_metadata_extra(permitted, :poam_document)
   end

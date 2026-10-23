@@ -1,0 +1,23 @@
+<%# #1267 — the one name/version form every document's show page renders.
+    Locals:
+      document      — the document being renamed
+      update_path   — its update_metadata path
+      version_field — its version column (:profile_version, :ssp_version, ...)
+
+    The fields are scoped to the document's param key, which is what each
+    controller's `params.require(<type>_document)` reads. Five pages each had
+    their own copy built with `form_with url:` alone, which submits the fields
+    unwrapped, so every rename and version change was refused with a 400. %>
+<%= form_with url: update_path, scope: document.model_name.param_key, method: :patch, local: true,
+      html: { data: { testid: "document-name-form" } } do |f| %>
+  <div class="d-flex gap-2 align-items-center flex-wrap">
+    <%= f.text_field :name, value: document.name, placeholder: "Document name",
+          aria: { label: "Document name" },
+          class: "sparc-input-dark sparc-input-dark-lg" %>
+    <%= f.text_field version_field, value: document.public_send(version_field), placeholder: "Version",
+          aria: { label: "Version" },
+          class: "sparc-input-dark sparc-input-dark-sm" %>
+    <%= f.submit "Save", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+    <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--neutral sparc-action--ghost">Cancel</button>
+  </div>
+<% end %>

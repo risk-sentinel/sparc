@@ -129,16 +129,9 @@
       <% if signed_in? && !@profile_document.published_lifecycle? %>
         <%# ── Edit mode (hidden) ── %>
         <div id="doc-meta-edit" data-doc-meta-target="edit" class="sparc-d-none">
-          <%= form_with url: update_metadata_profile_document_path(@profile_document), method: :patch, local: true do |f| %>
-            <div class="d-flex gap-2 align-items-center flex-wrap">
-              <%= f.text_field :name, value: @profile_document.name,
-                    class: "sparc-input-dark sparc-input-dark-lg" %>
-              <%= f.text_field :profile_version, value: @profile_document.profile_version, placeholder: "Version",
-                    class: "sparc-input-dark sparc-input-dark-sm" %>
-              <%= f.submit "Save", class: "sparc-action sparc-action--primary sparc-action--solid" %>
-              <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--neutral sparc-action--ghost">Cancel</button>
-            </div>
-          <% end %>
+          <%= render "shared/document_name_form", document: @profile_document,
+                update_path: update_metadata_profile_document_path(@profile_document),
+                version_field: :profile_version %>
         </div>
       <% end %>
 
