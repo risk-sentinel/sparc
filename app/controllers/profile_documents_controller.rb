@@ -1,4 +1,5 @@
 class ProfileDocumentsController < ApplicationController
+  include DocumentCopyReporting
   include ReconciliationGate
   # #911 layer 2 — refuse an edit until the document names the baseline
   # its controls descend from. `set_baseline` is deliberately absent.
@@ -250,8 +251,8 @@ class ProfileDocumentsController < ApplicationController
   end
 
   def copy
-    service = DocumentDuplicationService.new(@profile_document)
-    copy = service.duplicate
+    copy = reporting_copy_failure(@profile_document) { DocumentDuplicationService.new(@profile_document).duplicate }
+    return unless copy
 
     audit_log("profile_document_copied", subject: copy, metadata: { source_id: @profile_document.id, source_name: @profile_document.name, copy_name: copy.name })
     flash[:success] = "Profile duplicated as '#{copy.name}'"
@@ -291,11 +292,15 @@ class ProfileDocumentsController < ApplicationController
       redirect_to(select_profile_profile_documents_path) && return
     end
 
-    service = DocumentDuplicationService.new(source)
-    copy = service.duplicate(
-      new_name: params[:profile_name].presence || "Tailored from #{source.name}"
-    )
-    copy.update!(source_profile_id: source.id)
+    # One transaction: a copy whose source link fails is not left behind.
+    copy = reporting_copy_failure(source, audit_metadata: { creation_method: "from_profile" }) do
+      ActiveRecord::Base.transaction do
+        DocumentDuplicationService.new(source)
+          .duplicate(new_name: params[:profile_name].presence || "Tailored from #{source.name}")
+          .tap { _1.update!(source_profile_id: source.id) }
+      end
+    end
+    return unless copy
 
     audit_log("profile_document_created", subject: copy,
               metadata: { name: copy.name, creation_method: "from_profile", source_profile_id: source.id })

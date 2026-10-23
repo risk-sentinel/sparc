@@ -1,4 +1,5 @@
 class CdefDocumentsController < ApplicationController
+  include DocumentCopyReporting
   include ReconciliationGate
   # #911 layer 2 — refuse an edit until the document names the baseline
   # its controls descend from. `set_baseline` is deliberately absent.
@@ -347,28 +348,21 @@ class CdefDocumentsController < ApplicationController
     # commit. A clone that would produce an invalid OSCAL (corrupted
     # source, missing required fields) rolls back instead of leaving
     # an unusable copy.
-    copy = CdefMutationService.build_and_apply do
-      duplicated = DocumentDuplicationService.new(@cdef_document).duplicate
-      if @cdef_document.aws_labs_source?
-        duplicated.update!(cloned_from_id: @cdef_document.id)
+    source_type = @cdef_document.aws_labs_source? ? "aws_labs" : nil
+    copy = reporting_copy_failure(@cdef_document, audit_metadata: { source_type: source_type }) do
+      CdefMutationService.build_and_apply do
+        duplicated = DocumentDuplicationService.new(@cdef_document).duplicate
+        if @cdef_document.aws_labs_source?
+          duplicated.update!(cloned_from_id: @cdef_document.id)
+        end
+        duplicated
       end
-      duplicated
     end
+    return unless copy
 
-    audit_log("cdef_document_copied", subject: copy, metadata: { source_id: @cdef_document.id, source_name: @cdef_document.name, copy_name: copy.name, source_type: @cdef_document.aws_labs_source? ? "aws_labs" : nil }.compact)
+    audit_log("cdef_document_copied", subject: copy, metadata: { source_id: @cdef_document.id, source_name: @cdef_document.name, copy_name: copy.name, source_type: source_type }.compact)
     flash[:success] = "Component Definition duplicated as '#{copy.name}'"
     redirect_to cdef_document_path(copy)
-  rescue StandardError => e
-    # Issue #519 — surface duplication failures in logs + audit + flash
-    # instead of a bare 500. AWS Labs CDEFs are the known repro path.
-    Rails.logger.error("[cdef_documents#copy] source_id=#{@cdef_document.id} aws_labs=#{@cdef_document.aws_labs_source?} failed: #{e.class}: #{e.message}")
-    Rails.logger.error("[cdef_documents#copy] backtrace: " + e.backtrace.first(20).join(" | "))
-    audit_log("cdef_document_copy_failed", subject: @cdef_document,
-      metadata: { source_id: @cdef_document.id, source_name: @cdef_document.name,
-                  source_type: @cdef_document.aws_labs_source? ? "aws_labs" : nil,
-                  error_class: e.class.to_s, error_message: e.message.to_s[0, 300] }.compact)
-    flash[:error] = "Could not duplicate '#{@cdef_document.name}': #{e.message.to_s[0, 200]}"
-    redirect_to cdef_document_path(@cdef_document)
   end
 
   def select_profile
