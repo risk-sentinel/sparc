@@ -3,8 +3,8 @@
 require "rails_helper"
 
 # #1257 — Policy Manager holds `cdef.write`, so it can create and edit a
-# component definition and make it organization-wide, and `cdef.scope_instance`,
-# so it can make one instance-wide (before #1257, instance administrators only).
+# component definition and make it organization-wide, and, holding it across the
+# instance, make one instance-wide (before #1257, instance administrators only).
 #
 # The roles here are the SHIPPED built-in roles (BuiltInRoleSeeder), not a
 # spec-made grant, so these fail if the shipped default loses the key. Both
@@ -41,14 +41,12 @@ RSpec.describe "Policy Manager and component definitions (#1257)", type: :reques
 
   # What an administrator does in Admin -> Roles: revoke the key, recorded as
   # their choice (#1259).
-  def administrator_revokes(key)
+  def administrator_revokes_cdef_write
     role = Role.find_by!(name: "policy_manager")
-    role.permissions = role.permissions.merge(key => false)
-    role.record_admin_choices([ key ])
+    role.permissions = role.permissions.merge("cdef.write" => false)
+    role.record_admin_choices([ "cdef.write" ])
     role.save!
   end
-
-  def administrator_revokes_cdef_write = administrator_revokes("cdef.write")
 
   it "ships Policy Manager with cdef.write" do
     expect(Role.find_by!(name: "policy_manager").has_permission?("cdef.write")).to be(true)
@@ -114,30 +112,6 @@ RSpec.describe "Policy Manager and component definitions (#1257)", type: :reques
         get cdef_document_path(cdef)
 
         expect(response.body).to match(/value="instance"(?![^>]*disabled)[^>]*>/)
-      end
-    end
-
-    context "as a Policy Manager whose administrator revoked cdef.scope_instance" do
-      before do
-        administrator_revokes("cdef.scope_instance")
-        BuiltInRoleSeeder.call # an upgrade keeps the administrator's choice
-        sign_in_as(policy_manager)
-      end
-
-      it "is refused the instance-wide tier and not offered it" do
-        patch update_scope_cdef_document_path(cdef), params: { cdef_document: { scope: "instance" } }
-
-        expect(flash[:error]).to eq(CdefScopeService::INSTANCE_SCOPE_REFUSAL)
-        expect(cdef.reload.scope_tier).not_to eq(:instance)
-
-        get cdef_document_path(cdef)
-        expect(response.body).not_to include('value="instance"')
-      end
-
-      it "still makes one organization-wide" do
-        patch update_scope_cdef_document_path(cdef), params: { cdef_document: { scope: "global" } }
-
-        expect(cdef.reload.scope_tier).to eq(:organization)
       end
     end
 
@@ -224,15 +198,14 @@ RSpec.describe "Policy Manager and component definitions (#1257)", type: :reques
       expect(cdef.reload.scope_tier).to eq(:instance)
     end
 
-    it "refuses the instance-wide tier to a Policy Manager whose administrator revoked cdef.scope_instance" do
-      administrator_revokes("cdef.scope_instance")
+    it "refuses the instance-wide tier to a Policy Manager whose administrator revoked cdef.write" do
+      administrator_revokes_cdef_write
       BuiltInRoleSeeder.call
 
       patch "/api/v1/cdef_documents/#{cdef.slug}/scope", params: { scope: "instance" },
                                                           headers: api_headers(policy_manager), as: :json
 
       expect(response).to have_http_status(:forbidden)
-      expect(response.parsed_body["error"]).to eq(CdefScopeService::INSTANCE_SCOPE_REFUSAL)
       expect(cdef.reload.scope_tier).not_to eq(:instance)
     end
 

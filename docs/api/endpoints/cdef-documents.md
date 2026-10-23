@@ -23,7 +23,7 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | read — `index`, `show`, `export` | any authenticated user |
 | write — `create`, `update`, `destroy`, `import`, `source_from_profile`, `submit_for_review`, `scope` | `cdef.write` |
 | bulk field import — `fields/import/preview`, `fields/import/confirm` | `converters.write` |
-| `scope` with `"scope": "instance"` | also `cdef.scope_instance`, granted at instance level (Policy Manager by default), or instance admin |
+| `scope` with `"scope": "instance"` | `cdef.write` held across the instance (Policy Manager by default, not a boundary-scoped role), or instance admin |
 | `bulk` delete | instance admin |
 | `approve`, `reject` | `cdef.approve`, or instance admin — and never the submitter |
 

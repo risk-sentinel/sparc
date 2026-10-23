@@ -163,14 +163,6 @@ RSpec.describe "Seeded permission grants (#919)" do
 
       expect(holders.map { |d| d[:name] }).to eq(%w[policy_manager])
     end
-
-    # Instance-wide publishes a CDEF to every organization: curated by Policy
-    # Manager, not self-granted by every author.
-    it "is the only built-in role that may make a CDEF instance-wide" do
-      holders = BuiltInRoles.all.values.select { |d| d[:permissions]["cdef.scope_instance"] }
-
-      expect(holders.map { |d| d[:name] }).to eq(%w[policy_manager])
-    end
   end
 
   # 1.3.0 -> 1.4.0 for #1044, which adds the `instance_admin` role carrying

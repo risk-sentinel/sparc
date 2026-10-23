@@ -19,9 +19,9 @@ with CDEF permissions — see [RBAC](RBAC).
   (`cdef.write`). Out of the box that is the **Policy Manager** role and the
   instance administrator. Making a CDEF **organization-wide** uses your
   organization, so you must belong to one. Making it **instance-wide**
-  (every organization on the instance) needs `cdef.scope_instance`: a
-  Policy Manager or the instance administrator. Anyone else asks a Policy
-  Manager to share theirs.
+  (every organization on the instance) needs `cdef.write` across the
+  instance: a Policy Manager or the instance administrator. Anyone else asks a
+  Policy Manager to share theirs.
 - **Prerequisites:** none to start; a **converter** is needed only if you plan to
   bulk-apply rule → control mappings (see
   [Converters & Imports](User-Guide-Converters-and-Imports)).

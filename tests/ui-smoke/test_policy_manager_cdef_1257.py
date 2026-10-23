@@ -3,7 +3,7 @@
 Before #1257 only an instance administrator could author a CDEF: every CDEF
 write is checked at instance level, and every other built-in role holding
 `cdef.write` is boundary-scoped. Policy Manager now ships with the key, and
-with `cdef.scope_instance`: it curates which CDEFs every organization shares.
+holding it across the instance curates which CDEFs every organization shares.
 
 Driven as the harness's second identity (SPARC_SMOKE_USER_TOKEN), a genuine
 non-administrator. The administrator session grants it the built-in Policy
@@ -12,9 +12,8 @@ if it did not hold it before. As that user this authors a CDEF in the browser,
 asks for organization-wide scope, then makes it instance-wide through the
 offered tier. The CDEF is deleted through the API afterwards.
 
-The authorization rules in both directions (web and API, instance-wide refused
-without cdef.scope_instance, a role without cdef.write refused, an
-administrator's revoke kept) are covered
+The authorization rules in both directions (web and API, a role without
+cdef.write refused, an administrator's revoke kept) are covered
 at the request layer: spec/requests/policy_manager_cdef_write_1257_spec.rb.
 
 Selectors verified against app/views/admin/users/edit.html.erb,
@@ -55,11 +54,8 @@ def _policy_manager_role_id() -> int:
     match = next((r for r in roles if r["name"] == "policy_manager"), None)
     if match is None:
         pytest.skip("the built-in Policy Manager role is not present on this instance")
-    granted = get_json(f"/api/v1/roles/{match['id']}")["permissions"]
-    missing = [key for key in ("cdef.write", "cdef.scope_instance") if key not in granted]
-    if missing:
-        held = ", ".join(missing)
-        pytest.skip(f"Policy Manager does not hold {held} here (revoked, or pre-#1257)")
+    if "cdef.write" not in get_json(f"/api/v1/roles/{match['id']}")["permissions"]:
+        pytest.skip("Policy Manager does not hold cdef.write here (revoked, or pre-#1257)")
     return match["id"]
 
 

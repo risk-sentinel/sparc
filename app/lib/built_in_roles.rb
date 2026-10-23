@@ -28,9 +28,6 @@ module BuiltInRoles
   K_AUTHORIZATION_BOUNDARIES_READ = "authorization_boundaries.read"
   K_CDEF_READ                     = "cdef.read"
   K_CDEF_WRITE                    = "cdef.write"
-  # #1257 — authority to make a CDEF available to every organization on the
-  # instance (CdefScopeService.may_scope_instance?). Instance-level grants only.
-  K_CDEF_SCOPE_INSTANCE           = "cdef.scope_instance"
   K_EVIDENCE_READ                 = "evidence.read"
   K_EVIDENCE_WRITE                = "evidence.write"
   # #947 — authority to ASSERT, distinct from the permission to add evidence.
@@ -63,13 +60,14 @@ module BuiltInRoles
   # enterprise policy artifact this role maintains. Approving one stays with
   # `cdef.approve` / this role, unchanged.
   #
-  # #1257 — and `cdef.scope_instance`: this role curates which component
-  # definitions every organization on the instance shares, so one vetted CDEF
-  # serves them all instead of a copy per organization. Before this only an
-  # instance administrator could (#980).
+  # Holding it at instance level is also what lets this role make a CDEF
+  # instance-wide (CdefScopeService.may_scope_instance?): it curates which
+  # component definitions every organization shares, so one vetted CDEF serves
+  # them all instead of a copy per organization. Before #1257 only an instance
+  # administrator could (#980).
   PERM_POLICY_MANAGER = PERM_ALL_READ.merge(
     "catalogs.write" => true, "profiles.write" => true, "mappings.write" => true,
-    K_CDEF_WRITE => true, K_CDEF_SCOPE_INSTANCE => true,
+    K_CDEF_WRITE => true,
     K_EVIDENCE_ATTEST => true
   ).freeze
 

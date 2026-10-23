@@ -25,15 +25,9 @@ RSpec.describe AddAdminOverridesToRoles do
                       .merge("permissions" => entry["permissions"].index_with(true)))
   end
 
-  # Keys this release adds. An install being upgraded never had them, so no
-  # editor before #1259 could have written them.
-  def keys_added_by_this_release = %w[cdef.scope_instance]
-
-  # What the role editor and API wrote before #1259: every key that existed
-  # then, true or false.
+  # What the role editor and API wrote before #1259: every key, true or false.
   def editor_save(role, changes = {})
-    keys = Role::PERMISSION_KEYS - keys_added_by_this_release
-    full = keys.to_h { |key| [ key, role.permissions[key] == true ] }.merge(changes)
+    full = Role::PERMISSION_KEYS.to_h { |key| [ key, role.permissions[key] == true ] }.merge(changes)
     role.update_columns(permissions: full)
   end
 
@@ -141,16 +135,10 @@ RSpec.describe AddAdminOverridesToRoles do
     it "reaches a Policy Manager role nobody edited, and is audited" do
       seed_as_before("policy_manager")
 
-      role = upgrade
-      expect(role.has_permission?("cdef.write")).to be(true)
-      expect(role.has_permission?("cdef.scope_instance")).to be(true)
-      events = AuditEvent.where(action: "role_default_applied").map(&:metadata)
-      expect(events.map { |m| m.slice("role_name", "key", "to") }).to contain_exactly(
-        { "role_name" => "policy_manager", "key" => "cdef.write", "to" => true },
-        { "role_name" => "policy_manager", "key" => "cdef.scope_instance", "to" => true }
-      )
+      expect(upgrade.has_permission?("cdef.write")).to be(true)
+      event = AuditEvent.where(action: "role_default_applied").sole
+      expect(event.metadata).to include("role_name" => "policy_manager", "key" => "cdef.write", "to" => true)
     end
-
 
     it "reaches a Policy Manager role an administrator edited elsewhere" do
       pm = seed_as_before("policy_manager")

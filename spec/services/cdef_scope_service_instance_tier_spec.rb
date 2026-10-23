@@ -102,9 +102,9 @@ RSpec.describe "CdefScopeService instance-wide tier" do
     end
   end
 
-  # #1257 — who may choose the tier. Instance-level grants only: a role scoped
-  # to one boundary confers boundary power, not authority over every
-  # organization.
+  # #1257 — who may choose the tier: whoever holds cdef.write across the
+  # instance. A role scoped to one boundary confers boundary power, not
+  # authority over every organization.
   describe ".may_scope_instance?" do
     def holder(permissions, boundary: nil)
       role = create(:role, name: "probe_#{SecureRandom.hex(3)}", scope: boundary ? "authorization_boundary" : "instance",
@@ -116,17 +116,17 @@ RSpec.describe "CdefScopeService instance-wide tier" do
       expect(CdefScopeService.may_scope_instance?(nil)).to be(false)
     end
 
-    it "is false for a cdef.write holder without the key" do
-      expect(CdefScopeService.may_scope_instance?(holder({ "cdef.write" => true }))).to be(false)
+    it "is false for an instance-level role without cdef.write" do
+      expect(CdefScopeService.may_scope_instance?(holder({ "cdef.read" => true }))).to be(false)
     end
 
-    it "is false for a grant of the key scoped to one boundary" do
+    it "is false for cdef.write scoped to one boundary" do
       boundary = create(:authorization_boundary)
-      expect(CdefScopeService.may_scope_instance?(holder({ "cdef.scope_instance" => true }, boundary: boundary))).to be(false)
+      expect(CdefScopeService.may_scope_instance?(holder({ "cdef.write" => true }, boundary: boundary))).to be(false)
     end
 
-    it "is true for an instance-level grant of the key" do
-      expect(CdefScopeService.may_scope_instance?(holder({ "cdef.scope_instance" => true }))).to be(true)
+    it "is true for cdef.write across the instance" do
+      expect(CdefScopeService.may_scope_instance?(holder({ "cdef.write" => true }))).to be(true)
     end
 
     it "is true for an instance administrator" do
