@@ -172,6 +172,7 @@ class AuditEvent < ApplicationRecord
     profile_document_imported
     profile_document_copied
     profile_controls_bulk_updated
+    profile_controls_bulk_edited
     control_catalog_created
     control_catalog_updated
     control_catalog_deleted
@@ -499,7 +500,7 @@ class AuditEvent < ApplicationRecord
     "Profiles" => %w[profile_document_created profile_document_updated profile_document_deleted
                      profile_document_delete_blocked
                      profile_document_exported profile_document_imported profile_document_copied
-                     profile_controls_bulk_updated
+                     profile_controls_bulk_updated profile_controls_bulk_edited
                      profile_control_created profile_control_updated profile_control_deleted
                      profile_document_published
                      profile_document_submitted_for_review profile_document_approved profile_document_rejected

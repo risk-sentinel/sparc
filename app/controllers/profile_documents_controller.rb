@@ -47,7 +47,7 @@ class ProfileDocumentsController < ApplicationController
     manage_controls update_controls publish submit_for_review
   ]
 
-  PRIORITY_ORDER = %w[P1 P2 P3].freeze
+  PRIORITY_ORDER = ProfileControl::PRIORITIES
 
   def index
     scope = ProfileDocument.order(created_at: :desc)
@@ -114,6 +114,15 @@ class ProfileDocumentsController < ApplicationController
       # #1002 — one definition of the sub-part rule, on the model, so the SSP
       # screen groups them identically instead of carrying a second copy.
       @catalog_sub_parts = CatalogControl.sub_parts_by_parent(catalog_controls, profile_control_ids)
+    end
+
+    # #1270 — what the bulk bar can link or unlink: the resources the user may
+    # link, plus any already linked to one of this profile's controls.
+    if helpers.can_write_back_matter? && helpers.can_write_profiles? && !@profile_document.published_lifecycle?
+      linked = ControlBackMatterLink.where(linkable_type: "ProfileControl", linkable_id: controls_scope.select(:id))
+      @bulk_resources = BackMatterResource.linkable_by(current_user)
+                                          .or(BackMatterResource.where(id: linked.select(:back_matter_resource_id)))
+                                          .order(:title)
     end
   end
 

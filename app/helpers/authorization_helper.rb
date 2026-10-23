@@ -23,6 +23,12 @@ module AuthorizationHelper
     !SparcConfig.any_auth_enabled? || current_user&.instance_administrator? || current_user&.has_permission?("profiles.write")
   end
 
+  # #1270 — mirrors ControlBackMatterLinksController#authorize_back_matter_write!
+  # for a profile's controls, which have no boundary: an instance-level grant.
+  def can_write_back_matter?
+    !SparcConfig.any_auth_enabled? || current_user&.instance_administrator? || current_user&.has_permission?("back_matter.write")
+  end
+
   # Check if the current user can perform write operations on converters.
   def can_write_converters?
     !SparcConfig.any_auth_enabled? || current_user&.instance_administrator? || current_user&.has_permission?("converters.write")

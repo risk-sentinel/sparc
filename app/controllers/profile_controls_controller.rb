@@ -21,7 +21,6 @@ class ProfileControlsController < ApplicationController
 
     if @profile_control.save
       save_editable_fields
-      save_param_values
       audit_log("profile_control_created", subject: @profile_control, metadata: { control_id: @profile_control.control_id, profile_document_id: @profile_document.id })
       flash[:success] = "Control #{@profile_control.control_id} added to profile"
       redirect_to profile_document_path(@profile_document)
@@ -37,7 +36,6 @@ class ProfileControlsController < ApplicationController
   def update
     if @profile_control.update(profile_control_params)
       save_editable_fields
-      save_param_values
       audit_log("profile_control_updated", subject: @profile_control, metadata: { control_id: @profile_control.control_id })
       flash[:success] = "Control #{@profile_control.control_id} updated"
       redirect_to profile_document_path(@profile_document)
@@ -52,8 +50,9 @@ class ProfileControlsController < ApplicationController
   # BaselineParameterService — the same service the Api::V1 endpoint uses — so
   # the web form and the API agree on what a valid tailoring decision is, and
   # the #994 guards (unknown ids named, a non-array selection refused) apply to
-  # both. `save_param_values` on the full edit form writes any id it is handed;
-  # this path does not.
+  # both. (#1270 removed the Edit form's parameter table, whose
+  # `save_param_values` wrote any id it was handed; this is now the only web
+  # path that writes a parameter.)
   def update_parameters
     result = BaselineParameterService.new(@profile_document)
                                      .update_parameters(parameter_payload_from_form)
@@ -74,6 +73,38 @@ class ProfileControlsController < ApplicationController
     end
 
     redirect_to profile_document_path(@profile_document, anchor: "control-#{@profile_control.id}")
+  end
+
+  # PATCH /profile_documents/:profile_document_id/profile_controls/bulk  (#1270)
+  #
+  # Sets the priority of, or links/unlinks a back-matter resource on, the
+  # controls the user selected on the Profile screen. The inline priority
+  # selector posts here too, as JSON, for one control. Writes through
+  # ProfileControlBulkEditService, as PUT /api/v1/profile_documents/:id/controls/bulk does.
+  def bulk
+    args = bulk_args
+    authorize_permission!("back_matter.write") if args[:link_resource_ids].present? || args[:unlink_resource_ids].present?
+
+    result = ProfileControlBulkEditService.new(@profile_document, user: current_user).apply(**args)
+    audit_log("profile_controls_bulk_edited", subject: @profile_document,
+              metadata: { control_ids: result.control_ids, priority_changed: result.priority_changed,
+                          priority: result.priority, linked: result.linked, unlinked: result.unlinked })
+
+    respond_to do |format|
+      format.json { render json: { data: result.to_h } }
+      format.html do
+        flash[:success] = bulk_summary(result)
+        redirect_to profile_document_path(@profile_document)
+      end
+    end
+  rescue ProfileControlBulkEditService::EditError => e
+    respond_to do |format|
+      format.json { render json: { error: e.message }, status: :unprocessable_content }
+      format.html do
+        flash[:error] = e.message
+        redirect_to profile_document_path(@profile_document)
+      end
+    end
   end
 
   def destroy
@@ -107,6 +138,32 @@ class ProfileControlsController < ApplicationController
 
   def set_profile_control
     @profile_control = @profile_document.profile_controls.find(params[:id])
+  end
+
+  # The bulk bar names its action with the button pressed; the inline selector
+  # and other JSON callers send the change itself, as the API does.
+  def bulk_args
+    args = { control_ids: params[:control_ids] }
+    case params[:bulk_action]
+    when "priority" then args[:priority] = params[:priority].to_s
+    when "link"     then args[:link_resource_ids] = Array(params[:resource_id])
+    when "unlink"   then args[:unlink_resource_ids] = Array(params[:resource_id])
+    else
+      args[:priority] = params[:priority].to_s if params.key?(:priority)
+      args[:link_resource_ids] = Array(params[:link_resource_ids])
+      args[:unlink_resource_ids] = Array(params[:unlink_resource_ids])
+    end
+    args
+  end
+
+  def bulk_summary(result)
+    count = result.control_ids.size
+    parts = []
+    parts << "priority #{result.priority || 'cleared'}" if result.priority_changed
+    parts << "#{result.linked} #{'link'.pluralize(result.linked)} added" if result.linked.positive?
+    parts << "#{result.unlinked} #{'link'.pluralize(result.unlinked)} removed" if result.unlinked.positive?
+    parts << "nothing changed" if parts.empty?
+    "#{count} #{'control'.pluralize(count)}: #{parts.join(', ')}"
   end
 
   def profile_control_params
@@ -145,27 +202,10 @@ class ProfileControlsController < ApplicationController
     payload
   end
 
-  def save_param_values
-    (params[:param_values] || {}).each do |param_id, value|
-      field = @profile_control.profile_control_fields.find_or_initialize_by(
-        field_name: "parameter:#{param_id}"
-      )
-      field.field_value = value.to_s.strip
-      field.save!
-    end
-  end
-
   def load_available_resources
     @linked_resources = @profile_control.back_matter_resources.order(:title)
-    org = current_user.organizations.first
-    @available_resources = if org
-      BackMatterResource.org_available(org.id)
-                         .where.not(id: @linked_resources.select(:id))
-                         .order(:title)
-    else
-      BackMatterResource.globally_available
-                         .where.not(id: @linked_resources.select(:id))
-                         .order(:title)
-    end
+    @available_resources = BackMatterResource.linkable_by(current_user)
+                                             .where.not(id: @linked_resources.select(:id))
+                                             .order(:title)
   end
 end

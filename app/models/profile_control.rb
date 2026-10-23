@@ -10,6 +10,12 @@ class ProfileControl < ApplicationRecord
   has_many :control_back_matter_links, as: :linkable, dependent: :destroy
   has_many :back_matter_resources, through: :control_back_matter_links
 
+  # #1270 — the priorities a user can set on a baseline control; nil is "not
+  # set". The one list the edit form, the inline selector, the bulk edit and
+  # the API read. Not a validation: an imported profile can carry other values,
+  # and editing a title must not fail on them.
+  PRIORITIES = %w[P1 P2 P3].freeze
+
   validates :control_id, presence: true,
                          uniqueness: { scope: :profile_document_id, message: "already exists in this profile" }
 

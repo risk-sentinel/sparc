@@ -216,12 +216,16 @@
     <div class="sparc-divider-v"></div>
 
     <div class="d-flex flex-wrap gap-2 sparc-flex-1">
-      <% [["P1", p1_count, "#e74c3c"], ["P2", p2_count, "#f39c12"], ["P3", p3_count, "#3498db"], ["None", none_count, "#95a5a6"]].each do |pri, count, color| %>
+      <%# #1270 — the "not set" chip filtered on "None" while each control card
+          carries LABEL_NONE ("(None)"), so it hid every control. The filter
+          value is now the card's own label. %>
+      <% [["P1", "P1", p1_count, "#e74c3c"], ["P2", "P2", p2_count, "#f39c12"], ["P3", "P3", p3_count, "#3498db"],
+          ["Not set", ApplicationHelper::LABEL_NONE, none_count, "#95a5a6"]].each do |pri, filter, count, color| %>
         <% next if count == 0 %>
         <div class="summary-chip sparc-summary-chip sparc-border-l-3 <%= accent_class(color) %>"
-             data-filter-value="<%= pri %>"
+             data-filter-value="<%= filter %>"
              data-action="click->heatmap-chip#apply keydown.enter->heatmap-chip#apply keydown.space->heatmap-chip#apply"
-             data-heatmap-chip-filter-param="<%= pri %>"
+             data-heatmap-chip-filter-param="<%= filter %>"
              role="button"
              tabindex="0"
              title="Click to filter: <%= pri %>">
@@ -257,7 +261,42 @@
      legend_items: [["P1 (High)", "#e74c3c"], ["P2 (Medium)", "#f39c12"], ["P3 (Low)", "#3498db"], ["None", "#95a5a6"]] %>
 
 <%# ── FAMILY-GROUPED CONTROL LIST ──────────────────────────────── %>
-<div id="controlsContainer">
+<%# #1270 — on a profile the user may tailor, each control's priority is set
+    in place, and controls can be selected and changed together from the bulk
+    bar. Both write through ProfileControlBulkEditService, as the API does. %>
+<% can_tailor = signed_in? && can_write_profiles? && !@profile_document.published_lifecycle? %>
+<% priority_accents = (ProfileControl::PRIORITIES + [ "" ]).to_h { |p|
+     [ p, accent_class({ "P1" => ApplicationHelper::COLOR_RED, "P2" => ApplicationHelper::COLOR_ORANGE,
+                         "P3" => ApplicationHelper::COLOR_BLUE }[p] || ApplicationHelper::COLOR_GRAY) ] } %>
+<div id="controlsContainer"<% if can_tailor %> data-controller="bulk-select"<% end %>>
+  <% if can_tailor %>
+    <%= form_with url: bulk_profile_document_profile_controls_path(@profile_document), method: :patch, local: true,
+          id: "profile-bulk-form",
+          html: { class: "sparc-bulk-bar", hidden: true, data: { bulk_select_target: "bar", testid: "bulk-bar" },
+                  aria: { label: "Change the selected controls" } } do %>
+      <span class="fw-semibold" role="status"><span data-bulk-select-target="count">0</span> selected</span>
+      <span class="d-flex align-items-center gap-1">
+        <%= select_tag "priority",
+              options_for_select(ProfileControl::PRIORITIES.map { [ _1, _1 ] } + [ [ "Clear priority", "" ] ]),
+              id: "bulk-priority", class: "form-select form-select-sm", aria: { label: "Priority for the selected controls" } %>
+        <%= button_tag "Set priority", name: "bulk_action", value: "priority",
+              class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
+      </span>
+      <% if @bulk_resources&.any? %>
+        <span class="d-flex align-items-center gap-1">
+          <%= select_tag "resource_id", options_from_collection_for_select(@bulk_resources, :id, :title),
+                id: "bulk-resource", class: "form-select form-select-sm",
+                aria: { label: "Back-matter resource for the selected controls" } %>
+          <%= button_tag "Link resource", name: "bulk_action", value: "link",
+                class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
+          <%= button_tag "Unlink resource", name: "bulk_action", value: "unlink",
+                class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm" %>
+        </span>
+      <% end %>
+      <button type="button" data-action="bulk-select#clear"
+              class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm">Clear selection</button>
+    <% end %>
+  <% end %>
   <div class="d-flex justify-content-between align-items-center mb-3">
     <span class="form-label fw-semibold mb-0"><%= @total_controls %> controls in this profile</span>
     <div class="d-flex gap-1">
@@ -277,6 +316,13 @@
       </summary>
 
       <div class="mt-2">
+        <% if can_tailor %>
+          <label class="form-check sparc-fs-078 mb-2">
+            <input type="checkbox" class="form-check-input" data-group="<%= family_code %>"
+                   data-action="change->bulk-select#toggleGroup">
+            <span class="form-check-label">Select all <%= family_code %> controls shown</span>
+          </label>
+        <% end %>
         <% family_controls.sort_by { |c| @sort_id_map[c.control_id] || c.control_id.gsub(/\d+/) { |n| n.rjust(3, "0") } }.each do |control| %>
           <%
             field_map    = control.profile_control_fields.index_by(&:field_name)
@@ -294,12 +340,38 @@
             <div class="d-flex justify-content-between align-items-start sparc-gap-1r">
               <div class="sparc-minw-0 sparc-flex-1">
                 <div class="d-flex align-items-center gap-2 flex-wrap sparc-mb-02">
+                  <% if can_tailor %>
+                    <input type="checkbox" class="form-check-input mt-0" name="control_ids[]"
+                           value="<%= control.control_id %>" form="profile-bulk-form"
+                           aria-label="Select <%= control.display_id %>"
+                           data-bulk-select-target="row" data-group="<%= family_code %>"
+                           data-action="change->bulk-select#toggle">
+                  <% end %>
                   <span class="sparc-ctrl-id">
                     <%= control.display_id.presence || "&mdash;".html_safe %>
                   </span>
-                  <span class="sparc-status-pill sparc-status--<%= pri_variant %>">
-                    <%= pri_val %>
-                  </span>
+                  <% if can_tailor %>
+                    <%# An imported value outside P1–P3 stays selectable, so the
+                        selector never shows a priority the control does not have. %>
+                    <% choices = [ [ "Priority not set", "" ] ] + ProfileControl::PRIORITIES.map { [ _1, _1 ] } %>
+                    <% choices << [ control.priority, control.priority ] if control.priority.present? && ProfileControl::PRIORITIES.exclude?(control.priority) %>
+                    <span class="d-inline-flex align-items-center gap-1"
+                          data-controller="priority-select"
+                          data-priority-select-url-value="<%= bulk_profile_document_profile_controls_path(@profile_document) %>"
+                          data-priority-select-control-id-value="<%= control.control_id %>"
+                          data-priority-select-accents-value="<%= priority_accents.to_json %>">
+                      <%= select_tag "priority", options_for_select(choices, control.priority.to_s),
+                            id: "priority-#{control.id}",
+                            class: "sparc-priority-select#{' sparc-priority-select--unset' if control.priority.blank?}",
+                            aria: { label: "Priority for #{control.display_id}" },
+                            data: { priority_select_target: "select", action: "change->priority-select#save" } %>
+                      <span class="sparc-fs-072" role="status" data-priority-select-target="status"></span>
+                    </span>
+                  <% else %>
+                    <span class="sparc-status-pill sparc-status--<%= pri_variant %>">
+                      <%= pri_val %>
+                    </span>
+                  <% end %>
                 </div>
                 <% if control.title.present? %>
                   <div class="sparc-ctrl-title"><%= control.title %></div>

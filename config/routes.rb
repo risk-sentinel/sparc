@@ -256,6 +256,10 @@ Rails.application.routes.draw do
       # PUT /api/v1/profile_documents/:id/parameters uses, so the web form and
       # the API cannot validate a tailoring decision differently.
       patch :parameters, on: :member, action: "update_parameters"
+      # #1270 — priority and back-matter links on many controls at once; the
+      # inline priority selector is the same change for one. Shares
+      # ProfileControlBulkEditService with PUT /api/v1/profile_documents/:id/controls/bulk.
+      patch :bulk, on: :collection
     end
     resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
@@ -832,6 +836,8 @@ Rails.application.routes.draw do
           get :baseline_review, to: "profile_documents#baseline_review"
           # #757 — select/deselect baseline controls from the linked catalog.
           put :controls, to: "profile_documents#update_controls", as: :controls
+          # #1270 — priority and back-matter links on many controls at once.
+          put "controls/bulk", to: "profile_documents#bulk_edit_controls", as: :bulk_edit_controls
         end
         # Baseline parameter management (#240)
         resource :parameters, only: [ :show, :update ], controller: "baseline_parameters" do

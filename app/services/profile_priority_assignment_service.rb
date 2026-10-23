@@ -12,7 +12,7 @@
 #   priority = ProfilePriorityAssignmentService.assign(catalog_control)
 #
 class ProfilePriorityAssignmentService
-  VALID_PRIORITIES = %w[P1 P2 P3].freeze
+  VALID_PRIORITIES = ProfileControl::PRIORITIES
 
   def self.assign(catalog_control)
     explicit = catalog_control.priority.to_s.strip.upcase

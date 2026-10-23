@@ -3,9 +3,12 @@ class ProfileControlField < ApplicationRecord
 
   validates :field_name, presence: true
 
+  # #1270 — `parameter_value` was editable here too: a free-text field on the
+  # control Edit screen that no export, resolution or SSP generation read, so
+  # anything typed in it went nowhere. Parameter values are tailored per
+  # parameter (`parameter:<id>`) on the Profile screen. Stored values are kept.
   EDITABLE_FIELDS = %w[
     tailoring_notes
-    parameter_value
   ].freeze
 
   FIELD_DISPLAY_ORDER = %w[
