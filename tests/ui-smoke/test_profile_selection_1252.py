@@ -92,7 +92,13 @@ def _import_profile(data: dict) -> dict:
         r = c.post(
             "/api/v1/profile_documents/import",
             files={
-                "file": ("invented-zz-profile.json", json.dumps(data).encode(), "application/json")
+                # A unique name per run: a deleted profile keeps its slug, so a
+                # fixed name could not be imported twice on one instance.
+                "file": (
+                    f"invented-zz-profile-{uuid.uuid4().hex[:8]}.json",
+                    json.dumps(data).encode(),
+                    "application/json",
+                )
             },
         )
         r.raise_for_status()
@@ -142,6 +148,8 @@ def test_profile_page_shows_the_selection_and_the_tailoring(authed_page, tailore
     expected = [title for control_id, title in CONTROLS if control_id != EXCLUDED]
     assert sorted(titles) == sorted(expected), f"cards {titles}, expected {expected}"
 
+    # Families start collapsed; open them as a reader would.
+    page.get_by_role("button", name="Expand All").click()
     card = page.locator(".control-card", has_text="Invented Policy").filter(has_not_text="Review")
     card.locator("summary").first.click()
     alters = card.get_by_test_id("profile-control-alters")
