@@ -49,5 +49,18 @@ class ProfileDocumentShow(ProfileDocumentIndex):
     control_catalog_id: int | None = None
     controls_count: Annotated[int, Field(ge=0)]
     control_ids: list[str] = Field(default_factory=list)  # #757
+    control_priorities: dict[str, str | None] = Field(default_factory=dict)  # #1270
     oscal_metadata: dict = Field(default_factory=dict)
     back_matter_resources: list[BackMatterResource] = Field(default_factory=list)
+
+
+class ProfileControlsBulkResult(BaseModel):
+    """PUT /api/v1/profile_documents/:id/controls/bulk (#1270)."""
+
+    model_config = STRICT
+
+    control_ids: list[str]
+    priority_changed: bool
+    priority: str | None
+    linked: Annotated[int, Field(ge=0)]
+    unlinked: Annotated[int, Field(ge=0)]

@@ -33,6 +33,9 @@ RSpec.describe "Api::V1 profile controls bulk edit (#1270)", type: :request do
     expect([ ac1.reload.priority, ac2.reload.priority ]).to eq(%w[P1 P1])
     expect(ac2.back_matter_resources).to eq([ resource ])
     expect(AuditEvent.where(action: "profile_controls_bulk_edited").count).to eq(1)
+
+    get "/api/v1/profile_documents/#{profile.slug}", headers: headers_for(curator)
+    expect(response.parsed_body.dig("data", "control_priorities")).to eq("ac-1" => "P1", "ac-2" => "P1")
   end
 
   it "clears priority on null, and leaves it alone when the key is absent" do

@@ -323,9 +323,35 @@ API equivalent: `PATCH /api/v1/profile_documents/:id` with
 
 ### How to set control priorities
 
-Open a baseline, then **Edit** an individual profile control
-(`/profile_documents/:id/profile_controls/:id/edit`) to set its **priority**.
-The priority heatmap on the detail page reflects your selections.
+On a baseline you can edit (not published, and you hold `profiles.write`),
+each control shows its priority as a selector beside its ID. Choose **P1**,
+**P2** or **P3** and it saves straight away; "Saved" appears next to it. A
+control without a priority shows **Priority not set** in amber.
+
+To find the controls that still need one, click the **Not set** tile above the
+controls. The list narrows to them.
+
+To set many at once:
+
+1. Tick the box beside each control, or **Select all *AC* controls shown** at
+   the top of a family. With the **Not set** filter on, that selects only the
+   family's controls without a priority.
+2. A bar appears at the bottom of the window with the number selected.
+3. Choose a priority (or **Clear priority**) and click **Set priority**.
+
+The same bar links an existing back-matter resource to every selected control,
+or unlinks it (**Link resource** / **Unlink resource**). This needs
+`back_matter.write`; creating a new resource is still done from a control's
+**Edit** screen.
+
+A control's **Edit** screen sets its ID, title, priority, tailoring notes and
+back-matter. Parameter values are tailored on the baseline itself (see
+[How to tailor a baseline's parameters](#how-to-tailor-a-baselines-parameters)).
+
+API equivalent: `PUT /api/v1/profile_documents/:id/controls/bulk` with
+`{ "control_ids": ["ac-1", "ac-2"], "priority": "P1" }`. Each control's
+priority is returned as `control_priorities` by
+`GET /api/v1/profile_documents/:id`.
 
 ### How to read what a baseline requires
 

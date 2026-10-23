@@ -213,7 +213,11 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
       data[:controls_count] = profile.profile_controls.count
       # #757 — the selected baseline control ids, so consumers can see/verify
       # the selection and drive the control-selection API (PUT .../controls).
-      data[:control_ids] = profile.profile_controls.order(:row_order).pluck(:control_id)
+      selected = profile.profile_controls.order(:row_order).pluck(:control_id, :priority)
+      data[:control_ids] = selected.map(&:first)
+      # #1270 — each control's priority (null: not set), so a caller can read
+      # back what PUT .../controls/bulk wrote.
+      data[:control_priorities] = selected.to_h
     end
 
     append_oscal_fields(data, profile, detailed: detailed)

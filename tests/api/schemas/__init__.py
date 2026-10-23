@@ -56,7 +56,7 @@ from ._helpers import (
     validate_index_response,
     validate_show_response,
 )
-from ._profile import ProfileDocumentIndex, ProfileDocumentShow
+from ._profile import ProfileControlsBulkResult, ProfileDocumentIndex, ProfileDocumentShow
 from .base import (
     BackMatterResource,
     DocumentBase,
@@ -89,6 +89,7 @@ __all__ = [
     "PoamDocumentIndex",
     "PoamDocumentShow",
     # Profile
+    "ProfileControlsBulkResult",
     "ProfileDocumentIndex",
     "ProfileDocumentShow",
     # Catalog + Mapping
