@@ -179,7 +179,10 @@ jobs:
     # 45 -> 60 (v1.17.2): at ~8,200 examples main ran 37-40 minutes and a PR
     # was cancelled at 45 while still passing. The suite runs as one process
     # on a 4-CPU runner; running it in parallel is the lasting fix.
-    timeout-minutes: 60
+    # 60 -> 75 (v1.17.2, owner): ten runs to 2026-10-23 took 35-48 minutes,
+    # rising with each bundle — 80% of the limit at worst. Room until the
+    # parallel run (#1256) and the test audit land.
+    timeout-minutes: 75
     needs: [ changes ]
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
 
