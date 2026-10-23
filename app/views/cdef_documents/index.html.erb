@@ -40,6 +40,15 @@
     <% end %>
   </div>
 
+  <%# #1268 — what the last AWS Labs refresh did, for whoever may start one.
+      Read from the refresh's own audit events (AwsLabsRefreshStatus). %>
+  <% if signed_in? && can_write_converters? && SparcConfig.aws_labs_cdef_enabled? %>
+    <% refresh_status = AwsLabsRefreshStatus.current %>
+    <div class="sparc-fs-078 mb-3 <%= { ok: 'text-body-secondary', info: 'text-body-secondary', warning: 'sparc-text-warning-bold' }[refresh_status.tone] %>"
+         role="status" data-testid="aws-labs-refresh-status" data-state="<%= refresh_status.state %>">
+      <%= refresh_status.message %>
+    </div>
+  <% end %>
 
   <%# #488 — Refresh from AWS Labs confirmation modal (matches the DISA
       CCI confirmation modal pattern from app/views/converters/show.html.erb). %>
@@ -57,8 +66,9 @@
               awslabs/oscal-content-for-aws-services</a> and import any new or
               updated entries.</p>
             <p class="mb-0 small text-body-secondary">Imports are idempotent — existing rows
-              with matching SHA are left unchanged. Refreshes typically take a few seconds.
-              The job runs asynchronously; new rows appear once the worker processes them.</p>
+              with matching SHA are left unchanged. A full refresh downloads every file and
+              takes one to two minutes. It runs in the background; its progress shows beside
+              the Refresh button.</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" data-bs-dismiss="modal">Cancel</button>

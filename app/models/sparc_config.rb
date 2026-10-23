@@ -1213,12 +1213,23 @@ module SparcConfig
   def aws_labs_oscal_versions
     raw = ENV.fetch("SPARC_AWS_LABS_OSCAL_VERSIONS", nil)
     if raw.present?
-      raw.split(",").map(&:strip).reject(&:blank?)
+      parse_version_list(raw)
     elsif defined?(OscalSchema) && OscalSchema.table_exists?
       OscalSchema.distinct.pluck(:oscal_version).compact
     else
       []
     end
+  end
+
+  # #1268 — a version list as an operator might write it. It was split on
+  # commas only and compared exactly, so "1.2.1 1.2.2", "1.2.1;1.2.2",
+  # '["1.2.1"]', "v1.2.1" or a value carrying its quotes matched nothing, and
+  # every upstream file was dropped without a word. Commas, semicolons and
+  # whitespace all separate; brackets, quotes and a leading "v" are dropped.
+  def parse_version_list(raw)
+    raw.to_s.delete("[]\"'").split(/[\s,;]+/)
+       .map { _1.strip.sub(/\A[vV]/, "") }
+       .reject(&:blank?).uniq
   end
 
   # ── Convenience ───────────────────────────────────────────────────────────

@@ -50,8 +50,9 @@ class AwsLabsCdefSourceClient
       @logger.info("[AwsLabsCdefSourceClient] Tree unchanged (ETag #{cached_etag})")
       nil
     when 200
-      new_etag = response["etag"]
-      Rails.cache.write(cache_key, new_etag, expires_in: ETAG_CACHE_TTL) if new_etag
+      # #1268 — held, not cached: the import remembers it (remember_tree_etag!)
+      # only after a run that imported or confirmed something.
+      @pending_tree_etag = response["etag"]
 
       body = JSON.parse(response.body)
       tree = body.fetch("tree", [])
@@ -67,6 +68,14 @@ class AwsLabsCdefSourceClient
     else
       raise Error, "Unexpected GitHub API response: #{response.code} #{response.body}"
     end
+  end
+
+  # #1268 — cache the ETag of the last listing, so the next unforced run can
+  # skip an unchanged tree. Called by the import once the listing was used.
+  def remember_tree_etag!
+    return unless @pending_tree_etag
+
+    Rails.cache.write("#{ETAG_CACHE_NAMESPACE}:tree:#{@repo}:#{@branch}", @pending_tree_etag, expires_in: ETAG_CACHE_TTL)
   end
 
   # Fetch raw blob content for a file entry. Uses the Contents API rather than

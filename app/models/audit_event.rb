@@ -136,6 +136,11 @@ class AuditEvent < ApplicationRecord
     cdef_bulk_apply_converter_applied
     aws_labs_cdef_refresh_requested
     aws_labs_cdef_refresh_degraded
+    aws_labs_cdef_refresh_enqueue_failed
+    aws_labs_cdef_refresh_started
+    aws_labs_cdef_refresh_completed
+    aws_labs_cdef_refresh_kept_nothing
+    aws_labs_cdef_refresh_failed
     control_resource_created
     control_resource_linked
     control_resource_unlinked
@@ -467,6 +472,11 @@ class AuditEvent < ApplicationRecord
                            cdef_bulk_apply_converter_applied
                            aws_labs_cdef_refresh_requested
                            aws_labs_cdef_refresh_degraded
+                           aws_labs_cdef_refresh_enqueue_failed
+                           aws_labs_cdef_refresh_started
+                           aws_labs_cdef_refresh_completed
+                           aws_labs_cdef_refresh_kept_nothing
+                           aws_labs_cdef_refresh_failed
                            control_resource_created control_resource_linked
                            control_resource_unlinked cdef_document_baseline_declared
                            cdef_document_scope_updated

@@ -428,9 +428,30 @@ Runtime ingestion of OSCAL Component Definitions from [`awslabs/oscal-content-fo
 | `SPARC_AWS_LABS_CDEF_ENABLED` | `false` | Master switch for AWS Labs CDEF ingestion |
 | `SPARC_AWS_LABS_CDEF_REPO` | `awslabs/oscal-content-for-aws-services` | Override source repo (internal fork/mirror) |
 | `SPARC_AWS_LABS_CDEF_BRANCH` | `main` | Pin to a tag or branch for reproducibility |
-| `SPARC_AWS_LABS_OSCAL_VERSIONS` | (auto-detect) | CSV of OSCAL spec versions to ingest |
+| `SPARC_AWS_LABS_OSCAL_VERSIONS` | (auto-detect) | OSCAL versions to ingest, e.g. `1.2.1, 1.2.2`. Commas, semicolons or spaces separate; quotes, brackets and a leading `v` are ignored. A file in any other version is skipped, and the refresh status says how many were |
 | `SPARC_AWS_LABS_CDEF_REFRESH_INTERVAL_DAYS` | `7` | How often the recurring refresh job runs (clamped 1..90) |
 | `SPARC_AWS_LABS_GITHUB_TOKEN` | (unset) | Optional GitHub PAT (`contents:read`) to raise the API rate limit 60→5000/hr |
+
+### What the last refresh did
+
+Beside **Refresh from AWS Labs**, the Component Definitions screen shows the
+last refresh's state to anyone who may start one:
+
+| Shown | Meaning | What to do |
+|---|---|---|
+| queued | Accepted; waiting for the job worker | Wait a minute or two |
+| queued … and never started | The job worker has not picked it up in 15 minutes | Check the worker is running (`SOLID_QUEUE_IN_PUMA`, or a separate `bin/jobs` process) |
+| could not be queued | The job queue refused it | Read the reason shown; check the queue database |
+| running | In progress; a full refresh takes one to two minutes | Wait |
+| … imported, … unchanged, … failed | Finished | For failures, see below |
+| imported nothing: the version filter kept none … | Every upstream file is in an OSCAL version the setting excludes | Set `SPARC_AWS_LABS_OSCAL_VERSIONS` to the versions shown as skipped, restart, and refresh again |
+| failed | The run stopped with an error | The error is shown; it is also in the audit log as `aws_labs_cdef_refresh_failed` |
+
+Each state is an audit event (`aws_labs_cdef_refresh_requested`, `_started`,
+`_completed`, `_kept_nothing`, `_failed`, `_enqueue_failed`). A refresh that
+keeps nothing does not record the upstream listing as seen, so after fixing the
+setting the next scheduled refresh tries again; you do not need to press
+Refresh Now.
 
 ### When a refresh does not complete
 

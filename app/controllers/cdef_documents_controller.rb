@@ -493,13 +493,30 @@ class CdefDocumentsController < ApplicationController
     end
     Rails.cache.write(lock_key, true, expires_in: 5.minutes)
 
-    AwsLabsCdefRefreshJob.perform_later(force: true)
+    # #1268 — "queued" only when it was. perform_later returns false when the
+    # adapter declines the job without raising; that used to be reported as
+    # success, audited as a request, and never heard of again.
+    job = begin
+      AwsLabsCdefRefreshJob.perform_later(force: true)
+    rescue ActiveJob::EnqueueError => e
+      enqueue_error = "#{e.class}: #{e.message}"
+      nil
+    end
+    unless job && job.successfully_enqueued?
+      Rails.cache.delete(lock_key)
+      reason = enqueue_error || job&.enqueue_error&.message || "the job queue did not accept it"
+      audit_log("aws_labs_cdef_refresh_enqueue_failed", subject: nil,
+                metadata: { triggered_via: "ui", actor_email: current_user&.email, error_message: reason.to_s[0, 300] })
+      redirect_to cdef_documents_path, flash: { error: "The AWS Labs refresh could not be queued: #{reason.to_s[0, 200]}" }
+      return
+    end
+
     audit_log("aws_labs_cdef_refresh_requested",
       subject: nil,
       metadata: { triggered_via: "ui", actor_email: current_user&.email })
 
     redirect_to cdef_documents_path,
-      flash: { success: "AWS Labs CDEF refresh queued. New rows will appear once the worker processes them." }
+      flash: { success: "AWS Labs CDEF refresh queued. It takes one to two minutes; its progress shows beside the Refresh button." }
   end
 
   def status

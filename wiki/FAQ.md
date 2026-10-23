@@ -83,7 +83,9 @@ skips a section whose version already matches (the v1.6.6 converters incident).
 
 **A new AWS converter / CDEF didn't appear after deploy.**
 Same cause as above — confirm the relevant `SeedRunner` version was bumped, and
-for AWS Labs CDEFs that `SPARC_AWS_LABS_CDEF_ENABLED=true`.
+for AWS Labs CDEFs that `SPARC_AWS_LABS_CDEF_ENABLED=true`. The Component
+Definitions screen shows what the last AWS Labs refresh did, beside **Refresh
+from AWS Labs** ([what each state means](Configuration#what-the-last-refresh-did)).
 
 ## OSCAL & validation
 
