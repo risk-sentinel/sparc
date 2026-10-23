@@ -28,7 +28,15 @@ class ControlRequirementText
   STATEMENT_PARTS = %w[statement item].freeze
 
   def self.for_profile(profile)
-    new(catalog: profile&.control_catalog, values: parameter_values(profile))
+    new(catalog: profile&.control_catalog, values: parameter_values(profile), alters: alters(profile))
+  end
+
+  # #1252 — canonical control id => the profile's stored alters for it.
+  def self.alters(profile)
+    return {} if profile.nil?
+
+    profile.profile_controls.where.not(alters: []).pluck(:control_id, :alters)
+           .to_h { |id, alters| [ ControlId.canonical(id), alters ] }
   end
 
   # param_id => the value the baseline sets. A blank value is not set.
@@ -44,9 +52,10 @@ class ControlRequirementText
                        end
   end
 
-  def initialize(catalog:, values: {})
+  def initialize(catalog:, values: {}, alters: {})
     @catalog = catalog
     @values = values || {}
+    @alters = alters || {}
   end
 
   # @param control_ids [Array<String>] in any form (ac-1, AC-01, ac-2(1))
@@ -64,7 +73,9 @@ class ControlRequirementText
       key = ControlId.canonical(control.control_id)
       next unless wanted.include?(key)
 
-      result[key] = text_for(control, parts[control.id] || [])
+      rows = parts[control.id] || []
+      rows = altered_rows(control, rows, @alters[key]) if @alters[key].present?
+      result[key] = text_for(control, rows)
     end
   end
 
@@ -88,6 +99,39 @@ class ControlRequirementText
       lines << ("  " * [ depth[row.part_id], 0 ].max) + [ row.label, text ].compact_blank.join(" ")
     end
     Text.new(full: lines.join("\n"), parts: prose)
+  end
+
+  # #1252 — the statement rows as the profile's alters leave them: removed
+  # items gone, added items in place. Rebuilt into the OSCAL tree, altered by
+  # ProfileAlterations (the definition the resolved catalog uses), and read
+  # back depth-first, which is the stored row order.
+  Row = Struct.new(:part_id, :parent_part_id, :label, :prose, keyword_init: true)
+
+  def altered_rows(control, rows, alters)
+    nodes = rows.to_h do |row|
+      node = { "id" => row.part_id, "name" => row.part_name }
+      node["props"] = [ { "name" => "label", "value" => row.label } ] if row.label.present?
+      node["prose"] = row.prose if row.prose.present?
+      [ row.part_id, node ]
+    end
+    roots = []
+    rows.each do |row|
+      parent = row.parent_part_id.present? && nodes[row.parent_part_id]
+      parent ? (parent["parts"] ||= []) << nodes[row.part_id] : roots << nodes[row.part_id]
+    end
+
+    tree = ProfileAlterations.new(alters).apply!({ "id" => control.control_id, "parts" => roots })
+    flatten_parts(tree["parts"], nil)
+  end
+
+  def flatten_parts(parts, parent_id)
+    Array(parts).flat_map do |part|
+      next [] unless STATEMENT_PARTS.include?(part["name"].to_s)
+
+      label = Array(part["props"]).find { |pr| pr["name"] == "label" }&.dig("value")
+      [ Row.new(part_id: part["id"], parent_part_id: parent_id, label: label, prose: part["prose"]) ] +
+        flatten_parts(part["parts"], part["id"])
+    end
   end
 
   # A catalog imported before parts were stored has only the flattened

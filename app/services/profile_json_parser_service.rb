@@ -31,7 +31,8 @@ class ProfileJsonParserService
 
     update_document_metadata(metadata, imports, profile)
 
-    selected_ids = extract_selected_control_ids(imports)
+    # #1252 — the union of every import's selection, in import order.
+    selected_ids = @import_resolutions.flat_map(&:control_ids).uniq
     source_catalog_ids = source_catalog_ids_by_control
     alter_map    = build_alter_map(modify["alters"] || [])
     param_map    = build_param_map(modify["set-parameters"] || [])
@@ -81,27 +82,26 @@ class ProfileJsonParserService
   # Builds one control's attrs + field entries, appending to the shared
   # accumulators (kept out of #parse to bound its cognitive complexity).
   def append_control_entry(raw_id, row_order, alter_map, param_map, control_attrs, field_entries)
-    alter = alter_map[raw_id]
+    alters = alter_map[raw_id] || []
 
     control_attrs << {
       control_id:     raw_id,
       title:          nil,
-      priority:       extract_priority(alter),
+      priority:       extract_priority(alters),
       control_family: raw_id.split("-").first.upcase.presence,
-      row_order:      row_order
+      row_order:      row_order,
+      alters:         stored_alters(alters)
     }
     idx = control_attrs.size - 1
 
-    append_alter_prop_fields(alter, idx, field_entries)
+    append_alter_prop_fields(alters, idx, field_entries)
     append_param_fields(raw_id, idx, param_map, field_entries)
   end
 
   # Store alter `adds` props as fields (skipping the priority prop, which is
   # promoted to a column above).
-  def append_alter_prop_fields(alter, idx, field_entries)
-    return unless alter
-
-    (alter["adds"] || []).each do |add|
+  def append_alter_prop_fields(alters, idx, field_entries)
+    alters.flat_map { |alter| Array(alter["adds"]) }.each do |add|
       (add["props"] || []).each do |prop|
         next if prop["name"] == "priority"
         field_entries << [ idx, "prop:#{prop['name']}", prop["value"] ]
@@ -198,7 +198,8 @@ class ProfileJsonParserService
   def import_records
     @import_resolutions.map do |r|
       { "href" => r.href, "title" => r.label, "control_ids" => r.control_ids,
-        "catalog_id" => r.catalog&.id, "matched_by" => r.matched_by }.compact
+        "catalog_id" => r.catalog&.id, "matched_by" => r.matched_by,
+        "unresolved_selectors" => r.unresolved.presence, "unknown_ids" => r.unknown_ids.presence }.compact
     end
   end
 
@@ -206,7 +207,8 @@ class ProfileJsonParserService
   # or a source until the catalog is loaded and the profile re-imported.
   def unlinked_import_records
     @import_resolutions.reject(&:linked?).map do |r|
-      { "href" => r.href, "title" => r.label, "control_ids" => r.control_ids }
+      { "href" => r.href, "title" => r.label, "control_ids" => r.control_ids,
+        "unresolved_selectors" => r.unresolved.presence }.compact
     end
   end
 
@@ -271,20 +273,26 @@ class ProfileJsonParserService
     end
   end
 
-  def extract_selected_control_ids(imports)
-    ids = []
-    imports.each do |imp|
-      (imp["include-controls"] || []).each do |ic|
-        ids.concat(Array(ic["with-ids"]))
-      end
-    end
-    ids.uniq
-  end
-
+  # #1252 — control id => every alter naming it, in document order. A profile
+  # may alter one control more than once; keeping only the last dropped the rest.
   def build_alter_map(alters)
     alters.each_with_object({}) do |alter, map|
       cid = alter["control-id"]
-      map[cid] = alter if cid
+      (map[cid] ||= []) << alter if cid
+    end
+  end
+
+  # #1252 — what profile_controls.alters holds: each alter's removes, and its
+  # adds without props (those are stored as fields and the priority column, as
+  # before). ProfileAlterations applies it; profile export writes it back.
+  def stored_alters(alters)
+    alters.filter_map do |alter|
+      adds = Array(alter["adds"]).map { |add| add.except("props") }
+                                 .select { |add| add.except("position", "by-id").any? }
+      removes = Array(alter["removes"])
+      next if adds.empty? && removes.empty?
+
+      { "removes" => removes.presence, "adds" => adds.presence }.compact
     end
   end
 
@@ -295,9 +303,8 @@ class ProfileJsonParserService
     end
   end
 
-  def extract_priority(alter)
-    return nil unless alter
-    Array(alter["adds"]).flat_map { |add| Array(add["props"]) }
+  def extract_priority(alters)
+    Array(alters).flat_map { |alter| Array(alter["adds"]) }.flat_map { |add| Array(add["props"]) }
       .find { |prop| prop["name"] == "priority" }&.[]("value")
   end
 

@@ -1,0 +1,28 @@
+<%# #1252 — a control's stored OSCAL alters, as the baseline states them.
+    A remove names what it matches (by-id, by-name, by-class, by-ns,
+    by-item-name); an add names where it goes and the parts it adds. %>
+<% removes = alters.flat_map { |a| Array(a["removes"]) } %>
+<% adds    = alters.flat_map { |a| Array(a["adds"]) } %>
+<div class="sparc-fs-078 mb-2" data-testid="profile-control-alters">
+  <div class="fw-semibold mb-1">Tailored by this baseline</div>
+  <% if removes.any? %>
+    <div class="mb-1">
+      <span class="text-body-secondary">Removes:</span>
+      <% removes.each do |remove| %>
+        <code class="me-2" data-testid="alter-remove"><%= remove.map { |k, v| "#{k}=#{v}" }.join(", ") %></code>
+      <% end %>
+    </div>
+  <% end %>
+  <% adds.each do |add| %>
+    <% Array(add["parts"]).each do |part| %>
+      <div class="mb-1" data-testid="alter-add">
+        <span class="text-body-secondary">
+          Adds <code><%= part["id"].presence || part["name"] %></code>
+          <%= [ add["position"].presence || "ending", add["by-id"] ].compact.join(" ") %>:
+        </span>
+        <%= Array(part["props"]).find { |pr| pr["name"] == "label" }&.dig("value") %>
+        <%= part["prose"] %>
+      </div>
+    <% end %>
+  <% end %>
+</div>

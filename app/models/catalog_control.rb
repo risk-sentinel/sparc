@@ -255,10 +255,56 @@ class CatalogControl < ApplicationRecord
 
   default_scope { order(Arel.sql("COALESCE(sort_id, control_id)")) }
 
-  # Scope to only base controls (e.g. "ac-1") and enhancements (e.g. "ac-2.1"),
-  # excluding statement sub-parts like "ac-1a", "ac-1a.1", "ac-1a.1.(a)".
-  # OSCAL base/enhancement IDs match: letter(s) + dash + digits + optional .digits
-  scope :top_level, -> { where("control_id ~ ?", '^[a-z]+-[0-9]+(\\.[0-9]+)?$') }
+  # Controls (e.g. "ac-1", "ac-2.1", "ksi-auth-01"), excluding the statement
+  # items an import derives ("ac-1a", "ac-1a.1", "ac-1a.1.(a)").
+  #
+  # #1252 — read from `statement_item`, which imports record and
+  # CatalogHierarchyBackfill set on older rows. It matched NIST's id shape, so
+  # every control of a catalog with other ids (FedRAMP 20x) was excluded.
+  scope :top_level, -> { where(statement_item: false) }
+
+  # #1252 — a control created any way other than from a catalog file (the
+  # editor, the API, a seed, another importer) is placed under the nearest
+  # control in the same catalog whose id it extends (`ac-2.3` under `ac-2`), as
+  # an import of NIST's tree would have placed it. A catalog import sets
+  # `hierarchy_recorded`, so the tree its file gives is kept as written,
+  # including a control the file puts at the top level.
+  attr_accessor :hierarchy_recorded
+
+  before_create :assign_inferred_parent, unless: :hierarchy_recorded
+
+  # A row whose id extends a control's by a letter (`ac-2a`, `ac-2a.1`) is a
+  # statement item of it, as NIST names them. Leaves an explicit parent, or a
+  # statement item, alone.
+  private def assign_inferred_parent
+    return self if parent_control_id.present? || statement_item?
+
+    catalog_id = control_family&.control_catalog_id
+    return self if catalog_id.nil?
+
+    candidates = CatalogControl.unscoped.joins(:control_family)
+                               .where(control_families: { control_catalog_id: catalog_id }, statement_item: false)
+                               .where.not(id: id).pluck(:control_id)
+    if (owner = self.class.statement_item_owner(control_id, candidates))
+      self.statement_item = true
+      self.parent_control_id = owner
+    else
+      self.parent_control_id = candidates.select { |c| self.class.descendant?(control_id, c) }.max_by(&:length)
+    end
+    self
+  end
+
+  # #1252 — where no catalog file says which rows are statement items: the
+  # control `id` extends by a letter, the way NIST names an item (`ac-1` ->
+  # `ac-1a`, `ac-1a.1`); an enhancement extends by a dot (`ac-1.1`) and a
+  # separate control by a digit (`ac-12`). nil when it extends none of `ids`.
+  # FedRAMP 20x ids (`ksi-auth-01`) extend nothing this way. The one rule for
+  # rows with no recorded tree: the backfill and a control created outside an
+  # import both read it.
+  def self.statement_item_owner(id, ids)
+    ids.select { |other| other != id && id.start_with?(other) && id[other.length].to_s.match?(/[a-z]/) }
+       .max_by(&:length)
+  end
 
   # #1115 — an entry that left its authoritative source is RETIRED, never
   # deleted: `ksi_validations` are `dependent: :destroy`, so a delete would take

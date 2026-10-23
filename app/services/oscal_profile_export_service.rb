@@ -156,13 +156,19 @@ class OscalProfileExportService
       props << { "name" => prop_name, "ns" => OscalNamespace.instance, "value" => field.field_value }
     end
 
-    return nil if props.empty?
+    # #1252 — the removes and added parts the profile was imported with.
+    stored  = Array(control.alters)
+    removes = stored.flat_map { |alter| Array(alter["removes"]) }
+    adds    = stored.flat_map { |alter| Array(alter["adds"]) }
+    adds.unshift({ "position" => "starting", "props" => props }) if props.any?
+    return nil if adds.empty? && removes.empty?
 
     {
       # #852 — TokenDatatype, same as with-ids above.
       "control-id" => ControlId.canonical(control.control_id),
-      "adds" => [ { "position" => "starting", "props" => props } ]
-    }
+      "removes" => removes.presence,
+      "adds" => adds.presence
+    }.compact
   end
 
   def build_set_parameters(controls)

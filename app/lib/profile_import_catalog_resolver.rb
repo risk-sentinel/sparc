@@ -26,9 +26,14 @@ class ProfileImportCatalogResolver
   REVISION_WORD  = /revision[_\s]*(\d+)/i
   UUID_PATTERN   = /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/
 
-  Resolution = Struct.new(:index, :href, :control_ids, :catalog, :matched_by, :label, keyword_init: true) do
+  # #1252 — `unresolved` names the selectors an import uses that need its
+  # catalog (include-all, matching, with-child-controls) when no loaded catalog
+  # matched it; `unknown_ids` the `with-ids` its catalog does not hold.
+  Resolution = Struct.new(:index, :href, :control_ids, :catalog, :matched_by, :label,
+                          :unresolved, :unknown_ids, keyword_init: true) do
     def linked? = catalog.present?
   end
+
 
   # @param back_matter [Array<Hash>] the profile's raw `back-matter.resources`
   def initialize(back_matter, catalogs: ControlCatalog.all.to_a)
@@ -43,15 +48,41 @@ class ProfileImportCatalogResolver
       href = imp["href"].to_s
       resource = @resources[href.delete_prefix("#")]
       catalog, matched_by = match(href, resource)
-      Resolution.new(index: index, href: href, control_ids: selected_ids(imp), catalog: catalog,
-                     matched_by: matched_by, label: resource&.dig("title").presence || href)
+      ids, unresolved, unknown = selection(imp, catalog)
+      Resolution.new(index: index, href: href, control_ids: ids, catalog: catalog,
+                     matched_by: matched_by, label: resource&.dig("title").presence || href,
+                     unresolved: unresolved, unknown_ids: unknown)
     end
   end
 
   private
 
-  def selected_ids(imp)
-    Array(imp["include-controls"]).flat_map { |ic| Array(ic["with-ids"]) }.uniq
+  # #1252 — a linked import is selected by ProfileSelection against its own
+  # catalog's control tree. An unlinked one has no tree: its named ids are
+  # kept, as before, less any it excludes by name, and every selector that
+  # needs the catalog is reported instead of guessed (owner, 2026-10-22).
+  def selection(imp, catalog)
+    if catalog
+      selector = ProfileSelection.new(tree_for(catalog))
+      return [ selector.select(imp), [], selector.unknown_ids(imp) ]
+    end
+
+    named    = Array(imp["include-controls"]).flat_map { |ic| Array(ic["with-ids"]) }.map(&:to_s)
+    excluded = Array(imp["exclude-controls"]).flat_map { |ic| Array(ic["with-ids"]) }.map(&:to_s)
+    [ (named - excluded).uniq, catalog_selectors(imp), [] ]
+  end
+
+  def catalog_selectors(imp)
+    selectors = Array(imp["include-controls"]) + Array(imp["exclude-controls"])
+    used = []
+    used << "include-all" if imp.key?("include-all")
+    used << "matching" if selectors.any? { |s| Array(s["matching"]).any? }
+    used << "with-child-controls" if selectors.any? { |s| s["with-child-controls"] == ProfileSelection::YES }
+    used
+  end
+
+  def tree_for(catalog)
+    (@trees ||= {})[catalog.id] ||= CatalogControlTree.for(catalog)
   end
 
   def match(href, resource)

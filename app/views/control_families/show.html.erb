@@ -92,7 +92,20 @@
         </tr>
       </thead>
       <tbody>
-        <% @catalog_controls.sort_by { |c| CatalogControl.control_sort_key(c.control_id) }.each do |control| %>
+        <% columns = 4 + (can_edit_baselines ? 1 : 0) + (can_write_catalogs? ? 1 : 0) %>
+        <% @control_sections.each do |section| %>
+        <% if section[:title] %>
+          <%# #1252 — a nested OSCAL group: a heading over the controls it holds. %>
+          <tr class="table-light" data-testid="catalog-subgroup-heading">
+            <th colspan="<%= columns %>" scope="colgroup" class="ps-<%= [ section[:depth] * 2, 5 ].min %>">
+              <%= section[:title] %>
+              <% unless section[:key].to_s.start_with?("~") %>
+                <span class="text-body-secondary fw-normal small ms-2"><%= section[:key] %></span>
+              <% end %>
+            </th>
+          </tr>
+        <% end %>
+        <% section[:controls].sort_by { |c| CatalogControl.control_sort_key(c.control_id) }.each do |control| %>
           <% depth      = ctrl_depth.call(control.control_id) %>
           <% stmt_text  = control.guidance_data["statement"].presence %>
           <tr class="<%= "sparc-row-nested" if depth > 0 %>" data-control-db-id="<%= control.id %>">
@@ -249,6 +262,7 @@
               </td>
             <% end %>
           </tr>
+        <% end %>
         <% end %>
       </tbody>
     </table>
