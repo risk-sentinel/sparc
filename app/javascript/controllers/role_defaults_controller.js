@@ -9,7 +9,7 @@ import { Controller } from "@hotwired/stimulus"
 // is saved until the form is submitted, and the server decides what is
 // recorded as the administrator's choice (Role#record_admin_choices): a key
 // saved at its shipped default follows the shipped default again.
-export default class extends Controller {
+export default class RoleDefaultsController extends Controller {
   static targets = ["field"]
 
   connect() {
