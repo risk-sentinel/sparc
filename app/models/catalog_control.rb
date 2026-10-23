@@ -276,7 +276,7 @@ class CatalogControl < ApplicationRecord
   # A row whose id extends a control's by a letter (`ac-2a`, `ac-2a.1`) is a
   # statement item of it, as NIST names them. Leaves an explicit parent, or a
   # statement item, alone.
-  def assign_inferred_parent
+  private def assign_inferred_parent
     return self if parent_control_id.present? || statement_item?
 
     catalog_id = control_family&.control_catalog_id

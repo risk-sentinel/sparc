@@ -166,18 +166,7 @@ RSpec.describe "Catalog control hierarchy (#1252)" do
   end
 
   describe "a control created by hand" do
-    it "is placed under the nearest control its id extends" do
-      catalog = create(:control_catalog)
-      family = create(:control_family, control_catalog: catalog, code: "ZZ")
-      family.catalog_controls.create!(control_id: "zz-2", title: "Base")
-      enhancement = family.catalog_controls.build(control_id: "zz-2.3", title: "Enh").assign_inferred_parent
-      separate = family.catalog_controls.build(control_id: "zz-20", title: "Other").assign_inferred_parent
-
-      expect(enhancement.parent_control_id).to eq("zz-2")
-      expect(separate.parent_control_id).to be_nil
-    end
-
-    it "is placed the same way when saved by any writer, with no call of its own" do
+    it "is placed under the nearest control its id extends, whichever writer saves it" do
       catalog = create(:control_catalog)
       family = create(:control_family, control_catalog: catalog, code: "ZZ")
       family.catalog_controls.create!(control_id: "zz-2", title: "Base")

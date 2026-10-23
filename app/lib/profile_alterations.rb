@@ -26,6 +26,9 @@
 class ProfileAlterations
   ITEM_KEYS = { "param" => "params", "prop" => "props", "link" => "links", "part" => "parts" }.freeze
   DEFAULT_POSITION = "ending"
+  BY_ITEM_NAME = "by-item-name"
+  BY_NAME = "by-name"
+  BY_CLASS = "by-class"
 
   attr_reader :unplaced
 
@@ -64,13 +67,13 @@ class ProfileAlterations
   end
 
   def matches?(item, kind, remove)
-    return false if remove["by-item-name"].present? && remove["by-item-name"] != kind
-    return false if remove["by-name"].present? && item["name"] != remove["by-name"]
-    return false if remove["by-class"].present? && item["class"] != remove["by-class"]
+    return false if remove[BY_ITEM_NAME].present? && remove[BY_ITEM_NAME] != kind
+    return false if remove[BY_NAME].present? && item["name"] != remove[BY_NAME]
+    return false if remove[BY_CLASS].present? && item["class"] != remove[BY_CLASS]
     return false if remove["by-ns"].present? && item["ns"] != remove["by-ns"]
     return false if remove["by-id"].present? && item_id(item, kind) != remove["by-id"]
 
-    remove.slice("by-name", "by-class", "by-id", "by-ns", "by-item-name").values.any?(&:present?)
+    remove.slice(BY_NAME, BY_CLASS, "by-id", "by-ns", BY_ITEM_NAME).values.any?(&:present?)
   end
 
   def item_id(item, kind) = kind == "prop" ? item["uuid"] : item["id"]

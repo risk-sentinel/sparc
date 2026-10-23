@@ -14,7 +14,7 @@ module CatalogGroupTree
   # A group's own fields; `controls` are rows and `groups` are recursed.
   FIELDS = %w[id class title params props links parts].freeze
 
-  module_function
+  extend self
 
   # Controls directly in these groups and in every group below them.
   def control_count(groups)

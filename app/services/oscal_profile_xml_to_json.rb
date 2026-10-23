@@ -19,6 +19,8 @@
 #
 # NIST 800-53: SI-10 (an unknown element is refused, never dropped).
 class OscalProfileXmlToJson < OscalCatalogXmlToJson
+  INSERT_CONTROLS = "insert-controls"
+
   def convert
     doc = XmlSecurity.parse(@xml, keep_blanks: true)
     doc.remove_namespaces!
@@ -100,7 +102,7 @@ class OscalProfileXmlToJson < OscalCatalogXmlToJson
     each_child(node) do |child, out|
       case child.name
       when "group"           then push(obj, "groups", custom_group(child))
-      when "insert-controls" then push(obj, "insert-controls", insert_controls(child))
+      when INSERT_CONTROLS then push(obj, INSERT_CONTROLS, insert_controls(child))
       else out.unknown!
       end
     end
@@ -117,7 +119,7 @@ class OscalProfileXmlToJson < OscalCatalogXmlToJson
       when "link"            then push(obj, "links", link(child))
       when "part"            then push(obj, "parts", part(child))
       when "group"           then push(obj, "groups", custom_group(child))
-      when "insert-controls" then push(obj, "insert-controls", insert_controls(child))
+      when INSERT_CONTROLS then push(obj, INSERT_CONTROLS, insert_controls(child))
       else out.unknown!
       end
     end

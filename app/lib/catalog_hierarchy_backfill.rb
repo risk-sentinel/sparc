@@ -42,7 +42,7 @@ class CatalogHierarchyBackfill
 
     items = items_from_parts(rows, ids_by_control)
     by_parts = items.size
-    items.merge!(items_from_ids(rows, ids_by_control.keys, items))
+    items.merge!(items_from_ids(ids_by_control.keys, items))
 
     controls = ids_by_control.keys - items.keys
     parents = controls.to_h { |cid| [ cid, nearest_ancestor(cid, controls) ] }
@@ -91,7 +91,7 @@ class CatalogHierarchyBackfill
   end
 
   # Only for rows the parts did not classify, on controls with no stored parts.
-  def items_from_ids(rows, all_ids, known_items)
+  def items_from_ids(all_ids, known_items)
     unresolved = all_ids - known_items.keys
     unresolved.each_with_object({}) do |cid, items|
       owner = CatalogControl.statement_item_owner(cid, unresolved)
