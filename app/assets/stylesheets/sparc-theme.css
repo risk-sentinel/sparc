@@ -1438,6 +1438,22 @@ a.link-purple { color: var(--sparc-purple); }
   border-top: 1px solid var(--bs-border-color);
 }
 
+/* A control's parameters (#1270). A parameter's label comes from the catalog
+   and its value from whoever tailors the baseline, so either can be long. The
+   shared label rule keeps labels on one line, which here stretched the label
+   column across the table and pushed the values out of the box. Scoped to this
+   table: the other field tables hold short field names. `anywhere`, not
+   `break-word`, because only `anywhere` lets a long unbroken value (a URL)
+   shrink the column's minimum width. */
+.sparc-field-table--params .sparc-field-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.sparc-field-table--params .sparc-field-value {
+  overflow-wrap: anywhere;
+}
+
 .sparc-field-label {
   width: 26%;
   padding: 0.4rem 0.5rem 0.4rem 0;
