@@ -104,6 +104,15 @@ class Api::V1::BaseController < ActionController::API
   # `updated_at` and `slug` are refused with or without it.
   ALWAYS_ALLOWED_FIELDS = %w[format].freeze
 
+  # #1267 — the OSCAL metadata every document's page edits, accepted by every
+  # document's API. One list, so the API takes what the OSCAL Metadata form
+  # saves on each type. Before this, Published Date was writable on no API
+  # endpoint, and OSCAL Version on none of SSP, SAR, SAP or POA&M. The rest of
+  # the form (roles, parties, revisions, ...) arrives as `oscal_metadata`, the
+  # same name the responses return it under; see #with_oscal_metadata.
+  OSCAL_METADATA_FIELDS = %i[oscal_version published].freeze
+  OSCAL_METADATA_PARAM = :oscal_metadata
+
   # `params.require(root).permit(*filters)`, except that anything permit would
   # have dropped is reported instead. Returns the permitted parameters, so call
   # sites read the same as the ones they replaced.
@@ -184,11 +193,40 @@ class Api::V1::BaseController < ActionController::API
     [ n, MAX_PAGINATION_LIMIT ].min
   end
 
+  # #1267 — merges a request's `oscal_metadata` into the document's stored
+  # OSCAL metadata. Only the keys the OSCAL Metadata form edits are accepted;
+  # anything else is refused, the way an unknown top-level field is. A key the
+  # request names replaces that key; keys it leaves out are kept, so a caller
+  # can set `remarks` without resending the roles.
+  #
+  # Call on the result of `permit_strictly(root, ..., also_accepts:
+  # [OSCAL_METADATA_PARAM])`; `current` is the document being updated, or nil
+  # on create.
+  def with_oscal_metadata(permitted, root, current)
+    raw = params.dig(root, OSCAL_METADATA_PARAM)
+    return permitted if raw.nil?
+
+    unless raw.is_a?(ActionController::Parameters) || raw.is_a?(Hash)
+      raise UnrecognizedFields.new([ OSCAL_METADATA_PARAM.to_s ], OscalMetadata::METADATA_EXTRA_KEYS)
+    end
+
+    incoming = raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : raw.to_h
+    unknown = incoming.keys.map(&:to_s) - OscalMetadata::METADATA_EXTRA_KEYS
+    if unknown.any?
+      raise UnrecognizedFields.new(unknown.map { |key| "#{OSCAL_METADATA_PARAM}.#{key}" },
+                                   OscalMetadata::METADATA_EXTRA_KEYS)
+    end
+
+    permitted.merge(metadata_extra: (current&.metadata_extra || {}).merge(incoming.stringify_keys))
+  end
+
   # Shared OSCAL metadata and back-matter serialization for document APIs.
   # Call from serialize_document to append published, metadata_extra, and
   # back_matter_resources to any document response hash.
   def append_oscal_fields(data, doc, detailed: false)
     data[:published] = doc.try(:published)
+    # #1267 — every type accepts it, so every type returns it.
+    data[:oscal_version] = doc.try(:oscal_version)
     data[:back_matter_resources_count] = doc.respond_to?(:back_matter_resources) ? doc.back_matter_resources.count : 0
 
     if detailed

@@ -208,6 +208,9 @@ None.
 | `sap_document[assessment_end]` | date | no | Assessment end date (ISO 8601) |
 | `sap_document[sap_version]` | string | no | SAP document version |
 | `sap_document[lifecycle_status]` | string | no | `started`, `in_progress` or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
+| `sap_document[oscal_version]` | string | no | OSCAL version the document declares, e.g. `1.1.3` (#1267) |
+| `sap_document[published]` | string | no | Published date, ISO 8601: OSCAL `metadata.published` (#1267) |
+| `sap_document[oscal_metadata]` | object | no | OSCAL metadata, returned under the same name: any of `roles`, `parties`, `responsible-parties`, `revisions`, `props`, `links`, `document-ids`, `locations`, `remarks`. Keys sent replace those keys and keys left out are kept. Any other key is refused with `422` and nothing changes (#1267) |
 
 #### Response Body
 

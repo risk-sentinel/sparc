@@ -149,10 +149,12 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   end
 
   def profile_params
-    permit_strictly(:profile_document,
+    permitted = permit_strictly(:profile_document,
       :name, :description, :baseline_level, :profile_version,
-      :oscal_version, :control_catalog_id, :lifecycle_status, :file_type
+      :control_catalog_id, :lifecycle_status, :file_type,
+      *OSCAL_METADATA_FIELDS, also_accepts: [ OSCAL_METADATA_PARAM ]
     )
+    with_oscal_metadata(permitted, :profile_document, @profile)
   end
 
   def serialize_profile(profile, detailed: false)

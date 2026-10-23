@@ -174,6 +174,8 @@ None.
 | `control_catalog[source]` | string | no | Origin of the catalog (e.g., `NIST`, `CIS`) |
 | `control_catalog[oscal_version]` | string | no | OSCAL schema version |
 | `control_catalog[lifecycle_status]` | string | no | `started`, `in_progress` or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
+| `control_catalog[published]` | string | no | Published date, ISO 8601: OSCAL `metadata.published` (#1267) |
+| `control_catalog[oscal_metadata]` | object | no | OSCAL metadata, returned under the same name: any of `roles`, `parties`, `responsible-parties`, `revisions`, `props`, `links`, `document-ids`, `locations`, `remarks`. Keys sent replace those keys and keys left out are kept. Any other key is refused with `422` and nothing changes (#1267) |
 
 #### Response Body
 

@@ -216,6 +216,9 @@ None.
 | `poam_document[poam_version]` | string | no | POA&M document version |
 | `poam_document[system_id]` | string | no | System identifier |
 | `poam_document[lifecycle_status]` | string | no | `started`, `in_progress` or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
+| `poam_document[oscal_version]` | string | no | OSCAL version the document declares, e.g. `1.1.3` (#1267) |
+| `poam_document[published]` | string | no | Published date, ISO 8601: OSCAL `metadata.published` (#1267) |
+| `poam_document[oscal_metadata]` | object | no | OSCAL metadata, returned under the same name: any of `roles`, `parties`, `responsible-parties`, `revisions`, `props`, `links`, `document-ids`, `locations`, `remarks`. Keys sent replace those keys and keys left out are kept. Any other key is refused with `422` and nothing changes (#1267) |
 
 #### Response Body
 
