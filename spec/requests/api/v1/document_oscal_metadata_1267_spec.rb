@@ -70,6 +70,17 @@ RSpec.describe "Api::V1 document OSCAL metadata (#1267)", type: :request do
         expect(response.parsed_body["details"]).to include("Unrecognized field: oscal_metadata.not-an-oscal-key")
         expect(document.reload.description).to eq(before_description)
       end
+
+      it "refuses OSCAL metadata that is not an object, and changes nothing" do
+        before_description = document.description
+
+        put path, headers: headers, as: :json,
+                  params: { key => { description: "Invented change", oscal_metadata: "Invented remarks" } }
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["details"]).to include("Unrecognized field: oscal_metadata")
+        expect(document.reload.description).to eq(before_description)
+      end
     end
   end
 end
