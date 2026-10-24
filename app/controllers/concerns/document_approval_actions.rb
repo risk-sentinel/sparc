@@ -13,7 +13,7 @@ module DocumentApprovalActions
 
   # POST /<resource>/:id/submit_for_review
   def submit_for_review
-    run_approval_transition { |svc| svc.submit_for_review! }
+    run_approval_transition { |svc| svc.submit_for_review!(requested_scope: params[:requested_scope]) }
   end
 
   # POST /<resource>/:id/approve

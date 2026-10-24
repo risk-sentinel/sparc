@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_24_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_24_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -443,6 +443,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_24_120000) do
     t.bigint "profile_document_id"
     t.string "published"
     t.text "rejection_reason"
+    t.string "requested_scope"
     t.string "slug"
     t.string "status", default: "pending"
     t.datetime "submitted_at"
@@ -466,6 +467,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_24_120000) do
     t.index ["submitted_by_user_id"], name: "index_cdef_documents_on_submitted_by_user_id"
     t.index ["uploaded_by_user_id"], name: "index_cdef_documents_on_uploaded_by_user_id"
     t.index ["uuid"], name: "index_cdef_documents_on_uuid", unique: true
+    t.check_constraint "requested_scope::text = ANY (ARRAY['global'::character varying, 'instance'::character varying]::text[])", name: "cdef_documents_requested_scope_values"
   end
 
   create_table "cdef_service_aliases", force: :cascade do |t|

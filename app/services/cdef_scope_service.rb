@@ -28,6 +28,11 @@ class CdefScopeService
     "Making a component definition available instance-wide needs cdef.write across the instance " \
     "(Policy Manager or instance administrator).".freeze
 
+  # #1275 — the scopes a submit for review may ask for, and how wide each tier is.
+  REQUESTABLE  = %w[global instance].freeze
+  REQUEST_TIER = { "global" => :organization, "instance" => :instance }.freeze
+  TIER_RANK    = { boundary: 0, organization: 1, instance: 2 }.freeze
+
   class << self
     # #980/#1257 — instance-wide publishes a CDEF to every organization on the
     # instance, including ones the requester is not a member of, so it needs
@@ -82,6 +87,46 @@ class CdefScopeService
     # The authorization boundary this CDEF is currently scoped to, if any.
     def current_boundary_id(cdef)
       (cdef.import_metadata || {})[METADATA_KEY]
+    end
+
+    # #1275 — a wider scope asked for at submit for review. Nearly anyone may
+    # author a CDEF on their boundary; making it available more widely is an
+    # approval at the tier it reaches (owner, 2026-10-24), so the author never
+    # needs a wider cdef.write. Who may approve each tier is
+    # CdefWriteAccess.may_approve?.
+    #
+    # The refusal for asking `scope` on this CDEF, or nil when it may be asked.
+    def request_refusal(cdef, scope)
+      unless REQUESTABLE.include?(scope.to_s)
+        return "A wider scope is organization-wide (global) or instance-wide (instance), not #{scope.to_s.inspect}."
+      end
+      return "This component definition was imported from AWS Labs and is read-only. Use 'Copy' to create an editable clone." if cdef.aws_labs_source?
+      if TIER_RANK.fetch(REQUEST_TIER.fetch(scope.to_s)) <= TIER_RANK.fetch(cdef.scope_tier)
+        return "This component definition is already available at least that widely."
+      end
+      if scope.to_s == "global" && requested_organization_id(cdef).nil?
+        return "Organization-wide needs an organization, and this component definition's boundary belongs to none."
+      end
+
+      nil
+    end
+
+    # Applies the scope a CDEF asked for and clears the request. Call inside
+    # the approval's transaction; raises ArgumentError as `apply` does.
+    def apply_requested!(cdef)
+      scope = cdef.requested_scope
+      return cdef if scope.blank?
+
+      apply(cdef, scope: scope, organization_id: (requested_organization_id(cdef) if scope == "global"))
+      cdef.update!(requested_scope: nil)
+      cdef
+    end
+
+    # The organization an organization-wide request is for: the one that owns
+    # the CDEF's boundary, or failing that the CDEF's own.
+    def requested_organization_id(cdef)
+      boundary = CdefWriteAccess.boundary_id(cdef)
+      (boundary && AuthorizationBoundary.where(id: boundary).pick(:organization_id)) || cdef.organization_id
     end
 
     private

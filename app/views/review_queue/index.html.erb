@@ -25,7 +25,7 @@
               badges: [ { text: routes[:label], class: "badge bg-secondary" } ],
               subtitle: "Submitted by #{doc.submitted_by_user&.email || '\u2014'}",
               description: doc.description,
-              empty_note: baseline_review_summary(doc, @baseline_reviews),
+              empty_note: baseline_review_summary(doc, @baseline_reviews) || scope_request_summary(doc),
               actions: render("review_queue/item_actions", doc: doc,
                               approve_path: routes[:approve], reject_path: routes[:reject]) %>
       <% end %>
@@ -59,6 +59,8 @@
                 <% if br.missing.any? %><span class="text-danger" title="<%= br.missing.join(', ') %>">· <%= br.missing.size %> missing</span><% end %>
                 <% if br.extra.any? %><span class="text-warning" title="<%= br.extra.join(', ') %>">· <%= br.extra.size %> extra</span><% end %>
                 · ODP <%= br.odp_customized_count %>/<%= br.odp_total_count %> customized
+              <% elsif (request = scope_request_summary(doc)) %>
+                <span data-testid="review-scope-request"><%= request %></span>
               <% else %>
                 &mdash;
               <% end %>

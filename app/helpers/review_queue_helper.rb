@@ -40,4 +40,11 @@ module ReviewQueueHelper
     parts << "ODP #{review.odp_customized_count}/#{review.odp_total_count} customized"
     parts.join(" · ")
   end
+
+  # #1275 — what approving a CDEF also grants: the wider scope its author asked
+  # for. The reviewer must see it before approving.
+  def scope_request_summary(doc)
+    label = doc.try(:requested_scope_label)
+    label && "Approving makes it available #{label}"
+  end
 end

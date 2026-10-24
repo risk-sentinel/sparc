@@ -39,7 +39,10 @@ class DocumentApprovalService
 
   # Request review. Allowed from draft/rejected; blocked for content-incomplete
   # documents (#628/#634 — an empty shell must not be reviewable).
-  def submit_for_review!
+  #
+  # #1275 — a CDEF may ask for a wider scope ("global" or "instance"), applied
+  # when it is approved. Blank keeps the scope it has.
+  def submit_for_review!(requested_scope: nil)
     unless @document.submittable_for_review?
       return conflict("Document is already #{@document.approval_status}")
     end
@@ -48,9 +51,16 @@ class DocumentApprovalService
                         error: "Cannot submit for review — missing required content: " \
                                "#{@document.content_completeness_gaps.join('; ')}")
     end
+    requested_scope = requested_scope.presence
+    if requested_scope && (refusal = scope_request_refusal(requested_scope))
+      return Result.new(success: false, status_code: :unprocessable_content, error: refusal)
+    end
 
-    @document.submit_for_review!(@actor)
-    audit("submitted_for_review")
+    @document.transaction do
+      @document.submit_for_review!(@actor)
+      @document.update!(requested_scope: requested_scope) if @document.is_a?(CdefDocument)
+    end
+    audit("submitted_for_review", requested_scope ? { requested_scope: requested_scope } : {})
     Result.new(success: true, document: @document)
   end
 
@@ -58,8 +68,18 @@ class DocumentApprovalService
     return refused("approve") unless can_approve?
     return conflict("Document is not pending review") unless @document.approval_pending?
 
-    @document.mark_approved!(@actor)
-    audit("approved")
+    # #1275 — the approval and the scope it was asked for land together.
+    granted = @document.try(:requested_scope)
+    begin
+      @document.transaction do
+        CdefScopeService.apply_requested!(@document) if granted
+        @document.mark_approved!(@actor)
+      end
+    rescue ArgumentError => e
+      @document.reload
+      return conflict(e.message)
+    end
+    audit("approved", granted ? { scope: granted } : {})
     Result.new(success: true, document: @document)
   end
 
@@ -71,7 +91,10 @@ class DocumentApprovalService
                         error: "Rejection reason is required")
     end
 
-    @document.mark_rejected!(reason.to_s.strip)
+    @document.transaction do
+      @document.mark_rejected!(reason.to_s.strip)
+      @document.update!(requested_scope: nil) if @document.try(:requested_scope)
+    end
     audit("rejected", reason: reason.to_s.strip)
     Result.new(success: true, document: @document)
   end
@@ -110,6 +133,13 @@ class DocumentApprovalService
 
     perm = APPROVE_PERMISSION[@document.class.name]
     perm.present? && user.has_permission?(perm)
+  end
+
+  # #1275 — only a CDEF has a scope to widen.
+  def scope_request_refusal(scope)
+    return "Only a component definition can ask for a wider scope." unless @document.is_a?(CdefDocument)
+
+    CdefScopeService.request_refusal(@document, scope)
   end
 
   # #1275 — a refused approve or reject is recorded, as a refused write is
