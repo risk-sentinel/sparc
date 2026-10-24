@@ -196,6 +196,18 @@ RSpec.describe "Boundary-scoped cdef.approve (#1275)", type: :request do
       expect(draft.requested_scope).to be_nil
     end
 
+    it "approves nothing when the scope can no longer be applied, and says why" do
+      submit(draft, "global")
+      x.update_columns(organization_id: nil)
+
+      result = approve(draft, by: isso)
+      expect(result.status_code).to eq(:conflict)
+      expect(result.error).to include("needs an organization")
+      expect(draft.reload.approval_status).to eq("pending_review")
+      expect(draft.scope_tier).to eq(:boundary)
+      expect(AuditEvent.where(action: "cdef_document_approved").for_subject(draft)).not_to exist
+    end
+
     it "drops the request when it is rejected" do
       submit(draft, "instance")
       DocumentApprovalService.new(document: draft, actor: policy_manager).reject!(reason: "Invented: too broad")
