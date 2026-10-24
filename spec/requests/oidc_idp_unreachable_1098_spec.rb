@@ -140,6 +140,11 @@ RSpec.describe "OIDC sign-in when the identity provider is unreachable (#1098)",
       end
     end
 
+    it "still reports, without a host, when the issuer URL does not parse" do
+      allow(SparcConfig).to receive(:oidc_issuer_url).and_return("https://idp example.gov/oauth2")
+      without_proxy_env { expect(described_class.line).to include("issuer host (unparseable issuer URL); no egress proxy applies") }
+    end
+
     it "says nothing when OIDC sign-in is off" do
       allow(SparcConfig).to receive(:enable_oidc?).and_return(false)
       expect(described_class.line).to be_nil
