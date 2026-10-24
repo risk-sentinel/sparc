@@ -195,9 +195,96 @@ For locked-down enterprise or DoD environments (private CAs, a mandated TLS egre
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SPARC_EXTRA_CA_CERTS` | (none) | Path (file, or directory of `.crt`/`.pem`/`.cer`) to custom/private CA certs to trust for **outbound** TLS — LDAPS, OIDC behind a private CA, a TLS-intercepting proxy, or DoD-PKI endpoints. Appended to the system bundle at startup so every outbound client benefits (public CAs stay trusted). Or bake CAs in at build time via `certs/` |
+| `SPARC_EXTRA_CA_CERTS` | (none) | Path (file, or directory of `.crt`/`.pem`/`.cer`) to custom/private CA certs to trust for **outbound** TLS — LDAPS, OIDC behind a private CA, a TLS-intercepting proxy, or DoD-PKI endpoints. Appended to the system bundle at startup so every outbound client benefits (public CAs stay trusted). Or bake CAs in at build time; see [Trusting a custom CA](#trusting-a-custom-ca) |
 | `HTTPS_PROXY` / `HTTP_PROXY` | (none) | Egress proxy for outbound HTTP(S) (OIDC discovery/JWKS, federation sync, content refreshers). Honored scheme-strictly — `HTTPS_PROXY` for `https://`. Lowercase also works |
 | `NO_PROXY` | (none) | Comma-separated hosts/domains that bypass the proxy (e.g. internal federation peers). Lowercase also works |
+
+### Trusting a custom CA
+
+Add a CA when SPARC's **outbound** TLS must trust one the public bundle doesn't
+hold. Typical cases are a TLS-inspecting egress proxy, an OIDC provider or LDAPS
+directory behind a private CA, and DoD-PKI endpoints. Verification stays on: a
+CA you add widens trust; it never switches checking off. There are three ways
+to add one (#1097).
+
+| Way | When to use it | What it costs |
+|---|---|---|
+| **1. Runtime mount** (`SPARC_EXTRA_CA_CERTS`) | **Recommended.** Adding the CA is the only reason you would change the image. | Nothing per release. You keep running the image SPARC signed. |
+| **2. Derived image** (`FROM` the published image) | Your platform requires trust to be baked into the image, for example air-gapped or no runtime mounts. | A rebuild, and your own signature, on **every SPARC release**. |
+| **3. Source-tree build** (`certs/`) | You build SPARC from source anyway. | The same rebuild per release. See `certs/README.md`. |
+
+**1. Runtime mount.** Mount the CA file, or a directory of `.crt`/`.pem`/`.cer`
+files, and point `SPARC_EXTRA_CA_CERTS` at it (or use the conventional path
+`/rails/certs`). At startup SPARC appends it to the system bundle, so the public
+CAs stay trusted:
+
+```yaml
+services:
+  web:
+    environment:
+      SPARC_EXTRA_CA_CERTS: /rails/certs
+    volumes:
+      - ./certs:/rails/certs:ro
+```
+
+**2. Derived image.** The published image ends as the non-root user
+`1000:1000`, so a derived build can't write the system trust store. The obvious
+version fails with `Permission denied` at `update-ca-trust`. Switch to root for
+the trust step, then switch back:
+
+```dockerfile
+# Pin the base by digest, after verifying its signature (below).
+FROM risksentinel/sparc:v1.17.2@sha256:<digest>
+USER root
+COPY corp-root-ca.crt /etc/pki/ca-trust/source/anchors/corp-root-ca.crt
+RUN update-ca-trust
+USER 1000:1000
+```
+
+> **Don't leave out the last line.** Without `USER 1000:1000` the image still
+> works, but SPARC runs as **root**. No functional test notices, and the
+> container has lost its non-root hardening.
+
+`update-ca-trust` is in the runtime image (it was kept deliberately, #1001). The
+step re-applies SPARC's own CA distrust list, so the new CA is added to the
+store rather than replacing it.
+
+A derived image is **your** artifact, not SPARC's, so it's outside SPARC's
+signature chain. A deploy-time check against `risksentinel/sparc` fails for it,
+correctly. Verify the base you derive from, pin it by digest, and sign your own
+build:
+
+```sh
+cosign verify risksentinel/sparc:v1.17.2 \
+  --certificate-identity-regexp="https://github.com/risk-sentinel/sparc/" \
+  --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
+```
+
+**Check it worked** before you rely on it. The image has no `openssl` CLI, so ask
+Ruby's OpenSSL, the library SPARC's outbound clients use:
+
+```sh
+docker run --rm --entrypoint ruby sparc:corp -ropenssl -e '
+  ca = OpenSSL::X509::Certificate.new(File.read(ARGV[0]))
+  store = OpenSSL::X509::Store.new.tap(&:set_default_paths)
+  puts store.verify(ca) ? "trusted" : "NOT trusted: #{store.error_string}"
+' /etc/pki/ca-trust/source/anchors/corp-root-ca.crt     # expect: trusted
+
+docker run --rm --entrypoint id sparc:corp -u           # expect: 1000
+```
+
+For a runtime mount, run the same Ruby check in the running container
+(`docker compose exec web ruby ...`) against the mounted file. The startup log
+also says `[ca-trust] trusting 1 custom CA file(s) from /rails/certs`.
+
+**Not covered: the database.** Postgres's client library (libpq) verifies against
+`sslrootcert` and ignores `SSL_CERT_FILE`, so none of these ways reaches the
+database connection. Use `SPARC_DB_SSLROOTCERT`; see `docs/DATABASE_TLS.md`.
+
+**Usually paired with a proxy.** A TLS-inspecting proxy needs both its CA (here)
+and `HTTPS_PROXY` / `NO_PROXY` (above). They apply scheme-strictly (#775):
+`HTTPS_PROXY` covers SPARC's `https://` calls. See also
+[OIDC sign-in and network egress](Authentication-and-MFA#oidc-sign-in-and-network-egress-1098).
 
 ## OAuth Providers
 

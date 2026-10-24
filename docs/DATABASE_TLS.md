@@ -52,7 +52,7 @@ Verify it took effect (see "Verifying" below) before you rely on it.
 
 `libpq` verifies against `sslrootcert` and **ignores `SSL_CERT_FILE`**. That means the
 runtime CA mechanism used for outbound HTTPS and LDAP (`SPARC_EXTRA_CA_CERTS`, see
-[custom CA trust](ENVIRONMENT_VARIABLES.md)) does **not** cover Postgres — the database
+[custom CA trust](https://github.com/risk-sentinel/sparc/wiki/Configuration#trusting-a-custom-ca)) does **not** cover Postgres — the database
 needs its own trust anchor.
 
 Mount your CA and point at it:
