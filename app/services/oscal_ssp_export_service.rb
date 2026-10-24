@@ -671,9 +671,12 @@ class OscalSspExportService
   # map when a NIST term honestly applies, and when none does, do NOT invent one
   # in NIST's namespace.
   #
-  # "Hybrid — partially inherited" has no NIST equivalent. OSCAL expresses split
-  # responsibility per-component rather than as a control-level term, so there is
-  # nothing to map it to and it is emitted under SPARC's namespace only.
+  # "Hybrid — partially inherited" IS NIST's: SP 800-53 Rev 5 and SP 800-37
+  # Rev 2 call a control part provided by another system and part by this one a
+  # hybrid control. What NIST lacks is a `control-origination` VALUE for it:
+  # OSCAL expresses a hybrid per statement, as a by-component carrying both
+  # `inherited` and `satisfied` (received_from_leveraged, #1242), so at control
+  # level it is emitted under SPARC's namespace only.
   # "Not Applicable" is a STATUS, not an origination, and is dropped here — it is
   # already carried by the implementation-status assembly on by-component.
   NIST_CONTROL_ORIGINATION = {
@@ -771,7 +774,8 @@ class OscalSspExportService
     markers, real_params = Array(stmt.set_parameters_data).partition do |param|
       param.is_a?(Hash) && param.key?(STATEMENT_MARKER_KEY)
     end
-    return [] if markers.empty? && real_params.empty? && stmt.implementation_prose.blank?
+    received = received_from_leveraged(stmt)
+    return [] if markers.empty? && real_params.empty? && stmt.implementation_prose.blank? && received.empty?
 
     component_uuid = statement_component_uuid
     return [] if component_uuid.blank?
@@ -808,9 +812,46 @@ class OscalSspExportService
     end
 
     entry["export"] = exported if exported.any?
+    entry.merge!(received)
 
     entry["set-parameters"] = real_params if real_params.any?
     [ entry ]
+  end
+
+  # #1242 — the LEVERAGING side, which this exporter never wrote: what this
+  # statement takes from a leveraged system's statement (`inherited`, pointing
+  # at its `export.provided`) and the responsibility it hands back that this
+  # system has met (`satisfied`, pointing at its `export.responsibilities`).
+  # Both carry the provider's uuids as build_statement_by_components derives
+  # them on the provider's own export.
+  #
+  # This is how OSCAL expresses NIST's hybrid control: one by-component with
+  # both `inherited` and `satisfied`. A provided part the author has replaced
+  # with their own text is no longer inherited; a hybrid's provided part still
+  # is, whatever the author wrote for their own part.
+  def received_from_leveraged(stmt)
+    received = {}
+    stmt.inheritance_links.each do |link|
+      next unless link.source_type == "SspControlStatement" && (source = link.source)
+
+      provided = source.provided?
+      responsibility = source.customer_responsibility?
+      if provided && (!link.overridden? || responsibility)
+        (received["inherited"] ||= []) << {
+          "uuid"          => OscalUuidService.derived(stmt.uuid, "ssp-statement-inherited", link.source_uuid),
+          "provided-uuid" => OscalUuidService.derived(link.source_uuid, "ssp-statement-provided"),
+          "description"   => "Inherited from the leveraged system's #{source.statement_id}."
+        }
+      end
+      next unless responsibility && stmt.implementation_prose.present?
+
+      (received["satisfied"] ||= []) << {
+        "uuid"                => OscalUuidService.derived(stmt.uuid, "ssp-statement-satisfied", link.source_uuid),
+        "responsibility-uuid" => OscalUuidService.derived(link.source_uuid, "ssp-statement-responsibility"),
+        "description"         => stmt.implementation_prose
+      }
+    end
+    received
   end
 
   # The placeholder a by-component carries when it exists only for its

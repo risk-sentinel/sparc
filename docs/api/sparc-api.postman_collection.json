@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "sparc-api-v1-collection",
     "name": "SPARC API v1",
-    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 325 endpoints across 59 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
+    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 327 endpoints across 59 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -13152,6 +13152,68 @@
               "mode": "raw",
               "raw": "{\n  \"ssp_control_statement\": {\n    \"implementation_prose\": \"Account types are defined in POL-AC-001.\",\n    \"remarks\": \"Reviewed 2026-09-01\",\n    \"responsible_roles_data\": [\n      {\n        \"role-id\": \"system-owner\"\n      }\n    ]\n  }\n}"
             }
+          },
+          "response": []
+        },
+        {
+          "name": "POST reset to source",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_control_statements/{{ssp_control_statement_id}}/reset_to_source",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_control_statements",
+                "{{ssp_control_statement_id}}",
+                "reset_to_source"
+              ]
+            },
+            "description": "`ssp_control_statements#reset_to_source`. Drops this system's edit and takes the source's text again (the SSP screen's Reset); clears any review mark. 422 when nothing is overridden or the SSP is published. Needs `ssp.write`."
+          },
+          "response": []
+        },
+        {
+          "name": "POST mark reviewed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_control_statements/{{ssp_control_statement_id}}/mark_reviewed",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_control_statements",
+                "{{ssp_control_statement_id}}",
+                "mark_reviewed"
+              ]
+            },
+            "description": "`ssp_control_statements#mark_reviewed`. Confirms that the text a CDEF filled in describes this system, keeping it (the SSP screen's Mark reviewed). 422 when no active CDEF link fills the row or the SSP is published. Needs `ssp.write`."
           },
           "response": []
         },

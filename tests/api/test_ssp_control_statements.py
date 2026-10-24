@@ -134,6 +134,62 @@ class TestUpdate:
         assert after["statement_id"] == statement["statement_id"]
 
 
+class TestResponseState:
+    """#1242 — each row says whether the baseline needs it, and its state."""
+
+    STATES = {"inherited", "hybrid_satisfied", "hybrid_unsatisfied",
+              "responsibility_unsatisfied", "implemented", "missing"}
+
+    def test_required_rows_carry_a_state_and_others_none(self, admin_client, ssp_slug):
+        r = admin_client.get(f"/api/v1/ssp_documents/{ssp_slug}/statements",
+                             params={"per_page": 100})
+        assert r.status_code == 200, r.text
+        rows = r.json()["data"]
+        assert any(row["required"] for row in rows), "no row on the SSP is a required response"
+        for row in rows:
+            if row["required"]:
+                assert row["response_state"] in self.STATES, row
+            else:
+                assert row["response_state"] is None, row
+            assert row["cdef_reviewed"] in (True, False, None), row
+
+    def test_the_document_totals_add_up(self, admin_client, ssp_slug):
+        r = admin_client.get(f"/api/v1/ssp_documents/{ssp_slug}")
+        assert r.status_code == 200, r.text
+        progress = r.json()["data"]["response_progress"]
+        assert progress["done"] + progress["owed"] == progress["required"], progress
+
+
+class TestResetAndReview:
+    """#1242 — reset_to_source and mark_reviewed, the screen's Reset and Mark reviewed."""
+
+    def _authored(self, admin_client, ssp_slug):
+        r = admin_client.get(f"/api/v1/ssp_documents/{ssp_slug}/statements",
+                             params={"per_page": 100})
+        rows = [row for row in r.json()["data"] if row["source_kind"] == "authored"]
+        if not rows:
+            pytest.skip("no authored statement on this SSP")
+        return rows[0]
+
+    def test_reset_to_source_refuses_a_row_with_nothing_overridden(self, admin_client, ssp_slug):
+        row = self._authored(admin_client, ssp_slug)
+        r = admin_client.post(f"/api/v1/ssp_control_statements/{row['id']}/reset_to_source")
+        assert r.status_code == 422, r.text
+
+    def test_mark_reviewed_refuses_a_row_no_cdef_fills(self, admin_client, ssp_slug):
+        row = self._authored(admin_client, ssp_slug)
+        r = admin_client.post(f"/api/v1/ssp_control_statements/{row['id']}/mark_reviewed")
+        assert r.status_code == 422, r.text
+
+    def test_both_refuse_an_unauthenticated_caller(self, base_url, statement):
+        import httpx
+
+        with httpx.Client(base_url=base_url, verify=False, timeout=30) as anon:
+            for action in ("reset_to_source", "mark_reviewed"):
+                r = anon.post(f"/api/v1/ssp_control_statements/{statement['id']}/{action}")
+                assert r.status_code == 401, (action, r.text)
+
+
 class TestSurface:
     """No create, no destroy — structure comes from the catalog, not the client."""
 

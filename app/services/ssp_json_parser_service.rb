@@ -563,7 +563,12 @@ class SspJsonParserService
     (stmt[BY_COMPONENTS] || []).each do |bc|
       exported = bc["export"].is_a?(Hash) ? bc["export"] : {}
 
-      provided = Array(exported["provided"]).any? || Array(bc["satisfied"]).any?
+      # #1242 — a conformant `satisfied` entry names the leveraged system's
+      # responsibility it meets (`responsibility-uuid`, required by OSCAL): it
+      # is the leveraging side, not something this system provides. Only the
+      # older shape without one is read as `provided`.
+      provided = Array(exported["provided"]).any? ||
+                 Array(bc["satisfied"]).any? { !_1.is_a?(Hash) || _1["responsibility-uuid"].blank? }
       responsibility = Array(exported["responsibilities"]).any? || Array(bc["responsibilities"]).any?
 
       set_params << { "tag" => "provided" } if provided && no_marker?(set_params, "provided")

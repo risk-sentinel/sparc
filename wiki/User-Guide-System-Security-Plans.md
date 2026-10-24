@@ -167,7 +167,43 @@ The SSP detail page (`/ssp_documents/:id`) is where the real work happens.
    An SSP is answered part by part, so the card no longer offers a control-level
    narrative. One written before v1.17.2 is still shown, and still exported.
 5. Save the card. The **compliance percentage** and progress bar at the top
-   update as you go.
+   update as you go, and so does **Responses done** beside them (see
+   [How much is left to write](#how-much-is-left-to-write)).
+
+### How much is left to write
+
+**Responses done** at the top of an SSP counts what the plan still needs
+written, in responses rather than controls. It reads "*done* of *required*",
+with the inherited, hybrid and owed counts beneath. Each control card shows the
+same count for that control ("4/6 done"), and every row in its Statements table
+says where that response stands.
+
+- **What counts as a response.** One per statement part with no parts below it
+  (AC-1 has six: `a.1.(a)`, `a.1.(b)`, `a.2`, `b`, `c.1`, `c.2`), and one for an
+  enhancement or control that has no parts. The count comes from the SSP's own
+  **baseline**: the controls its profile selects, as the profile tailors them.
+  An agency's tailored baseline, a FedRAMP baseline and a NIST baseline each
+  count what they select. A part with no row yet counts as owed; it does not
+  drop out of the total.
+- **Inherited.** A response a leveraged system provides in full. It counts as
+  done.
+- **Hybrid.** NIST's term for a control part the leveraged system provides in
+  part, handing the rest back. The provider's part is shown read-only above the
+  row's box; the box is for this system's part. It is owed until you write it.
+- **Customer responsibility.** A part the leveraged system hands back entirely.
+  It is owed until you write it.
+- **Implemented.** This system's own text, written here or filled in from a CDEF.
+- **Text from a CDEF** counts as implemented, and the row says so until someone
+  confirms it describes this system. Click **Mark reviewed** to keep it as it
+  is, or edit it to make it your own. A CDEF refresh that changes the text
+  clears the mark.
+- **Text written above its parts** (on `ac-1_smt` when AC-1 has lettered parts)
+  answers none of them, and the row says so. Move each part's text into its row.
+- A control the baseline does not select shows **Not in baseline** and is not
+  counted.
+
+The compliance percentage still rates controls by implementation status; the
+two figures answer different questions.
 
 ### Answering a control statement by statement
 
@@ -278,6 +314,8 @@ one component and cannot carry a pair. See
 | A control shows no **Statements** table | That control genuinely has no statements — roughly thirty Rev 5.2.0 base controls carry only guidance | Nothing to fix; answer the control on the card itself |
 | Statements appear for some controls but not others in an older plan | The catalog was imported before SPARC stored the statement tree | Re-import the catalog, then re-open the SSP |
 | A parameter value on the SSP looks wrong | It comes from the baseline, not the SSP | Change it on the baseline, then re-open the SSP |
+| **Responses done** doesn't move when a control's text is filled in | The text sits above the parts that need it (the row says "Written above its parts") | Move each part's text into its own row |
+| A control card shows **Not in baseline** | The SSP's profile does not select that control | Nothing is owed for it; change the baseline if it should be |
 | **Baseline not set** — the SSP imports a profile SPARC cannot find, and it can't be edited | The profile named in the file isn't loaded, or is named differently | Choose the right profile in the banner's **Profile** list and click **Set baseline**. This works even if the SSP has other problems; the confirmation lists anything still outstanding |
 | **No boundary linked** on an SSP | The SSP was uploaded without a boundary, or before a boundary was required | Pick the boundary in the banner's **Link to a boundary** list and click **Link boundary**. A boundary already linked to a different SSP says so in the list — check that one first |
 | The boundary page warns that several SSPs point at it | More than one SSP is linked to the same boundary, but a boundary has one SSP | Open each SSP listed in the warning and keep the right one linked |

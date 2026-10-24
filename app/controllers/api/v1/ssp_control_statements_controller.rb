@@ -5,6 +5,8 @@
 #   GET   /api/v1/ssp_documents/:ssp_document_id/statements
 #   GET   /api/v1/ssp_control_statements/:id
 #   PATCH /api/v1/ssp_control_statements/:id
+#   POST  /api/v1/ssp_control_statements/:id/reset_to_source   (#1242)
+#   POST  /api/v1/ssp_control_statements/:id/mark_reviewed     (#1242)
 #
 # WHY THIS EXISTS
 #
@@ -26,9 +28,10 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class Api::V1::SspControlStatementsController < Api::V1::BaseController
   before_action :set_document,  only: %i[index]
-  before_action :set_statement, only: %i[show update]
+  before_action :set_statement, only: %i[show update reset_to_source mark_reviewed]
   before_action :authorize_read!,  only: %i[index show]
-  before_action :authorize_write!, only: %i[update]
+  before_action :authorize_write!, only: %i[update reset_to_source mark_reviewed]
+  before_action :ensure_editable!, only: %i[reset_to_source mark_reviewed]
 
   # GET /api/v1/ssp_documents/:ssp_document_id/statements
   #
@@ -54,6 +57,7 @@ class Api::V1::SspControlStatementsController < Api::V1::BaseController
     scope  = scope.order("ssp_controls.control_id ASC, ssp_control_statements.row_order ASC")
     result = paginate(scope, items: 100)
 
+    @progress = SspResponseProgress.new(@document)
     render json: { data: result[:data].map { |stmt| serialize(stmt) }, meta: result[:meta] }
   end
 
@@ -62,9 +66,46 @@ class Api::V1::SspControlStatementsController < Api::V1::BaseController
     render json: { data: serialize(@statement, detailed: true) }
   end
 
+  # POST /api/v1/ssp_control_statements/:id/reset_to_source
+  #
+  # Drops this system's edit and takes the source's text again, as the SSP
+  # screen's Reset does. 422 when nothing was overridden: there is no source
+  # text to go back to, and a silent 200 would read as done.
+  def reset_to_source
+    links = @statement.inheritance_links.where(overridden: true).to_a
+    if links.empty?
+      return render json: { error: "Statement #{@statement.statement_id} has no overridden source to reset to" },
+                    status: :unprocessable_content
+    end
+
+    links.each(&:reset_to_source!)
+    @statement.reload
+    audit_log("ssp_statement_reset_to_source", subject: @document,
+              metadata: { statement_id: @statement.statement_id })
+    render json: { data: serialize(@statement, detailed: true) }
+  end
+
+  # POST /api/v1/ssp_control_statements/:id/mark_reviewed
+  #
+  # Confirms that the text a CDEF filled in is true of this system, keeping it
+  # as it is. 422 when no active CDEF link fills it.
+  def mark_reviewed
+    links = @statement.inheritance_links.from_cdef.active.to_a
+    if links.empty?
+      return render json: { error: "Statement #{@statement.statement_id} has no CDEF text to review" },
+                    status: :unprocessable_content
+    end
+
+    links.each { _1.mark_reviewed!(current_user) }
+    audit_log("ssp_statement_reviewed", subject: @document,
+              metadata: { statement_id: @statement.statement_id })
+    render json: { data: serialize(@statement.reload, detailed: true) }
+  end
+
   # PATCH /api/v1/ssp_control_statements/:id
   def update
-    @statement.update!(statement_params)
+    # #1242 — the screen's save: changed text overrides the links filling it.
+    raise ActiveRecord::RecordInvalid, @statement unless @statement.apply_author_edit(statement_params)
 
     audit_log("ssp_statement_updated", subject: @statement,
               metadata: { ssp_document_id: @document&.id,
@@ -103,6 +144,7 @@ class Api::V1::SspControlStatementsController < Api::V1::BaseController
   end
 
   def serialize(stmt, detailed: false)
+    part = progress&.part_for_statement(stmt.id)
     data = {
       id: stmt.id,
       uuid: stmt.uuid,
@@ -125,7 +167,13 @@ class Api::V1::SspControlStatementsController < Api::V1::BaseController
       # per-statement model exists to make askable — a client should not have to
       # infer it from an empty string.
       answered: stmt.implementation_prose.present?,
-      source_kind: stmt.source_kind
+      source_kind: stmt.source_kind,
+      # #1242 — whether the SSP's baseline needs a response from this row, and
+      # its state (SspResponseProgress::STATES); null for a row that is not a
+      # required response, such as `ac-1_smt` when `ac-1_smt.a` exists.
+      required: part.present?,
+      response_state: part&.state,
+      cdef_reviewed: cdef_reviewed(stmt)
     }
 
     if detailed
@@ -137,6 +185,25 @@ class Api::V1::SspControlStatementsController < Api::V1::BaseController
     end
 
     data
+  end
+
+  def progress
+    return nil unless @document
+
+    @progress ||= SspResponseProgress.new(@document)
+  end
+
+  # true / false when a CDEF fills this row, nil when none does.
+  def cdef_reviewed(stmt)
+    links = stmt.inheritance_links.select { _1.source_type == "CdefControlStatement" && !_1.overridden? }
+    links.empty? ? nil : links.all?(&:reviewed?)
+  end
+
+  # A published SSP is read-only, as its screen's Reset and Mark reviewed are.
+  def ensure_editable!
+    return unless @document&.published_lifecycle?
+
+    render json: { error: "SSP is published and read-only" }, status: :unprocessable_content
   end
 
   def authorize_read!

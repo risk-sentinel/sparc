@@ -59,6 +59,9 @@ controllers:
       download_oscal_unvalidated: ["GET /api/v1/ssp_documents/:id/export?format=oscal&validate=false"]  # #1181 / #1154 part 2 — promoted from gap
       download_xml: ["GET /api/v1/ssp_documents/:id/export?format=oscal-xml"]  # #1181 / #1154 part 2 — promoted from gap
       download_yaml: ["GET /api/v1/ssp_documents/:id/export?format=oscal-yaml"]  # #1181 / #1154 part 2 — promoted from gap
+      update_statement: ["PATCH /api/v1/ssp_control_statements/:id"]  # #1242 — promoted from gap: both save through SspControlStatement#apply_author_edit
+      reset_inherited_statement: ["POST /api/v1/ssp_control_statements/:id/reset_to_source"]  # #1242 — promoted from gap
+      mark_statement_reviewed: ["POST /api/v1/ssp_control_statements/:id/mark_reviewed"]  # #1242
     ui_only:
       - reason: "HTML form pages; the API takes the same fields as a JSON body"
         actions: [new, enrich]
@@ -87,16 +90,9 @@ controllers:
         reason: "system_id, system_name_short, date_authorized, boundary/network/data-flow descriptions, information types and system users are not writable via API"
         would_be: "PATCH /api/v1/ssp_documents/:id"
         partial: true
-      update_statement:
-        reason: "API statement update does not mark an inherited statement overridden, so the next CDEF refresh reverts the edit"
-        would_be: "PATCH /api/v1/ssp_control_statements/:id"
-        partial: true
       refresh_inherited_statements:
         reason: "bulk resync of inherited prose from linked CDEFs is browser-only"
         would_be: "POST /api/v1/ssp_documents/:id/refresh_inherited_statements"
-      reset_inherited_statement:
-        reason: "dropping a statement override and resyncing to source is browser-only"
-        would_be: "POST /api/v1/ssp_control_statements/:id/reset_to_source"
       import_boundary_users:
         reason: "SSP system users have no API; importing boundary members as users is browser-only"
         would_be: "POST /api/v1/ssp_documents/:id/import_boundary_users"

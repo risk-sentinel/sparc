@@ -391,6 +391,7 @@ class AuditEvent < ApplicationRecord
     ssp_document_populated_from_profile
     ssp_statement_updated
     ssp_statement_reset_to_source
+    ssp_statement_reviewed
     ssp_inherited_refreshed
     leveraged_authorizations_without_date_reported
     leveraged_authorization_created
@@ -452,7 +453,7 @@ class AuditEvent < ApplicationRecord
                           boundary_less_documents_reported
                           unscoped_authoritative_back_matter_reported
                           ssp_document_created_from_profile ssp_document_populated_from_profile
-                          ssp_statement_updated ssp_statement_reset_to_source
+                          ssp_statement_updated ssp_statement_reset_to_source ssp_statement_reviewed
                           ssp_role_declared ssp_role_updated ssp_role_undeclared
                           ssp_component_created ssp_component_updated ssp_component_deleted
                           ssp_inherited_refreshed ssp_document_fields_imported],

@@ -1,0 +1,21 @@
+<%# #1242 — responses the SSP's baseline requires, beside the per-control
+    compliance score. The control count rates implementation status; this
+    counts what an author still has to write (SspResponseProgress).
+
+    Locals:
+      progress - SspResponseProgress::Tally for the document %>
+<% counts = progress.counts %>
+<div class="sparc-score-cell" data-testid="ssp-response-progress"
+     data-required="<%= progress.required %>" data-done="<%= progress.done %>" data-owed="<%= progress.owed %>">
+  <div class="sparc-score"><%= progress.done %> <span class="sparc-fs-078 text-body-secondary">of <%= progress.required %></span></div>
+  <div class="sparc-score-label">Responses done</div>
+  <div class="sparc-fs-072 text-body-secondary">
+    <%= safe_join([
+          ("#{counts['inherited']} inherited" if counts["inherited"].positive?),
+          ("#{counts['hybrid_satisfied'] + counts['hybrid_unsatisfied']} hybrid" if (counts["hybrid_satisfied"] + counts["hybrid_unsatisfied"]).positive?),
+          "#{progress.owed} owed",
+          ("#{progress.cdef_unreviewed} CDEF text not reviewed" if progress.cdef_unreviewed.positive?),
+          ("#{progress.parent_level_text} written above its parts" if progress.parent_level_text.positive?)
+        ].compact, " · ") %>
+  </div>
+</div>

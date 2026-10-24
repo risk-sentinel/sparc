@@ -308,6 +308,8 @@ POST /api/v1/service_accounts/:id/disable
 POST /api/v1/service_accounts/:id/enable
 POST /api/v1/service_accounts/:id/regenerate_token
 POST /api/v1/sessions/from_token
+POST /api/v1/ssp_control_statements/:id/mark_reviewed
+POST /api/v1/ssp_control_statements/:id/reset_to_source
 POST /api/v1/ssp_documents
 POST /api/v1/ssp_documents/:id/fields/import/confirm
 POST /api/v1/ssp_documents/:id/fields/import/preview

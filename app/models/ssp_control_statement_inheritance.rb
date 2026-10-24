@@ -11,6 +11,8 @@
 class SspControlStatementInheritance < ApplicationRecord
   belongs_to :ssp_control_statement
   belongs_to :source, polymorphic: true
+  # #1242 — who confirmed that a CDEF's text is true of this system.
+  belongs_to :reviewed_by_user, class_name: "User", optional: true
 
   SOURCE_TYPES = %w[CdefControlStatement SspControlStatement].freeze
 
@@ -36,10 +38,18 @@ class SspControlStatementInheritance < ApplicationRecord
     update!(overridden: true, overridden_prose: new_prose)
   end
 
-  # Drop the override and resync to the current source prose.
+  # #1242 — a review keeps the text as it is and records who vouched for it.
+  def mark_reviewed!(user)
+    update!(reviewed_at: Time.current, reviewed_by_user: user)
+  end
+
+  def reviewed? = reviewed_at.present?
+
+  # Drop the override and resync to the current source prose. The text is the
+  # source's again, so an earlier review no longer covers it.
   def reset_to_source!
     transaction do
-      update!(overridden: false, overridden_prose: nil)
+      update!(overridden: false, overridden_prose: nil, reviewed_at: nil, reviewed_by_user: nil)
       ssp_control_statement.update!(implementation_prose: source.implementation_prose)
     end
   end
