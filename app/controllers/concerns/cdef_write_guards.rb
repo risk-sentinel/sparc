@@ -27,22 +27,11 @@ module CdefWriteGuards
     raise Authorization::NotAuthorizedError, "Permission 'cdef.write' required on this component definition's boundary"
   end
 
-  # A new CDEF (create, import, copy, from a profile): an instance-level writer
-  # keeps every tier; anyone else creates only into a boundary they hold
-  # cdef.write on.
-  def authorize_cdef_create!
-    return unless SparcConfig.any_auth_enabled?
-    return if CdefWriteAccess.instance_writer?(current_user)
-
-    scope, boundary_id = requested_cdef_scope
-    return if CdefWriteAccess.may_scope?(current_user, scope, boundary_id)
-
-    raise Authorization::NotAuthorizedError, CdefWriteAccess.scope_refusal(scope)
-  end
-
-  # A scope change: the CDEF as it is now (authorize_cdef_write!) and the scope
-  # it is moving to.
-  def authorize_cdef_scope!
+  # Where a CDEF is going: a new one (create, import, copy, from a profile), or
+  # the target of a scope change, which authorize_cdef_write! has already
+  # checked as it is now. An instance-level writer may use every tier; anyone
+  # else only a boundary they hold cdef.write on.
+  def authorize_cdef_destination!
     return unless SparcConfig.any_auth_enabled?
     return if CdefWriteAccess.instance_writer?(current_user)
 

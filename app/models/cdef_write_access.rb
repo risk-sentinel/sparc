@@ -27,7 +27,7 @@ module CdefWriteAccess
   KEY = "cdef.write"
   SCOPES = %w[boundary global instance].freeze
 
-  module_function
+  extend self
 
   # Instance-level `cdef.write`: writes every CDEF, at every tier.
   def instance_writer?(user) = user.present? && user.has_permission?(KEY)
