@@ -67,5 +67,14 @@ module SparcHttp
       headers.each { |k, v| request[k] = v }
       start(uri) { |http| http.request(request) }
     end
+
+    # #1098 — does an egress proxy apply to `url`? The same scheme-strict,
+    # NO_PROXY-aware rule start uses, so a sign-in diagnosis and the boot
+    # posture report what an outbound call would actually do.
+    def proxied?(url)
+      URI(url.to_s).find_proxy.present?
+    rescue URI::Error
+      false
+    end
   end
 end
