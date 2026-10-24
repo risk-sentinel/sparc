@@ -27,7 +27,7 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | bulk apply — `bulk_apply_converter/preview`, `/confirm`; bulk field import — `fields/import/preview`, `/confirm` | `converters.write` **and** write access to the CDEF (#1258) |
 | `scope` with `"scope": "instance"` | `cdef.write` held across the instance (Policy Manager by default, not a boundary-scoped role), or instance admin |
 | `bulk` delete | instance admin |
-| `approve`, `reject` | `cdef.approve` across the instance, or on the boundary the CDEF is scoped to (#1275); the `policy_manager` role; or instance admin. Never the submitter, except the break-glass administrator |
+| `approve`, `reject` | At the tier the CDEF asked for (#1275): its boundary or organization-wide, `cdef.approve` on the boundary the CDEF is scoped to or across the instance; instance-wide, `cdef.approve` across the instance. Also the `policy_manager` role, or instance admin. Never the submitter, except the instance administrator |
 | `update` / `create` with `lifecycle_status: "published"` on a CDEF that is not approved | `cdef.approve` across the instance, `policy_manager`, or instance admin. A boundary approver submits it for review instead (#1275) |
 
 **Changed in #1258.** A `cdef.write` grant held on an authorization boundary now
@@ -49,6 +49,13 @@ refused (`403`) a CDEF scoped to another boundary, and an organization-wide,
 instance-wide or unscoped one. It does not let its holder publish a CDEF over
 the API without review: that stays with instance-level approvers. A refused
 `approve` or `reject` is now recorded as `cdef_document_approval_refused`.
+
+`submit_for_review` also takes an optional `requested_scope`: `global`
+(organization-wide, in the organization of the CDEF's boundary) or `instance`.
+It is approved at the tier it reaches: the boundary's approvers may approve
+`global`, and only an instance-level approver may approve `instance`.
+Approving applies the scope; rejecting drops the request. The approval
+payload of a CDEF carries `requested_scope` and `scope_tier`.
 
 **Changed in #1032.** CDEF writes were previously available to any authenticated
 user, while the web UI gated the same operations on `cdef.write`. An integration
@@ -586,11 +593,19 @@ Transition a CDEF into the review workflow (#630). Uses the same `DocumentApprov
 |-----------|------|----------|-------------|
 | `id` | string | Yes | Slug (or numeric id) of the CDEF |
 
+**Body Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `requested_scope` | string | No | #1275: make it available more widely once approved: `global` (organization-wide, in its boundary's organization) or `instance`. Omit to keep its scope. `422` if it is not wider than the current scope, the boundary has no organization (`global`), or the CDEF is from AWS Labs |
+
 **Example Request**
 
 ```bash
 curl -X POST "https://sparc.example.com/api/v1/cdef_documents/web-application-server/submit_for_review" \
-  -H "Authorization: Bearer YOUR_API_TOKEN_HERE"
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"requested_scope": "instance"}'
 ```
 
 **Response Body**
@@ -606,7 +621,9 @@ curl -X POST "https://sparc.example.com/api/v1/cdef_documents/web-application-se
     "submitted_at": "2026-06-29T12:00:00Z",
     "approved_by_user_id": null,
     "approved_at": null,
-    "rejection_reason": null
+    "rejection_reason": null,
+    "requested_scope": "instance",
+    "scope_tier": "boundary"
   }
 }
 ```
@@ -618,7 +635,7 @@ curl -X POST "https://sparc.example.com/api/v1/cdef_documents/web-application-se
 | `200` | Submitted for review |
 | `401` | Unauthorized -- missing or invalid token |
 | `404` | CDEF not found |
-| `422` | Invalid transition, or missing required content on an empty CDEF |
+| `422` | Invalid transition, missing required content on an empty CDEF, or a `requested_scope` it cannot ask for |
 
 ---
 

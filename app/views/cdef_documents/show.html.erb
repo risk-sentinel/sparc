@@ -109,6 +109,7 @@
         <span class="fw-semibold sparc-accent-text <%= accent_class(type_color) %>"><%= @cdef_document.cdef_type&.upcase&.tr("_", " ") || "Unknown" %></span>
         &nbsp;&bull;&nbsp; <%= @total_controls %> controls
       </div>
+      <%= render "cdef_documents/approval", cdef: @cdef_document %>
       <% if @cdef_document.description.present? %>
         <div class="sparc-color-white-45 sparc-fs-082 sparc-mt-04 sparc-maxw-600"><%= truncate(@cdef_document.description, length: 200) %></div>
       <% end %>

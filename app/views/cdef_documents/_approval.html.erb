@@ -1,0 +1,51 @@
+<%#
+  #1275 — where this CDEF stands in review, and the review actions, on its own
+  page. Before this the only way to submit, approve or reject a CDEF in the UI
+  was the review queue, which nothing links to.
+
+  Submit for review: whoever may write this CDEF (#1258), while it is a draft
+  or was rejected; never on a published or AWS Labs CDEF, which are read-only.
+  It may ask for a wider scope; only the wider tiers this CDEF can reach are
+  offered (CdefScopeService.request_refusal decides).
+
+  Approve / Reject: DocumentApprovalService#can_approve?, the rule the actions
+  enforce, so the submitter never sees them. The queue's own partial, so there
+  is one definition of the buttons.
+
+  Locals: cdef — the CdefDocument
+%>
+<% cdef = local_assigns.fetch(:cdef) %>
+<div class="d-flex flex-wrap align-items-center gap-2 sparc-mt-04" data-testid="cdef-approval">
+  <span class="badge <%= cdef.approval_badge_class %>" data-testid="cdef-approval-status"><%= cdef.approval_label %></span>
+  <span class="small sparc-color-white-45">
+    <% if cdef.approval_pending? %>
+      Submitted by <%= cdef.submitted_by_user&.email || "—" %><%= " on #{l(cdef.submitted_at.to_date)}" if cdef.submitted_at %><% if cdef.requested_scope_label %>; asks to be made available <strong data-testid="cdef-requested-scope"><%= cdef.requested_scope_label %></strong><% end %>.
+    <% elsif cdef.approved? %>
+      Approved by <%= cdef.approved_by_user&.email || "—" %><%= " on #{l(cdef.approved_at.to_date)}" if cdef.approved_at %>.
+    <% elsif cdef.approval_rejected? && cdef.rejection_reason.present? %>
+      Reason: <%= cdef.rejection_reason %>
+    <% end %>
+  </span>
+
+  <% if signed_in? && cdef.approval_draft? && !cdef.published_lifecycle? && !cdef.aws_labs_source? &&
+        CdefWriteAccess.may_write?(current_user, cdef) %>
+    <% wider = CdefScopeService::REQUESTABLE.reject { CdefScopeService.request_refusal(cdef, _1) } %>
+    <%= form_with url: submit_for_review_cdef_document_path(cdef), method: :post, class: "d-inline-flex align-items-center gap-1",
+                  data: { testid: "cdef-submit-for-review" } do |f| %>
+      <% if wider.any? %>
+        <%= f.label :requested_scope, "Make available to", class: "small sparc-color-white-45 mb-0" %>
+        <%= f.select :requested_scope,
+              [ [ "Keep current scope", "" ] ] +
+                wider.map { [ _1 == "instance" ? "Instance-wide (Policy Manager approves)" : "Organization-wide (this boundary's approvers)", _1 ] },
+              {}, class: "form-select form-select-sm d-inline-block w-auto" %>
+      <% end %>
+      <%= f.submit "Submit for review", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
+    <% end %>
+  <% end %>
+
+  <% if signed_in? && cdef.approval_pending? &&
+        DocumentApprovalService.new(document: cdef, actor: current_user).can_approve? %>
+    <%= render "review_queue/item_actions", doc: cdef,
+          approve_path: approve_cdef_document_path(cdef), reject_path: reject_cdef_document_path(cdef) %>
+  <% end %>
+</div>

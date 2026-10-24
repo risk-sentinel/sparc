@@ -185,7 +185,7 @@ SPARC defines **33 permission keys** across 14 resource areas (`Role::PERMISSION
 | `poam.write` | Create / edit POA&Ms |
 | `cdef.read` | View Component Definitions |
 | `cdef.write` | Create / edit Component Definitions. Held on a boundary, it writes the CDEFs scoped to that boundary (v1.17.2, #1258); held across the instance, every CDEF |
-| `cdef.approve` | Approve or reject a Component Definition submitted for review: across the instance, or on the boundary it is scoped to (#1275). Publishing is a write (`cdef.write`); only an instance-level approver may publish over the API without review |
+| `cdef.approve` | Approve or reject a Component Definition submitted for review, at the tier it asks to reach (#1275): held on its boundary, for that boundary or organization-wide in the boundary's organization; held across the instance, for any tier including instance-wide. Publishing is a write (`cdef.write`); only an instance-level approver may publish over the API without review |
 | `evidence.read` | View evidence artifacts |
 | `evidence.write` | Upload / edit / link evidence artifacts |
 | `evidence.attest` | Sign an attestation — assert, as an accountable role, that evidence is accurate |
@@ -350,13 +350,43 @@ CDEF serves every organization instead of each keeping its own copy. Out of the
 box only this role and the instance administrator can choose it; anyone else
 who wants a CDEF shared instance-wide asks a Policy Manager. An organization-wide request from someone
 in no organization is refused rather than widened to instance-wide. Approving a
-CDEF follows the same tiers (#1275): `cdef.approve` across the instance, which
-this role holds, approves every CDEF; ISSM, ISSO and System Owner hold it on
-their boundary and approve that boundary's CDEFs. Nobody approves their own
-submission. An existing install receives the grant on
+CDEF follows the same tiers (#1275), described under
+[Approving a Component Definition](#approving-a-component-definition).
+An existing install receives the grant on
 upgrade unless an administrator had already set Policy Manager's `cdef.write`
 either way — see
 [Shipped Defaults and Administrator Overrides](#shipped-defaults-and-administrator-overrides).
+
+### Approving a Component Definition
+
+The instance holds organizations and each organization holds authorization
+boundaries: Instance > Organization > Boundary. Nearly anyone authors a
+Component Definition on their boundary (`cdef.write`, #1258). Making it
+available more widely is not a write but an approval, decided at the tier it
+will reach (#1275).
+
+The author chooses the tier at **Submit for review**, on the CDEF's page or
+through the API (`requested_scope`): keep the current scope, organization-wide,
+or instance-wide. Approving it applies that scope; rejecting it drops the
+request.
+
+| The CDEF asks for | Who approves it |
+|---|---|
+| Its boundary (no wider scope) | ISSO, ISSM or System Owner / ISO assigned on that boundary; Policy Manager |
+| Organization-wide, in its boundary's organization | ISSO, ISSM or System Owner / ISO assigned on that boundary; Policy Manager |
+| Instance-wide | Policy Manager |
+
+- **Nobody approves their own submission.** The instance administrator is the
+  exception: global authority, and every approval is audited.
+- Holding an approver role on *another* boundary, even one in the same
+  organization, approves nothing here. Linking the CDEF to an environment
+  grants nothing either.
+- A boundary that belongs to no organization cannot ask for organization-wide.
+- The review queue and the CDEF page show what approving grants ("Approving
+  makes it available instance-wide") before the approver acts.
+- A refused approve or reject is recorded (`cdef_document_approval_refused`).
+- Changing a CDEF's scope directly, without review, still needs `cdef.write`
+  across the instance for organization-wide or instance-wide.
 
 ### Global Viewer
 

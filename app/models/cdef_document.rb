@@ -114,6 +114,8 @@ class CdefDocument < ApplicationRecord
   ].freeze
 
   validates :component_type, inclusion: { in: COMPONENT_TYPES }, allow_blank: true
+  # #1275 — a wider scope asked for at submit for review (CdefScopeService).
+  validates :requested_scope, inclusion: { in: CdefScopeService::REQUESTABLE }, allow_nil: true
 
   # Scope: CDEFs visible to a given organization for SSP composition.
   # Returns globally_available CDEFs in that org. (Boundary-specific CDEFs
@@ -140,6 +142,17 @@ class CdefDocument < ApplicationRecord
 
   def instance_wide?
     scope_tier == :instance
+  end
+
+  # #1275 — the wider scope asked for at submit for review, in words, for the
+  # CDEF page and the review queue. Nil when none was asked for.
+  def requested_scope_label
+    case requested_scope
+    when "instance" then "instance-wide"
+    when "global"
+      org = Organization.find_by(id: CdefScopeService.requested_organization_id(self))
+      org ? "organization-wide (#{org.name})" : "organization-wide"
+    end
   end
 
   # Issue #466 — rows ingested by AwsLabsCdefImportService are tagged in

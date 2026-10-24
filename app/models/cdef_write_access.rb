@@ -29,6 +29,12 @@
 # `cdef.approve` (Policy Manager) approves every one. Separation of duties and
 # the break-glass exemption stay in DocumentApprovalService#can_approve?.
 #
+# An author may ask, at submit for review, for the CDEF to be made available
+# organization-wide or instance-wide (CdefScopeService.request_refusal). The
+# boundary's approvers approve organization-wide, in the boundary's own
+# organization; instance-wide stays with instance-level approvers. The scope
+# is applied when it is approved.
+#
 # NIST 800-53: AC-3 (access enforcement), AC-6 (least privilege), AC-5
 # (separation of duties, in the service).
 module CdefWriteAccess
@@ -54,7 +60,15 @@ module CdefWriteAccess
 
   # #1275 — the approver's authority. Who may not approve their own
   # submission is DocumentApprovalService's rule, not this one.
-  def may_approve?(user, cdef) = granted_on?(user, cdef, APPROVE_KEY)
+  #
+  # The tier a pending CDEF asked for decides who approves it: instance-wide
+  # only an instance-level approver; boundary or organization-wide the
+  # approvers assigned on the CDEF's own boundary as well (owner, 2026-10-24).
+  def may_approve?(user, cdef)
+    return instance_approver?(user) if cdef&.requested_scope == "instance"
+
+    granted_on?(user, cdef, APPROVE_KEY)
+  end
 
   # Instance-level `cdef.approve`. Only these may publish over the API without
   # review (ApiPublicationGuard); a boundary approver submits and has another

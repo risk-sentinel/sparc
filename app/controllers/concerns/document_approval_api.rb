@@ -9,7 +9,7 @@ module DocumentApprovalApi
 
   # POST /api/v1/<resource>/:id/submit_for_review
   def submit_for_review
-    render_approval_result { |svc| svc.submit_for_review! }
+    render_approval_result { |svc| svc.submit_for_review!(requested_scope: params[:requested_scope]) }
   end
 
   # POST /api/v1/<resource>/:id/approve
@@ -44,6 +44,6 @@ module DocumentApprovalApi
       approved_by_user_id:  doc.approved_by_user_id,
       approved_at:          doc.approved_at&.iso8601,
       rejection_reason:     doc.rejection_reason
-    }
+    }.merge(doc.is_a?(CdefDocument) ? { requested_scope: doc.requested_scope, scope_tier: doc.scope_tier.to_s } : {})
   end
 end
