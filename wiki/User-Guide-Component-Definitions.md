@@ -15,13 +15,23 @@ with CDEF permissions — see [RBAC](RBAC).
 
 ## Before you start
 
-- **Access:** signed in, with a role that permits creating/editing CDEFs
-  (`cdef.write`). Out of the box that is the **Policy Manager** role and the
-  instance administrator. Making a CDEF **organization-wide** uses your
-  organization, so you must belong to one. Making it **instance-wide**
-  (every organization on the instance) needs `cdef.write` across the
-  instance: a Policy Manager or the instance administrator. Anyone else asks a
-  Policy Manager to share theirs.
+- **Access:** signed in, with `cdef.write`.
+  - **Held on a boundary** (out of the box: System Owner / ISO, ISSM, ISSO,
+    Cloud Service Provider, Common Control Provider and the other boundary
+    roles that write documents), it creates CDEFs **for that boundary** and
+    edits the CDEFs scoped to it. Choose the boundary when you create one; if
+    you write for only one boundary, it is chosen for you, and a copy you make
+    lands there too. A CDEF scoped to another boundary, an organization-wide or
+    instance-wide CDEF, and one with no scope are read-only to you, and you
+    cannot widen a CDEF's scope.
+  - **Held across the instance** (the **Policy Manager** role, and the instance
+    administrator), it creates and edits every CDEF at every tier.
+  - Making a CDEF **organization-wide** uses your organization, so you must
+    belong to one. Making it **instance-wide** (every organization on the
+    instance) needs a Policy Manager or the instance administrator. Anyone else
+    asks a Policy Manager to share theirs.
+  - Attaching a CDEF to an environment from a boundary's own form uses it; it
+    does not make it that boundary's to edit.
 - **Prerequisites:** none to start; a **converter** is needed only if you plan to
   bulk-apply rule → control mappings (see
   [Converters & Imports](User-Guide-Converters-and-Imports)).
