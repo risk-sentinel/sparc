@@ -47,12 +47,11 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   # the CDEF too, so they need it as well as converters.write (owner,
   # 2026-10-24). `approve` / `reject` stay as above (#1275).
   include CdefWriteGuards
-  before_action :authorize_cdef_create!, only: [ :create, :import ]
   before_action :authorize_cdef_write!, only: [ :update, :destroy, :source_from_profile, :submit_for_review,
                                                 :update_scope, :bulk_apply_converter_preview,
                                                 :bulk_apply_converter_confirm,
                                                 :import_fields_preview, :import_fields_confirm ]
-  before_action :authorize_cdef_scope!, only: [ :update_scope ]
+  before_action :authorize_cdef_destination!, only: [ :create, :import, :update_scope ]
   # #716 — field import is a bulk mutation; gate it like bulk-apply (converters.write).
   before_action :authorize_bulk_apply!, only: [ :import_fields_preview, :import_fields_confirm ]
 

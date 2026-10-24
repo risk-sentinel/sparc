@@ -34,9 +34,8 @@ class CdefDocumentsController < ApplicationController
   # (AC-3)
   include CdefWriteGuards
   before_action :fill_default_cdef_scope!, only: %i[create create_from_profile copy]
-  before_action :authorize_cdef_create!, only: %i[create create_from_profile copy]
   before_action :authorize_cdef_write!, only: %i[update edit set_baseline select_profile_source destroy update_field update_metadata source_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review update_scope bulk_apply bulk_apply_preview bulk_apply_confirm]
-  before_action :authorize_cdef_scope!, only: %i[update_scope]
+  before_action :authorize_cdef_destination!, only: %i[create create_from_profile copy update_scope]
 
 
   def index
