@@ -9,7 +9,14 @@ By default it is **empty** (only this README and `.gitkeep`). **Do not commit
 real CA certificates here** — this is a public repository; add them at build or
 run time in your own environment.
 
-There are two ways to add a CA; pick whichever fits your deployment.
+There are two ways to add a CA from the source tree; pick whichever fits your deployment.
+
+**Running the published image, not building from source?** Use the runtime
+mount (2), or derive an image `FROM` the published one. A derived build must
+switch to `USER root` for `update-ca-trust` and back to `USER 1000:1000`
+afterwards. The full guide, with which way to choose, signing and a check
+that the CA is trusted: wiki
+[Configuration, Trusting a custom CA](https://github.com/risk-sentinel/sparc/wiki/Configuration#trusting-a-custom-ca) (#1097).
 
 ## 1. Build-time bake-in (permanent, rebuild required)
 
