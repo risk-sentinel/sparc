@@ -150,22 +150,33 @@ class SspResponseProgress
   end
 
   def state_of(row)
-    written = row[:written]
     links = links_by_statement.fetch(row[:id], [])
     leveraged = links.find { _1[:source_type] == "SspControlStatement" }
-
-    if leveraged
-      tags = source_tags.fetch(leveraged[:source_id], [])
-      if tags.include?(SspControlStatement::RESPONSIBILITY_TAG)
-        hybrid = tags.include?(SspControlStatement::PROVIDED_TAG)
-        return [ written ? (hybrid ? "hybrid_satisfied" : "implemented") : (hybrid ? "hybrid_unsatisfied" : "responsibility_unsatisfied"), false ]
-      end
-      return [ "inherited", false ] unless leveraged[:overridden]
-    end
-    return [ "missing", false ] unless written
+    decided = leveraged && leveraged_state(leveraged, row[:written])
+    return [ decided, false ] if decided
+    return [ "missing", false ] unless row[:written]
 
     cdef = links.find { _1[:source_type] == "CdefControlStatement" && !_1[:overridden] }
     [ "implemented", cdef.present? && cdef[:reviewed_at].nil? ]
+  end
+
+  # [hybrid, written] => state, for a provider statement that hands a
+  # responsibility back.
+  RESPONSIBILITY_STATES = {
+    [ true, true ] => "hybrid_satisfied", [ true, false ] => "hybrid_unsatisfied",
+    [ false, true ] => "implemented", [ false, false ] => "responsibility_unsatisfied"
+  }.freeze
+  private_constant :RESPONSIBILITY_STATES
+
+  # The state a leveraged link decides, or nil when this system's own text
+  # decides it (an overridden plain inheritance).
+  def leveraged_state(link, written)
+    tags = source_tags.fetch(link[:source_id], [])
+    if tags.include?(SspControlStatement::RESPONSIBILITY_TAG)
+      return RESPONSIBILITY_STATES.fetch([ tags.include?(SspControlStatement::PROVIDED_TAG), written ])
+    end
+
+    link[:overridden] ? nil : "inherited"
   end
 
   # [canonical control id, downcased statement_id] => row, root controls only.
