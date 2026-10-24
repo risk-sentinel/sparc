@@ -184,7 +184,7 @@ SPARC defines **33 permission keys** across 14 resource areas (`Role::PERMISSION
 | `poam.read` | View POA&Ms |
 | `poam.write` | Create / edit POA&Ms |
 | `cdef.read` | View Component Definitions |
-| `cdef.write` | Create / edit Component Definitions |
+| `cdef.write` | Create / edit Component Definitions. Held on a boundary, it writes the CDEFs scoped to that boundary (v1.17.2, #1258); held across the instance, every CDEF |
 | `cdef.approve` | Approve / publish a Component Definition |
 | `evidence.read` | View evidence artifacts |
 | `evidence.write` | Upload / edit / link evidence artifacts |
@@ -337,9 +337,11 @@ Full CRUD on catalogs and profiles. Controls enterprise baselines and organizati
 
 Since v1.17.2 (#1257) also creates, edits and publishes **component definitions**
 (`cdef.write`), and makes them available to its organization (organization-wide)
-or to a boundary. Every CDEF write is checked at instance level, and the other
-built-in roles holding `cdef.write` are boundary-scoped, so before this only an
-instance administrator could author a CDEF.
+or to a boundary. Before #1257 only an instance administrator could author a
+CDEF, because every CDEF write was checked at instance level and the other
+built-in roles holding `cdef.write` are boundary-scoped. Since #1258 those
+boundary roles write the CDEFs scoped to their own boundary too; only a holder
+across the instance writes organization-wide, instance-wide and unscoped ones.
 
 Because this role holds `cdef.write` across the instance, it also makes a CDEF
 available **instance-wide**, to every organization on the instance, including
