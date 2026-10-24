@@ -236,6 +236,60 @@ that account no way in during an IdP outage — exactly when it is needed.
 > MFA enforcement is `SPARC_REQUIRE_AUTH_METHODS`; hardware-key enforcement is
 > `SPARC_REQUIRE_FIDO2`.
 
+## OIDC sign-in and network egress (#1098)
+
+OIDC sign-in depends on **outbound HTTPS calls from the SPARC server to your
+identity provider**. They are made when someone signs in, not when SPARC starts:
+
+- **Discovery.** When a user presses the sign-in button, SPARC fetches
+  `{SPARC_OIDC_ISSUER_URL}/.well-known/openid-configuration`, then the IdP's
+  signing keys (JWKS) to check the ID token it gets back.
+- **API tokens.** With `SPARC_API_AUTH=oidc` or `hybrid`, SPARC makes the same
+  two calls to check a bearer token. It caches the keys for an hour.
+
+Both calls go through whatever egress path your deployment mandates. If outbound
+traffic must use a proxy, set `HTTPS_PROXY`, and `NO_PROXY` for hosts that must
+bypass it. SPARC applies them **scheme-strictly** (#775): `HTTPS_PROXY` covers
+`https://` calls, which is all of them, and `HTTP_PROXY` alone does nothing for
+them. See `HTTPS_PROXY` / `NO_PROXY` in the [Configuration Reference](Configuration).
+
+Because discovery happens at sign-in, a server that cannot reach the IdP still
+starts cleanly and still shows the sign-in button. The failure appears only when
+someone presses it. Two things help you tell a network problem from an OIDC one:
+
+- **At startup** SPARC logs one line:
+  `[SPARC] OIDC sign-in: enabled, issuer host <host>; no egress proxy applies.`
+  (or `an egress proxy applies`). It makes no network call, and it never logs the
+  proxy URL, which can carry credentials.
+- **When sign-in cannot reach the IdP**, the page says *Sign-in could not reach
+  the identity provider*, with a **Reference**. That is the request id: the log
+  lines tagged with it name the exception. When no proxy applies to the issuer,
+  a second log line says so.
+
+### The issuer is the `issuer` value, not a metadata URL
+
+Set `SPARC_OIDC_ISSUER_URL` to the IdP's **`issuer`**, for example
+`https://example.okta.com/oauth2/default`. SPARC builds the discovery URL from it
+by appending `/.well-known/openid-configuration`.
+
+Don't paste in a metadata URL. An OAuth authorization-server metadata URL (RFC
+8414, `/.well-known/oauth-authorization-server/...`) is built differently, so
+using it as the issuer makes discovery fail with an HTTP error (a 404 or 405).
+
+### OIDC troubleshooting
+
+Start from what you see. Look the **Reference** on the sign-in page up in the
+logs for the exception.
+
+| What you see | Likely cause | What to do |
+|---|---|---|
+| *Sign-in could not reach the identity provider*; the log shows `DiscoveryFailed` with `SSL_connect`, connection reset, refused or timed out | No egress to the IdP, or a mandated proxy is not configured | Set `HTTPS_PROXY` (and `NO_PROXY`). The startup line says whether a proxy applies to the issuer. |
+| The same, with `certificate verify failed` | A TLS-inspecting proxy whose CA SPARC does not trust | Add the proxy's CA with `SPARC_EXTRA_CA_CERTS` (#774), or bake it into a derived image (see [Configuration](Configuration#trusting-a-custom-ca)). |
+| The same, with a 404 or 405 | The issuer is wrong, or it is a metadata URL; or the server is OAuth-only and has no `openid-configuration` | Set `SPARC_OIDC_ISSUER_URL` to the IdP's `issuer` value. |
+| `redirect_uri did not match` on the IdP's page | The callback registered at the IdP differs from `SPARC_OIDC_REDIRECT_URI` | Fix the IdP's registered callback. This never reaches SPARC, so SPARC logs nothing. |
+| No OIDC sign-in button | OIDC is off: `SPARC_ENABLE_OIDC=false`; or `SPARC_OIDC_CLIENT_ID` is blank and `SPARC_ENABLE_OIDC` is unset; or `SPARC_OIDC_ISSUER_URL` is blank | Set the client ID and the issuer. |
+| API calls with an OIDC token get `401`; the log shows `Failed to fetch OIDC JWKS` | The same egress problem, on the API path | As the first row. |
+
 ## Compliance
 
 | Control | How SPARC meets it |

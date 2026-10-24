@@ -111,6 +111,14 @@ Callback URL: `http://localhost:3000/auth/gitlab/callback`. Scope: `read_user`.
 
 See [OKTA_DEV_SETUP.md](OKTA_DEV_SETUP.md) for a step-by-step Okta configuration guide.
 
+**Discovery is an outbound call.** `SPARC_OIDC_ISSUER_URL` makes SPARC fetch
+`{issuer}/.well-known/openid-configuration`, and then the IdP's keys (JWKS),
+over outbound HTTPS **at sign-in, not at boot**. With `SPARC_API_AUTH=oidc` or
+`hybrid` it makes the same calls to check API tokens. Both follow
+`HTTPS_PROXY` / `NO_PROXY` (scheme-strict, #775). Set the issuer to the IdP's
+`issuer` value, not a metadata URL. Troubleshooting by symptom: wiki
+[Authentication and MFA, OIDC sign-in and network egress](https://github.com/risk-sentinel/sparc/wiki/Authentication-and-MFA#oidc-sign-in-and-network-egress-1098) (#1098).
+
 ### LDAP
 
 | Variable | Description | Default |

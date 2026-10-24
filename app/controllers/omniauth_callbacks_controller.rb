@@ -178,6 +178,58 @@ class OmniauthCallbacksController < ApplicationController
       metadata: { error: message }
     )
 
+    if idp_unreachable?(request.env["omniauth.error"], request.env["omniauth.error.type"])
+      log_idp_unreachable(request.env["omniauth.error"])
+      return redirect_to login_path, error: format(IDP_UNREACHABLE, reference: request.request_id)
+    end
+
     redirect_to login_path, error: "Authentication failed: #{message.humanize}"
+  end
+
+  # #1098 — SPARC fetches the identity provider's configuration (discovery)
+  # and keys (JWKS) over outbound HTTPS at sign-in, not at boot. When that call
+  # cannot complete, the cause is this server's network path (an egress proxy
+  # not configured, a firewall, an untrusted TLS-inspecting proxy) or the
+  # issuer address, never the user's credentials. The on_failure hook calls
+  # this action directly, so `params[:message]` is never set and every such
+  # failure used to read "Unknown error". The sign-in page is unauthenticated,
+  # so it says what to check and gives the request id; the detail is logged.
+  IDP_UNREACHABLE = "Sign-in could not reach the identity provider. Ask your administrator to check " \
+                    "this server's network egress (proxy) settings and the identity provider's address. " \
+                    "Reference: %<reference>s"
+
+  # Raised by the OIDC strategy, or the HTTP client under it, when the IdP
+  # cannot be reached or its configuration cannot be fetched.
+  IDP_NETWORK_ERRORS = [
+    "OpenIDConnect::Discovery::DiscoveryFailed", "Faraday::ConnectionFailed", "Faraday::TimeoutError",
+    "Faraday::SSLError", "OpenSSL::SSL::SSLError", "SocketError", "Timeout::Error",
+    "Errno::ECONNREFUSED", "Errno::ECONNRESET", "Errno::ETIMEDOUT", "Errno::EHOSTUNREACH", "Errno::ENETUNREACH"
+  ].freeze
+  IDP_NETWORK_ERROR_TYPES = %i[timeout failed_to_connect].freeze
+
+  private
+
+  def idp_unreachable?(error, type)
+    return true if IDP_NETWORK_ERROR_TYPES.include?(type)
+    return false if error.nil?
+
+    error.class.ancestors.any? { |klass| IDP_NETWORK_ERRORS.include?(klass.name) }
+  end
+
+  # The detail an operator needs, on the line tagged with the same request id
+  # the user was given. A proxy URL can carry credentials, so only whether one
+  # is set is logged.
+  def log_idp_unreachable(error)
+    Rails.logger.error(
+      "[SPARC] Sign-in could not reach the identity provider (#{params[:strategy] || 'oidc'}): " \
+      "#{error.class}: #{error&.message}. Discovery and JWKS are outbound HTTPS calls made at sign-in."
+    )
+    return if SparcHttp.proxied?(SparcConfig.oidc_issuer_url)
+
+    Rails.logger.warn(
+      "[SPARC] OIDC discovery failed and no HTTPS_PROXY applies to the issuer. If this deployment requires an " \
+      "egress proxy, set HTTPS_PROXY (and NO_PROXY for internal hosts); see wiki Authentication-and-MFA, " \
+      "\"OIDC troubleshooting\"."
+    )
   end
 end
