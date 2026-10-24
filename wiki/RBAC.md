@@ -185,7 +185,7 @@ SPARC defines **33 permission keys** across 14 resource areas (`Role::PERMISSION
 | `poam.write` | Create / edit POA&Ms |
 | `cdef.read` | View Component Definitions |
 | `cdef.write` | Create / edit Component Definitions. Held on a boundary, it writes the CDEFs scoped to that boundary (v1.17.2, #1258); held across the instance, every CDEF |
-| `cdef.approve` | Approve / publish a Component Definition |
+| `cdef.approve` | Approve or reject a Component Definition submitted for review: across the instance, or on the boundary it is scoped to (#1275). Publishing is a write (`cdef.write`); only an instance-level approver may publish over the API without review |
 | `evidence.read` | View evidence artifacts |
 | `evidence.write` | Upload / edit / link evidence artifacts |
 | `evidence.attest` | Sign an attestation — assert, as an accountable role, that evidence is accurate |
@@ -350,8 +350,10 @@ CDEF serves every organization instead of each keeping its own copy. Out of the
 box only this role and the instance administrator can choose it; anyone else
 who wants a CDEF shared instance-wide asks a Policy Manager. An organization-wide request from someone
 in no organization is refused rather than widened to instance-wide. Approving a
-CDEF is unchanged: the Policy Manager role or `cdef.approve`, and nobody
-approves their own submission. An existing install receives the grant on
+CDEF follows the same tiers (#1275): `cdef.approve` across the instance, which
+this role holds, approves every CDEF; ISSM, ISSO and System Owner hold it on
+their boundary and approve that boundary's CDEFs. Nobody approves their own
+submission. An existing install receives the grant on
 upgrade unless an administrator had already set Policy Manager's `cdef.write`
 either way — see
 [Shipped Defaults and Administrator Overrides](#shipped-defaults-and-administrator-overrides).
