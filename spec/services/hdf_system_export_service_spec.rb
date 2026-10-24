@@ -48,7 +48,34 @@ RSpec.describe HdfSystemExportService do
       expect(doc["systemId"]).to eq(boundary.uuid)
       expect(doc["identifier"]).to eq(boundary.uuid)
       expect(doc["identifierScheme"]).to eq("urn:ietf:rfc:4122")
-      expect(doc["labels"]).to eq("system_id" => boundary.uuid)
+      expect(doc["labels"]).to eq("system" => boundary.uuid, "system_id" => boundary.uuid)
+    end
+
+    # #1205 — results label every component `system: <boundary uuid>` (HDF's
+    # well-known key), so that is the join; `system_id` stays alongside it
+    # through v1.18.0.
+    it "labels the system with HDF's well-known `system` key, keeping `system_id`" do
+      doc = service.export
+
+      expect(doc.dig("labels", "system")).to eq(boundary.uuid)
+      expect(doc.dig("labels", "system_id")).to eq(boundary.uuid)
+    end
+
+    it "scopes every component to the boundary's results with a targetSelector" do
+      doc = service.export
+
+      expect(doc["components"]).not_to be_empty
+      expect(doc["components"].map { _1["targetSelector"] }).to all(eq("labels.system" => boundary.uuid))
+      expect(Hdf::SystemSchema.errors(doc)).to eq([])
+    end
+
+    it "gives a selector a results component labelled for this boundary matches, and another boundary's does not" do
+      selector = service.export["components"].first["targetSelector"]
+      matches = ->(labels) { selector.all? { |key, value| labels[key.delete_prefix("labels.")] == value } }
+
+      expect(matches.call("system" => boundary.uuid, "target" => "arn:aws:iam::123456789012:root")).to be(true)
+      expect(matches.call("system" => SecureRandom.uuid, "target" => "arn:aws:iam::123456789012:root")).to be(false)
+      expect(matches.call("system_id" => boundary.uuid)).to be(false)
     end
 
     it "maps name, description and boundaryDescription from the boundary" do
@@ -188,7 +215,7 @@ RSpec.describe HdfSystemExportService do
       expect(service.export["components"]).to eq([
         { "type" => "application", "name" => "Portal web tier",
           "componentId" => OscalUuidService.derived(cdef.uuid, "cdef-component"),
-          "description" => "Rails app" }
+          "description" => "Rails app", "targetSelector" => { "labels.system" => boundary.uuid } }
       ])
     end
 
@@ -207,7 +234,8 @@ RSpec.describe HdfSystemExportService do
 
       expect(service.export["components"]).to eq([
         { "type" => "application", "name" => "Amazon S3",
-          "componentId" => "11111111-2222-4333-8444-555555555555", "description" => "Object storage" }
+          "componentId" => "11111111-2222-4333-8444-555555555555", "description" => "Object storage",
+          "targetSelector" => { "labels.system" => boundary.uuid } }
       ])
     end
 

@@ -196,6 +196,10 @@ The document is bound to its system (#1179):
   document carries as `systemId` and `identifier`. It was the slug before
   #1179; a slug is regenerated when the boundary is renamed, so it cannot be a
   join key. A consumer matching on the old slug value must switch to the uuid.
+  **Deprecated** (#1205): kept, with the same value, through v1.18.0.
+- `labels.system` — the same boundary uuid under HDF's well-known key, the one
+  results label their components with (#1205). The hdf-system document carries
+  the same labels.
 
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \

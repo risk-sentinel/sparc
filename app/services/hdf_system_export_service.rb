@@ -136,6 +136,26 @@ class HdfSystemExportService
     "#{SparcConfig.app_url.chomp('/')}#{path}"
   end
 
+  # #1205 — the labels every SPARC HDF document carries for its boundary: this
+  # one and the amendments export (HdfAmendmentExportService), so the two
+  # cannot disagree. `system` is HDF's well-known key, holding the boundary
+  # uuid, as the boundary contract settled (risk-sentinel/sparc-validate#432):
+  # every results document labels its components with it, so it is the join.
+  # `system_id` was an earlier draft's key; it is kept, with the same value,
+  # through v1.18.0 for anything that already reads it (owner, 2026-10-24).
+  def self.labels(boundary)
+    { "system" => boundary.uuid, "system_id" => boundary.uuid }
+  end
+
+  # #1205 — the selector that ties results to a component: every component is
+  # scoped to the boundary's results by `labels.system`. Nothing finer is
+  # emitted: SPARC does not reliably know which scan targets a component
+  # covers, and a selector that guessed would claim results that are not its
+  # own.
+  def self.target_selector(boundary)
+    { "labels.system" => boundary.uuid }
+  end
+
   # @return [Hash] a validated hdf-system document
   def export
     doc = build
@@ -168,7 +188,7 @@ class HdfSystemExportService
       "components"          => components,
       "controlDesignations" => control_designations.presence,
       "generator"           => { "name" => GENERATOR_NAME, "version" => SparcConfig.version },
-      "labels"              => { "system_id" => @boundary.uuid }
+      "labels"              => self.class.labels(@boundary)
     }
     doc.compact
   end
@@ -271,7 +291,8 @@ class HdfSystemExportService
           "type"        => hdf_type,
           "name"        => candidate[:name],
           "componentId" => candidate[:id],
-          "description" => candidate[:description].presence
+          "description" => candidate[:description].presence,
+          "targetSelector" => self.class.target_selector(@boundary)
         }.compact
       end
     end
