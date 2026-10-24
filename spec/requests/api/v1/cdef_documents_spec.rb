@@ -374,7 +374,15 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
 
       before { regular_user.user_roles.create!(role: writer_role) }
 
-      it "is authorized to preview" do
+      # #1258 — bulk apply writes the CDEF, so it needs write access to the CDEF
+      # as well (owner, 2026-10-24).
+      it "is refused without write access to the CDEF" do
+        post path, params: { converter_id: converter.id }, headers: user_headers, as: :json
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "is authorized to preview with cdef.write too" do
+        grant_permission(regular_user, "cdef.write")
         post path, params: { converter_id: converter.id }, headers: user_headers, as: :json
         expect(response).to have_http_status(:ok)
       end

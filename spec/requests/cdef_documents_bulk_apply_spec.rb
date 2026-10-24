@@ -95,7 +95,9 @@ RSpec.describe "CdefDocuments bulk-apply UI", type: :request do
   end
 
   context "as a non-admin user without converters.write" do
-    let(:regular_user) { create(:user) }
+    # #1258 — bulk apply also needs write access to the CDEF; this user has it,
+    # so what is refused is converters.write.
+    let(:regular_user) { create(:user).tap { grant_permission(_1, "cdef.write") } }
 
     before { sign_in_as(regular_user) }
 
