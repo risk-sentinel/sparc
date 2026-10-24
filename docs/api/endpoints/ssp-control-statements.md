@@ -21,6 +21,7 @@ the control-level field does, asserts that one narrative covers all 22.
 |---|---|
 | **Base path** | `/api/v1/ssp_documents/:ssp_document_id/statements` (list) |
 | | `/api/v1/ssp_control_statements/:id` (read, update) |
+| | `/api/v1/ssp_control_statements/:id/reset_to_source`, `/mark_reviewed` (#1242) |
 | **Auth** | Bearer token |
 | **Read** | `ssp.read` on the SSP's authorization boundary |
 | **Write** | `ssp.write` on the SSP's authorization boundary |
@@ -46,6 +47,8 @@ client is told, instead of being left believing a write landed.
 | `GET` | `/api/v1/ssp_documents/:ssp_document_id/statements` | `ssp_control_statements#index` |
 | `GET` | `/api/v1/ssp_control_statements/:id` | `ssp_control_statements#show` |
 | `PATCH/PUT` | `/api/v1/ssp_control_statements/:id` | `ssp_control_statements#update` |
+| `POST` | `/api/v1/ssp_control_statements/:id/reset_to_source` | `ssp_control_statements#reset_to_source` |
+| `POST` | `/api/v1/ssp_control_statements/:id/mark_reviewed` | `ssp_control_statements#mark_reviewed` |
 
 ### `GET /api/v1/ssp_documents/:ssp_document_id/statements`
 
@@ -78,7 +81,10 @@ Authorization: Bearer <token>
       "control_id": "ac-2",
       "identifier": "ac-2",
       "answered": true,
-      "source_kind": "authored"
+      "source_kind": "authored",
+      "required": true,
+      "response_state": "implemented",
+      "cdef_reviewed": null
     }
   ],
   "meta": { "count": 22, "items": 100, "page": 1, "pages": 1 }
@@ -95,6 +101,24 @@ is `null` when a statement has no parent control.
 `answered` reports whether the statement carries implementation prose. That is
 the question the per-statement model exists to make askable, and a client should
 not have to infer it from an empty string.
+
+**#1242.** `required` says whether the SSP's baseline needs a response from this
+row: a part with no parts below it, or a control's `_smt` when it has none. It
+is `false` for an intermediate row such as `ac-1_smt` when `ac-1_smt.a` exists.
+`response_state` is that response's state, `null` when it is not required:
+
+| `response_state` | meaning | owed? |
+|---|---|---|
+| `inherited` | a leveraged system provides it in full | no |
+| `hybrid_satisfied` | a leveraged system provides part and hands the rest back; this system wrote its part | no |
+| `hybrid_unsatisfied` | the same, with this system's part not written | yes |
+| `responsibility_unsatisfied` | a leveraged system hands the whole part back, not written yet | yes |
+| `implemented` | this system's own text, authored or filled from a CDEF | no |
+| `missing` | nothing written | yes |
+
+`cdef_reviewed` is `true` or `false` when a CDEF fills the row, and `null` when
+none does. The document's totals are `response_progress` on
+[`GET /api/v1/ssp_documents/:id`](ssp-documents.md).
 
 ### `GET /api/v1/ssp_control_statements/:id`
 
@@ -114,6 +138,12 @@ Writes the prose.
 }
 ```
 
+Changed `implementation_prose` makes the text this system's own: every CDEF or
+leveraged link filling the row is marked overridden, so a refresh leaves the
+edit alone. The SSP screen's save does the same. (Before #1242 this endpoint
+kept the link active, so the row still counted as inherited and the next CDEF
+refresh replaced the edit.)
+
 `responsible_roles_data` is permitted as a SHAPE, not a blob: OSCAL models
 `responsible-roles` as objects carrying a `role-id`, and `OscalSspExportService`
 writes this column straight into the document, so a bare array of strings would
@@ -122,6 +152,20 @@ emit schema-invalid OSCAL.
 > **Note.** A `role-id` must reference a role declared in `metadata.roles`.
 > Nothing enforces that yet — see #1116.
 
+### `POST /api/v1/ssp_control_statements/:id/reset_to_source`
+
+Drops this system's edit and takes the source's text again, as the SSP screen's
+**Reset** does, and clears any review mark. `422` when nothing on the row is
+overridden. Needs `ssp.write`; refused (`422`) on a published SSP.
+
+### `POST /api/v1/ssp_control_statements/:id/mark_reviewed`
+
+Confirms that the text a CDEF filled in describes this system, keeping it as it
+is, as the screen's **Mark reviewed** does. Records who and when; a CDEF refresh
+that changes the text clears it. `422` when no active CDEF link fills the row.
+Needs `ssp.write`; refused (`422`) on a published SSP. Audited as
+`ssp_statement_reviewed`.
+
 ## Errors
 
 | status | when |
@@ -129,4 +173,4 @@ emit schema-invalid OSCAL.
 | `401` | no or invalid bearer token |
 | `403` | the caller lacks `ssp.read` / `ssp.write` on the boundary |
 | `404` | no such statement, or no such SSP |
-| `422` | the body carried a field this endpoint does not accept |
+| `422` | the body carried a field this endpoint does not accept; or, for `reset_to_source` / `mark_reviewed`, nothing to reset or review, or a published SSP |

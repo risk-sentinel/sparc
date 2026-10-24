@@ -117,10 +117,25 @@ None.
     "system_status": "operational",
     "security_sensitivity_level": "high",
     "controls_count": 370,
-    "profile_document_id": 12
+    "profile_document_id": 12,
+    "response_progress": {
+      "inherited": 120, "hybrid_satisfied": 30, "hybrid_unsatisfied": 12,
+      "responsibility_unsatisfied": 4, "implemented": 610, "missing": 88,
+      "required": 864, "done": 760, "owed": 104,
+      "cdef_unreviewed": 40, "parent_level_text": 3
+    }
   }
 }
 ```
+
+`response_progress` (#1242, on show and list) counts the responses the SSP's
+baseline requires, by state. `required` is one per statement part with no parts
+below it, for each control the SSP's profile selects as it tailors them, so it
+follows whatever baseline the SSP uses. `done` + `owed` = `required`.
+`cdef_unreviewed` counts CDEF-filled text nobody has marked reviewed (within
+`implemented`); `parent_level_text` counts rows written above the parts that
+need them, which answer none of them. The states are described on
+[SSP Control Statements](ssp-control-statements.md).
 
 #### Status Codes
 

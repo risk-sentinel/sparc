@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import BaseModel, Field, model_validator
 
 from .base import (
     STRICT,
@@ -32,6 +32,39 @@ class BoundaryScopedDocument(DocumentBase):
 # ── SSP ────────────────────────────────────────────────────────────────
 
 
+NonNegative = Annotated[int, Field(ge=0)]
+
+
+class SspResponseProgress(BaseModel):
+    """#1242 — responses the SSP's baseline requires, by state."""
+
+    model_config = STRICT
+    inherited: NonNegative
+    hybrid_satisfied: NonNegative
+    hybrid_unsatisfied: NonNegative
+    responsibility_unsatisfied: NonNegative
+    implemented: NonNegative
+    missing: NonNegative
+    required: NonNegative
+    done: NonNegative
+    owed: NonNegative
+    cdef_unreviewed: NonNegative
+    parent_level_text: NonNegative
+
+    @model_validator(mode="after")
+    def _adds_up(self) -> SspResponseProgress:
+        states = (self.inherited + self.hybrid_satisfied + self.hybrid_unsatisfied
+                  + self.responsibility_unsatisfied + self.implemented + self.missing)
+        assert states == self.required, f"states sum to {states}, required is {self.required}"
+        assert self.done + self.owed == self.required, "done + owed != required"
+        owed = self.hybrid_unsatisfied + self.responsibility_unsatisfied + self.missing
+        assert self.owed == owed, f"owed {self.owed} != the owed states' {owed}"
+        assert self.cdef_unreviewed <= self.implemented, (
+            "CDEF text not reviewed is counted within implemented"
+        )
+        return self
+
+
 class SspDocumentIndex(BoundaryScopedDocument):
     model_config = STRICT
     creation_method: str | None = None
@@ -39,6 +72,7 @@ class SspDocumentIndex(BoundaryScopedDocument):
     # (SspDocument includes ContentCompleteness; SAR/SAP/POAM do not).
     content_complete: bool
     content_completeness_gaps: list[str]
+    response_progress: SspResponseProgress
 
 
 class SspDocumentShow(SspDocumentIndex):

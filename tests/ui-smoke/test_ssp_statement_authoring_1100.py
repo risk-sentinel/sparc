@@ -37,7 +37,7 @@ STATEMENTS_BLOCK = "text=Implementation Statements"
 # against a build without this work FAILS on the assertions rather than
 # skipping for want of a selector. A skip would be a vacuous green.
 STMT_ROW = "tr[data-statement-id]"
-ANSWERED_CHIP = "text=/\\d+ of \\d+ answered/"
+ANSWERED_CHIP = "text=/\\d+ of \\d+ done/"  # #1242: counted in required responses
 
 
 def _open_control_with_statements(page):
@@ -108,7 +108,7 @@ def test_control_reports_how_much_of_it_is_answered(authed_page):
 
     chip = card.locator(ANSWERED_CHIP).first
     assert chip.count() > 0 and chip.is_visible(), (
-        "no 'N of M answered' indicator on a control with multiple statements"
+        "no 'N of M done' indicator on a control with multiple statements"
     )
 
 
