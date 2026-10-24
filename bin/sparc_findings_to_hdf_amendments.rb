@@ -83,6 +83,15 @@ MAX_REVIEW_DAYS = {
   "INFORMATIONAL" => 60
 }.freeze
 
+# A false_positive's window, whatever its severity (owner, 2026-10-24). It is a
+# determination that the finding is not real, not a risk on a remediation
+# clock, but it is still re-reviewed yearly: its next_review_date becomes the
+# amendment's `expiresAt`, so on day 366 `hdf amend verify` drops it as truth
+# and security_gate fails until someone re-measures it and sets a new date.
+# Counted from `last_reviewed_date` once it has been re-reviewed, else from
+# `discovery_date`.
+FALSE_POSITIVE_MAX_REVIEW_DAYS = 365
+
 # CRITICAL findings cannot be 'accepted' (no risk acceptance for criticals).
 # false_positive IS allowed because it's semantically distinct from accepted:
 # 'accepted' means "we're keeping the risk", 'false_positive' means "the
@@ -354,16 +363,19 @@ def validate_deviation_kev(finding, dev, errors)
   errors
 end
 
-# Review-cadence checks (window + overdue). These apply to dispositions that
-# hold or defer RISK — accepted / deferred. They do NOT apply to
-# false_positive: a false positive is a determination that the finding is not
-# real (scanner is wrong / vulnerable code path unreachable), so there is no
-# risk on a remediation clock to re-review every 30 days (#620 — Ruby
-# default-gem shadows, perl, x/crypto/ssh). discovery_date/next_review_date are
-# still required for provenance (checked in validate!), but a stale
-# next_review_date on a false_positive does not gate the build.
+# Review-cadence checks (window + overdue) for dispositions that hold or defer
+# RISK — accepted / deferred — on the severity's clock above.
+#
+# A false_positive is not on that clock (#620 — Ruby default-gem shadows, perl,
+# x/crypto/ssh): it is a determination that the finding is not real. Its window
+# is capped at FALSE_POSITIVE_MAX_REVIEW_DAYS instead, and nothing here checks
+# it for being overdue: its next_review_date is the amendment's `expiresAt`, and
+# `hdf amend verify` (security_gate) is the gate that fails once it passes. A
+# second overdue check here would only report the same date twice. Before
+# 2026-10-24 this said a stale false_positive date "does not gate the build";
+# it always did, through that expiry, with no limit on how far out it was set.
 def validate_review_cadence(finding, errors, severity:, disposition:, discovery:, next_rev:, today:)
-  return if disposition == "false_positive"
+  return validate_false_positive_window(finding, errors, discovery: discovery, next_rev: next_rev) if disposition == "false_positive"
 
   cve_id = finding["cve_id"]
   window_start, counted_from = review_window_start(finding, discovery)
@@ -381,6 +393,23 @@ def validate_review_cadence(finding, errors, severity:, disposition:, discovery:
     errors << "#{cve_id}: next_review_date #{next_rev.iso8601} is #{overdue_days}d overdue (today=#{today.iso8601}) — re-review and refresh"
   end
 
+  errors
+end
+
+def validate_false_positive_window(finding, errors, discovery:, next_rev:)
+  cve_id = finding["cve_id"]
+  reviewed = parse_date(finding["last_reviewed_date"])
+  if reviewed && discovery && reviewed < discovery
+    errors << "#{cve_id}: last_reviewed_date #{reviewed.iso8601} is before discovery_date #{discovery.iso8601}"
+  end
+
+  start, counted_from = reviewed ? [ reviewed, "last_reviewed_date #{reviewed.iso8601}" ] : [ discovery, "discovery_date #{discovery&.iso8601}" ]
+  return errors unless start && next_rev
+
+  days = (next_rev - start).to_i
+  if days > FALSE_POSITIVE_MAX_REVIEW_DAYS
+    errors << "#{cve_id}: false_positive review window is #{days}d from #{counted_from} — policy max is #{FALSE_POSITIVE_MAX_REVIEW_DAYS}d"
+  end
   errors
 end
 

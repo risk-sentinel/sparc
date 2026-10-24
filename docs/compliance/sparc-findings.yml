@@ -193,11 +193,12 @@ findings:
     report beacon that browsers POST without a token; it changes no state, is Rack::Attack rate-limited and
     reads at most 8 KB. CodeQL declares the rule at CVSS 8.8, which is the grading for a skip on a
     cookie-authenticated state-changing endpoint; none of these is one. Pinned to the three results; any
-    new skip breaches the gate (#1186).'
+    new skip breaches the gate (#1186). Re-measured 2026-10-24: still exactly these three skips in app/ (sessions_controller.rb:45, omniauth_callbacks_controller.rb:24 only: :create, csp_reports_controller.rb:32), and security_gate''s pin check on main c7f1e14a reported 3 results, 3 pinned, exact match. Window set to 365 days, the false_positive policy (owner, 2026-10-24).'
   nist_control: sc-23
   reviewed_by: '@clem-field'
   discovery_date: '2026-09-24'
-  next_review_date: '2026-10-24'
+  last_reviewed_date: '2026-10-24'
+  next_review_date: '2027-10-24'
   pinned_results:
   - path: app/controllers/api/v1/sessions_controller.rb
     line_hash: bcb8fce034920d18:1
@@ -221,11 +222,12 @@ findings:
     2026-07-28) that SARIF->HDF conversion does not see. (5) services/ssp_wizard_service.rb — a FIPS 199
     impact level (low/moderate/high); its `lgtm[...]` suppression comment is dead syntax CodeQL no longer
     reads, and is left in place because editing the line would change the pinned fingerprint. Pinned to the
-    five results; any new instance breaches the gate (#1186).'
+    five results; any new instance breaches the gate (#1186). Re-measured 2026-10-24: security_gate''s pin check on main c7f1e14a reported 5 results, 5 pinned, exact match. Window set to 365 days, the false_positive policy (owner, 2026-10-24).'
   nist_control: sc-28
   reviewed_by: '@clem-field'
   discovery_date: '2026-09-24'
-  next_review_date: '2026-10-24'
+  last_reviewed_date: '2026-10-24'
+  next_review_date: '2027-10-24'
   pinned_results:
   - path: app/models/audit_event.rb
     line_hash: af31b0950cdb3e75:1
