@@ -7,6 +7,10 @@ require "rails_helper"
 # renders (form action, method, field names, the checkboxes' `form`
 # attribute) and read the result back from the database.
 RSpec.describe "Profile control priority and bulk edit (#1270)", type: :request do
+  # The guards return early when no sign-in method is configured; a test run
+  # without a .env (CI) would otherwise pass every permission check.
+  before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
+
   let(:profile) { create(:profile_document) }
   let!(:ac1) { create(:profile_control, profile_document: profile, control_id: "ac-1", priority: nil, control_family: "AC") }
   let!(:ac2) { create(:profile_control, profile_document: profile, control_id: "ac-2", priority: "P3", control_family: "AC") }

@@ -5,6 +5,10 @@ require "rails_helper"
 # #1270 — PUT /api/v1/profile_documents/:id/controls/bulk makes the change the
 # Profile screen's bulk bar and inline priority selector make.
 RSpec.describe "Api::V1 profile controls bulk edit (#1270)", type: :request do
+  # The guards return early when no sign-in method is configured; a test run
+  # without a .env (CI) would otherwise pass every permission check.
+  before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
+
   let(:profile) { create(:profile_document) }
   let!(:ac1) { create(:profile_control, profile_document: profile, control_id: "ac-1", priority: nil) }
   let!(:ac2) { create(:profile_control, profile_document: profile, control_id: "ac-2", priority: "P3") }

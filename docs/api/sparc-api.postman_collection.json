@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "sparc-api-v1-collection",
     "name": "SPARC API v1",
-    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 324 endpoints across 59 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
+    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 325 endpoints across 59 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -11464,6 +11464,46 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"profile_document\": {\n    \"name\": \"\",\n    \"description\": \"\",\n    \"baseline_level\": \"\",\n    \"profile_version\": \"\",\n    \"oscal_version\": \"\",\n    \"control_catalog_id\": \"\",\n    \"lifecycle_status\": \"\",\n    \"file_type\": \"\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT bulk edit controls",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/controls/bulk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents",
+                "{{profile_slug}}",
+                "controls",
+                "bulk"
+              ]
+            },
+            "description": "`profile_documents#bulk_edit_controls`. Sets or clears the priority of several controls and links or unlinks back-matter resources, all or nothing. Send `priority` only to change it (`null` clears it); linking or unlinking needs `back_matter.write`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"control_ids\": [\n    \"ac-1\",\n    \"ac-2\"\n  ],\n  \"priority\": \"P1\",\n  \"link_resource_ids\": [],\n  \"unlink_resource_ids\": []\n}",
               "options": {
                 "raw": {
                   "language": "json"
