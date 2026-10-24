@@ -27,11 +27,11 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   # FedRAMP rather than authored here.
   include DocumentFileIngestApi
 
-  before_action :authorize_profiles_write!, only: [ :create, :update, :destroy, :submit_for_review, :update_controls, :import ]
+  before_action :authorize_profiles_write!, only: [ :create, :update, :destroy, :submit_for_review, :update_controls, :bulk_edit_controls, :import ]
 
   # #1031 — DocumentFileIngestApi hook.
   def ingest_type_key = :profile
-  before_action :set_profile, only: [ :show, :update, :destroy, :submit_for_review, :approve, :reject, :baseline_review, :update_controls ]
+  before_action :set_profile, only: [ :show, :update, :destroy, :submit_for_review, :approve, :reject, :baseline_review, :update_controls, :bulk_edit_controls ]
 
   # GET /api/v1/profile_documents
   def index
@@ -74,6 +74,29 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
     render json: { data: { added: result.added, removed: result.removed,
                            controls_count: @profile.profile_controls.count } }
   rescue ProfileControlSelectionService::SelectionError => e
+    render json: { error: e.message }, status: :unprocessable_content
+  end
+
+  # PUT /api/v1/profile_documents/:id/controls/bulk  (#1270)
+  #
+  # Sets the priority of, and links/unlinks back-matter resources on, a set of
+  # the profile's controls. The same change the Profile screen's bulk bar and
+  # inline priority selector make (ProfileControlBulkEditService). `priority`
+  # is changed only when the key is sent; null or "" clears it.
+  def bulk_edit_controls
+    link_ids = Array(params[:link_resource_ids])
+    unlink_ids = Array(params[:unlink_resource_ids])
+    authorize_permission!("back_matter.write") if link_ids.any? || unlink_ids.any?
+
+    args = { control_ids: params[:control_ids], link_resource_ids: link_ids, unlink_resource_ids: unlink_ids }
+    args[:priority] = params[:priority].to_s if params.key?(:priority)
+    result = ProfileControlBulkEditService.new(@profile, user: current_user).apply(**args)
+
+    audit_log("profile_controls_bulk_edited", subject: @profile,
+              metadata: { control_ids: result.control_ids, priority_changed: result.priority_changed,
+                          priority: result.priority, linked: result.linked, unlinked: result.unlinked })
+    render json: { data: result.to_h }
+  rescue ProfileControlBulkEditService::EditError => e
     render json: { error: e.message }, status: :unprocessable_content
   end
 
@@ -190,7 +213,11 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
       data[:controls_count] = profile.profile_controls.count
       # #757 — the selected baseline control ids, so consumers can see/verify
       # the selection and drive the control-selection API (PUT .../controls).
-      data[:control_ids] = profile.profile_controls.order(:row_order).pluck(:control_id)
+      selected = profile.profile_controls.order(:row_order).pluck(:control_id, :priority)
+      data[:control_ids] = selected.map(&:first)
+      # #1270 — each control's priority (null: not set), so a caller can read
+      # back what PUT .../controls/bulk wrote.
+      data[:control_priorities] = selected.to_h
     end
 
     append_oscal_fields(data, profile, detailed: detailed)

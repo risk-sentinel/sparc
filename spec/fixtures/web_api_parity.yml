@@ -469,6 +469,7 @@ controllers:
     mapped:
       update_parameters: ["PATCH /api/v1/profile_documents/:profile_document_id/parameters"]
       destroy: ["PUT /api/v1/profile_documents/:id/controls"]
+      bulk: ["PUT /api/v1/profile_documents/:id/controls/bulk"]  # #1270
     ui_only:
       - reason: "HTML form pages; the write goes through create/update"
         actions: [new, edit]

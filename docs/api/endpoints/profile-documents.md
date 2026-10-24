@@ -17,6 +17,7 @@ Profile documents represent security baselines and resolved control profiles der
 | `POST` | `/api/v1/profile_documents/:id/approve` | Approve a profile under review | Admin or reviewer |
 | `POST` | `/api/v1/profile_documents/:id/reject` | Reject a profile under review | Admin or reviewer |
 | `PUT` | `/api/v1/profile_documents/:id/controls` | Replace the profile's selected control set | Admin or `profiles.write` |
+| `PUT` | `/api/v1/profile_documents/:id/controls/bulk` | Set priority on, and link or unlink back-matter resources on, a set of controls (#1270) | `profiles.write`; linking also `back_matter.write` |
 
 ---
 
@@ -134,10 +135,14 @@ None.
     "description": "FedRAMP HIGH baseline profile derived from NIST SP 800-53 Rev 5. Includes 370 controls.",
     "control_catalog_id": 1,
     "catalog_name": "NIST SP 800-53 Rev 5",
-    "controls_count": 370
+    "controls_count": 370,
+    "control_ids": ["ac-1", "ac-2"],
+    "control_priorities": { "ac-1": "P1", "ac-2": null }
   }
 }
 ```
+
+`control_priorities` (#1270) maps each selected control to its priority; `null` means not set.
 
 #### Status Codes
 
@@ -547,6 +552,56 @@ curl -s -X POST \
   -H "Content-Type: application/json" \
   -d '{ "reason": "Baseline selection does not match HIGH" }' \
   "https://sparc.example.com/api/v1/profile_documents/fedramp-high-baseline/reject" | jq .
+```
+
+---
+
+### PUT /api/v1/profile_documents/:id/controls/bulk
+
+Sets the priority of, and links or unlinks existing back-matter resources on, a set of the profile's controls in one change (#1270). It is the change the Profile screen's bulk bar and inline priority selector make. All or nothing: if any part is refused, nothing is written. Audited as `profile_controls_bulk_edited`.
+
+#### Request Body
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `control_ids` | array of strings | Required. Controls in the profile, in any accepted form (`ac-2.1`, `AC-2(1)`) |
+| `priority` | string or null | `P1`, `P2` or `P3`; `null` or `""` clears it. Omit the key to leave priority unchanged |
+| `link_resource_ids` | array of integers | Resources to link to every named control. Must be your organization's or globally available. Needs `back_matter.write` |
+| `unlink_resource_ids` | array of integers | Resources to unlink from every named control. The resources are not deleted. Needs `back_matter.write` |
+
+#### Response Body
+
+```json
+{
+  "data": {
+    "control_ids": ["ac-1", "ac-2"],
+    "priority_changed": true,
+    "priority": "P1",
+    "linked": 2,
+    "unlinked": 0
+  }
+}
+```
+
+`linked` and `unlinked` count links actually added or removed; a link that already exists is not counted again.
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Applied |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `403 Forbidden` | No `profiles.write`, or a link or unlink without `back_matter.write` |
+| `422 Unprocessable Entity` | No controls named, a control not in the profile, a priority outside P1–P3, a resource you may not link, nothing to change, or a published profile |
+
+#### cURL Example
+
+```bash
+curl -s -X PUT \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{ "control_ids": ["ac-1", "ac-2"], "priority": "P1" }' \
+  "https://sparc.example.com/api/v1/profile_documents/my-baseline/controls/bulk" | jq .
 ```
 
 ---

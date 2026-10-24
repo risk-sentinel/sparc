@@ -285,6 +285,12 @@ Shows the baseline profile with:
   the baseline is published. Writes through `BaselineParameterService`, the same
   service `PUT /api/v1/profile_documents/:id/parameters` uses.
 - Priority heatmap grouped by NIST family
+- On an editable baseline (#1270): each control's priority as a selector that
+  saves in place ("Priority not set" in amber), a checkbox per control and a
+  **Select all** per family, and a bulk bar that sets priority or links/unlinks
+  a back-matter resource on the selected controls. Same change as
+  `PUT /api/v1/profile_documents/:id/controls/bulk`. The **Not set** tile
+  filters to controls without a priority.
 - Copy button (creates a duplicate profile)
 - Export buttons: JSON, OSCAL (validated/unvalidated), **Resolved Catalog**
   (a conformant OSCAL resolved-profile catalog — enhancements nested inside
@@ -309,7 +315,7 @@ Two-step flow: first select a source catalog, then choose which controls to incl
 | **Controller** | `ProfileControlsController#edit` |
 | **Auth** | Authenticated |
 
-Edit form for individual profile controls with control ID, title, and priority fields.
+Edit form for individual profile controls: control ID, title, priority, tailoring notes and back-matter references. Parameter values are tailored on the Profile detail screen (#1270).
 
 #### Control Mappings List
 

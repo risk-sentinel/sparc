@@ -91,6 +91,7 @@ RSpec.describe AuditEvent, type: :model do
         app/controllers/concerns/publishable.rb
         app/controllers/api/v1/poam_subresources_controller.rb
         app/controllers/concerns/document_file_ingest_api.rb
+        app/controllers/concerns/document_copy_reporting.rb
       ]
     end
 
@@ -109,6 +110,22 @@ RSpec.describe AuditEvent, type: :model do
       expect(expected - AuditEvent::ACTIONS).to be_empty, <<~MESSAGE
         Api::V1::PoamSubresourcesController builds its action name at runtime and
         these expansions are not in ACTIONS, so they would record NOTHING:
+
+        #{(expected - AuditEvent::ACTIONS).map { |a| "  #{a}" }.join("\n")}
+      MESSAGE
+    end
+
+    # #1271 — DocumentCopyReporting builds "<type>_copy_failed" from the
+    # source document's model; the controllers that include it are enumerable.
+    it "registers every action a failed copy can emit" do
+      controllers = [ ProfileDocumentsController, CdefDocumentsController ]
+      expect(ApplicationController.descendants.select { _1.include?(DocumentCopyReporting) })
+        .to match_array(controllers)
+
+      expected = %w[profile_document cdef_document].map { |type| "#{type}_copy_failed" }
+      expect(expected - AuditEvent::ACTIONS).to be_empty, <<~MESSAGE
+        DocumentCopyReporting builds its action name at runtime and these
+        expansions are not in ACTIONS, so a failed copy would record NOTHING:
 
         #{(expected - AuditEvent::ACTIONS).map { |a| "  #{a}" }.join("\n")}
       MESSAGE

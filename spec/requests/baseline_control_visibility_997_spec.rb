@@ -90,6 +90,19 @@ RSpec.describe "What the baseline requires, on screen (#997)", type: :request do
         expect(response.body).not_to include("param_values[ac-20_odp.01]")
       end
 
+      # #1270 — both tables take the rules that let a long label or value wrap
+      # inside the block; the Chrome check measures the layout itself.
+      it "renders the parameters in the wrapping table, editable or not" do
+        [ author, reader ].each do |user|
+          sign_in_as(user)
+          get profile_document_path(profile)
+
+          table = Nokogiri::HTML(response.body).at_css("table.sparc-field-table--params")
+          expect(table).to be_present, "no wrapping parameter table for #{user == author ? 'an author' : 'a reader'}"
+          expect(table.text).to include("ac-20_odp.01")
+        end
+      end
+
       it "refuses the write itself, not merely the button" do
         sign_in_as(reader)
         patch parameters_profile_document_profile_control_path(profile, profile_control),

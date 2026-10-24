@@ -55,7 +55,7 @@
 
         <% if editable && form_url.present? %>
           <%= form_with url: form_url, method: :patch, local: true, class: "sparc-param-form" do %>
-            <table class="sparc-field-table">
+            <table class="sparc-field-table sparc-field-table--params">
               <% detail.parameters.each do |param| %>
                 <tr>
                   <th scope="row" class="sparc-field-label sparc-w-28pct">
@@ -111,7 +111,7 @@
             </div>
           <% end %>
         <% else %>
-          <table class="sparc-field-table">
+          <table class="sparc-field-table sparc-field-table--params">
             <% detail.parameters.each do |param| %>
               <tr>
                 <th scope="row" class="sparc-field-label sparc-w-28pct">

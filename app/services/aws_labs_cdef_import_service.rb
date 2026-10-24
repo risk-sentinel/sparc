@@ -30,8 +30,16 @@ class AwsLabsCdefImportService
 
   Result = Struct.new(
     :discovered, :imported, :skipped_unchanged, :superseded, :errors, :index_degraded,
+    :kept, :skipped_by_version, :allowed_versions,
     keyword_init: true
   ) do
+    # #1268 — upstream had files and the version filter kept none of them. Not
+    # a success, whatever the other counts say: nothing was imported or
+    # confirmed, and the cause is the setting, not upstream.
+    def kept_nothing?
+      discovered.to_i.positive? && kept.to_i.zero?
+    end
+
     # #968 item 3 — a run that silently degrades must SAY so where an operator
     # looks, not only in a log line. `index_degraded` counts documents that
     # imported but whose component index failed: real rows with real controls,
@@ -43,6 +51,9 @@ class AwsLabsCdefImportService
              "skipped_unchanged=#{skipped_unchanged} superseded=#{superseded} " \
              "errors=#{errors.length}"
       base += " index_degraded=#{index_degraded}" if index_degraded.to_i.positive?
+      if skipped_by_version.present?
+        base += " skipped_by_version=#{skipped_by_version.map { |v, n| "#{v}:#{n}" }.join(',')}"
+      end
       base
     end
   end
@@ -75,6 +86,7 @@ class AwsLabsCdefImportService
     # Reset per `run`; initialized here so a caller that exercises
     # `build_candidates` directly does not hit a nil.
     @fetch_errors = []
+    @skipped_by_version = Hash.new(0)
   end
 
   # #1088 — re-parse upstream content that is ALREADY imported, in place.
@@ -197,8 +209,11 @@ class AwsLabsCdefImportService
     commit_sha = @client.current_commit_sha
     # #939 — fetch-stage failures are collected rather than aborting the pass.
     @fetch_errors = []
+    @skipped_by_version = Hash.new(0)
+    warn_unsupported_allowed_versions
     candidates = regions_first(build_candidates(tree_entries))
     @logger.info("[AwsLabsCdefImportService] Discovered #{candidates.length} candidate CDEFs after version filtering")
+    report_version_filter(tree_entries.length, candidates.length)
 
     imported = 0
     skipped_unchanged = 0
@@ -247,12 +262,21 @@ class AwsLabsCdefImportService
                                  .where(updated_at: @run_started_at..)
                                  .count
 
+    # #1268 — the listing's ETag was cached on every 200, so after a run that
+    # kept nothing the boot ingest and the weekly schedule got 304 and skipped:
+    # a corrected setting changed nothing until someone pressed Refresh Now.
+    # Remember it only once a run has imported or confirmed something.
+    @client.remember_tree_etag! if (imported + skipped_unchanged).positive?
+
     Result.new(discovered: tree_entries.length,
                imported: imported,
                skipped_unchanged: skipped_unchanged,
                superseded: superseded,
                errors: errors,
-               index_degraded: index_degraded)
+               index_degraded: index_degraded,
+               kept: candidates.length,
+               skipped_by_version: @skipped_by_version.to_h,
+               allowed_versions: @allowed_oscal_versions)
   end
 
   # #939 — a partial import used to be indistinguishable from a clean one.
@@ -296,6 +320,41 @@ class AwsLabsCdefImportService
 
   private
 
+  # #1268 — the version filter used to drop files with `next nil` and say
+  # nothing. Name what it dropped and what it allows, at WARN, and at ERROR
+  # when it kept nothing of a non-empty upstream.
+  def report_version_filter(discovered, kept)
+    return if @skipped_by_version.empty?
+
+    found = @skipped_by_version.map { |v, n| "#{v} (#{n} files)" }.join(", ")
+    allowed = @allowed_oscal_versions.any? ? @allowed_oscal_versions.join(", ") : "(any)"
+    message = "[AwsLabsCdefImportService] Version filter skipped #{@skipped_by_version.values.sum} of " \
+              "#{discovered} files. Found: #{found}. Allowed (SPARC_AWS_LABS_OSCAL_VERSIONS): #{allowed}."
+    if kept.zero? && discovered.positive?
+      @logger.error("#{message} Nothing was kept; no AWS Labs CDEF was imported or confirmed.")
+    else
+      @logger.warn(message)
+    end
+  end
+
+  # #1268 — an allowed version SPARC has no schema for can never be validated.
+  # Named on every run (the boot ingest included), where an operator reading
+  # the refresh's log will see it.
+  def warn_unsupported_allowed_versions
+    return if @allowed_oscal_versions.empty? || !OscalSchema.table_exists?
+
+    known = OscalSchema.distinct.pluck(:oscal_version).compact
+    return if known.empty?
+
+    unknown = @allowed_oscal_versions - known
+    return if unknown.empty?
+
+    @logger.warn("[AwsLabsCdefImportService] SPARC_AWS_LABS_OSCAL_VERSIONS names #{unknown.join(', ')}, " \
+                 "which SPARC has no OSCAL schema for. Supported: #{known.sort.join(', ')}.")
+  rescue ActiveRecord::ActiveRecordError => e
+    @logger.warn("[AwsLabsCdefImportService] Could not check OSCAL versions: #{e.class}: #{e.message}")
+  end
+
   # For each tree entry: fetch metadata only (parse JSON, read
   # metadata.oscal-version + metadata.version), filter by allowed OSCAL
   # versions, then keep the highest metadata.version per (service_path,
@@ -305,8 +364,11 @@ class AwsLabsCdefImportService
       file = @client.fetch_file(path: entry["path"])
       data = JSON.parse(file[:content])
       meta = data.dig("component-definition", "metadata") || {}
-      next nil if meta[OSCAL_VERSION].blank?
-      next nil if @allowed_oscal_versions.any? && !@allowed_oscal_versions.include?(meta[OSCAL_VERSION])
+      if meta[OSCAL_VERSION].blank? ||
+         (@allowed_oscal_versions.any? && !@allowed_oscal_versions.include?(meta[OSCAL_VERSION]))
+        @skipped_by_version[meta[OSCAL_VERSION].presence || "(none)"] += 1
+        next nil
+      end
 
       {
         path: file[:path],

@@ -13,6 +13,9 @@ test_baseline_parameters.py.
 # cannot see them.
 # api-inventory: covers profile_documents#import
 # api-inventory: covers profile_documents#update_controls
+# Its own module, test_profile_controls_bulk_1270.py, which the inventory does
+# not map to this controller:
+# api-inventory: covers profile_documents#bulk_edit_controls
 
 from __future__ import annotations
 

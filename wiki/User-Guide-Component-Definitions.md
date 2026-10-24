@@ -165,6 +165,8 @@ On the detail page:
 | OSCAL export fails validation | Missing required component metadata | Fill the flagged fields, then use the validated export |
 | A `validation` CDEF cannot say what it validates | A component definition exports one component, and the OSCAL validation model needs a pair | Record the validation on the SSP ([how](User-Guide-System-Security-Plans#how-to-record-a-product-validation)) |
 | Can't edit the CDEF | View-only role | Request CDEF write permission ([RBAC](RBAC)) |
+| A copy shows "Could not duplicate …" | The copy was refused; the message names why | Fix what it names (often a name already in use) and copy again. Nothing is left half-copied |
+| AWS Labs refresh shows nothing new | The status beside **Refresh from AWS Labs** says why: queued, never started, kept nothing for its OSCAL version, or failed | See [What the last refresh did](Configuration#what-the-last-refresh-did) |
 
 ---
 

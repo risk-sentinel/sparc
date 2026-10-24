@@ -136,6 +136,11 @@ class AuditEvent < ApplicationRecord
     cdef_bulk_apply_converter_applied
     aws_labs_cdef_refresh_requested
     aws_labs_cdef_refresh_degraded
+    aws_labs_cdef_refresh_enqueue_failed
+    aws_labs_cdef_refresh_started
+    aws_labs_cdef_refresh_completed
+    aws_labs_cdef_refresh_kept_nothing
+    aws_labs_cdef_refresh_failed
     control_resource_created
     control_resource_linked
     control_resource_unlinked
@@ -171,7 +176,9 @@ class AuditEvent < ApplicationRecord
     profile_document_exported
     profile_document_imported
     profile_document_copied
+    profile_document_copy_failed
     profile_controls_bulk_updated
+    profile_controls_bulk_edited
     control_catalog_created
     control_catalog_updated
     control_catalog_deleted
@@ -465,6 +472,11 @@ class AuditEvent < ApplicationRecord
                            cdef_bulk_apply_converter_applied
                            aws_labs_cdef_refresh_requested
                            aws_labs_cdef_refresh_degraded
+                           aws_labs_cdef_refresh_enqueue_failed
+                           aws_labs_cdef_refresh_started
+                           aws_labs_cdef_refresh_completed
+                           aws_labs_cdef_refresh_kept_nothing
+                           aws_labs_cdef_refresh_failed
                            control_resource_created control_resource_linked
                            control_resource_unlinked cdef_document_baseline_declared
                            cdef_document_scope_updated
@@ -498,8 +510,8 @@ class AuditEvent < ApplicationRecord
                            remediation_timeline_updated],
     "Profiles" => %w[profile_document_created profile_document_updated profile_document_deleted
                      profile_document_delete_blocked
-                     profile_document_exported profile_document_imported profile_document_copied
-                     profile_controls_bulk_updated
+                     profile_document_exported profile_document_imported profile_document_copied profile_document_copy_failed
+                     profile_controls_bulk_updated profile_controls_bulk_edited
                      profile_control_created profile_control_updated profile_control_deleted
                      profile_document_published
                      profile_document_submitted_for_review profile_document_approved profile_document_rejected

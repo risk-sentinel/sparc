@@ -166,6 +166,13 @@ class BackMatterResource < ApplicationRecord
     where(organization_id: org_id).or(where(globally_available: true))
   }
   scope :pending_promotion, -> { where(promotion_status: "pending_review") }
+  # #1270 — the resources a user may link to a control: their organization's
+  # and the globally available ones, or only the global ones for a user in no
+  # organization. One rule for the control Edit screen and the bulk edit.
+  def self.linkable_by(user)
+    org = user&.organizations&.first
+    org ? org_available(org.id) : globally_available
+  end
   # The control types a back-matter resource may be linked to. Defined ONCE:
   # this list was inline in Api::V1::BackMatterResourcesController#link, and a
   # second copy in the web controller would have been the third place the same

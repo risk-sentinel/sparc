@@ -23,6 +23,8 @@ RSpec.describe AwsLabsCdefImportService, "rescued error classes (#968)" do
     allow(SparcConfig).to receive(:aws_labs_cdef_repo).and_return("awslabs/oscal-content-for-aws-services")
     allow(SparcConfig).to receive(:aws_labs_cdef_branch).and_return("main")
     allow(client).to receive(:current_commit_sha).and_return("commit-sha-aaaa")
+    # #1268 — the ETag is cached only after a run that kept files.
+    allow(client).to receive(:remember_tree_etag!)
     allow(client).to receive(:list_component_definition_files).and_return([
       { "type" => "blob", "path" => "component-definitions/s3/s3-cd.json", "sha" => "sha-s3" }
     ])
