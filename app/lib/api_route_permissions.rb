@@ -52,6 +52,8 @@ module ApiRoutePermissions
                                               "reject"  => [ "profiles.approve", "role:policy_manager" ] } },
     "baseline_parameters"     => { read: :authenticated, write: [ "profiles.write" ],
                                    actions: { "import_preview" => [ "profiles.write" ] } },
+    # #1258 — a grant on any boundary passes here; which CDEFs it writes is
+    # CdefWriteAccess, in the controllers.
     "cdef_documents"          => { read: :authenticated, write: [ "cdef.write" ],
                                    actions: { "approve"      => [ "cdef.approve", "role:policy_manager" ],
                                               "reject"       => [ "cdef.approve", "role:policy_manager" ],

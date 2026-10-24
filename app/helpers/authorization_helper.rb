@@ -54,8 +54,10 @@ module AuthorizationHelper
   def can_bulk_delete? = admin_access?
 
   # #1243 — CdefDocumentsController#authorize_cdef_write!: instance-level.
+  # #1258 — may create a CDEF somewhere: instance-level cdef.write, or
+  # cdef.write on any boundary (CdefWriteAccess).
   def can_write_cdefs?
-    !SparcConfig.any_auth_enabled? || current_user&.has_permission?("cdef.write") || false
+    !SparcConfig.any_auth_enabled? || CdefWriteAccess.may_create?(current_user)
   end
 
   # #1243 — may this person create a document of a boundary-scoped type

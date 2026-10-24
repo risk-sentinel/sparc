@@ -27,6 +27,14 @@ class CdefDocument < ApplicationRecord
   has_many :boundaries, through: :boundary_cdef_documents
   belongs_to :profile_document, optional: true
 
+  # #1258 — the boundary a CDEF's scope was set to lives in import_metadata
+  # (CdefScopeService::METADATA_KEY), and the upload parsers REPLACE
+  # import_metadata when the file is parsed, after the upload has set the scope.
+  # So an uploaded boundary CDEF lost its boundary, and with it the boundary
+  # writer's right to edit it. A save keeps it; CdefScopeService changes it with
+  # update_column, past this.
+  before_save :keep_scope_boundary, if: :import_metadata_changed?
+
   # #911 layer 2 — OSCAL requires `control-implementation/@source` on every
   # component definition: a component claims to implement controls FROM
   # something, and that something is a catalog or profile.
@@ -318,6 +326,15 @@ class CdefDocument < ApplicationRecord
   end
 
   private
+
+  def keep_scope_boundary
+    key = CdefScopeService::METADATA_KEY
+    previous = import_metadata_was
+    return unless previous.is_a?(Hash) && previous[key].present?
+
+    current = import_metadata.is_a?(Hash) ? import_metadata : {}
+    self.import_metadata = current.merge(key => previous[key]) unless current.key?(key)
+  end
 
   def deletion_dependencies
     deps = []
