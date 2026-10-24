@@ -45,8 +45,13 @@ class CdefToSspInheritanceService
         .preload(:ssp_control_statement, :source)
         .find_each do |link|
           next if link.source.nil?
-          if link.ssp_control_statement.update(implementation_prose: link.source.implementation_prose)
+          statement = link.ssp_control_statement
+          statement.implementation_prose = link.source.implementation_prose
+          changed = statement.implementation_prose_changed?
+          if statement.save
             updated += 1
+            # #1242 — a review covered the text as it was; new text needs its own.
+            link.update!(reviewed_at: nil, reviewed_by_user: nil) if changed && link.reviewed?
           end
         end
       updated

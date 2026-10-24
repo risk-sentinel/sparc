@@ -165,6 +165,8 @@ Rails.application.routes.draw do
       # #398: bulk refresh inherited statements from all linked CDEFs
       post :refresh_inherited_statements
       post :reset_inherited_statement
+      # #1242: confirm a CDEF-filled statement is true of this system
+      post :mark_statement_reviewed
       # #628: populate an existing empty SSP from a published profile so a
       # metadata-only shell isn't a dead end.
       get :attach_profile
@@ -750,7 +752,13 @@ Rails.application.routes.draw do
       resources :sar_risks, only: [ :show, :update, :destroy ]
       # #1100 — a statement is addressed by its own id once a client has listed
       # it, the same shape the risk sub-resources use.
-      resources :ssp_control_statements, only: [ :show, :update ]
+      resources :ssp_control_statements, only: [ :show, :update ] do
+        # #1242 — what the SSP screen's Reset and Mark reviewed buttons do.
+        member do
+          post :reset_to_source
+          post :mark_reviewed
+        end
+      end
 
       # Evidence CRUD (#756 — file upload + Control/CDEF association) plus
       # attestations (#440 — periodic-review records + CMS schema export).

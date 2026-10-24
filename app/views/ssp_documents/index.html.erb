@@ -1,6 +1,8 @@
 <%= render "shared/section_summary", tiles: [
   [@total_count, "SSP Documents"],
   [@controls_count, "Total Controls"],
+  # #1242 — what is left to write, in the responses each SSP's baseline requires.
+  ["#{@responses_done} of #{@responses_required}", "Responses done"],
   [@completed_count, "Completed"]
 ] %>
 

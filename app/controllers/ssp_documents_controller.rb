@@ -25,14 +25,14 @@ class SspDocumentsController < ApplicationController
     :publish, :publish_check,
     :create_control_resource, :link_control_resource, :unlink_control_resource,
     :update_statement,
-    :refresh_inherited_statements, :reset_inherited_statement,
+    :refresh_inherited_statements, :reset_inherited_statement, :mark_statement_reviewed,
     :attach_profile, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter,
     :attach_boundary
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :mark_statement_reviewed, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :validate_oscal_export, :status, :edit, :enrich, :attach_profile, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :set_baseline, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter, :attach_boundary ]
+  before_action :authorize_document_write!, only: [ :create, :set_baseline, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :mark_statement_reviewed, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter, :attach_boundary ]
 
   def index
     scope = boundary_scoped_relation(SspDocument).order(created_at: :desc)
@@ -45,6 +45,12 @@ class SspDocumentsController < ApplicationController
     # different populations.
     @controls_count = SspControl.where(ssp_document_id: scope.reorder(nil).select(:id)).count
     @completed_count = scope.where(status: "completed").count
+    # #1242 — responses across the same population: done of required, shared
+    # with each listed document below, so a baseline is resolved once.
+    @response_progress_cache = {}
+    population = SspResponseProgress.for_documents(scope.reorder(nil).to_a, required_cache: @response_progress_cache)
+    @responses_required = population.values.sum { _1.total.required }
+    @responses_done = population.values.sum { _1.total.done }
 
     # #672 — filter listed rows; the tiles above keep showing totals.
     # #1202 — the sidebar links here with `?authorization_boundary_id=`; narrow to
@@ -73,7 +79,9 @@ class SspDocumentsController < ApplicationController
     @controls = @ssp_document.ssp_controls
                               .roots
                               .includes(:ssp_control_fields,
-                                        :ssp_control_statements,
+                                        # #1242 — each row's links, their source and reviewer: its
+                                        # badge, provider part and review mark read them.
+                                        ssp_control_statements: { inheritance_links: %i[source reviewed_by_user] },
                                         ssp_by_components: :ssp_component,
                                         provider_statements: :ssp_control_fields)
 
@@ -175,6 +183,10 @@ class SspDocumentsController < ApplicationController
       else
         {}
       end
+
+    # #1242 — the responses the SSP's baseline requires, by state: the header
+    # figure, each control's badge and each statement row read this.
+    @response_progress = SspResponseProgress.new(@ssp_document)
 
     # Heatmap uses root controls; status field is now 'status'
     @heatmap_data, @heatmap_families, @heatmap_statuses =
@@ -624,17 +636,10 @@ class SspDocumentsController < ApplicationController
       permitted["responsible_roles_data"] = ids.map { |id| { "role-id" => id } }
     end
 
-    old_prose = statement.implementation_prose
-    if statement.update(permitted)
-      # #396 + #398: if prose changed and the statement was inherited,
-      # flip the link to overridden so the next CDEF/leveraged refresh
-      # leaves the user's edit alone.
-      new_prose = permitted["implementation_prose"]
-      if new_prose && new_prose != old_prose
-        statement.inheritance_links.where(overridden: false).find_each do |link|
-          link.update!(overridden: true, overridden_prose: new_prose)
-        end
-      end
+    # #396 + #398: changed prose marks every filling link overridden, so the
+    # next CDEF/leveraged refresh leaves the user's edit alone. One method,
+    # shared with the API (#1242).
+    if statement.apply_author_edit(permitted)
       @ssp_document.regenerate_oscal_uuid!
       audit_log("ssp_statement_updated", subject: @ssp_document,
                 metadata: { statement_id: statement.statement_id })
@@ -662,6 +667,28 @@ class SspDocumentsController < ApplicationController
               metadata: { updated_count: updated })
     flash[:success] = "Refreshed #{updated} inherited statement(s) from linked CDEFs."
     redirect_to ssp_document_path(@ssp_document)
+  end
+
+  # POST /ssp_documents/:id/mark_statement_reviewed
+  # Body: { statement_id: N }
+  # #1242: an author confirms that the text a CDEF filled in is true of this
+  # system, keeping it as it is. Editing the text instead makes it this
+  # system's own (overridden), which needs no review mark.
+  def mark_statement_reviewed
+    statement = SspControlStatement.joins(ssp_control: :ssp_document)
+                                   .find_by!(id: params[:statement_id],
+                                             ssp_documents: { id: @ssp_document.id })
+
+    links = statement.inheritance_links.from_cdef.active.to_a
+    if links.empty?
+      flash[:error] = "Statement #{statement.label.presence || statement.statement_id} has no CDEF text to review."
+    else
+      links.each { _1.mark_reviewed!(current_user) }
+      audit_log("ssp_statement_reviewed", subject: @ssp_document,
+                metadata: { statement_id: statement.statement_id })
+      flash[:success] = "Statement #{statement.label.presence || statement.statement_id} marked reviewed."
+    end
+    redirect_to ssp_document_path(@ssp_document, anchor: "stmt-#{statement.id}")
   end
 
   # POST /ssp_documents/:id/reset_inherited_statement

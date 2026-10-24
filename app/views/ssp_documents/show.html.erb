@@ -116,6 +116,10 @@
 
     <div class="sparc-divider-v"></div>
 
+    <%= render "ssp_documents/response_progress", progress: @response_progress.total %>
+
+    <div class="sparc-divider-v"></div>
+
     <div class="d-flex flex-wrap sparc-gap-045 sparc-flex-1">
       <% total_by_status.each do |status, count| %>
         <% next if count == 0 %>
@@ -328,14 +332,21 @@
             <%# #1100 — how much of this control is answered, on the COLLAPSED
                 card. The per-statement work is invisible until you expand a
                 control, so a document of 150 controls gave an author no way to
-                see where the gaps were without opening all of them. %>
-            <% stmt_total = control.ssp_control_statements.size %>
-            <% if stmt_total > 1 %>
-              <% stmt_answered = control.ssp_control_statements.count { |s| s.implementation_prose.present? } %>
-              <span class="sparc-status sparc-status--<%= stmt_answered.zero? ? 'neutral' : stmt_answered == stmt_total ? 'success' : 'warning' %> sparc-fs-068"
-                    title="Implementation statements carrying prose">
-                <%= stmt_answered %>/<%= stmt_total %> answered
+                see where the gaps were without opening all of them.
+                #1242 — counted in the responses the baseline requires
+                (SspResponseProgress), on every control: it counted every
+                stored row, intermediate levels included, and showed nothing on
+                a control with one response. %>
+            <% control_progress = @response_progress.for_control(control.control_id) %>
+            <% if control_progress %>
+              <span class="sparc-status sparc-status--<%= control_progress.complete? ? 'success' : control_progress.done.zero? ? 'neutral' : 'warning' %> sparc-fs-068"
+                    data-testid="control-response-badge"
+                    title="Responses this control requires that are done: inherited, satisfied or written">
+                <%= control_progress.done %>/<%= control_progress.required %> done
               </span>
+            <% else %>
+              <span class="sparc-status sparc-status--neutral sparc-fs-068" data-testid="control-response-badge"
+                    title="The SSP's baseline does not select this control, so it is not counted">Not in baseline</span>
             <% end %>
           </div>
           <div class="sparc-ctrl-title sparc-mt-01"><%= control.title %></div>
@@ -363,7 +374,8 @@
             it is there in both: #1100 moved it out of the edit form into view
             mode, and an author who clicked Edit then found only control-level
             boxes and no way to answer a part. %>
-        <%= render "ssp_documents/statements_table", control: control, ssp_document: @ssp_document, requirement: requirement %>
+        <%= render "ssp_documents/statements_table", control: control, ssp_document: @ssp_document, requirement: requirement,
+              progress: @response_progress %>
 
         <%# ── View mode ── %>
         <div id="view-<%= control.id %>" class="sparc-mt-05">

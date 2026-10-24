@@ -62,7 +62,11 @@ class CdefControlField < ApplicationRecord
   CONTROL_ORIGIN_LABELS = {
     "system-specific" => "System-Specific",
     "inherited"       => "Inherited",
-    "shared"          => "Shared"
+    # #1242 — NIST's term for a control implemented partly by a provider and
+    # partly by this system is a hybrid control (SP 800-53 Rev 5, SP 800-37
+    # Rev 2); "Shared" is not a NIST or OSCAL term. The stored value is kept
+    # so existing CDEFs and imports read the same.
+    "shared"          => "Hybrid"
   }.freeze
 
   before_validation :set_editable_flag

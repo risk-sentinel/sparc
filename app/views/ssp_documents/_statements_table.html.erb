@@ -9,11 +9,17 @@
       ssp_document - SspDocument instance (for routing)
       requirement  - ControlRequirementText::Text for the control, or nil: the
                      text each row answers, parameter values applied
+      progress     - SspResponseProgress for the document, or nil (#1242): which
+                     rows are required responses, and the state of each
 %>
 <% requirement = local_assigns[:requirement] %>
+<% progress = local_assigns[:progress] %>
 <%
   statements = control.ssp_control_statements.sort_by { |s| s.row_order || 0 }
-  answered   = statements.count { |s| s.implementation_prose.present? }
+  tally      = progress&.for_control(control.control_id)
+  above      = progress ? progress.parent_level_statement_ids : Set.new
+  done       = tally ? tally.done : statements.count { |s| s.implementation_prose.present? }
+  needed     = tally ? tally.required : statements.size
 %>
 
 <% if statements.any? %>
@@ -27,10 +33,11 @@
       </div>
       <%# How much of this control is actually answered. The table showed a
           statement count and nothing about completion, so a control with 22
-          parts and one answer looked identical to one that was finished. %>
-      <span class="sparc-status sparc-status--<%= answered.zero? ? 'neutral' : answered == statements.size ? 'success' : 'warning' %> sparc-fs-07"
-            title="Statements carrying implementation prose">
-        <%= answered %> of <%= statements.size %> answered
+          parts and one answer looked identical to one that was finished.
+          #1242 — counted in required responses, not stored rows. %>
+      <span class="sparc-status sparc-status--<%= done.zero? ? 'neutral' : done == needed ? 'success' : 'warning' %> sparc-fs-07"
+            title="Required responses that are done: inherited, satisfied or written">
+        <%= done %> of <%= needed %> done
       </span>
     </div>
 
@@ -63,6 +70,10 @@
                   <span class="badge badge-info sparc-fs-065" title="Implementation inherited from a CDEF">CDEF</span>
                 <% when :leveraged %>
                   <span class="badge bg-primary sparc-fs-065" title="Inherited via a leveraged authorization">Leveraged</span>
+                <% when :hybrid, :overridden_hybrid %>
+                  <%# #1242 — NIST's hybrid control: the provider implements part
+                      of it and hands the rest back to this system. %>
+                  <span class="badge bg-primary sparc-fs-065" title="The leveraged system provides part of this; this system writes the rest">Hybrid</span>
                 <% when :responsibility %>
                   <%# #956 — the leveraged system hands this back to us. It is
                       the opposite of an inherited implementation, and the one
@@ -83,6 +94,28 @@
                 <div class="sparc-fs-078 sparc-color-body sparc-mb-025" data-statement-requirement>
                   <%= part_text.presence || content_tag(:span, "The control as a whole", class: "text-body-secondary") %>
                 </div>
+                <%# #1242 — the row's state, when the baseline requires a
+                    response from it, and a note when its text sits above the
+                    parts that need it. %>
+                <% part = progress&.part_for_statement(stmt.id) %>
+                <% if part %>
+                  <span class="sparc-status sparc-status--<%= SspResponseProgress::OWED.include?(part.state) ? 'warning' : 'success' %> sparc-fs-065"
+                        data-response-state="<%= part.state %>">
+                    <%= SspResponseProgress::LABELS[part.state] %><%= " · CDEF text not reviewed" if part.cdef_unreviewed %>
+                  </span>
+                <% elsif above.include?(stmt.id) %>
+                  <div class="sparc-fs-072 sparc-text-warning-bold" data-response-state="parent_level_text">
+                    Written above its parts, so it answers none of them. Move each part's text into its row below.
+                  </div>
+                <% end %>
+                <%# #1242 — on a hybrid control the provider's part is theirs,
+                    shown read-only; the box below is this system's part. %>
+                <% if (provider = stmt.hybrid_source) %>
+                  <div class="sparc-stmt-note sparc-mt-025" data-testid="hybrid-provider-part">
+                    <span class="fw-semibold">Provider's part (read-only):</span>
+                    <%= provider.implementation_prose.presence || content_tag(:span, "(the provider wrote nothing)", class: "fst-italic") %>
+                  </div>
+                <% end %>
                 <%# ── Read view ── %>
                 <div data-statement-edit-target="read">
                   <%= stmt.implementation_prose.presence ||
@@ -175,6 +208,20 @@
                         class="sparc-action sparc-action--primary sparc-action--outline sparc-action--sm sparc-fs-07 sparc-p-015-045">
                   Edit
                 </button>
+                <% cdef_links = stmt.inheritance_links.select { _1.source_type == "CdefControlStatement" && !_1.overridden? } %>
+                <% if cdef_links.any? && !cdef_links.all?(&:reviewed?) && stmt.implementation_prose.present? %>
+                  <%= button_to "Mark reviewed",
+                        mark_statement_reviewed_ssp_document_path(ssp_document, statement_id: stmt.id),
+                        method: :post,
+                        title: "The CDEF's text is true of this system; keep it as it is",
+                        class: "sparc-action sparc-action--positive sparc-action--ghost sparc-action--sm sparc-fs-07 sparc-p-015-045",
+                        form: { class: "sparc-d-inline" } %>
+                <% elsif cdef_links.any? && cdef_links.all?(&:reviewed?) %>
+                  <% reviewed = cdef_links.max_by(&:reviewed_at) %>
+                  <div class="sparc-fs-065 text-body-secondary" data-testid="cdef-reviewed">
+                    Reviewed <%= reviewed.reviewed_at.utc.strftime("%Y-%m-%d") %><%= " by #{reviewed.reviewed_by_user.display_label}" if reviewed.reviewed_by_user %>
+                  </div>
+                <% end %>
                 <% if %i[overridden_cdef overridden_leveraged].include?(stmt.source_kind) %>
                   <%= button_to "Reset",
                         reset_inherited_statement_ssp_document_path(ssp_document, statement_id: stmt.id),

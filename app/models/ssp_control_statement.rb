@@ -59,11 +59,14 @@ class SspControlStatement < ApplicationRecord
   # :authored           — no inheritance link; user wrote this themselves
   # :cdef               — populated from a CDEF component
   # :leveraged          — inherited via a leveraged authorization
+  # :hybrid             — #1242: the leveraged system provides part of it and
+  #                       hands the rest back to us (NIST's hybrid control)
   # :responsibility     — a leveraged system has handed this BACK to us and we
   #                       have not implemented it yet (#956)
   # :overridden_cdef    — started as CDEF but the user has edited
   # :overridden_leveraged — started as leveraged but the user has edited
   # :overridden_responsibility — a responsibility we have now implemented
+  # :overridden_hybrid  — a hybrid whose part this system has now written
   def source_kind
     link = inheritance_links.first
     return :authored unless link
@@ -75,7 +78,7 @@ class SspControlStatement < ApplicationRecord
         # An inherited implementation and an outstanding customer
         # responsibility are opposites; showing both as "Leveraged" hid the
         # one the reader has to act on.
-        :responsibility
+        link.source.provided? ? :hybrid : :responsibility
       else
         :leveraged
       end
@@ -85,5 +88,35 @@ class SspControlStatement < ApplicationRecord
 
   def inherited?
     inheritance_links.exists?
+  end
+
+  # #1242 — the leveraged statement this one inherits from, when the provider
+  # hands part of it back: its text is the provider's part, shown read-only
+  # beside this system's own.
+  def hybrid_source
+    link = inheritance_links.find { _1.source_type == "SspControlStatement" }
+    source = link&.source
+    source if source&.provided? && source.customer_responsibility?
+  end
+
+  # #1242 — the one way an author's edit is saved, from the screen and the API.
+  # Changed text is this system's own from now on, so every link that was
+  # filling it is marked overridden and a CDEF or leveraged refresh leaves it
+  # alone. The API used to save the text and keep the link active, so an
+  # answered row still counted, and refreshed, as inherited.
+  def apply_author_edit(attributes)
+    attributes = attributes.to_h.stringify_keys
+    prose_changed = attributes.key?("implementation_prose") &&
+                    attributes["implementation_prose"] != implementation_prose
+    transaction do
+      raise ActiveRecord::Rollback unless update(attributes)
+
+      if prose_changed
+        inheritance_links.where(overridden: false).find_each do |link|
+          link.update!(overridden: true, overridden_prose: implementation_prose)
+        end
+      end
+      true
+    end || false
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_23_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_24_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1653,6 +1653,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_120000) do
     t.string "source_uuid", null: false
     t.bigint "ssp_control_statement_id", null: false
     t.datetime "updated_at", null: false
+    t.datetime "reviewed_at"
+    t.bigint "reviewed_by_user_id"
+    t.index ["reviewed_by_user_id"], name: "idx_inh_on_reviewed_by"
     t.index ["source_type", "source_id"], name: "idx_inh_on_source"
     t.index ["source_uuid"], name: "idx_inh_on_source_uuid"
     t.index ["ssp_control_statement_id", "source_type", "source_id"], name: "idx_inh_unique_target_source", unique: true
@@ -2007,6 +2010,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_120000) do
   add_foreign_key "ssp_components", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_control_fields", "ssp_controls"
   add_foreign_key "ssp_control_statement_inheritances", "ssp_control_statements", on_delete: :cascade
+  add_foreign_key "ssp_control_statement_inheritances", "users", column: "reviewed_by_user_id", on_delete: :nullify
   add_foreign_key "ssp_control_statements", "ssp_controls", on_delete: :cascade
   add_foreign_key "ssp_controls", "ssp_controls", column: "parent_id"
   add_foreign_key "ssp_controls", "ssp_documents"

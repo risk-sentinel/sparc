@@ -21,7 +21,10 @@
 #
 # NIST 800-53: PL-2 (the SSP states how each requirement is met), CM-6.
 class ControlRequirementText
-  Text = Struct.new(:full, :parts, keyword_init: true) do
+  # `required` — #1242: the part ids an SSP must answer, one response each: the
+  # statement parts with no statement part below them, in catalog order. A
+  # control whose catalog holds no parts has one, its `_smt`.
+  Text = Struct.new(:full, :parts, :required, keyword_init: true) do
     def for_part(part_id) = parts[part_id.to_s]
   end
 
@@ -90,6 +93,7 @@ class ControlRequirementText
     depth = {}
     prose = {}
     lines = []
+    parents = rows.filter_map(&:parent_part_id).to_set
     rows.each do |row|
       depth[row.part_id] = row.parent_part_id.present? ? depth.fetch(row.parent_part_id, -1) + 1 : -1
       text = row.prose.present? ? resolver.resolve_text(row.prose).strip : nil
@@ -98,7 +102,7 @@ class ControlRequirementText
 
       lines << ("  " * [ depth[row.part_id], 0 ].max) + [ row.label, text ].compact_blank.join(" ")
     end
-    Text.new(full: lines.join("\n"), parts: prose)
+    Text.new(full: lines.join("\n"), parts: prose, required: rows.map(&:part_id).reject { parents.include?(_1) })
   end
 
   # #1252 — the statement rows as the profile's alters leave them: removed
@@ -139,6 +143,7 @@ class ControlRequirementText
   def flat_text(control, resolver)
     statement = (control.guidance_data || {})["statement"].to_s
     text = statement.present? ? resolver.resolve_text(statement).strip : ""
-    Text.new(full: text, parts: text.present? ? { "#{control.control_id}_smt" => text } : {})
+    Text.new(full: text, parts: text.present? ? { "#{control.control_id}_smt" => text } : {},
+             required: [ "#{control.control_id}_smt" ])
   end
 end

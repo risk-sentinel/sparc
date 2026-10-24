@@ -180,7 +180,10 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
       creation_method: doc.creation_method,
       authorization_boundary_id: doc.authorization_boundary_id,
       created_at: doc.created_at.iso8601,
-      updated_at: doc.updated_at.iso8601
+      updated_at: doc.updated_at.iso8601,
+      # #1242 — responses the SSP's baseline requires, by state
+      # (SspResponseProgress): what the screen's header and the list show.
+      response_progress: SspResponseProgress.for(doc, required_cache: (@required_cache ||= {})).to_h
     }
 
     if detailed
