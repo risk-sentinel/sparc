@@ -13,7 +13,8 @@ require "stringio"
 # boundary's hdf-system document (HdfSystemExportService.system_ref), and
 # `labels.system_id` is the boundary uuid, the same value that document carries
 # as systemId/identifier. It was the slug, which is regenerated on rename and
-# so cannot be a join key.
+# so cannot be a join key. #1205 — the labels are HdfSystemExportService.labels,
+# so `system` (HDF's well-known key, the one results carry) is there too.
 #
 # HYBRID (design D5): SPARC hand-emits the JSON — deterministic (stable ordering +
 # a content-seeded amendmentId so re-export is byte-identical and cache-pinnable) —
@@ -83,7 +84,7 @@ class HdfAmendmentExportService
       "version"     => "1",
       "generator"   => GENERATOR,
       "systemRef"   => HdfSystemExportService.system_ref(@boundary),
-      "labels"      => { "system_id" => @boundary.uuid },
+      "labels"      => HdfSystemExportService.labels(@boundary),
       "overrides"   => overrides
     }
     # #1037 — wrapped in StringIO, NOT passed as a bare String. `HdfRunner`

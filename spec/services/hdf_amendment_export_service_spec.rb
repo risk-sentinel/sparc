@@ -28,6 +28,10 @@ RSpec.describe HdfAmendmentExportService do
       # slug, which is regenerated on rename and so cannot join anything.
       expect(doc["labels"]["system_id"]).to eq(boundary.uuid)
       expect(doc["labels"]["system_id"]).not_to eq(boundary.slug)
+      # #1205 — and HDF's well-known `system` key, the one results carry, with
+      # the same labels the hdf-system document has.
+      expect(doc["labels"]["system"]).to eq(boundary.uuid)
+      expect(doc["labels"]).to eq(HdfSystemExportService.labels(boundary))
       expect(doc["overrides"].length).to eq(2)
 
       o1 = doc["overrides"].find { |o| o["requirementId"] == "CVE-1" }

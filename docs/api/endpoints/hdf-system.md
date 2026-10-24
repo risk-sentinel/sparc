@@ -66,7 +66,8 @@ The body **is** the artefact — raw hdf-system JSON, not wrapped.
       "type": "application",
       "name": "Amazon S3",
       "componentId": "11111111-2222-4333-8444-555555555555",
-      "description": "Object storage"
+      "description": "Object storage",
+      "targetSelector": { "labels.system": "8f7e1c94-0d3a-4b21-9c1e-2f4a6b8d0e13" }
     }
   ],
   "controlDesignations": [
@@ -77,7 +78,10 @@ The body **is** the artefact — raw hdf-system JSON, not wrapped.
     }
   ],
   "generator": { "name": "sparc", "version": "1.16.3" },
-  "labels": { "system_id": "8f7e1c94-0d3a-4b21-9c1e-2f4a6b8d0e13" }
+  "labels": {
+    "system": "8f7e1c94-0d3a-4b21-9c1e-2f4a6b8d0e13",
+    "system_id": "8f7e1c94-0d3a-4b21-9c1e-2f4a6b8d0e13"
+  }
 }
 ```
 
@@ -98,7 +102,9 @@ The body **is** the artefact — raw hdf-system JSON, not wrapped.
 | `controlDesignations` | the boundary SSP's control origination (below) | omitted |
 | `dataFlows` | **not exported** — SPARC does not model interconnections | always omitted |
 | `generator` | `{name: "sparc", version: <SPARC version>}` | — |
-| `labels.system_id` | boundary uuid | — |
+| `labels.system` | boundary uuid: HDF's well-known key, the one results label their components with (#1205) | — |
+| `labels.system_id` | boundary uuid. **Deprecated** (#1205): kept with the same value through v1.18.0; read `labels.system` | — |
+| `components[].targetSelector` | `{"labels.system": <boundary uuid>}` on every component (#1205) | — |
 
 ### Components
 
@@ -121,6 +127,12 @@ is listed once.
 A component that carries its own automated check (an AWS Config Rule, modelled
 as a `software` component) is an assessment procedure rather than an asset, and
 is excluded too.
+
+Each component's `targetSelector` is `{"labels.system": <boundary uuid>}`. It
+selects the results labelled for this boundary, which is how a consumer joins
+results to the system document. Nothing finer is emitted: SPARC does not
+reliably know which scan targets (an account, a database, an image) a component
+covers, and a selector that guessed would claim results that are not its own.
 
 ### Control designations
 

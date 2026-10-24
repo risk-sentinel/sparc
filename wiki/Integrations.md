@@ -334,7 +334,11 @@ container image published by this repo's CI:
   `304 Not Modified` when nothing changed (strong ETag over the exported bytes).
 - **HDF system document.** sparc-validate's results and amendments reference the
   boundary's `hdf-system` document through `systemRef`; SPARC writes it, and the
-  HDF amendments export now carries that `systemRef`.
+  HDF amendments export now carries that `systemRef`. Both documents label the
+  boundary `system: <boundary uuid>`, HDF's well-known key and the one results
+  carry, and each system component has a `targetSelector` on it, so results
+  join to the system. The older `system_id` label stays, with the same value,
+  through v1.18.0 (#1205).
 - The full delivery contract (endpoints, auth, what can be sent back) is in
   `docs/api/DELIVERY_CONTRACT.md`.
 

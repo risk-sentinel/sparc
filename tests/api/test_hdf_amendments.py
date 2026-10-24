@@ -110,6 +110,8 @@ class TestExport:
 
         assert doc["systemRef"].endswith(f"{BOUNDARIES_PATH}/{boundary['uuid']}/hdf_system"), doc
         assert doc["labels"]["system_id"] == boundary["uuid"], doc
+        # #1205 — and HDF's well-known `system` key, which results carry.
+        assert doc["labels"]["system"] == boundary["uuid"], doc
 
     def test_re_export_is_byte_identical(
         self, admin_client: httpx.Client, triaged: dict[str, Any]

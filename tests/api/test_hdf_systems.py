@@ -76,6 +76,20 @@ class TestExport:
         assert doc["components"], "an exported document listed no components"
         assert doc["generator"]["name"] == "sparc", doc
 
+    def test_results_can_be_joined_to_the_system_and_its_components(
+        self, exportable: tuple[dict[str, Any], httpx.Response]
+    ) -> None:
+        """#1205 — results label every component `system: <boundary uuid>`, HDF's
+        well-known key. The document carries it (and `system_id`, kept through
+        v1.18.0), and each component selects the boundary's results by it."""
+        boundary, response = exportable
+        doc = response.json()
+
+        assert doc["labels"] == {"system": boundary["uuid"], "system_id": boundary["uuid"]}, doc
+        selectors = [c.get("targetSelector") for c in doc["components"]]
+        expected = {"labels.system": boundary["uuid"]}
+        assert selectors and all(s == expected for s in selectors), selectors
+
     def test_the_uuid_address_resolves_to_the_same_document(
         self, admin_client: httpx.Client, exportable: tuple[dict[str, Any], httpx.Response]
     ) -> None:
