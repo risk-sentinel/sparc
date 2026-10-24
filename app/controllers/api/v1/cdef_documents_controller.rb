@@ -404,15 +404,18 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   end
 
   def cdef_params
-    permit_strictly(:cdef_document,
+    permitted = permit_strictly(:cdef_document,
       :name, :description, :cdef_type, :cdef_version, :benchmark_id,
-      :oscal_version, :lifecycle_status, :file_type,
+      :lifecycle_status, :file_type,
+      *OSCAL_METADATA_FIELDS,
       # #944 — the component's own OSCAL fields. The exporter hardcoded these,
       # so an integrator could create a CDEF over the API and still had no way
       # to say what kind of component it described.
       :component_type, :component_title, :component_description,
-      :control_implementation_source, :control_implementation_description
+      :control_implementation_source, :control_implementation_description,
+      also_accepts: [ OSCAL_METADATA_PARAM ]
     )
+    with_oscal_metadata(permitted, :cdef_document, @cdef)
   end
 
   def serialize_cdef(cdef, detailed: false, summary: nil)

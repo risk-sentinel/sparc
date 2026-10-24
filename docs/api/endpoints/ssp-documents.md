@@ -164,6 +164,9 @@ None.
 | `ssp_document[security_objective_integrity]` | string | no | Integrity objective (low/moderate/high) |
 | `ssp_document[security_objective_availability]` | string | no | Availability objective (low/moderate/high) |
 | `ssp_document[lifecycle_status]` | string | no | `started`, `in_progress` or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
+| `ssp_document[oscal_version]` | string | no | OSCAL version the document declares, e.g. `1.1.3` (#1267) |
+| `ssp_document[published]` | string | no | Published date, ISO 8601: OSCAL `metadata.published` (#1267) |
+| `ssp_document[oscal_metadata]` | object | no | OSCAL metadata, returned under the same name: any of `roles`, `parties`, `responsible-parties`, `revisions`, `props`, `links`, `document-ids`, `locations`, `remarks`. Keys sent replace those keys and keys left out are kept. Any other key is refused with `422` and nothing changes (#1267) |
 
 #### Response Body
 

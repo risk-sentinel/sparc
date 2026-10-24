@@ -227,12 +227,14 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
   end
 
   def document_params
-    permit_strictly(:sap_document,
+    permitted = permit_strictly(:sap_document,
       :name, :description, :authorization_boundary_id,
       :ssp_document_id, :profile_document_id,
       :assessment_type, :assessment_start, :assessment_end,
-      :sap_version, :lifecycle_status
+      :sap_version, :lifecycle_status,
+      *OSCAL_METADATA_FIELDS, also_accepts: [ OSCAL_METADATA_PARAM ]
     )
+    with_oscal_metadata(permitted, :sap_document, @document)
   end
 
   def serialize_document(doc, detailed: false)

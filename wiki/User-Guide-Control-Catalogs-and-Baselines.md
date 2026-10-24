@@ -304,6 +304,23 @@ Two things to know:
 API equivalent: `PATCH /api/v1/profile_documents/:id` with
 `{ "profile_document": { "control_catalog_id": <id> } }`.
 
+### How to start a new version of a published baseline
+
+A published baseline is read-only. To tailor it further, work on a copy:
+
+1. Open the published baseline and choose **Create Editable Copy**. The copy is
+   named "Copy of …" and starts unpublished.
+2. Choose **Edit** beside the copy's name, give it its own name and version
+   number, and **Save**. The page's address follows the new name.
+3. Tailor the copy: parameters, controls, priorities. Publish it when it is
+   ready.
+
+The **OSCAL Metadata** section further down the page sets the OSCAL version,
+published date and description.
+
+API equivalent: `PATCH /api/v1/profile_documents/:id` with
+`{ "profile_document": { "name": "…", "profile_version": "…" } }`.
+
 ### How to set control priorities
 
 Open a baseline, then **Edit** an individual profile control

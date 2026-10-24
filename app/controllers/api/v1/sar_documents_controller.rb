@@ -127,11 +127,14 @@ class Api::V1::SarDocumentsController < Api::V1::DocumentBaseController
   def write_permission_key = "sar.write"
 
   def document_params
-    permit_strictly(:sar_document,
+    # #1267 — `sar_version` is the field the page's name/version form edits.
+    permitted = permit_strictly(:sar_document,
       :name, :description, :authorization_boundary_id,
       :sap_document_id, :profile_document_id, :ssp_document_id,
-      :lifecycle_status
+      :lifecycle_status, :sar_version,
+      *OSCAL_METADATA_FIELDS, also_accepts: [ OSCAL_METADATA_PARAM ]
     )
+    with_oscal_metadata(permitted, :sar_document, @document)
   end
 
   def serialize_document(doc, detailed: false)
@@ -155,6 +158,8 @@ class Api::V1::SarDocumentsController < Api::V1::DocumentBaseController
       data[:sap_document_id] = doc.sap_document_id
       data[:profile_document_id] = doc.profile_document_id
       data[:ssp_document_id] = doc.ssp_document_id
+      # #1267 — accepted on write, so returned on read, as SSP/SAP/POA&M do.
+      data[:sar_version] = doc.sar_version
     end
 
     append_oscal_fields(data, doc, detailed: detailed)

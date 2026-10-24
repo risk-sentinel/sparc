@@ -734,7 +734,7 @@ class CdefDocumentsController < ApplicationController
   end
 
   def document_metadata_params
-    permitted = params.require(:cdef_document).permit(:name, :cdef_version, :oscal_version, :description)
+    permitted = params.require(:cdef_document).permit(:name, :cdef_version, :oscal_version, :description, :published)
     merge_metadata_extra(permitted, :cdef_document)
   end
 

@@ -177,6 +177,8 @@ None.
 | `profile_document[control_catalog_id]` | integer | no | Associated control catalog ID |
 | `profile_document[lifecycle_status]` | string | no | `started`, `in_progress` or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
 | `profile_document[file_type]` | string | no | File type (e.g., `catalog`, `profile`) |
+| `profile_document[published]` | string | no | Published date, ISO 8601: OSCAL `metadata.published` (#1267) |
+| `profile_document[oscal_metadata]` | object | no | OSCAL metadata, returned under the same name: any of `roles`, `parties`, `responsible-parties`, `revisions`, `props`, `links`, `document-ids`, `locations`, `remarks`. Keys sent replace those keys and keys left out are kept. Any other key is refused with `422` and nothing changes (#1267) |
 
 #### Response Body
 

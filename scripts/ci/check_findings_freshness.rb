@@ -13,8 +13,10 @@
 # Checks:
 #   1. docs/compliance/sparc-findings.yml — every non-exempt finding's
 #      next_review_date is in the future (grace window configurable).
-#      false_positive dispositions are exempt (determined not-a-vuln; there is
-#      no accepted-risk cadence to keep fresh).
+#      false_positive dispositions are exempt HERE: their next_review_date is
+#      the HDF amendment's `expiresAt`, capped at 365 days by
+#      bin/sparc_findings_to_hdf_amendments.rb, and `hdf amend verify`
+#      (security_gate) fails once it passes (owner, 2026-10-24).
 #   2. .trivyignore — each `# Reviewed: YYYY-MM-DD` is within the review window.
 #
 # The legacy Debian findings (sparc-findings.debian.yml) are intentionally NOT

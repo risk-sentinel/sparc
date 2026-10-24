@@ -115,9 +115,11 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
   end
 
   def catalog_params
-    permit_strictly(:control_catalog,
-      :name, :description, :version, :source, :oscal_version, :lifecycle_status
+    permitted = permit_strictly(:control_catalog,
+      :name, :description, :version, :source, :lifecycle_status,
+      *OSCAL_METADATA_FIELDS, also_accepts: [ OSCAL_METADATA_PARAM ]
     )
+    with_oscal_metadata(permitted, :control_catalog, @catalog)
   end
 
   def serialize_catalog(catalog, detailed: false)

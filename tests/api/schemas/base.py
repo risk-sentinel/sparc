@@ -99,6 +99,8 @@ class DocumentBase(BaseModel):
     # accept str | None here. If a future SPARC version returns a real bool
     # this should be tightened.
     published: str | None = None
+    # #1267 — every document type accepts it on write, so every type returns it.
+    oscal_version: str | None = None
     back_matter_resources_count: Annotated[int, Field(ge=0)]
 
 

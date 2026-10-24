@@ -65,6 +65,7 @@ class SarDocumentShow(SarDocumentIndex):
     profile_document_id: int | None = None
     ssp_document_id: int | None = None
     sap_document_id: int | None = None
+    sar_version: str | None = None
     controls_count: Annotated[int, Field(ge=0)]
     oscal_metadata: dict = Field(default_factory=dict)
     back_matter_resources: list[BackMatterResource] = Field(default_factory=list)

@@ -149,10 +149,12 @@ class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
   def write_permission_key = "poam.write"
 
   def document_params
-    permit_strictly(:poam_document,
+    permitted = permit_strictly(:poam_document,
       :name, :description, :authorization_boundary_id,
-      :poam_version, :system_id, :lifecycle_status
+      :poam_version, :system_id, :lifecycle_status,
+      *OSCAL_METADATA_FIELDS, also_accepts: [ OSCAL_METADATA_PARAM ]
     )
+    with_oscal_metadata(permitted, :poam_document, @document)
   end
 
   def serialize_document(doc, detailed: false)

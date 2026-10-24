@@ -248,7 +248,11 @@
           </button>
         <% end %>
       </div>
-      <%= form_with url: update_path, method: :patch, local: true, html: { data: { action: "submit->oscal-metadata#sync" } } do |f| %>
+      <%# #1267 — `scope:` puts OSCAL Version, Published Date and Description under
+          param_key, which each controller requires. Without it they arrived
+          unwrapped and were dropped, while the page still said "Document updated". %>
+      <%= form_with url: update_path, scope: param_key, method: :patch, local: true,
+            html: { data: { action: "submit->oscal-metadata#sync", testid: "oscal-metadata-form" } } do |f| %>
 
         <%# ── Core fields row ── %>
         <div class="row g-3 mb-3">

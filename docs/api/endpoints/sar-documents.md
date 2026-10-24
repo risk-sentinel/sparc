@@ -158,6 +158,10 @@ None.
 | `sar_document[profile_document_id]` | integer | no | Associated profile/baseline |
 | `sar_document[ssp_document_id]` | integer | no | Related System Security Plan |
 | `sar_document[lifecycle_status]` | string | no | `started`, `in_progress` or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
+| `sar_document[sar_version]` | string | no | Document version (#1267) |
+| `sar_document[oscal_version]` | string | no | OSCAL version the document declares, e.g. `1.1.3` (#1267) |
+| `sar_document[published]` | string | no | Published date, ISO 8601: OSCAL `metadata.published` (#1267) |
+| `sar_document[oscal_metadata]` | object | no | OSCAL metadata, returned under the same name: any of `roles`, `parties`, `responsible-parties`, `revisions`, `props`, `links`, `document-ids`, `locations`, `remarks`. Keys sent replace those keys and keys left out are kept. Any other key is refused with `422` and nothing changes (#1267) |
 
 #### Response Body
 

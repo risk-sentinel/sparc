@@ -202,6 +202,8 @@ Create a new component definition document.
 | `oscal_version` | string | No | OSCAL schema version. No column default; an unset value falls back to `OscalSchema::DEFAULT_VERSION` on export |
 | `lifecycle_status` | string | No | `started`, `in_progress` (default) or `published`. Publishing is restricted: see [Publishing through the API](../publication.md) |
 | `file_type` | string | No | Source format: `oscal_json`, `oscal_yaml`, `oscal_xml`, `xccdf` |
+| `published` | string | No | Published date, ISO 8601: OSCAL `metadata.published` (#1267) |
+| `oscal_metadata` | object | No | OSCAL metadata, returned under the same name: any of `roles`, `parties`, `responsible-parties`, `revisions`, `props`, `links`, `document-ids`, `locations`, `remarks`. Keys sent replace those keys and keys left out are kept. Any other key is refused with `422` and nothing changes (#1267) |
 
 **Example Request**
 

@@ -763,7 +763,7 @@ class SspDocumentsController < ApplicationController
     # #929 — `:authorization_boundary_id` was permitted by
     # api/v1/ssp_documents_controller.rb all along but not here, so the boundary
     # could be set at upload and never again from the UI.
-    permitted = params.require(:ssp_document).permit(:name, :ssp_version, :oscal_version, :description,
+    permitted = params.require(:ssp_document).permit(:name, :ssp_version, :oscal_version, :description, :published,
       :authorization_boundary_id)
     merge_metadata_extra(permitted, :ssp_document)
   end

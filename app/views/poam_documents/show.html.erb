@@ -75,12 +75,9 @@
 
       <%# ── Edit mode (hidden) ── %>
       <div class="sparc-d-none" id="doc-meta-edit" data-doc-meta-target="edit">
-        <%= form_with model: @poam_document, url: update_metadata_poam_document_path(@poam_document), method: :patch, local: true, class: "d-flex align-items-center gap-2 flex-wrap" do |f| %>
-          <%= f.text_field :name, value: @poam_document.name, class: "sparc-input-dark sparc-input-dark-lg", placeholder: "Document name" %>
-          <%= f.text_field :poam_version, value: @poam_document.poam_version, class: "sparc-input-dark sparc-input-dark-sm", placeholder: "Version" %>
-          <%= f.submit "Save", class: "sparc-action sparc-action--primary sparc-action--solid" %>
-          <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--neutral sparc-action--ghost">Cancel</button>
-        <% end %>
+        <%= render "shared/document_name_form", document: @poam_document,
+              update_path: update_metadata_poam_document_path(@poam_document),
+              version_field: :poam_version %>
       </div>
     </div>
 
