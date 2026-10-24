@@ -8,13 +8,13 @@ organization; instance-wide is Policy Manager's (or the instance
 administrator's). Nobody approves their own submission.
 
 Driven as the harness's second identity (SPARC_SMOKE_USER_TOKEN), a genuine
-non-administrator. The administrator session creates two boundaries, puts the
-first in an existing organization, and grants that identity the built-in ISSO
-role on it through Admin -> Users -> Edit. The administrator authors and
+non-administrator. The administrator session creates two boundaries, puts them
+both in an existing organization, and grants that identity the built-in ISSO
+role on the first through Admin -> Users -> Edit. The administrator authors and
 submits the CDEFs, so the ISSO is never the submitter. As the ISSO this opens a
 CDEF asking for organization-wide availability, sees what approving grants,
 approves it from the CDEF page and sees it organization-wide; then sees no
-Approve on a CDEF asking for instance-wide, nor on the other boundary's.
+Approve on a CDEF asking for instance-wide, nor on the sibling boundary's.
 Teardown removes the grant and deletes what was made.
 
 Every tier in both directions, the submitter rule and the form as rendered are
@@ -66,8 +66,11 @@ def _place_in(boundary: dict, organization: dict) -> None:
         assert r.status_code == 200, r.text[:300]
 
 
-def _submitted_cdef(boundary_id: int, requested_scope: str) -> dict:
-    """A CDEF on this boundary with a control basis, submitted by the administrator."""
+def _submitted_cdef(boundary_id: int, requested_scope: str, made: list[dict]) -> dict:
+    """A CDEF on this boundary with a control basis, submitted by the administrator.
+
+    Recorded in `made` as soon as it exists, so teardown deletes it even when a
+    later step fails."""
     with _client() as c:
         r = c.post("/api/v1/cdef_documents", json={"cdef_document": {
             "name": f"phase2-ui-cdef1275-{requested_scope}-{uuid.uuid4().hex[:8]}",
@@ -77,11 +80,11 @@ def _submitted_cdef(boundary_id: int, requested_scope: str) -> dict:
         }})
         assert r.status_code == 201, r.text[:300]
         cdef = r.json()["data"]
+        made.append(cdef)
         listed = c.get("/api/v1/profile_documents", params={"lifecycle_status": "published"})
         profiles = listed.json().get("data", [])
         profile = next((p for p in profiles if p.get("lifecycle_status") == "published"), None)
         if profile is None:
-            delete_doc("cdef_documents", cdef["slug"])
             pytest.skip("no published profile to give the CDEF a control basis")
         populated = c.post(f"/api/v1/cdef_documents/{cdef['slug']}/source_from_profile",
                            json={"source_profile_id": profile["id"]})
@@ -107,11 +110,13 @@ def test_boundary_isso_approves_up_to_organization_wide_only(authed_page, user_a
     made: list[dict] = []
 
     try:
+        # Both boundaries in one organization: holding ISSO on one approves
+        # nothing on its sibling, even organization-wide in the same org.
         _place_in(mine, organization)
-        org_wide = _submitted_cdef(mine["id"], "global")
-        instance_wide = _submitted_cdef(mine["id"], "instance")
-        other = _submitted_cdef(theirs["id"], "global")
-        made += [org_wide, instance_wide, other]
+        _place_in(theirs, organization)
+        org_wide = _submitted_cdef(mine["id"], "global", made)
+        instance_wide = _submitted_cdef(mine["id"], "instance", made)
+        other = _submitted_cdef(theirs["id"], "global", made)
         _grant(admin, user_id, mine["id"], role_id)
 
         record_csp(user)
@@ -134,7 +139,10 @@ def test_boundary_isso_approves_up_to_organization_wide_only(authed_page, user_a
         approved = get_json(f"/api/v1/cdef_documents/{org_wide['slug']}")
         assert approved["scope_tier"] == "organization"
 
-        refused = ((instance_wide, "an instance-wide request"), (other, "another boundary's CDEF"))
+        refused = (
+            (instance_wide, "an instance-wide request"),
+            (other, "its sibling boundary's CDEF"),
+        )
         for cdef, why in refused:
             _open(user, cdef["slug"])
             offered = user.locator(APPROVAL).get_by_role("button", name="Approve").count()
