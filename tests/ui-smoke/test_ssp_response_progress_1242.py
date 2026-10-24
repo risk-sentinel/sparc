@@ -64,7 +64,9 @@ def test_header_and_badges_agree_with_the_api(authed_page):
     cards = page.locator(".control-card").count()
     assert cards > 0
     assert page.locator(BADGE).count() == cards, "a control card has no response badge"
-    texts = page.locator(BADGE).all_inner_texts()
+    # text_content, not inner_text: the badges sit in collapsed family groups,
+    # and inner_text of hidden text is "".
+    texts = page.locator(BADGE).all_text_contents()
     assert all(re.fullmatch(r"\d+/\d+ done|Not in baseline", t.strip()) for t in texts), texts
     assert_no_csp_violations(page, during="reading an SSP's response progress")
 
