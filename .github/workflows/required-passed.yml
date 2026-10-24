@@ -57,15 +57,18 @@ jobs:
             // exceed the slowest job it waits for, with margin.
             //
             // MUST STAY ABOVE `timeout-minutes` FOR THE `test` JOB IN
-            // .github/workflows/ci.yml (currently 30). At 25 it was configured
+            // .github/workflows/ci.yml (currently 75). At 25 it was configured
             // TIGHTER than the job it waits on, so a `test` run of 26 minutes —
             // well inside its own allowance, and green — still failed this gate.
             // Measured across ten CI runs on 2026-09-11: six of nine successful
             // runs exceeded 25 minutes (29.7, 27.7, 27.4, 26.3, 25.3, 25.2).
             //
-            // 45 is 1.5x the worst observed. Raise it again if the suite grows;
-            // it was 6,655 examples when this was set.
-            const TIMEOUT_MIN = 45;
+            // 45 -> 90 (v1.17.2, owner, 2026-10-23): the same thing happened
+            // again. `test` had gone to 60 and this stayed at 45, so a green
+            // 58.7-minute run on PR #1262 (8,406 examples) failed this gate.
+            // 90 stays above `test`'s 75 with margin for the waiter's own
+            // start-up. Change the two together.
+            const TIMEOUT_MIN = 90;
             const MAX_ITER = Math.ceil((TIMEOUT_MIN * 60) / POLL_INTERVAL_S);
 
             const OK_CONCLUSIONS = new Set(['success', 'skipped', 'neutral']);
