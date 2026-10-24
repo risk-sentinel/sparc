@@ -27,7 +27,8 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | bulk apply — `bulk_apply_converter/preview`, `/confirm`; bulk field import — `fields/import/preview`, `/confirm` | `converters.write` **and** write access to the CDEF (#1258) |
 | `scope` with `"scope": "instance"` | `cdef.write` held across the instance (Policy Manager by default, not a boundary-scoped role), or instance admin |
 | `bulk` delete | instance admin |
-| `approve`, `reject` | `cdef.approve`, or instance admin — and never the submitter |
+| `approve`, `reject` | `cdef.approve` across the instance, or on the boundary the CDEF is scoped to (#1275); the `policy_manager` role; or instance admin. Never the submitter, except the break-glass administrator |
+| `update` / `create` with `lifecycle_status: "published"` on a CDEF that is not approved | `cdef.approve` across the instance, `policy_manager`, or instance admin. A boundary approver submits it for review instead (#1275) |
 
 **Changed in #1258.** A `cdef.write` grant held on an authorization boundary now
 applies: it writes the CDEFs whose scope is that boundary (the one
@@ -40,6 +41,14 @@ a create naming another boundary or a wider tier, and a scope change that widens
 exactly one boundary may omit them. `PATCH` refuses them: scope changes through
 `PATCH /api/v1/cdef_documents/:slug/scope`. Bulk apply and field import also
 need write access to the CDEF.
+
+**Changed in #1275.** A `cdef.approve` grant held on an authorization boundary
+(ISSM, ISSO and System Owner by default) now applies: it approves and rejects
+the CDEFs scoped to that boundary, under the same rule as #1258's writes. It is
+refused (`403`) a CDEF scoped to another boundary, and an organization-wide,
+instance-wide or unscoped one. It does not let its holder publish a CDEF over
+the API without review: that stays with instance-level approvers. A refused
+`approve` or `reject` is now recorded as `cdef_document_approval_refused`.
 
 **Changed in #1032.** CDEF writes were previously available to any authenticated
 user, while the web UI gated the same operations on `cdef.write`. An integration

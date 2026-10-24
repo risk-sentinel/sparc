@@ -14,6 +14,9 @@
 #     be approved, or the caller must be able to approve it themselves
 #     (DocumentApprovalService#can_approve?: the type's `<type>.approve`
 #     permission, the policy_manager role, or an instance administrator).
+#     #1275 — for a CDEF, `cdef.approve` held across the instance: a boundary
+#     approver may approve its boundary's CDEFs but not skip their review
+#     (DocumentApprovalService#may_publish_without_review?; owner, 2026-10-24).
 #   * Any other document (SSP, SAP, SAR, POA&M): the checks the web Publish
 #     button makes, PublicationValidationService and content completeness.
 #
@@ -45,11 +48,13 @@ module ApiPublicationGuard
   def publication_refusal(document)
     if DocumentApprovalService::APPROVE_PERMISSION.key?(document.class.name)
       return nil if document.persisted? && document.respond_to?(:approved?) && document.approved?
-      return nil if DocumentApprovalService.new(document: document, actor: current_user).can_approve?
+      return nil if DocumentApprovalService.new(document: document, actor: current_user).may_publish_without_review?
 
+      # #1275 — a boundary approver may approve a CDEF, but not skip its review.
+      across = document.is_a?(CdefDocument) ? " across the instance" : ""
       "Publishing a #{document.model_name.human.downcase} needs its approval: submit it for review " \
         "(POST .../submit_for_review) and have an approver approve it, or publish as a caller who " \
-        "may approve it (#{DocumentApprovalService::APPROVE_PERMISSION[document.class.name]} or policy_manager)."
+        "may approve it (#{DocumentApprovalService::APPROVE_PERMISSION[document.class.name]}#{across} or policy_manager)."
     else
       return "Create the document first, then publish it once it is complete." unless document.persisted?
 

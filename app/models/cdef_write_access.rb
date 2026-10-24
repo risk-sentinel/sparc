@@ -22,9 +22,18 @@
 #     writer cannot widen scope: organization-wide needs instance-level
 #     `cdef.write`, instance-wide stays CdefScopeService.may_scope_instance?.
 #
-# NIST 800-53: AC-3 (access enforcement), AC-6 (least privilege).
+# #1275 — approval follows the same boundary rule (owner, 2026-10-24).
+# ISSM, ISSO and System Owner hold `cdef.approve` on a boundary, and approval
+# checked it at instance level only, so no boundary approver could approve.
+# A boundary grant approves the CDEFs scoped to that boundary; instance-level
+# `cdef.approve` (Policy Manager) approves every one. Separation of duties and
+# the break-glass exemption stay in DocumentApprovalService#can_approve?.
+#
+# NIST 800-53: AC-3 (access enforcement), AC-6 (least privilege), AC-5
+# (separation of duties, in the service).
 module CdefWriteAccess
   KEY = "cdef.write"
+  APPROVE_KEY = "cdef.approve"
   SCOPES = %w[boundary global instance].freeze
 
   extend self
@@ -41,13 +50,16 @@ module CdefWriteAccess
     CdefScopeService.current_boundary_id(cdef).presence&.to_i
   end
 
-  def may_write?(user, cdef)
-    return false if user.blank? || cdef.nil?
-    return true if instance_writer?(user)
+  def may_write?(user, cdef) = granted_on?(user, cdef, KEY)
 
-    id = boundary_id(cdef)
-    id.present? && user.has_permission?(KEY, authorization_boundary_id: id)
-  end
+  # #1275 — the approver's authority. Who may not approve their own
+  # submission is DocumentApprovalService's rule, not this one.
+  def may_approve?(user, cdef) = granted_on?(user, cdef, APPROVE_KEY)
+
+  # Instance-level `cdef.approve`. Only these may publish over the API without
+  # review (ApiPublicationGuard); a boundary approver submits and has another
+  # approve (owner, 2026-10-24).
+  def instance_approver?(user) = user.present? && user.has_permission?(APPROVE_KEY)
 
   # May create a CDEF scoped to this boundary.
   def may_create_in?(user, boundary_id)
@@ -90,5 +102,16 @@ module CdefWriteAccess
     when "boundary" then "You may create or move a component definition only into a boundary where you hold cdef.write."
     else "Choose a scope for the component definition: a boundary you hold cdef.write on."
     end
+  end
+
+  private
+
+  # `key` held across the instance, or on the boundary this CDEF is scoped to.
+  def granted_on?(user, cdef, key)
+    return false if user.blank? || cdef.nil?
+    return true if user.has_permission?(key)
+
+    id = boundary_id(cdef)
+    id.present? && user.has_permission?(key, authorization_boundary_id: id)
   end
 end

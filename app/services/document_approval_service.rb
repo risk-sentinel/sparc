@@ -55,7 +55,7 @@ class DocumentApprovalService
   end
 
   def approve!
-    return forbidden unless can_approve?
+    return refused("approve") unless can_approve?
     return conflict("Document is not pending review") unless @document.approval_pending?
 
     @document.mark_approved!(@actor)
@@ -64,7 +64,7 @@ class DocumentApprovalService
   end
 
   def reject!(reason:)
-    return forbidden unless can_approve?
+    return refused("reject") unless can_approve?
     return conflict("Document is not pending review") unless @document.approval_pending?
     if reason.to_s.strip.empty?
       return Result.new(success: false, status_code: :unprocessable_content,
@@ -83,14 +83,41 @@ class DocumentApprovalService
     return false if !user.admin? && @document.submitted_by_user_id.present? &&
                     @document.submitted_by_user_id == user.id
     return true if user.instance_administrator?
-
-    perm = APPROVE_PERMISSION[@document.class.name]
-    return true if perm && user.has_permission?(perm)
+    return true if approver_of_document?(user)
 
     user.has_role?("policy_manager")
   end
 
+  # #1275 — may this caller publish over the API without the document going
+  # through review (ApiPublicationGuard)? For a CDEF, only an instance-level
+  # approver: a boundary approver submits it and has someone else approve it
+  # (owner, 2026-10-24). Catalogs and profiles are approved at instance level
+  # only, so for them it is can_approve?.
+  def may_publish_without_review?(user = @actor)
+    return false unless can_approve?(user)
+    return true unless @document.is_a?(CdefDocument)
+
+    user.instance_administrator? || CdefWriteAccess.instance_approver?(user) || user.has_role?("policy_manager")
+  end
+
   private
+
+  # #1275 — a CDEF is approved under the boundary rule #1258 set for writes:
+  # `cdef.approve` across the instance, or on the boundary its scope was set
+  # to. Catalogs and profiles are library documents, approved at instance level.
+  def approver_of_document?(user)
+    return CdefWriteAccess.may_approve?(user, @document) if @document.is_a?(CdefDocument)
+
+    perm = APPROVE_PERMISSION[@document.class.name]
+    perm.present? && user.has_permission?(perm)
+  end
+
+  # #1275 — a refused approve or reject is recorded, as a refused write is
+  # (owner, 2026-10-24). AC-3 / AU-2.
+  def refused(attempt)
+    audit("approval_refused", attempted: attempt)
+    forbidden
+  end
 
   def audit(event, extra = {})
     AuditEvent.log(
