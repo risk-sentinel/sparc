@@ -117,13 +117,16 @@
       <%# #944 — there was no way to edit a component definition at all. Shown
           only where a mutation would actually be permitted, so the button does
           not lead to a guard that immediately bounces the user back. %>
-      <% if signed_in? && !@cdef_document.aws_labs_source? &&
-            !@cdef_document.published_lifecycle? &&
-            (current_user.instance_administrator? || current_user.has_permission?("cdef.write")) %>
+      <%# #1258 — the guard's own rule: instance-level cdef.write, or cdef.write
+          on the boundary this CDEF is scoped to. %>
+      <% may_write_cdef = signed_in? && CdefWriteAccess.may_write?(current_user, @cdef_document) %>
+      <% may_create_cdef = signed_in? && CdefWriteAccess.may_create?(current_user) %>
+      <% if may_write_cdef && !@cdef_document.aws_labs_source? &&
+            !@cdef_document.published_lifecycle? %>
         <%= link_to "Edit", edit_cdef_document_path(@cdef_document),
               class: "sparc-action sparc-action--primary sparc-action--outline", data: { testid: "edit-cdef" } %>
       <% end %>
-      <% if signed_in? %>
+      <% if may_create_cdef %>
         <% if @cdef_document.published_lifecycle? %>
           <%= button_to "Create Editable Copy", copy_cdef_document_path(@cdef_document), method: :post,
                 class: "sparc-action sparc-action--positive sparc-action--solid", form: { data: { turbo_confirm: "Create an editable copy of this published component definition?" } } %>
@@ -137,7 +140,7 @@
         <% end %>
       <% end %>
       <%# #499 slice 5 — bulk-apply Converter (editable clones only). %>
-      <% if signed_in? && !@cdef_document.aws_labs_source? &&
+      <% if may_write_cdef && !@cdef_document.aws_labs_source? &&
             (current_user.instance_administrator? || current_user.has_permission?("converters.write")) %>
         <%# `update`, not `overwrite`: bulk_apply_preview stands between this and
             any change, so it applies reviewed edits rather than replacing rows
@@ -207,8 +210,8 @@
           published profile to import controls, parameters, and guidance.
         </p>
       </div>
-      <%# #1238 — the picker requires cdef.write, as the Edit button does. %>
-      <% if signed_in? && (current_user.instance_administrator? || current_user.has_permission?("cdef.write")) %>
+      <%# #1238 — the picker requires cdef.write, as the Edit button does (#1258: on this CDEF). %>
+      <% if signed_in? && CdefWriteAccess.may_write?(current_user, @cdef_document) %>
         <%= link_to "Populate from Profile",
               select_profile_source_cdef_document_path(@cdef_document),
               class: "sparc-action sparc-action--primary sparc-action--solid" %>
@@ -614,6 +617,8 @@
         <% end %>
       </p>
 
+      <%# #1258 — offered to whoever may write this CDEF; everyone sees its scope. %>
+      <% if CdefWriteAccess.may_write?(current_user, @cdef_document) %>
       <%= form_with url: update_scope_cdef_document_path(@cdef_document),
                     method: :patch, local: true do %>
         <%= render "cdef_documents/scope_picker",
@@ -624,6 +629,7 @@
         <%# The picker submits under cdef_document[...]; this action reads the
             flat names, so mirror them across. %>
         <button type="submit" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm">Update Scope</button>
+      <% end %>
       <% end %>
     </div>
   </div>

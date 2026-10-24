@@ -14,9 +14,15 @@
 %>
 <%
   param_key = local_assigns.fetch(:param_key, :cdef_document)
+  # Element ids, so the picker can render twice on one page (#1258: the
+  # authoring form has its own). Field names stay under `param_key`.
+  id_prefix = local_assigns.fetch(:id_prefix, param_key)
   # #929 — shared with shared/_boundary_picker so the two cannot drift. The
   # legacy roster join this replaced returned an empty set for every user.
-  boundaries = assignable_boundaries(current_user)
+  # #1258 — a boundary-only writer may choose only boundaries they hold
+  # cdef.write on, and not the organization-wide tier (CdefWriteAccess).
+  instance_writer = CdefWriteAccess.instance_writer?(current_user)
+  boundaries = instance_writer ? assignable_boundaries(current_user) : CdefWriteAccess.writable_boundaries(current_user)
   selected_boundary_id = local_assigns.fetch(:selected, nil).presence
   selected_scope = local_assigns.fetch(:scope, "boundary").to_s
   # The instance tier needs CdefScopeService.may_scope_instance? — see
@@ -34,9 +40,9 @@
   <div class="form-check">
     <%= radio_button_tag "#{param_key}[scope]", "boundary", selected_scope != "global",
           class: "form-check-input",
-          id:    "#{param_key}_scope_boundary",
+          id:    "#{id_prefix}_scope_boundary",
           data:  { action: "change->cdef-scope#toggle", cdef_scope_target: "boundaryRadio" } %>
-    <label class="form-check-label" for="<%= param_key %>_scope_boundary">
+    <label class="form-check-label" for="<%= id_prefix %>_scope_boundary">
       <strong>Boundary-specific</strong> — attach this CDEF to a specific
       authorization boundary's environments.
     </label>
@@ -45,11 +51,15 @@
   <div class="form-check">
     <%= radio_button_tag "#{param_key}[scope]", "global", selected_scope == "global",
           class: "form-check-input",
-          id:    "#{param_key}_scope_global",
+          disabled: !instance_writer,
+          id:    "#{id_prefix}_scope_global",
           data:  { action: "change->cdef-scope#toggle", cdef_scope_target: "globalRadio" } %>
-    <label class="form-check-label" for="<%= param_key %>_scope_global">
+    <label class="form-check-label" for="<%= id_prefix %>_scope_global">
       <strong>Organization-wide</strong> — any boundary's SSP within your
       organization can compose this CDEF.
+      <% unless instance_writer %>
+        <span class="text-body-secondary">(needs cdef.write across the instance)</span>
+      <% end %>
     </label>
   </div>
 
@@ -60,9 +70,9 @@
       <%= radio_button_tag "#{param_key}[scope]", "instance", instance_selected,
             class: "form-check-input",
             disabled: !may_scope_instance,
-            id:    "#{param_key}_scope_instance",
+            id:    "#{id_prefix}_scope_instance",
             data:  { action: "change->cdef-scope#toggle", cdef_scope_target: "instanceRadio" } %>
-      <label class="form-check-label" for="<%= param_key %>_scope_instance">
+      <label class="form-check-label" for="<%= id_prefix %>_scope_instance">
         <strong>Instance-wide</strong> — every organization on this instance can
         compose this CDEF.
         <% unless may_scope_instance %>
@@ -75,8 +85,8 @@
 
 <%# Boundary picker (only relevant when scope = boundary). The TODO below
     tracks the org-admin permission check for global publishing per #395 P2. %>
-<div class="form-group mb-3" id="<%= param_key %>_boundary_picker_wrapper" data-cdef-scope-target="wrapper">
-  <label for="<%= param_key %>_authorization_boundary_id" class="fw-semibold">
+<div class="form-group mb-3" id="<%= id_prefix %>_boundary_picker_wrapper" data-cdef-scope-target="wrapper">
+  <label for="<%= id_prefix %>_authorization_boundary_id" class="fw-semibold">
     Authorization Boundary
   </label>
   <% if boundaries.any? %>
@@ -85,14 +95,14 @@
                              boundaries.map { |b| [ b.name, b.id ] },
                              selected_boundary_id.to_s),
           class: "form-control",
-          id:    "#{param_key}_authorization_boundary_id" %>
+          id:    "#{id_prefix}_authorization_boundary_id" %>
     <small class="text-body-secondary d-block mt-1">
       Required when scope is "Boundary-specific". Ignored for the organization-wide and instance-wide tiers.
     </small>
   <% else %>
     <%# #929 — the field used to vanish when the list was empty, leaving
         "Boundary-specific" selected with nothing to select. %>
-    <p class="text-body-secondary small mb-0" id="<%= param_key %>_authorization_boundary_id">
+    <p class="text-body-secondary small mb-0" id="<%= id_prefix %>_authorization_boundary_id">
       You are not on the roster of any authorization boundary. Choose
       "Globally available" above, or ask to be added to a boundary first.
     </p>

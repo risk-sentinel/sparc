@@ -41,9 +41,18 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   # `reject` carry their own authority check inside DocumentApprovalService —
   # adding `cdef.write` to those would change who can approve, which is a
   # different decision.
-  before_action :authorize_cdef_write!, only: [ :create, :update, :destroy, :import,
-                                                :source_from_profile, :submit_for_review,
-                                                :update_scope ]
+  #
+  # #1258 — `cdef.write` instance-level, or on the boundary the CDEF is scoped
+  # to (CdefWriteAccess, shared with the web). Bulk apply and field import write
+  # the CDEF too, so they need it as well as converters.write (owner,
+  # 2026-10-24). `approve` / `reject` stay as above (#1275).
+  include CdefWriteGuards
+  before_action :authorize_cdef_create!, only: [ :create, :import ]
+  before_action :authorize_cdef_write!, only: [ :update, :destroy, :source_from_profile, :submit_for_review,
+                                                :update_scope, :bulk_apply_converter_preview,
+                                                :bulk_apply_converter_confirm,
+                                                :import_fields_preview, :import_fields_confirm ]
+  before_action :authorize_cdef_scope!, only: [ :update_scope ]
   # #716 — field import is a bulk mutation; gate it like bulk-apply (converters.write).
   before_action :authorize_bulk_apply!, only: [ :import_fields_preview, :import_fields_confirm ]
 
@@ -93,20 +102,22 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
   # POST /api/v1/cdef_documents
   def create
-    cdef = CdefDocument.new(cdef_params)
-    return if refuse_unauthorized_publication!(cdef, cdef_params)
+    attrs = cdef_params.except(:scope, :authorization_boundary_id)
+    cdef = CdefDocument.new(attrs)
+    return if refuse_unauthorized_publication!(cdef, attrs)
 
     # #498 slice 2 — route through CdefMutationService for post-save
     # OSCAL validation. Empty-CDEF creates skip validation legitimately
     # (the service handles that), so a metadata-only create still works.
     CdefMutationService.apply(cdef) do |c|
       c.save!
+      apply_requested_cdef_scope!(c) # #1258 — the scope the guard checked
     end
     finalize_unprocessed_create(cdef)   # #618 — no file to parse ⇒ don't hang in `pending`
 
     audit_log("cdef_document_created", subject: cdef, metadata: { name: cdef.name })
     render json: { data: serialize_cdef(cdef) }, status: :created
-  rescue CdefMutationService::ValidationError => e
+  rescue CdefMutationService::ValidationError, ArgumentError => e
     render json: { error: e.message }, status: :unprocessable_content
   end
 
@@ -376,9 +387,23 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
   # #1032 — the same helper name and body as the web controller's, so the two
   # gates cannot drift apart.
-  def authorize_cdef_write!
-    authorize_permission!("cdef.write")
+  # #1258 — CdefWriteGuards' hooks.
+  def cdef_write_target = @cdef
+
+  # update_scope takes the flat body it always has. create and import read
+  # `cdef_document[scope]` / `[authorization_boundary_id]`, where the file
+  # ingest reads a document's boundary (DocumentFileIngestApi): one source for
+  # the guard and the write.
+  def cdef_scope_params
+    return [ params[:scope], params[:authorization_boundary_id] ] if action_name == "update_scope"
+
+    nested = params[:cdef_document].respond_to?(:dig) ? params[:cdef_document] : {}
+    [ nested[:scope], nested[:authorization_boundary_id] ]
   end
+
+  # DocumentFileIngestApi hook: an imported CDEF takes the requested scope in
+  # the transaction that creates it.
+  def after_ingest_create(document) = apply_requested_cdef_scope!(document)
 
   # #499 slice 3 — bulk-apply gated on converters.write (matches the
   # existing AWS Labs refresh authorization).
@@ -413,6 +438,8 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       # to say what kind of component it described.
       :component_type, :component_title, :component_description,
       :control_implementation_source, :control_implementation_description,
+      # #1258 — a new CDEF's scope; create only (update_scope changes it after).
+      *(action_name == "create" ? %i[scope authorization_boundary_id] : []),
       also_accepts: [ OSCAL_METADATA_PARAM ]
     )
     with_oscal_metadata(permitted, :cdef_document, @cdef)

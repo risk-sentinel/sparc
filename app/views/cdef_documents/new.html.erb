@@ -32,6 +32,8 @@
 
   <%= form_with model: @cdef_document, local: true do |f| %>
     <%= render "component_fields", f: f %>
+    <%# #1258 — an authored CDEF is scoped at create, as an upload is. %>
+    <%= render "cdef_documents/scope_picker", param_key: :cdef_document, id_prefix: :cdef_author %>
 
     <div class="d-flex gap-3 mt-4">
       <%= f.submit "Create Component Definition", class: "sparc-action sparc-action--positive sparc-action--solid",

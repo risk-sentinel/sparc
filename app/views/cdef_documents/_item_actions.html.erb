@@ -17,7 +17,8 @@
 <div class="d-flex flex-wrap gap-1 align-items-center">
   <%= link_to "View", cdef_document_path(doc), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm", style: size %>
 
-  <% if signed_in? && doc.completed? %>
+  <%# #1258 — the copy guard's rule: someone who may create a CDEF somewhere. %>
+  <% if signed_in? && doc.completed? && CdefWriteAccess.may_create?(current_user) %>
     <%= button_to "Copy", copy_cdef_document_path(doc), method: :post,
           class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm", style: size,
           form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>

@@ -91,7 +91,13 @@ module DocumentFileIngestApi
       attrs[:authorization_boundary_id] = boundary_id
     end
 
-    document = document_class.create!(**attrs)
+    # #1258 — a controller may finish the record in the same transaction (the
+    # CDEF API applies the scope its guard checked).
+    document = ActiveRecord::Base.transaction do
+      created = document_class.create!(**attrs)
+      after_ingest_create(created) if respond_to?(:after_ingest_create, true)
+      created
+    end
     document.file.attach(upload)
 
     DocumentConversionJob.perform_later(ingest_type_key.to_s, document.id)

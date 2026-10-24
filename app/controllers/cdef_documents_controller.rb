@@ -28,8 +28,15 @@ class CdefDocumentsController < ApplicationController
   # authoritative-upstream-content operation alongside DISA CCI / STIG
   # refreshes — gated on `converters.write` or admin.
   before_action :authorize_converter_write!, only: [ :refresh_aws_labs ]
-  # #738: CDEF is global (no boundary); mutations require cdef.write (instance-level). (AC-3)
-  before_action :authorize_cdef_write!, only: %i[create update edit set_baseline select_profile_source destroy update_field update_metadata copy create_from_profile source_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review update_scope]
+  # #738 / #1258: every write needs cdef.write — instance-level, or on the
+  # boundary the CDEF is scoped to (CdefWriteAccess). Bulk apply writes the
+  # CDEF too, so it needs this as well as converters.write (owner, 2026-10-24).
+  # (AC-3)
+  include CdefWriteGuards
+  before_action :fill_default_cdef_scope!, only: %i[create create_from_profile copy]
+  before_action :authorize_cdef_create!, only: %i[create create_from_profile copy]
+  before_action :authorize_cdef_write!, only: %i[update edit set_baseline select_profile_source destroy update_field update_metadata source_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review update_scope bulk_apply bulk_apply_preview bulk_apply_confirm]
+  before_action :authorize_cdef_scope!, only: %i[update_scope]
 
 
   def index
@@ -355,6 +362,10 @@ class CdefDocumentsController < ApplicationController
         if @cdef_document.aws_labs_source?
           duplicated.update!(cloned_from_id: @cdef_document.id)
         end
+        # #1258 — a copy carried its source's tier, so copying an AWS Labs CDEF
+        # gave a boundary-only writer an instance-wide one. It takes the scope
+        # the copier asked for (or their only boundary).
+        apply_requested_cdef_scope!(duplicated)
         duplicated
       end
     end
@@ -419,7 +430,11 @@ class CdefDocumentsController < ApplicationController
   def create_from_profile
     profile = ProfileDocument.find_by!(slug: params[:source_profile_id])
 
-    cdef = CdefFromProfileService.new(profile, name: params[:cdef_name]).create
+    cdef = ActiveRecord::Base.transaction do
+      created = CdefFromProfileService.new(profile, name: params[:cdef_name]).create
+      apply_requested_cdef_scope!(created) # #1258
+      created
+    end
 
     audit_log("cdef_document_created_from_profile", subject: cdef,
       metadata: { name: cdef.name, source_profile_id: profile.id, source_profile_name: profile.name })
@@ -721,7 +736,13 @@ class CdefDocumentsController < ApplicationController
     @cdef_document.cdef_type ||= "custom"
     @cdef_document.uploaded_by_user = current_user if @cdef_document.respond_to?(:uploaded_by_user=)
 
-    if @cdef_document.save
+    saved = ActiveRecord::Base.transaction do
+      raise ActiveRecord::Rollback unless @cdef_document.save
+
+      apply_requested_cdef_scope!(@cdef_document) # #1258
+      true
+    end
+    if saved
       audit_log("cdef_document_authored", subject: @cdef_document,
                 metadata: { name: @cdef_document.name,
                             component_type: @cdef_document.component_type })
@@ -731,6 +752,9 @@ class CdefDocumentsController < ApplicationController
       flash.now[:error] = @cdef_document.errors.full_messages.join(", ")
       render :new, status: :unprocessable_content
     end
+  rescue ArgumentError => e
+    flash.now[:error] = e.message
+    render :new, status: :unprocessable_content
   end
 
   # #944 — the component's own OSCAL fields, separate from
@@ -771,8 +795,33 @@ class CdefDocumentsController < ApplicationController
     authorize_permission!("converters.write")
   end
 
-  def authorize_cdef_write!
-    authorize_permission!("cdef.write")
+  # #1258 — CdefWriteGuards' hooks.
+  def cdef_write_target = @cdef_document
+
+  # The scope picker submits under `cdef_document[...]`; update_scope also
+  # accepts the flat form. Everything else reads the nested form only, which is
+  # where the upload path (FileUploadable) applies it.
+  def cdef_scope_params
+    nested = params[:cdef_document].respond_to?(:dig) ? params[:cdef_document] : {}
+    scope = nested[:scope]
+    boundary_id = nested[:authorization_boundary_id]
+    if action_name == "update_scope"
+      scope = scope.presence || params[:scope]
+      boundary_id = boundary_id.presence || params[:authorization_boundary_id]
+    end
+    [ scope, boundary_id ]
+  end
+
+  # The scope the guard checks (CdefWriteGuards#requested_cdef_scope, which may
+  # default it) is written back where the upload path reads it, so the guard
+  # and the write read one source.
+  def fill_default_cdef_scope!
+    scope, boundary_id = requested_cdef_scope
+    return if scope.nil?
+
+    params[:cdef_document] = {} unless params[:cdef_document].respond_to?(:[]=)
+    params[:cdef_document][:scope] = scope
+    params[:cdef_document][:authorization_boundary_id] = boundary_id
   end
 
   def ensure_editable!
