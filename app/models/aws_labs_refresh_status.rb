@@ -65,7 +65,7 @@ class AwsLabsRefreshStatus
                          "#{meta['errors'].to_i} failed, of #{meta['discovered'].to_i} upstream files.#{version_note}"
     when :kept_nothing then "Last refresh #{at} imported nothing: the version filter kept none of the " \
                             "#{meta['discovered'].to_i} upstream files.#{version_note}"
-    when :failed then "Last refresh #{at} failed: #{meta['error_class']}: #{meta['error_message']}"
+    else "Last refresh #{at} failed: #{meta['error_class']}: #{meta['error_message']}" # :failed
     end
   end
 

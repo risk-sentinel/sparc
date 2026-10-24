@@ -274,7 +274,7 @@
           id: "profile-bulk-form",
           html: { class: "sparc-bulk-bar", hidden: true, data: { bulk_select_target: "bar", testid: "bulk-bar" },
                   aria: { label: "Change the selected controls" } } do %>
-      <span class="fw-semibold" role="status"><span data-bulk-select-target="count">0</span> selected</span>
+      <output class="fw-semibold"><span data-bulk-select-target="count">0</span> selected</output>
       <span class="d-flex align-items-center gap-1">
         <%= select_tag "priority",
               options_for_select(ProfileControl::PRIORITIES.map { [ _1, _1 ] } + [ [ "Clear priority", "" ] ]),
@@ -365,7 +365,7 @@
                             class: "sparc-priority-select#{' sparc-priority-select--unset' if control.priority.blank?}",
                             aria: { label: "Priority for #{control.display_id}" },
                             data: { priority_select_target: "select", action: "change->priority-select#save" } %>
-                      <span class="sparc-fs-072" role="status" data-priority-select-target="status"></span>
+                      <output class="sparc-fs-072" data-priority-select-target="status"></output>
                     </span>
                   <% else %>
                     <span class="sparc-status-pill sparc-status--<%= pri_variant %>">

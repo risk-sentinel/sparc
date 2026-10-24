@@ -44,10 +44,10 @@
       Read from the refresh's own audit events (AwsLabsRefreshStatus). %>
   <% if signed_in? && can_write_converters? && SparcConfig.aws_labs_cdef_enabled? %>
     <% refresh_status = AwsLabsRefreshStatus.current %>
-    <div class="sparc-fs-078 mb-3 <%= { ok: 'text-body-secondary', info: 'text-body-secondary', warning: 'sparc-text-warning-bold' }[refresh_status.tone] %>"
-         role="status" data-testid="aws-labs-refresh-status" data-state="<%= refresh_status.state %>">
+    <output class="d-block sparc-fs-078 mb-3 <%= { ok: 'text-body-secondary', info: 'text-body-secondary', warning: 'sparc-text-warning-bold' }[refresh_status.tone] %>"
+            data-testid="aws-labs-refresh-status" data-state="<%= refresh_status.state %>">
       <%= refresh_status.message %>
-    </div>
+    </output>
   <% end %>
 
   <%# #488 — Refresh from AWS Labs confirmation modal (matches the DISA
