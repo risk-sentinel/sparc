@@ -17,9 +17,10 @@ EXPECTED=825AD9036F7C850E6A6FED4935B8ACA44FD9CA9F
 key=$(mktemp)
 trap 'rm -f "$key"' EXIT
 
-wget -qO "$key" https://aquasecurity.github.io/trivy-repo/deb/public.key
+# The URL serves the key directly; a redirect is refused, not followed.
+wget -q --max-redirect=0 -O "$key" https://aquasecurity.github.io/trivy-repo/deb/public.key
 fpr=$(gpg --show-keys --with-colons "$key" | awk -F: '/^fpr:/ {print $10; exit}')
-if [ "$fpr" != "$EXPECTED" ]; then
+if [[ "$fpr" != "$EXPECTED" ]]; then
   echo "::error::Trivy repo key fingerprint is ${fpr:-unreadable}, not the announced $EXPECTED" >&2
   exit 1
 fi

@@ -276,7 +276,11 @@ COPY certs/ /etc/pki/ca-trust/source/anchors/sparc-custom/
 RUN find /etc/pki/ca-trust/source/anchors/sparc-custom/ -type f \
       ! \( -name '*.crt' -o -name '*.pem' -o -name '*.cer' \) -delete 2>/dev/null || true; \
     update-ca-trust \
-    && if grep -xE '# (emSign ECC Root CA - G3|emSign Root TLS CA - G3|emSign Root CS CA - G3|AAA Certificate Services)' \
+    && if grep -xE \
+         -e '# emSign ECC Root CA - G3' \
+         -e '# emSign Root TLS CA - G3' \
+         -e '# emSign Root CS CA - G3' \
+         -e '# AAA Certificate Services' \
          /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem; then \
          echo "a root behind the eMudhra weak-key intermediates is a TLS anchor (CVE-2026-114406)" >&2; exit 1; \
        fi
