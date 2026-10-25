@@ -39,7 +39,14 @@ ARG HDF_LIBS_VERSION=3.7.2
 # Bumped 2026-10-16 (v1.17.1): pcre2 10.44-1.el10.3 -> 10.44-1.5.el10_2 clears
 # CVE-2026-86145, -89161 and -103111 (the three deferred pcre2 HIGHs); the same
 # digest moves gnutls -4 -> -5, glibc -128 -> -142 and openssl-libs -1 -> -2.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:552f8cc1ddb0bc9e411065c78499aa4dbc2c4ea9bd057aa0e6e44940db13acb5
+#
+# Bumped 2026-10-25 (v1.17.2): ca-certificates 2025.2.80-102.el10_1 ->
+# 2026.2.92-100.3.el10_2 is Red Hat's fix for CVE-2026-114406 (RHSB-2026-012,
+# the eMudhra weak-key intermediates): it removes AAA Certificate Services and
+# emSign ECC Root CA - G3, so the build-time blocklist that stood in for it is
+# retired. The same digest moves glibc -142 -> -145; the RPM signing keys are
+# unchanged.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:ab67cd02caf8706e34a695a1432ebe965934f6128ec352a6c3f4048b43a4fb5e
 
 # ── hdf-builder: hdf-cli compiled from source, toolchain pinned (#1001) ──────
 # This used to be a release-tarball download (script/dev/install-hdf.sh, then
@@ -259,23 +266,20 @@ RUN rm /tmp/sparc-version-key.rb \
 # update-ca-trust. Mechanism 2 (runtime volume mount, no rebuild) lives in
 # bin/lib/ca-trust.sh. Runs as root here — the runtime user (UID 1000) cannot.
 COPY certs/ /etc/pki/ca-trust/source/anchors/sparc-custom/
-# CVE-2026-114406 (RHSB-2026-012): roots that signed intermediates with weak
-# eMudhra keys stay trusted in ca-certificates until Red Hat ships the fix.
-# Of the two Red Hat names, only emSign ECC Root CA - G3 is a TLS anchor in the
-# UBI 10 store (Comodo "AAA Certificate Services" is not), so it is
-# distrusted here; the build fails if it is still in the TLS bundle afterwards.
-# Remove once a ca-certificates build without it ships. NIST SC-12, SC-17, SI-2.
-COPY config/ca-trust/blocklist/ /etc/pki/ca-trust/source/blocklist/
+# CVE-2026-114406 (RHSB-2026-012): the roots behind the eMudhra weak-key
+# intermediates must not be TLS anchors. Red Hat's ca-certificates
+# 2026.2.92-100.3 removes them, which retired the blocklist this stage used to
+# apply; the build still fails if a base or package regression brings one back.
+# The four are the issuers of the eight intermediates (emSign Root TLS CA - G3,
+# emSign Root CS CA - G3, AAA Certificate Services for the cross-signs) and
+# emSign ECC Root CA - G3, which Red Hat names. NIST SC-12, SC-17, SI-2.
 RUN find /etc/pki/ca-trust/source/anchors/sparc-custom/ -type f \
       ! \( -name '*.crt' -o -name '*.pem' -o -name '*.cer' \) -delete 2>/dev/null || true; \
     update-ca-trust \
-    && for pem in /etc/pki/ca-trust/source/blocklist/*.pem; do \
-         [ -f "$pem" ] || continue; \
-         key="$(sed -n '2p' "$pem")"; \
-         if grep -qF "$key" /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem; then \
-           echo "distrusted root still in the TLS bundle: $pem" >&2; exit 1; \
-         fi; \
-       done
+    && if grep -xE '# (emSign ECC Root CA - G3|emSign Root TLS CA - G3|emSign Root CS CA - G3|AAA Certificate Services)' \
+         /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem; then \
+         echo "a root behind the eMudhra weak-key intermediates is a TLS anchor (CVE-2026-114406)" >&2; exit 1; \
+       fi
 
 # ── Database TLS trust (#785, NIST SC-8(1)) ──────────────────────────────────
 # libpq does NOT honour SSL_CERT_FILE, so the runtime CA mechanism above (which
