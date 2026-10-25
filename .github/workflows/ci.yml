@@ -4,6 +4,12 @@ on:
   pull_request:
   push:
     branches: [ main ]
+  # Run CI on main by hand when GitHub drops main's push event. A merge whose
+  # request errored (a 502 on #1278 and on #1280) landed its commits but raised
+  # no push event, so nothing ran on them, and a re-run repeats the old commit.
+  # Every job treats a dispatch like a push: each condition tests only for
+  # `pull_request`.
+  workflow_dispatch:
 
 # Least-privilege default (#545). Jobs that need more (e.g., pull-requests:
 # read for paths-filter) declare their own permissions block to override.
