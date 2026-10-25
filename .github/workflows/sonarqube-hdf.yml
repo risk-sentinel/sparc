@@ -171,7 +171,12 @@ jobs:
             # fired on PR #1126 because the analyzer cannot see through
             # `${SAF_VER}`, and neither can a reader of this line. Single-use
             # indirection bought nothing. Matches the cdxgen call in security.yml.
-            npm install --no-save --ignore-scripts @mitre/saf@1.6.0
+            # The two commands of script/ci/npm_install_soaked.sh, inline: this
+            # job has no checkout. Dependencies from versions at least 7 days
+            # old, every registry signature verified.
+            npm install --no-save --ignore-scripts --no-fund --no-audit \
+              --before="$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)" @mitre/saf@1.6.0
+            npm audit signatures
             ./node_modules/.bin/saf convert sonarqube2hdf \
               -n "$KEY" -u "$URL" --auth "$SONAR_TOKEN" -o "$out"
           fi

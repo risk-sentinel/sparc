@@ -549,6 +549,10 @@ jobs:
           # load those seed files passed. The files are still ANALYSED for
           # bugs and smells — only the coverage demand is dropped. If SimpleCov
           # ever starts tracking db/, remove this so the two agree again.
+          # config/** is excluded for the same reason: SimpleCov skips
+          # "/config/" too (it loads at boot, before coverage starts), and
+          # seven new lines in config/importmap.rb scored 0.0% (PR #1280)
+          # while the spec that renders that importmap passed.
           args: >
             -Dsonar.projectKey=risk-sentinel_sparc
             -Dsonar.organization=risk-sentinel
@@ -558,4 +562,4 @@ jobs:
             -Dsonar.tests=spec,tests,lib/federation/python/tests
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=spec/**,tests/**,lib/federation/python/tests/**,lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.ico,**/*.svg,**/*.mp4,**/*.xlsx,**/*.rdb,**/*.pdf,**/*.woff,**/*.woff2
-            -Dsonar.coverage.exclusions=db/**
+            -Dsonar.coverage.exclusions=db/**,config/**

@@ -33,8 +33,9 @@ jobs:
 
       - name: Install js-yaml
         # #966 — exact version, and --ignore-scripts so a dependency's install
-        # hooks cannot execute in CI (githubactions:S6505).
-        run: npm install --no-save --ignore-scripts js-yaml@4.3.2
+        # hooks cannot execute in CI (githubactions:S6505); from versions at
+        # least 7 days old, signature verified (script/ci/npm_install_soaked.sh).
+        run: script/ci/npm_install_soaked.sh . js-yaml@4.3.2
 
       - name: Validate JSON-vs-workflow filter sync
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9

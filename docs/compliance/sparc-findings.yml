@@ -21,6 +21,16 @@
 # moved to sparc-findings.retired.yml with `verified_absent_on`. CVE-2026-75804
 # (openssl-libs, QUIC) is still reported at -2 and stays.
 #
+# ── v1.17.2 BASE BUMP (2026-10-25) ─────────────────────────────────────────
+#
+# UBI 10 digest 552f8cc1 -> ab67cd02. Rescanned (grype 0.114.0, DB v6.1.10
+# built 2026-10-25): ca-certificates 2026.2.92_v9.0.319-100.3.el10_2 clears
+# CVE-2026-114406 (eMudhra), which moved to sparc-findings.retired.yml with
+# `verified_absent_on`; the Dockerfile blocklist that stood in for the fix is
+# retired. No critical or high is reported against the image. The five base
+# entries still reported (openssl-libs, gnutls, systemd-libs, openldap,
+# sqlite-libs) remain not-fixed upstream and stay.
+#
 # ── THE TWO DELIBERATE ABSENCES ARE RESOLVED (#1065, 2026-08-28) ──────────
 #
 # This block used to say: do NOT "fix" resolv and uri by adding entries here.
@@ -239,32 +249,6 @@ findings:
     line_hash: 96ec6e7986178e77:1
   - path: app/services/ssp_wizard_service.rb
     line_hash: 65a9810537cf814d:1
-- cve_id: CVE-2026-114406
-  package: ca-certificates
-  installed_version: 2025.2.80_v9.0.305-102.el10_1
-  fixed_version: none available upstream (not-fixed)
-  severity: CRITICAL
-  disposition: deferred
-  rationale: 'ca-certificates trusts root CAs that signed intermediate CA certificates with weak private keys issued by the eMudhra authority, so a holder of one of those keys could present a certificate for any host name that a client using the system store would trust (Red Hat RHSB-2026-012; Red Hat rates it Critical, NVD 6.8 Medium, CVSS 3.1 AV:N/AC:H/PR:N/UI:R/C:H/I:H/A:N). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2) as ca-certificates 2025.2.80_v9.0.305-102.el10_1, the base package of digest 552f8cc1; the UBI 10 repositories offered no newer build on 2026-10-22. First reported by the grype-container gate on 2026-10-22 (grype 0.115.0), on main and every open PR alike. Red Hat''s remedy is to remove the roots that signed the weak intermediates; until it ships, the image applies that remedy itself (Dockerfile, config/ca-trust/blocklist/). The package stays flagged by version, so the finding stays open in the POA&M until Red Hat ships the fix and the blocklist is removed. Proposed 2026-10-22 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation.'
-  nist_control: si-2
-  reviewed_by: '@clem-field'
-  discovery_date: '2026-10-22'
-  next_review_date: '2026-11-21'
-  deviation:
-    type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: "@clem-field"
-    approved_in: "risk-sentinel/sparc#1254"
-    approved_at: "2026-10-22"
-    approval_mechanism: approve-deviation-comment
-    adjusted_severity: LOW
-    adjustment_rationale: 'CRITICAL grades a system store that still trusts the roots behind the weak eMudhra intermediates. The mitigating factors below are properties of THIS image, measured rather than argued: the one such root that is a TLS anchor in the UBI 10 store is distrusted at build, and the build fails if it is still trusted. What remains is the package version the scanner matches, until Red Hat ships the fix.'
-    mitigating_factors:
-    - description: "emSign ECC Root CA - G3 (SHA-256 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b) is placed in /etc/pki/ca-trust/source/blocklist and update-ca-trust removes it from /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem; the Dockerfile fails the build if it is still there"
-    - description: "the other root Red Hat names, Comodo AAA Certificate Services, is not a TLS trust anchor in the UBI 10 store: it is absent from tls-ca-bundle.pem in the base image"
-    - description: "every outbound TLS client in the app uses OpenSSL's default store (SparcHttp, Net::HTTP, the AWS SDK without its bundled certificate, the LDAP client's default store), which is /etc/pki/tls/cert.pem -> tls-ca-bundle.pem plus /etc/pki/tls/certs; no gem the app uses ships its own CA bundle. Measured on the built image: OpenSSL::X509::Store#set_default_paths refuses the emSign ECC Root CA - G3 certificate while a root still in the bundle verifies. The only other copies are the package's untouched trust source and p11-kit's openssl-format extract, which no default path reads"
-    kev_checked: '2026-10-22'
-    kev_listed: false
 - cve_id: CVE-2026-75804
   package: openssl-libs
   installed_version: 1:3.5.8-2.el10_2
