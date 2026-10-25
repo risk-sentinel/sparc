@@ -147,12 +147,11 @@ class CdefDocument < ApplicationRecord
   # #1275 — the wider scope asked for at submit for review, in words, for the
   # CDEF page and the review queue. Nil when none was asked for.
   def requested_scope_label
-    case requested_scope
-    when "instance" then "instance-wide"
-    when "global"
-      org = Organization.find_by(id: CdefScopeService.requested_organization_id(self))
-      org ? "organization-wide (#{org.name})" : "organization-wide"
-    end
+    return "instance-wide" if requested_scope == "instance"
+    return nil unless requested_scope == "global"
+
+    org = Organization.find_by(id: CdefScopeService.requested_organization_id(self))
+    org ? "organization-wide (#{org.name})" : "organization-wide"
   end
 
   # Issue #466 — rows ingested by AwsLabsCdefImportService are tagged in

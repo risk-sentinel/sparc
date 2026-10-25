@@ -47,24 +47,32 @@ module ApiPublicationGuard
 
   def publication_refusal(document)
     if DocumentApprovalService::APPROVE_PERMISSION.key?(document.class.name)
-      return nil if document.persisted? && document.respond_to?(:approved?) && document.approved?
-      return nil if DocumentApprovalService.new(document: document, actor: current_user).may_publish_without_review?
-
-      # #1275 — a boundary approver may approve a CDEF, but not skip its review.
-      across = document.is_a?(CdefDocument) ? " across the instance" : ""
-      "Publishing a #{document.model_name.human.downcase} needs its approval: submit it for review " \
-        "(POST .../submit_for_review) and have an approver approve it, or publish as a caller who " \
-        "may approve it (#{DocumentApprovalService::APPROVE_PERMISSION[document.class.name]}#{across} or policy_manager)."
+      approval_refusal(document)
     else
-      return "Create the document first, then publish it once it is complete." unless document.persisted?
-
-      result = PublicationValidationService.new(document, current_user: current_user).validate
-      return "Not ready to publish: #{result.errors.join('; ')}" unless result.valid?
-      if document.respond_to?(:content_complete?) && !document.content_complete?
-        return "Not ready to publish: missing #{Array(document.content_completeness_gaps).join(', ')}"
-      end
-
-      nil
+      readiness_refusal(document)
     end
+  end
+
+  def approval_refusal(document)
+    return nil if document.persisted? && document.respond_to?(:approved?) && document.approved?
+    return nil if DocumentApprovalService.new(document: document, actor: current_user).may_publish_without_review?
+
+    # #1275 — a boundary approver may approve a CDEF, but not skip its review.
+    across = document.is_a?(CdefDocument) ? " across the instance" : ""
+    "Publishing a #{document.model_name.human.downcase} needs its approval: submit it for review " \
+      "(POST .../submit_for_review) and have an approver approve it, or publish as a caller who " \
+      "may approve it (#{DocumentApprovalService::APPROVE_PERMISSION[document.class.name]}#{across} or policy_manager)."
+  end
+
+  def readiness_refusal(document)
+    return "Create the document first, then publish it once it is complete." unless document.persisted?
+
+    result = PublicationValidationService.new(document, current_user: current_user).validate
+    return "Not ready to publish: #{result.errors.join('; ')}" unless result.valid?
+    if document.respond_to?(:content_complete?) && !document.content_complete?
+      return "Not ready to publish: missing #{Array(document.content_completeness_gaps).join(', ')}"
+    end
+
+    nil
   end
 end
