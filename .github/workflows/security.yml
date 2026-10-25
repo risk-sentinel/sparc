@@ -442,7 +442,8 @@ jobs:
         if: steps.trivy-cache.outputs.cache-hit != 'true'
         run: |
           sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          # The repo signing key is trusted only if it is the one Aqua announced.
+          script/ci/trivy_repo_key.sh
           echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
           sudo apt-get install -y trivy=0.69.3
@@ -513,7 +514,8 @@ jobs:
         if: steps.trivy-cache.outputs.cache-hit != 'true'
         run: |
           sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          # The repo signing key is trusted only if it is the one Aqua announced.
+          script/ci/trivy_repo_key.sh
           echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
           sudo apt-get install -y trivy=0.69.3
@@ -745,7 +747,9 @@ jobs:
           # Verified rather than assumed: installed this way, cdxgen produces a
           # valid CycloneDX 1.6 SBOM with 354 components for this repo, so its
           # postinstall is not load-bearing for `-t ruby`.
-          npm install --no-save --ignore-scripts @cyclonedx/cdxgen@11.11.0
+          # Dependencies from versions at least 7 days old, every registry
+          # signature verified: script/ci/npm_install_soaked.sh.
+          script/ci/npm_install_soaked.sh . @cyclonedx/cdxgen@11.11.0
           ./node_modules/.bin/cdxgen -t ruby -o sbom-ruby.cdx.json .
           # cdxgen emits a phantom version-less component for gems that appear
           # under multiple platforms in Gemfile.lock (e.g. precompiled nokogiri's
@@ -1099,6 +1103,7 @@ jobs:
             bin/hdf_ensure_canary.rb
             Dockerfile
             script/ci/hdf_pins.sh
+            script/ci/npm_install_soaked.sh
             script/dev/install-hdf.sh
           sparse-checkout-cone-mode: false
 
@@ -1167,7 +1172,13 @@ jobs:
         # them — verified by installing with the flag and then actually running
         # `validate threshold` and `convert sarif2hdf` against real inputs, not
         # merely checking `saf --version`.
-        run: npm install -g --ignore-scripts @mitre/saf@1.6.0
+        # Dependencies from versions at least 7 days old, every registry
+        # signature verified (script/ci/npm_install_soaked.sh). Signature
+        # checks do not support global installs, so saf installs under
+        # RUNNER_TEMP and its bin goes on PATH for the steps that follow.
+        run: |
+          script/ci/npm_install_soaked.sh "$RUNNER_TEMP/saf" @mitre/saf@1.6.0
+          echo "$RUNNER_TEMP/saf/node_modules/.bin" >> "$GITHUB_PATH"
 
       - name: Verify SAF CLI converters are available
         if: always()
@@ -1774,6 +1785,8 @@ jobs:
             # missing from this list fails at RUNTIME, not at checkout.
             bin/codeql_pin_check.rb
             bin/hdf_amend_chain_gate.rb
+            # Installs saf for the threshold step (soaked, signatures checked).
+            script/ci/npm_install_soaked.sh
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (converter only — no bundle)
@@ -1980,7 +1993,13 @@ jobs:
         # them — verified by installing with the flag and then actually running
         # `validate threshold` and `convert sarif2hdf` against real inputs, not
         # merely checking `saf --version`.
-        run: npm install -g --ignore-scripts @mitre/saf@1.6.0
+        # Dependencies from versions at least 7 days old, every registry
+        # signature verified (script/ci/npm_install_soaked.sh). Signature
+        # checks do not support global installs, so saf installs under
+        # RUNNER_TEMP and its bin goes on PATH for the steps that follow.
+        run: |
+          script/ci/npm_install_soaked.sh "$RUNNER_TEMP/saf" @mitre/saf@1.6.0
+          echo "$RUNNER_TEMP/saf/node_modules/.bin" >> "$GITHUB_PATH"
 
       - name: Validate each amended HDF against its scanner threshold
         run: |
