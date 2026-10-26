@@ -62,11 +62,20 @@ RSpec.describe ContentCompleteness do
 
       expect(profile.content_complete?).to be(true)
     end
+
+    it "is incomplete while the catalog an upload matched is unconfirmed" do
+      profile = create(:profile_document, control_catalog: create(:control_catalog),
+                                          import_metadata: { "catalog_confirmation" => "pending" })
+      create(:profile_control, profile_document: profile)
+
+      expect(profile.content_completeness_gaps).to eq([ "A confirmed control catalog" ])
+    end
   end
 
   it "keeps requirement definitions isolated per model" do
     expect(CdefDocument.content_requirement_defs.size).to eq(1)
     expect(SspDocument.content_requirement_defs.size).to eq(2)
-    expect(ProfileDocument.content_requirement_defs.size).to eq(2)
+    # A linked catalog, at least one control, and (v1.17.4) a confirmed catalog.
+    expect(ProfileDocument.content_requirement_defs.size).to eq(3)
   end
 end
