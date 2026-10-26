@@ -81,3 +81,29 @@ def test_arrow_keys_move_between_choices(authed_page, base_url):
     _assert_only(page, "profile")
     page.keyboard.press("ArrowRight")  # wraps to the first
     _assert_only(page, "upload")
+
+
+def test_list_buttons_open_the_chooser_and_the_upload_alone(authed_page, base_url):
+    """Create New offers every way in; Upload File is the import on its own."""
+    page = authed_page
+    record_csp(page)
+    page.goto(f"{base_url}/cdef_documents")
+    page.wait_for_load_state("networkidle")
+    create_new = page.get_by_role("link", name="Create New", exact=True)
+    upload_file = page.get_by_role("link", name="Upload File", exact=True)
+    if create_new.count() == 0:
+        pytest.skip("current user cannot add CDEFs on this deployment")
+
+    create_new.click()
+    page.wait_for_url("**/cdef_documents/new**")
+    expect(page.get_by_role("tablist")).to_be_visible()
+
+    page.goto(f"{base_url}/cdef_documents")
+    page.wait_for_load_state("networkidle")
+    upload_file.click()
+    page.wait_for_url("**/cdef_documents/new?only=upload**")
+    expect(page.locator("[data-testid='cdef-upload-only']")).to_be_visible()
+    assert page.get_by_role("tablist").count() == 0, "the upload-only page shows the chooser"
+    assert page.locator("[data-testid='author-cdef-submit']").count() == 0
+    expect(page.get_by_role("button", name="Upload and Process")).to_be_visible()
+    assert_no_csp_violations(page, during="the CDEF list's Create New and Upload File")

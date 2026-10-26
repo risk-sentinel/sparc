@@ -34,8 +34,10 @@
             stretched the whole row to 52px. One line, shorter label. %>
         <%= link_to "Terraform Wizard", new_cdef_coverage_path,
               class: "sparc-action sparc-action--accent sparc-action--outline" %>
-        <%= link_to "Create New", select_profile_cdef_documents_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
-        <%= link_to "Upload File", new_cdef_document_path, class: "sparc-action sparc-action--info sparc-action--solid" %>
+        <%# Create New offers every way in (upload, author, from a profile);
+            Upload File is the import page on its own. %>
+        <%= link_to "Create New", new_cdef_document_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
+        <%= link_to "Upload File", new_cdef_document_path(only: "upload"), class: "sparc-action sparc-action--info sparc-action--solid" %>
       </div>
     <% end %>
   </div>

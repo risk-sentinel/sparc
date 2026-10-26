@@ -1,0 +1,63 @@
+<%# The upload form, its scope picker and the supported-formats table. Shared
+    by the new-CDEF chooser's Upload panel and the upload-only page that the
+    CDEF list's Upload File button opens (new.html.erb). %>
+<%= form_with model: @cdef_document, local: true, multipart: true do |f| %>
+  <%# The upload-only page (?only=upload) posts this back, so a rejected
+      upload re-renders there rather than on the chooser. %>
+  <%= hidden_field_tag :only, "upload" if local_assigns[:upload_only] %>
+  <%= render "shared/dropzone",
+    form: f,
+    field: :file,
+    accept: ".xml,.json,.yaml,.yml",
+    multiple: true,
+    hint: "Upload an XCCDF XML, OSCAL XML/JSON/YAML, InSpec JSON, or STIG Viewer export file." %>
+
+  <%= render "cdef_documents/scope_picker", param_key: :cdef_document %>
+
+  <div class="d-flex gap-3">
+    <%= f.submit "Upload and Process", class: "sparc-action sparc-action--info sparc-action--solid" %>
+    <%= link_to "Cancel", cdef_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
+  </div>
+<% end %>
+
+<details class="sparc-cdef-formats mt-3">
+  <summary>Supported formats</summary>
+  <p class="text-body-secondary mb-3">SPARC automatically detects the format and extracts controls, severity ratings, and CCI references.</p>
+
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>Format</th>
+        <th>Extension</th>
+        <th>Sources</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>OSCAL Component Definition</strong></td>
+        <td>.json, .yaml, .xml</td>
+        <td>NIST OSCAL component-definition documents (auto-detected)</td>
+      </tr>
+      <tr>
+        <td><strong>XCCDF XML</strong></td>
+        <td>.xml</td>
+        <td>DISA STIGs, SCAP benchmarks, CIS Benchmarks</td>
+      </tr>
+      <tr>
+        <td><strong>InSpec JSON</strong></td>
+        <td>.json</td>
+        <td>Chef InSpec profile results (has <code>profiles</code> and <code>controls</code> keys)</td>
+      </tr>
+      <tr>
+        <td><strong>STIG Viewer JSON</strong></td>
+        <td>.json</td>
+        <td>STIG Viewer exports (has <code>stigs</code> key)</td>
+      </tr>
+      <tr>
+        <td><strong>Generic JSON</strong></td>
+        <td>.json</td>
+        <td>Any JSON with a <code>controls</code> array containing <code>id</code>/<code>title</code> fields</td>
+      </tr>
+    </tbody>
+  </table>
+</details>

@@ -77,7 +77,9 @@ There are three ways in, on the **Create New** page (`/cdef_documents/new`):
 one of the three cards at the top of the page and only that form shows. Nothing
 you enter in one carries over to another. Each choice has its own link
 (`/cdef_documents/new#upload`, `#author`, `#profile`) to send someone straight
-to it.
+to it. On the Component Definitions list, **Create New** opens this page and
+**Upload File** opens the upload on its own: drop the files, set where the CDEF
+may be used, and upload.
 
 ### Author one from scratch
 
@@ -111,8 +113,8 @@ to it.
 
 ### Upload or generate
 
-1. Click **Create New**, then either choose **Upload files** and drop a file in,
-   or choose **From a published profile** and pick a baseline.
+1. Click **Upload File** and drop a file in, or click **Create New**, choose
+   **From a published profile** and pick a baseline.
 2. The detail page (`/cdef_documents/:id`) shows the component's controls
    organized by family, with a **severity heatmap**. Within each family,
    controls are in **NIST catalog order** — base number then enhancement.

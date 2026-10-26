@@ -3,7 +3,23 @@
     asks which one first. The chooser is tabs (cdef_new_chooser_controller.js):
     a choice can be linked directly (#upload, #author, #profile), and without
     JavaScript the chooser stays hidden and all three forms show. A rejected
-    authored CDEF re-renders on Author (@cdef_new_choice). %>
+    authored CDEF re-renders on Author (@cdef_new_choice).
+
+    ?only=upload is the import page on its own — what the CDEF list's Upload
+    File button opens: drop files, set availability, upload. No chooser. %>
+<% if params[:only] == "upload" %>
+  <div class="card" data-testid="cdef-upload-only">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+      <h2>Upload Component Definition</h2>
+      <%= link_to "Other ways to add one", new_cdef_document_path,
+            class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
+    </div>
+    <p class="text-body-secondary sparc-fs-088">
+      Import a component definition someone else authored: OSCAL, XCCDF, InSpec or a STIG Viewer export.
+    </p>
+    <%= render "cdef_documents/upload_form", upload_only: true %>
+  </div>
+<% else %>
 <% choices = [
      { key: "upload", accent: "sparc-accent--blue", icon: "&#128194;", title: "Upload files",
        desc: "Import an OSCAL, XCCDF, InSpec or STIG Viewer file." },
@@ -49,63 +65,7 @@
        data-cdef-new-chooser-target="panel" data-choice="upload">
     <h2>Upload files</h2>
 
-    <%= form_with model: @cdef_document, local: true, multipart: true do |f| %>
-      <%= render "shared/dropzone",
-        form: f,
-        field: :file,
-        accept: ".xml,.json,.yaml,.yml",
-        multiple: true,
-        hint: "Upload an XCCDF XML, OSCAL XML/JSON/YAML, InSpec JSON, or STIG Viewer export file." %>
-
-      <%= render "cdef_documents/scope_picker", param_key: :cdef_document %>
-
-      <div class="d-flex gap-3">
-        <%= f.submit "Upload and Process", class: "sparc-action sparc-action--info sparc-action--solid" %>
-        <%= link_to "Cancel", cdef_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
-      </div>
-    <% end %>
-
-    <details class="sparc-cdef-formats mt-3">
-      <summary>Supported formats</summary>
-      <p class="text-body-secondary mb-3">SPARC automatically detects the format and extracts controls, severity ratings, and CCI references.</p>
-
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th>Format</th>
-            <th>Extension</th>
-            <th>Sources</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>OSCAL Component Definition</strong></td>
-            <td>.json, .yaml, .xml</td>
-            <td>NIST OSCAL component-definition documents (auto-detected)</td>
-          </tr>
-          <tr>
-            <td><strong>XCCDF XML</strong></td>
-            <td>.xml</td>
-            <td>DISA STIGs, SCAP benchmarks, CIS Benchmarks</td>
-          </tr>
-          <tr>
-            <td><strong>InSpec JSON</strong></td>
-            <td>.json</td>
-            <td>Chef InSpec profile results (has <code>profiles</code> and <code>controls</code> keys)</td>
-          </tr>
-          <tr>
-            <td><strong>STIG Viewer JSON</strong></td>
-            <td>.json</td>
-            <td>STIG Viewer exports (has <code>stigs</code> key)</td>
-          </tr>
-          <tr>
-            <td><strong>Generic JSON</strong></td>
-            <td>.json</td>
-            <td>Any JSON with a <code>controls</code> array containing <code>id</code>/<code>title</code> fields</td>
-          </tr>
-        </tbody>
-      </table>
-    </details>
+    <%= render "cdef_documents/upload_form" %>
   </div>
 
   <%# #944 — authoring from scratch. This form carries no file field, which is
@@ -145,6 +105,8 @@
     </div>
   </div>
 </div>
+
+<% end %>
 
 <div class="card">
   <h3>Export Capabilities</h3>

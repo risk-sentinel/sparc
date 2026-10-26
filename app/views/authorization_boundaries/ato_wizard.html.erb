@@ -127,7 +127,7 @@
           <% else %>
             <p class="text-body-secondary sparc-fs-088">
               No completed CDEFs found. You can
-              <%= link_to "upload a CDEF", new_cdef_document_path %> first, or skip this step.
+              <%= link_to "upload a CDEF", new_cdef_document_path(only: "upload") %> first, or skip this step.
             </p>
           <% end %>
         </div>

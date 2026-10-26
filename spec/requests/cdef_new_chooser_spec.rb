@@ -62,4 +62,41 @@ RSpec.describe "New CDEF chooser", type: :request do
     expect(response.body).to include("NIST OSCAL v#{OscalSchema::DEFAULT_VERSION} Component Definition JSON")
     expect(response.body).not_to include("v1.1.2")
   end
+
+  describe "the upload-only page (?only=upload)" do
+    def upload_only = page.at_css("[data-testid='cdef-upload-only']")
+
+    it "is the import on its own: no chooser, no other forms" do
+      get new_cdef_document_path(only: "upload")
+
+      expect(upload_only).to be_present
+      expect(chooser).to be_nil
+      expect(page.css("[role='tab']")).to be_empty
+      expect(upload_only.at_css("form input[type='file']")).to be_present
+      expect(upload_only.at_css("input[type='submit']")["value"]).to eq("Upload and Process")
+      expect(upload_only.at_css("input[name='cdef_document[scope]']")).to be_present
+      expect(upload_only.at_css("input[type='hidden'][name='only']")["value"]).to eq("upload")
+      expect(page.at_css("[data-testid='author-cdef-submit']")).to be_nil
+      expect(upload_only.at_css("a[href='#{new_cdef_document_path}']").text).to eq("Other ways to add one")
+    end
+
+    it "asks for a file, on the same page, when posted without one, and never authors" do
+      expect {
+        post cdef_documents_path, params: { only: "upload", cdef_document: { scope: "boundary" } }
+      }.not_to change(CdefDocument, :count)
+
+      expect(flash[:error]).to eq("Please select a file to upload")
+      expect(upload_only).to be_present
+    end
+  end
+
+  describe "the CDEF list" do
+    it "offers Create New as every way in, and Upload File as the import alone" do
+      get cdef_documents_path
+
+      links = Nokogiri::HTML(response.body).css("a.sparc-action").to_h { |a| [ a.text.strip, a["href"] ] }
+      expect(links["Create New"]).to eq(new_cdef_document_path)
+      expect(links["Upload File"]).to eq(new_cdef_document_path(only: "upload"))
+    end
+  end
 end

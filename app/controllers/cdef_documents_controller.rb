@@ -181,7 +181,9 @@ class CdefDocumentsController < ApplicationController
     # #944 — authoring from scratch, when no file was supplied. `create` was
     # unconditionally an upload handler, which is why the only way a component
     # definition entered SPARC was as a file someone else had authored.
-    return create_authored if authoring_from_scratch?
+    # The upload-only page (?only=upload) never authors: with no file it is an
+    # upload missing its file, and says so there.
+    return create_authored if authoring_from_scratch? && params[:only] != "upload"
 
     handle_multi_file_upload(:cdef, param_key: :cdef_document)
   end
