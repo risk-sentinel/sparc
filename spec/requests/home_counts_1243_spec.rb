@@ -144,13 +144,23 @@ RSpec.describe "Homepage counts (#1243)", type: :request do
       expect(card_new_links).to contain_exactly(new_ssp_document_path, new_control_catalog_path)
     end
 
-    it "puts families and controls on the Control Catalogs card, from the catalog page's expressions" do
+    it "lays every card out the same way: icon, count, title, buttons" do
       create(:control_catalog)
       get root_path
 
-      secondary = page.at_css("[data-home-secondary='control_catalogs']").text
-      expect(secondary).to include("#{ControlCatalog.family_count} families")
-      expect(secondary).to include("#{ControlCatalog.control_count} controls")
+      page.css(".sparc-section-card .card-body").each do |body|
+        kinds = body.element_children.map do |el|
+          if el["class"].to_s.include?("sparc-count-badge") then :count
+          elsif el.name == "h5" then :title
+          elsif el.css("a.sparc-action").any? then :buttons
+          else :icon
+          end
+        end
+        expect(kinds).to eq(%i[icon count title buttons]), body.at_css("h5")&.text
+      end
+      # Families and controls are the tiles' to show; no card carries a breakdown.
+      expect(page.css(".sparc-section-card .card-body").size).to eq(11) # every card this user is offered
+      expect(page.css(".sparc-section-card").text).not_to include("families")
     end
   end
 

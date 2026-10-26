@@ -60,8 +60,7 @@
       cls: "sparc-heading-controls",
       cards: [
         { key: :control_catalogs, title: "Control Catalogs", path: control_catalogs_path,
-          new_path: new_control_catalog_path, can_create: can_write_catalogs?, icon: "&#128218;",
-          secondary: "#{number_with_delimiter(@family_count)} families · #{number_with_delimiter(@control_count)} controls" },
+          new_path: new_control_catalog_path, can_create: can_write_catalogs?, icon: "&#128218;" },
         { key: :profile_documents, title: "Baselines / Profiles", path: profile_documents_path,
           new_path: new_profile_document_path, can_create: can_write_profiles?, icon: "&#128203;" },
         { key: :control_mappings, title: "Control Mapping", path: control_mappings_path,
@@ -122,24 +121,16 @@
         <div class="col">
           <div class="card sparc-section-card sparc-section-card--accented h-100 <%= accent_class(group[:color]) %>">
             <div class="card-body d-flex flex-row align-items-center gap-3 sparc-p-035-085">
+              <%# Every card reads the same way: icon, count, title, buttons. The
+                  count sits in a fixed-width slot so titles line up down a column. %>
               <div class="sparc-fs-22r sparc-flex-shrink-0"><%= s[:icon].html_safe %></div>
-              <div class="flex-grow-1 sparc-minw-0">
-                <%# flex-wrap: in a narrow card the badge wraps under the title instead
-                    of overflowing beneath the View button, which took its clicks
-                    (found by the ui-smoke gate). %>
-                <h5 class="mb-0 sparc-fs-095 d-flex flex-wrap align-items-center gap-2">
-                  <span><%= s[:title] %></span>
-                  <% count = @counts.fetch(s[:key]) %>
-                  <%= link_to number_with_delimiter(count), s[:path],
-                        class: "sparc-count-badge",
-                        data: { home_count: s[:key] },
-                        title: "Open #{s[:title]}",
-                        "aria-label": "#{number_with_delimiter(count)} #{s[:title]}: open the list" %>
-                </h5>
-                <% if s[:secondary] %>
-                  <div class="text-body-secondary sparc-fs-075" data-home-secondary="<%= s[:key] %>"><%= s[:secondary] %></div>
-                <% end %>
-              </div>
+              <% count = @counts.fetch(s[:key]) %>
+              <%= link_to number_with_delimiter(count), s[:path],
+                    class: "sparc-count-badge sparc-count-badge--lead flex-shrink-0",
+                    data: { home_count: s[:key] },
+                    title: "Open #{s[:title]}",
+                    "aria-label": "#{number_with_delimiter(count)} #{s[:title]}: open the list" %>
+              <h5 class="mb-0 sparc-fs-095 flex-grow-1 sparc-minw-0"><%= s[:title] %></h5>
               <div class="d-flex gap-2 flex-shrink-0">
                 <%= link_to "View", s[:path], class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm px-3" %>
                 <% if s[:can_create] %>

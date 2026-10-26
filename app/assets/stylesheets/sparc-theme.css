@@ -4368,6 +4368,10 @@ a.link-purple { color: var(--sparc-purple); }
   color: var(--bs-body-color);
 }
 
+/* On a homepage card the count leads the title, in a slot wide enough for
+   four digits, so every card reads icon, count, title and titles line up. */
+.sparc-count-badge--lead { min-width: 3.4rem; font-size: 0.8rem; padding: 0.1rem 0.5rem; }
+
 /* Homepage inventory: thin count tiles in one row above the cards, each a
    link to its list. Sits on the gradient header, so its text is white in
    both themes, like the hero tiles it replaces. */
