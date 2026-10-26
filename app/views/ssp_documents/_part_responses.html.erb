@@ -1,0 +1,46 @@
+<%#
+  The control's Edit form answers every part that needs a response, in one
+  Save. Before this an author clicking a control's Edit got only control-level
+  fields, and answered ac-1a, ac-1a.1(a), ac-1b … one row at a time with each
+  row's own Edit and Save.
+
+  The rows are the ones the baseline requires a response from: the same
+  SspResponseProgress parts that mark a row "Missing" in the table above.
+  A part already answered shows its answer, ready to change. Saving goes
+  through SspControlStatement#apply_author_edit, the method a single row's
+  Save and the API use, so CDEF-filled text a person rewrites is marked theirs.
+
+  Locals:
+    control      — SspControl, with ssp_control_statements loaded
+    requirement  — ControlRequirementText::Text for the control, or nil
+    progress     — SspResponseProgress for the document, or nil
+%>
+<% progress = local_assigns[:progress] %>
+<% requirement = local_assigns[:requirement] %>
+<% rows = control.ssp_control_statements.sort_by { |s| s.row_order || 0 }
+                  .filter_map { |s| (part = progress&.part_for_statement(s.id)) && [ s, part ] } %>
+<% if rows.any? %>
+  <div class="sparc-statement-block sparc-statement-block--info sparc-accent--blue sparc-mb-075" data-testid="part-responses">
+    <div class="sparc-statement-label sparc-heading-controls sparc-mb-04">
+      Responses
+      <span class="text-body-secondary sparc-fw-400 sparc-fs-07">
+        (<%= pluralize(rows.size, "part") %> this baseline requires; saved with Save Changes)
+      </span>
+    </div>
+    <% rows.each do |stmt, part| %>
+      <% box_id = "part-response-#{stmt.id}" %>
+      <div class="form-group sparc-mb-075" data-part-response="<%= stmt.statement_id %>">
+        <label class="fw-semibold sparc-fs-082 d-block" for="<%= box_id %>">
+          <code class="sparc-fs-078"><%= stmt.label.presence || stmt.statement_id %></code>
+          <span class="sparc-fw-400 sparc-color-body"><%= requirement&.for_part(stmt.statement_id).presence || "The control as a whole" %></span>
+          <span class="sparc-status sparc-status--<%= SspResponseProgress::OWED.include?(part.state) ? 'warning' : 'success' %> sparc-fs-065 sparc-ml-02">
+            <%= SspResponseProgress::LABELS[part.state] %>
+          </span>
+        </label>
+        <%= text_area_tag "statements[#{stmt.id}][implementation_prose]", stmt.implementation_prose,
+              id: box_id, rows: 3, class: "form-control sparc-fs-0875",
+              placeholder: "How this system meets #{stmt.label.presence || stmt.statement_id}" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

@@ -546,6 +546,8 @@
 
           <%= form_with url: ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
             <%= hidden_field_tag :control_id, control.control_id %>
+            <%= render "ssp_documents/part_responses", control: control, requirement: requirement,
+                  progress: @response_progress %>
 
             <%#
               Iterate ALL EDITABLE_FIELDS so control_application, coverage_level, etc. always

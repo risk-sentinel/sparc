@@ -219,12 +219,18 @@ class SspDocumentsController < ApplicationController
         update_service.bulk_update(params[:controls])
         flash[:success] = "Controls updated successfully"
       else
-        update_service.update_control(params[:control_id], params[:fields])
+        saved_parts = []
+        ActiveRecord::Base.transaction do
+          control = update_service.update_control(params[:control_id], params[:fields] || {})
+          saved_parts = update_service.update_statements(control, part_responses_params)
+        end
         flash[:success] = "Control updated successfully"
+        flash[:success] += " (#{saved_parts.size} part #{"response".pluralize(saved_parts.size)} saved)" if saved_parts.any?
       end
 
       audit_log("ssp_document_updated", subject: @ssp_document,
-        metadata: { name: @ssp_document.name, bulk: params[:bulk_update].present? })
+        metadata: { name: @ssp_document.name, bulk: params[:bulk_update].present?,
+                    statements: saved_parts&.map(&:statement_id).presence }.compact)
       redirect_to @ssp_document
     rescue StandardError => e
       flash[:error] = "Error updating: #{e.message}"
@@ -793,6 +799,15 @@ class SspDocumentsController < ApplicationController
     permitted = params.require(:ssp_document).permit(:name, :ssp_version, :oscal_version, :description, :published,
       :authorization_boundary_id)
     merge_metadata_extra(permitted, :ssp_document)
+  end
+
+  # The control Edit form's part responses: statement id => its prose, and
+  # nothing else a client might add.
+  def part_responses_params
+    raw = params[:statements]
+    return {} unless raw.respond_to?(:keys)
+
+    raw.keys.to_h { |id| [ id.to_s, { "implementation_prose" => raw.dig(id, :implementation_prose).to_s } ] }
   end
 
   def wizard_params
