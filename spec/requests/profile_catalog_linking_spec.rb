@@ -182,8 +182,13 @@ RSpec.describe "Linking a profile to its source catalog", type: :request do
       expect(response.body).not_to include("Baseline not set")
     end
 
-    it "still offers the picker, pre-selected with the current catalog" do
+    it "keeps the picker behind the header's Change link, pre-selected with the current catalog" do
       get profile_document_path(profile)
+      link = Nokogiri::HTML(response.body).at_css("[data-testid='change-catalog-link']")
+      expect(link).to be_present
+      expect(response.body).not_to include("Change catalog")
+
+      get link["href"]
 
       expect(response.body).to include("Change catalog")
       expect(response.body).to match(/<option selected[^>]*value="#{catalog.id}"/)
@@ -214,10 +219,11 @@ RSpec.describe "Linking a profile to its source catalog", type: :request do
       expect(response.body).to include("published and its baseline is fixed")
     end
 
-    it "does not draw the picker" do
-      get profile_document_path(profile)
+    it "does not draw the picker, or the link to it" do
+      get profile_document_path(profile, change_catalog: 1)
 
       expect(response.body).not_to include("Change catalog")
+      expect(response.body).not_to include("change-catalog-link")
     end
 
     # The trap #911 exists to avoid: a document published BEFORE lineage

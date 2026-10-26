@@ -99,7 +99,9 @@ RSpec.describe "Tailored Rev 5 profile and its catalog", type: :request do
 
       expect(profile).not_to be_catalog_confirmation_pending
       expect(profile.content_completeness_gaps).not_to include("A confirmed control catalog")
-      expect(page_for(profile).at_css("[data-catalog-state]")).to be_nil
+      page = page_for(profile)
+      expect(page.at_css("[data-testid='catalog-link']")).to be_nil
+      expect(page.at_css("[data-testid='change-catalog-link']")).to be_present
     end
 
     it "re-checks the import when the catalog is changed, clearing the warning and leaving every value as it was" do
