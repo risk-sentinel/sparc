@@ -26,6 +26,9 @@
 #
 # Review cadence: 90 days per FedRAMP supply-chain controls. The script
 # warns when next_review_date is in the past (still emits the action item).
+#
+# 2026-10-25 (v1.17.2): the owner extended every overdue review (72 entries,
+# due 2026-08-16) to 2026-11-24, 30 days out.
 # ==========================================================================
 
 dispositions:
@@ -43,7 +46,7 @@ dispositions:
     nist_control: sa-15
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
 
   # bundler-audit ships under GPL-3.0-or-later. Used only as a CI-time
   # security scanner (Gemfile dev group) -- never loaded into the running
@@ -55,7 +58,7 @@ dispositions:
     nist_control: sa-15
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
 
   # spreadsheet 1.3.4 is GPL-3.0-only. Used at RUNTIME for Excel parsing
   # (SspExcelParserService / SarExcelParserService). With SPARC about to be
@@ -81,7 +84,7 @@ dispositions:
     nist_control: sa-22
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
 
   # ── Ruby gems where cdxgen missed the license metadata (#481) ────────────
   #
@@ -97,7 +100,7 @@ dispositions:
     nist_control: sa-15
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
 
   - name: swd
     license: MIT
@@ -106,7 +109,7 @@ dispositions:
     nist_control: sa-15
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
 
   - name: validate_url
     license: MIT
@@ -115,7 +118,7 @@ dispositions:
     nist_control: sa-15
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
 
   # ── Debian system libs with missing license metadata (#481) ──────────────
   #
@@ -131,7 +134,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
 
   - name: libgcc-s1
     license: "GPL-3.0-or-later WITH GCC-exception-3.1"
@@ -140,7 +143,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
 
   - name: libstdc++6
     license: "GPL-3.0-or-later WITH GCC-exception-3.1"
@@ -149,7 +152,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
 
   # ── Vendored binary: MITRE hdf-libs CLI (#481, holistic disposition) ─────
   #
@@ -169,7 +172,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
 
   # ── System-layer (Debian base image) GPL dispositions ────────────────────
   #
@@ -193,7 +196,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: apt
     version: "2.6.1"
     license: GPL-2.0-or-later
@@ -202,7 +205,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: base-files
     version: "12.4+deb12u13"
     license: GPL-2.0-or-later
@@ -211,7 +214,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: base-passwd
     version: "3.6.1"
     license: GPL-2.0-only
@@ -220,7 +223,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: bash
     version: "5.2.15-2+b10"
     license: GPL-3.0-or-later
@@ -229,7 +232,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: bsdutils
     version: "1:2.38.1-5+deb12u3"
     license: GPL-2.0-or-later
@@ -238,7 +241,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: ca-certificates
     version: "20230311+deb12u1"
     license: GPL-2.0-or-later
@@ -247,7 +250,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: coreutils
     version: "9.1-1"
     license: GPL-3.0-or-later
@@ -256,7 +259,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: debian-archive-keyring
     version: "2023.3+deb12u2"
     license: GPL-2.0-or-later
@@ -265,7 +268,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: debianutils
     version: "5.7-0.5~deb12u1"
     license: GPL-2.0-or-later
@@ -274,7 +277,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: diffutils
     version: "1:3.8-4"
     license: GPL-3.0-or-later
@@ -283,7 +286,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: dpkg
     version: "1.21.22"
     license: GPL-2.0-or-later
@@ -292,7 +295,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: e2fsprogs
     version: "1.47.0-2+b2"
     license: GPL-2.0-only
@@ -301,7 +304,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: gcc-12-base
     version: "12.2.0-14+deb12u1"
     license: GPL-2.0-or-later
@@ -310,7 +313,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: gpgv
     version: "2.2.40-1.1+deb12u2"
     license: GPL-3.0-or-later
@@ -319,7 +322,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: grep
     version: "3.8-5"
     license: GPL-3.0-or-later
@@ -328,7 +331,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: gzip
     version: "1.12-1"
     license: GPL-3.0-or-later
@@ -337,7 +340,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: hostname
     version: "3.23+nmu1"
     license: GPL-2.0-only
@@ -346,7 +349,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libacl1
     version: "2.3.1-3"
     license: GPL-2.0-or-later
@@ -355,7 +358,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libapt-pkg6.0
     version: "2.6.1"
     license: GPL-2.0-or-later
@@ -364,7 +367,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libattr1
     version: "1:2.5.1-4"
     license: GPL-2.0-or-later
@@ -373,7 +376,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libaudit-common
     version: "1:3.0.9-1"
     license: GPL-2.0-only
@@ -382,7 +385,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libaudit1
     version: "1:3.0.9-1"
     license: GPL-2.0-only
@@ -391,7 +394,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libblkid1
     version: "2.38.1-5+deb12u3"
     license: GPL-2.0-or-later
@@ -400,7 +403,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libcom-err2
     version: "1.47.0-2+b2"
     license: GPL-2.0-only
@@ -409,7 +412,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libext2fs2
     version: "1.47.0-2+b2"
     license: GPL-2.0-only
@@ -418,7 +421,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libgcrypt20
     version: "1.10.1-3"
     license: LGPL-2.0-or-later
@@ -427,7 +430,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libgdbm-compat4
     version: "1.23-3"
     license: GPL-3.0-or-later
@@ -436,7 +439,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libgdbm6
     version: "1.23-3"
     license: GPL-3.0-or-later
@@ -445,7 +448,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libgmp10
     version: "2:6.2.1+dfsg1-1.1"
     license: GPL-2.0-or-later
@@ -454,7 +457,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libgssapi-krb5-2
     version: "1.20.1-2+deb12u4"
     license: GPL-2.0-only
@@ -463,7 +466,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libidn2-0
     version: "2.3.3-1+b1"
     license: GPL-3.0-or-later
@@ -472,7 +475,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libk5crypto3
     version: "1.20.1-2+deb12u4"
     license: GPL-2.0-only
@@ -481,7 +484,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libkeyutils1
     version: "1.6.3-2"
     license: GPL-2.0-or-later
@@ -490,7 +493,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libkrb5-3
     version: "1.20.1-2+deb12u4"
     license: GPL-2.0-only
@@ -499,7 +502,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libkrb5support0
     version: "1.20.1-2+deb12u4"
     license: GPL-2.0-only
@@ -508,7 +511,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libmount1
     version: "2.38.1-5+deb12u3"
     license: GPL-2.0-or-later
@@ -517,7 +520,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libperl5.36
     version: "5.36.0-7+deb12u3"
     license: GPL-1.0-or-later
@@ -526,7 +529,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libreadline8
     version: "8.2-1.3"
     license: GPL-3.0-or-later
@@ -535,7 +538,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libsemanage-common
     version: "3.4-1"
     license: LGPL-2.0-or-later
@@ -544,7 +547,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libsemanage2
     version: "3.4-1+b5"
     license: LGPL-2.0-or-later
@@ -553,7 +556,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libsmartcols1
     version: "2.38.1-5+deb12u3"
     license: GPL-2.0-or-later
@@ -562,7 +565,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libss2
     version: "1.47.0-2+b2"
     license: GPL-2.0-only
@@ -571,7 +574,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libtasn1-6
     version: "4.19.0-2+deb12u1"
     license: LGPL-2.0-or-later
@@ -580,7 +583,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: libuuid1
     version: "2.38.1-5+deb12u3"
     license: GPL-2.0-or-later
@@ -589,7 +592,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: logsave
     version: "1.47.0-2+b2"
     license: GPL-2.0-only
@@ -598,7 +601,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: mawk
     version: "1.3.4.20200120-3.1"
     license: GPL-2.0-only
@@ -607,7 +610,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: mount
     version: "2.38.1-5+deb12u3"
     license: GPL-2.0-or-later
@@ -616,7 +619,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: netbase
     version: "6.4"
     license: GPL-2.0-only
@@ -625,7 +628,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: perl
     version: "5.36.0-7+deb12u3"
     license: GPL-1.0-or-later
@@ -634,7 +637,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: perl-base
     version: "5.36.0-7+deb12u3"
     license: GPL-1.0-or-later
@@ -643,7 +646,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: perl-modules-5.36
     version: "5.36.0-7+deb12u3"
     license: GPL-1.0-or-later
@@ -652,7 +655,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: postgresql-client
     version: "15+248+deb12u1"
     license: GPL-2.0-or-later
@@ -661,7 +664,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: postgresql-client-common
     version: "248+deb12u1"
     license: GPL-2.0-or-later
@@ -670,7 +673,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: readline-common
     version: "8.2-1.3"
     license: GPL-3.0-or-later
@@ -679,7 +682,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: sed
     version: "4.9-1"
     license: GPL-3.0-or-later
@@ -688,7 +691,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: sensible-utils
     version: "0.0.17+nmu1"
     license: GPL-2.0-or-later
@@ -697,7 +700,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: sysvinit-utils
     version: "3.06-4"
     license: GPL-2.0-or-later
@@ -706,7 +709,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: tar
     version: "1.34+dfsg-1.2+deb12u1"
     license: GPL-3.0-or-later
@@ -715,7 +718,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: usr-is-merged
     version: "37~deb12u1"
     license: GPL-2.0-or-later
@@ -724,7 +727,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: util-linux
     version: "2.38.1-5+deb12u3"
     license: GPL-2.0-or-later
@@ -733,7 +736,7 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"
   - name: util-linux-extra
     version: "2.38.1-5+deb12u3"
     license: GPL-2.0-or-later
@@ -742,4 +745,4 @@ dispositions:
     nist_control: sr-3
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-08-16"
+    next_review_date: "2026-11-24"

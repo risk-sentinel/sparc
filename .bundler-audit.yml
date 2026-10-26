@@ -2,24 +2,11 @@
 # bundler-audit suppressions. Each entry MUST carry a rationale and a review
 # date (issue_rules.md: suppressions reviewed every release, <= 90 days).
 #
-# mcp (Model Context Protocol Ruby SDK) — 5 advisories, ALL in the
-# StreamableHTTPTransport / SSE *server* transport, all fixed in >= 0.23.0.
-#
-#   Not exploitable in SPARC:
-#   - mcp is a TRANSITIVE, DEV/CI-ONLY dependency: rubocop (1.85+) -> mcp (~> 0.6),
-#     pulled in via `gem "rubocop-rails-omakase", require: false` in the :development
-#     group. It is never loaded in the production image or at runtime.
-#   - Every advisory is in the MCP *server* HTTP/SSE transport. SPARC does not run
-#     an MCP server and never instantiates StreamableHTTPTransport; the vulnerable
-#     code path is unreachable.
-#   - Cannot be bumped independently: rubocop constrains mcp `~> 0.6`, and the fix
-#     is 0.23.0. Clears when rubocop's own dependency moves; tracked, not forced.
-#
-#   Reviewed: 2026-07-20 (v1.12.3). Next review: v1.13.0 or 90 days. bundle-audit
-#   clean at v1.12.3 (no gem changes in the outbound-TLS cluster #773–775).
-ignore:
-  - GHSA-52jp-gj8w-j6xh  # mcp: unbounded session retention (server transport)
-  - GHSA-5p9g-j988-pcwv  # mcp: SSE session poisoning (server transport)
-  - GHSA-7683-3w9x-ch42  # mcp: server transport
-  - GHSA-h669-8m4g-r2hc  # mcp: server transport
-  - GHSA-rjr6-rcgv-9m7m  # mcp: DNS-rebinding in StreamableHTTPTransport (server)
+# None. The five mcp advisories (GHSA-52jp-gj8w-j6xh, GHSA-5p9g-j988-pcwv,
+# GHSA-7683-3w9x-ch42, GHSA-h669-8m4g-r2hc, GHSA-rjr6-rcgv-9m7m) were
+# suppressed from 2026-07-20 as a dev-only transitive dependency of rubocop.
+# Retired 2026-10-25 (v1.17.2): mcp left Gemfile.lock in v1.17.0 (#1210), so
+# the entries suppressed nothing. bundle-audit with this list removed reports
+# no vulnerabilities (ruby-advisory-db 2026-10-23). If one returns, it is a
+# new finding.
+ignore: []
