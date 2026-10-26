@@ -14,7 +14,13 @@
 #   1. a catalog UUID: the href (`#<uuid>` or `uuid:<uuid>`) or one of its
 #      back-matter resource's rlinks names a loaded catalog's OSCAL uuid;
 #   2. the NIST pattern: an rlink (or the href itself) names SP 800-53 and a
-#      revision a loaded catalog's name also carries (the pre-#1234 rule);
+#      revision a loaded catalog's name also carries (the pre-#1234 rule).
+#      Several catalogs can fit — an agency overlay named "... SP 800-53
+#      Rev 5" fits as well as NIST's — so the fits are ranked: the catalog the
+#      profile was uploaded against first, then the one holding the most of the
+#      controls the import names. Taking the lowest id linked a NIST profile to
+#      an overlay holding none of its controls, and every control was reported
+#      as missing from its catalog;
 #   3. the back-matter resource's title equals a loaded catalog's name, and
 #      EXACTLY ONE catalog has that name. Two catalogs with one name is not a
 #      match: guessing would attribute controls to the wrong source.
@@ -36,9 +42,12 @@ class ProfileImportCatalogResolver
 
 
   # @param back_matter [Array<Hash>] the profile's raw `back-matter.resources`
-  def initialize(back_matter, catalogs: ControlCatalog.all.to_a)
+  # @param preferred [ControlCatalog, nil] the catalog the profile was
+  #   uploaded against, which wins among catalogs the NIST pattern fits
+  def initialize(back_matter, catalogs: ControlCatalog.all.to_a, preferred: nil)
     @resources = Array(back_matter).index_by { |r| r["uuid"].to_s }
     @catalogs  = catalogs.sort_by(&:id)
+    @preferred = preferred
   end
 
   # @param imports [Array<Hash>] the profile's raw `imports`
@@ -47,7 +56,7 @@ class ProfileImportCatalogResolver
     Array(imports).each_with_index.map do |imp, index|
       href = imp["href"].to_s
       resource = @resources[href.delete_prefix("#")]
-      catalog, matched_by = match(href, resource)
+      catalog, matched_by = match(href, resource, imp)
       ids, unresolved, unknown = selection(imp, catalog)
       Resolution.new(index: index, href: href, control_ids: ids, catalog: catalog,
                      matched_by: matched_by, label: resource&.dig("title").presence || href,
@@ -85,14 +94,14 @@ class ProfileImportCatalogResolver
     (@trees ||= {})[catalog.id] ||= CatalogControlTree.for(catalog)
   end
 
-  def match(href, resource)
+  def match(href, resource, imp)
     rlinks = Array(resource&.dig("rlinks")).map { |rl| rl["href"].to_s }
     rlinks = [ href ] if resource.nil? && !href.start_with?("#")
 
     if (catalog = by_uuid([ href, *rlinks ]))
       return [ catalog, "uuid" ]
     end
-    if (catalog = by_nist_pattern(rlinks))
+    if (catalog = by_nist_pattern(rlinks, imp))
       return [ catalog, "nist_pattern" ]
     end
     if (catalog = by_unique_title(resource&.dig("title")))
@@ -112,15 +121,25 @@ class ProfileImportCatalogResolver
     end
   end
 
-  def by_nist_pattern(rlinks)
+  def by_nist_pattern(rlinks, imp)
     hrefs = rlinks.map(&:downcase)
-    @catalogs.find do |c|
+    fits = @catalogs.select do |c|
       name = c.name.to_s.downcase
       catalog_rev = revision(name)
       next false unless name.include?(CATALOG_800_53) && catalog_rev
 
       hrefs.any? { |h| h.include?(CATALOG_800_53) && revision(h) == catalog_rev }
     end
+    return fits.first if fits.size < 2
+    return @preferred if @preferred && fits.any? { |c| c.id == @preferred.id }
+
+    named = Array(imp["include-controls"]).flat_map { |ic| Array(ic["with-ids"]) }.map(&:to_s)
+    # max_by keeps the first of equals, so a tie still goes to the lowest id.
+    fits.max_by { |c| named.count { |id| known_ids(c).include?(id) } }
+  end
+
+  def known_ids(catalog)
+    (@known_ids ||= {})[catalog.id] ||= tree_for(catalog).to_set(&:first)
   end
 
   def by_unique_title(title)

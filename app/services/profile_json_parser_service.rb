@@ -157,7 +157,8 @@ class ProfileJsonParserService
 
     catalog_ref  = imports.first&.dig("href")
     back_matter  = profile.dig("back-matter", "resources") || []
-    @import_resolutions = ProfileImportCatalogResolver.new(back_matter).resolve(imports)
+    @import_resolutions = ProfileImportCatalogResolver.new(back_matter, preferred: @document.control_catalog)
+                                                      .resolve(imports)
 
     # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
     metadata_extra = metadata.except("title", "version", OSCAL_VERSION, "last-modified")

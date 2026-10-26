@@ -1,0 +1,13 @@
+<%# An aggregate parameter (NIST Rev 5's `ac-1_prm_1`) combines others and has
+    no value of its own: its reading is theirs, and it is set by setting them.
+    Locals: param — a BaselineControlDetail::Parameter with aggregate? true. %>
+<div data-aggregate-param="<%= param.id %>">
+  <% if param.aggregate_answered %>
+    <span><%= param.display %></span>
+  <% else %>
+    <span class="text-body-tertiary fst-italic">Not set</span>
+  <% end %>
+  <div class="text-body-tertiary sparc-fs-072 sparc-mt-02">
+    Combines <%= param.aggregates.to_sentence %>; set those to change it.
+  </div>
+</div>
