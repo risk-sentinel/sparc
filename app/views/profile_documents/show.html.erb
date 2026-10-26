@@ -203,6 +203,11 @@
       <% if @profile_document.description.present? %>
         <div class="sparc-fs-082 sparc-color-white-45 sparc-mt-04 sparc-maxw-600"><%= truncate(@profile_document.description, length: 200) %></div>
       <% end %>
+      <%= render "shared/document_review", doc: @profile_document, may_write: can_write_profiles?,
+            submit_path: submit_for_review_profile_document_path(@profile_document),
+            approve_path: approve_profile_document_path(@profile_document),
+            reject_path: reject_profile_document_path(@profile_document),
+            muted_class: "sparc-color-white-45" %>
     </div>
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
       <% if signed_in? %>
