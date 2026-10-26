@@ -4368,6 +4368,64 @@ a.link-purple { color: var(--sparc-purple); }
   color: var(--bs-body-color);
 }
 
+/* Homepage inventory: thin count tiles in one row above the cards, each a
+   link to its list. Sits on the gradient header, so its text is white in
+   both themes, like the hero tiles it replaces. */
+.sparc-inventory { padding: 0.5rem 0.6rem; }
+.sparc-inventory-group { padding: 0.25rem 0.35rem 0.35rem; }
+.sparc-inventory-heading { margin-bottom: 0.2rem; line-height: 1; }
+.sparc-inventory-heading .badge { font-size: 0.62rem; padding: 0.2em 0.5em; }
+.sparc-inventory-tile {
+  display: grid;
+  justify-items: center;
+  min-width: 3.3rem;
+  padding: 0.2rem 0.35rem 0.25rem;
+  border-radius: 0.4rem;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  text-decoration: none;
+  line-height: 1.1;
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+.sparc-inventory-tile:hover,
+.sparc-inventory-tile:focus-visible {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.sparc-inventory-tile:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.sparc-inventory-count { font-weight: 700; font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.sparc-inventory-name { font-size: 0.66rem; color: #fff; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) {
+  .sparc-inventory-tile { transition: none; }
+  .sparc-inventory-tile:hover { transform: none; }
+}
+
+/* New-CDEF screen: the three ways in are choice cards (tabs) above the one
+   form that is showing (cdef_new_chooser_controller.js). */
+.sparc-cdef-choice {
+  cursor: pointer;
+  padding: 0;
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+.sparc-cdef-choice .card-body { padding: 0.75rem 0.9rem; }
+.sparc-cdef-choice-check { visibility: hidden; font-weight: 700; color: var(--sparc-accent); }
+.sparc-cdef-choice[aria-selected="true"] {
+  box-shadow: 0 0 0 2px var(--sparc-accent);
+  background: color-mix(in srgb, var(--sparc-accent) 10%, var(--bs-body-bg));
+}
+.sparc-cdef-choice[aria-selected="true"] .sparc-cdef-choice-check { visibility: visible; }
+.sparc-cdef-choice:focus-visible { outline: 2px solid var(--sparc-accent); outline-offset: 2px; }
+.sparc-cdef-formats { border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem; }
+.sparc-cdef-formats summary { cursor: pointer; font-weight: 600; }
+.sparc-cdef-formats[open] summary { margin-bottom: 0.5rem; }
+.sparc-cdef-export {
+  border: 1px solid var(--bs-border-color);
+  border-left: 3px solid var(--sparc-accent);
+}
+.sparc-cdef-export-title--success { color: var(--bs-success); }
+
 /* #1248 — a sortable column header on the boundary list: reads as the header
    it is, with the sort direction beside it. */
 .sparc-sort-link {

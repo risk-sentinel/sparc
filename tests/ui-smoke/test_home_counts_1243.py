@@ -1,11 +1,13 @@
 """UI smoke: the homepage's count badges (v1.17.2, #1243).
 
-The scoreboard above the layer cards is gone. Each card carries a count badge
-that links to the same page as its View button, scoped to what the user may
-see. Every badge is clicked here, in Chrome, with zero CSP violations.
+The thin inventory tiles above the layer cards are shown (restored after #1243
+removed them by mistake), each a link to its list, and each card carries a count badge that links to
+the same page as its View button, scoped to what the user may see. Every badge
+is clicked here, in Chrome, with zero CSP violations.
 
 Selectors verified against app/views/home/index.html.erb
-(`a[data-home-count]`, `.sparc-section-card`).
+(`[data-home-inventory]`, `a[data-home-tile]`, `.sparc-inventory-name`, `a[data-home-count]`,
+`.sparc-section-card`).
 """
 
 from __future__ import annotations
@@ -26,13 +28,37 @@ def _badges(page) -> list[tuple[str, str]]:
     )
 
 
-def test_scoreboard_is_gone_and_each_badge_opens_its_list(authed_page, base_url):
+def _tiles(page) -> list[tuple[str, str]]:
+    return page.locator("[data-home-inventory] a[data-home-tile]").evaluate_all(
+        "els => els.map(e => [e.dataset.homeTile, e.getAttribute('href')])"
+    )
+
+
+def test_inventory_shows_and_each_badge_opens_its_list(authed_page, base_url):
     page = authed_page
     record_csp(page)
     page.goto(f"{base_url}/")
     page.wait_for_load_state("domcontentloaded")
 
-    assert page.locator(".sparc-gradient-header").count() == 0, "the scoreboard is still rendered"
+    inventory = page.locator("[data-home-inventory]")
+    expect(inventory).to_be_visible()
+    labels = inventory.locator(".sparc-inventory-name").all_text_contents()
+    for label in (
+        "Catalogs",
+        "Families",
+        "Controls",
+        "Baselines",
+        "Mappings",
+        "SSPs",
+        "CDEFs",
+        "Converters",
+        "SAPs",
+        "Evidence",
+        "SARs",
+        "POA&Ms",
+        "Auth Boundaries",
+    ):
+        assert label in labels, f"inventory tile {label!r} missing; found {labels}"
     badges = _badges(page)
     assert len(badges) >= 11, f"expected a badge on every layer card, found {badges}"
 
@@ -54,6 +80,29 @@ def test_scoreboard_is_gone_and_each_badge_opens_its_list(authed_page, base_url)
         assert_no_csp_violations(page, during=f"clicking the {key} count badge")
 
 
+def test_each_inventory_tile_opens_its_list(authed_page, base_url):
+    page = authed_page
+    record_csp(page)
+    page.goto(f"{base_url}/")
+    page.wait_for_load_state("domcontentloaded")
+
+    tiles = _tiles(page)
+    assert len(tiles) >= 13, f"expected a tile per inventory count, found {tiles}"
+    badges = dict(_badges(page))
+    for key, href in tiles:
+        if key in badges:
+            assert href == badges[key], f"{key}: tile and card badge lead to different pages"
+
+    for key, href in tiles:
+        page.goto(f"{base_url}/")
+        page.wait_for_load_state("domcontentloaded")
+        tile = page.locator(f"[data-home-inventory] a[data-home-tile='{key}']")
+        expect(tile).to_be_visible()
+        tile.click()
+        page.wait_for_url(lambda url, target=href: urlparse(url).path == target, timeout=10000)
+        assert_no_csp_violations(page, during=f"clicking the {key} inventory tile")
+
+
 def test_non_admin_sees_no_organizations_card(user_authed_page, base_url):
     page = user_authed_page
     record_csp(page)
@@ -61,6 +110,8 @@ def test_non_admin_sees_no_organizations_card(user_authed_page, base_url):
     page.wait_for_load_state("domcontentloaded")
 
     assert page.locator("a[data-home-count='organizations']").count() == 0
+    labels = page.locator("[data-home-inventory] .sparc-inventory-name").all_text_contents()
+    assert "Auth Boundaries" in labels and "Organizations" not in labels, labels
     assert page.locator(".sparc-section-card a[href^='/admin/organizations']").count() == 0
     assert page.locator("a[data-home-count='authorization_boundaries']").count() == 1
     assert_no_csp_violations(page, during="the homepage as a non-administrator")

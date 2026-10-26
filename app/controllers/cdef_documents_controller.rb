@@ -749,10 +749,17 @@ class CdefDocumentsController < ApplicationController
                   flash: { success: "Component definition created. Add controls to it next." }
     else
       flash.now[:error] = @cdef_document.errors.full_messages.join(", ")
-      render :new, status: :unprocessable_content
+      render_author_form_again
     end
   rescue ArgumentError => e
     flash.now[:error] = e.message
+    render_author_form_again
+  end
+
+  # The new screen shows one way in at a time; a rejected authored CDEF comes
+  # back on the Author form, with what was entered.
+  def render_author_form_again
+    @cdef_new_choice = "author"
     render :new, status: :unprocessable_content
   end
 
