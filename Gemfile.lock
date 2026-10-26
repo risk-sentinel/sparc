@@ -101,15 +101,15 @@ GEM
     aws-sdk-kms (1.135.0)
       aws-sdk-core (~> 3, >= 3.260.0)
       aws-sigv4 (~> 1.5)
-    aws-sdk-rds (1.325.0)
-      aws-sdk-core (~> 3, >= 3.258.0)
+    aws-sdk-rds (1.327.0)
+      aws-sdk-core (~> 3, >= 3.260.0)
       aws-sigv4 (~> 1.5)
-    aws-sdk-s3 (1.234.0)
+    aws-sdk-s3 (1.235.0)
       aws-sdk-core (~> 3, >= 3.258.0)
       aws-sdk-kms (~> 1)
       aws-sigv4 (~> 1.5)
-    aws-sdk-secretsmanager (1.137.0)
-      aws-sdk-core (~> 3, >= 3.258.0)
+    aws-sdk-secretsmanager (1.139.0)
+      aws-sdk-core (~> 3, >= 3.260.0)
       aws-sigv4 (~> 1.5)
     aws-sigv4 (1.12.1)
       aws-eventstream (~> 1, >= 1.0.2)
@@ -192,7 +192,7 @@ GEM
     globalid (1.4.0)
       activesupport (>= 6.1)
     hana (1.3.7)
-    hashie (5.1.0)
+    hashie (5.2.0)
       logger
     htmlentities (4.4.2)
     i18n (1.15.2)
@@ -306,11 +306,11 @@ GEM
       rack (>= 1.2, < 4)
       snaky_hash (~> 2.0, >= 2.0.7)
       version_gem (~> 1.1, >= 1.1.14)
-    omniauth (2.1.4)
-      hashie (>= 3.4.6)
+    omniauth (2.3.1)
+      hashie (>= 3.5.2)
       logger
-      rack (>= 2.2.3)
-      rack-protection
+      rack (>= 2.2.8)
+      rack-protection (>= 2.2.0)
     omniauth-github (2.0.1)
       omniauth (~> 2.0)
       omniauth-oauth2 (~> 1.8)
@@ -542,7 +542,7 @@ GEM
       faraday-follow_redirects
     thor (1.5.0)
     timeout (0.6.1)
-    tpm-key_attestation (0.14.1)
+    tpm-key_attestation (0.14.2)
       bindata (~> 2.4)
       openssl (> 2.0)
       openssl-signature_algorithm (~> 1.0)
@@ -567,7 +567,7 @@ GEM
       actionview (>= 8.0.0)
       bindex (>= 0.4.0)
       railties (>= 8.0.0)
-    webauthn (3.4.3)
+    webauthn (3.5.0)
       android_key_attestation (~> 0.3.0)
       bindata (~> 2.4)
       cbor (~> 0.5.9)
@@ -604,9 +604,9 @@ PLATFORMS
 
 DEPENDENCIES
   activerecord-import
-  aws-sdk-rds (~> 1.325)
+  aws-sdk-rds (~> 1.327)
   aws-sdk-s3
-  aws-sdk-secretsmanager (~> 1.137)
+  aws-sdk-secretsmanager (~> 1.139)
   axe-core-rspec
   bcrypt (~> 3.1.22)
   bootsnap
@@ -633,7 +633,7 @@ DEPENDENCIES
   net-imap (>= 0.6.4)
   net-ldap (~> 0.21)
   oauth2 (>= 2.0.22)
-  omniauth (~> 2.1)
+  omniauth (~> 2.3)
   omniauth-github (~> 2.0)
   omniauth-gitlab (~> 4.0)
   omniauth-rails_csrf_protection (~> 2.0)
@@ -663,7 +663,7 @@ DEPENDENCIES
   tzinfo-data
   uri (>= 1.1.1)
   web-console
-  webauthn (~> 3.1)
+  webauthn (~> 3.5)
   websocket-driver (>= 0.8.2)
   zlib (>= 3.2.3)
 

@@ -14,7 +14,7 @@ class HomeController < ApplicationController
   #                                   someone it admits (the card is hidden
   #                                   otherwise)
   #
-  # The scoreboard that repeated these numbers above the cards is gone.
+  # The inventory tiles above the cards show these same counts, grouped by layer.
   def index
     @counts = {
       control_catalogs: ControlCatalog.count,
@@ -31,7 +31,7 @@ class HomeController < ApplicationController
     }
     @counts[:organizations] = Organization.count if helpers.admin_access?
 
-    # Secondary text on the Control Catalogs card, from the expressions the
+    # The Families and Controls inventory tiles, from the expressions the
     # catalog page's own tiles use.
     @family_count  = ControlCatalog.family_count
     @control_count = ControlCatalog.control_count

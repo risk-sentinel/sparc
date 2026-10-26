@@ -78,7 +78,8 @@ RSpec.describe "CDEF authoring (#944)", type: :request do
     it "offers the authoring form on the new page" do
       get new_cdef_document_path
 
-      expect(response.body).to include("Author a Component Definition")
+      expect(response.body).to include("Author from scratch")
+      expect(response.body).to include("data-testid=\"author-cdef-submit\"")
     end
   end
 

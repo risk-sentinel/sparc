@@ -181,7 +181,9 @@ class CdefDocumentsController < ApplicationController
     # #944 — authoring from scratch, when no file was supplied. `create` was
     # unconditionally an upload handler, which is why the only way a component
     # definition entered SPARC was as a file someone else had authored.
-    return create_authored if authoring_from_scratch?
+    # The upload-only page (?only=upload) never authors: with no file it is an
+    # upload missing its file, and says so there.
+    return create_authored if authoring_from_scratch? && params[:only] != "upload"
 
     handle_multi_file_upload(:cdef, param_key: :cdef_document)
   end
@@ -749,10 +751,17 @@ class CdefDocumentsController < ApplicationController
                   flash: { success: "Component definition created. Add controls to it next." }
     else
       flash.now[:error] = @cdef_document.errors.full_messages.join(", ")
-      render :new, status: :unprocessable_content
+      render_author_form_again
     end
   rescue ArgumentError => e
     flash.now[:error] = e.message
+    render_author_form_again
+  end
+
+  # The new screen shows one way in at a time; a rejected authored CDEF comes
+  # back on the Author form, with what was entered.
+  def render_author_form_again
+    @cdef_new_choice = "author"
     render :new, status: :unprocessable_content
   end
 

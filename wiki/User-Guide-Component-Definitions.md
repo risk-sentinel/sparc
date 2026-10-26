@@ -71,14 +71,20 @@ The CDEF is the OSCAL `component-definition`; SSPs consume it (see
 
 ## How to create a component definition
 
-There are three ways in, on the same **Create New** page (`/cdef_documents/new`):
-upload a file someone else authored, generate one from a published profile, or
-**author one yourself**.
+There are three ways in, on the **Create New** page (`/cdef_documents/new`):
+**Upload files** someone else authored, **Author from scratch**, or generate one
+**From a published profile**. Each is a separate choice with its own form: pick
+one of the three cards at the top of the page and only that form shows. Nothing
+you enter in one carries over to another. Each choice has its own link
+(`/cdef_documents/new#upload`, `#author`, `#profile`) to send someone straight
+to it. On the Component Definitions list, **Create New** opens this page and
+**Upload File** opens the upload on its own: drop the files, set where the CDEF
+may be used, and upload.
 
 ### Author one from scratch
 
 1. Go to *Implementation → Component Definitions* (`/cdef_documents`).
-2. Click **Create New**, then use the **Author a Component Definition** form.
+2. Click **Create New**, then choose **Author from scratch**.
 3. Fill in what the component *is*:
    - **Document name** — what it is called inside SPARC.
    - **Component type** — what kind of thing it is: service, hardware, policy,
@@ -107,8 +113,8 @@ upload a file someone else authored, generate one from a published profile, or
 
 ### Upload or generate
 
-1. Click **Create New** and either drop a file into **Upload Component
-   Definition**, or pick a baseline under **Create from Published Profile**.
+1. Click **Upload File** and drop a file in, or click **Create New**, choose
+   **From a published profile** and pick a baseline.
 2. The detail page (`/cdef_documents/:id`) shows the component's controls
    organized by family, with a **severity heatmap**. Within each family,
    controls are in **NIST catalog order** — base number then enhancement.

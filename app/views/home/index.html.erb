@@ -1,10 +1,57 @@
-<%# ── Section navigation grid grouped by OSCAL layers ── %>
-<%# #1243 — the scoreboard that sat above these cards is gone: it repeated the
-    same nouns in the same order, its tiles looked clickable and were not, and
-    it counted the whole instance. Each card now carries its own count as a
-    badge that opens the same page as View, and the count is the one that page
-    shows THIS user (HomeController#index). "New" appears only to someone the
-    create action would let through. %>
+<%# ── Inventory: thin count tiles grouped by OSCAL layer ──
+    The instance's inventory at a glance, in one row. #1243 removed it in
+    v1.17.2 by mistake; it is restored as thin tiles, each a link to its list.
+    Every count is the one the cards below show this user
+    (HomeController#index). Families and controls live inside catalogs, so
+    those tiles open the catalog list, which totals them. Organizations is
+    counted only for someone the admin screen admits. %>
+<%
+  inventory_groups = [
+    { label: "CONTROLS", accent: "sparc-accent--blue", badge: "sparc-status--info", tiles: [
+        [:control_catalogs, @counts[:control_catalogs], "Catalogs", control_catalogs_path],
+        [:families, @family_count, "Families", control_catalogs_path],
+        [:controls, @control_count, "Controls", control_catalogs_path],
+        [:profile_documents, @counts[:profile_documents], "Baselines", profile_documents_path],
+        [:control_mappings, @counts[:control_mappings], "Mappings", control_mappings_path]] },
+    { label: "IMPLEMENTATION", accent: "sparc-accent--green", badge: "sparc-status--success", tiles: [
+        [:ssp_documents, @counts[:ssp_documents], "SSPs", ssp_documents_path],
+        [:cdef_documents, @counts[:cdef_documents], "CDEFs", cdef_documents_path],
+        [:converters, @counts[:converters], "Converters", converters_path]] },
+    { label: "ASSESSMENT", accent: "sparc-accent--carrot", badge: "sparc-status--orange", tiles: [
+        [:sap_documents, @counts[:sap_documents], "SAPs", sap_documents_path],
+        [:evidences, @counts[:evidences], "Evidence", evidences_path],
+        [:sar_documents, @counts[:sar_documents], "SARs", sar_documents_path],
+        [:poam_documents, @counts[:poam_documents], "POA&Ms", poam_documents_path]] },
+    { label: "ENTERPRISE", accent: "sparc-accent--purple", badge: "sparc-status--purple", tiles: [
+        ([:organizations, @counts[:organizations], "Organizations", admin_organizations_path] if @counts.key?(:organizations)),
+        [:authorization_boundaries, @counts[:authorization_boundaries], "Auth Boundaries", authorization_boundaries_path]].compact }
+  ]
+%>
+<nav class="card sparc-gradient-header sparc-inventory mb-3 sparc-br-05r" data-home-inventory aria-label="Inventory">
+  <div class="d-flex flex-wrap justify-content-center gap-2">
+    <% inventory_groups.each do |g| %>
+      <div class="sparc-home-group sparc-inventory-group <%= g[:accent] %>">
+        <div class="text-center sparc-inventory-heading">
+          <span class="badge <%= g[:badge] %> sparc-ls-005"><%= g[:label] %></span>
+        </div>
+        <div class="d-flex gap-1">
+          <% g[:tiles].each do |key, count, label, path| %>
+            <%= link_to path, class: "sparc-inventory-tile", data: { home_tile: key },
+                  title: "Open #{label}", "aria-label": "#{number_with_delimiter(count)} #{label}: open the list" do %>
+              <span class="sparc-inventory-count"><%= number_with_delimiter(count) %></span>
+              <span class="sparc-inventory-name"><%= label %></span>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</nav>
+
+<%# ── Section navigation grid grouped by OSCAL layers ──
+    Each card carries its own count as a badge that opens the same page as
+    View (#1243). "New" appears only to someone the create action would let
+    through. %>
 <%
   layer_groups = [
     {
@@ -13,8 +60,7 @@
       cls: "sparc-heading-controls",
       cards: [
         { key: :control_catalogs, title: "Control Catalogs", path: control_catalogs_path,
-          new_path: new_control_catalog_path, can_create: can_write_catalogs?, icon: "&#128218;",
-          secondary: "#{number_with_delimiter(@family_count)} families · #{number_with_delimiter(@control_count)} controls" },
+          new_path: new_control_catalog_path, can_create: can_write_catalogs?, icon: "&#128218;" },
         { key: :profile_documents, title: "Baselines / Profiles", path: profile_documents_path,
           new_path: new_profile_document_path, can_create: can_write_profiles?, icon: "&#128203;" },
         { key: :control_mappings, title: "Control Mapping", path: control_mappings_path,
@@ -70,33 +116,25 @@
       <span class="sparc-group-bar <%= accent_class(group[:color]) %>"></span>
       <h6 class="mb-0 fw-bold sparc-fs-085 <%= group[:cls] %>"><%= group[:label] %></h6>
     </div>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-2">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xxl-3 g-2">
       <% group[:cards].each do |s| %>
         <div class="col">
           <div class="card sparc-section-card sparc-section-card--accented h-100 <%= accent_class(group[:color]) %>">
-            <div class="card-body d-flex flex-row align-items-center gap-3 sparc-p-035-085">
+            <div class="card-body d-flex flex-row align-items-center gap-2 sparc-p-035-085">
+              <%# Every card reads the same way: icon, count, title, buttons. The
+                  count sits in a fixed-width slot so titles line up down a column. %>
               <div class="sparc-fs-22r sparc-flex-shrink-0"><%= s[:icon].html_safe %></div>
-              <div class="flex-grow-1 sparc-minw-0">
-                <%# flex-wrap: in a narrow card the badge wraps under the title instead
-                    of overflowing beneath the View button, which took its clicks
-                    (found by the ui-smoke gate). %>
-                <h5 class="mb-0 sparc-fs-095 d-flex flex-wrap align-items-center gap-2">
-                  <span><%= s[:title] %></span>
-                  <% count = @counts.fetch(s[:key]) %>
-                  <%= link_to number_with_delimiter(count), s[:path],
-                        class: "sparc-count-badge",
-                        data: { home_count: s[:key] },
-                        title: "Open #{s[:title]}",
-                        "aria-label": "#{number_with_delimiter(count)} #{s[:title]}: open the list" %>
-                </h5>
-                <% if s[:secondary] %>
-                  <div class="text-body-secondary sparc-fs-075" data-home-secondary="<%= s[:key] %>"><%= s[:secondary] %></div>
-                <% end %>
-              </div>
+              <% count = @counts.fetch(s[:key]) %>
+              <%= link_to number_with_delimiter(count), s[:path],
+                    class: "sparc-count-badge sparc-count-badge--lead flex-shrink-0",
+                    data: { home_count: s[:key] },
+                    title: "Open #{s[:title]}",
+                    "aria-label": "#{number_with_delimiter(count)} #{s[:title]}: open the list" %>
+              <h5 class="mb-0 sparc-fs-095 flex-grow-1 sparc-card-title"><%= s[:title] %></h5>
               <div class="d-flex gap-2 flex-shrink-0">
-                <%= link_to "View", s[:path], class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm px-3" %>
+                <%= link_to "View", s[:path], class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm px-2" %>
                 <% if s[:can_create] %>
-                  <%= link_to "New", s[:new_path], class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm px-3" %>
+                  <%= link_to "New", s[:new_path], class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm px-2" %>
                 <% end %>
               </div>
             </div>

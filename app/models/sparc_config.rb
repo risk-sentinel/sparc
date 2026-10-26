@@ -19,7 +19,7 @@
 #   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
-  VERSION = "1.17.2"
+  VERSION = "1.17.3"
 
   extend self
 
@@ -630,6 +630,23 @@ module SparcConfig
 
   def oidc_redirect_uri
     ENV.fetch("SPARC_OIDC_REDIRECT_URI", nil).presence || "#{app_url.chomp('/')}#{OIDC_CALLBACK_PATH}"
+  end
+
+  # NIST 800-53: IA-8, SC-23. The origin OAuth providers (GitHub, GitLab) send
+  # the IdP as their callback host — scheme, host and any non-default port of
+  # SPARC_APP_URL — so it never comes from a request's Host, X-Forwarded-Host or
+  # Forwarded header, which a client can forge (GHSA-m27g-v28p-f9fx). nil when
+  # SPARC_APP_URL is unset or not a URL: deliberately NOT app_url's localhost
+  # default, which would send every IdP back to localhost.
+  def oauth_full_host
+    raw = ENV.fetch("SPARC_APP_URL", nil).presence or return nil
+    uri = URI.parse(raw)
+    return nil unless uri.scheme && uri.host
+
+    port = uri.port == uri.default_port ? "" : ":#{uri.port}"
+    "#{uri.scheme}://#{uri.host}#{port}"
+  rescue URI::InvalidURIError
+    nil
   end
 
   # #785 — was read raw in api_authentication.rb with the same blank-string

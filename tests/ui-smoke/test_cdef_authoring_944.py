@@ -24,7 +24,7 @@ from helpers import assert_no_csp_violations, record_csp
 pytestmark = pytest.mark.authenticated
 
 INDEX = "/cdef_documents"
-NEW = "/cdef_documents/new"
+NEW = "/cdef_documents/new#author"  # the Author form, by its own link
 TYPE_SELECT = "select[name='cdef_document[component_type]']"
 SUBMIT = "[data-testid='author-cdef-submit']"
 
@@ -78,7 +78,7 @@ def test_the_authoring_form_is_offered(authed_page):
     authed_page.wait_for_load_state("networkidle")
 
     body = authed_page.locator("body").inner_text()
-    assert "Author a Component Definition" in body, (
+    assert "Author from scratch" in body, (
         "the new-CDEF page offers no way to author one — it is still upload-only"
     )
 

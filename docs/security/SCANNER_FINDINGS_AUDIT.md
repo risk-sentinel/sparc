@@ -1,8 +1,33 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-10-25 (v1.17.2 — UBI 10 digest bump with Red Hat's eMudhra fix, gem updates)
+**Last reviewed:** 2026-10-26 (v1.17.3 — omniauth 2.3.1, webauthn 3.5.0, aws-sdk updates; no base change)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **v1.17.3 rescan (2026-10-26).** Real rescan of the built `sparc:v1.17.3`
+> image (arm64, `86d52fdf5702`), not an SBOM, with grype 0.114.0 (DB v6.1.10
+> built 2026-10-26) and Trivy 0.74.0. Same UBI 10 base as v1.17.2.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype 0.114.0 (image, DB v6.1.10 built 2026-10-26) | **0** | **0** | 45 | 33 |
+> | Trivy 0.74.0 (image, vuln scanner) | 0 | 0 | 0 | 1 |
+>
+> Distinct CVEs (96 grype matches). Identical to v1.17.2 at every severity,
+> on a database a day newer: none new, none gone. Trivy's one Low is still
+> Ruby's on-disk `json` 2.9.1 (the app loads 3.1.0).
+>
+> - **Gems taken:** omniauth 2.1.4 → 2.3.1, webauthn 3.4.3 → 3.5.0,
+>   aws-sdk-s3 1.235.0, aws-sdk-rds 1.327.0, aws-sdk-secretsmanager 1.139.0,
+>   with hashie 5.2.0 and tpm-key_attestation 0.14.2. bundle-audit: no
+>   vulnerabilities (ruby-advisory-db 2026-10-23).
+> - **omniauth GHSA-m27g-v28p-f9fx** (forged host in OAuth callback URLs,
+>   CVE-2026-63183) is fixed in 2.2.0, but only for an app that names its own
+>   host. SPARC now builds GitHub and GitLab callbacks from `SPARC_APP_URL`
+>   (`SparcConfig.oauth_full_host`). The advisory is in neither GitHub's
+>   global database nor ruby-advisory-db yet, so no scanner reported 2.1.4.
+> - **Register:** unchanged. 7 entries; no `RELEASE-BLOCKING` finding; the
+>   freshness gate is green.
 
 > **v1.17.2 rescan (2026-10-25).** Real rescan of the built `sparc:v1.17.2`
 > image (arm64, `3933ac3b626f`), not an SBOM, with grype 0.114.0 (DB v6.1.10

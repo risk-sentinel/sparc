@@ -158,14 +158,14 @@ Current password and new password fields. Also used for forced password reset on
 | **Controller** | `HomeController#index` |
 | **Auth** | Varies (public when auth disabled) |
 
-The homepage is a grid of cards grouped by OSCAL layer (Controls, Implementation, Assessment, Enterprise), one per area: Control Catalogs, Baselines / Profiles, Control Mapping, SSPs, CDEFs, Converters, SAPs, Evidence, SARs, POA&Ms, Organizations and Auth Boundaries (v1.17.2, #1243).
+The homepage opens with the **inventory**: one row of thin count tiles grouped by OSCAL layer -- Controls (Catalogs, Families, Controls, Baselines, Mappings), Implementation (SSPs, CDEFs, Converters), Assessment (SAPs, Evidence, SARs, POA&Ms) and Enterprise (Organizations, Auth Boundaries). Each tile is a link to its list and shows the same count as its card's badge below, so it counts what the signed-in user may see (Families and Controls open the catalog list, which totals them); Organizations appears only to someone the administrator screen admits. v1.17.2 removed these tiles by mistake; v1.17.3 restores them.
 
-- **Count badge** -- beside each card's title, a count that links to the same list as the card's **View** button. The count is the one that list shows the signed-in user: SSPs, SAPs, SARs, Evidence and POA&Ms through the same boundary scoping as their list pages, Auth Boundaries through the boundaries the user may see, and the shared library (catalogs, baselines, mappings, CDEFs, converters) in full, as their lists show it. An instance administrator, or a deployment with authentication disabled, sees full totals.
-- **Control Catalogs** carries the number of families and controls as secondary text (the same figures as the catalog list's tiles).
+Below it is a grid of cards grouped by OSCAL layer (Controls, Implementation, Assessment, Enterprise), one per area: Control Catalogs, Baselines / Profiles, Control Mapping, SSPs, CDEFs, Converters, SAPs, Evidence, SARs, POA&Ms, Organizations and Auth Boundaries (v1.17.2, #1243).
+
+- **Count badge** -- before each card's title, a count that links to the same list as the card's **View** button. The count is the one that list shows the signed-in user: SSPs, SAPs, SARs, Evidence and POA&Ms through the same boundary scoping as their list pages, Auth Boundaries through the boundaries the user may see, and the shared library (catalogs, baselines, mappings, CDEFs, converters) in full, as their lists show it. An instance administrator, or a deployment with authentication disabled, sees full totals.
+- **Layout** -- every card reads the same way: icon, count, title, then **View** and **New**. Families and controls are counted only in the inventory tiles.
 - **New** -- shown only where the user may create that kind of record.
 - **Organizations** -- an administrator screen; the card shows only to someone it admits.
-
-The statistics header that used to sit above the cards was removed in v1.17.2: it repeated the cards, its tiles were not links, and it counted the whole instance.
 
 #### Family Drilldown
 

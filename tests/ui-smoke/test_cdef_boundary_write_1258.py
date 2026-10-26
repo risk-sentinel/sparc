@@ -102,7 +102,7 @@ def test_system_owner_writes_its_boundarys_cdefs_only(authed_page, user_authed_p
         _grant(admin, user_id, mine["id"], role_id)
 
         record_csp(user)
-        user.goto("/cdef_documents/new")
+        user.goto("/cdef_documents/new#author")
         user.wait_for_load_state("networkidle")
         assert user.locator(SUBMIT).count() == 1, "a System Owner should be offered authoring"
         offered = user.locator(f"{AUTHOR_BOUNDARY} option").all_text_contents()
