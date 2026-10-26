@@ -116,11 +116,11 @@
       <span class="sparc-group-bar <%= accent_class(group[:color]) %>"></span>
       <h6 class="mb-0 fw-bold sparc-fs-085 <%= group[:cls] %>"><%= group[:label] %></h6>
     </div>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-2">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xxl-3 g-2">
       <% group[:cards].each do |s| %>
         <div class="col">
           <div class="card sparc-section-card sparc-section-card--accented h-100 <%= accent_class(group[:color]) %>">
-            <div class="card-body d-flex flex-row align-items-center gap-3 sparc-p-035-085">
+            <div class="card-body d-flex flex-row align-items-center gap-2 sparc-p-035-085">
               <%# Every card reads the same way: icon, count, title, buttons. The
                   count sits in a fixed-width slot so titles line up down a column. %>
               <div class="sparc-fs-22r sparc-flex-shrink-0"><%= s[:icon].html_safe %></div>
@@ -130,11 +130,11 @@
                     data: { home_count: s[:key] },
                     title: "Open #{s[:title]}",
                     "aria-label": "#{number_with_delimiter(count)} #{s[:title]}: open the list" %>
-              <h5 class="mb-0 sparc-fs-095 flex-grow-1 sparc-minw-0"><%= s[:title] %></h5>
+              <h5 class="mb-0 sparc-fs-095 flex-grow-1 sparc-card-title"><%= s[:title] %></h5>
               <div class="d-flex gap-2 flex-shrink-0">
-                <%= link_to "View", s[:path], class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm px-3" %>
+                <%= link_to "View", s[:path], class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm px-2" %>
                 <% if s[:can_create] %>
-                  <%= link_to "New", s[:new_path], class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm px-3" %>
+                  <%= link_to "New", s[:new_path], class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm px-2" %>
                 <% end %>
               </div>
             </div>
