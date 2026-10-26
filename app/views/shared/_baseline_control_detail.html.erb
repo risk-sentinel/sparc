@@ -65,7 +65,9 @@
                     <% end %>
                   </th>
                   <td class="sparc-field-value">
-                    <% if param.select? %>
+                    <% if param.aggregate? %>
+                      <%= render "shared/aggregate_parameter_value", param: param %>
+                    <% elsif param.select? %>
                       <%# An empty entry so an operator can clear every choice;
                           without it the field vanishes from the payload and the
                           old answer silently stands. %>
@@ -121,7 +123,9 @@
                   <% end %>
                 </th>
                 <td class="sparc-field-value">
-                  <% if param.answered? %>
+                  <% if param.aggregate? %>
+                    <%= render "shared/aggregate_parameter_value", param: param %>
+                  <% elsif param.answered? %>
                     <%# The resolved reading, not the stored value: a selection
                         stores WHICH branches were chosen, which is not the text
                         the control ends up asserting. %>

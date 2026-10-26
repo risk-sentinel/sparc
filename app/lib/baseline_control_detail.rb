@@ -31,10 +31,14 @@ class BaselineControlDetail
   # what the operator answered, and what that answer READS as once resolved.
   Parameter = Struct.new(
     :id, :label, :description, :select, :how_many, :choices, :value, :display,
-    :catalog_value,
+    :catalog_value, :aggregates, :aggregate_answered,
     keyword_init: true
   ) do
     def select? = select.present?
+    # An aggregate (NIST Rev 5's `ac-1_prm_1`) is the parameters it names, read
+    # together: it has no value of its own to set, so a screen shows its reading
+    # and never offers it as a field.
+    def aggregate? = Array(aggregates).any?
     def answered? = value.present?
     # #1241 — the catalog assigns a value this baseline has not overridden.
     def catalog_assigned? = !answered? && catalog_value.present?
@@ -200,7 +204,10 @@ class BaselineControlDetail
     Parameter.new(
       id:          id,
       label:       param["label"],
-      description: param.dig("guidelines", 0, "prose").presence,
+      # Resolved: five Rev 5 guidelines name another parameter ("frequency at
+      # which to conduct {{ insert: param, sa-11_odp.01 }} testing"), and raw
+      # markup is never shown on a screen.
+      description: resolve(param.dig("guidelines", 0, "prose").presence),
       select:      select,
       how_many:    select && (select["how-many"] || "one"),
       # Resolved, because a choice can itself be composed from other parameters
@@ -211,7 +218,9 @@ class BaselineControlDetail
       display:     resolver.resolve_param(id),
       # #1241 — the catalog's own `values`; the resolver already falls back to
       # them, and the screen says where the reading came from.
-      catalog_value: Array(param["values"]).join(" | ").presence
+      catalog_value: Array(param["values"]).join(" | ").presence,
+      aggregates:    OscalParameterResolver.aggregated_ids(param),
+      aggregate_answered: OscalParameterResolver.aggregated_ids(param).any? { |part| resolver.answered?(part) }
     )
   end
 end

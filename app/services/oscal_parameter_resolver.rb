@@ -76,7 +76,15 @@ class OscalParameterResolver
     # A select's stored value is WHICH branches were chosen, not the finished
     # text, so it is resolved as a selection rather than used verbatim.
     if param && param["select"].present?
-      return resolve_selection(param, set_value.presence || catalog_values(param), depth)
+      chosen = set_value.presence || catalog_values(param)
+      # Two Rev 5 aggregates are also selections (sc-36_prm_1, si-7.1_prm_2).
+      # With nothing chosen on the aggregate itself, its reading is its parts';
+      # running every option together would assert all of them.
+      if chosen.blank? && (aggregated = resolve_aggregate(param, depth))
+        return aggregated
+      end
+
+      return resolve_selection(param, chosen, depth)
     end
 
     return resolve_text(set_value, depth) if set_value.present?
@@ -94,16 +102,25 @@ class OscalParameterResolver
     param["label"].presence
   end
 
+  # Is this parameter answered, by a set value or by the catalog? Public so a
+  # screen can tell an aggregate whose parts are all unanswered.
+  def answered?(param_id)
+    @values[param_id].present? || catalog_values(@params[param_id]).any?
+  end
+
+  # The parameter ids an aggregate parameter combines (its `aggregates`
+  # props); empty for an ordinary parameter. One definition, so a screen and
+  # this resolver read an aggregate the same way.
+  def self.aggregated_ids(param)
+    Array(param && param["props"]).select { |prop| prop["name"] == "aggregates" }
+                                  .filter_map { |prop| prop["value"].presence }
+  end
+
   private
 
   # The values the catalog itself assigns the parameter (#1241).
   def catalog_values(param)
     Array(param && param["values"]).map { |value| value.to_s.strip }.reject(&:blank?)
-  end
-
-  # Is this parameter answered, by a set value or by the catalog?
-  def answered?(param_id)
-    @values[param_id].present? || catalog_values(@params[param_id]).any?
   end
 
   # NIST Rev 5 writes some statements against an AGGREGATE parameter:
@@ -117,7 +134,7 @@ class OscalParameterResolver
   # parts answered it returns nil, so the caller's fallback (guidelines, then
   # label) still applies.
   def resolve_aggregate(param, depth)
-    part_ids = Array(param["props"]).select { |prop| prop["name"] == "aggregates" }.filter_map { |prop| prop["value"].presence }
+    part_ids = self.class.aggregated_ids(param)
     return nil if part_ids.empty?
 
     values = part_ids.filter_map { |id| answered?(id) && resolve_param(id, depth + 1) }.uniq
