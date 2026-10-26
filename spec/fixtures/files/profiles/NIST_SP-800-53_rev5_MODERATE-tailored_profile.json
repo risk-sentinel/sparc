@@ -443,7 +443,7 @@
         {
           "param-id": "ac-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -815,7 +815,7 @@
         {
           "param-id": "at-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -941,7 +941,7 @@
         {
           "param-id": "au-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -1109,7 +1109,7 @@
         {
           "param-id": "ca-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -1259,7 +1259,7 @@
         {
           "param-id": "cm-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -1601,7 +1601,7 @@
         {
           "param-id": "cp-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -1829,7 +1829,7 @@
         {
           "param-id": "ia-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -1961,7 +1961,7 @@
         {
           "param-id": "ir-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -2117,7 +2117,7 @@
         {
           "param-id": "ma-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -2207,7 +2207,7 @@
         {
           "param-id": "mp-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -2405,7 +2405,7 @@
         {
           "param-id": "pe-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -2645,7 +2645,7 @@
         {
           "param-id": "pl-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -2735,7 +2735,7 @@
         {
           "param-id": "ps-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -2873,7 +2873,7 @@
         {
           "param-id": "ra-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -3023,7 +3023,7 @@
         {
           "param-id": "sa-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -3233,7 +3233,7 @@
         {
           "param-id": "sc-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -3413,7 +3413,7 @@
         {
           "param-id": "si-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -3755,7 +3755,7 @@
         {
           "param-id": "sr-01_odp.04",
           "values": [
-            "the Chief Information Security Officer (CISO)"
+            "Information System Security Manager (ISSM)"
           ]
         },
         {
@@ -3924,6 +3924,4313 @@
           "param-id": "sr-12_odp.02",
           "values": [
             "static and dynamic code analysis"
+          ]
+        }
+      ],
+      "alters": [
+        {
+          "control-id": "ac-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-2.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-2.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-2.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-2.4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-2.5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-2.13",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-6.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-6.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-6.5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-6.7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-6.9",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-6.10",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-11",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-11.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-12",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-14",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-17",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-17.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-17.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-17.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-17.4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-18",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-18.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-18.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-19",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-19.5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-20",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-20.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-20.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-21",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ac-22",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "at-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "at-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "at-2.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "at-2.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "at-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "at-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-3.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-6.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-6.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-7.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-9",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-9.4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-11",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "au-12",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ca-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ca-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ca-2.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ca-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ca-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ca-6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ca-7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ca-7.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ca-7.4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ca-9",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-2.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-2.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-2.7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-3.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-3.4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-4.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-7.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-7.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-7.5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-8.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-8.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-9",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-10",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-11",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-12",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cm-12.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-2.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-2.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-2.8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-4.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-6.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-6.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-7.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-7.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-7.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-8.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-8.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-9",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-9.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-9.8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-10",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "cp-10.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-2.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-2.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-2.8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-2.12",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-4.4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-5.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-5.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-5.6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-8.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-8.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-8.4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-11",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-12",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-12.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-12.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ia-12.5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-3.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-4.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-6.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-6.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-7.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ir-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ma-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ma-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ma-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ma-3.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ma-3.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ma-3.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ma-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ma-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ma-6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "mp-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "mp-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "mp-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "mp-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "mp-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "mp-6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "mp-7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-6.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-9",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-10",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-11",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-12",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-13",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-13.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-14",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-15",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-16",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pe-17",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pl-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pl-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pl-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pl-4.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pl-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pl-10",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "pl-11",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ps-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ps-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ps-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ps-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ps-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ps-6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ps-7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ps-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ps-9",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ra-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ra-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ra-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ra-3.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ra-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ra-5.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ra-5.5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ra-5.11",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ra-7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "ra-9",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-4.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-4.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-4.9",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-4.10",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-9",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-9.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-10",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-11",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-15",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-15.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sa-22",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-7.3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-7.4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-7.5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-7.7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-7.8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-8.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-10",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-12",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-13",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-15",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-17",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-18",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-20",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-21",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-22",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-23",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-28",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-28.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sc-39",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-2.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-4.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-4.4",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-4.5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-7.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-7.7",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-8.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-10",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-11",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-12",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "si-16",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sr-1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sr-2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sr-2.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sr-3",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sr-5",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sr-6",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sr-8",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sr-10",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sr-11",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sr-11.1",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sr-11.2",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "control-id": "sr-12",
+          "adds": [
+            {
+              "position": "starting",
+              "props": [
+                {
+                  "name": "priority",
+                  "ns": "https://sparc.risk-sentinel.org/ns",
+                  "value": "P1"
+                }
+              ]
+            }
           ]
         }
       ]
