@@ -4430,7 +4430,7 @@ a.link-purple { color: var(--sparc-purple); }
   border: 1px solid var(--bs-border-color);
   border-left: 3px solid var(--sparc-accent);
 }
-.sparc-cdef-export-title--success { color: var(--bs-success); }
+.sparc-cdef-export-title--success { color: var(--sparc-success); }  /* AA in both themes; --bs-success is not, on bg-body-secondary */
 
 /* #1248 — a sortable column header on the boundary list: reads as the header
    it is, with the sort direction beside it. */
