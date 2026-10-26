@@ -4,15 +4,15 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
-## v1.17.3 -- Homepage Inventory Restored, One Way In for New CDEFs (2026-10-26)
+## v1.17.3 -- Homepage Inventory Restored, One Way In for New CDEFs, OAuth Host Pinned (2026-10-26)
 
-A patch release: the homepage's inventory is back, and the new-CDEF page asks which way in first.
+A patch release: the homepage's inventory is back, the new-CDEF page asks which way in first, and OAuth sign-in callbacks are pinned to SPARC's own URL.
 
 - **Inventory tiles restored.** v1.17.2 removed the count tiles above the homepage cards by mistake. They are back as one row of thin tiles grouped by OSCAL layer (Controls, Implementation, Assessment, Enterprise), and each tile is now a link to its list. Every tile shows the same count as its card's badge, so it counts what the signed-in user may see; an instance administrator sees full totals. See [Screens](Screens).
-
 - **Adding a component definition: one way at a time.** The Create New page offered three independent ways in (upload, author, generate from a profile) as stacked forms that read as one. It now asks which one first: three choice cards, and only the chosen form shows. Each choice has its own link (`/cdef_documents/new#author`). On the list, **Create New** opens that page and **Upload File** opens the upload on its own. See [Component Definitions](User-Guide-Component-Definitions).
+- **Gem updates; OAuth callbacks pinned to SPARC_APP_URL.** omniauth 2.3.1 (was 2.1.4), webauthn 3.5.0, and the aws-sdk S3, RDS and Secrets Manager gems. omniauth 2.2 fixes a forged-host flaw in OAuth callback URLs (GHSA-m27g-v28p-f9fx), but only for an app that names its own host: GitHub and GitLab sign-in now send the identity provider a callback built from `SPARC_APP_URL`, never from the request's Host header. OIDC already did. See [Configuration](Configuration).
 
-**Upgrading:** an image swap from v1.17.2. No migrations and no configuration changes.
+**Upgrading:** an image swap from v1.17.2. No migrations. If you offer GitHub or GitLab sign-in, make sure `SPARC_APP_URL` is your public URL; without it the callback follows the request's host, as before, and every sign-in logs a warning.
 
 [Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.3).
 

@@ -30,7 +30,7 @@ This is the real list. Roughly a dozen entries.
 
 | Variable | Why you set it |
 |---|---|
-| `SPARC_APP_URL` | Your public URL. Also derives the OIDC redirect URI and FIDO2 RP ID |
+| `SPARC_APP_URL` | Your public URL. Also derives the OIDC redirect URI, the FIDO2 RP ID, and the GitHub/GitLab OAuth callback host |
 | `SECRET_KEY_BASE` | Rails master secret |
 | `SPARC_HASH` | Per-instance master secret (≥32 chars) |
 | `DB_CREDENTIALS` *or* `DATABASE_URL` | Your database — see [Database Configuration](#database-configuration) for precedence |
