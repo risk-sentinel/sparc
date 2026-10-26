@@ -236,7 +236,9 @@ class SspDocumentsController < ApplicationController
 
   def wizard
     @ssp_document = SspDocument.new
-    @profiles = ProfileDocument.where(status: "completed").order(:name)
+    # Published baselines only: the SSP is built from the resolved catalog,
+    # which a draft does not have, and answers a baseline that will not move.
+    @profiles = ProfileDocument.ssp_ready.order(:name)
     @cdefs    = CdefDocument.where(status: "completed").order(:name)
   end
 
@@ -256,8 +258,7 @@ class SspDocumentsController < ApplicationController
   # ── Create from Published Profile ────────────────────────────────
 
   def select_profile
-    @profiles = ProfileDocument.where(lifecycle_status: "published")
-                               .where.not(resolved_catalog_json: nil)
+    @profiles = ProfileDocument.ssp_ready
                                .includes(:control_catalog)
                                .order(updated_at: :desc)
   end
@@ -301,8 +302,7 @@ class SspDocumentsController < ApplicationController
       redirect_to(ssp_document_path(@ssp_document)) && return
     end
 
-    @profiles = ProfileDocument.where(lifecycle_status: "published")
-                               .where.not(resolved_catalog_json: nil)
+    @profiles = ProfileDocument.ssp_ready
                                .includes(:control_catalog)
                                .order(updated_at: :desc)
   end

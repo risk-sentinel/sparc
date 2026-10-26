@@ -38,6 +38,12 @@ class ProfileDocument < ApplicationRecord
 
   validates :name, presence: true
 
+  # Baselines an SSP can be built from: published, so the SSP answers a fixed
+  # baseline, and resolved, because the SSP's statement parts are read from the
+  # resolved catalog publishing produces (SspFromProfileService). The SSP
+  # wizard, "Create from profile" and "Populate from profile" all offer these.
+  scope :ssp_ready, -> { where(lifecycle_status: "published").where.not(resolved_catalog_json: nil) }
+
   BASELINE_LEVELS = %w[LOW MODERATE HIGH].freeze
 
   # #627 — content-completeness, independent of the parse `status`. A profile
