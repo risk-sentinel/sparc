@@ -113,6 +113,21 @@ RSpec.describe "SSP wizard, from the tailored Rev 5 baseline", type: :request do
     expect(ssp.ssp_controls.find_by(control_id: "ac-1").ssp_control_statements.pluck(:statement_id)).to include("ac-1_smt.a")
   end
 
+  it "publishes with no review where approval is not required (SPARC_REQUIRE_DOCUMENT_APPROVAL=false)" do
+    allow(SparcConfig).to receive(:require_document_approval?).and_return(false)
+    profile = draft
+
+    patch set_baseline_profile_document_path(profile), params: { profile_document: { control_catalog_id: nist.id } }
+    get profile_document_path(profile)
+    expect(response.body).not_to include("document-review")
+    patch publish_profile_document_path(profile)
+
+    expect(flash[:error]).to be_nil
+    expect(profile.reload.lifecycle_status).to eq("published")
+    expect(profile.approval_status).to be_nil.or eq("draft")
+    expect(create_with_wizard(profile).ssp_controls.find_by(control_id: "ac-1").ssp_control_statements).to be_present
+  end
+
   it "lists published baselines only, and says how a draft gets there" do
     published
     other_draft = create(:profile_document, name: "Still a draft")

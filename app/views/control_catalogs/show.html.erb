@@ -56,6 +56,10 @@
       <% if @control_catalog.description.present? %>
         <p class="text-body-secondary" style="margin-top: 0.5rem;"><%= @control_catalog.description %></p>
       <% end %>
+      <%= render "shared/document_review", doc: @control_catalog, may_write: can_write_catalogs?,
+            submit_path: submit_for_review_control_catalog_path(@control_catalog),
+            approve_path: approve_control_catalog_path(@control_catalog),
+            reject_path: reject_control_catalog_path(@control_catalog) %>
     </div>
     <div class="d-flex gap-2">
       <% if can_write_catalogs? %>

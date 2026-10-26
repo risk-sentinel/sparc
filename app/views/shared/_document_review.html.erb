@@ -1,0 +1,54 @@
+<%#
+  Where a baseline or catalog stands in review, and the review actions, on its
+  own page.
+
+  With SPARC_REQUIRE_DOCUMENT_APPROVAL on (the default), Publish refuses a
+  document that is not approved: "must be reviewed and approved first". The
+  routes and DocumentApprovalService existed for profiles and catalogs (#630),
+  but no screen offered Submit for review, so neither could be published from
+  the web at all. CDEFs have their own panel (cdef_documents/_approval, #1275),
+  which adds scope requests.
+
+  Submit for review: whoever may write the document, while it is a draft or was
+  rejected and not yet published. DocumentApprovalService refuses it while
+  required content is missing (a confirmed catalog, priorities) and says what.
+
+  Approve / Reject: DocumentApprovalService#can_approve?, the rule the actions
+  enforce. The review queue's own buttons, so there is one definition of them.
+
+  Locals:
+    doc          — the ProfileDocument or ControlCatalog
+    may_write    — whether the viewer may write it
+    submit_path, approve_path, reject_path
+    muted_class  — the class for secondary text where this renders
+%>
+<% doc = local_assigns.fetch(:doc) %>
+<% muted = local_assigns.fetch(:muted_class, "text-body-secondary") %>
+<% if SparcConfig.require_document_approval? || !doc.approval_draft? %>
+  <div class="d-flex flex-wrap align-items-center gap-2 sparc-mt-04" data-testid="document-review">
+    <span class="badge <%= doc.approval_badge_class %>" data-testid="document-review-status"><%= doc.approval_label %></span>
+    <span class="small <%= muted %>">
+      <% if doc.approval_pending? %>
+        Submitted by <%= doc.submitted_by_user&.email || "—" %><%= " on #{l(doc.submitted_at.to_date)}" if doc.submitted_at %>.
+      <% elsif doc.approved? %>
+        Approved by <%= doc.approved_by_user&.email || "—" %><%= " on #{l(doc.approved_at.to_date)}" if doc.approved_at %>.
+      <% elsif doc.approval_rejected? && doc.rejection_reason.present? %>
+        Reason: <%= doc.rejection_reason %>
+      <% elsif !doc.published_lifecycle? && SparcConfig.require_document_approval? %>
+        Needs review and approval before it can be published.
+      <% end %>
+    </span>
+
+    <% if signed_in? && local_assigns[:may_write] && doc.approval_draft? && !doc.published_lifecycle? %>
+      <%= button_to "Submit for review", local_assigns.fetch(:submit_path), method: :post,
+            class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm",
+            form: { class: "d-inline", data: { testid: "document-submit-for-review" } } %>
+    <% end %>
+
+    <% if signed_in? && doc.approval_pending? &&
+          DocumentApprovalService.new(document: doc, actor: current_user).can_approve? %>
+      <%= render "review_queue/item_actions", doc: doc,
+            approve_path: local_assigns.fetch(:approve_path), reject_path: local_assigns.fetch(:reject_path) %>
+    <% end %>
+  </div>
+<% end %>
