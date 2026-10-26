@@ -10,7 +10,7 @@ SPARC is configured via environment variables — most prefixed with `SPARC_`. A
 | `RAILS_ENV` | `development` | Rails environment (development, test, production) |
 | `RAILS_MAX_THREADS` | `5` | Puma thread pool + DB connection pool size |
 | `FORCE_SSL` | `true` (prod) | Enforce HTTPS redirects + HSTS header |
-| `SPARC_APP_URL` | `http://localhost:3000` | Application base public URL (used in emails, links, redirects) |
+| `SPARC_APP_URL` | `http://localhost:3000` | Application base public URL (used in emails, links, redirects). Also the host GitHub and GitLab sign-in send the identity provider as their callback; set it in every deployment that offers them, or the callback follows the request's Host header (v1.17.3) |
 | `SPARC_APP_NAME` | `SPARC` | Application display name. Since #936 this also sets the **browser tab title** on pages that do not set their own, and the `og:site_name` published in **link previews** — so a rebranded deployment no longer leaks "SPARC" into tabs or into links its staff share. |
 | `SPARC_CONTACT_EMAIL` | (none) | Support/admin contact email shown in UI |
 | `SPARC_RESOURCES` | (adds to 9 shipped links) | JSON array of external resource links **added to** the shipped set (#914). Your entries appear first; duplicate `href`s collapse |
