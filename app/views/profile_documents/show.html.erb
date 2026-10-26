@@ -27,8 +27,14 @@
 <%# A writer looking at a baseline with no catalog gets the catalog card below,
     which says what the baseline names and how to load it, instead of the
     banner's generic picker: the two never appear together. %>
-<% catalog_card = signed_in? && can_write_profiles? && !@profile_document.published_lifecycle? &&
-                  (@profile_document.control_catalog.blank? || !@profile_document.reconciliation_blocks_update?) %>
+<% catalog_changeable = signed_in? && can_write_profiles? && !@profile_document.published_lifecycle? &&
+                        (@profile_document.control_catalog.blank? || !@profile_document.reconciliation_blocks_update?) %>
+<%# Once the catalog is confirmed the card goes away; the header's Source line
+    carries a Change link back to it (?change_catalog=1), so a draft linked to
+    the wrong catalog can still be re-pointed (#928). %>
+<% catalog_card = catalog_changeable &&
+                  (@profile_document.control_catalog.blank? || @profile_document.catalog_confirmation_pending? ||
+                   params[:change_catalog].present?) %>
 <%= render "shared/reconciliation_banner", document: @profile_document unless catalog_card && @profile_document.control_catalog.blank? %>
 
 <%# ── #928: the source catalog, changeable ───────────────────────────
@@ -50,7 +56,7 @@
       published. %>
   <% catalog = @profile_document.control_catalog %>
   <% pending = @profile_document.catalog_confirmation_pending? %>
-  <div class="card mt-2 mb-0 <%= "border-warning" if catalog.blank? || pending %>" data-testid="catalog-link">
+  <div class="card mt-2 mb-0 <%= "border-warning" if catalog.blank? || pending %>" data-testid="catalog-link" id="catalog-link">
     <div class="card-body py-2">
       <% if catalog.blank? %>
         <p class="mb-2" data-catalog-state="absent">
@@ -172,6 +178,10 @@
           Source: <span class="fw-semibold"><%= @profile_document.control_catalog.name %></span>
           <% if @profile_document.control_catalog.short_digest.present? %>
             <code class="sparc-fs-075 sparc-color-white-50 sparc-ml-02"><%= @profile_document.control_catalog.short_digest %></code>
+          <% end %>
+          <% if catalog_changeable && !catalog_card %>
+            <%= link_to "Change", profile_document_path(@profile_document, change_catalog: 1, anchor: "catalog-link"),
+                        class: "sparc-header-link sparc-ml-02", data: { testid: "change-catalog-link" } %>
           <% end %>
         <% else %>
           <%# #928 — an unlinked profile said nothing at all here, so the state
