@@ -105,8 +105,10 @@ the value on the record and SPARC will not overwrite it on a later import.
    them.
 5. Click **Publish**. The dialog lists any remaining warnings, and you can
    publish with them. When document approval is required
-   (`SPARC_REQUIRE_DOCUMENT_APPROVAL`), the catalog must be submitted and
-   approved first, like any other document. Publishing makes it read-only.
+   (`SPARC_REQUIRE_DOCUMENT_APPROVAL`, on by default), the catalog must be
+   submitted and approved first: the review row under its title shows where it
+   stands, with **Submit for review**, then **Approve** or **Reject** for an
+   approver. Publishing makes it read-only.
 
 A catalog is not checked for control **priority** or **baseline impact**. Those
 belong to a baseline (profile), which sets them for its own controls. NIST's
@@ -269,24 +271,31 @@ A baseline selects and prioritizes controls from a catalog.
 You can also click **Create New** for an empty baseline, or **Copy** an existing
 baseline's detail page to duplicate it as a starting point.
 
-### How to link an imported baseline to its source catalog
+### How to confirm or select an imported baseline's catalog
 
 A baseline created with **Create from Catalog** is linked to that catalog
-automatically. An **imported** baseline is not — the file may name a catalog
-SPARC has not loaded, or you may have imported the baseline first. Until it is
-linked, SPARC has nothing to resolve the baseline's controls against, so
-**Manage Controls** and **Publish** do not appear on its detail page.
+automatically. An **imported** baseline names its catalog in the file, and
+SPARC matches that against the catalogs it has loaded:
 
-An unlinked baseline says so in its header: **No source catalog**.
+- **A loaded catalog matches.** The baseline is linked to it, and a card at the
+  top of its page asks you to confirm: *"It was matched to … by the catalog's
+  identifier"* (or *by name*). Click **Confirm catalog**, or choose another and
+  click **Change catalog**. A match by name is a suggestion: an agency overlay
+  named "… SP 800-53 Rev 5" fits a NIST baseline's file as well as NIST's own
+  catalog does.
+- **Nothing matches, or the catalog isn't loaded yet.** The card says which
+  catalog the file names and offers **Import the catalog**; once it is loaded,
+  choose it and click **Select Catalog**.
 
-To link it:
+Confirming, selecting or changing the catalog re-checks the baseline against
+it: which of its controls the catalog holds (the *"names controls its catalog
+does not have"* warning), and each control's source. Parameter values,
+priorities and notes are left as they are. A baseline whose catalog is not yet
+confirmed or selected **cannot be published**.
 
-1. Open the baseline (*Controls → Baselines*, then the baseline's name).
-2. In the **source catalog** panel near the top of the page, choose the catalog
-   the baseline draws its controls from.
-3. Click **Link catalog**.
-
-**Manage Controls** and the publish flow appear once it is linked.
+Once confirmed, the card goes away; the header's **Source** line names the
+catalog, with a **Change** link back to the picker while the baseline is a
+draft.
 
 Two things to know:
 
@@ -295,14 +304,27 @@ Two things to know:
   check the document against itself. Import the correct catalog first, then come
   back and link it.
 - **Choose carefully before publishing.** While the baseline is in draft you can
-  change the catalog at any time (the button reads **Change catalog**). Once the
+  change the catalog at any time (**Change** on the header's Source line). Once the
   baseline is **published** its catalog is fixed, because assessments made
   against it are only meaningful relative to the baseline they were made
   against. To point a published baseline at a different catalog, make an
   editable copy.
 
 API equivalent: `PATCH /api/v1/profile_documents/:id` with
-`{ "profile_document": { "control_catalog_id": <id> } }`.
+`{ "profile_document": { "control_catalog_id": <id> } }`. Sending the catalog
+the baseline is already linked to confirms it.
+
+### How to publish a baseline
+
+A baseline publishes once its catalog is confirmed and every control has a
+priority. When document approval is required (`SPARC_REQUIRE_DOCUMENT_APPROVAL`,
+on by default), the review row under its title takes it there:
+**Submit for review**, then an approver's **Approve** (an instance
+administrator may approve their own), then **Publish**. With approval not
+required, the row is not shown and **Publish** is the only step.
+
+An SSP is built from a published baseline: the SSP wizard and **Create from
+profile** list published baselines only.
 
 ### How to start a new version of a published baseline
 

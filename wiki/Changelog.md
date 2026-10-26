@@ -4,6 +4,19 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.17.4 -- Baselines Confirm Their Catalog, SSPs Answer Every Part (2026-10-27)
+
+A patch release from testing NIST's Rev 5 catalog, a tailored baseline and an SSP end to end.
+
+- **A baseline's catalog is confirmed, not guessed.** An imported baseline matched to a loaded catalog now asks you to **Confirm catalog** (or change it); with no match, it asks you to **Select Catalog** and offers to import it. Either re-checks the baseline against the catalog chosen, which clears a stale "names controls its catalog does not have" warning. An agency overlay named "… SP 800-53 Rev 5" no longer captures a NIST baseline. A baseline whose catalog is unconfirmed cannot be published. See [Control Catalogs and Baselines](User-Guide-Control-Catalogs-and-Baselines).
+- **Baselines and catalogs can be reviewed from their pages.** With document approval required (the default), Publish refused an unapproved baseline or catalog, and no page offered **Submit for review**. Both pages now have a review row: Submit for review, Approve, Reject. With `SPARC_REQUIRE_DOCUMENT_APPROVAL=false` there is no review step.
+- **Rev 5 aggregate parameters.** NIST's `ac-1_prm_1` and 141 others combine other parameters and have no value of their own. The parameter table showed each as an empty field; it now shows the combined value and the parameters that set it. Field hints that named another parameter showed `{{ insert: param, … }}`; they are filled in.
+- **SSPs answer every part.** The SSP wizard built one row per control and no statement parts, even from a published baseline; it now builds them as **Create from profile** does, and lists published baselines only. A control's **Edit** opens a box for every part that needs a response, saved with one **Save Changes**. See [System Security Plans](User-Guide-System-Security-Plans).
+
+**Upgrading:** an image swap from v1.17.3. No migrations. Baselines imported before this release are not asked to confirm their catalog.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.4).
+
 ## v1.17.3 -- Homepage Inventory Restored, One Way In for New CDEFs, OAuth Host Pinned (2026-10-26)
 
 A patch release: the homepage's inventory is back, the new-CDEF page asks which way in first, and OAuth sign-in callbacks are pinned to SPARC's own URL.
