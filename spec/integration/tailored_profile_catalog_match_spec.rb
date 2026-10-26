@@ -39,6 +39,11 @@ RSpec.describe "Tailored Rev 5 profile matched to its catalog", type: :request d
 
   def import_of(profile) = profile.import_metadata["imports"].first
 
+  def set_value(param_id)
+    JSON.parse(File.read(profile_path)).dig("profile", "modify", "set-parameters")
+        .find { |p| p["param-id"] == param_id }.fetch("values").first
+  end
+
   it "fits both catalogs by name, so the test is about choosing between them" do
     expect(overlay.id).to be < nist.id
     expect([ overlay, nist ].map { |c| c.name.include?("800-53") && c.name.match?(/rev\.?\s*5/i) }).to all(be(true))
@@ -64,7 +69,7 @@ RSpec.describe "Tailored Rev 5 profile matched to its catalog", type: :request d
     expect(page.at_css("[data-testid='unknown-control-ids']")).to be_nil
     expect(page.css("[name^='param_values[ac-1_prm_1]']")).to be_empty
     expect(page.at_css("[data-aggregate-param='ac-1_prm_1']").text.squish)
-      .to include("TAILORED[ac-01_odp.01], TAILORED[ac-01_odp.02]")
+      .to include("#{set_value("ac-01_odp.01")}, #{set_value("ac-01_odp.02")}")
     expect(page.at_css("[name='param_values[ac-01_odp.05]']")["value"]).to eq("365")
   end
 end
