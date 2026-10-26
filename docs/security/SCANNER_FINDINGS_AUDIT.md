@@ -1,8 +1,24 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-10-26 (v1.17.3 — omniauth 2.3.1, webauthn 3.5.0, aws-sdk updates; no base change)
+**Last reviewed:** 2026-10-27 (v1.17.4 — application fixes only; no gem or base change)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **v1.17.4 rescan (2026-10-27).** Real rescan of the built `sparc:v1.17.4`
+> image (arm64, `fd5ebf377102`), not an SBOM, with grype 0.114.0 (DB v6.1.10
+> built 2026-10-26) and Trivy 0.74.0. Same UBI 10 base and the same gems as
+> v1.17.3: this release changes application code only.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype 0.114.0 (image, DB v6.1.10 built 2026-10-26) | **0** | **0** | 45 | 33 |
+> | Trivy 0.74.0 (image, vuln scanner) | 0 | 0 | 0 | 1 |
+>
+> Distinct CVEs (96 grype matches). The same 78 CVE ids as v1.17.3, compared
+> id by id: none new, none gone. Trivy's one Low is still Ruby's on-disk
+> `json` 2.9.1 (the app loads 3.1.0).
+>
+> - **Register:** unchanged. 7 entries; no `RELEASE-BLOCKING` finding.
 
 > **v1.17.3 rescan (2026-10-26).** Real rescan of the built `sparc:v1.17.3`
 > image (arm64, `86d52fdf5702`), not an SBOM, with grype 0.114.0 (DB v6.1.10
