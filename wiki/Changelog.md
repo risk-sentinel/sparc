@@ -4,7 +4,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
-## v1.17.2 -- Boundary Access, OSCAL Tailoring End to End, Supply-Chain Fixes (2026-10-25)
+## v1.17.2 -- Boundary Access, OSCAL Tailoring End to End, Supply-Chain Fixes (2026-10-26)
 
 A patch release in three threads: every boundary action checks that boundary, NIST profiles and their parameters survive from import to SSP and SAR, and the image and CI respond to this month's compromised certificate authorities and package-registry attacks.
 

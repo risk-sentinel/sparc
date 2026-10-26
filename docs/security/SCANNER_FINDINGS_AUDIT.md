@@ -1,8 +1,46 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-10-16 (v1.17.1 — UBI 10 digest bump, hdf toolchain, hdf-libs 3.7.2)
+**Last reviewed:** 2026-10-25 (v1.17.2 — UBI 10 digest bump with Red Hat's eMudhra fix, gem updates)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **v1.17.2 rescan (2026-10-25).** Real rescan of the built `sparc:v1.17.2`
+> image (arm64, `3933ac3b626f`), not an SBOM, with grype 0.114.0 (DB v6.1.10
+> built 2026-10-25) and Trivy 0.74.0. The image is built from the release
+> code; the commits after it change only CI workflows.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype 0.114.0 (image, DB v6.1.10 built 2026-10-25) | **0** | **0** | 45 | 33 |
+> | Trivy 0.74.0 (image, vuln scanner) | 0 | 0 | 0 | 1 |
+>
+> Distinct CVEs (96 grype matches across 24 packages). Against v1.17.1: the
+> one High is gone, 7 fewer Medium, 1 more Low.
+>
+> - **Taken in this release:** UBI 10 digest 552f8cc1 → ab67cd02, carrying
+>   `ca-certificates` 2026.2.92 (Red Hat's fix for the distrusted eMudhra
+>   roots, CVE-2026-114406, now retired with `verified_absent_on`) and glibc
+>   -145.
+> - **No longer High:** Red Hat's el10 data, the authoritative source for the
+>   base (`docs/compliance/severity-source-policy.md`), now rates gnutls
+>   CVE-2026-88647 and openssl-libs CVE-2026-75804 **Medium**. Both are still
+>   reported and still `not-fixed`; their register entries, deviations and
+>   review dates are unchanged.
+> - **Every grype finding is `not-fixed` upstream except one:** the
+>   Ruby-shipped on-disk `json` 2.9.1 (CVE-2026-54696 / GHSA-x2f5-4prf-w687,
+>   Low), which is also Trivy's one finding. The app loads json 3.1.0, measured
+>   in the image.
+> - **Register:** 7 entries, all re-verified. The five image findings are
+>   still reported, at the versions recorded. The two CodeQL dispositions are
+>   not image findings. No `RELEASE-BLOCKING` finding. The freshness gate is
+>   green, and the 122 retired entries all carry `verified_absent_on` and
+>   `verified_by`.
+> - **bundle-audit:** no vulnerabilities (ruby-advisory-db 2026-10-23), with
+>   or without the ignore list. The five `mcp` suppressions are retired:
+>   `mcp` left `Gemfile.lock` in v1.17.0 (#1210), so they suppressed nothing.
+> - **License dispositions:** 72 reviews, due 2026-08-16, were overdue. The
+>   freshness gate does not read `license-dispositions.yml`. The owner
+>   extended them to 2026-11-24.
 
 > **v1.17.1 rescan (2026-10-16).** Real rescan of the built `sparc:v1.17.1`
 > image (arm64), not an SBOM, with grype 0.114.0 (DB v6.1.10 built 2026-10-16)
@@ -208,16 +246,16 @@ For each scanner: what it covers, what threshold it gates on, what's suppressed 
 
 | Scanner | App-code suppressions | Configured threshold | Source of truth |
 |---|---|---|---|
-| Brakeman | 7 (documented false positives) | any un-ignored finding fails | `config/brakeman.ignore` |
+| Brakeman | 5 (documented false positives) | any un-ignored finding fails | `config/brakeman.ignore` |
 | CodeQL | 0 | default rule set | (no `.github/codeql/codeql-config.yml`) |
 | Rubocop | 0 (style-only via `rubocop-rails-omakase`) | `cops_to_omit` from omakase | `.rubocop.yml` |
-| Bundler-audit / dependency-audit | 5 (all `mcp`, dev-only transitive) | any vulnerable gem fails | `Gemfile.lock` + `.bundler-audit.yml` |
+| Bundler-audit / dependency-audit | 0 (5 `mcp` entries retired 2026-10-25) | any vulnerable gem fails | `Gemfile.lock` + `.bundler-audit.yml` |
 | Secrets scan | 0 | any secret fails | (no ignore file present) |
 | Trivy filesystem | 0 (DS-0002 retired 2026-10-20) | CRITICAL + HIGH + MEDIUM | `.trivyignore` |
 | Trivy container | 0 CVEs in `.trivyignore` (9 Debian-era entries removed as obsolete on UBI9, v1.12.2); container CVE dispositions tracked in `sparc-findings.yml` | CRITICAL + HIGH | `.trivyignore` + `docs/compliance/sparc-findings.yml` |
 | Grype SBOM | 0 explicit per-CVE suppressions; **threshold ramp** = CRITICAL only | CRITICAL (ramp; intent is HIGH after baseline triage) | `.github/workflows/security.yml` (`GRYPE_FAIL_ON`) |
 
-**Net state:** SPARC's app code carries 7 Brakeman suppressions, each recorded in `config/brakeman.ignore` with a written rationale. Every other scanner has zero app-code suppressions; the rest live at the container / OS / dependency layer, are documented with rationale, and have a stated review cadence. The Grype threshold is a deliberate calibration choice (ramp from CRITICAL → HIGH) flagged for follow-up, not a suppression.
+**Net state:** SPARC's app code carries 5 Brakeman suppressions, each recorded in `config/brakeman.ignore` with a written rationale. Every other scanner has zero app-code suppressions; the rest live at the container / OS / dependency layer, are documented with rationale, and have a stated review cadence. The Grype threshold is a deliberate calibration choice (ramp from CRITICAL → HIGH) flagged for follow-up, not a suppression.
 
 > **Corrected 2026-08-08 (v1.15.5).** This section previously claimed "zero scanner suppressions" and that no Brakeman ignore file existed. Both were wrong: 4 entries were already present in `config/brakeman.ignore`. The document understated the app-code suppression count for as long as those entries have existed, which is precisely the question this audit is supposed to answer honestly.
 
@@ -226,13 +264,15 @@ For each scanner: what it covers, what threshold it gates on, what's suppressed 
 ### Brakeman (Rails security static analysis)
 
 - **Covers:** XSS, SQLi, command injection, mass assignment, unsafe deserialization, weak crypto in Rails app code (`app/`, `lib/`, `config/`).
-- **Suppressions:** 7, all in `config/brakeman.ignore`, each with a `note` giving its
-  rationale. No inline `# brakeman:ignore` directives in `app/` or `lib/`.
-  - **2 × Mass Assignment (attestations)** — `role` is descriptive metadata identifying the
-    attester, not an authorization role.
+- **Suppressions:** 5, all in `config/brakeman.ignore`, each with a `note` giving its
+  rationale. No inline `# brakeman:ignore` directives in `app/` or `lib/`. (This read 7 until
+  2026-10-25; the API copies of the attestation and boundary-membership entries were removed in
+  #1066.)
+  - **1 × Mass Assignment (attestations)** — `:attester_user_id` and `:role` cannot escalate the
+    caller: the model validates the named attester against the boundary roster (#947).
   - **2 × Mass Assignment (service accounts)** — `:admin` is permitted BY DESIGN on the admin-only
     service-account screens.
-  - **2 × Mass Assignment (boundary memberships, added v1.15.5)** — `:role` is permitted so the
+  - **1 × Mass Assignment (boundary memberships, added v1.15.5)** — `:role` is permitted so the
     model validates it in one place against the configured vocabulary (#875), and escalation is
     prevented by AUTHORIZATION rather than by the permit list. Note that the web path had NO such
     authorization until v1.15.5; see the boundary-roster fix in that release.
@@ -259,9 +299,9 @@ For each scanner: what it covers, what threshold it gates on, what's suppressed 
 ### Bundler-audit / dependency-audit
 
 - **Covers:** known CVEs in declared gem dependencies (queries `ruby-advisory-db`).
-- **Suppressions:** 5 advisories on `mcp`, all ACCEPTED RISK — see `.bundler-audit.yml` (auto-loaded by bundler-audit 0.9.3, so CI's `bundle-audit check` honors it).
-- **Current state (as of 2026-07-20, v1.12.2):** `bundle exec bundle-audit check --update` returns "No vulnerabilities found" with the ignore config applied; raw (no config) reports only the 5 `mcp` entries below.
-- **`mcp` — ACCEPTED RISK (dev-only, unreachable):** `mcp` is a **transitive, development/CI-only** dependency (`rubocop 1.85+ → mcp ~> 0.6`, pulled via `gem "rubocop-rails-omakase", require: false`). It is never loaded in the production image or at runtime. All 5 advisories (`GHSA-52jp-gj8w-j6xh`, `GHSA-5p9g-j988-pcwv`, `GHSA-7683-3w9x-ch42`, `GHSA-h669-8m4g-r2hc`, `GHSA-rjr6-rcgv-9m7m`) are in the MCP **server** StreamableHTTPTransport / SSE path — SPARC runs no MCP server and never instantiates that transport, so the vulnerable code is unreachable. All are fixed in `>= 0.23.0`, but rubocop constrains `~> 0.6`; the finding clears when rubocop's own dependency advances (tracked, not forced). Re-review each release.
+- **Suppressions: none.** `.bundler-audit.yml` (auto-loaded by bundler-audit, so CI's `bundle-audit check` honors it) has an empty ignore list.
+- **Current state (2026-10-25, v1.17.2):** `bundle-audit check` against ruby-advisory-db of 2026-10-23 returns "No vulnerabilities found", with and without the ignore config.
+- **`mcp` — RETIRED 2026-10-25.** `mcp` left `Gemfile.lock` in v1.17.0 (#1210), so the five entries below suppressed nothing and were removed rather than re-dated. History, as accepted from 2026-07-20: `mcp` is a **transitive, development/CI-only** dependency (`rubocop 1.85+ → mcp ~> 0.6`, pulled via `gem "rubocop-rails-omakase", require: false`). It is never loaded in the production image or at runtime. All 5 advisories (`GHSA-52jp-gj8w-j6xh`, `GHSA-5p9g-j988-pcwv`, `GHSA-7683-3w9x-ch42`, `GHSA-h669-8m4g-r2hc`, `GHSA-rjr6-rcgv-9m7m`) are in the MCP **server** StreamableHTTPTransport / SSE path — SPARC runs no MCP server and never instantiates that transport, so the vulnerable code is unreachable. All are fixed in `>= 0.23.0`, but rubocop constrains `~> 0.6`; the finding clears when rubocop's own dependency advances (tracked, not forced). Re-review each release.
 - **Resolved since last audit:** `rails-html-sanitizer` 1.7.0 → **1.7.1** (GHSA-cj75-f6xr-r4g7, XSS) via the #767 dependency bump — a real advisory on a gem SPARC uses for HTML sanitization, now cleared.
 - **If a CVE shows up later:** preferred response is `bundle update <gem>` to clear it (as done for rails-html-sanitizer). If the upstream patch isn't reachable, document it here with classification (DISPUTED / MITIGATED / FALSE POSITIVE / ACCEPTED RISK) and add a rationale'd `.bundler-audit.yml` entry with a review date.
 
