@@ -39,8 +39,8 @@ gem "pagy", "~> 43.8"              # Pagination
 gem "sidekiq"                       # Background jobs
 gem "redis", "~> 6.0"              # For Sidekiq
 gem "aws-sdk-s3"                    # File storage
-gem "aws-sdk-secretsmanager", "~> 1.137"  # Secrets Manager (ECS deployments)
-gem "aws-sdk-rds", "~> 1.325"           # IAM DB auth token generation
+gem "aws-sdk-secretsmanager", "~> 1.139"  # Secrets Manager (ECS deployments)
+gem "aws-sdk-rds", "~> 1.327"           # IAM DB auth token generation
 gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 # #620 / #1065 — pin patched versions of Ruby DEFAULT gems so Bundler loads them
 # instead of the copy Ruby ships. Two independent layers, and both are wanted:
@@ -82,7 +82,7 @@ gem "bcrypt", "~> 3.1.22"
 gem "rack-attack", "~> 6.7"                    # Rate limiting + throttling (#513)
 
 # ── Authentication ──────────────────────────────────────────────────────────
-gem "omniauth", "~> 2.1"                       # OAuth/OIDC foundation
+gem "omniauth", "~> 2.3"                       # OAuth/OIDC foundation
 gem "omniauth-rails_csrf_protection", "~> 2.0" # CSRF protection for OmniAuth POST
 gem "omniauth-github", "~> 2.0"                # GitHub OAuth
 gem "omniauth-gitlab", "~> 4.0"                # GitLab OAuth
@@ -94,7 +94,7 @@ gem "omniauth_openid_connect", "~> 0.8"        # Generic OIDC (Okta, Keycloak, E
 gem "faraday", ">= 2.14.4"
 gem "net-ldap", "~> 0.21"                      # LDAP authentication
 gem "jwt", "~> 3.3"                            # JWT decoding for OIDC API token validation
-gem "webauthn", "~> 3.1"                       # FIDO2/WebAuthn passwordless + 2FA (#779)
+gem "webauthn", "~> 3.5"                       # FIDO2/WebAuthn passwordless + 2FA (#779)
 # Pin the openssl *gem* (the thin Ruby binding, NOT the OpenSSL C library) to the
 # 3.x line — which is exactly what the UBI9 prod image already ships (Ruby 3.4.4's
 # default) and what production's OpenSSL 3.x library expects. This is NOT a
