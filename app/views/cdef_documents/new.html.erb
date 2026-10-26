@@ -1,98 +1,149 @@
-<div class="card">
-  <h2>Upload Component Definition</h2>
+<%# Three independent ways to add a component definition, one shown at a time.
+    Each has its own form and button; nothing carries between them, so the page
+    asks which one first. The chooser is tabs (cdef_new_chooser_controller.js):
+    a choice can be linked directly (#upload, #author, #profile), and without
+    JavaScript the chooser stays hidden and all three forms show. A rejected
+    authored CDEF re-renders on Author (@cdef_new_choice). %>
+<% choices = [
+     { key: "upload", accent: "sparc-accent--blue", icon: "&#128194;", title: "Upload files",
+       desc: "Import an OSCAL, XCCDF, InSpec or STIG Viewer file." },
+     { key: "author", accent: "sparc-accent--green", icon: "&#9999;&#65039;", title: "Author from scratch",
+       desc: "Describe a component yourself, then add controls." },
+     { key: "profile", accent: "sparc-accent--purple", icon: "&#128203;", title: "From a published profile",
+       desc: "Start from a profile's controls and parameters." }
+   ] %>
 
-  <%= form_with model: @cdef_document, local: true, multipart: true do |f| %>
-    <%= render "shared/dropzone",
-      form: f,
-      field: :file,
-      accept: ".xml,.json,.yaml,.yml",
-      multiple: true,
-      hint: "Upload an XCCDF XML, OSCAL XML/JSON/YAML, InSpec JSON, or STIG Viewer export file." %>
+<div data-controller="cdef-new-chooser"
+     data-cdef-new-chooser-default-value="<%= @cdef_new_choice || "upload" %>">
+  <div class="mb-3">
+    <h2 class="mb-1">New Component Definition</h2>
+    <p class="text-body-secondary mb-0">
+      Choose how to add it. Each way has its own form; switching starts a new one.
+    </p>
+  </div>
 
-    <%= render "cdef_documents/scope_picker", param_key: :cdef_document %>
+  <div class="row row-cols-1 row-cols-md-3 g-2 mb-3" role="tablist"
+       aria-label="How to add a component definition"
+       data-cdef-new-chooser-target="chooser" hidden>
+    <% choices.each do |c| %>
+      <div class="col">
+        <button type="button" role="tab" id="cdef-new-tab-<%= c[:key] %>"
+                aria-controls="cdef-new-panel-<%= c[:key] %>" aria-selected="false" tabindex="-1"
+                class="card sparc-section-card sparc-section-card--accented sparc-cdef-choice h-100 w-100 text-start <%= c[:accent] %>"
+                data-cdef-new-chooser-target="tab" data-choice="<%= c[:key] %>"
+                data-action="click->cdef-new-chooser#select keydown->cdef-new-chooser#navigate">
+          <span class="card-body d-flex align-items-start gap-3">
+            <span class="sparc-fs-22r" aria-hidden="true"><%= c[:icon].html_safe %></span>
+            <span class="flex-grow-1">
+              <span class="d-block fw-semibold sparc-fs-095"><%= c[:title] %></span>
+              <span class="d-block text-body-secondary sparc-fs-075"><%= c[:desc] %></span>
+            </span>
+            <span class="sparc-cdef-choice-check" aria-hidden="true">&#10003;</span>
+          </span>
+        </button>
+      </div>
+    <% end %>
+  </div>
 
-    <div class="d-flex gap-3">
-      <%= f.submit "Upload and Process", class: "sparc-action sparc-action--info sparc-action--solid" %>
-      <%= link_to "Cancel", cdef_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
+  <div class="card" role="tabpanel" id="cdef-new-panel-upload" aria-labelledby="cdef-new-tab-upload"
+       data-cdef-new-chooser-target="panel" data-choice="upload">
+    <h2>Upload files</h2>
+
+    <%= form_with model: @cdef_document, local: true, multipart: true do |f| %>
+      <%= render "shared/dropzone",
+        form: f,
+        field: :file,
+        accept: ".xml,.json,.yaml,.yml",
+        multiple: true,
+        hint: "Upload an XCCDF XML, OSCAL XML/JSON/YAML, InSpec JSON, or STIG Viewer export file." %>
+
+      <%= render "cdef_documents/scope_picker", param_key: :cdef_document %>
+
+      <div class="d-flex gap-3">
+        <%= f.submit "Upload and Process", class: "sparc-action sparc-action--info sparc-action--solid" %>
+        <%= link_to "Cancel", cdef_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
+      </div>
+    <% end %>
+
+    <details class="sparc-cdef-formats mt-3">
+      <summary>Supported formats</summary>
+      <p class="text-body-secondary mb-3">SPARC automatically detects the format and extracts controls, severity ratings, and CCI references.</p>
+
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Format</th>
+            <th>Extension</th>
+            <th>Sources</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>OSCAL Component Definition</strong></td>
+            <td>.json, .yaml, .xml</td>
+            <td>NIST OSCAL component-definition documents (auto-detected)</td>
+          </tr>
+          <tr>
+            <td><strong>XCCDF XML</strong></td>
+            <td>.xml</td>
+            <td>DISA STIGs, SCAP benchmarks, CIS Benchmarks</td>
+          </tr>
+          <tr>
+            <td><strong>InSpec JSON</strong></td>
+            <td>.json</td>
+            <td>Chef InSpec profile results (has <code>profiles</code> and <code>controls</code> keys)</td>
+          </tr>
+          <tr>
+            <td><strong>STIG Viewer JSON</strong></td>
+            <td>.json</td>
+            <td>STIG Viewer exports (has <code>stigs</code> key)</td>
+          </tr>
+          <tr>
+            <td><strong>Generic JSON</strong></td>
+            <td>.json</td>
+            <td>Any JSON with a <code>controls</code> array containing <code>id</code>/<code>title</code> fields</td>
+          </tr>
+        </tbody>
+      </table>
+    </details>
+  </div>
+
+  <%# #944 — authoring from scratch. This form carries no file field, which is
+      exactly how the controller tells it from an upload. %>
+  <div class="card" role="tabpanel" id="cdef-new-panel-author" aria-labelledby="cdef-new-tab-author"
+       data-cdef-new-chooser-target="panel" data-choice="author">
+    <h2>Author from scratch</h2>
+    <p class="text-body-secondary sparc-fs-088">
+      Describe a component yourself, rather than importing one. You can give it a
+      control basis afterwards — from a published profile, or by adding controls
+      directly.
+    </p>
+
+    <%= form_with model: @cdef_document, local: true do |f| %>
+      <%= render "component_fields", f: f %>
+      <%# #1258 — an authored CDEF is scoped at create, as an upload is. %>
+      <%= render "cdef_documents/scope_picker", param_key: :cdef_document, id_prefix: :cdef_author %>
+
+      <div class="d-flex gap-3 mt-4">
+        <%= f.submit "Create Component Definition", class: "sparc-action sparc-action--positive sparc-action--solid",
+              data: { testid: "author-cdef-submit" } %>
+        <%= link_to "Cancel", cdef_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="card" role="tabpanel" id="cdef-new-panel-profile" aria-labelledby="cdef-new-tab-profile"
+       data-cdef-new-chooser-target="panel" data-choice="profile">
+    <h2>Generate from a published profile</h2>
+    <p class="text-body-secondary mb-3">
+      Generate a Component Definition from a published OSCAL Profile's resolved catalog.
+      Controls, parameters, and guidance will be pre-populated. Implementation narratives
+      and notes can be added after creation.
+    </p>
+    <div>
+      <%= link_to "Select a Profile", select_profile_cdef_documents_path, class: "sparc-action sparc-action--info sparc-action--solid" %>
     </div>
-  <% end %>
-</div>
-
-<%# #944 — authoring from scratch. Until now `create` was unconditionally an
-    upload handler, so the only way a component definition entered SPARC was as
-    a file someone else had authored. This form carries no file field, which is
-    exactly how the controller tells the two apart. %>
-<div class="card">
-  <h2>Author a Component Definition</h2>
-  <p class="text-body-secondary" style="font-size: 0.88rem;">
-    Describe a component yourself, rather than importing one. You can give it a
-    control basis afterwards — from a published profile, or by adding controls
-    directly.
-  </p>
-
-  <%= form_with model: @cdef_document, local: true do |f| %>
-    <%= render "component_fields", f: f %>
-    <%# #1258 — an authored CDEF is scoped at create, as an upload is. %>
-    <%= render "cdef_documents/scope_picker", param_key: :cdef_document, id_prefix: :cdef_author %>
-
-    <div class="d-flex gap-3 mt-4">
-      <%= f.submit "Create Component Definition", class: "sparc-action sparc-action--positive sparc-action--solid",
-            data: { testid: "author-cdef-submit" } %>
-      <%= link_to "Cancel", cdef_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
-    </div>
-  <% end %>
-</div>
-
-<div class="card">
-  <h2>Create from Published Profile</h2>
-  <p class="text-body-secondary mb-3">
-    Generate a Component Definition from a published OSCAL Profile's resolved catalog.
-    Controls, parameters, and guidance will be pre-populated. Implementation narratives
-    and notes can be added after creation.
-  </p>
-  <%= link_to "Select a Profile", select_profile_cdef_documents_path, class: "btn btn-primary" %>
-</div>
-
-<div class="card">
-  <h3>Supported Formats</h3>
-  <p class="text-body-secondary mb-3">SPARC automatically detects the format and extracts controls, severity ratings, and CCI references.</p>
-
-  <table class="table table-hover">
-    <thead>
-      <tr>
-        <th>Format</th>
-        <th>Extension</th>
-        <th>Sources</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><strong>OSCAL Component Definition</strong></td>
-        <td>.json, .yaml, .xml</td>
-        <td>NIST OSCAL v1.1.2 component-definition documents (auto-detected)</td>
-      </tr>
-      <tr>
-        <td><strong>XCCDF XML</strong></td>
-        <td>.xml</td>
-        <td>DISA STIGs, SCAP benchmarks, CIS Benchmarks</td>
-      </tr>
-      <tr>
-        <td><strong>InSpec JSON</strong></td>
-        <td>.json</td>
-        <td>Chef InSpec profile results (has <code>profiles</code> and <code>controls</code> keys)</td>
-      </tr>
-      <tr>
-        <td><strong>STIG Viewer JSON</strong></td>
-        <td>.json</td>
-        <td>STIG Viewer exports (has <code>stigs</code> key)</td>
-      </tr>
-      <tr>
-        <td><strong>Generic JSON</strong></td>
-        <td>.json</td>
-        <td>Any JSON with a <code>controls</code> array containing <code>id</code>/<code>title</code> fields</td>
-      </tr>
-    </tbody>
-  </table>
+  </div>
 </div>
 
 <div class="card">
@@ -101,17 +152,17 @@
 
   <div class="row row-cols-1 row-cols-md-2 g-3">
     <div class="col">
-      <div class="bg-body-secondary p-3 rounded" style="border: 1px solid var(--bs-border-color); border-left: 3px solid #8e44ad;">
-        <div class="fw-bold sparc-heading-enterprise" style="margin-bottom: 0.35rem;">OSCAL Component Definition</div>
-        <div class="text-body-secondary" style="font-size: 0.88rem;">
-          NIST OSCAL v1.1.2 compliant Component Definition JSON. Maps controls to implemented-requirements with severity, CCI references, and implementation narratives.
+      <div class="bg-body-secondary p-3 rounded sparc-cdef-export sparc-accent--purple">
+        <div class="fw-bold sparc-heading-enterprise sparc-mb-035">OSCAL Component Definition</div>
+        <div class="text-body-secondary sparc-fs-088">
+          NIST OSCAL v<%= OscalSchema::DEFAULT_VERSION %> Component Definition JSON. Maps controls to implemented-requirements with severity, CCI references, and implementation narratives.
         </div>
       </div>
     </div>
     <div class="col">
-      <div class="bg-body-secondary p-3 rounded" style="border: 1px solid var(--bs-border-color); border-left: 3px solid var(--bs-success);">
-        <div class="fw-bold" style="margin-bottom: 0.35rem; color: var(--bs-success);">SPARC JSON</div>
-        <div class="text-body-secondary" style="font-size: 0.88rem;">
+      <div class="bg-body-secondary p-3 rounded sparc-cdef-export sparc-accent--green">
+        <div class="fw-bold sparc-mb-035 sparc-cdef-export-title--success">SPARC JSON</div>
+        <div class="text-body-secondary sparc-fs-088">
           Standard SPARC JSON export with document metadata, controls, and all associated fields.
         </div>
       </div>

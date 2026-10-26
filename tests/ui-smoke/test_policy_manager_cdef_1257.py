@@ -86,7 +86,7 @@ def test_policy_manager_creates_a_cdef_and_makes_it_instance_wide(
         _set_policy_manager(admin, user_id, role_id, held=True)
 
         record_csp(user)
-        user.goto("/cdef_documents/new")
+        user.goto("/cdef_documents/new#author")
         user.wait_for_load_state("networkidle")
         assert user.locator(SUBMIT).count() == 1, "a Policy Manager should be offered authoring"
 

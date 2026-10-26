@@ -5,8 +5,9 @@ require "rails_helper"
 # #1243 — the homepage's counts live on the layer cards, each a badge linking
 # to the same page as the card's View button, and each the number THAT page
 # shows this user (owner, 2026-10-22: counts show only what the user has
-# permission to see). The scoreboard above the cards, which counted the whole
-# instance, is gone.
+# permission to see). The thin inventory tiles above the cards show the same
+# counts, each a link to the same list as its card;
+# #1243 removed them in v1.17.2 by mistake, and they are restored.
 #
 # NIST 800-53: AC-3, AC-4 (a count must not disclose other boundaries' records).
 RSpec.describe "Homepage counts (#1243)", type: :request do
@@ -39,6 +40,23 @@ RSpec.describe "Homepage counts (#1243)", type: :request do
   end
 
   def card_new_links = page.css(".sparc-section-card a").select { |a| a.text.strip == "New" }.map { |a| a["href"] }
+
+  # The inventory above the cards, as { label => count text }.
+  def inventory
+    page.css("[data-home-inventory] a.sparc-inventory-tile").to_h do |tile|
+      [ tile.at_css(".sparc-inventory-name").text.strip, tile.at_css(".sparc-inventory-count").text.strip ]
+    end
+  end
+
+  def tile(key) = page.at_css("[data-home-inventory] a[data-home-tile='#{key}']")
+
+  # Inventory tiles that have a card badge of their own.
+  def tile_badges
+    { "Catalogs" => :control_catalogs, "Baselines" => :profile_documents, "Mappings" => :control_mappings,
+      "SSPs" => :ssp_documents, "CDEFs" => :cdef_documents, "Converters" => :converters,
+      "SAPs" => :sap_documents, "Evidence" => :evidences, "SARs" => :sar_documents,
+      "POA&Ms" => :poam_documents, "Auth Boundaries" => :authorization_boundaries }
+  end
 
   before do
     boundary_types.each_value do |factory|
@@ -93,11 +111,22 @@ RSpec.describe "Homepage counts (#1243)", type: :request do
       expect(response.body).not_to include(admin_organizations_path)
     end
 
-    it "has no scoreboard above the cards" do
+    it "sees the inventory tiles above the cards, each matching its card's badge" do
       get root_path
 
-      expect(page.at_css(".sparc-gradient-header")).to be_nil
-      expect(page.css(".sparc-hero-tile")).to be_empty
+      expect(page.at_css("[data-home-inventory]")).to be_present
+      expect(inventory.keys).to eq([ "Catalogs", "Families", "Controls", "Baselines", "Mappings",
+                                    "SSPs", "CDEFs", "Converters",
+                                    "SAPs", "Evidence", "SARs", "POA&Ms",
+                                    "Auth Boundaries" ])
+      tile_badges.each do |label, key|
+        expect(inventory[label]).to eq(badge(key).text), label
+        expect(tile(key)["href"]).to eq(badge(key)["href"]), "#{label}: tile and card open different lists"
+      end
+      expect(tile(:families)["href"]).to eq(control_catalogs_path)
+      expect(tile(:controls)["href"]).to eq(control_catalogs_path)
+      expect(inventory["Families"]).to eq(ActiveSupport::NumberHelper.number_to_delimited(ControlCatalog.family_count))
+      expect(inventory["Controls"]).to eq(ActiveSupport::NumberHelper.number_to_delimited(ControlCatalog.control_count))
     end
 
     it "is offered New only where the create action would admit them" do
@@ -136,6 +165,16 @@ RSpec.describe "Homepage counts (#1243)", type: :request do
       expect(badge(:organizations).text).to eq(Organization.count.to_s)
       expect(badge(:organizations)["href"]).to eq(admin_organizations_path)
       expect(card_new_links.size).to eq(12)
+    end
+
+    it "sees the full inventory, Organizations included, at instance totals" do
+      get root_path
+
+      expect(inventory.keys).to include("Organizations")
+      expect(inventory["Organizations"]).to eq(ActiveSupport::NumberHelper.number_to_delimited(Organization.count))
+      expect(tile(:organizations)["href"]).to eq(admin_organizations_path)
+      expect(inventory["SSPs"]).to eq("3")
+      expect(inventory["Evidence"]).to eq("4")
     end
   end
 

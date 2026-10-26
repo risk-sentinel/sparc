@@ -14,7 +14,7 @@ class HomeController < ApplicationController
   #                                   someone it admits (the card is hidden
   #                                   otherwise)
   #
-  # The scoreboard that repeated these numbers above the cards is gone.
+  # The inventory tiles above the cards show these same counts, grouped by layer.
   def index
     @counts = {
       control_catalogs: ControlCatalog.count,
