@@ -639,7 +639,9 @@ module SparcConfig
   # SPARC_APP_URL is unset or not a URL: deliberately NOT app_url's localhost
   # default, which would send every IdP back to localhost.
   def oauth_full_host
-    raw = ENV.fetch("SPARC_APP_URL", nil).presence or return nil
+    raw = ENV.fetch("SPARC_APP_URL", nil).presence
+    return nil unless raw
+
     uri = URI.parse(raw)
     return nil unless uri.scheme && uri.host
 

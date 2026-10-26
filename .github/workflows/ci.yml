@@ -559,6 +559,12 @@ jobs:
           # "/config/" too (it loads at boot, before coverage starts), and
           # seven new lines in config/importmap.rb scored 0.0% (PR #1280)
           # while the spec that renders that importmap passed.
+          # app/javascript/** is excluded because nothing produces coverage for
+          # it: SPARC has no Node build, and its Stimulus controllers are
+          # tested in a browser by ui-smoke (Playwright), which reports no
+          # coverage. Every new controller line read as uncovered: PR #1285's
+          # one new controller was 29 of its 30 uncovered lines and scored
+          # 28.6%. The JS is still analysed for bugs and smells.
           args: >
             -Dsonar.projectKey=risk-sentinel_sparc
             -Dsonar.organization=risk-sentinel
@@ -568,4 +574,4 @@ jobs:
             -Dsonar.tests=spec,tests,lib/federation/python/tests
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=spec/**,tests/**,lib/federation/python/tests/**,lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.ico,**/*.svg,**/*.mp4,**/*.xlsx,**/*.rdb,**/*.pdf,**/*.woff,**/*.woff2
-            -Dsonar.coverage.exclusions=db/**,config/**
+            -Dsonar.coverage.exclusions=db/**,config/**,app/javascript/**
