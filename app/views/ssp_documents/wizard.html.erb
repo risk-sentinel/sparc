@@ -70,7 +70,7 @@
         <% else %>
           <p class="text-body-secondary sparc-fs-088">
             No completed CDEFs found. You can still create an SSP without components, or
-            <%= link_to "upload a CDEF", new_cdef_document_path %> first.
+            <%= link_to "upload a CDEF", new_cdef_document_path(only: "upload") %> first.
           </p>
         <% end %>
       </div>

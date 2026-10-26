@@ -10,7 +10,7 @@ A patch release: the homepage's inventory is back, and the new-CDEF page asks wh
 
 - **Inventory tiles restored.** v1.17.2 removed the count tiles above the homepage cards by mistake. They are back as one row of thin tiles grouped by OSCAL layer (Controls, Implementation, Assessment, Enterprise), and each tile is now a link to its list. Every tile shows the same count as its card's badge, so it counts what the signed-in user may see; an instance administrator sees full totals. See [Screens](Screens).
 
-- **Adding a component definition: one way at a time.** The Create New page offered three independent ways in (upload, author, generate from a profile) as stacked forms that read as one. It now asks which one first: three choice cards, and only the chosen form shows. Each choice has its own link (`/cdef_documents/new#author`). See [Component Definitions](User-Guide-Component-Definitions).
+- **Adding a component definition: one way at a time.** The Create New page offered three independent ways in (upload, author, generate from a profile) as stacked forms that read as one. It now asks which one first: three choice cards, and only the chosen form shows. Each choice has its own link (`/cdef_documents/new#author`). On the list, **Create New** opens that page and **Upload File** opens the upload on its own. See [Component Definitions](User-Guide-Component-Definitions).
 
 **Upgrading:** an image swap from v1.17.2. No migrations and no configuration changes.
 
