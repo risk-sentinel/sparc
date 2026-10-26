@@ -29,13 +29,15 @@
                   @profiles.map { |p| ["#{p.name} (#{p.profile_controls.count} controls)", p.id] },
                   { include_blank: "-- Select a Profile --" },
                   { required: true, class: "form-control" } %>
-            <small class="text-body-secondary d-block sparc-mt-03">
-              Controls from this profile will be imported into the SSP.
+            <small class="text-body-secondary d-block sparc-mt-03" data-testid="wizard-baseline-hint">
+              Published baselines only. Each control and each of its statement parts
+              is imported, ready to answer. A draft baseline appears here once it is published.
             </small>
           <% else %>
-            <p class="sparc-heading-danger sparc-fs-088">
-              No completed profiles found. Please
-              <%= link_to "upload a Profile", new_profile_document_path %> first.
+            <p class="sparc-heading-danger sparc-fs-088" data-testid="wizard-no-baselines">
+              No published baselines yet. An SSP is built from a published baseline:
+              <%= link_to "upload one", new_profile_document_path %>, or publish a
+              <%= link_to "draft baseline", profile_documents_path %>.
             </p>
           <% end %>
         </div>

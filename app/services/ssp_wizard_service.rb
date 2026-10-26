@@ -102,42 +102,15 @@ class SspWizardService
 
   # ── Control population from profile ──────────────────────────────
 
+  # The SSP's controls, their fields and every statement part, built by the
+  # same code as "Create from profile" and "Populate from profile". The wizard
+  # had its own copy that made one row per control and no statement parts, so
+  # a wizard-built SSP had nowhere to answer ac-1a, ac-1b.1 and the rest, even
+  # from a published baseline. SspFromProfileService refuses a baseline that
+  # is not published and resolved, and the wizard lists only those.
   def populate_controls_from_profile
     profile = ProfileDocument.find(@params[:profile_document_id])
-    controls = profile.profile_controls.order(:row_order)
-
-    controls.each_with_index do |pc, idx|
-      ssp_ctrl = @document.ssp_controls.create!(
-        control_id: pc.control_id,
-        title:      pc.title,
-        row_order:  idx
-      )
-
-      create_default_ssp_fields(ssp_ctrl)
-
-      ssp_ctrl.ssp_by_components.create!(
-        ssp_component: @this_system,
-        uuid:          SecureRandom.uuid,
-        implementation_status: "planned"
-      )
-    end
-  end
-
-  def create_default_ssp_fields(ssp_ctrl)
-    default_fields = {
-      "status"                 => "",
-      "control_application"            => "",
-      "coverage_level"            => "",
-      "control_type"    => "",
-      "responsible_entities"   => "",
-      "implementation_statement" => "",
-      "implementation_summary"  => "",
-      "expected_completion"    => "",
-      "notes"                  => ""
-    }
-    default_fields.each do |fname, fvalue|
-      ssp_ctrl.ssp_control_fields.create!(field_name: fname, field_value: fvalue)
-    end
+    SspFromProfileService.new(profile).populate(@document)
   end
 
   # ── Auto-fill from CDEFs ─────────────────────────────────────────

@@ -203,7 +203,9 @@ RSpec.describe "SspDocuments", type: :request do
   end
 
   describe "POST /ssp_documents/create_from_wizard" do
-    it "creates a document from wizard with profile" do
+    # Creating from a published baseline, statement parts included, is
+    # spec/integration/ssp_wizard_statements_spec.rb.
+    it "refuses a draft baseline, creating nothing" do
       profile = create(:profile_document)
       expect {
         post create_from_wizard_ssp_documents_path, params: {
@@ -211,8 +213,9 @@ RSpec.describe "SspDocuments", type: :request do
           profile_document_id: profile.id,
           authorization_boundary_id: create(:authorization_boundary).id
         }
-      }.to change(SspDocument, :count).by(1)
-      expect(response).to have_http_status(:redirect)
+      }.not_to change(SspDocument, :count)
+      expect(response).to redirect_to(wizard_ssp_documents_path)
+      expect(flash[:error]).to include("Profile must be published")
     end
 
     it "redirects with error when wizard fails" do
