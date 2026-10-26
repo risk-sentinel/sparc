@@ -105,7 +105,9 @@ RSpec.describe "NIST Rev 5 MODERATE, end to end", type: :request do
     expect(unresolved).to be_empty
 
     ac1 = ControlRequirementText.for_profile(profile).for_control("ac-1")
-    expect(ac1.for_part("ac-1_smt.a")).to include("TAILORED[ac-01_odp.01]") # through aggregate ac-1_prm_1
+    # Through aggregate ac-1_prm_1, which stands for both of its parts.
+    expect(ac1.for_part("ac-1_smt.a"))
+      .to include("#{set_parameters["ac-01_odp.01"].first}, #{set_parameters["ac-01_odp.02"].first}")
     expect(ac1.for_part("ac-1_smt.c.1")).to include("365")
   end
 
@@ -195,7 +197,9 @@ RSpec.describe "NIST Rev 5 MODERATE, end to end", type: :request do
       expect(enhancements.size).to eq(110)
       # An enhancement's objective carries the consumer's values too: the plan
       # used to index only top-level controls of the resolved catalog.
-      expect(sap.sap_controls.find_by(control_id: "ac-2.3").objective).to include("TAILORED[ac-02.03_odp.01]")
+      ac23 = sap.sap_controls.find_by(control_id: "ac-2.3").objective
+      expect(ac23).to include(set_parameters.fetch("ac-02.03_odp.01").first)
+      expect(ac23).not_to include("insert:")
 
       data = JSON.parse(OscalAssessmentPlanExportService.new(sap.reload).export_unvalidated)
       expect(OscalSchemaValidationService.validate(:assessment_plan, data, version: "1.2.3").errors).to be_empty

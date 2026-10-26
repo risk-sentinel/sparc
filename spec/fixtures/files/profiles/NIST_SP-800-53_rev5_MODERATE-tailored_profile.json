@@ -3,7 +3,7 @@
     "uuid": "6d1f3c52-8b7e-4a4e-9c1d-3f5a2b7c9e01",
     "metadata": {
       "title": "NIST Special Publication 800-53 Revision 5 MODERATE IMPACT BASELINE (tailored fixture)",
-      "last-modified": "2026-10-21T00:00:00Z",
+      "last-modified": "2026-10-26T00:00:00Z",
       "version": "5.2.0-tailored",
       "oscal-version": "1.1.3",
       "roles": [
@@ -425,13 +425,13 @@
         {
           "param-id": "ac-01_odp.01",
           "values": [
-            "TAILORED[ac-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ac-01_odp.02",
           "values": [
-            "TAILORED[ac-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -443,7 +443,7 @@
         {
           "param-id": "ac-01_odp.04",
           "values": [
-            "TAILORED[ac-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
@@ -455,85 +455,85 @@
         {
           "param-id": "ac-01_odp.06",
           "values": [
-            "TAILORED[ac-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "ac-01_odp.07",
           "values": [
-            "TAILORED[ac-01_odp.07]"
+            "annually"
           ]
         },
         {
           "param-id": "ac-01_odp.08",
           "values": [
-            "TAILORED[ac-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "ac-02_odp.01",
           "values": [
-            "TAILORED[ac-02_odp.01]"
+            "Prerequisites and criteria as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-02_odp.02",
           "values": [
-            "TAILORED[ac-02_odp.02]"
+            "Attributes (as required) as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-02_odp.03",
           "values": [
-            "TAILORED[ac-02_odp.03]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ac-02_odp.04",
           "values": [
-            "TAILORED[ac-02_odp.04]"
+            "Policy, procedures, prerequisites, and criteria as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-02_odp.05",
           "values": [
-            "TAILORED[ac-02_odp.05]"
+            "the System Owner"
           ]
         },
         {
           "param-id": "ac-02_odp.06",
           "values": [
-            "TAILORED[ac-02_odp.06]"
+            "30 days"
           ]
         },
         {
           "param-id": "ac-02_odp.07",
           "values": [
-            "TAILORED[ac-02_odp.07]"
+            "90 days"
           ]
         },
         {
           "param-id": "ac-02_odp.08",
           "values": [
-            "TAILORED[ac-02_odp.08]"
+            "24 hours"
           ]
         },
         {
           "param-id": "ac-02_odp.09",
           "values": [
-            "TAILORED[ac-02_odp.09]"
+            "Attributes (as required) as defined in the Access Control procedures (ac-02_odp.09)"
           ]
         },
         {
           "param-id": "ac-02_odp.10",
           "values": [
-            "TAILORED[ac-02_odp.10]"
+            "annually"
           ]
         },
         {
           "param-id": "ac-02.01_odp",
           "values": [
-            "TAILORED[ac-02.01_odp]"
+            "the enterprise configuration management tool"
           ]
         },
         {
@@ -545,115 +545,115 @@
         {
           "param-id": "ac-02.02_odp.02",
           "values": [
-            "TAILORED[ac-02.02_odp.02]"
+            "30 days"
           ]
         },
         {
           "param-id": "ac-02.03_odp.01",
           "values": [
-            "TAILORED[ac-02.03_odp.01]"
+            "30 days"
           ]
         },
         {
           "param-id": "ac-02.03_odp.02",
           "values": [
-            "TAILORED[ac-02.03_odp.02]"
+            "90 days"
           ]
         },
         {
           "param-id": "ac-02.05_odp",
           "values": [
-            "TAILORED[ac-02.05_odp]"
+            "30 days"
           ]
         },
         {
           "param-id": "ac-02.13_odp.01",
           "values": [
-            "TAILORED[ac-02.13_odp.01]"
+            "30 days"
           ]
         },
         {
           "param-id": "ac-02.13_odp.02",
           "values": [
-            "TAILORED[ac-02.13_odp.02]"
+            "Significant risks as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-04_odp",
           "values": [
-            "TAILORED[ac-04_odp]"
+            "Information flow control policies as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-05_odp",
           "values": [
-            "TAILORED[ac-05_odp]"
+            "Duties of individuals as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-06.01_odp.01",
           "values": [
-            "TAILORED[ac-06.01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ac-06.01_odp.02",
           "values": [
-            "TAILORED[ac-06.01_odp.02]"
+            "Security functions (deployed in hardware) as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-06.01_odp.03",
           "values": [
-            "TAILORED[ac-06.01_odp.03]"
+            "Security functions (deployed in software) as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-06.01_odp.04",
           "values": [
-            "TAILORED[ac-06.01_odp.04]"
+            "Security functions (deployed in firmware) as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-06.01_odp.05",
           "values": [
-            "TAILORED[ac-06.01_odp.05]"
+            "Security-relevant information as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-06.02_odp",
           "values": [
-            "TAILORED[ac-06.02_odp]"
+            "Security functions or security-relevant information as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-06.05_odp",
           "values": [
-            "TAILORED[ac-06.05_odp]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ac-06.07_odp.01",
           "values": [
-            "TAILORED[ac-06.07_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "ac-06.07_odp.02",
           "values": [
-            "TAILORED[ac-06.07_odp.02]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ac-07_odp.01",
           "values": [
-            "TAILORED[ac-07_odp.01]"
+            "3"
           ]
         },
         {
           "param-id": "ac-07_odp.02",
           "values": [
-            "TAILORED[ac-07_odp.02]"
+            "30 days"
           ]
         },
         {
@@ -665,31 +665,31 @@
         {
           "param-id": "ac-07_odp.04",
           "values": [
-            "TAILORED[ac-07_odp.04]"
+            "90 days"
           ]
         },
         {
           "param-id": "ac-07_odp.05",
           "values": [
-            "TAILORED[ac-07_odp.05]"
+            "Delay algorithm as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-07_odp.06",
           "values": [
-            "TAILORED[ac-07_odp.06]"
+            "lock the account"
           ]
         },
         {
           "param-id": "ac-08_odp.01",
           "values": [
-            "TAILORED[ac-08_odp.01]"
+            "System use notification as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-08_odp.02",
           "values": [
-            "TAILORED[ac-08_odp.02]"
+            "a pending investigation or a change in duties"
           ]
         },
         {
@@ -701,31 +701,31 @@
         {
           "param-id": "ac-11_odp.02",
           "values": [
-            "TAILORED[ac-11_odp.02]"
+            "30 days"
           ]
         },
         {
           "param-id": "ac-12_odp",
           "values": [
-            "TAILORED[ac-12_odp]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "ac-14_odp",
           "values": [
-            "TAILORED[ac-14_odp]"
+            "User actions as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-17.04_odp.01",
           "values": [
-            "TAILORED[ac-17.04_odp.01]"
+            "Needs requiring remote access as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-17.04_odp.02",
           "values": [
-            "TAILORED[ac-17.04_odp.02]"
+            "Needs requiring remote access as defined in the Access Control procedures (ac-17.04_odp.02)"
           ]
         },
         {
@@ -743,7 +743,7 @@
         {
           "param-id": "ac-19.05_odp.02",
           "values": [
-            "TAILORED[ac-19.05_odp.02]"
+            "government-furnished smartphones and tablets"
           ]
         },
         {
@@ -755,55 +755,55 @@
         {
           "param-id": "ac-20_odp.02",
           "values": [
-            "TAILORED[ac-20_odp.02]"
+            "the interconnection security agreement"
           ]
         },
         {
           "param-id": "ac-20_odp.03",
           "values": [
-            "TAILORED[ac-20_odp.03]"
+            "Controls asserted as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-20_odp.04",
           "values": [
-            "TAILORED[ac-20_odp.04]"
+            "Prohibited types of external systems as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-20.02_odp",
           "values": [
-            "TAILORED[ac-20.02_odp]"
+            "Restrictions as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-21_odp.01",
           "values": [
-            "TAILORED[ac-21_odp.01]"
+            "Information-sharing circumstances as defined in the Access Control procedures"
           ]
         },
         {
           "param-id": "ac-21_odp.02",
           "values": [
-            "TAILORED[ac-21_odp.02]"
+            "the enterprise configuration management tool"
           ]
         },
         {
           "param-id": "ac-22_odp",
           "values": [
-            "TAILORED[ac-22_odp]"
+            "annually"
           ]
         },
         {
           "param-id": "at-01_odp.01",
           "values": [
-            "TAILORED[at-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "at-01_odp.02",
           "values": [
-            "TAILORED[at-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -815,121 +815,121 @@
         {
           "param-id": "at-01_odp.04",
           "values": [
-            "TAILORED[at-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "at-01_odp.05",
           "values": [
-            "TAILORED[at-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "at-01_odp.06",
           "values": [
-            "TAILORED[at-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "at-01_odp.07",
           "values": [
-            "TAILORED[at-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "at-01_odp.08",
           "values": [
-            "TAILORED[at-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "at-02_odp.01",
           "values": [
-            "TAILORED[at-02_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "at-02_odp.02",
           "values": [
-            "TAILORED[at-02_odp.02]"
+            "quarterly"
           ]
         },
         {
           "param-id": "at-02_odp.03",
           "values": [
-            "TAILORED[at-02_odp.03]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "at-02_odp.04",
           "values": [
-            "TAILORED[at-02_odp.04]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "at-02_odp.05",
           "values": [
-            "TAILORED[at-02_odp.05]"
+            "Awareness techniques as defined in the Awareness and Training procedures"
           ]
         },
         {
           "param-id": "at-02_odp.06",
           "values": [
-            "TAILORED[at-02_odp.06]"
+            "monthly"
           ]
         },
         {
           "param-id": "at-02_odp.07",
           "values": [
-            "TAILORED[at-02_odp.07]"
+            "an assessment finding or a change in the threat environment"
           ]
         },
         {
           "param-id": "at-03_odp.01",
           "values": [
-            "TAILORED[at-03_odp.01]"
+            "those in the system's roles and responsibilities matrix"
           ]
         },
         {
           "param-id": "at-03_odp.02",
           "values": [
-            "TAILORED[at-03_odp.02]"
+            "those named in the incident response plan"
           ]
         },
         {
           "param-id": "at-03_odp.03",
           "values": [
-            "TAILORED[at-03_odp.03]"
+            "annually"
           ]
         },
         {
           "param-id": "at-03_odp.04",
           "values": [
-            "TAILORED[at-03_odp.04]"
+            "quarterly"
           ]
         },
         {
           "param-id": "at-03_odp.05",
           "values": [
-            "TAILORED[at-03_odp.05]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "at-04_odp",
           "values": [
-            "TAILORED[at-04_odp]"
+            "30 days"
           ]
         },
         {
           "param-id": "au-01_odp.01",
           "values": [
-            "TAILORED[au-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "au-01_odp.02",
           "values": [
-            "TAILORED[au-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -941,163 +941,163 @@
         {
           "param-id": "au-01_odp.04",
           "values": [
-            "TAILORED[au-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "au-01_odp.05",
           "values": [
-            "TAILORED[au-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "au-01_odp.06",
           "values": [
-            "TAILORED[au-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "au-01_odp.07",
           "values": [
-            "TAILORED[au-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "au-01_odp.08",
           "values": [
-            "TAILORED[au-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "au-02_odp.01",
           "values": [
-            "TAILORED[au-02_odp.01]"
+            "successful and failed logons, privilege use and account changes"
           ]
         },
         {
           "param-id": "au-02_odp.02",
           "values": [
-            "TAILORED[au-02_odp.02]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "au-02_odp.03",
           "values": [
-            "TAILORED[au-02_odp.03]"
+            "annually"
           ]
         },
         {
           "param-id": "au-02_odp.04",
           "values": [
-            "TAILORED[au-02_odp.04]"
+            "quarterly"
           ]
         },
         {
           "param-id": "au-03.01_odp",
           "values": [
-            "TAILORED[au-03.01_odp]"
+            "Additional information as defined in the Audit and Accountability procedures"
           ]
         },
         {
           "param-id": "au-04_odp",
           "values": [
-            "TAILORED[au-04_odp]"
+            "Audit log retention requirements as defined in the Audit and Accountability procedures"
           ]
         },
         {
           "param-id": "au-05_odp.01",
           "values": [
-            "TAILORED[au-05_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "au-05_odp.02",
           "values": [
-            "TAILORED[au-05_odp.02]"
+            "30 days"
           ]
         },
         {
           "param-id": "au-05_odp.03",
           "values": [
-            "TAILORED[au-05_odp.03]"
+            "Additional actions as defined in the Audit and Accountability procedures"
           ]
         },
         {
           "param-id": "au-06_odp.01",
           "values": [
-            "TAILORED[au-06_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "au-06_odp.02",
           "values": [
-            "TAILORED[au-06_odp.02]"
+            "Inappropriate or unusual activity as defined in the Audit and Accountability procedures"
           ]
         },
         {
           "param-id": "au-06_odp.03",
           "values": [
-            "TAILORED[au-06_odp.03]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "au-06.01_odp",
           "values": [
-            "TAILORED[au-06.01_odp]"
+            "the enterprise configuration management tool"
           ]
         },
         {
           "param-id": "au-07.01_odp",
           "values": [
-            "TAILORED[au-07.01_odp]"
+            "Fields within audit records as defined in the Audit and Accountability procedures"
           ]
         },
         {
           "param-id": "au-08_odp",
           "values": [
-            "TAILORED[au-08_odp]"
+            "Granularity of time measurement as defined in the Audit and Accountability procedures"
           ]
         },
         {
           "param-id": "au-09_odp",
           "values": [
-            "TAILORED[au-09_odp]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "au-09.04_odp",
           "values": [
-            "TAILORED[au-09.04_odp]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "au-11_odp",
           "values": [
-            "TAILORED[au-11_odp]"
+            "30 days"
           ]
         },
         {
           "param-id": "au-12_odp.01",
           "values": [
-            "TAILORED[au-12_odp.01]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "au-12_odp.02",
           "values": [
-            "TAILORED[au-12_odp.02]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ca-01_odp.01",
           "values": [
-            "TAILORED[ca-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ca-01_odp.02",
           "values": [
-            "TAILORED[ca-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -1109,43 +1109,43 @@
         {
           "param-id": "ca-01_odp.04",
           "values": [
-            "TAILORED[ca-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "ca-01_odp.05",
           "values": [
-            "TAILORED[ca-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "ca-01_odp.06",
           "values": [
-            "TAILORED[ca-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "ca-01_odp.07",
           "values": [
-            "TAILORED[ca-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "ca-01_odp.08",
           "values": [
-            "TAILORED[ca-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "ca-02_odp.01",
           "values": [
-            "TAILORED[ca-02_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "ca-02_odp.02",
           "values": [
-            "TAILORED[ca-02_odp.02]"
+            "the ISSO and the System Owner"
           ]
         },
         {
@@ -1157,97 +1157,97 @@
         {
           "param-id": "ca-03_odp.02",
           "values": [
-            "TAILORED[ca-03_odp.02]"
+            "Type of agreement as defined in the Assessment, Authorization, and Monitoring procedures"
           ]
         },
         {
           "param-id": "ca-03_odp.03",
           "values": [
-            "TAILORED[ca-03_odp.03]"
+            "annually"
           ]
         },
         {
           "param-id": "ca-05_odp",
           "values": [
-            "TAILORED[ca-05_odp]"
+            "annually"
           ]
         },
         {
           "param-id": "ca-06_odp",
           "values": [
-            "TAILORED[ca-06_odp]"
+            "annually"
           ]
         },
         {
           "param-id": "ca-07_odp.01",
           "values": [
-            "TAILORED[ca-07_odp.01]"
+            "System-level metrics as defined in the Assessment, Authorization, and Monitoring procedures"
           ]
         },
         {
           "param-id": "ca-07_odp.02",
           "values": [
-            "TAILORED[ca-07_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "ca-07_odp.03",
           "values": [
-            "TAILORED[ca-07_odp.03]"
+            "quarterly"
           ]
         },
         {
           "param-id": "ca-07_odp.04",
           "values": [
-            "TAILORED[ca-07_odp.04]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ca-07_odp.05",
           "values": [
-            "TAILORED[ca-07_odp.05]"
+            "monthly"
           ]
         },
         {
           "param-id": "ca-07_odp.06",
           "values": [
-            "TAILORED[ca-07_odp.06]"
+            "the System Owner"
           ]
         },
         {
           "param-id": "ca-07_odp.07",
           "values": [
-            "TAILORED[ca-07_odp.07]"
+            "every 30 days"
           ]
         },
         {
           "param-id": "ca-09_odp.01",
           "values": [
-            "TAILORED[ca-09_odp.01]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "ca-09_odp.02",
           "values": [
-            "TAILORED[ca-09_odp.02]"
+            "a pending investigation or a change in duties"
           ]
         },
         {
           "param-id": "ca-09_odp.03",
           "values": [
-            "TAILORED[ca-09_odp.03]"
+            "annually"
           ]
         },
         {
           "param-id": "cm-01_odp.01",
           "values": [
-            "TAILORED[cm-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "cm-01_odp.02",
           "values": [
-            "TAILORED[cm-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -1259,85 +1259,85 @@
         {
           "param-id": "cm-01_odp.04",
           "values": [
-            "TAILORED[cm-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "cm-01_odp.05",
           "values": [
-            "TAILORED[cm-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "cm-01_odp.06",
           "values": [
-            "TAILORED[cm-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "cm-01_odp.07",
           "values": [
-            "TAILORED[cm-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "cm-01_odp.08",
           "values": [
-            "TAILORED[cm-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "cm-02_odp.01",
           "values": [
-            "TAILORED[cm-02_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "cm-02_odp.02",
           "values": [
-            "TAILORED[cm-02_odp.02]"
+            "a system outage or an emergency change"
           ]
         },
         {
           "param-id": "cm-02.02_odp",
           "values": [
-            "TAILORED[cm-02.02_odp]"
+            "the enterprise configuration management tool"
           ]
         },
         {
           "param-id": "cm-02.03_odp",
           "values": [
-            "TAILORED[cm-02.03_odp]"
+            "3"
           ]
         },
         {
           "param-id": "cm-02.07_odp.01",
           "values": [
-            "TAILORED[cm-02.07_odp.01]"
+            "all production systems"
           ]
         },
         {
           "param-id": "cm-02.07_odp.02",
           "values": [
-            "TAILORED[cm-02.07_odp.02]"
+            "Configurations as defined in the Configuration Management procedures"
           ]
         },
         {
           "param-id": "cm-02.07_odp.03",
           "values": [
-            "TAILORED[cm-02.07_odp.03]"
+            "the controls in the system's approved baseline"
           ]
         },
         {
           "param-id": "cm-03_odp.01",
           "values": [
-            "TAILORED[cm-03_odp.01]"
+            "30 days"
           ]
         },
         {
           "param-id": "cm-03_odp.02",
           "values": [
-            "TAILORED[cm-03_odp.02]"
+            "Configuration change control element as defined in the Configuration Management procedures"
           ]
         },
         {
@@ -1349,121 +1349,121 @@
         {
           "param-id": "cm-03_odp.04",
           "values": [
-            "TAILORED[cm-03_odp.04]"
+            "annually"
           ]
         },
         {
           "param-id": "cm-03_odp.05",
           "values": [
-            "TAILORED[cm-03_odp.05]"
+            "Configuration change conditions as defined in the Configuration Management procedures"
           ]
         },
         {
           "param-id": "cm-03.04_odp.01",
           "values": [
-            "TAILORED[cm-03.04_odp.01]"
+            "Security representatives as defined in the Configuration Management procedures"
           ]
         },
         {
           "param-id": "cm-03.04_odp.02",
           "values": [
-            "TAILORED[cm-03.04_odp.02]"
+            "Privacy representatives as defined in the Configuration Management procedures"
           ]
         },
         {
           "param-id": "cm-03.04_odp.03",
           "values": [
-            "TAILORED[cm-03.04_odp.03]"
+            "Configuration change control element as defined in the Configuration Management procedures"
           ]
         },
         {
           "param-id": "cm-06_odp.01",
           "values": [
-            "TAILORED[cm-06_odp.01]"
+            "Common secure configurations as defined in the Configuration Management procedures"
           ]
         },
         {
           "param-id": "cm-06_odp.02",
           "values": [
-            "TAILORED[cm-06_odp.02]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "cm-06_odp.03",
           "values": [
-            "TAILORED[cm-06_odp.03]"
+            "Operational requirements as defined in the Configuration Management procedures"
           ]
         },
         {
           "param-id": "cm-07_odp.01",
           "values": [
-            "TAILORED[cm-07_odp.01]"
+            "Mission-essential capabilities as defined in the Configuration Management procedures"
           ]
         },
         {
           "param-id": "cm-07_odp.02",
           "values": [
-            "TAILORED[cm-07_odp.02]"
+            "remote administration and file sharing"
           ]
         },
         {
           "param-id": "cm-07_odp.03",
           "values": [
-            "TAILORED[cm-07_odp.03]"
+            "TCP 443 and TCP 22"
           ]
         },
         {
           "param-id": "cm-07_odp.04",
           "values": [
-            "TAILORED[cm-07_odp.04]"
+            "HTTPS and SSH"
           ]
         },
         {
           "param-id": "cm-07_odp.05",
           "values": [
-            "TAILORED[cm-07_odp.05]"
+            "the approved operating system images"
           ]
         },
         {
           "param-id": "cm-07_odp.06",
           "values": [
-            "TAILORED[cm-07_odp.06]"
+            "the web application and the API service"
           ]
         },
         {
           "param-id": "cm-07.01_odp.01",
           "values": [
-            "TAILORED[cm-07.01_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "cm-07.01_odp.02",
           "values": [
-            "TAILORED[cm-07.01_odp.02]"
+            "remote administration and file sharing"
           ]
         },
         {
           "param-id": "cm-07.01_odp.03",
           "values": [
-            "TAILORED[cm-07.01_odp.03]"
+            "TCP 443 and TCP 22"
           ]
         },
         {
           "param-id": "cm-07.01_odp.04",
           "values": [
-            "TAILORED[cm-07.01_odp.04]"
+            "HTTPS and SSH"
           ]
         },
         {
           "param-id": "cm-07.01_odp.05",
           "values": [
-            "TAILORED[cm-07.01_odp.05]"
+            "the approved operating system images"
           ]
         },
         {
           "param-id": "cm-07.01_odp.06",
           "values": [
-            "TAILORED[cm-07.01_odp.06]"
+            "the web application and the API service"
           ]
         },
         {
@@ -1475,55 +1475,55 @@
         {
           "param-id": "cm-07.02_odp.02",
           "values": [
-            "TAILORED[cm-07.02_odp.02]"
+            "Policies, rules of behavior, and/or access agreements regarding software program usage and restrictions as defined in the Configuration Management procedures"
           ]
         },
         {
           "param-id": "cm-07.05_odp.01",
           "values": [
-            "TAILORED[cm-07.05_odp.01]"
+            "unauthorized peer-to-peer file sharing software"
           ]
         },
         {
           "param-id": "cm-07.05_odp.02",
           "values": [
-            "TAILORED[cm-07.05_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "cm-08_odp.01",
           "values": [
-            "TAILORED[cm-08_odp.01]"
+            "controlled unclassified information (CUI)"
           ]
         },
         {
           "param-id": "cm-08_odp.02",
           "values": [
-            "TAILORED[cm-08_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "cm-08.03_odp.01",
           "values": [
-            "TAILORED[cm-08.03_odp.01]"
+            "the enterprise configuration management tool"
           ]
         },
         {
           "param-id": "cm-08.03_odp.02",
           "values": [
-            "TAILORED[cm-08.03_odp.02]"
+            "the SIEM and its alerting rules"
           ]
         },
         {
           "param-id": "cm-08.03_odp.03",
           "values": [
-            "TAILORED[cm-08.03_odp.03]"
+            "the identity governance platform"
           ]
         },
         {
           "param-id": "cm-08.03_odp.04",
           "values": [
-            "TAILORED[cm-08.03_odp.04]"
+            "annually"
           ]
         },
         {
@@ -1535,61 +1535,61 @@
         {
           "param-id": "cm-08.03_odp.06",
           "values": [
-            "TAILORED[cm-08.03_odp.06]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "cm-09_odp",
           "values": [
-            "TAILORED[cm-09_odp]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "cm-11_odp.01",
           "values": [
-            "TAILORED[cm-11_odp.01]"
+            "Policies as defined in the Configuration Management procedures"
           ]
         },
         {
           "param-id": "cm-11_odp.02",
           "values": [
-            "TAILORED[cm-11_odp.02]"
+            "Methods as defined in the Configuration Management procedures"
           ]
         },
         {
           "param-id": "cm-11_odp.03",
           "values": [
-            "TAILORED[cm-11_odp.03]"
+            "annually"
           ]
         },
         {
           "param-id": "cm-12_odp",
           "values": [
-            "TAILORED[cm-12_odp]"
+            "controlled unclassified information (CUI)"
           ]
         },
         {
           "param-id": "cm-12.01_odp.01",
           "values": [
-            "TAILORED[cm-12.01_odp.01]"
+            "Information by information type as defined in the Configuration Management procedures"
           ]
         },
         {
           "param-id": "cm-12.01_odp.02",
           "values": [
-            "TAILORED[cm-12.01_odp.02]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "cp-01_odp.01",
           "values": [
-            "TAILORED[cp-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "cp-01_odp.02",
           "values": [
-            "TAILORED[cp-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -1601,73 +1601,73 @@
         {
           "param-id": "cp-01_odp.04",
           "values": [
-            "TAILORED[cp-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "cp-01_odp.05",
           "values": [
-            "TAILORED[cp-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "cp-01_odp.06",
           "values": [
-            "TAILORED[cp-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "cp-01_odp.07",
           "values": [
-            "TAILORED[cp-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "cp-01_odp.08",
           "values": [
-            "TAILORED[cp-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "cp-02_odp.01",
           "values": [
-            "TAILORED[cp-02_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "cp-02_odp.02",
           "values": [
-            "TAILORED[cp-02_odp.02]"
+            "the System Owner"
           ]
         },
         {
           "param-id": "cp-02_odp.03",
           "values": [
-            "TAILORED[cp-02_odp.03]"
+            "the System Owner, the ISSO and the contingency plan coordinator"
           ]
         },
         {
           "param-id": "cp-02_odp.04",
           "values": [
-            "TAILORED[cp-02_odp.04]"
+            "the Office of the CIO and the system program office"
           ]
         },
         {
           "param-id": "cp-02_odp.05",
           "values": [
-            "TAILORED[cp-02_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "cp-02_odp.06",
           "values": [
-            "TAILORED[cp-02_odp.06]"
+            "the recovery team leads"
           ]
         },
         {
           "param-id": "cp-02_odp.07",
           "values": [
-            "TAILORED[cp-02_odp.07]"
+            "the Security Operations Center"
           ]
         },
         {
@@ -1679,7 +1679,7 @@
         {
           "param-id": "cp-02.03_odp.02",
           "values": [
-            "TAILORED[cp-02.03_odp.02]"
+            "30 days"
           ]
         },
         {
@@ -1691,133 +1691,133 @@
         {
           "param-id": "cp-03_odp.01",
           "values": [
-            "TAILORED[cp-03_odp.01]"
+            "30 days"
           ]
         },
         {
           "param-id": "cp-03_odp.02",
           "values": [
-            "TAILORED[cp-03_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "cp-03_odp.03",
           "values": [
-            "TAILORED[cp-03_odp.03]"
+            "quarterly"
           ]
         },
         {
           "param-id": "cp-03_odp.04",
           "values": [
-            "TAILORED[cp-03_odp.04]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "cp-04_odp.01",
           "values": [
-            "TAILORED[cp-04_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "cp-04_odp.02",
           "values": [
-            "TAILORED[cp-04_odp.02]"
+            "functional security testing"
           ]
         },
         {
           "param-id": "cp-04_odp.03",
           "values": [
-            "TAILORED[cp-04_odp.03]"
+            "penetration testing"
           ]
         },
         {
           "param-id": "cp-07_odp.01",
           "values": [
-            "TAILORED[cp-07_odp.01]"
+            "System operations as defined in the Contingency Planning procedures"
           ]
         },
         {
           "param-id": "cp-07_odp.02",
           "values": [
-            "TAILORED[cp-07_odp.02]"
+            "30 days"
           ]
         },
         {
           "param-id": "cp-08_odp.01",
           "values": [
-            "TAILORED[cp-08_odp.01]"
+            "System operations as defined in the Contingency Planning procedures"
           ]
         },
         {
           "param-id": "cp-08_odp.02",
           "values": [
-            "TAILORED[cp-08_odp.02]"
+            "30 days"
           ]
         },
         {
           "param-id": "cp-09_odp.01",
           "values": [
-            "TAILORED[cp-09_odp.01]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "cp-09_odp.02",
           "values": [
-            "TAILORED[cp-09_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "cp-09_odp.03",
           "values": [
-            "TAILORED[cp-09_odp.03]"
+            "quarterly"
           ]
         },
         {
           "param-id": "cp-09_odp.04",
           "values": [
-            "TAILORED[cp-09_odp.04]"
+            "monthly"
           ]
         },
         {
           "param-id": "cp-09.01_odp.01",
           "values": [
-            "TAILORED[cp-09.01_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "cp-09.01_odp.02",
           "values": [
-            "TAILORED[cp-09.01_odp.02]"
+            "quarterly"
           ]
         },
         {
           "param-id": "cp-09.08_odp",
           "values": [
-            "TAILORED[cp-09.08_odp]"
+            "Backup information as defined in the Contingency Planning procedures"
           ]
         },
         {
           "param-id": "cp-10_odp.01",
           "values": [
-            "TAILORED[cp-10_odp.01]"
+            "30 days"
           ]
         },
         {
           "param-id": "cp-10_odp.02",
           "values": [
-            "TAILORED[cp-10_odp.02]"
+            "90 days"
           ]
         },
         {
           "param-id": "ia-01_odp.01",
           "values": [
-            "TAILORED[ia-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ia-01_odp.02",
           "values": [
-            "TAILORED[ia-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -1829,31 +1829,31 @@
         {
           "param-id": "ia-01_odp.04",
           "values": [
-            "TAILORED[ia-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "ia-01_odp.05",
           "values": [
-            "TAILORED[ia-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "ia-01_odp.06",
           "values": [
-            "TAILORED[ia-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "ia-01_odp.07",
           "values": [
-            "TAILORED[ia-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "ia-01_odp.08",
           "values": [
-            "TAILORED[ia-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
@@ -1865,7 +1865,7 @@
         {
           "param-id": "ia-03_odp.01",
           "values": [
-            "TAILORED[ia-03_odp.01]"
+            "Devices and/or types of devices as defined in the Identification and Authentication procedures"
           ]
         },
         {
@@ -1877,61 +1877,61 @@
         {
           "param-id": "ia-04_odp.01",
           "values": [
-            "TAILORED[ia-04_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ia-04_odp.02",
           "values": [
-            "TAILORED[ia-04_odp.02]"
+            "30 days"
           ]
         },
         {
           "param-id": "ia-04.04_odp",
           "values": [
-            "TAILORED[ia-04.04_odp]"
+            "Characteristics as defined in the Identification and Authentication procedures"
           ]
         },
         {
           "param-id": "ia-05_odp.01",
           "values": [
-            "TAILORED[ia-05_odp.01]"
+            "30 days"
           ]
         },
         {
           "param-id": "ia-05_odp.02",
           "values": [
-            "TAILORED[ia-05_odp.02]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "ia-05.01_odp.01",
           "values": [
-            "TAILORED[ia-05.01_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "ia-05.01_odp.02",
           "values": [
-            "TAILORED[ia-05.01_odp.02]"
+            "Composition and complexity rules as defined in the Identification and Authentication procedures"
           ]
         },
         {
           "param-id": "ia-08.04_odp",
           "values": [
-            "TAILORED[ia-08.04_odp]"
+            "Identity management profiles as defined in the Identification and Authentication procedures"
           ]
         },
         {
           "param-id": "ia-11_odp",
           "values": [
-            "TAILORED[ia-11_odp]"
+            "Circumstances or situations as defined in the Identification and Authentication procedures"
           ]
         },
         {
           "param-id": "ia-12.03_odp",
           "values": [
-            "TAILORED[ia-12.03_odp]"
+            "Methods of validation and verification as defined in the Identification and Authentication procedures"
           ]
         },
         {
@@ -1943,13 +1943,13 @@
         {
           "param-id": "ir-01_odp.01",
           "values": [
-            "TAILORED[ir-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ir-01_odp.02",
           "values": [
-            "TAILORED[ir-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -1961,151 +1961,151 @@
         {
           "param-id": "ir-01_odp.04",
           "values": [
-            "TAILORED[ir-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "ir-01_odp.05",
           "values": [
-            "TAILORED[ir-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "ir-01_odp.06",
           "values": [
-            "TAILORED[ir-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "ir-01_odp.07",
           "values": [
-            "TAILORED[ir-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "ir-01_odp.08",
           "values": [
-            "TAILORED[ir-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "ir-02_odp.01",
           "values": [
-            "TAILORED[ir-02_odp.01]"
+            "30 days"
           ]
         },
         {
           "param-id": "ir-02_odp.02",
           "values": [
-            "TAILORED[ir-02_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "ir-02_odp.03",
           "values": [
-            "TAILORED[ir-02_odp.03]"
+            "quarterly"
           ]
         },
         {
           "param-id": "ir-02_odp.04",
           "values": [
-            "TAILORED[ir-02_odp.04]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "ir-03_odp.01",
           "values": [
-            "TAILORED[ir-03_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "ir-03_odp.02",
           "values": [
-            "TAILORED[ir-03_odp.02]"
+            "functional security testing"
           ]
         },
         {
           "param-id": "ir-04.01_odp",
           "values": [
-            "TAILORED[ir-04.01_odp]"
+            "the enterprise configuration management tool"
           ]
         },
         {
           "param-id": "ir-06_odp.01",
           "values": [
-            "TAILORED[ir-06_odp.01]"
+            "30 days"
           ]
         },
         {
           "param-id": "ir-06_odp.02",
           "values": [
-            "TAILORED[ir-06_odp.02]"
+            "Authorities as defined in the Incident Response procedures"
           ]
         },
         {
           "param-id": "ir-06.01_odp",
           "values": [
-            "TAILORED[ir-06.01_odp]"
+            "the enterprise configuration management tool"
           ]
         },
         {
           "param-id": "ir-07.01_odp",
           "values": [
-            "TAILORED[ir-07.01_odp]"
+            "the enterprise configuration management tool"
           ]
         },
         {
           "param-id": "ir-08_odp.01",
           "values": [
-            "TAILORED[ir-08_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ir-08_odp.02",
           "values": [
-            "TAILORED[ir-08_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "ir-08_odp.03",
           "values": [
-            "TAILORED[ir-08_odp.03]"
+            "the System Owner"
           ]
         },
         {
           "param-id": "ir-08_odp.04",
           "values": [
-            "TAILORED[ir-08_odp.04]"
+            "the Incident Response Team"
           ]
         },
         {
           "param-id": "ir-08_odp.05",
           "values": [
-            "TAILORED[ir-08_odp.05]"
+            "the Office of the CIO and the system program office"
           ]
         },
         {
           "param-id": "ir-08_odp.06",
           "values": [
-            "TAILORED[ir-08_odp.06]"
+            "the SOC analysts and the ISSO"
           ]
         },
         {
           "param-id": "ir-08_odp.07",
           "values": [
-            "TAILORED[ir-08_odp.07]"
+            "the Security Operations Center"
           ]
         },
         {
           "param-id": "ma-01_odp.01",
           "values": [
-            "TAILORED[ma-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ma-01_odp.02",
           "values": [
-            "TAILORED[ma-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -2117,85 +2117,85 @@
         {
           "param-id": "ma-01_odp.04",
           "values": [
-            "TAILORED[ma-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "ma-01_odp.05",
           "values": [
-            "TAILORED[ma-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "ma-01_odp.06",
           "values": [
-            "TAILORED[ma-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "ma-01_odp.07",
           "values": [
-            "TAILORED[ma-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "ma-01_odp.08",
           "values": [
-            "TAILORED[ma-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "ma-02_odp.01",
           "values": [
-            "TAILORED[ma-02_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ma-02_odp.02",
           "values": [
-            "TAILORED[ma-02_odp.02]"
+            "controlled unclassified information (CUI)"
           ]
         },
         {
           "param-id": "ma-02_odp.03",
           "values": [
-            "TAILORED[ma-02_odp.03]"
+            "personally identifiable information (PII)"
           ]
         },
         {
           "param-id": "ma-03_odp",
           "values": [
-            "TAILORED[ma-03_odp]"
+            "annually"
           ]
         },
         {
           "param-id": "ma-03.03_odp",
           "values": [
-            "TAILORED[ma-03.03_odp]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ma-06_odp.01",
           "values": [
-            "TAILORED[ma-06_odp.01]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "ma-06_odp.02",
           "values": [
-            "TAILORED[ma-06_odp.02]"
+            "30 days"
           ]
         },
         {
           "param-id": "mp-01_odp.01",
           "values": [
-            "TAILORED[mp-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "mp-01_odp.02",
           "values": [
-            "TAILORED[mp-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -2207,163 +2207,163 @@
         {
           "param-id": "mp-01_odp.04",
           "values": [
-            "TAILORED[mp-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "mp-01_odp.05",
           "values": [
-            "TAILORED[mp-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "mp-01_odp.06",
           "values": [
-            "TAILORED[mp-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "mp-01_odp.07",
           "values": [
-            "TAILORED[mp-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "mp-01_odp.08",
           "values": [
-            "TAILORED[mp-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "mp-02_odp.01",
           "values": [
-            "TAILORED[mp-02_odp.01]"
+            "USB flash drives, external hard drives and optical discs"
           ]
         },
         {
           "param-id": "mp-02_odp.02",
           "values": [
-            "TAILORED[mp-02_odp.02]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "mp-02_odp.03",
           "values": [
-            "TAILORED[mp-02_odp.03]"
+            "paper records and printed reports"
           ]
         },
         {
           "param-id": "mp-02_odp.04",
           "values": [
-            "TAILORED[mp-02_odp.04]"
+            "the System Owner"
           ]
         },
         {
           "param-id": "mp-03_odp.01",
           "values": [
-            "TAILORED[mp-03_odp.01]"
+            "Types of media exempted from marking as defined in the Media Protection procedures"
           ]
         },
         {
           "param-id": "mp-03_odp.02",
           "values": [
-            "TAILORED[mp-03_odp.02]"
+            "the data center and the network operations center"
           ]
         },
         {
           "param-id": "mp-04_odp.01",
           "values": [
-            "TAILORED[mp-04_odp.01]"
+            "USB flash drives, external hard drives and optical discs"
           ]
         },
         {
           "param-id": "mp-04_odp.02",
           "values": [
-            "TAILORED[mp-04_odp.02]"
+            "paper records and printed reports"
           ]
         },
         {
           "param-id": "mp-04_odp.03",
           "values": [
-            "TAILORED[mp-04_odp.03]"
+            "removable SSDs and SD cards"
           ]
         },
         {
           "param-id": "mp-04_odp.04",
           "values": [
-            "TAILORED[mp-04_odp.04]"
+            "microfilm"
           ]
         },
         {
           "param-id": "mp-04_odp.05",
           "values": [
-            "TAILORED[mp-04_odp.05]"
+            "the data center and the network operations center"
           ]
         },
         {
           "param-id": "mp-04_odp.06",
           "values": [
-            "TAILORED[mp-04_odp.06]"
+            "secured equipment rooms"
           ]
         },
         {
           "param-id": "mp-05_odp.01",
           "values": [
-            "TAILORED[mp-05_odp.01]"
+            "Types of system media as defined in the Media Protection procedures"
           ]
         },
         {
           "param-id": "mp-05_odp.02",
           "values": [
-            "TAILORED[mp-05_odp.02]"
+            "the controls in the system's approved baseline"
           ]
         },
         {
           "param-id": "mp-05_odp.03",
           "values": [
-            "TAILORED[mp-05_odp.03]"
+            "the controls inherited from the hosting provider"
           ]
         },
         {
           "param-id": "mp-06_odp.01",
           "values": [
-            "TAILORED[mp-06_odp.01]"
+            "hard drives, backup tapes and removable media"
           ]
         },
         {
           "param-id": "mp-06_odp.02",
           "values": [
-            "TAILORED[mp-06_odp.02]"
+            "decommissioned storage devices"
           ]
         },
         {
           "param-id": "mp-06_odp.03",
           "values": [
-            "TAILORED[mp-06_odp.03]"
+            "printed output containing CUI"
           ]
         },
         {
           "param-id": "mp-06_odp.04",
           "values": [
-            "TAILORED[mp-06_odp.04]"
+            "NIST SP 800-88 purge or destroy, as the media requires"
           ]
         },
         {
           "param-id": "mp-06_odp.05",
           "values": [
-            "TAILORED[mp-06_odp.05]"
+            "cryptographic erase followed by verification"
           ]
         },
         {
           "param-id": "mp-06_odp.06",
           "values": [
-            "TAILORED[mp-06_odp.06]"
+            "degaussing and physical destruction"
           ]
         },
         {
           "param-id": "mp-07_odp.01",
           "values": [
-            "TAILORED[mp-07_odp.01]"
+            "Types of system media as defined in the Media Protection procedures"
           ]
         },
         {
@@ -2375,25 +2375,25 @@
         {
           "param-id": "mp-07_odp.03",
           "values": [
-            "TAILORED[mp-07_odp.03]"
+            "all production systems"
           ]
         },
         {
           "param-id": "mp-07_odp.04",
           "values": [
-            "TAILORED[mp-07_odp.04]"
+            "the controls in the system's approved baseline"
           ]
         },
         {
           "param-id": "pe-01_odp.01",
           "values": [
-            "TAILORED[pe-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "pe-01_odp.02",
           "values": [
-            "TAILORED[pe-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -2405,43 +2405,43 @@
         {
           "param-id": "pe-01_odp.04",
           "values": [
-            "TAILORED[pe-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "pe-01_odp.05",
           "values": [
-            "TAILORED[pe-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "pe-01_odp.06",
           "values": [
-            "TAILORED[pe-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "pe-01_odp.07",
           "values": [
-            "TAILORED[pe-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "pe-01_odp.08",
           "values": [
-            "TAILORED[pe-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "pe-02_odp",
           "values": [
-            "TAILORED[pe-02_odp]"
+            "annually"
           ]
         },
         {
           "param-id": "pe-03_odp.01",
           "values": [
-            "TAILORED[pe-03_odp.01]"
+            "Entry and exit points as defined in the Physical and Environmental Protection procedures"
           ]
         },
         {
@@ -2453,109 +2453,109 @@
         {
           "param-id": "pe-03_odp.03",
           "values": [
-            "TAILORED[pe-03_odp.03]"
+            "Systems or devices as defined in the Physical and Environmental Protection procedures"
           ]
         },
         {
           "param-id": "pe-03_odp.04",
           "values": [
-            "TAILORED[pe-03_odp.04]"
+            "Entry or exit points as defined in the Physical and Environmental Protection procedures"
           ]
         },
         {
           "param-id": "pe-03_odp.05",
           "values": [
-            "TAILORED[pe-03_odp.05]"
+            "Physical access controls as defined in the Physical and Environmental Protection procedures"
           ]
         },
         {
           "param-id": "pe-03_odp.06",
           "values": [
-            "TAILORED[pe-03_odp.06]"
+            "a system outage or an emergency change"
           ]
         },
         {
           "param-id": "pe-03_odp.07",
           "values": [
-            "TAILORED[pe-03_odp.07]"
+            "Physical access devices as defined in the Physical and Environmental Protection procedures"
           ]
         },
         {
           "param-id": "pe-03_odp.08",
           "values": [
-            "TAILORED[pe-03_odp.08]"
+            "annually"
           ]
         },
         {
           "param-id": "pe-03_odp.09",
           "values": [
-            "TAILORED[pe-03_odp.09]"
+            "quarterly"
           ]
         },
         {
           "param-id": "pe-03_odp.10",
           "values": [
-            "TAILORED[pe-03_odp.10]"
+            "monthly"
           ]
         },
         {
           "param-id": "pe-04_odp.01",
           "values": [
-            "TAILORED[pe-04_odp.01]"
+            "System distribution and transmission lines as defined in the Physical and Environmental Protection procedures"
           ]
         },
         {
           "param-id": "pe-04_odp.02",
           "values": [
-            "TAILORED[pe-04_odp.02]"
+            "Security controls as defined in the Physical and Environmental Protection procedures"
           ]
         },
         {
           "param-id": "pe-05_odp",
           "values": [
-            "TAILORED[pe-05_odp]"
+            "Output devices as defined in the Physical and Environmental Protection procedures"
           ]
         },
         {
           "param-id": "pe-06_odp.01",
           "values": [
-            "TAILORED[pe-06_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "pe-06_odp.02",
           "values": [
-            "TAILORED[pe-06_odp.02]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "pe-08_odp.01",
           "values": [
-            "TAILORED[pe-08_odp.01]"
+            "30 days"
           ]
         },
         {
           "param-id": "pe-08_odp.02",
           "values": [
-            "TAILORED[pe-08_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "pe-08_odp.03",
           "values": [
-            "TAILORED[pe-08_odp.03]"
+            "system administrators and the ISSO"
           ]
         },
         {
           "param-id": "pe-10_odp.01",
           "values": [
-            "TAILORED[pe-10_odp.01]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "pe-10_odp.02",
           "values": [
-            "TAILORED[pe-10_odp.02]"
+            "the alternate processing site"
           ]
         },
         {
@@ -2567,13 +2567,13 @@
         {
           "param-id": "pe-13.01_odp.01",
           "values": [
-            "TAILORED[pe-13.01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "pe-13.01_odp.02",
           "values": [
-            "TAILORED[pe-13.01_odp.02]"
+            "Emergency responders as defined in the Physical and Environmental Protection procedures"
           ]
         },
         {
@@ -2585,55 +2585,55 @@
         {
           "param-id": "pe-14_odp.02",
           "values": [
-            "TAILORED[pe-14_odp.02]"
+            "Environmental control as defined in the Physical and Environmental Protection procedures"
           ]
         },
         {
           "param-id": "pe-14_odp.03",
           "values": [
-            "TAILORED[pe-14_odp.03]"
+            "Acceptable levels as defined in the Physical and Environmental Protection procedures"
           ]
         },
         {
           "param-id": "pe-14_odp.04",
           "values": [
-            "TAILORED[pe-14_odp.04]"
+            "annually"
           ]
         },
         {
           "param-id": "pe-16_odp.01",
           "values": [
-            "TAILORED[pe-16_odp.01]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "pe-16_odp.02",
           "values": [
-            "TAILORED[pe-16_odp.02]"
+            "all production servers"
           ]
         },
         {
           "param-id": "pe-17_odp.01",
           "values": [
-            "TAILORED[pe-17_odp.01]"
+            "Alternate work sites as defined in the Physical and Environmental Protection procedures"
           ]
         },
         {
           "param-id": "pe-17_odp.02",
           "values": [
-            "TAILORED[pe-17_odp.02]"
+            "the controls in the system's approved baseline"
           ]
         },
         {
           "param-id": "pl-01_odp.01",
           "values": [
-            "TAILORED[pl-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "pl-01_odp.02",
           "values": [
-            "TAILORED[pl-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -2645,55 +2645,55 @@
         {
           "param-id": "pl-01_odp.04",
           "values": [
-            "TAILORED[pl-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "pl-01_odp.05",
           "values": [
-            "TAILORED[pl-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "pl-01_odp.06",
           "values": [
-            "TAILORED[pl-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "pl-01_odp.07",
           "values": [
-            "TAILORED[pl-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "pl-01_odp.08",
           "values": [
-            "TAILORED[pl-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "pl-02_odp.01",
           "values": [
-            "TAILORED[pl-02_odp.01]"
+            "Individuals or groups as defined in the Planning procedures"
           ]
         },
         {
           "param-id": "pl-02_odp.02",
           "values": [
-            "TAILORED[pl-02_odp.02]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "pl-02_odp.03",
           "values": [
-            "TAILORED[pl-02_odp.03]"
+            "annually"
           ]
         },
         {
           "param-id": "pl-04_odp.01",
           "values": [
-            "TAILORED[pl-04_odp.01]"
+            "annually"
           ]
         },
         {
@@ -2705,25 +2705,25 @@
         {
           "param-id": "pl-04_odp.03",
           "values": [
-            "TAILORED[pl-04_odp.03]"
+            "quarterly"
           ]
         },
         {
           "param-id": "pl-08_odp",
           "values": [
-            "TAILORED[pl-08_odp]"
+            "annually"
           ]
         },
         {
           "param-id": "ps-01_odp.01",
           "values": [
-            "TAILORED[ps-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ps-01_odp.02",
           "values": [
-            "TAILORED[ps-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -2735,133 +2735,133 @@
         {
           "param-id": "ps-01_odp.04",
           "values": [
-            "TAILORED[ps-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "ps-01_odp.05",
           "values": [
-            "TAILORED[ps-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "ps-01_odp.06",
           "values": [
-            "TAILORED[ps-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "ps-01_odp.07",
           "values": [
-            "TAILORED[ps-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "ps-01_odp.08",
           "values": [
-            "TAILORED[ps-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "ps-02_odp",
           "values": [
-            "TAILORED[ps-02_odp]"
+            "annually"
           ]
         },
         {
           "param-id": "ps-03_odp.01",
           "values": [
-            "TAILORED[ps-03_odp.01]"
+            "Conditions requiring rescreening as defined in the Personnel Security procedures"
           ]
         },
         {
           "param-id": "ps-03_odp.02",
           "values": [
-            "TAILORED[ps-03_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "ps-04_odp.01",
           "values": [
-            "TAILORED[ps-04_odp.01]"
+            "30 days"
           ]
         },
         {
           "param-id": "ps-04_odp.02",
           "values": [
-            "TAILORED[ps-04_odp.02]"
+            "Information security topics as defined in the Personnel Security procedures"
           ]
         },
         {
           "param-id": "ps-05_odp.01",
           "values": [
-            "TAILORED[ps-05_odp.01]"
+            "Transfer or reassignment actions as defined in the Personnel Security procedures"
           ]
         },
         {
           "param-id": "ps-05_odp.02",
           "values": [
-            "TAILORED[ps-05_odp.02]"
+            "30 days"
           ]
         },
         {
           "param-id": "ps-05_odp.03",
           "values": [
-            "TAILORED[ps-05_odp.03]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ps-05_odp.04",
           "values": [
-            "TAILORED[ps-05_odp.04]"
+            "90 days"
           ]
         },
         {
           "param-id": "ps-06_odp.01",
           "values": [
-            "TAILORED[ps-06_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "ps-06_odp.02",
           "values": [
-            "TAILORED[ps-06_odp.02]"
+            "quarterly"
           ]
         },
         {
           "param-id": "ps-07_odp.01",
           "values": [
-            "TAILORED[ps-07_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ps-07_odp.02",
           "values": [
-            "TAILORED[ps-07_odp.02]"
+            "30 days"
           ]
         },
         {
           "param-id": "ps-08_odp.01",
           "values": [
-            "TAILORED[ps-08_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ps-08_odp.02",
           "values": [
-            "TAILORED[ps-08_odp.02]"
+            "30 days"
           ]
         },
         {
           "param-id": "ra-01_odp.01",
           "values": [
-            "TAILORED[ra-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ra-01_odp.02",
           "values": [
-            "TAILORED[ra-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -2873,31 +2873,31 @@
         {
           "param-id": "ra-01_odp.04",
           "values": [
-            "TAILORED[ra-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "ra-01_odp.05",
           "values": [
-            "TAILORED[ra-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "ra-01_odp.06",
           "values": [
-            "TAILORED[ra-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "ra-01_odp.07",
           "values": [
-            "TAILORED[ra-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "ra-01_odp.08",
           "values": [
-            "TAILORED[ra-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
@@ -2909,61 +2909,61 @@
         {
           "param-id": "ra-03_odp.02",
           "values": [
-            "TAILORED[ra-03_odp.02]"
+            "Document as defined in the Risk Assessment procedures"
           ]
         },
         {
           "param-id": "ra-03_odp.03",
           "values": [
-            "TAILORED[ra-03_odp.03]"
+            "annually"
           ]
         },
         {
           "param-id": "ra-03_odp.04",
           "values": [
-            "TAILORED[ra-03_odp.04]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "ra-03_odp.05",
           "values": [
-            "TAILORED[ra-03_odp.05]"
+            "quarterly"
           ]
         },
         {
           "param-id": "ra-03.01_odp.01",
           "values": [
-            "TAILORED[ra-03.01_odp.01]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "ra-03.01_odp.02",
           "values": [
-            "TAILORED[ra-03.01_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "ra-05_odp.01",
           "values": [
-            "TAILORED[ra-05_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "ra-05_odp.02",
           "values": [
-            "TAILORED[ra-05_odp.02]"
+            "quarterly"
           ]
         },
         {
           "param-id": "ra-05_odp.03",
           "values": [
-            "TAILORED[ra-05_odp.03]"
+            "Response times as defined in the Risk Assessment procedures"
           ]
         },
         {
           "param-id": "ra-05_odp.04",
           "values": [
-            "TAILORED[ra-05_odp.04]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
@@ -2975,43 +2975,43 @@
         {
           "param-id": "ra-05.02_odp.02",
           "values": [
-            "TAILORED[ra-05.02_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "ra-05.05_odp.01",
           "values": [
-            "TAILORED[ra-05.05_odp.01]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "ra-05.05_odp.02",
           "values": [
-            "TAILORED[ra-05.05_odp.02]"
+            "Vulnerability scanning activities as defined in the Risk Assessment procedures"
           ]
         },
         {
           "param-id": "ra-09_odp.01",
           "values": [
-            "TAILORED[ra-09_odp.01]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "ra-09_odp.02",
           "values": [
-            "TAILORED[ra-09_odp.02]"
+            "Decision points in the system development life cycle as defined in the Risk Assessment procedures"
           ]
         },
         {
           "param-id": "sa-01_odp.01",
           "values": [
-            "TAILORED[sa-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "sa-01_odp.02",
           "values": [
-            "TAILORED[sa-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -3023,37 +3023,37 @@
         {
           "param-id": "sa-01_odp.04",
           "values": [
-            "TAILORED[sa-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "sa-01_odp.05",
           "values": [
-            "TAILORED[sa-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "sa-01_odp.06",
           "values": [
-            "TAILORED[sa-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "sa-01_odp.07",
           "values": [
-            "TAILORED[sa-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "sa-01_odp.08",
           "values": [
-            "TAILORED[sa-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "sa-03_odp",
           "values": [
-            "TAILORED[sa-03_odp]"
+            "System-development life cycle as defined in the System and Services Acquisition procedures"
           ]
         },
         {
@@ -3065,7 +3065,7 @@
         {
           "param-id": "sa-04_odp.02",
           "values": [
-            "TAILORED[sa-04_odp.02]"
+            "Contract language as defined in the System and Services Acquisition procedures"
           ]
         },
         {
@@ -3077,55 +3077,55 @@
         {
           "param-id": "sa-04.02_odp.02",
           "values": [
-            "TAILORED[sa-04.02_odp.02]"
+            "Design and implementation information as defined in the System and Services Acquisition procedures"
           ]
         },
         {
           "param-id": "sa-04.02_odp.03",
           "values": [
-            "TAILORED[sa-04.02_odp.03]"
+            "Level of detail as defined in the System and Services Acquisition procedures"
           ]
         },
         {
           "param-id": "sa-05_odp.01",
           "values": [
-            "TAILORED[sa-05_odp.01]"
+            "disable the account and notify the ISSO"
           ]
         },
         {
           "param-id": "sa-05_odp.02",
           "values": [
-            "TAILORED[sa-05_odp.02]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "sa-08_odp.01",
           "values": [
-            "TAILORED[sa-08_odp.01]"
+            "Systems security engineering principles as defined in the System and Services Acquisition procedures"
           ]
         },
         {
           "param-id": "sa-08_odp.02",
           "values": [
-            "TAILORED[sa-08_odp.02]"
+            "Privacy engineering principles as defined in the System and Services Acquisition procedures"
           ]
         },
         {
           "param-id": "sa-09_odp.01",
           "values": [
-            "TAILORED[sa-09_odp.01]"
+            "the controls in the system's approved baseline"
           ]
         },
         {
           "param-id": "sa-09_odp.02",
           "values": [
-            "TAILORED[sa-09_odp.02]"
+            "Processes, methods, and techniques as defined in the System and Services Acquisition procedures"
           ]
         },
         {
           "param-id": "sa-09.02_odp",
           "values": [
-            "TAILORED[sa-09.02_odp]"
+            "External system services as defined in the System and Services Acquisition procedures"
           ]
         },
         {
@@ -3137,13 +3137,13 @@
         {
           "param-id": "sa-10_odp.02",
           "values": [
-            "TAILORED[sa-10_odp.02]"
+            "Configuration items as defined in the System and Services Acquisition procedures"
           ]
         },
         {
           "param-id": "sa-10_odp.03",
           "values": [
-            "TAILORED[sa-10_odp.03]"
+            "system administrators and the ISSO"
           ]
         },
         {
@@ -3155,49 +3155,49 @@
         {
           "param-id": "sa-11_odp.02",
           "values": [
-            "TAILORED[sa-11_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "sa-11_odp.03",
           "values": [
-            "TAILORED[sa-11_odp.03]"
+            "Depth and coverage as defined in the System and Services Acquisition procedures"
           ]
         },
         {
           "param-id": "sa-15_odp.01",
           "values": [
-            "TAILORED[sa-15_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "sa-15_odp.02",
           "values": [
-            "TAILORED[sa-15_odp.02]"
+            "Security requirements as defined in the System and Services Acquisition procedures"
           ]
         },
         {
           "param-id": "sa-15_odp.03",
           "values": [
-            "TAILORED[sa-15_odp.03]"
+            "Privacy requirements as defined in the System and Services Acquisition procedures"
           ]
         },
         {
           "param-id": "sa-15.03_odp.01",
           "values": [
-            "TAILORED[sa-15.03_odp.01]"
+            "Decision points as defined in the System and Services Acquisition procedures"
           ]
         },
         {
           "param-id": "sa-15.03_odp.02",
           "values": [
-            "TAILORED[sa-15.03_odp.02]"
+            "Breadth as defined in the System and Services Acquisition procedures"
           ]
         },
         {
           "param-id": "sa-15.03_odp.03",
           "values": [
-            "TAILORED[sa-15.03_odp.03]"
+            "Depth as defined in the System and Services Acquisition procedures"
           ]
         },
         {
@@ -3209,19 +3209,19 @@
         {
           "param-id": "sa-22_odp.02",
           "values": [
-            "TAILORED[sa-22_odp.02]"
+            "Support from external providers as defined in the System and Services Acquisition procedures"
           ]
         },
         {
           "param-id": "sc-01_odp.01",
           "values": [
-            "TAILORED[sc-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "sc-01_odp.02",
           "values": [
-            "TAILORED[sc-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -3233,37 +3233,37 @@
         {
           "param-id": "sc-01_odp.04",
           "values": [
-            "TAILORED[sc-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "sc-01_odp.05",
           "values": [
-            "TAILORED[sc-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "sc-01_odp.06",
           "values": [
-            "TAILORED[sc-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "sc-01_odp.07",
           "values": [
-            "TAILORED[sc-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "sc-01_odp.08",
           "values": [
-            "TAILORED[sc-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "sc-05_odp.01",
           "values": [
-            "TAILORED[sc-05_odp.01]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
@@ -3275,7 +3275,7 @@
         {
           "param-id": "sc-05_odp.03",
           "values": [
-            "TAILORED[sc-05_odp.03]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
@@ -3287,7 +3287,7 @@
         {
           "param-id": "sc-07.04_odp",
           "values": [
-            "TAILORED[sc-07.04_odp]"
+            "annually"
           ]
         },
         {
@@ -3299,25 +3299,25 @@
         {
           "param-id": "sc-07.05_odp.02",
           "values": [
-            "TAILORED[sc-07.05_odp.02]"
+            "Systems as defined in the System and Communications Protection procedures"
           ]
         },
         {
           "param-id": "sc-07.07_odp",
           "values": [
-            "TAILORED[sc-07.07_odp]"
+            "Safeguards as defined in the System and Communications Protection procedures"
           ]
         },
         {
           "param-id": "sc-07.08_odp.01",
           "values": [
-            "TAILORED[sc-07.08_odp.01]"
+            "Internal communications traffic as defined in the System and Communications Protection procedures"
           ]
         },
         {
           "param-id": "sc-07.08_odp.02",
           "values": [
-            "TAILORED[sc-07.08_odp.02]"
+            "External networks as defined in the System and Communications Protection procedures"
           ]
         },
         {
@@ -3335,37 +3335,37 @@
         {
           "param-id": "sc-10_odp",
           "values": [
-            "TAILORED[sc-10_odp]"
+            "30 days"
           ]
         },
         {
           "param-id": "sc-12_odp",
           "values": [
-            "TAILORED[sc-12_odp]"
+            "Requirements as defined in the System and Communications Protection procedures"
           ]
         },
         {
           "param-id": "sc-13_odp.01",
           "values": [
-            "TAILORED[sc-13_odp.01]"
+            "Cryptographic uses as defined in the System and Communications Protection procedures"
           ]
         },
         {
           "param-id": "sc-13_odp.02",
           "values": [
-            "TAILORED[sc-13_odp.02]"
+            "Types of cryptography as defined in the System and Communications Protection procedures"
           ]
         },
         {
           "param-id": "sc-15_odp",
           "values": [
-            "TAILORED[sc-15_odp]"
+            "Exceptions where remote activation is to be allowed as defined in the System and Communications Protection procedures"
           ]
         },
         {
           "param-id": "sc-17_odp",
           "values": [
-            "TAILORED[sc-17_odp]"
+            "Certificate policy as defined in the System and Communications Protection procedures"
           ]
         },
         {
@@ -3377,31 +3377,31 @@
         {
           "param-id": "sc-28_odp.02",
           "values": [
-            "TAILORED[sc-28_odp.02]"
+            "Information at rest as defined in the System and Communications Protection procedures"
           ]
         },
         {
           "param-id": "sc-28.01_odp.01",
           "values": [
-            "TAILORED[sc-28.01_odp.01]"
+            "controlled unclassified information (CUI)"
           ]
         },
         {
           "param-id": "sc-28.01_odp.02",
           "values": [
-            "TAILORED[sc-28.01_odp.02]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "si-01_odp.01",
           "values": [
-            "TAILORED[si-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "si-01_odp.02",
           "values": [
-            "TAILORED[si-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -3413,49 +3413,49 @@
         {
           "param-id": "si-01_odp.04",
           "values": [
-            "TAILORED[si-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "si-01_odp.05",
           "values": [
-            "TAILORED[si-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "si-01_odp.06",
           "values": [
-            "TAILORED[si-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "si-01_odp.07",
           "values": [
-            "TAILORED[si-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "si-01_odp.08",
           "values": [
-            "TAILORED[si-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "si-02_odp",
           "values": [
-            "TAILORED[si-02_odp]"
+            "30 days"
           ]
         },
         {
           "param-id": "si-02.02_odp.01",
           "values": [
-            "TAILORED[si-02.02_odp.01]"
+            "the enterprise configuration management tool"
           ]
         },
         {
           "param-id": "si-02.02_odp.02",
           "values": [
-            "TAILORED[si-02.02_odp.02]"
+            "annually"
           ]
         },
         {
@@ -3467,7 +3467,7 @@
         {
           "param-id": "si-03_odp.02",
           "values": [
-            "TAILORED[si-03_odp.02]"
+            "annually"
           ]
         },
         {
@@ -3485,37 +3485,37 @@
         {
           "param-id": "si-03_odp.05",
           "values": [
-            "TAILORED[si-03_odp.05]"
+            "lock the account"
           ]
         },
         {
           "param-id": "si-03_odp.06",
           "values": [
-            "TAILORED[si-03_odp.06]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "si-04_odp.01",
           "values": [
-            "TAILORED[si-04_odp.01]"
+            "Monitoring objectives as defined in the System and Information Integrity procedures"
           ]
         },
         {
           "param-id": "si-04_odp.02",
           "values": [
-            "TAILORED[si-04_odp.02]"
+            "static and dynamic code analysis"
           ]
         },
         {
           "param-id": "si-04_odp.03",
           "values": [
-            "TAILORED[si-04_odp.03]"
+            "System monitoring information as defined in the System and Information Integrity procedures"
           ]
         },
         {
           "param-id": "si-04_odp.04",
           "values": [
-            "TAILORED[si-04_odp.04]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
@@ -3527,49 +3527,49 @@
         {
           "param-id": "si-04_odp.06",
           "values": [
-            "TAILORED[si-04_odp.06]"
+            "annually"
           ]
         },
         {
           "param-id": "si-04.04_odp.01",
           "values": [
-            "TAILORED[si-04.04_odp.01]"
+            "annually"
           ]
         },
         {
           "param-id": "si-04.04_odp.02",
           "values": [
-            "TAILORED[si-04.04_odp.02]"
+            "Unusual or unauthorized activities or conditions as defined in the System and Information Integrity procedures"
           ]
         },
         {
           "param-id": "si-04.04_odp.03",
           "values": [
-            "TAILORED[si-04.04_odp.03]"
+            "quarterly"
           ]
         },
         {
           "param-id": "si-04.04_odp.04",
           "values": [
-            "TAILORED[si-04.04_odp.04]"
+            "Unusual or unauthorized activities or conditions as defined in the System and Information Integrity procedures (si-04.04_odp.04)"
           ]
         },
         {
           "param-id": "si-04.05_odp.01",
           "values": [
-            "TAILORED[si-04.05_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "si-04.05_odp.02",
           "values": [
-            "TAILORED[si-04.05_odp.02]"
+            "Compromise indicators as defined in the System and Information Integrity procedures"
           ]
         },
         {
           "param-id": "si-05_odp.01",
           "values": [
-            "TAILORED[si-05_odp.01]"
+            "US-CERT (CISA)"
           ]
         },
         {
@@ -3581,61 +3581,61 @@
         {
           "param-id": "si-05_odp.03",
           "values": [
-            "TAILORED[si-05_odp.03]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "si-05_odp.04",
           "values": [
-            "TAILORED[si-05_odp.04]"
+            "Elements as defined in the System and Information Integrity procedures"
           ]
         },
         {
           "param-id": "si-05_odp.05",
           "values": [
-            "TAILORED[si-05_odp.05]"
+            "the hosting provider's security team"
           ]
         },
         {
           "param-id": "si-07_odp.01",
           "values": [
-            "TAILORED[si-07_odp.01]"
+            "the approved operating system images"
           ]
         },
         {
           "param-id": "si-07_odp.02",
           "values": [
-            "TAILORED[si-07_odp.02]"
+            "BIOS/UEFI and network device firmware"
           ]
         },
         {
           "param-id": "si-07_odp.03",
           "values": [
-            "TAILORED[si-07_odp.03]"
+            "controlled unclassified information (CUI)"
           ]
         },
         {
           "param-id": "si-07_odp.04",
           "values": [
-            "TAILORED[si-07_odp.04]"
+            "disable the account and notify the ISSO"
           ]
         },
         {
           "param-id": "si-07_odp.05",
           "values": [
-            "TAILORED[si-07_odp.05]"
+            "isolate the affected component and open an incident"
           ]
         },
         {
           "param-id": "si-07_odp.06",
           "values": [
-            "TAILORED[si-07_odp.06]"
+            "alert the SOC and preserve the logs"
           ]
         },
         {
           "param-id": "si-07.01_odp.01",
           "values": [
-            "TAILORED[si-07.01_odp.01]"
+            "the approved operating system images"
           ]
         },
         {
@@ -3647,19 +3647,19 @@
         {
           "param-id": "si-07.01_odp.03",
           "values": [
-            "TAILORED[si-07.01_odp.03]"
+            "system startup, restart and shutdown"
           ]
         },
         {
           "param-id": "si-07.01_odp.04",
           "values": [
-            "TAILORED[si-07.01_odp.04]"
+            "annually"
           ]
         },
         {
           "param-id": "si-07.01_odp.05",
           "values": [
-            "TAILORED[si-07.01_odp.05]"
+            "BIOS/UEFI and network device firmware"
           ]
         },
         {
@@ -3671,19 +3671,19 @@
         {
           "param-id": "si-07.01_odp.07",
           "values": [
-            "TAILORED[si-07.01_odp.07]"
+            "a failover or recovery from backup"
           ]
         },
         {
           "param-id": "si-07.01_odp.08",
           "values": [
-            "TAILORED[si-07.01_odp.08]"
+            "quarterly"
           ]
         },
         {
           "param-id": "si-07.01_odp.09",
           "values": [
-            "TAILORED[si-07.01_odp.09]"
+            "controlled unclassified information (CUI)"
           ]
         },
         {
@@ -3695,55 +3695,55 @@
         {
           "param-id": "si-07.01_odp.11",
           "values": [
-            "TAILORED[si-07.01_odp.11]"
+            "a change to the security configuration"
           ]
         },
         {
           "param-id": "si-07.01_odp.12",
           "values": [
-            "TAILORED[si-07.01_odp.12]"
+            "monthly"
           ]
         },
         {
           "param-id": "si-07.07_odp",
           "values": [
-            "TAILORED[si-07.07_odp]"
+            "Changes as defined in the System and Information Integrity procedures"
           ]
         },
         {
           "param-id": "si-08.02_odp",
           "values": [
-            "TAILORED[si-08.02_odp]"
+            "annually"
           ]
         },
         {
           "param-id": "si-10_odp",
           "values": [
-            "TAILORED[si-10_odp]"
+            "Information inputs as defined in the System and Information Integrity procedures"
           ]
         },
         {
           "param-id": "si-11_odp",
           "values": [
-            "TAILORED[si-11_odp]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "si-16_odp",
           "values": [
-            "TAILORED[si-16_odp]"
+            "the controls in the system's approved baseline"
           ]
         },
         {
           "param-id": "sr-01_odp.01",
           "values": [
-            "TAILORED[sr-01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "sr-01_odp.02",
           "values": [
-            "TAILORED[sr-01_odp.02]"
+            "the System Owner"
           ]
         },
         {
@@ -3755,73 +3755,73 @@
         {
           "param-id": "sr-01_odp.04",
           "values": [
-            "TAILORED[sr-01_odp.04]"
+            "the Chief Information Security Officer (CISO)"
           ]
         },
         {
           "param-id": "sr-01_odp.05",
           "values": [
-            "TAILORED[sr-01_odp.05]"
+            "annually"
           ]
         },
         {
           "param-id": "sr-01_odp.06",
           "values": [
-            "TAILORED[sr-01_odp.06]"
+            "a significant change to the system, a security incident, or a new federal requirement"
           ]
         },
         {
           "param-id": "sr-01_odp.07",
           "values": [
-            "TAILORED[sr-01_odp.07]"
+            "quarterly"
           ]
         },
         {
           "param-id": "sr-01_odp.08",
           "values": [
-            "TAILORED[sr-01_odp.08]"
+            "a reorganization, an audit finding, or a change in applicable law"
           ]
         },
         {
           "param-id": "sr-02_odp.01",
           "values": [
-            "TAILORED[sr-02_odp.01]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "sr-02_odp.02",
           "values": [
-            "TAILORED[sr-02_odp.02]"
+            "annually"
           ]
         },
         {
           "param-id": "sr-02.01_odp.01",
           "values": [
-            "TAILORED[sr-02.01_odp.01]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "sr-02.01_odp.02",
           "values": [
-            "TAILORED[sr-02.01_odp.02]"
+            "Supply chain risk management activities as defined in the Supply Chain Risk Management procedures"
           ]
         },
         {
           "param-id": "sr-03_odp.01",
           "values": [
-            "TAILORED[sr-03_odp.01]"
+            "System or system component as defined in the Supply Chain Risk Management procedures"
           ]
         },
         {
           "param-id": "sr-03_odp.02",
           "values": [
-            "TAILORED[sr-03_odp.02]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "sr-03_odp.03",
           "values": [
-            "TAILORED[sr-03_odp.03]"
+            "Supply chain controls as defined in the Supply Chain Risk Management procedures"
           ]
         },
         {
@@ -3833,19 +3833,19 @@
         {
           "param-id": "sr-03_odp.05",
           "values": [
-            "TAILORED[sr-03_odp.05]"
+            "Document as defined in the Supply Chain Risk Management procedures"
           ]
         },
         {
           "param-id": "sr-05_odp",
           "values": [
-            "TAILORED[sr-05_odp]"
+            "Strategies, tools, and methods as defined in the Supply Chain Risk Management procedures"
           ]
         },
         {
           "param-id": "sr-06_odp",
           "values": [
-            "TAILORED[sr-06_odp]"
+            "annually"
           ]
         },
         {
@@ -3857,13 +3857,13 @@
         {
           "param-id": "sr-08_odp.02",
           "values": [
-            "TAILORED[sr-08_odp.02]"
+            "Results of assessments or audits as defined in the Supply Chain Risk Management procedures"
           ]
         },
         {
           "param-id": "sr-10_odp.01",
           "values": [
-            "TAILORED[sr-10_odp.01]"
+            "all production systems"
           ]
         },
         {
@@ -3875,13 +3875,13 @@
         {
           "param-id": "sr-10_odp.03",
           "values": [
-            "TAILORED[sr-10_odp.03]"
+            "annually"
           ]
         },
         {
           "param-id": "sr-10_odp.04",
           "values": [
-            "TAILORED[sr-10_odp.04]"
+            "Indications of need for inspection as defined in the Supply Chain Risk Management procedures"
           ]
         },
         {
@@ -3893,37 +3893,37 @@
         {
           "param-id": "sr-11_odp.02",
           "values": [
-            "TAILORED[sr-11_odp.02]"
+            "External reporting organizations as defined in the Supply Chain Risk Management procedures"
           ]
         },
         {
           "param-id": "sr-11_odp.03",
           "values": [
-            "TAILORED[sr-11_odp.03]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "sr-11.01_odp",
           "values": [
-            "TAILORED[sr-11.01_odp]"
+            "the Information System Security Officer (ISSO)"
           ]
         },
         {
           "param-id": "sr-11.02_odp",
           "values": [
-            "TAILORED[sr-11.02_odp]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "sr-12_odp.01",
           "values": [
-            "TAILORED[sr-12_odp.01]"
+            "web servers, database servers and network devices"
           ]
         },
         {
           "param-id": "sr-12_odp.02",
           "values": [
-            "TAILORED[sr-12_odp.02]"
+            "static and dynamic code analysis"
           ]
         }
       ]
