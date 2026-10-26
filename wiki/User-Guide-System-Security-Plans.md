@@ -63,10 +63,14 @@ the assessment layer (SAP/SAR) and the ATO package.
 
 1. Go to *Implementation → System Security Plans* (`/ssp_documents`).
 2. Click **Create New SSP** to open the wizard (`/ssp_documents/wizard`).
-3. **Select a baseline/profile** — this determines the control set.
+3. **Select a baseline/profile** — this determines the control set. Only
+   **published** baselines are listed: the SSP's statement parts come from the
+   resolved catalog publishing produces.
 4. **Select a CDEF** (optional) — to seed component-provided implementations.
 5. Enter **system details**: name, version, description.
-6. Submit. SPARC generates the SSP with one control entry per baseline control.
+6. Submit. SPARC generates the SSP with one control entry per baseline control,
+   and a row for each of its statement parts to answer, exactly as **Create from
+   profile** does.
 
 ## How to import or upload an existing SSP
 
@@ -155,7 +159,10 @@ The SSP detail page (`/ssp_documents/:id`) is where the real work happens.
      ![The read-only What This Baseline Requires panel on an SSP control card, showing the resolved control statement, parameters, guidance and implementation statements](images/ssp-baseline-requires.png)
 3. Answer each **statement part** and each **enhancement** in its own row (see
    below). The rows are there whether the card is in view or edit mode.
-4. Click **Edit** on the card to set the control's own attributes:
+4. Click **Edit** on the card. A **Responses** section opens with a box for
+   every part the baseline requires a response from, each labelled with the
+   requirement it answers; answer as many as you like there instead of one row
+   at a time. Below it, set the control's own attributes:
    - **Status** (implementation status). A new SSP starts with **no status**:
      choose one when you answer the control. Choose **Deferred** or **Will Not
      Implement** only when that is the system's actual position: an assessment
@@ -166,7 +173,8 @@ The SSP detail page (`/ssp_documents/:id`) is where the real work happens.
 
    An SSP is answered part by part, so the card no longer offers a control-level
    narrative. One written before v1.17.2 is still shown, and still exported.
-5. Save the card. The **compliance percentage** and progress bar at the top
+5. **Save Changes** stores the attributes and every response you changed, in
+   one save (a box you leave as it was changes nothing). The **compliance percentage** and progress bar at the top
    update as you go, and so does **Responses done** beside them (see
    [How much is left to write](#how-much-is-left-to-write)).
 
