@@ -221,7 +221,7 @@ jobs:
       # image is in Docker Hub/ECR. Expiry IS the cleanup — there is no staging
       # registry to prune.
       - name: Upload the ${{ matrix.platform }} image
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: image-${{ matrix.slug }}
           path: /tmp/sparc-${{ matrix.slug }}.tar
@@ -268,7 +268,7 @@ jobs:
       # selects one platform out of the OCI index. Do not "simplify" this back
       # to docker save — the arm64 half would be silently lost.
       - name: Download the amd64 image built by the matrix
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: image-linux-amd64
           path: /tmp
@@ -320,7 +320,7 @@ jobs:
           echo "minted $(grep -c '^export' /tmp/smoke-env.sh) exports"
 
       - name: Set up Python tooling
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
           enable-cache: true
 
@@ -433,7 +433,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Download the arm64 image built by the matrix
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: image-linux-arm64
           path: /tmp
@@ -547,7 +547,7 @@ jobs:
 
       - name: Login to Docker Hub
         if: needs.prepare.outputs.dry_run != 'true'
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -620,7 +620,7 @@ jobs:
       # it would publish a single-arch image and silently drop arm64.
       - name: Download both verified architectures
         if: needs.prepare.outputs.dry_run != 'true'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: image-linux-*
           merge-multiple: true
@@ -778,7 +778,7 @@ jobs:
 
       - name: Install Syft
         if: needs.prepare.outputs.dry_run == 'true'
-        uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        uses: anchore/sbom-action/download-syft@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
 
       - name: Generate SBOM (dry run)
         if: needs.prepare.outputs.dry_run == 'true'
@@ -789,7 +789,7 @@ jobs:
 
       - name: Upload SBOM artifact
         if: needs.prepare.outputs.dry_run == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: sparc-sbom-${{ needs.prepare.outputs.version_stripped }}
           path: sparc-sbom-${{ needs.prepare.outputs.version_stripped }}.cdx.json
@@ -823,10 +823,10 @@ jobs:
           cosign-release: "v3.1.1"
 
       - name: Install Syft
-        uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        uses: anchore/sbom-action/download-syft@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
 
       - name: Login to Docker Hub
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -928,7 +928,7 @@ jobs:
             "${ECR_REGISTRY}@${{ needs.build-and-push.outputs.digest }}"
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: sparc-sbom-${{ needs.prepare.outputs.version_stripped }}
           path: sparc-sbom-${{ needs.prepare.outputs.version_stripped }}.cdx.json
@@ -971,7 +971,7 @@ jobs:
         id: grype
 
       - name: Set up Ruby (amendments + VEX enrichment)
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@26e5b7d197ebf60545ee9667bcbace0be11ccaec # v1
         with:
           ruby-version: .ruby-version
 
@@ -1105,7 +1105,7 @@ jobs:
             "${ECR_REGISTRY}@${{ needs.build-and-push.outputs.digest }}"
 
       - name: Upload the vulnerability predicate + scan
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: vulnerability-attestation
           path: |
