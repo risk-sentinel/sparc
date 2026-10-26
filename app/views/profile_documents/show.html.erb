@@ -24,7 +24,12 @@
 
 <%# ── #911: catalog lineage. Discovered by looking, not by being
      refused mid-edit. Renders nothing when reconciled. %>
-<%= render "shared/reconciliation_banner", document: @profile_document %>
+<%# A writer looking at a baseline with no catalog gets the catalog card below,
+    which says what the baseline names and how to load it, instead of the
+    banner's generic picker: the two never appear together. %>
+<% catalog_card = signed_in? && can_write_profiles? && !@profile_document.published_lifecycle? &&
+                  (@profile_document.control_catalog.blank? || !@profile_document.reconciliation_blocks_update?) %>
+<%= render "shared/reconciliation_banner", document: @profile_document unless catalog_card && @profile_document.control_catalog.blank? %>
 
 <%# ── #928: the source catalog, changeable ───────────────────────────
      The banner above carries a picker only while the document is BLOCKED,
@@ -37,21 +42,43 @@
 
      Rendered only where the banner is NOT already offering the same control,
      so the two never appear together. %>
-<% if signed_in? && can_write_profiles? &&
-     !@profile_document.published_lifecycle? &&
-     !@profile_document.reconciliation_blocks_update? %>
-  <div class="card mt-2 mb-0 <%= "border-warning" if @profile_document.control_catalog.blank? %>">
+<% if catalog_card %>
+  <%# The catalog this baseline's controls come from. Upload links a catalog it
+      matches, as a suggestion to CONFIRM; with no match, or the catalog not
+      loaded yet, a person SELECTS one. Either way the imports are re-checked
+      against it (ProfileCatalogLinkService), and a pending baseline cannot be
+      published. %>
+  <% catalog = @profile_document.control_catalog %>
+  <% pending = @profile_document.catalog_confirmation_pending? %>
+  <div class="card mt-2 mb-0 <%= "border-warning" if catalog.blank? || pending %>" data-testid="catalog-link">
     <div class="card-body py-2">
-      <% if @profile_document.control_catalog.blank? %>
-        <p class="mb-2">
-          <strong>No source catalog is linked.</strong>
-          A profile selects controls from a catalog, so until one is set this
-          profile cannot be published and its controls cannot be managed.
+      <% if catalog.blank? %>
+        <p class="mb-2" data-catalog-state="absent">
+          <strong>Select the catalog this baseline's controls come from.</strong>
+          <% pointed = Array(@profile_document.import_metadata&.dig("imports")).filter_map { |imp| imp["title"].presence || imp["href"].presence } %>
+          <% if pointed.any? %>
+            It names <%= pointed.to_sentence %>, which matches no loaded catalog.
+          <% end %>
+          Until one is selected it cannot be published and its controls cannot be managed.
+          Not in SPARC yet? <%= link_to "Import the catalog", import_control_catalogs_path %>, then select it here.
         </p>
+        <%= render "shared/baseline_picker", document: @profile_document, submit_label: "Select Catalog" %>
+      <% elsif pending %>
+        <div class="mb-2" data-catalog-state="pending">
+          <strong>Confirm this baseline's catalog.</strong>
+          It was matched to <strong><%= catalog.name %></strong>
+          <%= @profile_document.suggested_catalog_match == "uuid" ? "by the catalog's identifier" : "by name" %>.
+          Confirm it, or choose another. It cannot be published until you do.
+        </div>
+        <%= form_with url: url_for(action: :set_baseline, id: @profile_document), method: :patch, local: true,
+                      class: "d-inline-block mb-2" do %>
+          <%= hidden_field_tag "profile_document[control_catalog_id]", catalog.id, id: nil %>
+          <%= submit_tag "Confirm catalog", class: "btn btn-success btn-sm", data: { testid: "confirm-catalog" } %>
+        <% end %>
+        <%= render "shared/baseline_picker", document: @profile_document, submit_label: "Change catalog" %>
+      <% else %>
+        <%= render "shared/baseline_picker", document: @profile_document, submit_label: "Change catalog" %>
       <% end %>
-      <%= render "shared/baseline_picker",
-            document: @profile_document,
-            submit_label: @profile_document.control_catalog.present? ? "Change catalog" : "Link catalog" %>
     </div>
   </div>
 <% end %>

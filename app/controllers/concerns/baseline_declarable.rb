@@ -65,6 +65,8 @@ module BaselineDeclarable
     document.assign_attributes(permitted)
     remaining = document.valid? ? [] : document.errors.full_messages
     document.save!(validate: false)
+    # A profile re-checks its imports against the catalog just declared.
+    document.baseline_declared! if document.respond_to?(:baseline_declared!)
     audit_log("#{document.model_name.element}_baseline_declared", subject: document,
               metadata: permitted.to_h)
 

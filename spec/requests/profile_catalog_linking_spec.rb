@@ -54,10 +54,10 @@ RSpec.describe "Linking a profile to its source catalog", type: :request do
 
       get profile_document_path(profile)
 
-      expect(response.body).to include("No source catalog is linked")
+      expect(response.body).to include("Select the catalog this baseline's controls come from")
       expect(response.body).to include("profile_document[control_catalog_id]")
       expect(response.body).to include(set_baseline_profile_document_path(profile))
-      expect(response.body).to include("Link catalog")
+      expect(response.body).to include("Select Catalog")
     end
 
     it "says so plainly when there is no catalog to choose, rather than offering an empty picker" do
@@ -283,7 +283,8 @@ RSpec.describe "Linking a profile to its source catalog", type: :request do
     it "is not offered a picker it could not use" do
       get profile_document_path(profile)
 
-      expect(response.body).not_to include("Link catalog")
+      expect(response.body).not_to include("Select Catalog")
+      expect(response.body).not_to include("profile_document[control_catalog_id]")
     end
 
     it "is refused the write" do

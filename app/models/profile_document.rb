@@ -44,7 +44,32 @@ class ProfileDocument < ApplicationRecord
   # tailors a catalog, so it needs a linked catalog and at least one control
   # before it can be published; a metadata-only API create has neither.
   requires_content("A linked control catalog") { control_catalog_id.present? }
+  # Upload's match to a loaded catalog is a suggestion until a person confirms
+  # or changes it (ProfileCatalogLinkService).
+  requires_content("A confirmed control catalog") { !catalog_confirmation_pending? }
   requires_content("At least one control") { profile_controls.exists? }
+
+  # Upload linked this baseline to a catalog it matched, and no one has
+  # confirmed or changed it yet. A baseline with no such record (authored,
+  # created from a catalog, or uploaded before the confirmation step) is not
+  # pending.
+  def catalog_confirmation_pending?
+    import_metadata.is_a?(Hash) && import_metadata["catalog_confirmation"] == "pending"
+  end
+
+  # How upload matched the catalog this baseline is linked to ("uuid",
+  # "nist_pattern", "title"), for the confirmation prompt.
+  def suggested_catalog_match
+    Array(import_metadata.is_a?(Hash) ? import_metadata["imports"] : nil)
+      .find { |imp| imp["catalog_id"] == control_catalog_id }&.dig("matched_by")
+  end
+
+  # A person declared this baseline's catalog: the web picker (set_baseline)
+  # and PATCH /api/v1/profile_documents/:id both land here. Re-checks the
+  # imports against it and marks the link confirmed.
+  def baseline_declared!
+    ProfileCatalogLinkService.new(self).call
+  end
 
   def to_json_data
     {

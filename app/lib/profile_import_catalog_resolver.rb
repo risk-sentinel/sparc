@@ -16,16 +16,19 @@
 #   2. the NIST pattern: an rlink (or the href itself) names SP 800-53 and a
 #      revision a loaded catalog's name also carries (the pre-#1234 rule).
 #      Several catalogs can fit — an agency overlay named "... SP 800-53
-#      Rev 5" fits as well as NIST's — so the fits are ranked: the catalog the
-#      profile was uploaded against first, then the one holding the most of the
-#      controls the import names. Taking the lowest id linked a NIST profile to
-#      an overlay holding none of its controls, and every control was reported
-#      as missing from its catalog;
+#      Rev 5" fits as well as NIST's — so the one holding the most of the
+#      controls the import names wins. Taking the lowest id linked a NIST
+#      profile to an overlay holding none of its controls, and every control
+#      was reported as missing from its catalog;
 #   3. the back-matter resource's title equals a loaded catalog's name, and
 #      EXACTLY ONE catalog has that name. Two catalogs with one name is not a
 #      match: guessing would attribute controls to the wrong source.
 #
 # An import nothing matches stays unlinked and is reported as a warning.
+#
+# Every match is a SUGGESTION: upload marks the baseline's catalog pending until
+# a person confirms or changes it (ProfileCatalogLinkService), and a pending
+# baseline cannot be published.
 class ProfileImportCatalogResolver
   CATALOG_800_53 = "800-53"
   REV_PATTERN    = /rev\.?\s*(\d+)/i
@@ -42,12 +45,9 @@ class ProfileImportCatalogResolver
 
 
   # @param back_matter [Array<Hash>] the profile's raw `back-matter.resources`
-  # @param preferred [ControlCatalog, nil] the catalog the profile was
-  #   uploaded against, which wins among catalogs the NIST pattern fits
-  def initialize(back_matter, catalogs: ControlCatalog.all.to_a, preferred: nil)
+  def initialize(back_matter, catalogs: ControlCatalog.all.to_a)
     @resources = Array(back_matter).index_by { |r| r["uuid"].to_s }
     @catalogs  = catalogs.sort_by(&:id)
-    @preferred = preferred
   end
 
   # @param imports [Array<Hash>] the profile's raw `imports`
@@ -131,7 +131,6 @@ class ProfileImportCatalogResolver
       hrefs.any? { |h| h.include?(CATALOG_800_53) && revision(h) == catalog_rev }
     end
     return fits.first if fits.size < 2
-    return @preferred if @preferred && fits.any? { |c| c.id == @preferred.id }
 
     named = Array(imp["include-controls"]).flat_map { |ic| Array(ic["with-ids"]) }.map(&:to_s)
     # max_by keeps the first of equals, so a tie still goes to the lowest id.

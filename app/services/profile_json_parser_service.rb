@@ -157,8 +157,7 @@ class ProfileJsonParserService
 
     catalog_ref  = imports.first&.dig("href")
     back_matter  = profile.dig("back-matter", "resources") || []
-    @import_resolutions = ProfileImportCatalogResolver.new(back_matter, preferred: @document.control_catalog)
-                                                      .resolve(imports)
+    @import_resolutions = ProfileImportCatalogResolver.new(back_matter).resolve(imports)
 
     # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
     metadata_extra = metadata.except("title", "version", OSCAL_VERSION, "last-modified")
@@ -175,7 +174,12 @@ class ProfileJsonParserService
         "catalog_href" => catalog_ref,
         "merge"        => profile["merge"],
         "imports"      => import_records,
-        "unlinked_imports" => unlinked_import_records.presence
+        "unlinked_imports" => unlinked_import_records.presence,
+        # The imports as uploaded, so confirming or changing the catalog can
+        # re-read their selection (ProfileCatalogLinkService).
+        "source_imports" => imports,
+        # A catalog matched here is a suggestion until someone confirms it.
+        "catalog_confirmation" => (@import_resolutions.any?(&:linked?) ? "pending" : nil)
       }.compact
     )
     @document.assign_oscal_uuid!(profile["uuid"])

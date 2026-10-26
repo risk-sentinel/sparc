@@ -134,6 +134,9 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
     end
 
     @profile.update!(profile_params)
+    # Declaring the catalog, even the one already linked, is how an API client
+    # confirms upload's match; the web picker does the same (set_baseline).
+    @profile.baseline_declared! if profile_params.key?(:control_catalog_id) && @profile.control_catalog_id
 
     audit_log("profile_document_updated", subject: @profile, metadata: { name: @profile.name })
     # #555 — return the detailed shape so callers can read-after-write.
