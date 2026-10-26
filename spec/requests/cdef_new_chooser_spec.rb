@@ -55,6 +55,18 @@ RSpec.describe "New CDEF chooser", type: :request do
     expect(panel("author").at_css("input[name='cdef_document[component_title]']")["value"]).to eq("Kept")
   end
 
+  it "reopens on Author, saving nothing, when an authored CDEF asks for a scope that does not exist" do
+    expect {
+      post cdef_documents_path, params: { cdef_document: { name: "Scoped", component_type: "service",
+                                                           component_title: "Kept", scope: "nowhere" } }
+    }.not_to change(CdefDocument, :count)
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.body).to include("Unknown CDEF scope")
+    expect(chooser["data-cdef-new-chooser-default-value"]).to eq("author")
+    expect(panel("author").at_css("input[name='cdef_document[component_title]']")["value"]).to eq("Kept")
+  end
+
   it "folds the supported formats into the Upload panel and names the OSCAL version SPARC exports" do
     get new_cdef_document_path
 

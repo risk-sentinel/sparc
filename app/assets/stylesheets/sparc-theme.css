@@ -4388,7 +4388,7 @@ a.link-purple { color: var(--sparc-purple); }
   padding: 0.2rem 0.35rem 0.25rem;
   border-radius: 0.4rem;
   background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  color: inherit; /* white, from .sparc-gradient-header */
   text-decoration: none;
   line-height: 1.1;
   transition: background 0.12s ease, transform 0.12s ease;
@@ -4396,7 +4396,7 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-inventory-tile:hover,
 .sparc-inventory-tile:focus-visible {
   background: rgba(255, 255, 255, 0.28);
-  color: #fff;
+  color: inherit;
   transform: translateY(-1px);
 }
 .sparc-inventory-tile:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
