@@ -10,8 +10,8 @@ and every enhancement (ac-2.1). On a deployed v1.17.1 an author could not:
     see which requirement a box answered.
 
 This checks both on a seeded SSP: every lettered part of ac-1 shows its
-requirement text, the rows are still there in Edit mode, and an enhancement has
-its own answerable row.
+requirement text, Edit turns the rows into answerable items in place, and an
+enhancement has its own answerable item.
 
 #1312 — the rows are the read view; every item that takes a response is
 answered in the control's Edit form, one block per item with all its fields.
@@ -71,14 +71,18 @@ def test_every_part_of_ac1_shows_the_requirement_it_answers(authed_page):
     assert_no_csp_violations(authed_page, during="ssp part rows")
 
 
-def test_the_part_rows_stay_answerable_in_edit_mode(authed_page):
+def test_edit_turns_the_rows_into_answerable_items_in_place(authed_page):
+    """#1312: one section. Edit swaps the read-only rows for the editable items,
+    in the same place, instead of leaving both on screen."""
     authed_page.goto(_ssp_with_part_rows(authed_page))
     card = _open_card(authed_page, "ac-1")
-    visible_before = card.locator(f"{ROW}:visible").count()
+    assert card.locator(f"{ROW}:visible").count() > 1
 
     card.locator("[id^='edit-btn-']").first.click()
 
-    assert card.locator(f"{ROW}:visible").count() == visible_before > 1
+    assert card.locator(f"{ROW}:visible").count() == 0, (
+        "the read-only rows stay on screen beside the editable items"
+    )
     blocks = card.locator("[data-part-response]:visible")
     assert blocks.count() > 1, "the Edit form offers no item to answer"
     first = blocks.first

@@ -255,9 +255,11 @@ RSpec.describe "NIST Rev 5 MODERATE, end to end", type: :request do
       c1 = rows.find { |r| r["data-statement-id"] == "ac-1_smt.c.1" }
       expect(c1.at_css("[data-statement-requirement]").text).to include("365")
 
-      # Outside the view/edit toggle, so an author in the edit form can answer it.
-      expect(c1.ancestors("[id^='view-']")).to be_empty
+      # #1312 — the read view; Edit swaps it, in place, for the editable item.
+      expect(c1.ancestors("[id^='view-']")).not_to be_empty
       expect(c1.ancestors("[id^='edit-']")).to be_empty
+      edit = card.at_css("[id^='edit-'] [data-part-response='ac-1_smt.c.1']")
+      expect(edit.at_css("textarea[name$='[implementation_prose]']")).to be_present
 
       au2 = page.css(".control-card").find { |c| c.at_css(".sparc-ctrl-id")&.text&.strip == "au-2" }
       expect(au2.text).not_to include("The organization:") # Rev 4's wording

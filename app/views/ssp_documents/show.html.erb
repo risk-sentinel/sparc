@@ -363,18 +363,17 @@
           <span class="sparc-card-detail-separator"></span>
         </summary>
 
-        <%# ── Per-part responses ─────────────────────────────────────────────
-            THE authoring surface of an SSP: the author answers each statement
-            part and each enhancement, one row each, with the requirement the
-            row answers shown beside it. Rendered OUTSIDE the view/edit toggle so
-            it is there in both: #1100 moved it out of the edit form into view
-            mode, and an author who clicked Edit then found only control-level
-            boxes and no way to answer a part. %>
-        <%= render "ssp_documents/statements_table", control: control, ssp_document: @ssp_document, requirement: requirement,
-              progress: @response_progress, determinations: @objective_determinations %>
-
         <%# ── View mode ── %>
         <div id="view-<%= control.id %>" class="sparc-mt-05">
+
+          <%# ── The control's answers, item by item: the READ view ──
+              #1312 — Edit swaps this for the editable items, in the same place
+              at the top of the card. It used to stay on screen in edit mode
+              too, so the author saw every item twice: read-only here ("answer
+              it from the control's Edit"), and editable further down, below
+              "What This Baseline Requires". %>
+          <%= render "ssp_documents/statements_table", control: control, ssp_document: @ssp_document, requirement: requirement,
+                progress: @response_progress, determinations: @objective_determinations %>
 
           <%# Stated requirement — highlighted block when present %>
           <% if stated_req.present? %>
@@ -508,41 +507,27 @@
 
         <%# ── Edit form ── %>
         <div id="edit-<%= control.id %>" class="sparc-divider-top-mt sparc-d-none">
-          <%# WHAT THE AUTHOR IS ANSWERING, kept on screen WHILE they answer it.
-              `inline_edit` swaps `view-<id>` for `edit-<id>`, so opening Edit hid
-              the entire read view — and with it "What This Baseline Requires",
-              which is the control's own language with this baseline's parameter
-              values applied, plus its implementation sub-parts (#1002).
-
-              The edit panel put back only `guidance_fields` (related controls,
-              supplemental guidance), so the author was asked to write an
-              implementation statement with the requirement, the parameters and
-              the sub-part list all hidden. Reported from a container review.
-
-              Same `baseline_detail` the read view builds a few lines up and the
-              same partial the Profile screen renders, so the two screens cannot
-              describe one control differently. `editable: false` — the SSP
-              CONSUMES the baseline, it does not define it.
-
-              Open by default here, unlike the read view: in edit mode this is
-              the reference being worked from, not optional background. %>
-          <% if baseline_detail&.any? %>
-            <details class="sparc-mb-075" open>
-              <summary class="sparc-ctx-header d-flex align-items-center gap-1 fw-semibold text-body-secondary rounded sparc-ctx-header--blue">
-                <span class="catalog-arrow sparc-ctx-arrow">&#9658;</span>
-                What This Baseline Requires
-                <span class="sparc-section-hint sparc-fs-07">&mdash; the language, parameters and sub-parts you are implementing</span>
-              </summary>
-              <div class="sparc-ctx-panel--blue">
-                <%= render "shared/baseline_control_detail", detail: baseline_detail, editable: false %>
-              </div>
-            </details>
-          <% end %>
-
           <%= form_with url: ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
             <%= hidden_field_tag :control_id, control.control_id %>
+            <%# #1312 — the editable items come FIRST, where the read view stood:
+                each carries its own requirement text and objectives. %>
             <%= render "ssp_documents/part_responses", control: control, requirement: requirement,
                   progress: @response_progress, determinations: @objective_determinations %>
+
+            <%# The whole control's language with this baseline's values, for
+                reference; collapsed, since each item above shows its own. %>
+            <% if baseline_detail&.any? %>
+              <details class="sparc-mb-075">
+                <summary class="sparc-ctx-header d-flex align-items-center gap-1 fw-semibold text-body-secondary rounded sparc-ctx-header--blue">
+                  <span class="catalog-arrow sparc-ctx-arrow">&#9658;</span>
+                  What This Baseline Requires
+                  <span class="sparc-section-hint sparc-fs-07">&mdash; the language, parameters and sub-parts you are implementing</span>
+                </summary>
+                <div class="sparc-ctx-panel--blue">
+                  <%= render "shared/baseline_control_detail", detail: baseline_detail, editable: false %>
+                </div>
+              </details>
+            <% end %>
 
             <%#
               Iterate ALL EDITABLE_FIELDS so each always appears even if no DB
