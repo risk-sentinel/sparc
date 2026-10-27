@@ -39,24 +39,29 @@ RSpec.describe FieldImportService do
 
     it "classifies change / unchanged / non_editable / invalid / unknown" do
       create(:ssp_control_field, ssp_control: control, field_name: "notes", field_value: "old")
+      control.ssp_control_statements.create!(statement_id: "ac-1_smt.a", uuid: SecureRandom.uuid)
       result = described_class.new(document).preview(
         described_class.parse(content: {
           "controls" => {
-            "AC-1" => { "status" => "Implemented", "notes" => "old", "class" => "nope", "coverage_level" => "BOGUS" },
-            "ZZ-9" => { "status" => "Implemented" }
+            "AC-1" => { "notes" => "old", "class" => "nope", "status" => "Implemented" },
+            "ac-1_smt.a" => { "implementation_status" => "planned", "control_origination" => "inherited, bogus" },
+            "ZZ-9" => { "notes" => "x" }
           }
         }.to_json, format: "json")
       )
       by = result[:rows].group_by { |r| [ r.control_id, r.field_name ] }
-      expect(by[[ "AC-1", "status" ]].first.status).to eq("change")
       expect(by[[ "AC-1", "notes" ]].first.status).to eq("unchanged")
       expect(by[[ "AC-1", "class" ]].first.status).to eq("non_editable")
-      expect(by[[ "AC-1", "coverage_level" ]].first.status).to eq("invalid")
-      expect(by[[ "ZZ-9", "status" ]].first.status).to eq("unknown")
+      # #1312 — retired at control level, and the message says where it went.
+      expect(by[[ "AC-1", "status" ]].first.status).to eq("non_editable")
+      expect(by[[ "AC-1", "status" ]].first.message).to include("statement id")
+      expect(by[[ "ac-1_smt.a", "implementation_status" ]].first.status).to eq("change")
+      expect(by[[ "ac-1_smt.a", "control_origination" ]].first.status).to eq("invalid")
+      expect(by[[ "ZZ-9", "notes" ]].first.status).to eq("unknown")
     end
 
     it "does not write anything (non-destructive)" do
-      expect { described_class.new(document).preview(payload("status" => "Implemented")) }
+      expect { described_class.new(document).preview(payload("notes" => "new")) }
         .not_to change(SspControlField, :count)
     end
   end
@@ -66,19 +71,37 @@ RSpec.describe FieldImportService do
     let!(:control) { create(:ssp_control, ssp_document: document, control_id: "AC-1") }
 
     it "writes editable/allowed changes and skips unknown/non_editable/invalid" do
+      item = control.ssp_control_statements.create!(statement_id: "ac-1_smt", uuid: SecureRandom.uuid)
       result = described_class.new(document).apply(
         described_class.parse(content: {
           "controls" => {
-            "AC-1" => { "status" => "Implemented", "class" => "nope", "coverage_level" => "BOGUS" },
-            "ZZ-9" => { "status" => "Implemented" }
+            "AC-1" => { "notes" => "Reviewed.", "class" => "nope" },
+            "ac-1_smt" => { "implementation_status" => "partial", "control_origination" => "inherited, system-specific",
+                            "expected_completion" => "2027-03-31", "remarks" => "bogus-date" },
+            "ZZ-9" => { "notes" => "x" }
           }
         }.to_json, format: "json")
       )
-      expect(result[:applied]).to eq(1) # only status
-      expect(control.ssp_control_fields.find_by(field_name: "status").field_value).to eq("Implemented")
+      expect(control.ssp_control_fields.find_by(field_name: "notes").field_value).to eq("Reviewed.")
       expect(control.ssp_control_fields.find_by(field_name: "class")).to be_nil
-      expect(control.ssp_control_fields.find_by(field_name: "coverage_level")).to be_nil
-      expect(result[:stats]).to include(changes: 1, non_editable: 1, invalid: 1, unknown: 1)
+      # #1312 — the item's own fields, by its statement id.
+      item.reload
+      expect(item.implementation_status).to eq("partial")
+      expect(item.control_origination).to eq(%w[system-specific inherited])
+      expect(item.expected_completion).to eq(Date.new(2027, 3, 31))
+      expect(result[:applied]).to eq(5)
+      expect(result[:stats]).to include(changes: 5, non_editable: 1, unknown: 1)
+    end
+
+    it "refuses an item value that is not OSCAL's, and a date that is not one" do
+      control.ssp_control_statements.create!(statement_id: "ac-1_smt", uuid: SecureRandom.uuid)
+      result = described_class.new(document).apply(
+        described_class.parse(content: {
+          "controls" => { "ac-1_smt" => { "implementation_status" => "Deferred", "expected_completion" => "next spring" } }
+        }.to_json, format: "json")
+      )
+      expect(result[:applied]).to eq(0)
+      expect(result[:stats]).to include(invalid: 2)
     end
   end
 

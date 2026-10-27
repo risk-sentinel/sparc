@@ -206,15 +206,36 @@ Only included if SspInventoryItem records exist.
 | (generated) | `implemented-requirements[].uuid` | Yes | Fresh UUID per export |
 | `SspControl#control_id` | `implemented-requirements[].control-id` | Yes | Normalized: lowercase, dot notation for enhancements |
 
-### Props (from SspControlField)
+### Props (implemented-requirement)
 
-| SspControlField `field_name` | OSCAL JSON Path | Notes |
-|------------------------------|----------------|-------|
-| `status` | `implemented-requirements[].props[name=implementation-status]` | Lowercased, spaces to hyphens |
-| `control_application` | `implemented-requirements[].props[name=control-type]` | ns: `SPARC_OSCAL_NS` (default `https://sparc.risk-sentinel.org/ns`) |
-| `coverage_level` | `implemented-requirements[].props[name=provided-as]` | ns: `SPARC_OSCAL_NS` (default `https://sparc.risk-sentinel.org/ns`) |
-| `control_type` | `implemented-requirements[].props[name=control-origination]` | ns: `SPARC_OSCAL_NS` (default `https://sparc.risk-sentinel.org/ns`) |
-| `responsible_entities` | `implemented-requirements[].props[name=responsible-entities]` | ns: `SPARC_OSCAL_NS` (default `https://sparc.risk-sentinel.org/ns`) |
+| Source | OSCAL JSON Path | Notes |
+|--------|----------------|-------|
+| every value the control's items carry (`SspControlStatement#effective_origination`) | `implemented-requirements[].props[name=control-origination]` | NIST's prop, no `ns`; one prop per value, in OSCAL's order |
+
+**Retired in v1.17.5 (#1312):** the control-level `status`, `control_application`,
+`coverage_level`, `control_type`, `responsible_entities` and `expected_completion`
+fields, and the props they exported (`sparc-status`, `control-type`,
+`provided-as`, `sparc-control-origination`, `responsible-entities`). Status,
+origination, responsible roles and expected completion are each statement item's
+own (below). Rows already stored are kept, unexported, until v1.18.0; the
+upgrade copies their values onto the items (`SspControlFieldCarryDown`).
+
+### Statement items (SspControlStatement)
+
+| Internal Field | OSCAL JSON Path | Notes |
+|---------------|----------------|-------|
+| `statement_id` | `...statements[].statement-id` | The catalog part it answers |
+| `uuid` | `...statements[].uuid` | |
+| `control_origination` (or a leveraged link's) | `...statements[].props[name=control-origination]` | One prop per value; `inherited` plus another is partly inherited (hybrid) |
+| `implementation_prose` | `...statements[].by-components[this-system].description` | |
+| `implementation_status` | `...statements[].by-components[this-system].implementation-status.state` | OSCAL's five states |
+| `responsible_roles_data` | `...statements[].responsible-roles` | `role-id` of a declared role |
+| `remarks`, `expected_completion` | `...statements[].remarks` | The date as a line `Expected completion: YYYY-MM-DD` |
+
+The importer reads each back onto the item. A document whose statements carry no
+status or origination of their own (SPARC before v1.17.5, or another tool) has
+its requirement-level props stored as the retired fields and copied down to the
+items.
 
 ### By-Components (SspByComponent)
 
@@ -247,7 +268,6 @@ Only included if SspInventoryItem records exist.
 |------------------------------|----------------|-------|
 | `stated_requirement` | `implemented-requirements[].remarks` | Prefixed with "Stated Requirement: " |
 | `notes` | `implemented-requirements[].remarks` | Prefixed with "Notes: " |
-| `expected_completion` | `implemented-requirements[].remarks` | Prefixed with "Expected Completion: " |
 | `inherited_from` | `implemented-requirements[].remarks` | Prefixed with "Inherited From: " |
 | `history` | `implemented-requirements[].remarks` | Prefixed with "History: " |
 

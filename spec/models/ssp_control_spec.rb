@@ -55,10 +55,20 @@ RSpec.describe SspControl, type: :model do
   describe "#to_hash" do
     it "returns a hash with control data and nested fields" do
       control = create(:ssp_control)
-      create(:ssp_control_field, ssp_control: control, field_name: "status", field_value: "Implemented")
+      create(:ssp_control_field, ssp_control: control, field_name: "notes", field_value: "Reviewed.")
       result = control.to_hash
       expect(result).to include(:control_id, :title, :row_order, :fields, :provider_statements)
-      expect(result[:fields].first).to include(field_name: "status", field_value: "Implemented")
+      expect(result[:fields].first).to include(field_name: "notes", field_value: "Reviewed.", editable: true)
+    end
+
+    # #1312 — the retired control-level fields are each item's own now: left
+    # out, and never offered as editable from a flag a row was saved with.
+    it "leaves out the retired control-level fields" do
+      control = create(:ssp_control)
+      create(:ssp_control_field, ssp_control: control, field_name: "status", field_value: "Implemented", editable: true)
+      create(:ssp_control_field, ssp_control: control, field_name: "notes", field_value: "Reviewed.")
+
+      expect(control.to_hash[:fields].map { _1[:field_name] }).to eq([ "notes" ])
     end
   end
 end

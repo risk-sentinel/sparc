@@ -76,20 +76,24 @@ class HdfSystemExportService
   }.freeze
   BLANK_COMPONENT_TYPE = "software"
 
-  # SSP `control_type` (the control's origination) -> HDF designation.
-  # "Not Applicable" is a status, not an origination, and has no designation.
-  DESIGNATIONS = {
-    "system specific"              => "system-specific",
-    "hybrid — partially inherited" => "hybrid",
-    "inherited from provider"      => "common"
-  }.freeze
+  # #1312 — a control's HDF designation, from where its items come from: every
+  # item inherited → common; partly inherited (NIST's hybrid) → hybrid; this
+  # system's own otherwise. A control whose items record no origination has no
+  # designation.
+  def self.designation_for(items)
+    return nil if items.nil? || items.originations.empty?
+    return "common" if items.fully_inherited?
+    return "hybrid" if items.hybrid?
+
+    "system-specific"
+  end
 
   # hdf requires a description on every designation. When the SSP holds no
   # implementation narrative for the control, the designation is still a real,
   # recorded fact — so it is exported, with a description that says exactly
   # where it came from and that no narrative exists, rather than dropped or
   # given invented prose.
-  NO_NARRATIVE = "Designation recorded in the SPARC SSP as \"%<origination>s\". " \
+  NO_NARRATIVE = "Designation from the origination the SPARC SSP records for this control's items (%<origination>s). " \
                  "No implementation statement has been written for this control."
 
   # Raised when the document cannot be minted from what the boundary holds.
@@ -358,28 +362,33 @@ class HdfSystemExportService
 
   # ── control designations ─────────────────────────────────────────────────
   #
-  # From the boundary's SSP: every control whose `control_type` (origination)
-  # maps to an HDF designation. The description is the control's own
-  # implementation narrative — the statement, then the summary — and when it
-  # has neither, NO_NARRATIVE says so plainly.
+  # From the boundary's SSP: every control whose items record an origination
+  # (#1312), designated by HdfSystemExportService.designation_for. The
+  # description is the control's own implementation narrative — its items'
+  # answers, then the earlier control-level statement and summary — and when it
+  # has none, NO_NARRATIVE says so plainly.
   def control_designations
     ssp = @boundary.ssp_document
     return [] unless ssp
 
+    progress = SspResponseProgress.new(ssp)
     seen = {}
-    ssp.ssp_controls.includes(:ssp_control_fields).order(:row_order, :id).each do |control|
-      fields = control.ssp_control_fields.index_by(&:field_name)
-      origination = fields["control_type"]&.field_value.to_s.strip
-      designation = DESIGNATIONS[origination.downcase]
+    ssp.ssp_controls.where(parent_id: nil).includes(:ssp_control_fields, :ssp_control_statements)
+       .order(:row_order, :id).each do |control|
+      items = progress.items_for(control.control_id)
+      designation = self.class.designation_for(items)
       next unless designation
 
       control_id = ControlId.human(control.control_id)
       next if control.control_id.blank? || seen.key?(control_id)
 
+      fields = control.ssp_control_fields.index_by(&:field_name)
+      origination = items.originations.map { SspControlStatement::ORIGINATION_LABELS[_1] }.join(", ")
       seen[control_id] = {
         "controlId"   => control_id,
         "designation" => designation,
-        "description" => narrative(fields) || format(NO_NARRATIVE, origination: origination)
+        "description" => control.aggregate_implementation_text || narrative(fields) ||
+                         format(NO_NARRATIVE, origination: origination)
       }
     end
     seen.values

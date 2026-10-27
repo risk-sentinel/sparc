@@ -26,7 +26,7 @@ RSpec.describe "Api::V1 field import", type: :request do
   describe "SSP (document.write authz)" do
     let(:document) { create(:ssp_document) }
     let!(:control) { create(:ssp_control, ssp_document: document, control_id: "AC-1") }
-    let(:body) { { "controls" => { "AC-1" => { "status" => "Implemented" } } } }
+    let(:body) { { "controls" => { "AC-1" => { "notes" => "Reviewed." } } } }
 
     it "previews without writing" do
       post import_fields_preview_api_v1_ssp_document_path(document.slug),
@@ -42,7 +42,7 @@ RSpec.describe "Api::V1 field import", type: :request do
            params: { file: upload(body) }, headers: admin_headers
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)["data"]["applied"]).to eq(1)
-      expect(control.ssp_control_fields.find_by(field_name: "status").field_value).to eq("Implemented")
+      expect(control.ssp_control_fields.find_by(field_name: "notes").field_value).to eq("Reviewed.")
     end
 
     it "returns 401 without a token" do

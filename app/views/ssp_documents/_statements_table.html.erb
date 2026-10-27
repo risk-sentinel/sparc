@@ -1,8 +1,9 @@
 <%# Per-control implementation statements for the SSP show page (#393, #1100).
 
-    THE primary authoring surface for a control. It renders in the VIEW, under
-    the control language it answers — it used to render at the bottom of the
-    edit form, below all nine editable fields, which is what made it unfindable.
+    The READ view of a control's answers, item by item, under the control
+    language they answer. #1312 — read-only: every item is answered in the
+    control's Edit form (_part_responses), all its fields in one Save. Each row
+    used to carry its own Edit too, a second place to enter the same answer.
 
     Locals:
       control      - SspControl instance (must have ssp_control_statements loaded)
@@ -11,9 +12,12 @@
                      text each row answers, parameter values applied
       progress     - SspResponseProgress for the document, or nil (#1242): which
                      rows are required responses, and the state of each
+      determinations - objective id => the SAR's latest determination, or {}
 %>
 <% requirement = local_assigns[:requirement] %>
 <% progress = local_assigns[:progress] %>
+<% determinations = local_assigns[:determinations] || {} %>
+<% summary = progress&.items_for(control.control_id) %>
 <%
   statements = control.ssp_control_statements.sort_by { |s| s.row_order || 0 }
   tally      = progress&.for_control(control.control_id)
@@ -40,6 +44,9 @@
         <%= done %> of <%= needed %> done
       </span>
     </div>
+    <% if summary %>
+      <div class="sparc-fs-075 sparc-color-secondary sparc-mb-04" data-testid="control-item-summary"><%= summary %></div>
+    <% end %>
 
     <div class="table-responsive">
       <table class="table table-sm table-hover sparc-fs-082 sparc-mb-0">
@@ -47,6 +54,7 @@
           <tr class="sparc-th-eyebrow-row">
             <th class="sparc-w-12pct">Statement</th>
             <th>Implementation</th>
+            <th class="sparc-w-14pct">Status &amp; origination</th>
             <th class="sparc-w-14pct">Responsible Roles</th>
             <th class="sparc-w-6pct"></th>
           </tr>
@@ -58,8 +66,7 @@
                 imports may carry bare strings — read both, write the shape. %>
             <% role_ids = Array(stmt.responsible_roles_data)
                             .flat_map { |r| Array(r.is_a?(Hash) ? r["role-id"] : r) }.compact %>
-            <tr id="stmt-<%= stmt.id %>" data-statement-id="<%= stmt.statement_id %>"
-                data-controller="statement-edit">
+            <tr id="stmt-<%= stmt.id %>" data-statement-id="<%= stmt.statement_id %>">
               <td>
                 <code class="sparc-fs-078 sparc-stmt-d<%= depth %>">
                   <%= stmt.label.presence || stmt.statement_id %>
@@ -117,9 +124,9 @@
                   </div>
                 <% end %>
                 <%# ── Read view ── %>
-                <div data-statement-edit-target="read">
+                <div>
                   <%= stmt.implementation_prose.presence ||
-                      content_tag(:span, "(unset — click Edit to add implementation)",
+                      content_tag(:span, "(not answered — answer it from the control's Edit)",
                                   class: "text-body-tertiary fst-italic") %>
                   <% if stmt.remarks.present? %>
                     <div class="text-body-secondary sparc-stmt-note">
@@ -128,86 +135,25 @@
                   <% end %>
                 </div>
 
-                <%# ── Inline editor (#1100) ──
-                    Opening this used to be a full page navigation to
-                    `?statement_id=N`, which reloaded every control on the
-                    document to show one modal. %>
-                <div data-statement-edit-target="form" class="sparc-d-none">
-                  <%= form_with url: update_statement_ssp_document_path(ssp_document),
-                                method: :patch, local: true do |f| %>
-                    <%= hidden_field_tag :statement_id, stmt.id %>
-                    <label class="sparc-edit-label" for="stmt-prose-<%= stmt.id %>">
-                      Implementation
-                      <span class="sparc-edit-editable-hint">(editable)</span>
-                    </label>
-                    <%= text_area_tag "ssp_control_statement[implementation_prose]",
-                          stmt.implementation_prose,
-                          rows: 4, class: "form-control sparc-fs-0875",
-                          id: "stmt-prose-#{stmt.id}",
-                          data: { statement_edit_target: "prose" },
-                          placeholder: "Describe how this system implements #{stmt.label.presence || stmt.statement_id}..." %>
-
-                    <label class="sparc-edit-label sparc-mt-025" for="stmt-remarks-<%= stmt.id %>">
-                      Remarks
-                      <span class="sparc-edit-editable-hint">(editable)</span>
-                    </label>
-                    <%= text_area_tag "ssp_control_statement[remarks]", stmt.remarks,
-                          rows: 2, class: "form-control sparc-fs-0875",
-                          id: "stmt-remarks-#{stmt.id}" %>
-
-                    <%# #1100 — the Responsible Roles column rendered a value no
-                        screen could set. `update_statement` had permitted
-                        `responsible_roles_data` all along; no form ever offered
-                        it, so the column could only ever show what an OSCAL
-                        import had put there. %>
-                    <label class="sparc-edit-label sparc-mt-025" for="stmt-roles-<%= stmt.id %>">
-                      Responsible Roles
-                      <span class="sparc-edit-editable-hint">(editable)</span>
-                    </label>
-                    <%# #1116 — PICK, never type. A `role-id` must resolve to a
-                        role declared in metadata.roles; free text let an author
-                        write `isso` and produce a document whose reference
-                        resolved to nothing. Schema-valid, referentially broken.
-
-                        Titles are shown, role-ids are stored — the machine
-                        identifier never has to be typed or remembered. %>
-                    <%= select_tag "ssp_control_statement[responsible_role_ids]",
-                          options_for_select(@declared_role_options, role_ids),
-                          multiple: true,
-                          class: "form-select sparc-fs-0875",
-                          id: "stmt-roles-#{stmt.id}",
-                          size: [ [ @declared_role_options.size, 3 ].max, 6 ].min %>
-                    <div class="sparc-fs-078 sparc-color-tertiary sparc-mt-025">
-                      OSCAL <code>responsible-roles</code> for this statement. Select none for none.
-                      <% if @declared_role_options.empty? %>
-                        <strong>No roles are declared on this document yet.</strong>
-                      <% end %>
-                    </div>
-
-                    <div class="d-flex gap-1 sparc-mt-035">
-                      <%= f.submit "Save Statement",
-                            class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
-                      <button type="button"
-                              data-action="statement-edit#cancel"
-                              class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm">
-                        Cancel
-                      </button>
-                    </div>
-                  <% end %>
-                </div>
+                <%= render "ssp_documents/item_objectives",
+                      objectives: requirement&.objectives_for(stmt.statement_id) || [], determinations: determinations %>
+              </td>
+              <td class="sparc-fs-075" data-item-status="<%= stmt.implementation_status %>">
+                <% if stmt.implementation_status %>
+                  <span class="sparc-status sparc-status--<%= ssp_item_status_variant(stmt.implementation_status) %> sparc-fs-065"><%= stmt.status_label %></span>
+                <% end %>
+                <% origination = stmt.effective_origination %>
+                <% if origination.any? %>
+                  <div class="text-body-secondary"><%= origination.map { SspControlStatement::ORIGINATION_LABELS[_1] }.join(" + ") %></div>
+                <% end %>
+                <% if stmt.expected_completion %>
+                  <div class="text-body-secondary">Expected <%= stmt.expected_completion.iso8601 %></div>
+                <% end %>
               </td>
               <td class="text-body-secondary sparc-fs-078">
                 <%= role_ids.any? ? role_ids.join(", ") : "—" %>
               </td>
               <td>
-                <button type="button"
-                        data-action="statement-edit#toggle"
-                        data-statement-edit-target="toggle"
-                        aria-expanded="false"
-                        aria-controls="stmt-prose-<%= stmt.id %>"
-                        class="sparc-action sparc-action--primary sparc-action--outline sparc-action--sm sparc-fs-07 sparc-p-015-045">
-                  Edit
-                </button>
                 <% cdef_links = stmt.inheritance_links.select { _1.source_type == "CdefControlStatement" && !_1.overridden? } %>
                 <% if cdef_links.any? && !cdef_links.all?(&:reviewed?) && stmt.implementation_prose.present? %>
                   <%= button_to "Mark reviewed",

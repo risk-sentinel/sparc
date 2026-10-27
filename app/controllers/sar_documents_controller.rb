@@ -726,12 +726,13 @@ class SarDocumentsController < ApplicationController
     {}
   end
 
-  # control_id (downcased) => { status:, responsible:, statements: [{label:, prose:}] }
+  # control_id (downcased) => { status:, statements: [{label:, prose:, status:, origination:, roles:}] }
   #
   # The statements are the point. Since #1100 an SSP answers a control PER
   # addressable part — at-1 carries ten — and those individual claims are what an
   # assessor assesses. Summarising them back into one blob here would undo that
-  # work on the screen that needs it most.
+  # work on the screen that needs it most. #1312 — each item carries its own
+  # status, origination and responsible roles; `status` is the summary of them.
   def build_ssp_context(controls)
     ssp = @sar_document.ssp_document
     return {} if ssp.nil? || controls.blank?
@@ -739,26 +740,33 @@ class SarDocumentsController < ApplicationController
     ids = controls.map { |c| c.control_id.to_s.strip.downcase }.reject(&:blank?).uniq
     return {} if ids.empty?
 
+    progress = SspResponseProgress.new(ssp)
     ssp.ssp_controls
-       .includes(:ssp_control_fields, :ssp_control_statements)
+       .includes(:ssp_control_fields, ssp_control_statements: { inheritance_links: :source })
        .select { |c| ids.include?(c.control_id.to_s.strip.downcase) }
        .to_h do |ssp_control|
       fields = ssp_control.ssp_control_fields.index_by(&:field_name)
       statements = ssp_control.ssp_control_statements
                               .sort_by { |s| s.row_order || 0 }
-                              .filter_map do |s|
-        prose = s.implementation_prose.presence
-        next if prose.blank?
-
-        { label: s.label.presence || s.statement_id, prose: prose }
-      end
+                              .filter_map { |s| ssp_item_context(s) }
 
       [ ssp_control.control_id.to_s.strip.downcase,
-        { status:      fields["status"]&.field_value.presence,
-          responsible: fields["responsible_entities"]&.field_value.presence,
+        { status:      progress.items_for(ssp_control.control_id)&.to_s,
           summary:     fields["implementation_statement"]&.field_value.presence,
           statements:  statements } ]
     end
+  end
+
+  # One SSP item as the assessor reads it, or nil when it says nothing.
+  def ssp_item_context(stmt)
+    prose = stmt.implementation_prose.presence
+    origination = stmt.effective_origination
+    return nil if prose.blank? && stmt.implementation_status.blank? && origination.empty?
+
+    { label: stmt.label.presence || stmt.statement_id, prose: prose,
+      status: stmt.status_label,
+      origination: origination.map { SspControlStatement::ORIGINATION_LABELS[_1] }.join(" + ").presence,
+      roles: Array(stmt.responsible_roles_data).filter_map { _1.is_a?(Hash) ? _1["role-id"] : _1 }.join(", ").presence }
   end
 
   def document_metadata_params

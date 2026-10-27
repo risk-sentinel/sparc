@@ -50,6 +50,9 @@ class SspJsonParserService
       @component_map = parse_system_implementation(ssp["system-implementation"])
       parse_control_implementation(ssp["control-implementation"], @component_map)
       link_inheritances!
+      # #1312 — a document an older SPARC exported records status, origination
+      # and responsible entities once per control; each item takes its own.
+      SspControlFieldCarryDown.new(@document).carry!
     end
   end
 
@@ -383,7 +386,7 @@ class SspJsonParserService
         row_order:  idx
       )
 
-      parse_implemented_requirement_props(ctrl, ir)
+      parse_implemented_requirement_props(ctrl, ir) if per_control_answers?(ir)
       parse_by_components(ctrl, ir[BY_COMPONENTS] || [], component_map)
       parse_statements_as_fields(ctrl, ir)
       parse_remarks_as_field(ctrl, ir)
@@ -414,6 +417,46 @@ class SspJsonParserService
   # better than one that is silently wrong.
   def canonical_status(value)
     STATUS_FROM_OSCAL[value.to_s.downcase] || value
+  end
+
+  # #1312 — whether the requirement records its answers once for the control,
+  # as SPARC did before v1.17.5 and other tools may. A document whose statements
+  # carry their own status or origination answers per item, and the
+  # requirement's `control-origination` is then only the sum of its items'.
+  def per_control_answers?(ir)
+    Array(ir["statements"]).none? do |stmt|
+      statement_origination(stmt).any? || statement_status(stmt).present?
+    end
+  end
+
+  # #1312 — an item's `control-origination` props, OSCAL's values only.
+  def statement_origination(stmt)
+    Array(stmt["props"]).filter_map do |prop|
+      next unless prop["name"] == "control-origination" && (prop["ns"].blank? || prop["ns"] == NIST_NS)
+
+      prop["value"] if SspControlStatement::CONTROL_ORIGINATIONS.include?(prop["value"])
+    end.uniq
+  end
+
+  # #1312 — an item's implementation status, from the statement's by-component
+  # (OSCAL attaches `implementation-status` nowhere else).
+  def statement_status(stmt)
+    Array(stmt[BY_COMPONENTS]).filter_map { |bc| bc.dig(IMPLEMENTATION_STATUS, "state") }
+                              .find { SspControlStatement::IMPLEMENTATION_STATUSES.include?(_1) }
+  end
+
+  EXPECTED_COMPLETION = /^Expected completion: (\d{4}-\d{2}-\d{2})$/
+  NIST_NS = "http://csrc.nist.gov/ns/oscal".freeze
+
+  # #1312 — SPARC exports an item's expected completion in its remarks
+  # (OSCAL has no field for it). [remarks without that line, the date or nil]
+  def statement_remarks_and_completion(stmt)
+    remarks = stmt["remarks"].to_s
+    date = remarks[EXPECTED_COMPLETION, 1]
+    rest = remarks.sub(EXPECTED_COMPLETION, "").strip
+    [ rest.presence, date && Date.iso8601(date) ]
+  rescue Date::Error
+    [ remarks.presence, nil ]
   end
 
   def parse_implemented_requirement_props(ctrl, ir)
@@ -521,15 +564,20 @@ class SspJsonParserService
       # `idx_ssp_stmt_on_uuid` is unique GLOBALLY, and an export carries the
       # statement UUIDs it already has, so re-importing a document the instance
       # already holds collides on the first statement.
+      remarks, completion = statement_remarks_and_completion(stmt)
       record = ActiveRecord::Base.transaction(requires_new: true) do
         ctrl.ssp_control_statements.create!(
           uuid:                   uuid,
           statement_id:           stmt_id,
           implementation_prose:   narrative,
-          remarks:                stmt["remarks"],
+          remarks:                remarks,
           responsible_roles_data: stmt[RESPONSIBLE_ROLES] || [],
           set_parameters_data:    set_params,
-          row_order:              idx
+          row_order:              idx,
+          # #1312 — the item's own status, origination and expected completion.
+          implementation_status:  statement_status(stmt),
+          control_origination:    statement_origination(stmt),
+          expected_completion:    completion
         )
       end
 
@@ -714,12 +762,17 @@ class SspJsonParserService
 
   # ── Helpers ──────────────────────────────────────────────────────
 
+  # The props a requirement carried when SPARC (before v1.17.5) or another tool
+  # answered once per control. Stored as the retired control-level fields, then
+  # carried down to the items (SspControlFieldCarryDown).
   def prop_name_to_field(oscal_name)
     {
       IMPLEMENTATION_STATUS  => "status",
+      "sparc-status"           => "status",
       "control-type"           => "control_application",
       "provided-as"            => "coverage_level",
       "control-origination"    => "control_type",
+      "sparc-control-origination" => "control_type",
       "responsible-entities"   => "responsible_entities"
     }[oscal_name]
   end

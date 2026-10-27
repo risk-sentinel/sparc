@@ -37,15 +37,37 @@ optional):
 ```json
 {
   "controls": {
-    "AC-1": { "status": "Implemented", "implementation_statement": "..." },
-    "AC-2": { "status": "Deferred", "notes": "tracked in POA&M" }
+    "AC-1": { "notes": "Reviewed with the ISSO." },
+    "ac-2_smt.d.1": { "implementation_status": "planned",
+                      "control_origination": "inherited, system-specific",
+                      "expected_completion": "2027-03-31" }
   }
 }
 ```
 
 Only each type's `*ControlField::EDITABLE_FIELDS` are writable; fields with a
-controlled vocabulary (e.g. SSP `status`, SAR `result`, CDEF
-`implementation_status`) are validated against it.
+controlled vocabulary (e.g. SAR `result`, CDEF `implementation_status`) are
+validated against it.
+
+### SSP statement items (#1312)
+
+An SSP is answered per statement item. A key that names one of the SSP's items,
+by its `statement_id` (`ac-2_smt.d.1`) or its `uuid`, writes that item's own
+fields:
+
+| field | value |
+|---|---|
+| `implementation_prose` | the item's answer |
+| `remarks` | free text |
+| `implementation_status` | OSCAL's: `implemented`, `partial`, `planned`, `alternative`, `not-applicable` |
+| `control_origination` | OSCAL's, comma-separated: `organization`, `system-specific`, `customer-configured`, `customer-provided`, `inherited` |
+| `expected_completion` | `YYYY-MM-DD` |
+
+A value outside OSCAL's vocabulary, or a date that is not one, is `invalid` and
+not written. The control-level `status`, `control_type`, `control_application`,
+`coverage_level`, `responsible_entities` and `expected_completion` are retired:
+sent against a control, they come back `non_editable` with a message naming the
+item fields.
 
 ## Addressing a control
 

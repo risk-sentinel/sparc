@@ -237,15 +237,28 @@ RSpec.describe "Api::V1::SspDocuments", type: :request do
     it "updates control fields with auth" do
       ssp = create(:ssp_document, authorization_boundary: boundary)
       control = create(:ssp_control, ssp_document: ssp, control_id: "ac-1")
-      create(:ssp_control_field, ssp_control: control, field_name: "status", field_value: "draft", editable: true)
+      create(:ssp_control_field, ssp_control: control, field_name: "notes", field_value: "draft", editable: true)
 
       put update_fields_api_v1_ssp_document_path(ssp), params: {
-        controls: { "ac-1" => { "status" => "implemented" } }
+        controls: { "ac-1" => { "notes" => "reviewed" } }
       }, headers: auth_headers, as: :json
 
       expect(response).to have_http_status(:ok)
       parsed = JSON.parse(response.body)
       expect(parsed["success"]).to be true
+    end
+
+    # #1312 — status is each statement item's own (PATCH
+    # /api/v1/ssp_control_statements/:id), and the control-level one is retired.
+    it "refuses the retired control-level status" do
+      ssp = create(:ssp_document, authorization_boundary: boundary)
+      create(:ssp_control, ssp_document: ssp, control_id: "ac-1")
+
+      put update_fields_api_v1_ssp_document_path(ssp), params: {
+        controls: { "ac-1" => { "status" => "Implemented" } }
+      }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

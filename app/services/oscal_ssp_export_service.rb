@@ -554,8 +554,8 @@ class OscalSspExportService
       "control-id" => normalize_control_id(control.control_id)
     }
 
-    # Props carry status, control_application, coverage_level, control_type
-    props = build_props(field_map)
+    # #1312 — the origination the control's items carry.
+    props = build_props(control)
     result["props"] = props if props.any?
 
     # By-components (enriched controls with component-level descriptions)
@@ -623,96 +623,38 @@ class OscalSspExportService
     ControlId.canonical(raw_id)
   end
 
-  # `implementation-status` is NOT a prop. In OSCAL 1.2.2/1.2.3 it is a
-  # define-assembly with a required `state` flag, and it attaches to exactly ONE
-  # place — `by-component`:
-  #
-  #     <define-assembly name="implementation-status">
-  #       <define-flag name="state" as-type="token" required="yes">
-  #
-  # It does not attach to `implemented-requirement` or `statement`, and it does
-  # not exist in the component-definition model at all (0 occurrences in
-  # component.xml). Emitting it as a prop here was the OSCAL 1.0 shape surviving
-  # in a 1.2.2 export.
-  #
-  # An earlier pass at #1106 fixed the VALUE — mapping SPARC's vocabulary onto
-  # NIST's terms, because `status.downcase.gsub(/\s+/, "-")` had been slugifying
-  # `Deferred` and `Partially Implemented` straight into NIST's namespace. That
-  # was the right diagnosis of the wrong line: the prop itself does not exist, so
-  # no value makes it conformant. Nothing caught either problem, because prop
-  # names and values are Metaschema constraints and
-  # `OscalSchemaValidationService` validates JSON Schema.
-  #
-  # The correct emission is already in this file, at `build_by_component`:
-  #
-  #     entry[IMPLEMENTATION_STATUS] = { "state" => bc.implementation_status }
-  #
-  # and it needs no mapping table, because `SspByComponent::IMPLEMENTATION_STATUSES`
-  # already IS NIST's vocabulary.
-  #
-  # At implemented-requirement level SPARC's status is SPARC's own concept, so it
-  # is emitted under SPARC's namespace where a reader knows to interpret it as
-  # ours. Nothing is lost: the verbatim value was always emitted there anyway.
-  def implementation_status_props(status)
-    [ { "name" => "sparc-status", "ns" => OscalNamespace.instance, "value" => status } ]
-  end
-
-  # `control-origination` IS NIST's, not ours — #1106 recorded it as a FedRAMP
-  # prop name borrowed under a SPARC namespace, and that premise is wrong for
-  # 1.2.2/1.2.3. NIST defines it in the SSP model, and the vocabulary is
-  # ENFORCED (`allow-other="no"`), so a value outside it is a hard violation
-  # rather than a style question:
+  # #1312 — status, origination, responsible roles and expected completion are
+  # each statement item's own, and export on the statement (see
+  # build_statements_from_table). `implementation-status` is not a prop: OSCAL
+  # 1.2.3 defines it as an assembly attached to a `by-component` only, so it
+  # rides each statement's this-system by-component. `control-origination` is
+  # NIST's prop, allowed on the requirement, a statement and a by-component, with
+  # values enforced (`allow-other="no"`):
   #
   #     organization · system-specific · customer-configured ·
   #     customer-provided · inherited
   #
-  # SPARC was emitting the right NAME under the wrong namespace with the wrong
-  # values ("System Specific" title-cased). Same rule as everywhere else here:
-  # map when a NIST term honestly applies, and when none does, do NOT invent one
-  # in NIST's namespace.
-  #
-  # "Hybrid — partially inherited" IS NIST's: SP 800-53 Rev 5 and SP 800-37
-  # Rev 2 call a control part provided by another system and part by this one a
-  # hybrid control. What NIST lacks is a `control-origination` VALUE for it:
-  # OSCAL expresses a hybrid per statement, as a by-component carrying both
-  # `inherited` and `satisfied` (received_from_leveraged, #1242), so at control
-  # level it is emitted under SPARC's namespace only.
-  # "Not Applicable" is a STATUS, not an origination, and is dropped here — it is
-  # already carried by the implementation-status assembly on by-component.
-  NIST_CONTROL_ORIGINATION = {
-    "system specific" => "system-specific",
-    "inherited from provider" => "inherited"
-  }.freeze
-
-  def control_origination_props(origination)
-    props = []
-    nist  = NIST_CONTROL_ORIGINATION[origination.to_s.strip.downcase]
-    # No `ns`: control-origination is NIST's, and NIST's namespace is implicit.
-    props << { "name" => "control-origination", "value" => nist } if nist
-    props << { "name" => "sparc-control-origination",
-               "ns" => OscalNamespace.instance, "value" => origination }
-    props
+  # The control-level SPARC props this used to write (sparc-status, control-type,
+  # provided-as, responsible-entities, sparc-control-origination) are gone with
+  # the fields they carried: control application and coverage level were not
+  # OSCAL's and duplicated other fields.
+  def control_origination_props(values)
+    Array(values).select { SspControlStatement::CONTROL_ORIGINATIONS.include?(_1) }
+                 .map { { "name" => "control-origination", "value" => _1 } }
   end
 
-  def build_props(field_map)
-    props = []
+  # The requirement's origination: every value its items carry, so a hybrid
+  # control reads as one at a glance.
+  def build_props(control)
+    values = control.ssp_control_statements.flat_map(&:effective_origination).uniq
+    control_origination_props(SspControlStatement::CONTROL_ORIGINATIONS & values)
+  end
 
-    status = field_map["status"]&.field_value
-    props.concat(implementation_status_props(status)) if status.present?
-
-    type_use = field_map["control_application"]&.field_value
-    props << { "name" => "control-type", "ns" => OscalNamespace.instance, "value" => type_use } if type_use.present?
-
-    coverage_level = field_map["coverage_level"]&.field_value
-    props << { "name" => "provided-as", "ns" => OscalNamespace.instance, "value" => coverage_level } if coverage_level.present?
-
-    origination = field_map["control_type"]&.field_value
-    props.concat(control_origination_props(origination)) if origination.present?
-
-    responsible = field_map["responsible_entities"]&.field_value
-    props << { "name" => "responsible-entities", "ns" => OscalNamespace.instance, "value" => responsible } if responsible.present?
-
-    props
+  # The item's remarks, and its expected completion, which OSCAL has no field
+  # for (owner, 2026-10-27: kept in the remarks text).
+  def statement_remarks(stmt)
+    completion = stmt.expected_completion && "Expected completion: #{stmt.expected_completion.iso8601}"
+    [ stmt.remarks.presence, completion ].compact.join("\n\n").presence
   end
 
   # #393: when ssp_control_statements records exist for this control
@@ -739,9 +681,14 @@ class OscalSspExportService
     control.ssp_control_statements.order(:row_order).map do |stmt|
       entry = {
         STATEMENT_ID => stmt.statement_id,
-        "uuid"         => stmt.uuid,
-        "remarks"      => stmt.remarks.presence
+        "uuid"         => stmt.uuid
       }
+      # #1312 — the item's origination, one `control-origination` prop per
+      # value (an item partly inherited carries `inherited` and its own). NIST's
+      # name, NIST's enforced values, so no `ns`.
+      origination = control_origination_props(stmt.effective_origination)
+      entry["props"] = origination if origination.any?
+      entry["remarks"] = statement_remarks(stmt)
       entry[RESPONSIBLE_ROLES] = stmt.responsible_roles_data if stmt.responsible_roles_data.present?
 
       # #958 — `set-parameters` is NOT legal on a statement (OSCAL allows it
@@ -775,7 +722,8 @@ class OscalSspExportService
       param.is_a?(Hash) && param.key?(STATEMENT_MARKER_KEY)
     end
     received = received_from_leveraged(stmt)
-    return [] if markers.empty? && real_params.empty? && stmt.implementation_prose.blank? && received.empty?
+    return [] if markers.empty? && real_params.empty? && stmt.implementation_prose.blank? && received.empty? &&
+                 stmt.implementation_status.blank?
 
     component_uuid = statement_component_uuid
     return [] if component_uuid.blank?
@@ -811,6 +759,10 @@ class OscalSspExportService
       } ]
     end
 
+    # #1312 — the item's implementation status. OSCAL attaches
+    # `implementation-status` to a by-component only, and this by-component is
+    # this system's implementation of the item.
+    entry[IMPLEMENTATION_STATUS] = { "state" => stmt.implementation_status } if stmt.implementation_status.present?
     entry["export"] = exported if exported.any?
     entry.merge!(received)
 
@@ -931,9 +883,6 @@ class OscalSspExportService
 
     notes = field_map["notes"]&.field_value
     parts << "Notes: #{notes}" if notes.present?
-
-    expected = field_map["expected_completion"]&.field_value
-    parts << "Expected Completion: #{expected}" if expected.present?
 
     inherited_from = field_map["inherited_from"]&.field_value
     parts << "Inherited From: #{inherited_from}" if inherited_from.present?

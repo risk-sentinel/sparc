@@ -1,8 +1,11 @@
 # SSP Control Statements
 
-The per-statement implementation prose of a System Security Plan — how the
-system satisfies each **addressable part** of a control, rather than the control
-as a whole.
+The per-statement answers of a System Security Plan — how the system satisfies
+each **addressable part** of a control, rather than the control as a whole. Since
+v1.17.5 (#1312) each item also records its own **implementation status**,
+**control origination** and **expected completion**; the control-level `status`,
+`control_type`, `control_application`, `coverage_level`, `responsible_entities`
+and `expected_completion` fields are retired.
 
 ## Why this endpoint exists
 
@@ -34,7 +37,8 @@ Statements are DERIVED from the catalog's part tree by
 `CatalogPartExtractorService`. Their `statement_id` and derived UUID are what an
 exported document references (#397), and what `CdefToSspInheritanceService` and
 `LeveragedAuthorizationService` join on. Structure comes from the catalog; only
-the prose is authored.
+the answer is authored: the prose, remarks, responsible roles and (#1312) the
+item's status, origination and expected completion.
 
 `permit_strictly` therefore REJECTS the whole request if a caller sends
 `statement_id` or `parent_statement_id`, rather than silently dropping them — a
@@ -84,7 +88,11 @@ Authorization: Bearer <token>
       "source_kind": "authored",
       "required": true,
       "response_state": "implemented",
-      "cdef_reviewed": null
+      "cdef_reviewed": null,
+      "implementation_status": "partial",
+      "control_origination": ["system-specific", "inherited"],
+      "leveraged_origination": false,
+      "expected_completion": "2027-03-31"
     }
   ],
   "meta": { "count": 22, "items": 100, "page": 1, "pages": 1 }
@@ -117,7 +125,17 @@ is `false` for an intermediate row such as `ac-1_smt` when `ac-1_smt.a` exists.
 | `missing` | nothing written | yes |
 
 `cdef_reviewed` is `true` or `false` when a CDEF fills the row, and `null` when
-none does. The document's totals are `response_progress` on
+none does.
+
+**#1312.** `implementation_status` is OSCAL's `implementation-status` state, or
+`null` until answered: `implemented`, `partial`, `planned`, `alternative`,
+`not-applicable`. `control_origination` is OSCAL's `control-origination`, one or
+more of `organization`, `system-specific`, `customer-configured`,
+`customer-provided`, `inherited`, in that order: `["inherited"]` alone is fully
+inherited; `inherited` with another value is partly inherited (NIST's hybrid).
+When the row is linked to a leveraged authorization the link decides it and
+`leveraged_origination` is `true`. `expected_completion` is an ISO date or
+`null`. The document's totals are `response_progress` on
 [`GET /api/v1/ssp_documents/:id`](ssp-documents.md).
 
 ### `GET /api/v1/ssp_control_statements/:id`
@@ -126,17 +144,24 @@ One statement, with its prose, remarks and responsible roles.
 
 ### `PATCH /api/v1/ssp_control_statements/:id`
 
-Writes the prose.
+Writes the item's answer: any of its prose, remarks, responsible roles,
+implementation status, control origination and expected completion.
 
 ```json
 {
   "ssp_control_statement": {
     "implementation_prose": "Account types are defined in POL-AC-001.",
     "remarks": "Reviewed 2026-09-01",
-    "responsible_roles_data": [ { "role-id": "system-owner" } ]
+    "responsible_roles_data": [ { "role-id": "system-owner" } ],
+    "implementation_status": "planned",
+    "control_origination": ["inherited", "system-specific"],
+    "expected_completion": "2027-03-31"
   }
 }
 ```
+
+A status or origination outside OSCAL's values, or an `expected_completion` that
+is not a `YYYY-MM-DD` date, is refused with `422` and nothing is written.
 
 Changed `implementation_prose` makes the text this system's own: every CDEF or
 leveraged link filling the row is marked overridden, so a refresh leaves the
@@ -173,4 +198,4 @@ Needs `ssp.write`; refused (`422`) on a published SSP. Audited as
 | `401` | no or invalid bearer token |
 | `403` | the caller lacks `ssp.read` / `ssp.write` on the boundary |
 | `404` | no such statement, or no such SSP |
-| `422` | the body carried a field this endpoint does not accept; or, for `reset_to_source` / `mark_reviewed`, nothing to reset or review, or a published SSP |
+| `422` | the body carried a field this endpoint does not accept, or a value outside OSCAL's vocabulary or a date that is not one; or, for `reset_to_source` / `mark_reviewed`, nothing to reset or review, or a published SSP |

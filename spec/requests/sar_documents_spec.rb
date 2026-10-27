@@ -196,7 +196,10 @@ RSpec.describe "SarDocuments", type: :request do
     let(:ssp) do
       ssp = create(:ssp_document)
       ssp_ctrl = ssp.ssp_controls.create!(control_id: "cm-2", title: "Baseline", row_order: 0)
-      ssp_ctrl.ssp_control_fields.create!(field_name: "responsible_entities", field_value: "Platform")
+      # #1312 — responsible roles are each item's own.
+      ssp_ctrl.ssp_control_statements.create!(statement_id: "cm-2_smt", uuid: SecureRandom.uuid,
+                                              implementation_prose: "Baselines are kept in the CMDB.",
+                                              responsible_roles_data: [ { "role-id" => "platform-team" } ])
       ssp
     end
     let(:sap) { create(:sap_document, ssp_document: ssp) }
@@ -240,7 +243,7 @@ RSpec.describe "SarDocuments", type: :request do
 
       get sar_document_path(sar)
 
-      expect(response.body).to include("Platform"),
+      expect(response.body).to include("Roles: platform-team"),
         "removing the copy must not remove the information"
     end
 

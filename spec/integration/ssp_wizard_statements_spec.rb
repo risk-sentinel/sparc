@@ -70,10 +70,15 @@ RSpec.describe "SSP wizard, from the tailored Rev 5 baseline", type: :request do
     expect(response.body).to include("Implementation Statements")
     expect(response.body).to include("#{set_value("ac-01_odp.01")}, #{set_value("ac-01_odp.02")}")
     %w[ac-1_smt.a ac-1_smt.b ac-1_smt.c.1].each do |part|
-      row = page.at_css("tr[data-statement-id='#{part}']")
-      expect(row).to be_present, part
-      expect(row.at_css("form[action='#{update_statement_ssp_document_path(ssp)}']")).to be_present, part
+      expect(page.at_css("tr[data-statement-id='#{part}']")).to be_present, part
     end
+    # #1312 — each item that takes a response is answered in the control's Edit
+    # form; a lead-in (ac-1a) is a heading there with no inputs.
+    form = page.at_css("form[action='#{ssp_document_path(ssp)}'] [data-testid='part-responses']")
+    %w[ac-1_smt.b ac-1_smt.c.1].each do |part|
+      expect(form.at_css("[data-part-response='#{part}'] textarea")).to be_present, part
+    end
+    expect(form.at_css("[data-lead-in='ac-1_smt.a']")).to be_present
   end
 
   it "keeps the wizard's own work: the system component, and CDEF content applied to its controls" do

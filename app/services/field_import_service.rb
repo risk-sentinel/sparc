@@ -73,6 +73,11 @@ class FieldImportService
     end
   end
 
+  # #1312 — an SSP is answered per statement item: a key that names one of the
+  # SSP's statement items ("ac-2_smt.d.1", or its uuid) sets these on the item.
+  # `control_origination` takes OSCAL's values, comma-separated.
+  ITEM_FIELDS = %w[implementation_prose remarks implementation_status control_origination expected_completion].freeze
+
   # Non-destructive diff — no writes.
   def preview(payload)
     field_class = @config[:field_class]
@@ -80,6 +85,11 @@ class FieldImportService
 
     Array(payload[:controls]).each do |entry|
       cid = entry[:control_id]
+      if (item = resolve_item(cid))
+        rows.concat(item_rows(cid, item, Hash(entry[:fields])))
+        next
+      end
+
       control, failure = resolve_control(cid)
 
       Hash(entry[:fields]).each do |fname, value|
@@ -94,7 +104,7 @@ class FieldImportService
         unless field_class::EDITABLE_FIELDS.include?(fname)
           rows << Row.new(control_id: cid, resolved_uuid: control.uuid, field_name: fname,
                           new_value: new_value,
-                          status: "non_editable", message: "Field is not editable")
+                          status: "non_editable", message: non_editable_message(fname))
           next
         end
         allowed = field_class.allowed_values(fname)
@@ -129,10 +139,15 @@ class FieldImportService
         # Re-running key resolution here would let preview and confirm disagree
         # whenever a key is ambiguous, which is precisely the defect: preview
         # described one control and confirm wrote another.
-        control = control_by_uuid.fetch(row.resolved_uuid)
-        field = control.public_send(@config[:fields]).find_or_initialize_by(field_name: row.field_name)
-        field.field_value = row.new_value
-        field.save!
+        if (item = item_by_uuid[row.resolved_uuid])
+          # #1312 — the item's own field, through the one author-edit path.
+          raise ActiveRecord::RecordInvalid, item unless item.apply_author_edit(row.field_name => item_value(row.field_name, row.new_value))
+        else
+          control = control_by_uuid.fetch(row.resolved_uuid)
+          field = control.public_send(@config[:fields]).find_or_initialize_by(field_name: row.field_name)
+          field.field_value = row.new_value
+          field.save!
+        end
         applied += 1 if row.status == "change"
       end
     end
@@ -236,6 +251,82 @@ class FieldImportService
     return nil unless control.respond_to?(:cdef_control_fields)
 
     control.cdef_control_fields.find { |f| f.field_name == "component" }&.field_value
+  end
+
+  # ── #1312: SSP statement items ─────────────────────────────────────
+
+  def non_editable_message(field_name)
+    if @document.is_a?(SspDocument) && SspControlField::RETIRED_FIELDS.include?(field_name)
+      "Answered per statement item since v1.17.5: address the item by its statement id " \
+        "(e.g. ac-2_smt.d.1) with #{ITEM_FIELDS.join(', ')}"
+    else
+      "Field is not editable"
+    end
+  end
+
+  # The SSP statement item a key names (its uuid or statement id), or nil.
+  def resolve_item(raw_key)
+    return nil unless @document.is_a?(SspDocument)
+
+    key = raw_key.to_s.strip
+    item_by_uuid[key] || items.find { _1.statement_id.casecmp?(key) }
+  end
+
+  def items
+    @items ||= SspControlStatement.joins(:ssp_control)
+                                  .where(ssp_controls: { ssp_document_id: @document.id, parent_id: nil })
+                                  .to_a
+  end
+
+  def item_by_uuid = @item_by_uuid ||= items.index_by { _1.uuid.to_s }
+
+  def item_rows(cid, item, fields)
+    fields.map do |fname, value|
+      fname = fname.to_s
+      new_value = value.is_a?(Array) ? value.join(", ") : value.to_s
+      base = { control_id: cid, resolved_uuid: item.uuid, field_name: fname, new_value: new_value }
+      next Row.new(**base, status: "non_editable", message: "Item fields: #{ITEM_FIELDS.join(', ')}") unless ITEM_FIELDS.include?(fname)
+
+      problem = item_value_problem(fname, new_value)
+      next Row.new(**base, status: "invalid", message: problem) if problem
+
+      current = item_current_value(item, fname)
+      Row.new(**base, current_value: current, status: current == new_value.strip ? "unchanged" : "change")
+    end
+  end
+
+  def item_value_problem(fname, value)
+    case fname
+    when "implementation_status"
+      return nil if value.blank? || SspControlStatement::IMPLEMENTATION_STATUSES.include?(value)
+
+      "Not an allowed value: #{SspControlStatement::IMPLEMENTATION_STATUSES.join(', ')}"
+    when "control_origination"
+      unknown = item_value(fname, value) - SspControlStatement::CONTROL_ORIGINATIONS
+      "Not OSCAL's control-origination: #{unknown.join(', ')}" if unknown.any?
+    when "expected_completion"
+      return nil if value.blank?
+
+      Date.iso8601(value.strip) && nil
+    end
+  rescue Date::Error
+    "Not a date (YYYY-MM-DD)"
+  end
+
+  def item_value(fname, value)
+    case fname
+    when "control_origination" then value.to_s.split(",").map(&:strip).compact_blank
+    when "expected_completion" then value.presence && Date.iso8601(value.strip)
+    else value.to_s.strip.presence
+    end
+  end
+
+  def item_current_value(item, fname)
+    case fname
+    when "control_origination" then item.control_origination.join(", ")
+    when "expected_completion" then item.expected_completion&.iso8601.to_s
+    else item.public_send(fname).to_s.strip
+    end
   end
 
   def current_value(control, field_name)

@@ -56,7 +56,7 @@
 
   <%# #1114 — the SSP's claim stays visible while assessing it. Editing is exactly
       when an assessor needs to see what the system says it does. %>
-  <% if ssp_ctx.present? && (ssp_ctx[:statements].any? || ssp_ctx[:summary].present? || ssp_ctx[:status].present? || ssp_ctx[:responsible].present?) %>
+  <% if ssp_ctx.present? && (ssp_ctx[:statements].any? || ssp_ctx[:summary].present? || ssp_ctx[:status].present?) %>
     <div class="sparc-ctx-readonly">
       <div class="sparc-ctx-readonly-head">
         As implemented &mdash; from the SSP
@@ -69,16 +69,14 @@
             <td class="sparc-ctx-readonly-td"><%= ssp_ctx[:status] %></td>
           </tr>
         <% end %>
-        <% if ssp_ctx[:responsible].present? %>
-          <tr class="sparc-divider-top">
-            <th scope="row" class="sparc-ctx-readonly-th">Responsible</th>
-            <td class="sparc-ctx-readonly-td"><%= ssp_ctx[:responsible] %></td>
-          </tr>
-        <% end %>
+        <%# #1312 — each item's own status, origination and responsible roles. %>
         <% ssp_ctx[:statements].each do |stmt| %>
           <tr class="sparc-divider-top">
             <th scope="row" class="sparc-ctx-readonly-th"><code class="sparc-fs-078"><%= stmt[:label] %></code></th>
-            <td class="sparc-ctx-readonly-td"><%= stmt[:prose] %></td>
+            <td class="sparc-ctx-readonly-td">
+              <%= stmt[:prose] %>
+              <%= render "sar_documents/ssp_item_facts", stmt: stmt %>
+            </td>
           </tr>
         <% end %>
         <% if ssp_ctx[:statements].empty? && ssp_ctx[:summary].present? %>

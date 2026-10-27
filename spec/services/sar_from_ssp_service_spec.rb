@@ -9,7 +9,9 @@ RSpec.describe SarFromSspService do
     ctrl = ssp.ssp_controls.create!(control_id: "ac-1", title: "Policy and Procedures", row_order: 0)
     ctrl.ssp_control_fields.create!(field_name: "stated_requirement", field_value: "Develop access control policy.")
     ctrl.ssp_control_fields.create!(field_name: "description", field_value: "Access control policy guidance.")
-    ctrl.ssp_control_fields.create!(field_name: "status", field_value: "Implemented")
+    ctrl.ssp_control_statements.create!(statement_id: "ac-1_smt", row_order: 0, uuid: SecureRandom.uuid,
+                                        implementation_prose: "Policy is published.",
+                                        implementation_status: "implemented")
     ctrl
   end
 
@@ -17,10 +19,12 @@ RSpec.describe SarFromSspService do
     ctrl = ssp.ssp_controls.create!(control_id: "sc-7", title: "Boundary Protection", row_order: 1)
     ctrl.ssp_control_fields.create!(field_name: "stated_requirement", field_value: "Monitor communications at boundaries.")
     ctrl.ssp_control_fields.create!(field_name: "description", field_value: "Boundary protection guidance.")
-    ctrl.ssp_control_fields.create!(field_name: "status", field_value: "Deferred")
-    ctrl.ssp_control_statements.create!(statement_id: "sc-7_smt.a", label: "a.", row_order: 0,
+    # #1312 — the item's own status. With no baseline catalog the item the SSP
+    # answers is the control's `_smt` (#1242).
+    ctrl.ssp_control_statements.create!(statement_id: "sc-7_smt", row_order: 0,
                                         uuid: SecureRandom.uuid,
-                                        implementation_prose: "Waiting on the boundary firewall refresh in Q3.")
+                                        implementation_prose: "Waiting on the boundary firewall refresh in Q3.",
+                                        implementation_status: "planned")
     ctrl
   end
 
@@ -112,14 +116,18 @@ RSpec.describe SarFromSspService do
       expect(field.editable).to be(false)
     end
 
-    it "copies SSP status as ssp_status read-only field" do
+    # #1312 — what the SSP's items record, summed up, and which are not in place.
+    it "copies the summary of the SSP's item statuses as the read-only ssp_status" do
       sar = described_class.new(ssp).create
 
       ac1 = sar.sar_controls.find_by(control_id: "ac-1")
       field = ac1.sar_control_fields.find_by(field_name: "ssp_status")
-      expect(field).to be_present
-      expect(field.field_value).to eq("Implemented")
+      expect(field.field_value).to eq("1 of 1 implemented")
       expect(field.editable).to be(false)
+      expect(ac1.sar_control_fields.find_by(field_name: "ssp_items_not_in_place")).to be_nil
+
+      sc7 = sar.sar_controls.find_by(control_id: "sc-7")
+      expect(sc7.sar_control_fields.find_by(field_name: "ssp_items_not_in_place").field_value).to eq("sc-7_smt planned")
     end
 
     it "creates editable placeholder fields with empty values" do
@@ -154,33 +162,39 @@ RSpec.describe SarFromSspService do
     end
 
     # Owner, 2026-10-21: a finding only where something is KNOWN before the
-    # assessment. The SSP reporting a control "Deferred" or "Will Not
-    # Implement" is a known finding; "Implemented" is a claim, not an
-    # assessment, and gets no finding until an assessor determines it. Every
-    # control used to be recorded not-satisfied with a risk (287 of 287).
+    # assessment. #1312 — an SSP item reported `planned` or `partial` is a known
+    # finding on that item; "implemented" is a claim, not an assessment, and
+    # `alternative` is a different implementation the assessor tests (owner,
+    # 2026-10-27). Neither gets a finding until an assessor determines it.
     describe "findings known before the assessment" do
       let(:result) { described_class.new(ssp).create.sar_results.first }
 
-      it "records a control the SSP reports Deferred as a known, not-satisfied finding on its statement" do
-        finding = result.sar_findings.find_by(title: "Finding for sc-7")
+      it "records an item the SSP reports planned as a known, not-satisfied finding on that item" do
+        finding = result.sar_findings.find_by(title: "Finding for sc-7_smt")
 
         expect(finding.target_data).to eq("type" => "statement-id", "target-id" => "sc-7_smt",
                                           "status" => { "state" => "not-satisfied" })
-        expect(finding.description).to include("Reported in the SSP as Deferred before the assessment")
+        expect(finding.description).to include("Reported in the SSP as planned before the assessment")
       end
 
-      it "records Will Not Implement the same way" do
+      it "records each item not in place, on the control's one risk" do
         ctrl = ssp.ssp_controls.create!(control_id: "cm-6", title: "Configuration Settings", row_order: 2)
-        ctrl.ssp_control_fields.create!(field_name: "status", field_value: "Will Not Implement")
+        ctrl.ssp_control_statements.create!(statement_id: "cm-6_smt", row_order: 0, uuid: SecureRandom.uuid,
+                                            implementation_status: "partial")
 
-        expect(result.sar_findings.find_by(title: "Finding for cm-6")).to be_present
-        expect(result.sar_risks.find_by(title: "Risk for cm-6")).to be_present
+        finding = result.sar_findings.find_by(title: "Finding for cm-6_smt")
+        risk = result.sar_risks.find_by(title: "Risk for cm-6")
+        expect(finding.description).to include("as partial")
+        expect(SarFindingRisk.where(sar_finding: finding, sar_risk: risk)).to exist
       end
 
-      it "records nothing for a control the SSP reports Implemented, or has not answered" do
-        ssp.ssp_controls.create!(control_id: "au-2", title: "Event Logging", row_order: 2)
+      it "records nothing for an item reported implemented or alternative, or not answered" do
+        au2 = ssp.ssp_controls.create!(control_id: "au-2", title: "Event Logging", row_order: 2)
+        au2.ssp_control_statements.create!(statement_id: "au-2_smt", row_order: 0, uuid: SecureRandom.uuid,
+                                           implementation_status: "alternative")
+        ssp.ssp_controls.create!(control_id: "au-3", title: "Content of Audit Records", row_order: 3)
 
-        expect(result.sar_findings.pluck(:title)).to contain_exactly("Finding for sc-7")
+        expect(result.sar_findings.pluck(:title)).to contain_exactly("Finding for sc-7_smt")
         expect(result.sar_risks.pluck(:title)).to contain_exactly("Risk for sc-7")
       end
 
@@ -188,10 +202,10 @@ RSpec.describe SarFromSspService do
         risk = result.sar_risks.find_by(title: "Risk for sc-7")
 
         expect(risk.status).to eq("open")
-        expect(risk.statement).to include("reported in the SSP as Deferred")
+        expect(risk.statement).to include("reported in the SSP as not yet in place: sc-7_smt (planned)")
         expect(risk.statement).to include("Monitor communications at boundaries.")
         expect(risk.statement).to include("Waiting on the boundary firewall refresh in Q3.")
-        expect(SarFindingRisk.where(sar_risk: risk, sar_finding: result.sar_findings.find_by(title: "Finding for sc-7"))).to exist
+        expect(SarFindingRisk.where(sar_risk: risk, sar_finding: result.sar_findings.find_by(title: "Finding for sc-7_smt"))).to exist
       end
 
       # Asserted against the generator's own constant rather than a copied

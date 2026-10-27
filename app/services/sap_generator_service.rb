@@ -79,15 +79,19 @@ class SapGeneratorService
     end
   end
 
+  # #1312 — the SSP answers item by item: the plan carries the summary of the
+  # items' statuses and their answers, not the retired control-level status.
   def gather_from_ssp
-    @ssp.ssp_controls.includes(:ssp_control_fields).map do |ctrl|
+    progress = SspResponseProgress.new(@ssp)
+    @ssp.ssp_controls.includes(:ssp_control_fields, :ssp_control_statements).map do |ctrl|
       field_map = ctrl.ssp_control_fields.index_by(&:field_name)
 
       {
         control_id: ctrl.control_id,
         title: ctrl.title,
-        implementation_status: field_map["status"]&.field_value,
-        implementation_description: field_map["implementation_statement"]&.field_value ||
+        implementation_status: progress.items_for(ctrl.control_id)&.to_s,
+        implementation_description: ctrl.aggregate_implementation_text ||
+                                    field_map["implementation_statement"]&.field_value ||
                                     field_map["implementation_summary"]&.field_value,
         objective: nil,
         test_case: nil,

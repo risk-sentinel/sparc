@@ -69,13 +69,14 @@ RSpec.describe "SAP assessment depth and SAR SSP context", type: :request do
 
     before do
       ssp_control = ssp.ssp_controls.create!(control_id: "ac-1", title: "Policy")
-      ssp_control.ssp_control_fields.create!(field_name: "status", field_value: "Implemented")
-      ssp_control.ssp_control_fields.create!(field_name: "responsible_entities", field_value: "ISSO")
       # Per-statement claims — what #1100 made possible and what an assessor
-      # actually assesses.
+      # actually assesses. #1312 — with each item's own status, origination and
+      # responsible roles.
       ssp_control.ssp_control_statements.create!(
-        statement_id: "ac-1_smt.a", label: "a.", row_order: 0, uuid: SecureRandom.uuid,
-        implementation_prose: "Policy is published in Confluence and reviewed annually."
+        statement_id: "ac-1_smt", label: "a.", row_order: 0, uuid: SecureRandom.uuid,
+        implementation_prose: "Policy is published in Confluence and reviewed annually.",
+        implementation_status: "implemented", control_origination: %w[organization],
+        responsible_roles_data: [ { "role-id" => "isso" } ]
       )
       sar.sar_controls.create!(control_id: "ac-1", title: "Policy", row_order: 0)
     end
@@ -91,7 +92,8 @@ RSpec.describe "SAP assessment depth and SAR SSP context", type: :request do
       get sar_document_path(sar)
 
       expect(response.body).to include("Declared status")
-      expect(response.body).to include("ISSO")
+      expect(response.body).to include("1 of 1 implemented")
+      expect(response.body).to include("Implemented · Organization · Roles: isso")
     end
 
     # Live, not copied. The enrich action snapshots a few SSP fields into

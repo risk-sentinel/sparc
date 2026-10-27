@@ -271,7 +271,11 @@ RSpec.describe "NIST Rev 5 MODERATE, end to end", type: :request do
 
       expect(row).to be_present
       expect(row.at_css("[data-statement-requirement]").text).to include("Support the management of system accounts")
-      expect(row.at_css("textarea[name='ssp_control_statement[implementation_prose]']")).to be_present
+      # #1312 — answered, with every field of its own, in the control's Edit form.
+      item = ssp.ssp_controls.find_by(control_id: "ac-2.1").ssp_control_statements.find_by(statement_id: "ac-2.1_smt")
+      block = card.at_css("[data-part-response='ac-2.1_smt']")
+      expect(block.at_css("textarea[name='statements[#{item.id}][implementation_prose]']")).to be_present
+      expect(block.at_css("select[name='statements[#{item.id}][implementation_status]']")).to be_present
     end
   end
 end

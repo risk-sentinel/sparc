@@ -338,7 +338,8 @@
 
           <div class="mt-2">
             <% if has_objectives %>
-              <%= render "sap_documents/objectives_table", control: control, sap_document: @sap_document %>
+              <%= render "sap_documents/objectives_table", control: control, sap_document: @sap_document,
+                    ssp_items: @ssp_items %>
             <% elsif control.objective.present? %>
               <div class="sparc-statement-block">
                 <div class="sparc-statement-label">Assessment Objective</div>

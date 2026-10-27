@@ -25,10 +25,16 @@ RSpec.describe HdfSystemExportService do
                           component_type: type, has_checks: has_checks, description: description)
   end
 
-  def ssp_control(ssp, control_id, row_order:, **fields)
+  # #1312 — `origination:` is the control's one item's (`_smt`, the item an SSP
+  # with no baseline catalog answers); the other keyword args are control fields.
+  def ssp_control(ssp, control_id, row_order:, origination: nil, **fields)
     control = create(:ssp_control, ssp_document: ssp, control_id: control_id, row_order: row_order)
     fields.each do |name, value|
       create(:ssp_control_field, ssp_control: control, field_name: name.to_s, field_value: value)
+    end
+    if origination
+      control.ssp_control_statements.create!(statement_id: "#{ControlId.canonical(control_id)}_smt",
+                                             uuid: SecureRandom.uuid, control_origination: origination)
     end
     control
   end
@@ -305,12 +311,12 @@ RSpec.describe HdfSystemExportService do
     let!(:cdef) { link_cdef(name: "App", component_type: "software") }
     let!(:ssp) { create(:ssp_document, authorization_boundary: boundary) }
 
-    it "maps the SSP origination and uses the implementation statement as the description" do
-      ssp_control(ssp, "AC-2", row_order: 1, control_type: "System Specific",
+    it "designates from the items' origination and uses the implementation statement as the description" do
+      ssp_control(ssp, "AC-2", row_order: 1, origination: %w[system-specific],
                   implementation_statement: "Accounts are managed in the IdP.")
-      ssp_control(ssp, "AC-2(1)", row_order: 2, control_type: "Hybrid — partially inherited",
+      ssp_control(ssp, "AC-2(1)", row_order: 2, origination: %w[inherited system-specific],
                   implementation_summary: "Automated account management, shared.")
-      ssp_control(ssp, "PE-3", row_order: 3, control_type: "Inherited from provider",
+      ssp_control(ssp, "PE-3", row_order: 3, origination: %w[inherited],
                   implementation_statement: "Provided by the CSP data centre.")
 
       expect(service.export["controlDesignations"]).to eq([
@@ -324,26 +330,34 @@ RSpec.describe HdfSystemExportService do
     end
 
     it "prefers the implementation statement over the summary" do
-      ssp_control(ssp, "AC-3", row_order: 1, control_type: "System Specific",
+      ssp_control(ssp, "AC-3", row_order: 1, origination: %w[system-specific],
                   implementation_statement: "Statement.", implementation_summary: "Summary.")
 
       expect(service.export["controlDesignations"].first["description"]).to eq("Statement.")
     end
 
     it "states plainly when the control has no narrative, rather than dropping or inventing one" do
-      ssp_control(ssp, "AC-4", row_order: 1, control_type: "Inherited from provider")
+      ssp_control(ssp, "AC-4", row_order: 1, origination: %w[inherited])
 
       expect(service.export["controlDesignations"].first["description"]).to eq(
-        "Designation recorded in the SPARC SSP as \"Inherited from provider\". " \
+        "Designation from the origination the SPARC SSP records for this control's items (Inherited). " \
         "No implementation statement has been written for this control."
       )
     end
 
-    it "drops Not Applicable and controls with no origination" do
-      ssp_control(ssp, "AC-5", row_order: 1, control_type: "Not Applicable", implementation_statement: "n/a")
+    it "drops controls whose items record no origination" do
+      ssp_control(ssp, "AC-5", row_order: 1, implementation_statement: "n/a")
       ssp_control(ssp, "AC-6", row_order: 2, implementation_statement: "no origination recorded")
 
       expect(service.export).not_to have_key("controlDesignations")
+    end
+
+    it "uses the items' own answers first" do
+      control = ssp_control(ssp, "AC-7", row_order: 1, origination: %w[organization],
+                            implementation_statement: "An earlier control-level answer.")
+      control.ssp_control_statements.first.update!(implementation_prose: "Lockout after three attempts.", label: "a.")
+
+      expect(service.export["controlDesignations"].first["description"]).to eq("[a.] Lockout after three attempts.")
     end
 
     it "is omitted when the boundary has no SSP" do
@@ -352,7 +366,7 @@ RSpec.describe HdfSystemExportService do
     end
 
     it "passes the schema with designations present" do
-      ssp_control(ssp, "SC-7", row_order: 1, control_type: "System Specific")
+      ssp_control(ssp, "SC-7", row_order: 1, origination: %w[system-specific])
       expect(Hdf::SystemSchema.errors(service.export)).to eq([])
     end
   end
@@ -429,7 +443,7 @@ RSpec.describe HdfSystemExportService do
       index_component(cdef, uuid: "11111111-2222-4333-8444-555555555555", title: "Amazon S3", type: "service")
       link_cdef(name: "Hosts", component_type: "hardware")
       ssp = create(:ssp_document, authorization_boundary: boundary)
-      ssp_control(ssp, "AC-2(1)", row_order: 1, control_type: "Hybrid — partially inherited")
+      ssp_control(ssp, "AC-2(1)", row_order: 1, origination: %w[inherited system-specific])
 
       doc = described_class.new(boundary, runner: runner, cli: true).export
       expect(doc.keys).to include("owner", "authorizationDate", "categorizationLevel", "controlDesignations")

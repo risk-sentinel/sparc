@@ -40,9 +40,13 @@ RSpec.describe "generated document UUID stability (#957)" do
     }
   end
 
+  # The controls the profile selects: an SSP's items, and so the SAR's known
+  # findings (#1312), are the ones its baseline selects (SspResponseProgress).
   let(:profile) do
     create(:profile_document, lifecycle_status: "published",
-           resolved_catalog_json: resolved_catalog_json, published: Time.current.iso8601)
+           resolved_catalog_json: resolved_catalog_json, published: Time.current.iso8601).tap do |doc|
+      %w[ac-1 ac-2].each_with_index { |id, i| doc.profile_controls.create!(control_id: id, row_order: i) }
+    end
   end
 
   # The documents differ, so their own UUIDs differ — that is correct, they ARE
@@ -111,10 +115,9 @@ RSpec.describe "generated document UUID stability (#957)" do
   describe "SarFromSspService" do
     it "derives result, control, finding and risk UUIDs from their parents" do
       ssp = SspFromProfileService.new(profile, name: "For SAR", authorization_boundary: boundary).create
-      # A finding exists only where the SSP reports the control not implemented
-      # (owner, 2026-10-21), so ac-1 is reported Deferred here.
-      ssp.ssp_controls.find_by(control_id: "ac-1").ssp_control_fields.find_by(field_name: "status")
-         .update!(field_value: "Deferred")
+      # A finding exists only where the SSP reports an item not in place
+      # (owner, 2026-10-21; #1312 per item), so ac-1's items are planned here.
+      ssp.ssp_controls.find_by(control_id: "ac-1").ssp_control_statements.update_all(implementation_status: "planned")
       sar = SarFromSspService.new(ssp, name: "SAR").create
 
       result = sar.sar_results.first
@@ -124,7 +127,9 @@ RSpec.describe "generated document UUID stability (#957)" do
       expect(control.uuid).to eq(OscalUuidService.derived(sar.uuid, "sar-control", "ac-1"))
 
       finding = result.sar_findings.find { |f| f.title.include?("ac-1") }
-      expect(finding.uuid).to eq(OscalUuidService.derived(result.uuid, "sar-finding", "ac-1"))
+      item = finding.target_data["target-id"]
+      expect(item).to start_with("ac-1_smt")
+      expect(finding.uuid).to eq(OscalUuidService.derived(result.uuid, "sar-finding", item))
       expect(result.sar_risks.find_by(title: "Risk for ac-1").uuid)
         .to eq(OscalUuidService.derived(result.uuid, "sar-risk", "ac-1"))
     end

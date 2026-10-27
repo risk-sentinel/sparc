@@ -158,9 +158,9 @@ class SspWizardService
       ssp_field_map["implementation_statement"]&.update!(field_value: narrative)
     end
 
-    if narrative.present? && ssp_field_map["status"]&.field_value.blank?
-      ssp_field_map["status"]&.update!(field_value: "Implemented")
-    end
+    # #1312 — no control-level status is set here: status is each statement
+    # item's own, and a component's text is not the author's word that an item
+    # is implemented.
 
     return unless component
     return if ssp_ctrl.ssp_by_components.exists?(ssp_component: component)

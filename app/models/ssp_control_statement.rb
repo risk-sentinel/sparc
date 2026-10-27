@@ -32,9 +32,50 @@ class SspControlStatement < ApplicationRecord
   validates :statement_id, presence: true,
                            uniqueness: { scope: :ssp_control_id }
 
-  # Attributes the controller is allowed to update via the edit modal.
+  # Attributes the controller is allowed to update from the control's Edit form
+  # and the API.
   EDITABLE_ATTRIBUTES = %i[implementation_prose remarks
-                           responsible_roles_data set_parameters_data].freeze
+                           responsible_roles_data set_parameters_data
+                           implementation_status expected_completion].freeze
+
+  # #1312 — each item an SSP answers carries its own status and origination,
+  # in OSCAL's terms. One vocabulary with the by-component it exports on.
+  IMPLEMENTATION_STATUSES = SspByComponent::IMPLEMENTATION_STATUSES
+  STATUS_LABELS = {
+    "implemented" => "Implemented", "partial" => "Partial", "planned" => "Planned",
+    "alternative" => "Alternative", "not-applicable" => "Not applicable"
+  }.freeze
+  # Statuses that say the item is not in place yet. A SAR generated from the
+  # SSP records each as a known finding. `alternative` is not one: a different
+  # implementation is in place, and the assessor tests it.
+  NOT_IN_PLACE = %w[planned partial].freeze
+
+  # OSCAL 1.2.3 `control-origination`, values enforced (allow-other="no"). An
+  # item may carry several: `inherited` plus this system's own origination is
+  # NIST's hybrid, an item partly inherited.
+  CONTROL_ORIGINATIONS = %w[organization system-specific customer-configured customer-provided inherited].freeze
+  ORIGINATION_LABELS = {
+    "organization" => "Organization", "system-specific" => "System-specific",
+    "customer-configured" => "Customer-configured", "customer-provided" => "Customer-provided",
+    "inherited" => "Inherited"
+  }.freeze
+  INHERITED = "inherited"
+
+  validates :implementation_status, inclusion: { in: IMPLEMENTATION_STATUSES }, allow_blank: true
+  validate :control_origination_values
+  validate :expected_completion_is_a_date
+
+  before_validation :normalize_item_fields
+
+  def status_label = STATUS_LABELS[implementation_status]
+
+  def not_in_place? = NOT_IN_PLACE.include?(implementation_status)
+
+  # Fully inherited: `inherited` and nothing of this system's own.
+  def fully_inherited? = control_origination == [ INHERITED ]
+
+  # Partly inherited: `inherited` with this system's own origination beside it.
+  def partially_inherited? = control_origination.include?(INHERITED) && control_origination.size > 1
 
   # #396 leveraging markers, parked in set_parameters_data by the OSCAL
   # importer and by an author declaring a customer responsibility matrix.
@@ -90,6 +131,26 @@ class SspControlStatement < ApplicationRecord
     inheritance_links.exists?
   end
 
+  # #1312 — the origination an item linked to a leveraged authorization takes
+  # from that link, or nil when the author sets it. Provided only: inherited.
+  # Provided with a responsibility handed back: NIST's hybrid, inherited plus
+  # this system's own part (system-specific unless the author named another).
+  # A whole responsibility handed back is this system's own: the author's.
+  def leveraged_origination
+    link = inheritance_links.find { _1.source_type == "SspControlStatement" && !_1.overridden? } ||
+           inheritance_links.find { _1.source_type == "SspControlStatement" }
+    source = link&.source
+    return nil unless source.respond_to?(:provided?)
+    return [ INHERITED ] if source.provided? && !source.customer_responsibility? && !link.overridden?
+    return nil unless source.provided? && source.customer_responsibility?
+
+    own = control_origination - [ INHERITED ]
+    [ INHERITED, *(own.presence || [ "system-specific" ]) ]
+  end
+
+  # What the item records, a leveraged link's answer first.
+  def effective_origination = leveraged_origination || control_origination
+
   # #1242 — the leveraged statement this one inherits from, when the provider
   # hands part of it back: its text is the provider's part, shown read-only
   # beside this system's own.
@@ -118,5 +179,29 @@ class SspControlStatement < ApplicationRecord
       end
       true
     end || false
+  end
+
+  private
+
+  # A blank select posts "", and a checkbox group posts a hidden "" so that
+  # clearing every box still sends the field. Neither is a value.
+  def normalize_item_fields
+    self.implementation_status = implementation_status.presence
+    self.control_origination = Array(control_origination).map(&:to_s).map(&:strip).compact_blank.uniq
+                                                         .sort_by { CONTROL_ORIGINATIONS.index(_1) || CONTROL_ORIGINATIONS.size }
+  end
+
+  # A value that does not cast to a date is dropped to nil by the column; say
+  # so instead of saving nothing.
+  def expected_completion_is_a_date
+    raw = expected_completion_before_type_cast
+    return if raw.blank? || expected_completion.present?
+
+    errors.add(:expected_completion, "is not a date (YYYY-MM-DD)")
+  end
+
+  def control_origination_values
+    unknown = control_origination - CONTROL_ORIGINATIONS
+    errors.add(:control_origination, "is not OSCAL's: #{unknown.join(', ')}") if unknown.any?
   end
 end

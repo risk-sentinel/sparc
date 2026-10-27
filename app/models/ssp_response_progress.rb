@@ -48,7 +48,86 @@ class SspResponseProgress
     "missing" => "Missing"
   }.freeze
 
-  Part = Struct.new(:control_id, :part_id, :statement_id, :state, :cdef_unreviewed, keyword_init: true)
+  # #1312 — `implementation_status` and `control_origination` are the item's
+  # own (SspControlStatement), nil and [] for a missing row.
+  Part = Struct.new(:control_id, :part_id, :statement_id, :state, :cdef_unreviewed,
+                    :implementation_status, :control_origination, keyword_init: true) do
+    def not_in_place? = SspControlStatement::NOT_IN_PLACE.include?(implementation_status)
+  end
+
+  # #1312 — what a control's items record: status counts and whether it is a
+  # hybrid. Read by the control's summary line, the SSP heatmap, the dashboard,
+  # SAR and SAP generation and the HDF export, so they cannot disagree.
+  class ItemSummary
+    NOT_SET = "Not set"
+    STATUS_ORDER = [ *SspControlStatement::IMPLEMENTATION_STATUSES, nil ].freeze
+
+    attr_reader :parts
+
+    def initialize(parts)
+      @parts = parts
+    end
+
+    def size = parts.size
+
+    # status (nil for not set) => count, in OSCAL's order, zeros left out.
+    def status_counts
+      counts = parts.group_by(&:implementation_status).transform_values(&:size)
+      STATUS_ORDER.filter_map { |status| [ status, counts[status] ] if counts[status] }.to_h
+    end
+
+    def originations = parts.flat_map { Array(_1.control_origination) }.uniq
+
+    # NIST's hybrid control: part of it inherited, part this system's own.
+    # Either an item is partly inherited, or some items are inherited and
+    # others are not. Items with no origination yet do not count either way.
+    def hybrid?
+      set = parts.map { Array(_1.control_origination) }.reject(&:empty?)
+      return false if set.empty?
+
+      set.any? { _1.include?(SspControlStatement::INHERITED) && _1.size > 1 } ||
+        set.map { _1.include?(SspControlStatement::INHERITED) }.uniq.size > 1
+    end
+
+    def fully_inherited? = parts.any? && parts.all? { Array(_1.control_origination) == [ SspControlStatement::INHERITED ] }
+
+    def not_in_place = parts.select(&:not_in_place?)
+
+    def self.label(status) = SspControlStatement::STATUS_LABELS.fetch(status, NOT_SET)
+
+    # Every status label, in OSCAL's order, "Not set" last: heatmap columns.
+    LABEL_ORDER = STATUS_ORDER.map { label(_1) }.freeze
+
+    # One label for the whole control, for its card: the status every item
+    # shares; otherwise Partial while any item is not in place, Not set while
+    # any is unanswered, else Implemented (a mix of implemented, alternative
+    # and not applicable is in place).
+    def headline_label
+      statuses = parts.map(&:implementation_status).uniq
+      return NOT_SET if statuses.empty?
+      return self.class.label(statuses.first) if statuses.size == 1
+      return self.class.label("partial") if parts.any?(&:not_in_place?)
+      return NOT_SET if statuses.include?(nil)
+
+      self.class.label("implemented")
+    end
+
+    # "12 of 18 implemented · 2 planned · hybrid"
+    def to_s
+      return "No items" if parts.empty?
+
+      counts = status_counts
+      words = [ "#{counts.fetch('implemented', 0)} of #{size} implemented" ]
+      counts.each do |status, count|
+        next if status == "implemented"
+
+        words << "#{count} #{self.class.label(status).downcase}"
+      end
+      words << "hybrid" if hybrid?
+      words << "inherited" if fully_inherited?
+      words.join(" · ")
+    end
+  end
 
   # Counts for one control or the whole document.
   class Tally
@@ -121,6 +200,18 @@ class SspResponseProgress
 
   def parts_for(control_id) = parts_by_control.fetch(ControlId.canonical(control_id), [])
 
+  # #1312 — what a control's items record (ItemSummary), or nil when the
+  # baseline does not select the control.
+  def items_for(control_id)
+    key = ControlId.canonical(control_id)
+    return nil unless required.key?(key)
+
+    (@items_per_control ||= {})[key] ||= ItemSummary.new(parts_by_control.fetch(key, []))
+  end
+
+  # Every required item on the document.
+  def items = @items ||= ItemSummary.new(parts)
+
   # statement row id => Part, for the rows that are required responses.
   def part_for_statement(statement_id) = parts_by_statement[statement_id]
 
@@ -143,10 +234,14 @@ class SspResponseProgress
 
   def classify(control, part_id)
     row = rows[[ control, part_id.downcase ]]
-    return Part.new(control_id: control, part_id: part_id, state: "missing", cdef_unreviewed: false) unless row
+    unless row
+      return Part.new(control_id: control, part_id: part_id, state: "missing", cdef_unreviewed: false,
+                      control_origination: [])
+    end
 
     state, unreviewed = state_of(row)
-    Part.new(control_id: control, part_id: part_id, statement_id: row[:id], state: state, cdef_unreviewed: unreviewed)
+    Part.new(control_id: control, part_id: part_id, statement_id: row[:id], state: state, cdef_unreviewed: unreviewed,
+             implementation_status: row[:status], control_origination: origination_of(row, state))
   end
 
   def state_of(row)
@@ -158,6 +253,18 @@ class SspResponseProgress
 
     cdef = links.find { _1[:source_type] == "CdefControlStatement" && !_1[:overridden] }
     [ "implemented", cdef.present? && cdef[:reviewed_at].nil? ]
+  end
+
+  # #1312 — what the item records, a leveraged link's answer first, as
+  # SspControlStatement#effective_origination decides it.
+  def origination_of(row, state)
+    own = Array(row[:origination])
+    case state
+    when "inherited" then [ SspControlStatement::INHERITED ]
+    when "hybrid_satisfied", "hybrid_unsatisfied"
+      [ SspControlStatement::INHERITED, *((own - [ SspControlStatement::INHERITED ]).presence || [ "system-specific" ]) ]
+    else own
+    end
   end
 
   # [hybrid, written] => state, for a provider statement that hands a
@@ -186,10 +293,11 @@ class SspResponseProgress
                                  .pluck(:id, "ssp_controls.control_id", :statement_id,
                                         # Any non-space character, as Ruby's `present?` reads it:
                                         # BTRIM strips spaces only, so a newline counted as written.
-                                        Arel.sql("COALESCE(ssp_control_statements.implementation_prose ~ '[^[:space:]]', false)"))
-                                 .to_h do |id, control_id, statement_id, written|
+                                        Arel.sql("COALESCE(ssp_control_statements.implementation_prose ~ '[^[:space:]]', false)"),
+                                        :implementation_status, :control_origination)
+                                 .to_h do |id, control_id, statement_id, written, status, origination|
                                    key = [ ControlId.canonical(control_id), statement_id.to_s.downcase ]
-                                   [ key, { id: id, written: written } ]
+                                   [ key, { id: id, written: written, status: status, origination: origination } ]
                                  end
   end
 

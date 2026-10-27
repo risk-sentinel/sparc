@@ -205,19 +205,22 @@ RSpec.describe SspFromProfileService do
     # Unanswered until the author answers it. A "Deferred" placeholder could
     # not be told from an author's decision to defer, which SAR generation
     # reads as a known finding.
-    it "creates the status field unanswered" do
+    # #1312 — status, origination and responsible roles are each item's own,
+    # unanswered until the author answers them; no control-level field for them.
+    it "leaves every item's status and origination unanswered, with no control-level status" do
       ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = ssp.ssp_controls.find_by(control_id: "ac-1")
-      status = ac1.ssp_control_fields.find_by(field_name: "status")
-      expect(status.field_value).to eq("")
+      expect(ac1.ssp_control_fields.where(field_name: SspControlField::RETIRED_FIELDS)).to be_empty
+      expect(ac1.ssp_control_statements.pluck(:implementation_status).uniq).to eq([ nil ])
+      expect(ac1.ssp_control_statements.pluck(:control_origination).uniq).to eq([ [] ])
     end
 
     it "creates empty editable placeholder fields for implementation" do
       ssp = described_class.new(profile, authorization_boundary: boundary).create
 
       ac1 = ssp.ssp_controls.find_by(control_id: "ac-1")
-      %w[control_type responsible_entities implementation_statement implementation_summary notes].each do |field_name|
+      %w[implementation_statement implementation_summary notes].each do |field_name|
         field = ac1.ssp_control_fields.find_by(field_name: field_name)
         expect(field).to be_present, "Expected field '#{field_name}' to exist"
         expect(field.field_value).to eq("")
