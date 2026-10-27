@@ -337,8 +337,8 @@
             <% if control_progress %>
               <span class="sparc-status sparc-status--<%= control_progress.complete? ? 'success' : control_progress.done.zero? ? 'neutral' : 'warning' %> sparc-fs-068"
                     data-testid="control-response-badge"
-                    title="Responses this control requires that are done: inherited, satisfied or written">
-                <%= control_progress.done %>/<%= control_progress.required %> done
+                    title="Responses this control requires that are answered: inherited, satisfied or written">
+                <%= control_progress.done %>/<%= control_progress.required %> answered
               </span>
             <% else %>
               <span class="sparc-status sparc-status--neutral sparc-fs-068" data-testid="control-response-badge"

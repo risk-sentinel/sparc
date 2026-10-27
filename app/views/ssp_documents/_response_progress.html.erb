@@ -8,7 +8,7 @@
 <div class="sparc-score-cell" data-testid="ssp-response-progress"
      data-required="<%= progress.required %>" data-done="<%= progress.done %>" data-owed="<%= progress.owed %>">
   <div class="sparc-score"><%= progress.done %> <span class="sparc-fs-078 text-body-secondary">of <%= progress.required %></span></div>
-  <div class="sparc-score-label">Responses done</div>
+  <div class="sparc-score-label">Responses answered</div>
   <div class="sparc-fs-072 text-body-secondary">
     <%= safe_join([
           ("#{counts['inherited']} inherited" if counts["inherited"].positive?),

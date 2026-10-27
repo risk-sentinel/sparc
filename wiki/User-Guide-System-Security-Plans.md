@@ -192,7 +192,7 @@ The SSP detail page (`/ssp_documents/:id`) is where the real work happens.
 5. **Save Changes** stores every item you changed, and the control's notes, in
    one save (an item you leave as it was changes nothing). The **compliance
    percentage** at the top (implemented items over the items that take a
-   response) updates as you go, and so does **Responses done** beside it (see
+   response) updates as you go, and so does **Responses answered** beside it (see
    [How much is left to write](#how-much-is-left-to-write)).
 
 **Upgrading to v1.17.5:** an SSP that recorded status, control type,
@@ -207,10 +207,10 @@ the retired control application and coverage level) is added to the control's
 
 ### How much is left to write
 
-**Responses done** at the top of an SSP counts what the plan still needs
-written, in responses rather than controls. It reads "*done* of *required*",
+**Responses answered** at the top of an SSP counts what the plan still needs
+written, in responses rather than controls. It reads "*answered* of *required*",
 with the inherited, hybrid and owed counts beneath. Each control card shows the
-same count for that control ("4/6 done"), and every row in its Statements table
+same count for that control ("4/6 answered"), and every row in its Statements table
 says where that response stands.
 
 - **What counts as a response.** One per statement part with no parts below it
@@ -221,7 +221,7 @@ says where that response stands.
   count what they select. A part with no row yet counts as owed; it does not
   drop out of the total.
 - **Inherited.** A response a leveraged system provides in full. It counts as
-  done.
+  answered.
 - **Hybrid.** NIST's term for a control part the leveraged system provides in
   part, handing the rest back. The provider's part is shown read-only above the
   row's box; the box is for this system's part. It is owed until you write it.
@@ -353,7 +353,7 @@ one component and cannot carry a pair. See
 | A control shows no **Statements** table | That control genuinely has no statements — roughly thirty Rev 5.2.0 base controls carry only guidance | Nothing to fix; answer the control on the card itself |
 | Statements appear for some controls but not others in an older plan | The catalog was imported before SPARC stored the statement tree | Re-import the catalog, then re-open the SSP |
 | A parameter value on the SSP looks wrong | It comes from the baseline, not the SSP | Change it on the baseline, then re-open the SSP |
-| **Responses done** doesn't move when a control's text is filled in | The text sits above the parts that need it (the row says "Written above its parts") | Move each part's text into its own row |
+| **Responses answered** doesn't move when a control's text is filled in | The text sits above the parts that need it (the row says "Written above its parts") | Move each part's text into its own row |
 | A control card shows **Not in baseline** | The SSP's profile does not select that control | Nothing is owed for it; change the baseline if it should be |
 | **Baseline not set** — the SSP imports a profile SPARC cannot find, and it can't be edited | The profile named in the file isn't loaded, or is named differently | Choose the right profile in the banner's **Profile** list and click **Set baseline**. This works even if the SSP has other problems; the confirmation lists anything still outstanding |
 | **No boundary linked** on an SSP | The SSP was uploaded without a boundary, or before a boundary was required | Pick the boundary in the banner's **Link to a boundary** list and click **Link boundary**. A boundary already linked to a different SSP says so in the list — check that one first |

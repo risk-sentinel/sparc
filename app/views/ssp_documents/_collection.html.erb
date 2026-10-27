@@ -18,7 +18,7 @@
     <div class="sparc-card-grid">
       <% records.each do |doc| %>
         <% progress = SspResponseProgress.for(doc, required_cache: (@response_progress_cache ||= {})).total %>
-        <% slots = document_card_slots(doc, count: "#{progress.done}/#{progress.required}", count_label: "responses done",
+        <% slots = document_card_slots(doc, count: "#{progress.done}/#{progress.required}", count_label: "responses answered",
                                        version: doc.ssp_version, enriched: doc.enriched?) %>
         <% slots[:metrics].insert(1, { value: doc.ssp_controls.count, label: "controls" }) %>
         <%= render "shared/item_card", **slots.merge(
@@ -38,7 +38,7 @@
           <th class="sparc-ws-nowrap">Status</th>
           <th class="sparc-ws-nowrap">OSCAL</th>
           <th class="sparc-ws-nowrap">Controls</th>
-          <th class="sparc-ws-nowrap" title="Responses the SSP's baseline requires that are done">Responses</th>
+          <th class="sparc-ws-nowrap" title="Responses the SSP's baseline requires that are answered">Responses</th>
           <th class="sparc-ws-nowrap">Created</th>
           <th class="sparc-ws-nowrap">Actions</th>
         </tr>
