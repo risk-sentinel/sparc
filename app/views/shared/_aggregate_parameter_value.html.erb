@@ -8,6 +8,10 @@
     <span class="text-body-tertiary fst-italic">Not set</span>
   <% end %>
   <div class="text-body-tertiary sparc-fs-072 sparc-mt-02">
-    Combines <%= param.aggregates.to_sentence %>; set those to change it.
+    <% if param.value.present? %>
+      Set on this aggregate itself; NIST sets it through <%= param.aggregates.to_sentence %>.
+    <% else %>
+      Combines <%= param.aggregates.to_sentence %>; set those to change it.
+    <% end %>
   </div>
 </div>
