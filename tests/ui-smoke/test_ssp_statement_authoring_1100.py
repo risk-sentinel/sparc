@@ -210,7 +210,7 @@ def test_saving_an_items_fields_persists_and_shows_in_the_read_view(authed_page)
     block.locator("input[name$='[expected_completion]']").fill("2027-06-30")
     try:
         with page.expect_navigation(wait_until="load"):
-            form.locator("input[type='submit'][value='Save Changes']").click()
+            form.locator("input[type='submit'][value='Save Changes']").first.click()
 
         row = page.locator(f"tr[data-statement-id='{statement_id}']").first
         text = row.text_content()
