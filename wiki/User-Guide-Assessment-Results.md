@@ -103,6 +103,14 @@ each one as **passing**, **failed** or **not applicable**, with your name and
 notes. Grouping nodes (`ac-1_obj.a`) carry no statement of their own and are
 not determined.
 
+Record them from the control card's **Edit**: **Determinations** lists every
+objective to determine, each with its determination (Pending, In progress,
+Passing, Failed, Not applicable) and your notes, and beside it what the SSP item
+it tests says, with that item's status, origination and roles. **Save Changes**
+stores every determination and the control's own fields in one save; your name
+is taken from the Assessor field. The objectives table on the card is the read
+view (since v1.17.5).
+
 - **A failed objective opens the control's risk**, linked to a finding on that
   objective, so it appears in a POA&M generated from this SAR. When none of the
   control's objectives is failing any more, the risk is closed.
