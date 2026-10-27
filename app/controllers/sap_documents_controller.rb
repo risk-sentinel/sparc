@@ -101,9 +101,6 @@ class SapDocumentsController < ApplicationController
     ControlFamily.where(code: family_codes).each { |f| @family_names[f.code] = f.name }
 
     # Allow ?objective_id=N to deep-link to an objective edit modal.
-    @editing_objective = SapControlObjective.joins(sap_control: :sap_document)
-                                            .find_by(id: params[:objective_id],
-                                                     sap_documents: { id: @sap_document.id })
 
     # #1114 — the assessment methods and, under each, WHAT to examine.
     #
@@ -159,12 +156,24 @@ class SapDocumentsController < ApplicationController
       permitted[:assessment_method] = methods.join(",")
     end
 
-    if control.update(permitted)
+    planned = []
+    saved = ActiveRecord::Base.transaction do
+      raise ActiveRecord::Rollback unless control.update(permitted)
+
+      planned = plan_objectives(control, permitted[:assessor_name])
+      true
+    end
+
+    if saved
       @sap_document.regenerate_oscal_uuid!
       flash[:success] = "Control #{control.control_id} updated"
+      flash[:success] += " (#{planned.size} #{"objective".pluralize(planned.size)} saved)" if planned.any?
     else
       flash[:error] = control.errors.full_messages.join(", ")
     end
+    redirect_to sap_document_path(@sap_document)
+  rescue ArgumentError, ActiveRecord::RecordInvalid => e
+    flash[:error] = e.message
     redirect_to sap_document_path(@sap_document)
   end
 
@@ -660,6 +669,30 @@ class SapDocumentsController < ApplicationController
   # control once under its rolled-up status. Controls without objectives
   # land in the "not_assessed" bucket.
   STATUS_ORDER = %w[failed in-progress pending passing not_applicable not_assessed].freeze
+
+  # #1312 — the control's Edit sets every objective's status and notes in its
+  # one Save. An objective left as it was changes nothing; one from another
+  # control is refused (the whole save rolls back).
+  def plan_objectives(control, assessor_name)
+    raw = params[:objectives]
+    return [] unless raw.respond_to?(:keys)
+
+    by_id = control.sap_control_objectives.index_by { _1.id.to_s }
+    assessor = assessor_name.presence || current_user&.display_label
+    raw.keys.filter_map do |id|
+      objective = by_id[id.to_s] or raise ArgumentError, "objective #{id} is not part of #{control.control_id}"
+      attrs = raw[id].permit(:status, :assessor_notes).to_h.symbolize_keys
+      attrs[:assessor_notes] = attrs[:assessor_notes].to_s.strip.presence if attrs.key?(:assessor_notes)
+      next if attrs.all? { |key, value| objective.public_send(key).presence == value.presence }
+
+      if attrs[:status] && attrs[:status] != objective.status
+        attrs[:assessor_name] = assessor
+        attrs[:assessed_at] = Time.current if %w[passing failed].include?(attrs[:status])
+      end
+      objective.update!(attrs)
+      objective
+    end
+  end
 
   # statement id => SspControlStatement, for the SSP the plan assesses.
   def ssp_items_for(ssp)

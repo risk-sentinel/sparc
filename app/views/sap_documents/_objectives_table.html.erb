@@ -1,4 +1,6 @@
-<%# Per-control objectives table for SAP show page.
+<%# Per-control objectives table for SAP show page: the READ view. #1312 —
+    objectives are planned in the control's Edit (_objective_plan), all in one
+    Save; rows carry no Edit of their own.
     Locals:
       control      - SapControl instance (must have sap_control_objectives loaded)
       sap_document - SapDocument instance (for routing)
@@ -45,7 +47,6 @@
           <th>Determination Statement</th>
           <th class="sparc-w-10pct">Status</th>
           <th class="sparc-w-14pct">Assessor</th>
-          <th class="sparc-w-6pct"></th>
         </tr>
       </thead>
       <tbody>
@@ -61,7 +62,7 @@
               something there is nothing to determine about. %>
           <% if obj.container? %>
             <tr class="sparc-objective-group" data-objective-id="<%= obj.objective_id %>">
-              <th scope="rowgroup" colspan="5" class="sparc-stmt-d<%= depth %> sparc-field-label">
+              <th scope="rowgroup" colspan="4" class="sparc-stmt-d<%= depth %> sparc-field-label">
                 <code class="sparc-fs-078"><%= obj.label.presence || obj.objective_id %></code>
               </th>
             </tr>
@@ -96,11 +97,6 @@
             </td>
             <td class="text-body-secondary sparc-fs-078">
               <%= obj.assessor_name.presence || "—" %>
-            </td>
-            <td>
-              <%= link_to "Edit",
-                          sap_document_path(sap_document, objective_id: obj.id, anchor: "obj-#{obj.id}"),
-                          class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm sparc-fs-07 sparc-p-015-045" %>
             </td>
           </tr>
         <% end %>
