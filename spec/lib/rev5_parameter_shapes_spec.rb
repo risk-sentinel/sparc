@@ -88,6 +88,13 @@ RSpec.describe "Rev 5 parameter shapes" do
       expect(param(d, "ac-01_odp.05")).not_to be_aggregate
     end
 
+    it "shows a value set on the aggregate itself, which the API accepts and the resolver reads first" do
+      agg = param(detail("ac-1", ac1_params, "ac-1_prm_1" => "the Security Steering Committee"), "ac-1_prm_1")
+
+      expect(agg.aggregate_answered).to be(true)
+      expect(agg.display).to eq("the Security Steering Committee")
+    end
+
     it "knows an aggregate none of whose parts is set" do
       agg = param(detail("ac-1", ac1_params), "ac-1_prm_1")
 

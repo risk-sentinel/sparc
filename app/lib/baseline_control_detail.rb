@@ -220,7 +220,10 @@ class BaselineControlDetail
       # them, and the screen says where the reading came from.
       catalog_value: Array(param["values"]).join(" | ").presence,
       aggregates:    OscalParameterResolver.aggregated_ids(param),
-      aggregate_answered: OscalParameterResolver.aggregated_ids(param).any? { |part| resolver.answered?(part) }
+      # Answered by a value of its own (the API accepts one, and the resolver
+      # reads it first) or by any of its parts.
+      aggregate_answered: resolver.answered?(id) ||
+                          OscalParameterResolver.aggregated_ids(param).any? { |part| resolver.answered?(part) }
     )
   end
 end
