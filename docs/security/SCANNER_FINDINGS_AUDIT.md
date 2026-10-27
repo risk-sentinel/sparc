@@ -1,13 +1,15 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-10-27 (v1.17.4 — application fixes only; no gem or base change)
+**Last reviewed:** 2026-10-27 (v1.17.4 — net-ssh 7.3.8 for seven advisories; no base change)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
 
 > **v1.17.4 rescan (2026-10-27).** Real rescan of the built `sparc:v1.17.4`
-> image (arm64, `fd5ebf377102`), not an SBOM, with grype 0.114.0 (DB v6.1.10
-> built 2026-10-26) and Trivy 0.74.0. Same UBI 10 base and the same gems as
-> v1.17.3: this release changes application code only.
+> image (arm64, `5807623677f0`, the release code with net-ssh 7.3.8), not an
+> SBOM, with grype 0.114.0 (DB v6.1.10 built 2026-10-26, the newest published)
+> and Trivy 0.74.0. Same UBI 10 base as v1.17.3. An earlier version of this
+> block described the image before the net-ssh bump and said no gem changed;
+> the counts below are from the image that shipped.
 >
 > | Scanner | Critical | High | Medium | Low |
 > |---|---|---|---|---|
@@ -18,6 +20,14 @@ or whenever a new suppression is added.
 > id by id: none new, none gone. Trivy's one Low is still Ruby's on-disk
 > `json` 2.9.1 (the app loads 3.1.0).
 >
+> - **Gem taken: net-ssh 7.3.2 → 7.3.8.** bundle-audit (ruby-advisory-db of
+>   2026-10-27) reported seven advisories against 7.3.2, which kamal brings in
+>   and the image installs (SPARC never loads it): GHSA-vxj5-fg65-x765 and
+>   GHSA-qpg5-fx6p-8cq3 (High), GHSA-3x7f-q7wf-fp73, GHSA-ggxh-cfwq-5xqc,
+>   GHSA-pfqh-p9vh-wx4p, GHSA-r75w-7fhp-84w8, GHSA-rpq3-v334-f5pm. 7.3.8 fixes
+>   all seven; bundle-audit is clean. grype's advisory data does not carry them
+>   yet: it reports nothing for net-ssh on the v1.17.3 image either, so the
+>   image scan neither found them there nor proves them gone here.
 > - **Register:** unchanged. 7 entries; no `RELEASE-BLOCKING` finding.
 
 > **v1.17.3 rescan (2026-10-26).** Real rescan of the built `sparc:v1.17.3`
