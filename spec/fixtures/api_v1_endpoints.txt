@@ -11,6 +11,7 @@ DELETE /api/v1/back_matter_resources/:id
 DELETE /api/v1/back_matter_resources/:id/unlink
 DELETE /api/v1/cdef_coverage/runs/:id
 DELETE /api/v1/cdef_documents/:id
+DELETE /api/v1/cdef_documents/:id/profiles/:profile_document_id
 DELETE /api/v1/cdef_documents/bulk
 DELETE /api/v1/control_catalogs/:control_catalog_id/control_families/:id
 DELETE /api/v1/control_catalogs/:control_catalog_id/controls/:id
@@ -238,6 +239,7 @@ POST /api/v1/cdef_documents/:id/bulk_apply_converter/preview
 POST /api/v1/cdef_documents/:id/fields/import/confirm
 POST /api/v1/cdef_documents/:id/fields/import/preview
 POST /api/v1/cdef_documents/:id/populate_from_profile
+POST /api/v1/cdef_documents/:id/profiles
 POST /api/v1/cdef_documents/:id/reject
 POST /api/v1/cdef_documents/:id/source_from_profile
 POST /api/v1/cdef_documents/:id/submit_for_review

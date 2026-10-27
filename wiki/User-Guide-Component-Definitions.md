@@ -143,6 +143,24 @@ NIST controls in bulk.
 Keep the converter fresh first — see
 [Converters & Imports](User-Guide-Converters-and-Imports).
 
+## How to use a CDEF under more than one baseline
+
+A component definition describes a component (a managed database, a load
+balancer, an OS build) and the controls it satisfies, so the same CDEF serves any
+number of baselines. Its page shows **Used under:** with every baseline it
+serves. **Add a baseline** links another; **Remove** stops using it under one.
+You need `cdef.write`; a published CDEF can take another baseline too, since
+adding one does not change the baselines it already serves.
+
+- **Built from a baseline**, each control names that baseline as its source, so
+  the CDEF's OSCAL export does not change when it is used under others.
+- **Membership** ("controls not in this document's baseline") is checked against
+  all its baselines together.
+- **Bulk apply** asks which baseline to compare against when there is more than
+  one.
+
+Before v1.17.5 a CDEF belonged to one baseline, and reuse meant copying it.
+
 ## How to reuse a CDEF in an SSP
 
 When creating an SSP with the wizard, select this CDEF at the **CDEF selector**

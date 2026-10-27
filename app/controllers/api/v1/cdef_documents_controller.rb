@@ -28,7 +28,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   include FieldImportable
   # #1031 — file ingest; a CDEF is normally authored elsewhere.
   include DocumentFileIngestApi
-  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :source_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm, :update_scope, :export ]
+  before_action :set_cdef, only: [ :show, :update, :destroy, :link_profile, :unlink_profile, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :source_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm, :update_scope, :export ]
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
   # #1032 — every write gated on `cdef.write`, the same permission and the same
@@ -48,6 +48,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   # 2026-10-24). `approve` / `reject` stay as above (#1275).
   include CdefWriteGuards
   before_action :authorize_cdef_write!, only: [ :update, :destroy, :source_from_profile, :submit_for_review,
+                                                :link_profile, :unlink_profile,
                                                 :update_scope, :bulk_apply_converter_preview,
                                                 :bulk_apply_converter_confirm,
                                                 :import_fields_preview, :import_fields_confirm ]
@@ -84,6 +85,10 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
     # Summarise only the page, the way the card view does.
     summaries = CdefComponent.summary_for(result[:data].map(&:id))
+    # #1089 — one query for the page's baseline links, not one per CDEF.
+    @profile_links = CdefDocumentProfileDocument.where(cdef_document_id: result[:data].map(&:id))
+                                                .pluck(:cdef_document_id, :profile_document_id)
+                                                .group_by(&:first).transform_values { |pairs| pairs.map(&:last) }
 
     render json: {
       data: result[:data].map { |c| serialize_cdef(c, summary: summaries[c.id]) },
@@ -201,7 +206,8 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       converter:                converter,
       target_rev:               params[:target_rev],
       source_ids:               params[:source_ids],
-      only_missing_vs_baseline: ActiveModel::Type::Boolean.new.cast(params[:only_missing_vs_baseline])
+      only_missing_vs_baseline: ActiveModel::Type::Boolean.new.cast(params[:only_missing_vs_baseline]),
+      baseline_profile_id:      params[:baseline_profile_id].presence # #1089
     )
 
     result = service.preview
@@ -273,6 +279,27 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     render json: { error: e.message }, status: :unprocessable_content
   rescue CdefMutationService::ValidationError => e
     render json: { error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_content
+  end
+
+  # POST /api/v1/cdef_documents/:id/profiles { profile_document_id }
+  # #1089 — use this CDEF under another baseline (id or slug). Idempotent.
+  def link_profile
+    profile = find_profile(params[:profile_document_id])
+    return render(json: { error: "Profile not found" }, status: :not_found) unless profile
+
+    @cdef.link_profile!(profile)
+    audit_log_api("cdef_profile_linked", @cdef, profile_document_id: profile.id)
+    render json: { data: serialize_cdef(@cdef.reload, detailed: true) }
+  end
+
+  # DELETE /api/v1/cdef_documents/:id/profiles/:profile_document_id
+  def unlink_profile
+    profile = @cdef.profile_documents.find_by(id: params[:profile_document_id])
+    return render(json: { error: "Not used under that profile" }, status: :not_found) unless profile
+
+    @cdef.unlink_profile!(profile)
+    audit_log_api("cdef_profile_unlinked", @cdef, profile_document_id: profile.id)
+    render json: { data: serialize_cdef(@cdef.reload, detailed: true) }
   end
 
   # DELETE /api/v1/cdef_documents/bulk
@@ -384,6 +411,12 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     profile
   end
 
+  # #1089 — any loaded profile, by id or slug.
+  def find_profile(id_or_slug)
+    id_or_slug = id_or_slug.to_s
+    id_or_slug.match?(/\A\d+\z/) ? ProfileDocument.find_by(id: id_or_slug) : ProfileDocument.find_by(slug: id_or_slug)
+  end
+
   # #1032 — the same helper name and body as the web controller's, so the two
   # gates cannot drift apart.
   # #1258 — CdefWriteGuards' hooks.
@@ -450,6 +483,8 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       slug: cdef.slug,
       uuid: cdef.uuid,
       name: cdef.name,
+      # #1089 — every baseline this CDEF is used under.
+      profile_document_ids: (@profile_links ? @profile_links.fetch(cdef.id, []) : cdef.profile_document_ids).sort,
       status: cdef.status,
       lifecycle_status: cdef.lifecycle_status,
       # #627/#628 — content-completeness is distinct from the parse `status`.

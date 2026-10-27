@@ -21,7 +21,7 @@ class CdefDocumentsController < ApplicationController
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
 
-  before_action :set_cdef_document, only: %i[set_baseline show edit update destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm select_profile_source source_from_profile submit_for_review approve reject update_scope]
+  before_action :set_cdef_document, only: %i[set_baseline link_profile unlink_profile show edit update destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm select_profile_source source_from_profile submit_for_review approve reject update_scope]
   before_action :ensure_editable!, only: [ :edit, :update, :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :select_profile_source, :source_from_profile, :submit_for_review ]
   # Issue #488 — same RBAC bucket as the DISA CCI "Refresh Now" button on
   # ConvertersController. Treats AWS Labs catalog refresh as an
@@ -34,7 +34,7 @@ class CdefDocumentsController < ApplicationController
   # (AC-3)
   include CdefWriteGuards
   before_action :fill_default_cdef_scope!, only: %i[create create_from_profile copy]
-  before_action :authorize_cdef_write!, only: %i[update edit set_baseline select_profile_source destroy update_field update_metadata source_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review update_scope bulk_apply bulk_apply_preview bulk_apply_confirm]
+  before_action :authorize_cdef_write!, only: %i[update edit set_baseline link_profile unlink_profile select_profile_source destroy update_field update_metadata source_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review update_scope bulk_apply bulk_apply_preview bulk_apply_confirm]
   before_action :authorize_cdef_destination!, only: %i[create create_from_profile copy update_scope]
 
 
@@ -452,6 +452,30 @@ class CdefDocumentsController < ApplicationController
   # GET /cdef_documents/:id/select_profile_source (#628, renamed #982)
   # Profile picker for an EXISTING empty CDEF so a metadata-only shell can
   # gain a control basis instead of being a dead end.
+  # POST /cdef_documents/:id/link_profile
+  # #1089 — use this CDEF under another baseline. Usage, not content: allowed
+  # on a published CDEF too, as declaring a missing baseline is (#928).
+  def link_profile
+    profile = ProfileDocument.find_by(id: params[:profile_document_id])
+    return redirect_to(@cdef_document, flash: { error: "Choose a baseline to add." }) unless profile
+
+    @cdef_document.link_profile!(profile)
+    audit_log("cdef_profile_linked", subject: @cdef_document,
+              metadata: { profile_document_id: profile.id, profile_name: profile.name })
+    redirect_to @cdef_document, flash: { success: "Now used under #{profile.name}." }
+  end
+
+  # DELETE /cdef_documents/:id/unlink_profile
+  def unlink_profile
+    profile = @cdef_document.profile_documents.find_by(id: params[:profile_document_id])
+    return redirect_to(@cdef_document, flash: { error: "Not used under that baseline." }) unless profile
+
+    @cdef_document.unlink_profile!(profile)
+    audit_log("cdef_profile_unlinked", subject: @cdef_document,
+              metadata: { profile_document_id: profile.id, profile_name: profile.name })
+    redirect_to @cdef_document, flash: { success: "No longer used under #{profile.name}." }
+  end
+
   def select_profile_source
     if @cdef_document.cdef_controls.exists?
       flash[:notice] = "This component definition already has controls."
@@ -627,7 +651,10 @@ class CdefDocumentsController < ApplicationController
     authorize_bulk_apply_web!
     refuse_if_aws_labs!
     @converters = Converter.where(status: "complete").order(:name)
-    @baseline_present = @cdef_document.profile_document.present?
+    # #1089 — every baseline this CDEF serves; the author picks which one
+    # "missing vs. baseline" compares against.
+    @baselines = @cdef_document.profile_documents.order(:name).to_a
+    @baseline_present = @baselines.any?
   end
 
   # POST /cdef_documents/:id/bulk_apply_preview
@@ -648,7 +675,8 @@ class CdefDocumentsController < ApplicationController
       cdef:                     @cdef_document,
       converter:                @converter,
       target_rev:               @target_rev,
-      only_missing_vs_baseline: @only_missing_vs_baseline
+      only_missing_vs_baseline: @only_missing_vs_baseline,
+      baseline_profile_id:      params[:baseline_profile_id].presence
     ).preview
 
     audit_log("cdef_bulk_apply_converter_previewed", subject: @cdef_document,

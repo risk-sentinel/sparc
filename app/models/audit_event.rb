@@ -342,6 +342,8 @@ class AuditEvent < ApplicationRecord
     cdef_document_copy_failed
     cdef_document_created_from_profile
     cdef_control_implementation_sourced_from_profile
+    cdef_profile_linked
+    cdef_profile_unlinked
 
     converter_created
     converter_updated
@@ -489,6 +491,7 @@ class AuditEvent < ApplicationRecord
                            cdef_document_authored cdef_document_copy_failed
                            cdef_document_created_from_profile
                            cdef_control_implementation_sourced_from_profile
+                           cdef_profile_linked cdef_profile_unlinked
                            cdef_document_fields_imported],
     "SAP Documents" => %w[sap_document_created sap_document_generated sap_document_updated
                           sap_document_deleted sap_document_delete_blocked sap_document_exported

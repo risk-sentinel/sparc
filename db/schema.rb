@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_24_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_27_130100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -410,6 +410,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_24_180000) do
     t.index ["authorization_boundary_id"], name: "index_cdef_coverage_runs_on_authorization_boundary_id"
     t.index ["created_by_user_id"], name: "index_cdef_coverage_runs_on_created_by_user_id"
     t.index ["uuid"], name: "index_cdef_coverage_runs_on_uuid", unique: true
+  end
+
+  create_table "cdef_document_profile_documents", force: :cascade do |t|
+    t.bigint "cdef_document_id", null: false
+    t.bigint "profile_document_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cdef_document_id", "profile_document_id"], name: "idx_cdef_profile_unique", unique: true
+    t.index ["profile_document_id"], name: "idx_cdef_profile_on_profile"
   end
 
   create_table "cdef_documents", force: :cascade do |t|
@@ -1665,8 +1674,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_24_180000) do
   end
 
   create_table "ssp_control_statements", force: :cascade do |t|
+    t.jsonb "control_origination", default: [], null: false
     t.datetime "created_at", null: false
+    t.date "expected_completion"
     t.text "implementation_prose"
+    t.string "implementation_status"
     t.string "label"
     t.string "parent_statement_id"
     t.text "remarks"
@@ -1915,6 +1927,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_24_180000) do
   add_foreign_key "cdef_coverage_results", "cdef_coverage_runs", on_delete: :cascade
   add_foreign_key "cdef_coverage_runs", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "cdef_coverage_runs", "users", column: "created_by_user_id", on_delete: :nullify
+  add_foreign_key "cdef_document_profile_documents", "cdef_documents", on_delete: :cascade
+  add_foreign_key "cdef_document_profile_documents", "profile_documents", on_delete: :cascade
   add_foreign_key "cdef_documents", "cdef_documents", column: "cloned_from_id"
   add_foreign_key "cdef_documents", "organizations", on_delete: :nullify
   add_foreign_key "cdef_documents", "profile_documents", on_delete: :nullify

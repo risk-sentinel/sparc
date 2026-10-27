@@ -42,6 +42,15 @@
               class: "form-select" %>
       </div>
 
+      <% if @baselines.size > 1 %>
+        <%# #1089 — this CDEF serves several baselines: compare against one. %>
+        <div class="mb-3">
+          <%= f.label :baseline_profile_id, "Baseline to compare against", class: "form-label fw-semibold" %>
+          <%= f.select :baseline_profile_id, @baselines.map { [ _1.name, _1.id ] },
+                { selected: @cdef_document.profile_document_id }, class: "form-select" %>
+        </div>
+      <% end %>
+
       <div class="form-check mb-4">
         <%= f.check_box :only_missing_vs_baseline, class: "form-check-input",
               disabled: !@baseline_present %>

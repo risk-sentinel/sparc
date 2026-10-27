@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "sparc-api-v1-collection",
     "name": "SPARC API v1",
-    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 327 endpoints across 59 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
+    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 329 endpoints across 59 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -4367,6 +4367,72 @@
               "body": "{\n  \"component-definition\": {\n    \"uuid\": \"cb2eb522-0ad5-404f-8990-9e4443916c03\",\n    \"metadata\": {\n      \"title\": \"rhel-9-stig-93c00019\",\n      \"version\": \"002.007\",\n      \"oscal-version\": \"1.1.2\",\n      \"last-modified\": \"2026-08-22T12:56:18Z\",\n      \"roles\": [\n        {\n          \"id\": \"prepared-by\",\n          \"title\": \"Prepared By\"\n        }\n      ],\n      \"parties\": [\n        {\n          \"uuid\": \"1b624d86-6b87-4082-9377-ff37b873edf1\",\n          \"type\": \"organization\",\n          \"name\": \"SPARC Export\"\n        }\n      ]\n    },\n    \"components\": [\n      {\n        \"uuid\": \"74f17d37-00e6-4b33-95aa-b66f46990091\",\n        \"type\": \"software\",\n        \"title\": \"rhel-9-stig-93c00019\",\n        \"description\": \"Test STIG for unit testing\",\n        \"control-implementations\": [\n          {\n            \"uuid\": \"67c30219-431b-48eb-97d4-11deb6629220\",\n            \"source\": \"https://public.cyber.mil/stigs/\",\n            \"description\": \"Controls from disa_stig component definition: rhel-9-stig-93c00019\",\n            \"implemented-requirements\": [\n              {\n                \"uuid\": \"f10cd2e9-be61-4351-9f48-eb5de1f7a286\",\n                \"control-id\": \"cm-6\",\n                \"description\": \"RHEL 9 must be a vendor-supported release.\\n\\nAn operating system release is considered supported if the vendor continues to provide patches.\\n\\nFix: Upgrade to a supported version of RHEL 9.\",\n                \"props\": [\n                  {\n                    \"name\": \"severity\",\n                    \"value\": \"high\"\n                  },\n                  {\n                    \"name\": \"rule-id\",\n                    \"value\": \"SV-257777r925318_rule\"\n                  },\n                  {\n                    \"name\": \"group-id\",\n                    \"value\": \"V-257777\"\n                  },\n                  {\n                    \"name\": \"stig-id\",\n                    \"value\": \"SV-257777r925318_rule\"\n                  },\n                  {\n                    \"name\": \"cci\",\n                    \"ns\": \"http://cyber.mil/cci\",\n                    \"value\": \"CCI-000366\"\n                  }\n                ]\n              },\n              {\n                \"uuid\": \"ca1439d6-4226-4145-9ae4-9057e07810a2\",\n                \"control-id\": \"cm-6\",\n                \"description\": \"RHEL 9 security patches must be installed.\\n\\nInstalling updates mitigates known vulnerabilities.\\n\\nFix: Install security patches.\",\n                \"props\": [\n                  {\n                    \"name\": \"severity\",\n                    \"value\": \"medium\"\n                  },\n                  {\n                    \"name\": \"rule-id\",\n                    \"value\": \"SV-257778r925321_rule\"\n                  },\n                  {\n                    \"name\": \"group-id\",\n                    \"value\": \"V-257778\"\n                  },\n                  {\n                    \"name\": \"stig-id\",\n                    \"value\": \"SV-257778r925321_rule\"\n                  },\n                  {\n                    \"name\": \"cci\",\n                    \"ns\": \"http://cyber.mil/cci\",\n                    \"value\": \"CCI-000366\"\n                  }\n                ]\n              }\n            ]\n          }\n        ]\n      }\n    ],\n    \"back-matter\": {\n      \"resources\": [\n        {\n          \"uuid\": \"250e5279-4730-423f-b2eb-1a74632bbb73\",\n          \"title\": \"SPARC Document Source\",\n          \"description\": \"Managed by SPARC\",\n          \"rlinks\": [\n            {\n              \"href\": \"https://localhost:3443\",\n              \"media-type\": \"text/html\"\n            }\n          ]\n        }\n      ]\n    }\n  }\n}"
             }
           ]
+        },
+        {
+          "name": "POST link profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}/profiles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents",
+                "{{cdef_slug}}",
+                "profiles"
+              ]
+            },
+            "description": "`cdef_documents#link_profile`. Generated by bin/api_postman_check.rb from the route table and the controller's own permitted-field list.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cdef_document\": {\n    \"name\": \"\",\n    \"description\": \"\",\n    \"cdef_type\": \"\",\n    \"cdef_version\": \"\",\n    \"benchmark_id\": \"\",\n    \"lifecycle_status\": \"\",\n    \"file_type\": \"\",\n    \"component_type\": \"\",\n    \"component_title\": \"\",\n    \"component_description\": \"\",\n    \"control_implementation_source\": \"\",\n    \"control_implementation_description\": \"\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE unlink profile",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}/profiles/{{profile_document_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents",
+                "{{cdef_slug}}",
+                "profiles",
+                "{{profile_document_id}}"
+              ]
+            },
+            "description": "`cdef_documents#unlink_profile`. Generated by bin/api_postman_check.rb from the route table and the controller's own permitted-field list."
+          }
         }
       ]
     },
@@ -11646,6 +11712,10 @@
               {
                 "key": "Authorization",
                 "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
             ],
             "url": {
@@ -11659,7 +11729,16 @@
                 "roles"
               ]
             },
-            "description": "`roles#create`. Generated by bin/api_postman_check.rb from the route table and the controller's own permitted-field list."
+            "description": "`roles#create`. Generated by bin/api_postman_check.rb from the route table and the controller's own permitted-field list.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": {\n    \"name\": \"\",\n    \"display_name\": \"\",\n    \"scope\": \"\",\n    \"description\": \"\",\n    \"sort_order\": \"\",\n    \"role\": \"\",\n    \"permissions\": \"\",\n    \"to_unsafe_h\": \"\",\n    \"to_sym\": \"\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           }
         },
         {
@@ -11720,6 +11799,10 @@
               {
                 "key": "Authorization",
                 "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
             ],
             "url": {
@@ -11734,7 +11817,16 @@
                 "{{id}}"
               ]
             },
-            "description": "`roles#update`. Generated by bin/api_postman_check.rb from the route table and the controller's own permitted-field list."
+            "description": "`roles#update`. Generated by bin/api_postman_check.rb from the route table and the controller's own permitted-field list.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": {\n    \"name\": \"\",\n    \"display_name\": \"\",\n    \"scope\": \"\",\n    \"description\": \"\",\n    \"sort_order\": \"\",\n    \"role\": \"\",\n    \"permissions\": \"\",\n    \"to_unsafe_h\": \"\",\n    \"to_sym\": \"\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           }
         }
       ]
@@ -13182,7 +13274,16 @@
                 "reset_to_source"
               ]
             },
-            "description": "`ssp_control_statements#reset_to_source`. Drops this system's edit and takes the source's text again (the SSP screen's Reset); clears any review mark. 422 when nothing is overridden or the SSP is published. Needs `ssp.write`."
+            "description": "`ssp_control_statements#reset_to_source`. Drops this system's edit and takes the source's text again (the SSP screen's Reset); clears any review mark. 422 when nothing is overridden or the SSP is published. Needs `ssp.write`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ssp_control_statement\": {\n    \"implementation_prose\": \"\",\n    \"remarks\": \"\",\n    \"implementation_status\": \"\",\n    \"expected_completion\": \"\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -13213,7 +13314,16 @@
                 "mark_reviewed"
               ]
             },
-            "description": "`ssp_control_statements#mark_reviewed`. Confirms that the text a CDEF filled in describes this system, keeping it (the SSP screen's Mark reviewed). 422 when no active CDEF link fills the row or the SSP is published. Needs `ssp.write`."
+            "description": "`ssp_control_statements#mark_reviewed`. Confirms that the text a CDEF filled in describes this system, keeping it (the SSP screen's Mark reviewed). 422 when no active CDEF link fills the row or the SSP is published. Needs `ssp.write`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ssp_control_statement\": {\n    \"implementation_prose\": \"\",\n    \"remarks\": \"\",\n    \"implementation_status\": \"\",\n    \"expected_completion\": \"\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },

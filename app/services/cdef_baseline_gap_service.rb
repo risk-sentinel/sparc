@@ -8,9 +8,12 @@
 #   gap[:missing]       # => ["ac-2", "ac-3"]
 #
 class CdefBaselineGapService
-  def initialize(cdef_document)
+  # #1089 — a CDEF serves several baselines; `profile:` names the one to
+  # compare against, and must be one the CDEF is linked to. Without it, the
+  # CDEF's own (mirrored) baseline.
+  def initialize(cdef_document, profile: nil)
     @cdef = cdef_document
-    @profile = cdef_document.profile_document
+    @profile = profile || cdef_document.profile_document
   end
 
   def analyze

@@ -1,0 +1,39 @@
+<%#
+  #1089 — the baselines this component definition is used under. A CDEF
+  describes a component and the controls it satisfies, so one serves any number
+  of baselines; it used to belong to one, and reuse meant cloning it.
+
+  Locals:
+    cdef       — CdefDocument
+    may_write  — whether the viewer may change it (cdef.write)
+%>
+<% linked = cdef.profile_documents.order(:name).to_a %>
+<div class="sparc-mt-04 sparc-fs-082" data-testid="cdef-baselines">
+  <span class="fw-semibold">Used under:</span>
+  <% if linked.empty? %>
+    <span class="text-body-secondary">no baseline yet</span>
+  <% end %>
+  <% linked.each do |profile| %>
+    <span class="sparc-tag-outline d-inline-flex align-items-center gap-1 sparc-mr-025" data-baseline-id="<%= profile.id %>">
+      <%= link_to profile.name, profile_document_path(profile) %>
+      <% if may_write %>
+        <%= button_to "Remove", unlink_profile_cdef_document_path(cdef, profile_document_id: profile.id),
+              method: :delete,
+              form: { class: "sparc-d-inline", data: { turbo_confirm: "Stop using this component definition under #{profile.name}?" } },
+              class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm sparc-fs-07 sparc-p-015-045",
+              title: "Stop using it under this baseline" %>
+      <% end %>
+    </span>
+  <% end %>
+  <% if may_write %>
+    <% choices = ProfileDocument.where.not(id: linked.map(&:id)).order(:name).pluck(:name, :id) %>
+    <% if choices.any? %>
+      <%= form_with url: link_profile_cdef_document_path(cdef), method: :post, local: true,
+                    class: "d-inline-flex align-items-center gap-1 sparc-ml-02" do |f| %>
+        <%= select_tag :profile_document_id, options_for_select(choices), include_blank: "Add a baseline…",
+              class: "form-select form-select-sm", "aria-label": "Baseline to add" %>
+        <%= f.submit "Add", class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

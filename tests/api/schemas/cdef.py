@@ -120,6 +120,8 @@ class CdefDocumentIndex(DocumentBase):
     # #627/#628 content-completeness gate (CdefDocument includes ContentCompleteness).
     content_complete: bool
     content_completeness_gaps: list[str]
+    # #1089 — every baseline the component definition is used under.
+    profile_document_ids: list[int]
     # #968 item 3 — the partial-success contract. A degraded component index is
     # swallowed by design so a parsed document is not lost; these two fields are
     # what stop that being indistinguishable from a clean import. Declared on the

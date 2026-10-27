@@ -344,6 +344,9 @@ controllers:
       destroy: ["DELETE /api/v1/cdef_documents/:id"]
       bulk_destroy: ["DELETE /api/v1/cdef_documents/bulk"]
       update_scope: ["PATCH /api/v1/cdef_documents/:id/scope"]
+      link_profile: ["POST /api/v1/cdef_documents/:id/profiles"]  # #1089
+      unlink_profile: ["DELETE /api/v1/cdef_documents/:id/profiles/:profile_document_id"]  # #1089
+      set_baseline: ["POST /api/v1/cdef_documents/:id/profiles"]  # #1089 — declaring a baseline adds one; promoted from gap
       create_from_profile: ["POST /api/v1/cdef_documents", "POST /api/v1/cdef_documents/:id/source_from_profile"]
       source_from_profile: ["POST /api/v1/cdef_documents/:id/source_from_profile"]
       submit_for_review: ["POST /api/v1/cdef_documents/:id/submit_for_review"]
@@ -372,10 +375,6 @@ controllers:
       - reason: "JSON polling endpoint for the processing page; API show carries status"
         actions: [status]
     gap:
-      set_baseline:
-        reason: "declaring profile_document_id (the #911 baseline) on a CDEF with controls; API update does not permit profile_document_id and source_from_profile refuses a CDEF that has controls"
-        would_be: "PATCH /api/v1/cdef_documents/:id"
-        partial: true
       update_metadata:
         reason: "OSCAL metadata extras (roles, parties, responsible-parties, props, links...) via metadata_extra_json are not writable over the API"
         would_be: "PATCH /api/v1/cdef_documents/:id"

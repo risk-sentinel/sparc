@@ -79,6 +79,8 @@ it previously received `201`/`200`.
 | `POST` | `/api/v1/cdef_documents/:id/submit_for_review` | Submit a CDEF for review |
 | `POST` | `/api/v1/cdef_documents/:id/approve` | Approve a CDEF under review |
 | `POST` | `/api/v1/cdef_documents/:id/reject` | Reject a CDEF under review |
+| `POST` | `/api/v1/cdef_documents/:id/profiles` | Use the CDEF under another baseline (`profile_document_id`, id or slug); idempotent |
+| `DELETE` | `/api/v1/cdef_documents/:id/profiles/:profile_document_id` | Stop using the CDEF under a baseline |
 | `PATCH` | `/api/v1/cdef_documents/:id/scope` | Pin the CDEF to one authorization boundary, make it organization-wide (`global`), or instance-wide (`instance`). The response's `scope_tier` reads back `boundary`, `organization` or `instance` |
 | `GET` | `/api/v1/cdef_documents/:id/export` | Export the CDEF — see **Export formats** below for `format` and `validate` |
 
@@ -490,6 +492,7 @@ Return the changeset a `Converter` would apply to this CDEF **without writing an
 | `target_rev` | string | No | Target catalog revision |
 | `source_ids` | array | No | Restrict the preview to specific source control ids |
 | `only_missing_vs_baseline` | boolean | No | Only propose rows missing versus the baseline |
+| `baseline_profile_id` | integer | No | Which of the CDEF's baselines to compare against (#1089); defaults to its first. One the CDEF is not used under is refused (`422`) |
 
 **Example Request**
 
@@ -742,6 +745,24 @@ curl -X POST "https://sparc.example.com/api/v1/cdef_documents/web-application-se
 | `422` | Invalid transition (e.g., not currently under review) |
 
 ---
+
+## Baselines a CDEF is used under (#1089)
+
+A component definition describes a component and the controls it satisfies, so
+it serves any number of baselines. Every CDEF response carries
+`profile_document_ids`: the baselines it is used under. Add one with
+`POST /api/v1/cdef_documents/:id/profiles` (`{ "profile_document_id": 42 }`, id
+or slug) and remove one with
+`DELETE /api/v1/cdef_documents/:id/profiles/:profile_document_id`. Both need
+`cdef.write`, are audited (`cdef_profile_linked` / `cdef_profile_unlinked`), and
+answer with the CDEF. `404` for a profile that does not exist, or (on delete)
+one the CDEF is not used under.
+
+Building a CDEF from a profile (`source_from_profile`) adds that profile; it no
+longer replaces another. Each control it creates names that profile as its
+`control-implementation/@source`, so the export does not change when the CDEF
+is used under other baselines too. The "Baseline not set" reconciliation is
+resolved by any linked baseline, or by every control naming its own source.
 
 ## Common Errors
 
