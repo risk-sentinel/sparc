@@ -540,6 +540,8 @@
         <div class="sparc-d-none sparc-objective-panel" id="edit-<%= control.id %>">
           <%= form_with url: sar_document_path(@sar_document, filter_params), method: :patch, local: true do |f| %>
             <%= hidden_field_tag :sar_control_id, control.id %>
+            <%# #1312 — the objectives first: what the assessor determines. %>
+            <%= render "sar_documents/objective_determinations", control: control, ssp_ctx: ssp_ctx %>
 
             <% if any_ctx %>
               <div class="sparc-edit-ctx-panel">
@@ -651,53 +653,6 @@
     Showing <%= @pagy.from %>-<%= @pagy.to %> of <%= @pagy.count %> controls
   </div>
 </div>
-<% end %>
-
-<%# ── Edit objective modal (inline) ── %>
-<% if @editing_objective %>
-  <% obj = @editing_objective %>
-  <% obj_default_assessor = obj.assessor_name.presence || current_user&.display_label %>
-  <div class="sparc-modal-overlay" id="editObjectiveModal">
-    <div class="bg-body rounded-3 sparc-modal-dialog sparc-modal-dialog--narrow">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <div class="text-body-tertiary sparc-modal-eyebrow">Assessment Objective</div>
-          <h3 class="sparc-m-0"><%= obj.label.presence || obj.objective_id %></h3>
-        </div>
-        <%= link_to "&times;".html_safe, sar_document_path(@sar_document),
-              class: "text-body-secondary sparc-modal-close" %>
-      </div>
-
-      <% if obj.prose.present? %>
-        <div class="bg-body-secondary rounded p-2 mb-3 sparc-fs-085">
-          <%= obj.prose %>
-        </div>
-      <% end %>
-
-      <%= form_with url: update_objective_sar_document_path(@sar_document), method: :patch, local: true do |f| %>
-        <%= hidden_field_tag :objective_id, obj.id %>
-        <div class="form-group mb-3">
-          <label for="sar_control_objective_status">Status</label>
-          <%= select_tag "sar_control_objective[status]",
-                options_for_select(SarControlObjective::OBJECTIVE_STATUSES.map { |s| [s.humanize, s] }, obj.status),
-                id: "sar_control_objective_status", class: "form-control" %>
-        </div>
-        <div class="form-group mb-3">
-          <label for="sar_control_objective_assessor_name">Assessor Name</label>
-          <%= text_field_tag "sar_control_objective[assessor_name]", obj_default_assessor, id: "sar_control_objective_assessor_name", class: "form-control" %>
-        </div>
-        <div class="form-group mb-3">
-          <label for="sar_control_objective_assessor_notes">Assessor Notes</label>
-          <%= text_area_tag "sar_control_objective[assessor_notes]", obj.assessor_notes, rows: 4, id: "sar_control_objective_assessor_notes", class: "form-control",
-                placeholder: "Findings, evidence references, or notes for this objective" %>
-        </div>
-        <div class="d-flex gap-2">
-          <%= f.submit "Save Objective", class: "sparc-action sparc-action--primary sparc-action--solid" %>
-          <%= link_to "Cancel", sar_document_path(@sar_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
-        </div>
-      <% end %>
-    </div>
-  </div>
 <% end %>
 
 <%= render "shared/uuid_replaced_warning", document: @sar_document %>
