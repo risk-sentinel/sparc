@@ -59,13 +59,13 @@ RSpec.describe "SSP response progress, web and API (#1242)", type: :request do
       figure = doc.at_css("[data-testid='ssp-response-progress']")
       expect(figure.to_h.slice("data-required", "data-done", "data-owed"))
         .to eq("data-required" => "2", "data-done" => "1", "data-owed" => "1")
-      expect(doc.css("[data-testid='control-response-badge']").map { _1.text.strip }).to contain_exactly("1/1 done", "0/1 done")
+      expect(doc.css("[data-testid='control-response-badge']").map { _1.text.strip }).to contain_exactly("1/1 answered", "0/1 answered")
     end
 
-    it "the SSP list shows responses done" do
+    it "the SSP list shows responses answered" do
       sign_in_as(reader)
       get ssp_documents_path
-      expect(response.body).to include("1 of 2").and include("Responses done")
+      expect(response.body).to include("1 of 2").and include("Responses answered")
     end
   end
 

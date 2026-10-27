@@ -40,8 +40,8 @@
           parts and one answer looked identical to one that was finished.
           #1242 — counted in required responses, not stored rows. %>
       <span class="sparc-status sparc-status--<%= done.zero? ? 'neutral' : done == needed ? 'success' : 'warning' %> sparc-fs-07"
-            title="Required responses that are done: inherited, satisfied or written">
-        <%= done %> of <%= needed %> done
+            title="Required responses that are answered: inherited, satisfied or written">
+        <%= done %> of <%= needed %> answered
       </span>
     </div>
     <% if summary %>
