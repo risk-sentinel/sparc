@@ -45,12 +45,29 @@ authentication mode coverage matrix.
 >
 > **The most recent shipped phase is 18 — v1.16.1, tagged 2026-09-17**, followed by
 > the v1.16.2 / v1.16.3 hotfix pair on 2026-09-18. Phase 19 shipped as **v1.17.0**
-> on 2026-10-02; the latest release is **v1.17.1** (hotfix, tagged 2026-10-16), below.
-> **The current phase is 20 — v1.17.2**, planned in bundles on 2026-10-17 with a tag target of 2026-10-24.
+> on 2026-10-02; v1.17.1 (hotfix) on 2026-10-16; v1.17.2–v1.17.4 on 2026-10-26/27.
+> **The current work is the v1.17.5 patch**, below.
 > Phases 17 and 18 moved there on **2026-09-27**, with a record of that hotfix
 > pair; their bundle detail, the Bundle Z sweep record and the cadence
 > re-measures are there, unedited.
 
+
+---
+
+### Patch: `v1.17.5` — SSP items answered in full, ATO wizard defaults, CDEFs under many baselines
+
+Plan approved by the owner on 2026-10-27; one branch (`feature/v1175_bundle`), one PR.
+v1.17.2–v1.17.4 shipped 2026-10-26/27. The navigation refactor moved from
+`1.17.5-rf` to `1.18.0-rf` the same day (owner).
+
+| Issue | What | Decisions (owner, 2026-10-27) |
+|---|---|---|
+| **#1312** | Every SSP item that takes a response (no item below it, at any depth) sets its own answer, implementation status, control origination, responsible roles, expected completion and remarks in the control's Edit form; lead-ins are headings; SP 800-53A objectives under each item with the SAR's determination read-only. SAR known findings per Planned/Partial item; SAP, SAR context, HDF designations and dashboard read the items. Deferred data migration copies the control-level values down. | OSCAL's five statuses, `partial` kept; Will Not Implement → Alternative, which is not a known finding; drop control application and coverage level; responsible entities → responsible roles; expected completion in remarks; no author status on objectives; control-level rows kept until v1.18.0 |
+| **#1101** | ATO wizard starts from the boundary: settled baseline as context (a chosen one becomes the boundary's), linked CDEFs listed, each document step on the boundary's one current document. Fixed while there: the create-new fields never reached the server, and the wizard's new SSP/SAR failed (boundary required at create since #952). | The wizard saves a chosen baseline to a boundary that has none |
+| **#1089** | CDEF ↔ baselines join table; `profile_document_id` kept as a mirror until v1.18.0; controls built from a baseline name it as their source (backfilled), so the export does not change; membership against all linked baselines; add/remove on the web and API. | Resolved when ≥1 baseline is linked or every control names its source |
+| **#1206** | `docs/c4/components.yml` in sparc-iac's descriptor schema, checked against `SparcConfig::VERSION` and the code it names. | — |
+
+**Owed to v1.18.0:** drop `ssp_control_fields` rows for the retired fields, and `cdef_documents.profile_document_id`.
 
 ---
 

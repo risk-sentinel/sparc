@@ -4,6 +4,20 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.17.5 -- SSP Items Answered in Full, ATO Wizard Starts From the Boundary, CDEFs Serve Many Baselines (2026-10-27)
+
+A patch release from an SSP review: every statement item now records everything about itself, in OSCAL's terms, and that carries through the assessment.
+
+- **Every SSP item is answered in full** ([#1312](https://github.com/risk-sentinel/sparc/issues/1312)). Each item that takes a response (no item below it, at any depth: AC-2 d.1, not the lead-in d.) sets its own answer, implementation status, control origination, responsible roles, expected completion and remarks, in one place: the control's **Edit** form. Status is OSCAL's five (Implemented, Partial, Planned, Alternative, Not applicable); origination is OSCAL's five, and an item can be fully or partly inherited. The rows' own Edit buttons, the control-level status, control type, responsible entities and expected completion, and the retired control application and coverage level are gone. Under each item are the SP 800-53A objectives that test it, with the assessor's latest determination read-only. The export puts each item's status and origination where OSCAL does. See [System Security Plans](User-Guide-System-Security-Plans).
+- **The assessment reads the items** ([#1312](https://github.com/risk-sentinel/sparc/issues/1312)). A SAR generated from an SSP records a known finding for each Planned or Partial item, on the control's one risk; an Alternative item is assessed, not assumed failed. The SAP shows the SSP item and its status under each objective, the SAR shows each item's status, origination and roles beside its answer, and the HDF system export designates controls from their items. See [Assessment Results](User-Guide-Assessment-Results).
+- **The ATO wizard starts from what the boundary has** ([#1101](https://github.com/risk-sentinel/sparc/issues/1101)). A settled baseline is shown as context, and a baseline chosen for a boundary without one becomes its baseline; linked CDEFs are listed as linked; each document step starts on the boundary's current SSP, SAP, SAR or POA&M when it has one. The wizard's new SSP and SAR could not be created at all, and a new SSP, SAP or SAR lost the status, sensitivity, type and dates entered for it; both are fixed. See [Authorization Boundaries](User-Guide-Authorization-Boundaries).
+- **A component definition serves many baselines** ([#1089](https://github.com/risk-sentinel/sparc/issues/1089)). Its page lists every baseline it is used under, with Add and Remove (and `POST`/`DELETE /api/v1/cdef_documents/:id/profiles`). Each control built from a baseline names it as its source, so the export does not change. See [Component Definitions](User-Guide-Component-Definitions).
+- **C4 component model for sparc-iac** ([#1206](https://github.com/risk-sentinel/sparc/issues/1206)). `docs/c4/components.yml` describes SPARC's components at each release tag, for sparc-iac's architecture diagrams.
+
+**Upgrading:** an image swap from v1.17.4, with migrations. Each SSP's control-level status, control type, responsible entities and expected completion are copied onto every item that takes a response (Deferred → Planned, Will Not Implement → Alternative, Not Applicable → Not applicable; System Specific → System-specific, Inherited from provider → Inherited); whatever does not map is added to the control's notes, and an item's own answer is never overwritten. The control-level rows are kept, unused, until v1.18.0, so a rollback to v1.17.4 finds them. Each CDEF's baseline becomes its first link, and its controls name that baseline as their source. Both run as deferred data migrations after the container starts.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.5).
+
 ## v1.17.4 -- Baselines Confirm Their Catalog, SSPs Answer Every Part (2026-10-27)
 
 A patch release from testing NIST's Rev 5 catalog, a tailored baseline and an SSP end to end.
