@@ -12,6 +12,7 @@ A patch release from testing NIST's Rev 5 catalog, a tailored baseline and an SS
 - **Baselines and catalogs can be reviewed from their pages.** With document approval required (the default), Publish refused an unapproved baseline or catalog, and no page offered **Submit for review**. Both pages now have a review row: Submit for review, Approve, Reject. With `SPARC_REQUIRE_DOCUMENT_APPROVAL=false` there is no review step.
 - **Rev 5 aggregate parameters.** NIST's `ac-1_prm_1` and 141 others combine other parameters and have no value of their own. The parameter table showed each as an empty field; it now shows the combined value and the parameters that set it. Field hints that named another parameter showed `{{ insert: param, … }}`; they are filled in.
 - **SSPs answer every part.** The SSP wizard built one row per control and no statement parts, even from a published baseline; it now builds them as **Create from profile** does, and lists published baselines only. A control's **Edit** opens a box for every part that needs a response, saved with one **Save Changes**. See [System Security Plans](User-Guide-System-Security-Plans).
+- **net-ssh 7.3.8** (was 7.3.2), for seven advisories published this week, two of them High (GHSA-vxj5-fg65-x765, GHSA-qpg5-fx6p-8cq3). kamal brings it in and the image installs it; SPARC never loads it.
 
 **Upgrading:** an image swap from v1.17.3. No migrations. Baselines imported before this release are not asked to confirm their catalog.
 
