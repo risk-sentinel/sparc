@@ -93,6 +93,24 @@ class ControlObjectiveExtractorService
     0
   end
 
+  # Whether the document still cannot have objectives: flagged, and its catalog
+  # still does not resolve. A flag is set when a document is generated before
+  # its baseline resolves (an unpublished profile, no SSP yet), and nothing
+  # cleared it once the baseline was published or linked later, so the SAP and
+  # SAR screens went on saying "isn't linked to a profile" beside a linked one,
+  # with no objectives. Now a flagged document whose catalog resolves is
+  # backfilled here, which clears the flag. Idempotent: unflagged documents and
+  # ones still unresolved are left alone.
+  def self.still_needs_reassociation!(document)
+    return false unless (document.import_metadata || {})[REASSOCIATION_FLAG] == REASSOCIATION_VALUE
+
+    service = new(document)
+    return true if service.send(:resolve_catalog).blank?
+
+    service.backfill!
+    (document.reload.import_metadata || {})[REASSOCIATION_FLAG] == REASSOCIATION_VALUE
+  end
+
   # Backfills objective records for all controls of the document. No-ops if
   # objectives already exist for a given control. Returns the number of
   # objective records inserted.
