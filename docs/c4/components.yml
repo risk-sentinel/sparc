@@ -1,0 +1,164 @@
+# C4 Level 3 component model for the SPARC Rails container (#1206).
+#
+# sparc-iac draws SPARC's architecture from Terraform state; the `sparc-prod`
+# container is the one it cannot decompose, because its source is here. It reads
+# this file AT THE RELEASE TAG it deploys (risk-sentinel/sparc-iac#759), in the
+# schema of its own descriptors (sparc-iac docs/c4/components/*.yml):
+#
+#   container, image, image_tag, source, technology, components[], relationships[],
+#   reviewed_by, reviewed_date, next_review_date
+#
+# `to:` names a component here, or an element sparc-iac already draws
+# (sparc-prod-db, sparc-prod-uploads, sparc-prod/admin-credentials); anything
+# else is drawn as outside this container. `code:` is SPARC's own field: where
+# each component lives, which spec/docs/c4_components_spec.rb checks exists, so
+# the model cannot quietly describe code that has moved. sparc-iac ignores it.
+#
+# Update `image_tag` with every release (the spec fails until it matches
+# SparcConfig::VERSION), revisit components when a subsystem is added or
+# retired, then record the review below.
+container: sparc-prod
+image: sparc-prod
+image_tag: v1.17.5
+source: first-party
+source_ref: "https://github.com/risk-sentinel/sparc"
+technology: "Ruby on Rails 8.1 / Puma (UBI 10), listen :3000"
+
+components:
+  - name: "Web UI"
+    technology: "Rails controllers, Hotwire (Turbo + Stimulus), Propshaft"
+    description: "The screens: catalogs, baselines, SSP/SAP/SAR/POA&M, component definitions, boundaries, administration"
+    code: [app/controllers, app/views, app/javascript]
+  - name: "REST API"
+    technology: "Rails API controllers (/api/v1), bearer tokens"
+    description: "Every document type, field import, OSCAL export; the same operations as the screens"
+    code: [app/controllers/api/v1]
+  - name: "Authentication"
+    technology: "OmniAuth (OIDC, GitHub, GitLab), WebAuthn security keys, PIV/CAC client certificates, local login"
+    description: "Signs users and API callers in; enforces the allowed sign-in methods (MFA through the IdP)"
+    code: [app/controllers/concerns/authentication.rb, app/controllers/concerns/api_authentication.rb]
+  - name: "Authorization"
+    technology: "Role permissions scoped to authorization boundaries"
+    description: "Decides what a user may read or change, per boundary; instance administrators are break-glass"
+    code: [app/controllers/concerns/authorization.rb, app/controllers/concerns/authorization_boundary_access.rb, app/models/role.rb]
+  - name: "OSCAL authoring"
+    technology: "ActiveRecord models and services"
+    description: "Catalogs, baselines (profiles), SSPs answered item by item, component definitions, assessment plans and results, POA&Ms"
+    code: [app/models, app/services]
+  - name: "OSCAL import and export"
+    technology: "JSON/YAML/XML parsers and exporters, json_schemer schema validation"
+    description: "Reads and writes OSCAL 1.2.3 for every model; validates each export against NIST's schemas"
+    code: [app/services/oscal_ssp_export_service.rb, app/services/ssp_json_parser_service.rb, app/services/oscal_schema_validation_service.rb, lib/oscal_schemas]
+  - name: "Evidence ingest"
+    technology: "HDF (Heimdall Data Format) ingest, converters, AWS Labs component definitions"
+    description: "Turns scanner results into findings and POA&M items, maps rules to NIST controls, refreshes AWS Labs CDEFs"
+    code: [app/services/hdf_ingest_service.rb, app/services/hdf_aggregation_service.rb, app/services/aws_labs_cdef_import_service.rb]
+  - name: "Background jobs"
+    technology: "Solid Queue (database-backed)"
+    description: "Document conversion, catalog import, deferred data migrations, AWS Labs refresh, account maintenance"
+    code: [app/jobs]
+  - name: "Mail"
+    technology: "Action Mailer over SMTP"
+    description: "Password reset, sign-in grants, document processing and service-account notices"
+    code: [app/mailers]
+  - name: "Audit log"
+    technology: "AuditEvent model"
+    description: "Records every security-relevant action: sign-ins, changes, approvals, exports"
+    code: [app/models/audit_event.rb, app/controllers/concerns/auditable.rb]
+  - name: "File storage"
+    technology: "Active Storage"
+    description: "Uploaded documents and evidence files"
+    code: [config/storage.yml]
+
+relationships:
+  - from: "Web UI"
+    to: "Authentication"
+    description: "Signs users in with"
+    technology: "in-process"
+  - from: "REST API"
+    to: "Authentication"
+    description: "Authenticates bearer tokens with"
+    technology: "in-process"
+  - from: "Web UI"
+    to: "Authorization"
+    description: "Checks permissions with"
+    technology: "in-process"
+  - from: "REST API"
+    to: "Authorization"
+    description: "Checks permissions with"
+    technology: "in-process"
+  - from: "Web UI"
+    to: "OSCAL authoring"
+    description: "Reads and changes documents through"
+    technology: "in-process"
+  - from: "REST API"
+    to: "OSCAL authoring"
+    description: "Reads and changes documents through"
+    technology: "in-process"
+  - from: "OSCAL authoring"
+    to: "OSCAL import and export"
+    description: "Imports and exports OSCAL with"
+    technology: "in-process"
+  - from: "REST API"
+    to: "Evidence ingest"
+    description: "Accepts scanner results through"
+    technology: "in-process"
+  - from: "Evidence ingest"
+    to: "OSCAL authoring"
+    description: "Records findings and POA&M items in"
+    technology: "in-process"
+  - from: "Background jobs"
+    to: "OSCAL import and export"
+    description: "Converts uploaded documents with"
+    technology: "in-process"
+  - from: "Background jobs"
+    to: "Mail"
+    description: "Sends notices with"
+    technology: "in-process"
+  - from: "Authentication"
+    to: "Audit log"
+    description: "Records sign-ins in"
+    technology: "in-process"
+  - from: "OSCAL authoring"
+    to: "Audit log"
+    description: "Records changes in"
+    technology: "in-process"
+  - from: "Authentication"
+    to: "OIDC identity provider"
+    to_technology: "External IdP (Okta, Keycloak, Entra ID)"
+    description: "Redirects sign-in to"
+    technology: "HTTPS, OpenID Connect"
+  - from: "OSCAL authoring"
+    to: "sparc-prod-db"
+    to_technology: "RDS PostgreSQL"
+    description: "Reads and writes"
+    technology: "PostgreSQL:5432, IAM auth"
+  - from: "Background jobs"
+    to: "sparc-prod-db"
+    to_technology: "RDS PostgreSQL"
+    description: "Queues and runs jobs in"
+    technology: "PostgreSQL:5432 (Solid Queue)"
+  - from: "Audit log"
+    to: "sparc-prod-db"
+    to_technology: "RDS PostgreSQL"
+    description: "Writes audit events to"
+    technology: "PostgreSQL:5432"
+  - from: "File storage"
+    to: "sparc-prod-uploads"
+    to_technology: "S3"
+    description: "Stores uploads in"
+    technology: "S3 API"
+  - from: "Authentication"
+    to: "sparc-prod/admin-credentials"
+    to_technology: "Secrets Manager"
+    description: "Rotates the bootstrap administrator's credentials in"
+    technology: "Secrets Manager API"
+  - from: "Mail"
+    to: "SMTP relay"
+    to_technology: "SES SMTP"
+    description: "Sends mail through"
+    technology: "SMTP:587 STARTTLS"
+
+reviewed_by: ""             # pending maintainer review
+reviewed_date: ""
+next_review_date: "2027-04-27"
