@@ -106,3 +106,37 @@ def test_selecting_another_mode_hides_the_first_panel(authed_page, base_url):
     expect(create_panel).to_be_hidden()
 
     assert_no_csp_violations(page, during="the ATO wizard after switching modes")
+
+
+def test_a_step_starts_on_the_boundarys_current_document(authed_page, base_url):
+    """#1101: a step the server opens on the boundary's own SSP behaves.
+
+    The page renders the chosen mode itself (radio, hidden field, open panel),
+    because the controller only reacts to a change. So the check is that the
+    server's choice is what a reader sees, and that choosing another mode from
+    there still closes it.
+    """
+    page = authed_page
+    record_csp(page)
+    for href in helpers.show_hrefs(page, "/authorization_boundaries", "/authorization_boundaries"):
+        page.goto(f"{base_url}{href}/ato_wizard")
+        page.wait_for_load_state("domcontentloaded")
+        if page.locator("[data-testid='ssp-current']").count():
+            break
+    else:
+        pytest.skip("no boundary with exactly one SSP — run the demo seed")
+
+    select_panel = page.locator("#ssp_select_existing_panel")
+    expect(page.locator("#ssp_mode")).to_have_value("select_existing")
+    expect(page.locator("input[name='ssp_radio'][value='select_existing']")).to_be_checked()
+    expect(select_panel).to_be_visible()
+    chosen = page.locator("select[name='ssp_document_id']").input_value()
+    assert chosen, "the boundary's current SSP is not the one chosen"
+
+    helpers.click_and_assert_clean(
+        page, "input[name='ssp_radio'][value='skip']",
+        during="leaving the SSP the wizard started on",
+    )
+    expect(select_panel).to_be_hidden()
+    expect(page.locator("#ssp_mode")).to_have_value("skip")
+    assert_no_csp_violations(page, during="the ATO wizard starting on a current document")

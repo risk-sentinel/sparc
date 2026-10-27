@@ -1,0 +1,35 @@
+<%#
+  #1101 — the choice at the top of an ATO wizard document step, starting where
+  the boundary already is (AtoWizardStep): its one current document chosen, or
+  its several listed, or Skip when it has none. The page renders the chosen
+  mode itself (radio, hidden field, open panel): ato_wizard_controller.js only
+  reacts to a change.
+
+  Locals:
+    step     — :ssp, :sap, :sar or :poam (the field prefix)
+    noun     — "SSP", "SAP", "SAR", "POA&M"
+    default  — AtoWizardStep
+%>
+<%= hidden_field_tag :"#{step}_mode", default.mode, id: "#{step}_mode" %>
+
+<% if default.current %>
+  <p class="sparc-fs-088 mb-2" data-testid="<%= step %>-current">
+    Using the boundary's current <%= noun %>: <strong><%= default.current.name %></strong>.
+    Choose another or create a new one below.
+  </p>
+<% elsif default.several? %>
+  <p class="sparc-fs-088 mb-2" data-testid="<%= step %>-several">
+    This boundary has <%= default.own.size %> <%= noun %>s. Choose the one this package uses.
+  </p>
+<% end %>
+
+<% [ [ "create_new", "Create New #{noun}" ], [ AtoWizardStep::SELECT, "Select Existing #{noun}" ],
+     [ AtoWizardStep::SKIP, "Skip" ] ].each do |value, label| %>
+  <div class="mb-2">
+    <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
+      <input type="radio" name="<%= step %>_radio" value="<%= value %>" <%= "checked" if default.mode?(value) %>
+             data-action="ato-wizard#setMode" data-ato-wizard-mode-param="<%= step %>" class="sparc-icon-16">
+      <span class="fw-semibold sparc-fs-088"><%= label %></span>
+    </label>
+  </div>
+<% end %>

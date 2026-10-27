@@ -43,9 +43,24 @@
     <details open class="mb-3 border rounded-3 sparc-wizard-step">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
         <span class="sparc-status--success sparc-wizard-step-number">2</span>
-        Select Baseline / Profile
+        Baseline / Profile
       </summary>
       <div class="sparc-wizard-step-body">
+        <% if @boundary_profile %>
+          <%# #1101 — the boundary's baseline is settled: context, not a question. %>
+          <%= hidden_field_tag :profile_mode, "select_existing", id: "profile_mode" %>
+          <%= hidden_field_tag :profile_document_id, @boundary_profile.id %>
+          <p class="sparc-fs-088 mb-1" data-testid="profile-settled">
+            <strong>Baseline:</strong> <%= link_to @boundary_profile.name, profile_document_path(@boundary_profile) %>
+            <span class="text-body-secondary">&mdash; set on this boundary</span>
+          </p>
+          <% unless ProfileDocument.ssp_ready.exists?(id: @boundary_profile.id) %>
+            <p class="sparc-heading-danger sparc-fs-088 mb-0" data-testid="profile-not-ready">
+              This baseline is not published yet. A new SSP or SAP needs a published baseline:
+              publish it from its page first.
+            </p>
+          <% end %>
+        <% else %>
         <%= hidden_field_tag :profile_mode, "skip", id: "profile_mode" %>
 
         <div class="mb-2">
@@ -72,14 +87,16 @@
             </div>
           <% else %>
             <p class="sparc-heading-danger sparc-fs-088">
-              No completed profiles found. Please
-              <%= link_to "upload a Profile", new_profile_document_path %> first.
+              No published profiles found. Please
+              <%= link_to "upload a Profile", new_profile_document_path %> and publish it first.
             </p>
           <% end %>
           <small class="text-body-secondary d-block sparc-wizard-field-note">
-            Controls from this profile will feed into SSP, SAP, and SAR creation.
+            Controls from this profile will feed into SSP, SAP, and SAR creation, and it
+            becomes this boundary's baseline.
           </small>
         </div>
+        <% end %>
       </div>
     </details>
 
@@ -87,21 +104,32 @@
     <details class="mb-3 border rounded-3 sparc-wizard-step">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
         <span class="sparc-status--orange sparc-wizard-step-number">3</span>
-        Select Components (CDEFs)
+        Components (CDEFs)
       </summary>
       <div class="sparc-wizard-step-body">
+        <% if @boundary_cdefs.any? %>
+          <%# #1101 — already linked to this boundary: shown, not asked again. %>
+          <div class="mb-3" data-testid="cdefs-linked">
+            <div class="fw-semibold sparc-fs-088 mb-1">Linked to this boundary</div>
+            <ul class="sparc-fs-088 mb-0">
+              <% @boundary_cdefs.each do |cdef| %>
+                <li><%= link_to cdef.name, cdef_document_path(cdef) %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
         <%= hidden_field_tag :cdef_mode, "skip", id: "cdef_mode" %>
 
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
             <input type="radio" name="cdef_radio" value="select" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="cdef" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Select Components</span>
+            <span class="fw-semibold sparc-fs-088"><%= @boundary_cdefs.any? ? "Add Components" : "Select Components" %></span>
           </label>
         </div>
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
             <input type="radio" name="cdef_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="cdef" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Skip</span>
+            <span class="fw-semibold sparc-fs-088"><%= @boundary_cdefs.any? ? "Keep as linked" : "Skip" %></span>
           </label>
         </div>
 
@@ -126,7 +154,7 @@
             <% end %>
           <% else %>
             <p class="text-body-secondary sparc-fs-088">
-              No completed CDEFs found. You can
+              No other completed CDEFs found. You can
               <%= link_to "upload a CDEF", new_cdef_document_path(only: "upload") %> first, or skip this step.
             </p>
           <% end %>
@@ -135,32 +163,13 @@
     </details>
 
     <%# ── Step 4: System Security Plan (SSP) ── %>
-    <details class="mb-3 border rounded-3 sparc-wizard-step">
+    <details <%= "open" if @step_defaults[:ssp].mode?(AtoWizardStep::SELECT) %> class="mb-3 border rounded-3 sparc-wizard-step">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
         <span class="sparc-status--danger sparc-wizard-step-number">4</span>
         System Security Plan (SSP)
       </summary>
       <div class="sparc-wizard-step-body">
-        <%= hidden_field_tag :ssp_mode, "skip", id: "ssp_mode" %>
-
-        <div class="mb-2">
-          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
-            <input type="radio" name="ssp_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="ssp" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Create New SSP</span>
-          </label>
-        </div>
-        <div class="mb-2">
-          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
-            <input type="radio" name="ssp_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="ssp" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Select Existing SSP</span>
-          </label>
-        </div>
-        <div class="mb-2">
-          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
-            <input type="radio" name="ssp_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="ssp" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Skip</span>
-          </label>
-        </div>
+        <%= render "ato_step_modes", step: :ssp, noun: "SSP", default: @step_defaults[:ssp] %>
 
         <div id="ssp_create_new_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
@@ -173,36 +182,36 @@
           </div>
           <div class="row row-cols-1 row-cols-md-2 g-3">
             <div class="form-group">
-              <label for="ssp_system_status">System Status</label>
-              <%= select_tag :ssp_system_status,
+              <label for="system_status">System Status</label>
+              <%= select_tag :system_status,
                     options_for_select(SspDocument::SYSTEM_STATUSES.map { |s| [s.titleize, s] }),
                     include_blank: "-- Select --",
                     class: "form-control" %>
             </div>
             <div class="form-group">
-              <label for="ssp_security_sensitivity_level">Security Sensitivity Level</label>
-              <%= select_tag :ssp_security_sensitivity_level,
+              <label for="security_sensitivity_level">Security Sensitivity Level</label>
+              <%= select_tag :security_sensitivity_level,
                     options_for_select([["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]]),
                     include_blank: "-- Select --",
                     class: "form-control" %>
             </div>
             <div class="form-group">
-              <label for="ssp_security_objective_confidentiality">Confidentiality Objective</label>
-              <%= select_tag :ssp_security_objective_confidentiality,
+              <label for="security_objective_confidentiality">Confidentiality Objective</label>
+              <%= select_tag :security_objective_confidentiality,
                     options_for_select([["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]]),
                     include_blank: "-- Select --",
                     class: "form-control" %>
             </div>
             <div class="form-group">
-              <label for="ssp_security_objective_integrity">Integrity Objective</label>
-              <%= select_tag :ssp_security_objective_integrity,
+              <label for="security_objective_integrity">Integrity Objective</label>
+              <%= select_tag :security_objective_integrity,
                     options_for_select([["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]]),
                     include_blank: "-- Select --",
                     class: "form-control" %>
             </div>
             <div class="form-group">
-              <label for="ssp_security_objective_availability">Availability Objective</label>
-              <%= select_tag :ssp_security_objective_availability,
+              <label for="security_objective_availability">Availability Objective</label>
+              <%= select_tag :security_objective_availability,
                     options_for_select([["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]]),
                     include_blank: "-- Select --",
                     class: "form-control" %>
@@ -210,11 +219,11 @@
           </div>
         </div>
 
-        <div id="ssp_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
+        <div id="ssp_select_existing_panel" class="sparc-wizard-step-panel<%= " sparc-d-none" unless @step_defaults[:ssp].mode?(AtoWizardStep::SELECT) %>">
           <div class="form-group">
             <label for="ssp_document_id">Existing SSP</label>
             <%= select_tag :ssp_document_id,
-                  options_for_select(@ssps.map { |s| [s.name, s.id] }),
+                  options_for_select(@ssps.map { |s| [s.name, s.id] }, @step_defaults[:ssp].selected_id),
                   include_blank: "-- Select an SSP --",
                   class: "form-control" %>
           </div>
@@ -223,32 +232,13 @@
     </details>
 
     <%# ── Step 5: Security Assessment Plan (SAP) ── %>
-    <details class="mb-3 border rounded-3 sparc-wizard-step">
+    <details <%= "open" if @step_defaults[:sap].mode?(AtoWizardStep::SELECT) %> class="mb-3 border rounded-3 sparc-wizard-step">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
         <span class="sparc-status--purple sparc-wizard-step-number">5</span>
         Security Assessment Plan (SAP)
       </summary>
       <div class="sparc-wizard-step-body">
-        <%= hidden_field_tag :sap_mode, "skip", id: "sap_mode" %>
-
-        <div class="mb-2">
-          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
-            <input type="radio" name="sap_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sap" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Create New SAP</span>
-          </label>
-        </div>
-        <div class="mb-2">
-          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
-            <input type="radio" name="sap_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sap" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Select Existing SAP</span>
-          </label>
-        </div>
-        <div class="mb-2">
-          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
-            <input type="radio" name="sap_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sap" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Skip</span>
-          </label>
-        </div>
+        <%= render "ato_step_modes", step: :sap, noun: "SAP", default: @step_defaults[:sap] %>
 
         <div id="sap_create_new_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
@@ -261,28 +251,28 @@
           </div>
           <div class="row row-cols-1 row-cols-md-2 g-3">
             <div class="form-group">
-              <label for="sap_assessment_type">Assessment Type</label>
-              <%= select_tag :sap_assessment_type,
+              <label for="assessment_type">Assessment Type</label>
+              <%= select_tag :assessment_type,
                     options_for_select([["Initial", "initial"], ["Annual", "annual"], ["Continuous", "continuous"], ["Ad-Hoc", "ad-hoc"]]),
                     include_blank: "-- Select --",
                     class: "form-control" %>
             </div>
             <div class="form-group">
-              <label for="sap_start_date">Start Date</label>
-              <%= date_field_tag :sap_start_date, nil, class: "form-control" %>
+              <label for="assessment_start">Start Date</label>
+              <%= date_field_tag :assessment_start, nil, class: "form-control" %>
             </div>
             <div class="form-group">
-              <label for="sap_end_date">End Date</label>
-              <%= date_field_tag :sap_end_date, nil, class: "form-control" %>
+              <label for="assessment_end">End Date</label>
+              <%= date_field_tag :assessment_end, nil, class: "form-control" %>
             </div>
           </div>
         </div>
 
-        <div id="sap_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
+        <div id="sap_select_existing_panel" class="sparc-wizard-step-panel<%= " sparc-d-none" unless @step_defaults[:sap].mode?(AtoWizardStep::SELECT) %>">
           <div class="form-group">
             <label for="sap_document_id">Existing SAP</label>
             <%= select_tag :sap_document_id,
-                  options_for_select(@saps.map { |s| [s.name, s.id] }),
+                  options_for_select(@saps.map { |s| [s.name, s.id] }, @step_defaults[:sap].selected_id),
                   include_blank: "-- Select a SAP --",
                   class: "form-control" %>
           </div>
@@ -291,32 +281,13 @@
     </details>
 
     <%# ── Step 6: Security Assessment Results (SAR) ── %>
-    <details class="mb-3 border rounded-3 sparc-wizard-step">
+    <details <%= "open" if @step_defaults[:sar].mode?(AtoWizardStep::SELECT) %> class="mb-3 border rounded-3 sparc-wizard-step">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
         <span class="sparc-status--info sparc-wizard-step-number">6</span>
         Security Assessment Results (SAR)
       </summary>
       <div class="sparc-wizard-step-body">
-        <%= hidden_field_tag :sar_mode, "skip", id: "sar_mode" %>
-
-        <div class="mb-2">
-          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
-            <input type="radio" name="sar_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sar" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Create New SAR</span>
-          </label>
-        </div>
-        <div class="mb-2">
-          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
-            <input type="radio" name="sar_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sar" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Select Existing SAR</span>
-          </label>
-        </div>
-        <div class="mb-2">
-          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
-            <input type="radio" name="sar_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sar" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Skip</span>
-          </label>
-        </div>
+        <%= render "ato_step_modes", step: :sar, noun: "SAR", default: @step_defaults[:sar] %>
 
         <div id="sar_create_new_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
@@ -329,21 +300,21 @@
           </div>
           <div class="row row-cols-1 row-cols-md-2 g-3">
             <div class="form-group">
-              <label for="sar_start_date">Start Date</label>
-              <%= date_field_tag :sar_start_date, nil, class: "form-control" %>
+              <label for="sar_assessment_start">Start Date</label>
+              <%= date_field_tag :sar_assessment_start, nil, class: "form-control" %>
             </div>
             <div class="form-group">
-              <label for="sar_end_date">End Date</label>
-              <%= date_field_tag :sar_end_date, nil, class: "form-control" %>
+              <label for="sar_assessment_end">End Date</label>
+              <%= date_field_tag :sar_assessment_end, nil, class: "form-control" %>
             </div>
           </div>
         </div>
 
-        <div id="sar_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
+        <div id="sar_select_existing_panel" class="sparc-wizard-step-panel<%= " sparc-d-none" unless @step_defaults[:sar].mode?(AtoWizardStep::SELECT) %>">
           <div class="form-group">
             <label for="sar_document_id">Existing SAR</label>
             <%= select_tag :sar_document_id,
-                  options_for_select(@sars.map { |s| [s.name, s.id] }),
+                  options_for_select(@sars.map { |s| [s.name, s.id] }, @step_defaults[:sar].selected_id),
                   include_blank: "-- Select a SAR --",
                   class: "form-control" %>
           </div>
@@ -352,32 +323,13 @@
     </details>
 
     <%# ── Step 7: Plan of Action & Milestones (POA&M) ── %>
-    <details class="mb-3 border rounded-3 sparc-wizard-step">
+    <details <%= "open" if @step_defaults[:poam].mode?(AtoWizardStep::SELECT) %> class="mb-3 border rounded-3 sparc-wizard-step">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2 sparc-wizard-step-summary">
         <span class="sparc-status--neutral sparc-wizard-step-number">7</span>
         Plan of Action &amp; Milestones (POA&amp;M)
       </summary>
       <div class="sparc-wizard-step-body">
-        <%= hidden_field_tag :poam_mode, "skip", id: "poam_mode" %>
-
-        <div class="mb-2">
-          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
-            <input type="radio" name="poam_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="poam" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Create New POA&amp;M</span>
-          </label>
-        </div>
-        <div class="mb-2">
-          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
-            <input type="radio" name="poam_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="poam" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Select Existing POA&amp;M</span>
-          </label>
-        </div>
-        <div class="mb-2">
-          <label class="d-flex align-items-center gap-2 sparc-cursor-pointer">
-            <input type="radio" name="poam_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="poam" class="sparc-icon-16">
-            <span class="fw-semibold sparc-fs-088">Skip</span>
-          </label>
-        </div>
+        <%= render "ato_step_modes", step: :poam, noun: "POA&M", default: @step_defaults[:poam] %>
 
         <div id="poam_create_new_panel" class="sparc-wizard-step-panel sparc-d-none">
           <div class="form-group">
@@ -390,11 +342,11 @@
           </div>
         </div>
 
-        <div id="poam_select_existing_panel" class="sparc-wizard-step-panel sparc-d-none">
+        <div id="poam_select_existing_panel" class="sparc-wizard-step-panel<%= " sparc-d-none" unless @step_defaults[:poam].mode?(AtoWizardStep::SELECT) %>">
           <div class="form-group">
             <label for="poam_document_id">Existing POA&amp;M</label>
             <%= select_tag :poam_document_id,
-                  options_for_select(@poams.map { |p| [p.name, p.id] }),
+                  options_for_select(@poams.map { |p| [p.name, p.id] }, @step_defaults[:poam].selected_id),
                   include_blank: "-- Select a POA&M --",
                   class: "form-control" %>
           </div>
