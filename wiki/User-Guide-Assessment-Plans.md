@@ -83,6 +83,12 @@ Within each family, controls are listed in **NIST catalog order** — base numbe
 then enhancement (AC-1, AC-2, AC-2(1), AC-3 … AC-17, AC-18) — rather than the
 order they arrived in from the source document.
 
+**Planning each objective.** A control's **Edit** lists its SP 800-53A
+objectives to assess (grouping objectives are headings), each with a status and
+notes (evidence to examine, who to interview, what to test), saved with the
+control's methods and assessor in one **Save Changes**. The objectives table on
+the card is the read view (since v1.17.5).
+
 **What the SSP says about each objective.** A plan generated from an SSP shows,
 under each SP 800-53A objective, the SSP item it tests and what that item
 records: its implementation status and its origination. An item marked

@@ -1,0 +1,64 @@
+<%#
+  #1312 — a SAP control's 800-53A objectives, planned in the control's Edit,
+  in one Save with the control's methods and assessor. Each objective to assess
+  (one with a statement; containers are headings) gets its status and notes,
+  and beside it, read-only, the SSP item it tests and what that item records.
+  The objectives table's per-row Edit and its modal were a second place to set
+  the same thing.
+
+  Locals:
+    control    — SapControl, with sap_control_objectives loaded
+    ssp_items  — statement id => SspControlStatement of the SSP assessed, or {}
+%>
+<% objectives = control.sap_control_objectives.sort_by { |o| o.row_order || 0 } %>
+<% ssp_items = local_assigns[:ssp_items] || {} %>
+<% ssp_item_ids = ssp_items.keys.to_set %>
+<% assessable = objectives.reject(&:container?) %>
+<% if assessable.any? %>
+  <div class="sparc-statement-block sparc-statement-block--info sparc-accent--blue sparc-mb-075" data-testid="objective-plan">
+    <div class="sparc-statement-label sparc-heading-controls sparc-mb-04">
+      Assessment Objectives
+      <span class="text-body-secondary sparc-fw-400 sparc-fs-07">
+        (<%= pluralize(assessable.size, "objective") %>; saved with Save Changes)
+      </span>
+    </div>
+    <% objectives.each do |obj| %>
+      <% depth = [ obj.parent_objective_id.present? ? 1 : 0, 3 ].min %>
+      <% if obj.container? %>
+        <div class="fw-semibold sparc-fs-082 sparc-mb-025 sparc-stmt-d<%= depth %>" data-objective-group="<%= obj.objective_id %>">
+          <code class="sparc-fs-078"><%= obj.label.presence || obj.objective_id %></code>
+        </div>
+        <% next %>
+      <% end %>
+      <% box = "sap-objective-#{obj.id}" %>
+      <% item = ssp_items[ControlRequirementText.statement_for_objective(obj.objective_id, ssp_item_ids)] %>
+      <div class="form-group sparc-mb-075 sparc-stmt-d<%= depth %>" data-objective-plan="<%= obj.objective_id %>">
+        <div class="sparc-fs-082">
+          <code class="sparc-fs-078"><%= obj.label.presence || obj.objective_id %></code>
+          <span class="sparc-color-body"><%= obj.prose %></span>
+        </div>
+        <% if item %>
+          <% facts = [ item.status_label || "status not set",
+                       item.effective_origination.map { SspControlStatement::ORIGINATION_LABELS[_1] }.join(" + ").presence ].compact %>
+          <div class="sparc-ctx-readonly-note sparc-mt-025" data-testid="ssp-claim">
+            SSP <code><%= item.label.presence || item.statement_id %></code>: <%= facts.join(" · ") %>
+          </div>
+        <% end %>
+        <div class="row g-2 sparc-mt-025">
+          <div class="col-md-4">
+            <label class="sparc-edit-label" for="<%= box %>-status">Status</label>
+            <%= select_tag "objectives[#{obj.id}][status]",
+                  options_for_select(SapControlObjective::OBJECTIVE_STATUSES.map { |s| [ s.tr("_-", "  ").capitalize, s ] }, obj.status),
+                  class: "form-select sparc-fs-0875", id: "#{box}-status" %>
+          </div>
+          <div class="col-md-8">
+            <label class="sparc-edit-label" for="<%= box %>-notes">Notes</label>
+            <%= text_area_tag "objectives[#{obj.id}][assessor_notes]", obj.assessor_notes, rows: 2,
+                  class: "form-control sparc-fs-0875", id: "#{box}-notes",
+                  placeholder: "Evidence to examine, who to interview, what to test" %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
