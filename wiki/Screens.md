@@ -421,8 +421,8 @@ Buttons: "Create New SSP" (links to wizard), "Upload File" (direct file upload).
    - Document type label ("System Security Plan")
    - Editable name and version (inline toggle)
    - Source filename, status, total control count
-   - Compliance percentage score with color coding (green >= 80%, yellow >= 50%, red < 50%)
-   - Status summary chips (clickable to filter heatmap)
+   - Compliance percentage score with color coding (green >= 80%, yellow >= 50%, red < 50%): implemented items over items that take a response, not-applicable items left out
+   - Status summary chips (clickable to filter heatmap), one count per control by the status its items add up to
    - Multi-segment progress bar showing status distribution
 
 2. **OSCAL enrichment panels** (if enriched):
@@ -434,7 +434,7 @@ Buttons: "Create New SSP" (links to wizard), "Upload File" (direct file upload).
 3. **Compliance heatmap** -- interactive grid by control family, color-coded by status, with URL sync for filter state
 
 4. **Control cards** -- each card shows:
-   - Control ID, status pill, type/use badge, provided-as badge, family code
+   - Control ID, status pill (the status its items add up to; the summary, such as "12 of 18 implemented · 2 planned · hybrid", on hover), a Hybrid or Inherited tag from its items' origination, family code
    - Control title
    - Collapsible details section with:
      - Stated requirement block (highlighted)
@@ -447,7 +447,8 @@ Buttons: "Create New SSP" (links to wizard), "Upload File" (direct file upload).
        not define it. Renders the same `shared/_baseline_control_detail`
        partial the Baseline Detail screen uses.
      - Catalog guidance (collapsible, reference from source catalog)
-   - Edit button toggling an inline edit form with dropdowns for status, control_application, coverage_level, control_type, date picker for expected_completion, and text areas for other fields
+   - Implementation Statements table: the read view of each item's answer, status, origination, responsible roles and expected completion, with the SP 800-53A objectives that test it (and the SAR's latest determination of each, read-only)
+   - Edit button toggling an inline edit form: **Responses**, one block per item that takes a response (an item with nothing below it, at any depth), each with its answer, implementation status (OSCAL's five), control origination (OSCAL's five; inherited plus another is partly inherited), responsible roles (declared roles), expected completion and remarks; lead-ins (AC-2 d. "Specify:") are headings with no inputs; then the control's notes. One **Save Changes** stores them all (v1.17.5, #1312)
    - Read-only fields shown in a collapsible sub-section
 
 Export buttons: Export OSCAL, Download JSON, Enrich, Back.
@@ -874,7 +875,7 @@ Add, edit, or remove team members with role assignment via dropdown.
 | **Controller** | `AuthorizationBoundariesController#ato_wizard`, `#create_ato_package`, `#download_ato_package` |
 | **Auth** | Required |
 
-Assembles an Authorization-to-Operate package (bundled SSP/SAP/SAR/POA&M/evidence artifacts) for the boundary, then offers it as a downloadable archive.
+Assembles an Authorization-to-Operate package (bundled SSP/SAP/SAR/POA&M/evidence artifacts) for the boundary, then offers it as a downloadable archive. Starts from what the boundary has (v1.17.5, #1101): its baseline as settled context (or, when it has none, a picker whose choice becomes the boundary's baseline), its linked CDEFs listed as linked, and each document step on the boundary's one current document, its several listed, or Skip when it has none.
 
 #### Leveraged Authorizations
 
