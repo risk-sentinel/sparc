@@ -29,6 +29,8 @@ def test_edit_offers_every_objective(authed_page, base_url):
 
     assert rows.locator("a, button").count() == 0, "an objective row still carries its own editor"
 
+    # Family groups render collapsed; open them so the card's Edit is clickable.
+    page.evaluate("() => document.querySelectorAll('details').forEach(d => { d.open = true })")
     card = rows.first.locator("xpath=ancestor::div[contains(@class,'control-card')]").first
     with page.expect_navigation(wait_until="load"):
         card.get_by_role("link", name="Edit").first.click()
