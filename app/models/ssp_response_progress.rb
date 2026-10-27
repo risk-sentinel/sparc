@@ -262,7 +262,7 @@ class SspResponseProgress
     case state
     when "inherited" then [ SspControlStatement::INHERITED ]
     when "hybrid_satisfied", "hybrid_unsatisfied"
-      [ SspControlStatement::INHERITED, *((own - [ SspControlStatement::INHERITED ]).presence || [ "system-specific" ]) ]
+      [ SspControlStatement::INHERITED, *((own - [ SspControlStatement::INHERITED ]).presence || [ SspControlStatement::SYSTEM_SPECIFIC ]) ]
     else own
     end
   end

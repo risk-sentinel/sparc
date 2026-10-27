@@ -373,8 +373,8 @@ Rails.application.routes.draw do
       # #911 — the write the reconciliation gate exists to provoke.
       patch :set_baseline, to: "cdef_documents#set_baseline"
       # #1089 — a CDEF serves many baselines: add or remove one.
-      post :link_profile
-      delete :unlink_profile
+      post :link_profile, to: "cdef_documents#link_profile"
+      delete :unlink_profile, to: "cdef_documents#unlink_profile"
       patch :update_metadata
       patch :update_field
       # #929 — re-point a CDEF's scope (boundary-specific <-> global) after
@@ -896,8 +896,8 @@ Rails.application.routes.draw do
           # #929 — re-point a CDEF's scope after upload (web parity).
           patch :scope, action: :update_scope, as: :update_scope
           # #1089 — the baselines this CDEF is used under: add or remove one.
-          post :profiles, action: :link_profile, as: :link_profile
-          delete "profiles/:profile_document_id", action: :unlink_profile, as: :unlink_profile
+          post :profiles, to: "cdef_documents#link_profile", as: :link_profile
+          delete "profiles/:profile_document_id", to: "cdef_documents#unlink_profile", as: :unlink_profile
           # #630/#634 — review/approval workflow.
           post :submit_for_review, to: "cdef_documents#submit_for_review"
           post :approve, to: "cdef_documents#approve"

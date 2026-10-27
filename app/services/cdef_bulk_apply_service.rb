@@ -298,8 +298,8 @@ class CdefBulkApplyService
   def resolve_baseline(profile_id)
     return @cdef.profile_document if profile_id.blank?
 
-    @cdef.profile_documents.find_by(id: profile_id) or
-      raise ArgumentError, "This component definition is not used under baseline #{profile_id}"
+    @cdef.profile_documents.find_by(id: profile_id) ||
+      raise(ArgumentError, "This component definition is not used under baseline #{profile_id}")
   end
 
   def baseline_missing_set

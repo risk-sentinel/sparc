@@ -529,13 +529,13 @@ class SarDocumentsController < ApplicationController
     by_id = control.sar_control_objectives.index_by { _1.id.to_s }
     assessor = params.dig(:fields, :assessor).presence || current_user&.display_label
     raw.keys.filter_map do |id|
-      objective = by_id[id.to_s] or raise ArgumentError, "objective #{id} is not part of #{control.control_id}"
+      objective = by_id[id.to_s] || raise(ArgumentError, "objective #{id} is not part of #{control.control_id}")
       attrs = raw[id].permit(:status, :assessor_notes).to_h.symbolize_keys
       attrs[:assessor_notes] = attrs[:assessor_notes].to_s.strip.presence if attrs.key?(:assessor_notes)
       next if attrs.all? { |key, value| objective.public_send(key).presence == value.presence }
 
       attrs[:assessor_name] = assessor if attrs[:status] && attrs[:status] != objective.status
-      SarObjectiveDetermination.new(objective).record(**attrs) or raise ActiveRecord::RecordInvalid, objective
+      raise ActiveRecord::RecordInvalid, objective unless SarObjectiveDetermination.new(objective).record(**attrs)
       objective
     end
   end

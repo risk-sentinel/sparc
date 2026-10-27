@@ -133,7 +133,8 @@ class ControlRequirementText
     objective_rows.each_with_object({}) do |row, placed|
       next if row.prose.blank?
 
-      part_id = self.class.statement_for_objective(row.part_id, ids) or next
+      part_id = self.class.statement_for_objective(row.part_id, ids)
+      next unless part_id
       (placed[part_id] ||= []) << Objective.new(objective_id: row.part_id, label: row.label,
                                                 prose: resolver.resolve_text(row.prose).strip)
     end
