@@ -234,9 +234,25 @@ A few rules worth knowing:
 1. On the boundary detail page, open the **ATO Package Wizard**
    (`/authorization_boundaries/:id/ato_wizard`).
 2. The wizard assembles the boundary's SSP, SAP, SAR, POA&M, and evidence
-   artifacts into one Authorization-to-Operate package.
+   artifacts into one Authorization-to-Operate package. It starts from what
+   the boundary already has:
+   - **Baseline.** Once the boundary has one, it is shown as settled, and the
+     package uses it. A boundary without one asks; the published baseline you
+     choose becomes the boundary's baseline, so the next run does not ask again.
+     A settled baseline that is not published yet is flagged: a new SSP or SAP
+     needs a published one.
+   - **Components (CDEFs).** Those already linked to the boundary are listed as
+     linked. **Add Components** offers the others.
+   - **SSP, SAP, SAR and POA&M.** A step starts on the boundary's current
+     document when it has exactly one ("Using the boundary's current SSP: …");
+     when it has several, they are listed and you choose one; when it has none,
+     the step starts on **Skip**. **Select Existing** and **Create New** stay
+     available on every step.
 3. Create the package, then use **Download** to get the bundled archive
-   (`download_ato_package`).
+   (`download_ato_package`). A new SSP keeps the system status, sensitivity and
+   security objectives you enter, and a new SAP or SAR its assessment type and
+   dates (before v1.17.5 the wizard dropped them, and its new SSP and SAR
+   could not be created at all).
 
 Since v1.15.2 the archive contains **every document in JSON, YAML and XML**
 (previously JSON only), so consumers standardised on OSCAL XML can use it

@@ -160,10 +160,14 @@ class AuthorizationBoundariesController < ApplicationController
 
   def ato_wizard
     @memberships = @authorization_boundary.authorization_boundary_memberships.order(:role)
-    @profiles    = ProfileDocument.where(lifecycle_status: "published")
-                                  .where.not(resolved_catalog_json: nil)
-                                  .order(:name)
-    @cdefs       = CdefDocument.where(status: "completed").order(:name)
+    # #1101 — the wizard starts from what the boundary already knows. Its
+    # baseline, once set, is settled context rather than a question; its CDEFs
+    # are shown as linked; and each document step defaults to the boundary's
+    # own document when it has exactly one.
+    @boundary_profile = @authorization_boundary.profile_document
+    @profiles    = ProfileDocument.ssp_ready.order(:name)
+    @boundary_cdefs = @authorization_boundary.cdef_documents.distinct.order(:name).to_a
+    @cdefs       = CdefDocument.where(status: "completed").where.not(id: @boundary_cdefs.map(&:id)).order(:name)
     # #1244 — this boundary's documents only (plus boundary-less ones for an
     # administrator). The wizard listed every completed document on the
     # instance, and "select existing" then moved the chosen one in.
@@ -171,6 +175,8 @@ class AuthorizationBoundariesController < ApplicationController
     @saps        = ato_candidates(SapDocument).where(status: "completed").order(:name)
     @sars        = ato_candidates(SarDocument).where(status: "completed").order(:name)
     @poams       = ato_candidates(PoamDocument).where(status: "completed").order(:name)
+    @step_defaults = { ssp: @ssps, sap: @saps, sar: @sars, poam: @poams }
+                       .transform_values { |candidates| AtoWizardStep.for(@authorization_boundary, candidates) }
 
     # Warn if required roles are missing
     roles = @memberships.pluck(:role)

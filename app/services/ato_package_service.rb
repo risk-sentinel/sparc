@@ -48,10 +48,21 @@ class AtoPackageService
 
   # ── Step 1: Profile (select only — profiles must pre-exist) ────
 
+  # #1101 — a boundary's baseline, once set, is settled: it is the one this
+  # package uses, whatever the request names. A boundary with none takes the
+  # one chosen here as its baseline; before, the choice fed this one package
+  # and was thrown away, so the next run asked again. Only a published baseline
+  # with a resolved catalog can be chosen (ProfileDocument.ssp_ready), the same
+  # set the wizard offers.
   def resolve_profile
+    if (settled = @ab.profile_document)
+      @profile = settled
+      return
+    end
     return if @params[:profile_mode] == "skip" || @params[:profile_document_id].blank?
 
-    @profile = ProfileDocument.find(@params[:profile_document_id])
+    @profile = ProfileDocument.ssp_ready.find(@params[:profile_document_id])
+    @ab.update!(profile_document: @profile)
   end
 
   # ── Step 2: Components (CDEFs) ─────────────────────────────────
@@ -78,12 +89,15 @@ class AtoPackageService
   def resolve_ssp
     case @params[:ssp_mode]
     when "select_existing"
-      @ssp = @existing_scope.call(SspDocument).find(@params[:ssp_document_id])
+      @ssp = existing(SspDocument, :ssp, "an SSP")
       @ssp.update!(authorization_boundary: @ab)
     when "create_new"
       wizard_params = {
         name: @params[:ssp_name].presence || "SSP for #{@ab.name}",
         description: @params[:ssp_description],
+        # #1101 — an SSP belongs to its boundary from creation (#952); creating
+        # it boundary-less and moving it in afterwards failed every time.
+        authorization_boundary_id: @ab.id,
         profile_document_id: @profile&.id,
         system_status: @params[:system_status],
         security_sensitivity_level: @params[:security_sensitivity_level],
@@ -106,7 +120,7 @@ class AtoPackageService
   def resolve_sap
     case @params[:sap_mode]
     when "select_existing"
-      @sap = @existing_scope.call(SapDocument).find(@params[:sap_document_id])
+      @sap = existing(SapDocument, :sap, "a SAP")
       @sap.update!(authorization_boundary: @ab)
     when "create_new"
       @sap = SapGeneratorService.new(
@@ -129,12 +143,13 @@ class AtoPackageService
   def resolve_sar
     case @params[:sar_mode]
     when "select_existing"
-      @sar = @existing_scope.call(SarDocument).find(@params[:sar_document_id])
+      @sar = existing(SarDocument, :sar, "a SAR")
       @sar.update!(authorization_boundary: @ab)
     when "create_new"
       sar_params = {
         name: @params[:sar_name].presence || "SAR for #{@ab.name}",
         description: @params[:sar_description],
+        authorization_boundary_id: @ab.id, # #1101, as for the SSP above
         sap_document_id: @sap&.id,
         assessment_start: @params[:sar_assessment_start],
         assessment_end: @params[:sar_assessment_end]
@@ -151,7 +166,7 @@ class AtoPackageService
   def resolve_poam
     case @params[:poam_mode]
     when "select_existing"
-      @poam = @existing_scope.call(PoamDocument).find(@params[:poam_document_id])
+      @poam = existing(PoamDocument, :poam, "a POA&M")
       @poam.update!(authorization_boundary: @ab)
     when "create_new"
       # #843 — POA&M used to be the one step in this wizard that produced an
@@ -180,6 +195,16 @@ class AtoPackageService
   end
 
   # ── Helpers ────────────────────────────────────────────────────
+
+  # #1101 — a step can start on "select existing" with nothing chosen (the
+  # boundary has several and the author picks); submitted that way, say so
+  # rather than "Couldn't find SspDocument without an ID".
+  def existing(klass, step, noun)
+    id = @params[:"#{step}_document_id"]
+    raise ArgumentError, "choose #{noun} to use, or skip that step" if id.blank?
+
+    @existing_scope.call(klass).find(id)
+  end
 
   def parse_date(value)
     return nil if value.blank?
