@@ -109,34 +109,58 @@ def test_selecting_another_mode_hides_the_first_panel(authed_page, base_url):
 
 
 def test_a_step_starts_on_the_boundarys_current_document(authed_page, base_url):
-    """#1101: a step the server opens on the boundary's own SSP behaves.
+    """#1101: a step the server opens on the boundary's one current document behaves.
 
     The page renders the chosen mode itself (radio, hidden field, open panel),
     because the controller only reacts to a change. So the check is that the
     server's choice is what a reader sees, and that choosing another mode from
-    there still closes it.
+    there still closes it. Whichever step starts that way: the demo boundary has
+    one SAP but two SSPs.
     """
     page = authed_page
     record_csp(page)
+    step = None
     for href in helpers.show_hrefs(page, "/authorization_boundaries", "/authorization_boundaries"):
         page.goto(f"{base_url}{href}/ato_wizard")
         page.wait_for_load_state("domcontentloaded")
-        if page.locator("[data-testid='ssp-current']").count():
+        step = next((s for s in ("ssp", "sap", "sar", "poam")
+                     if page.locator(f"[data-testid='{s}-current']").count()), None)
+        if step:
             break
-    else:
-        pytest.skip("no boundary with exactly one SSP — run the demo seed")
+    if not step:
+        pytest.skip("no boundary with exactly one SSP, SAP, SAR or POA&M — run the demo seed")
 
-    select_panel = page.locator("#ssp_select_existing_panel")
-    expect(page.locator("#ssp_mode")).to_have_value("select_existing")
-    expect(page.locator("input[name='ssp_radio'][value='select_existing']")).to_be_checked()
+    select_panel = page.locator(f"#{step}_select_existing_panel")
+    expect(page.locator(f"#{step}_mode")).to_have_value("select_existing")
+    expect(page.locator(f"input[name='{step}_radio'][value='select_existing']")).to_be_checked()
     expect(select_panel).to_be_visible()
-    chosen = page.locator("select[name='ssp_document_id']").input_value()
-    assert chosen, "the boundary's current SSP is not the one chosen"
+    chosen = page.locator(f"select[name='{step}_document_id']").input_value()
+    assert chosen, f"the boundary's current {step} is not the one chosen"
 
     helpers.click_and_assert_clean(
-        page, "input[name='ssp_radio'][value='skip']",
-        during="leaving the SSP the wizard started on",
+        page, f"input[name='{step}_radio'][value='skip']",
+        during=f"leaving the {step} the wizard started on",
     )
     expect(select_panel).to_be_hidden()
-    expect(page.locator("#ssp_mode")).to_have_value("skip")
+    expect(page.locator(f"#{step}_mode")).to_have_value("skip")
     assert_no_csp_violations(page, during="the ATO wizard starting on a current document")
+
+
+def test_several_documents_are_listed_without_choosing(authed_page, base_url):
+    """#1101: with several, the author picks; none is chosen for them."""
+    page = authed_page
+    step = None
+    for href in helpers.show_hrefs(page, "/authorization_boundaries", "/authorization_boundaries"):
+        page.goto(f"{base_url}{href}/ato_wizard")
+        page.wait_for_load_state("domcontentloaded")
+        step = next((s for s in ("ssp", "sap", "sar", "poam")
+                     if page.locator(f"[data-testid='{s}-several']").count()), None)
+        if step:
+            break
+    if not step:
+        pytest.skip("no boundary with several of one document type — run the demo seed")
+
+    expect(page.locator(f"#{step}_select_existing_panel")).to_be_visible()
+    assert page.locator(f"select[name='{step}_document_id']").input_value() == "", (
+        f"a {step} was chosen for the author out of several"
+    )

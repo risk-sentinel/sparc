@@ -3,7 +3,7 @@
 It belonged to at most one; reuse meant copying it. Its page now lists every
 baseline it serves under "Used under:", with Add a baseline and Remove. What only
 a browser proves: the panel renders on a real CDEF, adding one round-trips
-through the form and shows, and Remove (behind a confirm) takes it away again,
+through the form and shows, and Remove (behind SPARC's confirm modal) takes it away again,
 all without a CSP violation.
 """
 
@@ -50,9 +50,12 @@ def test_adding_and_removing_a_baseline(authed_page):
         assert linked.count() == 1, f"{profile_name!r} is not listed after adding it"
         assert profile_name in linked.text_content()
 
-        page.once("dialog", lambda dialog: dialog.accept())
+        # turbo_confirm renders SPARC's CSP-safe confirm modal, not a native dialog.
+        linked.locator("button, input[type='submit']").first.click()
+        confirm = page.locator("#sparc-confirm-modal-confirm")
+        confirm.wait_for(state="visible", timeout=5000)
         with page.expect_navigation(wait_until="load"):
-            linked.locator("button, input[type='submit']").first.click()
+            confirm.click()
         assert page.locator(f"{PANEL} [data-baseline-id='{profile_id}']").count() == 0, (
             "Remove left the baseline listed"
         )

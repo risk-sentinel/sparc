@@ -12,6 +12,9 @@ and every enhancement (ac-2.1). On a deployed v1.17.1 an author could not:
 This checks both on a seeded SSP: every lettered part of ac-1 shows its
 requirement text, the rows are still there in Edit mode, and an enhancement has
 its own answerable row.
+
+#1312 — the rows are the read view; every item that takes a response is
+answered in the control's Edit form, one block per item with all its fields.
 """
 
 from __future__ import annotations
@@ -73,13 +76,14 @@ def test_the_part_rows_stay_answerable_in_edit_mode(authed_page):
     card = _open_card(authed_page, "ac-1")
     visible_before = card.locator(f"{ROW}:visible").count()
 
-    card.locator("button", has_text="Edit").first.click()
+    card.locator("[id^='edit-btn-']").first.click()
 
     assert card.locator(f"{ROW}:visible").count() == visible_before > 1
-    first = card.locator(f"{ROW}:visible").first
-    first.get_by_role("button", name="Edit").click()
-    response_box = "textarea[name='ssp_control_statement[implementation_prose]']"
-    assert first.locator(response_box).is_visible()
+    blocks = card.locator("[data-part-response]:visible")
+    assert blocks.count() > 1, "the Edit form offers no item to answer"
+    first = blocks.first
+    assert first.locator("textarea[name$='[implementation_prose]']").is_visible()
+    assert first.locator("select[name$='[implementation_status]']").is_visible()
 
 
 def test_an_enhancement_has_its_own_answerable_row(authed_page):
@@ -93,4 +97,9 @@ def test_an_enhancement_has_its_own_answerable_row(authed_page):
     row = card.locator(ROW).first
     requirement = row.locator(REQUIREMENT).inner_text().strip()
     assert requirement, f"{enhancement}'s row shows no requirement"
-    assert row.get_by_role("button", name="Edit").is_visible()
+
+    card.locator("[id^='edit-btn-']").first.click()
+    block = card.locator("[data-part-response]").first
+    assert block.locator("textarea[name$='[implementation_prose]']").is_visible(), (
+        f"{enhancement} has no answerable item in its Edit form"
+    )
