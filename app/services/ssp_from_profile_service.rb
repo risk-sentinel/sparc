@@ -188,13 +188,9 @@ class SspFromProfileService
         statement_entries << [ idx, part_id, parent_part_id, label, order ]
       end
 
-      # Editable placeholder fields
-      # Unanswered until the author answers it. "Deferred" here was a
-      # placeholder indistinguishable from an author's decision to defer, which
-      # SAR generation reads as a known finding.
-      field_entries << [ idx, "status", "" ]
-      field_entries << [ idx, "control_type", "" ]
-      field_entries << [ idx, "responsible_entities", "" ]
+      # Editable placeholder fields. #1312 — status, origination and
+      # responsible roles are each statement item's own, unanswered (nil) until
+      # the author answers them, so none is created here.
       field_entries << [ idx, "implementation_statement", "" ]
       field_entries << [ idx, "implementation_summary", "" ]
       field_entries << [ idx, "notes", "" ]

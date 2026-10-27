@@ -689,7 +689,7 @@ Interactive heatmap grids provide visual analytics showing control distribution 
 
 | Document Type | Secondary Dimension | Example Values                                                    |
 |---------------|--------------------|--------------------------------------------------------------------|
-| SSP           | Status             | Implemented, Deferred, Not Applicable, Planned, Partially Implemented |
+| SSP           | Status             | Implemented, Partial, Planned, Alternative, Not applicable, Not set (one per control, from its items) |
 | SAR           | Result             | Pass, Fail                                                         |
 | CDEF          | Severity           | High, Medium, Low                                                  |
 | Profile       | Priority           | P1, P2, P3                                                        |
@@ -697,7 +697,7 @@ Interactive heatmap grids provide visual analytics showing control distribution 
 
 ### Dashboard Aggregation
 
-The `DashboardAggregationService` aggregates implementation status counts across ALL SSP documents, grouped by NIST control family (AC, AU, CM, IA, etc.). It returns a triple of `[heatmap_data, families, ordered_statuses]` matching the contract expected by the shared `_heatmap.html.erb` partial.
+The `DashboardAggregationService` aggregates implementation status counts across ALL SSP documents, one per statement item that takes a response (v1.17.5), grouped by NIST control family (AC, AU, CM, IA, etc.). It returns a triple of `[heatmap_data, families, ordered_statuses]` matching the contract expected by the shared `_heatmap.html.erb` partial.
 
 ### Stimulus Controller
 

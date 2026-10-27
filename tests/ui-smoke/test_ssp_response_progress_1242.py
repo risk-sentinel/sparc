@@ -2,8 +2,9 @@
 
 What only a browser proves: the header figure and every control's badge render
 on a real seeded SSP, agree with the API's `response_progress`, carry no CSP
-violation, and move when an author writes a response through the inline editor
-and the page reloads. The counts themselves are rspec's (derived from the
+violation, and move when an author writes a response through the control's
+Edit form (#1312: the one place an item is answered) and the page
+reloads. The counts themselves are rspec's (derived from the
 profile, never pinned); this checks the screen reads the same definition.
 """
 
@@ -82,12 +83,14 @@ def test_writing_a_response_moves_the_counts(authed_page):
     row = page.locator("tr[data-statement-id]:has([data-response-state='missing'])").first
     row.wait_for(state="attached", timeout=5000)
     statement_id = row.get_attribute("id").removeprefix("stmt-")
-    row.locator("[data-statement-edit-target='toggle']").click()
-    prose = row.locator("textarea[name='ssp_control_statement[implementation_prose]']")
+    card = row.locator("xpath=ancestor::div[contains(@class,'control-card')]").first
+    card.locator("[id^='edit-btn-']").first.click()
+    prose = card.locator(f"textarea[name='statements[{statement_id}][implementation_prose]']")
+    prose.wait_for(state="visible", timeout=5000)
     prose.fill("ui-smoke #1242 response")
     try:
         with page.expect_navigation(wait_until="load"):
-            row.get_by_role("button", name="Save Statement", exact=True).click()
+            card.locator("input[type='submit'][value='Save Changes']").first.click()
 
         after = _figure(page)
         assert after["done"] == before["done"] + 1, (before, after)

@@ -94,6 +94,36 @@ RSpec.describe "Api::V1::SspControlStatements", type: :request do
       expect(root_statement.reload.implementation_prose).to be_blank
     end
 
+    # #1312 — each item sets its own status, origination and expected
+    # completion, in OSCAL's terms, and reads them back.
+    it "writes an item's status, origination and expected completion" do
+      patch "/api/v1/ssp_control_statements/#{sub_statement.id}",
+            params: { ssp_control_statement: { implementation_status: "partial",
+                                               control_origination: %w[inherited system-specific],
+                                               expected_completion: "2027-09-30" } },
+            headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)["data"]
+      expect(data).to include("implementation_status" => "partial",
+                              "control_origination" => %w[system-specific inherited],
+                              "leveraged_origination" => false,
+                              "expected_completion" => "2027-09-30")
+      expect(sub_statement.reload).to be_partially_inherited
+    end
+
+    it "refuses a status or origination that is not OSCAL's, and a date that is not one" do
+      [ { implementation_status: "Deferred" }, { control_origination: [ "hybrid" ] },
+        { expected_completion: "soon" } ].each do |attrs|
+        patch "/api/v1/ssp_control_statements/#{sub_statement.id}",
+              params: { ssp_control_statement: attrs }, headers: headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_content), attrs.inspect
+      end
+      expect(sub_statement.reload).to have_attributes(implementation_status: nil, control_origination: [],
+                                                      expected_completion: nil)
+    end
+
     # Structure belongs to the catalog. `statement_id` and the derived UUID are
     # what an exported document references (#397), and what
     # CdefToSspInheritanceService joins on — a client that could move them would

@@ -20,7 +20,9 @@
 # `CatalogPartExtractorService` — their `statement_id` and derived UUID are what
 # an exported document references (#397), so inventing or deleting one through
 # the API would put the SSP out of step with the catalog it claims to implement.
-# Structure comes from the catalog; only the prose is authored.
+# Structure comes from the catalog; only the answer is authored: the prose, and
+# (#1312) the item's status, origination, responsible roles and expected
+# completion.
 #
 # NIST 800-53 Controls:
 #   IA-2 (token auth), AC-3/AC-6 (boundary-scoped RBAC),
@@ -138,7 +140,13 @@ class Api::V1::SspControlStatementsController < Api::V1::BaseController
     # responsible-roles as objects carrying a role-id, and the exporter writes
     # this column straight into the document, so a bare array of strings would
     # emit schema-invalid OSCAL.
+    #
+    # #1312 — each item's implementation status (OSCAL's five states),
+    # control origination (OSCAL's values, one or more) and expected completion
+    # (YYYY-MM-DD). The model rejects anything else.
     permit_strictly(:ssp_control_statement, :implementation_prose, :remarks,
+      :implementation_status, :expected_completion,
+      control_origination: [],
       responsible_roles_data: [ :"role-id", { "party-uuids": [] } ]
     )
   end
@@ -173,7 +181,14 @@ class Api::V1::SspControlStatementsController < Api::V1::BaseController
       # required response, such as `ac-1_smt` when `ac-1_smt.a` exists.
       required: part.present?,
       response_state: part&.state,
-      cdef_reviewed: cdef_reviewed(stmt)
+      cdef_reviewed: cdef_reviewed(stmt),
+      # #1312 — the item's own answers. `control_origination` is what the item
+      # records, a leveraged authorization's answer first; `leveraged_origination`
+      # says whether that came from a link (then not set by the author).
+      implementation_status: stmt.implementation_status,
+      control_origination: stmt.effective_origination,
+      leveraged_origination: stmt.leveraged_origination.present?,
+      expected_completion: stmt.expected_completion&.iso8601
     }
 
     if detailed

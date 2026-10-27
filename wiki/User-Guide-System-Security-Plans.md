@@ -157,26 +157,53 @@ The SSP detail page (`/ssp_documents/:id`) is where the real work happens.
      sub-parts (`ac-1a`, `ac-1a.1`, …) — with the same values substituted.
 
      ![The read-only What This Baseline Requires panel on an SSP control card, showing the resolved control statement, parameters, guidance and implementation statements](images/ssp-baseline-requires.png)
-3. Answer each **statement part** and each **enhancement** in its own row (see
-   below). The rows are there whether the card is in view or edit mode.
-4. Click **Edit** on the card. A **Responses** section opens with a box for
-   every part the baseline requires a response from, each labelled with the
-   requirement it answers; answer as many as you like there instead of one row
-   at a time. Below it, set the control's own attributes:
-   - **Status** (implementation status). A new SSP starts with **no status**:
-     choose one when you answer the control. Choose **Deferred** or **Will Not
-     Implement** only when that is the system's actual position: an assessment
-     generated from this SSP records those as known findings.
-   - **Control application** and **coverage level**
-   - **Control type**
-   - **Expected completion** date (for planned items)
+3. The **Implementation Statements** table under the control language is the
+   read view of every item's answer: its status, origination, responsible roles
+   and expected completion, and under each item the **SP 800-53A objectives**
+   that test it (with the assessor's latest determination once an assessment
+   exists).
+4. Click **Edit** on the card. **Responses** opens with one block for every item
+   the baseline requires a response from, nested as the catalog nests them. An
+   item takes a response when nothing sits below it, at any depth: AC-2 has 18
+   (a, b, c, d.1–d.3, e, f, g, h.1–h.3, i.1–i.3, j, k, l). A lead-in such as
+   AC-2 d. ("Specify:") takes no input; it is a heading showing the state of the
+   items under it. Each item sets everything about itself:
+   - **The answer**, how this system meets the item.
+   - **Implementation status**, OSCAL's five: **Implemented**, **Partial**,
+     **Planned**, **Alternative** (a different implementation is in place) or
+     **Not applicable**. A new SSP starts with none: choose one when you answer
+     the item. An assessment generated from this SSP records each **Planned** or
+     **Partial** item as a known finding.
+   - **Control origination**, OSCAL's five: **Organization**,
+     **System-specific**, **Customer-configured**, **Customer-provided**,
+     **Inherited**. Inherited alone is fully inherited; Inherited with another is
+     partly inherited (NIST's hybrid). An item linked to a leveraged
+     authorization takes its origination from the link.
+   - **Responsible roles**, picked from the roles the SSP declares.
+   - **Expected completion**, for an item that is not in place yet (exported in
+     the item's remarks).
+   - **Remarks**.
 
-   An SSP is answered part by part, so the card no longer offers a control-level
-   narrative. One written before v1.17.2 is still shown, and still exported.
-5. **Save Changes** stores the attributes and every response you changed, in
-   one save (a box you leave as it was changes nothing). The **compliance percentage** and progress bar at the top
-   update as you go, and so does **Responses done** beside them (see
+   Enhancements are answered the same way: each is its own control with its own
+   items. The control itself has no status of its own: its card shows what its
+   items add up to ("12 of 18 implemented · 2 planned · hybrid"). An SSP written
+   before items were answered individually keeps its control-level narrative,
+   shown and exported.
+5. **Save Changes** stores every item you changed, and the control's notes, in
+   one save (an item you leave as it was changes nothing). The **compliance
+   percentage** at the top (implemented items over the items that take a
+   response) updates as you go, and so does **Responses done** beside it (see
    [How much is left to write](#how-much-is-left-to-write)).
+
+**Upgrading to v1.17.5:** an SSP that recorded status, control type,
+responsible entities or expected completion once per control has each value
+copied onto every item that takes a response, in OSCAL's terms: Implemented →
+Implemented, Deferred → Planned, Will Not Implement → Alternative, Not
+Applicable → Not applicable; System Specific → System-specific, Inherited from
+provider → Inherited. What does not map (a hybrid, whose inherited share is per
+item; a responsible entity that is not a declared role; a date that is not one;
+the retired control application and coverage level) is added to the control's
+**notes**, so nothing is lost. An item's own answer is never overwritten.
 
 ### How much is left to write
 
@@ -210,8 +237,9 @@ says where that response stands.
 - A control the baseline does not select shows **Not in baseline** and is not
   counted.
 
-The compliance percentage still rates controls by implementation status; the
-two figures answer different questions.
+The compliance percentage rates the same items by their implementation status
+(implemented over everything not marked not applicable); the two figures answer
+different questions: whether an item is answered, and what the answer says.
 
 ### Answering a control statement by statement
 
@@ -221,12 +249,12 @@ NIST divides most controls into lettered **statements** — `ac-1a`, `ac-1a.1`,
 
 The **Statements** table on a control card lists them individually, indented to
 show nesting. **Each row shows the requirement it answers**, with the
-baseline's organization-defined values filled in, beside its own response and
-responsible roles. The table is on the card in both view and edit mode. Write
-against the statement you are answering rather than describing the whole control
-in one box, and the export will say exactly which requirement each response
-covers. Each **enhancement** (AC-2(1), …) is a control card of its own, with its
-own rows.
+baseline's organization-defined values filled in, beside its own response,
+status, origination and responsible roles. You answer them in the card's
+**Edit** form (see above). Write against the statement you are answering rather
+than describing the whole control in one box, and the export will say exactly
+which requirement each response covers. Each **enhancement** (AC-2(1), …) is a
+control card of its own, with its own items.
 
 A few things worth knowing:
 
@@ -242,11 +270,14 @@ A few things worth knowing:
 - **The export follows.** The OSCAL `system-security-plan` emits one
   `statement` per addressable part under each `implemented-requirement`. Your
   response is that statement's **by-component description** for this system,
-  which is where OSCAL tools look for an implementation.
+  which is where OSCAL tools look for an implementation; the item's status is
+  that by-component's `implementation-status`, its origination one
+  `control-origination` prop per value on the statement, and its expected
+  completion a line in the statement's remarks.
 
-For heads-down editing, open the dedicated **Editor**
-(`/ssp_documents/:id/editor`), which updates control fields inline via Turbo
-Frames without full page reloads.
+For heads-down editing of the control-level notes, open the dedicated
+**Editor** (`/ssp_documents/:id/editor`), which updates them without full page
+reloads. Items are answered on the control card.
 
 ## How to export an SSP
 
@@ -260,8 +291,8 @@ reflect the current state you want to submit.
 
 - **Enrich early.** Several export validations depend on system characteristics,
   components, and users — filling them up front avoids a late scramble.
-- Drive completion with the **status chips**: filter to *pending* controls and
-  work the list down until the compliance score is where you need it.
+- Drive completion with the **status chips**: filter to *Not set* or *Planned*
+  controls and work the list down until the compliance score is where you need it.
 - Reuse **CDEFs** for common components (a managed database, a logging stack) so
   the same implementation narrative isn't retyped across systems.
 - Watch the **colour of the compliance score**: green ≥ 80%, yellow ≥ 50%, red

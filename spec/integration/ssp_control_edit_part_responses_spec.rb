@@ -52,10 +52,10 @@ RSpec.describe "Answering a control's parts from its Edit form", type: :request 
     expect(form.at_css("form textarea[name='statements[#{part("ac-1_smt.b").id}][implementation_prose]']")).to be_present
   end
 
-  it "saves every answered part and the control's fields in one Save, leaving an untouched box alone" do
+  it "saves every answered part and the control's notes in one Save, leaving an untouched box alone" do
     patch ssp_document_path(ssp), params: {
       control_id: "ac-1",
-      fields: { "status" => "Implemented" },
+      fields: { "notes" => "Reviewed with the ISSO." },
       statements: {
         part("ac-1_smt.b").id => { implementation_prose: "The ISSM owns the access control policy." },
         part("ac-1_smt.c.1").id => { implementation_prose: "Reviewed every 365 days and after each significant change." },
@@ -67,20 +67,86 @@ RSpec.describe "Answering a control's parts from its Edit form", type: :request 
     expect(part("ac-1_smt.b").implementation_prose).to eq("The ISSM owns the access control policy.")
     expect(part("ac-1_smt.c.1").implementation_prose).to start_with("Reviewed every 365 days")
     expect(part("ac-1_smt.a.2").implementation_prose).to be_nil
-    expect(ac1.ssp_control_fields.find_by(field_name: "status").field_value).to eq("Implemented")
+    expect(ac1.ssp_control_fields.find_by(field_name: "notes").field_value).to eq("Reviewed with the ISSO.")
+  end
+
+  # #1312 — every item that takes a response sets all of its own fields, and
+  # the form is submitted as the page renders it: each input's own name.
+  it "saves each item's status, origination, roles, completion and remarks, as the form renders them" do
+    form = edit_form
+    item = part("ac-1_smt.c.2")
+    block = form.at_css("[data-part-response='ac-1_smt.c.2']")
+    names = block.css("textarea, select, input").map { _1["name"] }.uniq
+    prefix = "statements[#{item.id}]"
+    expect(names).to include("#{prefix}[implementation_prose]", "#{prefix}[implementation_status]",
+                             "#{prefix}[control_origination][]", "#{prefix}[responsible_role_ids][]",
+                             "#{prefix}[expected_completion]", "#{prefix}[remarks]")
+    expect(block.css("select[name='#{prefix}[implementation_status]'] option").map { _1["value"] }.compact_blank)
+      .to eq(%w[implemented partial planned alternative not-applicable])
+    expect(block.css("input[name='#{prefix}[control_origination][]'][type=checkbox]").map { _1["value"] })
+      .to eq(%w[organization system-specific customer-configured customer-provided inherited])
+    role = ssp.declared_role_ids.first
+    expect(block.css("select[name='#{prefix}[responsible_role_ids][]'] option").map { _1["value"] }).to include(role)
+
+    patch ssp_document_path(ssp), params: {
+      control_id: "ac-1",
+      statements: { item.id => { implementation_prose: "Procedures are reviewed annually.",
+                                 implementation_status: "partial",
+                                 control_origination: [ "", "inherited", "system-specific" ],
+                                 responsible_role_ids: [ "", role ],
+                                 expected_completion: "2027-06-30", remarks: "The provider reviews its share." } }
+    }
+
+    item.reload
+    expect(item.implementation_status).to eq("partial")
+    expect(item.control_origination).to eq(%w[system-specific inherited])
+    expect(item).to be_partially_inherited
+    expect(item.responsible_roles_data).to eq([ { "role-id" => role } ])
+    expect(item.expected_completion).to eq(Date.new(2027, 6, 30))
+    expect(item.remarks).to eq("The provider reviews its share.")
+
+    # Unchecking everything clears it: the hidden "" still sends the field.
+    patch ssp_document_path(ssp), params: {
+      control_id: "ac-1",
+      statements: { item.id => { control_origination: [ "" ], responsible_role_ids: [ "" ], implementation_status: "" } }
+    }
+    item.reload
+    expect(item.control_origination).to eq([])
+    expect(item.responsible_roles_data).to eq([])
+    expect(item.implementation_status).to be_nil
+  end
+
+  it "shows a lead-in as a heading with no inputs" do
+    form = edit_form
+    lead_in = form.at_css("[data-lead-in='ac-1_smt.a.1']")
+
+    expect(lead_in).to be_present
+    expect(lead_in.css("textarea, select, input")).to be_empty
+    expect(form.at_css("[data-part-response='ac-1_smt.a.1']")).to be_nil
+  end
+
+  it "refuses a role the document does not declare, and saves nothing" do
+    item = part("ac-1_smt.b")
+    patch ssp_document_path(ssp), params: {
+      control_id: "ac-1",
+      statements: { item.id => { implementation_status: "implemented", responsible_role_ids: [ "nobody-declared-this" ] } }
+    }
+
+    expect(flash[:error]).to include("not declared")
+    expect(item.reload.implementation_status).to be_nil
   end
 
   it "refuses a part from another control, and saves nothing" do
     other = ssp.ssp_controls.find_by(control_id: "ac-2").ssp_control_statements.first
 
     patch ssp_document_path(ssp), params: {
-      control_id: "ac-1", fields: { "status" => "Implemented" },
+      control_id: "ac-1", fields: { "notes" => "kept?" },
       statements: { part("ac-1_smt.b").id => { implementation_prose: "kept?" }, other.id => { implementation_prose: "wrong control" } }
     }
 
     expect(flash[:error]).to be_present
     expect(part("ac-1_smt.b").implementation_prose).to be_nil
     expect(other.reload.implementation_prose).to be_nil
-    expect(ac1.ssp_control_fields.find_by(field_name: "status").field_value).to be_blank
+    expect(ac1.ssp_control_fields.find_by(field_name: "notes")&.field_value).to be_blank
   end
 end

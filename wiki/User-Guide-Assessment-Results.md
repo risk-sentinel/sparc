@@ -115,12 +115,22 @@ not determined.
 ### What a new SAR already contains
 
 A SAR generated from an SSP records a finding only where something is known
-before the assessment starts: a control the SSP reports **Deferred** or **Will
-Not Implement** is a not-satisfied finding with a risk, whose statement quotes
-the requirement and the SSP's own reason. A control the SSP reports
-**Implemented** has no finding until you assess it: an SSP's claim is not an
-assessment. A SAR generated from a baseline or from the wizard starts with no
-findings at all.
+before the assessment starts:
+
+- **An item the SSP reports Planned or Partial** (for example AC-2 d.1) is a
+  not-satisfied finding on that item. A control's findings share one risk, whose
+  statement names the items and quotes the requirement and the SSP's own answers
+  for them, so the POA&M carries one item per control.
+- **An item reported Alternative is not a finding:** a different implementation
+  is in place, and you assess it.
+- **An item reported Implemented has no finding until you assess it:** an SSP's
+  claim is not an assessment.
+
+Each control also shows the SSP's own record, read live: every item's answer
+with its status, origination and responsible roles, and a summary such as
+"12 of 18 implemented · 2 planned · hybrid". A SAR generated from a baseline or
+from the wizard starts with no findings at all. A SAR generated before v1.17.5
+keeps the findings it was given.
 
 ## How to enrich a SAR
 

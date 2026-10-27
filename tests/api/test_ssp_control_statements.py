@@ -118,6 +118,41 @@ class TestUpdate:
                     "implementation_prose": original.get("implementation_prose") or ""}},
             )
 
+    def test_writes_an_items_status_origination_and_completion(self, admin_client, statement):
+        """#1312 — each item records its own, in OSCAL's terms, and reads back."""
+        sid = statement["id"]
+        original = admin_client.get(f"/api/v1/ssp_control_statements/{sid}").json()["data"]
+        try:
+            r = admin_client.patch(
+                f"/api/v1/ssp_control_statements/{sid}",
+                json={"ssp_control_statement": {
+                    "implementation_status": "planned",
+                    "control_origination": ["inherited", "system-specific"],
+                    "expected_completion": "2027-06-30"}},
+            )
+            assert r.status_code == 200, r.text
+            again = admin_client.get(f"/api/v1/ssp_control_statements/{sid}").json()["data"]
+            assert again["implementation_status"] == "planned"
+            if not again["leveraged_origination"]:
+                assert again["control_origination"] == ["system-specific", "inherited"]
+            assert again["expected_completion"] == "2027-06-30"
+        finally:
+            admin_client.patch(
+                f"/api/v1/ssp_control_statements/{sid}",
+                json={"ssp_control_statement": {
+                    "implementation_status": original.get("implementation_status"),
+                    "control_origination": original.get("control_origination") or [],
+                    "expected_completion": original.get("expected_completion")}},
+            )
+
+    def test_refuses_a_status_that_is_not_oscals(self, admin_client, statement):
+        sid = statement["id"]
+        r = admin_client.patch(
+            f"/api/v1/ssp_control_statements/{sid}",
+            json={"ssp_control_statement": {"implementation_status": "Deferred"}},
+        )
+        assert r.status_code == 422, r.text
+
     def test_refuses_to_let_a_client_rewrite_the_catalog_structure(self, admin_client, statement):
         # statement_id and parent_statement_id belong to the catalog's part tree.
         # permit_strictly rejects the whole request rather than dropping them, so

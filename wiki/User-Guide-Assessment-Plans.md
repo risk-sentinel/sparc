@@ -83,6 +83,14 @@ Within each family, controls are listed in **NIST catalog order** — base numbe
 then enhancement (AC-1, AC-2, AC-2(1), AC-3 … AC-17, AC-18) — rather than the
 order they arrived in from the source document.
 
+**What the SSP says about each objective.** A plan generated from an SSP shows,
+under each SP 800-53A objective, the SSP item it tests and what that item
+records: its implementation status and its origination. An item marked
+**Inherited** is the leveraged provider's to show, so scope its objectives to the
+provider's authorization; a **Planned** or **Partial** item is a known gap before
+the assessment starts. Each control's plan also carries the summary of its items
+("12 of 18 implemented · 2 planned · hybrid") and their answers.
+
 ## How to export an assessment plan
 
 On the detail page use **Export OSCAL** (validated / unvalidated) or **JSON**.

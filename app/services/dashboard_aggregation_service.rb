@@ -1,32 +1,27 @@
+# #1312 — implementation status across every SSP, counted per statement item
+# that takes a response (each item records its own status now).
 class DashboardAggregationService
-  SSP_STATUS_ORDER = [
-    "Implemented", "Deferred", "Not Applicable", "Will Not Implement",
-    "Partially Implemented", "Planned", "Alternative Implementation", "Not Implemented"
-  ].freeze
+  SSP_STATUS_ORDER = SspResponseProgress::ItemSummary::LABEL_ORDER
 
-  # Aggregate implementation status counts across ALL SSP documents,
+  # Aggregate item implementation status counts across ALL SSP documents,
   # grouped by NIST control family (e.g. "AC", "AU", "IA").
   #
   # Returns [heatmap_data, families, ordered_statuses] matching the
   # contract expected by the shared _heatmap.html.erb partial.
   def call
     data = {}
+    cache = {}
 
-    SspControl
-      .joins(:ssp_document)
-      .where.not(control_id: [ nil, "" ])
-      .includes(:ssp_control_fields)
-      .find_each(batch_size: 1000) do |control|
-        family = control.control_id.to_s.split("-").first.upcase
+    SspDocument.find_each do |document|
+      SspResponseProgress.for(document, required_cache: cache).items.parts.each do |item|
+        family = item.control_id.to_s.split("-").first.to_s.upcase
         next if family.blank?
 
-        status_field = control.ssp_control_fields.find { |f| f.field_name == "status" }
-        status = status_field&.field_value.presence || "(Unknown)"
-
+        status = SspResponseProgress::ItemSummary.label(item.implementation_status)
         data[family] ||= {}
-        data[family][status] ||= 0
-        data[family][status] += 1
+        data[family][status] = data[family].fetch(status, 0) + 1
       end
+    end
 
     families = data.keys.sort
     all_statuses = data.values.flat_map(&:keys).uniq

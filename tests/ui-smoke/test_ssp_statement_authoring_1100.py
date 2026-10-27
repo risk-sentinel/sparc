@@ -24,6 +24,13 @@ cost to use:
 
 None of this is visible to rspec or to a pixel diff: the table was in the DOM
 the whole time, just sealed inside a hidden edit form.
+
+#1312 — one place to answer an item. Each row's inline editor was a second way
+to write the same answer (and a deep-linked modal a third). The table is now
+the read view; every item that takes a response is answered in the control's
+Edit form, where it sets its own status, origination, responsible roles,
+expected completion and remarks in one Save. A lead-in (AC-2 d. "Specify:")
+takes no input.
 """
 
 from __future__ import annotations
@@ -112,145 +119,109 @@ def test_control_reports_how_much_of_it_is_answered(authed_page):
     )
 
 
-def test_editing_one_statement_does_not_navigate(authed_page):
-    """Opening a statement editor was a whole-page reload, 22 times per control."""
+ITEM_BLOCK = "[data-part-response]"
+STATUSES = ["implemented", "partial", "planned", "alternative", "not-applicable"]
+ORIGINATIONS = [
+    "organization", "system-specific", "customer-configured", "customer-provided", "inherited",
+]
+
+
+def _open_edit_form(page, card):
+    """Click the control's own Edit (in place, no navigation) and return its form."""
+    control_card = card.locator("xpath=ancestor::div[contains(@class,'control-card')]").first
+    control_card.locator("[id^='edit-btn-']").first.click()
+    form = control_card.locator("[id^='edit-']").filter(has=page.locator(ITEM_BLOCK)).first
+    form.wait_for(state="visible", timeout=5000)
+    return form
+
+
+def test_rows_are_read_only_now(authed_page):
+    """#1312: the table is the read view; no row carries a second editor."""
+    _href, card = _open_control_with_statements(authed_page)
+
+    rows = card.locator(STMT_ROW)
+    assert rows.count() > 1
+    assert rows.locator("textarea, select, input[type='submit']").count() == 0, (
+        "a statement row still carries its own editor — a second place to "
+        "enter the same answer"
+    )
+
+
+def test_edit_form_sets_every_field_per_item(authed_page):
+    """Each item that takes a response sets all of its own fields, in OSCAL's terms."""
     record_csp(authed_page)
-    href, card = _open_control_with_statements(authed_page)
+    _href, card = _open_control_with_statements(authed_page)
     before_url = authed_page.url
+    form = _open_edit_form(authed_page, card)
+    assert authed_page.url == before_url, "opening Edit navigated"
 
-    row = card.locator(STMT_ROW).first
-    form = row.locator("[data-statement-edit-target='form']")
-    assert not form.is_visible(), "precondition: the row editor should start closed"
+    block = form.locator(ITEM_BLOCK).first
+    status = block.locator("select[name$='[implementation_status]']")
+    values = status.locator("option").evaluate_all("opts => opts.map(o => o.value)")
+    assert [v for v in values if v] == STATUSES, values
 
-    row.locator("[data-statement-edit-target='toggle']").click()
-    authed_page.wait_for_timeout(250)
+    origin = block.locator("input[type='checkbox'][name$='[control_origination][]']")
+    leveraged = block.locator("[data-testid='leveraged-origination']").count()
+    if not leveraged:
+        assert origin.evaluate_all("els => els.map(e => e.value)") == ORIGINATIONS
 
-    assert authed_page.url == before_url, (
-        f"editing a statement navigated: {before_url} -> {authed_page.url}"
-    )
-    assert form.is_visible(), "the inline statement editor did not open"
-    assert row.locator("[data-statement-edit-target='prose']").is_visible(), (
-        "the implementation textarea is not on screen"
-    )
-    assert_no_csp_violations(authed_page, during="statement inline edit")
-
-
-def test_responsible_roles_can_actually_be_edited(authed_page):
-    """The column displayed a value no screen could write (#1100), and then let
-    an author type anything (#1116).
-
-    Owner review on #1100: "Not sure why Responsible Roles is not able to be
-    edited or why it is there if I cannot edit it." The field was added as free
-    text with a datalist of ids ALREADY USED in the document — which offered
-    back whatever was typed first, typos included, and never consulted
-    metadata.roles.
-
-    #1116 made it a PICKER over declared roles. A `role-id` must resolve to a
-    role in metadata.roles; free text let an author write `isso` and produce a
-    document that validates cleanly and whose reference resolves to nothing.
-    """
-    _href, card = _open_control_with_statements(authed_page)
-
-    row = card.locator(STMT_ROW).first
-    assert row.locator("td").nth(2).is_visible(), "no Responsible Roles cell to speak of"
-
-    row.locator("[data-statement-edit-target='toggle']").click()
-    authed_page.wait_for_timeout(250)
-
-    roles = row.locator("select[name='ssp_control_statement[responsible_role_ids][]']")
-    assert roles.count() == 1, (
-        "the statement editor offers no Responsible Roles picker, so the column "
-        "it renders is still unwritable"
-    )
-    assert roles.is_visible(), "the roles picker is not visible"
-    assert roles.get_attribute("multiple") is not None, (
-        "a statement may name several responsible roles"
-    )
-
-    # THE #1116 GUARANTEE: no free-text path to a role id remains on this screen.
-    # A text input here would let an author mint an id that resolves to nothing.
-    assert row.locator("input[name='ssp_control_statement[responsible_role_ids]']").count() == 0, (
-        "a free-text roles input is still present — an author can still invent "
-        "a role id that resolves to no declared role"
-    )
-
-    # Options are DECLARED roles: titles are shown, role-ids are stored, so the
-    # machine identifier never has to be typed or remembered.
-    #
+    roles = block.locator("select[name$='[responsible_role_ids][]']")
+    assert roles.get_attribute("multiple") is not None
+    role_values = roles.locator("option").evaluate_all("opts => opts.map(o => o.value)")
+    assert "system-owner" in role_values, role_values
+    # #1116: NIST's canonical id, never the abbreviation authors type.
+    assert "isso" not in role_values
     # `all_text_contents()` on the options, NOT `inner_text()` on the select:
-    # inner_text of a <select> is rendering-dependent — Firefox returns '' for
-    # options while Chromium returns them joined.
-    option_values = roles.locator("option").evaluate_all(
-        "opts => opts.map(o => o.value)"
-    )
-    option_labels = roles.locator("option").all_text_contents()
+    # inner_text of a <select> is rendering-dependent across browsers.
+    labels = roles.locator("option").all_text_contents()
+    assert any(label.strip() == "System Owner" for label in labels), labels
 
-    assert option_values, "the picker offers no roles at all"
-    assert "system-owner" in option_values, (
-        f"the SSP's default declared roles are not offered: {option_values}"
-    )
-    assert any("System Owner" == label.strip() for label in option_labels), (
-        f"roles are offered by raw id rather than by title: {option_labels}"
-    )
-    # NIST's canonical id for the ISSO — not the `isso` abbreviation #1116
-    # records authors typing.
-    assert "isso" not in option_values, (
-        "a non-canonical role id is being offered; NIST defines this role as "
-        "information-system-security-officer"
-    )
+    assert block.locator("input[type='date'][name$='[expected_completion]']").count() == 1
+    assert block.locator("textarea[name$='[remarks]']").count() == 1
+    assert block.locator("textarea[name$='[implementation_prose]']").count() == 1
+    assert_no_csp_violations(authed_page, during="ssp control edit form")
 
 
-def test_selecting_a_role_persists_and_shows_in_the_read_view(authed_page):
-    """The journey that matters: pick a role, save, and see it stick.
-
-    The previous suite asserted the FIELD existed but never that a selection
-    survived a save — so the column could have gone on rendering nothing while
-    every example stayed green. #1116 turned the field into a picker, which is
-    only worth anything if what it picks is what the document ends up carrying.
-    """
+def test_lead_ins_take_no_input(authed_page):
+    """AC-2 d. 'Specify:' is answered by d.1-d.3, not by itself."""
     _href, card = _open_control_with_statements(authed_page)
-    row = card.locator(STMT_ROW).first
-
-    row.locator("[data-statement-edit-target='toggle']").click()
-    authed_page.wait_for_timeout(250)
-
-    roles = row.locator("select[name='ssp_control_statement[responsible_role_ids][]']")
-    values = roles.locator("option").evaluate_all("opts => opts.map(o => o.value)")
-    assert "system-owner" in values, f"nothing recognisable to select: {values}"
-
-    roles.select_option(["system-owner"])
-
-    # `f.submit` renders <input type="submit">, NOT <button type="submit">.
-    # Guessing that selector cost a 30s timeout that looked like a product hang.
-    row.locator("input[type='submit']").first.click()
-    authed_page.wait_for_load_state("networkidle")
-
-    # Assert on the whole ROW, not the `read` target: the Responsible Roles
-    # column is its own <td> outside that element, so reading the target alone
-    # would miss the value even when it saved correctly.
-    reloaded = authed_page.locator(STMT_ROW).first
-    row_text = reloaded.inner_text()
-
-    assert "system-owner" in row_text or "System Owner" in row_text, (
-        "the selected role did not survive the save — the row now reads: "
-        f"{row_text[:400]!r}"
-    )
+    form = _open_edit_form(authed_page, card)
+    lead_ins = form.locator("[data-lead-in]")
+    if lead_ins.count() == 0:
+        pytest.skip("this control has no lead-in item")
+    assert lead_ins.locator("textarea, select, input").count() == 0
 
 
-def test_cancelling_closes_the_editor_and_restores_the_read_view(authed_page):
-    href, card = _open_control_with_statements(authed_page)
-    row = card.locator(STMT_ROW).first
-    toggle = row.locator("[data-statement-edit-target='toggle']")
-    form = row.locator("[data-statement-edit-target='form']")
-    read = row.locator("[data-statement-edit-target='read']")
+def test_saving_an_items_fields_persists_and_shows_in_the_read_view(authed_page):
+    """Pick a status, origination and role, save once, and see them stick."""
+    page = authed_page
+    _href, card = _open_control_with_statements(page)
+    form = _open_edit_form(page, card)
+    block = form.locator(ITEM_BLOCK).first
+    statement_id = block.get_attribute("data-part-response")
+    prose_name = block.locator("textarea[name$='[implementation_prose]']").get_attribute("name")
+    row_id = prose_name.split("[")[1].rstrip("]")
 
-    toggle.click()
-    authed_page.wait_for_timeout(250)
-    assert form.is_visible()
-    assert not read.is_visible(), "the read view should give way to the editor"
+    block.locator("select[name$='[implementation_status]']").select_option("planned")
+    if block.locator("[data-testid='leveraged-origination']").count() == 0:
+        block.locator("input[type='checkbox'][value='inherited']").check()
+        block.locator("input[type='checkbox'][value='system-specific']").check()
+    block.locator("select[name$='[responsible_role_ids][]']").select_option(["system-owner"])
+    block.locator("input[name$='[expected_completion]']").fill("2027-06-30")
+    try:
+        with page.expect_navigation(wait_until="load"):
+            form.locator("input[type='submit'][value='Save Changes']").click()
 
-    row.locator("[data-action='statement-edit#cancel']").click()
-    authed_page.wait_for_timeout(250)
-
-    assert not form.is_visible(), "Cancel left the editor open"
-    assert read.is_visible(), "Cancel did not restore the read view"
+        row = page.locator(f"tr[data-statement-id='{statement_id}']").first
+        text = row.text_content()
+        assert "Planned" in text, text[:400]
+        assert "system-owner" in text, text[:400]
+        assert "Expected 2027-06-30" in text, text[:400]
+    finally:
+        from _api_setup import _client
+        with _client() as c:
+            c.patch(f"/api/v1/ssp_control_statements/{row_id}",
+                    json={"ssp_control_statement": {"implementation_status": None,
+                                                    "control_origination": [],
+                                                    "responsible_roles_data": [],
+                                                    "expected_completion": None}})

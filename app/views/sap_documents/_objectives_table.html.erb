@@ -2,10 +2,15 @@
     Locals:
       control      - SapControl instance (must have sap_control_objectives loaded)
       sap_document - SapDocument instance (for routing)
+      ssp_items    - statement id => SspControlStatement of the SSP assessed, or {}
+                     (#1312: the item each objective tests, and what it records)
 %>
 <%
   objectives = control.sap_control_objectives.sort_by { |o| o.row_order || 0 }
   return "" if objectives.empty?
+
+  ssp_items = local_assigns[:ssp_items] || {}
+  ssp_item_ids = ssp_items.keys.to_set
 
   status_colors = {
     "pending"        => "#95a5a6",
@@ -70,6 +75,14 @@
             </td>
             <td class="sparc-stmt-d<%= depth %>">
               <%= obj.prose %>
+              <% item = ssp_items[ControlRequirementText.statement_for_objective(obj.objective_id, ssp_item_ids)] %>
+              <% if item %>
+                <% facts = [ item.status_label || "status not set",
+                             item.effective_origination.map { SspControlStatement::ORIGINATION_LABELS[_1] }.join(" + ").presence ].compact %>
+                <div class="text-body-secondary sparc-stmt-note" data-testid="ssp-item-for-objective">
+                  SSP <code><%= item.label.presence || item.statement_id %></code>: <%= facts.join(" · ") %>
+                </div>
+              <% end %>
               <% if obj.assessor_notes.present? %>
                 <div class="text-body-secondary sparc-stmt-note">
                   <%= obj.assessor_notes %>

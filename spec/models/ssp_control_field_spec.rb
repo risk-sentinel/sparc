@@ -13,7 +13,7 @@ RSpec.describe SspControlField, type: :model do
 
   describe "editable flag" do
     it "sets editable to true for fields in EDITABLE_FIELDS" do
-      field = build(:ssp_control_field, field_name: "status")
+      field = build(:ssp_control_field, field_name: "notes")
       field.valid?
       expect(field.editable).to be true
     end
@@ -27,7 +27,19 @@ RSpec.describe SspControlField, type: :model do
 
   describe "constants" do
     it "defines EDITABLE_FIELDS" do
-      expect(SspControlField::EDITABLE_FIELDS).to include("status")
+      expect(SspControlField::EDITABLE_FIELDS).to include("notes")
+    end
+
+    # #1312 — answered per statement item now, or retired; a stored row is
+    # never editable again.
+    it "retires the control-level status, origination, roles and completion" do
+      expect(SspControlField::RETIRED_FIELDS).to contain_exactly(
+        "status", "control_application", "coverage_level", "control_type", "responsible_entities", "expected_completion"
+      )
+      expect(SspControlField::EDITABLE_FIELDS & SspControlField::RETIRED_FIELDS).to be_empty
+      field = build(:ssp_control_field, field_name: "status")
+      field.valid?
+      expect(field.editable).to be false
     end
 
     it "defines VALID_STATUSES" do

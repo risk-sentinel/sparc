@@ -1,0 +1,8 @@
+<%# #1312 — what the SSP records for one item, beside its answer: status,
+    origination and responsible roles. One definition for the SAR's read view
+    and its edit form.
+    Locals: stmt — one entry of SarDocumentsController#build_ssp_context's statements %>
+<% facts = [ stmt[:status], stmt[:origination], (stmt[:roles] && "Roles: #{stmt[:roles]}") ].compact %>
+<% if facts.any? %>
+  <div class="sparc-ctx-readonly-note" data-testid="ssp-item-facts"><%= facts.join(" · ") %></div>
+<% end %>

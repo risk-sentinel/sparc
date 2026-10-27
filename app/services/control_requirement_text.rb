@@ -24,11 +24,43 @@ class ControlRequirementText
   # `required` — #1242: the part ids an SSP must answer, one response each: the
   # statement parts with no statement part below them, in catalog order. A
   # control whose catalog holds no parts has one, its `_smt`.
-  Text = Struct.new(:full, :parts, :required, keyword_init: true) do
+  #
+  # `objectives` — #1312: statement part id => the SP 800-53A objectives that
+  # test it (Objective), assessable ones only, parameter values applied.
+  Text = Struct.new(:full, :parts, :required, :objectives, keyword_init: true) do
     def for_part(part_id) = parts[part_id.to_s]
+
+    def objectives_for(part_id) = (objectives || {}).fetch(part_id.to_s, [])
   end
 
+  Objective = Struct.new(:objective_id, :label, :prose, keyword_init: true)
+
   STATEMENT_PARTS = %w[statement item].freeze
+  OBJECTIVE_PART = "assessment-objective"
+
+  # #1312 — the statement part an 800-53A objective tests, by NIST's ids: drop
+  # the `-N` that numbers objectives within one requirement and swap `_obj` for
+  # `_smt`, then walk up to the nearest part the control has.
+  #
+  #   ac-1_obj.a.1.a-3 → ac-1_smt.a.1.a
+  #   ac-1_obj.a-3     → ac-1_smt.a    (ac-1a's develop/document/disseminate,
+  #                                      which a.1 and a.2 share)
+  #   ac-2.1_obj       → ac-2.1_smt
+  #
+  # They are not one-to-one: ac-1a.2 has no objective of its own, and
+  # ac-1a.1(a) has seven. nil when the id is not NIST's shape.
+  def self.statement_for_objective(objective_id, statement_ids)
+    control, rest = objective_id.to_s.split("_obj", 2)
+    return nil if rest.nil? || control.blank?
+
+    candidate = "#{control}_smt#{rest.sub(/-\d+\z/, '')}"
+    loop do
+      return candidate if statement_ids.include?(candidate)
+      return nil unless candidate.include?(".")
+
+      candidate = candidate.sub(/\.[^.]*\z/, "")
+    end
+  end
 
   def self.for_profile(profile)
     new(catalog: profile&.control_catalog, values: parameter_values(profile), alters: alters(profile))
@@ -68,17 +100,18 @@ class ControlRequirementText
     return {} if wanted.empty?
 
     catalog_controls = CatalogControl.guidance_index(wanted.flat_map { |id| ControlId.forms(id) }, catalog: @catalog).values
-    parts = CatalogControlPart.where(catalog_control_id: catalog_controls.map(&:id), part_name: STATEMENT_PARTS)
-                              .order(:catalog_control_id, :row_order)
-                              .group_by(&:catalog_control_id)
+    all_parts = CatalogControlPart.where(catalog_control_id: catalog_controls.map(&:id),
+                                         part_name: [ *STATEMENT_PARTS, OBJECTIVE_PART ])
+                                  .order(:catalog_control_id, :row_order)
+                                  .group_by(&:catalog_control_id)
 
     catalog_controls.each_with_object({}) do |control, result|
       key = ControlId.canonical(control.control_id)
       next unless wanted.include?(key)
 
-      rows = parts[control.id] || []
+      objectives, rows = (all_parts[control.id] || []).partition { _1.part_name == OBJECTIVE_PART }
       rows = altered_rows(control, rows, @alters[key]) if @alters[key].present?
-      result[key] = text_for(control, rows)
+      result[key] = text_for(control, rows, objectives)
     end
   end
 
@@ -86,10 +119,27 @@ class ControlRequirementText
 
   private
 
-  def text_for(control, rows)
+  def text_for(control, rows, objective_rows = [])
     resolver = OscalParameterResolver.new(control.effective_params_list.presence || control.params_list, @values)
-    return flat_text(control, resolver) if rows.empty?
+    text = rows.empty? ? flat_text(control, resolver) : tree_text(rows, resolver)
+    text.objectives = place_objectives(objective_rows, text.parts.keys | text.required | rows.map(&:part_id), resolver)
+    text
+  end
 
+  # Assessable objectives (prose present; the containers above them group and
+  # state nothing, #1114) under the statement part each tests.
+  def place_objectives(objective_rows, statement_ids, resolver)
+    ids = statement_ids.to_set
+    objective_rows.each_with_object({}) do |row, placed|
+      next if row.prose.blank?
+
+      part_id = self.class.statement_for_objective(row.part_id, ids) or next
+      (placed[part_id] ||= []) << Objective.new(objective_id: row.part_id, label: row.label,
+                                                prose: resolver.resolve_text(row.prose).strip)
+    end
+  end
+
+  def tree_text(rows, resolver)
     depth = {}
     prose = {}
     lines = []

@@ -11,13 +11,18 @@
 
 <% else %>
 <%
+  # Controls by the status their items add up to: the chips and the bar.
   total_by_status = {}
   @heatmap_statuses.each { |s| total_by_status[s] = @heatmap_families.sum { |f| @heatmap_data.dig(f, s) || 0 } }
   total_controls = total_by_status.values.sum
 
-  compliant_count = total_by_status["Implemented"].to_i
-  not_applicable  = total_by_status["Not Applicable"].to_i
-  denominator     = [total_controls - not_applicable, 1].max
+  # #1312 — compliance is counted per item that takes a response, each by its
+  # own status: what an assessor tests.
+  item_counts     = @response_progress.items.status_counts
+  total_items     = @response_progress.items.size
+  compliant_count = item_counts["implemented"].to_i
+  not_applicable  = item_counts["not-applicable"].to_i
+  denominator     = [total_items - not_applicable, 1].max
   compliance_pct  = (compliant_count * 100.0 / denominator).round(1)
   score_color     = compliance_pct >= 80 ? "#2ecc71" : compliance_pct >= 50 ? "#f39c12" : "#e74c3c"
 %>
@@ -267,16 +272,8 @@
      url_sync: true,
      initial_family: params[:family],
      initial_filter: params[:status],
-     legend_items: ApplicationHelper::SSP_STATUS_COLORS.first(4).to_a %>
+     legend_items: ApplicationHelper::SSP_STATUS_COLORS.first(5).to_a %>
 
-<%# #1100 — one datalist for the page. The statement editor renders on every
-    control card, so the list is emitted ONCE here and referenced by id rather
-    than duplicated (and its id collided) 150 times. %>
-<datalist id="ssp-known-role-ids">
-  <% Array(@known_role_ids).each do |rid| %>
-    <option value="<%= rid %>"></option>
-  <% end %>
-</datalist>
 
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
 <div id="controlsContainer">
@@ -302,14 +299,14 @@
   <% family_controls.sort_by { |c| SspControl.control_sort_key(c.control_id) }.each do |control| %>
     <%
       field_map   = control.ssp_control_fields.index_by(&:field_name)
-      status_val  = field_map["status"]&.field_value.presence || "(Unknown)"
+      # #1312 — the control's items, each with its own status.
+      item_summary = @response_progress.items_for(control.control_id)
+      status_val  = item_summary&.headline_label || SspResponseProgress::ItemSummary::NOT_SET
       status_color = ssp_status_color(status_val)
       status_variant = ssp_status_variant(status_val)
       family_code  = control.control_id.to_s.split("-").first.upcase
       requirement  = @requirement_text[ControlId.canonical(control.control_id)]
       stated_req   = requirement&.full.presence || field_map["stated_requirement"]&.field_value.presence
-      type_use_val = field_map["control_application"]&.field_value.presence
-      prov_as_val  = field_map["coverage_level"]&.field_value.presence
       catalog_ctrl = @catalog_guidance[normalize_ctrl_id(control.control_id)]
     %>
     <div class="control-card sparc-border-l-4 <%= accent_class(status_color) %>"
@@ -321,12 +318,11 @@
         <div class="sparc-minw-0 sparc-flex-1">
           <div class="d-flex align-items-center gap-2 flex-wrap sparc-mb-02">
             <span class="sparc-ctrl-id"><%= control.control_id %></span>
-            <span class="sparc-status-pill sparc-status--<%= status_variant %>"><%= status_val %></span>
-            <% if type_use_val.present? %>
-              <span class="sparc-asset-tag"><%= type_use_val %></span>
-            <% end %>
-            <% if prov_as_val.present? %>
-              <span class="sparc-env-tag">&#x2713; <%= prov_as_val %></span>
+            <span class="sparc-status-pill sparc-status--<%= status_variant %>" title="<%= item_summary %>"><%= status_val %></span>
+            <% if item_summary&.hybrid? %>
+              <span class="sparc-asset-tag" title="Part inherited, part this system's own">Hybrid</span>
+            <% elsif item_summary&.fully_inherited? %>
+              <span class="sparc-asset-tag">Inherited</span>
             <% end %>
             <span class="sparc-ctrl-family sparc-ml-01"><%= family_code %></span>
             <%# #1100 — how much of this control is answered, on the COLLAPSED
@@ -375,7 +371,7 @@
             mode, and an author who clicked Edit then found only control-level
             boxes and no way to answer a part. %>
         <%= render "ssp_documents/statements_table", control: control, ssp_document: @ssp_document, requirement: requirement,
-              progress: @response_progress %>
+              progress: @response_progress, determinations: @objective_determinations %>
 
         <%# ── View mode ── %>
         <div id="view-<%= control.id %>" class="sparc-mt-05">
@@ -391,8 +387,11 @@
           <%# Ordered field table — editable fields first, then supplemental %>
           <%
             ordered = SspControlField::FIELD_DISPLAY_ORDER.map { |fn| field_map[fn] }.compact
+            # #1312 — the retired control-level fields are answered per item
+            # now; their rows stay until v1.18.0 but are never shown.
             extras  = field_map.values.reject { |f|
               SspControlField::FIELD_DISPLAY_ORDER.include?(f.field_name) ||
+              SspControlField::RETIRED_FIELDS.include?(f.field_name) ||
               f.field_name == "stated_requirement"
             }
             display_fields = ordered + extras
@@ -407,11 +406,7 @@
                     <% if field.editable %><span class="sparc-editable-indicator">✎</span><% end %>
                   </th>
                   <td class="sparc-field-value">
-                    <% if field.field_name == "status" %>
-                      <span class="sparc-status-pill sparc-status--<%= ssp_status_variant(field.field_value) %> sparc-fs-075 sparc-fw-600"><%= field.field_value %></span>
-                    <% else %>
-                      <%= field.field_value %>
-                    <% end %>
+                    <%= field.field_value %>
                   </td>
                 </tr>
               <% end %>
@@ -547,11 +542,13 @@
           <%= form_with url: ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
             <%= hidden_field_tag :control_id, control.control_id %>
             <%= render "ssp_documents/part_responses", control: control, requirement: requirement,
-                  progress: @response_progress %>
+                  progress: @response_progress, determinations: @objective_determinations %>
 
             <%#
-              Iterate ALL EDITABLE_FIELDS so control_application, coverage_level, etc. always
-              appear even if no DB record exists yet for that field.
+              Iterate ALL EDITABLE_FIELDS so each always appears even if no DB
+              record exists yet for that field. #1312 — status, origination,
+              responsible roles and expected completion are each item's own, in
+              the Responses above; only the control's notes remain here.
             %>
             <% SspControlField::EDITABLE_FIELDS.each do |fname| %>
               <% field = field_map[fname] %>
@@ -571,39 +568,19 @@
                 </label>
                 <% if SspControlField::CONTROL_LEVEL_NARRATIVES.include?(fname) %>
                   <div class="sparc-fs-078 sparc-color-tertiary sparc-mb-025">
-                    Written before parts were answered individually. Answer each
-                    part in the rows above; this is kept so nothing is lost.
+                    Written before items were answered individually. Answer each
+                    item in Responses above; this is kept so nothing is lost.
                   </div>
                 <% end %>
-                <% if fname == "status" %>
-                  <%= select_tag "fields[#{fname}]",
-                        options_for_select(SspControlField::VALID_STATUSES, fval),
-                        include_blank: "— select —", class: "form-control sparc-fs-0875", id: field_id %>
-                <% elsif fname == "control_application" %>
-                  <%= select_tag "fields[#{fname}]",
-                        options_for_select(SspControlField::CONTROL_APPLICATION_VALUES, fval),
-                        include_blank: "— select —", class: "form-control sparc-fs-0875", id: field_id %>
-                <% elsif fname == "coverage_level" %>
-                  <%= select_tag "fields[#{fname}]",
-                        options_for_select(SspControlField::COVERAGE_LEVEL_VALUES, fval),
-                        include_blank: "— select —", class: "form-control sparc-fs-0875", id: field_id %>
-                <% elsif fname == "control_type" %>
-                  <%= select_tag "fields[#{fname}]",
-                        options_for_select(SspControlField::CONTROL_TYPE_VALUES, fval),
-                        include_blank: "— select —", class: "form-control sparc-fs-0875", id: field_id %>
-                <% elsif fname == "expected_completion" %>
-                  <%= text_field_tag "fields[#{fname}]", fval,
-                        class: "form-control sparc-fs-0875", placeholder: "YYYY-MM-DD", id: field_id %>
-                <% else %>
-                  <%= text_area_tag "fields[#{fname}]", fval,
-                        class: "form-control sparc-fs-0875", rows: 3, id: field_id %>
-                <% end %>
+                <%= text_area_tag "fields[#{fname}]", fval,
+                      class: "form-control sparc-fs-0875", rows: 3, id: field_id %>
               </div>
             <% end %>
 
             <%# Read-only fields (from upstream import, not user-editable) %>
             <% ro_fields = field_map.values.reject { |f|
-                 SspControlField::EDITABLE_FIELDS.include?(f.field_name)
+                 SspControlField::EDITABLE_FIELDS.include?(f.field_name) ||
+                   SspControlField::RETIRED_FIELDS.include?(f.field_name)
                }.select { |f| f.field_value.present? } %>
             <% if stated_req.present? || ro_fields.any? %>
               <details class="sparc-mt-05">
@@ -735,46 +712,6 @@
 
 </div><%# end CSP-safe Stimulus wrapper %>
 
-<%# ── #393: Statement edit modal (deep-linked via ?statement_id=N) ── %>
-<% if @editing_statement %>
-  <% stmt = @editing_statement %>
-  <div id="editStatementModal" class="sparc-modal-overlay">
-    <div class="bg-body rounded-3 sparc-modal-dialog">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <div class="text-body-tertiary sparc-modal-eyebrow">
-            Implementation Statement (read-only references from catalog)
-          </div>
-          <h3 class="sparc-m-0"><%= stmt.label.presence || stmt.statement_id %></h3>
-          <code class="text-body-secondary sparc-fs-078"><%= stmt.statement_id %></code>
-        </div>
-        <%= link_to "&times;".html_safe, ssp_document_path(@ssp_document),
-              class: "text-body-secondary sparc-modal-close" %>
-      </div>
-
-      <%= form_with url: update_statement_ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
-        <%= hidden_field_tag :statement_id, stmt.id %>
-
-        <div class="form-group mb-3">
-          <label class="fw-semibold" for="ssp_control_statement_implementation_prose">Implementation Prose</label>
-          <%= text_area_tag "ssp_control_statement[implementation_prose]",
-                stmt.implementation_prose, rows: 6, class: "form-control", id: "ssp_control_statement_implementation_prose",
-                placeholder: "Describe how this system implements this catalog statement..." %>
-        </div>
-
-        <div class="form-group mb-3">
-          <label class="fw-semibold" for="ssp_control_statement_remarks">Remarks</label>
-          <%= text_area_tag "ssp_control_statement[remarks]", stmt.remarks, rows: 2, class: "form-control", id: "ssp_control_statement_remarks" %>
-        </div>
-
-        <div class="d-flex gap-2">
-          <%= f.submit "Save Statement", class: "sparc-action sparc-action--primary sparc-action--solid" %>
-          <%= link_to "Cancel", ssp_document_path(@ssp_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
-        </div>
-      <% end %>
-    </div>
-  </div>
-<% end %>
 
 <%= render "shared/uuid_replaced_warning", document: @ssp_document %>
 

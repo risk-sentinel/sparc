@@ -2,21 +2,19 @@
 
 require "rails_helper"
 
-# #1106 F2 — `control-origination` is NIST's, not ours.
+# #1106 F2 — `control-origination` is NIST's, not ours: NIST defines it in the
+# SSP model, under NIST's implicit namespace, with an ENFORCED vocabulary
+# (`allow-other="no"`), allowed on the requirement, a statement and a
+# by-component (`(.|statement|.//by-component)`).
 #
-# The issue recorded it as a FedRAMP prop name borrowed under a SPARC namespace,
-# and proposed either mapping to FedRAMP's vocabulary under FedRAMP's ns, or
-# renaming. That premise is wrong for OSCAL 1.2.2/1.2.3: NIST defines
-# `control-origination` in the SSP model itself. SPARC was emitting the right
-# NAME under the wrong NAMESPACE with the wrong VALUES.
-#
-# The vocabulary is ENFORCED (`allow-other="no"` in the metaschema), so a value
-# outside it is a hard conformance violation, not a style preference. The allowed
-# list is read from the generated dataset rather than hand-copied, so a NIST
-# change cannot leave this spec asserting stale terms.
+# #1312 — each statement item records its own origination, one or more of
+# NIST's values: `inherited` alone is fully inherited; `inherited` with this
+# system's own is partly inherited, NIST's hybrid. The requirement carries every
+# value its items carry. The control-level `control_type` (and its
+# `sparc-control-origination` prop) is retired.
 RSpec.describe OscalSspExportService, "control-origination conformance" do
   let(:conformance) do
-    JSON.parse(Rails.root.join("lib", "oscal_conformance", "1.2.2", "conformance.json").read)
+    JSON.parse(Rails.root.join("lib", "oscal_conformance", "1.2.3", "conformance.json").read)
   end
   let(:nist_vocabulary) do
     conformance.dig("models", "system-security-plan", "prop_values", "control-origination")
@@ -25,69 +23,72 @@ RSpec.describe OscalSspExportService, "control-origination conformance" do
   let(:boundary) { create(:authorization_boundary) }
   let(:ssp)      { create(:ssp_document, authorization_boundary: boundary) }
 
-  # The control id is parameterised because one example exercises several
-  # values, and SspControl enforces uniqueness per document.
-  def props_for(origination, control_id: "ac-1")
-    control = ssp.ssp_controls.create!(control_id: control_id, title: "Policy and Procedures")
-    control.ssp_control_fields.create!(field_name: "control_type", field_value: origination)
-    json = JSON.parse(described_class.new(ssp.reload).export_unvalidated)
-    json.dig("system-security-plan", "control-implementation", "implemented-requirements")
-        .find { |r| r["control-id"] == control_id }["props"] || []
+  def requirement(control_id)
+    JSON.parse(described_class.new(ssp.reload).export_unvalidated)
+        .dig("system-security-plan", "control-implementation", "implemented-requirements")
+        .find { |r| r["control-id"] == control_id }
   end
 
-  it "is a NIST-defined prop with an ENFORCED vocabulary" do
-    expect(nist_vocabulary).to be_present
-    expect(nist_vocabulary["advisory"]).to be(false),
-      "if NIST relaxes this to allow-other, the mapping below stops being mandatory"
-    expect(nist_vocabulary["values"]).to contain_exactly(
-      "organization", "system-specific", "customer-configured", "customer-provided", "inherited"
-    )
+  def item!(control, statement_id, origination)
+    control.ssp_control_statements.create!(statement_id: statement_id, uuid: SecureRandom.uuid,
+                                           control_origination: origination)
   end
 
-  {
-    "System Specific" => "system-specific",
-    "Inherited from provider" => "inherited"
-  }.each do |sparc_value, nist_value|
-    it "maps #{sparc_value.inspect} to NIST's #{nist_value.inspect}, in NIST's namespace" do
-      prop = props_for(sparc_value).find { |p| p["name"] == "control-origination" }
+  def originations(node) = Array(node["props"]).select { _1["name"] == "control-origination" }
 
-      expect(prop).to be_present
-      expect(prop["ns"]).to be_nil,
-        "control-origination belongs to NIST, and NIST's namespace is implicit — an explicit SPARC ns made it OURS"
-      expect(prop["value"]).to eq(nist_value)
-      expect(nist_vocabulary["values"]).to include(prop["value"])
+  it "is a NIST-defined prop with an ENFORCED vocabulary, allowed on a statement" do
+    expect(nist_vocabulary["advisory"]).to be(false)
+    expect(nist_vocabulary["values"]).to match_array(SspControlStatement::CONTROL_ORIGINATIONS)
+    expect(nist_vocabulary["target"]).to include("statement")
+  end
+
+  it "emits each item's origination on its statement, in NIST's namespace" do
+    control = ssp.ssp_controls.create!(control_id: "ac-2", title: "Account Management")
+    item!(control, "ac-2_smt.a", %w[system-specific])
+
+    statement = requirement("ac-2")["statements"].find { _1["statement-id"] == "ac-2_smt.a" }
+    expect(originations(statement)).to eq([ { "name" => "control-origination", "value" => "system-specific" } ])
+  end
+
+  it "emits a partly inherited item as one prop per value" do
+    control = ssp.ssp_controls.create!(control_id: "ac-2", title: "Account Management")
+    item!(control, "ac-2_smt.a", %w[inherited system-specific])
+
+    statement = requirement("ac-2")["statements"].find { _1["statement-id"] == "ac-2_smt.a" }
+    expect(originations(statement).map { _1["value"] }).to eq(%w[system-specific inherited])
+    expect(originations(statement).map { _1["ns"] }).to all(be_nil)
+  end
+
+  it "gives the requirement every value its items carry" do
+    control = ssp.ssp_controls.create!(control_id: "pe-3", title: "Physical Access Control")
+    item!(control, "pe-3_smt.a", %w[inherited])
+    item!(control, "pe-3_smt.b", %w[organization])
+
+    expect(originations(requirement("pe-3")).map { _1["value"] }).to eq(%w[organization inherited])
+  end
+
+  it "never emits a value outside NIST's enforced vocabulary" do
+    control = ssp.ssp_controls.create!(control_id: "ac-2", title: "Account Management")
+    SspControlStatement::CONTROL_ORIGINATIONS.each_with_index do |value, i|
+      item!(control, "ac-2_smt.#{(97 + i).chr}", [ value ])
     end
+
+    values = requirement("ac-2")["statements"].flat_map { originations(_1) }.map { _1["value"] }
+    expect(values).to all(be_in(nist_vocabulary["values"]))
   end
 
-  # The other direction, and the rule that keeps this honest: when NIST cannot
-  # express the value, say nothing in NIST's namespace rather than inventing a
-  # term there.
-  [ "Hybrid — partially inherited", "Not Applicable" ].each do |unmappable|
-    it "does NOT invent a NIST term for #{unmappable.inspect}" do
-      props = props_for(unmappable)
-
-      expect(props.find { |p| p["name"] == "control-origination" }).to be_nil,
-        "OSCAL expresses split responsibility per-component; inventing a control-level term would misinform a reader"
-    end
+  it "refuses a value outside the vocabulary at the model" do
+    control = ssp.ssp_controls.create!(control_id: "ac-2", title: "Account Management")
+    item = control.ssp_control_statements.build(statement_id: "ac-2_smt.a", uuid: SecureRandom.uuid,
+                                                control_origination: [ "Hybrid — partially inherited" ])
+    expect(item).not_to be_valid
   end
 
-  it "always preserves the verbatim SPARC value under the deployment namespace" do
-    props = props_for("Hybrid — partially inherited")
-    sparc = props.find { |p| p["name"] == "sparc-control-origination" }
+  it "does not export the retired control-level control type" do
+    control = ssp.ssp_controls.create!(control_id: "ac-2", title: "Account Management")
+    control.ssp_control_fields.create!(field_name: "control_type", field_value: "Hybrid — partially inherited")
 
-    expect(sparc).to be_present, "an unmappable value must still survive the export"
-    expect(sparc["ns"]).to eq(OscalNamespace.instance)
-    expect(sparc["value"]).to eq("Hybrid — partially inherited")
-  end
-
-  it "never emits a SPARC value inside NIST's vocabulary" do
-    described_class::NIST_CONTROL_ORIGINATION.each_key.with_index do |sparc_value, i|
-      prop = props_for(sparc_value.titleize, control_id: "ac-#{i + 1}")
-               .find { |p| p["name"] == "control-origination" }
-      next if prop.nil?
-
-      expect(nist_vocabulary["values"]).to include(prop["value"]),
-        "#{prop['value'].inspect} is not in NIST's enforced vocabulary"
-    end
+    ir = requirement("ac-2")
+    expect(Array(ir["props"]).map { _1["name"] }).not_to include("sparc-control-origination", "control-type")
   end
 end

@@ -77,6 +77,11 @@ class SapDocumentsController < ApplicationController
     @controls = controls_scope.order(:row_order)
                               .includes(:sap_control_fields, :sap_control_objectives)
 
+    # #1312 — the SSP item each objective tests, with the status and origination
+    # the SSP records for it, so the plan shows what is claimed, planned, or
+    # inherited (and so scoped to the provider's authorization).
+    @ssp_items = ssp_items_for(@sap_document.ssp_document)
+
     # Status (objective rollup) heatmap by family. Independent of the methods
     # heatmap so users can see assessment progress separately from coverage.
 
@@ -654,4 +659,14 @@ class SapDocumentsController < ApplicationController
   # control once under its rolled-up status. Controls without objectives
   # land in the "not_assessed" bucket.
   STATUS_ORDER = %w[failed in-progress pending passing not_applicable not_assessed].freeze
+
+  # statement id => SspControlStatement, for the SSP the plan assesses.
+  def ssp_items_for(ssp)
+    return {} unless ssp
+
+    SspControlStatement.joins(:ssp_control)
+                       .where(ssp_controls: { ssp_document_id: ssp.id, parent_id: nil })
+                       .includes(inheritance_links: :source)
+                       .index_by(&:statement_id)
+  end
 end

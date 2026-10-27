@@ -85,10 +85,6 @@ class SspDocumentsController < ApplicationController
                                         ssp_by_components: :ssp_component,
                                         provider_statements: :ssp_control_fields)
 
-    # #393: deep-link statement editing via ?statement_id=N
-    @editing_statement = SspControlStatement.joins(ssp_control: :ssp_document)
-                                            .find_by(id: params[:statement_id],
-                                                     ssp_documents: { id: @ssp_document.id })
     @needs_statements_reassociation = @ssp_document.import_metadata&.dig(
       CatalogPartExtractorService::REASSOCIATION_FLAG
     ) == CatalogPartExtractorService::REASSOCIATION_VALUE
@@ -96,26 +92,11 @@ class SspDocumentsController < ApplicationController
     # OSCAL entity panels (always load regardless of creation_method)
     @components      = @ssp_document.ssp_components.order(:title)
 
-    # #1100 — role ids already in use anywhere on this document, offered as a
-    # datalist on the statement editor so an author reuses an existing role
-    # rather than inventing a second spelling of it. Gathered once: the editor
-    # renders on every control card, and querying per card would be 150 queries.
-    # #1116 — what the picker offers: the roles this document DECLARES, by
-    # title. Previously this gathered ids already USED in the document, which
-    # perpetuated whatever was typed first (including typos) and never consulted
-    # metadata.roles at all.
+    # #1116 — what each item's responsible-roles picker offers (#1312): the
+    # roles this document DECLARES, by title. Gathered once for the page, not
+    # per control card.
     @declared_role_options = @ssp_document.declared_role_options
 
-    # Retained for the read view, which still renders the raw ids a document may
-    # have arrived with from an OSCAL import.
-    @known_role_ids = (
-      @components.flat_map { |c| Array(c.responsible_roles_data) } +
-      SspControlStatement.joins(ssp_control: :ssp_document)
-                         .where(ssp_documents: { id: @ssp_document.id })
-                         .pluck(:responsible_roles_data).flatten
-    ).compact
-     .map { |r| r.is_a?(Hash) ? r["role-id"] : r }
-     .compact_blank.uniq.sort
     @users           = @ssp_document.ssp_users.order(:title)
     @info_types      = @ssp_document.ssp_information_types.order(:title)
     @leveraged_auths = @ssp_document.ssp_leveraged_authorizations.order(:title)
@@ -188,9 +169,14 @@ class SspDocumentsController < ApplicationController
     # figure, each control's badge and each statement row read this.
     @response_progress = SspResponseProgress.new(@ssp_document)
 
-    # Heatmap uses root controls; status field is now 'status'
-    @heatmap_data, @heatmap_families, @heatmap_statuses =
-      build_heatmap(@controls, "status")
+    # #1312 — the assessor's latest determination of each 800-53A objective,
+    # shown read-only under the item it tests.
+    @objective_determinations = latest_objective_determinations(@ssp_document)
+
+    # #1312 — one count per control, by the status its items add up to
+    # (ItemSummary#headline_label), so a cell's count is the number of control
+    # cards its filter shows. The control-level status is retired.
+    @heatmap_data, @heatmap_families, @heatmap_statuses = build_heatmap(@controls, @response_progress)
   end
 
   def new
@@ -803,11 +789,18 @@ class SspDocumentsController < ApplicationController
 
   # The control Edit form's part responses: statement id => its prose, and
   # nothing else a client might add.
+  # #1312 — each item's fields, as the control's Edit form posts them. Only the
+  # keys an item's block sends are passed on, so a field the form did not offer
+  # is left as it is.
   def part_responses_params
     raw = params[:statements]
     return {} unless raw.respond_to?(:keys)
 
-    raw.keys.to_h { |id| [ id.to_s, { "implementation_prose" => raw.dig(id, :implementation_prose).to_s } ] }
+    raw.keys.to_h do |id|
+      item = raw[id].permit(:implementation_prose, :remarks, :implementation_status, :expected_completion,
+                            control_origination: [], responsible_role_ids: []).to_h
+      [ id.to_s, item.slice(*SspUpdateService::ITEM_KEYS) ]
+    end
   end
 
   def wizard_params
@@ -958,29 +951,39 @@ class SspDocumentsController < ApplicationController
 
   # ── Heatmap ──────────────────────────────────────────────────────
 
-  SSP_STATUS_ORDER = [
-    "Implemented", "Deferred", "Not Applicable", "Will Not Implement",
-    # Legacy values -- kept so old data sorts predictably
-    "Partially Implemented", "Planned", "Alternative Implementation", "Not Implemented"
-  ].freeze
+  # #1312 — item status labels in OSCAL's order, "Not set" last.
+  SSP_STATUS_ORDER = SspResponseProgress::ItemSummary::LABEL_ORDER
 
-  def build_heatmap(controls, status_field_name)
+  # #1312 — family => status label => controls, each control counted once by
+  # ItemSummary#headline_label: the label its card shows and filters on.
+  def build_heatmap(controls, progress)
     data = {}
     controls.each do |control|
       next if control.control_id.blank?
-      family      = control.control_id.to_s.split("-").first.upcase
-      status_field = control.ssp_control_fields.find { |f| f.field_name == status_field_name }
-      status       = status_field&.field_value.presence || "(Unknown)"
 
-      data[family]         ||= {}
-      data[family][status] ||= 0
-      data[family][status]  += 1
+      family = control.control_id.to_s.split("-").first.upcase
+      status = progress.items_for(control.control_id)&.headline_label || SspResponseProgress::ItemSummary::NOT_SET
+      data[family] ||= {}
+      data[family][status] = data[family].fetch(status, 0) + 1
     end
 
-    families    = data.keys.sort
+    families     = data.keys.sort
     all_statuses = data.values.flat_map(&:keys).uniq
     ordered      = SSP_STATUS_ORDER.select { |s| all_statuses.include?(s) }
     ordered     += (all_statuses - SSP_STATUS_ORDER).sort
     [ data, families, ordered ]
+  end
+
+  # objective id => the most recently updated SAR's determination, for the SARs
+  # generated from or linked to this SSP. Pending objectives are left out: an
+  # objective nobody has determined has nothing to show.
+  def latest_objective_determinations(ssp)
+    sar = SarDocument.where(ssp_document_id: ssp.id).order(updated_at: :desc).first
+    return {} unless sar
+
+    SarControlObjective.joins(:sar_control)
+                       .where(sar_controls: { sar_document_id: sar.id })
+                       .where.not(status: "pending")
+                       .pluck(:objective_id, :status).to_h
   end
 end

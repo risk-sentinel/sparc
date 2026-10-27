@@ -34,11 +34,15 @@ class SspControl < ApplicationRecord
       control_id: control_id,
       title: title,
       row_order: row_order,
-      fields: ssp_control_fields.map do |field|
+      # #1312 — the retired control-level fields (status, origination, …) are
+      # each item's own now and are left out; `editable` is read from the
+      # current vocabulary, not the flag a row was saved with, so the editor
+      # never offers a field the save would refuse.
+      fields: ssp_control_fields.reject { SspControlField::RETIRED_FIELDS.include?(_1.field_name) }.map do |field|
         {
           field_name: field.field_name,
           field_value: field.field_value,
-          editable: field.editable
+          editable: SspControlField::EDITABLE_FIELDS.include?(field.field_name)
         }
       end,
       provider_statements: provider_statements.map(&:to_hash)
@@ -59,14 +63,15 @@ class SspControl < ApplicationRecord
     ssp_control_statements.where(parent_statement_id: parent_id).order(:row_order)
   end
 
-  # Joined implementation prose across all statements -- mirrors the SAP
-  # `aggregate_objective_text` pattern. Used by exporters as a fallback
-  # when no per-statement records exist.
+  # The control's answers, item by item, labelled: "[a.] … [b.] …". #1312 —
+  # read by SAP generation and the HDF export. An unanswered item contributes
+  # nothing: it used to contribute its bare label, so a control with no answers
+  # read "[ac-2_smt]" instead of nil.
   def aggregate_implementation_text
-    return nil if ssp_control_statements.empty?
-    ssp_control_statements.order(:row_order).map do |s|
-      label = s.label.presence || s.statement_id
-      "[#{label}] #{s.implementation_prose}".strip
-    end.reject(&:blank?).join("\n\n").presence
+    ssp_control_statements.sort_by { _1.row_order || 0 }.filter_map do |s|
+      next if s.implementation_prose.blank?
+
+      "[#{s.label.presence || s.statement_id}] #{s.implementation_prose.strip}"
+    end.join("\n\n").presence
   end
 end

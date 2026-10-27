@@ -214,17 +214,16 @@ module ApplicationHelper
   LABEL_NONE           = "(None)".freeze
   LABEL_NOT_APPLICABLE = "Not Applicable".freeze
 
+  # #1312 — keyed on the item status labels (SspControlStatement::STATUS_LABELS
+  # and "Not set"), the OSCAL states an SSP counts. The first five are the
+  # heatmap legend.
   SSP_STATUS_COLORS = {
-    # Current schema values
-    "Implemented"              => COLOR_GREEN,
-    "Deferred"                 => COLOR_BLUE,
-    LABEL_NOT_APPLICABLE           => COLOR_GRAY,
-    "Will Not Implement"       => COLOR_RED,
-    # Legacy values kept for backward compatibility with existing data
-    "Partially Implemented"    => COLOR_ORANGE,
-    "Planned"                  => COLOR_BLUE,
-    "Alternative Implementation" => COLOR_PURPLE,
-    "Not Implemented"          => COLOR_RED
+    "Implemented"    => COLOR_GREEN,
+    "Partial"        => COLOR_ORANGE,
+    "Planned"        => COLOR_BLUE,
+    "Alternative"    => COLOR_PURPLE,
+    "Not applicable" => COLOR_GRAY,
+    "Not set"        => COLOR_GRAY_DARK
   }.freeze
 
   SAR_STATUS_COLORS = {
@@ -296,14 +295,12 @@ module ApplicationHelper
   # The *_color maps above stay for decorative fills (heatmap bars, legends);
   # these drive AA-correct badge text. Same domain space, no hex.
   SSP_STATUS_VARIANTS = {
-    "Implemented"                => "success",
-    "Deferred"                   => "info",
-    LABEL_NOT_APPLICABLE             => "neutral",
-    "Will Not Implement"         => "danger",
-    "Partially Implemented"      => "warning",
-    "Planned"                    => "info",
-    "Alternative Implementation" => "purple",
-    "Not Implemented"            => "danger"
+    "Implemented"    => "success",
+    "Partial"        => "warning",
+    "Planned"        => "info",
+    "Alternative"    => "purple",
+    "Not applicable" => "neutral",
+    "Not set"        => "neutral"
   }.freeze
 
   SAR_STATUS_VARIANTS = {
@@ -322,6 +319,11 @@ module ApplicationHelper
 
   def ssp_status_variant(status, _count = 0)
     SSP_STATUS_VARIANTS[status] || "neutral"
+  end
+
+  # #1312 — an item's OSCAL status token ("planned") to its badge variant.
+  def ssp_item_status_variant(status)
+    ssp_status_variant(SspResponseProgress::ItemSummary.label(status))
   end
 
   # #1088 — the OSCAL component-type vocabulary, mapped centrally.

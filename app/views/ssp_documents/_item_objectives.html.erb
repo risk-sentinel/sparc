@@ -1,0 +1,32 @@
+<%#
+  #1312 — the SP 800-53A objectives that test one statement item, under it,
+  so the author answers knowing what the assessor will test. Read-only: a
+  determination is the assessor's, recorded in the SAR, never the author's.
+
+  Locals:
+    objectives      — [ControlRequirementText::Objective], parameter values applied
+    determinations  — objective id => the SSP's latest SAR determination, or {}
+%>
+<% determinations = local_assigns[:determinations] || {} %>
+<% if objectives.present? %>
+  <details class="sparc-mt-025" data-testid="item-objectives">
+    <summary class="sparc-fs-072 sparc-color-secondary">
+      What the assessor tests (<%= objectives.size %> <%= "objective".pluralize(objectives.size) %>)
+    </summary>
+    <ul class="sparc-fs-075 sparc-mb-0 sparc-mt-025">
+      <% objectives.each do |objective| %>
+        <% determination = determinations[objective.objective_id] %>
+        <li data-objective-id="<%= objective.objective_id %>">
+          <span class="fw-semibold"><%= objective.label.presence || objective.objective_id %></span>
+          <%= objective.prose %>
+          <% if determination %>
+            <span class="sparc-status sparc-status--<%= sar_objective_status_variant(determination) %> sparc-fs-065"
+                  title="The assessor's latest determination, from the SAR">
+              Assessor: <%= determination.tr("_-", "  ") %>
+            </span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </details>
+<% end %>

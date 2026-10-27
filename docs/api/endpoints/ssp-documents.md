@@ -415,23 +415,23 @@ Bulk-update editable control fields on a single SSP. The endpoint accepts a `con
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `controls` | object | Yes | Map of control identifier → field-update hash. Field identifiers within each control follow the same key convention exposed in `GET /:slug` (the document's serialized `controls[].fields` array). |
+| `controls` | object | Yes | Map of control identifier → field-update hash. The editable control fields are `notes`, `implementation_statement` and `implementation_summary` (the last two are control-level answers written before items were answered individually). |
 
 ```json
 {
   "controls": {
-    "AC-1": {
-      "implementation_status": "implemented",
-      "responsible_role": "System Owner",
-      "control_summary": "Updated implementation narrative..."
-    },
-    "AC-2": {
-      "implementation_status": "partial",
-      "control_summary": "Account provisioning automated; deprovisioning still manual."
-    }
+    "AC-1": { "notes": "Reviewed with the ISSO in March." },
+    "AC-2": { "notes": "Deprovisioning moves to the IdP in Q2." }
   }
 }
 ```
+
+**Since v1.17.5 (#1312)** a control's status, origination, responsible roles and
+expected completion are each statement item's own: write them with
+[`PATCH /api/v1/ssp_control_statements/:id`](ssp-control-statements.md). The
+control-level `status`, `control_type`, `control_application`, `coverage_level`,
+`responsible_entities` and `expected_completion` are retired, and sending one
+here is refused with `422`.
 
 #### Response Body
 

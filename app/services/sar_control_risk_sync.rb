@@ -9,8 +9,10 @@
 #   - an 800-53A objective of the control is determined `failed`;
 #   - the control's own result is `Failed` (a catalog without 800-53A
 #     objectives, Rev 4 among them, is assessed per control);
-#   - the SSP itself reports the control "Deferred" or "Will Not Implement"
-#     (SarFromSspService's known finding, owner 2026-10-21).
+#   - the SSP itself reports an item of the control not in place (`planned`
+#     or `partial`, #1312), or, on an SSP from before v1.17.5, the control
+#     "Deferred" or "Will Not Implement" (SarFromSspService's known findings,
+#     owner 2026-10-21).
 #
 # Each failure is a not-satisfied finding linked to the risk: an objective-id
 # target for an objective, a statement-id target (`ac-1_smt`) for the control.
@@ -37,7 +39,8 @@ class SarControlRiskSync
 
     failed_objectives = @control.sar_control_objectives.where(status: "failed").order(:row_order).to_a.reject(&:container?)
     control_failed = field("result") == FAILED_RESULT
-    known = SarFromSspService::KNOWN_NOT_IMPLEMENTED.include?(field("ssp_status"))
+    known = SarFromSspService::KNOWN_NOT_IMPLEMENTED.include?(field("ssp_status")) ||
+            field(SarFromSspService::ITEMS_NOT_IN_PLACE).present?
     risk = result.sar_risks.find_by(uuid: risk_uuid)
 
     unless failed_objectives.any? || control_failed || known

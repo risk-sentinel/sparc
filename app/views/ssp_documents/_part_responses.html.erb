@@ -1,45 +1,165 @@
 <%#
-  The control's Edit form answers every part that needs a response, in one
-  Save. Before this an author clicking a control's Edit got only control-level
-  fields, and answered ac-1a, ac-1a.1(a), ac-1b … one row at a time with each
-  row's own Edit and Save.
+  #1312 — THE place an SSP control is answered, item by item, in one Save.
 
-  The rows are the ones the baseline requires a response from: the same
-  SspResponseProgress parts that mark a row "Missing" in the table above.
-  A part already answered shows its answer, ready to change. Saving goes
-  through SspControlStatement#apply_author_edit, the method a single row's
-  Save and the API use, so CDEF-filled text a person rewrites is marked theirs.
+  Every item that takes a response (no item below it, at any depth: ac-2 d.1,
+  ac-1a.1(a)) gets one block, and the block sets everything about that item:
+  its response, implementation status, control origination (fully inherited,
+  partly inherited, or not), responsible roles, expected completion and
+  remarks. Nothing is set once for the whole control any more.
+
+  A lead-in (ac-2 d. "Specify:", ac-1a) takes no input: it is a heading,
+  with the state of the items under it and any objectives NIST tests at its
+  level. The control's own `_smt` is the summary line at the top.
+
+  Under each item: the SP 800-53A objectives that test it, with the
+  assessor's latest determination when the SSP has an SAR. Read-only: an
+  objective's determination is the assessor's, never the author's.
+
+  The items are the ones SspResponseProgress requires, the same set that
+  marks a row "Missing" in the table. Saving goes through
+  SspControlStatement#apply_author_edit, as the API does, so CDEF-filled text a
+  person rewrites is marked theirs.
 
   Locals:
-    control      — SspControl, with ssp_control_statements loaded
-    requirement  — ControlRequirementText::Text for the control, or nil
-    progress     — SspResponseProgress for the document, or nil
+    control         — SspControl, with ssp_control_statements loaded
+    requirement     — ControlRequirementText::Text for the control, or nil
+    progress        — SspResponseProgress for the document, or nil
+    determinations  — objective id => the SAR's latest determination, or {}
 %>
 <% progress = local_assigns[:progress] %>
 <% requirement = local_assigns[:requirement] %>
-<% rows = control.ssp_control_statements.sort_by { |s| s.row_order || 0 }
-                  .filter_map { |s| (part = progress&.part_for_statement(s.id)) && [ s, part ] } %>
-<% if rows.any? %>
+<% determinations = local_assigns[:determinations] || {} %>
+<% statements = control.ssp_control_statements.sort_by { |s| s.row_order || 0 } %>
+<% by_statement_id = statements.index_by(&:statement_id) %>
+<% by_row_id = statements.index_by(&:id) %>
+<% children = statements.group_by(&:parent_statement_id) %>
+<% required = statements.filter_map { |s| (part = progress&.part_for_statement(s.id)) && [ s.id, part ] }.to_h %>
+<% summary = progress&.items_for(control.control_id) %>
+<%
+  # The required items below a lead-in, at any depth, for its summary.
+  items_under = lambda do |stmt|
+    Array(children[stmt.statement_id]).flat_map { |child| required.key?(child.id) ? [ required[child.id] ] : items_under.call(child) }
+  end
+%>
+<% if required.any? %>
   <div class="sparc-statement-block sparc-statement-block--info sparc-accent--blue sparc-mb-075" data-testid="part-responses">
     <div class="sparc-statement-label sparc-heading-controls sparc-mb-04">
       Responses
       <span class="text-body-secondary sparc-fw-400 sparc-fs-07">
-        (<%= pluralize(rows.size, "part") %> this baseline requires; saved with Save Changes)
+        (<%= pluralize(required.size, "item") %> this baseline requires; saved with Save Changes)
       </span>
     </div>
-    <% rows.each do |stmt, part| %>
+    <% if summary %>
+      <div class="sparc-fs-078 sparc-color-secondary sparc-mb-06" data-testid="control-item-summary"><%= summary %></div>
+    <% end %>
+
+    <% statements.each do |stmt| %>
+      <% part = required[stmt.id] %>
+      <% kids = children[stmt.statement_id] %>
+      <% label = stmt.label.presence || stmt.statement_id %>
+      <% objectives = requirement&.objectives_for(stmt.statement_id) || [] %>
+      <% depth = 0
+         up = stmt
+         depth += 1 while (up = by_statement_id[up.parent_statement_id]) && depth < 4 %>
+
+      <% if part.nil? && kids.present? %>
+        <%# ── Lead-in: a heading, no inputs. The control's own _smt is the
+            summary above, so it is skipped unless NIST tests something at its
+            level. %>
+        <% next if stmt.parent_statement_id.blank? && objectives.empty? %>
+        <% under = items_under.call(stmt) %>
+        <div class="sparc-mb-06 sparc-stmt-d<%= [ depth, 3 ].min %>" data-lead-in="<%= stmt.statement_id %>">
+          <div class="fw-semibold sparc-fs-082">
+            <% if stmt.parent_statement_id.present? %><code class="sparc-fs-078"><%= label %></code><% end %>
+            <span class="sparc-fw-400 sparc-color-body"><%= requirement&.for_part(stmt.statement_id).presence || "The control as a whole" %></span>
+          </div>
+          <% if under.any? %>
+            <div class="sparc-fs-072 sparc-color-tertiary" data-testid="lead-in-summary">
+              <%= under.map { |item| "#{by_row_id[item.statement_id]&.label.presence || item.part_id} #{SspResponseProgress::ItemSummary.label(item.implementation_status).downcase}" }.join(" · ") %>
+            </div>
+          <% end %>
+          <%= render "ssp_documents/item_objectives", objectives: objectives, determinations: determinations %>
+        </div>
+        <% next %>
+      <% end %>
+      <% next unless part %>
+
+      <%# ── An item that takes a response: every field is its own. %>
       <% box_id = "part-response-#{stmt.id}" %>
-      <div class="form-group sparc-mb-075" data-part-response="<%= stmt.statement_id %>">
+      <% field = "statements[#{stmt.id}]" %>
+      <% role_ids = Array(stmt.responsible_roles_data).flat_map { |r| Array(r.is_a?(Hash) ? r["role-id"] : r) }.compact %>
+      <% leveraged = stmt.leveraged_origination %>
+      <div class="form-group sparc-mb-075 sparc-stmt-d<%= [ depth, 3 ].min %>" data-part-response="<%= stmt.statement_id %>">
         <label class="fw-semibold sparc-fs-082 d-block" for="<%= box_id %>">
-          <code class="sparc-fs-078"><%= stmt.label.presence || stmt.statement_id %></code>
+          <code class="sparc-fs-078"><%= label %></code>
           <span class="sparc-fw-400 sparc-color-body"><%= requirement&.for_part(stmt.statement_id).presence || "The control as a whole" %></span>
           <span class="sparc-status sparc-status--<%= SspResponseProgress::OWED.include?(part.state) ? 'warning' : 'success' %> sparc-fs-065 sparc-ml-02">
             <%= SspResponseProgress::LABELS[part.state] %>
           </span>
         </label>
-        <%= text_area_tag "statements[#{stmt.id}][implementation_prose]", stmt.implementation_prose,
+        <%= text_area_tag "#{field}[implementation_prose]", stmt.implementation_prose,
               id: box_id, rows: 3, class: "form-control sparc-fs-0875",
-              placeholder: "How this system meets #{stmt.label.presence || stmt.statement_id}" %>
+              placeholder: "How this system meets #{label}" %>
+
+        <div class="row g-2 sparc-mt-025">
+          <div class="col-md-4">
+            <label class="sparc-edit-label" for="<%= box_id %>-status">Implementation status</label>
+            <%= select_tag "#{field}[implementation_status]",
+                  options_for_select(SspControlStatement::STATUS_LABELS.map { |value, text| [ text, value ] }, stmt.implementation_status),
+                  include_blank: "— not set —", class: "form-select sparc-fs-0875", id: "#{box_id}-status",
+                  data: { item_field: "implementation_status" } %>
+          </div>
+          <div class="col-md-5">
+            <span class="sparc-edit-label d-block">Control origination</span>
+            <% if leveraged %>
+              <div class="sparc-fs-078" data-testid="leveraged-origination">
+                <%= leveraged.map { SspControlStatement::ORIGINATION_LABELS[_1] }.join(" + ") %>
+                <span class="sparc-color-tertiary">— from the leveraged authorization<%= leveraged.size > 1 ? " (partly inherited)" : "" %></span>
+              </div>
+            <% else %>
+              <%= hidden_field_tag "#{field}[control_origination][]", "", id: nil %>
+              <div class="d-flex flex-wrap gap-2" data-item-field="control_origination">
+                <% SspControlStatement::ORIGINATION_LABELS.each do |value, text| %>
+                  <% check_id = "#{box_id}-origin-#{value}" %>
+                  <span class="form-check form-check-inline sparc-fs-078 sparc-m-0">
+                    <%= check_box_tag "#{field}[control_origination][]", value, stmt.control_origination.include?(value),
+                          id: check_id, class: "form-check-input" %>
+                    <label class="form-check-label" for="<%= check_id %>"><%= text %></label>
+                  </span>
+                <% end %>
+              </div>
+              <div class="sparc-fs-07 sparc-color-tertiary">Inherited alone: fully inherited. Inherited with another: partly inherited.</div>
+            <% end %>
+          </div>
+          <div class="col-md-3">
+            <label class="sparc-edit-label" for="<%= box_id %>-completion">Expected completion</label>
+            <%= date_field_tag "#{field}[expected_completion]", stmt.expected_completion,
+                  class: "form-control sparc-fs-0875", id: "#{box_id}-completion" %>
+          </div>
+        </div>
+
+        <div class="row g-2 sparc-mt-025">
+          <div class="col-md-5">
+            <label class="sparc-edit-label" for="<%= box_id %>-roles">Responsible roles</label>
+            <%# #1116 — pick, never type: a role-id must resolve to a role the
+                document declares. %>
+            <%= hidden_field_tag "#{field}[responsible_role_ids][]", "", id: nil %>
+            <%= select_tag "#{field}[responsible_role_ids][]",
+                  options_for_select(@declared_role_options || [], role_ids),
+                  multiple: true, class: "form-select sparc-fs-0875", id: "#{box_id}-roles",
+                  size: [ [ (@declared_role_options || []).size, 2 ].max, 4 ].min %>
+            <% if (@declared_role_options || []).empty? %>
+              <div class="sparc-fs-07 sparc-color-tertiary">No roles are declared on this document yet.</div>
+            <% end %>
+          </div>
+          <div class="col-md-7">
+            <label class="sparc-edit-label" for="<%= box_id %>-remarks">Remarks</label>
+            <%= text_area_tag "#{field}[remarks]", stmt.remarks, rows: 2,
+                  class: "form-control sparc-fs-0875", id: "#{box_id}-remarks" %>
+          </div>
+        </div>
+
+        <%= render "ssp_documents/item_objectives", objectives: objectives, determinations: determinations %>
       </div>
     <% end %>
   </div>
