@@ -10,6 +10,9 @@ class ProfileDocument < ApplicationRecord
   include Approvable
 
   has_many :profile_controls, dependent: :delete_all
+  # #1089 — the component definitions used under this baseline.
+  has_many :cdef_document_profile_documents, dependent: :delete_all
+  has_many :cdef_documents, through: :cdef_document_profile_documents
   belongs_to :control_catalog, optional: true
 
   # #911 layer 2 — a profile does not merely HAVE a catalog, it imports a

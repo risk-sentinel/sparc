@@ -21,12 +21,18 @@ class CdefBulkApplyService
   Result = Struct.new(:rows, :token, :stats, keyword_init: true)
   Row = Struct.new(:source_id, :target_id, :relationship, :status, :title, :note, keyword_init: true)
 
-  def initialize(cdef:, converter:, target_rev: nil, source_ids: nil, only_missing_vs_baseline: false)
+  # #1089 — `baseline_profile_id` picks which of the CDEF's linked baselines
+  # "missing vs. baseline" and the control titles are read from; without it,
+  # the CDEF's own (mirrored) baseline. An id the CDEF is not linked to is
+  # refused, never silently swapped for another.
+  def initialize(cdef:, converter:, target_rev: nil, source_ids: nil, only_missing_vs_baseline: false,
+                 baseline_profile_id: nil)
     @cdef                     = cdef
     @converter                = converter
     @target_rev               = target_rev&.to_s
     @source_ids               = Array(source_ids).map { |i| i.to_s.downcase }.uniq
     @only_missing_vs_baseline = !!only_missing_vs_baseline
+    @baseline = resolve_baseline(baseline_profile_id)
   end
 
   # Slice 3 — preview only. Returns Result with rows + token + stats.
@@ -230,8 +236,8 @@ class CdefBulkApplyService
     entries = entries.where(source_id: @source_ids) if @source_ids.any?
 
     # 2. Optionally filter to controls that are missing-vs-baseline.
-    #    Requires the CDEF to have a profile_document; otherwise the
-    #    filter is a no-op (no baseline to compare against).
+    #    Against the chosen linked baseline (#1089), or the CDEF's own;
+    #    with none, the filter is a no-op (no baseline to compare against).
     baseline_missing_ids = baseline_missing_set if @only_missing_vs_baseline
 
     existing_control_ids = @cdef.cdef_controls.pluck(:control_id).to_set
@@ -289,20 +295,24 @@ class CdefBulkApplyService
     @converter_target_rev ||= @converter.target_rev
   end
 
-  def baseline_missing_set
-    return nil unless @cdef.respond_to?(:profile_document) && @cdef.profile_document.present?
+  def resolve_baseline(profile_id)
+    return @cdef.profile_document if profile_id.blank?
 
-    gap = CdefBaselineGapService.new(@cdef).analyze
-    Array(gap[:missing]).to_set
+    @cdef.profile_documents.find_by(id: profile_id) or
+      raise ArgumentError, "This component definition is not used under baseline #{profile_id}"
+  end
+
+  def baseline_missing_set
+    return nil if @baseline.nil?
+
+    gap = CdefBaselineGapService.new(@cdef, profile: @baseline).analyze
+    Array(gap&.dig(:missing)).to_set
   end
 
   def catalog_title_for(control_id)
-    return nil unless @cdef.respond_to?(:profile_document) && @cdef.profile_document.present?
+    return nil if @baseline.nil?
 
-    @catalog_title_cache ||= begin
-      catalog = @cdef.profile_document.resolved_catalog_json
-      walk_catalog_titles(catalog)
-    end
+    @catalog_title_cache ||= walk_catalog_titles(@baseline.resolved_catalog_json)
     @catalog_title_cache[control_id]
   end
 

@@ -25,7 +25,15 @@ class CdefDocument < ApplicationRecord
   has_many :cdef_components, dependent: :delete_all
   has_many :boundary_cdef_documents, dependent: :destroy
   has_many :boundaries, through: :boundary_cdef_documents
+  # #1089 — a CDEF serves any number of baselines: these links are the truth.
+  # `profile_document` (the column) is kept until v1.18.0 as a mirror of one
+  # linked baseline, so the lineage check and a rollback to v1.17.4 both find
+  # one. Every write that sets the column — building from a baseline, the
+  # baseline picker, a copy — also links that baseline (link_declared_profile).
+  has_many :cdef_document_profile_documents, dependent: :destroy
+  has_many :profile_documents, through: :cdef_document_profile_documents
   belongs_to :profile_document, optional: true
+  after_save :follow_declared_profile, if: :saved_change_to_profile_document_id?
 
   # #1258 — the boundary a CDEF's scope was set to lives in import_metadata
   # (CdefScopeService::METADATA_KEY), and the upload parsers REPLACE
@@ -87,6 +95,32 @@ class CdefDocument < ApplicationRecord
   membership_within controls: :cdef_controls, baseline: :profile_document,
                     baseline_controls: :profile_controls,
                     label: "@source profile"
+
+  # #1089 — use this CDEF under another baseline. The first one linked also
+  # becomes the mirror column. Returns the link.
+  def link_profile!(profile)
+    transaction do
+      link = cdef_document_profile_documents.find_or_create_by!(profile_document: profile)
+      update!(profile_document: profile) if profile_document_id.nil?
+      link
+    end
+  end
+
+  # #1089 — stop using this CDEF under a baseline. When it was the mirror, the
+  # column moves to another linked baseline, or clears when none is left.
+  def unlink_profile!(profile)
+    transaction do
+      cdef_document_profile_documents.where(profile_document: profile).destroy_all
+      next unless profile_document_id == profile.id
+
+      update_column(:profile_document_id, cdef_document_profile_documents.order(:id).pick(:profile_document_id))
+    end
+  end
+
+  # #1089 — declaring a baseline on a CDEF ADDS one; it never re-points the
+  # baselines it already serves, so it is not the rebaselining #928 refuses on
+  # a published document.
+  def rebaselining_published?(_attributes) = false
 
   belongs_to :organization, optional: true
   # Issue #466 — AWS-sourced CDEFs are read-only; users clone them to edit.
@@ -337,7 +371,36 @@ class CdefDocument < ApplicationRecord
     }
   end
 
+
   private
+
+  # The column was set (link it) or cleared (unlink what it named, and mirror
+  # another linked baseline if one is left), so the column and the links agree
+  # whichever path wrote it.
+  def follow_declared_profile
+    if profile_document_id.present?
+      cdef_document_profile_documents.find_or_create_by!(profile_document_id: profile_document_id)
+    else
+      before = profile_document_id_before_last_save
+      cdef_document_profile_documents.where(profile_document_id: before).destroy_all if before
+      remaining = cdef_document_profile_documents.order(:id).pick(:profile_document_id)
+      update_column(:profile_document_id, remaining) if remaining
+    end
+  end
+
+  # #1089 — membership is judged against every baseline the CDEF serves:
+  # a control in any of them is in scope.
+  def baseline_record
+    profile_documents.to_a.presence || profile_document
+  end
+
+  def baseline_control_id_set
+    ids = (profile_document_ids + [ profile_document_id ]).compact.uniq
+    return super if ids.empty?
+
+    ProfileControl.where(profile_document_id: ids).pluck(:control_id).compact_blank
+                  .map { |id| ControlId.canonical(id) }.to_set
+  end
 
   def keep_scope_boundary
     key = CdefScopeService::METADATA_KEY

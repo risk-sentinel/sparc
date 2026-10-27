@@ -115,7 +115,11 @@ class CdefFromProfileService
         title:          control["title"],
         control_family: family_code,
         severity:       severity,
-        row_order:      row_order
+        row_order:      row_order,
+        # #1089 — each control names the baseline it was drawn from, so the
+        # CDEF's OSCAL `control-implementation/@source` stays this profile's
+        # once the CDEF serves other baselines too.
+        implementation_source: OscalMetadata.import_href_for(@profile)
       }
 
       # Pre-populated read-only fields

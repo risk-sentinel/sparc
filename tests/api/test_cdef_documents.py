@@ -948,3 +948,67 @@ class TestExportFormats:
         )
 
         assert response.status_code == 401, response.text
+
+
+# api-inventory: covers cdef_documents#link_profile
+# api-inventory: covers cdef_documents#unlink_profile
+class TestBaselines:
+    """`POST/DELETE /cdef_documents/:slug/profiles` (#1089) — a component
+    definition is used under many baselines. Each change is confirmed by an
+    independent read of the CDEF's `profile_document_ids`.
+    """
+
+    @pytest.fixture
+    def cdef_and_profile(self, admin_client: httpx.Client):
+        listed = admin_client.get("/api/v1/profile_documents", params={"items": 100})
+        assert listed.status_code == 200, listed.text
+        profiles = listed.json()["data"]
+        if not profiles:
+            pytest.skip("no profile on this instance to link")
+        created = admin_client.post(
+            "/api/v1/cdef_documents",
+            json={"cdef_document": {"name": f"phase2-baselines-{uuid.uuid4().hex[:8]}"}},
+        )
+        assert created.status_code == 201, created.text
+        cdef = created.json()["data"]
+        try:
+            yield cdef, profiles[0]
+        finally:
+            admin_client.delete(f"/api/v1/cdef_documents/{cdef['slug']}")
+
+    def _linked(self, admin_client: httpx.Client, slug: str) -> list[int]:
+        response = admin_client.get(f"{PATH}/{slug}")
+        assert response.status_code == 200, response.text
+        return response.json()["data"]["profile_document_ids"]
+
+    @pytest.mark.happy
+    def test_adding_and_removing_a_baseline(
+        self, admin_client: httpx.Client, cdef_and_profile
+    ) -> None:
+        cdef, profile = cdef_and_profile
+        added = admin_client.post(
+            f"{PATH}/{cdef['slug']}/profiles", json={"profile_document_id": profile["id"]}
+        )
+        assert added.status_code == 200, added.text
+        assert profile["id"] in self._linked(admin_client, cdef["slug"])
+
+        removed = admin_client.delete(f"{PATH}/{cdef['slug']}/profiles/{profile['id']}")
+        assert removed.status_code == 200, removed.text
+        assert profile["id"] not in self._linked(admin_client, cdef["slug"])
+
+    @pytest.mark.validation
+    def test_unknown_profile_returns_404(
+        self, admin_client: httpx.Client, cdef_and_profile
+    ) -> None:
+        cdef, _profile = cdef_and_profile
+        response = admin_client.post(
+            f"{PATH}/{cdef['slug']}/profiles", json={"profile_document_id": 0}
+        )
+        assert_error_envelope(response, expected_status=404)
+
+    @pytest.mark.auth
+    def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
+        assert_error_envelope(
+            anon_client.post(f"{PATH}/anything/profiles", json={"profile_document_id": 1}),
+            expected_status=401,
+        )

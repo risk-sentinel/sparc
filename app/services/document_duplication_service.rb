@@ -25,6 +25,7 @@ class DocumentDuplicationService
       copy = build_document_copy(new_name)
       copy.save!
       copy_controls(copy)
+      copy_baseline_links(copy)
       copy
     end
   end
@@ -41,6 +42,13 @@ class DocumentDuplicationService
     attrs["import_metadata"] = { "copied_from" => @source.id, "copied_at" => Time.current.iso8601 }
 
     @source.class.new(attrs)
+  end
+
+  # #1089 — a copied CDEF serves the same baselines as its source.
+  def copy_baseline_links(copy)
+    return unless copy.respond_to?(:link_profile!)
+
+    @source.profile_documents.each { copy.link_profile!(_1) }
   end
 
   def copy_controls(copy)
