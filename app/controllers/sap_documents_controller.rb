@@ -64,6 +64,10 @@ class SapDocumentsController < ApplicationController
   def show
     return if @sap_document.pending? || @sap_document.processing? || @sap_document.failed?
 
+    # A stale objective flag is repaired once the catalog resolves (see the
+    # service). Before the controls load, so the new objectives render now.
+    @needs_reassociation = ControlObjectiveExtractorService.still_needs_reassociation!(@sap_document)
+
     controls_scope = @sap_document.sap_controls
 
     @method_counts, @multiple_count = compute_method_counts(controls_scope)
@@ -100,9 +104,6 @@ class SapDocumentsController < ApplicationController
     @editing_objective = SapControlObjective.joins(sap_control: :sap_document)
                                             .find_by(id: params[:objective_id],
                                                      sap_documents: { id: @sap_document.id })
-    @needs_reassociation = @sap_document.import_metadata&.dig(
-      ControlObjectiveExtractorService::REASSOCIATION_FLAG
-    ) == ControlObjectiveExtractorService::REASSOCIATION_VALUE
 
     # #1114 — the assessment methods and, under each, WHAT to examine.
     #

@@ -69,6 +69,10 @@ class SarDocumentsController < ApplicationController
     # Short-circuit for documents still being processed
     return if @sar_document.pending? || @sar_document.processing? || @sar_document.failed?
 
+    # A stale objective flag is repaired once the catalog resolves (see the
+    # service). Before the controls load, so the new objectives render now.
+    @needs_reassociation = ControlObjectiveExtractorService.still_needs_reassociation!(@sar_document)
+
     controls_scope = @sar_document.sar_controls
 
     # Filter options — TRIM + DISTINCT to deduplicate values with whitespace differences
@@ -142,9 +146,6 @@ class SarDocumentsController < ApplicationController
     @editing_objective = SarControlObjective.joins(sar_control: :sar_document)
                                             .find_by(id: params[:objective_id],
                                                      sar_documents: { id: @sar_document.id })
-    @needs_reassociation = @sar_document.import_metadata&.dig(
-      ControlObjectiveExtractorService::REASSOCIATION_FLAG
-    ) == ControlObjectiveExtractorService::REASSOCIATION_VALUE
 
     # #1114 — what the SSP CLAIMS, shown beside the assessment of it.
     #
