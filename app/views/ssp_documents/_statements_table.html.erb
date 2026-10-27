@@ -126,7 +126,7 @@
                 <%# ── Read view ── %>
                 <div>
                   <%= stmt.implementation_prose.presence ||
-                      content_tag(:span, "(not answered — answer it from the control's Edit)",
+                      content_tag(:span, "(not answered)",
                                   class: "text-body-tertiary fst-italic") %>
                   <% if stmt.remarks.present? %>
                     <div class="text-body-secondary sparc-stmt-note">

@@ -52,6 +52,11 @@
     <% if summary %>
       <div class="sparc-fs-078 sparc-color-secondary sparc-mb-06" data-testid="control-item-summary"><%= summary %></div>
     <% end %>
+    <div class="d-flex align-items-center gap-2 sparc-mb-06">
+      <%= submit_tag "Save Changes", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm",
+            data: { testid: "save-items-top" } %>
+      <span class="sparc-fs-072 sparc-color-tertiary">Saves every item below, and the control's notes.</span>
+    </div>
 
     <% statements.each do |stmt| %>
       <% part = required[stmt.id] %>
