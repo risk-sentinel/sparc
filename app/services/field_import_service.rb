@@ -308,6 +308,8 @@ class FieldImportService
       return nil if value.blank?
 
       Date.iso8601(value.strip) && nil
+    else
+      nil # remarks and the answer are free text
     end
   rescue Date::Error
     "Not a date (YYYY-MM-DD)"

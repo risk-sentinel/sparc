@@ -31,6 +31,8 @@
 class SspControlFieldCarryDown
   NOTE_MARKER = "Carried from the control-level fields (v1.17.5):"
 
+  NOT_APPLICABLE_STATUS = "not-applicable"
+
   STATUS_MAP = {
     "implemented" => "implemented",
     "deferred" => "planned",
@@ -38,8 +40,8 @@ class SspControlFieldCarryDown
     "will not implement" => "alternative",
     "alternative" => "alternative",
     "alternative implementation" => "alternative",
-    "not applicable" => "not-applicable",
-    "not-applicable" => "not-applicable",
+    "not applicable" => NOT_APPLICABLE_STATUS,
+    NOT_APPLICABLE_STATUS => NOT_APPLICABLE_STATUS,
     "partially implemented" => "partial",
     "partial" => "partial"
   }.freeze
@@ -88,7 +90,7 @@ class SspControlFieldCarryDown
     notes = []
     status = map_status(fields["status"], notes)
     origination = map_origination(fields["control_type"], notes)
-    status ||= "not-applicable" if fields["control_type"].to_s.downcase == NOT_APPLICABLE
+    status ||= NOT_APPLICABLE_STATUS if fields["control_type"].to_s.downcase == NOT_APPLICABLE
     role_refs = map_roles(fields["responsible_entities"], roles, notes)
     date = map_date(fields["expected_completion"], notes)
     %w[control_application coverage_level].each do |name|

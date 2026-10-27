@@ -53,9 +53,10 @@ class SspControlStatement < ApplicationRecord
   # OSCAL 1.2.3 `control-origination`, values enforced (allow-other="no"). An
   # item may carry several: `inherited` plus this system's own origination is
   # NIST's hybrid, an item partly inherited.
-  CONTROL_ORIGINATIONS = %w[organization system-specific customer-configured customer-provided inherited].freeze
+  SYSTEM_SPECIFIC = "system-specific"
+  CONTROL_ORIGINATIONS = [ "organization", SYSTEM_SPECIFIC, "customer-configured", "customer-provided", "inherited" ].freeze
   ORIGINATION_LABELS = {
-    "organization" => "Organization", "system-specific" => "System-specific",
+    "organization" => "Organization", SYSTEM_SPECIFIC => "System-specific",
     "customer-configured" => "Customer-configured", "customer-provided" => "Customer-provided",
     "inherited" => "Inherited"
   }.freeze
@@ -145,7 +146,7 @@ class SspControlStatement < ApplicationRecord
     return nil unless source.provided? && source.customer_responsibility?
 
     own = control_origination - [ INHERITED ]
-    [ INHERITED, *(own.presence || [ "system-specific" ]) ]
+    [ INHERITED, *(own.presence || [ SYSTEM_SPECIFIC ]) ]
   end
 
   # What the item records, a leveraged link's answer first.
