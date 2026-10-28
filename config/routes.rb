@@ -23,6 +23,9 @@ Rails.application.routes.draw do
   get "about/api",      to: "about#api_docs",      as: :about_api
   get "about/quickstart", to: "about#quickstart",  as: :about_quickstart
   get "about/resources", to: "about#resources",   as: :about_resources
+  # 1.18.0-rf #1288 / #1289 — the shell building blocks and icons, for review.
+  # 404 unless SPARC_NAV_SHELL is on.
+  get "shell_preview",   to: "shell_preview#show", as: :shell_preview
 
   # ── In-app Help Center / User Guides (#784) ───────────────────────────
   # The image route is declared BEFORE the :slug show route so "images" is

@@ -11,14 +11,14 @@
     <%# ── Organizations ── %>
     <div class="sparc-sidebar-section">
       <button class="sparc-sidebar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebarOrgs" aria-expanded="true">
-        <span class="sparc-sidebar-icon">&#128193;</span> Organizations
+        <span class="sparc-sidebar-icon"><%= icon("folder") %></span> Organizations
       </button>
       <div class="collapse show" id="sidebarOrgs">
         <% sidebar_organizations.each do |org| %>
           <div class="sparc-sidebar-org">
             <button class="sparc-sidebar-toggle sparc-sidebar-indent-1"
                     data-bs-toggle="collapse" data-bs-target="#sidebarOrg<%= org.id %>" aria-expanded="false">
-              <span class="sparc-sidebar-icon">&#128205;</span> <%= org.name %>
+              <span class="sparc-sidebar-icon"><%= icon("building-2") %></span> <%= org.name %>
             </button>
             <div class="collapse" id="sidebarOrg<%= org.id %>">
               <%#
@@ -64,7 +64,7 @@
     <%# ── Compliance Library (#372) ── %>
     <div class="sparc-sidebar-section border-top border-secondary">
       <button class="sparc-sidebar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebarLibrary" aria-expanded="false">
-        <span class="sparc-sidebar-icon">&#128218;</span> Compliance Library
+        <span class="sparc-sidebar-icon"><%= icon("library") %></span> Compliance Library
       </button>
       <div class="collapse" id="sidebarLibrary">
         <ul class="sparc-sidebar-leaves">
@@ -97,7 +97,7 @@
 
     <div class="sparc-sidebar-section border-top border-secondary">
       <button class="sparc-sidebar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebarResources" aria-expanded="false">
-        <span class="sparc-sidebar-icon">&#128279;</span> Resources
+        <span class="sparc-sidebar-icon"><%= icon("link") %></span> Resources
       </button>
       <div class="collapse" id="sidebarResources">
         <%# #951 — the NIST OSCAL reference links nest, so this section is a few
@@ -109,7 +109,7 @@
               <a href="<%= resource["href"] %>" target="_blank" rel="noopener noreferrer"
                  class="sparc-sidebar-leaf">
                 <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--purple"></span>
-                <%= resource["display_text"] %> <span class="sparc-fs-065">&#8599;</span>
+                <%= resource["display_text"] %> <%= icon("external-link", css_class: "sparc-icon-sm") %>
               </a>
             </li>
           <% end %>
@@ -117,7 +117,7 @@
         <% if groups[:nested].any? %>
           <button class="sparc-sidebar-toggle sparc-sidebar-indent-1"
                   data-bs-toggle="collapse" data-bs-target="#sidebarOscalRef" aria-expanded="false">
-            <span class="sparc-sidebar-icon">&#128218;</span> OSCAL Reference
+            <span class="sparc-sidebar-icon"><%= icon("library") %></span> OSCAL Reference
           </button>
           <div class="collapse" id="sidebarOscalRef">
             <ul class="sparc-sidebar-leaves">
@@ -126,7 +126,7 @@
                   <a href="<%= resource["href"] %>" target="_blank" rel="noopener noreferrer"
                      class="sparc-sidebar-leaf sparc-sidebar-indent-2">
                     <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--purple"></span>
-                    <%= resource["display_text"] %> <span class="sparc-fs-065">&#8599;</span>
+                    <%= resource["display_text"] %> <%= icon("external-link", css_class: "sparc-icon-sm") %>
                   </a>
                 </li>
               <% end %>
@@ -139,7 +139,7 @@
     <%# ── Help & Guides (#784) ── %>
     <div class="sparc-sidebar-section border-top border-secondary">
       <button class="sparc-sidebar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebarHelp" aria-expanded="false">
-        <span class="sparc-sidebar-icon">&#10067;</span> Help &amp; Guides
+        <span class="sparc-sidebar-icon"><%= icon("circle-question-mark") %></span> Help &amp; Guides
       </button>
       <div class="collapse" id="sidebarHelp">
         <ul class="sparc-sidebar-leaves">

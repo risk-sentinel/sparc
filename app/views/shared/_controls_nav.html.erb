@@ -9,12 +9,12 @@
 <ul class="dropdown-menu sparc-dropdown-menu">
   <li class="sparc-dropdown-header sparc-dropdown-header-controls">Controls Layer</li>
   <li><%= link_to control_catalogs_path, class: "dropdown-item" do %>
-    <span class="sparc-dropdown-icon">&#128218;</span> Control Catalogs
+    <span class="sparc-dropdown-icon"><%= icon("library") %></span> Control Catalogs
   <% end %></li>
   <li><%= link_to profile_documents_path, class: "dropdown-item" do %>
-    <span class="sparc-dropdown-icon">&#128203;</span> Baselines
+    <span class="sparc-dropdown-icon"><%= icon("list-checks") %></span> Baselines
   <% end %></li>
   <li><%= link_to control_mappings_path, class: "dropdown-item" do %>
-    <span class="sparc-dropdown-icon">&#128260;</span> Mappings
+    <span class="sparc-dropdown-icon"><%= icon("arrow-left-right") %></span> Mappings
   <% end %></li>
 </ul>

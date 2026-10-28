@@ -3,7 +3,11 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ main ]
+    # release-1.18.0-rf (owner, 2026-10-28): the navigation refactor's
+    # integration branch. Running on its pushes is what makes SonarCloud analyse
+    # the branch as a whole after each phase merges, so its findings are tracked
+    # before it ever reaches main. Remove when the branch merges or is dropped.
+    branches: [ main, release-1.18.0-rf ]
   # Run CI on main by hand when GitHub drops main's push event. A merge whose
   # request errored (a 502 on #1278 and on #1280) landed its commits but raised
   # no push event, so nothing ran on them, and a re-run repeats the old commit.

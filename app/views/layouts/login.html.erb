@@ -38,6 +38,8 @@
 
   <body class="d-flex flex-column min-vh-100"
         data-controller="video-easter-egg<% if @consent_banner_content.present? %> consent-banner<% end %>">
+    <%# #1289 — the icon sprite, once per page; IconHelper#icon draws from it. %>
+    <%= render "shared/icon_sprite" %>
     <%= render "shared/environment_header" %>
     <%# ── Navbar (same as application layout) ── %>
     <%= render "shared/main_nav" %>

@@ -10,7 +10,7 @@ import { Controller } from "@hotwired/stimulus"
 // the UI follows the OS automatically.
 //
 // Targets:
-//   icon — the toggle button element whose text content shows the current mode
+//   icon — the toggle button; it holds both icons and CSS shows the right one
 //
 // Actions:
 //   theme#toggle — flip between light and dark
@@ -62,18 +62,12 @@ export default class ThemeController extends Controller {
     }
   }
 
+  // #1289 — the button holds a sun and a moon icon and CSS shows the one for
+  // the current theme; only the tooltip is set here.
   updateIcon() {
     if (!this.hasIconTarget) return
 
-    const current = document.documentElement.dataset.bsTheme
-    if (current === "dark") {
-      // Dark mode active — show sun icon (click to switch to light)
-      this.iconTarget.textContent = "\u2600\uFE0F"
-      this.iconTarget.title = "Switch to light mode"
-    } else {
-      // Light mode active — show moon icon (click to switch to dark)
-      this.iconTarget.textContent = "\uD83C\uDF19"
-      this.iconTarget.title = "Switch to dark mode"
-    }
+    const dark = document.documentElement.dataset.bsTheme === "dark"
+    this.iconTarget.title = dark ? "Switch to light mode" : "Switch to dark mode"
   }
 }

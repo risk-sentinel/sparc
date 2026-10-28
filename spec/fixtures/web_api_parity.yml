@@ -910,6 +910,11 @@ controllers:
       - reason: "static informational OSCAL overview page"
         actions: [oscal_overview]
 
+  shell_preview:
+    ui_only:
+      - reason: "1.18.0-rf: a static page showing the navigation shell's building blocks and icons for review; no data, 404 unless SPARC_NAV_SHELL is on"
+        actions: [show]
+
   omniauth_callbacks:
     ui_only:
       - reason: "browser OIDC sign-in callback flow; the API authenticates by bearer token"

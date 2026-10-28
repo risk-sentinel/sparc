@@ -25,7 +25,10 @@ on:
     # Without `edited` here the aggregator never re-evaluates when an updated
     # body produces a passing pr-checklist run, leaving stale failures pinned.
     types: [ opened, edited, synchronize, reopened ]
-    branches: [ main ]
+    # release-1.18.0-rf (owner, 2026-10-28): phase PRs into the navigation
+    # refactor's integration branch get the same single gate as main, which the
+    # Merge_Main ruleset requires there too. Remove when the branch merges or is dropped.
+    branches: [ main, release-1.18.0-rf ]
 
 permissions:
   checks: read

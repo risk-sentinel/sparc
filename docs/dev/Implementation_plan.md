@@ -78,8 +78,11 @@ and the new sidebar (#1296).
 **Branching (owner, 2026-10-28):** the new look may not be kept, so it does not
 land on `main` until it is. Phase 0 (tests and docs) goes to `main`. Phases 1–5
 go to a protected integration branch, `release-1.18.0-rf`, cut from `main` once
-phase 0 merges: each phase is its own branch with a PR into it, `main` is merged
-into it before each phase, and images for testing are built from its tip.
+phase 0 merges: each phase is its own branch with a PR into it, and images for
+testing are built from its tip. The branch is in the `Merge_Main` ruleset, which
+requires linear history, so it is **rebased onto `main` between phases** (when no
+phase PR is open) rather than merged, and the final PR to `main` keeps each
+phase's commits.
 Keeping the shell is one PR from `release-1.18.0-rf` to `main`; dropping it is
 deleting the branch. `SPARC_NAV_SHELL` stays, so old and new can be compared on
 one stack while deciding. The branch is added to the `Merge_Main` ruleset, and
@@ -92,8 +95,8 @@ owner on a local stack before the next phase is planned.
 
 | Phase | Issues | Status |
 |---|---|---|
-| 0. Navigation inventory (tests and docs only) | — | In progress: `feature/v1180rf_phase0_nav_inventory` |
-| 1. Primitives | #1288, #1289 | — |
+| 0. Navigation inventory (tests and docs only) | — | Merged to `main` (PR #1314) |
+| 1. Primitives | #1288, #1289 | In progress: `feature/v1180rf_phase1_primitives` |
 | 2. Boundary context | #1290, #1292, #1293 | — |
 | 3. Shell, behind the switch | #1291, #1295, #1296, #1298, #1246 | — |
 | 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | — |

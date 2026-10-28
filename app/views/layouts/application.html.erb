@@ -73,6 +73,8 @@
       never reaches Rails (edge WAF block, proxy 413, transport failure) has no
       controller to set a flash, so the feedback has to come from the client. %>
   <body data-controller="video-easter-egg details-arrow submit-feedback help-drawer">
+    <%# #1289 — the icon sprite, once per page; IconHelper#icon draws from it. %>
+    <%= render "shared/icon_sprite" %>
     <%= render "shared/environment_header" %>
     <%= render "shared/main_nav" %>
 
