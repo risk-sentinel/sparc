@@ -1,0 +1,86 @@
+<%# 1.18.0-rf #1288 / #1289 — the shell's building blocks, for review.
+    Toggle the theme in the header to see each one in light and dark. %>
+<% content_for :title, "Shell preview" %>
+
+<div class="py-4">
+  <h1 class="h3 mb-1">Shell preview</h1>
+  <p class="text-body-secondary mb-4">
+    The building blocks of the 1.18.0-rf navigation shell (#1288) and its icons (#1289).
+    No screen uses them yet. Switch the theme in the header to check both.
+  </p>
+
+  <section class="mb-5" aria-labelledby="preview-layers">
+    <h2 class="h5" id="preview-layers">Layer colours</h2>
+    <p class="text-body-secondary small">Each as text, as a count on its own tint, and as a tab indicator.</p>
+    <% %w[controls implementation assessment enterprise].each do |layer| %>
+      <div class="d-flex align-items-center gap-3 mb-2">
+        <span class="sparc-dropdown-header sparc-dropdown-header-<%= layer == "enterprise" ? "boundaries" : layer %> p-0"><%= layer.capitalize %> layer</span>
+        <span class="sparc-counter sparc-counter--<%= layer %>">12</span>
+        <nav class="sparc-tabs" aria-label="<%= layer.capitalize %> tab example">
+          <a href="#preview-layers" class="sparc-tab sparc-tab--<%= layer %>" aria-current="page">Current</a>
+          <a href="#preview-layers" class="sparc-tab sparc-tab--<%= layer %>">Other</a>
+        </nav>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="mb-5" aria-labelledby="preview-tabs">
+    <h2 class="h5" id="preview-tabs">Underline tabs with counts</h2>
+    <nav class="sparc-tabs" aria-label="Tab example">
+      <a href="#preview-tabs" class="sparc-tab" aria-current="page"><%= icon("house") %> Overview</a>
+      <a href="#preview-tabs" class="sparc-tab sparc-tab--implementation"><%= icon("file-text") %> Implementation <span class="sparc-counter">3</span></a>
+      <a href="#preview-tabs" class="sparc-tab sparc-tab--assessment"><%= icon("clipboard-list") %> Assessment <span class="sparc-counter">7</span></a>
+      <a href="#preview-tabs" class="sparc-tab sparc-tab--assessment"><%= icon("flag") %> POA&amp;Ms <span class="sparc-counter">23</span></a>
+      <a href="#preview-tabs" class="sparc-tab"><%= icon("paperclip") %> Evidence <span class="sparc-counter">412</span></a>
+      <a href="#preview-tabs" class="sparc-tab"><%= icon("settings") %> Settings</a>
+    </nav>
+  </section>
+
+  <section class="mb-5" aria-labelledby="preview-controls">
+    <h2 class="h5" id="preview-controls">Segmented control, filter tokens, button group</h2>
+    <div class="d-flex flex-wrap align-items-center gap-3">
+      <div class="sparc-segmented" role="group" aria-label="View">
+        <button type="button" aria-pressed="true"><%= icon("list") %> List</button>
+        <button type="button" aria-pressed="false"><%= icon("layout-grid") %> Cards</button>
+      </div>
+      <span class="sparc-filter-token">
+        <span class="sparc-filter-token__key">Boundary:</span> Payments Platform
+        <a href="#preview-controls" class="sparc-filter-token__remove" aria-label="Remove filter Boundary: Payments Platform"><%= icon("x") %></a>
+      </span>
+      <span class="sparc-filter-token">
+        <span class="sparc-filter-token__key">Status:</span> Open
+        <a href="#preview-controls" class="sparc-filter-token__remove" aria-label="Remove filter Status: Open"><%= icon("x") %></a>
+      </span>
+      <div class="sparc-action-group" role="group" aria-label="Export">
+        <button type="button" class="sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm"><%= icon("download") %> Export</button>
+        <button type="button" class="sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" aria-label="More export formats"><%= icon("chevron-down") %></button>
+      </div>
+      <button type="button" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm"><%= icon("plus") %> New</button>
+    </div>
+  </section>
+
+  <section class="mb-5" aria-labelledby="preview-status">
+    <h2 class="h5" id="preview-status">Status chips</h2>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="sparc-status-chip">Draft</span>
+      <span class="sparc-status-chip sparc-status-chip--primary">In review</span>
+      <span class="sparc-status-chip sparc-status-chip--positive">ATO active</span>
+      <span class="sparc-status-chip sparc-status-chip--info">FedRAMP Moderate</span>
+      <span class="sparc-status-chip sparc-status-chip--caution">Overdue</span>
+      <span class="sparc-status-chip sparc-status-chip--danger">Failed</span>
+      <span class="sparc-status-chip sparc-status-chip--accent">Inherited</span>
+    </div>
+  </section>
+
+  <section class="mb-5" aria-labelledby="preview-icons">
+    <h2 class="h5" id="preview-icons">Icons (Lucide, <%= @icon_names.size %>)</h2>
+    <ul class="list-unstyled d-flex flex-wrap gap-3" data-testid="shell-preview-icons">
+      <% @icon_names.each do |name| %>
+        <li class="d-flex flex-column align-items-center gap-1 small text-body-secondary sparc-preview-icon">
+          <%= icon(name, label: name) %>
+          <code><%= name %></code>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+</div>

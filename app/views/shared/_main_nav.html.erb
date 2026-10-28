@@ -82,7 +82,7 @@
                     target: "_blank", rel: "noopener noreferrer",
                     title: "Help & User Guides",
                     data: { action: "click->help-drawer#open" },
-                    aria: { label: "Help and user guides" } do %>&#10067;<% end %>
+                    aria: { label: "Help and user guides" } do %><%= icon("circle-question-mark") %><% end %>
             </li>
           <% end %>
 
@@ -96,7 +96,8 @@
             <button class="btn btn-outline-light btn-sm sparc-nav-theme-btn"
                     data-theme-target="icon"
                     data-action="theme#toggle"
-                    title="Toggle light/dark mode">&#127769;</button>
+                    title="Toggle light/dark mode"><%# #1289 — both glyphs render; the theme decides which shows (CSS), so
+                    the right one is there on first paint, before Stimulus connects. %><%= icon("moon", css_class: "sparc-theme-icon-moon") %><%= icon("sun", css_class: "sparc-theme-icon-sun") %></button>
           </li>
 
           <%# ── User menu / Login ── %>
@@ -196,15 +197,15 @@
                   <li class="sparc-dropdown-header sparc-dropdown-header-implementation">Implementation Layer</li>
                   <% if show_boundary_docs %>
                     <li><%= link_to ssp_documents_path, class: "dropdown-item" do %>
-                      <span class="sparc-dropdown-icon">&#128196;</span> System Security Plans
+                      <span class="sparc-dropdown-icon"><%= icon("file-text") %></span> System Security Plans
                     <% end %></li>
                   <% end %>
                   <% if show_controls_reference %>
                     <li><%= link_to cdef_documents_path, class: "dropdown-item" do %>
-                      <span class="sparc-dropdown-icon">&#128295;</span> Component Definitions
+                      <span class="sparc-dropdown-icon"><%= icon("puzzle") %></span> Component Definitions
                     <% end %></li>
                     <li><%= link_to converters_path, class: "dropdown-item" do %>
-                      <span class="sparc-dropdown-icon">&#128260;</span> Converters
+                      <span class="sparc-dropdown-icon"><%= icon("replace") %></span> Converters
                     <% end %></li>
                   <% end %>
                 </ul>
@@ -221,16 +222,16 @@
                 <ul class="dropdown-menu sparc-dropdown-menu">
                   <li class="sparc-dropdown-header sparc-dropdown-header-assessment">Assessment Layer</li>
                   <li><%= link_to sap_documents_path, class: "dropdown-item" do %>
-                    <span class="sparc-dropdown-icon">&#128221;</span> Assessment Plans
+                    <span class="sparc-dropdown-icon"><%= icon("clipboard-list") %></span> Assessment Plans
                   <% end %></li>
                   <li><%= link_to sar_documents_path, class: "dropdown-item" do %>
-                    <span class="sparc-dropdown-icon">&#128200;</span> Assessment Results
+                    <span class="sparc-dropdown-icon"><%= icon("chart-line") %></span> Assessment Results
                   <% end %></li>
                   <li><%= link_to evidences_path, class: "dropdown-item" do %>
-                    <span class="sparc-dropdown-icon">&#128206;</span> Evidence
+                    <span class="sparc-dropdown-icon"><%= icon("paperclip") %></span> Evidence
                   <% end %></li>
                   <li><%= link_to poam_documents_path, class: "dropdown-item" do %>
-                    <span class="sparc-dropdown-icon">&#9888;&#65039;</span> POA&amp;Ms
+                    <span class="sparc-dropdown-icon"><%= icon("flag") %></span> POA&amp;Ms
                   <% end %></li>
                 </ul>
               </li>
@@ -251,15 +252,17 @@
                         back_matter.federate (can_federate?). %>
                     <% if admin_access? %>
                       <li><%= link_to admin_organizations_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
-                        <span>&#127970;</span> Organizations
+                        <%= icon("building-2") %> Organizations
                         <span class="badge bg-secondary ms-auto" style="font-size: 0.65rem;"><%= Organization.count %></span>
                       <% end %></li>
                       <li><%= link_to admin_service_accounts_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
-                        <span>&#128272;</span> Service Accounts
+                        <%= icon("key-round") %> Service Accounts
                       <% end %></li>
                     <% end %>
                     <li><hr class="dropdown-divider"></li>
-                    <li class="sparc-dropdown-header" style="font-size: 0.7rem; padding: 0.25rem 1rem; color: rgba(255,255,255,0.5);">Authorization Boundaries</li>
+                    <%# #1288 — this heading was white at 50% on the menu, which is white in the
+                        light theme: invisible. It takes the shared heading style. %>
+                    <li class="sparc-dropdown-header">Authorization Boundaries</li>
                     <% if boundaries.any? %>
                       <% boundaries.each do |ab| %>
                         <li><%= link_to authorization_boundary_path(ab), class: "dropdown-item d-flex align-items-center justify-content-between gap-2" do %>
@@ -275,7 +278,7 @@
                       <li><hr class="dropdown-divider"></li>
                     <% end %>
                     <li><%= link_to authorization_boundaries_path, class: "dropdown-item" do %>
-                      <span class="sparc-dropdown-icon">&#128203;</span> View All Boundaries
+                      <span class="sparc-dropdown-icon"><%= icon("layout-list") %></span> View All Boundaries
                     <% end %></li>
                     <%# Compliance Library (#372) — these screens lived ONLY in the
                         sidebar, so there was no dropdown route to Authoritative
@@ -285,17 +288,17 @@
                     <li><hr class="dropdown-divider"></li>
                     <li class="sparc-dropdown-header sparc-dropdown-header-boundaries">Compliance Library</li>
                     <li><%= link_to authoritative_sources_path, class: "dropdown-item" do %>
-                      <span class="sparc-dropdown-icon">&#128220;</span> Authoritative Sources
+                      <span class="sparc-dropdown-icon"><%= icon("scroll-text") %></span> Authoritative Sources
                     <% end %></li>
                     <li><%= link_to promotion_queue_index_path, class: "dropdown-item" do %>
-                      <span class="sparc-dropdown-icon">&#11014;</span> Promotion Queue
+                      <span class="sparc-dropdown-icon"><%= icon("arrow-up-from-line") %></span> Promotion Queue
                     <% end %></li>
                     <li><%= link_to leveraged_poam_documents_path, class: "dropdown-item" do %>
-                      <span class="sparc-dropdown-icon">&#128203;</span> Leveraged POA&amp;Ms
+                      <span class="sparc-dropdown-icon"><%= icon("flag") %></span> Leveraged POA&amp;Ms
                     <% end %></li>
                     <% if can_federate? %>
                       <li><%= link_to federation_peers_path, class: "dropdown-item" do %>
-                        <span class="sparc-dropdown-icon">&#128279;</span> Federation Peers
+                        <span class="sparc-dropdown-icon"><%= icon("link") %></span> Federation Peers
                       <% end %></li>
                     <% end %>
                   </ul>

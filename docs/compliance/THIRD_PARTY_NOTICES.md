@@ -92,6 +92,20 @@ holistically dispositioned in `docs/compliance/license-dispositions.yml`
 and not itemized individually in the license inventory (the relevant
 `skip_patterns` in `license-policy.yml` exclude their namespaces).
 
+### Lucide icons (vendored assets)
+
+| Field | Value |
+| --- | --- |
+| **Source** | [`lucide-static`](https://www.npmjs.com/package/lucide-static) 1.56.0 (published 2026-10-13), from `https://unpkg.com/lucide-static@1.56.0/icons/<name>.svg` |
+| **Source files** | 41 icons under `icons/`, and `LICENSE` |
+| **Copyright** | Lucide Icons and Contributors; Cole Bemis for the icons derived from Feather |
+| **License** | ISC; the icons derived from Feather (listed in the licence file) are MIT. Both are on the policy allowlist (`license-policy.yml`); the one condition is that the notice travels with the copies |
+| **License text** | `lib/data/lucide/LICENSE`, verbatim |
+| **Vendored as** | `lib/data/lucide/icons/*.svg`, byte-for-byte, with provenance (version, source, sha256 per icon and for the licence) in `lib/data/lucide/provenance.json` |
+| **Re-vendor task** | Replace the icons from a new version, update the sidecar, run `bin/build_icon_sprite`; `spec/lib/lucide_icons_spec.rb` pins each sha256 and checks the sprite is in step |
+| **Used by** | `app/views/shared/_icon_sprite.html.erb` (generated, carries a one-line notice) and `IconHelper#icon` — the navigation icons (1.18.0-rf #1289) |
+| **NIST control alignment** | SR-3 Supply Chain Controls (pinned version, recorded checksums, no runtime CDN) |
+
 ### FedRAMP consolidated rules — FedRAMP 20x KSI catalog (vendored data)
 
 | Field | Value |

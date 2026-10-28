@@ -558,6 +558,12 @@ module SparcConfig
   # control library set SPARC_PUBLIC_CATALOGS=true. See #726. (AC-3)
   def public_catalogs? = ENV.fetch("SPARC_PUBLIC_CATALOGS", "false") == "true"
 
+  # 1.18.0-rf (#1286) — the navigation refactor's new shell is built behind this
+  # switch while the owner decides whether to keep it (#1287), so old and new
+  # can be compared on one stack. Off = today's navigation, unchanged. Until the
+  # shell itself lands (phase 3) it only opens the /shell_preview page.
+  def nav_shell? = ENV.fetch("SPARC_NAV_SHELL", "false") == "true"
+
   # ── Dynamic Roles ────────────────────────────────────────────────────────
   # Configurable role lists for organizations and authorization boundaries.
   # Comma-separated lists via environment variables. Defaults to the

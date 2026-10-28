@@ -1,0 +1,175 @@
+{
+  "package": "lucide-static",
+  "version": "1.56.0",
+  "published": "2026-10-13",
+  "license": "ISC",
+  "source": "https://unpkg.com/lucide-static@1.56.0/icons/<name>.svg",
+  "license_sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+  "note": "Byte-for-byte copies of the icons SPARC uses (1.18.0-rf #1289). bin/build_icon_sprite turns them into app/views/shared/_icon_sprite.html.erb; spec/lib/lucide_icons_spec.rb pins each sha256 and checks the sprite is in step. Each icon is a {name, sha256} entry rather than name: sha256, so no hash sits right after a name like \"key-round\" (a secret scanner reads that as an API key).",
+  "icons": [
+    {
+      "name": "arrow-left-right",
+      "sha256": "f67a144da4952491a35a885374f68ed8604540c721d840f638cb2c45a8e9be00"
+    },
+    {
+      "name": "arrow-up-from-line",
+      "sha256": "ff6f4ff1d0a6a3c13e50f15891b7156f7a606b3d8f357a6518848a153a340495"
+    },
+    {
+      "name": "bell",
+      "sha256": "355b3d0902d14d943f9f7301cd9e3ca49f197a2bffd288a6d22bdc767d8f8773"
+    },
+    {
+      "name": "building-2",
+      "sha256": "501832f1e5784724a4a871fb4980fed45267f9f78eaed6d9b53e7ff21c7f469f"
+    },
+    {
+      "name": "chart-line",
+      "sha256": "6a2162d56706130263c371213deefdb8cd1c8fa36ba920294d5171f4a34ebc41"
+    },
+    {
+      "name": "chevron-down",
+      "sha256": "e1a65020d5e7e530f01ea75dca301a4ddd4ed76af85140820c7a9ecff76f5337"
+    },
+    {
+      "name": "chevron-right",
+      "sha256": "6b7b76b5b5b35cbd0fdd0fec1ed41afbf7690d455949829cae463c673f2c58ec"
+    },
+    {
+      "name": "circle-question-mark",
+      "sha256": "e0a9ef55424d2e9fa374d0707e04638edeeb1457784d0a66ca4aced9c120ae53"
+    },
+    {
+      "name": "clipboard-list",
+      "sha256": "e7a027a2f75c01015894f7bbbc4701a1cc2bd97cb5dc7814f38062c8c0dde617"
+    },
+    {
+      "name": "cloud",
+      "sha256": "809c1332e72b1ad9a31a687f108250bdebbfb42936b0458bf1d4cd26d93ddb90"
+    },
+    {
+      "name": "download",
+      "sha256": "4c2ce502d76dd08191c78f99b49185709d157b393260aed7e32b158bad3de667"
+    },
+    {
+      "name": "ellipsis-vertical",
+      "sha256": "04c6c1339158a333709e095da1d0584be76c3672e5e250055bb9f12a3621fd15"
+    },
+    {
+      "name": "external-link",
+      "sha256": "815ed209176853c9f068a69550f4b7987188d4d6b7ecfa4356e6895bad9a382e"
+    },
+    {
+      "name": "file-text",
+      "sha256": "cecc5df91e0e2b92e0988b72be4d24a33fa48613624677c4bcdeed2fdb285470"
+    },
+    {
+      "name": "flag",
+      "sha256": "f1d06e5215f1de366acb9852b131576051f95dc73bcb0718435bce08378a9ed3"
+    },
+    {
+      "name": "folder",
+      "sha256": "15a8cbe890c0e7292cee6ee8ff6f7c1b9408f134b4d49dd7485945daf4419a5c"
+    },
+    {
+      "name": "house",
+      "sha256": "c44edb40c49ffcb78893beaa6f0604c5be994e94735c15726fcd5f3a44e95cc8"
+    },
+    {
+      "name": "inbox",
+      "sha256": "8ca29d4a5fd9795913315eff313e3ea455099fcb8340cd12501e4b664a54faff"
+    },
+    {
+      "name": "key-round",
+      "sha256": "7471ee0769f36c514c630ea128ac01fbc0af5e9a4a6a0a87c894b58de585ac19"
+    },
+    {
+      "name": "layout-grid",
+      "sha256": "ea7988ce0ed0d760ec9ed5464c840e62abfa9dbbbf86682aca8d32f62c36f4dc"
+    },
+    {
+      "name": "layout-list",
+      "sha256": "3d41ee9dbeee2f2237c5b101efdd47e44d43371d28129ee1bf02629831c48b93"
+    },
+    {
+      "name": "library",
+      "sha256": "f665985e5de417d83781c40c953f9ff3724f29f3691a70cfda2bab7a36883ba0"
+    },
+    {
+      "name": "link",
+      "sha256": "abc812f7f3058a90a8ce299093f6897954783634aeb2b60766f5d0a91cfd775b"
+    },
+    {
+      "name": "list",
+      "sha256": "21def7290d8a0b020dd800f740bb86e4d2c1bcd13c91f260dcbdd1056c03be8c"
+    },
+    {
+      "name": "list-checks",
+      "sha256": "0d08be21fa5e41701b16f12f905b7df2b2773655c00d29e2362200b1c9a02a10"
+    },
+    {
+      "name": "moon",
+      "sha256": "86cae55ecddc21e0e2606865f813d0283ebe88696ed0211338c836928b597690"
+    },
+    {
+      "name": "panel-left-close",
+      "sha256": "7060db1c244acb34f1513907591bd9ef9c78361a57a66996e0ecb1a15bfc884f"
+    },
+    {
+      "name": "panel-left-open",
+      "sha256": "d875491f31444dc5de7406ee35b8d5d99a3e1a99a3251181c1e9f7ef64e74291"
+    },
+    {
+      "name": "paperclip",
+      "sha256": "f7398f7ba2a73a0f96ed47fe85b4ff4011be1790ed7821a9ff5a68a84ae3b7d0"
+    },
+    {
+      "name": "plus",
+      "sha256": "9c80c22c24c8e669b894e2e0ab53b752059d9c22cd4a4bc42e77c1d75a4b7cd9"
+    },
+    {
+      "name": "puzzle",
+      "sha256": "70cf9d97ac1ad3e37ad19d7b426bb8f772498b9207ab433d56ff5325a6785bba"
+    },
+    {
+      "name": "replace",
+      "sha256": "017e3a8a5868167b0eae04fe78d1f6ff183b3579a143695817eeeb4ef09256c0"
+    },
+    {
+      "name": "scroll-text",
+      "sha256": "19ae3e8cc2b5d1855189529fe603683b8be29a9ac798b7bac036fb786c571cd5"
+    },
+    {
+      "name": "search",
+      "sha256": "a7b33593e2a79eebdbf450b9914a119f7c988900ed0562c4e9677b33afc06c97"
+    },
+    {
+      "name": "settings",
+      "sha256": "c696b24e4f326249b9326e30c74d6c1fd166604aecbbe32ed6b4acf460c56de6"
+    },
+    {
+      "name": "shield",
+      "sha256": "f73e5b7fef2badf936af325b5b01339479ae53ddfc1ec6b831af5e9c6feb11b3"
+    },
+    {
+      "name": "sun",
+      "sha256": "de0c59d1daaa667af7e263f8f296bfbb58139bd4d65faa133d26575560d5558d"
+    },
+    {
+      "name": "table",
+      "sha256": "1541a8cb026e1baa1165ca69eb16d392892abc54e60105f8d5bd55f5463a94a6"
+    },
+    {
+      "name": "upload",
+      "sha256": "17b0c5d4177d9837e4c5eff7ee5a13c543b9d9887e196767e79341cb181b9805"
+    },
+    {
+      "name": "user",
+      "sha256": "3b3cc907994e90996fb992f96a0487f50a5c030c36367b2d69535ff23a869859"
+    },
+    {
+      "name": "x",
+      "sha256": "215604458643128c2f4e43e4798959d059bf38d738c5c39c0899470bb6b9a2e4"
+    }
+  ]
+}

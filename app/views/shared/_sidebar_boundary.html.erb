@@ -56,38 +56,38 @@
     <ul class="sparc-sidebar-leaves">
       <li>
         <%= link_to BoundaryScopedList.path(:cdef, ab), class: "sparc-sidebar-leaf" do %>
-          <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> CDEFs
+          <span class="sparc-sidebar-dot sparc-layer-dot--implementation"></span> CDEFs
         <% end %>
       </li>
       <li>
         <%= link_to BoundaryScopedList.path(:ssp, ab), class: "sparc-sidebar-leaf" do %>
-          <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> SSP
+          <span class="sparc-sidebar-dot sparc-layer-dot--implementation"></span> SSP
         <% end %>
       </li>
       <li>
         <%= link_to BoundaryScopedList.path(:sap, ab), class: "sparc-sidebar-leaf" do %>
-          <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAP
+          <span class="sparc-sidebar-dot sparc-layer-dot--assessment"></span> SAP
         <% end %>
       </li>
       <li>
         <%= link_to BoundaryScopedList.path(:evidence, ab), class: "sparc-sidebar-leaf" do %>
-          <span class="sparc-sidebar-dot" style="background: #16a085;"></span> Evidence
+          <span class="sparc-sidebar-dot sparc-layer-dot--assessment"></span> Evidence
         <% end %>
       </li>
       <li>
         <%= link_to BoundaryScopedList.path(:sar, ab), class: "sparc-sidebar-leaf" do %>
-          <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAR
+          <span class="sparc-sidebar-dot sparc-layer-dot--assessment"></span> SAR
         <% end %>
       </li>
       <li>
         <%# #447 — the triage screen for this boundary's scanner findings. %>
         <%= link_to triage_authorization_boundary_path(ab), class: "sparc-sidebar-leaf" do %>
-          <span class="sparc-sidebar-dot" style="background: #d35400;"></span> Amendments
+          <span class="sparc-sidebar-dot sparc-layer-dot--assessment"></span> Amendments
         <% end %>
       </li>
       <li>
         <%= link_to BoundaryScopedList.path(:poam, ab), class: "sparc-sidebar-leaf" do %>
-          <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> POA&amp;Ms
+          <span class="sparc-sidebar-dot sparc-layer-dot--assessment"></span> POA&amp;Ms
         <% end %>
       </li>
     </ul>

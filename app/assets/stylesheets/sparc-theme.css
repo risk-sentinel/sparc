@@ -97,6 +97,25 @@
   --sparc-i-caution-ink:  #805c00;   /* 4.63 / 5.17 */
   --sparc-i-danger-ink:   #af3427;   /* 4.62 / 5.24 */
   --sparc-i-accent-ink:   #8841a6;   /* 4.68 / 5.28 */
+
+  /* 1.18.0-rf #1288 — the four OSCAL layer colours, as tokens. They were
+     hard-coded hexes picked for the dark navbar, and on the light dropdown
+     menus they measured 1.91-3.10:1 (every layer heading failed AA). Each value
+     is the original hue at the smallest lightness change that reads at 4.5:1 as
+     text on the page (#f5f5f5), on a card (#fff) and on its own 14% tint, which
+     is how tabs and counters use them; as a 3px indicator that is well over the
+     3:1 UI minimum. Ratios: spec/quality/layer_token_contrast_spec.rb. */
+  --sparc-layer-controls:       #2e6ca6;   /* 4.54 (was #6ba3d6, 2.46) */
+  --sparc-layer-implementation: #337632;   /* 4.59 (was #6abf69, 2.08) */
+  --sparc-layer-assessment:     #8e6010;   /* 4.54 (was #d4943c / #e8a838, 1.91) */
+  --sparc-layer-enterprise:     #9f33c7;   /* 4.51 (was #bb6bd9, 3.10) */
+
+  /* The navbar is `bg-dark` (#212529) in BOTH themes (#974), so what sits on it
+     takes the dark-surface values whatever the theme. */
+  --sparc-layer-controls-on-navy:       #6da4d7;
+  --sparc-layer-implementation-on-navy: #6abf69;
+  --sparc-layer-assessment-on-navy:     #e8a838;
+  --sparc-layer-enterprise-on-navy:     #c785e0;
 }
 
 [data-bs-theme="dark"] {
@@ -167,6 +186,13 @@
   --sparc-i-caution-ink:  #f6e05e;
   --sparc-i-danger-ink:   #f48a87;
   --sparc-i-accent-ink:   #c683df;
+
+  /* #1288 — the layer colours on dark surfaces (#0f1419 page, #1e2632 and
+     #252d3a cards), at 4.5:1 as text there and on their own 14% tint. */
+  --sparc-layer-controls:       #6da4d7;   /* 4.52 (was #6ba3d6) */
+  --sparc-layer-implementation: #6abf69;   /* 5.20, unchanged */
+  --sparc-layer-assessment:     #e8a838;   /* 5.63, unchanged */
+  --sparc-layer-enterprise:     #c785e0;   /* 4.55 (was #bb6bd9, 4.10) */
 }
 
 
@@ -504,19 +530,19 @@ code {
 /* OSCAL layer accent borders on active/hover */
 .sparc-nav-controls:hover,
 .sparc-nav-controls.show {
-  border-bottom-color: #6ba3d6;
+  border-bottom-color: var(--sparc-layer-controls-on-navy);
 }
 .sparc-nav-implementation:hover,
 .sparc-nav-implementation.show {
-  border-bottom-color: #6abf69;
+  border-bottom-color: var(--sparc-layer-implementation-on-navy);
 }
 .sparc-nav-assessment:hover,
 .sparc-nav-assessment.show {
-  border-bottom-color: #e8a838;
+  border-bottom-color: var(--sparc-layer-assessment-on-navy);
 }
 .sparc-nav-boundaries:hover,
 .sparc-nav-boundaries.show {
-  border-bottom-color: #bb6bd9;
+  border-bottom-color: var(--sparc-layer-enterprise-on-navy);
 }
 
 /* Vertical separator between nav sections */
@@ -594,20 +620,57 @@ code {
 }
 
 .sparc-dropdown-header-controls {
-  color: #6ba3d6;
+  color: var(--sparc-layer-controls);
 }
 
 .sparc-dropdown-header-implementation {
-  color: #6abf69;
+  color: var(--sparc-layer-implementation);
 }
 
 .sparc-dropdown-header-assessment {
-  color: #d4943c;
+  color: var(--sparc-layer-assessment);
 }
 
 .sparc-dropdown-header-boundaries {
-  color: #bb6bd9;
+  color: var(--sparc-layer-enterprise);
 }
+
+/* #1289 — Lucide icons (IconHelper#icon), drawn from the sprite the layouts
+   render once per page. The sprite itself takes no space; its symbols are only
+   ever drawn through <use>. Icons size to the text around them and stroke in
+   currentColor, so they follow text and layer colours in both themes. */
+.sparc-icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.sparc-icon {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.2em;
+  flex-shrink: 0;
+}
+
+.sparc-icon-sm {
+  width: 0.85em;
+  height: 0.85em;
+  vertical-align: -0.05em;
+}
+
+/* The theme toggle carries both glyphs; the theme picks one, so the right
+   icon is there on first paint. Dark shows the sun (switch to light). */
+[data-bs-theme="dark"] .sparc-theme-icon-moon,
+:root:not([data-bs-theme="dark"]) .sparc-theme-icon-sun {
+  display: none;
+}
+
+/* #1288 — a boundary's documents in the sidebar tree, dotted by the layer
+   they belong to (implementation, then assessment), on the page surface. */
+.sparc-layer-dot--implementation { background: var(--sparc-layer-implementation); }
+.sparc-layer-dot--assessment { background: var(--sparc-layer-assessment); }
 
 /* Dropdown item icons */
 .sparc-dropdown-icon {
@@ -3331,6 +3394,184 @@ a.link-purple { color: var(--sparc-purple); }
 
 /* Rows of mixed roles line up without a wrapper forcing it. */
 .sparc-action-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.5rem; }
+
+/* ==========================================================================
+   1.18.0-rf #1288 — shell building blocks
+   --------------------------------------------------------------------------
+   What the navigation refactor's screens are built from. No new palette:
+   colour comes from the layer tokens (--sparc-layer-*) and the #950 intents
+   (--sparc-i-*), whose pairs are measured in spec/quality/. Nothing renders
+   these until the shell does (phases 3-4); /shell_preview shows each one when
+   SPARC_NAV_SHELL is on.
+   ========================================================================== */
+
+/* Joined buttons (GitHub's button group): the existing .sparc-action roles and
+   sizes, sharing borders instead of a gap. */
+.sparc-action-group { display: inline-flex; align-items: stretch; }
+.sparc-action-group > .sparc-action { border-radius: 0; }
+.sparc-action-group > .sparc-action + .sparc-action { margin-left: -1px; }
+.sparc-action-group > .sparc-action:first-child { border-radius: 0.375rem 0 0 0.375rem; }
+.sparc-action-group > .sparc-action:last-child { border-radius: 0 0.375rem 0.375rem 0; }
+.sparc-action-group > .sparc-action:focus-visible { position: relative; z-index: 1; }
+
+/* A count on a tab or navigation item. Tabular figures keep a row of counts
+   from shifting as numbers change. Body text on a faint neutral fill. */
+.sparc-counter {
+  display: inline-block;
+  min-width: 1.4rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bs-body-color) 10%, transparent);
+  color: var(--bs-body-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Layer-coloured count: the layer colour as text on its own 14% tint, the
+   pair the layer tokens are measured for. */
+.sparc-counter--controls       { --sparc-layer-c: var(--sparc-layer-controls); }
+.sparc-counter--implementation { --sparc-layer-c: var(--sparc-layer-implementation); }
+.sparc-counter--assessment     { --sparc-layer-c: var(--sparc-layer-assessment); }
+.sparc-counter--enterprise     { --sparc-layer-c: var(--sparc-layer-enterprise); }
+.sparc-counter--controls, .sparc-counter--implementation, .sparc-counter--assessment, .sparc-counter--enterprise {
+  background: color-mix(in srgb, var(--sparc-layer-c) 14%, var(--sparc-surface));
+  color: var(--sparc-layer-c);
+}
+
+/* Underline tabs. The current tab carries aria-current="page" (or
+   aria-selected="true" in a tablist) and a 3px indicator in its layer colour,
+   primary by default. At phone width the row scrolls sideways with no visible
+   scrollbar rather than wrapping. */
+.sparc-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--sparc-border-soft, var(--sparc-border));
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sparc-tabs::-webkit-scrollbar { display: none; }
+
+.sparc-tab {
+  --sparc-tab-c: var(--sparc-i-primary);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.75rem;
+  margin-bottom: -1px;
+  border-bottom: 3px solid transparent;
+  color: var(--bs-secondary-color);
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.sparc-tab:hover { color: var(--bs-body-color); border-bottom-color: var(--sparc-border-soft, var(--sparc-border)); }
+.sparc-tab:focus-visible { outline: 2px solid var(--sparc-tab-c); outline-offset: -2px; }
+.sparc-tab[aria-current="page"],
+.sparc-tab[aria-selected="true"] {
+  color: var(--bs-body-color);
+  font-weight: 600;
+  border-bottom-color: var(--sparc-tab-c);
+}
+.sparc-tab--controls       { --sparc-tab-c: var(--sparc-layer-controls); }
+.sparc-tab--implementation { --sparc-tab-c: var(--sparc-layer-implementation); }
+.sparc-tab--assessment     { --sparc-tab-c: var(--sparc-layer-assessment); }
+.sparc-tab--enterprise     { --sparc-tab-c: var(--sparc-layer-enterprise); }
+
+/* Segmented control: a small group of icon buttons where one is pressed
+   (aria-pressed="true"), e.g. the list / card view toggle. */
+.sparc-segmented {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--sparc-border);
+  border-radius: 0.5rem;
+  background: var(--sparc-surface-alt);
+}
+.sparc-segmented > button,
+.sparc-segmented > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+.sparc-segmented > [aria-pressed="true"],
+.sparc-segmented > [aria-current="true"] {
+  background: var(--sparc-surface);
+  color: var(--bs-body-color);
+  box-shadow: 0 0 0 1px var(--sparc-border);
+}
+.sparc-segmented > :focus-visible { outline: 2px solid var(--sparc-i-primary); outline-offset: 1px; }
+
+/* A removable filter: "key: value" with a remove button. */
+.sparc-filter-token {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.15rem 0.1rem 0.55rem;
+  border: 1px solid var(--sparc-border);
+  border-radius: 999px;
+  background: var(--sparc-surface);
+  color: var(--bs-body-color);
+  font-size: 0.8rem;
+}
+.sparc-filter-token__key { color: var(--bs-secondary-color); }
+.sparc-filter-token__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  text-decoration: none;
+}
+.sparc-filter-token__remove:hover { background: var(--sparc-surface-alt); color: var(--bs-body-color); }
+.sparc-filter-token__remove:focus-visible { outline: 2px solid var(--sparc-i-primary); outline-offset: 1px; }
+
+/* Status chip on the #950 intents: the label in the intent's -ink colour on
+   its tint in light, and a bordered chip with no fill in dark, the same
+   surfaces button_role_contrast_spec.rb measures. */
+.sparc-status-chip {
+  --sparc-chip-c: var(--sparc-i-neutral);
+  --sparc-chip-ink: var(--sparc-i-neutral-ink);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.55rem;
+  border: 1px solid var(--sparc-chip-c);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sparc-chip-c) 20%, #fff);
+  color: var(--sparc-chip-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.sparc-status-chip--primary  { --sparc-chip-c: var(--sparc-i-primary);  --sparc-chip-ink: var(--sparc-i-primary-ink); }
+.sparc-status-chip--positive { --sparc-chip-c: var(--sparc-i-positive); --sparc-chip-ink: var(--sparc-i-positive-ink); }
+.sparc-status-chip--info     { --sparc-chip-c: var(--sparc-i-info);     --sparc-chip-ink: var(--sparc-i-info-ink); }
+.sparc-status-chip--caution  { --sparc-chip-c: var(--sparc-i-caution);  --sparc-chip-ink: var(--sparc-i-caution-ink); }
+.sparc-status-chip--danger   { --sparc-chip-c: var(--sparc-i-danger);   --sparc-chip-ink: var(--sparc-i-danger-ink); }
+.sparc-status-chip--accent   { --sparc-chip-c: var(--sparc-i-accent);   --sparc-chip-ink: var(--sparc-i-accent-ink); }
+[data-bs-theme="dark"] .sparc-status-chip { background: transparent; }
+
+/* /shell_preview only: the icon grid. */
+.sparc-preview-icon { width: 7.5rem; }
+.sparc-preview-icon .sparc-icon { width: 1.5rem; height: 1.5rem; color: var(--bs-body-color); }
 
 /* ==========================================================================
    #1047 utility layer — the replacement for inline `style=`
