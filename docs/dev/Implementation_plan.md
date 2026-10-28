@@ -46,11 +46,66 @@ authentication mode coverage matrix.
 > **The most recent shipped phase is 18 — v1.16.1, tagged 2026-09-17**, followed by
 > the v1.16.2 / v1.16.3 hotfix pair on 2026-09-18. Phase 19 shipped as **v1.17.0**
 > on 2026-10-02; v1.17.1 (hotfix) on 2026-10-16; v1.17.2–v1.17.4 on 2026-10-26/27.
-> **The current work is the v1.17.5 patch**, below.
+> v1.17.5 shipped 2026-10-27. **The current work is the `1.18.0-rf` navigation refactor**, below.
 > Phases 17 and 18 moved there on **2026-09-27**, with a record of that hotfix
 > pair; their bundle detail, the Bundle Z sweep record and the cadence
 > re-measures are there, unedited.
 
+
+---
+
+### Milestone: `1.18.0-rf` — navigation refactor (#1286)
+
+A repository-style shell with boundary context, on the existing SPARC colour
+tokens. Decided by the owner on #1287, 2026-10-28:
+
+| # | Decision |
+|---|---|
+| 1 | **Hybrid layout:** prototype B's sidebar for global and layer navigation; prototype A's boundary overview (#1301) as the boundary home |
+| 2 | **Navigation rule:** *a link is always in the same place within the shell; items are shown or hidden by reachability and never moved to make them reachable.* The reachability predicates in `_main_nav` carry over unchanged |
+| 3 | **#1294** (boundary-nested URLs) deferred out of the milestone; shared links carry `?boundary=` (#1290) |
+| 4 | **#1305** (global search) deferred out of the milestone |
+| 5 | **#1292:** a boundary's CDEFs are its own plus global CDEFs linked to it (#929) |
+| 6 | A user with exactly one reachable boundary has it selected by default |
+| 7 | **#1293:** with no boundary selected, counts cover everything the user can reach |
+| 8 | **#1303:** admin navigation is an admin-only sidebar section |
+| 9 | The new shell is built behind `SPARC_NAV_SHELL` (default off); **#1297** removes the old menus and the switch |
+
+**#1246** (single-organization users skip the organization level; rename
+"Amendments") moved here from v1.18.0: it is delivered by the switcher (#1291)
+and the new sidebar (#1296).
+
+**Branching (owner, 2026-10-28):** the new look may not be kept, so it does not
+land on `main` until it is. Phase 0 (tests and docs) goes to `main`. Phases 1–5
+go to a protected integration branch, `release/1.18.0-rf`, cut from `main` once
+phase 0 merges: each phase is its own branch with a PR into it, `main` is merged
+into it before each phase, and images for testing are built from its tip.
+Keeping the shell is one PR from `release/1.18.0-rf` to `main`; dropping it is
+deleting the branch. `SPARC_NAV_SHELL` stays, so old and new can be compared on
+one stack while deciding. The branch is added to the `Merge_Main` ruleset, and
+`required-passed.yml` covers PRs into it from phase 1 on.
+
+Each phase is gated on a UBI image built from its branch, then walked by the
+owner on a local stack before the next phase is planned.
+
+| Phase | Issues | Status |
+|---|---|---|
+| 0. Navigation inventory (tests and docs only) | — | In progress: `feature/v1180rf_phase0_nav_inventory` |
+| 1. Primitives | #1288, #1289 | — |
+| 2. Boundary context | #1290, #1293 | — |
+| 3. Shell, behind the switch | #1291, #1295, #1296, #1298, #1246 | — |
+| 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | — |
+| 5. Finish | #1297, #1306, #1307, #1308, #1309 | — |
+
+**Phase 0** records what the navigation offers today, per viewer, before any
+navigation code changes: `tests/ui-smoke/nav_inventory.json` (signed out, signed
+out with public catalogs, auth disabled, signed-in member, signed-in admin).
+`spec/requests/nav_inventory_spec.rb` checks the rendered navigation against it
+in both directions, and `tests/ui-smoke/test_nav_inventory.py` checks a live
+stack and clicks every internal link through the menus that hold it. #1297 and
+#1307 build on both. Found while recording it: with auth disabled there is no
+sidebar, so Authoritative Sources, the Promotion Queue, Leveraged POA&Ms and the
+help guides have no navigation entry in that posture.
 
 ---
 
