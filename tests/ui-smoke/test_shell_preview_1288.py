@@ -34,6 +34,9 @@ VISIBLE_THEME_ICON_JS = """
 """
 
 
+SETTLED_JS = "() => document.getAnimations().every((a) => a.playState !== 'running')"
+
+
 def _theme(page) -> str:
     return page.evaluate("document.documentElement.dataset.bsTheme")
 
@@ -90,6 +93,10 @@ def test_shell_preview_draws_every_icon_cleanly_in_both_themes(authed_page):
     assert_no_csp_violations(authed_page, during="shell preview render")
 
     for _ in range(2):  # the current theme, then the other one
+        # The theme fades over 0.2-0.3s. Axe run mid-fade measures colours that
+        # belong to neither theme (greys like #bdbec0), so wait until every
+        # transition has finished.
+        authed_page.wait_for_function(SETTLED_JS)
         theme = _theme(authed_page)
         violations = Axe().run(authed_page, options=WCAG).response.get("violations", [])
         found = [
