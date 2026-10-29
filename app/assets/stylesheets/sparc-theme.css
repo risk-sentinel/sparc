@@ -672,6 +672,13 @@ code {
 .sparc-layer-dot--implementation { background: var(--sparc-layer-implementation); }
 .sparc-layer-dot--assessment { background: var(--sparc-layer-assessment); }
 
+/* #1289 — the home page tiles: the item's menu icon, large, in its layer colour. */
+.sparc-tile-icon { width: 2rem; height: 2rem; vertical-align: middle; }
+.sparc-tile-icon--controls { color: var(--sparc-layer-controls); }
+.sparc-tile-icon--implementation { color: var(--sparc-layer-implementation); }
+.sparc-tile-icon--assessment { color: var(--sparc-layer-assessment); }
+.sparc-tile-icon--enterprise { color: var(--sparc-layer-enterprise); }
+
 /* Dropdown item icons */
 .sparc-dropdown-icon {
   display: inline-block;
