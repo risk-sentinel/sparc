@@ -35,6 +35,11 @@ RSpec.describe "Shell preview", type: :request do
       %w[.sparc-counter .sparc-tabs .sparc-segmented .sparc-filter-token .sparc-status-chip .sparc-action-group].each do |css|
         expect(page.at_css(css)).to be_present, "#{css} missing from the preview"
       end
+      # Grouped controls are named native <fieldset>s, not role="group" divs.
+      groups = page.css(".sparc-segmented, .sparc-action-group")
+      expect(groups.map(&:name).uniq).to eq([ "fieldset" ])
+      expect(groups.map { |g| g["aria-label"] }).to all(be_present)
+      expect(page.at_css("[role=group]")).to be_nil
       shown = page.css("[data-testid=shell-preview-icons] svg use").map { |u| u["href"].delete_prefix("#i-") }
       expect(shown).to match_array(IconHelper.names)
     end
