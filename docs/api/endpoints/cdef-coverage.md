@@ -140,6 +140,10 @@ GET /api/v1/cdef_coverage/runs/:id
 Requires `cdef.read`. Paginated, newest first. Non-admins see runs for their
 boundaries plus unattached runs, matching what the UI shows them.
 
+`GET /runs` takes `authorization_boundary_id`: a boundary id narrows to that
+boundary's runs, `none` to runs attached to no boundary, and omitting it applies
+no boundary filter. The web list uses the same rule (1.18.0-rf #1292).
+
 ### DELETE a run
 
 ```

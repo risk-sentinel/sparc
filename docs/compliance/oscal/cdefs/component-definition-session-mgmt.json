@@ -35,7 +35,7 @@
               {
                 "uuid": "e4c809d5-065a-4057-a481-d6b6aed7cb38",
                 "control-id": "ac-4",
-                "description": "Cross-instance information flow is explicit rather than implicit. Federation exchanges signed bundles against a peer allow-list: an instance that is not a registered peer is not trusted, and a bundle whose signature does not verify is rejected rather than partially applied. There is no ambient cross-instance trust to inherit.",
+                "description": "Cross-instance information flow is explicit rather than implicit. Federation exchanges signed bundles against a peer allow-list: an instance that is not a registered peer is not trusted, and a bundle whose signature does not verify is rejected rather than partially applied. There is no ambient cross-instance trust to inherit. 1.18.0-rf #1292: with a boundary chosen in a list's Boundary filter (carried in the URL, not the session), the list shows only that boundary's records, by the one rule (BoundaryScopedList) the sidebar, the web lists and the API share.",
                 "remarks": "Implemented in app/services/authoritative_source_federation_service.rb and app/models/federation_peer.rb. Tested by spec/services/authoritative_source_federation_service_spec.rb and spec/models/federation_peer_spec.rb."
               },
               {
