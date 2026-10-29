@@ -21,6 +21,8 @@
         `view` but dropped `per_page`, so filtering silently reset the page
         size. They come through the shared toolbar now, like every other
         collection screen. %>
+    <%# 1.18.0-rf #1292 — the Boundary filter beside the list (BoundaryListFilter). %>
+    <%= render layout: "shared/boundary_filter_layout" do %>
     <%= render "shared/collection_toolbar",
           label: "evidence records", placeholder: "Search evidence…",
           filter_fields: @filter_fields, facets: @facets, clear_params: @clear_facets,
@@ -43,6 +45,7 @@
       <div class="text-center text-body-secondary p-4">
         <p>No evidence records found. <%= link_to "Add evidence", new_evidence_path, class: "text-primary" %> to get started.</p>
       </div>
+    <% end %>
     <% end %>
   </div>
 

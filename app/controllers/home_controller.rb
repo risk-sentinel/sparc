@@ -15,18 +15,23 @@ class HomeController < ApplicationController
   #                                   otherwise)
   #
   # The inventory tiles above the cards show these same counts, grouped by layer.
+  #
+  # 1.18.0-rf #1293 — the document counts come from BoundaryNavCounts, the one
+  # definition the navigation counts with, over everything the user can reach.
+  # The homepage does not follow the selected boundary (owner, phase 2 plan).
   def index
+    documents = BoundaryNavCounts.for(nil, current_user)
     @counts = {
       control_catalogs: ControlCatalog.count,
       profile_documents: ProfileDocument.count,
       control_mappings: ControlMapping.count,
-      cdef_documents: CdefDocument.count,
+      cdef_documents: documents[:cdef],
       converters: Converter.count,
-      ssp_documents: boundary_document_count(SspDocumentsController),
-      sap_documents: boundary_document_count(SapDocumentsController),
-      sar_documents: boundary_document_count(SarDocumentsController),
-      evidences: boundary_document_count(EvidencesController),
-      poam_documents: boundary_document_count(PoamDocumentsController),
+      ssp_documents: documents[:ssp],
+      sap_documents: documents[:sap],
+      sar_documents: documents[:sar],
+      evidences: documents[:evidence],
+      poam_documents: documents[:poam],
       authorization_boundaries: AuthorizationBoundary.visible_to(current_user).count
     }
     @counts[:organizations] = Organization.count if helpers.admin_access?
@@ -39,11 +44,5 @@ class HomeController < ApplicationController
 
   def oscal_overview
     # Static informational page: renders its template, no data to load.
-  end
-
-  private
-
-  def boundary_document_count(controller_class)
-    BoundaryScopedDocument.index_relation(controller_class, current_user).count
   end
 end

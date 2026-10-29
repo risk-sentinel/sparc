@@ -3576,6 +3576,50 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-status-chip--accent   { --sparc-chip-c: var(--sparc-i-accent);   --sparc-chip-ink: var(--sparc-i-accent-ink); }
 [data-bs-theme="dark"] .sparc-status-chip { background: transparent; }
 
+/* 1.18.0-rf #1292 — a list with a filter column beside it (the Boundary
+   filter, BoundaryListFilter). The column stacks above the list at phone
+   width. The current choice carries aria-current="true". */
+.sparc-filtered-collection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+.sparc-filtered-collection__side { flex: 1 1 14rem; max-width: 17rem; min-width: 0; }
+.sparc-filtered-collection__main { flex: 999 1 32rem; min-width: 0; }
+@media (max-width: 767.98px) {
+  .sparc-filtered-collection__side { max-width: none; }
+}
+.sparc-filter-group__title {
+  margin: 0 0 0.35rem;
+  padding: 0 0.6rem;
+  color: var(--bs-secondary-color);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.sparc-filter-group { margin: 0; padding: 0; list-style: none; }
+.sparc-filter-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  color: var(--bs-body-color);
+  text-decoration: none;
+}
+.sparc-filter-link:hover { background: var(--sparc-surface-alt); color: var(--bs-body-color); }
+.sparc-filter-link:focus-visible { outline: 2px solid var(--sparc-i-primary); outline-offset: 1px; }
+.sparc-filter-link[aria-current="true"] {
+  background: var(--sparc-surface);
+  box-shadow: 0 0 0 1px var(--sparc-border-soft);
+  font-weight: 650;
+}
+.sparc-filter-link__label { min-width: 0; overflow-wrap: anywhere; }
+.sparc-filter-link .sparc-counter { margin-left: auto; }
+
 /* /shell_preview only: the icon grid. */
 .sparc-preview-icon { width: 7.5rem; }
 .sparc-preview-icon .sparc-icon { width: 1.5rem; height: 1.5rem; color: var(--bs-body-color); }

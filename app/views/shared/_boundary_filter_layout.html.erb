@@ -1,0 +1,57 @@
+<%# 1.18.0-rf #1292 — a document list with its Boundary filter beside it.
+    Wrap the list's toolbar, records and pagination in
+    `render layout: "shared/boundary_filter_layout" do … end`.
+
+    With no filter (SPARC_NAV_SHELL off, or a list that declares none) the
+    block renders exactly as before. The filter is built by the controller
+    (BoundaryListFilter), which counts and names only boundaries the user can
+    reach; a URL naming any other boundary shows an empty list and is never
+    named here. %>
+<% filter = boundary_filter %>
+<% if filter %>
+  <div class="sparc-filtered-collection">
+    <nav class="sparc-filtered-collection__side" aria-labelledby="boundary-filter-title" data-testid="boundary-filter">
+      <h3 class="sparc-filter-group__title" id="boundary-filter-title">Boundary</h3>
+      <ul class="sparc-filter-group">
+        <li>
+          <%= link_to url_for(filter.all_params), class: "sparc-filter-link",
+                aria: { current: (filter.selected == :all ? "true" : nil) },
+                data: { testid: "boundary-filter-all" } do %>
+            <span class="sparc-filter-link__label">All boundaries</span>
+            <span class="sparc-counter"><%= filter.total %></span>
+          <% end %>
+        </li>
+        <% filter.entries.each do |entry| %>
+          <li>
+            <%= link_to url_for(filter.boundary_params(entry.boundary)), class: "sparc-filter-link",
+                  aria: { current: (entry.current ? "true" : nil) },
+                  data: { testid: "boundary-filter-option", boundary_id: entry.boundary.id } do %>
+              <span class="sparc-filter-link__label"><%= entry.boundary.name %></span>
+              <span class="sparc-counter"><%= entry.count %></span>
+            <% end %>
+          </li>
+        <% end %>
+        <% if filter.show_none? %>
+          <li>
+            <%= link_to url_for(filter.none_params), class: "sparc-filter-link",
+                  aria: { current: (filter.selected == :none ? "true" : nil) },
+                  data: { testid: "boundary-filter-none" } do %>
+              <span class="sparc-filter-link__label">Not attached to a boundary</span>
+              <span class="sparc-counter"><%= filter.none_count %></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+      <% if filter.selected == :unavailable %>
+        <p class="small text-body-secondary mt-2 mb-0 px-2" data-testid="boundary-filter-unavailable">
+          That boundary is not available to you. <%= link_to "Show all boundaries", url_for(filter.all_params) %>
+        </p>
+      <% end %>
+    </nav>
+    <div class="sparc-filtered-collection__main">
+      <%= yield %>
+    </div>
+  </div>
+<% else %>
+  <%= yield %>
+<% end %>
