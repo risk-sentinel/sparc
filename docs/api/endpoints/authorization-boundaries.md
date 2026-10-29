@@ -64,7 +64,13 @@ and the detail) carries these fields:
 
 The detail (`GET /api/v1/authorization_boundaries/:id`) additionally carries
 `artifact_summary`, `organization` (the organization's name), `members_count` (distinct people, by role assignment or legacy roster; v1.17.2),
-`evidences_count`, and `environments`.
+`evidences_count`, `environments`, and `counts` (1.18.0-rf #1293).
+
+`counts` is how many records each document list holds in this boundary **for the caller**:
+`cdef`, `ssp`, `sap`, `evidence`, `sar` and `poam`. Each equals what that list returns with
+`?authorization_boundary_id=<this boundary>` (the web list and the matching `Api::V1` index), so
+evidence includes global evidence and CDEFs are the boundary's own plus global ones linked to it.
+The web navigation shows the same numbers.
 
 ---
 
@@ -178,7 +184,8 @@ curl -X GET "https://sparc.example.com/api/v1/authorization_boundaries/1" \
     "evidences_count": 12,
     "environments": [
       { "name": "Production", "environment": "production", "components": 5 }
-    ]
+    ],
+    "counts": { "cdef": 5, "ssp": 1, "sap": 0, "evidence": 14, "sar": 0, "poam": 1 }
   }
 }
 ```

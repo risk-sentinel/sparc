@@ -64,7 +64,7 @@ Returns a paginated list (see [pagination.md](../pagination.md)), newest first.
 | `type` | Filter by `evidence_type` (e.g. `scan_result`) |
 | `status` | Filter by status (e.g. `collected`) |
 | `source` | Filter by the recorded source |
-| `authorization_boundary_id` | Filter to one boundary |
+| `authorization_boundary_id` | Filter to one boundary (its evidence plus global evidence). `none` lists global evidence only; omitting it applies no boundary filter. Any other value that is not an id matches nothing (1.18.0-rf #1292) |
 | `control_id` | Only evidence linked to this control (e.g. `AC-2`) |
 | `collected_by_user_id` | Only evidence collected by this account — "added by" (#934) |
 | `collected_from` / `collected_to` | Collection-date range, inclusive of both days (`YYYY-MM-DD`) |
