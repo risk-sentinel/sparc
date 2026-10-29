@@ -39,10 +39,10 @@
   <section class="mb-5" aria-labelledby="preview-controls">
     <h2 class="h5" id="preview-controls">Segmented control, filter tokens, button group</h2>
     <div class="d-flex flex-wrap align-items-center gap-3">
-      <div class="sparc-segmented" role="group" aria-label="View">
+      <fieldset class="sparc-segmented" aria-label="View">
         <button type="button" aria-pressed="true"><%= icon("list") %> List</button>
         <button type="button" aria-pressed="false"><%= icon("layout-grid") %> Cards</button>
-      </div>
+      </fieldset>
       <span class="sparc-filter-token">
         <span class="sparc-filter-token__key">Boundary:</span> Payments Platform
         <a href="#preview-controls" class="sparc-filter-token__remove" aria-label="Remove filter Boundary: Payments Platform"><%= icon("x") %></a>
@@ -51,10 +51,10 @@
         <span class="sparc-filter-token__key">Status:</span> Open
         <a href="#preview-controls" class="sparc-filter-token__remove" aria-label="Remove filter Status: Open"><%= icon("x") %></a>
       </span>
-      <div class="sparc-action-group" role="group" aria-label="Export">
+      <fieldset class="sparc-action-group" aria-label="Export">
         <button type="button" class="sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm"><%= icon("download") %> Export</button>
         <button type="button" class="sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" aria-label="More export formats"><%= icon("chevron-down") %></button>
-      </div>
+      </fieldset>
       <button type="button" class="sparc-action sparc-action--primary sparc-action--solid sparc-action--sm"><%= icon("plus") %> New</button>
     </div>
   </section>
