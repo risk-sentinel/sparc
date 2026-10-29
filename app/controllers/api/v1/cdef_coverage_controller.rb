@@ -87,7 +87,10 @@ class Api::V1::CdefCoverageController < Api::V1::BaseController
 
   # GET /api/v1/cdef_coverage/runs
   def runs
-    result = paginate(scoped_runs.recent)
+    # 1.18.0-rf #1292 — `?authorization_boundary_id=` (an id, `none` or `all`),
+    # by the rule the web list uses, so the two return the same runs.
+    runs = BoundaryScopedList.narrow_params(:cdef_coverage, scoped_runs, params)
+    result = paginate(runs.recent)
     render json: { data: result[:data].map { |r| serialize_run(r) }, meta: result[:meta] }
   end
 

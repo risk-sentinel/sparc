@@ -194,6 +194,10 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
     if detailed
       summary = ab.artifact_summary
       data[:artifact_summary] = summary
+      # 1.18.0-rf #1293 — what each document list holds in this boundary for
+      # the caller: the numbers the web navigation shows, from the same
+      # definition (BoundaryNavCounts), so the two cannot disagree.
+      data[:counts] = BoundaryNavCounts.for(ab, current_user)
       data[:organization] = ab.organization&.name
       # #770 bug 3 — count the full roster (canonical user_roles + legacy
       # memberships), matching what the boundary screen now shows. members_count

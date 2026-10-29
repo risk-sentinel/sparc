@@ -156,6 +156,34 @@ class TestShow:
         response = admin_client.get(f"{PATH}/99999999")
         assert_error_envelope(response, expected_status=404)
 
+    # 1.18.0-rf #1293 — the detail's `counts` are what each document list
+    # returns for this boundary, read here from the lists themselves. Evidence
+    # includes global evidence (#951), so on a seeded instance its count is not
+    # zero even for a new boundary.
+    COUNTED_LISTS = {
+        "cdef": "/api/v1/cdef_documents",
+        "ssp": "/api/v1/ssp_documents",
+        "sap": "/api/v1/sap_documents",
+        "evidence": "/api/v1/evidences",
+        "sar": "/api/v1/sar_documents",
+        "poam": "/api/v1/poam_documents",
+    }
+
+    def test_detail_counts_equal_the_lists(
+        self, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        detail = admin_client.get(f"{PATH}/{boundary['id']}")
+        assert detail.status_code == 200, detail.text
+        counts = detail.json()["data"]["counts"]
+        assert set(counts) == set(self.COUNTED_LISTS)
+
+        for key, path in self.COUNTED_LISTS.items():
+            params = {"authorization_boundary_id": boundary["id"], "per_page": 1}
+            listed = admin_client.get(path, params=params)
+            assert listed.status_code == 200, f"{path}: {listed.text}"
+            assert_paginated_envelope(listed.json())
+            assert counts[key] == listed.json()["meta"]["count"], key
+
 
 class TestCreate:
     @pytest.mark.happy

@@ -209,6 +209,44 @@ class TestRuns:
         gone = admin_client.get(f"/api/v1/cdef_coverage/runs/{run_id}")
         assert gone.status_code == 404
 
+    # 1.18.0-rf #1292 — the runs list narrows by boundary as the web list does:
+    # an id, `none` for runs attached to no boundary, no parameter for every run,
+    # and a value that is not an id for none.
+    def test_runs_list_narrows_by_boundary(self, admin_client):
+        made = admin_client.post(
+            "/api/v1/authorization_boundaries",
+            json={"authorization_boundary": {"name": f"coverage-scope-{uuid.uuid4().hex[:8]}"}},
+        )
+        assert made.status_code in (200, 201), made.text
+        boundary_id = made.json()["data"]["id"]
+        files = _files(("prod.tfstate", _state_bytes(["aws_guardduty_detector"])))
+        attached = admin_client.post(
+            "/api/v1/cdef_coverage/runs",
+            files=files,
+            data={"authorization_boundary_id": boundary_id},
+        ).json()["data"]["id"]
+        files = _files(("prod.tfstate", _state_bytes(["aws_guardduty_detector"])))
+        loose = admin_client.post("/api/v1/cdef_coverage/runs", files=files).json()["data"]["id"]
+
+        def ids(value=None):
+            params = {"per_page": 200}
+            if value is not None:
+                params["authorization_boundary_id"] = value
+            resp = admin_client.get("/api/v1/cdef_coverage/runs", params=params)
+            assert resp.status_code == 200, resp.text
+            return {r["id"] for r in resp.json()["data"]}
+
+        try:
+            assert ids(boundary_id) == {attached}
+            in_none = ids("none")
+            assert loose in in_none and attached not in in_none
+            assert {attached, loose} <= ids()
+            assert ids("all") == set()
+        finally:
+            for run_id in (attached, loose):
+                admin_client.delete(f"/api/v1/cdef_coverage/runs/{run_id}")
+            admin_client.delete(f"/api/v1/authorization_boundaries/{boundary_id}")
+
     def test_report_token_saves_without_reuploading(self, admin_client):
         analysed = admin_client.post(
             "/api/v1/cdef_coverage/analyze",

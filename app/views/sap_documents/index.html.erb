@@ -17,6 +17,8 @@
     </div>
   </div>
 
+  <%# 1.18.0-rf #1292 — the Boundary filter beside the list (BoundaryListFilter). %>
+  <%= render layout: "shared/boundary_filter_layout" do %>
   <%= render "shared/collection_toolbar",
         label: "security assessment plans", placeholder: "Search SAPs…",
         view_mode: (@view_mode if @sap_documents.any?) %>
@@ -38,4 +40,5 @@
   <% end %>
 
   <%= render "shared/collection_pagination", pagy: @pagy, label: "security assessment plans" %>
+  <% end %>
 </div>

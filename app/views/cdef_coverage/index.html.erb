@@ -10,6 +10,8 @@
       <%= link_to "New analysis", new_cdef_coverage_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
     </div>
 
+    <%# 1.18.0-rf #1292 — the Boundary filter beside the list (BoundaryListFilter). %>
+    <%= render layout: "shared/boundary_filter_layout" do %>
     <% if @runs.any? %>
       <div class="table-responsive">
         <table class="table table-hover align-middle">
@@ -52,11 +54,14 @@
       </div>
 
       <%== pagy_nav(@pagy) if @pagy && @pagy.pages > 1 %>
+    <% elsif params[:authorization_boundary_id].present? %>
+      <p class="text-body-secondary mb-0">No saved analyses in this filter.</p>
     <% else %>
       <p class="text-body-secondary mb-0">
         No saved analyses yet. <%= link_to "Run one", new_cdef_coverage_path %> against a boundary's
         Terraform to see which Component Definitions it needs.
       </p>
+    <% end %>
     <% end %>
   </div>
 </div>

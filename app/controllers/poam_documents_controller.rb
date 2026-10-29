@@ -1,4 +1,7 @@
 class PoamDocumentsController < ApplicationController
+  # 1.18.0-rf #1292 — offers the Boundary filter (BoundaryListFilter).
+  boundary_list :poam
+
   include ReconciliationGate
   # #911 layer 2 — refuse an edit until the document names the baseline
   # its controls descend from. `set_baseline` is deliberately absent.
@@ -44,10 +47,11 @@ class PoamDocumentsController < ApplicationController
     # screen and Api::V1 narrow the collection identically. The scope is passed
     # in already boundary-scoped — the query object must never re-derive who may
     # see what.
+    build_boundary_filter(scope)
     query = PoamBrowseQuery.new(params, scope: scope)
-    @filter_fields = query.filter_fields
-    @facets = active_facets(PoamBrowseQuery.facet_params, labels: PoamBrowseQuery.facet_labels)
-    @clear_facets = clear_facets_params(PoamBrowseQuery.facet_params)
+    @filter_fields = without_boundary_field(query.filter_fields)
+    @facets = active_facets(boundary_facet_keys(PoamBrowseQuery.facet_params), labels: PoamBrowseQuery.facet_labels)
+    @clear_facets = clear_facets_params(boundary_facet_keys(PoamBrowseQuery.facet_params))
 
     # #888 — cards by default, remembered per screen, and paginated because a
     # card costs far more to render than a table row.

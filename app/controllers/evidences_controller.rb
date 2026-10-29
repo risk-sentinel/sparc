@@ -1,4 +1,7 @@
 class EvidencesController < ApplicationController
+  # 1.18.0-rf #1292 — offers the Boundary filter (BoundaryListFilter).
+  boundary_list :evidence
+
   include CollectionViewable
   include CollectionTierable
   include BoundaryScopedDocument
@@ -18,10 +21,11 @@ class EvidencesController < ApplicationController
     # here and hand-written into the view, which is how this screen ended up
     # with a filter form that dropped `per_page`. The scope is passed in already
     # boundary-scoped; the query object must never re-derive who may see what.
+    build_boundary_filter(scope)
     query = EvidenceBrowseQuery.new(params, scope: scope)
-    @filter_fields = query.filter_fields
-    @facets = active_facets(EvidenceBrowseQuery.facet_params, labels: EvidenceBrowseQuery.facet_labels)
-    @clear_facets = clear_facets_params(EvidenceBrowseQuery.facet_params)
+    @filter_fields = without_boundary_field(query.filter_fields)
+    @facets = active_facets(boundary_facet_keys(EvidenceBrowseQuery.facet_params), labels: EvidenceBrowseQuery.facet_labels)
+    @clear_facets = clear_facets_params(boundary_facet_keys(EvidenceBrowseQuery.facet_params))
     @view_mode = resolve_view_mode(:evidences)
     filtered = query.records
     @pagy, @evidences = paginate_collection(filtered)

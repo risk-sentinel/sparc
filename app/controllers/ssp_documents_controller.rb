@@ -1,4 +1,7 @@
 class SspDocumentsController < ApplicationController
+  # 1.18.0-rf #1292 — offers the Boundary filter (BoundaryListFilter).
+  boundary_list :ssp
+
   include ReconciliationGate
   # #911 layer 2 — refuse an edit until the document names the baseline
   # its controls descend from. `set_baseline` is deliberately absent.
@@ -56,6 +59,7 @@ class SspDocumentsController < ApplicationController
     # #1202 — the sidebar links here with `?authorization_boundary_id=`; narrow to
     # that boundary through the ONE definition the sidebar and Api::V1 also use.
     # It narrows the permission-scoped relation above, never widens it.
+    build_boundary_filter(scope)
     scope = BoundaryScopedList.narrow_params(:ssp, scope, params)
     scope = scope.search_text(params[:q])
 

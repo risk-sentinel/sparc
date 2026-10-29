@@ -20,6 +20,9 @@
 # NIST: AC-3 (cdef.read to analyse, cdef.write to save), AU-12 (both audited),
 # CM-8 (the inventory this derives), SI-12 (uploads are not retained).
 class CdefCoverageController < ApplicationController
+  # 1.18.0-rf #1292 — offers the Boundary filter (BoundaryListFilter).
+  boundary_list :cdef_coverage
+
   include Auditable
   include CollectionViewable
 
@@ -72,7 +75,9 @@ class CdefCoverageController < ApplicationController
 
   # GET /cdef_coverage — saved runs.
   def index
-    @runs = scoped_runs.recent.includes(:authorization_boundary)
+    build_boundary_filter(scoped_runs)
+    runs = BoundaryScopedList.narrow_params(:cdef_coverage, scoped_runs, params)
+    @runs = runs.recent.includes(:authorization_boundary)
     @pagy, @runs = paginate_collection(@runs)
   end
 
