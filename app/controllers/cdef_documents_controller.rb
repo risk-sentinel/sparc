@@ -60,9 +60,17 @@ class CdefDocumentsController < ApplicationController
     # facets is shared too (CollectionViewable + shared/_collection_filters);
     # only the labels are screen-specific.
     build_boundary_filter(CdefDocument.all)
-    @cdef_documents = CdefBrowseQuery.new(params).documents
+    query = CdefBrowseQuery.new(params)
+    @cdef_documents = query.documents
+    @filter_fields = query.filter_fields
     @facets = active_facets(CdefBrowseQuery::FACETS, labels: CdefBrowseQuery::FACET_LABELS)
     @clear_facets = clear_facets_params(CdefBrowseQuery::FACETS)
+    # 1.18.0-rf #1300 — source tabs, counted with every other filter applied.
+    @status_tabs = StatusTabs.cdef_source(params: params, base: CdefBrowseQuery.new(params.except("source")).documents)
+    # Coverage against the boundary's baseline, only when the list is
+    # filtered to a boundary that has one (owner, phase 4 plan).
+    @coverage_baseline = cdef_coverage_baseline
+    @sort = @coverage_baseline && params[:sort] == "coverage" ? "coverage" : nil
 
     # #887 — view mode lives in the URL rather than in client state, so a
     # chosen view is shareable, survives a reload, round-trips with the active
@@ -72,8 +80,19 @@ class CdefDocumentsController < ApplicationController
     # #888 — paginate before summarising. Cards show document-level
     # applicability, but the facts are per component, and rolling up the whole
     # table to draw one page would not hold up.
-    @pagy, @cdef_documents = paginate_collection(@cdef_documents)
+    if @sort
+      # A boundary's CDEFs are its own plus those linked to it — a short list —
+      # so the whole list is measured to sort it.
+      all = @cdef_documents.to_a
+      @coverage = CdefBaselineGapService.coverage_for(all.map(&:id), @coverage_baseline)
+      sorted = all.sort_by { |doc| [ -@coverage.dig(doc.id, :pct).to_f, doc.name.to_s.downcase ] }
+      @pagy, @cdef_documents = paginate_array(sorted)
+    else
+      @pagy, @cdef_documents = paginate_collection(@cdef_documents)
+      @coverage = CdefBaselineGapService.coverage_for(@cdef_documents.map(&:id), @coverage_baseline) if @coverage_baseline
+    end
     @component_summaries = CdefComponent.summary_for(@cdef_documents.map(&:id))
+    @listing_facts = CdefControl.listing_facts(@cdef_documents.map(&:id))
   end
 
   def show
@@ -725,6 +744,17 @@ class CdefDocumentsController < ApplicationController
   end
 
   private
+
+  # The baseline of the boundary the list is filtered to (the Boundary filter
+  # only ever names a boundary the viewer can reach), when it has been
+  # resolved; nil otherwise.
+  def cdef_coverage_baseline
+    filter = boundary_filter
+    return unless filter&.selected == :boundary
+
+    profile = filter.boundary.profile_document
+    profile if profile&.resolved_catalog_json.present?
+  end
 
   # #499 slice 5 — bulk-apply web UI auth helpers.
   def authorize_bulk_apply_web!

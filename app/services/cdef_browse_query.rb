@@ -13,12 +13,17 @@
 # they INTERSECT the free-text search rather than replacing it: `?q=iam` plus
 # `?partition=aws-us-gov` means "IAM, in GovCloud", not "IAM or GovCloud".
 class CdefBrowseQuery
-  FACETS = %i[partition capability checks].freeze
+  # 1.18.0-rf #1300 adds source (CdefDocument::SOURCES), family (NIST
+  # control family, e.g. AC) and component_type ("applies to").
+  FACETS = %i[partition capability checks source family component_type].freeze
 
   FACET_LABELS = {
     partition: "Partition",
     capability: "Capability",
-    checks: "Automated checks"
+    checks: "Automated checks",
+    source: "Source",
+    family: "Family",
+    component_type: "Applies to"
   }.freeze
 
   def initialize(params, scope: CdefDocument.order(created_at: :desc))
@@ -37,6 +42,27 @@ class CdefBrowseQuery
   # what narrowed the result set without re-parsing the query string.
   def applied_facets
     FACETS.index_with { |key| @params[key].presence }.compact
+  end
+
+  # 1.18.0-rf #1300 — the dropdowns for the list's left column (the shared
+  # filter form). Choices come from the CDEFs in `@scope`, so the list never
+  # offers a family or component type it does not hold (within the
+  # boundary the list is filtered to). Source is the list's
+  # status tabs, so it has no dropdown.
+  def filter_fields
+    docs = apply_boundary(@scope).reorder(nil).select(:id)
+    families = CdefControl.where(cdef_document_id: docs)
+                          .distinct.pluck(Arel.sql(CdefControl::FAMILY_SQL))
+                          .grep(CdefControl::NIST_FAMILY).sort
+    types = CdefComponent.where(cdef_document_id: docs).where.not(component_type: [ nil, "" ])
+                         .distinct.pluck(:component_type).sort
+    partitions = CdefComponent.where(cdef_document_id: docs).pluck(:partitions).flatten.uniq.sort
+    [
+      select_field(:family, families.map { [ _1, _1 ] }),
+      select_field(:component_type, types.map { [ _1.humanize, _1 ] }),
+      select_field(:partition, partitions.map { [ CdefComponent.partition_label(_1), _1 ] }),
+      select_field(:checks, [ [ "With automated checks", "true" ], [ "Documentation only", "false" ] ])
+    ].compact
   end
 
   private
@@ -86,7 +112,21 @@ class CdefBrowseQuery
          .or(scope.where(id: CdefComponent.search(term).select(:cdef_document_id)))
   end
 
+  def select_field(key, choices)
+    return if choices.size < 2 && @params[key].blank?
+
+    { key: key, label: FACET_LABELS.fetch(key), type: :select, choices: choices, value: @params[key] }
+  end
+
   def apply_facets(scope)
+    scope = scope.with_source(@params[:source]) if @params[:source].present?
+    if @params[:family].present?
+      scope = scope.where(id: CdefControl.in_family(@params[:family]).select(:cdef_document_id))
+    end
+    if @params[:component_type].present?
+      scope = scope.where(id: CdefComponent.where(component_type: @params[:component_type]).select(:cdef_document_id))
+    end
+
     if @params[:partition].present?
       scope = scope.where(id: CdefComponent.in_partition(@params[:partition]).select(:cdef_document_id))
     end

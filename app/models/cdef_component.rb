@@ -177,6 +177,8 @@ class CdefComponent < ApplicationRecord
       {
         component_count: components.size,
         service_count: services.size,
+        # 1.18.0-rf #1300 — what the definition applies to.
+        component_types: components.filter_map { |c| c.component_type.presence }.uniq.sort,
         # An upstream file is a service FAMILY, not one service:
         # workspaces.oscal carries four (WorkSpaces, Instances, Thin Client,
         # Web). Naming them is the difference between a card that informs and
@@ -215,7 +217,7 @@ class CdefComponent < ApplicationRecord
   # should render as "no coverage asserted" rather than blank.
   def self.empty_summary
     {
-      component_count: 0, service_count: 0, service_titles: [],
+      component_count: 0, service_count: 0, component_types: [], service_titles: [],
       primary_description: nil, partitions: [],
       partitions_uniform: true, region_count: 0,
       availability: [], lifecycle_stages: [], declared_capabilities: [],

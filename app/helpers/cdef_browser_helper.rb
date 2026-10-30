@@ -21,16 +21,72 @@ module CdefBrowserHelper
   # Where the content came from. The UI must never blur upstream AWS content
   # (Apache-2.0, explicitly labelled experimental) with SPARC-curated or
   # org-provided definitions, because they carry different warranties.
+  # 1.18.0-rf #1300 — through CdefDocument#source_kind, the definition the
+  # list's source tabs and filter use.
   def cdef_source_badge(document)
-    if document.try(:aws_labs_source?)
-      { text: "AWS", class: "sparc-status sparc-status--warning", title: "Upstream AWS Labs content" }
-    elsif document.organization_id.present?
-      { text: "Org", class: "badge badge-info", title: "Organization-provided" }
-    elsif document.profile_document_id.present?
-      { text: "SPARC", class: "badge bg-primary", title: "Generated from a SPARC profile" }
-    else
-      { text: "Local", class: "badge bg-secondary", title: "Uploaded or hand-authored" }
+    case document.source_kind
+    when "aws"   then { text: "AWS", class: "sparc-status sparc-status--warning", title: "Upstream AWS Labs content" }
+    when "org"   then { text: "Org", class: "badge badge-info", title: "Organization-provided" }
+    when "sparc" then { text: "SPARC", class: "badge bg-primary", title: "Generated from a SPARC profile" }
+    else              { text: "Local", class: "badge bg-secondary", title: "Uploaded or hand-authored" }
     end
+  end
+
+  # 1.18.0-rf #1300 — where it came from, which version, and when it last
+  # changed: the AWS Labs sync for upstream content, else the last edit.
+  def cdef_source_line(document)
+    version = document.cdef_version.presence && "v#{document.cdef_version}"
+    if document.source_kind == "aws"
+      fetched = document.import_metadata["fetched_at"].presence && Time.zone.parse(document.import_metadata["fetched_at"].to_s)
+      [ "awslabs/oscal-content", version, (fetched && "synced #{time_ago_in_words(fetched)} ago") ]
+    else
+      origin = document.source_kind == "org" ? (document.organization&.name || "Organization") : CdefDocument::SOURCES[document.source_kind]
+      [ origin, version, "edited #{time_ago_in_words(document.updated_at)} ago" ]
+    end.compact.join(" · ")
+  rescue ArgumentError
+    [ "awslabs/oscal-content", version ].compact.join(" · ")
+  end
+
+  # 1.18.0-rf #1300 — the CDEF card and row under SPARC_NAV_SHELL: source and
+  # last change, what it applies to, the controls it covers and their
+  # families, SPARC's enrichment of upstream content, and — when the list is
+  # filtered to a boundary with a baseline — coverage of that baseline.
+  FAMILY_CHIPS_SHOWN = 8
+
+  def cdef_shell_slots(document, summary, facts, coverage)
+    families = facts[:families]
+    family_chips = families.first(FAMILY_CHIPS_SHOWN).map { { text: _1, class: "sparc-chip--family", title: "Control family" } }
+    if families.size > FAMILY_CHIPS_SHOWN
+      family_chips << { text: "+#{families.size - FAMILY_CHIPS_SHOWN}", class: "sparc-chip--family",
+                        title: families.drop(FAMILY_CHIPS_SHOWN).join(", ") }
+    end
+    enrichment = if document.source_kind == "aws" && summary[:enriched_control_count].positive?
+      [ { text: "SPARC enrichment", class: "sparc-chip--derived",
+          title: "#{summary[:enriched_control_count]} NIST controls mapped by SPARC" } ]
+    else
+      []
+    end
+    applies = summary[:component_types].presence && "Applies to #{summary[:component_types].map(&:humanize).join(', ').downcase}"
+    {
+      metrics: [
+        { value: summary[:service_count], label: "services".pluralize(summary[:service_count]) },
+        *cdef_listing_metrics(facts, coverage),
+        { value: summary[:check_count], label: "checks" }
+      ],
+      chips: enrichment + family_chips + cdef_card_chips(summary),
+      footer: [ cdef_source_line(document), applies, cdef_mapping_note(summary) ].compact.join(" · "),
+      meter: coverage && { value: coverage[:pct], label: "#{coverage[:pct].round}% of the boundary's baseline covered" }
+    }
+  end
+
+  # The numbers a CDEF row adds (#1300): controls covered, and against the
+  # boundary's baseline when the list is filtered to a boundary that has one.
+  def cdef_listing_metrics(facts, coverage)
+    metrics = [ { value: facts[:controls], label: "controls covered" } ]
+    if coverage
+      metrics << { value: "#{coverage[:pct].round}%", label: "of the boundary's baseline (#{coverage[:covered]}/#{coverage[:total]})" }
+    end
+    metrics
   end
 
   # The numbers worth comparing between two CDEFs at a glance.

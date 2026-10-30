@@ -1,0 +1,9 @@
+<%# 1.18.0-rf #1300 — sort a boundary's CDEFs by how much of its baseline
+    each covers. Offered only while the list is filtered to a boundary that
+    has a baseline (CdefDocumentsController#cdef_coverage_baseline). %>
+<nav class="sparc-segmented" aria-label="Sort component definitions" data-testid="cdef-sort">
+  <%= link_to "Newest", url_for(request.query_parameters.except("sort", "page")),
+        aria: { current: (@sort ? nil : "true") } %>
+  <%= link_to "Coverage", url_for(request.query_parameters.except("page").merge("sort" => "coverage")),
+        aria: { current: (@sort == "coverage" ? "true" : nil) }, data: { testid: "cdef-sort-coverage" } %>
+</nav>

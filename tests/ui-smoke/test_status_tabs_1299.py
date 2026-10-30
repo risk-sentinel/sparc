@@ -1,4 +1,4 @@
-"""Status tabs, list rows and side filters in a real browser (1.18.0-rf #1299).
+"""Status tabs, list rows and side filters in a real browser (1.18.0-rf #1299, #1300).
 
 Posture-gated ("nav_shell"): reported as UNPROVEN when the stack has the switch
 off. On each list with tabs, every tab is clicked (each click followed by a CSP
@@ -25,8 +25,9 @@ pytestmark = [pytest.mark.authenticated, pytest.mark.posture("nav_shell")]
 TABS = "[data-testid=status-tabs] [data-testid=status-tab]"
 ROW = "[data-testid=collection-row]"
 
-# Lists with status tabs (CDEFs get theirs with #1300).
+# Lists with status tabs (CDEFs by source, #1300).
 TABBED = [
+    ("cdef", "/cdef_documents"),
     ("ssp", "/ssp_documents"),
     ("sap", "/sap_documents"),
     ("sar", "/sar_documents"),
@@ -62,10 +63,12 @@ def test_every_tab_selects_itself_and_shows_its_count(authed_page, label, path):
 
     for target in targets:
         _open(page, f"{path}?view=list&per_page=200")
+        before = page.url
         tab = page.locator(f"{TABS}[data-tab='{target['slug']}']")
         click_and_assert_clean(page, tab, during=f"{label}: tab {target['slug']}")
         if target["slug"] != "all":
-            page.wait_for_url(lambda url: "status=" in url, timeout=15000)
+            # A Turbo visit: the URL changes after the click returns.
+            page.wait_for_url(lambda url, before=before: url != before, timeout=15000)
         page.wait_for_load_state("networkidle")
 
         query = parse_qs(urlparse(page.url).query)
@@ -111,3 +114,33 @@ def test_rows_fit_the_viewport(authed_page, width):
         pytest.skip("no SSPs on this deployment")
     overflow = page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
     assert overflow <= 0, f"{width}px: the list scrolls sideways by {overflow}px"
+
+
+def test_cdef_coverage_sorts_a_boundary_list(authed_page):
+    """#1300 — inside a boundary with a baseline, CDEFs sort by coverage."""
+    page = authed_page
+    record_csp(page)
+    _open(page, "/cdef_documents?view=list")
+    options = page.locator("[data-testid=boundary-filter-option]").evaluate_all(
+        "els => els.map(e => e.getAttribute('href'))"
+    )
+    for href in options:
+        _open(page, href)
+        if page.locator("[data-testid=cdef-sort-coverage]").count():
+            break
+    else:
+        pytest.skip("no boundary here has CDEFs and a resolved baseline")
+
+    before = page.url
+    click_and_assert_clean(page, "[data-testid=cdef-sort-coverage]", during="sort by coverage")
+    page.wait_for_url(lambda url: url != before and "sort=coverage" in url, timeout=15000)
+    page.wait_for_load_state("networkidle")
+    values = [
+        float(v)
+        for v in page.locator(f"{ROW} [data-testid=coverage-meter]").evaluate_all(
+            "els => els.map(e => e.getAttribute('value'))"
+        )
+    ]
+    assert values, "a boundary list sorted by coverage shows no coverage"
+    assert values == sorted(values, reverse=True), f"not sorted by coverage: {values}"
+    assert_no_csp_violations(page, during="cdef coverage sort")

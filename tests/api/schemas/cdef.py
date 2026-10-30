@@ -62,6 +62,8 @@ class ComponentSummary(BaseModel):
 
     count: Annotated[int, Field(ge=0)]
     service_count: Annotated[int, Field(ge=0)]
+    # 1.18.0-rf #1300 — what the definition applies to (its component types).
+    component_types: list[str]
     service_titles: list[str]
     description: str | None = None
     partitions: list[Partition]
@@ -108,6 +110,18 @@ class ComponentDetail(BaseModel):
     mapping_sources: list[str]
 
 
+class BaselineCoverage(BaseModel):
+    """1.18.0-rf #1300 — coverage of a boundary's baseline, on an index filtered
+    to a boundary the caller reaches whose baseline is resolved."""
+
+    model_config = STRICT
+
+    covered: Annotated[int, Field(ge=0)]
+    total: Annotated[int, Field(ge=0)]
+    pct: Annotated[float, Field(ge=0, le=100)]
+    profile_document_id: int
+
+
 class CdefDocumentIndex(DocumentBase):
     """Shape of one item in `/api/v1/cdef_documents` (list)."""
 
@@ -139,6 +153,12 @@ class CdefDocumentIndex(DocumentBase):
     # #887 — the enriched shape the UI renders, so the API is not a thinner
     # answer to the same question.
     components: ComponentSummary
+    # 1.18.0-rf #1300 — what the list screen shows on each row. Index only:
+    # absent on the detail shape.
+    source_kind: Literal["aws", "org", "sparc", "local"] | None = None
+    controls_covered: Annotated[int, Field(ge=0)] | None = None
+    families: list[str] | None = None
+    baseline_coverage: BaselineCoverage | None = None
 
 
 class CdefDocumentShow(CdefDocumentIndex):

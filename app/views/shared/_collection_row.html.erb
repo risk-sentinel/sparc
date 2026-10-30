@@ -9,8 +9,8 @@
   user gets one stop per row.
 
   Locals: title, url, badges, subtitle, description, metrics, chips,
-  empty_note, footer, actions, select (see shared/_item_card); icon (optional,
-  an icon name drawn before the title).
+  empty_note, footer, actions, select, meter (see shared/_item_card); icon
+  (optional, an icon name drawn before the title).
 %>
 <article class="sparc-collection-row" data-testid="collection-row">
   <% if local_assigns[:select].present? %>
@@ -43,6 +43,7 @@
         <% if local_assigns[:footer].present? %><li><%= local_assigns[:footer] %></li><% end %>
       </ul>
     <% end %>
+    <%= render "shared/collection_meter", meter: local_assigns[:meter] if local_assigns[:meter] %>
   </div>
   <% if local_assigns[:actions].present? %>
     <div class="sparc-collection-row__actions"><%= local_assigns[:actions] %></div>

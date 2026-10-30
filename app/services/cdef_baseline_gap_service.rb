@@ -37,6 +37,33 @@ class CdefBaselineGapService
     }
   end
 
+  # 1.18.0-rf #1300 — coverage of many CDEFs against one baseline, for a list:
+  # the same comparison as #analyze (the baseline's control ids through
+  # ResolvedCatalog against each CDEF's control ids), in one query.
+  # Returns { cdef_id => { covered:, total:, pct: } }; {} when the baseline
+  # has not been resolved.
+  def self.coverage_for(document_ids, profile)
+    return {} unless profile&.resolved_catalog_json.present?
+
+    baseline = baseline_control_ids(profile)
+    ids = Array(document_ids).compact.uniq
+    by_doc = CdefControl.where(cdef_document_id: ids).pluck(:cdef_document_id, :control_id)
+                        .group_by(&:first).transform_values { |rows| rows.map(&:last).to_set }
+    ids.index_with do |id|
+      covered = (baseline & by_doc.fetch(id, Set.new)).size
+      { covered: covered, total: baseline.size,
+        pct: baseline.empty? ? 100.0 : (covered * 100.0 / baseline.size).round(1) }
+    end
+  end
+
+  # A baseline's control ids, cached per version of the baseline: resolving
+  # the catalog is the expensive part, and a list asks for it on every page.
+  def self.baseline_control_ids(profile)
+    Rails.cache.fetch([ "cdef-baseline-control-ids", profile.id, profile.updated_at.to_f ]) do
+      ResolvedCatalog.wrap(profile.resolved_catalog_json).control_ids.to_a
+    end.to_set
+  end
+
   # Returns missing control details (id + title) for the gap UI.
   def missing_control_details
     gap = analyze
@@ -56,7 +83,7 @@ class CdefBaselineGapService
   # #999 — through ResolvedCatalog, so a nested enhancement counts as covered
   # rather than reading as a gap the CDEF was never asked to fill.
   def extract_baseline_control_ids
-    ResolvedCatalog.wrap(@profile.resolved_catalog_json).control_ids.to_set
+    self.class.baseline_control_ids(@profile)
   end
 
   def build_catalog_control_map

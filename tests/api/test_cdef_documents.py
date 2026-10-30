@@ -371,6 +371,38 @@ class TestBrowse:
         show = admin_client.get(f"{PATH}/{cdef_doc['slug']}").json()["data"]
         assert "component_details" in show
 
+    def test_rows_say_where_each_came_from_and_what_it_covers(
+        self, admin_client: httpx.Client, cdef_doc
+    ) -> None:
+        """1.18.0-rf #1300 — the list screen's row facts, on every index row."""
+        row = next(
+            d
+            for d in admin_client.get(PATH, params={"q": cdef_doc["name"]}).json()["data"]
+            if d["slug"] == cdef_doc["slug"]
+        )
+        assert row["source_kind"] == "local"
+        assert row["controls_covered"] == 0 and row["families"] == []
+        assert "baseline_coverage" not in row
+
+    def test_source_narrows_and_an_unknown_source_returns_nothing(
+        self, admin_client: httpx.Client, cdef_doc
+    ) -> None:
+        """1.18.0-rf #1300 — `source` is the list screen's source tabs."""
+        local = admin_client.get(PATH, params={"source": "local", "items": 100})
+        assert local.status_code == 200, local.text
+        assert {d["source_kind"] for d in local.json()["data"]} <= {"local"}
+
+        aws = admin_client.get(PATH, params={"source": "aws", "q": cdef_doc["name"]}).json()
+        assert all(d["slug"] != cdef_doc["slug"] for d in aws["data"])
+
+        nothing = admin_client.get(PATH, params={"source": "no-such-source"})
+        assert nothing.json()["data"] == []
+
+    def test_family_narrows_to_definitions_covering_it(self, admin_client: httpx.Client) -> None:
+        """1.18.0-rf #1300 — every row returned covers a control in the family."""
+        response = admin_client.get(PATH, params={"family": "AC", "items": 50})
+        assert response.status_code == 200, response.text
+        assert all("AC" in d["families"] for d in response.json()["data"])
 
 class TestShow:
     @pytest.mark.happy

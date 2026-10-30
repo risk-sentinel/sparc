@@ -100,6 +100,13 @@ Returns a paginated list of component definition documents.
 | `name` | string | No | Filter by name (partial match) |
 | `q` | string | No | Case-insensitive search across name and description (#672) |
 | `cdef_type` | string | No | Filter by component type (e.g., `software`, `hardware`, `service`) |
+| `source` | string | No | Where it came from: `aws` (AWS Labs), `org` (an organization's), `sparc` (generated from a SPARC baseline) or `local`; the list screen's source tabs (1.18.0-rf #1300). Any other value matches nothing |
+| `family` | string | No | CDEFs covering at least one control in this SP 800-53 family (e.g. `AC`) |
+| `component_type` | string | No | CDEFs with a component of this type (e.g. `service`); "Applies to" on the list screen |
+| `authorization_boundary_id` | integer | No | The boundary's CDEFs. When the caller can reach the boundary and its baseline is resolved, each row also carries `baseline_coverage` |
+| `sort` | string | No | `coverage` — most of the boundary's baseline first; only with an `authorization_boundary_id` that returns `baseline_coverage` |
+
+Each row of the list also carries (1.18.0-rf #1300): `source_kind` (as `source` above), `controls_covered` (distinct control ids), `families` (SP 800-53 families of those controls), `components.component_types`, and, on a boundary list as above, `baseline_coverage: { covered, total, pct, profile_document_id }` — the same comparison as the CDEF's baseline gap check.
 
 **Example Request**
 
