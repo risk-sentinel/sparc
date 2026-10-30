@@ -40,7 +40,8 @@ COLLECTION_PAGES = [
     ("control_catalogs", "/control_catalogs"),
     ("control_mappings", "/control_mappings"),
     ("converters", "/converters"),
-    ("authorization_boundaries", "/authorization_boundaries"),
+    # 1.18.0-rf: with SPARC_NAV_SHELL on, the card/list views are the classic list.
+    ("authorization_boundaries", "/authorization_boundaries?classic=1"),
     ("evidences", "/evidences"),
     ("authoritative_sources", "/authoritative_sources"),
     ("federation_peers", "/federation_peers"),
@@ -96,6 +97,11 @@ def _populated(page) -> bool:
     return page.locator(f"{CARD}, table tbody tr").count() > 0
 
 
+def _view(path, mode):
+    """`path` showing `mode` (card or list), whether or not it has a query."""
+    return f"{path}{'&' if '?' in path else '?'}view={mode}"
+
+
 def _load(page, path, *, during):
     console_errors = collect_console_errors(page)
     record_csp(page)
@@ -116,7 +122,7 @@ def _load(page, path, *, during):
 @pytest.mark.parametrize(("label", "path"), COLLECTION_PAGES, ids=[p[0] for p in COLLECTION_PAGES])
 def test_card_view_renders(authed_page, label, path):
     """?view=card draws cards, not a table."""
-    _load(authed_page, f"{path}?view=card", during=f"{label} card view")
+    _load(authed_page, _view(path, "card"), during=f"{label} card view")
 
     if not _populated(authed_page):
         pytest.skip(f"{label}: no records on this deployment")
@@ -132,7 +138,7 @@ def test_card_view_renders(authed_page, label, path):
 @pytest.mark.parametrize(("label", "path"), COLLECTION_PAGES, ids=[p[0] for p in COLLECTION_PAGES])
 def test_list_view_renders(authed_page, label, path):
     """?view=list draws a table, not cards."""
-    _load(authed_page, f"{path}?view=list", during=f"{label} list view")
+    _load(authed_page, _view(path, "list"), during=f"{label} list view")
 
     if not _populated(authed_page):
         pytest.skip(f"{label}: no records on this deployment")
@@ -152,7 +158,7 @@ def test_toggle_switches_the_view(authed_page, label, path):
     The assertion request specs cannot make: that the control is reachable,
     that clicking it navigates, and that the server honours the result.
     """
-    _load(authed_page, f"{path}?view=card", during=f"{label} toggle")
+    _load(authed_page, _view(path, "card"), during=f"{label} toggle")
 
     if not _populated(authed_page):
         pytest.skip(f"{label}: no records on this deployment")
