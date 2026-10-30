@@ -58,12 +58,14 @@ def test_choose_a_boundary_and_back_to_all(authed_page):
     name = first.locator(".sparc-filter-link__label").inner_text().strip()
 
     click_and_assert_clean(page, first, during="choose a boundary")
+    page.wait_for_url(lambda u: f"{PARAM}={boundary_id}" in u)
     page.wait_for_load_state("networkidle")
     assert _param(page) == [boundary_id], page.url
     assert page.locator(CURRENT).get_attribute("data-boundary-id") == boundary_id
     assert page.locator(CURRENT).inner_text().strip().startswith(name)
 
     click_and_assert_clean(page, ALL, during="back to all boundaries")
+    page.wait_for_url(lambda u: f"{PARAM}=" not in u)
     page.wait_for_load_state("networkidle")
     assert _param(page) is None, page.url
     assert page.locator(CURRENT).get_attribute("data-testid") == "boundary-filter-all"

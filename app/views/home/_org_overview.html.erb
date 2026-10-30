@@ -33,7 +33,7 @@
         </h2>
         <div class="sparc-lane__boxes">
           <% group[:cards].each do |card| %>
-            <article class="sparc-lane-box" data-testid="org-box" data-home-count="<%= card[:key] %>">
+            <article class="sparc-lane-box" data-testid="org-box" data-box="<%= card[:key] %>">
               <div class="sparc-lane-box__head">
                 <%= icon(card[:icon], css_class: "sparc-tile-icon sparc-tile-icon--#{group[:layer]}") %>
                 <%= link_to card[:title], card[:path], class: "sparc-lane-box__title" %>
@@ -43,6 +43,7 @@
                 <% end %>
               </div>
               <%= link_to number_with_delimiter(card[:count]), card[:path], class: "sparc-lane-box__count",
+                    data: { home_count: card[:key] },
                     aria: { label: "#{number_with_delimiter(card[:count])} #{card[:title]}: open the list" } %>
             </article>
           <% end %>

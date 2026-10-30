@@ -58,7 +58,14 @@
     <section class="sparc-repo-list" aria-label="Boundaries" data-testid="boundary-rows">
       <div class="sparc-repo-list__head">
         <strong><%= pluralize(@pagy&.count || @authorization_boundaries.size, "boundary", plural: "boundaries") %></strong>
-        <span class="ms-auto small text-body-secondary">Most recently updated first</span>
+        <%# #1248 — the Next decision sort the classic list offers, by the same allow-list. %>
+        <% sort_next = @sort == "next_decision" ? "-next_decision" : "next_decision" %>
+        <span class="ms-auto small text-body-secondary">
+          <%= { "next_decision" => "Soonest next decision first", "-next_decision" => "Latest next decision first" }.fetch(@sort.to_s, "Most recently updated first") %>
+          ·
+          <%= link_to "Sort by next decision", url_for(request.query_parameters.except("page").merge("sort" => sort_next)),
+                data: { testid: "boundaries-sort-next-decision" } %>
+        </span>
       </div>
       <% if @authorization_boundaries.empty? %>
         <p class="text-center text-body-secondary p-4 mb-0">No boundaries match this filter.</p>
@@ -81,6 +88,7 @@
               <li><%= link_to poam_documents_path(scoped), data: { testid: "row-poams" } do %><%= icon("flag") %> <%= pluralize(@row_counts[:poam][ab.id], "POA&M") %><% end %></li>
               <li><%= link_to evidences_path(scoped), data: { testid: "row-evidence" } do %><%= icon("paperclip") %> <%= @row_counts[:evidence][ab.id] %> evidence<% end %></li>
               <% if @show_organization && ab.organization %><li><%= icon("building-2") %> <%= ab.organization.name %></li><% end %>
+              <li>Next decision <%= next_decision_badge(ab) %></li>
               <li>Updated <%= time_ago_in_words(ab.updated_at) %> ago</li>
             </ul>
           </div>
