@@ -45,7 +45,9 @@ def test_choose_a_boundary_and_back_to_all(authed_page):
     page = authed_page
     record_csp(page)
 
-    _open(page, "/ssp_documents")
+    # Arrive with a page size and a view mode: choosing a boundary must keep
+    # both and drop the page number, as the filter row does (#908).
+    _open(page, "/ssp_documents?per_page=50&view=list&page=1")
     if page.locator(FILTER).count() == 0:
         pytest.skip("SPARC_NAV_SHELL is off on this stack, so there is no Boundary filter")
     assert page.locator(CURRENT).get_attribute("data-testid") == "boundary-filter-all"
@@ -61,6 +63,9 @@ def test_choose_a_boundary_and_back_to_all(authed_page):
     page.wait_for_url(lambda u: f"{PARAM}={boundary_id}" in u)
     page.wait_for_load_state("networkidle")
     assert _param(page) == [boundary_id], page.url
+    query = parse_qs(urlparse(page.url).query)
+    assert query.get("per_page") == ["50"] and query.get("view") == ["list"], page.url
+    assert "page" not in query, f"choosing a boundary kept the old page number: {page.url}"
     assert page.locator(CURRENT).get_attribute("data-boundary-id") == boundary_id
     assert page.locator(CURRENT).inner_text().strip().startswith(name)
 
