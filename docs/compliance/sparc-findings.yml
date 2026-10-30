@@ -262,7 +262,11 @@ findings:
   next_review_date: '2026-11-16'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1317"
+    approved_at: "2026-10-30"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: 'HIGH grades the flaw where the affected protocol is in use. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
     mitigating_factors:
