@@ -81,7 +81,20 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     # UI also matched regions, control ids and capabilities, and the facets
     # did not exist on the API at all.
     query = CdefBrowseQuery.new(params, scope: scope)
-    result = paginate(query.documents)
+    # 1.18.0-rf #1300 — coverage of the boundary's baseline, and sorting by
+    # it, as on the list screen: only when `authorization_boundary_id` names a
+    # boundary the caller can reach that has a resolved baseline.
+    baseline = coverage_baseline_for_index
+    if baseline && params[:sort] == "coverage"
+      all = query.documents.to_a
+      coverage = CdefBaselineGapService.coverage_for(all.map(&:id), baseline)
+      result = paginate(all.sort_by { |doc| [ -coverage.dig(doc.id, :pct).to_f, doc.name.to_s.downcase ] })
+    else
+      result = paginate(query.documents)
+      coverage = CdefBaselineGapService.coverage_for(result[:data].map(&:id), baseline) if baseline
+    end
+    @listing_facts = CdefControl.listing_facts(result[:data].map(&:id))
+    @coverage = coverage && { baseline: baseline, by_id: coverage }
 
     # Summarise only the page, the way the card view does.
     summaries = CdefComponent.summary_for(result[:data].map(&:id))
@@ -477,6 +490,17 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     with_oscal_metadata(permitted, :cdef_document, @cdef)
   end
 
+  # The baseline of the boundary `authorization_boundary_id` names, when the
+  # caller can reach that boundary and its baseline is resolved; nil
+  # otherwise (including `none` and an unknown or unreachable id).
+  def coverage_baseline_for_index
+    id = params[BoundaryScopedList::PARAM].to_s
+    return unless id.match?(/\A\d+\z/)
+
+    profile = AuthorizationBoundary.visible_to(current_user).find_by(id: id)&.profile_document
+    profile if profile&.resolved_catalog_json.present?
+  end
+
   def serialize_cdef(cdef, detailed: false, summary: nil)
     data = {
       id: cdef.id,
@@ -578,6 +602,20 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     # the empty summary is returned rather than omitting the key.
     data[:components] = serialize_component_summary(summary || CdefComponent.empty_summary)
 
+    # 1.18.0-rf #1300 — what the list screen shows on each row: where it came
+    # from (CdefDocument::SOURCES), the distinct controls it covers and their
+    # NIST families, and — on an index filtered to a boundary with a baseline —
+    # its coverage of that baseline.
+    if @listing_facts
+      facts = @listing_facts[cdef.id] || CdefControl.empty_listing_facts
+      data[:source_kind] = cdef.source_kind
+      data[:controls_covered] = facts[:controls]
+      data[:families] = facts[:families]
+      if @coverage && (cov = @coverage[:by_id][cdef.id])
+        data[:baseline_coverage] = cov.merge(profile_document_id: @coverage[:baseline].id)
+      end
+    end
+
     # The detailed shape lists the components themselves. On the index that
     # would be a row-count multiplier for no benefit — the roll-up is what a
     # list needs.
@@ -594,6 +632,8 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     {
       count: summary[:component_count],
       service_count: summary[:service_count],
+      # 1.18.0-rf #1300 — what the definition applies to.
+      component_types: summary[:component_types],
       service_titles: summary[:service_titles],
       description: summary[:primary_description],
       partitions: summary[:partitions].map do |p|

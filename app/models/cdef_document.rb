@@ -196,6 +196,38 @@ class CdefDocument < ApplicationRecord
 
   CDEF_TYPES = %w[disa_stig scap cis custom].freeze
 
+  # 1.18.0-rf #1300 — where a CDEF came from, as one definition the list's
+  # tabs and badge, its `source` filter and the API all read. In order of
+  # precedence: upstream AWS Labs content, an organization's, generated from a
+  # SPARC baseline, or uploaded / hand-authored here.
+  SOURCES = {
+    "aws"   => "AWS Labs",
+    "org"   => "Organization",
+    "sparc" => "SPARC baseline",
+    "local" => "Local"
+  }.freeze
+
+  AWS_LABS_SQL = "import_metadata->>'source_type' = 'aws_labs'"
+
+  scope :with_source, ->(kind) {
+    not_aws = where("(#{AWS_LABS_SQL}) IS NOT TRUE")
+    case kind.to_s
+    when "aws"   then where(AWS_LABS_SQL)
+    when "org"   then not_aws.where.not(organization_id: nil)
+    when "sparc" then not_aws.where(organization_id: nil).where.not(profile_document_id: nil)
+    when "local" then not_aws.where(organization_id: nil, profile_document_id: nil)
+    else none
+    end
+  }
+
+  def source_kind
+    if aws_labs_source? then "aws"
+    elsif organization_id.present? then "org"
+    elsif profile_document_id.present? then "sparc"
+    else "local"
+    end
+  end
+
   # #628 — content-completeness, independent of the parse `status`. A CDEF
   # asserts how a component implements controls, so it needs at least one
   # control before it can be published; a metadata-only API create has none.

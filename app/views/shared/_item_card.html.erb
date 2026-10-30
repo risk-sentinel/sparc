@@ -21,6 +21,7 @@
     footer     — String or safe HTML
     actions    — safe HTML, right side of the footer
     select     — safe HTML, a bulk-select control shown before the title
+    meter      — { value: 0..100, label: } (1.18.0-rf #1300)
 
   `select` and `actions` exist so a card is not a read-only rendering of a row:
   #888 §4 requires every action available in one view to be available in the
@@ -67,6 +68,9 @@
       <% end %>
     </div>
   <% end %>
+
+  <%# 1.18.0-rf #1300 — meter: { value: 0..100, label: } (e.g. baseline coverage). %>
+  <%= render "shared/collection_meter", meter: local_assigns[:meter] if local_assigns[:meter] %>
 
   <% if local_assigns[:chips].present? %>
     <div class="sparc-item-card__chips">

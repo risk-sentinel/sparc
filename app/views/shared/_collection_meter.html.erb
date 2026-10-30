@@ -1,0 +1,9 @@
+<%# 1.18.0-rf #1300 — a share of something, on a card or a list row (e.g. how
+    much of the boundary's baseline a CDEF covers). A native <meter>, so it is
+    announced with its value and needs no inline style.
+    Locals: meter — { value: 0..100, label: } %>
+<div class="sparc-meter-line">
+  <meter class="sparc-meter" min="0" max="100" low="50" high="80" optimum="100"
+         value="<%= meter[:value] %>" aria-label="<%= meter[:label] %>" data-testid="coverage-meter"></meter>
+  <span class="sparc-meter-line__label"><%= meter[:label] %></span>
+</div>

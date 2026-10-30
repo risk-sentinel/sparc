@@ -38,6 +38,30 @@ class CdefControl < ApplicationRecord
 
   before_save :compute_control_family
 
+  # 1.18.0-rf #1300 — a control's family: the stored one, else the id's
+  # prefix (ControlOrdering reads it the same way). Only SP 800-53 families
+  # (FrameworkDeriver::NIST_FAMILIES) are listed, so a vendor id such as
+  # "ELASTICBEANSTALK.1" or a STIG rule "SV-…" never shows as a family.
+  FAMILY_SQL = "COALESCE(NULLIF(cdef_controls.control_family, ''), UPPER(SPLIT_PART(cdef_controls.control_id, '-', 1)))"
+  NIST_FAMILY = /\A(?:#{FrameworkDeriver::NIST_FAMILIES.join("|").upcase})\z/
+
+  scope :in_family, ->(family) { where("#{FAMILY_SQL} = ?", family.to_s.upcase) }
+
+  # For one page of CDEFs: the distinct controls each covers and its families.
+  def self.listing_facts(document_ids)
+    ids = Array(document_ids).compact.uniq
+    return {} if ids.empty?
+
+    where(cdef_document_id: ids).where.not(control_id: [ nil, "" ])
+      .pluck(:cdef_document_id, :control_id, Arel.sql(FAMILY_SQL))
+      .group_by(&:first).transform_values do |rows|
+        { controls: rows.map { _1[1] }.uniq.size,
+          families: rows.map(&:last).grep(NIST_FAMILY).uniq.sort }
+      end
+  end
+
+  def self.empty_listing_facts = { controls: 0, families: [] }.freeze
+
   # #911 — a STIG rule reaches NIST through CCI (rule → CCI → 800-53). Where
   # that resolution fails there is no control to name, so `control_id` is NULL
   # and the XCCDF identity survives in `stig_id`. That pair is the unmapped

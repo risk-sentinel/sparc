@@ -3948,6 +3948,13 @@ a.link-purple { color: var(--sparc-purple); }
   .sparc-collection-row__actions { max-width: none; flex-basis: 100%; }
 }
 
+/* 1.18.0-rf #1300 — a share (baseline coverage) on a card or row, and the
+   control-family chips. The meter is native: colours come from the browser's
+   own low/high/optimum states, and the value is also written beside it. */
+.sparc-meter-line { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--bs-secondary-color); }
+.sparc-meter { width: 8rem; height: 0.6rem; flex: 0 0 auto; }
+.sparc-chip--family { font-family: var(--bs-font-monospace); letter-spacing: 0.02em; }
+
 /* The list's filter form in the left column. */
 .sparc-filter-form--stacked .form-label { color: var(--bs-secondary-color); }
 

@@ -46,18 +46,29 @@ class StatusTabs
 
   attr_reader :keys
 
+  # CDEFs by source (CdefDocument::SOURCES): a tab is `?source=aws`, and the
+  # count goes through the same scope the browse query narrows with.
+  def self.cdef_source(base:, params:)
+    new(base: base, params: params,
+        definitions: CdefDocument::SOURCES.map { |kind, label| [ label, { "source" => kind } ] },
+        scope_for: ->(rel, tab_params) { rel.with_source(tab_params["source"]) })
+  end
+
   # definitions — [[label, { "param" => "value" }], ...]
-  def initialize(base:, params:, definitions:, all_label: "All")
+  # scope_for   — how a tab's params narrow a relation, when they are not
+  #               columns (default: `where(params)`)
+  def initialize(base:, params:, definitions:, all_label: "All", scope_for: nil)
     @base = base.reorder(nil)
     @params = params
     @definitions = definitions
     @all_label = all_label
+    @scope_for = scope_for || ->(rel, tab_params) { rel.where(tab_params) }
     @keys = definitions.flat_map { |_, p| p.keys }.uniq
   end
 
   def tabs
     @tabs ||= [ all_tab ] + @definitions.map do |label, tab_params|
-      Tab.new(label: label, params: tab_params, count: @base.where(tab_params).count,
+      Tab.new(label: label, params: tab_params, count: @scope_for.call(@base, tab_params).count,
               current: current?(tab_params))
     end
   end
@@ -70,7 +81,7 @@ class StatusTabs
   # cannot mean different things. Never touches the counts.
   def narrow(scope)
     given = @keys.select { |k| @params[k].present? }.index_with { |k| @params[k].to_s }
-    given.any? ? scope.where(given) : scope
+    given.any? ? @scope_for.call(scope, given) : scope
   end
 
   # The query params a tab links to: the request's, minus every tab's own key

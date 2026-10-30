@@ -118,13 +118,24 @@
         placeholder: "Search component definitions…",
         view_mode: (@view_mode if @cdef_documents.any?),
         facets: @facets, clear_params: @clear_facets,
-        extra: (render("cdef_documents/select_all") if can_bulk_delete? && @cdef_documents.any? && collection_layout(@view_mode) != :table) %>
+        status_tabs: @status_tabs, filter_fields: @filter_fields,
+        extra: safe_join([
+          (render("cdef_documents/select_all") if can_bulk_delete? && @cdef_documents.any? && collection_layout(@view_mode) != :table),
+          (render("cdef_documents/coverage_sort") if @coverage_baseline && @cdef_documents.any?)
+        ].compact, " ") %>
 
   <% if @cdef_documents.any? && collection_layout(@view_mode) != :table %>
     <div class="<%= collection_items_class(@view_mode) %>">
       <% @cdef_documents.each do |doc| %>
         <% summary = (@component_summaries || {})[doc.id] || CdefComponent.empty_summary %>
-        <%= render collection_item_partial(@view_mode),
+        <%# 1.18.0-rf #1300 — under the shell: source, applies to, controls
+            covered, families and baseline coverage (CdefBrowserHelper). %>
+        <% shell_slots = if SparcConfig.nav_shell?
+             cdef_shell_slots(doc, summary, (@listing_facts || {})[doc.id] || CdefControl.empty_listing_facts, @coverage&.[](doc.id))
+           else
+             {}
+           end %>
+        <%= render collection_item_partial(@view_mode), **{
               title: cdef_display_name(doc),
               url: cdef_document_path(doc),
               badges: [
@@ -139,7 +150,7 @@
               footer: [ doc.cdef_type.presence, cdef_mapping_note(summary),
                         "#{summary[:region_count]} regions" ].compact.join(" · "),
               select: (render("cdef_documents/bulk_checkbox", doc: doc) if can_bulk_delete?),
-              actions: render("cdef_documents/item_actions", doc: doc, compact: true) %>
+              actions: render("cdef_documents/item_actions", doc: doc, compact: true) }.merge(shell_slots) %>
       <% end %>
     </div>
   <% elsif @cdef_documents.any? %>
@@ -154,6 +165,7 @@
           <th class="sparc-ws-nowrap">Version</th>
           <th class="sparc-ws-nowrap">Status</th>
           <th class="sparc-ws-nowrap">Controls</th>
+          <% if @coverage %><th class="sparc-ws-nowrap" title="Share of the boundary's baseline this CDEF covers">Baseline coverage</th><% end %>
           <th class="sparc-ws-nowrap">Created</th>
           <th class="sparc-ws-nowrap">Actions</th>
         </tr>
@@ -211,6 +223,10 @@
               <% end %>
             </td>
             <td><%= doc.cdef_controls.count %></td>
+            <% if @coverage %>
+              <% cov = @coverage[doc.id] %>
+              <td class="sparc-ws-nowrap" data-testid="coverage-cell"><%= cov ? "#{cov[:pct].round}% (#{cov[:covered]}/#{cov[:total]})" : "—" %></td>
+            <% end %>
             <td class="sparc-ws-nowrap"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
             <td>
               <div class="sparc-maxw-280px">
