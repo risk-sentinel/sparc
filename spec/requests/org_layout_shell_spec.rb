@@ -113,7 +113,7 @@ RSpec.describe "Organization layout (1.18.0-rf)", type: :request do
       allow(SparcConfig).to receive(:nav_shell?).and_return(true)
       get "/"
       boxes = page.css("[data-testid=org-box]").to_h do
-        [ _1["data-home-count"], _1.at_css(".sparc-lane-box__count").text.delete(",").to_i ]
+        [ _1["data-box"], _1.at_css(".sparc-lane-box__count").text.delete(",").to_i ]
       end
 
       expect(page.css("[data-home-tile]").map { _1["data-home-tile"] }).to eq(classic_tiles)
@@ -124,19 +124,19 @@ RSpec.describe "Organization layout (1.18.0-rf)", type: :request do
     it "adds the Enterprise routing boxes for whoever their screens admit" do
       sign_in_as(admin)
       get "/"
-      enterprise = page.css("[data-layer=enterprise] [data-testid=org-box]").map { _1["data-home-count"] }
+      enterprise = page.css("[data-layer=enterprise] [data-testid=org-box]").map { _1["data-box"] }
       expect(enterprise).to eq(%w[organizations authorization_boundaries federation_peers authoritative_sources])
 
       sign_in_as(member)
       get "/"
-      enterprise = page.css("[data-layer=enterprise] [data-testid=org-box]").map { _1["data-home-count"] }
+      enterprise = page.css("[data-layer=enterprise] [data-testid=org-box]").map { _1["data-box"] }
       expect(enterprise).to eq(%w[authorization_boundaries])
     end
 
     it "offers New only where the create action would admit the viewer" do
       sign_in_as(member)
       get "/"
-      catalogs = page.css("[data-testid=org-box]").find { _1["data-home-count"] == "control_catalogs" }
+      catalogs = page.css("[data-testid=org-box]").find { _1["data-box"] == "control_catalogs" }
 
       expect(catalogs.at_css(".sparc-lane-box__new")).to be_nil
     end
@@ -189,6 +189,20 @@ RSpec.describe "Organization layout (1.18.0-rf)", type: :request do
 
       expect(row(alpha).at_css("[data-testid=boundary-sparkline]")["data-total"]).to eq("3")
       expect(row(bravo).at_css("[data-testid=boundary-sparkline]")["data-total"]).to eq("0")
+    end
+
+    # #1248 — the Next decision the classic list shows and sorts by.
+    it "shows each boundary's next decision and sorts by it" do
+      alpha.update!(boundary_metadata: alpha.boundary_metadata.merge("next_decision_date" => (Date.current + 400).iso8601))
+      bravo.update!(boundary_metadata: bravo.boundary_metadata.merge("next_decision_date" => (Date.current + 10).iso8601))
+      sign_in_as(member)
+      get "/authorization_boundaries"
+
+      expect(row(bravo).at_css("[data-next-decision]")["data-next-decision"]).to eq("due_soon")
+      get page.at_css("[data-testid=boundaries-sort-next-decision]")["href"]
+      expect(rows.map { _1["data-boundary-id"].to_i }).to eq([ bravo.id, alpha.id ])
+      get page.at_css("[data-testid=boundaries-sort-next-decision]")["href"]
+      expect(rows.map { _1["data-boundary-id"].to_i }).to eq([ alpha.id, bravo.id ])
     end
 
     it "keeps the classic list, with bulk delete, a click away for administrators" do

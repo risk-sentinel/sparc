@@ -275,14 +275,14 @@ def test_actions_are_present_in_both_views(authed_page):
         pytest.skip("no CDEF records on this deployment")
 
     list_actions = {
-        "view": authed_page.get_by_role("link", name="View").count(),
+        "view": authed_page.get_by_role("link", name="View", exact=True).count(),
         "export": authed_page.locator('[data-controller="oscal-export"]').count(),
         "delete": authed_page.get_by_role("button", name="Delete").count(),
     }
 
     _load(authed_page, "/cdef_documents?view=card", during="actions: card")
     card_actions = {
-        "view": authed_page.get_by_role("link", name="View").count(),
+        "view": authed_page.get_by_role("link", name="View", exact=True).count(),
         "export": authed_page.locator('[data-controller="oscal-export"]').count(),
         "delete": authed_page.get_by_role("button", name="Delete").count(),
     }

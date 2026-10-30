@@ -63,10 +63,14 @@ def test_inventory_shows_and_each_badge_opens_its_list(authed_page, base_url):
     assert len(badges) >= 11, f"expected a badge on every layer card, found {badges}"
 
     for key, href in badges:
-        card = page.locator(".sparc-section-card").filter(
+        # The classic card's "View", or (SPARC_NAV_SHELL, 1.18.0-rf) the
+        # Overview box's title link: either way the card's own way in.
+        card = page.locator(".sparc-section-card, [data-testid=org-box]").filter(
             has=page.locator(f"a[data-home-count='{key}']")
         )
-        view = card.get_by_role("link", name="View")
+        view = card.locator(".sparc-lane-box__title").or_(
+            card.get_by_role("link", name="View", exact=True)
+        )
         assert view.get_attribute("href") == href, f"{key}: badge and View lead to different pages"
 
     for key, href in badges:

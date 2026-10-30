@@ -63,7 +63,7 @@ def test_view_opens_show_page(authed_page):
     record_csp(authed_page)
     authed_page.goto(INDEX, wait_until="networkidle")
 
-    view = authed_page.get_by_role("link", name="View")
+    view = authed_page.get_by_role("link", name="View", exact=True)
     if view.count() == 0:
         pytest.skip("no rows to view")
     view.first.click()

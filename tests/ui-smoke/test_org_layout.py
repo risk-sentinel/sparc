@@ -54,8 +54,8 @@ def test_overview_boundaries_and_inside_a_boundary(authed_page):
     click_and_assert_clean(
         page, f"{ORG_TABS} [data-tab=boundaries]", during="open the Boundaries tab"
     )
+    page.wait_for_url(lambda u: urlparse(u).path == "/authorization_boundaries")
     page.wait_for_load_state("networkidle")
-    assert urlparse(page.url).path == "/authorization_boundaries", page.url
     assert _current(page, ORG_TABS) == "boundaries"
     rows = page.locator("[data-testid=boundary-row]")
     if rows.count() == 0:
@@ -67,6 +67,7 @@ def test_overview_boundaries_and_inside_a_boundary(authed_page):
     boundary_id = row.get_attribute("data-boundary-id")
     name = row.locator(".sparc-repo-row__name").inner_text().strip()
     click_and_assert_clean(page, row.locator(".sparc-repo-row__name"), during="open a boundary")
+    page.wait_for_url(lambda u: urlparse(u).path.startswith("/authorization_boundaries/"))
     page.wait_for_load_state("networkidle")
     assert page.locator("[data-testid=shell-boundary]").inner_text().strip() == name
     assert _current(page, BOUNDARY_TABS) == "overview"
@@ -74,6 +75,7 @@ def test_overview_boundaries_and_inside_a_boundary(authed_page):
     click_and_assert_clean(
         page, f"{BOUNDARY_TABS} [data-tab=poam]", during="open the boundary's POA&Ms"
     )
+    page.wait_for_url(lambda u: "authorization_boundary_id=" in u)
     page.wait_for_load_state("networkidle")
     query = parse_qs(urlparse(page.url).query)
     assert query.get("authorization_boundary_id") == [boundary_id], page.url
@@ -83,7 +85,7 @@ def test_overview_boundaries_and_inside_a_boundary(authed_page):
     assert_no_new_a11y_violations(page, "boundary_poams_tabs")
 
     click_and_assert_clean(page, "[data-testid=shell-org]", during="back to the organization")
+    page.wait_for_url(lambda u: urlparse(u).path == "/")
     page.wait_for_load_state("networkidle")
-    assert urlparse(page.url).path == "/", page.url
     assert _current(page, ORG_TABS) == "overview"
     assert_no_csp_violations(page, during="organization layout")
