@@ -131,7 +131,7 @@ per phase PR:
 | 1. Primitives | #1288, #1289 | Merged to `release-1.18.0-rf` (PR #1315) |
 | 2. Boundary context | #1290, #1292, #1293 | PR #1316 into `release-1.18.0-rf` |
 | 3. Shell, behind the switch | #1291, #1295, #1296, #1298, #1246 | Built on `feature/v1180rf_shell` |
-| 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | — (`feature/v1180rf_shell`) |
+| 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | Plan approved 2026-10-30; 4a (#1299, #1300, #1302, #1303) built on `feature/v1180rf_shell`, 4b (#1301, #1304) next |
 | 5. Finish | #1297, #1306, #1307, #1308, #1309 | — (`feature/v1180rf_shell`) |
 
 **Phase 0** records what the navigation offers today, per viewer, before any
@@ -218,6 +218,56 @@ impact the row shows. Administrators keep bulk delete through the classic list
   Boundaries tab. The list screens adopt it with #1299 in phase 4, and the
   document pages with #1304.
 - Search (#1305) stays deferred.
+
+**Phase 4** (plan approved 2026-10-30), behind `SPARC_NAV_SHELL`, walked in two
+stops: 4a (#1299, #1300, #1302, #1303), then 4b (#1301, #1304).
+- **The lists (#1299):**
+  - **Status tabs with counts** (`StatusTabs`) on nine lists. SSPs, SAPs,
+    SARs, POA&Ms and baselines by lifecycle; catalogs also by Approved;
+    evidence, mappings and converters by status. A tab is a link that sets
+    the filter, and its count is the list with every other filter applied.
+    `lifecycle_status` and `approval_status` filter the API index the same
+    way, and any other value matches nothing.
+  - **List** draws the shared row (`shared/_collection_row`, the card's
+    locals), and a third view, **Table**, keeps each screen's table. With
+    the switch off, List and Table both draw the table.
+  - The filter form moves into the list's left column, applied filters are
+    tokens, the view toggle is the segmented control, and page links are
+    restyled.
+  - Each list is headed by the shared page header (#1298): title, its first
+    create action, and the rest under "More actions" below 768px.
+- **The CDEF list (#1300):**
+  - **Source tabs** (AWS Labs, Organization, SPARC baseline, Local) from
+    `CdefDocument::SOURCES`.
+  - Each row shows the source line, what it applies to, the controls it
+    covers with their family chips, and "SPARC enrichment" on upstream
+    content.
+  - **Family and applies-to filters.**
+  - **Coverage of the boundary's baseline**, with a sort by coverage, only
+    when the list is filtered to a boundary whose baseline is resolved
+    (`CdefBaselineGapService.coverage_for`).
+  - The API index takes and returns the same fields.
+  - A federation-peer source is not offered: no CDEF records its peer.
+- **The Overview (#1302):**
+  - the organization's people count;
+  - "Waiting on you" for approvers (`ReviewQueue`);
+  - every number links to the list it counts;
+  - a spec compares the Overview's counts with the organization tabs'.
+- **Administration (#1303):**
+  - The Settings tab opens `/admin`: every admin screen, grouped, including
+    Catalog lineage and Data migrations, which had no link before.
+  - Each admin screen shows that menu beside it and the shared page header.
+  - Users, Organizations, Service accounts, Roles and Authorization
+    boundaries get the shared search and status tabs, and service accounts
+    are paginated.
+  - The audit log keeps its table.
+  - The account menu and admin permissions are unchanged.
+- **4b:**
+  - **The boundary page (#1301):** activity, a document list, readiness,
+    an About column and "Needs attention". The roster, evidence and back
+    matter stay on the page as collapsible sections.
+  - **The document pages (#1304):** the page header, with sticky section
+    links instead of hiding tabs.
 
 ---
 
