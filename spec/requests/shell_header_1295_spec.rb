@@ -38,8 +38,10 @@ RSpec.describe "Shell header (1.18.0-rf #1295)", type: :request do
       expect(header.css("a").map { _1["href"] }).to include("/admin/users", "/admin/audit_logs")
     end
 
-    it "loses the classic bar's layer dropdowns" do
+    it "loses the classic bar's layer dropdowns and the left sidebar (#1296)" do
       get "/"
+
+      expect(page.at_css("nav.sparc-sidebar")).to be_nil
 
       expect(page.at_css("#navbarNav")).to be_nil
       menus = header.css(".dropdown-toggle").map { _1["aria-label"] || _1.text.squish }
@@ -140,5 +142,6 @@ RSpec.describe "Shell header (1.18.0-rf #1295)", type: :request do
 
     expect(header).to be_nil
     expect(page.at_css("nav.navbar #navbarNav")).to be_present
+    expect(page.at_css("nav.sparc-sidebar")).to be_present
   end
 end
