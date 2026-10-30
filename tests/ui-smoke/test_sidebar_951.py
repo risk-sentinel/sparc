@@ -17,9 +17,16 @@ from __future__ import annotations
 
 import pytest
 
-from helpers import assert_no_csp_violations, record_csp
+from helpers import assert_no_csp_violations, record_csp, require_classic_header
 
-pytestmark = pytest.mark.authenticated
+pytestmark = [pytest.mark.authenticated, pytest.mark.posture("classic_nav")]
+
+
+@pytest.fixture(autouse=True)
+def _classic_header(request):
+    """These check the classic navbar and sidebar (SPARC_NAV_SHELL off)."""
+    name = "user_authed_page" if "user_authed_page" in request.fixturenames else "authed_page"
+    require_classic_header(request.getfixturevalue(name))
 
 SIDEBAR = ".sparc-sidebar"
 

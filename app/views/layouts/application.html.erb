@@ -105,7 +105,12 @@
       </div>
     <% end %>
 
-    <% if signed_in? %>
+    <%# 1.18.0-rf #1296 — behind SPARC_NAV_SHELL there is no left sidebar: its
+        organization/boundary tree is the header's switcher (#1291) and the
+        Boundaries tab, its Compliance Library the header's Library menu, and
+        its Resources and Help & Guides the header's Help menu (#1295). The
+        sidebar stays for the switch-off view until #1297. %>
+    <% if signed_in? && !SparcConfig.nav_shell? %>
       <div class="d-flex">
         <%= render "shared/sidebar" %>
         <div class="sparc-main-content flex-grow-1">
