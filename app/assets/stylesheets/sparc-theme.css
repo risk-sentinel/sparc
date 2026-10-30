@@ -3584,30 +3584,80 @@ a.link-purple { color: var(--sparc-purple); }
   border-bottom: 1px solid var(--sparc-border-soft);
 }
 .sparc-shell-bar .sparc-tabs { border-bottom: 0; }
+/* 1.18.0-rf #1295 — the shell header (shared/_shell_header): one navy row in
+   both themes. The breadcrumb sits on the navy, so it takes the navbar's light
+   ink; it truncates rather than wrapping the row. */
+.sparc-shell-crumbs {
+  min-width: 0;
+  flex: 0 1 auto;
+}
 .sparc-shell-crumbs ol {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
   margin: 0;
-  padding: 0.6rem 0 0;
+  padding: 0;
   list-style: none;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  min-width: 0;
+}
+.sparc-shell-crumbs li {
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 .sparc-shell-crumbs li + li::before {
   content: "/";
   margin-right: 0.35rem;
-  color: var(--bs-secondary-color);
+  color: rgba(255, 255, 255, 0.55);
 }
 .sparc-shell-crumbs a {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  color: var(--bs-body-color);
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.92);
   text-decoration: none;
 }
-.sparc-shell-crumbs a:hover { text-decoration: underline; }
+.sparc-shell-crumbs a:hover,
+.sparc-shell-crumbs a:focus-visible { color: #fff; text-decoration: underline; }
+.sparc-shell-crumbs__text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 22ch;
+}
 .sparc-shell-crumbs__boundary { font-weight: 650; }
+.sparc-shell-header__menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.sparc-shell-header__menu .sparc-counter { margin-left: 0; }
+.sparc-shell-header__help {
+  max-height: min(70vh, 32rem);
+  overflow-y: auto;
+}
+/* Phone width: the organization segment and the menu names give way; the
+   boundary name and every icon stay. */
+@media (max-width: 767.98px) {
+  .sparc-shell-header__label { display: none; }
+  .sparc-shell-crumbs li:first-child:not(:last-child) { display: none; }
+  .sparc-shell-crumbs li + li::before { content: none; }
+  .sparc-shell-crumbs__text { max-width: 14ch; }
+}
+@media (max-width: 575.98px) {
+  .sparc-shell-header .dropdown-toggle::after { display: none; }
+  /* Measured at 320px: six icon controls beside the logo need ~375px at the
+     desktop spacing. Tighter padding keeps every control, without a second row. */
+  .sparc-shell-header > .container-fluid { padding-left: 0.5rem; padding-right: 0.5rem; gap: 0.25rem !important; }
+  .sparc-shell-header__actions { gap: 0 !important; }
+  .sparc-shell-header .nav-link,
+  .sparc-shell-header .sparc-nav-btn { padding: 0.35rem 0.45rem !important; }
+  .sparc-shell-header .sparc-nav-theme-btn { padding: 0.15rem 0.25rem; }
+  .sparc-shell-header .sparc-navbar-logo { height: 28px; }
+  .sparc-shell-crumbs-wrap { min-width: 1.9rem; }
+}
 .sparc-tabs__sep {
   flex-shrink: 0;
   width: 1px;

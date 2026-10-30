@@ -1,0 +1,19 @@
+<%# 1.18.0-rf — where you are, in the shell header: the organization, then the
+    boundary when the page is inside one (ShellNavHelper#shell_boundary: its
+    own page, or a list filtered to it). Moved here from the tab bar (#1295). %>
+<% boundary = shell_boundary %>
+<nav class="sparc-shell-crumbs" aria-label="Context">
+  <ol>
+    <li>
+      <%= link_to root_path, class: "sparc-shell-crumbs__org", data: { testid: "shell-org" } do %>
+        <%= icon("building-2") %> <span class="sparc-shell-crumbs__text"><%= boundary&.organization&.name || shell_org_name %></span>
+      <% end %>
+    </li>
+    <% if boundary %>
+      <li>
+        <%= link_to authorization_boundary_path(boundary),
+              class: "sparc-shell-crumbs__boundary", data: { testid: "shell-boundary" } do %><span class="sparc-shell-crumbs__text"><%= boundary.name %></span><% end %>
+      </li>
+    <% end %>
+  </ol>
+</nav>

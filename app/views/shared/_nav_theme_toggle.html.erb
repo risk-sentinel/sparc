@@ -1,0 +1,10 @@
+<%# The theme toggle, as a header list item — ONE definition rendered by the
+    classic header (shared/_main_nav) and the shell header (shared/_shell_header). %>
+<%# ── Theme toggle ── %>
+<li class="nav-item" data-controller="theme">
+  <button class="btn btn-outline-light btn-sm sparc-nav-theme-btn"
+          data-theme-target="icon"
+          data-action="theme#toggle"
+          title="Toggle light/dark mode"><%# #1289 — both glyphs render; the theme decides which shows (CSS), so
+          the right one is there on first paint, before Stimulus connects. %><%= icon("moon", css_class: "sparc-theme-icon-moon") %><%= icon("sun", css_class: "sparc-theme-icon-sun") %></button>
+</li>

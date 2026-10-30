@@ -76,7 +76,10 @@ export default class HelpDrawerController extends Controller {
 
     // Focus has to come back here on close — a keyboard user who opened the
     // drawer from the navbar must not be dumped at the top of the document.
-    this.returnFocusTo = trigger
+    // 1.18.0-rf #1295: in the shell header the trigger is an item in the Help
+    // menu, which closes on the click, so focus returns to the menu's button.
+    const menu = trigger.closest(".dropdown-menu")
+    this.returnFocusTo = menu?.parentElement?.querySelector(":scope > .dropdown-toggle") || trigger
 
     // The full-guide escape hatch points at the same guide the drawer shows,
     // so "open the whole thing in a tab" is never a different page.

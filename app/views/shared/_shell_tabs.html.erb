@@ -1,27 +1,12 @@
 <%# 1.18.0-rf — the organization layout's tab bar (ShellNavHelper), under the
     header, behind SPARC_NAV_SHELL. Inside a boundary (its page, or a list
-    filtered to it) the breadcrumb names it and the tabs are its own. Today's
-    menus and sidebar stay until #1297. %>
+    filtered to it) the tabs are its own; the header's breadcrumb names it
+    (shared/_shell_crumbs). %>
 <% boundary = shell_boundary %>
 <% tabs = boundary ? shell_boundary_tabs(boundary) : shell_org_tabs %>
 <% current = shell_current_tab(boundary) %>
 <div class="sparc-shell-bar" data-testid="shell-bar">
   <div class="container-fluid">
-    <nav class="sparc-shell-crumbs" aria-label="Context">
-      <ol>
-        <li>
-          <%= link_to root_path, class: "sparc-shell-crumbs__org", data: { testid: "shell-org" } do %>
-            <%= icon("building-2") %> <%= boundary&.organization&.name || shell_org_name %>
-          <% end %>
-        </li>
-        <% if boundary %>
-          <li>
-            <%= link_to boundary.name, authorization_boundary_path(boundary),
-                  class: "sparc-shell-crumbs__boundary", data: { testid: "shell-boundary" } %>
-          </li>
-        <% end %>
-      </ol>
-    </nav>
     <nav class="sparc-tabs sparc-shell-tabs" aria-label="<%= boundary ? "Boundary sections" : "Organization sections" %>"
          data-testid="<%= boundary ? "boundary-tabs" : "org-tabs" %>">
       <% tabs.each do |tab| %>
