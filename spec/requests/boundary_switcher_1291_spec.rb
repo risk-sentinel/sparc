@@ -93,6 +93,28 @@ RSpec.describe "Boundary switcher (1.18.0-rf #1291)", type: :request do
     expect(groups).not_to include("Recently used")
   end
 
+  # #1246 — one organization: no organization level.
+  it "lists a single-organization viewer's boundaries without the organization level" do
+    solo = create(:user).tap do |u|
+      create(:organization_membership, user: u, organization: agency)
+      grant_permission(u, "authorization_boundaries.read", authorization_boundary: alpha)
+    end
+    sign_in_as(solo)
+    get "/"
+
+    expect(groups).to be_empty
+    expect(entries.map(&:last)).to eq([ "Alpha ATO" ])
+    expect(page.at_css("[data-testid=shell-org]").text.squish).to eq("Agency")
+  end
+
+  it "keeps the organization level for an administrator, even with one organization" do
+    [ bravo, loose ].each { _1.update!(organization: agency) }
+    sign_in_as(create(:user, :admin))
+    get "/"
+
+    expect(groups).to eq([ "Agency" ])
+  end
+
   it "is not rendered with SPARC_NAV_SHELL off" do
     allow(SparcConfig).to receive(:nav_shell?).and_return(false)
     get "/"

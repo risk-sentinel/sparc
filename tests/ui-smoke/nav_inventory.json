@@ -310,12 +310,6 @@
       },
       {
         "menu": "Organizations > Boundary",
-        "label": "Amendments",
-        "path": "/authorization_boundaries/:boundary/triage",
-        "when": "boundary"
-      },
-      {
-        "menu": "Organizations > Boundary",
         "label": "CDEFs",
         "path": "/cdef_documents?authorization_boundary_id=:boundary",
         "when": "boundary"
@@ -324,6 +318,12 @@
         "menu": "Organizations > Boundary",
         "label": "Evidence",
         "path": "/evidences?authorization_boundary_id=:boundary",
+        "when": "boundary"
+      },
+      {
+        "menu": "Organizations > Boundary",
+        "label": "Findings Triage",
+        "path": "/authorization_boundaries/:boundary/triage",
         "when": "boundary"
       },
       {
@@ -626,12 +626,6 @@
       },
       {
         "menu": "Organizations > Boundary",
-        "label": "Amendments",
-        "path": "/authorization_boundaries/:boundary/triage",
-        "when": "boundary"
-      },
-      {
-        "menu": "Organizations > Boundary",
         "label": "CDEFs",
         "path": "/cdef_documents?authorization_boundary_id=:boundary",
         "when": "boundary"
@@ -640,6 +634,12 @@
         "menu": "Organizations > Boundary",
         "label": "Evidence",
         "path": "/evidences?authorization_boundary_id=:boundary",
+        "when": "boundary"
+      },
+      {
+        "menu": "Organizations > Boundary",
+        "label": "Findings Triage",
+        "path": "/authorization_boundaries/:boundary/triage",
         "when": "boundary"
       },
       {

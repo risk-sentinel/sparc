@@ -48,8 +48,10 @@
       <% sections << [ "Recently used", "recent", switcher.recent ] if switcher.recent.any? %>
       <% switcher.groups.each_with_index { |(name, list), i| sections << [ name, "org-#{i}", list ] } %>
       <% sections.each do |label, key, list| %>
-        <li class="sparc-switcher__group" data-boundary-switcher-target="group" data-group="<%= key %>"
-            data-testid="shell-switcher-group"><%= label %></li>
+        <% unless switcher.flat && key != "recent" %>
+          <li class="sparc-switcher__group" data-boundary-switcher-target="group" data-group="<%= key %>"
+              data-testid="shell-switcher-group"><%= label %></li>
+        <% end %>
         <% list.each do |ab| %>
           <li>
             <%= link_to shell_switch_path(ab), class: "sparc-switcher__item",

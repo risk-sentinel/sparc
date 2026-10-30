@@ -97,7 +97,11 @@ module ShellNavHelper
   # by organization (boundaries with none in their own group, last), and the
   # recently used ones first. Recent ids come from a cookie and are resolved
   # through the same visible set, so an id the viewer cannot reach is dropped.
-  Switcher = Struct.new(:recent, :groups, keyword_init: true)
+  #
+  # #1246 — a viewer whose boundaries all sit in one organization (and who is
+  # not an instance administrator, who keeps the full tree) gets them as one
+  # list: the breadcrumb already names the organization.
+  Switcher = Struct.new(:recent, :groups, :flat, keyword_init: true)
   NO_ORGANIZATION = "No organization"
 
   def shell_switcher
@@ -108,7 +112,8 @@ module ShellNavHelper
       groups = visible.group_by { |b| b.organization&.name }
                       .sort_by { |name, _| [ name.nil? ? 1 : 0, name.to_s.downcase ] }
                       .map { |name, list| [ name || NO_ORGANIZATION, list ] }
-      Switcher.new(recent: recent, groups: groups)
+      flat = groups.size == 1 && !current_user&.instance_administrator? && SparcConfig.any_auth_enabled?
+      Switcher.new(recent: recent, groups: groups, flat: flat)
     end
   end
 

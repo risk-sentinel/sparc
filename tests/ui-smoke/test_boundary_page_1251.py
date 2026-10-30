@@ -1,7 +1,7 @@
 """UI smoke: the boundary page (v1.17.2, #1251).
 
 Clicked in Chrome, each with zero CSP violations:
-  - the "More" menu and each of its items (Amendments, CDEF Coverage, Edit,
+  - the "More" menu and each of its items (Findings Triage, CDEF Coverage, Edit,
     All Authorization Boundaries), and Delete through SPARC's confirm modal
     (`#sparc-confirm-modal-confirm`, not a native dialog);
   - a collapsible section, whose open/closed state survives a reload and

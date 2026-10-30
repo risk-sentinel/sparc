@@ -64,10 +64,10 @@ def _open_triage(page, base_url):
     # menu item is in the DOM but not clickable until the menu is shown.
     page.locator("[data-boundary-action='more']").click()
     link = page.locator("[data-boundary-action='amendments'][href$='/triage']").filter(
-        has_text="Amendments"
+        has_text="Findings Triage"
     )
     assert link.count() > 0, (
-        f"boundary {href} exists but its header 'Amendments' link was not found. "
+        f"boundary {href} exists but its 'Findings Triage' menu item was not found. "
         "This is a BROKEN LOCATOR, not an empty deployment — if the button was "
         "restyled, fix the selector rather than letting this degrade to a skip "
         "(see #950)."
@@ -75,7 +75,7 @@ def _open_triage(page, base_url):
     link.first.click()
     # Turbo navigation — wait for the URL + heading rather than a content snapshot.
     page.wait_for_url("**/triage", timeout=10000)
-    page.get_by_role("heading", name="HDF Amendment Triage").wait_for(timeout=10000)
+    page.get_by_role("heading", name="Findings Triage").wait_for(timeout=10000)
     page.wait_for_load_state("networkidle")
     return True
 
@@ -87,7 +87,8 @@ def test_triage_page_loads_and_ingests(authed_page, base_url):
     if not _open_triage(page, base_url):
         pytest.skip("no authorization boundary available to triage")
 
-    assert "HDF Amendment Triage" in page.content(), "triage heading not rendered"
+    heading = page.get_by_role("heading", name="Findings Triage")
+    assert heading.count() == 1, "triage heading not rendered"
     assert page.locator("input[type='file']").count() > 0, "ingest upload form missing"
     assert page.get_by_role("link", name="Download Amendments").count() > 0, "export link missing"
 
