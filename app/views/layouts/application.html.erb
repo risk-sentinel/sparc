@@ -77,6 +77,8 @@
     <%= render "shared/icon_sprite" %>
     <%= render "shared/environment_header" %>
     <%= render "shared/main_nav" %>
+    <%# 1.18.0-rf — the organization layout's tab bar, behind SPARC_NAV_SHELL. %>
+    <%= render "shared/shell_tabs" if shell_nav? %>
 
     <%# ── Flash notifications (fixed top-right overlay) ────────
         #902 — driven by ApplicationHelper::FLASH_CLASSES so `notice:`/`alert:`

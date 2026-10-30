@@ -1,3 +1,9 @@
+<%# 1.18.0-rf — with SPARC_NAV_SHELL on, the list is the organization's
+    Boundaries tab (authorization_boundaries/_tab). `?classic=1` keeps this
+    list, which carries the administrators' bulk delete until the tab does. %>
+<% if shell_nav? && params[:classic] != "1" %>
+  <%= render "authorization_boundaries/tab" %>
+<% else %>
 <%= render "shared/section_summary", tiles: [
   [@total_count, "Authorization Boundaries"],
   [@active_count, "Active"],
@@ -130,3 +136,4 @@
 
   <%= render "shared/collection_pagination", pagy: @pagy, label: "authorization boundaries" %>
 </div>
+<% end %>

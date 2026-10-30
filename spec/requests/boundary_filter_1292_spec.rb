@@ -206,6 +206,18 @@ RSpec.describe "Boundary filter beside the lists (#1292)", type: :request do
       expect(runs_listed).to eq([ false, false, true ])
     end
 
+    # Found walking the phase 2 image: the list called `pagy_nav`, which is not
+    # a helper here, so a second page of analyses raised a 500 (since #904).
+    it "pages like every other list" do
+      get "/cdef_coverage", params: { per_page: 2 }
+      expect(response).to have_http_status(:ok)
+      expect(page.css("output").text).to include("saved analyses")
+
+      get "/cdef_coverage", params: { per_page: 2, page: 2 }
+      expect(response).to have_http_status(:ok)
+      expect(runs_listed.count(true)).to eq(1)
+    end
+
     it "narrow the same way on the API" do
       token = ApiToken.generate!(user: admin, name: "caller", expires_at: 1.day.from_now)
       headers = { "Authorization" => "Bearer #{token.plaintext_token}" }
