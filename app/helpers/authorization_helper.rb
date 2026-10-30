@@ -49,6 +49,15 @@ module AuthorizationHelper
     !SparcConfig.any_auth_enabled? || current_user&.has_permission?("back_matter.federate") || false
   end
 
+  # 1.18.0-rf — AuthoritativeSourcesController#authorize_read!: an
+  # administrator, or back_matter.read. Signed-in only (the screen reads the
+  # user's organizations).
+  def can_read_authoritative_sources?
+    return false unless current_user
+
+    current_user.instance_administrator? || current_user.has_permission?("back_matter.read")
+  end
+
   # #629 — bulk delete is instance-admin-only; mirror authorize_admin! so the
   # UI only renders the controls when the action would actually be allowed.
   def can_bulk_delete? = admin_access?

@@ -217,15 +217,7 @@ class AuthoritativeSourcesController < ApplicationController
   # Resources the current user may see: globally-available + their org's, or
   # everything for an instance admin.
   def visible_resources
-    base = BackMatterResource.active
-    return base if current_user.instance_administrator?
-
-    org_ids = current_user.organizations.ids
-    if org_ids.any?
-      base.where("globally_available = ? OR organization_id IN (?)", true, org_ids)
-    else
-      base.where(globally_available: true)
-    end
+    BackMatterResource.authoritative_sources_for(current_user)
   end
 
   def resource_params

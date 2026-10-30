@@ -39,6 +39,10 @@ class AuthorizationBoundariesController < ApplicationController
     @show_organization = scope.reorder(nil).where.not(organization_id: nil)
                               .distinct.count(:organization_id) > 1
 
+    # 1.18.0-rf — the Boundaries tab (SPARC_NAV_SHELL): filters in the left
+    # column, counted on the visible set before any filter applies.
+    scope = filter_boundary_tab(scope) if SparcConfig.nav_shell?
+
     # #672 — filter listed rows; the tiles above keep showing totals.
     scope = scope.search_text(params[:q])
 
@@ -50,6 +54,7 @@ class AuthorizationBoundariesController < ApplicationController
     # #888 — cards by default, remembered per screen, and paginated.
     @view_mode = resolve_view_mode(:authorization_boundaries)
     @pagy, @authorization_boundaries = paginate_collection(scope)
+    load_boundary_tab_rows if SparcConfig.nav_shell?
   end
 
   def show
@@ -214,6 +219,35 @@ class AuthorizationBoundariesController < ApplicationController
   end
 
   private
+
+  # 1.18.0-rf — "Assigned to me" (a role on the boundary) and status, each a
+  # link in the Boundaries tab's left column with its count over `visible`.
+  def filter_boundary_tab(visible)
+    mine = current_user ? visible.where(id: current_user.user_roles.select(:authorization_boundary_id)) : visible.none
+    @boundary_tab = {
+      total: visible.count,
+      mine: mine.count,
+      statuses: visible.reorder(nil).group(:status).count,
+      status: (params[:status].to_s if AuthorizationBoundary::STATUSES.include?(params[:status].to_s)),
+      mine_selected: params[:mine] == "1"
+    }
+    scope = @boundary_tab[:mine_selected] ? mine : visible
+    @boundary_tab[:status] ? scope.where(status: @boundary_tab[:status]) : scope
+  end
+
+  # The rows' figures, one query each for the whole page: open POA&Ms and
+  # evidence as each boundary's list counts them (BoundaryScopedList, from the
+  # lists' own relations), and the weekly activity behind the sparklines.
+  def load_boundary_tab_rows
+    ids = @authorization_boundaries.map(&:id)
+    ActiveRecord::Associations::Preloader.new(records: @authorization_boundaries.to_a,
+                                              associations: %i[profile_document information_types]).call
+    @row_counts = {
+      poam: BoundaryScopedList.counts_by_boundary(:poam, BoundaryScopedDocument.index_relation(PoamDocumentsController, current_user)),
+      evidence: BoundaryScopedList.counts_by_boundary(:evidence, BoundaryScopedDocument.index_relation(EvidencesController, current_user))
+    }
+    @activity = BoundaryActivity.weekly(ids)
+  end
 
   def access_boundary = @authorization_boundary
 

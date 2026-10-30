@@ -53,7 +53,9 @@
         </table>
       </div>
 
-      <%== pagy_nav(@pagy) if @pagy && @pagy.pages > 1 %>
+      <%# The shared pagination, as every other list: `pagy_nav` is not a helper
+          here, so a second page of analyses raised a 500. %>
+      <%= render "shared/collection_pagination", pagy: @pagy, label: "saved analyses" %>
     <% elsif params[:authorization_boundary_id].present? %>
       <p class="text-body-secondary mb-0">No saved analyses in this filter.</p>
     <% else %>

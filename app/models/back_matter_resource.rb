@@ -182,6 +182,17 @@ class BackMatterResource < ApplicationRecord
   ].freeze
 
   scope :active,   -> { where(archived_at: nil) }
+
+  # The Authoritative Sources screen's rows for `user`: every active resource
+  # for an administrator, otherwise the global ones plus their organizations'.
+  # ONE definition, read by the screen and by the organization Overview's box
+  # (1.18.0-rf), so the box's count is the list's.
+  def self.authoritative_sources_for(user)
+    return active if user.instance_administrator?
+
+    org_ids = user.organizations.ids
+    org_ids.any? ? active.where("globally_available = ? OR organization_id IN (?)", true, org_ids) : active.where(globally_available: true)
+  end
   scope :archived, -> { where.not(archived_at: nil) }
   scope :federated, -> { where.not(federated_from_instance: nil) }
 
