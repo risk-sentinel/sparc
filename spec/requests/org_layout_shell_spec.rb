@@ -121,6 +121,20 @@ RSpec.describe "Organization layout (1.18.0-rf)", type: :request do
       expect(page.css("[data-testid=org-lane]").map { _1["data-layer"] }).to eq(%w[controls implementation assessment enterprise])
     end
 
+    it "names the organization in the shared page header" do
+      org = create(:organization, name: "Example Agency")
+      create(:organization_membership, user: member, organization: org)
+      sign_in_as(member)
+      get "/"
+
+      header = page.at_css("[data-testid=page-header]")
+      expect(header.at_css("h1").text).to eq("Example Agency")
+      # The inventory ribbon comes first, above the header (owner, phase 3 walk).
+      order = page.css("[data-home-inventory], [data-testid=page-header]").map { _1.name }
+      expect(order).to eq(%w[nav header])
+      expect(header.at_css(".sparc-page-header__meta").text.squish).to eq("2 boundaries")
+    end
+
     it "adds the Enterprise routing boxes for whoever their screens admit" do
       sign_in_as(admin)
       get "/"
@@ -203,6 +217,20 @@ RSpec.describe "Organization layout (1.18.0-rf)", type: :request do
       expect(rows.map { _1["data-boundary-id"].to_i }).to eq([ bravo.id, alpha.id ])
       get page.at_css("[data-testid=boundaries-sort-next-decision]")["href"]
       expect(rows.map { _1["data-boundary-id"].to_i }).to eq([ alpha.id, bravo.id ])
+    end
+
+    # #1298 — the shared page header, with New boundary only for whoever may create one.
+    it "titles the tab with the shared page header" do
+      sign_in_as(admin)
+      get "/authorization_boundaries"
+      header = page.at_css("[data-testid=page-header]")
+      expect(header.at_css("h1").text).to eq("Boundaries")
+      expect(header.css("[data-testid=page-header-actions] a").map(&:text)).to eq([ "New boundary" ])
+
+      sign_in_as(member)
+      get "/authorization_boundaries"
+      expect(page.at_css("[data-testid=page-header] h1").text).to eq("Boundaries")
+      expect(page.at_css("[data-testid=page-header-actions]")).to be_nil
     end
 
     it "keeps the classic list, with bulk delete, a click away for administrators" do

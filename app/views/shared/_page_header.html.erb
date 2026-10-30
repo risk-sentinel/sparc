@@ -1,0 +1,81 @@
+<%# 1.18.0-rf #1298 — one page header for the shell's screens, so every screen
+    puts its title, status and actions in the same places.
+
+    Locals (all optional except title):
+      title      the page's h1
+      crumbs     [[label, path], ...] — a Breadcrumb trail; the last entry is
+                 the current page (aria-current, no link)
+      chips      [{ label:, intent: }, ...] — status chips beside the title
+                 (#1288 intents: positive, info, warning, danger, neutral, accent)
+      lead       HTML before the title (e.g. the Overview's organization tile)
+      meta       [HTML, ...] — facts under the title, one per item
+      subtitle   one line of supporting text
+      primary    { label:, path:, data: } — the one primary action
+      secondary  [{ label:, path:, data: }, ...] — other actions; below 768px
+                 they fold into a "More actions" menu
+      extra      HTML placed before the primary action (e.g. an export
+                 split button, shared/_oscal_export_dropdown)
+
+    Adopted on the Boundaries tab and the Overview here; the list screens take
+    it with #1299 and the document pages with #1304. %>
+<% crumbs    = local_assigns.fetch(:crumbs, []) %>
+<% chips     = local_assigns.fetch(:chips, []) %>
+<% meta      = local_assigns.fetch(:meta, []) %>
+<% secondary = local_assigns.fetch(:secondary, []) %>
+<% primary   = local_assigns[:primary] %>
+<header class="sparc-page-header" data-testid="page-header">
+  <% if crumbs.any? %>
+    <nav aria-label="Breadcrumb">
+      <ol class="sparc-page-header__crumbs">
+        <% crumbs.each_with_index do |(label, path), i| %>
+          <% if i == crumbs.size - 1 %>
+            <li aria-current="page"><%= label %></li>
+          <% else %>
+            <li><%= link_to label, path %></li>
+          <% end %>
+        <% end %>
+      </ol>
+    </nav>
+  <% end %>
+  <div class="sparc-page-header__row">
+    <% if local_assigns[:lead] %><div class="sparc-page-header__lead"><%= lead %></div><% end %>
+    <div class="sparc-page-header__heading">
+      <div class="sparc-page-header__title-row">
+        <h1 class="sparc-page-header__title"><%= title %></h1>
+        <% chips.each do |chip| %>
+          <span class="sparc-status-chip sparc-status-chip--<%= chip[:intent] || "neutral" %>" data-testid="page-header-chip"><%= chip[:label] %></span>
+        <% end %>
+      </div>
+      <% if meta.any? %>
+        <ul class="sparc-page-header__meta">
+          <% meta.each do |item| %><li><%= item %></li><% end %>
+        </ul>
+      <% end %>
+      <% if local_assigns[:subtitle].present? %><p class="sparc-page-header__subtitle"><%= subtitle %></p><% end %>
+    </div>
+    <% if primary || secondary.any? || local_assigns[:extra] %>
+      <div class="sparc-page-header__actions" data-testid="page-header-actions">
+        <% secondary.each do |action| %>
+          <%= link_to action[:label], action[:path], data: action[:data],
+                class: "sparc-action sparc-action--neutral sparc-action--outline sparc-page-header__secondary" %>
+        <% end %>
+        <% if secondary.any? %>
+          <div class="dropdown sparc-page-header__overflow">
+            <button type="button" class="sparc-action sparc-action--neutral sparc-action--outline dropdown-toggle"
+                    data-bs-toggle="dropdown" aria-expanded="false">More actions</button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <% secondary.each do |action| %>
+                <li><%= link_to action[:label], action[:path], class: "dropdown-item" %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+        <%= local_assigns[:extra] %>
+        <% if primary %>
+          <%= link_to primary[:label], primary[:path], data: primary[:data],
+                class: "sparc-action sparc-action--positive sparc-action--solid" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</header>

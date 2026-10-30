@@ -3665,14 +3665,50 @@ a.link-purple { color: var(--sparc-purple); }
   background: var(--sparc-border-soft);
 }
 
-/* 1.18.0-rf — the organization Overview (home/_org_overview). */
-.sparc-org-head {
+/* 1.18.0-rf #1298 — the shared page header (shared/_page_header): breadcrumb,
+   title with status chips, facts, and actions on the right that wrap below
+   the title when the row is narrow. */
+.sparc-page-header { padding: 0.5rem 0 1.25rem; }
+.sparc-page-header__crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.35rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+  color: var(--bs-secondary-color);
+}
+.sparc-page-header__crumbs li + li::before { content: "/"; margin-right: 0.35rem; }
+.sparc-page-header__crumbs a { color: inherit; }
+.sparc-page-header__row {
   display: flex;
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
-  padding: 0.5rem 0 1.25rem;
 }
+.sparc-page-header__heading { flex: 1 1 18rem; min-width: 0; }
+.sparc-page-header__title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+.sparc-page-header__title { margin: 0; font-size: 1.6rem; font-weight: 650; overflow-wrap: anywhere; }
+.sparc-page-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--bs-secondary-color);
+  font-size: 0.9rem;
+}
+.sparc-page-header__meta li { display: inline-flex; align-items: center; gap: 0.35rem; }
+.sparc-page-header__subtitle { margin: 0.35rem 0 0; color: var(--bs-secondary-color); }
+.sparc-page-header__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-left: auto; }
+.sparc-page-header__overflow { display: none; }
+@media (max-width: 767.98px) {
+  .sparc-page-header__secondary { display: none; }
+  .sparc-page-header__overflow { display: block; }
+}
+/* The Overview's organization tile, the header's lead. */
 .sparc-org-head__tile {
   display: grid;
   place-items: center;
@@ -3684,18 +3720,6 @@ a.link-purple { color: var(--sparc-purple); }
   font-size: 1.4rem;
   font-weight: 800;
 }
-.sparc-org-head__name { margin: 0; font-size: 1.6rem; font-weight: 650; }
-.sparc-org-head__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 1.25rem;
-  margin: 0.35rem 0 0;
-  padding: 0;
-  list-style: none;
-  color: var(--bs-secondary-color);
-  font-size: 0.9rem;
-}
-.sparc-org-head__meta li { display: inline-flex; align-items: center; gap: 0.35rem; }
 .sparc-org-overview { display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 1rem; }
 .sparc-org-overview__lanes { flex: 999 1 36rem; min-width: 0; }
 .sparc-org-overview__rail { flex: 1 1 16rem; max-width: 21rem; display: flex; flex-direction: column; gap: 1.25rem; }

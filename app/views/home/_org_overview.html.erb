@@ -9,19 +9,17 @@
 <% single_org = current_user&.organizations&.order(:name)&.limit(2)&.to_a %>
 <% org = single_org&.one? ? single_org.first : nil %>
 
-<header class="sparc-org-head" data-testid="org-overview-header">
-  <span class="sparc-org-head__tile" aria-hidden="true"><%= shell_org_name.split.map(&:first).first(2).join.upcase %></span>
-  <div class="sparc-org-head__text">
-    <h1 class="sparc-org-head__name"><%= shell_org_name %></h1>
-    <ul class="sparc-org-head__meta">
-      <li><%= icon("shield") %> <%= pluralize(@counts[:authorization_boundaries], "boundary", plural: "boundaries") %></li>
-      <% if org&.contact_person.present? %><li><%= icon("user") %> <%= org.contact_person %></li><% end %>
-      <% if org&.contact_email.present? %><li><%= mail_to org.contact_email %></li><% end %>
-    </ul>
-  </div>
-</header>
-
+<%# The inventory ribbon leads the Overview, above the organization's header
+    (owner, walking phase 3). %>
 <%= render "home/inventory" %>
+
+<% meta = [ safe_join([ icon("shield"), " ", pluralize(@counts[:authorization_boundaries], "boundary", plural: "boundaries") ]) ] %>
+<% meta << safe_join([ icon("user"), " ", org.contact_person ]) if org&.contact_person.present? %>
+<% meta << mail_to(org.contact_email) if org&.contact_email.present? %>
+<%= render "shared/page_header",
+      title: shell_org_name, meta: meta,
+      lead: tag.span(shell_org_name.split.map(&:first).first(2).join.upcase, class: "sparc-org-head__tile", "aria-hidden": "true") %>
+
 
 <div class="sparc-org-overview">
   <div class="sparc-org-overview__lanes">

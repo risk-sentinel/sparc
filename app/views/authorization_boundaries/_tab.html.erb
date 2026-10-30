@@ -45,13 +45,8 @@
   </nav>
 
   <div class="sparc-filtered-collection__main">
-    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-      <h1 class="h3 mb-0">Boundaries</h1>
-      <% if can_create_boundary? %>
-        <%= link_to "New boundary", new_authorization_boundary_path,
-              class: "sparc-action sparc-action--positive sparc-action--solid ms-auto" %>
-      <% end %>
-    </div>
+    <%= render "shared/page_header", title: "Boundaries",
+          primary: (can_create_boundary? ? { label: "New boundary", path: new_authorization_boundary_path } : nil) %>
 
     <%= render "shared/collection_toolbar", label: "boundaries", placeholder: "Search boundaries…" %>
 
