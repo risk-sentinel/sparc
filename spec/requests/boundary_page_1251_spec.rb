@@ -52,7 +52,7 @@ RSpec.describe "Boundary page (#1251)", type: :request do
     it "keeps Build ATO Package primary and puts the rest in More" do
       expect(page.at_css("header [data-boundary-action='build_ato_package']")).to be_present
       expect(more_actions).to include("amendments", "cdef_coverage", "edit", "delete", "all_boundaries")
-      expect(page.at_css("[data-boundary-action='amendments']").text).to eq("Amendments")
+      expect(page.at_css("[data-boundary-action='amendments']").text).to eq("Findings Triage")
     end
   end
 

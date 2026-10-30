@@ -1,8 +1,10 @@
-<% content_for :title, "HDF Triage — #{@authorization_boundary&.name || @boundary.name}" %>
+<%# #1246 — "Findings Triage", the name every link to this screen uses. The
+    file it exports keeps HDF's name for it ("Download Amendments"). %>
+<% content_for :title, "Findings Triage — #{@authorization_boundary&.name || @boundary.name}" %>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
-    <h1 class="h3 mb-0">HDF Amendment Triage</h1>
+    <h1 class="h3 mb-0">Findings Triage</h1>
     <p class="text-muted mb-0"><%= @boundary.name %></p>
   </div>
   <div class="d-flex gap-2">

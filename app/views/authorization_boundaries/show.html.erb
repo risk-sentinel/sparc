@@ -61,7 +61,7 @@
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="boundary-more-menu">
             <%# #447 — HDF Amendment triage for scanner findings on this boundary. %>
             <% if boundary_permission?("evidence.read", boundary) %>
-              <li><%= link_to "Amendments", triage_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "amendments" } %></li>
+              <li><%= link_to "Findings Triage", triage_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "amendments" } %></li>
             <% end %>
             <%# #904 — which CDEFs this boundary needs, from the Terraform it is built from. %>
             <% if !SparcConfig.any_auth_enabled? || current_user&.has_permission?("cdef.read") %>

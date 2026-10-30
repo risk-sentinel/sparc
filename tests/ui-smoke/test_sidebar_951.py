@@ -122,7 +122,7 @@ def test_boundary_documents_follow_the_implementation_then_assessment_order(auth
     leaves.first.wait_for(state="visible")
     labels = [leaves.nth(i).inner_text().strip() for i in range(leaves.count())]
 
-    assert labels == ["CDEFs", "SSP", "SAP", "Evidence", "SAR", "Amendments", "POA&Ms"], labels
+    assert labels == ["CDEFs", "SSP", "SAP", "Evidence", "SAR", "Findings Triage", "POA&Ms"], labels
 
 
 def test_the_oscal_reference_links_are_nested(authed_page):

@@ -26,7 +26,7 @@ RSpec.describe "HdfTriage", type: :request do
       create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-1")
       get triage_authorization_boundary_path(boundary)
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("HDF Amendment Triage")
+      expect(response.body).to include("<h1 class=\"h3 mb-0\">Findings Triage</h1>")
       expect(response.body).to include("CVE-1")
     end
 
