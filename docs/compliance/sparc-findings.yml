@@ -255,24 +255,20 @@ findings:
   fixed_version: none available upstream (not-fixed)
   severity: HIGH
   disposition: deferred
-  rationale: 'OpenSSL: QUIC connection-level flow control is not enforced, allowing a remote peer to force excess buffering (DoS). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2): openssl-libs 1:3.5.8-1.el10_2, and still present at 1:3.5.8-2.el10_2 after the v1.17.1 base bump (rescan 2026-10-16), and equally in the shipping v1.16.3 UBI9 image (1:3.5.8-1.el9_8), so not introduced by the base change. Red Hat lists it affected with no fix (not-fixed) on el9 and el10. Surfaced by the grype-container gate made live in #1200 (grype 0.115.0, DB built 2026-09-30T06:32Z); Trivy does not report it. openssl-libs cannot be stripped: Ruby''s OpenSSL bindings and every outbound TLS client need it. Proposed 2026-09-30 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation. Separate from the OpenSSL copy the pg gem bundles, tracked in #1204.'
+  rationale: 'OpenSSL: QUIC connection-level flow control is not enforced, allowing a remote peer to force excess buffering (DoS). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2): openssl-libs 1:3.5.8-1.el10_2, and still present at 1:3.5.8-2.el10_2 after the v1.17.1 base bump (rescan 2026-10-16), and equally in the shipping v1.16.3 UBI9 image (1:3.5.8-1.el9_8), so not introduced by the base change. Red Hat lists it affected with no fix (not-fixed) on el9 and el10. Surfaced by the grype-container gate made live in #1200 (grype 0.115.0, DB built 2026-09-30T06:32Z); Trivy does not report it. openssl-libs cannot be stripped: Ruby''s OpenSSL bindings and every outbound TLS client need it. Proposed 2026-09-30 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation. Separate from the OpenSSL copy the pg gem bundles, tracked in #1204. REVIEW RECORD (owner): re-reviewed 2026-10-30 (accepted to 2026-11-16, aligned with the other base-image deferrals) on a grype 0.114.0 scan of the IMAGE sparc:v1.18.0-rf, not an SBOM (#862; vulnerability DB built 2026-10-29T06:23:34Z), which found openssl-libs 1:3.5.8-2.el10_2 still present and still not-fixed; grype and Red Hat''s el10 data now grade it Medium. Not in CISA KEV (catalog 2026.10.29). The risk adjustment below is unchanged; its first approval (@clem-field, /approve-deviation in #1201, 2026-10-01) set a 30-day HIGH window that ends on this date, so the deviation is requested again and its new approval restarts the window.'
   nist_control: si-2
   reviewed_by: '@clem-field'
   discovery_date: '2026-09-30'
-  next_review_date: '2026-10-30'
+  next_review_date: '2026-11-16'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-approved
-    approved_by: "@clem-field"
-    approved_in: "risk-sentinel/sparc#1201"
-    approved_at: "2026-10-01"
-    approval_mechanism: approve-deviation-comment
+    risk_status: deviation-requested
     adjusted_severity: LOW
     adjustment_rationale: 'HIGH grades the flaw where the affected protocol is in use. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
     mitigating_factors:
     - description: "the flaw is in OpenSSL's QUIC stack; Ruby's OpenSSL extension exposes no QUIC API (no QUIC constants in OpenSSL::SSL, no stream methods on SSLSocket), and no gem in the bundle implements QUIC"
     - description: "SPARC serves HTTP/1.1 through Puma behind the deployment's TLS terminator; the image runs no QUIC or HTTP/3 endpoint and makes no QUIC connections"
-    kev_checked: '2026-09-30'
+    kev_checked: '2026-10-30'
     kev_listed: false
 - cve_id: CVE-2026-88647
   package: gnutls
