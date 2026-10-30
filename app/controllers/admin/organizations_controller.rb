@@ -20,7 +20,9 @@ module Admin
           q: "%#{params[:q]}%"
         )
       end
-      scope = scope.where(status: params[:status]) if params[:status].present?
+      # 1.18.0-rf #1303 — `status` through status tabs (counts over the search).
+      @status_tabs = StatusTabs.for_values(:status, Organization::STATUSES, base: scope, params: params)
+      scope = @status_tabs.narrow(scope)
       @pagy, @organizations = pagy(:offset, scope, limit: ORGS_PER_PAGE)
     end
 

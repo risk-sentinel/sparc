@@ -3955,6 +3955,39 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-meter { width: 8rem; height: 0.6rem; flex: 0 0 auto; }
 .sparc-chip--family { font-family: var(--bs-font-monospace); letter-spacing: 0.02em; }
 
+/* 1.18.0-rf #1303 — the administration settings page and menu. */
+.sparc-settings-frame .sparc-filter-link .sparc-icon { flex: 0 0 auto; color: var(--bs-secondary-color); }
+.sparc-settings-frame .sparc-filter-link[aria-current="page"] {
+  background: var(--sparc-surface);
+  box-shadow: 0 0 0 1px var(--sparc-border-soft);
+  font-weight: 650;
+}
+.sparc-settings-overview { display: grid; gap: 1.5rem; }
+.sparc-settings-overview__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sparc-settings-overview__item {
+  display: flex;
+  gap: 0.75rem;
+  height: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--sparc-border-soft);
+  border-radius: 0.5rem;
+  background: var(--sparc-surface);
+  color: var(--bs-body-color);
+  text-decoration: none;
+}
+.sparc-settings-overview__item:hover { border-color: var(--sparc-border); background: var(--sparc-surface-alt); }
+.sparc-settings-overview__item:focus-visible { outline: 2px solid var(--sparc-i-primary); outline-offset: 1px; }
+.sparc-settings-overview__icon { color: var(--bs-secondary-color); padding-top: 0.1rem; }
+.sparc-settings-overview__label { display: block; font-weight: 650; }
+.sparc-settings-overview__desc { display: block; color: var(--bs-secondary-color); font-size: 0.85rem; }
+
 /* The list's filter form in the left column. */
 .sparc-filter-form--stacked .form-label { color: var(--bs-secondary-color); }
 

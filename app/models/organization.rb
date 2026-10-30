@@ -19,7 +19,8 @@ class Organization < ApplicationRecord
   validates :contact_email, format: { with: URI::MailTo::EMAIL_REGEXP },
                             allow_blank: true
 
-  validates :status, inclusion: { in: %w[active inactive] }
+  STATUSES = %w[active inactive].freeze
+  validates :status, inclusion: { in: STATUSES }
 
   # ── Scopes ───────────────────────────────────────────────────────────────
   scope :active, -> { where(status: "active") }

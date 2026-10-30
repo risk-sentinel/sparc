@@ -16,7 +16,9 @@ module Admin
     def index
       scope = User.order(:email)
       scope = scope.where("email ILIKE :q OR display_name ILIKE :q OR first_name ILIKE :q OR last_name ILIKE :q", q: "%#{params[:q]}%") if params[:q].present?
-      scope = scope.where(status: params[:status]) if params[:status].present?
+      # 1.18.0-rf #1303 — `status` through status tabs (counts over the search).
+      @status_tabs = StatusTabs.for_values(:status, User::STATUSES, base: scope, params: params)
+      scope = @status_tabs.narrow(scope)
       @pagy, @users = pagy(:offset, scope, limit: USERS_PER_PAGE)
       @roles = Role.sorted
     end

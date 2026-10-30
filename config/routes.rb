@@ -520,6 +520,8 @@ Rails.application.routes.draw do
 
   # ── Admin ───────────────────────────────────────────────────────────
   namespace :admin do
+    # 1.18.0-rf #1303 — the settings page (Settings tab, SPARC_NAV_SHELL).
+    get "/", to: "settings#index", as: :settings
     # #911 — instance-wide catalog-lineage report (read-only).
     resources :reconciliation, only: [ :index ]
     resources :users, only: [ :index, :show, :new, :create, :edit, :update ] do

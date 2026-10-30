@@ -1,0 +1,26 @@
+<%# 1.18.0-rf #1303 — an admin screen with the settings menu beside it, under
+    SPARC_NAV_SHELL (application layout). The menu stacks above the screen
+    at phone width. The current screen carries aria-current="page". %>
+<div class="sparc-filtered-collection sparc-settings-frame">
+  <nav class="sparc-filtered-collection__side" aria-label="Settings" data-testid="admin-settings-menu">
+    <%= link_to "Settings", admin_settings_path, class: "sparc-filter-link fw-semibold",
+          aria: { current: (controller_path == "admin/settings" ? "page" : nil) }, data: { testid: "admin-settings-home" } %>
+    <% admin_settings_sections.each do |section| %>
+      <h3 class="sparc-filter-group__title mt-3"><%= section.title %></h3>
+      <ul class="sparc-filter-group">
+        <% section.items.each do |item| %>
+          <li>
+            <%= link_to item.path, class: "sparc-filter-link",
+                  aria: { current: (controller_path == item.controller ? "page" : nil) },
+                  data: { testid: "admin-settings-link", item: item.key } do %>
+              <%= icon(item.icon) %> <span class="sparc-filter-link__label"><%= item.label %></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </nav>
+  <div class="sparc-filtered-collection__main">
+    <%= yield %>
+  </div>
+</div>

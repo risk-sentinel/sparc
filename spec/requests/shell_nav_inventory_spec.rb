@@ -53,14 +53,16 @@ RSpec.describe "Shell navigation inventory (1.18.0-rf #1296)", type: :request do
     # The Leveraged POA&Ms boundary tab (phase 2).
     "signed_in_member" => [ "/leveraged_poam_documents?authorization_boundary_id=:boundary" ],
     # #1295 Create menu, the review queue (an administrator approves every
-    # reviewable type), and the Leveraged POA&Ms boundary tab.
-    "signed_in_admin" => create_paths + create_in_boundary + [ "/review_queue",
+    # reviewable type), the Leveraged POA&Ms boundary tab, and the Settings
+    # tab's administration settings page (#1303, owner, phase 4 plan).
+    "signed_in_admin" => create_paths + create_in_boundary + [ "/review_queue", "/admin",
                                                           "/leveraged_poam_documents?authorization_boundary_id=:boundary" ],
     # With sign-in disabled there was no sidebar (phase 0 found the gap), so the
     # library, help and reference links, the boundaries and their tabs, and
-    # Settings (admin_access? admits everyone) are new here; so is Create.
+    # Settings (admin_access? admits everyone; the settings page since
+    # #1303) are new here; so is Create.
     "auth_disabled" => create_paths + create_in_boundary + boundary_tabs + %w[
-      /admin/organizations /authorization_boundaries/:boundary /federation_peers /help
+      /admin /authorization_boundaries/:boundary /federation_peers /help
       /leveraged_poam_documents /promotion_queue
     ] + Array(SparcConfig.resources).map { _1["href"] }
   }

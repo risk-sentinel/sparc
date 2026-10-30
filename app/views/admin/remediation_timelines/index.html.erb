@@ -1,5 +1,11 @@
 <% content_for :title, "Remediation Timelines" %>
 
+<%# 1.18.0-rf #1303 — under SPARC_NAV_SHELL, the shared page header. %>
+<% if SparcConfig.nav_shell? %>
+  <%# The settings menu beside the screen replaces the "Admin" link. %>
+  <%= render "shared/page_header", title: "Remediation timelines",
+        subtitle: "Days to remediate by profile baseline × NIST criticality. Used to validate amendments when a control has no profile ODP remediation value (#809)." %>
+<% else %>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h1 class="h3 mb-0">Remediation Timelines</h1>
@@ -8,6 +14,7 @@
   </div>
   <%= link_to "Admin", admin_users_path, class: "btn btn-outline-secondary btn-sm" %>
 </div>
+<% end %>
 
 <div class="card">
   <div class="table-responsive">

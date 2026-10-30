@@ -1,0 +1,15 @@
+<%# 1.18.0-rf #1303 — an admin list's header under SPARC_NAV_SHELL: the shared
+    page header (title, count, the one primary action) and the shared toolbar
+    (search, status tabs with counts, filter tokens). The search and the
+    status keep their params, so URLs do not change.
+    Locals: title, label (plural noun), count, primary ({ label:, path: }),
+            status_tabs (optional), placeholder, subtitle (optional) %>
+<%= render "shared/page_header",
+      title: title,
+      subtitle: local_assigns[:subtitle],
+      meta: [ "#{number_with_delimiter(count)} #{label}" ],
+      primary: local_assigns[:primary] %>
+<%= render "shared/collection_toolbar",
+      label: label,
+      placeholder: local_assigns.fetch(:placeholder, "Search #{label}…"),
+      status_tabs: local_assigns[:status_tabs] %>

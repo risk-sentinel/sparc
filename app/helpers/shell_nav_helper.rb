@@ -48,8 +48,10 @@ module ShellNavHelper
     @shell_org_name = orgs.one? ? orgs.first.name : "All organizations"
   end
 
+  # #1303 — every admin screen but People belongs to Settings.
   def shell_current_tab(boundary)
-    (boundary ? BOUNDARY_TAB_FOR : ORG_TAB_FOR)[controller_path]
+    (boundary ? BOUNDARY_TAB_FOR : ORG_TAB_FOR)[controller_path] ||
+      (:settings if !boundary && controller_path.start_with?("admin/"))
   end
 
   def shell_org_tabs
@@ -69,7 +71,8 @@ module ShellNavHelper
       *document_tabs(counts, {}),
       SEPARATOR,
       (Tab.new(key: :people, label: "People", path: admin_users_path, icon: "user") if current_user&.instance_administrator?),
-      (Tab.new(key: :settings, label: "Settings", path: admin_organizations_path, icon: "settings") if admin_access?)
+      # #1303 — the administration settings page (AdminSettingsHelper).
+      (Tab.new(key: :settings, label: "Settings", path: admin_settings_path, icon: "settings") if admin_access?)
     ].compact.then { |tabs| tidy_separators(tabs) }
   end
 

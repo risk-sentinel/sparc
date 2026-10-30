@@ -1,6 +1,14 @@
 <%# v1.8.3 — read-only status page for deferred data migrations. %>
 
 <div class="container-fluid py-4">
+  <%# 1.18.0-rf #1303 — under SPARC_NAV_SHELL, the shared page header. %>
+  <% if SparcConfig.nav_shell? %>
+    <%= render "shared/page_header", title: "Data migrations",
+          subtitle: safe_join([ "Post-boot deferred data migrations and their current status. Use ",
+                                tag.code("bin/rake sparc:data_migrations:run"), " from a one-off task to retry; ",
+                                tag.code("sparc:data_migrations:reset NAME=ClassName"), " to put a row back into the pending queue." ]),
+          secondary: [ { label: "Refresh", path: admin_data_migrations_path } ] %>
+  <% else %>
   <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
       <h3 class="mb-1">Data Migrations</h3>
@@ -13,6 +21,7 @@
     </div>
     <%= link_to "Refresh", admin_data_migrations_path, class: "sparc-action sparc-action--caution sparc-action--solid" %>
   </div>
+  <% end %>
 
   <div class="sparc-card p-3 mb-4 d-flex gap-4">
     <div><strong><%= @counts[:pending] %></strong> pending</div>

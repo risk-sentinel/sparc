@@ -9,6 +9,8 @@ module Admin
 
     def index
       @roles = Role.sorted
+      # 1.18.0-rf #1303 — searchable, like the other admin lists.
+      @roles = @roles.where("name ILIKE :q OR display_name ILIKE :q OR description ILIKE :q", q: "%#{params[:q]}%") if params[:q].present?
     end
 
     def show
