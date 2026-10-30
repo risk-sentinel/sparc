@@ -9,6 +9,12 @@
 <% end %>
 
 <div class="card" style="overflow-x: auto;">
+  <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <% if SparcConfig.nav_shell? %>
+    <%= render "shared/page_header", title: "Assessment Plans (SAP)",
+            primary: { label: "Create New", path: new_sap_document_path },
+            secondary: [ { label: "Upload File", path: new_sap_document_path(anchor: "upload-sap") } ] %>
+  <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Assessment Plans (SAP)</h2>
     <div class="d-flex gap-2">
@@ -16,11 +22,13 @@
       <%= link_to "Upload File", new_sap_document_path(anchor: "upload-sap"), class: "sparc-action sparc-action--info sparc-action--solid" %>
     </div>
   </div>
+  <% end %>
 
   <%# 1.18.0-rf #1292 — the Boundary filter beside the list (BoundaryListFilter). %>
   <%= render layout: "shared/boundary_filter_layout" do %>
   <%= render "shared/collection_toolbar",
         label: "security assessment plans", placeholder: "Search SAPs…",
+        status_tabs: @status_tabs, facets: @facets, clear_params: @clear_facets,
         view_mode: (@view_mode if @sap_documents.any?) %>
 
   <% if @sap_documents.any? && @tiering&.tiered? %>

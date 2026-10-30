@@ -4,7 +4,7 @@
 
     Locals:
       records       — the documents to draw (a page, or one tier's slice)
-      view_mode     — :card or :list
+      view_mode     — :card, :list or :table
 
     No boundary column here, unlike evidences/_collection. These types are
     per-system by definition, so the column would be either redundant (inside a
@@ -14,14 +14,14 @@
     asked for the column there specifically.
 %>
 
-<% if view_mode == :card %>
-    <div class="sparc-card-grid">
+<% if collection_layout(view_mode) != :table %>
+    <div class="<%= collection_items_class(view_mode) %>">
       <% records.each do |doc| %>
         <% progress = SspResponseProgress.for(doc, required_cache: (@response_progress_cache ||= {})).total %>
         <% slots = document_card_slots(doc, count: "#{progress.done}/#{progress.required}", count_label: "responses answered",
                                        version: doc.ssp_version, enriched: doc.enriched?) %>
         <% slots[:metrics].insert(1, { value: doc.ssp_controls.count, label: "controls" }) %>
-        <%= render "shared/item_card", **slots.merge(
+        <%= render collection_item_partial(view_mode), **slots.merge(
               url: ssp_document_path(doc),
               badges: (document_card_badges(doc, enriched: doc.enriched?) + [ creation_method_badge(doc) ]).compact,
               actions: render("ssp_documents/item_actions", doc: doc, compact: true)) %>

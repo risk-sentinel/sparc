@@ -56,7 +56,11 @@ class PoamDocumentsController < ApplicationController
     # #888 — cards by default, remembered per screen, and paginated because a
     # card costs far more to render than a table row.
     @view_mode = resolve_view_mode(:poam_documents)
-    filtered = query.records
+    # 1.18.0-rf #1299 — status tabs: counts over the list with every other
+    # filter applied (the same query without the tabs' params).
+    @status_tabs = StatusTabs.lifecycle(params: params,
+      base: PoamBrowseQuery.new(params.except(*StatusTabs::LIFECYCLE_KEYS), scope: scope).records)
+    filtered = @status_tabs.narrow(query.records)
     @pagy, @poam_documents = paginate_collection(filtered)
 
     # #948 — tiering receives the SAME relation the list came from, already

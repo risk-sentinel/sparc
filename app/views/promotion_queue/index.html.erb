@@ -1,8 +1,14 @@
 <div class="card">
   <div class="card-body">
+    <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+    <% if SparcConfig.nav_shell? %>
+      <%= render "shared/page_header", title: "Promotion Queue",
+            subtitle: "Pending requests to promote a back-matter resource into the authoritative tier. Only items you are authorized to approve appear here." %>
+    <% else %>
     <h2 class="mb-1">Promotion Queue</h2>
     <p class="text-body-secondary">Pending requests to promote a back-matter resource into the
       authoritative tier. Only items you are authorized to approve appear here.</p>
+    <% end %>
 
     <%= render "shared/collection_toolbar",
           label: "pending promotions", placeholder: "Search pending promotions…",
@@ -10,10 +16,10 @@
 
     <% if @resources.empty? %>
       <div class="alert alert-info mb-0">No pending promotions. 🎉</div>
-    <% elsif @view_mode == :card %>
-      <div class="sparc-card-grid">
+    <% elsif collection_layout(@view_mode) != :table %>
+      <div class="<%= collection_items_class(@view_mode) %>">
         <% @resources.each do |r| %>
-          <%= render "shared/item_card",
+          <%= render collection_item_partial(@view_mode),
                 title: r.title,
                 url: authoritative_source_path(r),
                 badges: [ { text: r.rel.to_s, class: "badge text-bg-secondary" } ],

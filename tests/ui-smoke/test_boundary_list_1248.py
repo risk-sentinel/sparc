@@ -10,7 +10,9 @@ Selectors verified against app/views/authorization_boundaries/index.html.erb
 
 With SPARC_NAV_SHELL on (1.18.0-rf) the list is the Boundaries tab and this
 table is the classic list at `?classic=1`; the parameter is ignored with the
-switch off, so these tests always open the table they are about.
+switch off, so these tests always open the table they are about. They ask for
+`view=table` (#1299): under the shell `list` draws rows, and Table is the
+table, which is also what `list` draws with the switch off.
 """
 
 from __future__ import annotations
@@ -58,7 +60,7 @@ def test_next_decision_sorts_both_ways(authed_page, base_url, dated_boundaries):
     slugs = [soon["slug"], later["slug"]]
     page = authed_page
     record_csp(page)
-    page.goto(f"{base_url}/authorization_boundaries?view=list&per_page=100&classic=1")
+    page.goto(f"{base_url}/authorization_boundaries?view=table&per_page=100&classic=1")
     page.wait_for_load_state("domcontentloaded")
 
     header = page.locator("a[data-sort-column='next_decision']")
@@ -81,7 +83,7 @@ def test_rows_offer_view_only(authed_page, base_url, dated_boundaries):
     soon, _later = dated_boundaries
     page = authed_page
     record_csp(page)
-    page.goto(f"{base_url}/authorization_boundaries?view=list&per_page=100&classic=1")
+    page.goto(f"{base_url}/authorization_boundaries?view=table&per_page=100&classic=1")
     page.wait_for_load_state("domcontentloaded")
 
     row = page.locator(f"tr[data-boundary-row='{soon['slug']}']")

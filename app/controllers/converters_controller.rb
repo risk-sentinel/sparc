@@ -33,6 +33,12 @@ class ConvertersController < ApplicationController
     # translates between at least as often as by its name, which is why
     # Converter declares those columns searchable.
     scope = scope.search_text(params[:q])
+    # 1.18.0-rf #1299 — status tabs: counts over the searched list, then
+    # narrowed by the selected one.
+    @status_tabs = StatusTabs.for_values(:status, Converter::STATUSES, base: scope, params: params)
+    @facets = active_facets(@status_tabs.keys, labels: { "status" => "Status" })
+    @clear_facets = clear_facets_params(@status_tabs.keys)
+    scope = @status_tabs.narrow(scope)
 
     @view_mode = resolve_view_mode(:converters)
     @pagy, @converters = paginate_collection(scope)

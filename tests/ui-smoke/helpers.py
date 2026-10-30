@@ -242,6 +242,11 @@ SHELL_HELP_PAGE = "[data-testid=shell-help-page]"
 CLASSIC_HELP = "a.sparc-nav-btn[href*='/help']"
 
 
+# The link that removes one applied filter: a chip in the classic view, the
+# token's remove button under SPARC_NAV_SHELL (1.18.0-rf #1299). Same href.
+REMOVE_FILTER = "a.sparc-chip, a.sparc-filter-token__remove"
+
+
 def nav_shell_on(page) -> bool:
     return page.locator(SHELL_HEADER).count() > 0
 

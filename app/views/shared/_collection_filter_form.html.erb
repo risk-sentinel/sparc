@@ -18,14 +18,19 @@
   Locals:
     fields — from CollectionBrowseQuery#filter_fields
     url    — where to submit (defaults to the current path)
+    stacked— true in a list's left column (#1299): one field per line
 %>
 <% fields = Array(local_assigns[:fields]) %>
+<% stacked = local_assigns[:stacked] %>
+<% col = stacked ? "col-12" : "col-6 col-md-2" %>
 <% if fields.any? %>
   <% filter_keys = fields.flat_map { |f| f[:type] == :date ? [ f[:from_key], f[:to_key] ] : [ f[:key] ] }.map(&:to_s) %>
-  <div class="card bg-body-secondary mb-3">
-    <div class="card-body py-2">
+  <% if stacked %><h3 class="sparc-filter-group__title mt-3" id="collection-filters-title">Filters</h3><% end %>
+  <div class="<%= stacked ? "sparc-filter-form--stacked" : "card bg-body-secondary mb-3" %>" data-testid="collection-filter-form">
+    <div class="<%= stacked ? "px-2" : "card-body py-2" %>">
       <%= form_with url: local_assigns.fetch(:url, request.path), method: :get, local: true,
-                    class: "row g-2 align-items-end" do |f| %>
+                    class: "row g-2 align-items-end",
+                    aria: (stacked ? { labelledby: "collection-filters-title" } : nil) do |f| %>
         <%# Everything that is NOT one of this form's own fields rides along —
             the search term, the view mode, the page size. `page` is deliberately
             dropped: the old page number is meaningless against a different
@@ -39,20 +44,20 @@
         <% fields.each do |field| %>
           <% case field[:type] %>
           <% when :date %>
-            <div class="col-6 col-md-2">
+            <div class="<%= col %>">
               <%= label_tag field[:from_key], "#{field[:label]} from",
                     class: "form-label small fw-semibold mb-1" %>
               <%= date_field_tag field[:from_key], field[:from_value],
                     class: "form-control form-control-sm" %>
             </div>
-            <div class="col-6 col-md-2">
+            <div class="<%= col %>">
               <%= label_tag field[:to_key], "#{field[:label]} to",
                     class: "form-label small fw-semibold mb-1" %>
               <%= date_field_tag field[:to_key], field[:to_value],
                     class: "form-control form-control-sm" %>
             </div>
           <% when :text %>
-            <div class="col-6 col-md-2">
+            <div class="<%= col %>">
               <%= label_tag field[:key], field[:label],
                     class: "form-label small fw-semibold mb-1" %>
               <%= text_field_tag field[:key], field[:value],
@@ -60,7 +65,7 @@
                     placeholder: "e.g. AC-01" %>
             </div>
           <% else %>
-            <div class="col-6 col-md-2">
+            <div class="<%= col %>">
               <%= label_tag field[:key], field[:label],
                     class: "form-label small fw-semibold mb-1" %>
               <%# Choices come from the loaded data, not a hardcoded enum, so
@@ -73,7 +78,7 @@
           <% end %>
         <% end %>
 
-        <div class="col-6 col-md-1">
+        <div class="<%= stacked ? "col-12" : "col-6 col-md-1" %>">
           <%= f.submit "Filter", class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm w-100" %>
         </div>
       <% end %>

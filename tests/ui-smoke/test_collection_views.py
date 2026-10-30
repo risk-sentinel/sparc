@@ -24,7 +24,7 @@ import os
 
 import pytest
 
-from helpers import collect_console_errors, csp_violations, record_csp
+from helpers import collect_console_errors, csp_violations, nav_shell_on, record_csp
 
 pytestmark = pytest.mark.authenticated
 
@@ -69,6 +69,14 @@ SEEDED_SCREENS = [
 CARD = ".sparc-item-card"
 GRID = ".sparc-card-grid"
 TOGGLE = '[role="radiogroup"]'
+# 1.18.0-rf #1299 — under SPARC_NAV_SHELL, List draws these rows and a third
+# view, Table, keeps the table. With the switch off, List is the table.
+ROW = "[data-testid=collection-row]"
+
+
+def _list_drawing(page) -> str:
+    """What ?view=list draws on this stack: rows under the shell, else a table."""
+    return ROW if nav_shell_on(page) else "table"
 
 
 def _demo_seeded() -> bool:
@@ -94,7 +102,7 @@ def _populated(page) -> bool:
     used to fire on are now seeded, so it should no longer fire anywhere on a
     demo instance — and `test_seeded_screens_are_populated` fails if it does.
     """
-    return page.locator(f"{CARD}, table tbody tr").count() > 0
+    return page.locator(f"{CARD}, {ROW}, table tbody tr").count() > 0
 
 
 def _view(path, mode):
@@ -137,17 +145,38 @@ def test_card_view_renders(authed_page, label, path):
 
 @pytest.mark.parametrize(("label", "path"), COLLECTION_PAGES, ids=[p[0] for p in COLLECTION_PAGES])
 def test_list_view_renders(authed_page, label, path):
-    """?view=list draws a table, not cards."""
+    """?view=list draws rows under the shell (a table without it), not cards."""
     _load(authed_page, _view(path, "list"), during=f"{label} list view")
 
     if not _populated(authed_page):
         pytest.skip(f"{label}: no records on this deployment")
 
-    assert authed_page.locator("table").count() > 0, (
-        f"{label}: ?view=list rendered no table"
+    drawing = _list_drawing(authed_page)
+    assert authed_page.locator(drawing).count() > 0, (
+        f"{label}: ?view=list rendered no {drawing}"
     )
     assert authed_page.locator(CARD).count() == 0, (
         f"{label}: ?view=list still rendered cards"
+    )
+    if drawing == ROW:
+        assert authed_page.locator("table").count() == 0, (
+            f"{label}: ?view=list rendered a table under the shell"
+        )
+
+
+@pytest.mark.parametrize(("label", "path"), COLLECTION_PAGES, ids=[p[0] for p in COLLECTION_PAGES])
+def test_table_view_renders(authed_page, label, path):
+    """?view=table draws the table on every screen, whichever way the switch is."""
+    _load(authed_page, _view(path, "table"), during=f"{label} table view")
+
+    if not _populated(authed_page):
+        pytest.skip(f"{label}: no records on this deployment")
+
+    assert authed_page.locator("table tbody tr").count() > 0, (
+        f"{label}: ?view=table rendered no table"
+    )
+    assert authed_page.locator(f"{CARD}, {ROW}").count() == 0, (
+        f"{label}: ?view=table still rendered cards or rows"
     )
 
 
@@ -181,8 +210,9 @@ def test_toggle_switches_the_view(authed_page, label, path):
     authed_page.wait_for_url("**view=list**", timeout=10_000)
     authed_page.wait_for_load_state("networkidle")
 
-    assert authed_page.locator("table").count() > 0, (
-        f"{label}: clicking List did not produce a table"
+    drawing = _list_drawing(authed_page)
+    assert authed_page.locator(drawing).count() > 0, (
+        f"{label}: clicking List did not produce a {drawing}"
     )
     assert authed_page.locator(CARD).count() == 0, (
         f"{label}: clicking List left cards on screen"
@@ -204,13 +234,13 @@ def test_the_choice_is_remembered_per_screen(authed_page):
     _load(authed_page, "/ssp_documents?view=list", during="remember: choose list")
 
     _load(authed_page, "/ssp_documents", during="remember: revisit")
-    assert authed_page.locator("table").count() > 0, (
+    assert authed_page.locator(_list_drawing(authed_page)).count() > 0, (
         "SSP index forgot the chosen list view on the next visit"
     )
 
     # A different screen must be unaffected — still cards.
     _load(authed_page, "/cdef_documents", during="remember: other screen")
-    if authed_page.locator(f"{CARD}, table tbody tr").count() > 0:
+    if _populated(authed_page):
         assert authed_page.locator(GRID).count() > 0, (
             "choosing list on SSPs also changed the CDEF screen"
         )

@@ -4,7 +4,7 @@
 
     Locals:
       records       — the documents to draw (a page, or one tier's slice)
-      view_mode     — :card or :list
+      view_mode     — :card, :list or :table
 
     No boundary column here, unlike evidences/_collection. These types are
     per-system by definition, so the column would be either redundant (inside a
@@ -14,10 +14,10 @@
     asked for the column there specifically.
 %>
 
-<% if view_mode == :card %>
-    <div class="sparc-card-grid">
+<% if collection_layout(view_mode) != :table %>
+    <div class="<%= collection_items_class(view_mode) %>">
       <% records.each do |doc| %>
-        <%= render "shared/item_card", **document_card_slots(
+        <%= render collection_item_partial(view_mode), **document_card_slots(
               doc, count: doc.sap_controls.count, count_label: "controls",
               version: doc.sap_version).merge(
               url: sap_document_path(doc),

@@ -37,6 +37,9 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
     # come from CatalogBrowseQuery, the same object the index screen uses, so
     # the two surfaces cannot offer different filters.
     scope = CatalogBrowseQuery.new(params, scope: scope).records
+    # 1.18.0-rf #1299 — the index screen's status tabs (approval_status too),
+    # through the same definition.
+    scope = StatusTabs.catalog(base: scope, params: params).narrow(scope)
 
     result = paginate(scope)
     render json: {

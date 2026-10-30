@@ -100,4 +100,27 @@ module CollectionCardHelper
   def card_short(value, length: 60)
     value.to_s.truncate(length)
   end
+
+  # 1.18.0-rf #1299 — how a view mode is drawn: :cards, :rows or :table.
+  #
+  # Rows exist only under SPARC_NAV_SHELL. With the switch off, `list` and
+  # `table` both draw the screen's table — what `list` has always meant — so
+  # turning the switch off never shows anyone a layout they did not choose.
+  def collection_layout(mode)
+    case mode&.to_sym
+    when :card then :cards
+    when :list then SparcConfig.nav_shell? ? :rows : :table
+    else :table
+    end
+  end
+
+  # Cards and rows take the same locals, so a screen fills them once and this
+  # picks the partial and its container.
+  def collection_item_partial(mode)
+    collection_layout(mode) == :rows ? "shared/collection_row" : "shared/item_card"
+  end
+
+  def collection_items_class(mode)
+    collection_layout(mode) == :rows ? "sparc-collection-rows" : "sparc-card-grid"
+  end
 end

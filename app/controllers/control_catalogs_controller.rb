@@ -42,12 +42,17 @@ class ControlCatalogsController < ApplicationController
     # screen and Api::V1 narrow the collection identically.
     query = CatalogBrowseQuery.new(params, scope: scope)
     @filter_fields = query.filter_fields
-    @facets = active_facets(CatalogBrowseQuery.facet_params, labels: CatalogBrowseQuery.facet_labels)
-    @clear_facets = clear_facets_params(CatalogBrowseQuery.facet_params)
+    # 1.18.0-rf #1299 — status tabs: the lifecycle states plus Approved
+    # (Approvable), counted with every other filter applied.
+    @status_tabs = StatusTabs.catalog(params: params,
+      base: CatalogBrowseQuery.new(params.except(*StatusTabs::LIFECYCLE_KEYS, "approval_status"), scope: scope).records)
+    facet_keys = CatalogBrowseQuery.facet_params + [ "approval_status" ]
+    @facets = active_facets(facet_keys, labels: CatalogBrowseQuery.facet_labels.merge("approval_status" => "Approval"))
+    @clear_facets = clear_facets_params(facet_keys)
 
     # #888 — cards by default, remembered per screen, and paginated.
     @view_mode = resolve_view_mode(:control_catalogs)
-    @pagy, @control_catalogs = paginate_collection(query.records)
+    @pagy, @control_catalogs = paginate_collection(@status_tabs.narrow(query.records))
   end
 
   def show

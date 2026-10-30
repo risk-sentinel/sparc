@@ -33,6 +33,7 @@ None.
 | `page` | integer | Page number (default: `1`) |
 | `items` | integer | Items per page (default: `25`) |
 | `status` | string | Filter by document status (e.g., `completed`, `processing`, `failed`) |
+| `lifecycle_status` | string | Filter by lifecycle: `started`, `in_progress` (Draft) or `published`; the index screen's status tabs (1.18.0-rf #1299). Any other value matches nothing |
 | `name` | string | Case-insensitive partial match on document name |
 | `q` | string | Case-insensitive search across name and description (#672) |
 | `authorization_boundary_id` | integer \| string | Filter by authorization boundary. `none` lists documents attached to no boundary; omitting it applies no boundary filter. Any other value that is not an id matches nothing (1.18.0-rf #1292) |

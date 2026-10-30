@@ -11,6 +11,13 @@
 
 <div class="card">
   <div class="card-body">
+  <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <% if SparcConfig.nav_shell? %>
+    <%= render "shared/page_header", title: "Control Catalogs",
+            subtitle: "Manage NIST and custom control catalogs",
+            primary: ({ label: "New Catalog", path: new_control_catalog_path } if can_write_catalogs?),
+            secondary: (can_write_catalogs? ? [ { label: "Import from File", path: import_control_catalogs_path } ] : []) %>
+  <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <h2>Control Catalogs</h2>
@@ -24,16 +31,20 @@
       </div>
     <% end %>
   </div>
+  <% end %>
 
+  <%# 1.18.0-rf #1299 — under SPARC_NAV_SHELL the filters sit in the left column. %>
+  <%= render layout: "shared/boundary_filter_layout" do %>
   <%= render "shared/collection_toolbar",
         label: "control catalogs", placeholder: "Search catalogs…",
         filter_fields: @filter_fields, facets: @facets, clear_params: @clear_facets,
+        status_tabs: @status_tabs,
         view_mode: (@control_catalogs.any? ? @view_mode : nil) %>
 
-  <% if @control_catalogs.any? && @view_mode == :card %>
-    <div class="sparc-card-grid">
+  <% if @control_catalogs.any? && collection_layout(@view_mode) != :table %>
+    <div class="<%= collection_items_class(@view_mode) %>">
       <% @control_catalogs.each do |catalog| %>
-        <%= render "shared/item_card",
+        <%= render collection_item_partial(@view_mode),
               title: catalog.name,
               url: control_catalog_path(catalog),
               badges: document_card_badges(catalog),
@@ -108,4 +119,5 @@
   </div>
 
   <%= render "shared/collection_pagination", pagy: @pagy, label: "control catalogs" %>
+  <% end %>
 </div>

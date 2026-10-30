@@ -23,6 +23,9 @@
 <% label = local_assigns.fetch(:label, "results") %>
 <% active_count = facets.size + (query ? 1 : 0) %>
 
+<%# 1.18.0-rf #1299 — under SPARC_NAV_SHELL each filter is a token (key,
+    value, remove button); the links, titles and URLs are the same. %>
+<% shell = SparcConfig.nav_shell? %>
 <% if active_count.positive? %>
   <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
     <span class="small text-body-secondary">
@@ -33,15 +36,33 @@
       <%# The search term is a filter like any other and must be removable from
           here — otherwise a user who cannot see the search box (or has scrolled
           past it) has no way to tell why the list is short. %>
+      <% if shell %>
+        <span class="sparc-filter-token" data-testid="filter-token">
+          <span class="sparc-filter-token__key">search:</span> <%= query %>
+          <%= link_to icon("x"), url_for(request.query_parameters.except("q", "page")),
+                class: "sparc-filter-token__remove", title: "Remove this search",
+                aria: { label: "Remove this search: #{query}" } %>
+        </span>
+      <% else %>
       <%= link_to url_for(request.query_parameters.except("q", "page")),
                   class: "sparc-chip sparc-chip--strong",
                   title: "Remove this search" do %>
         search: <%= query %> <span aria-hidden="true">&times;</span>
         <span class="visually-hidden">(remove)</span>
       <% end %>
+      <% end %>
     <% end %>
 
     <% facets.each do |facet| %>
+      <% if shell %>
+        <span class="sparc-filter-token" data-testid="filter-token">
+          <span class="sparc-filter-token__key"><%= facet[:label] %>:</span> <%= facet[:value] %>
+          <%= link_to icon("x"), url_for(facet[:remove_params]),
+                class: "sparc-filter-token__remove", title: "Remove the #{facet[:label]} filter",
+                aria: { label: "Remove the #{facet[:label]} filter: #{facet[:value]}" } %>
+        </span>
+        <% next %>
+      <% end %>
       <%= link_to url_for(facet[:remove_params]),
                   class: "sparc-chip sparc-chip--strong",
                   title: "Remove the #{facet[:label]} filter" do %>

@@ -7,10 +7,20 @@
     (BoundaryListFilter), which counts and names only boundaries the user can
     reach; a URL naming any other boundary shows an empty list and is never
     named here. %>
+<%# 1.18.0-rf #1299 — under SPARC_NAV_SHELL the list's other filters join the
+    Boundary filter in the left column: the toolbar inside the block hands its
+    filter form over through `content_for :collection_side`, so the block is
+    rendered first and the column after. %>
 <% filter = boundary_filter %>
-<% if filter %>
+<% @collection_side_open = true %>
+<% main = yield %>
+<% @collection_side_open = false %>
+<% side = content_for(:collection_side) %>
+<% if filter || side.present? %>
   <div class="sparc-filtered-collection">
-    <nav class="sparc-filtered-collection__side" aria-labelledby="boundary-filter-title" data-testid="boundary-filter">
+    <div class="sparc-filtered-collection__side">
+    <% if filter %>
+    <nav aria-labelledby="boundary-filter-title" data-testid="boundary-filter">
       <h3 class="sparc-filter-group__title" id="boundary-filter-title">Boundary</h3>
       <ul class="sparc-filter-group">
         <li>
@@ -48,10 +58,13 @@
         </p>
       <% end %>
     </nav>
+    <% end %>
+    <%= side %>
+    </div>
     <div class="sparc-filtered-collection__main">
-      <%= yield %>
+      <%= main %>
     </div>
   </div>
 <% else %>
-  <%= yield %>
+  <%= main %>
 <% end %>

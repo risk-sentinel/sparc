@@ -1,5 +1,12 @@
 <div class="card">
   <div class="card-body">
+    <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+    <% if SparcConfig.nav_shell? %>
+      <%= render "shared/page_header", title: "Authoritative Sources",
+              subtitle: "Browse the curated library of authoritative back-matter resources. Use these references when building Catalogs, Profiles, CDEFs, SSPs, and other OSCAL artifacts.",
+              meta: [ "#{@total} total" ],
+              primary: { label: "Add source", path: new_authoritative_source_path } %>
+    <% else %>
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div>
         <h2>Authoritative Sources</h2>
@@ -15,6 +22,7 @@
                     class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm text-nowrap" %>
       </div>
     </div>
+    <% end %>
 
     <%= form_with url: authoritative_sources_path, method: :get,
                   local: true, class: "row g-2 mb-3" do |f| %>
@@ -57,10 +65,10 @@
 
     <% if @resources.empty? %>
       <div class="alert alert-info mb-0">No matching resources.</div>
-    <% elsif @view_mode == :card %>
-      <div class="sparc-card-grid">
+    <% elsif collection_layout(@view_mode) != :table %>
+      <div class="<%= collection_items_class(@view_mode) %>">
         <% @resources.each do |r| %>
-          <%= render "shared/item_card",
+          <%= render collection_item_partial(@view_mode),
                 title: r.title,
                 url: authoritative_source_path(r),
                 badges: [ { text: r.source.to_s.titleize, class: "badge bg-light text-dark" },

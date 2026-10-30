@@ -34,7 +34,8 @@ None.
 | `status` | string | Filter by catalog status |
 | `name` | string | Case-insensitive partial match on catalog name |
 | `q` | string | Case-insensitive search across name and description (#672) |
-| `lifecycle_status` | string | Filter by lifecycle status (e.g., `active`, `deprecated`) |
+| `lifecycle_status` | string | Filter by lifecycle: `started`, `in_progress` (Draft) or `published` |
+| `approval_status` | string | Filter by approval: `draft`, `pending_review`, `approved` or `rejected`; the index screen's Approved tab (1.18.0-rf #1299) |
 
 #### Response Body
 

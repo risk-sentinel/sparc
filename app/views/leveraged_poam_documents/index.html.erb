@@ -1,10 +1,16 @@
 <div class="card">
   <div class="card-body">
+    <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+    <% if SparcConfig.nav_shell? %>
+      <%= render "shared/page_header", title: "Leveraged POA&Ms",
+            subtitle: "POA&Ms owned by leveraged-system boundaries that any of your leveraging-side authorization boundaries depend on. Read-only." %>
+    <% else %>
     <h2>Leveraged POA&amp;Ms</h2>
     <p class="text-body-secondary">
       POA&amp;Ms owned by leveraged-system boundaries that any of your
       leveraging-side authorization boundaries depend on. Read-only.
     </p>
+    <% end %>
 
     <%# 1.18.0-rf #1292 — the Boundary filter beside the list (BoundaryListFilter). %>
     <%= render layout: "shared/boundary_filter_layout" do %>
@@ -18,10 +24,10 @@
         <code>LeveragedAuthorization</code> records linking your boundaries to
         leveraged ones.
       </div>
-    <% elsif @view_mode == :card %>
-      <div class="sparc-card-grid">
+    <% elsif collection_layout(@view_mode) != :table %>
+      <div class="<%= collection_items_class(@view_mode) %>">
         <% @leveraged_poams.each do |poam| %>
-          <%= render "shared/item_card",
+          <%= render collection_item_partial(@view_mode),
                 title: poam.name,
                 url: leveraged_poam_document_path(poam),
                 badges: [ { text: poam.lifecycle_status.to_s.titleize, class: "badge bg-light text-dark" } ],

@@ -1,8 +1,14 @@
 <div class="card">
+  <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <% if SparcConfig.nav_shell? %>
+    <%= render "shared/page_header", title: "Review Queue",
+            meta: [ "#{@total_pending} awaiting your review" ] %>
+  <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Review Queue</h2>
     <span class="text-body-secondary"><%= @total_pending %> awaiting your review</span>
   </div>
+  <% end %>
 
   <p class="text-body-secondary mb-4">
     Trust-store documents (Control Catalog, Profile, CDEF) submitted for review.
@@ -15,11 +21,11 @@
         label: "documents awaiting review", placeholder: "Search by name or submitter…",
         view_mode: (@pending.any? ? @view_mode : nil) %>
 
-  <% if @pending.any? && @view_mode == :card %>
-    <div class="sparc-card-grid">
+  <% if @pending.any? && collection_layout(@view_mode) != :table %>
+    <div class="<%= collection_items_class(@view_mode) %>">
       <% @pending.each do |doc| %>
         <% routes = review_queue_routes(doc) %>
-        <%= render "shared/item_card",
+        <%= render collection_item_partial(@view_mode),
               title: doc.name,
               url: routes[:show],
               badges: [ { text: routes[:label], class: "badge bg-secondary" } ],
