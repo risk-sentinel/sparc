@@ -1,4 +1,7 @@
 class CdefDocumentsController < ApplicationController
+  # 1.18.0-rf #1292 — offers the Boundary filter (BoundaryListFilter).
+  boundary_list :cdef
+
   include DocumentCopyReporting
   include ReconciliationGate
   # #911 layer 2 — refuse an edit until the document names the baseline
@@ -56,6 +59,7 @@ class CdefDocumentsController < ApplicationController
     # Api::V1 narrow the collection identically. The chrome that renders the
     # facets is shared too (CollectionViewable + shared/_collection_filters);
     # only the labels are screen-specific.
+    build_boundary_filter(CdefDocument.all)
     @cdef_documents = CdefBrowseQuery.new(params).documents
     @facets = active_facets(CdefBrowseQuery::FACETS, labels: CdefBrowseQuery::FACET_LABELS)
     @clear_facets = clear_facets_params(CdefBrowseQuery::FACETS)

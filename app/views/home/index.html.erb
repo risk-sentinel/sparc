@@ -1,118 +1,15 @@
-<%# ── Inventory: thin count tiles grouped by OSCAL layer ──
-    The instance's inventory at a glance, in one row. #1243 removed it in
-    v1.17.2 by mistake; it is restored as thin tiles, each a link to its list.
-    Every count is the one the cards below show this user
-    (HomeController#index). Families and controls live inside catalogs, so
-    those tiles open the catalog list, which totals them. Organizations is
-    counted only for someone the admin screen admits. %>
-<%
-  inventory_groups = [
-    { label: "CONTROLS", accent: "sparc-accent--blue", badge: "sparc-status--info", tiles: [
-        [:control_catalogs, @counts[:control_catalogs], "Catalogs", control_catalogs_path],
-        [:families, @family_count, "Families", control_catalogs_path],
-        [:controls, @control_count, "Controls", control_catalogs_path],
-        [:profile_documents, @counts[:profile_documents], "Baselines", profile_documents_path],
-        [:control_mappings, @counts[:control_mappings], "Mappings", control_mappings_path]] },
-    { label: "IMPLEMENTATION", accent: "sparc-accent--green", badge: "sparc-status--success", tiles: [
-        [:ssp_documents, @counts[:ssp_documents], "SSPs", ssp_documents_path],
-        [:cdef_documents, @counts[:cdef_documents], "CDEFs", cdef_documents_path],
-        [:converters, @counts[:converters], "Converters", converters_path]] },
-    { label: "ASSESSMENT", accent: "sparc-accent--carrot", badge: "sparc-status--orange", tiles: [
-        [:sap_documents, @counts[:sap_documents], "SAPs", sap_documents_path],
-        [:evidences, @counts[:evidences], "Evidence", evidences_path],
-        [:sar_documents, @counts[:sar_documents], "SARs", sar_documents_path],
-        [:poam_documents, @counts[:poam_documents], "POA&Ms", poam_documents_path]] },
-    { label: "ENTERPRISE", accent: "sparc-accent--purple", badge: "sparc-status--purple", tiles: [
-        ([:organizations, @counts[:organizations], "Organizations", admin_organizations_path] if @counts.key?(:organizations)),
-        [:authorization_boundaries, @counts[:authorization_boundaries], "Auth Boundaries", authorization_boundaries_path]].compact }
-  ]
-%>
-<nav class="card sparc-gradient-header sparc-inventory mb-3 sparc-br-05r" data-home-inventory aria-label="Inventory">
-  <div class="d-flex flex-wrap justify-content-center gap-2">
-    <% inventory_groups.each do |g| %>
-      <div class="sparc-home-group sparc-inventory-group <%= g[:accent] %>">
-        <div class="text-center sparc-inventory-heading">
-          <span class="badge <%= g[:badge] %> sparc-ls-005"><%= g[:label] %></span>
-        </div>
-        <div class="d-flex gap-1">
-          <% g[:tiles].each do |key, count, label, path| %>
-            <%= link_to path, class: "sparc-inventory-tile", data: { home_tile: key },
-                  title: "Open #{label}", "aria-label": "#{number_with_delimiter(count)} #{label}: open the list" do %>
-              <span class="sparc-inventory-count"><%= number_with_delimiter(count) %></span>
-              <span class="sparc-inventory-name"><%= label %></span>
-            <% end %>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
-  </div>
-</nav>
+<%# 1.18.0-rf — with SPARC_NAV_SHELL on, the home page is the organization
+    Overview (home/_org_overview), which keeps this inventory and these cards. %>
+<% if shell_nav? %>
+  <%= render "home/org_overview" %>
+<% else %>
+<%= render "home/inventory" %>
 
 <%# ── Section navigation grid grouped by OSCAL layers ──
     Each card carries its own count as a badge that opens the same page as
     View (#1243). "New" appears only to someone the create action would let
     through. %>
-<%
-  layer_groups = [
-    {
-      label: "Controls Layer",
-      color: ApplicationHelper::COLOR_BLUE,
-      cls: "sparc-heading-controls",
-      layer: "controls",
-      cards: [
-        { key: :control_catalogs, title: "Control Catalogs", path: control_catalogs_path,
-          new_path: new_control_catalog_path, can_create: can_write_catalogs?, icon: "library" },
-        { key: :profile_documents, title: "Baselines / Profiles", path: profile_documents_path,
-          new_path: new_profile_document_path, can_create: can_write_profiles?, icon: "list-checks" },
-        { key: :control_mappings, title: "Control Mapping", path: control_mappings_path,
-          new_path: new_control_mapping_path, can_create: can_write_mappings?, icon: "arrow-left-right" },
-      ]
-    },
-    {
-      label: "Implementation Layer",
-      color: ApplicationHelper::COLOR_GREEN,
-      cls: "sparc-heading-implementation",
-      layer: "implementation",
-      cards: [
-        { key: :ssp_documents, title: "SSPs", path: ssp_documents_path,
-          new_path: new_ssp_document_path, can_create: can_create_boundary_document?(SspDocumentsController), icon: "file-text" },
-        { key: :cdef_documents, title: "CDEFs", path: cdef_documents_path,
-          new_path: new_cdef_document_path, can_create: can_write_cdefs?, icon: "puzzle" },
-        { key: :converters, title: "Converters", path: converters_path,
-          new_path: new_converter_path, can_create: can_write_converters?, icon: "replace" },
-      ]
-    },
-    {
-      label: "Assessment Layer",
-      color: ApplicationHelper::COLOR_CARROT,
-      cls: "sparc-heading-assessment",
-      layer: "assessment",
-      cards: [
-        { key: :sap_documents, title: "SAPs", path: sap_documents_path,
-          new_path: new_sap_document_path, can_create: can_create_boundary_document?(SapDocumentsController), icon: "clipboard-list" },
-        { key: :evidences, title: "Evidence", path: evidences_path,
-          new_path: new_evidence_path, can_create: can_create_boundary_document?(EvidencesController), icon: "paperclip" },
-        { key: :sar_documents, title: "SARs", path: sar_documents_path,
-          new_path: new_sar_document_path, can_create: can_create_boundary_document?(SarDocumentsController), icon: "chart-line" },
-        { key: :poam_documents, title: "POA&Ms", path: poam_documents_path,
-          new_path: new_poam_document_path, can_create: can_create_boundary_document?(PoamDocumentsController), icon: "flag" },
-      ]
-    },
-    {
-      label: "Enterprise",
-      color: ApplicationHelper::COLOR_PURPLE,
-      cls: "sparc-heading-enterprise",
-      layer: "enterprise",
-      cards: [
-        # An administrator screen: the card shows only where it would admit the user.
-        ({ key: :organizations, title: "Organizations", path: admin_organizations_path,
-           new_path: new_admin_organization_path, can_create: admin_access?, icon: "building-2" } if admin_access?),
-        { key: :authorization_boundaries, title: "Auth Boundaries", path: authorization_boundaries_path,
-          new_path: new_authorization_boundary_path, can_create: can_create_boundary?, icon: "layout-list" },
-      ].compact
-    }
-  ]
-%>
+<% layer_groups = home_layer_groups %>
 
 <% layer_groups.each do |group| %>
   <div class="mb-2">
@@ -155,4 +52,5 @@
     Need help?
     <%= mail_to SparcConfig.support_email, "Support", class: "text-primary text-decoration-none fw-semibold" %>
   </div>
+<% end %>
 <% end %>

@@ -3576,6 +3576,228 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-status-chip--accent   { --sparc-chip-c: var(--sparc-i-accent);   --sparc-chip-ink: var(--sparc-i-accent-ink); }
 [data-bs-theme="dark"] .sparc-status-chip { background: transparent; }
 
+/* 1.18.0-rf — the organization layout's tab bar under the header
+   (shared/_shell_tabs): a breadcrumb (organization, then boundary) above
+   underline tabs. */
+.sparc-shell-bar {
+  background: var(--sparc-surface);
+  border-bottom: 1px solid var(--sparc-border-soft);
+}
+.sparc-shell-bar .sparc-tabs { border-bottom: 0; }
+.sparc-shell-crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.6rem 0 0;
+  list-style: none;
+  font-size: 1rem;
+}
+.sparc-shell-crumbs li + li::before {
+  content: "/";
+  margin-right: 0.35rem;
+  color: var(--bs-secondary-color);
+}
+.sparc-shell-crumbs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--bs-body-color);
+  text-decoration: none;
+}
+.sparc-shell-crumbs a:hover { text-decoration: underline; }
+.sparc-shell-crumbs__boundary { font-weight: 650; }
+.sparc-tabs__sep {
+  flex-shrink: 0;
+  width: 1px;
+  margin: 0.55rem 0.35rem;
+  background: var(--sparc-border-soft);
+}
+
+/* 1.18.0-rf — the organization Overview (home/_org_overview). */
+.sparc-org-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0 1.25rem;
+}
+.sparc-org-head__tile {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 10px;
+  background: var(--sparc-ink, #2c3e50);
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+.sparc-org-head__name { margin: 0; font-size: 1.6rem; font-weight: 650; }
+.sparc-org-head__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--bs-secondary-color);
+  font-size: 0.9rem;
+}
+.sparc-org-head__meta li { display: inline-flex; align-items: center; gap: 0.35rem; }
+.sparc-org-overview { display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 1rem; }
+.sparc-org-overview__lanes { flex: 999 1 36rem; min-width: 0; }
+.sparc-org-overview__rail { flex: 1 1 16rem; max-width: 21rem; display: flex; flex-direction: column; gap: 1.25rem; }
+.sparc-org-overview__rail section + section { border-top: 1px solid var(--sparc-border-soft); padding-top: 1rem; }
+.sparc-lane { --sparc-lane-c: var(--sparc-layer-controls); position: relative; padding: 0 0 1.5rem 2rem; }
+.sparc-lane--implementation { --sparc-lane-c: var(--sparc-layer-implementation); }
+.sparc-lane--assessment     { --sparc-lane-c: var(--sparc-layer-assessment); }
+.sparc-lane--enterprise     { --sparc-lane-c: var(--sparc-layer-enterprise); }
+.sparc-lane::before {
+  content: "";
+  position: absolute;
+  left: 0.55rem;
+  top: 1.6rem;
+  bottom: 0;
+  width: 2px;
+  background: var(--sparc-border-soft);
+}
+.sparc-lane:last-child::before { display: none; }
+.sparc-lane__title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem -2rem;
+  font-size: 1.1rem;
+  font-weight: 650;
+}
+.sparc-lane__dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin: 0 0.35rem;
+  border-radius: 50%;
+  background: var(--sparc-lane-c);
+  box-shadow: 0 0 0 4px var(--bs-body-bg);
+}
+.sparc-lane__dot--controls { --sparc-lane-c: var(--sparc-layer-controls); box-shadow: none; margin: 0 0.35rem 0 0; }
+.sparc-lane__boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); gap: 0.85rem; }
+.sparc-lane-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--sparc-border-soft);
+  border-top: 3px solid var(--sparc-lane-c);
+  border-radius: 8px;
+  background: var(--sparc-surface);
+}
+.sparc-lane-box__head { display: flex; align-items: center; gap: 0.5rem; }
+.sparc-lane-box__title { font-weight: 650; text-decoration: none; }
+.sparc-lane-box__title:hover { text-decoration: underline; }
+.sparc-lane-box__new { margin-left: auto; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+.sparc-lane-box__count {
+  color: var(--bs-body-color);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+}
+.sparc-lane-box__count:hover { text-decoration: underline; }
+.sparc-rail-title { margin: 0 0 0.6rem; font-size: 1rem; font-weight: 650; }
+.sparc-rail-list { margin: 0 0 0.5rem; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+.sparc-rail-list--inline { flex-direction: row; flex-wrap: wrap; gap: 0.35rem 1rem; font-size: 0.9rem; }
+.sparc-rail-list--inline li { display: inline-flex; align-items: center; }
+
+/* 1.18.0-rf — repository-style rows (the Boundaries tab), each with a
+   documentation-activity sparkline in the implementation colour. */
+.sparc-repo-list {
+  border: 1px solid var(--sparc-border-soft);
+  border-radius: 8px;
+  background: var(--sparc-surface);
+  overflow: hidden;
+}
+.sparc-repo-list__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  background: var(--sparc-surface-alt);
+  border-bottom: 1px solid var(--sparc-border-soft);
+}
+.sparc-repo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  padding: 1rem;
+  border-top: 1px solid var(--sparc-border-soft);
+}
+.sparc-repo-row:first-of-type { border-top: 0; }
+.sparc-repo-row__main { flex: 1 1 26rem; min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.sparc-repo-row__name { font-size: 1.15rem; font-weight: 650; }
+.sparc-repo-row__desc { margin: 0; color: var(--bs-secondary-color); }
+.sparc-repo-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--bs-secondary-color);
+  font-size: 0.85rem;
+}
+.sparc-repo-row__meta li, .sparc-repo-row__meta a { display: inline-flex; align-items: center; gap: 0.3rem; }
+.sparc-repo-row__meta a { color: inherit; }
+.sparc-sparkline { flex-shrink: 0; color: var(--sparc-layer-implementation); }
+
+/* 1.18.0-rf #1292 — a list with a filter column beside it (the Boundary
+   filter, BoundaryListFilter). The column stacks above the list at phone
+   width. The current choice carries aria-current="true". */
+.sparc-filtered-collection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+.sparc-filtered-collection__side { flex: 1 1 14rem; max-width: 17rem; min-width: 0; }
+.sparc-filtered-collection__main { flex: 999 1 32rem; min-width: 0; }
+@media (max-width: 767.98px) {
+  .sparc-filtered-collection__side { max-width: none; }
+}
+.sparc-filter-group__title {
+  margin: 0 0 0.35rem;
+  padding: 0 0.6rem;
+  color: var(--bs-secondary-color);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.sparc-filter-group { margin: 0; padding: 0; list-style: none; }
+.sparc-filter-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  color: var(--bs-body-color);
+  text-decoration: none;
+}
+.sparc-filter-link:hover { background: var(--sparc-surface-alt); color: var(--bs-body-color); }
+.sparc-filter-link:focus-visible { outline: 2px solid var(--sparc-i-primary); outline-offset: 1px; }
+.sparc-filter-link[aria-current="true"] {
+  background: var(--sparc-surface);
+  box-shadow: 0 0 0 1px var(--sparc-border-soft);
+  font-weight: 650;
+}
+.sparc-filter-link__label { min-width: 0; overflow-wrap: anywhere; }
+.sparc-filter-link .sparc-counter { margin-left: auto; }
+
 /* /shell_preview only: the icon grid. */
 .sparc-preview-icon { width: 7.5rem; }
 .sparc-preview-icon .sparc-icon { width: 1.5rem; height: 1.5rem; color: var(--bs-body-color); }

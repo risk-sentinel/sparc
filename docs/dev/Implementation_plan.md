@@ -61,15 +61,30 @@ tokens. Decided by the owner on #1287, 2026-10-28:
 
 | # | Decision |
 |---|---|
-| 1 | **Hybrid layout:** prototype B's sidebar for global and layer navigation; prototype A's boundary overview (#1301) as the boundary home |
+| 1 | ~~Hybrid layout: prototype B's sidebar for global and layer navigation~~ **Superseded 2026-10-29 by the organization layout** (below): navigation is the organization's and the boundary's tab bars; the left column holds a list's filters. Prototype A's boundary overview (#1301) stays the boundary home |
 | 2 | **Navigation rule:** *a link is always in the same place within the shell; items are shown or hidden by reachability and never moved to make them reachable.* The reachability predicates in `_main_nav` carry over unchanged |
-| 3 | **#1294** (boundary-nested URLs) deferred out of the milestone; shared links carry `?boundary=` (#1290) |
+| 3 | **#1294** (boundary-nested URLs) deferred out of the milestone; shared links carry `?authorization_boundary_id=`, the parameter the sidebar and `Api::V1` already use (#1290; the issue said `?boundary=`) |
 | 4 | **#1305** (global search) deferred out of the milestone |
 | 5 | **#1292:** a boundary's CDEFs are its own plus global CDEFs linked to it (#929) |
-| 6 | A user with exactly one reachable boundary has it selected by default |
+| 6 | ~~A user with exactly one reachable boundary has it selected by default~~ Moot since 2026-10-29: nothing is selected or remembered; the URL carries the boundary |
 | 7 | **#1293:** with no boundary selected, counts cover everything the user can reach |
 | 8 | **#1303:** admin navigation is an admin-only sidebar section |
 | 9 | The new shell is built behind `SPARC_NAV_SHELL` (default off); **#1297** removes the old menus and the switch |
+
+**Organization layout (owner, 2026-10-29).** From the owner's GitHub-organization
+sketch (samples: the "SPARC Organization View" canvas): an organization header
+with tabs (Overview, Boundaries, Baselines, SSPs, CDEFs, SAPs, SARs, Evidence,
+POA&Ms, People, Settings); the Overview is today's home tiles as layer lanes, with
+the Enterprise routing boxes Auth Boundaries, Organizations, Federation Peers and
+Authoritative Sources; the Boundaries tab lists boundaries like repositories, each
+with a documentation-activity sparkline; a document-type tab filters by boundary in
+a left column; inside a boundary, the breadcrumb is organization / boundary and the
+tabs are that boundary's. Decided with it: **the URL is the only source of the
+boundary** (no session selection); #1296 becomes the organization and boundary tab
+bars, #1302 the organization Overview, #1301 the inside-a-boundary screen, #1291
+the switcher in the breadcrumb; the Boundaries tab and its sparklines (audit events
+mapped to boundaries) fold into #1301/#1302 in phase 4; boundaries with no
+organization get a home in #1291 (phase 3).
 
 **#1246** (single-organization users skip the organization level; rename
 "Amendments") moved here from v1.18.0: it is delivered by the switcher (#1291)
@@ -96,8 +111,8 @@ owner on a local stack before the next phase is planned.
 | Phase | Issues | Status |
 |---|---|---|
 | 0. Navigation inventory (tests and docs only) | — | Merged to `main` (PR #1314) |
-| 1. Primitives | #1288, #1289 | In progress: `feature/v1180rf_phase1_primitives` |
-| 2. Boundary context | #1290, #1292, #1293 | — |
+| 1. Primitives | #1288, #1289 | Merged to `release-1.18.0-rf` (PR #1315) |
+| 2. Boundary context | #1290, #1292, #1293 | In progress: `feature/v1180rf_phase2_boundary_context` |
 | 3. Shell, behind the switch | #1291, #1295, #1296, #1298, #1246 | — |
 | 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | — |
 | 5. Finish | #1297, #1306, #1307, #1308, #1309 | — |
@@ -111,6 +126,44 @@ stack and clicks every internal link through the menus that hold it. #1297 and
 #1307 build on both. Found while recording it: with auth disabled there is no
 sidebar, so Authoritative Sources, the Promotion Queue, Leveraged POA&Ms and the
 help guides have no navigation entry in that posture.
+
+**Phase 2** (plan approved 2026-10-29, revised the same day for the organization
+layout) puts a **Boundary filter** beside the SSP, SAP, SAR, POA&M, evidence, CDEF,
+leveraged-POA&M and CDEF-coverage lists, behind `SPARC_NAV_SHELL`
+(`BoundaryListFilter`, `shared/_boundary_filter_layout`): "All boundaries", each
+reachable boundary that has records there with its count, and "Not attached"
+(`?authorization_boundary_id=none`) where such records exist. The boundary comes
+only from `?authorization_boundary_id=`; a boundary the user cannot reach, or that
+does not exist, shows an empty list and is never named, and a value that is not an
+id matches nothing (before, `12abc` was read as boundary 12, and evidence lists
+added global evidence to any value). The counts come from `BoundaryScopedList.counts_by_boundary`,
+one grouped query per list that equals each boundary's list. POA&M and evidence
+drop their boundary dropdown while the filter is shown. Federation peers carry no
+boundary, so they are shared-library, not boundary-scoped as #1292 listed. The CDEF
+rule now includes a boundary's own CDEFs even before it has environments.
+`BoundaryNavCounts` gives the per-boundary navigation counts from the lists' own
+relations, also returned as `counts` on `GET /api/v1/authorization_boundaries/:id`;
+the homepage counts through it. Moving the lists' other filters into the left
+column is #1299 (phase 4).
+
+**Org layout pulled into phase 2** (owner, 2026-10-29, after walking the Boundary
+filter alone: "build the org layout now", with the sparkline), behind the switch,
+read-only and with no migrations: the **organization tab bar** under the header
+(`ShellNavHelper`, `shared/_shell_tabs`; Overview, Boundaries, the document types,
+People and Settings for administrators) and, inside a boundary (its page, or a list
+filtered to it), a **breadcrumb and the boundary's own tabs**; the **Overview** as
+the home page (`home/_org_overview`: the inventory strip and every homepage card,
+laid out as layer lanes, plus the Federation Peers and Authoritative Sources routing
+boxes, and a rail of recent boundaries and baselines in use; the cards come from one
+helper, `HomeHelper#home_layer_groups`, shared with the classic page); and the
+**Boundaries tab** (`authorization_boundaries/_tab`: repository-style rows, Assigned
+to me and Status filters, and a 26-week documentation-activity sparkline from the
+audit log, `BoundaryActivity`). The Impact filter is held back: a boundary's impact
+is derived from its information types, so a column filter could disagree with the
+impact the row shows. Administrators keep bulk delete through the classic list
+(`?classic=1`) until the tab carries it. Today's menus and left sidebar stay until
+#1297. This delivers the organization halves of #1296 and #1302 and the header of
+#1301, which stay open for the rest.
 
 ---
 

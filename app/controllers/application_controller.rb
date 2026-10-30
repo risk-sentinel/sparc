@@ -2,6 +2,7 @@ class ApplicationController < ActionController::Base
   include Authentication
   include Authorization
   include Auditable
+  include BoundaryListFilter # 1.18.0-rf #1292 — the Boundary filter beside each document list
 
   # Register custom flash types so `redirect_to path, success: "msg"` works
   add_flash_types :success, :error, :warning

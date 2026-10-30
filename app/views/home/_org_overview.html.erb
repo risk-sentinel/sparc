@@ -1,0 +1,93 @@
+<%# 1.18.0-rf — the organization Overview: the home page with SPARC_NAV_SHELL
+    on (owner, 2026-10-29). The inventory strip and every homepage card stay;
+    the cards are laid out as layer lanes, Enterprise gains the routing boxes
+    from the Enterprise menu (HomeHelper#org_overview_lanes), and a rail lists
+    the boundaries the viewer reaches. Counts are HomeController's @counts,
+    the ones the classic home page shows. %>
+<% lane_titles = { "controls" => "Controls", "implementation" => "Implementation",
+                   "assessment" => "Assessment", "enterprise" => "Enterprise routing" } %>
+<% single_org = current_user&.organizations&.order(:name)&.limit(2)&.to_a %>
+<% org = single_org&.one? ? single_org.first : nil %>
+
+<header class="sparc-org-head" data-testid="org-overview-header">
+  <span class="sparc-org-head__tile" aria-hidden="true"><%= shell_org_name.split.map(&:first).first(2).join.upcase %></span>
+  <div class="sparc-org-head__text">
+    <h1 class="sparc-org-head__name"><%= shell_org_name %></h1>
+    <ul class="sparc-org-head__meta">
+      <li><%= icon("shield") %> <%= pluralize(@counts[:authorization_boundaries], "boundary", plural: "boundaries") %></li>
+      <% if org&.contact_person.present? %><li><%= icon("user") %> <%= org.contact_person %></li><% end %>
+      <% if org&.contact_email.present? %><li><%= mail_to org.contact_email %></li><% end %>
+    </ul>
+  </div>
+</header>
+
+<%= render "home/inventory" %>
+
+<div class="sparc-org-overview">
+  <div class="sparc-org-overview__lanes">
+    <% org_overview_lanes(@counts).each do |group| %>
+      <section class="sparc-lane sparc-lane--<%= group[:layer] %>" aria-labelledby="lane-<%= group[:layer] %>"
+               data-testid="org-lane" data-layer="<%= group[:layer] %>">
+        <h2 class="sparc-lane__title" id="lane-<%= group[:layer] %>">
+          <span class="sparc-lane__dot" aria-hidden="true"></span><%= lane_titles.fetch(group[:layer]) %>
+        </h2>
+        <div class="sparc-lane__boxes">
+          <% group[:cards].each do |card| %>
+            <article class="sparc-lane-box" data-testid="org-box" data-box="<%= card[:key] %>">
+              <div class="sparc-lane-box__head">
+                <%= icon(card[:icon], css_class: "sparc-tile-icon sparc-tile-icon--#{group[:layer]}") %>
+                <%= link_to card[:title], card[:path], class: "sparc-lane-box__title" %>
+                <% if card[:can_create] %>
+                  <%= link_to "+ New", card[:new_path], class: "sparc-lane-box__new",
+                        aria: { label: "New: #{card[:title]}" } %>
+                <% end %>
+              </div>
+              <%= link_to number_with_delimiter(card[:count]), card[:path], class: "sparc-lane-box__count",
+                    data: { home_count: card[:key] },
+                    aria: { label: "#{number_with_delimiter(card[:count])} #{card[:title]}: open the list" } %>
+            </article>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+  </div>
+
+  <aside class="sparc-org-overview__rail" aria-label="Organization summary">
+    <section>
+      <h2 class="sparc-rail-title">Boundaries</h2>
+      <% recent = org_overview_recent_boundaries %>
+      <% if recent.any? %>
+        <ul class="sparc-rail-list" data-testid="org-recent-boundaries">
+          <% recent.each do |ab| %>
+            <li>
+              <%= link_to ab.name, authorization_boundary_path(ab), class: "fw-semibold" %>
+              <small class="d-block text-body-secondary">
+                <%= ab.status.capitalize %> · updated <%= time_ago_in_words(ab.updated_at) %> ago
+              </small>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="small text-body-secondary mb-2">No boundaries assigned to you yet.</p>
+      <% end %>
+      <%= link_to "View all boundaries", authorization_boundaries_path, class: "small" %>
+    </section>
+    <% baselines = org_overview_baselines_in_use %>
+    <% if baselines.any? %>
+      <section>
+        <h2 class="sparc-rail-title">Baselines in use</h2>
+        <ul class="sparc-rail-list sparc-rail-list--inline">
+          <% baselines.each do |name, count| %>
+            <li><span class="sparc-lane__dot sparc-lane__dot--controls" aria-hidden="true"></span><%= name %> · <%= count %></li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+    <% if SparcConfig.support_email.present? %>
+      <section>
+        <h2 class="sparc-rail-title">Help</h2>
+        <%= mail_to SparcConfig.support_email, "Contact support", class: "small" %>
+      </section>
+    <% end %>
+  </aside>
+</div>

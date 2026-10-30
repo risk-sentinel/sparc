@@ -96,6 +96,8 @@
     </div>
   <% end %>
 
+  <%# 1.18.0-rf #1292 — the Boundary filter beside the list (BoundaryListFilter). %>
+  <%= render layout: "shared/boundary_filter_layout" do %>
   <%= render "shared/collection_toolbar",
         label: "component definitions",
         placeholder: "Search component definitions…",
@@ -208,6 +210,7 @@
     <p class="text-center p-4 text-body-secondary">No component definitions found. Upload your first CDEF to get started.</p>
   <% end %>
   <%= render "shared/collection_pagination", pagy: @pagy, label: "component definitions" %>
+  <% end %>
 
   </div>
 </div>

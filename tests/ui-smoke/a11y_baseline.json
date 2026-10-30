@@ -836,6 +836,7 @@
   "authorization_boundaries": [],
   "authorization_boundary_new": [],
   "authorization_boundary_show": [],
+  "boundary_poams_tabs": [],
   "cdef_index": [
     "color-contrast::tr:nth-child(1) > td:nth-child(2) > .rounded.fw-semibold",
     "color-contrast::tr:nth-child(10) > td:nth-child(2) > .rounded.fw-semibold",
@@ -1498,6 +1499,8 @@
   "help_system-security-plans": [],
   "help_trust-store": [],
   "login": [],
+  "org_boundaries_tab": [],
+  "org_overview": [],
   "password_edit": [],
   "poam_index": [
     "color-contrast::tr:nth-child(2) > td:nth-child(5) > span[title=\"Findings\"]",

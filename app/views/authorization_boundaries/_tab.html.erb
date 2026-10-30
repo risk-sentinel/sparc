@@ -1,0 +1,108 @@
+<%# 1.18.0-rf — the organization's Boundaries tab (owner, 2026-10-29): the
+    boundaries the viewer may see (AuthorizationBoundary.visible_to) as
+    repository-style rows, each with a 26-week documentation-activity
+    sparkline (BoundaryActivity), and filters in the left column. Counts on
+    the rows are the POA&M and evidence lists' own (BoundaryScopedList). %>
+<% tab = @boundary_tab %>
+<% base = request.query_parameters.except("mine", "status", "page") %>
+<div class="sparc-filtered-collection">
+  <nav class="sparc-filtered-collection__side" aria-label="Filter boundaries" data-testid="boundaries-filter">
+    <ul class="sparc-filter-group">
+      <li>
+        <%= link_to url_for(base), class: "sparc-filter-link",
+              aria: { current: (tab[:status].nil? && !tab[:mine_selected] ? "true" : nil) },
+              data: { testid: "boundaries-filter-all" } do %>
+          <span class="sparc-filter-link__label">All</span><span class="sparc-counter"><%= tab[:total] %></span>
+        <% end %>
+      </li>
+      <% if current_user %>
+        <li>
+          <%= link_to url_for(base.merge("mine" => "1")), class: "sparc-filter-link",
+                aria: { current: (tab[:mine_selected] ? "true" : nil) },
+                data: { testid: "boundaries-filter-mine" } do %>
+            <span class="sparc-filter-link__label">Assigned to me</span><span class="sparc-counter"><%= tab[:mine] %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+    <h3 class="sparc-filter-group__title mt-3" id="boundaries-status-title">Status</h3>
+    <ul class="sparc-filter-group" aria-labelledby="boundaries-status-title">
+      <% AuthorizationBoundary::STATUSES.each do |status| %>
+        <% count = tab[:statuses].fetch(status, 0) %>
+        <% next unless count.positive? || tab[:status] == status %>
+        <li>
+          <%= link_to url_for(base.merge("status" => status, "mine" => (tab[:mine_selected] ? "1" : nil)).compact),
+                class: "sparc-filter-link", aria: { current: (tab[:status] == status ? "true" : nil) },
+                data: { testid: "boundaries-filter-status", status: status } do %>
+            <span class="sparc-filter-link__label"><%= status.capitalize %></span><span class="sparc-counter"><%= count %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+    <% if can_bulk_delete? %>
+      <p class="small mt-3 px-2"><%= link_to "Classic list (bulk delete)", authorization_boundaries_path(classic: 1) %></p>
+    <% end %>
+  </nav>
+
+  <div class="sparc-filtered-collection__main">
+    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+      <h1 class="h3 mb-0">Boundaries</h1>
+      <% if can_create_boundary? %>
+        <%= link_to "New boundary", new_authorization_boundary_path,
+              class: "sparc-action sparc-action--positive sparc-action--solid ms-auto" %>
+      <% end %>
+    </div>
+
+    <%= render "shared/collection_toolbar", label: "boundaries", placeholder: "Search boundaries…" %>
+
+    <section class="sparc-repo-list" aria-label="Boundaries" data-testid="boundary-rows">
+      <div class="sparc-repo-list__head">
+        <strong><%= pluralize(@pagy&.count || @authorization_boundaries.size, "boundary", plural: "boundaries") %></strong>
+        <%# #1248 — the Next decision sort the classic list offers, by the same allow-list. %>
+        <% sort_next = @sort == "next_decision" ? "-next_decision" : "next_decision" %>
+        <span class="ms-auto small text-body-secondary">
+          <%= { "next_decision" => "Soonest next decision first", "-next_decision" => "Latest next decision first" }.fetch(@sort.to_s, "Most recently updated first") %>
+          ·
+          <%= link_to "Sort by next decision", url_for(request.query_parameters.except("page").merge("sort" => sort_next)),
+                data: { testid: "boundaries-sort-next-decision" } %>
+        </span>
+      </div>
+      <% if @authorization_boundaries.empty? %>
+        <p class="text-center text-body-secondary p-4 mb-0">No boundaries match this filter.</p>
+      <% end %>
+      <% @authorization_boundaries.each do |ab| %>
+        <% scoped = { BoundaryScopedList::PARAM => ab.id } %>
+        <% impact = ab.security_categorization %>
+        <article class="sparc-repo-row" data-testid="boundary-row" data-boundary-id="<%= ab.id %>">
+          <div class="sparc-repo-row__main">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+              <%= link_to ab.name, authorization_boundary_path(ab), class: "sparc-repo-row__name" %>
+              <span class="sparc-status-chip sparc-status-chip--<%= boundary_status_chip(ab.status) %>"><%= ab.status.capitalize %></span>
+            </div>
+            <% if ab.description.present? %>
+              <p class="sparc-repo-row__desc"><%= truncate(ab.description, length: 180) %></p>
+            <% end %>
+            <ul class="sparc-repo-row__meta">
+              <li><%= icon("shield") %> <%= impact.present? ? "#{impact.to_s.capitalize} impact" : "Not categorized" %></li>
+              <% if ab.profile_document %><li><%= icon("list-checks") %> <%= ab.profile_document.name %></li><% end %>
+              <li><%= link_to poam_documents_path(scoped), data: { testid: "row-poams" } do %><%= icon("flag") %> <%= pluralize(@row_counts[:poam][ab.id], "POA&M") %><% end %></li>
+              <li><%= link_to evidences_path(scoped), data: { testid: "row-evidence" } do %><%= icon("paperclip") %> <%= @row_counts[:evidence][ab.id] %> evidence<% end %></li>
+              <% if @show_organization && ab.organization %><li><%= icon("building-2") %> <%= ab.organization.name %></li><% end %>
+              <li>Next decision <%= next_decision_badge(ab) %></li>
+              <li>Updated <%= time_ago_in_words(ab.updated_at) %> ago</li>
+            </ul>
+          </div>
+          <% weeks = @activity.fetch(ab.id) %>
+          <svg class="sparc-sparkline" width="140" height="32" viewBox="0 0 140 32" role="img"
+               aria-label="Documentation activity for <%= ab.name %>: <%= weeks.sum %> changes in the last <%= weeks.size %> weeks"
+               data-testid="boundary-sparkline" data-total="<%= weeks.sum %>">
+            <polyline points="<%= sparkline_points(weeks) %>" fill="none" stroke="currentColor" stroke-width="1.6"
+                      stroke-linejoin="round" stroke-linecap="round"></polyline>
+          </svg>
+        </article>
+      <% end %>
+    </section>
+
+    <%= render "shared/collection_pagination", pagy: @pagy, label: "boundaries" %>
+  </div>
+</div>

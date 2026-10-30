@@ -20,14 +20,19 @@
 #   AU-2 — every cross-boundary view emits an AuditEvent so the
 #         leveraged system has visibility into who is consuming its data
 class LeveragedPoamDocumentsController < ApplicationController
+  # 1.18.0-rf #1292 — offers the Boundary filter (BoundaryListFilter).
+  boundary_list :leveraged_poam
+
   include CollectionViewable
   before_action :set_poam_document, only: :show
 
   def index
     # #888 — this screen had no search. It lists POA&Ms owned by other
     # boundaries, so the boundary name matters as much as the document's.
+    build_boundary_filter(visible_leveraged_poam_documents)
     scope = visible_leveraged_poam_documents.includes(:authorization_boundary)
                                             .distinct.search_text(params[:q])
+    scope = BoundaryScopedList.narrow_params(:leveraged_poam, scope, params)
 
     @view_mode = resolve_view_mode(:leveraged_poam_documents)
     @pagy, @leveraged_poams = paginate_collection(scope)

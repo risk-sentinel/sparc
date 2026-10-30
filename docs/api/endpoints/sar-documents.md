@@ -34,7 +34,7 @@ None.
 | `status` | string | Filter by document status (e.g., `completed`, `processing`, `failed`) |
 | `name` | string | Case-insensitive partial match on document name |
 | `q` | string | Case-insensitive search across name and description (#672) |
-| `authorization_boundary_id` | integer | Filter by authorization boundary |
+| `authorization_boundary_id` | integer \| string | Filter by authorization boundary. `none` lists documents attached to no boundary; omitting it applies no boundary filter. Any other value that is not an id matches nothing (1.18.0-rf #1292) |
 
 #### Response Body
 
