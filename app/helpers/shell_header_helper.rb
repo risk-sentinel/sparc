@@ -60,10 +60,17 @@ module ShellHeaderHelper
   # The review-queue indicator: nil when the viewer approves nothing, else the
   # number of documents waiting for them (ReviewQueue, the screen's own list).
   def shell_review_queue_count
-    return @shell_review_queue_count if defined?(@shell_review_queue_count)
+    shell_review_queue_items&.size
+  end
 
-    @shell_review_queue_count =
-      (ReviewQueue.approvable_for(current_user).size if ReviewQueue.approver?(current_user))
+  # The documents waiting for this viewer (ReviewQueue), or nil for someone
+  # who approves nothing. Read once per page: the header's indicator and the
+  # Overview's "Waiting on you" (#1302) show the same list.
+  def shell_review_queue_items
+    return @shell_review_queue_items if defined?(@shell_review_queue_items)
+
+    @shell_review_queue_items =
+      (ReviewQueue.approvable_for(current_user) if ReviewQueue.approver?(current_user))
   end
 
   # Help & guides for the Help menu: Getting Oriented first, then the Help

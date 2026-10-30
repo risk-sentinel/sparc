@@ -89,3 +89,31 @@ def test_overview_boundaries_and_inside_a_boundary(authed_page):
     page.wait_for_load_state("networkidle")
     assert _current(page, ORG_TABS) == "overview"
     assert_no_csp_violations(page, during="organization layout")
+
+
+@pytest.mark.posture("nav_shell")
+def test_overview_numbers_open_what_they_count(authed_page):
+    """#1302 — the header's counts, Waiting on you and every lane count are links."""
+    page = authed_page
+    record_csp(page)
+    _open(page, "/")
+    if page.locator(ORG_TABS).count() == 0:
+        pytest.skip("SPARC_NAV_SHELL is off on this stack, so there is no organization layout")
+
+    targets = [("[data-testid=org-meta-boundaries]", "/authorization_boundaries")]
+    people = page.locator("a[data-testid=org-meta-people]")
+    if people.count():
+        people_path = urlparse(people.get_attribute("href")).path
+        targets.append(("a[data-testid=org-meta-people]", people_path))
+    if page.locator("[data-testid=org-waiting-queue]").count():
+        targets.append(("[data-testid=org-waiting-queue]", "/review_queue"))
+    for box in page.locator("[data-testid=org-box] .sparc-lane-box__count").evaluate_all(
+        "els => els.map(e => e.getAttribute('href'))"
+    ):
+        targets.append((f"[data-testid=org-box] .sparc-lane-box__count[href='{box}']", box))
+
+    for selector, path in targets:
+        _open(page, "/")
+        click_and_assert_clean(page, page.locator(selector).first, during=f"Overview: {selector}")
+        page.wait_for_url(lambda u, path=path: urlparse(u).path == urlparse(path).path)
+    assert_no_csp_violations(page, during="Overview numbers")
