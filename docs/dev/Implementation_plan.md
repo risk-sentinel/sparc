@@ -146,6 +146,25 @@ relations, also returned as `counts` on `GET /api/v1/authorization_boundaries/:i
 the homepage counts through it. Moving the lists' other filters into the left
 column is #1299 (phase 4).
 
+**Org layout pulled into phase 2** (owner, 2026-10-29, after walking the Boundary
+filter alone: "build the org layout now", with the sparkline), behind the switch,
+read-only and with no migrations: the **organization tab bar** under the header
+(`ShellNavHelper`, `shared/_shell_tabs`; Overview, Boundaries, the document types,
+People and Settings for administrators) and, inside a boundary (its page, or a list
+filtered to it), a **breadcrumb and the boundary's own tabs**; the **Overview** as
+the home page (`home/_org_overview`: the inventory strip and every homepage card,
+laid out as layer lanes, plus the Federation Peers and Authoritative Sources routing
+boxes, and a rail of recent boundaries and baselines in use; the cards come from one
+helper, `HomeHelper#home_layer_groups`, shared with the classic page); and the
+**Boundaries tab** (`authorization_boundaries/_tab`: repository-style rows, Assigned
+to me and Status filters, and a 26-week documentation-activity sparkline from the
+audit log, `BoundaryActivity`). The Impact filter is held back: a boundary's impact
+is derived from its information types, so a column filter could disagree with the
+impact the row shows. Administrators keep bulk delete through the classic list
+(`?classic=1`) until the tab carries it. Today's menus and left sidebar stay until
+#1297. This delivers the organization halves of #1296 and #1302 and the header of
+#1301, which stay open for the rest.
+
 ---
 
 ### Patch: `v1.17.5` — SSP items answered in full, ATO wizard defaults, CDEFs under many baselines
