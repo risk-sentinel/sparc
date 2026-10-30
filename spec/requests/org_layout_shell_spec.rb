@@ -132,7 +132,8 @@ RSpec.describe "Organization layout (1.18.0-rf)", type: :request do
       # The inventory ribbon comes first, above the header (owner, phase 3 walk).
       order = page.css("[data-home-inventory], [data-testid=page-header]").map { _1.name }
       expect(order).to eq(%w[nav header])
-      expect(header.at_css(".sparc-page-header__meta").text.squish).to eq("2 boundaries")
+      # #1302 — and the organization's people.
+      expect(header.at_css(".sparc-page-header__meta").text.squish).to eq("2 boundaries 1 person")
     end
 
     it "adds the Enterprise routing boxes for whoever their screens admit" do

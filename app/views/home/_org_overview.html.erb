@@ -13,7 +13,14 @@
     (owner, walking phase 3). %>
 <%= render "home/inventory" %>
 
-<% meta = [ safe_join([ icon("shield"), " ", pluralize(@counts[:authorization_boundaries], "boundary", plural: "boundaries") ]) ] %>
+<%# 1.18.0-rf #1302 — every number links to the list it counts. %>
+<% meta = [ link_to(safe_join([ icon("shield"), " ", pluralize(@counts[:authorization_boundaries], "boundary", plural: "boundaries") ]),
+                    authorization_boundaries_path, data: { testid: "org-meta-boundaries" }) ] %>
+<% people_count, people_path = org_overview_people(org) %>
+<% if people_count %>
+  <% people = safe_join([ icon("user"), " ", pluralize(people_count, "person", plural: "people") ]) %>
+  <% meta << (people_path ? link_to(people, people_path, data: { testid: "org-meta-people" }) : tag.span(people, data: { testid: "org-meta-people" })) %>
+<% end %>
 <% meta << safe_join([ icon("user"), " ", org.contact_person ]) if org&.contact_person.present? %>
 <% meta << mail_to(org.contact_email) if org&.contact_email.present? %>
 <%= render "shared/page_header",
@@ -51,6 +58,28 @@
   </div>
 
   <aside class="sparc-org-overview__rail" aria-label="Organization summary">
+    <%# 1.18.0-rf #1302 — what is waiting for this viewer: the review queue
+        the header's indicator counts (ReviewQueue), shown to approvers. %>
+    <% waiting = shell_review_queue_items %>
+    <% unless waiting.nil? %>
+      <section data-testid="org-waiting">
+        <h2 class="sparc-rail-title">Waiting on you</h2>
+        <% if waiting.any? %>
+          <ul class="sparc-rail-list">
+            <% waiting.first(5).each do |doc| %>
+              <li>
+                <%= link_to doc.name, polymorphic_path(doc), class: "fw-semibold" %>
+                <small class="d-block text-body-secondary"><%= doc.model_name.human %> · submitted for review</small>
+              </li>
+            <% end %>
+          </ul>
+          <%= link_to "#{pluralize(waiting.size, 'document')} in the review queue", review_queue_index_path,
+                class: "small", data: { testid: "org-waiting-queue" } %>
+        <% else %>
+          <p class="small text-body-secondary mb-0">Nothing is waiting for your review.</p>
+        <% end %>
+      </section>
+    <% end %>
     <section>
       <h2 class="sparc-rail-title">Boundaries</h2>
       <% recent = org_overview_recent_boundaries %>
@@ -75,8 +104,8 @@
       <section>
         <h2 class="sparc-rail-title">Baselines in use</h2>
         <ul class="sparc-rail-list sparc-rail-list--inline">
-          <% baselines.each do |name, count| %>
-            <li><span class="sparc-lane__dot sparc-lane__dot--controls" aria-hidden="true"></span><%= name %> · <%= count %></li>
+          <% baselines.each do |name, count, profile_id| %>
+            <li><span class="sparc-lane__dot sparc-lane__dot--controls" aria-hidden="true"></span><%= link_to "#{name} · #{count}", profile_document_path(profile_id), data: { testid: "org-baseline-in-use" } %></li>
           <% end %>
         </ul>
       </section>

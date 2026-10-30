@@ -94,10 +94,24 @@ module HomeHelper
     AuthorizationBoundary.visible_to(current_user).order(updated_at: :desc).limit(limit)
   end
 
-  # The baselines those boundaries use, most used first: [[name, count], ...].
+  # 1.18.0-rf #1302 — the people count in the Overview's header: the one
+  # organization's members, or every user for an instance administrator, with
+  # the screen that lists them when the viewer may open it (People is an
+  # administrator's tab). nil when neither applies.
+  def org_overview_people(org)
+    if org
+      [ org.users.count, (admin_users_path if current_user&.instance_administrator?) ]
+    elsif current_user&.instance_administrator?
+      [ User.count, admin_users_path ]
+    end
+  end
+
+  # The baselines those boundaries use, most used first:
+  # [[name, boundary count, profile id], ...]. Each links to its baseline.
   def org_overview_baselines_in_use
     AuthorizationBoundary.visible_to(current_user).joins(:profile_document)
-                         .group("profile_documents.name").count
-                         .sort_by { |name, n| [ -n, name ] }.first(6)
+                         .group("profile_documents.id", "profile_documents.name").count
+                         .map { |(id, name), n| [ name, n, id ] }
+                         .sort_by { |name, n, _| [ -n, name ] }.first(6)
   end
 end
