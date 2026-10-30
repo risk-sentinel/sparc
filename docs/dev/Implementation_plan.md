@@ -108,14 +108,31 @@ issue's body carries the branch it is cut from and merges back to.
 Each phase is gated on a UBI image built from its branch, then walked by the
 owner on a local stack before the next phase is planned.
 
+**One branch for phases 3–5 (owner, 2026-10-30)**, to save a ~60-minute CI run
+per phase PR:
+- Phase 2 finishes as PR #1316.
+- Phases 3–5 are built on one branch, `feature/v1180rf_shell`, with one commit
+  per issue and no per-phase PR.
+- Each phase is still planned and approved, gated on a locally built arm64 UBI
+  image (full rspec, API and Chrome), and walked by the owner.
+- `main` is not rebased in per phase. It sees little besides known
+  security-register updates, so it is brought in once, before the final PR.
+- After phase 5, one PR goes into `release-1.18.0-rf`.
+- A prerelease tag `v1.18.0-rf.N` is then cut for full testing. It publishes
+  signed images under that version and does not move `latest`; the owner
+  approves each tag.
+- Keeping the new look is one PR from `release-1.18.0-rf` to `main`, which
+  carries the closing keywords for every issue. Dropping it is deleting the
+  branch.
+
 | Phase | Issues | Status |
 |---|---|---|
 | 0. Navigation inventory (tests and docs only) | — | Merged to `main` (PR #1314) |
 | 1. Primitives | #1288, #1289 | Merged to `release-1.18.0-rf` (PR #1315) |
-| 2. Boundary context | #1290, #1292, #1293 | In progress: `feature/v1180rf_phase2_boundary_context` |
-| 3. Shell, behind the switch | #1291, #1295, #1296, #1298, #1246 | — |
-| 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | — |
-| 5. Finish | #1297, #1306, #1307, #1308, #1309 | — |
+| 2. Boundary context | #1290, #1292, #1293 | PR #1316 into `release-1.18.0-rf` |
+| 3. Shell, behind the switch | #1291, #1295, #1296, #1298, #1246 | Built on `feature/v1180rf_shell` |
+| 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | — (`feature/v1180rf_shell`) |
+| 5. Finish | #1297, #1306, #1307, #1308, #1309 | — (`feature/v1180rf_shell`) |
 
 **Phase 0** records what the navigation offers today, per viewer, before any
 navigation code changes: `tests/ui-smoke/nav_inventory.json` (signed out, signed
@@ -164,6 +181,43 @@ impact the row shows. Administrators keep bulk delete through the classic list
 (`?classic=1`) until the tab carries it. Today's menus and left sidebar stay until
 #1297. This delivers the organization halves of #1296 and #1302 and the header of
 #1301, which stay open for the rest.
+
+**Phase 3** (plan approved 2026-10-30), behind `SPARC_NAV_SHELL`:
+- **The shell header (#1295),** `shared/_shell_header`, rendered by
+  `_main_nav` so both layouts switch together:
+  - brand and version, and the organization / boundary breadcrumb;
+  - **Create:** the homepage cards' "New" actions. Inside a boundary, the
+    SSP, SAP, SAR, evidence and POA&M forms open with it preselected;
+  - **Library:** catalogs, baselines, mappings, CDEFs, converters,
+    authoritative sources, promotion queue, leveraged POA&Ms and federation
+    peers, each behind its screen's guard;
+  - **a review-queue indicator** with the count of documents waiting for
+    the viewer, shown to approvers only. `ReviewQueue` is the one definition
+    the queue screen also reads;
+  - **Help:** help for this page (the #880 drawer), the guides, About,
+    Resources, the OSCAL overview and the operator's reference links;
+  - the theme toggle and the account menu, as partials both headers share.
+  - The layer dropdowns, Home, About, Resources and OSCAL leave the bar.
+- **The boundary switcher (#1291):**
+  - **What it lists:** reachable boundaries grouped by organization, with
+    "No organization" last and recently used first.
+  - **Recently used:** ids in a signed, httponly cookie, re-checked against
+    `visible_to` on every read.
+  - **Where a choice leads:** a filtered list stays the same list narrowed to
+    the new boundary; anywhere else it opens the boundary's page.
+  - **Keyboard:** type to filter, arrow keys, Esc.
+  - `ShellContext` owns `shell_boundary`.
+- **No left sidebar under the shell (#1296).** Each of its sections has a home
+  above. `shell_nav_inventory_spec` checks every phase-0 path is still
+  reachable for each viewer, and that nothing unreviewed is offered.
+- **"Findings Triage" (#1246)** replaces "Amendments" on every link to the
+  triage screen and on its heading, with or without the switch. A viewer
+  whose boundaries all sit in one organization gets the switcher without the
+  organization level.
+- **`shared/_page_header` (#1298),** used here on the Overview and the
+  Boundaries tab. The list screens adopt it with #1299 in phase 4, and the
+  document pages with #1304.
+- Search (#1305) stays deferred.
 
 ---
 
