@@ -85,7 +85,7 @@
           <% if @show_organization %><th>Organization</th><% end %>
           <th>Status</th>
           <th aria-sort="<%= aria_sort %>">
-            <%= link_to authorization_boundaries_path(request.query_parameters.slice("q", "view", "per_page").merge("sort" => sort_next)),
+            <%= link_to authorization_boundaries_path(request.query_parameters.slice("q", "view", "per_page", "classic").merge("sort" => sort_next)),
                   class: "sparc-sort-link", data: { sort_column: "next_decision" },
                   title: "Sort by next decision date (no date last)" do %>
               Next decision
