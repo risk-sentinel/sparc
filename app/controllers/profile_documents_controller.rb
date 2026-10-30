@@ -66,7 +66,10 @@ class ProfileDocumentsController < ApplicationController
 
     # #888 — cards by default, remembered per screen, and paginated.
     @view_mode = resolve_view_mode(:profile_documents)
-    @pagy, @profile_documents = paginate_collection(query.records)
+    # 1.18.0-rf #1299 — status tabs, counted with every other filter applied.
+    @status_tabs = StatusTabs.lifecycle(params: params,
+      base: ProfileBrowseQuery.new(params.except(*StatusTabs::LIFECYCLE_KEYS), scope: scope).records)
+    @pagy, @profile_documents = paginate_collection(@status_tabs.narrow(query.records))
   end
 
   def show

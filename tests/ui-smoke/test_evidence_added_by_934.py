@@ -25,7 +25,7 @@ from __future__ import annotations
 import pytest
 
 import _api_setup
-from helpers import csp_violations, record_csp
+from helpers import REMOVE_FILTER, csp_violations, record_csp
 
 pytestmark = pytest.mark.authenticated
 
@@ -111,7 +111,7 @@ def test_added_by_is_offered_and_narrows(authed_page, submitted_evidence):
         "filtering by that account — the submission recorded no usable collector"
     )
 
-    chips = authed_page.locator("a.sparc-chip")
+    chips = authed_page.locator(REMOVE_FILTER)
     assert chips.count() >= 1, "an applied Added by filter must show a removable chip"
 
     assert not csp_violations(authed_page), (

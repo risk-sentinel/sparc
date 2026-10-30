@@ -23,6 +23,12 @@ class ControlMappingsController < ApplicationController
     # #888 — this screen had no search at all; a corpus you can only scroll is
     # not a corpus you can use.
     scope = scope.search_text(params[:q])
+    # 1.18.0-rf #1299 — status tabs: counts over the searched list, then
+    # narrowed by the selected one.
+    @status_tabs = StatusTabs.for_values(:status, ControlMapping::STATUSES, labels: { "not-complete" => "Not complete" }, base: scope, params: params)
+    @facets = active_facets(@status_tabs.keys, labels: { "status" => "Status" })
+    @clear_facets = clear_facets_params(@status_tabs.keys)
+    scope = @status_tabs.narrow(scope)
 
     @view_mode = resolve_view_mode(:control_mappings)
     @pagy, @control_mappings = paginate_collection(scope)

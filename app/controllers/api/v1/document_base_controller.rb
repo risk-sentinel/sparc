@@ -127,6 +127,9 @@ class Api::V1::DocumentBaseController < Api::V1::BaseController
     scope = scope.where(status: params[:status]) if params[:status].present?
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
     scope = scope.search_text(params[:q]) if params[:q].present? # #672 free-text search
+    # 1.18.0-rf #1299 — `lifecycle_status`, the index screens' status tabs,
+    # through the same definition.
+    scope = StatusTabs.lifecycle(base: scope, params: params).narrow(scope)
     # #1202 — the same boundary rule the web lists and the sidebar use.
     scope = BoundaryScopedList.narrow_params(BoundaryScopedList.type_for(document_class), scope, params)
     scope

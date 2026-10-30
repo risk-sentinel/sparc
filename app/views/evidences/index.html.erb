@@ -5,6 +5,12 @@
 
 <div class="card">
   <div class="card-body">
+    <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+    <% if SparcConfig.nav_shell? %>
+      <%= render "shared/page_header", title: "Evidence Repository",
+              meta: [ pluralize(@evidences.size, "evidence record") ],
+              primary: { label: "Add Evidence", path: new_evidence_path } %>
+    <% else %>
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h2>Evidence Repository</h2>
@@ -16,6 +22,7 @@
         <%= link_to "Add Evidence", new_evidence_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
       </div>
     </div>
+    <% end %>
 
     <%# #908 — the filters were a hand-written form here that re-emitted `q` and
         `view` but dropped `per_page`, so filtering silently reset the page
@@ -26,6 +33,7 @@
     <%= render "shared/collection_toolbar",
           label: "evidence records", placeholder: "Search evidence…",
           filter_fields: @filter_fields, facets: @facets, clear_params: @clear_facets,
+          status_tabs: @status_tabs,
           view_mode: (@evidences.any? ? @view_mode : nil) %>
 
     <% if @evidences.any? && @tiering&.tiered? %>

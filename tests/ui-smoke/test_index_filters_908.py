@@ -26,7 +26,7 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
-from helpers import csp_violations, record_csp
+from helpers import REMOVE_FILTER, csp_violations, record_csp
 
 pytestmark = pytest.mark.authenticated
 
@@ -145,7 +145,7 @@ def test_applied_filter_shows_a_removable_chip(authed_page, name, path):
         pytest.skip(f"{name}: no filter dropdown offered for this corpus")
     param, _value = applied
 
-    chips = authed_page.locator("a.sparc-chip")
+    chips = authed_page.locator(REMOVE_FILTER)
     assert chips.count() >= 1, (
         f"{name}: an applied filter must show a removable chip, or a user cannot "
         f"tell why the list is short"

@@ -9,6 +9,20 @@
 <% end %>
 
 <div class="card sparc-ofx-auto">
+  <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <% if SparcConfig.nav_shell? %>
+    <% refresh_button = capture do %>
+      <% if signed_in? && can_write_converters? && SparcConfig.aws_labs_cdef_enabled? %>
+        <button type="button" class="sparc-action sparc-action--caution sparc-action--outline"
+                data-bs-toggle="modal" data-bs-target="#refreshAwsLabsModal">Refresh from AWS Labs</button>
+      <% end %>
+    <% end %>
+    <%= render "shared/page_header", title: "Component Definitions",
+          primary: ({ label: "Create New", path: new_cdef_document_path } if signed_in?),
+          secondary: (signed_in? ? [ { label: "Upload File", path: new_cdef_document_path(only: "upload") },
+                                     { label: "Terraform Wizard", path: new_cdef_coverage_path } ] : []),
+          extra: refresh_button.presence %>
+  <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Component Definitions</h2>
     <% if signed_in? %>
@@ -41,6 +55,7 @@
       </div>
     <% end %>
   </div>
+  <% end %>
 
   <%# #1268 — what the last AWS Labs refresh did, for whoever may start one.
       Read from the refresh's own audit events (AwsLabsRefreshStatus). %>
@@ -103,13 +118,13 @@
         placeholder: "Search component definitions…",
         view_mode: (@view_mode if @cdef_documents.any?),
         facets: @facets, clear_params: @clear_facets,
-        extra: (render("cdef_documents/select_all") if can_bulk_delete? && @cdef_documents.any? && @view_mode == :card) %>
+        extra: (render("cdef_documents/select_all") if can_bulk_delete? && @cdef_documents.any? && collection_layout(@view_mode) != :table) %>
 
-  <% if @cdef_documents.any? && @view_mode == :card %>
-    <div class="sparc-card-grid">
+  <% if @cdef_documents.any? && collection_layout(@view_mode) != :table %>
+    <div class="<%= collection_items_class(@view_mode) %>">
       <% @cdef_documents.each do |doc| %>
         <% summary = (@component_summaries || {})[doc.id] || CdefComponent.empty_summary %>
-        <%= render "shared/item_card",
+        <%= render collection_item_partial(@view_mode),
               title: cdef_display_name(doc),
               url: cdef_document_path(doc),
               badges: [

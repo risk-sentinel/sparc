@@ -5,6 +5,11 @@
 ] %>
 
 <div class="card sparc-of-hidden">
+  <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <% if SparcConfig.nav_shell? %>
+    <%= render "shared/page_header", title: "Control Mappings",
+            primary: ({ label: "New Mapping", path: new_control_mapping_path } if can_write_mappings?) %>
+  <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Control Mappings</h2>
     <% if can_write_mappings? %>
@@ -13,15 +18,17 @@
       </div>
     <% end %>
   </div>
+  <% end %>
 
   <%= render "shared/collection_toolbar",
         label: "control mappings", placeholder: "Search control mappings…",
+        status_tabs: @status_tabs, facets: @facets, clear_params: @clear_facets,
         view_mode: (@control_mappings.any? ? @view_mode : nil) %>
 
-  <% if @control_mappings.any? && @view_mode == :card %>
-    <div class="sparc-card-grid">
+  <% if @control_mappings.any? && collection_layout(@view_mode) != :table %>
+    <div class="<%= collection_items_class(@view_mode) %>">
       <% @control_mappings.each do |mapping| %>
-        <%= render "shared/item_card",
+        <%= render collection_item_partial(@view_mode),
               title: mapping.name,
               url: control_mapping_path(mapping),
               badges: [ { text: mapping.status.to_s.titleize,

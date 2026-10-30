@@ -7,17 +7,17 @@
 
     Locals:
       records   — the evidence to draw (a page, or one tier's slice of it)
-      view_mode — :card or :list
+      view_mode — :card, :list or :table
       show_boundary — whether to show the boundary column. False inside a tier,
                       where the heading above already says which boundary this
                       is and repeating it on every row is noise.
 %>
 <% show_boundary = local_assigns.fetch(:show_boundary, true) %>
 
-<% if view_mode == :card %>
-  <div class="sparc-card-grid">
+<% if collection_layout(view_mode) != :table %>
+  <div class="<%= collection_items_class(view_mode) %>">
     <% records.each do |evidence| %>
-      <%= render "shared/item_card",
+      <%= render collection_item_partial(view_mode),
             title: evidence.title,
             url: evidence_path(evidence),
             badges: [ { text: Evidence::STATUS_LABELS[evidence.status] || evidence.status.to_s.titleize,

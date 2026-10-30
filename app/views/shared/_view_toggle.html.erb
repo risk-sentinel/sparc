@@ -10,16 +10,23 @@
   stops the toggle from silently clearing an active search or facet.
 
   Locals:
-    current — :card or :list
+    current — :card, :list or :table
     label   — what is being toggled, for the accessible name
 %>
 <% current = local_assigns.fetch(:current, :card) %>
 <% label = local_assigns.fetch(:label, "items") %>
 
-<div class="sparc-view-toggle" role="radiogroup" aria-label="<%= "Choose how to display #{label}" %>">
-  <% [ [ :card, "Cards", "▦" ], [ :list, "List", "☰" ] ].each do |mode, text, glyph| %>
+<%# 1.18.0-rf #1299 — under SPARC_NAV_SHELL a third choice, Table, keeps the
+    table and List draws rows. With the switch off a stored `table` shows as
+    List, which draws the same table (CollectionCardHelper#collection_layout). %>
+<% shell = SparcConfig.nav_shell? %>
+<% options = [ [ :card, "Cards", "▦" ], [ :list, "List", "☰" ] ] %>
+<% options << [ :table, "Table", "▤" ] if shell %>
+<% shown = (!shell && current.to_sym == :table) ? :list : current.to_sym %>
+<div class="sparc-view-toggle<%= " sparc-view-toggle--shell" if shell %>" role="radiogroup" aria-label="<%= "Choose how to display #{label}" %>">
+  <% options.each do |mode, text, glyph| %>
     <%
-      selected = current.to_sym == mode
+      selected = shown == mode
       # aria-current is the state assistive tech reads; the CSS selector keys
       # off the same attribute so the visual and announced states cannot drift.
     %>

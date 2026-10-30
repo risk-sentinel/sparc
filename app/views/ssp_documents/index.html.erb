@@ -11,6 +11,12 @@
 <% end %>
 
 <div class="card">
+  <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <% if SparcConfig.nav_shell? %>
+    <%= render "shared/page_header", title: "System Security Plans",
+            primary: { label: "Create New SSP", path: wizard_ssp_documents_path },
+            secondary: [ { label: "Upload File", path: new_ssp_document_path } ] %>
+  <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>System Security Plans</h2>
     <div class="d-flex gap-2">
@@ -18,11 +24,13 @@
       <%= link_to "Upload File", new_ssp_document_path, class: "sparc-action sparc-action--info sparc-action--solid" %>
     </div>
   </div>
+  <% end %>
 
   <%# 1.18.0-rf #1292 — the Boundary filter beside the list (BoundaryListFilter). %>
   <%= render layout: "shared/boundary_filter_layout" do %>
   <%= render "shared/collection_toolbar",
         label: "system security plans", placeholder: "Search SSPs…",
+        status_tabs: @status_tabs, facets: @facets, clear_params: @clear_facets,
         view_mode: (@view_mode if @ssp_documents.any?) %>
 
   <% if @ssp_documents.any? && @tiering&.tiered? %>

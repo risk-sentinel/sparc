@@ -1,0 +1,50 @@
+<%#
+  1.18.0-rf #1299 — one record as a list row (SPARC_NAV_SHELL, view "list").
+
+  Takes exactly the locals of shared/_item_card, so a screen fills the slots
+  once and draws cards or rows from them (CollectionCardHelper
+  #collection_item_partial): title and status first, one line of
+  description, a meta line of the numbers worth comparing, and the actions on
+  the right. As on the card, the title is the row's one link, so a keyboard
+  user gets one stop per row.
+
+  Locals: title, url, badges, subtitle, description, metrics, chips,
+  empty_note, footer, actions, select (see shared/_item_card); icon (optional,
+  an icon name drawn before the title).
+%>
+<article class="sparc-collection-row" data-testid="collection-row">
+  <% if local_assigns[:select].present? %>
+    <div class="sparc-collection-row__select"><%= local_assigns[:select] %></div>
+  <% end %>
+  <% if local_assigns[:icon].present? %>
+    <span class="sparc-collection-row__icon" aria-hidden="true"><%= icon(local_assigns[:icon]) %></span>
+  <% end %>
+  <div class="sparc-collection-row__main">
+    <div class="sparc-collection-row__title-line">
+      <h3 class="sparc-collection-row__title"><%= link_to local_assigns[:title], local_assigns[:url] %></h3>
+      <% Array(local_assigns[:badges]).each do |badge| %>
+        <span class="<%= badge[:class].presence || "badge bg-secondary" %>"><%= badge[:text] %></span>
+      <% end %>
+      <% Array(local_assigns[:chips]).each do |chip| %>
+        <%= tag.span chip[:text], class: "sparc-chip #{chip[:class]}", title: chip[:title].presence %>
+      <% end %>
+    </div>
+    <% line = local_assigns[:subtitle].presence || local_assigns[:description].presence %>
+    <% if line %>
+      <p class="sparc-collection-row__desc" title="<%= line %>"><%= line %></p>
+    <% end %>
+    <% metrics = Array(local_assigns[:metrics]) %>
+    <% if metrics.any? || local_assigns[:footer].present? || local_assigns[:empty_note].present? %>
+      <ul class="sparc-collection-row__meta">
+        <% metrics.each do |metric| %>
+          <li><strong><%= metric[:value] %></strong> <%= metric[:label] %></li>
+        <% end %>
+        <% if local_assigns[:empty_note].present? %><li><%= local_assigns[:empty_note] %></li><% end %>
+        <% if local_assigns[:footer].present? %><li><%= local_assigns[:footer] %></li><% end %>
+      </ul>
+    <% end %>
+  </div>
+  <% if local_assigns[:actions].present? %>
+    <div class="sparc-collection-row__actions"><%= local_assigns[:actions] %></div>
+  <% end %>
+</article>

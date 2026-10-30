@@ -27,7 +27,10 @@ class EvidencesController < ApplicationController
     @facets = active_facets(boundary_facet_keys(EvidenceBrowseQuery.facet_params), labels: EvidenceBrowseQuery.facet_labels)
     @clear_facets = clear_facets_params(boundary_facet_keys(EvidenceBrowseQuery.facet_params))
     @view_mode = resolve_view_mode(:evidences)
-    filtered = query.records
+    # 1.18.0-rf #1299 — status tabs, counted with every other filter applied.
+    @status_tabs = StatusTabs.for_values(:status, Evidence.statuses.values, params: params,
+      base: EvidenceBrowseQuery.new(params.except("status"), scope: scope).records)
+    filtered = @status_tabs.narrow(query.records)
     @pagy, @evidences = paginate_collection(filtered)
 
     # #948 — tiering receives the SAME relation the list came from, already

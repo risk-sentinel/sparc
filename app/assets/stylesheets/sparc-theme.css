@@ -3872,6 +3872,111 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-filter-link__label { min-width: 0; overflow-wrap: anywhere; }
 .sparc-filter-link .sparc-counter { margin-left: auto; }
 
+/* 1.18.0-rf #1299 — collection screens under SPARC_NAV_SHELL. */
+
+/* Status tabs: a filter, so the current one carries aria-current="true". */
+.sparc-tab[aria-current="true"] {
+  color: var(--bs-body-color);
+  font-weight: 600;
+  border-bottom-color: var(--sparc-tab-c);
+}
+.sparc-status-tabs .sparc-counter { margin-left: 0.1rem; }
+
+/* The view toggle, drawn as the segmented control. */
+.sparc-view-toggle--shell {
+  padding: 2px;
+  border-color: var(--sparc-border);
+  border-radius: 0.5rem;
+  background: var(--sparc-surface-alt);
+}
+.sparc-view-toggle--shell .sparc-view-toggle__option {
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.375rem;
+  font-size: 0.85rem;
+}
+.sparc-view-toggle--shell .sparc-view-toggle__option + .sparc-view-toggle__option { border-left: 0; }
+.sparc-view-toggle--shell .sparc-view-toggle__option[aria-current="true"] {
+  background: var(--sparc-surface);
+  color: var(--bs-body-color);
+  box-shadow: 0 0 0 1px var(--sparc-border);
+}
+
+/* List rows (shared/_collection_row): title and status, one line of
+   description, a meta line, actions on the right. */
+.sparc-collection-rows {
+  border: 1px solid var(--sparc-border-soft);
+  border-radius: 0.5rem;
+  background: var(--sparc-surface);
+}
+.sparc-collection-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--sparc-border-soft);
+}
+.sparc-collection-row:first-child { border-top: 0; }
+.sparc-collection-row__select { padding-top: 0.15rem; }
+.sparc-collection-row__icon { color: var(--bs-secondary-color); padding-top: 0.1rem; }
+.sparc-collection-row__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.sparc-collection-row__title-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.5rem; }
+.sparc-collection-row__title { margin: 0; font-size: 1rem; font-weight: 650; overflow-wrap: anywhere; }
+.sparc-collection-row__title a { text-decoration: none; }
+.sparc-collection-row__title a:hover { text-decoration: underline; }
+.sparc-collection-row__desc {
+  margin: 0;
+  color: var(--bs-secondary-color);
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sparc-collection-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--bs-secondary-color);
+  font-size: 0.8rem;
+}
+.sparc-collection-row__meta strong { color: var(--bs-body-color); }
+.sparc-collection-row__actions { flex: 0 0 auto; max-width: 45%; }
+@media (max-width: 575.98px) {
+  .sparc-collection-row { flex-wrap: wrap; }
+  .sparc-collection-row__actions { max-width: none; flex-basis: 100%; }
+}
+
+/* The list's filter form in the left column. */
+.sparc-filter-form--stacked .form-label { color: var(--bs-secondary-color); }
+
+/* Page links. */
+.sparc-collection-pagination .pagy { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; }
+.sparc-collection-pagination .pagy a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--sparc-border);
+  border-radius: 0.375rem;
+  color: var(--bs-body-color);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+.sparc-collection-pagination .pagy a:hover { background: var(--sparc-surface-alt); }
+/* The current page keeps the body text colour on the surface (no new colour
+   pair to measure) and is marked by a 2px primary border and weight. */
+.sparc-collection-pagination .pagy a[aria-current="page"] {
+  border: 2px solid var(--sparc-i-primary);
+  background: var(--sparc-surface);
+  font-weight: 700;
+}
+.sparc-collection-pagination .pagy a[aria-disabled="true"]:not([aria-current]) { opacity: 0.55; pointer-events: none; }
+.sparc-collection-pagination .pagy a:focus-visible { outline: 2px solid var(--sparc-i-primary); outline-offset: 1px; }
+
 /* /shell_preview only: the icon grid. */
 .sparc-preview-icon { width: 7.5rem; }
 .sparc-preview-icon .sparc-icon { width: 1.5rem; height: 1.5rem; color: var(--bs-body-color); }

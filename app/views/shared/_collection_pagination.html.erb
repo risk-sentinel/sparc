@@ -24,7 +24,9 @@
 <% label = local_assigns.fetch(:label, "results") %>
 
 <% if pagy %>
-  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+  <%# 1.18.0-rf #1299 — under SPARC_NAV_SHELL the page links are restyled
+      (.sparc-collection-pagination); the links and params are pagy's own. %>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3<%= " sparc-collection-pagination" if SparcConfig.nav_shell? %>">
     <output class="small text-body-secondary mb-0 d-block">
       <% if pagy.count.zero? %>
         No <%= label %> match the current filters.

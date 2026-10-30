@@ -7,6 +7,13 @@
 ] %>
 
 <div class="card sparc-of-hidden">
+  <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <% if SparcConfig.nav_shell? %>
+    <%= render "shared/page_header", title: "Converters",
+            primary: ({ label: "New Converter", path: new_converter_path } if can_write_converters?),
+            secondary: (can_write_converters? ? [ { label: "Import STIG", path: stig_parser_converters_path },
+                                                  { label: "Import JSON", path: import_converters_path } ] : []) %>
+  <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Converters</h2>
     <% if can_write_converters? %>
@@ -17,15 +24,17 @@
       </div>
     <% end %>
   </div>
+  <% end %>
 
   <%= render "shared/collection_toolbar",
         label: "converters", placeholder: "Search converters…",
+        status_tabs: @status_tabs, facets: @facets, clear_params: @clear_facets,
         view_mode: (@converters.any? ? @view_mode : nil) %>
 
-  <% if @converters.any? && @view_mode == :card %>
-    <div class="sparc-card-grid">
+  <% if @converters.any? && collection_layout(@view_mode) != :table %>
+    <div class="<%= collection_items_class(@view_mode) %>">
       <% @converters.each do |converter| %>
-        <%= render "shared/item_card",
+        <%= render collection_item_partial(@view_mode),
               title: converter.name,
               url: converter_path(converter),
               badges: [ { text: converter.status.to_s.titleize,

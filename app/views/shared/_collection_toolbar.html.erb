@@ -10,7 +10,7 @@
 
   Locals:
     label        — plural noun, e.g. "system security plans"
-    view_mode    — :card or :list (omit to hide the toggle)
+    view_mode    — :card, :list or :table (omit to hide the toggle)
     placeholder  — search box hint (omit for the shared default)
     facets       — from CollectionViewable#active_facets (omit if the screen has none)
     clear_params — from CollectionViewable#clear_facets_params
@@ -18,8 +18,31 @@
     search       — false to hide the search box
     extra        — safe HTML placed on the left of the toggle row, for
                    screen-specific controls like select-all
+    status_tabs  — a StatusTabs (#1299; drawn under SPARC_NAV_SHELL only)
+
+  1.18.0-rf #1299, under SPARC_NAV_SHELL: status tabs with counts lead; the
+  filter form moves into the list's left column when the list sits in
+  shared/_boundary_filter_layout; a tab's own filter is not repeated as a
+  dropdown or a token, since the selected tab already says it.
 %>
 <% label = local_assigns.fetch(:label, "results") %>
+<% shell = SparcConfig.nav_shell? %>
+<% tabs = shell ? local_assigns[:status_tabs] : nil %>
+<% tab_keys = tabs ? tabs.keys.map(&:to_s) : [] %>
+<% filter_fields = Array(local_assigns[:filter_fields]).reject { |f| tab_keys.include?(f[:key].to_s) } %>
+<% facets = local_assigns[:facets]&.reject { |f| tab_keys.include?(f[:key].to_s) } %>
+
+<% if tabs %>
+  <nav class="sparc-tabs sparc-status-tabs mb-3" aria-label="<%= "Filter #{label} by status" %>" data-testid="status-tabs">
+    <% tabs.tabs.each do |tab| %>
+      <%= link_to url_for(tabs.link_params(request.query_parameters, tab)), class: "sparc-tab",
+            aria: { current: (tab.current ? "true" : nil) },
+            data: { testid: "status-tab", tab: tab.label.parameterize, count: tab.count } do %>
+        <%= tab.label %> <span class="sparc-counter"><%= number_with_delimiter(tab.count) %></span>
+      <% end %>
+    <% end %>
+  </nav>
+<% end %>
 
 <% if local_assigns.fetch(:search, true) %>
   <%= render "shared/index_search",
@@ -29,12 +52,16 @@
 <%# #908 — the controls that narrow, between the search box and the record of
     what is currently applied. Keeps the top-to-bottom reading order intact:
     how to narrow, what IS narrowed, then how it is drawn. %>
-<% if local_assigns[:filter_fields].present? %>
-  <%= render "shared/collection_filter_form", fields: local_assigns[:filter_fields] %>
+<% if filter_fields.present? %>
+  <% if shell && @collection_side_open %>
+    <% content_for :collection_side, render("shared/collection_filter_form", fields: filter_fields, stacked: true) %>
+  <% else %>
+    <%= render "shared/collection_filter_form", fields: filter_fields %>
+  <% end %>
 <% end %>
 
 <%= render "shared/collection_filters",
-      facets: local_assigns[:facets],
+      facets: facets,
       clear_params: local_assigns[:clear_params],
       query: params[:q],
       label: label %>
