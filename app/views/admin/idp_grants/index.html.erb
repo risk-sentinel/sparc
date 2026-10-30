@@ -1,6 +1,21 @@
 <% content_for :title, "IdP Grants" %>
 
 <div class="container-fluid py-4">
+  <%# 1.18.0-rf #1303 — under SPARC_NAV_SHELL, the shared page header. %>
+  <% if SparcConfig.nav_shell? %>
+    <% window_form = capture do %>
+    <%= form_with url: admin_idp_grants_path, method: :get, class: "d-flex align-items-center gap-2" do %>
+      <label for="days" class="form-label mb-0 text-nowrap">Last</label>
+      <%= select_tag :days,
+            options_for_select([ [ "7 days", 7 ], [ "30 days", 30 ], [ "90 days", 90 ], [ "1 year", 365 ] ], @window_days),
+            class: "form-select form-select-sm" %>
+      <%= submit_tag "Apply", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm", name: nil %>
+    <% end %>
+    <% end %>
+    <%= render "shared/page_header", title: "Unmatched IdP Grants",
+          subtitle: "Access your identity provider asked for that this instance could not grant.",
+          extra: window_form %>
+  <% else %>
   <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
     <div>
       <h1 class="h3 mb-1">Unmatched IdP Grants</h1>
@@ -17,6 +32,7 @@
       <%= submit_tag "Apply", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm", name: nil %>
     <% end %>
   </div>
+  <% end %>
 
   <% if @summary.empty? %>
     <div class="alert alert-success d-flex align-items-center gap-2">

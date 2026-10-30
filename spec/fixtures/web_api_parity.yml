@@ -795,6 +795,11 @@ controllers:
         reason: "Removing a boundary-scoped RBAC role assignment (UserRole) is browser-only"
         would_be: "DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/role_assignments/:id"
 
+  admin/settings:
+    ui_only:
+      - reason: "1.18.0-rf #1303: the Settings tab's page, a list of links to the admin screens (each has its own entry); no data, 404 unless SPARC_NAV_SHELL is on"
+        actions: [index]
+
   admin/data_migrations:
     gap:
       index:

@@ -119,6 +119,11 @@
           </div>
         </div>
       </div>
+    <% elsif shell_nav? && admin_settings_page? %>
+      <%# 1.18.0-rf #1303 — an admin screen, with the settings menu beside it. %>
+      <div class="container">
+        <%= render layout: "admin/settings_frame" do %><%= yield %><% end %>
+      </div>
     <% else %>
       <div class="container">
         <%= yield %>

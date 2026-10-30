@@ -16,6 +16,9 @@ module Admin
   #   IA-5 Authenticator Management (token generation, expiration, rotation)
   class ServiceAccountsController < ApplicationController
     include ApiTokenLimits
+    include Pagy::Method
+
+    PER_PAGE = 25
 
     before_action :authorize_admin!
     before_action :set_service_account, only: [ :show, :edit, :update, :disable, :enable, :regenerate_token, :destroy ]
@@ -23,7 +26,9 @@ module Admin
     def index
       scope = User.service_accounts.order(:email)
       scope = scope.where("email ILIKE :q OR display_name ILIKE :q OR first_name ILIKE :q", q: "%#{params[:q]}%") if params[:q].present?
-      @service_accounts = scope
+      # 1.18.0-rf #1303 — status tabs and pagination, as on Users.
+      @status_tabs = StatusTabs.for_values(:status, User::STATUSES, base: scope, params: params)
+      @pagy, @service_accounts = pagy(:offset, @status_tabs.narrow(scope), limit: PER_PAGE)
     end
 
     def show

@@ -1,6 +1,11 @@
 <div class="container py-4">
   <div class="sparc-card p-4 p-md-5">
 
+    <%# 1.18.0-rf #1303 — under SPARC_NAV_SHELL, the shared page header. %>
+    <% if SparcConfig.nav_shell? %>
+      <%= render "shared/page_header", title: "Catalog lineage",
+            subtitle: "Every document that cannot yet name the catalog its controls descend from. Blocking documents are refused edits until a baseline is set; advisory ones are findings to act on, not work that is stopping anyone." %>
+    <% else %>
     <div class="mb-4">
       <h1 class="fw-bold mb-1">Catalog lineage</h1>
       <p class="text-body-secondary mb-0">
@@ -9,6 +14,7 @@
         are findings to act on, not work that is stopping anyone.
       </p>
     </div>
+    <% end %>
 
     <%# ── Summary strip. A bare count means nothing without a denominator:
         12 affected is very different at 12 of 12 than at 12 of 4000. ── %>

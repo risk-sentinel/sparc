@@ -1,3 +1,9 @@
+<%# 1.18.0-rf #1303 — under SPARC_NAV_SHELL, the shared page header. %>
+<% if SparcConfig.nav_shell? %>
+  <%= render "shared/page_header", title: "Audit log",
+        meta: [ "#{number_with_delimiter(@pagy.count)} events" ],
+        secondary: [ { label: "Export CSV", path: admin_audit_logs_path(request.query_parameters.merge(format: :csv)) } ] %>
+<% else %>
 <div class="d-flex justify-content-between align-items-center my-4">
   <h1 class="h3 fw-bold mb-0">Audit Log</h1>
   <div class="d-flex align-items-center gap-2">
@@ -6,6 +12,7 @@
         class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm" %>
   </div>
 </div>
+<% end %>
 
 <%# ── Filters ──────────────────────────────────────────── %>
 <div class="card mb-3">

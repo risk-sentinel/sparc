@@ -1,0 +1,27 @@
+<%# 1.18.0-rf #1303 — the organization's Settings: every administration
+    screen, grouped, with what it is for. The same menu sits beside each
+    screen (admin/_settings_frame). %>
+<% content_for :title, "Settings" %>
+<%= render "shared/page_header", title: "Settings",
+      subtitle: "Administration for this SPARC instance. Each screen is open to instance administrators only." %>
+
+<div class="sparc-settings-overview" data-testid="admin-settings">
+  <% admin_settings_sections.each do |section| %>
+    <section aria-labelledby="settings-<%= section.title.parameterize %>">
+      <h2 class="sparc-rail-title" id="settings-<%= section.title.parameterize %>"><%= section.title %></h2>
+      <ul class="sparc-settings-overview__list">
+        <% section.items.each do |item| %>
+          <li>
+            <%= link_to item.path, class: "sparc-settings-overview__item", data: { testid: "admin-settings-item", item: item.key } do %>
+              <span class="sparc-settings-overview__icon"><%= icon(item.icon) %></span>
+              <span>
+                <span class="sparc-settings-overview__label"><%= item.label %></span>
+                <span class="sparc-settings-overview__desc"><%= item.description %></span>
+              </span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+</div>

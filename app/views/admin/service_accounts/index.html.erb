@@ -1,4 +1,11 @@
 <div class="container-fluid py-4">
+  <%# 1.18.0-rf #1303 — under SPARC_NAV_SHELL, the shared header and toolbar. %>
+  <% if SparcConfig.nav_shell? %>
+    <%= render "admin/list_header", title: "Service accounts", label: "service accounts", count: @pagy.count,
+          subtitle: "API-only accounts for pipelines, CI/CD, and integrations",
+          primary: { label: "New service account", path: new_admin_service_account_path },
+          status_tabs: @status_tabs, placeholder: "Search by name or email…" %>
+  <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <h2>Service Accounts</h2>
@@ -22,10 +29,11 @@
       <button type="submit" class="sparc-action sparc-action--neutral sparc-action--ghost">Search</button>
     </div>
   <% end %>
+  <% end %>
 
   <div class="card sparc-card">
     <div class="table-responsive">
-      <table class="table tabletable-hover mb-0">
+      <table class="table table table-hover mb-0">
         <thead>
           <tr>
             <th>Name</th>
@@ -84,4 +92,6 @@
       </table>
     </div>
   </div>
+  <%# 1.18.0-rf #1303 — paginated, like the other admin lists. %>
+  <%= render "shared/collection_pagination", pagy: @pagy, label: "service accounts" %>
 </div>

@@ -8,7 +8,11 @@ module Admin
     before_action :set_authorization_boundary, only: [ :show, :edit, :update, :add_member, :remove_member ]
 
     def index
-      @authorization_boundaries = AuthorizationBoundary.order(:name)
+      scope = AuthorizationBoundary.order(:name)
+      # 1.18.0-rf #1303 — searchable, with status tabs, like the other admin lists.
+      scope = scope.where("name ILIKE :q OR description ILIKE :q", q: "%#{params[:q]}%") if params[:q].present?
+      @status_tabs = StatusTabs.for_values(:status, AuthorizationBoundary::STATUSES, base: scope, params: params)
+      @authorization_boundaries = @status_tabs.narrow(scope)
     end
 
     def show
