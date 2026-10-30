@@ -36,18 +36,8 @@ module ShellNavHelper
     SparcConfig.nav_shell? && (!SparcConfig.any_auth_enabled? || signed_in?)
   end
 
-  # The boundary the page is inside: its own page, or a list filtered to it
-  # (BoundaryListFilter, which only names a boundary the viewer can reach).
-  def shell_boundary
-    return @shell_boundary if defined?(@shell_boundary)
-
-    @shell_boundary =
-      if controller_path == "authorization_boundaries" && action_name == "show"
-        @authorization_boundary
-      elsif (filter = boundary_filter) && filter.selected == :boundary
-        filter.boundary
-      end
-  end
+  # The boundary the page is inside is ShellContext#shell_boundary (a helper
+  # method), shared with the switcher's recently-used list.
 
   # The viewer's organization when they belong to exactly one; the switcher
   # between organizations is #1291.
@@ -101,6 +91,38 @@ module ShellNavHelper
       Tab.new(key: :leveraged, label: "Leveraged POA&Ms", path: leveraged_poam_documents_path(scoped),
               icon: "link", layer: :enterprise)
     ].compact.then { |tabs| tidy_separators(tabs) }
+  end
+
+  # #1291 — the switcher's list: every boundary the viewer can reach, grouped
+  # by organization (boundaries with none in their own group, last), and the
+  # recently used ones first. Recent ids come from a cookie and are resolved
+  # through the same visible set, so an id the viewer cannot reach is dropped.
+  Switcher = Struct.new(:recent, :groups, keyword_init: true)
+  NO_ORGANIZATION = "No organization"
+
+  def shell_switcher
+    @shell_switcher ||= begin
+      visible = AuthorizationBoundary.visible_to(current_user).includes(:organization).order(:name).to_a
+      by_id = visible.index_by(&:id)
+      recent = shell_recent_boundary_ids.filter_map { |id| by_id[id] }
+      groups = visible.group_by { |b| b.organization&.name }
+                      .sort_by { |name, _| [ name.nil? ? 1 : 0, name.to_s.downcase ] }
+                      .map { |name, list| [ name || NO_ORGANIZATION, list ] }
+      Switcher.new(recent: recent, groups: groups)
+    end
+  end
+
+  # Where choosing `boundary` takes the viewer: the same list narrowed to it
+  # when the page is a list with the Boundary filter, otherwise its own page.
+  # nil = "All boundaries".
+  def shell_switch_path(boundary)
+    if boundary_filter
+      query = request.query_parameters.except("page", BoundaryScopedList::PARAM.to_s)
+      query = query.merge(BoundaryScopedList::PARAM.to_s => boundary.id) if boundary
+      url_for(query.merge(only_path: true))
+    else
+      boundary ? authorization_boundary_path(boundary) : authorization_boundaries_path
+    end
   end
 
   # Polyline points for a sparkline of `values` in a width x height box,

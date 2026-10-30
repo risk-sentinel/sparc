@@ -1,19 +1,68 @@
 <%# 1.18.0-rf — where you are, in the shell header: the organization, then the
-    boundary when the page is inside one (ShellNavHelper#shell_boundary: its
-    own page, or a list filtered to it). Moved here from the tab bar (#1295). %>
+    boundary when the page is inside one (ShellContext#shell_boundary: its own
+    page, or a list filtered to it). Moved here from the tab bar (#1295).
+
+    #1291 — the switcher beside it: every boundary the viewer can reach,
+    grouped by organization, recently used first, filterable as you type.
+    Choosing one keeps you on the same screen where that means something (a
+    list narrowed to the new boundary), otherwise opens its page. The list is
+    rendered here, so it works as plain links before Stimulus connects; the
+    controller adds the filter, the keyboard and Esc. %>
 <% boundary = shell_boundary %>
-<nav class="sparc-shell-crumbs" aria-label="Context">
-  <ol>
-    <li>
-      <%= link_to root_path, class: "sparc-shell-crumbs__org", data: { testid: "shell-org" } do %>
-        <%= icon("building-2") %> <span class="sparc-shell-crumbs__text"><%= boundary&.organization&.name || shell_org_name %></span>
-      <% end %>
-    </li>
-    <% if boundary %>
+<% switcher = shell_switcher %>
+<div class="sparc-shell-crumbs-wrap" data-controller="boundary-switcher"
+     data-action="keydown->boundary-switcher#keydown">
+  <nav class="sparc-shell-crumbs" aria-label="Context">
+    <ol>
       <li>
-        <%= link_to authorization_boundary_path(boundary),
-              class: "sparc-shell-crumbs__boundary", data: { testid: "shell-boundary" } do %><span class="sparc-shell-crumbs__text"><%= boundary.name %></span><% end %>
+        <%= link_to root_path, class: "sparc-shell-crumbs__org", data: { testid: "shell-org" } do %>
+          <%= icon("building-2") %> <span class="sparc-shell-crumbs__text"><%= boundary&.organization&.name || shell_org_name %></span>
+        <% end %>
       </li>
-    <% end %>
-  </ol>
-</nav>
+      <% if boundary %>
+        <li>
+          <%= link_to authorization_boundary_path(boundary),
+                class: "sparc-shell-crumbs__boundary", data: { testid: "shell-boundary" } do %><span class="sparc-shell-crumbs__text"><%= boundary.name %></span><% end %>
+        </li>
+      <% end %>
+    </ol>
+  </nav>
+  <button type="button" class="sparc-switcher__trigger" aria-expanded="false" aria-controls="sparc-switcher-panel"
+          aria-label="Switch boundary" title="Switch boundary"
+          data-boundary-switcher-target="trigger" data-action="boundary-switcher#toggle"
+          data-testid="shell-switcher"><%= icon("chevron-down") %></button>
+  <div class="sparc-switcher__panel" id="sparc-switcher-panel" role="dialog" aria-label="Switch boundary" hidden
+       data-boundary-switcher-target="panel" data-testid="shell-switcher-panel">
+    <input type="search" class="form-control form-control-sm" placeholder="Filter boundaries…"
+           aria-label="Filter boundaries" autocomplete="off"
+           data-boundary-switcher-target="filter" data-action="input->boundary-switcher#filter">
+    <ul class="sparc-switcher__list">
+      <li>
+        <%= link_to shell_switch_path(nil), class: "sparc-switcher__item sparc-switcher__item--all",
+              aria: { current: (boundary.nil? ? "true" : nil) },
+              data: { boundary_switcher_target: "item", name: "all boundaries", testid: "shell-switcher-all" } do %>
+          All boundaries
+        <% end %>
+      </li>
+      <% sections = [] %>
+      <% sections << [ "Recently used", "recent", switcher.recent ] if switcher.recent.any? %>
+      <% switcher.groups.each_with_index { |(name, list), i| sections << [ name, "org-#{i}", list ] } %>
+      <% sections.each do |label, key, list| %>
+        <li class="sparc-switcher__group" data-boundary-switcher-target="group" data-group="<%= key %>"
+            data-testid="shell-switcher-group"><%= label %></li>
+        <% list.each do |ab| %>
+          <li>
+            <%= link_to shell_switch_path(ab), class: "sparc-switcher__item",
+                  aria: { current: (boundary&.id == ab.id ? "true" : nil) },
+                  data: { boundary_switcher_target: "item", group: key, name: ab.name.downcase,
+                          testid: "shell-switcher-item", boundary_id: ab.id } do %>
+              <span class="sparc-switcher__name"><%= ab.name %></span>
+              <span class="sparc-status-chip sparc-status-chip--<%= boundary_status_chip(ab.status) %>"><%= ab.status.capitalize %></span>
+            <% end %>
+          </li>
+        <% end %>
+      <% end %>
+    </ul>
+    <p class="sparc-switcher__empty small mb-0" hidden data-boundary-switcher-target="empty">No boundary matches.</p>
+  </div>
+</div>
