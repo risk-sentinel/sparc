@@ -34,7 +34,9 @@
         <div class="text-center sparc-inventory-heading">
           <span class="badge <%= g[:badge] %> sparc-ls-005"><%= g[:label] %></span>
         </div>
-        <div class="d-flex gap-1">
+        <%# Wraps rather than overflowing: five Controls tiles are 324px, wider
+            than a 320px phone (measured, 1.18.0-rf #1295). %>
+        <div class="d-flex flex-wrap justify-content-center gap-1">
           <% g[:tiles].each do |key, count, label, path| %>
             <%= link_to path, class: "sparc-inventory-tile", data: { home_tile: key },
                   title: "Open #{label}", "aria-label": "#{number_with_delimiter(count)} #{label}: open the list" do %>

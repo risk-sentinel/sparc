@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import pytest
 
-from helpers import assert_no_csp_violations, first_show_href, record_csp
+from helpers import assert_no_csp_violations, first_show_href, help_trigger, record_csp
 
 pytestmark = pytest.mark.authenticated
 
@@ -38,8 +38,8 @@ def test_help_control_keeps_its_new_tab_fallback(authed_page):
     record_csp(authed_page)
     authed_page.goto(BOUNDARY_FORM)
 
-    help_link = authed_page.locator("a.sparc-nav-btn[href*='/help']").first
-    assert help_link.count() > 0, "navbar help control not found"
+    help_link = help_trigger(authed_page, open_menu=False)
+    assert help_link.count() > 0, "help control not found"
     assert help_link.get_attribute("target") == "_blank"
 
     rel = help_link.get_attribute("rel") or ""
@@ -63,7 +63,7 @@ def test_opening_help_does_not_discard_typed_input(authed_page):
     authed_page.fill("#authorization_boundary_name", typed)
     url_before = authed_page.url
 
-    authed_page.click("a.sparc-nav-btn[href*='/help']")
+    help_trigger(authed_page).click()
     authed_page.wait_for_selector("#sparc-help-drawer.show", timeout=5000)
 
     # The point of the drawer: help arrived without going anywhere.

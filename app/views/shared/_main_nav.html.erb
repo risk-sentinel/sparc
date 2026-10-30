@@ -28,7 +28,12 @@
 <%# Reachability predicates, named once so every entry below reads clearly. %>
 <% show_boundary_docs      = !SparcConfig.any_auth_enabled? || signed_in? %>
 <% show_controls_reference = controls_publicly_accessible? %>
-
+<%# 1.18.0-rf #1295 — behind SPARC_NAV_SHELL the header is the shell's
+    (shared/_shell_header); this bar is unchanged with the switch off, and
+    #1297 removes it. Both layouts render this partial, so they switch together. %>
+<% if SparcConfig.nav_shell? %>
+  <%= render "shared/shell_header" %>
+<% else %>
     <nav class="navbar navbar-expand-xxl navbar-dark bg-dark sticky-top">
       <div class="container-fluid">
         <div class="d-flex align-items-center gap-2">
@@ -91,65 +96,9 @@
             <span class="sparc-nav-separator"></span>
           </li>
 
-          <%# ── Theme toggle ── %>
-          <li class="nav-item" data-controller="theme">
-            <button class="btn btn-outline-light btn-sm sparc-nav-theme-btn"
-                    data-theme-target="icon"
-                    data-action="theme#toggle"
-                    title="Toggle light/dark mode"><%# #1289 — both glyphs render; the theme decides which shows (CSS), so
-                    the right one is there on first paint, before Stimulus connects. %><%= icon("moon", css_class: "sparc-theme-icon-moon") %><%= icon("sun", css_class: "sparc-theme-icon-sun") %></button>
-          </li>
+          <%= render "shared/nav_theme_toggle" %>
 
-          <%# ── User menu / Login ── %>
-          <% if SparcConfig.any_auth_enabled? %>
-            <% if signed_in? %>
-              <li class="nav-item dropdown">
-                <button type="button" class="nav-link dropdown-toggle d-flex align-items-center gap-2 sparc-nav-user" data-bs-toggle="dropdown" aria-expanded="false">
-                  <span class="sparc-avatar">
-                    <%= safe_avatar_tag(current_user, alt: current_user.initials) %>
-                  </span>
-                  <span class="d-none d-xl-inline"><%= current_user.display_label %></span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end sparc-dropdown-menu">
-                  <li class="px-3 py-2">
-                    <div class="d-flex align-items-center gap-2">
-                      <span class="sparc-avatar sparc-avatar-md">
-                        <%= safe_avatar_tag(current_user, alt: current_user.initials) %>
-                      </span>
-                      <div>
-                        <div class="fw-semibold small"><%= current_user.display_label %></div>
-                        <div class="text-body-secondary" style="font-size: 0.75rem;"><%= current_user.email %></div>
-                      </div>
-                    </div>
-                  </li>
-                  <li><hr class="dropdown-divider"></li>
-                  <% if current_user.instance_administrator? %>
-                    <li><h6 class="dropdown-header">Administration</h6></li>
-                    <li><%= link_to "Users", admin_users_path, class: "dropdown-item" %></li>
-                    <li><%= link_to "Roles", admin_roles_path, class: "dropdown-item" %></li>
-                    <li><%= link_to "Service Accounts", admin_service_accounts_path, class: "dropdown-item" %></li>
-                    <li><%= link_to "Auth Boundaries", admin_authorization_boundaries_path, class: "dropdown-item" %></li>
-                    <li><%= link_to "Organizations", admin_organizations_path, class: "dropdown-item" %></li>
-                    <li><%= link_to "Remediation Timelines", admin_remediation_timelines_path, class: "dropdown-item" %></li>
-                    <li><%= link_to "IdP Grants", admin_idp_grants_path, class: "dropdown-item" %></li>
-                    <li><%= link_to "Audit Log", admin_audit_logs_path, class: "dropdown-item" %></li>
-                    <li><hr class="dropdown-divider"></li>
-                  <% end %>
-                  <li><%= link_to "Profile", edit_profile_path, class: "dropdown-item" %></li>
-                  <li><%= link_to "Change Password", edit_password_path, class: "dropdown-item" %></li>
-                  <% if SparcConfig.fido2_enabled? %>
-                    <li><%= link_to "Security Keys", webauthn_credentials_path, class: "dropdown-item" %></li>
-                  <% end %>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><%= button_to "Sign Out", logout_path, method: :delete, class: "dropdown-item" %></li>
-                </ul>
-              </li>
-            <% else %>
-              <li class="nav-item">
-                <%= link_to "Login", login_path, class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm fw-semibold" %>
-              </li>
-            <% end %>
-          <% end %>
+          <%= render "shared/nav_account_menu" %>
         </ul>
         <button class="navbar-toggler ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -328,3 +277,4 @@
         </div>
       </div>
     </nav>
+<% end %>

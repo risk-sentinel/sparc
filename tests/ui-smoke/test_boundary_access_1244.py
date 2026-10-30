@@ -19,11 +19,18 @@ import os
 
 import pytest
 
-from helpers import assert_no_csp_violations, record_csp
+from helpers import SHELL_HEADER, assert_no_csp_violations, nav_shell_on, record_csp
 
 pytestmark = pytest.mark.authenticated
 
 ENTERPRISE_MENU = ".sparc-nav-boundaries + .dropdown-menu"
+# 1.18.0-rf — with SPARC_NAV_SHELL on, those links live in the shell header
+# (Library menu, switcher) and the tab bar (Settings) instead.
+SHELL_NAV = f"{SHELL_HEADER}, [data-testid=shell-bar]"
+# Boundary links on the list: the classic table's, or the Boundaries tab's rows.
+LISTED = (
+    "table a[href^='/authorization_boundaries/'], [data-testid=boundary-row] a.sparc-repo-row__name"
+)
 
 
 def _all_boundary_slugs(page, base_url) -> list[str]:
@@ -39,9 +46,7 @@ def _all_boundary_slugs(page, base_url) -> list[str]:
 
 
 def _listed_slugs(page) -> list[str]:
-    hrefs = page.locator("table a[href^='/authorization_boundaries/']").evaluate_all(
-        "els => els.map(e => e.getAttribute('href'))"
-    )
+    hrefs = page.locator(LISTED).evaluate_all("els => els.map(e => e.getAttribute('href'))")
     return sorted({h.split("/")[2] for h in hrefs if h.count("/") == 2})
 
 
@@ -81,19 +86,25 @@ def test_non_admin_is_refused_a_boundary_it_cannot_see(user_authed_page, base_ur
     )
 
 
+def _navigation_html(page) -> str:
+    if nav_shell_on(page):
+        return "".join(page.locator(SHELL_NAV).evaluate_all("els => els.map(e => e.innerHTML)"))
+    return page.locator(ENTERPRISE_MENU).inner_html()
+
+
 def test_enterprise_menu_offers_admin_screens_only_to_admins(
     authed_page, user_authed_page, base_url
 ):
     user = user_authed_page
     user.goto(f"{base_url}/")
     user.wait_for_load_state("domcontentloaded")
-    user_menu = user.locator(ENTERPRISE_MENU).inner_html()
+    user_menu = _navigation_html(user)
     assert "/federation_peers" not in user_menu
     assert "/admin/organizations" not in user_menu
 
     admin = authed_page
     admin.goto(f"{base_url}/")
     admin.wait_for_load_state("domcontentloaded")
-    admin_menu = admin.locator(ENTERPRISE_MENU).inner_html()
+    admin_menu = _navigation_html(admin)
     assert "/federation_peers" in admin_menu
     assert "/admin/organizations" in admin_menu

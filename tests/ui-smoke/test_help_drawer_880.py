@@ -25,19 +25,23 @@ from __future__ import annotations
 import pytest
 
 from a11y import assert_no_new_a11y_violations
-from helpers import assert_no_csp_violations, record_csp
+from helpers import (
+    assert_no_csp_violations,
+    help_focus_return_selector,
+    help_trigger,
+    record_csp,
+)
 
 pytestmark = pytest.mark.authenticated
 
 BOUNDARY_FORM = "/authorization_boundaries/new"
 NAME_FIELD = "#authorization_boundary_name"
-TRIGGER = "a.sparc-nav-btn[href*='/help']"
 DRAWER = "#sparc-help-drawer"
 
 
 def open_drawer(page):
-    """Click the navbar ? and wait for the panel to finish sliding in."""
-    page.click(TRIGGER)
+    """Click help for this page and wait for the panel to finish sliding in."""
+    help_trigger(page).click()
     page.wait_for_selector(f"{DRAWER}.show", timeout=5000)
     # The guide arrives in a Turbo Frame, separately from the panel animation.
     page.wait_for_selector(f"{DRAWER} .sparc-guide-content", timeout=5000)
@@ -110,9 +114,10 @@ def test_focus_moves_into_the_drawer_and_returns_to_the_trigger(authed_page):
     authed_page.wait_for_selector(f"{DRAWER}.show", state="detached", timeout=5000)
 
     returned = authed_page.evaluate(
-        "document.activeElement?.matches(\"a.sparc-nav-btn[href*='/help']\") === true"
+        "(sel) => document.activeElement?.matches(sel) === true",
+        help_focus_return_selector(authed_page),
     )
-    assert returned, "focus did not return to the ? that opened the drawer"
+    assert returned, "focus did not return to the control that opened the drawer"
 
 
 def test_focus_is_trapped_while_the_drawer_is_open(authed_page):

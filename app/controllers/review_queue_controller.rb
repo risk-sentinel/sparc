@@ -10,16 +10,12 @@
 # path as the per-type actions and the API).
 class ReviewQueueController < ApplicationController
   include CollectionViewable
-  REVIEWABLE_TYPES = [ ControlCatalog, ProfileDocument, CdefDocument ].freeze
 
   def index
     # Approval authority is decided per document by DocumentApprovalService, so
     # this cannot be a relation — search and pagination run over the Array.
-    approvable = REVIEWABLE_TYPES.flat_map do |klass|
-      klass.pending_review.to_a.select do |doc|
-        DocumentApprovalService.new(document: doc, actor: current_user).can_approve?
-      end
-    end
+    # ReviewQueue is the one definition the header's count also reads (#1295).
+    approvable = ReviewQueue.approvable_for(current_user)
 
     # #888 — no search here before. A reviewer hunts by document name or by who
     # submitted it.

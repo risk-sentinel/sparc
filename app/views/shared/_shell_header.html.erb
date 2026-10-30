@@ -1,0 +1,133 @@
+<%# 1.18.0-rf #1295 — the shell header, behind SPARC_NAV_SHELL (rendered by
+    shared/_main_nav, so the application and login layouts switch together).
+
+    One row, SPARC navy in both themes: brand and version, where you are
+    (organization / boundary, #1291), then Create, Library, the review queue,
+    Help, the theme toggle and the account menu. Every entry is shown exactly
+    when its screen admits the viewer (ShellHeaderHelper, through the
+    predicates today's menus use). Below 768px the menu names hide and the
+    icons stay, each still named for assistive technology.
+
+    The layer dropdowns, Home, About, Resources and OSCAL are not here: the
+    document types are the tab bar's (shared/_shell_tabs), the shared library is
+    the Library menu, and About, Resources and OSCAL are in Help. %>
+<% member = !SparcConfig.any_auth_enabled? || signed_in? %>
+<% create_items = member ? shell_create_items(shell_nav? ? shell_boundary : nil) : [] %>
+<% library_items = shell_library_items %>
+<% review_count = signed_in? ? shell_review_queue_count : nil %>
+<%# navbar-expand is load-bearing: Bootstrap positions a navbar's dropdowns
+    absolutely only inside an expanded navbar. Without it every menu opened
+    in the flow and stretched the header (owner, walking phase 3). %>
+<nav class="navbar navbar-expand navbar-dark bg-dark sticky-top sparc-shell-header" aria-label="Main" data-testid="shell-header">
+  <div class="container-fluid flex-nowrap gap-2">
+    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+      <a href="#" class="navbar-brand d-flex align-items-center me-0" data-action="click->video-easter-egg#play">
+        <%= image_tag "sparc_logo.png", alt: "SPARC", class: "sparc-navbar-logo" %>
+      </a>
+      <span class="badge text-bg-dark d-none d-sm-inline-block sparc-fs-065">v<%= SparcConfig::VERSION %></span>
+    </div>
+
+    <% if shell_nav? %>
+      <%= render "shared/shell_crumbs" %>
+    <% end %>
+
+    <ul class="navbar-nav flex-row align-items-center gap-1 ms-auto flex-shrink-0 sparc-shell-header__actions">
+      <% if create_items.any? %>
+        <li class="nav-item dropdown" data-testid="shell-create">
+          <button type="button" class="nav-link dropdown-toggle sparc-nav-btn sparc-shell-header__menu"
+                  data-bs-toggle="dropdown" aria-expanded="false" aria-label="Create">
+            <%= icon("plus") %><span class="sparc-shell-header__label">Create</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end sparc-dropdown-menu">
+            <li class="sparc-dropdown-header">
+              <%= shell_nav? && shell_boundary ? "Create in #{shell_boundary.name}" : "Create" %>
+            </li>
+            <% create_items.each do |item| %>
+              <li><%= link_to item.path, class: "dropdown-item", data: { testid: "shell-create-item", item: item.key } do %>
+                <span class="sparc-dropdown-icon"><%= icon(item.icon) %></span> <%= item.label %>
+              <% end %></li>
+            <% end %>
+          </ul>
+        </li>
+      <% end %>
+
+      <% if library_items.any? %>
+        <li class="nav-item dropdown" data-testid="shell-library">
+          <button type="button" class="nav-link dropdown-toggle sparc-nav-btn sparc-shell-header__menu"
+                  data-bs-toggle="dropdown" aria-expanded="false" aria-label="Library">
+            <%= icon("library") %><span class="sparc-shell-header__label">Library</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end sparc-dropdown-menu">
+            <li class="sparc-dropdown-header">Shared library</li>
+            <% library_items.each do |item| %>
+              <li><%= link_to item.path, class: "dropdown-item", data: { testid: "shell-library-item", item: item.key } do %>
+                <span class="sparc-dropdown-icon"><%= icon(item.icon) %></span> <%= item.label %>
+              <% end %></li>
+            <% end %>
+          </ul>
+        </li>
+      <% end %>
+
+      <% unless review_count.nil? %>
+        <li class="nav-item">
+          <%= link_to review_queue_index_path, class: "nav-link sparc-nav-btn sparc-shell-header__menu",
+                title: "Review queue",
+                aria: { label: "Review queue, #{pluralize(review_count, 'document')} waiting" },
+                data: { testid: "shell-review-queue", count: review_count } do %>
+            <%= icon("inbox") %><span class="sparc-counter"><%= review_count %></span>
+          <% end %>
+        </li>
+      <% end %>
+
+      <li class="nav-item dropdown" data-testid="shell-help">
+        <button type="button" class="nav-link dropdown-toggle sparc-nav-btn sparc-shell-header__menu"
+                data-bs-toggle="dropdown" aria-expanded="false" aria-label="Help">
+          <%= icon("circle-question-mark") %><span class="sparc-shell-header__label">Help</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end sparc-dropdown-menu sparc-shell-header__help">
+          <% if member %>
+            <%# #870 / #880 — opens the guide for this screen in the drawer; if
+                Stimulus never connects it is still a link to the guide in a new
+                tab, never a navigation away from a part-filled form. %>
+            <li><%= link_to contextual_help_path, class: "dropdown-item",
+                      target: "_blank", rel: "noopener noreferrer",
+                      data: { action: "click->help-drawer#open", testid: "shell-help-page" } do %>
+              <span class="sparc-dropdown-icon"><%= icon("circle-question-mark") %></span> Help for this page
+            <% end %></li>
+            <li><hr class="dropdown-divider"></li>
+            <li class="sparc-dropdown-header">Guides</li>
+            <li><%= link_to help_guide_path("getting-oriented"), class: "dropdown-item",
+                      target: "_blank", rel: "noopener noreferrer",
+                      aria: { label: "Getting Oriented guide, opens in a new tab" } do %>Getting Oriented<% end %></li>
+            <li><%= link_to "Help Center", help_path, class: "dropdown-item" %></li>
+            <% shell_help_guides.each do |guide| %>
+              <li><%= link_to guide.title, help_guide_path(guide.slug), class: "dropdown-item",
+                        target: "_blank", rel: "noopener noreferrer",
+                        aria: { label: "#{guide.title} guide, opens in a new tab" } %></li>
+            <% end %>
+            <li><hr class="dropdown-divider"></li>
+          <% end %>
+          <li class="sparc-dropdown-header">About SPARC</li>
+          <li><%= link_to "About", about_path, class: "dropdown-item" %></li>
+          <li><%= link_to "Resources", about_resources_path, class: "dropdown-item" %></li>
+          <% if member %>
+            <li><%= link_to "OSCAL overview", oscal_overview_path, class: "dropdown-item" %></li>
+            <% resources = Array(SparcConfig.resources) %>
+            <% if resources.any? %>
+              <li><hr class="dropdown-divider"></li>
+              <li class="sparc-dropdown-header">Reference links</li>
+              <% resources.each do |resource| %>
+                <li><a href="<%= resource["href"] %>" target="_blank" rel="noopener noreferrer" class="dropdown-item">
+                  <%= resource["display_text"] %> <%= icon("external-link", css_class: "sparc-icon-sm") %>
+                </a></li>
+              <% end %>
+            <% end %>
+          <% end %>
+        </ul>
+      </li>
+
+      <%= render "shared/nav_theme_toggle" %>
+      <%= render "shared/nav_account_menu" %>
+    </ul>
+  </div>
+</nav>

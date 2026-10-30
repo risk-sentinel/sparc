@@ -1596,6 +1596,7 @@
     "select-name::#sar_document\\[ssp_document_id\\]"
   ],
   "sar_wizard": [],
+  "shell_switcher_open": [],
   "ssp_index": [
     "color-contrast::tr:nth-child(1) > td:nth-child(2) > .sparc-source-excel.sparc-source-badge",
     "color-contrast::tr:nth-child(1) > td:nth-child(5) > .sparc-oscal-enriched",

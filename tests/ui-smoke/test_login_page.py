@@ -81,7 +81,11 @@ def test_controls_dropdown_visibility_matches_access_for_guest(page):
 
     page.goto("/login")
     page.wait_for_load_state("networkidle")
-    controls = page.locator(".sparc-nav-controls")
+    # The classic header's Controls dropdown, or (SPARC_NAV_SHELL on) the shell
+    # header's Library menu entry for catalogs.
+    controls = page.locator(
+        ".sparc-nav-controls, [data-testid=shell-library-item][data-item=control_catalogs]"
+    )
 
     if gated:
         assert controls.count() == 0, (
