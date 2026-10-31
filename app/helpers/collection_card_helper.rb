@@ -106,6 +106,17 @@ module CollectionCardHelper
   # Rows exist only under SPARC_NAV_SHELL. With the switch off, `list` and
   # `table` both draw the screen's table — what `list` has always meant — so
   # turning the switch off never shows anyone a layout they did not choose.
+  # 1.18.0-rf — a list table's date and time. One line ("2026-08-19 12:13"), as
+  # on main; under SPARC_NAV_SHELL the time sits small under the date
+  # (CSS, .sparc-stamp), so wide tables fit beside the left column.
+  def collection_timestamp(time)
+    return "\u2014" if time.blank?
+
+    tag.span(class: "sparc-stamp") do
+      safe_join([ tag.span(time.strftime("%Y-%m-%d")), tag.span(time.strftime("%H:%M"), class: "sparc-stamp__second") ], " ")
+    end
+  end
+
   def collection_layout(mode)
     case mode&.to_sym
     when :card then :cards

@@ -1,13 +1,14 @@
-<%= render "shared/section_summary", tiles: [
+<% summary = [
   [@total_count, "Control Mappings"],
   [@complete_count, "Complete"],
   [@draft_count, "Draft"]
 ] %>
+<%= render "shared/section_summary", tiles: summary unless SparcConfig.nav_shell? %>
 
-<div class="card sparc-of-hidden">
+<div class="card sparc-list-card sparc-of-hidden">
   <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
   <% if SparcConfig.nav_shell? %>
-    <%= render "shared/page_header", title: "Control Mappings",
+    <%= render "shared/page_header", summary: summary, title: "Control Mappings",
             primary: ({ label: "New Mapping", path: new_control_mapping_path } if can_write_mappings?) %>
   <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">

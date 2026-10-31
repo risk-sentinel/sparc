@@ -1,15 +1,16 @@
-<%= render "shared/section_summary", tiles: [
+<% summary = [
   [@total_count, "Converters"],
   [@complete_count, "Complete"],
   [@draft_count, "Draft"],
   [@unique_targets, "Unique NIST Controls"],
   [@family_count, "Control Families"]
 ] %>
+<%= render "shared/section_summary", tiles: summary unless SparcConfig.nav_shell? %>
 
-<div class="card sparc-of-hidden">
+<div class="card sparc-list-card sparc-of-hidden">
   <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
   <% if SparcConfig.nav_shell? %>
-    <%= render "shared/page_header", title: "Converters",
+    <%= render "shared/page_header", summary: summary, title: "Converters",
             primary: ({ label: "New Converter", path: new_converter_path } if can_write_converters?),
             secondary: (can_write_converters? ? [ { label: "Import STIG", path: stig_parser_converters_path },
                                                   { label: "Import JSON", path: import_converters_path } ] : []) %>

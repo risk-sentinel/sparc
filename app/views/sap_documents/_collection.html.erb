@@ -44,14 +44,16 @@
       <tbody>
         <% records.each do |doc| %>
           <tr>
-            <td><strong><%= link_to doc.name, sap_document_path(doc), class: "text-primary sparc-td-none" %></strong></td>
+            <td class="sparc-col-name"><strong><%= link_to doc.name, sap_document_path(doc), class: "text-primary sparc-td-none" %></strong></td>
             <td>
               <% type_variants = { "initial" => "info", "annual" => "success", "continuous" => "purple", "ad-hoc" => "warning" } %>
               <span class="sparc-status sparc-status--<%= type_variants[doc.assessment_type] || 'neutral' %>">
                 <%= doc.assessment_type&.titleize || "Initial" %>
               </span>
             </td>
-            <td class="small text-body-secondary"><%= doc.ssp_document&.name || "—" %></td>
+            <%# Under SPARC_NAV_SHELL at most two lines (.sparc-cell-clamp); the full
+                name is the hover text. %>
+            <td class="small text-body-secondary"><span class="sparc-cell-clamp" title="<%= doc.ssp_document&.name %>"><%= doc.ssp_document&.name || "—" %></span></td>
             <td class="small text-body-secondary"><%= doc.sap_version.presence || "—" %></td>
             <td class="sparc-ws-nowrap">
               <% if doc.processing? || doc.pending? || doc.failed? %>
@@ -70,15 +72,15 @@
             <td><%= doc.sap_controls.count %></td>
             <td class="text-body-secondary sparc-fs-082 sparc-ws-nowrap">
               <% if doc.assessment_start.present? %>
-                <%= doc.assessment_start.strftime("%Y-%m-%d") %>
+                <span class="sparc-stamp"><span><%= doc.assessment_start.strftime("%Y-%m-%d") %></span>
                 <% if doc.assessment_end.present? %>
-                  &rarr; <%= doc.assessment_end.strftime("%Y-%m-%d") %>
-                <% end %>
+                  <span class="sparc-stamp__second">&rarr; <%= doc.assessment_end.strftime("%Y-%m-%d") %></span>
+                <% end %></span>
               <% else %>
                 —
               <% end %>
             </td>
-            <td class="sparc-ws-nowrap"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td class="sparc-ws-nowrap"><%= collection_timestamp(doc.created_at) %></td>
             <td>
               <%= render "sap_documents/item_actions", doc: doc %>
             </td>
