@@ -1,19 +1,21 @@
-<%= render "shared/section_summary", tiles: [
+<% summary = [
   [@total_count, "Assessment Plans"],
   [@controls_count, "Total Controls"],
   [@completed_count, "Completed"]
 ] %>
+<%= render "shared/section_summary", tiles: summary unless SparcConfig.nav_shell? %>
 
 <% if @sap_documents.any? { |d| d.processing? || d.pending? } %>
   <div data-controller="auto-refresh" data-auto-refresh-interval-value="10000" hidden></div>
 <% end %>
 
-<div class="card" style="overflow-x: auto;">
+<div class="card sparc-list-card" style="overflow-x: auto;">
   <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <% header = nil %>
   <% if SparcConfig.nav_shell? %>
-    <%= render "shared/page_header", title: "Assessment Plans (SAP)",
+    <% header = capture do %><%= render "shared/page_header", summary: summary, title: "Assessment Plans (SAP)",
             primary: { label: "Create New", path: new_sap_document_path },
-            secondary: [ { label: "Upload File", path: new_sap_document_path(anchor: "upload-sap") } ] %>
+            secondary: [ { label: "Upload File", path: new_sap_document_path(anchor: "upload-sap") } ] %><% end %>
   <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Assessment Plans (SAP)</h2>
@@ -25,7 +27,7 @@
   <% end %>
 
   <%# 1.18.0-rf #1292 — the Boundary filter beside the list (BoundaryListFilter). %>
-  <%= render layout: "shared/boundary_filter_layout" do %>
+  <%= render layout: "shared/boundary_filter_layout", locals: { header: header } do %>
   <%= render "shared/collection_toolbar",
         label: "security assessment plans", placeholder: "Search SAPs…",
         status_tabs: @status_tabs, facets: @facets, clear_params: @clear_facets,

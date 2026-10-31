@@ -3962,6 +3962,36 @@ a.link-purple { color: var(--sparc-purple); }
   box-shadow: 0 0 0 1px var(--sparc-border-soft);
   font-weight: 650;
 }
+/* 1.18.0-rf — the page frame (owner-approved 10-31): under SPARC_NAV_SHELL a
+   list screen has no outer box. The header, the left column and the tabs sit
+   on the page; cards sit on the page; rows and tables each get one box with
+   no inner padding. `.sparc-list-card` marks a list's outer container (a
+   `.card` in the switch-off view, which keeps its look). */
+.sparc-shell .sparc-list-card {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+.sparc-shell .sparc-list-card > .card-body { padding: 0; }
+.sparc-shell .sparc-list-card table.table {
+  border: 1px solid var(--sparc-border-soft);
+  border-radius: 0.5rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 0.75rem;
+  background: var(--sparc-surface);
+  /* Cells stay clear so the table's rounded corners show; `overflow` does
+     not apply to a table, and clipping would hide row dropdowns anyway. */
+  --bs-table-bg: transparent;
+}
+.sparc-shell .sparc-list-card table.table > :last-child > tr:last-child > * { border-bottom: 0; }
+/* A list table's headings stay on one line (the Users table's "Sign-ins"
+   broke at its hyphen and doubled the header row); a wide table scrolls in
+   its own box. */
+.sparc-shell .sparc-list-card table.table > thead th { white-space: nowrap; }
+
 .sparc-settings-overview { display: grid; gap: 1.5rem; }
 .sparc-settings-overview__list {
   display: grid;

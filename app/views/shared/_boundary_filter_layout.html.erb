@@ -11,6 +11,9 @@
     Boundary filter in the left column: the toolbar inside the block hands its
     filter form over through `content_for :collection_side`, so the block is
     rendered first and the column after. %>
+<%# 1.18.0-rf — `header` (optional local): the page header, placed at the top
+    of the list column so the left column sits beside it (the page frame). %>
+<% header = local_assigns[:header] %>
 <% filter = boundary_filter %>
 <% @collection_side_open = true %>
 <% main = yield %>
@@ -62,9 +65,11 @@
     <%= side %>
     </div>
     <div class="sparc-filtered-collection__main">
+      <%= header %>
       <%= main %>
     </div>
   </div>
 <% else %>
+  <%= header %>
   <%= main %>
 <% end %>

@@ -131,7 +131,7 @@ per phase PR:
 | 1. Primitives | #1288, #1289 | Merged to `release-1.18.0-rf` (PR #1315) |
 | 2. Boundary context | #1290, #1292, #1293 | PR #1316 into `release-1.18.0-rf` |
 | 3. Shell, behind the switch | #1291, #1295, #1296, #1298, #1246 | Built on `feature/v1180rf_shell` |
-| 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | Plan approved 2026-10-30; 4a (#1299, #1300, #1302, #1303) built on `feature/v1180rf_shell`, 4b (#1301, #1304) next |
+| 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | Plan approved 2026-10-30; 4a (#1299, #1300, #1302, #1303) built on `feature/v1180rf_shell`; page frame approved 2026-10-31; 4b (#1301, #1304) next |
 | 5. Finish | #1297, #1306, #1307, #1308, #1309 | — (`feature/v1180rf_shell`) |
 
 **Phase 0** records what the navigation offers today, per viewer, before any
@@ -221,6 +221,15 @@ impact the row shows. Administrators keep bulk delete through the classic list
 
 **Phase 4** (plan approved 2026-10-30), behind `SPARC_NAV_SHELL`, walked in two
 stops: 4a (#1299, #1300, #1302, #1303), then 4b (#1301, #1304).
+- **The page frame** (approved 2026-10-31, after the 4a walk): every screen
+  under the shell uses the admin settings frame. The header, the left column
+  and the tabs sit on the page with no outer box, and the header sits beside
+  the left column. Cards sit on the page; rows and tables each get one box
+  with no inner padding. A list's totals, the banner in the switch-off view,
+  are one line under the title. `body.sparc-shell` scopes the styles;
+  `.sparc-list-card` marks a list's container; `shared/_page_header` takes
+  `summary:` and `shared/_boundary_filter_layout` takes `header:`. The 4b
+  pages use the same frame.
 - **The lists (#1299):**
   - **Status tabs with counts** (`StatusTabs`) on nine lists. SSPs, SAPs,
     SARs, POA&Ms and baselines by lifecycle; catalogs also by Approved;

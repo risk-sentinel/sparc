@@ -1,9 +1,10 @@
-<div class="card">
+<div class="card sparc-list-card">
   <div class="card-body">
     <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+    <% header = nil %>
     <% if SparcConfig.nav_shell? %>
-      <%= render "shared/page_header", title: "Leveraged POA&Ms",
-            subtitle: "POA&Ms owned by leveraged-system boundaries that any of your leveraging-side authorization boundaries depend on. Read-only." %>
+      <% header = capture do %><%= render "shared/page_header", title: "Leveraged POA&Ms",
+            subtitle: "POA&Ms owned by leveraged-system boundaries that any of your leveraging-side authorization boundaries depend on. Read-only." %><% end %>
     <% else %>
     <h2>Leveraged POA&amp;Ms</h2>
     <p class="text-body-secondary">
@@ -13,7 +14,7 @@
     <% end %>
 
     <%# 1.18.0-rf #1292 — the Boundary filter beside the list (BoundaryListFilter). %>
-    <%= render layout: "shared/boundary_filter_layout" do %>
+    <%= render layout: "shared/boundary_filter_layout", locals: { header: header } do %>
     <%= render "shared/collection_toolbar",
           label: "leveraged POA&Ms", placeholder: "Search leveraged POA&Ms…",
           view_mode: (@leveraged_poams.any? ? @view_mode : nil) %>

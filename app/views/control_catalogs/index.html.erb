@@ -1,22 +1,24 @@
-<%= render "shared/section_summary", tiles: [
+<% summary = [
   [@total_count, "Catalogs"],
   [@family_count, "Unique Families"],
   [@control_count, "Unique Controls"],
   [@revision_count, "Revisions"]
 ] %>
+<%= render "shared/section_summary", tiles: summary unless SparcConfig.nav_shell? %>
 
 <% if @control_catalogs.any? { |c| c.processing? || c.pending? } %>
   <div data-controller="auto-refresh" data-auto-refresh-interval-value="10000" hidden></div>
 <% end %>
 
-<div class="card">
+<div class="card sparc-list-card">
   <div class="card-body">
   <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <% header = nil %>
   <% if SparcConfig.nav_shell? %>
-    <%= render "shared/page_header", title: "Control Catalogs",
+    <% header = capture do %><%= render "shared/page_header", summary: summary, title: "Control Catalogs",
             subtitle: "Manage NIST and custom control catalogs",
             primary: ({ label: "New Catalog", path: new_control_catalog_path } if can_write_catalogs?),
-            secondary: (can_write_catalogs? ? [ { label: "Import from File", path: import_control_catalogs_path } ] : []) %>
+            secondary: (can_write_catalogs? ? [ { label: "Import from File", path: import_control_catalogs_path } ] : []) %><% end %>
   <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -34,7 +36,7 @@
   <% end %>
 
   <%# 1.18.0-rf #1299 — under SPARC_NAV_SHELL the filters sit in the left column. %>
-  <%= render layout: "shared/boundary_filter_layout" do %>
+  <%= render layout: "shared/boundary_filter_layout", locals: { header: header } do %>
   <%= render "shared/collection_toolbar",
         label: "control catalogs", placeholder: "Search catalogs…",
         filter_fields: @filter_fields, facets: @facets, clear_params: @clear_facets,

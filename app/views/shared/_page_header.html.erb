@@ -9,6 +9,9 @@
                  (#1288 intents: positive, info, warning, danger, neutral, accent)
       lead       HTML before the title (e.g. the Overview's organization tile)
       meta       [HTML, ...] — facts under the title, one per item
+      summary    [[count, label], ...] — a list's totals, shown as one line
+                 under the title (the switch-off view draws them as the
+                 shared/_section_summary banner)
       subtitle   one line of supporting text
       primary    { label:, path:, data: } — the one primary action
       secondary  [{ label:, path:, data: }, ...] — other actions; below 768px
@@ -21,6 +24,7 @@
 <% crumbs    = local_assigns.fetch(:crumbs, []) %>
 <% chips     = local_assigns.fetch(:chips, []) %>
 <% meta      = local_assigns.fetch(:meta, []) %>
+<% summary   = local_assigns.fetch(:summary, []) %>
 <% secondary = local_assigns.fetch(:secondary, []) %>
 <% primary   = local_assigns[:primary] %>
 <header class="sparc-page-header" data-testid="page-header">
@@ -49,6 +53,11 @@
       <% if meta.any? %>
         <ul class="sparc-page-header__meta">
           <% meta.each do |item| %><li><%= item %></li><% end %>
+        </ul>
+      <% end %>
+      <% if summary.any? %>
+        <ul class="sparc-page-header__meta" data-testid="page-header-summary">
+          <% summary.each do |count, label| %><li><strong><%= count %></strong> <%= label %></li><% end %>
         </ul>
       <% end %>
       <% if local_assigns[:subtitle].present? %><p class="sparc-page-header__subtitle"><%= subtitle %></p><% end %>

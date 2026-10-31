@@ -1,19 +1,21 @@
-<%= render "shared/section_summary", tiles: [
+<% summary = [
   [@total_count, "SAR Documents"],
   [@controls_count, "Total Controls"],
   [@completed_count, "Completed"]
 ] %>
+<%= render "shared/section_summary", tiles: summary unless SparcConfig.nav_shell? %>
 
 <% if @sar_documents.any? { |d| d.processing? || d.pending? } %>
   <div data-controller="auto-refresh" data-auto-refresh-interval-value="10000" hidden></div>
 <% end %>
 
-<div class="card">
+<div class="card sparc-list-card">
   <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <% header = nil %>
   <% if SparcConfig.nav_shell? %>
-    <%= render "shared/page_header", title: "Security Assessment Results",
+    <% header = capture do %><%= render "shared/page_header", summary: summary, title: "Security Assessment Results",
             primary: { label: "Create from Wizard", path: wizard_sar_documents_path },
-            secondary: [ { label: "Upload New", path: new_sar_document_path } ] %>
+            secondary: [ { label: "Upload New", path: new_sar_document_path } ] %><% end %>
   <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Security Assessment Results</h2>
@@ -25,7 +27,7 @@
   <% end %>
 
   <%# 1.18.0-rf #1292 — the Boundary filter beside the list (BoundaryListFilter). %>
-  <%= render layout: "shared/boundary_filter_layout" do %>
+  <%= render layout: "shared/boundary_filter_layout", locals: { header: header } do %>
   <%= render "shared/collection_toolbar",
         label: "security assessment reports", placeholder: "Search SARs…",
         status_tabs: @status_tabs, facets: @facets, clear_params: @clear_facets,
