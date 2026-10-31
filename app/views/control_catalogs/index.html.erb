@@ -17,8 +17,8 @@
   <% if SparcConfig.nav_shell? %>
     <% header = capture do %><%= render "shared/page_header", summary: summary, title: "Control Catalogs",
             subtitle: "Manage NIST and custom control catalogs",
-            primary: ({ label: "New Catalog", path: new_control_catalog_path } if can_write_catalogs?),
-            secondary: (can_write_catalogs? ? [ { label: "Import from File", path: import_control_catalogs_path } ] : []) %><% end %>
+            primary: ({ label: "New Catalog", look: "positive solid", path: new_control_catalog_path } if can_write_catalogs?),
+            secondary: (can_write_catalogs? ? [ { label: "Import from File", look: "info solid", path: import_control_catalogs_path } ] : []) %><% end %>
   <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>

@@ -52,14 +52,14 @@
   <%= render "shared/document_header", document: @poam_document, type: :poam, version: @poam_document.poam_version,
         rename: { update_path: update_metadata_poam_document_path(@poam_document), version_field: :poam_version },
         meta: [ pluralize(@total_items, "item") ],
-        primary: { label: "+ Add Item", path: new_poam_document_poam_item_path(@poam_document) },
+        primary: { label: "+ Add Item", look: "positive solid", path: new_poam_document_poam_item_path(@poam_document) },
         secondary: [
-          { label: "+ Add Risk", path: new_poam_document_poam_risk_path(@poam_document) },
-          { label: "+ Add Remediation", path: new_poam_document_poam_remediation_path(@poam_document) },
-          { label: "+ Add Observation", path: new_poam_document_poam_observation_path(@poam_document) },
-          { label: "+ Add Finding", path: new_poam_document_poam_finding_path(@poam_document) },
-          { label: "+ Add Component", path: new_poam_document_poam_local_component_path(@poam_document) },
-          ({ label: "Findings Triage", path: triage_authorization_boundary_path(@poam_document.authorization_boundary) } if @poam_document.authorization_boundary)
+          { label: "+ Add Risk", look: "positive solid", path: new_poam_document_poam_risk_path(@poam_document) },
+          { label: "+ Add Remediation", look: "positive solid", path: new_poam_document_poam_remediation_path(@poam_document) },
+          { label: "+ Add Observation", look: "positive solid", path: new_poam_document_poam_observation_path(@poam_document) },
+          { label: "+ Add Finding", look: "positive solid", path: new_poam_document_poam_finding_path(@poam_document) },
+          { label: "+ Add Component", look: "positive solid", path: new_poam_document_poam_local_component_path(@poam_document) },
+          ({ label: "Findings Triage", look: "neutral outline", path: triage_authorization_boundary_path(@poam_document.authorization_boundary) } if @poam_document.authorization_boundary)
         ].compact,
         export: "POA&M", publish: signed_in? && @poam_document.draft?,
         sections: [ [ "Overview", "#doc-overview" ], ([ "Risk", "#poam-risk-matrix" ] if @heatmap_data.any?), [ "Items", "#poam-items" ],

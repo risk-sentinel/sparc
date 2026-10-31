@@ -27,15 +27,15 @@
   <% if SparcConfig.nav_shell? %>
     <% refresh_button = capture do %>
       <% if signed_in? && can_write_converters? && SparcConfig.aws_labs_cdef_enabled? %>
-        <button type="button" class="sparc-action sparc-action--caution sparc-action--outline"
+        <button type="button" class="sparc-action sparc-action--caution sparc-action--solid"
                 data-bs-toggle="modal" data-bs-target="#refreshAwsLabsModal">Refresh from AWS Labs</button>
       <% end %>
     <% end %>
     <% header = capture do %>
     <%= render "shared/page_header", summary: summary, title: "Component Definitions",
-          primary: ({ label: "Create New", path: new_cdef_document_path } if signed_in?),
-          secondary: (signed_in? ? [ { label: "Upload File", path: new_cdef_document_path(only: "upload") },
-                                     { label: "Terraform Wizard", path: new_cdef_coverage_path } ] : []),
+          primary: ({ label: "Create New", look: "positive solid", path: new_cdef_document_path } if signed_in?),
+          secondary: (signed_in? ? [ { label: "Upload File", look: "info solid", path: new_cdef_document_path(only: "upload") },
+                                     { label: "Terraform Wizard", look: "accent outline", path: new_cdef_coverage_path } ] : []),
           extra: refresh_button.presence %>
     <%= refresh_status_line %>
     <% end %>

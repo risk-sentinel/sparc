@@ -14,8 +14,8 @@
   <% header = nil %>
   <% if SparcConfig.nav_shell? %>
     <% header = capture do %><%= render "shared/page_header", summary: summary, title: "Security Assessment Results",
-            primary: { label: "Create from Wizard", path: wizard_sar_documents_path },
-            secondary: [ { label: "Upload New", path: new_sar_document_path } ] %><% end %>
+            primary: { label: "Create from Wizard", look: "accent outline", path: wizard_sar_documents_path },
+            secondary: [ { label: "Upload New", look: "info solid", path: new_sar_document_path } ] %><% end %>
   <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Security Assessment Results</h2>

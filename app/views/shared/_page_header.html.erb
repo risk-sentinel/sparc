@@ -14,6 +14,11 @@
                  shared/_section_summary banner)
       subtitle   one line of supporting text
       primary    { label:, path:, data: } — the one primary action
+      Every action may carry `look:` — its sparc-action intent and variant,
+      e.g. "info solid" — and SHOULD carry the look the button has on main:
+      the colours are the product's and do not change with the layout
+      (owner, 2026-10-31). Without one, primary is "positive solid" and the
+      others "neutral outline".
       secondary  [{ label:, path:, data: }, ...] — other actions; below 768px
                  they fold into a "More actions" menu. An action with
                  `method:` (:post, :patch, :delete) submits a form
@@ -28,6 +33,10 @@
     Adopted on the Boundaries tab and the Overview here; the list screens take
     it with #1299 and the document pages with #1304. %>
 <%# An action: a link, or (with method:) a button that submits a form. %>
+<% look_css = lambda do |action, default|
+     intent, variant = (action[:look] || default).split
+     "sparc-action sparc-action--#{intent} sparc-action--#{variant}"
+   end %>
 <% action_tag = lambda do |action, css|
      if action[:method]
        button_to action[:label], action[:path], method: action[:method], class: css,
@@ -84,7 +93,7 @@
     <% if primary || secondary.any? || local_assigns[:extra] %>
       <div class="sparc-page-header__actions" data-testid="page-header-actions">
         <% secondary.each do |action| %>
-          <%= action_tag.call(action, "sparc-action sparc-action--neutral sparc-action--outline sparc-page-header__secondary") %>
+          <%= action_tag.call(action, "#{look_css.call(action, "neutral outline")} sparc-page-header__secondary") %>
         <% end %>
         <% if secondary.any? %>
           <div class="dropdown sparc-page-header__overflow">
@@ -99,8 +108,7 @@
         <% end %>
         <%= local_assigns[:extra] %>
         <% if primary %>
-          <%= link_to primary[:label], primary[:path], data: primary[:data],
-                class: "sparc-action sparc-action--positive sparc-action--solid" %>
+          <%= action_tag.call(primary, look_css.call(primary, "positive solid")) %>
         <% end %>
       </div>
     <% end %>

@@ -7,8 +7,8 @@
         chips: [ { label: @evidence.type_label, intent: "neutral" },
                  { label: @evidence.status_label,
                    intent: { "collected" => "info", "reviewed" => "info", "attested" => "positive", "expired" => "danger" }.fetch(@evidence.status, "neutral") } ],
-        primary: { label: "Attest", path: new_evidence_attestation_path(@evidence) },
-        secondary: [ { label: "Edit", path: edit_evidence_path(@evidence) } ] %>
+        primary: { label: "Attest", look: "primary solid", path: new_evidence_attestation_path(@evidence) },
+        secondary: [ { label: "Edit", look: "primary outline", path: edit_evidence_path(@evidence) } ] %>
 <% end %>
 
 <div class="card">

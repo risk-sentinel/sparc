@@ -17,7 +17,7 @@
 <%= render "shared/page_header", title: boundary.name,
       chips: [ { label: boundary.status.titleize, intent: boundary_status_chip(boundary.status) } ],
       meta: [ render("shared/uuid_badge", uuid: boundary.uuid, label: "UUID", name: "boundary UUID") ],
-      primary: ({ label: "Build ATO Package", path: ato_wizard_authorization_boundary_path(boundary),
+      primary: ({ label: "Build ATO Package", look: "primary solid", path: ato_wizard_authorization_boundary_path(boundary),
                   data: { boundary_action: "build_ato_package" } } if signed_in? && may_edit),
       extra: (render("authorization_boundaries/more_menu", boundary: boundary, may_edit: may_edit) if signed_in?) %>
 

@@ -31,9 +31,12 @@
 <div class="sparc-org-overview">
   <div class="sparc-org-overview__lanes">
     <% org_overview_lanes(@counts).each do |group| %>
-      <section class="sparc-lane sparc-lane--<%= group[:layer] %>" aria-labelledby="lane-<%= group[:layer] %>"
+      <%# The lane's colours are main's home page's: the layer's accent (the
+          banner's) and its heading colour, from home_layer_groups (owner,
+          2026-10-31). %>
+      <section class="sparc-lane sparc-lane--<%= group[:layer] %> <%= accent_class(group[:color]) %>" aria-labelledby="lane-<%= group[:layer] %>"
                data-testid="org-lane" data-layer="<%= group[:layer] %>">
-        <h2 class="sparc-lane__title" id="lane-<%= group[:layer] %>">
+        <h2 class="sparc-lane__title <%= group[:cls] %>" id="lane-<%= group[:layer] %>">
           <span class="sparc-lane__dot" aria-hidden="true"></span><%= lane_titles.fetch(group[:layer]) %>
         </h2>
         <div class="sparc-lane__boxes">
@@ -105,7 +108,7 @@
         <h2 class="sparc-rail-title">Baselines in use</h2>
         <ul class="sparc-rail-list sparc-rail-list--inline">
           <% baselines.each do |name, count, profile_id| %>
-            <li><span class="sparc-lane__dot sparc-lane__dot--controls" aria-hidden="true"></span><%= link_to "#{name} · #{count}", profile_document_path(profile_id), data: { testid: "org-baseline-in-use" } %></li>
+            <li><span class="sparc-lane__dot sparc-lane__dot--controls <%= accent_class(ApplicationHelper::COLOR_BLUE) %>" aria-hidden="true"></span><%= link_to "#{name} · #{count}", profile_document_path(profile_id), data: { testid: "org-baseline-in-use" } %></li>
           <% end %>
         </ul>
       </section>

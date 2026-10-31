@@ -72,12 +72,12 @@
   <% profile_secondary =
        if !signed_in? then []
        elsif @profile_document.published_lifecycle?
-         [ { label: "Create Editable Copy", path: copy_profile_document_path(@profile_document), method: :post,
+         [ { label: "Create Editable Copy", look: "positive solid", path: copy_profile_document_path(@profile_document), method: :post,
              confirm: "Create an editable copy of this published profile?" } ]
        else
-         [ { label: "Copy", path: copy_profile_document_path(@profile_document), method: :post, confirm: "Duplicate this profile?" },
-           { label: "+ Add Control", path: new_profile_document_profile_control_path(@profile_document) },
-           ({ label: "Manage Controls", path: manage_controls_profile_document_path(@profile_document) } if @profile_document.control_catalog.present?) ].compact
+         [ { label: "Copy", look: "info outline", path: copy_profile_document_path(@profile_document), method: :post, confirm: "Duplicate this profile?" },
+           { label: "+ Add Control", look: "positive solid", path: new_profile_document_profile_control_path(@profile_document) },
+           ({ label: "Manage Controls", look: "neutral outline", path: manage_controls_profile_document_path(@profile_document) } if @profile_document.control_catalog.present?) ].compact
        end %>
   <%= render "shared/document_header", document: @profile_document, type: :profile, version: @profile_document.profile_version,
         rename: ({ update_path: update_metadata_profile_document_path(@profile_document), version_field: :profile_version } if editable_profile),

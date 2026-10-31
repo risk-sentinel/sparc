@@ -1,7 +1,7 @@
 <%# 1.18.0-rf #1303 — under SPARC_NAV_SHELL, the shared header and toolbar. %>
 <% if SparcConfig.nav_shell? %>
   <%= render "admin/list_header", title: "Roles", label: "roles", count: @roles.size,
-        primary: { label: "New role", path: new_admin_role_path }, placeholder: "Search roles…" %>
+        primary: { label: "New role", look: "positive solid", path: new_admin_role_path }, placeholder: "Search roles…" %>
 <% else %>
 <div class="d-flex justify-content-between align-items-center my-4">
   <h1 class="h3 fw-bold mb-0">Role Management</h1>
