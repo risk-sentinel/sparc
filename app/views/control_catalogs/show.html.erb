@@ -57,9 +57,9 @@
                 pluralize(@control_families.size, "family", plural: "families"),
                 pluralize(@control_catalog.total_controls, "control") ],
         after: catalog_after,
-        primary: ({ label: "Edit Catalog", path: edit_control_catalog_path(@control_catalog) } if can_write_catalogs?),
-        secondary: (can_write_catalogs? ? [ { label: "Import / Refresh", path: import_control_catalogs_path },
-                                            { label: "＋ Add Family", path: new_control_catalog_control_family_path(@control_catalog) } ] : []),
+        primary: ({ label: "Edit Catalog", look: "primary outline", path: edit_control_catalog_path(@control_catalog) } if can_write_catalogs?),
+        secondary: (can_write_catalogs? ? [ { label: "Import / Refresh", look: "info solid", path: import_control_catalogs_path },
+                                            { label: "＋ Add Family", look: "positive solid", path: new_control_catalog_control_family_path(@control_catalog) } ] : []),
         export: ("Catalog" if signed_in?), publish: signed_in? && @control_catalog.draft?,
         sections: [ [ "Families", "#catalog-families" ], [ "Metadata", "#oscal-metadata" ], [ "Back matter", "#oscal-back-matter" ] ] %>
 <% end %>

@@ -2,7 +2,7 @@
 <% if SparcConfig.nav_shell? %>
   <%= render "admin/list_header", title: "Authorization boundaries", label: "authorization boundaries",
         count: @authorization_boundaries.size,
-        primary: { label: "New boundary", path: new_admin_authorization_boundary_path },
+        primary: { label: "New boundary", look: "positive solid", path: new_admin_authorization_boundary_path },
         status_tabs: @status_tabs, placeholder: "Search boundaries…" %>
 <% else %>
 <div class="d-flex justify-content-between align-items-center my-4">

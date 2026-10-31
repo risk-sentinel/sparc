@@ -4,7 +4,7 @@
     <% if SparcConfig.nav_shell? %>
       <%= render "shared/page_header", title: "Federation Peers",
               subtitle: "Configured remote SPARC instances for cross-instance authoritative source sharing.",
-              primary: { label: "New Peer", path: new_federation_peer_path } %>
+              primary: { label: "New Peer", look: "positive solid", path: new_federation_peer_path } %>
     <% else %>
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div>

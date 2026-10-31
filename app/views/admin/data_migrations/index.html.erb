@@ -7,7 +7,7 @@
           subtitle: safe_join([ "Post-boot deferred data migrations and their current status. Use ",
                                 tag.code("bin/rake sparc:data_migrations:run"), " from a one-off task to retry; ",
                                 tag.code("sparc:data_migrations:reset NAME=ClassName"), " to put a row back into the pending queue." ]),
-          secondary: [ { label: "Refresh", path: admin_data_migrations_path } ] %>
+          secondary: [ { label: "Refresh", look: "caution solid", path: admin_data_migrations_path } ] %>
   <% else %>
   <div class="d-flex align-items-center justify-content-between mb-4">
     <div>

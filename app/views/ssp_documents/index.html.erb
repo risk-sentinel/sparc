@@ -16,8 +16,8 @@
   <% header = nil %>
   <% if SparcConfig.nav_shell? %>
     <% header = capture do %><%= render "shared/page_header", summary: summary, title: "System Security Plans",
-            primary: { label: "Create New SSP", path: wizard_ssp_documents_path },
-            secondary: [ { label: "Upload File", path: new_ssp_document_path } ] %><% end %>
+            primary: { label: "Create New SSP", look: "positive solid", path: wizard_ssp_documents_path },
+            secondary: [ { label: "Upload File", look: "info solid", path: new_ssp_document_path } ] %><% end %>
   <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>System Security Plans</h2>

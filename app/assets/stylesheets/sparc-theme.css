@@ -98,24 +98,23 @@
   --sparc-i-danger-ink:   #af3427;   /* 4.62 / 5.24 */
   --sparc-i-accent-ink:   #8841a6;   /* 4.68 / 5.28 */
 
-  /* 1.18.0-rf #1288 — the four OSCAL layer colours, as tokens. They were
-     hard-coded hexes picked for the dark navbar, and on the light dropdown
-     menus they measured 1.91-3.10:1 (every layer heading failed AA). Each value
-     is the original hue at the smallest lightness change that reads at 4.5:1 as
-     text on the page (#f5f5f5), on a card (#fff) and on its own 14% tint, which
-     is how tabs and counters use them; as a 3px indicator that is well over the
-     3:1 UI minimum. Ratios: spec/quality/layer_token_contrast_spec.rb. */
-  --sparc-layer-controls:       #2e6ca6;   /* 4.54 (was #6ba3d6, 2.46) */
-  --sparc-layer-implementation: #337632;   /* 4.59 (was #6abf69, 2.08) */
-  --sparc-layer-assessment:     #8e6010;   /* 4.54 (was #d4943c / #e8a838, 1.91) */
-  --sparc-layer-enterprise:     #9f33c7;   /* 4.51 (was #bb6bd9, 3.10) */
+  /* 1.18.0-rf #1288 — the four OSCAL layer colours, as tokens. Main's hues
+     and saturation (owner, 2026-10-31: the colour families are the
+     product's); on the light theme each is darkened by the least that reads
+     at 4.5:1 as text on the page (#f5f5f5), a card (#fff) and its own 14%
+     tint (owner chose these, "proposal A", 2026-10-31). Main's values failed
+     there at 2.08-3.38:1. Ratios: spec/quality/layer_token_contrast_spec.rb. */
+  --sparc-layer-controls:       #2e6ca6;   /* main #6ba3d6 */
+  --sparc-layer-implementation: #337632;   /* main #6abf69 */
+  --sparc-layer-assessment:     #8e6010;   /* main #d4943c */
+  --sparc-layer-enterprise:     #9f33c7;   /* main #bb6bd9 */
 
-  /* The navbar is `bg-dark` (#212529) in BOTH themes (#974), so what sits on it
-     takes the dark-surface values whatever the theme. */
-  --sparc-layer-controls-on-navy:       #6da4d7;
+  /* The navbar is `bg-dark` (#212529) in BOTH themes (#974); main's values
+     pass there (4.57-7.41:1) and stay. */
+  --sparc-layer-controls-on-navy:       #6ba3d6;
   --sparc-layer-implementation-on-navy: #6abf69;
   --sparc-layer-assessment-on-navy:     #e8a838;
-  --sparc-layer-enterprise-on-navy:     #c785e0;
+  --sparc-layer-enterprise-on-navy:     #bb6bd9;
 }
 
 [data-bs-theme="dark"] {
@@ -188,11 +187,12 @@
   --sparc-i-accent-ink:   #c683df;
 
   /* #1288 — the layer colours on dark surfaces (#0f1419 page, #1e2632 and
-     #252d3a cards), at 4.5:1 as text there and on their own 14% tint. */
-  --sparc-layer-controls:       #6da4d7;   /* 4.52 (was #6ba3d6) */
-  --sparc-layer-implementation: #6abf69;   /* 5.20, unchanged */
-  --sparc-layer-assessment:     #e8a838;   /* 5.63, unchanged */
-  --sparc-layer-enterprise:     #c785e0;   /* 4.55 (was #bb6bd9, 4.10) */
+     #252d3a cards): main's values where they read at 4.5:1, Controls and
+     Enterprise lightened by the least that does ("proposal A"). */
+  --sparc-layer-controls:       #6da4d7;   /* main #6ba3d6 */
+  --sparc-layer-implementation: #6abf69;   /* main's */
+  --sparc-layer-assessment:     #e8a838;   /* main's navbar amber */
+  --sparc-layer-enterprise:     #c785e0;   /* main #bb6bd9 */
 }
 
 
@@ -3616,7 +3616,7 @@ a.link-purple { color: var(--sparc-purple); }
   align-items: center;
   gap: 0.35rem;
   min-width: 0;
-  color: rgba(255, 255, 255, 0.92);
+  color: #fff;
   text-decoration: none;
 }
 .sparc-shell-crumbs a:hover,
@@ -3724,10 +3724,10 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-org-overview__lanes { flex: 999 1 36rem; min-width: 0; }
 .sparc-org-overview__rail { flex: 1 1 16rem; max-width: 21rem; display: flex; flex-direction: column; gap: 1.25rem; }
 .sparc-org-overview__rail section + section { border-top: 1px solid var(--sparc-border-soft); padding-top: 1rem; }
-.sparc-lane { --sparc-lane-c: var(--sparc-layer-controls); position: relative; padding: 0 0 1.5rem 2rem; }
-.sparc-lane--implementation { --sparc-lane-c: var(--sparc-layer-implementation); }
-.sparc-lane--assessment     { --sparc-lane-c: var(--sparc-layer-assessment); }
-.sparc-lane--enterprise     { --sparc-lane-c: var(--sparc-layer-enterprise); }
+/* A lane's colour is its layer's accent on main's home page (the banner's:
+   .sparc-accent--*, set by the view from home_layer_groups). */
+.sparc-lane { --sparc-lane-c: var(--sparc-accent); position: relative; padding: 0 0 1.5rem 2rem; }
+.sparc-lane .sparc-tile-icon { color: var(--sparc-lane-c); }
 .sparc-lane::before {
   content: "";
   position: absolute;
@@ -3756,7 +3756,7 @@ a.link-purple { color: var(--sparc-purple); }
   background: var(--sparc-lane-c);
   box-shadow: 0 0 0 4px var(--bs-body-bg);
 }
-.sparc-lane__dot--controls { --sparc-lane-c: var(--sparc-layer-controls); box-shadow: none; margin: 0 0.35rem 0 0; }
+.sparc-lane__dot--controls { --sparc-lane-c: var(--sparc-accent); box-shadow: none; margin: 0 0.35rem 0 0; }
 .sparc-lane__boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); gap: 0.85rem; }
 .sparc-lane-box {
   display: flex;
@@ -3769,7 +3769,7 @@ a.link-purple { color: var(--sparc-purple); }
   background: var(--sparc-surface);
 }
 .sparc-lane-box__head { display: flex; align-items: center; gap: 0.5rem; }
-.sparc-lane-box__title { font-weight: 650; text-decoration: none; }
+.sparc-lane-box__title { font-weight: 650; text-decoration: none; color: var(--bs-body-color); }
 .sparc-lane-box__title:hover { text-decoration: underline; }
 .sparc-lane-box__new { margin-left: auto; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
 .sparc-lane-box__count {
@@ -5422,7 +5422,7 @@ a.link-purple { color: var(--sparc-purple); }
   border: 1px solid transparent;
   border-radius: 0.375rem;
   background: transparent;
-  color: rgba(255, 255, 255, 0.92);
+  color: #fff;
   flex-shrink: 0;
 }
 .sparc-switcher__trigger:hover,

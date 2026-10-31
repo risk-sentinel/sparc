@@ -152,7 +152,8 @@ RSpec.describe "Collection screens (#1299)", type: :request do
       it "puts a list's first create action first and folds the rest into More actions" do
         get ssp_documents_path
         actions = page.at_css("[data-testid=page-header-actions]")
-        expect(actions.css("a.sparc-action--solid").map(&:text)).to eq([ "Create New SSP" ])
+        # The create action is the green one; Upload File keeps main's info colour.
+        expect(actions.css("a.sparc-action--positive.sparc-action--solid").map(&:text)).to eq([ "Create New SSP" ])
         expect(actions.css(".sparc-page-header__overflow .dropdown-item").map(&:text)).to eq([ "Upload File" ])
       end
     end

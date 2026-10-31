@@ -69,6 +69,28 @@ RSpec.describe "Organization Overview (#1302)", type: :request do
     end
   end
 
+  describe "colours" do
+    # The banner above the lanes (home/_inventory, main's) colours each layer
+    # with the same accents.
+    it "draws each lane in main's home page colours: the layer's accent and its heading colour" do
+      sign_in_as(create(:user, :admin))
+      get root_path
+
+      expected = {
+        "controls" => [ "sparc-accent--blue", "sparc-heading-controls" ],
+        "implementation" => [ "sparc-accent--green", "sparc-heading-implementation" ],
+        "assessment" => [ "sparc-accent--carrot", "sparc-heading-assessment" ],
+        "enterprise" => [ "sparc-accent--purple", "sparc-heading-enterprise" ]
+      }
+      page.css("[data-testid=org-lane]").each do |lane|
+        accent, heading = expected.fetch(lane["data-layer"])
+        expect(lane["class"].split).to include(accent), lane["data-layer"]
+        expect(lane.at_css(".sparc-lane__title")["class"].split).to include(heading), lane["data-layer"]
+      end
+      expect(page.css("[data-testid=org-lane]").map { _1["data-layer"] }).to eq(expected.keys)
+    end
+  end
+
   describe "counts" do
     let(:admin) { create(:user, :admin) }
     let(:boundary) { create(:authorization_boundary) }

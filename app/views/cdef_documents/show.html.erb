@@ -55,15 +55,15 @@
   <% end %>
   <% copy_action =
        if may_create_cdef && @cdef_document.published_lifecycle?
-         { label: "Create Editable Copy", path: copy_cdef_document_path(@cdef_document), method: :post,
+         { label: "Create Editable Copy", look: "positive solid", path: copy_cdef_document_path(@cdef_document), method: :post,
            confirm: "Create an editable copy of this published component definition?" }
        elsif may_create_cdef
-         { label: (@cdef_document.aws_labs_source? ? "Copy for editing" : "Copy"), path: copy_cdef_document_path(@cdef_document),
+         { label: (@cdef_document.aws_labs_source? ? "Copy for editing" : "Copy"), look: "info outline", path: copy_cdef_document_path(@cdef_document),
            method: :post, confirm: "Duplicate this component definition?" }
        end %>
   <% bulk_action = if may_write_cdef && !@cdef_document.aws_labs_source? &&
                       (current_user.instance_administrator? || current_user.has_permission?("converters.write"))
-                     { label: "Bulk Apply Converter", path: bulk_apply_cdef_document_path(@cdef_document) }
+                     { label: "Bulk Apply Converter", look: "primary solid", path: bulk_apply_cdef_document_path(@cdef_document) }
                    end %>
   <%= render "shared/document_header", document: @cdef_document, type: :cdef,
         title: cdef_display_name(@cdef_document), version: @cdef_document.cdef_version,
@@ -73,7 +73,7 @@
         meta: [ @cdef_document.original_filename, (@cdef_document.cdef_type&.upcase&.tr("_", " ") || "Unknown"),
                 pluralize(@total_controls, "control") ],
         after: cdef_after,
-        primary: ({ label: "Edit", path: edit_cdef_document_path(@cdef_document), data: { testid: "edit-cdef" } } if
+        primary: ({ label: "Edit", look: "primary outline", path: edit_cdef_document_path(@cdef_document), data: { testid: "edit-cdef" } } if
                     may_write_cdef && !@cdef_document.aws_labs_source? && !@cdef_document.published_lifecycle?),
         secondary: [ copy_action, bulk_action ].compact,
         export: "Component Definition", publish: signed_in? && @cdef_document.draft?,

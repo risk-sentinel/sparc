@@ -44,8 +44,8 @@
                                title: @ssp_document.content_completeness_gaps.join("; ")) unless @ssp_document.content_complete?),
         meta: [ @ssp_document.original_filename, pluralize(total_controls, "control") ],
         secondary: [
-          { label: "Enrich", path: enrich_ssp_document_path(@ssp_document) },
-          ({ label: "Refresh Inherited", path: refresh_inherited_statements_ssp_document_path(@ssp_document), method: :post } if
+          { label: "Enrich", look: "info outline", path: enrich_ssp_document_path(@ssp_document) },
+          ({ label: "Refresh Inherited", look: "caution solid", path: refresh_inherited_statements_ssp_document_path(@ssp_document), method: :post } if
             signed_in? && @ssp_document.ssp_components.where.not(cdef_document_id: nil).exists?)
         ].compact,
         export: "SSP", publish: signed_in? && @ssp_document.draft?,

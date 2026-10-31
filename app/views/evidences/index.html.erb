@@ -10,7 +10,7 @@
     <% header = nil %>
     <% if SparcConfig.nav_shell? %>
       <% header = capture do %><%= render "shared/page_header", summary: summary, title: "Evidence Repository",
-              primary: { label: "Add Evidence", path: new_evidence_path } %><% end %>
+              primary: { label: "Add Evidence", look: "positive solid", path: new_evidence_path } %><% end %>
     <% else %>
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>

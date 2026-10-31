@@ -1,7 +1,7 @@
 <%# 1.18.0-rf #1303 — under SPARC_NAV_SHELL, the shared header and toolbar. %>
 <% if SparcConfig.nav_shell? %>
   <%= render "admin/list_header", title: "Users", label: "users", count: @pagy.count,
-        primary: { label: "New user", path: new_admin_user_path },
+        primary: { label: "New user", look: "positive solid", path: new_admin_user_path },
         status_tabs: @status_tabs, placeholder: "Search by email or name…" %>
 <% else %>
 <div class="d-flex justify-content-between align-items-center my-4">

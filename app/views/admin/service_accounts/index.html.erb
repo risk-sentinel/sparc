@@ -3,7 +3,7 @@
   <% if SparcConfig.nav_shell? %>
     <%= render "admin/list_header", title: "Service accounts", label: "service accounts", count: @pagy.count,
           subtitle: "API-only accounts for pipelines, CI/CD, and integrations",
-          primary: { label: "New service account", path: new_admin_service_account_path },
+          primary: { label: "New service account", look: "positive solid", path: new_admin_service_account_path },
           status_tabs: @status_tabs, placeholder: "Search by name or email…" %>
   <% else %>
   <div class="d-flex justify-content-between align-items-center mb-4">
