@@ -30,7 +30,7 @@
   <% if signed_in? && cdef.approval_draft? && !cdef.published_lifecycle? && !cdef.aws_labs_source? &&
         CdefWriteAccess.may_write?(current_user, cdef) %>
     <% wider = CdefScopeService::REQUESTABLE.reject { CdefScopeService.request_refusal(cdef, _1) } %>
-    <%= form_with url: submit_for_review_cdef_document_path(cdef), method: :post, class: "d-inline-flex align-items-center gap-1",
+    <%= form_with url: submit_for_review_cdef_document_path(cdef), method: :post, class: "d-inline-flex flex-wrap align-items-center gap-1",
                   data: { testid: "cdef-submit-for-review" } do |f| %>
       <% if wider.any? %>
         <%= f.label :requested_scope, "Make available to", class: "small sparc-color-white-45 mb-0" %>

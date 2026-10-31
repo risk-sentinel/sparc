@@ -1,5 +1,19 @@
+<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared page header: the
+    breadcrumb to the boundary and the evidence list, type and status;
+    Attest as the main action, Edit beside it. %>
+<% if shell_nav? %>
+  <%= render "shared/page_header", title: @evidence.title,
+        crumbs: document_crumbs(@evidence, :evidence, name: @evidence.title),
+        chips: [ { label: @evidence.type_label, intent: "neutral" },
+                 { label: @evidence.status_label,
+                   intent: { "collected" => "info", "reviewed" => "info", "attested" => "positive", "expired" => "danger" }.fetch(@evidence.status, "neutral") } ],
+        primary: { label: "Attest", path: new_evidence_attestation_path(@evidence) },
+        secondary: [ { label: "Edit", path: edit_evidence_path(@evidence) } ] %>
+<% end %>
+
 <div class="card">
   <div class="card-body">
+    <% unless shell_nav? %>
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h2><%= @evidence.title %></h2>
@@ -26,6 +40,7 @@
       </div>
     </div>
 
+    <% end %>
     <%# ── Details ── %>
     <div class="row mb-4">
       <div class="col-md-6">

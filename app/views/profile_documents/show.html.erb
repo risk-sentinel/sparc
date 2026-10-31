@@ -35,6 +35,64 @@
 <% catalog_card = catalog_changeable &&
                   (@profile_document.control_catalog.blank? || @profile_document.catalog_confirmation_pending? ||
                    params[:change_catalog].present?) %>
+<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared document header
+    (shared/_document_header), first on the page: the source catalog under
+    the name; the copies and the control actions beside it. The review panel
+    stays under the name. %>
+<% if shell_nav? %>
+  <% editable_profile = signed_in? && !@profile_document.published_lifecycle? %>
+  <% profile_source = capture do %>
+    <% if @profile_document.control_catalog.present? %>
+      Source: <span class="fw-semibold"><%= @profile_document.control_catalog.name %></span>
+      <% if @profile_document.control_catalog.short_digest.present? %><code class="sparc-fs-075 ms-1"><%= @profile_document.control_catalog.short_digest %></code><% end %>
+      <% if catalog_changeable && !catalog_card %>
+        <%= link_to "Change", profile_document_path(@profile_document, change_catalog: 1, anchor: "catalog-link"),
+              class: "ms-1", data: { testid: "change-catalog-link" } %>
+      <% end %>
+    <% else %>
+      <span class="fw-semibold sparc-text-warning-bold">No source catalog</span>
+    <% end %>
+  <% end %>
+  <% profile_after = capture do %>
+    <% if @profile_document.description.present? %>
+      <p class="text-body-secondary small mt-2 mb-0 sparc-maxw-600"><%= truncate(@profile_document.description, length: 200) %></p>
+    <% end %>
+    <%= render "shared/document_review", doc: @profile_document, may_write: can_write_profiles?,
+          submit_path: submit_for_review_profile_document_path(@profile_document),
+          approve_path: approve_profile_document_path(@profile_document),
+          reject_path: reject_profile_document_path(@profile_document),
+          muted_class: "text-body-secondary" %>
+  <% end %>
+  <% resolved_item = capture do %>
+    <% if @profile_document.resolved_catalog_json.present? %>
+      <li><h6 class="dropdown-header">Resolved Catalog</h6></li>
+      <li><%= link_to "JSON (Resolved)", download_resolved_catalog_profile_document_path(@profile_document), class: "dropdown-item" %></li>
+    <% end %>
+  <% end %>
+  <% profile_secondary =
+       if !signed_in? then []
+       elsif @profile_document.published_lifecycle?
+         [ { label: "Create Editable Copy", path: copy_profile_document_path(@profile_document), method: :post,
+             confirm: "Create an editable copy of this published profile?" } ]
+       else
+         [ { label: "Copy", path: copy_profile_document_path(@profile_document), method: :post, confirm: "Duplicate this profile?" },
+           { label: "+ Add Control", path: new_profile_document_profile_control_path(@profile_document) },
+           ({ label: "Manage Controls", path: manage_controls_profile_document_path(@profile_document) } if @profile_document.control_catalog.present?) ].compact
+       end %>
+  <%= render "shared/document_header", document: @profile_document, type: :profile, version: @profile_document.profile_version,
+        rename: ({ update_path: update_metadata_profile_document_path(@profile_document), version_field: :profile_version } if editable_profile),
+        meta: [ @profile_document.original_filename, (@profile_document.baseline_level || "Custom"),
+                pluralize(@total_controls, "control"), profile_source,
+                (safe_join([ "Derived from: ", link_to(@profile_document.source_profile.name, profile_document_path(@profile_document.source_profile)) ]) if
+                  @profile_document.source_profile.present?) ],
+        after: profile_after,
+        secondary: profile_secondary,
+        export: "Profile", export_items: resolved_item.presence,
+        publish: editable_profile && @profile_document.control_catalog.present?,
+        sections: [ [ "Overview", "#doc-overview" ], ([ "Families", "#heatmapSection" ] if @heatmap_families.any?), [ "Controls", "#controlsContainer" ],
+                    [ "Metadata", "#oscal-metadata" ], [ "Back matter", "#oscal-back-matter" ] ].compact %>
+<% end %>
+
 <%= render "shared/reconciliation_banner", document: @profile_document unless catalog_card && @profile_document.control_catalog.blank? %>
 
 <%# ── #928: the source catalog, changeable ───────────────────────────
@@ -134,7 +192,8 @@
 <% end %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
-<div class="sparc-dashboard-header">
+<div class="sparc-dashboard-header" id="doc-overview">
+<% unless shell_nav? %>
 
   <div class="d-flex justify-content-between align-items-start mb-4 gap-3 flex-wrap">
     <div>
@@ -249,6 +308,7 @@
     </div>
   </div>
 
+<% end %>
   <div class="d-flex align-items-center gap-4 flex-wrap">
     <div class="text-center flex-shrink-0 sparc-minw-80px">
       <div class="sparc-score sparc-color-white"><%= @total_controls %></div>

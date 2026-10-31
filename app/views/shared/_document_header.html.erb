@@ -1,0 +1,60 @@
+<%# 1.18.0-rf #1304 — a document page's header under SPARC_NAV_SHELL, one
+    definition for every document page: the shared page header (breadcrumb to
+    the boundary and list, the name, lifecycle and approval chips), the name
+    renamed in place as before (doc-meta: #doc-meta-view / #doc-meta-edit,
+    inside the page's data-controller="doc-meta"), the export menu and
+    Publish beside the page's own actions, then the section links.
+
+    Locals:
+      document      the record (required); type — its DOCUMENT_LISTS key
+      title         defaults to the document's name
+      version       version string, shown as vN
+      rename        { update_path:, version_field: } when the name may be
+                    edited here; nil hides Rename
+      title_extra   HTML after the version (warnings, a source link)
+      meta          [HTML, ...] under the name
+      after         HTML under the rename form (review panels, description)
+      primary, secondary   as shared/_page_header
+      export        document_type: for the export menu (nil: no menu);
+                    export_items — extra menu items
+      publish       true to offer Publish (the caller decides when)
+      sections      [[label, "#anchor"], ...] %>
+<% rename = local_assigns[:rename] %>
+<% title_extra = capture do %>
+  <% if local_assigns[:version].present? %><span class="sparc-version-badge">v<%= version %></span><% end %>
+  <%= local_assigns[:title_extra] %>
+  <% if rename %>
+    <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline sparc-action--sm">Rename</button>
+  <% end %>
+<% end %>
+<% after_title = capture do %>
+  <% if rename %>
+    <div id="doc-meta-edit" data-doc-meta-target="edit" class="sparc-d-none">
+      <%= render "shared/document_name_form", document: document,
+            update_path: rename[:update_path], version_field: rename[:version_field] %>
+    </div>
+  <% end %>
+  <%= local_assigns[:after] %>
+<% end %>
+<% actions = capture do %>
+  <% if local_assigns[:export] %>
+    <%= render "shared/oscal_export_dropdown", **oscal_export_paths(document),
+          document_type: export, extra_items: local_assigns[:export_items] %>
+  <% end %>
+  <% if local_assigns[:publish] %>
+    <%= render "shared/publish_button", document: document, **publish_paths(document) %>
+  <% end %>
+<% end %>
+<% title = local_assigns[:title] || document.name %>
+<%= render "shared/page_header", title: title,
+      crumbs: document_crumbs(document, type, name: title), chips: document_chips(document),
+      title_attrs: { id: "doc-meta-view", data: { doc_meta_target: "view" } },
+      title_extra: title_extra,
+      meta: [ (render("shared/uuid_badge", uuid: document.uuid, name: "document UUID") if document.respond_to?(:uuid) && document.uuid.present?),
+              *local_assigns.fetch(:meta, []) ].compact_blank,
+      after_title: after_title,
+      primary: local_assigns[:primary], secondary: local_assigns.fetch(:secondary, []),
+      extra: actions.presence %>
+<% if local_assigns[:sections].present? %>
+  <%= render "shared/section_links", links: sections %>
+<% end %>
