@@ -63,9 +63,13 @@ class TestTheAddTileLeadsSomewhereUseful:
 
         # The SSP tile, with no SSP attached, reads "Add…". Scoped to the
         # Artifact Summary: since #1251 the Completeness checklist above it
-        # also links the attach screen ("Add SSP first").
+        # also links the attach screen ("Add SSP first"). Under
+        # SPARC_NAV_SHELL (#1301) the tiles are the home's document rows.
         attach = f"/authorization_boundaries/{boundary['slug']}/attach_document"
-        link = page.locator(f'#boundary-artifacts a[href*="{attach}"]').first
+        link = page.locator(
+            f'#boundary-artifacts a[href*="{attach}"], '
+            f'[data-testid=boundary-documents] a[href*="{attach}"]'
+        ).first
         assert link.count() > 0, "no Add… tile linked to the attach screen"
 
         link.click()

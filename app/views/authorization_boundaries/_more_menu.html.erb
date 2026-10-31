@@ -1,0 +1,56 @@
+<%# The boundary's "More" menu: the classic header and, under
+    SPARC_NAV_SHELL, the page header (1.18.0-rf #1301) both draw it. Every
+    item carries data-boundary-action; each appears only to someone its
+    controller would admit (#1247).
+    Locals: boundary, may_edit %>
+<%# Bootstrap's dropdown (data-bs-toggle); no inline handlers. %>
+<div class="dropdown">
+  <button type="button" class="sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm dropdown-toggle"
+          data-bs-toggle="dropdown" aria-expanded="false" id="boundary-more-menu" data-boundary-action="more">
+    More
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="boundary-more-menu">
+    <%# #447 — HDF Amendment triage for scanner findings on this boundary. %>
+    <% if boundary_permission?("evidence.read", boundary) %>
+      <li><%= link_to "Findings Triage", triage_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "amendments" } %></li>
+    <% end %>
+    <%# #904 — which CDEFs this boundary needs, from the Terraform it is built from. %>
+    <% if !SparcConfig.any_auth_enabled? || current_user&.has_permission?("cdef.read") %>
+      <li><%= link_to "CDEF Coverage", new_cdef_coverage_path(authorization_boundary_id: boundary.id), class: "dropdown-item", data: { boundary_action: "cdef_coverage" } %></li>
+    <% end %>
+    <% has_documents = boundary.ssp_document.present? || boundary.sap_document.present? ||
+                       boundary.sar_document.present? || boundary.poam_documents.any? %>
+    <% if has_documents %>
+      <li><%= link_to "Download ATO Package", download_ato_package_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "download_ato_package" } %></li>
+    <% end %>
+    <% if may_edit || can_delete_boundary? %>
+      <li><hr class="dropdown-divider"></li>
+    <% end %>
+    <% if may_edit %>
+      <li><%= link_to "Edit", edit_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "edit" } %></li>
+    <% end %>
+    <% if can_delete_boundary? %>
+      <%# #629 — the guard refuses a delete while SSP/SAP/SAR/POA&M
+          documents are attached; say so before the click rather than
+          after it. deletion_blockers is the list the guard checks. %>
+      <% blockers = boundary.deletion_blockers %>
+      <% if blockers.any? %>
+        <li>
+          <span class="dropdown-item disabled" aria-disabled="true" data-boundary-action="delete_refused">
+            Delete
+            <span class="sparc-menu-note">Cannot delete while linked to <%= blockers.to_sentence %>. Detach or delete those first.</span>
+          </span>
+        </li>
+      <% else %>
+        <li>
+          <%= button_to "Delete", authorization_boundary_path(boundary), method: :delete,
+                class: "dropdown-item text-danger",
+                data: { boundary_action: "delete" },
+                form: { data: { turbo_confirm: "Delete '#{boundary.name}'? This cannot be undone." } } %>
+        </li>
+      <% end %>
+    <% end %>
+    <li><hr class="dropdown-divider"></li>
+    <li><%= link_to "All Authorization Boundaries", authorization_boundaries_path, class: "dropdown-item", data: { boundary_action: "all_boundaries" } %></li>
+  </ul>
+</div>

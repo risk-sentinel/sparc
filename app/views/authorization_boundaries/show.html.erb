@@ -3,7 +3,9 @@
     Order: header (name, status, key ATO facts, description), the multiple-SSP
     warning, Boundary Completeness, Artifact Summary, Environments &
     Components, Personnel Roster, Evidence, Back Matter (#1249), Leveraged
-    Authorizations, Metadata sync status.
+    Authorizations, Metadata sync status. Under SPARC_NAV_SHELL (1.18.0-rf
+    #1301) the header and the Artifact Summary are the boundary home above
+    the same sections.
 
     Every section after the warning is a shared/_collapsible_section with a
     count in its header. Defaults: Completeness open while the boundary is
@@ -16,6 +18,12 @@
 <% may_edit = can_edit_boundary?(boundary) %>
 <div data-controller="collapse-memory" data-collapse-memory-key-value="boundary-page">
 
+<%# 1.18.0-rf #1301 — under SPARC_NAV_SHELL the header and the Artifact
+    Summary are the boundary home (authorization_boundaries/_home). %>
+<% if shell_nav? %>
+  <%= render "authorization_boundaries/home", boundary: boundary, home: @home, readiness: @readiness,
+        may_edit: may_edit, personnel: @personnel %>
+<% else %>
 <%# ── Header ─────────────────────────────────────────────────── %>
 <header class="mb-3">
   <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
@@ -52,61 +60,12 @@
                 data: { boundary_action: "build_ato_package" } %>
         <% end %>
 
-        <%# Bootstrap's dropdown (data-bs-toggle); no inline handlers. %>
-        <div class="dropdown">
-          <button type="button" class="sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm dropdown-toggle"
-                  data-bs-toggle="dropdown" aria-expanded="false" id="boundary-more-menu" data-boundary-action="more">
-            More
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="boundary-more-menu">
-            <%# #447 — HDF Amendment triage for scanner findings on this boundary. %>
-            <% if boundary_permission?("evidence.read", boundary) %>
-              <li><%= link_to "Findings Triage", triage_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "amendments" } %></li>
-            <% end %>
-            <%# #904 — which CDEFs this boundary needs, from the Terraform it is built from. %>
-            <% if !SparcConfig.any_auth_enabled? || current_user&.has_permission?("cdef.read") %>
-              <li><%= link_to "CDEF Coverage", new_cdef_coverage_path(authorization_boundary_id: boundary.id), class: "dropdown-item", data: { boundary_action: "cdef_coverage" } %></li>
-            <% end %>
-            <% has_documents = boundary.ssp_document.present? || boundary.sap_document.present? ||
-                               boundary.sar_document.present? || boundary.poam_documents.any? %>
-            <% if has_documents %>
-              <li><%= link_to "Download ATO Package", download_ato_package_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "download_ato_package" } %></li>
-            <% end %>
-            <% if may_edit || can_delete_boundary? %>
-              <li><hr class="dropdown-divider"></li>
-            <% end %>
-            <% if may_edit %>
-              <li><%= link_to "Edit", edit_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "edit" } %></li>
-            <% end %>
-            <% if can_delete_boundary? %>
-              <%# #629 — the guard refuses a delete while SSP/SAP/SAR/POA&M
-                  documents are attached; say so before the click rather than
-                  after it. deletion_blockers is the list the guard checks. %>
-              <% blockers = boundary.deletion_blockers %>
-              <% if blockers.any? %>
-                <li>
-                  <span class="dropdown-item disabled" aria-disabled="true" data-boundary-action="delete_refused">
-                    Delete
-                    <span class="sparc-menu-note">Cannot delete while linked to <%= blockers.to_sentence %>. Detach or delete those first.</span>
-                  </span>
-                </li>
-              <% else %>
-                <li>
-                  <%= button_to "Delete", authorization_boundary_path(boundary), method: :delete,
-                        class: "dropdown-item text-danger",
-                        data: { boundary_action: "delete" },
-                        form: { data: { turbo_confirm: "Delete '#{boundary.name}'? This cannot be undone." } } %>
-                </li>
-              <% end %>
-            <% end %>
-            <li><hr class="dropdown-divider"></li>
-            <li><%= link_to "All Authorization Boundaries", authorization_boundaries_path, class: "dropdown-item", data: { boundary_action: "all_boundaries" } %></li>
-          </ul>
-        </div>
+        <%= render "authorization_boundaries/more_menu", boundary: boundary, may_edit: may_edit %>
       </div>
     <% end %>
   </div>
 </header>
+<% end %>
 
 <% if @linked_ssps.size > 1 %>
   <%# More than one SSP claims this boundary; the SSP tile below shows only
@@ -127,7 +86,8 @@
 <%# ── Boundary Completeness (#940) ─────────────────────────────── %>
 <%= render "readiness", readiness: @readiness, boundary: boundary %>
 
-<%# ── Artifact Summary ─────────────────────────────────────── %>
+<%# ── Artifact Summary (the home's document list under the shell) ── %>
+<% unless shell_nav? %>
 <% single_artifacts = [
      { label: "SSP", doc: boundary.ssp_document,
        index: attach_document_authorization_boundary_path(boundary, type: "ssp") },
@@ -182,6 +142,7 @@
       <% end %>
     </div>
   </div>
+<% end %>
 <% end %>
 
 <%# ── Environments & Components ────────────────────────────── %>

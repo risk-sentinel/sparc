@@ -313,7 +313,7 @@ class AuthorizationBoundary < ApplicationRecord
   # roster reflects every assignment regardless of where it was made. Canonical
   # (user_role) entries are managed in admin and render read-only here; legacy
   # entries keep their inline edit/remove.
-  PersonnelEntry = Struct.new(:name, :email, :role_label, :source, :membership, keyword_init: true)
+  PersonnelEntry = Struct.new(:name, :email, :role_label, :source, :membership, :role_key, keyword_init: true)
 
   # #1247/#1250 — how many PEOPLE have access to these boundaries, counted
   # once each, as ONE definition for the list's Members column and tile and the
@@ -339,13 +339,13 @@ class AuthorizationBoundary < ApplicationRecord
     canonical = user_roles.includes(:user, :role).map do |ur|
       PersonnelEntry.new(
         name: ur.user.display_label, email: ur.user.email,
-        role_label: ur.role.display_name, source: :assigned, membership: nil
+        role_label: ur.role.display_name, source: :assigned, membership: nil, role_key: ur.role.name
       )
     end
     legacy = authorization_boundary_memberships.order(:role, :user_name).map do |m|
       PersonnelEntry.new(
         name: m.user_name, email: m.user_email,
-        role_label: m.role_label, source: :membership, membership: m
+        role_label: m.role_label, source: :membership, membership: m, role_key: m.role
       )
     end
     (canonical + legacy).sort_by { |e| [ e.role_label.to_s, e.name.to_s ] }

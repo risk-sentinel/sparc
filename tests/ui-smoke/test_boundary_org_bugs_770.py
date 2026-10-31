@@ -19,7 +19,7 @@ from __future__ import annotations
 import pytest
 
 from _api_setup import create_boundary, delete_doc
-from helpers import assert_no_csp_violations, first_show_href, record_csp
+from helpers import assert_no_csp_violations, first_show_href, nav_shell_on, record_csp
 
 BOUNDARIES = "/authorization_boundaries"
 
@@ -50,8 +50,16 @@ class TestBoundaryShow:
         authed_page.goto(_first_boundary(authed_page))
         authed_page.wait_for_load_state("networkidle")
 
-        tiles = authed_page.locator("a.sparc-hero-tile-link")
-        assert tiles.count() >= 4, "expected all four artifact tiles to be links"
+        if nav_shell_on(authed_page):
+            # #1301 — under SPARC_NAV_SHELL the tiles are the home's document
+            # rows; the SSP, SAP, SAR and POA&M rows each lead somewhere.
+            rows = authed_page.get_by_test_id("boundary-documents")
+            for key in ("ssp", "sap", "sar", "poam"):
+                row = rows.locator(f"[data-document='{key}'] a")
+                assert row.count() >= 1, f"the {key} document row is not a link"
+        else:
+            tiles = authed_page.locator("a.sparc-hero-tile-link")
+            assert tiles.count() >= 4, "expected all four artifact tiles to be links"
         assert_no_csp_violations(authed_page, during="boundary show render")
 
     def test_add_evidence_prescopes_the_boundary(self, authed_page):
