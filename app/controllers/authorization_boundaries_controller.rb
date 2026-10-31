@@ -75,6 +75,8 @@ class AuthorizationBoundariesController < ApplicationController
     # finds first when several point here. Production has no shell to look, so
     # the drift is reported on the screen that would otherwise hide it.
     @linked_ssps = SspDocument.where(authorization_boundary_id: @authorization_boundary.id).order(:name).to_a
+    # 1.18.0-rf #1301 — the boundary home's facts (shell only; built lazily).
+    @home = BoundaryHome.new(@authorization_boundary)
   end
 
   # GET /authorization_boundaries/:id/attach_document?type=ssp

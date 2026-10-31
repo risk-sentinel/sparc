@@ -1,0 +1,163 @@
+<%# 1.18.0-rf #1301 — the top of the boundary page under SPARC_NAV_SHELL: a
+    home for the boundary, in the page frame (owner-approved 10-31). The page
+    header carries the name, status and every header action (the same More
+    menu as the switch-off view); the main column has the latest activity,
+    one row per document, the weekly activity and readiness; the About column
+    has the facts, tags and what needs attention.
+
+    The sections below it on the page (completeness, environments, roster,
+    evidence, back matter, leveraged, metadata sync) are unchanged, so every
+    action the page had stays where it was.
+
+    Every fact reads a definition another screen already uses (BoundaryHome).
+    Locals: boundary, home (BoundaryHome), readiness, may_edit, personnel %>
+<% ao = boundary.authorizing_official.presence ||
+        personnel.find { |p| p.role_label.to_s.casecmp?("Authorizing Official") }&.name %>
+<% isso = home.people_with_role("isso") %>
+<%= render "shared/page_header", title: boundary.name,
+      chips: [ { label: boundary.status.titleize, intent: boundary_status_chip(boundary.status) } ],
+      meta: [ render("shared/uuid_badge", uuid: boundary.uuid, label: "UUID", name: "boundary UUID") ],
+      primary: ({ label: "Build ATO Package", path: ato_wizard_authorization_boundary_path(boundary),
+                  data: { boundary_action: "build_ato_package" } } if signed_in? && may_edit),
+      extra: (render("authorization_boundaries/more_menu", boundary: boundary, may_edit: may_edit) if signed_in?) %>
+
+<div class="sparc-boundary-home" data-testid="boundary-home">
+  <div class="sparc-boundary-home__main">
+    <%# Latest activity: the newest audited change to the boundary or its documents. %>
+    <% latest = home.latest_activity %>
+    <section class="sparc-boundary-home__activity" data-testid="boundary-latest-activity" aria-label="Latest activity">
+      <% if latest %>
+        <%= icon("chart-line") %>
+        <span class="fw-semibold"><%= latest.user&.display_label || "SPARC" %></span>
+        <span><%= latest.action.humanize(capitalize: false) %></span>
+        <% if latest.subject_type.present? && latest.subject_type != "AuthorizationBoundary" %>
+          <span class="text-body-secondary"><%= latest.subject_type.titleize.downcase %></span>
+        <% end %>
+        <time class="text-body-secondary ms-auto" datetime="<%= latest.created_at.iso8601 %>"><%= time_ago_in_words(latest.created_at) %> ago</time>
+      <% else %>
+        <span class="text-body-secondary">No recorded activity yet.</span>
+      <% end %>
+    </section>
+
+    <%# One row per document, in OSCAL's order. %>
+    <section aria-labelledby="boundary-documents-title">
+      <h2 class="sparc-boundary-home__title" id="boundary-documents-title">Documents</h2>
+      <ul class="sparc-collection-rows sparc-boundary-home__docs" data-testid="boundary-documents">
+        <% home.documents.each do |row| %>
+          <li class="sparc-collection-row" data-document="<%= row.key %>">
+            <span class="sparc-boundary-home__layer"><%= row.label %></span>
+            <span class="sparc-collection-row__main">
+              <% if row.missing && row.key == :profile %>
+                <span class="text-body-secondary">No baseline</span>
+              <% elsif row.missing && row.key == :leveraged %>
+                <span class="text-body-secondary">None</span>
+              <% elsif row.missing %>
+                <%= link_to "Add…", row.url %>
+              <% elsif row.count %>
+                <%= link_to pluralize(row.count, { cdef: "CDEF", poam: "POA&M", leveraged: "leveraged system" }.fetch(row.key)), row.url %>
+              <% else %>
+                <%= link_to row.name, row.url %>
+              <% end %>
+            </span>
+            <% if row.status %><span class="sparc-status-chip sparc-status-chip--neutral"><%= row.status %></span><% end %>
+            <% if row.updated_at %>
+              <time class="text-body-secondary small text-nowrap" datetime="<%= row.updated_at.iso8601 %>"><%= time_ago_in_words(row.updated_at) %> ago</time>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+
+    <%# Weekly activity: the Boundaries tab's sparkline data, as bars. %>
+    <% weeks = home.weekly_activity %>
+    <section aria-labelledby="boundary-activity-title">
+      <h2 class="sparc-boundary-home__title" id="boundary-activity-title">Activity</h2>
+      <% top = [ weeks.max, 1 ].max %>
+      <svg class="sparc-boundary-home__chart" viewBox="0 0 <%= weeks.size * 10 %> 40" preserveAspectRatio="none"
+           role="img" aria-label="<%= pluralize(weeks.sum, "recorded change") %> in the last <%= weeks.size %> weeks"
+           data-testid="boundary-activity-chart" data-total="<%= weeks.sum %>">
+        <% weeks.each_with_index do |n, i| %>
+          <% h = n.zero? ? 1 : (n.to_f / top * 38).clamp(2, 38) %>
+          <rect x="<%= i * 10 + 1 %>" y="<%= 40 - h %>" width="8" height="<%= h %>"
+                class="<%= n.zero? ? "sparc-boundary-home__bar--empty" : "sparc-boundary-home__bar" %>"></rect>
+        <% end %>
+      </svg>
+      <p class="small text-body-secondary mb-0">Edits, imports, exports, scans and validations, week by week.</p>
+    </section>
+
+    <%# Readiness: the completeness report's states as one bar. %>
+    <% summary = readiness[:summary] %>
+    <% total = readiness[:sections].size %>
+    <section aria-labelledby="boundary-readiness-title" data-testid="boundary-readiness-bar">
+      <h2 class="sparc-boundary-home__title" id="boundary-readiness-title">
+        Readiness <span class="text-body-secondary fw-normal small" data-readiness-complete="<%= summary[:complete] %>"><%= summary[:complete] %> of <%= total %> complete</span>
+      </h2>
+      <div class="sparc-readiness-bar">
+        <% { complete: "Complete", partial: "Partial", absent: "Not started", optional_none: "None (optional)", not_modelled: "Not modelled" }.each do |state, label| %>
+          <% next if summary[state].to_i.zero? %>
+          <span class="sparc-readiness-bar__seg sparc-readiness-bar__seg--<%= state %>" style="flex-grow: <%= summary[state] %>;"
+                title="<%= label %>: <%= summary[state] %>" data-state="<%= state %>"></span>
+        <% end %>
+      </div>
+      <p class="small mb-2"><a href="#boundary-completeness">See each item</a></p>
+      <details class="sparc-boundary-home__pipeline">
+        <summary>Use from a pipeline</summary>
+        <pre class="mb-0"><code>curl -H "Authorization: Bearer $TOKEN" \
+  <%= api_v1_authorization_boundary_readiness_url(boundary.id) %></code></pre>
+      </details>
+    </section>
+  </div>
+
+  <aside class="sparc-boundary-home__about" aria-labelledby="boundary-about-title">
+    <h2 class="sparc-boundary-home__title" id="boundary-about-title">About</h2>
+    <p class="mb-2"><%= boundary.description.presence || "No description." %></p>
+    <% if boundary.authorization_boundary_description.present? %>
+      <p class="small text-body-secondary"><strong>Authorization boundary:</strong> <%= boundary.authorization_boundary_description %></p>
+    <% end %>
+
+    <dl class="sparc-boundary-home__facts">
+      <div><dt>Authorization status</dt><dd data-boundary-fact="authorization_status"><%= boundary.authorization_status.presence || "—" %></dd></div>
+      <div><dt>Next decision</dt><dd data-boundary-fact="next_decision"><%= next_decision_badge(boundary) %></dd></div>
+      <div><dt>Authorizing official</dt><dd data-boundary-fact="authorizing_official"><%= ao.presence || "—" %></dd></div>
+      <div><dt>ISSO</dt><dd data-boundary-fact="isso"><%= isso.any? ? isso.to_sentence : "—" %></dd></div>
+      <div><dt>People</dt><dd data-boundary-fact="people"><a href="#boundary-personnel"><%= pluralize(boundary.people_count, "person", plural: "people") %></a></dd></div>
+    </dl>
+
+    <ul class="sparc-boundary-home__tags" data-testid="boundary-tags" aria-label="Tags">
+      <% if home.impact_label %><li class="sparc-chip" data-tag="impact"><%= home.impact_label %> impact</li><% end %>
+      <% if boundary.profile_document %><li class="sparc-chip" data-tag="baseline"><%= boundary.profile_document.name %></li><% end %>
+      <li class="sparc-chip" data-tag="oscal">OSCAL <%= OscalSchema::DEFAULT_VERSION %></li>
+    </ul>
+
+    <h3 class="sparc-filter-group__title mt-3">Needs attention</h3>
+    <ul class="sparc-boundary-home__attention" data-testid="boundary-attention">
+      <% overdue = home.overdue_poam_items %>
+      <li data-attention="overdue_poam_items" data-count="<%= overdue %>">
+        <% if overdue.positive? %>
+          <%= link_to pluralize(overdue, "overdue POA&M item"), BoundaryScopedList.path(:poam, boundary), class: "sparc-text-warning-bold" %>
+        <% else %>
+          <span class="text-body-secondary">No overdue POA&amp;M items</span>
+        <% end %>
+      </li>
+      <% missing = home.controls_without_evidence %>
+      <li data-attention="controls_without_evidence" data-count="<%= missing %>">
+        <% if missing.nil? %>
+          <span class="text-body-secondary">No baseline to measure evidence against</span>
+        <% elsif missing.positive? %>
+          <%= link_to pluralize(missing, "baseline control") + " without evidence", "#boundary-evidence", class: "sparc-text-warning-bold" %>
+        <% else %>
+          <span class="text-body-secondary">Every baseline control has evidence</span>
+        <% end %>
+      </li>
+      <% done, required = home.ssp_completion %>
+      <li data-attention="ssp_completion" data-done="<%= done %>" data-required="<%= required %>">
+        <% if required.nil? %>
+          <span class="text-body-secondary">No SSP yet</span>
+        <% else %>
+          <%= link_to "SSP: #{done} of #{required} responses answered", ssp_document_path(boundary.ssp_document),
+                class: (done == required ? "text-body-secondary" : "sparc-text-warning-bold") %>
+        <% end %>
+      </li>
+    </ul>
+  </aside>
+</div>
