@@ -12,6 +12,14 @@ class PoamItem < ApplicationRecord
   has_many :poam_item_findings, dependent: :delete_all
   has_many :poam_findings, through: :poam_item_findings
 
+  # 1.18.0-rf #1301 — past its deadline and not closed (a closed primary risk
+  # leaves nothing to remediate; no recorded status counts as open). NIST
+  # SP 800-53 Rev 5 CA-5: the plan's milestones are tracked to their dates.
+  CLOSED_RISK_STATUS = "closed"
+  scope :overdue, ->(today = Date.current) {
+    where(deadline: ...today).where("poam_items.risk_status IS NULL OR poam_items.risk_status <> ?", CLOSED_RISK_STATUS)
+  }
+
   def primary_risk
     poam_risks.order("poam_item_risks.id").first
   end

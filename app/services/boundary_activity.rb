@@ -5,7 +5,7 @@
 #
 # Activity is the audit log (AuditEvent): every audited action on the boundary
 # itself or on a document that belongs to it (SSP, SAP, SAR, POA&M, evidence,
-# CDEF coverage run). An event is tied to its boundary through its subject, so
+# CDEF coverage run, and — #1301 — scan run and KSI validation). An event is tied to its boundary through its subject, so
 # an event whose subject has since been hard-deleted no longer counts; a
 # soft-deleted document's events still do.
 #
@@ -28,7 +28,9 @@ class BoundaryActivity
     "SarDocument"     => "INNER JOIN sar_documents s ON s.id = audit_events.subject_id",
     "PoamDocument"    => "INNER JOIN poam_documents s ON s.id = audit_events.subject_id",
     "Evidence"        => "INNER JOIN evidences s ON s.id = audit_events.subject_id",
-    "CdefCoverageRun" => "INNER JOIN cdef_coverage_runs s ON s.id = audit_events.subject_id"
+    "CdefCoverageRun" => "INNER JOIN cdef_coverage_runs s ON s.id = audit_events.subject_id",
+    "ScanRun"         => "INNER JOIN scan_runs s ON s.id = audit_events.subject_id",
+    "KsiValidation"   => "INNER JOIN ksi_validations s ON s.id = audit_events.subject_id"
   }.freeze
 
   # { boundary_id => [count per week, oldest first] }, WEEKS long, for every
@@ -47,22 +49,36 @@ class BoundaryActivity
     series
   end
 
-  def self.counts(ids, start)
-    direct = AuditEvent.unscoped
-      .where(subject_type: "AuthorizationBoundary", subject_id: ids, created_at: start..)
-      .select("audit_events.subject_id AS ab_id", "audit_events.created_at")
-    via = VIA_SUBJECT.map do |type, join|
-      AuditEvent.unscoped.joins(join)
-        .where(subject_type: type, created_at: start..)
-        .where("s.authorization_boundary_id IN (?)", ids)
-        .select("s.authorization_boundary_id AS ab_id", "audit_events.created_at")
-    end
-    union = [ direct, *via ].map(&:arel).reduce { |all, one| Arel::Nodes::UnionAll.new(all, one) }
+  # #1301 — the boundary's most recent events, newest first, through the same
+  # definition the weekly counts use. Each is an AuditEvent with its user.
+  def self.latest(boundary_id, limit: 1)
+    union = events([ boundary_id.to_i ], nil, columns: [ "audit_events.id" ])
+    ids = AuditEvent.unscoped.from(Arel::Nodes::As.new(Arel::Nodes::Grouping.new(union), Arel.sql("events"))).select("events.id")
+    AuditEvent.unscoped.where(id: ids).includes(:user).order(created_at: :desc, id: :desc).limit(limit).to_a
+  end
 
-    AuditEvent.unscoped.from(Arel::Nodes::As.new(Arel::Nodes::Grouping.new(union), Arel.sql("events")))
+  def self.counts(ids, start)
+    AuditEvent.unscoped.from(Arel::Nodes::As.new(Arel::Nodes::Grouping.new(events(ids, start)), Arel.sql("events")))
       .group("events.ab_id").group(Arel.sql("date_trunc('week', events.created_at)")).count
   end
   private_class_method :counts
+
+  # Every event on the boundaries or their documents, as one UNION ALL; since
+  # `start` when given.
+  def self.events(ids, start, columns: [ "audit_events.created_at" ])
+    since = start ? { created_at: start.. } : {}
+    direct = AuditEvent.unscoped
+      .where(subject_type: "AuthorizationBoundary", subject_id: ids, **since)
+      .select("audit_events.subject_id AS ab_id", *columns)
+    via = VIA_SUBJECT.map do |type, join|
+      AuditEvent.unscoped.joins(join)
+        .where(subject_type: type, **since)
+        .where("s.authorization_boundary_id IN (?)", ids)
+        .select("s.authorization_boundary_id AS ab_id", *columns)
+    end
+    [ direct, *via ].map(&:arel).reduce { |all, one| Arel::Nodes::UnionAll.new(all, one) }
+  end
+  private_class_method :events
 
   def self.week_start(value)
     (value.is_a?(String) ? Time.zone.parse(value) : value).to_time.utc

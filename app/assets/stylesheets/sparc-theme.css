@@ -3992,6 +3992,73 @@ a.link-purple { color: var(--sparc-purple); }
    its own box. */
 .sparc-shell .sparc-list-card table.table > thead th { white-space: nowrap; }
 
+/* 1.18.0-rf #1301 — the boundary home: a main column and an About column
+   that stacks under it below 992px. */
+.sparc-boundary-home {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+.sparc-boundary-home__main { flex: 999 1 34rem; min-width: 0; display: flex; flex-direction: column; gap: 1.25rem; }
+.sparc-boundary-home__about { flex: 1 1 16rem; min-width: 0; }
+.sparc-boundary-home__title { font-size: 1rem; font-weight: 650; margin: 0 0 0.5rem; }
+.sparc-boundary-home__activity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--sparc-border-soft);
+  border-radius: 0.5rem;
+  background: var(--sparc-surface);
+  font-size: 0.9rem;
+}
+.sparc-boundary-home__docs { list-style: none; margin: 0; padding: 0; }
+.sparc-boundary-home__docs .sparc-collection-row { align-items: center; }
+.sparc-boundary-home__layer {
+  flex: 0 0 5.5rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bs-secondary-color);
+}
+.sparc-boundary-home__chart { display: block; width: 100%; height: 3rem; }
+.sparc-boundary-home__bar { fill: var(--sparc-i-primary); }
+.sparc-boundary-home__bar--empty { fill: var(--sparc-border-soft); }
+.sparc-readiness-bar {
+  display: flex;
+  height: 0.6rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--sparc-border-soft);
+  margin-bottom: 0.4rem;
+}
+.sparc-readiness-bar__seg { flex-basis: 0; }
+.sparc-readiness-bar__seg--complete { background: var(--sparc-i-positive); }
+.sparc-readiness-bar__seg--partial { background: var(--sparc-i-caution); }
+.sparc-readiness-bar__seg--absent { background: var(--sparc-i-danger); }
+.sparc-readiness-bar__seg--optional_none,
+.sparc-readiness-bar__seg--not_modelled { background: var(--bs-secondary-color); }
+.sparc-boundary-home__pipeline summary { cursor: pointer; font-size: 0.875rem; }
+.sparc-boundary-home__pipeline pre {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--sparc-surface-alt, var(--sparc-surface));
+  border: 1px solid var(--sparc-border-soft);
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.sparc-boundary-home__facts { margin: 0 0 0.75rem; display: grid; gap: 0.5rem; }
+.sparc-boundary-home__facts dt { font-size: 0.8rem; font-weight: 600; color: var(--bs-secondary-color); }
+.sparc-boundary-home__facts dd { margin: 0; }
+.sparc-boundary-home__tags { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.sparc-boundary-home__attention { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.9rem; }
+
 .sparc-settings-overview { display: grid; gap: 1.5rem; }
 .sparc-settings-overview__list {
   display: grid;

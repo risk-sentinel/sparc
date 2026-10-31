@@ -230,6 +230,19 @@ stops: 4a (#1299, #1300, #1302, #1303), then 4b (#1301, #1304).
   `.sparc-list-card` marks a list's container; `shared/_page_header` takes
   `summary:` and `shared/_boundary_filter_layout` takes `header:`. The 4b
   pages use the same frame.
+- **The boundary page (#1301):** under the shell the header and the Artifact
+  Summary become a home for the boundary (`BoundaryHome`,
+  `authorization_boundaries/_home`). The page header carries the name,
+  status, Build ATO Package and the same More menu. The main column has the
+  latest audited change, one row per document (baseline, SSP, CDEFs, SAP,
+  SAR, POA&Ms, leveraged), weekly activity and the readiness bar with the
+  readiness API call. The About column has the facts, the ISSO, tags
+  (impact, baseline, OSCAL version) and Needs attention: overdue POA&M items
+  (`PoamItem.overdue`: past the deadline, not closed), baseline controls with
+  no evidence, and SSP responses answered. `BoundaryActivity` now counts
+  scan runs and KSI validations. The sections below are unchanged, so all 34
+  links and forms on the switch-off page are still there (the request spec
+  checks the set).
 - **The lists (#1299):**
   - **Status tabs with counts** (`StatusTabs`) on nine lists. SSPs, SAPs,
     SARs, POA&Ms and baselines by lifecycle; catalogs also by Approved;
