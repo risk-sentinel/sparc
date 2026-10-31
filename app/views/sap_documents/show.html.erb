@@ -30,12 +30,33 @@
 
 <div data-controller="doc-meta family-toggle heatmap-chip">
 
+<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared document header
+    (shared/_document_header): the assessment type beside the name; the SSP,
+    baseline and dates under it. %>
+<% if shell_nav? %>
+  <% sap_type = tag.span(@sap_document.assessment_type&.titleize || "Initial", class: "sparc-tag-outline sparc-status--#{type_variant}") %>
+  <% sap_description = (tag.p(truncate(@sap_document.description, length: 200), class: "text-body-secondary small mt-2 mb-0 sparc-maxw-600") if
+                          @sap_document.description.present?) %>
+  <%= render "shared/document_header", document: @sap_document, type: :sap, version: @sap_document.sap_version,
+        rename: { update_path: update_metadata_sap_document_path(@sap_document), version_field: :sap_version },
+        title_extra: sap_type,
+        meta: [ (safe_join([ "SSP: ", link_to(@sap_document.ssp_document.name, ssp_document_path(@sap_document.ssp_document)) ]) if @sap_document.ssp_document),
+                (safe_join([ "Baseline: ", link_to(@sap_document.profile_document.name, profile_document_path(@sap_document.profile_document)) ]) if @sap_document.profile_document),
+                pluralize(@total_controls, "control"),
+                ([ @sap_document.assessment_start&.strftime("%b %d, %Y"), @sap_document.assessment_end&.strftime("%b %d, %Y") ].compact.join(" – ") if @sap_document.assessment_start) ],
+        after: sap_description,
+        export: "Assessment Plan", publish: signed_in? && @sap_document.draft?,
+        sections: [ [ "Overview", "#doc-overview" ], ([ "Families", "#heatmapSection" ] if @heatmap_families.any?), [ "Controls", "#controlsContainer" ],
+                    [ "Metadata", "#oscal-metadata" ], [ "Back matter", "#oscal-back-matter" ] ].compact %>
+<% end %>
+
 <%# ── #911: catalog lineage. Discovered by looking, not by being
      refused mid-edit. Renders nothing when reconciled. %>
 <%= render "shared/reconciliation_banner", document: @sap_document %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
-<div class="sparc-gradient-header sparc-doc-hero">
+<div class="sparc-gradient-header sparc-doc-hero" id="doc-overview">
+<% unless shell_nav? %>
 
   <div class="d-flex justify-content-between align-items-start mb-4 gap-3 flex-wrap">
     <div>
@@ -101,6 +122,7 @@
     </div>
   </div>
 
+<% end %>
   <%# ── Summary chips ── %>
   <div class="d-flex align-items-center gap-4 flex-wrap">
     <div class="text-center flex-shrink-0 sparc-minw-80px">

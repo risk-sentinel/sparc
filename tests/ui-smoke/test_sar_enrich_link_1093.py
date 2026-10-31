@@ -30,7 +30,9 @@ from helpers import assert_no_csp_violations, record_csp
 
 pytestmark = pytest.mark.authenticated
 
-ENRICH_LINK = "a[href$='/enrich']"
+# `:visible` — under SPARC_NAV_SHELL (#1304) the page header also lists the
+# link in its folded "More actions" menu, hidden until a narrow window.
+ENRICH_LINK = "a[href$='/enrich']:visible"
 
 
 def _first_sar(page):

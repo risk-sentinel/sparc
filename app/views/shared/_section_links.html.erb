@@ -1,0 +1,13 @@
+<%# 1.18.0-rf #1304 — a document page's sections as a row of links that stays
+    at the top of the window while the page scrolls (owner-approved instead
+    of tabs that hide sections: every #anchor, the heat map's URL state and
+    inline editing keep working).
+
+    Locals: links — [[label, "#anchor"], ...] %>
+<nav class="sparc-section-links" aria-label="Sections" data-testid="section-links" data-controller="sticky-offset">
+  <ul>
+    <% links.each do |label, anchor| %>
+      <li><a href="<%= anchor %>" data-section="<%= anchor.delete_prefix("#") %>"><%= label %></a></li>
+    <% end %>
+  </ul>
+</nav>

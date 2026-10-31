@@ -1,4 +1,5 @@
-<%# #395 P3: boundary context header (system title, impact level, link) %>
+<%# #395 P3: boundary context header (system title, impact level, link).
+    Under SPARC_NAV_SHELL the breadcrumb names the boundary (#1304). %>
 <%= render "shared/boundary_header", document: @ssp_document %>
 
 <%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
@@ -34,12 +35,31 @@
      data-ssp-control-resource-create-url-value="<%= create_control_resource_ssp_document_path(@ssp_document) %>"
      data-ssp-control-resource-unlink-url-value="<%= unlink_control_resource_ssp_document_path(@ssp_document) %>">
 
+<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared document header
+    (shared/_document_header); Enrich and Refresh Inherited beside it. %>
+<% if shell_nav? %>
+  <%= render "shared/document_header", document: @ssp_document, type: :ssp, version: @ssp_document.ssp_version,
+        rename: { update_path: update_metadata_ssp_document_path(@ssp_document), version_field: :ssp_version },
+        title_extra: (tag.span("Incomplete — needs content", class: "badge bg-warning text-dark",
+                               title: @ssp_document.content_completeness_gaps.join("; ")) unless @ssp_document.content_complete?),
+        meta: [ @ssp_document.original_filename, pluralize(total_controls, "control") ],
+        secondary: [
+          { label: "Enrich", path: enrich_ssp_document_path(@ssp_document) },
+          ({ label: "Refresh Inherited", path: refresh_inherited_statements_ssp_document_path(@ssp_document), method: :post } if
+            signed_in? && @ssp_document.ssp_components.where.not(cdef_document_id: nil).exists?)
+        ].compact,
+        export: "SSP", publish: signed_in? && @ssp_document.draft?,
+        sections: [ [ "Overview", "#doc-overview" ], ([ "Compliance", "#heatmapSection" ] if @heatmap_families.any?), [ "Controls", "#controlsContainer" ],
+                    [ "Metadata", "#oscal-metadata" ], [ "Back matter", "#oscal-back-matter" ] ].compact %>
+<% end %>
+
 <%# ── #911: catalog lineage. Discovered by looking, not by being
      refused mid-edit. Renders nothing when reconciled. %>
 <%= render "shared/reconciliation_banner", document: @ssp_document %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
-<div class="sparc-dashboard-header">
+<div class="sparc-dashboard-header" id="doc-overview">
+<% unless shell_nav? %>
 
   <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap sparc-gap-1r">
     <div>
@@ -111,6 +131,7 @@
     </div>
   </div>
 
+<% end %>
   <div class="d-flex align-items-center flex-wrap sparc-gap-15r">
     <div class="sparc-score-cell">
       <div class="sparc-score sparc-accent-text <%= accent_class(score_color) %>">

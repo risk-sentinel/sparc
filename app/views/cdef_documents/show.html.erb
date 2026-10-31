@@ -18,8 +18,73 @@
      data-cdef-control-create-url-value="<%= create_control_resource_cdef_document_path(@cdef_document) %>"
      data-cdef-control-unlink-url-value="<%= unlink_control_resource_cdef_document_path(@cdef_document) %>">
 
+<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared document header
+    (shared/_document_header): the import warnings beside the name; Edit as
+    the main action, the copies and Bulk Apply Converter beside it. The
+    lineage banner, approval panel, baselines and description stay under the
+    name. %>
+<% if shell_nav? %>
+  <% may_write_cdef = signed_in? && CdefWriteAccess.may_write?(current_user, @cdef_document) %>
+  <% may_create_cdef = signed_in? && CdefWriteAccess.may_create?(current_user) %>
+  <% cdef_warnings = capture do %>
+    <% if @cdef_document.aws_labs_source? %>
+      <span class="sparc-status sparc-status--warning" title="Read-only — imported from AWS Labs">AWS Labs (read-only)</span>
+      <% if @cdef_document.source_url.present? %>
+        <a href="<%= @cdef_document.source_url %>" target="_blank" rel="noopener" class="sparc-fs-078 sparc-color-tertiary">View source</a>
+      <% end %>
+    <% end %>
+    <% unless @cdef_document.content_complete? %>
+      <span class="sparc-status sparc-status--warning" title="<%= @cdef_document.content_completeness_gaps.join('; ') %>">Incomplete — needs content</span>
+    <% end %>
+    <% if @cdef_document.component_index_degraded? %>
+      <span class="sparc-status sparc-status--warning" data-testid="cdef-index-degraded"
+            title="The component index failed during import on <%= @cdef_document.component_index_failed_at %>. Controls are intact; component-derived views may understate this document. Re-import to rebuild it.">Component index degraded</span>
+    <% end %>
+    <% if @cdef_document.nist_enrichment_degraded? %>
+      <span class="sparc-status sparc-status--warning" data-testid="cdef-enrichment-degraded"
+            title="NIST enrichment failed during import on <%= @cdef_document.nist_enrichment_failed_at %>. Controls are intact; they carry no NIST mapping, so NIST-grouped views understate this document. Re-import to resolve them.">NIST mappings degraded</span>
+    <% end %>
+  <% end %>
+  <% cdef_after = capture do %>
+    <%= render "shared/reconciliation_banner", document: @cdef_document %>
+    <%= render "cdef_documents/approval", cdef: @cdef_document %>
+    <%= render "cdef_documents/baselines", cdef: @cdef_document, may_write: may_write_cdef %>
+    <% if @cdef_document.description.present? %>
+      <p class="text-body-secondary small mt-2 mb-0 sparc-maxw-600"><%= truncate(@cdef_document.description, length: 200) %></p>
+    <% end %>
+  <% end %>
+  <% copy_action =
+       if may_create_cdef && @cdef_document.published_lifecycle?
+         { label: "Create Editable Copy", path: copy_cdef_document_path(@cdef_document), method: :post,
+           confirm: "Create an editable copy of this published component definition?" }
+       elsif may_create_cdef
+         { label: (@cdef_document.aws_labs_source? ? "Copy for editing" : "Copy"), path: copy_cdef_document_path(@cdef_document),
+           method: :post, confirm: "Duplicate this component definition?" }
+       end %>
+  <% bulk_action = if may_write_cdef && !@cdef_document.aws_labs_source? &&
+                      (current_user.instance_administrator? || current_user.has_permission?("converters.write"))
+                     { label: "Bulk Apply Converter", path: bulk_apply_cdef_document_path(@cdef_document) }
+                   end %>
+  <%= render "shared/document_header", document: @cdef_document, type: :cdef,
+        title: cdef_display_name(@cdef_document), version: @cdef_document.cdef_version,
+        rename: ({ update_path: update_metadata_cdef_document_path(@cdef_document), version_field: :cdef_version } if
+                   signed_in? && !@cdef_document.aws_labs_source?),
+        title_extra: cdef_warnings,
+        meta: [ @cdef_document.original_filename, (@cdef_document.cdef_type&.upcase&.tr("_", " ") || "Unknown"),
+                pluralize(@total_controls, "control") ],
+        after: cdef_after,
+        primary: ({ label: "Edit", path: edit_cdef_document_path(@cdef_document), data: { testid: "edit-cdef" } } if
+                    may_write_cdef && !@cdef_document.aws_labs_source? && !@cdef_document.published_lifecycle?),
+        secondary: [ copy_action, bulk_action ].compact,
+        export: "Component Definition", publish: signed_in? && @cdef_document.draft?,
+        sections: [ [ "Overview", "#doc-overview" ], ([ "Components", "#cdef-components" ] if @components.present?),
+                    [ "Controls", "#controlsContainer" ], [ "Metadata", "#oscal-metadata" ],
+                    [ "Back matter", "#oscal-back-matter" ] ].compact %>
+<% end %>
+
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
-<div class="sparc-dashboard-header">
+<div class="sparc-dashboard-header" id="doc-overview">
+<% unless shell_nav? %>
 
   <div class="d-flex justify-content-between align-items-start mb-4 gap-3 flex-wrap">
     <div>
@@ -168,6 +233,7 @@
     </div>
   </div>
 
+<% end %>
   <%# #1088 — the severity chips and the severity progress bar that sat beside
       this count went with the "Severity by Control Family" heatmap they
       filtered. The chips dispatched `heatmap:chip` to `#heatmapSection`, so

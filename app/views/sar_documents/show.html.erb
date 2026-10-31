@@ -47,12 +47,30 @@
 
 <div data-controller="doc-meta inline-edit">
 
+<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared document header
+    (shared/_document_header); Enrich beside it. %>
+<% if shell_nav? %>
+  <%= render "shared/document_header", document: @sar_document, type: :sar, version: @sar_document.sar_version,
+        rename: { update_path: update_metadata_sar_document_path(@sar_document), version_field: :sar_version },
+        title_extra: (tag.span("OSCAL Enriched", class: "sparc-enriched-badge") if @sar_document.enriched?),
+        meta: [ @sar_document.original_filename, pluralize(@total_controls, "test"),
+                (pluralize(@sections.size, "section") if @sections.size > 1),
+                (pluralize(@assets.size, "asset") if @assets.any?),
+                ({ "excel" => "Import", "wizard" => "Wizard", "oscal_import" => "OSCAL Import" }[@sar_document.creation_method] ||
+                  @sar_document.creation_method) ],
+        secondary: [ { label: (@sar_document.enriched? ? "Edit Enrichment" : "Enrich"), path: enrich_sar_document_path(@sar_document) } ],
+        export: "SAR", publish: signed_in? && @sar_document.draft?,
+        sections: [ [ "Overview", "#doc-overview" ], ([ "Results", "#heatmapSection" ] if @heatmap_families.any?), [ "Tests", "#controlsContainer" ],
+                    [ "Metadata", "#oscal-metadata" ], [ "Back matter", "#oscal-back-matter" ] ].compact %>
+<% end %>
+
 <%# ── #911: catalog lineage. Discovered by looking, not by being
      refused mid-edit. Renders nothing when reconciled. %>
 <%= render "shared/reconciliation_banner", document: @sar_document %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
-<div class="sparc-dashboard-header">
+<div class="sparc-dashboard-header" id="doc-overview">
+<% unless shell_nav? %>
 
   <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap sparc-gap-1r">
     <div>
@@ -139,6 +157,7 @@
     </div>
   </div>
 
+<% end %>
   <div class="d-flex align-items-center flex-wrap sparc-gap-15r">
     <div class="sparc-score-cell">
       <div class="sparc-score sparc-accent-text <%= accent_class(score_color) %>"><%= pass_pct %>%</div>
