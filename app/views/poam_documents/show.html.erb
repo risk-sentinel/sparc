@@ -45,12 +45,34 @@
   has_filters   = [active_status, active_impact].any?(&:present?)
 %>
 
+<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared document header
+    (shared/_document_header): Add Item as the main action, the other adds
+    and Findings Triage beside it. %>
+<% if shell_nav? %>
+  <%= render "shared/document_header", document: @poam_document, type: :poam, version: @poam_document.poam_version,
+        rename: { update_path: update_metadata_poam_document_path(@poam_document), version_field: :poam_version },
+        meta: [ pluralize(@total_items, "item") ],
+        primary: { label: "+ Add Item", path: new_poam_document_poam_item_path(@poam_document) },
+        secondary: [
+          { label: "+ Add Risk", path: new_poam_document_poam_risk_path(@poam_document) },
+          { label: "+ Add Remediation", path: new_poam_document_poam_remediation_path(@poam_document) },
+          { label: "+ Add Observation", path: new_poam_document_poam_observation_path(@poam_document) },
+          { label: "+ Add Finding", path: new_poam_document_poam_finding_path(@poam_document) },
+          { label: "+ Add Component", path: new_poam_document_poam_local_component_path(@poam_document) },
+          ({ label: "Findings Triage", path: triage_authorization_boundary_path(@poam_document.authorization_boundary) } if @poam_document.authorization_boundary)
+        ].compact,
+        export: "POA&M", publish: signed_in? && @poam_document.draft?,
+        sections: [ [ "Overview", "#doc-overview" ], ([ "Risk", "#poam-risk-matrix" ] if @heatmap_data.any?), [ "Items", "#poam-items" ],
+                    [ "Metadata", "#oscal-metadata" ], [ "Back matter", "#oscal-back-matter" ] ].compact %>
+<% end %>
+
 <%# ── #911: catalog lineage. Discovered by looking, not by being
      refused mid-edit. Renders nothing when reconciled. %>
 <%= render "shared/reconciliation_banner", document: @poam_document %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
-<div class="sparc-gradient-header sparc-doc-hero">
+<div class="sparc-gradient-header sparc-doc-hero" id="doc-overview">
+<% unless shell_nav? %>
 
   <div class="d-flex justify-content-between align-items-start mb-4 gap-3 flex-wrap">
     <div>
@@ -112,6 +134,7 @@
     </div>
   </div>
 
+<% end %>
   <%# ── Summary stats ── %>
   <div class="sparc-poam-hero-tiles">
     <div class="sparc-hero-tile rounded-3">
@@ -147,7 +170,7 @@
 
 <%# ── HEATMAP ────────────────────────────────────────────────────── %>
 <% if @heatmap_data.any? %>
-<div class="card sparc-ofx-auto">
+<div class="card sparc-ofx-auto" id="poam-risk-matrix">
   <h3 class="mb-3">Risk Status x Impact</h3>
   <table class="table table-hover sparc-poam-table">
     <thead>
@@ -222,6 +245,7 @@
 <% end %>
 
 <%# ── POA&M ITEM CARDS WITH INLINE EDITING ────────────────────── %>
+<span id="poam-items"></span>
 <% @items.each_with_index do |item, idx| %>
   <%
     sc = status_colors[item.risk_status] || "#7f8c8d"

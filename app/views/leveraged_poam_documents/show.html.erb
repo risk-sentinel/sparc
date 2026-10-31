@@ -1,3 +1,20 @@
+<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared page header. Read-only:
+    no rename, export or actions; the breadcrumb leads back to the leveraged
+    list, not to a boundary the viewer may not open. %>
+<% if shell_nav? %>
+  <%= render "shared/page_header", title: @poam_document.name,
+        crumbs: [ [ "Leveraged POA&Ms", leveraged_poam_documents_path ], [ @poam_document.name ] ],
+        chips: document_chips(@poam_document),
+        meta: [ "System ID: #{@poam_document.system_id || "—"}", "OSCAL #{@poam_document.oscal_version || "—"}",
+                ("v#{@poam_document.poam_version}" if @poam_document.poam_version.present?) ].compact,
+        after_title: capture {
+          concat(tag.div(class: "alert alert-info mt-3 mb-0") do
+            concat(tag.strong("Inherited from #{@poam_document.authorization_boundary&.name || "—"}"))
+            concat(" — this POA&M is owned by a leveraged system. You have read-only visibility.")
+          end)
+          concat(tag.p(@poam_document.description, class: "text-body-secondary mt-2 mb-0")) if @poam_document.description.present?
+        } %>
+<% else %>
 <div class="card mb-3">
   <div class="card-body">
     <div class="alert alert-info mb-3">
@@ -18,6 +35,8 @@
     </div>
   </div>
 </div>
+
+<% end %>
 
 <%# ── Items ── %>
 <div class="card mb-3">

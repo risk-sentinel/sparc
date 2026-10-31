@@ -4059,6 +4059,51 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-boundary-home__tags { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .sparc-boundary-home__attention { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.9rem; }
 
+/* 1.18.0-rf #1304 — a document page's sections as links that stay at the
+   top of the window. The row scrolls sideways on a phone rather than
+   wrapping. Anchored sections leave room for it (scroll-margin). */
+.sparc-section-links {
+  position: sticky;
+  /* Just below the sticky top bar (sticky_offset_controller.js). */
+  top: var(--sparc-topbar-h, 0px);
+  z-index: 5;
+  margin: 0 0 1rem;
+  background: var(--bs-body-bg);
+  border-bottom: 1px solid var(--sparc-border-soft);
+  overflow-x: auto;
+}
+.sparc-section-links ul { display: flex; gap: 1.5rem; margin: 0; padding: 0; list-style: none; white-space: nowrap; }
+.sparc-section-links a {
+  display: inline-block;
+  padding: 0.6rem 0.1rem;
+  color: var(--bs-secondary-color);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+.sparc-section-links a:hover,
+.sparc-section-links a:focus-visible { color: var(--bs-body-color); border-bottom-color: var(--sparc-border-soft); }
+.sparc-shell :is(#doc-overview, #heatmapSection, #controlsContainer, #oscal-metadata, #oscal-back-matter, #cdef-components, #poam-risk-matrix, #poam-items, #catalog-families) {
+  scroll-margin-top: calc(var(--sparc-topbar-h, 0px) + 3.5rem);
+}
+
+/* The page header holds partials written for the dark document header
+   (version badge, the CDEF approval line); on the page they need the page's
+   colours to keep their contrast. */
+.sparc-shell .sparc-page-header :is(.sparc-version-badge, .sparc-enriched-badge) {
+  background: var(--sparc-surface-alt);
+  color: var(--bs-body-color);
+  border: 1px solid var(--sparc-border-soft);
+}
+.sparc-shell .sparc-page-header .sparc-color-white-45 { color: var(--bs-secondary-color); }
+
+
+/* Key/value field tables fit a phone: labels and values wrap rather than
+   widen the page. */
+@media (max-width: 575.98px) {
+  .sparc-field-label { white-space: normal; overflow-wrap: anywhere; }
+  .sparc-field-value { overflow-wrap: anywhere; }
+}
+
 .sparc-settings-overview { display: grid; gap: 1.5rem; }
 .sparc-settings-overview__list {
   display: grid;

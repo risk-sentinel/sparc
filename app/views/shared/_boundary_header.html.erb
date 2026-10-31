@@ -6,7 +6,10 @@
       document - the document being shown (SSP/SAP/SAR/POAM/Profile/CDEF)
 %>
 <% ab = document.try(:authorization_boundary) %>
-<% if ab %>
+<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the page header's breadcrumb names
+    the boundary; the warning for a document with none stays. %>
+<% if ab && shell_nav? %>
+<% elsif ab %>
   <div class="sparc-card" style="margin-bottom: 1rem; padding: 0.65rem 1rem; background: rgba(52,152,219,0.04); border-left: 3px solid rgba(52,152,219,0.4);">
     <div style="font-size: 0.78rem; color: var(--bs-secondary-color);">Boundary</div>
     <div style="font-size: 0.95rem; font-weight: 500;">

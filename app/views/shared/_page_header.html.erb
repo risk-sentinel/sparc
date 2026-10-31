@@ -15,12 +15,27 @@
       subtitle   one line of supporting text
       primary    { label:, path:, data: } — the one primary action
       secondary  [{ label:, path:, data: }, ...] — other actions; below 768px
-                 they fold into a "More actions" menu
+                 they fold into a "More actions" menu. An action with
+                 `method:` (:post, :patch, :delete) submits a form
+                 (button_to); `confirm:` asks first (#1304)
+      title_attrs  HTML attributes for the block holding the title row and
+                 meta (e.g. a document's rename-in-place view target, #1304)
+      title_extra  HTML at the end of the title row (version, a rename button)
+      after_title  HTML under that block (e.g. the rename form, hidden)
       extra      HTML placed before the primary action (e.g. an export
                  split button, shared/_oscal_export_dropdown)
 
     Adopted on the Boundaries tab and the Overview here; the list screens take
     it with #1299 and the document pages with #1304. %>
+<%# An action: a link, or (with method:) a button that submits a form. %>
+<% action_tag = lambda do |action, css|
+     if action[:method]
+       button_to action[:label], action[:path], method: action[:method], class: css,
+                 data: action[:data], form: { class: "sparc-d-inline", data: ({ turbo_confirm: action[:confirm] } if action[:confirm]) }
+     else
+       link_to action[:label], action[:path], data: action[:data], class: css
+     end
+   end %>
 <% crumbs    = local_assigns.fetch(:crumbs, []) %>
 <% chips     = local_assigns.fetch(:chips, []) %>
 <% meta      = local_assigns.fetch(:meta, []) %>
@@ -44,17 +59,21 @@
   <div class="sparc-page-header__row">
     <% if local_assigns[:lead] %><div class="sparc-page-header__lead"><%= lead %></div><% end %>
     <div class="sparc-page-header__heading">
+      <%= tag.div(**local_assigns.fetch(:title_attrs, {})) do %>
       <div class="sparc-page-header__title-row">
         <h1 class="sparc-page-header__title"><%= title %></h1>
         <% chips.each do |chip| %>
           <span class="sparc-status-chip sparc-status-chip--<%= chip[:intent] || "neutral" %>" data-testid="page-header-chip"><%= chip[:label] %></span>
         <% end %>
+        <%= local_assigns[:title_extra] %>
       </div>
       <% if meta.any? %>
         <ul class="sparc-page-header__meta">
           <% meta.each do |item| %><li><%= item %></li><% end %>
         </ul>
       <% end %>
+      <% end %>
+      <%= local_assigns[:after_title] %>
       <% if summary.any? %>
         <ul class="sparc-page-header__meta" data-testid="page-header-summary">
           <% summary.each do |count, label| %><li><strong><%= count %></strong> <%= label %></li><% end %>
@@ -65,8 +84,7 @@
     <% if primary || secondary.any? || local_assigns[:extra] %>
       <div class="sparc-page-header__actions" data-testid="page-header-actions">
         <% secondary.each do |action| %>
-          <%= link_to action[:label], action[:path], data: action[:data],
-                class: "sparc-action sparc-action--neutral sparc-action--outline sparc-page-header__secondary" %>
+          <%= action_tag.call(action, "sparc-action sparc-action--neutral sparc-action--outline sparc-page-header__secondary") %>
         <% end %>
         <% if secondary.any? %>
           <div class="dropdown sparc-page-header__overflow">
@@ -74,7 +92,7 @@
                     data-bs-toggle="dropdown" aria-expanded="false">More actions</button>
             <ul class="dropdown-menu dropdown-menu-end">
               <% secondary.each do |action| %>
-                <li><%= link_to action[:label], action[:path], class: "dropdown-item" %></li>
+                <li><%= action_tag.call(action.except(:data), "dropdown-item") %></li>
               <% end %>
             </ul>
           </div>

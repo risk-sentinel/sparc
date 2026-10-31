@@ -89,8 +89,9 @@ def _save_and_follow(page, button, label: str, *, follow: bool = True) -> None:
 
 def _rename(page, label: str, new_name: str, new_version: str) -> None:
     """Open the header editor, type a new name and version, and save."""
-    # The header's Edit button; the form's own Cancel shares the action.
-    page.get_by_role("button", name="Edit", exact=True).and_(
+    # The header's Edit button ("Rename" under SPARC_NAV_SHELL, #1304, where
+    # Edit is the edit page); the form's own Cancel shares the action.
+    page.get_by_role("button", name=re.compile(r"^(Edit|Rename)$")).and_(
         page.locator('[data-action="doc-meta#toggle"]')
     ).first.click()
     form = page.locator(NAME_FORM)
@@ -109,7 +110,9 @@ def _assert_renamed(page, label: str, resource: str, new_name: str, new_version:
     assert f"/{resource}/{slug_prefix}" in path, (
         f"{label}: after the rename the page is {page.url}, not the renamed document"
     )
-    assert page.locator(".sparc-header-title").filter(has_text=new_name).count() > 0, (
+    # The classic header's title, or the page header's (SPARC_NAV_SHELL, #1304).
+    title = page.locator(".sparc-header-title, .sparc-page-header__title")
+    assert title.filter(has_text=new_name).count() > 0, (
         f"{label}: the renamed page does not show '{new_name}'"
     )
     form = page.locator(NAME_FORM)

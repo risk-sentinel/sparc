@@ -131,7 +131,7 @@ per phase PR:
 | 1. Primitives | #1288, #1289 | Merged to `release-1.18.0-rf` (PR #1315) |
 | 2. Boundary context | #1290, #1292, #1293 | PR #1316 into `release-1.18.0-rf` |
 | 3. Shell, behind the switch | #1291, #1295, #1296, #1298, #1246 | Built on `feature/v1180rf_shell` |
-| 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | Plan approved 2026-10-30; 4a (#1299, #1300, #1302, #1303) built on `feature/v1180rf_shell`; page frame approved 2026-10-31; 4b (#1301, #1304) next |
+| 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | Plan approved 2026-10-30; 4a (#1299, #1300, #1302, #1303) built on `feature/v1180rf_shell`; page frame approved 2026-10-31; 4b (#1301, #1304) built |
 | 5. Finish | #1297, #1306, #1307, #1308, #1309 | — (`feature/v1180rf_shell`) |
 
 **Phase 0** records what the navigation offers today, per viewer, before any
@@ -243,6 +243,18 @@ stops: 4a (#1299, #1300, #1302, #1303), then 4b (#1301, #1304).
   scan runs and KSI validations. The sections below are unchanged, so all 34
   links and forms on the switch-off page are still there (the request spec
   checks the set).
+- **The document pages (#1304):** under the shell every document page (SSP,
+  SAP, SAR, POA&M, CDEF, baseline, catalog, leveraged POA&M, evidence)
+  opens with the shared header (`shared/_document_header` over
+  `shared/_page_header`; `DocumentHeaderHelper` builds the breadcrumb to
+  the boundary and its list, the lifecycle and approval chips, and the
+  export and Publish paths). The name is still renamed in place
+  (`#doc-meta-view` / `#doc-meta-edit`), its button now called Rename
+  because Edit opens the edit page where there is one. The page header
+  takes actions that submit a form (`method:`, `confirm:`). A sticky row of
+  section links (`shared/_section_links`) replaces in-page tabs, and links
+  only to sections the page draws. The boundary card above a document is
+  the breadcrumb now; the warning for a document with no boundary stays.
 - **The lists (#1299):**
   - **Status tabs with counts** (`StatusTabs`) on nine lists. SSPs, SAPs,
     SARs, POA&Ms and baselines by lifecycle; catalogs also by Approved;
