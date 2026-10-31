@@ -3962,6 +3962,55 @@ a.link-purple { color: var(--sparc-purple); }
   box-shadow: 0 0 0 1px var(--sparc-border-soft);
   font-weight: 650;
 }
+/* 1.18.0-rf — the page frame (owner-approved 10-31): under SPARC_NAV_SHELL a
+   list screen has no outer box. The header, the left column and the tabs sit
+   on the page; cards sit on the page; rows and tables each get one box with
+   no inner padding. `.sparc-list-card` marks a list's outer container (a
+   `.card` in the switch-off view, which keeps its look). */
+.sparc-shell .sparc-list-card {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+.sparc-shell .sparc-list-card > .card-body { padding: 0; }
+.sparc-shell .sparc-list-card table.table {
+  border: 1px solid var(--sparc-border-soft);
+  border-radius: 0.5rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 0.75rem;
+  background: var(--sparc-surface);
+  /* Cells stay clear so the table's rounded corners show; `overflow` does
+     not apply to a table, and clipping would hide row dropdowns anyway. */
+  --bs-table-bg: transparent;
+}
+.sparc-shell .sparc-list-card table.table > :last-child > tr:last-child > * { border-bottom: 0; }
+/* A list table fits beside the left column with no sideways scroll (owner,
+   2026-10-31): cells take Bootstrap's 8px side padding, the record's name
+   keeps a readable width, a date and time stack (.sparc-stamp,
+   CollectionCardHelper#collection_timestamp) and a long secondary name shows
+   two lines, the rest on hover. Headings keep main's own one-line classes. */
+.sparc-shell .sparc-list-card table.table th,
+.sparc-shell .sparc-list-card table.table td { padding-inline: 0.5rem; }
+.sparc-shell .sparc-list-card table.table .sparc-col-name { min-width: 9rem; }
+.sparc-shell .sparc-stamp > span { display: block; }
+.sparc-shell .sparc-stamp__second { font-size: 0.8rem; color: var(--bs-secondary-color); }
+/* The Baselines table has fixed column widths; beside the left column its
+   one-line Version and Controls headings need a little more of the Name
+   column's share (22% -> 18.5%). */
+.sparc-shell .sparc-baselines-table > thead > tr > th:nth-child(1) { width: 18.5%; }
+.sparc-shell .sparc-baselines-table > thead > tr > th:nth-child(3) { width: 9%; }
+.sparc-shell .sparc-baselines-table > thead > tr > th:nth-child(6) { width: 9.5%; }
+.sparc-shell .sparc-cell-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 7.5rem;
+}
+
 .sparc-settings-overview { display: grid; gap: 1.5rem; }
 .sparc-settings-overview__list {
   display: grid;

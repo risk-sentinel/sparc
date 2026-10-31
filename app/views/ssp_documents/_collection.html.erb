@@ -46,7 +46,7 @@
       <tbody>
         <% records.each do |doc| %>
           <tr>
-            <td><strong><%= link_to doc.name, ssp_document_path(doc), class: "text-primary sparc-td-none" %></strong></td>
+            <td class="sparc-col-name"><strong><%= link_to doc.name, ssp_document_path(doc), class: "text-primary sparc-td-none" %></strong></td>
             <td>
               <%# #946 — one mapping, in the helper. A second copy here rendered
                   "Import" with spreadsheet styling for profile- and SSP-generated
@@ -90,7 +90,7 @@
             <td><%= doc.ssp_controls.count %></td>
             <% progress = SspResponseProgress.for(doc, required_cache: (@response_progress_cache ||= {})).total %>
             <td class="sparc-ws-nowrap"><%= progress.done %> of <%= progress.required %></td>
-            <td class="sparc-ws-nowrap"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td class="sparc-ws-nowrap"><%= collection_timestamp(doc.created_at) %></td>
             <td>
               <div class="sparc-maxw-280px">
                 <%= render "ssp_documents/item_actions", doc: doc %>

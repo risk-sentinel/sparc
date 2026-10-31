@@ -157,6 +157,25 @@ RSpec.describe "Collection screens (#1299)", type: :request do
       end
     end
 
+    describe "wide tables fit beside the left column" do
+      it "stacks the SSP's date and time, keeps a name width, and shows a SAP's full SSP name on hover" do
+        ssp = create(:ssp_document, name: "A very long system security plan name for the table", authorization_boundary: boundary)
+        create(:sap_document, authorization_boundary: boundary, ssp_document: ssp,
+                              assessment_start: Date.new(2026, 1, 15), assessment_end: Date.new(2026, 3, 15))
+
+        get ssp_documents_path(view: "table")
+        stamp = page.at_css("tbody .sparc-stamp")
+        expect(stamp.css("span").map(&:text)).to eq([ ssp.created_at.strftime("%Y-%m-%d"), ssp.created_at.strftime("%H:%M") ])
+        expect(page.at_css("tbody td.sparc-col-name").text).to include(ssp.name)
+
+        get sap_documents_path(view: "table")
+        clamp = page.at_css("tbody .sparc-cell-clamp")
+        expect(clamp["title"]).to eq(ssp.name)
+        expect(clamp.text.squish).to eq(ssp.name)
+        expect(page.css("tbody .sparc-stamp").first.text.squish).to eq("2026-01-15 → 2026-03-15")
+      end
+    end
+
     describe "status tabs on the other lists" do
       it "adds Approved to the catalog tabs" do
         create(:control_catalog, lifecycle_status: "published", approval_status: "approved")
@@ -226,6 +245,14 @@ RSpec.describe "Collection screens (#1299)", type: :request do
     before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: false) }
 
     let!(:doc) { create(:ssp_document, name: "Classic plan", authorization_boundary: boundary, lifecycle_status: "published") }
+
+    it "keeps the table's date and time on one line, as main does" do
+      get ssp_documents_path(view: "list")
+      cell = page.css("tbody td").find { _1.at_css(".sparc-stamp") }
+      expect(cell["class"]).to include("sparc-ws-nowrap")
+      expect(cell.text.squish).to eq(doc.created_at.strftime("%Y-%m-%d %H:%M"))
+      expect(page.at_css("body")["class"]).to be_nil # the stacking styles apply under .sparc-shell only
+    end
 
     it "draws no tabs and no rows; List and a stored Table both draw the table" do
       %w[list table].each do |mode|
