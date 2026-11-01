@@ -147,22 +147,23 @@ RSpec.describe "Homepage counts (#1243)", type: :request do
       expect(card_new_links).to contain_exactly(new_ssp_document_path, new_control_catalog_path)
     end
 
-    it "lays every card out the same way: icon, title, New, then the count" do
+    # 1.18.0-rf, the command-center home: each card is a row of its layer card.
+    it "lays every card out the same way: icon, title, count, then New" do
       create(:control_catalog)
       get root_path
 
       cards.each do |card|
-        head, count = card.element_children
-        kinds = head.element_children.map do |el|
+        kinds = card.element_children.map do |el|
           if el.name == "svg" then :icon
           elsif el["class"].to_s.include?("sparc-lane-box__new") then :new
           elsif el["class"].to_s.include?("sparc-lane-box__title") then :title
+          elsif el["data-home-count"] then :count
           else el.name.to_sym
           end
         end
-        expect(kinds - [ :new ]).to eq(%i[icon title]), card["data-box"]
-        expect(count["data-home-count"]).to eq(card["data-box"]), card["data-box"]
-        expect(card.element_children.size).to eq(2), card["data-box"]
+        expect(kinds - [ :new ]).to eq(%i[icon title count]), card["data-box"]
+        expect(card.at_css("[data-home-count]")["data-home-count"]).to eq(card["data-box"]), card["data-box"]
+        expect(card.at_css("[data-home-count]")["class"].split).to include("sparc-count-badge"), card["data-box"]
       end
       # Families and controls are the tiles' to show; no card carries a breakdown.
       expect(cards.size).to eq(11) # every card this user is offered

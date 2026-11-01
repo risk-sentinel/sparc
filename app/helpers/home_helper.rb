@@ -94,6 +94,17 @@ module HomeHelper
     AuthorizationBoundary.visible_to(current_user).order(updated_at: :desc).limit(limit)
   end
 
+  # 1.18.0-rf — the command-center home's "Start something": the header's
+  # Create menu entries (ShellHeaderHelper#shell_create_items, so each shows
+  # exactly when the create action admits the viewer), the four the owner's
+  # concept named first. Nil-free; empty for someone who may create nothing.
+  QUICK_ACTIONS = %i[ssp_documents evidences authorization_boundaries cdef_documents].freeze
+
+  def org_overview_quick_actions
+    items = shell_create_items.index_by(&:key)
+    QUICK_ACTIONS.filter_map { |key| items[key] }
+  end
+
   # 1.18.0-rf #1302 — the people count in the Overview's header: the one
   # organization's members, or every user for an instance administrator, with
   # the screen that lists them when the viewer may open it (People is an

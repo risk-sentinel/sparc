@@ -1,17 +1,15 @@
-<%# 1.18.0-rf — the organization Overview: the home page
-    on (owner, 2026-10-29). The inventory strip and every homepage card stay;
-    the cards are laid out as layer lanes, Enterprise gains the routing boxes
-    from the Enterprise menu (HomeHelper#org_overview_lanes), and a rail lists
-    the boundaries the viewer reaches. Counts are HomeController's @counts,
-    the ones the classic home page shows. %>
+<%# 1.18.0-rf — the organization Overview, the home page: the command center
+    (owner, 2026-10-31, concept A). The organization's header, a strip of the
+    four layers' inventory counts, the layer cards (one row per screen: icon,
+    name, count, + New; HomeHelper#org_overview_lanes) and a rail with what is
+    waiting on the viewer, quick actions, boundaries and their activity, and
+    the baselines in use. Counts are HomeController's @counts, the ones the
+    classic home page showed; colours are main's (layer accents, heading
+    colours, the count badge and layer bar of main's home cards). %>
 <% lane_titles = { "controls" => "Controls", "implementation" => "Implementation",
                    "assessment" => "Assessment", "enterprise" => "Enterprise routing" } %>
 <% single_org = current_user&.organizations&.order(:name)&.limit(2)&.to_a %>
 <% org = single_org&.one? ? single_org.first : nil %>
-
-<%# The inventory ribbon leads the Overview, above the organization's header
-    (owner, walking phase 3). %>
-<%= render "home/inventory" %>
 
 <%# 1.18.0-rf #1302 — every number links to the list it counts. %>
 <% meta = [ link_to(safe_join([ icon("shield"), " ", pluralize(@counts[:authorization_boundaries], "boundary", plural: "boundaries") ]),
@@ -27,35 +25,33 @@
       title: shell_org_name, meta: meta,
       lead: tag.span(shell_org_name.split.map(&:first).first(2).join.upcase, class: "sparc-org-head__tile", "aria-hidden": "true") %>
 
+<%= render "home/inventory" %>
 
 <div class="sparc-org-overview">
-  <div class="sparc-org-overview__lanes">
+  <div class="sparc-org-overview__lanes sparc-home-layers">
     <% org_overview_lanes(@counts).each do |group| %>
-      <%# The lane's colours are main's home page's: the layer's accent (the
-          banner's) and its heading colour, from home_layer_groups (owner,
-          2026-10-31). %>
-      <section class="sparc-lane sparc-lane--<%= group[:layer] %> <%= accent_class(group[:color]) %>" aria-labelledby="lane-<%= group[:layer] %>"
+      <%# The card's colours are main's home page's: the layer's accent and its
+          heading colour, from home_layer_groups (owner, 2026-10-31). %>
+      <section class="sparc-home-layer <%= accent_class(group[:color]) %>" aria-labelledby="lane-<%= group[:layer] %>"
                data-testid="org-lane" data-layer="<%= group[:layer] %>">
-        <h2 class="sparc-lane__title <%= group[:cls] %>" id="lane-<%= group[:layer] %>">
-          <span class="sparc-lane__dot" aria-hidden="true"></span><%= lane_titles.fetch(group[:layer]) %>
+        <h2 class="sparc-home-layer__title <%= group[:cls] %>" id="lane-<%= group[:layer] %>">
+          <span class="sparc-group-bar" aria-hidden="true"></span><%= lane_titles.fetch(group[:layer]) %>
         </h2>
-        <div class="sparc-lane__boxes">
+        <ul class="sparc-home-layer__rows">
           <% group[:cards].each do |card| %>
-            <article class="sparc-lane-box" data-testid="org-box" data-box="<%= card[:key] %>">
-              <div class="sparc-lane-box__head">
-                <%= icon(card[:icon], css_class: "sparc-tile-icon sparc-tile-icon--#{group[:layer]}") %>
-                <%= link_to card[:title], card[:path], class: "sparc-lane-box__title" %>
-                <% if card[:can_create] %>
-                  <%= link_to "+ New", card[:new_path], class: "sparc-lane-box__new",
-                        aria: { label: "New: #{card[:title]}" } %>
-                <% end %>
-              </div>
-              <%= link_to number_with_delimiter(card[:count]), card[:path], class: "sparc-lane-box__count",
+            <li class="sparc-home-row" data-testid="org-box" data-box="<%= card[:key] %>">
+              <%= icon(card[:icon], css_class: "sparc-tile-icon sparc-tile-icon--#{group[:layer]}") %>
+              <%= link_to card[:title], card[:path], class: "sparc-lane-box__title" %>
+              <%= link_to number_with_delimiter(card[:count]), card[:path], class: "sparc-count-badge sparc-lane-box__count",
                     data: { home_count: card[:key] },
                     aria: { label: "#{number_with_delimiter(card[:count])} #{card[:title]}: open the list" } %>
-            </article>
+              <% if card[:can_create] %>
+                <%= link_to "+ New", card[:new_path], class: "sparc-lane-box__new",
+                      aria: { label: "New: #{card[:title]}" } %>
+              <% end %>
+            </li>
           <% end %>
-        </div>
+        </ul>
       </section>
     <% end %>
   </div>
@@ -65,7 +61,7 @@
         the header's indicator counts (ReviewQueue), shown to approvers. %>
     <% waiting = shell_review_queue_items %>
     <% unless waiting.nil? %>
-      <section data-testid="org-waiting">
+      <section class="sparc-home-box sparc-home-box--waiting sparc-accent--carrot" data-testid="org-waiting">
         <h2 class="sparc-rail-title">Waiting on you</h2>
         <% if waiting.any? %>
           <ul class="sparc-rail-list">
@@ -83,17 +79,36 @@
         <% end %>
       </section>
     <% end %>
-    <section>
+
+    <% quick = org_overview_quick_actions %>
+    <% if quick.any? %>
+      <section class="sparc-home-box" data-testid="org-quick-actions">
+        <h2 class="sparc-rail-title">Start something</h2>
+        <div class="sparc-home-quick">
+          <% quick.each do |item| %>
+            <%= link_to item.path, class: "sparc-home-quick__item", data: { testid: "org-quick-action", item: item.key } do %>
+              <%= icon(item.icon) %> New <%= item.label %>
+            <% end %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <section class="sparc-home-box">
       <h2 class="sparc-rail-title">Boundaries</h2>
-      <% recent = org_overview_recent_boundaries %>
+      <% recent = org_overview_recent_boundaries.to_a %>
       <% if recent.any? %>
+        <% activity = BoundaryActivity.weekly(recent.map(&:id)) %>
         <ul class="sparc-rail-list" data-testid="org-recent-boundaries">
           <% recent.each do |ab| %>
-            <li>
-              <%= link_to ab.name, authorization_boundary_path(ab), class: "fw-semibold" %>
-              <small class="d-block text-body-secondary">
-                <%= ab.status.capitalize %> · updated <%= time_ago_in_words(ab.updated_at) %> ago
-              </small>
+            <li class="sparc-home-boundary">
+              <div class="sparc-home-boundary__text">
+                <%= link_to ab.name, authorization_boundary_path(ab), class: "fw-semibold" %>
+                <small class="d-block text-body-secondary">
+                  <%= ab.status.capitalize %> · updated <%= time_ago_in_words(ab.updated_at) %> ago
+                </small>
+              </div>
+              <%= render "authorization_boundaries/sparkline", boundary: ab, weeks: activity.fetch(ab.id), width: 72, height: 22 %>
             </li>
           <% end %>
         </ul>
@@ -102,19 +117,21 @@
       <% end %>
       <%= link_to "View all boundaries", authorization_boundaries_path, class: "small" %>
     </section>
+
     <% baselines = org_overview_baselines_in_use %>
     <% if baselines.any? %>
-      <section>
+      <section class="sparc-home-box">
         <h2 class="sparc-rail-title">Baselines in use</h2>
         <ul class="sparc-rail-list sparc-rail-list--inline">
           <% baselines.each do |name, count, profile_id| %>
-            <li><span class="sparc-lane__dot sparc-lane__dot--controls <%= accent_class(ApplicationHelper::COLOR_BLUE) %>" aria-hidden="true"></span><%= link_to "#{name} · #{count}", profile_document_path(profile_id), data: { testid: "org-baseline-in-use" } %></li>
+            <li><span class="sparc-lane__dot <%= accent_class(ApplicationHelper::COLOR_BLUE) %>" aria-hidden="true"></span><%= link_to "#{name} · #{count}", profile_document_path(profile_id), data: { testid: "org-baseline-in-use" } %></li>
           <% end %>
         </ul>
       </section>
     <% end %>
+
     <% if SparcConfig.support_email.present? %>
-      <section>
+      <section class="sparc-home-box">
         <h2 class="sparc-rail-title">Help</h2>
         <%= mail_to SparcConfig.support_email, "Contact support", class: "small" %>
       </section>

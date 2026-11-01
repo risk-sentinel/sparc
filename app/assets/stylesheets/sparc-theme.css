@@ -3492,67 +3492,113 @@ a.link-purple { color: var(--sparc-purple); }
   font-size: 1.4rem;
   font-weight: 800;
 }
-.sparc-org-overview { display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 1rem; }
+.sparc-org-overview { display: flex; flex-wrap: wrap; gap: 1.25rem; }
 .sparc-org-overview__lanes { flex: 999 1 36rem; min-width: 0; }
-.sparc-org-overview__rail { flex: 1 1 16rem; max-width: 21rem; display: flex; flex-direction: column; gap: 1.25rem; }
-.sparc-org-overview__rail section + section { border-top: 1px solid var(--sparc-border-soft); padding-top: 1rem; }
-/* A lane's colour is its layer's accent on main's home page (the banner's:
-   .sparc-accent--*, set by the view from home_layer_groups). */
-.sparc-lane { --sparc-lane-c: var(--sparc-accent); position: relative; padding: 0 0 1.5rem 2rem; }
-.sparc-lane .sparc-tile-icon { color: var(--sparc-lane-c); }
-.sparc-lane::before {
-  content: "";
-  position: absolute;
-  left: 0.55rem;
-  top: 1.6rem;
-  bottom: 0;
-  width: 2px;
-  background: var(--sparc-border-soft);
+.sparc-org-overview__rail { flex: 1 1 18rem; max-width: 22rem; display: flex; flex-direction: column; gap: 1rem; }
+/* 1.18.0-rf — the command-center home (owner, 2026-10-31, concept A). Colour
+   comes from main only: a layer's accent (.sparc-accent--*, the banner's) and
+   its heading colour (.sparc-heading-*), with main's count badge and layer bar
+   (.sparc-count-badge, .sparc-group-bar). */
+.sparc-home-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
 }
-.sparc-lane:last-child::before { display: none; }
-.sparc-lane__title {
+.sparc-home-strip__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 0.85rem;
+  border: 1px solid var(--sparc-border-soft);
+  border-top: 3px solid var(--sparc-accent);
+  border-radius: 8px;
+  background: var(--sparc-surface);
+}
+.sparc-home-strip__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.sparc-home-strip__nums { display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; }
+.sparc-home-strip .sparc-inventory-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--bs-body-color);
+  text-decoration: none;
+}
+.sparc-home-strip .sparc-inventory-tile:hover .sparc-inventory-count,
+.sparc-home-strip .sparc-inventory-tile:focus-visible .sparc-inventory-count { text-decoration: underline; }
+.sparc-home-strip .sparc-inventory-tile:focus-visible { outline: 2px solid var(--sparc-accent); outline-offset: 2px; }
+.sparc-home-strip .sparc-inventory-count { font-size: 1.35rem; line-height: 1.15; }
+.sparc-home-strip .sparc-inventory-name { font-size: 0.75rem; color: var(--bs-secondary-color); }
+
+.sparc-home-layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: 1rem; align-content: start; }
+.sparc-home-layer {
+  padding: 0.85rem 1rem 0.5rem;
+  border: 1px solid var(--sparc-border-soft);
+  border-radius: 8px;
+  background: var(--sparc-surface);
+}
+.sparc-home-layer__title { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.35rem; font-size: 1rem; font-weight: 700; }
+.sparc-home-layer__rows { margin: 0; padding: 0; list-style: none; }
+.sparc-home-row {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr) auto 3.75rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.15rem;
+  border-top: 1px solid var(--sparc-border-soft);
+}
+.sparc-home-row:first-child { border-top: 0; }
+.sparc-home-row .sparc-tile-icon { width: 1.25rem; height: 1.25rem; color: var(--sparc-accent); }
+.sparc-home-row .sparc-count-badge { grid-column: 3; }
+.sparc-home-row .sparc-lane-box__new { grid-column: 4; justify-self: end; }
+.sparc-lane-box__title { font-weight: 600; text-decoration: none; color: var(--bs-body-color); min-width: 0; }
+.sparc-lane-box__title:hover { text-decoration: underline; }
+.sparc-lane-box__new { font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+
+.sparc-home-box {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--sparc-border-soft);
+  border-radius: 8px;
+  background: var(--sparc-surface);
+}
+.sparc-home-box--waiting { border-left: 3px solid var(--sparc-accent); }
+/* Two per row where both labels fit on one line, otherwise one. */
+.sparc-home-quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.75rem, 1fr)); gap: 0.5rem; }
+.sparc-home-quick__item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin: 0 0 0.75rem -2rem;
-  font-size: 1.1rem;
-  font-weight: 650;
+  gap: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--sparc-border-soft);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
 }
+.sparc-home-quick__item:hover { background: var(--sparc-surface-alt); }
+.sparc-home-boundary { display: flex; align-items: center; gap: 0.75rem; }
+.sparc-home-boundary__text { flex: 1 1 auto; min-width: 0; }
+/* The rail's "Baselines in use" marker. */
 .sparc-lane__dot {
   display: inline-block;
   flex-shrink: 0;
   width: 0.75rem;
   height: 0.75rem;
-  margin: 0 0.35rem;
+  margin: 0 0.35rem 0 0;
   border-radius: 50%;
-  background: var(--sparc-lane-c);
-  box-shadow: 0 0 0 4px var(--bs-body-bg);
+  background: var(--sparc-accent);
 }
-.sparc-lane__dot--controls { --sparc-lane-c: var(--sparc-accent); box-shadow: none; margin: 0 0.35rem 0 0; }
-.sparc-lane__boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); gap: 0.85rem; }
-.sparc-lane-box {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--sparc-border-soft);
-  border-top: 3px solid var(--sparc-lane-c);
-  border-radius: 8px;
-  background: var(--sparc-surface);
-}
-.sparc-lane-box__head { display: flex; align-items: center; gap: 0.5rem; }
-.sparc-lane-box__title { font-weight: 650; text-decoration: none; color: var(--bs-body-color); }
-.sparc-lane-box__title:hover { text-decoration: underline; }
-.sparc-lane-box__new { margin-left: auto; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
-.sparc-lane-box__count {
-  color: var(--bs-body-color);
-  font-size: 1.75rem;
-  font-weight: 700;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-  text-decoration: none;
-}
-.sparc-lane-box__count:hover { text-decoration: underline; }
 .sparc-rail-title { margin: 0 0 0.6rem; font-size: 1rem; font-weight: 650; }
 .sparc-rail-list { margin: 0 0 0.5rem; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
 .sparc-rail-list--inline { flex-direction: row; flex-wrap: wrap; gap: 0.35rem 1rem; font-size: 0.9rem; }

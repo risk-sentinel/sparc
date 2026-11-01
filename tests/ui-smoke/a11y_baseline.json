@@ -1371,6 +1371,7 @@
     "color-contrast::tr:nth-child(5) > td:nth-child(3) > code:nth-child(2)"
   ],
   "cdef_show": [],
+  "command_center_home": [],
   "control_catalog_new": [],
   "control_catalog_show": [
     "nested-interactive::summary"

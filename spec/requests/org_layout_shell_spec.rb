@@ -116,9 +116,10 @@ RSpec.describe "Organization layout (1.18.0-rf)", type: :request do
 
       header = page.at_css("[data-testid=page-header]")
       expect(header.at_css("h1").text).to eq("Example Agency")
-      # The inventory ribbon comes first, above the header (owner, phase 3 walk).
+      # The command-center home (owner, 2026-10-31, concept A): the header
+      # leads, the inventory strip follows it.
       order = page.css("[data-home-inventory], [data-testid=page-header]").map { _1.name }
-      expect(order).to eq(%w[nav header])
+      expect(order).to eq(%w[header nav])
       # #1302 — and the organization's people.
       expect(header.at_css(".sparc-page-header__meta").text.squish).to eq("2 boundaries 1 person")
     end

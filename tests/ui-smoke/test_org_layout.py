@@ -110,3 +110,41 @@ def test_overview_numbers_open_what_they_count(authed_page):
         click_and_assert_clean(page, page.locator(selector).first, during=f"Overview: {selector}")
         page.wait_for_url(lambda u, path=path: urlparse(u).path == urlparse(path).path)
     assert_no_csp_violations(page, during="Overview numbers")
+
+
+def test_command_center_controls_open_what_they_name(authed_page):
+    """The command-center home (owner, 2026-10-31): a strip count, a layer
+    row's title, every quick action and a boundary in the rail each open the
+    page they name, with zero CSP violations; the page fits at 1280px and on a
+    phone, and is held to zero new WCAG 2.1 AA violations."""
+    page = authed_page
+    record_csp(page)
+    _open(page, "/")
+    assert page.locator("[data-home-inventory] .sparc-home-strip__card").count() == 4
+    assert_no_new_a11y_violations(page, "command_center_home")
+
+    tile = "[data-home-inventory] a[data-home-tile='ssp_documents']"
+    title = "[data-testid=org-box][data-box='cdef_documents'] .sparc-lane-box__title"
+    targets = [(sel, page.locator(sel).get_attribute("href")) for sel in (tile, title)]
+    quick = page.locator("[data-testid=org-quick-action]").evaluate_all(
+        "els => els.map(e => [e.dataset.item, e.getAttribute('href')])"
+    )
+    for item, href in quick:
+        targets.append((f"[data-testid=org-quick-action][data-item='{item}']", href))
+    rail = "[data-testid=org-recent-boundaries]"
+    boundary = page.locator(f"{rail} li a").first
+    if boundary.count():
+        assert page.locator(f"{rail} [data-testid=boundary-sparkline]").count() > 0
+        targets.append((f"{rail} li a >> nth=0", boundary.get_attribute("href")))
+
+    for selector, path in targets:
+        _open(page, "/")
+        click_and_assert_clean(page, page.locator(selector).first, during=f"home: {selector}")
+        page.wait_for_url(lambda u, path=path: urlparse(u).path == urlparse(path).path)
+
+    for width in (1280, 390):
+        page.set_viewport_size({"width": width, "height": 900})
+        _open(page, "/")
+        overflow = page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
+        assert overflow <= 0, f"{width}px: the home page scrolls sideways by {overflow}px"
+    assert_no_csp_violations(page, during="command center")
