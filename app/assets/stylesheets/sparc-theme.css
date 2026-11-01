@@ -3657,6 +3657,17 @@ a.link-purple { color: var(--sparc-purple); }
   .sparc-shell-header .sparc-nav-theme-btn { padding: 0.15rem 0.25rem; }
   .sparc-shell-header .sparc-navbar-logo { height: 28px; }
   .sparc-shell-crumbs-wrap { min-width: 1.9rem; }
+  /* #1307 — with the names hidden, a menu right-aligned to its button ran off
+     the left edge (Create, 52px at 390px). On a phone the header's menus open
+     under the header, inside its margins. The sticky header is their
+     containing block. */
+  .sparc-shell-header .nav-item.dropdown { position: static; }
+  .sparc-shell-header .dropdown-menu.sparc-dropdown-menu {
+    left: 0.5rem !important;
+    right: 0.5rem !important;
+    width: auto;
+    max-width: none;
+  }
 }
 .sparc-tabs__sep {
   flex-shrink: 0;
