@@ -3774,6 +3774,10 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-shell .sparc-baselines-table > thead > tr > th:nth-child(1) { width: 18.5%; }
 .sparc-shell .sparc-baselines-table > thead > tr > th:nth-child(3) { width: 9%; }
 .sparc-shell .sparc-baselines-table > thead > tr > th:nth-child(6) { width: 9.5%; }
+/* 1.18.0-rf — the Evidence table beside the left column (owner, 11-01): one
+   control id per line, never split, and a long type badge on two lines. */
+.sparc-shell .sparc-evidence-table__controls code { display: block; white-space: nowrap; }
+.sparc-shell .sparc-evidence-table td > .badge { white-space: normal; text-align: left; }
 .sparc-shell .sparc-cell-clamp {
   display: -webkit-box;
   -webkit-line-clamp: 2;

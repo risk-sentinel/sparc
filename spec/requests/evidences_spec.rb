@@ -39,6 +39,25 @@ RSpec.describe "Evidences", type: :request do
     end
   end
 
+  # 1.18.0-rf — the table fits beside the list's left column (owner, 11-01):
+  # the file name is a line under the title, not a column of its own.
+  describe "GET /evidences in the table view" do
+    it "names each record's file under its title, and says when there is none" do
+      with_file = create(:evidence, title: "Has A File")
+      attestation = create(:evidence, :attestation, title: "Signed Statement Only")
+
+      get evidences_path(view: "table")
+
+      table = Nokogiri::HTML(response.body).at_css("table.sparc-evidence-table")
+      expect(table.css("thead th").map { _1.text.squish }).not_to include("File")
+      row = ->(record) { table.css("tbody tr").find { _1.text.include?(record.title) } }
+      title_cell = ->(record) { row.(record).at_css("td") }
+      expect(title_cell.(with_file).at_css("[data-testid=evidence-file]").text.squish).to eq("evidence.txt")
+      expect(title_cell.(attestation).at_css("[data-testid=evidence-file]").text.squish).to eq("No file")
+      expect(table.css("thead th").size).to eq(row.(with_file).css("> td").size)
+    end
+  end
+
   describe "GET /evidences/:id" do
     it "shows the evidence" do
       evidence = create(:evidence, title: "Show Evidence")

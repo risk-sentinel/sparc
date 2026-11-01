@@ -33,7 +33,10 @@
   </div>
 <% else %>
   <div class="table-responsive">
-    <table class="table table-hover">
+    <%# 1.18.0-rf — the table fits beside the left column (owner, 11-01, option 2):
+        the file name is a line under the title, not a column of its own; dates
+        and control ids never break mid-value; a long type badge wraps. %>
+    <table class="table table-hover sparc-evidence-table">
       <thead>
         <tr>
           <th>Title</th>
@@ -45,7 +48,6 @@
           <% if show_boundary %><th>Boundary</th><% end %>
           <th>Controls</th>
           <th>Collected</th>
-          <th>File</th>
           <th>Attestations</th>
           <th>Actions</th>
         </tr>
@@ -58,6 +60,13 @@
               <% if evidence.description.present? %>
                 <br><span class="text-body-secondary small"><%= truncate(evidence.description, length: 60) %></span>
               <% end %>
+              <div class="small" data-testid="evidence-file">
+                <% if evidence.file.attached? %>
+                  <span class="text-success"><%= evidence.original_filename || evidence.file.filename %></span>
+                <% else %>
+                  <span class="text-body-tertiary fst-italic">No file</span>
+                <% end %>
+              </div>
             </td>
             <td><span class="badge bg-body-secondary text-body"><%= evidence.type_label %></span></td>
             <td>
@@ -84,7 +93,7 @@
                 <% end %>
               </td>
             <% end %>
-            <td>
+            <td class="sparc-evidence-table__controls">
               <% evidence.evidence_control_links.limit(3).each do |link| %>
                 <code class="small"><%= link.control_id %></code>
               <% end %>
@@ -92,14 +101,7 @@
                 <span class="text-body-secondary small">+<%= evidence.evidence_control_links.size - 3 %></span>
               <% end %>
             </td>
-            <td class="small"><%= evidence.collected_at&.strftime("%Y-%m-%d") %></td>
-            <td>
-              <% if evidence.file.attached? %>
-                <span class="text-success small"><%= evidence.original_filename || evidence.file.filename %></span>
-              <% else %>
-                <span class="text-body-tertiary small fst-italic">No file</span>
-              <% end %>
-            </td>
+            <td class="small sparc-ws-nowrap"><%= evidence.collected_at&.strftime("%Y-%m-%d") %></td>
             <td class="text-center">
               <% if evidence.attestations.any? %>
                 <span class="badge bg-success"><%= evidence.attestations.count %></span>
