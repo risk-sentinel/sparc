@@ -4,7 +4,6 @@
   [@control_count, "Unique Controls"],
   [@revision_count, "Revisions"]
 ] %>
-<%= render "shared/section_summary", tiles: summary unless SparcConfig.nav_shell? %>
 
 <% if @control_catalogs.any? { |c| c.processing? || c.pending? } %>
   <div data-controller="auto-refresh" data-auto-refresh-interval-value="10000" hidden></div>
@@ -12,30 +11,14 @@
 
 <div class="card sparc-list-card">
   <div class="card-body">
-  <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <%# 1.18.0-rf #1299/#1298 — the shared page header. %>
   <% header = nil %>
-  <% if SparcConfig.nav_shell? %>
     <% header = capture do %><%= render "shared/page_header", summary: summary, title: "Control Catalogs",
             subtitle: "Manage NIST and custom control catalogs",
             primary: ({ label: "New Catalog", look: "positive solid", path: new_control_catalog_path } if can_write_catalogs?),
             secondary: (can_write_catalogs? ? [ { label: "Import from File", look: "info solid", path: import_control_catalogs_path } ] : []) %><% end %>
-  <% else %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2>Control Catalogs</h2>
-      <p class="text-body-secondary sparc-mt-05">Manage NIST and custom control catalogs</p>
-    </div>
-    <% if can_write_catalogs? %>
-      <div class="d-flex flex-wrap gap-2">
-        <%= link_to "↑ Import from File", import_control_catalogs_path,
-              class: "sparc-action sparc-action--info sparc-action--solid fw-semibold sparc-fs-0875 sparc-ws-nowrap" %>
-        <%= link_to "＋ New Catalog", new_control_catalog_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
-      </div>
-    <% end %>
-  </div>
-  <% end %>
 
-  <%# 1.18.0-rf #1299 — under SPARC_NAV_SHELL the filters sit in the left column. %>
+  <%# 1.18.0-rf #1299 — the filters sit in the left column. %>
   <%= render layout: "shared/boundary_filter_layout", locals: { header: header } do %>
   <%= render "shared/collection_toolbar",
         label: "control catalogs", placeholder: "Search catalogs…",

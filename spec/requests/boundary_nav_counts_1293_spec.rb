@@ -58,7 +58,7 @@ RSpec.describe "Boundary navigation counts (#1293)", type: :request do
   end
 
   before do
-    allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: true)
+    allow(SparcConfig).to receive_messages(any_auth_enabled?: true)
     sign_in_as(member)
   end
 

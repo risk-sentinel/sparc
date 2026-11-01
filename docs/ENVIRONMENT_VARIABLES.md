@@ -268,7 +268,6 @@ approach). Enable one or more to activate the login page at `/login`.
 | SPARC_PIV_OIDC_AMR_VALUES | Accepted `amr` claim values, e.g. `x509,hwk`. Empty = accept none | *(empty)* | `x509,hwk` | No |
 | SPARC_USER_INACTIVITY_DAYS | Deactivate an account that has not signed in for this many days. `0` disables it. This is the offboarding mechanism — a disabled IdP account cannot sign in, so absence of sign-in is the signal | 0 | `90` | No |
 | SPARC_PUBLIC_CATALOGS | Make the Controls layer (control catalogs, baselines, mappings) publicly readable — shown in the header nav and reachable without signing in. Off = gated behind authentication (secure-by-default, #726); enable only when SPARC is fronted by your own network auth (e.g. VPN). | false | `true` | No |
-| SPARC_NAV_SHELL | Turn on the 1.18.0-rf navigation shell, which is being built on the `release-1.18.0-rf` branch (#1286). Off = today's navigation, unchanged. Until the shell itself lands it opens `/shell_preview`, a page showing the shell's building blocks and icons, and turns on the organization layout: a tab bar under the header (the boundary's own tabs inside a boundary), the Overview as the home page, the Boundaries tab with activity sparklines, and a Boundary filter beside the document lists (SSP, SAP, SAR, POA&M, evidence, CDEF, leveraged POA&M, CDEF coverage) that narrows each by `?authorization_boundary_id=`. Today's menus and sidebar stay until #1297. | false | `true` | No |
 | SPARC_ADMIN_EMAIL | Email for the bootstrapped admin account | admin@sparc.local | `admin@yourorg.com` | No |
 
 <!-- markdownlint-enable MD013 MD034 -->
@@ -657,6 +656,7 @@ it from the deployment configuration.
 | ~~SPARC_RATE_LIMITING_ENABLED~~ | Removed in #785; rate limiting is always on | Tune the `SPARC_RATE_LIMIT_*` settings |
 | ~~SPARC_ARTIFACT_REAPER_ENABLED~~ | Never read; the reaper always runs and only reports unless told to purge | `SPARC_ARTIFACT_REAPER_PURGE`, `SPARC_ARTIFACT_REAPER_INTERVAL_DAYS` |
 | ~~SPARC_SA_INACTIVITY_DAYS~~ | Retired in #785; service accounts use the same window as people | `SPARC_INACTIVITY_DAYS` |
+| ~~SPARC_NAV_SHELL~~ | 1.18.0-rf (#1297): the new navigation is the only navigation, so there is nothing to switch | Delete it |
 
 ---
 

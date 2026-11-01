@@ -22,7 +22,7 @@ RSpec.describe "Homepage tile icons (#1289)", type: :request do
 
   def tiles
     page.css("a[data-home-count]").map do |badge|
-      body = badge.ancestors(".card-body").first
+      body = badge.ancestors("[data-testid=org-box]").first # 1.18.0-rf #1297: the Overview box
       { key: badge["data-home-count"], path: badge["href"], body: body }
     end
   end
@@ -30,7 +30,7 @@ RSpec.describe "Homepage tile icons (#1289)", type: :request do
   def icon_of(node) = node&.at_css("svg.sparc-icon use")&.[]("href")
 
   it "shows every tile, each with a line icon and no emoji" do
-    expect(tiles.size).to eq(12)
+    expect(tiles.size).to eq(14) # Enterprise also routes to federation peers and authoritative sources
     tiles.each do |t|
       expect(icon_of(t[:body])).to match(/\A#i-[a-z0-9-]+\z/), "#{t[:key]} has no icon"
       expect(t[:body].text).not_to match(/\p{Extended_Pictographic}/), "#{t[:key]} still has an emoji"
@@ -39,13 +39,19 @@ RSpec.describe "Homepage tile icons (#1289)", type: :request do
 
   it "colours each tile icon by its layer" do
     layers = tiles.map { |t| t[:body].at_css("svg.sparc-tile-icon")["class"][/sparc-tile-icon--(\w+)/, 1] }
-    expect(layers.tally).to eq("controls" => 3, "implementation" => 3, "assessment" => 4, "enterprise" => 2)
+    expect(layers.tally).to eq("controls" => 3, "implementation" => 3, "assessment" => 4, "enterprise" => 4)
   end
 
   it "draws each tile with the icon of the menu link to the same list" do
-    nav = page.at_css("nav")
-    mismatches = tiles.filter_map do |t|
-      link = nav.css("a[href='#{t[:path]}']").find { |a| icon_of(a) }
+    tile_list = tiles
+    # 1.18.0-rf #1297 — the header menus and the organization tab bar; and the
+    # Settings menu, where the administration lists (Organizations) now live —
+    # read from its own page, as it is rendered.
+    nav = page.css("[data-testid=shell-header], [data-testid=org-tabs]").to_a
+    get admin_settings_path
+    nav += page.css("[data-testid=admin-settings-menu]").to_a
+    mismatches = tile_list.filter_map do |t|
+      link = nav.flat_map { _1.css("a[href='#{t[:path]}']").to_a }.find { |a| icon_of(a) }
       menu = icon_of(link)
       "#{t[:key]}: tile #{icon_of(t[:body])}, menu #{menu.inspect}" unless menu && menu == icon_of(t[:body])
     end

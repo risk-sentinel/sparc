@@ -1,5 +1,5 @@
 <%# #395 P3: boundary context header (system title, impact level, link).
-    Under SPARC_NAV_SHELL the breadcrumb names the boundary (#1304). %>
+    The page header's breadcrumb names the boundary (#1304). %>
 <%= render "shared/boundary_header", document: @ssp_document %>
 
 <%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
@@ -35,9 +35,8 @@
      data-ssp-control-resource-create-url-value="<%= create_control_resource_ssp_document_path(@ssp_document) %>"
      data-ssp-control-resource-unlink-url-value="<%= unlink_control_resource_ssp_document_path(@ssp_document) %>">
 
-<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared document header
+<%# 1.18.0-rf #1304 — the shared document header
     (shared/_document_header); Enrich and Refresh Inherited beside it. %>
-<% if shell_nav? %>
   <%= render "shared/document_header", document: @ssp_document, type: :ssp, version: @ssp_document.ssp_version,
         rename: { update_path: update_metadata_ssp_document_path(@ssp_document), version_field: :ssp_version },
         title_extra: (tag.span("Incomplete — needs content", class: "badge bg-warning text-dark",
@@ -51,7 +50,6 @@
         export: "SSP", publish: signed_in? && @ssp_document.draft?,
         sections: [ [ "Overview", "#doc-overview" ], ([ "Compliance", "#heatmapSection" ] if @heatmap_families.any?), [ "Controls", "#controlsContainer" ],
                     [ "Metadata", "#oscal-metadata" ], [ "Back matter", "#oscal-back-matter" ] ].compact %>
-<% end %>
 
 <%# ── #911: catalog lineage. Discovered by looking, not by being
      refused mid-edit. Renders nothing when reconciled. %>
@@ -59,79 +57,6 @@
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-dashboard-header" id="doc-overview">
-<% unless shell_nav? %>
-
-  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap sparc-gap-1r">
-    <div>
-      <div class="sparc-header-subtitle">System Security Plan</div>
-
-      <div id="doc-meta-view" data-doc-meta-target="view">
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-          <h2 class="sparc-header-title"><%= @ssp_document.name %></h2>
-          <% if @ssp_document.ssp_version.present? %>
-            <span class="sparc-version-badge">v<%= @ssp_document.ssp_version %></span>
-          <% end %>
-          <%# #627 — content-completeness is distinct from the parse status. %>
-          <% unless @ssp_document.content_complete? %>
-            <span class="badge bg-warning text-dark"
-                  title="<%= @ssp_document.content_completeness_gaps.join('; ') %>">
-              Incomplete — needs content
-            </span>
-          <% end %>
-          <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
-        </div>
-        <%# #1180 — the document's own UUID, under the name, in the same
-            treatment every other screen uses. Copyable: this is the
-            identifier the federation key grammar keys objects on. %>
-        <div class="mt-1">
-          <%= render "shared/uuid_badge", uuid: @ssp_document.uuid, name: "document UUID" %>
-        </div>
-      </div>
-
-      <div id="doc-meta-edit" data-doc-meta-target="edit" class="sparc-d-none">
-        <%= render "shared/document_name_form", document: @ssp_document,
-              update_path: update_metadata_ssp_document_path(@ssp_document),
-              version_field: :ssp_version %>
-      </div>
-
-      <div class="sparc-header-meta">
-        <%= @ssp_document.original_filename %>
-        &nbsp;•&nbsp;
-        <span class="sparc-accent-text sparc-fw-600 <%= accent_class(@ssp_document.completed? ? '#2ecc71' : '#f39c12') %>">
-          <%= @ssp_document.status %>
-        </span>
-        &nbsp;•&nbsp; <%= total_controls %> controls
-      </div>
-    </div>
-    <div class="d-flex flex-wrap gap-2 sparc-flex-shrink-0">
-      <% if signed_in? && @ssp_document.draft? %>
-        <%= render "shared/publish_button", document: @ssp_document,
-              publish_path: publish_ssp_document_path(@ssp_document),
-              check_path: publish_check_ssp_document_path(@ssp_document) %>
-      <% end %>
-      <%= render "shared/oscal_export_dropdown",
-            validate_path: validate_oscal_export_ssp_document_path(@ssp_document),
-            download_json_path: download_oscal_validated_ssp_document_path(@ssp_document),
-            download_yaml_path: download_yaml_ssp_document_path(@ssp_document),
-            download_xml_path: download_xml_ssp_document_path(@ssp_document),
-            fallback_json_path: download_oscal_unvalidated_ssp_document_path(@ssp_document),
-            document_type: "SSP" %>
-      <%= link_to "Enrich", enrich_ssp_document_path(@ssp_document),
-            class: "sparc-action sparc-action--info sparc-action--outline" %>
-      <%# #398: bulk refresh inherited statements from linked CDEFs %>
-      <% if signed_in? && @ssp_document.ssp_components.where.not(cdef_document_id: nil).exists? %>
-        <%= button_to "Refresh Inherited",
-              refresh_inherited_statements_ssp_document_path(@ssp_document),
-              method: :post,
-              class: "sparc-action sparc-action--caution sparc-action--solid",
-              form: { class: "sparc-d-inline" } %>
-      <% end %>
-      <%= link_to "&#8592; Back".html_safe, ssp_documents_path,
-            class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
-    </div>
-  </div>
-
-<% end %>
   <div class="d-flex align-items-center flex-wrap sparc-gap-15r">
     <div class="sparc-score-cell">
       <div class="sparc-score sparc-accent-text <%= accent_class(score_color) %>">

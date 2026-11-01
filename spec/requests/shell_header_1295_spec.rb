@@ -2,10 +2,9 @@
 
 require "rails_helper"
 
-# 1.18.0-rf #1295 — the shell header behind SPARC_NAV_SHELL. Asserts what each
+# 1.18.0-rf #1295 — the shell header. Asserts what each
 # viewer is OFFERED, in both directions: an entry appears for a viewer whose
-# screen would admit them, and not for one it would refuse. The classic header
-# with the switch off is pinned by nav_inventory_spec.rb.
+# screen would admit them, and not for one it would refuse.
 RSpec.describe "Shell header (1.18.0-rf #1295)", type: :request do
   let(:alpha) { create(:authorization_boundary, name: "Alpha ATO") }
   let(:admin) { create(:user, :admin) }
@@ -21,7 +20,7 @@ RSpec.describe "Shell header (1.18.0-rf #1295)", type: :request do
 
   def help_links = header.css("[data-testid=shell-help] a").map { _1.text.squish }
 
-  before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: true) }
+  before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true) }
 
   describe "an administrator" do
     before { sign_in_as(admin) }
@@ -133,15 +132,5 @@ RSpec.describe "Shell header (1.18.0-rf #1295)", type: :request do
       expect(items("shell-library-item")).to include("promotion_queue", "leveraged_poam_documents", "federation_peers")
       expect(help_links).to include("Help for this page", "OSCAL overview")
     end
-  end
-
-  it "is absent with SPARC_NAV_SHELL off" do
-    allow(SparcConfig).to receive(:nav_shell?).and_return(false)
-    sign_in_as(admin)
-    get "/"
-
-    expect(header).to be_nil
-    expect(page.at_css("nav.navbar #navbarNav")).to be_present
-    expect(page.at_css("nav.sparc-sidebar")).to be_present
   end
 end

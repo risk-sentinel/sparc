@@ -21,25 +21,28 @@ RSpec.describe "Contextual help (#870)", type: :request do
   end
 
   describe "guides open without leaving the current screen" do
-    # #880 moved the navbar "?" to the in-page drawer, but deliberately left
-    # the href/target as they were. That is not vestigial markup: it is the
-    # fallback if help_drawer_controller never connects, and it keeps the
-    # property this issue is actually about — the click cannot replace the
+    # The header's Help menu (1.18.0-rf #1295): "Help for this page" opens the
+    # #880 drawer, and keeps its href/target as the fallback if
+    # help_drawer_controller never connects — the click cannot replace the
     # current page and discard a part-filled form.
-    it "never navigates the navbar help control in place, even without JS" do
+    def help_menu = Nokogiri::HTML(response.body).css("[data-testid=shell-help] a")
+
+    def page_help = help_menu.find { _1["data-testid"] == "shell-help-page" }
+
+    it "never navigates the header's help control in place, even without JS" do
       get authorization_boundaries_path
 
-      help = links_to(response.body, "/help").find { |a| a["class"].to_s.include?("sparc-nav-btn") }
-      expect(help).to be_present, "expected the navbar ? control to be rendered"
+      help = page_help
+      expect(help).to be_present, "expected the header's Help for this page to be rendered"
       expect(help["target"]).to eq("_blank")
       expect(help["rel"]).to include("noopener")
       expect(help["rel"]).to include("noreferrer")
     end
 
-    it "opens sidebar guide links in a new tab" do
+    it "opens the Help menu's guide links in a new tab" do
       get authorization_boundaries_path
 
-      guide_links = links_to(response.body, "/help/").select { |a| a["class"].to_s.include?("sparc-sidebar-leaf") }
+      guide_links = help_menu.select { |a| a["href"].to_s.match?(%r{\A/help/[^/?#]+\z}) }
       expect(guide_links).not_to be_empty
 
       guide_links.each do |a|
@@ -48,26 +51,20 @@ RSpec.describe "Contextual help (#870)", type: :request do
       end
     end
 
-    # Before #880 this asserted the label said "opens in a new tab". It no
-    # longer does, and must not: a screen-reader user has JS, so what they get
-    # is the drawer. A label promising a new tab would now be describing the
-    # fallback nobody with a working browser experiences. The dialog announces
-    # itself — Bootstrap sets role=dialog + aria-modal on the offcanvas, which
-    # carries its own accessible name (see the #880 spec).
-    it "announces the navbar help control, and does not promise a new tab it no longer opens" do
+    # Before #880 this asserted the label said "opens in a new tab". It must
+    # not: a screen-reader user has JS, so what they get is the drawer.
+    it "names the help control, and does not promise a new tab it no longer opens" do
       get authorization_boundaries_path
 
-      help = links_to(response.body, "/help").find { |a| a["class"].to_s.include?("sparc-nav-btn") }
-      expect(help["aria-label"].to_s).to match(/help/i)
-      expect(help["aria-label"].to_s).not_to match(/new tab/i)
+      name = page_help["aria-label"].presence || page_help.text.squish
+      expect(name).to match(/help/i)
+      expect(name).not_to match(/new tab/i)
     end
 
     it "leaves the Help Center index navigating normally — it is a destination, not a reference" do
       get authorization_boundaries_path
 
-      index = links_to(response.body, "/help").find do |a|
-        a["class"].to_s.include?("sparc-sidebar-leaf") && a["href"].to_s.end_with?("/help")
-      end
+      index = help_menu.find { |a| a["href"].to_s.end_with?("/help") }
       expect(index).to be_present
       expect(index["target"]).to be_nil
     end
@@ -75,8 +72,7 @@ RSpec.describe "Contextual help (#870)", type: :request do
     it "still deep-links to the guide for the current screen" do
       get authorization_boundaries_path
 
-      help = links_to(response.body, "/help").find { |a| a["class"].to_s.include?("sparc-nav-btn") }
-      expect(help["href"]).to match(%r{/help})
+      expect(page_help["href"]).to match(%r{/help})
     end
   end
 

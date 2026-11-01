@@ -1,8 +1,5 @@
 """The Boundary filter beside the document lists, in a real browser (1.18.0-rf #1292).
 
-The filter exists only with SPARC_NAV_SHELL on, so this is posture-gated
-("nav_shell") and reported as UNPROVEN when the stack has the switch off.
-
 Each option is clicked and followed by a CSP check, and each must change what
 the page shows, not just render: choosing a boundary puts it in the URL and
 marks it current; "All boundaries" takes it out again; and a fresh visit
@@ -40,7 +37,6 @@ def _param(page):
     return parse_qs(urlparse(page.url).query).get(PARAM)
 
 
-@pytest.mark.posture("nav_shell")
 def test_choose_a_boundary_and_back_to_all(authed_page):
     page = authed_page
     record_csp(page)
@@ -48,8 +44,6 @@ def test_choose_a_boundary_and_back_to_all(authed_page):
     # Arrive with a page size and a view mode: choosing a boundary must keep
     # both and drop the page number, as the filter row does (#908).
     _open(page, "/ssp_documents?per_page=50&view=list&page=1")
-    if page.locator(FILTER).count() == 0:
-        pytest.skip("SPARC_NAV_SHELL is off on this stack, so there is no Boundary filter")
     assert page.locator(CURRENT).get_attribute("data-testid") == "boundary-filter-all"
 
     options = page.locator(OPTION)
@@ -82,13 +76,11 @@ def test_choose_a_boundary_and_back_to_all(authed_page):
     assert_no_csp_violations(page, during="boundary filter")
 
 
-@pytest.mark.posture("nav_shell")
 def test_shared_library_list_has_no_boundary_filter(authed_page):
     page = authed_page
     record_csp(page)
     _open(page, "/ssp_documents")
-    if page.locator(FILTER).count() == 0:
-        pytest.skip("SPARC_NAV_SHELL is off on this stack, so there is no Boundary filter")
+    assert page.locator(FILTER).count() == 1, "the SSP list offers no Boundary filter"
 
     _open(page, "/control_catalogs")
     assert page.locator(FILTER).count() == 0

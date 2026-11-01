@@ -35,7 +35,7 @@ RSpec.describe "Boundary switcher (1.18.0-rf #1291)", type: :request do
   end
 
   before do
-    allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: true)
+    allow(SparcConfig).to receive_messages(any_auth_enabled?: true)
     sign_in_as(member)
   end
 
@@ -113,12 +113,5 @@ RSpec.describe "Boundary switcher (1.18.0-rf #1291)", type: :request do
     get "/"
 
     expect(groups).to eq([ "Agency" ])
-  end
-
-  it "is not rendered with SPARC_NAV_SHELL off" do
-    allow(SparcConfig).to receive(:nav_shell?).and_return(false)
-    get "/"
-
-    expect(panel).to be_nil
   end
 end

@@ -25,10 +25,8 @@ module CollectionViewable
     include Pagy::Method
   end
 
-  # 1.18.0-rf #1299 — `table` is today's table. Under SPARC_NAV_SHELL `list`
-  # draws the shared row (shared/_collection_row) and `table` keeps the table;
-  # with the switch off both draw the table, so a stored choice of either
-  # still shows what it showed before (CollectionCardHelper#collection_layout).
+  # 1.18.0-rf #1299 — `list` draws the shared row (shared/_collection_row) and
+  # `table` keeps each screen's table (CollectionCardHelper#collection_layout).
   MODES = %i[card list table].freeze
   DEFAULT_MODE = :card
   COOKIE_PREFIX = "sparc_view_"

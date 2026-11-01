@@ -51,7 +51,7 @@
                 <%= doc.assessment_type&.titleize || "Initial" %>
               </span>
             </td>
-            <%# Under SPARC_NAV_SHELL at most two lines (.sparc-cell-clamp); the full
+            <%# At most two lines (.sparc-cell-clamp); the full
                 name is the hover text. %>
             <td class="small text-body-secondary"><span class="sparc-cell-clamp" title="<%= doc.ssp_document&.name %>"><%= doc.ssp_document&.name || "—" %></span></td>
             <td class="small text-body-secondary"><%= doc.sap_version.presence || "—" %></td>

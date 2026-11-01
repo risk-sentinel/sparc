@@ -2,28 +2,13 @@
   [@total_count, "Evidence Records"],
   [@link_count, "Control Links"]
 ] %>
-<%= render "shared/section_summary", tiles: summary unless SparcConfig.nav_shell? %>
 
 <div class="card sparc-list-card">
   <div class="card-body">
-    <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+    <%# 1.18.0-rf #1299/#1298 — the shared page header. %>
     <% header = nil %>
-    <% if SparcConfig.nav_shell? %>
       <% header = capture do %><%= render "shared/page_header", summary: summary, title: "Evidence Repository",
               primary: { label: "Add Evidence", look: "positive solid", path: new_evidence_path } %><% end %>
-    <% else %>
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h2>Evidence Repository</h2>
-        <p class="text-body-secondary mb-0">
-          <%= @evidences.size %> evidence record<%= @evidences.size == 1 ? "" : "s" %>
-        </p>
-      </div>
-      <div class="d-flex gap-2">
-        <%= link_to "Add Evidence", new_evidence_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
-      </div>
-    </div>
-    <% end %>
 
     <%# #908 — the filters were a hand-written form here that re-emitted `q` and
         `view` but dropped `per_page`, so filtering silently reset the page

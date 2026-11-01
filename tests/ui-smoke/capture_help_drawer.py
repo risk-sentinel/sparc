@@ -73,7 +73,9 @@ def main() -> int:
         # show the property the guide describes — that your work survives.
         page.fill("#authorization_boundary_name", "Example Boundary")
 
-        page.click("a.sparc-nav-btn[href*='/help']")
+        # The header's Help menu, then "Help for this page" (1.18.0-rf #1295).
+        page.click("[data-testid=shell-help] > .dropdown-toggle")
+        page.click("[data-testid=shell-help-page]")
         page.wait_for_selector("#sparc-help-drawer.show", timeout=10000)
         page.wait_for_selector("#sparc-help-drawer .sparc-guide-content", timeout=10000)
         # Let the slide-in settle so the panel is not caught mid-transition.

@@ -16,14 +16,12 @@
 <% current = local_assigns.fetch(:current, :card) %>
 <% label = local_assigns.fetch(:label, "items") %>
 
-<%# 1.18.0-rf #1299 — under SPARC_NAV_SHELL a third choice, Table, keeps the
-    table and List draws rows. With the switch off a stored `table` shows as
-    List, which draws the same table (CollectionCardHelper#collection_layout). %>
-<% shell = SparcConfig.nav_shell? %>
+<%# 1.18.0-rf #1299 — a third choice, Table, keeps the screen's table and
+    List draws rows (CollectionCardHelper#collection_layout). %>
 <% options = [ [ :card, "Cards", "▦" ], [ :list, "List", "☰" ] ] %>
-<% options << [ :table, "Table", "▤" ] if shell %>
-<% shown = (!shell && current.to_sym == :table) ? :list : current.to_sym %>
-<div class="sparc-view-toggle<%= " sparc-view-toggle--shell" if shell %>" role="radiogroup" aria-label="<%= "Choose how to display #{label}" %>">
+<% options << [ :table, "Table", "▤" ] %>
+<% shown = current.to_sym %>
+<div class="sparc-view-toggle sparc-view-toggle--shell" role="radiogroup" aria-label="<%= "Choose how to display #{label}" %>">
   <% options.each do |mode, text, glyph| %>
     <%
       selected = shown == mode

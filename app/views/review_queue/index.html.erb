@@ -1,14 +1,7 @@
 <div class="card sparc-list-card">
-  <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
-  <% if SparcConfig.nav_shell? %>
+  <%# 1.18.0-rf #1299/#1298 — the shared page header. %>
     <%= render "shared/page_header", title: "Review Queue",
             meta: [ "#{@total_pending} awaiting your review" ] %>
-  <% else %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Review Queue</h2>
-    <span class="text-body-secondary"><%= @total_pending %> awaiting your review</span>
-  </div>
-  <% end %>
 
   <p class="text-body-secondary mb-4">
     Trust-store documents (Control Catalog, Profile, CDEF) submitted for review.

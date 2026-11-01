@@ -3,8 +3,8 @@
 module HomeHelper
   # The homepage cards, by OSCAL layer: title, list, "New" (only where the
   # create action would let the viewer through) and icon. ONE definition read
-  # by the classic home page and by the organization Overview (1.18.0-rf,
-  # behind SPARC_NAV_SHELL), so the two can never offer different screens.
+  # by the organization Overview (1.18.0-rf) and its inventory, so the two can
+  # never offer different screens.
   def home_layer_groups
     [
       {
@@ -61,7 +61,7 @@ module HomeHelper
           ({ key: :organizations, title: "Organizations", path: admin_organizations_path,
              new_path: new_admin_organization_path, can_create: admin_access?, icon: "building-2" } if admin_access?),
           { key: :authorization_boundaries, title: "Auth Boundaries", path: authorization_boundaries_path,
-            new_path: new_authorization_boundary_path, can_create: can_create_boundary?, icon: "layout-list" }
+            new_path: new_authorization_boundary_path, can_create: can_create_boundary?, icon: "shield" }
         ].compact
       }
     ]

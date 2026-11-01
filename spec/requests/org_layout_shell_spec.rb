@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-# 1.18.0-rf — the organization layout behind SPARC_NAV_SHELL (owner,
+# 1.18.0-rf — the organization layout (owner,
 # 2026-10-29): the organization and boundary tab bars, the Overview home and
 # the Boundaries tab. Asserts what each viewer is OFFERED and that every count
 # equals what its list shows, in both directions (an admin sees the admin tabs,
@@ -34,7 +34,7 @@ RSpec.describe "Organization layout (1.18.0-rf)", type: :request do
   def current_tab(testid) = page.at_css("[data-testid=#{testid}] [aria-current=page]")&.[]("data-tab")&.to_sym
 
   before do
-    allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: true)
+    allow(SparcConfig).to receive_messages(any_auth_enabled?: true)
     [ alpha, bravo, hidden ].each do |b|
       create(:ssp_document, authorization_boundary: b)
       create_list(:poam_document, 2, authorization_boundary: b)
@@ -60,15 +60,6 @@ RSpec.describe "Organization layout (1.18.0-rf)", type: :request do
       expect(tab_keys("org-tabs")).not_to include(:people, :settings)
       expect(current_tab("org-tabs")).to eq(:overview)
       expect(tab_counts("org-tabs")).to include(boundaries: 2, ssp: 2, poam: 4)
-    end
-
-    it "is absent with SPARC_NAV_SHELL off" do
-      allow(SparcConfig).to receive(:nav_shell?).and_return(false)
-      sign_in_as(admin)
-      [ "/", "/ssp_documents", "/authorization_boundaries" ].each do |path|
-        get path
-        expect(page.at_css("[data-testid=shell-bar]")).to be_nil, path
-      end
     end
   end
 
@@ -103,21 +94,17 @@ RSpec.describe "Organization layout (1.18.0-rf)", type: :request do
   end
 
   describe "the Overview" do
-    it "keeps the inventory and every homepage card, with the classic page's counts" do
+    # The classic home page's inventory tiles and counted cards, recorded before
+    # #1297 removed it (spec/fixtures/main_look.yml): every one stays (owner rule).
+    # That each count equals its list's is org_overview_1302_spec.rb's.
+    it "keeps the inventory and every homepage card the classic page had" do
+      main = YAML.load_file(Rails.root.join("spec/fixtures/main_look.yml")).fetch("home")
       sign_in_as(admin)
-      allow(SparcConfig).to receive(:nav_shell?).and_return(false)
       get "/"
-      classic = page.css("[data-home-count]").to_h { [ _1["data-home-count"], _1.text.squish.delete(",").to_i ] }
-      classic_tiles = page.css("[data-home-tile]").map { _1["data-home-tile"] }
+      boxes = page.css("[data-testid=org-box]").map { _1["data-box"] }
 
-      allow(SparcConfig).to receive(:nav_shell?).and_return(true)
-      get "/"
-      boxes = page.css("[data-testid=org-box]").to_h do
-        [ _1["data-box"], _1.at_css(".sparc-lane-box__count").text.delete(",").to_i ]
-      end
-
-      expect(page.css("[data-home-tile]").map { _1["data-home-tile"] }).to eq(classic_tiles)
-      expect(boxes).to include(classic)
+      expect(page.css("[data-home-tile]").map { _1["data-home-tile"] }).to eq(main.fetch("tiles"))
+      expect(boxes).to include(*main.fetch("counts"))
       expect(page.css("[data-testid=org-lane]").map { _1["data-layer"] }).to eq(%w[controls implementation assessment enterprise])
     end
 

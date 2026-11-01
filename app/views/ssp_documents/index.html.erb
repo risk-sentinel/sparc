@@ -5,28 +5,17 @@
   ["#{@responses_done} of #{@responses_required}", "Responses answered"],
   [@completed_count, "Completed"]
 ] %>
-<%= render "shared/section_summary", tiles: summary unless SparcConfig.nav_shell? %>
 
 <% if @ssp_documents.any? { |d| d.processing? || d.pending? } %>
   <div data-controller="auto-refresh" data-auto-refresh-interval-value="10000" hidden></div>
 <% end %>
 
 <div class="card sparc-list-card">
-  <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <%# 1.18.0-rf #1299/#1298 — the shared page header. %>
   <% header = nil %>
-  <% if SparcConfig.nav_shell? %>
     <% header = capture do %><%= render "shared/page_header", summary: summary, title: "System Security Plans",
             primary: { label: "Create New SSP", look: "positive solid", path: wizard_ssp_documents_path },
             secondary: [ { label: "Upload File", look: "info solid", path: new_ssp_document_path } ] %><% end %>
-  <% else %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>System Security Plans</h2>
-    <div class="d-flex gap-2">
-      <%= link_to "Create New SSP", wizard_ssp_documents_path, class: "sparc-action sparc-action--positive sparc-action--solid", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
-      <%= link_to "Upload File", new_ssp_document_path, class: "sparc-action sparc-action--info sparc-action--solid" %>
-    </div>
-  </div>
-  <% end %>
 
   <%# 1.18.0-rf #1292 — the Boundary filter beside the list (BoundaryListFilter). %>
   <%= render layout: "shared/boundary_filter_layout", locals: { header: header } do %>

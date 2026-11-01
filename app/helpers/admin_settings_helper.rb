@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# 1.18.0-rf #1303 — the administration screens as one settings menu, under
-# SPARC_NAV_SHELL: the organization's Settings tab opens it (admin/settings),
+# 1.18.0-rf #1303 — the administration screens as one settings menu: the
+# organization's Settings tab opens it (admin/settings),
 # and every admin screen shows it in its left column, like an organization's
 # settings on GitHub. The account menu's Administration list is unchanged.
 #

@@ -2,15 +2,15 @@
 
 #1244 — every boundary action checks the caller against that boundary. Before
 it, any signed-in user who knew a slug could open, edit or delete a boundary.
-#1245 / #1247 — the list, the sidebar and the Enterprise menu show only the
-boundaries the user may see, and only the actions they may take.
+#1245 / #1247 — the list and the navigation show only the boundaries the user
+may see, and only the actions they may take.
 
 Driven as the harness's second identity (SPARC_SMOKE_USER_TOKEN), a genuine
 non-administrator, against a boundary that identity has no role on, found
 through the administrator's API. Nothing is created or changed.
 
-Selectors verified against app/views/authorization_boundaries/index.html.erb
-and app/views/shared/_main_nav.html.erb.
+Selectors verified against app/views/authorization_boundaries/_tab.html.erb
+and app/views/shared/_shell_header.html.erb.
 """
 
 from __future__ import annotations
@@ -19,18 +19,15 @@ import os
 
 import pytest
 
-from helpers import SHELL_HEADER, assert_no_csp_violations, nav_shell_on, record_csp
+from helpers import SHELL_HEADER, assert_no_csp_violations, record_csp
 
 pytestmark = pytest.mark.authenticated
 
-ENTERPRISE_MENU = ".sparc-nav-boundaries + .dropdown-menu"
-# 1.18.0-rf — with SPARC_NAV_SHELL on, those links live in the shell header
-# (Library menu, switcher) and the tab bar (Settings) instead.
+# 1.18.0-rf — the administrator screens' links live in the header (Library
+# menu, account menu) and the tab bar (Settings).
 SHELL_NAV = f"{SHELL_HEADER}, [data-testid=shell-bar]"
-# Boundary links on the list: the classic table's, or the Boundaries tab's rows.
-LISTED = (
-    "table a[href^='/authorization_boundaries/'], [data-testid=boundary-row] a.sparc-repo-row__name"
-)
+# Boundary links on the list: the Boundaries tab's rows.
+LISTED = "[data-testid=boundary-row] a.sparc-repo-row__name"
 
 
 def _all_boundary_slugs(page, base_url) -> list[str]:
@@ -87,9 +84,7 @@ def test_non_admin_is_refused_a_boundary_it_cannot_see(user_authed_page, base_ur
 
 
 def _navigation_html(page) -> str:
-    if nav_shell_on(page):
-        return "".join(page.locator(SHELL_NAV).evaluate_all("els => els.map(e => e.innerHTML)"))
-    return page.locator(ENTERPRISE_MENU).inner_html()
+    return "".join(page.locator(SHELL_NAV).evaluate_all("els => els.map(e => e.innerHTML)"))
 
 
 def test_enterprise_menu_offers_admin_screens_only_to_admins(

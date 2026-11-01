@@ -53,7 +53,9 @@ RSpec.describe "Boundary visibility and the boundary list (#1245 #1247 #1250)", 
     end
   end
 
-  describe "the sidebar and the Enterprise menu" do
+  # The classic sidebar and Enterprise menu became the header's boundary
+  # switcher and the organization tab bar (1.18.0-rf #1291, #1296, #1297).
+  describe "the boundary switcher and the tab bar" do
     before do
       grant_read_on(mine)
       sign_in_as(user)
@@ -62,25 +64,18 @@ RSpec.describe "Boundary visibility and the boundary list (#1245 #1247 #1250)", 
 
     let(:page) { Nokogiri::HTML(response.body) }
 
-    it "lists only the user's boundary in the sidebar" do
-      sidebar = page.at_css("#sidebarOrg#{org.id}")
-      expect(sidebar.text).to include("Mine System")
-      expect(sidebar.text).not_to include("Theirs System")
+    it "lists only the user's boundary in the switcher" do
+      switcher = page.css("[data-testid=shell-switcher-item]").map { _1.text.squish }.join(" ")
+      expect(switcher).to include("Mine System")
+      expect(switcher).not_to include("Theirs System")
     end
 
-    it "lists only the user's boundary in the Enterprise menu" do
-      menu = page.css(".sparc-nav-boundaries + .dropdown-menu").text
-      expect(menu).to include("Mine System")
-      expect(menu).not_to include("Theirs System")
-    end
-
-    # Both are administrator screens. (The homepage's Organizations card is
-    # #1243's, which rebuilds those cards.)
-    it "offers a non-administrator neither Organizations nor Federation Peers in the Enterprise menu" do
-      menu = page.css(".sparc-nav-boundaries + .dropdown-menu").to_html
-      expect(menu).to include(authorization_boundaries_path)
-      expect(menu).not_to include(admin_organizations_path)
-      expect(menu).not_to include(federation_peers_path)
+    # Both are administrator screens. (The Overview's routing boxes are #1243's.)
+    it "offers a non-administrator neither Organizations nor Federation Peers in the navigation" do
+      navigation = page.css("[data-testid=shell-header], [data-testid=shell-bar]").to_html
+      expect(navigation).to include(authorization_boundaries_path)
+      expect(navigation).not_to include(admin_organizations_path)
+      expect(navigation).not_to include(federation_peers_path)
     end
   end
 
@@ -95,7 +90,7 @@ RSpec.describe "Boundary visibility and the boundary list (#1245 #1247 #1250)", 
 
     it "lists and counts only the user's boundary" do
       sign_in_as(user)
-      get authorization_boundaries_path(view: "list")
+      get authorization_boundaries_path(classic: 1, view: "table")
       expect(response.body).to include("Mine System")
       expect(response.body).not_to include("Theirs System")
       tiles = Nokogiri::HTML(response.body).css(".sparc-hero-tile-count").map { |t| t.text.strip }
@@ -104,7 +99,7 @@ RSpec.describe "Boundary visibility and the boundary list (#1245 #1247 #1250)", 
 
     it "shows a read-only user no Edit, Delete or New" do
       sign_in_as(user)
-      get authorization_boundaries_path(view: "list")
+      get authorization_boundaries_path(classic: 1, view: "table")
       expect(response.body).not_to include(edit_authorization_boundary_path(mine))
       expect(response.body).not_to include("New Authorization Boundary")
       expect(Nokogiri::HTML(response.body).at_css("form[action='#{authorization_boundary_path(mine)}']")).to be_nil
@@ -115,7 +110,7 @@ RSpec.describe "Boundary visibility and the boundary list (#1245 #1247 #1250)", 
     it "shows Edit to a boundary writer on its page, and New only with an instance-level write" do
       grant_permission(user, "authorization_boundaries.write", authorization_boundary: mine)
       sign_in_as(user)
-      get authorization_boundaries_path(view: "list")
+      get authorization_boundaries_path(classic: 1, view: "table")
       expect(response.body).not_to include("New Authorization Boundary")
       get authorization_boundary_path(mine)
       expect(response.body).to include(edit_authorization_boundary_path(mine))
@@ -125,15 +120,15 @@ RSpec.describe "Boundary visibility and the boundary list (#1245 #1247 #1250)", 
       sign_in_as(user)
       # active is "info" in ab_status_variant; the card view called it success,
       # the table badge-ok.
-      get authorization_boundaries_path(view: "list")
+      get authorization_boundaries_path(classic: 1, view: "table")
       expect(response.body).to include("sparc-status--info")
-      get authorization_boundaries_path(view: "card")
+      get authorization_boundaries_path(classic: 1, view: "card")
       expect(response.body).to include("sparc-status--info")
     end
 
     it "labels environments as environments" do
       sign_in_as(user)
-      get authorization_boundaries_path(view: "list")
+      get authorization_boundaries_path(classic: 1, view: "table")
       expect(response.body).to include("<th>Environments</th>")
       expect(response.body).not_to include("<th>Boundaries</th>")
     end
@@ -191,15 +186,15 @@ RSpec.describe "Boundary visibility and the boundary list (#1245 #1247 #1250)", 
       expect(response.body).to include("None (optional)")
     end
 
-    it "sends the POA&M tile to this boundary's POA&Ms" do
+    it "sends the POA&M row to this boundary's POA&Ms" do
       create(:poam_document, authorization_boundary: mine)
       sign_in_as(create(:user, :admin))
       get authorization_boundary_path(mine)
-      # The tile itself: the sidebar links the same URL, so a page-wide match
-      # would pass with the tile still pointing at every boundary's POA&Ms.
-      tile = Nokogiri::HTML(response.body).css("a.sparc-hero-tile-link")
-                     .find { |a| a.text.include?("POA&Ms") }
-      expect(tile["href"]).to eq(BoundaryScopedList.path(:poam, mine))
+      # The boundary home's POA&M row itself: the tab bar links the same URL,
+      # so a page-wide match would pass with the row pointing at every
+      # boundary's POA&Ms.
+      row = Nokogiri::HTML(response.body).at_css("[data-testid=boundary-documents] [data-document=poam] a")
+      expect(row["href"]).to eq(BoundaryScopedList.path(:poam, mine))
     end
   end
 end

@@ -7,7 +7,9 @@ require "rails_helper"
 # opts into public sharing via SPARC_PUBLIC_CATALOGS. (NIST AC-3)
 RSpec.describe "Controls layer visibility (#726)", type: :request do
   let(:user) { create(:user) }
-  let(:controls_marker) { "sparc-nav-controls" }
+  # The control library's entry in the header's Library menu (1.18.0-rf #1295;
+  # the classic header's Controls dropdown until #1297).
+  def control_library_offered? = Nokogiri::HTML(response.body).at_css("[data-testid=shell-library-item][data-item=control_catalogs]").present?
 
   # Index paths for the three Controls-layer read controllers.
   READ_PATHS = {
@@ -63,26 +65,27 @@ RSpec.describe "Controls layer visibility (#726)", type: :request do
     end
   end
 
-  describe "header Controls dropdown visibility" do
+  describe "the header's control library entry" do
     before { allow(SparcConfig).to receive(:enable_local_login?).and_return(true) }
 
     it "is hidden on the login page for a guest when auth is on and sharing is off" do
       enable_auth(public_catalogs: false)
       get login_path
-      expect(response.body).not_to include(controls_marker)
+      expect(response).to have_http_status(:ok)
+      expect(control_library_offered?).to be(false)
     end
 
     it "is shown on the login page when SPARC_PUBLIC_CATALOGS is on" do
       enable_auth(public_catalogs: true)
       get login_path
-      expect(response.body).to include(controls_marker)
+      expect(control_library_offered?).to be(true)
     end
 
     it "is shown for a signed-in user" do
       enable_auth(public_catalogs: false)
       sign_in_as(user)
       get "/control_catalogs"
-      expect(response.body).to include(controls_marker)
+      expect(control_library_offered?).to be(true)
     end
   end
 end

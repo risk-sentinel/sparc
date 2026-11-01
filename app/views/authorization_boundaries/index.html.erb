@@ -1,7 +1,7 @@
-<%# 1.18.0-rf — with SPARC_NAV_SHELL on, the list is the organization's
+<%# 1.18.0-rf — the list is the organization's
     Boundaries tab (authorization_boundaries/_tab). `?classic=1` keeps this
     list, which carries the administrators' bulk delete until the tab does. %>
-<% if shell_nav? && params[:classic] != "1" %>
+<% if params[:classic] != "1" %>
   <%= render "authorization_boundaries/tab" %>
 <% else %>
 <%= render "shared/section_summary", tiles: [

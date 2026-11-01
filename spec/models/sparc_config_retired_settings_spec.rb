@@ -15,11 +15,21 @@ RSpec.describe "SparcConfig retired settings (#1120)" do
 
   let(:none_set) { SparcConfig::RETIRED_VARIABLES.keys.index_with { nil } }
 
-  it "lists the six variables #1120 retired" do
+  it "lists the six variables #1120 retired, and the navigation switch #1297 retired" do
     expect(SparcConfig::RETIRED_VARIABLES.keys).to contain_exactly(
       "SPARC_ENABLE_EMAIL_CONFIRMATION", "SPARC_OIDC_FORCE_MFA", "SPARC_WELCOME_TEXT",
-      "SPARC_RATE_LIMITING_ENABLED", "SPARC_ARTIFACT_REAPER_ENABLED", "SPARC_SA_INACTIVITY_DAYS"
+      "SPARC_RATE_LIMITING_ENABLED", "SPARC_ARTIFACT_REAPER_ENABLED", "SPARC_SA_INACTIVITY_DAYS",
+      "SPARC_NAV_SHELL"
     )
+  end
+
+  # 1.18.0-rf #1297 — a deployment that still sets the switch is told it does nothing.
+  it "tells a deployment still setting SPARC_NAV_SHELL that there is nothing to switch" do
+    with_env(none_set.merge("SPARC_NAV_SHELL" => "true")) do
+      expect(SparcConfig.retired_variable_warnings).to contain_exactly(
+        a_string_including("SPARC_NAV_SHELL is set but SPARC no longer reads it", "the only navigation")
+      )
+    end
   end
 
   it "warns about nothing when none is set" do

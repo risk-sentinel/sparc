@@ -232,52 +232,30 @@ def turbo_visit(page, path: str) -> None:
     page.wait_for_load_state("networkidle")
 
 
-# 1.18.0-rf #1295 — the header a page carries. With SPARC_NAV_SHELL on it is
-# the shell header, whose help control is "Help for this page" inside the Help
-# menu; with it off it is the classic navbar's "?". Tests that drive help go
-# through these so they run against whichever header the stack serves.
+# 1.18.0-rf #1295 — the shell header, the only header since #1297. Its help
+# control is "Help for this page" inside the Help menu.
 SHELL_HEADER = "[data-testid=shell-header]"
 SHELL_HELP_TOGGLE = "[data-testid=shell-help] > .dropdown-toggle"
 SHELL_HELP_PAGE = "[data-testid=shell-help-page]"
-CLASSIC_HELP = "a.sparc-nav-btn[href*='/help']"
 
 
-# The link that removes one applied filter: a chip in the classic view, the
-# token's remove button under SPARC_NAV_SHELL (1.18.0-rf #1299). Same href.
-REMOVE_FILTER = "a.sparc-chip, a.sparc-filter-token__remove"
-
-
-def nav_shell_on(page) -> bool:
-    return page.locator(SHELL_HEADER).count() > 0
+# The link that removes one applied filter: the filter token's remove button
+# (1.18.0-rf #1299).
+REMOVE_FILTER = "a.sparc-filter-token__remove"
 
 
 def help_trigger(page, open_menu: bool = True):
     """The control that opens help for this page, made clickable.
 
-    In the shell it is a menu item, so the Help menu is opened first unless
-    `open_menu` is False (for reading its attributes, which needs no click).
+    It is a menu item, so the Help menu is opened first unless `open_menu` is
+    False (for reading its attributes, which needs no click).
     """
-    if nav_shell_on(page):
-        if open_menu:
-            page.locator(SHELL_HELP_TOGGLE).click()
-        return page.locator(SHELL_HELP_PAGE)
-    return page.locator(CLASSIC_HELP).first
+    if open_menu:
+        page.locator(SHELL_HELP_TOGGLE).click()
+    return page.locator(SHELL_HELP_PAGE)
 
 
 def help_focus_return_selector(page) -> str:
-    """Where focus lands when the help drawer closes: the classic "?", or in
-    the shell the Help menu's button (the item itself is hidden by then)."""
-    return SHELL_HELP_TOGGLE if nav_shell_on(page) else CLASSIC_HELP
-
-
-def require_classic_header(page, path: str = "/") -> None:
-    """Skip a check of the classic navbar or sidebar when the stack serves the
-    shell (SPARC_NAV_SHELL on). Modules calling this carry
-    `pytest.mark.posture("classic_nav")`, so the skip is reported as an
-    UNPROVEN posture, and the switch-off run proves it."""
-    import pytest
-
-    page.goto(path)
-    page.wait_for_load_state("domcontentloaded")
-    if nav_shell_on(page):
-        pytest.skip("SPARC_NAV_SHELL is on: this checks the classic header and sidebar")
+    """Where focus lands when the help drawer closes: the Help menu's button
+    (the item itself is hidden by then)."""
+    return SHELL_HELP_TOGGLE

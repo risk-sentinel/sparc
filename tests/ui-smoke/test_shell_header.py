@@ -1,7 +1,6 @@
-"""The shell header in a real browser (1.18.0-rf #1295, #1291, SPARC_NAV_SHELL).
+"""The shell header in a real browser (1.18.0-rf #1295, #1291).
 
-Posture-gated ("nav_shell"): reported as UNPROVEN when the stack has the switch
-off. Every menu entry is clicked, each click followed by a CSP check, and must
+Every menu entry is clicked, each click followed by a CSP check, and must
 open the page it names:
   - Create, Library and Help;
   - the review-queue indicator;
@@ -26,11 +25,10 @@ from helpers import (
     SHELL_HEADER,
     assert_no_csp_violations,
     click_and_assert_clean,
-    nav_shell_on,
     record_csp,
 )
 
-pytestmark = [pytest.mark.authenticated, pytest.mark.posture("nav_shell")]
+pytestmark = pytest.mark.authenticated
 
 TRIGGER = "[data-testid=shell-switcher]"
 PANEL = "[data-testid=shell-switcher-panel]"
@@ -41,8 +39,6 @@ def _home(page):
     response = page.goto("/")
     assert response is not None and response.ok, f"/ returned {response and response.status}"
     page.wait_for_load_state("networkidle")
-    if not nav_shell_on(page):
-        pytest.skip("SPARC_NAV_SHELL is off on this stack, so there is no shell header")
 
 
 def _menu_entries(page, menu_testid, item_selector):

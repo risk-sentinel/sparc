@@ -20,29 +20,27 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
   end
   let(:ab) { create(:authorization_boundary) }
 
-  # #770 bug 4 — Artifact Summary tiles are uniform and clickable. The POA&M
-  # tile previously omitted the shared font-size and had no link.
-  describe "GET /authorization_boundaries/:id (Artifact Summary tiles)" do
+  # #770 bug 4 — the boundary's documents are uniform and clickable. The
+  # POA&M tile once had no link and its own font size; since 1.18.0-rf #1301
+  # the tiles are the boundary home's document rows.
+  describe "GET /authorization_boundaries/:id (the document rows)" do
     before { sign_in_as(user) }
 
-    it "renders every artifact tile as a link, POA&M included" do
+    def rows = Nokogiri::HTML(response.body).css("[data-testid=boundary-documents] [data-document]")
+
+    it "makes every document row a link, POA&M included" do
       get authorization_boundary_path(ab)
       expect(response).to have_http_status(:ok)
 
-      # All four tiles carry the clickable wrapper class.
-      link_count = response.body.scan("sparc-hero-tile-link").size
-      expect(link_count).to be >= 4
-
-      # The POA&M tile links to the POA&M index (was a bare, unlinked count).
-      expect(response.body).to include("href=\"#{poam_documents_path}\"")
+      %w[ssp sap sar poam].each do |key|
+        row = rows.find { _1["data-document"] == key }
+        expect(row&.at_css("a[href]")).to be_present, "the #{key} row has no link"
+      end
     end
 
-    it "sizes the POA&M count consistently with the other tiles" do
+    it "draws the POA&M row like the others" do
       get authorization_boundary_path(ab)
-      # Every hero-tile-count now carries the 1rem override; none inherits 2rem.
-      counts = response.body.scan(/sparc-hero-tile-count[^>]*>/)
-      expect(counts).to be_present
-      expect(counts).to all(include("font-size: 1rem"))
+      expect(rows.map { _1["class"] }.uniq).to eq([ "sparc-collection-row" ])
     end
   end
 

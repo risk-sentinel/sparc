@@ -47,7 +47,7 @@ module CdefBrowserHelper
     [ "awslabs/oscal-content", version ].compact.join(" · ")
   end
 
-  # 1.18.0-rf #1300 — the CDEF card and row under SPARC_NAV_SHELL: source and
+  # 1.18.0-rf #1300 — the CDEF card and row: source and
   # last change, what it applies to, the controls it covers and their
   # families, SPARC's enrichment of upstream content, and — when the list is
   # filtered to a boundary with a baseline — coverage of that baseline.

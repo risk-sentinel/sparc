@@ -8,11 +8,9 @@ Selectors verified against app/views/authorization_boundaries/index.html.erb
 (`a[data-sort-column='next_decision']`, `tr[data-boundary-row]`,
 `[data-next-decision]`).
 
-With SPARC_NAV_SHELL on (1.18.0-rf) the list is the Boundaries tab and this
-table is the classic list at `?classic=1`; the parameter is ignored with the
-switch off, so these tests always open the table they are about. They ask for
-`view=table` (#1299): under the shell `list` draws rows, and Table is the
-table, which is also what `list` draws with the switch off.
+Since 1.18.0-rf the list is the Boundaries tab and this table is the classic
+list at `?classic=1`. They ask for `view=table` (#1299): `list` draws rows,
+and Table is the table.
 """
 
 from __future__ import annotations

@@ -23,9 +23,6 @@ Rails.application.routes.draw do
   get "about/api",      to: "about#api_docs",      as: :about_api
   get "about/quickstart", to: "about#quickstart",  as: :about_quickstart
   get "about/resources", to: "about#resources",   as: :about_resources
-  # 1.18.0-rf #1288 / #1289 — the shell building blocks and icons, for review.
-  # 404 unless SPARC_NAV_SHELL is on.
-  get "shell_preview",   to: "shell_preview#show", as: :shell_preview
 
   # ── In-app Help Center / User Guides (#784) ───────────────────────────
   # The image route is declared BEFORE the :slug show route so "images" is
@@ -520,7 +517,7 @@ Rails.application.routes.draw do
 
   # ── Admin ───────────────────────────────────────────────────────────
   namespace :admin do
-    # 1.18.0-rf #1303 — the settings page (Settings tab, SPARC_NAV_SHELL).
+    # 1.18.0-rf #1303 — the settings page (Settings tab).
     get "/", to: "settings#index", as: :settings
     # #911 — instance-wide catalog-lineage report (read-only).
     resources :reconciliation, only: [ :index ]

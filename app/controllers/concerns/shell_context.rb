@@ -49,7 +49,7 @@ module ShellContext
   private
 
   def remember_shell_boundary
-    return unless SparcConfig.nav_shell? && current_user && request.get? && response.successful?
+    return unless current_user && request.get? && response.successful?
     return unless (boundary = shell_boundary)
 
     ids = ([ boundary.id ] + shell_recent_boundary_ids).uniq.first(RECENT_MAX)

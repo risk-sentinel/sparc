@@ -78,7 +78,7 @@ RSpec.describe "Collection tiering (#948)", type: :request do
     it "shows the boundary in the table view when not tiered" do
       create_list(:evidence, 2, authorization_boundary: mine)
 
-      get evidences_path(view: "list")
+      get evidences_path(view: "table")
 
       expect(response.body).to include("<th>Boundary</th>")
       expect(response.body).to include("My System")

@@ -39,14 +39,17 @@ RSpec.describe "Boundary page (#1251)", type: :request do
       get authorization_boundary_path(boundary)
     end
 
-    it "states the status and the key ATO facts, with the description under the name" do
-      header = page.at_css("header")
-      expect(header.at_css("h2").text).to eq("Page Sys")
-      expect(header.at_css("[data-boundary-status]")["class"]).to include("sparc-status--info")
-      expect(header.text).to include("Payroll for HQ")
-      expect(header.at_css("[data-boundary-fact='authorization_status']").text).to include("Authorized (conditional)")
-      expect(header.at_css("[data-boundary-fact='authorizing_official']").text).to include("Dana Official")
-      expect(header.at_css("[data-boundary-fact='next_decision'] [data-next-decision='overdue']")).to be_present
+    # Since 1.18.0-rf #1301: the name and status in the page header, the
+    # description and the key ATO facts in the boundary home's About column.
+    it "states the status and the key ATO facts, with the description beside the name" do
+      header = page.at_css("[data-testid=page-header]")
+      expect(header.at_css("h1").text).to eq("Page Sys")
+      expect(header.at_css("[data-testid=page-header-chip]")["class"]).to include("sparc-status-chip--info")
+      about = page.at_css(".sparc-boundary-home__about")
+      expect(about.text).to include("Payroll for HQ")
+      expect(about.at_css("[data-boundary-fact='authorization_status']").text).to include("Authorized (conditional)")
+      expect(about.at_css("[data-boundary-fact='authorizing_official']").text).to include("Dana Official")
+      expect(about.at_css("[data-boundary-fact='next_decision'] [data-next-decision='overdue']")).to be_present
     end
 
     it "keeps Build ATO Package primary and puts the rest in More" do
@@ -116,7 +119,9 @@ RSpec.describe "Boundary page (#1251)", type: :request do
       sign_in_as(admin)
       get authorization_boundary_path(boundary)
 
-      expect(section_ids).to eq(%w[boundary-completeness boundary-artifacts boundary-environments
+      # The Artifact Summary is the boundary home's document list (1.18.0-rf #1301).
+      expect(page.at_css("[data-testid=boundary-documents]")).to be_present
+      expect(section_ids).to eq(%w[boundary-completeness boundary-environments
                                    boundary-personnel boundary-evidence boundary-back-matter
                                    boundary-leveraged boundary-metadata-sync])
       (section_ids - %w[boundary-completeness]).each do |id|
@@ -141,11 +146,12 @@ RSpec.describe "Boundary page (#1251)", type: :request do
       expect(body_of("boundary-completeness")["data-collapse-memory-pinned"]).to be_nil
     end
 
-    it "open Artifact Summary and collapse the rest by default" do
+    it "always show the documents, and collapse the sections by default" do
       sign_in_as(admin)
       get authorization_boundary_path(boundary)
 
-      expect(body_of("boundary-artifacts")["class"]).to include("show")
+      # The documents (once the open Artifact Summary) are always shown.
+      expect(page.at_css("[data-testid=boundary-documents]")).to be_present
       %w[boundary-environments boundary-personnel boundary-evidence boundary-back-matter
          boundary-leveraged boundary-metadata-sync].each do |id|
         expect(body_of(id)["class"]).not_to include("show"), "#{id} should start collapsed"

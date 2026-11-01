@@ -2,10 +2,9 @@
 
 require "rails_helper"
 
-# 1.18.0-rf #1299 — the collection screens under SPARC_NAV_SHELL: status tabs
+# 1.18.0-rf #1299 — the collection screens: status tabs
 # with counts, list rows, a third Table view, filter tokens and the filter
-# form in the left column. With the switch off the screens draw what they
-# drew before.
+# form in the left column.
 RSpec.describe "Collection screens (#1299)", type: :request do
   let(:admin) { create(:user, :admin) }
   let(:boundary) { create(:authorization_boundary, name: "Alpha ATO") }
@@ -24,8 +23,8 @@ RSpec.describe "Collection screens (#1299)", type: :request do
 
   before { sign_in_as(admin) }
 
-  context "with SPARC_NAV_SHELL on" do
-    before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: true) }
+  context "in the 1.18.0-rf navigation" do
+    before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true) }
 
     describe "status tabs on the SSP list" do
       let!(:started)   { create(:ssp_document, name: "Started plan", authorization_boundary: boundary, lifecycle_status: "started") }
@@ -239,42 +238,6 @@ RSpec.describe "Collection screens (#1299)", type: :request do
 
       get api_v1_control_catalogs_path, params: { approval_status: "approved" }, headers: auth_headers
       expect(response.parsed_body["data"].map { _1["id"] }).to eq([ approved.id ])
-    end
-  end
-
-  context "with SPARC_NAV_SHELL off" do
-    before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: false) }
-
-    let!(:doc) { create(:ssp_document, name: "Classic plan", authorization_boundary: boundary, lifecycle_status: "published") }
-
-    it "keeps the table's date and time on one line, as main does" do
-      get ssp_documents_path(view: "list")
-      cell = page.css("tbody td").find { _1.at_css(".sparc-stamp") }
-      expect(cell["class"]).to include("sparc-ws-nowrap")
-      expect(cell.text.squish).to eq(doc.created_at.strftime("%Y-%m-%d %H:%M"))
-      expect(page.at_css("body")["class"]).to be_nil # the stacking styles apply under .sparc-shell only
-    end
-
-    it "draws no tabs and no rows; List and a stored Table both draw the table" do
-      %w[list table].each do |mode|
-        get ssp_documents_path(view: mode)
-
-        expect(page.at_css("[data-testid=status-tabs]")).to be_nil
-        expect(page.css("table tbody tr").size).to eq(1), mode
-        expect(page.css("[data-testid=collection-row]")).to be_empty
-        options = page.css(".sparc-view-toggle [role=radio]")
-        expect(options.map(&:text).map(&:squish)).to eq([ "▦Cards", "☰List" ])
-        expect(options.find { _1["aria-checked"] == "true" }.text).to include("List"), mode
-      end
-    end
-
-    it "still narrows by a lifecycle link, and says so with a chip" do
-      create(:ssp_document, name: "Draft plan", authorization_boundary: boundary, lifecycle_status: "in_progress")
-      get ssp_documents_path(lifecycle_status: "published", view: "list")
-
-      expect(response.body).to include("Classic plan")
-      expect(response.body).not_to include("Draft plan")
-      expect(page.at_css(".sparc-chip").text.squish).to start_with("Lifecycle: published")
     end
   end
 end

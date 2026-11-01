@@ -1,6 +1,6 @@
 """The document pages' shared header in a real browser (1.18.0-rf #1304).
 
-Posture-gated ("nav_shell"). On an SSP and a CDEF created through the API (and
+On an SSP and a CDEF created through the API (and
 deleted afterwards), each clicked with zero CSP violations:
   - every section link jumps to its section, and the row stays just below
     the (sticky) top bar after the jump;
@@ -19,9 +19,9 @@ import pytest
 from playwright.sync_api import expect
 
 from _api_setup import create_boundary, create_cdef, create_ssp, delete_doc
-from helpers import assert_no_csp_violations, nav_shell_on, record_csp
+from helpers import assert_no_csp_violations, record_csp
 
-pytestmark = [pytest.mark.authenticated, pytest.mark.posture("nav_shell")]
+pytestmark = pytest.mark.authenticated
 
 
 @pytest.fixture
@@ -43,8 +43,6 @@ def _open(page, base_url, path, width=1280):
     resp = page.goto(f"{base_url}{path}")
     assert resp is not None and resp.ok, f"{path} returned {resp and resp.status}"
     page.wait_for_load_state("domcontentloaded")
-    if not nav_shell_on(page):
-        pytest.skip("SPARC_NAV_SHELL is off on this stack")
 
 
 @pytest.mark.parametrize("kind", ["ssp", "cdef"])

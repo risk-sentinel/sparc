@@ -1,7 +1,6 @@
-<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared page header: the
+<%# 1.18.0-rf #1304 — the shared page header: the
     breadcrumb to the boundary and the evidence list, type and status;
     Attest as the main action, Edit beside it. %>
-<% if shell_nav? %>
   <%= render "shared/page_header", title: @evidence.title,
         crumbs: document_crumbs(@evidence, :evidence, name: @evidence.title),
         chips: [ { label: @evidence.type_label, intent: "neutral" },
@@ -9,38 +8,9 @@
                    intent: { "collected" => "info", "reviewed" => "info", "attested" => "positive", "expired" => "danger" }.fetch(@evidence.status, "neutral") } ],
         primary: { label: "Attest", look: "primary solid", path: new_evidence_attestation_path(@evidence) },
         secondary: [ { label: "Edit", look: "primary outline", path: edit_evidence_path(@evidence) } ] %>
-<% end %>
 
 <div class="card">
   <div class="card-body">
-    <% unless shell_nav? %>
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h2><%= @evidence.title %></h2>
-        <p class="text-body-secondary mb-0">
-          <span class="badge bg-body-secondary text-body"><%= @evidence.type_label %></span>
-          <% badge_class = case @evidence.status
-             when "draft" then "bg-secondary"
-             when "collected" then "badge-info"
-             when "reviewed" then "bg-primary"
-             when "attested" then "bg-success"
-             when "expired" then "bg-danger"
-             else "bg-secondary"
-             end %>
-          <span class="badge <%= badge_class %>"><%= @evidence.status_label %></span>
-          <% if @evidence.authorization_boundary %>
-            &nbsp;|&nbsp; Authorization Boundary: <strong><%= @evidence.authorization_boundary.name %></strong>
-          <% end %>
-        </p>
-      </div>
-      <div class="d-flex gap-2">
-        <%= link_to "Edit", edit_evidence_path(@evidence), class: "sparc-action sparc-action--primary sparc-action--outline" %>
-        <%= link_to "Attest", new_evidence_attestation_path(@evidence), class: "sparc-action sparc-action--primary sparc-action--solid" %>
-        <%= link_to "All Evidence", evidences_path, class: "btn btn-primary" %>
-      </div>
-    </div>
-
-    <% end %>
     <%# ── Details ── %>
     <div class="row mb-4">
       <div class="col-md-6">

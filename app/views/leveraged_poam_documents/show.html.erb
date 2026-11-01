@@ -1,7 +1,6 @@
-<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared page header. Read-only:
+<%# 1.18.0-rf #1304 — the shared page header. Read-only:
     no rename, export or actions; the breadcrumb leads back to the leveraged
     list, not to a boundary the viewer may not open. %>
-<% if shell_nav? %>
   <%= render "shared/page_header", title: @poam_document.name,
         crumbs: [ [ "Leveraged POA&Ms", leveraged_poam_documents_path ], [ @poam_document.name ] ],
         chips: document_chips(@poam_document),
@@ -14,29 +13,6 @@
           end)
           concat(tag.p(@poam_document.description, class: "text-body-secondary mt-2 mb-0")) if @poam_document.description.present?
         } %>
-<% else %>
-<div class="card mb-3">
-  <div class="card-body">
-    <div class="alert alert-info mb-3">
-      <strong>Inherited from <%= @poam_document.authorization_boundary&.name || "—" %></strong>
-      &mdash; this POA&amp;M is owned by a leveraged system. You have read-only visibility.
-    </div>
-
-    <h2 class="mb-1"><%= @poam_document.name %></h2>
-    <% if @poam_document.description.present? %>
-      <p class="text-body-secondary"><%= @poam_document.description %></p>
-    <% end %>
-
-    <div class="row g-3 small">
-      <div class="col-md-3"><strong>System ID:</strong> <%= @poam_document.system_id || "—" %></div>
-      <div class="col-md-3"><strong>OSCAL version:</strong> <%= @poam_document.oscal_version || "—" %></div>
-      <div class="col-md-3"><strong>POA&amp;M version:</strong> <%= @poam_document.poam_version || "—" %></div>
-      <div class="col-md-3"><strong>Lifecycle:</strong> <%= @poam_document.lifecycle_status %></div>
-    </div>
-  </div>
-</div>
-
-<% end %>
 
 <%# ── Items ── %>
 <div class="card mb-3">

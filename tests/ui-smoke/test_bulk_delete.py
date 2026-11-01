@@ -68,6 +68,6 @@ class TestBulkDelete:
         _assert_bulk_wiring(authed_page, "/cdef_documents", "cdef index")
 
     def test_boundary_index_bulk_controls(self, authed_page, a_boundary):
-        # 1.18.0-rf: with SPARC_NAV_SHELL on, bulk delete is on the classic list
-        # (`?classic=1`, ignored with the switch off).
+        # 1.18.0-rf: bulk delete is on the classic list (`?classic=1`), not the
+        # Boundaries tab.
         _assert_bulk_wiring(authed_page, "/authorization_boundaries?classic=1", "boundary index")

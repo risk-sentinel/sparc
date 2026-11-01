@@ -27,7 +27,7 @@ RSpec.describe "Boundary filter beside the lists (#1292)", type: :request do
   def count_in(link) = link.at_css(".sparc-counter").text.to_i
 
   before do
-    allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: true)
+    allow(SparcConfig).to receive_messages(any_auth_enabled?: true)
     sign_in_as(admin)
   end
 
@@ -279,44 +279,23 @@ RSpec.describe "Boundary filter beside the lists (#1292)", type: :request do
 
   it "costs the same number of queries however many boundaries there are" do
     create(:ssp_document, authorization_boundary: alpha)
-    # The filter's own cost: the same page with the shell on, minus with it
-    # off. (The list itself renders more rows as records are added.)
-    filter_cost = lambda do
-      %w[on off].map do |state|
-        allow(SparcConfig).to receive(:nav_shell?).and_return(state == "on")
-        queries = []
-        callback = ->(*, payload) { queries << payload[:sql] unless payload[:name].in?([ "SCHEMA", "TRANSACTION" ]) || payload[:cached] }
-        ActiveSupport::Notifications.subscribed(callback, "sql.active_record") { get "/ssp_documents" }
-        queries.size
-      end.inject(:-)
+    # More boundaries, each in the filter column but with nothing in the list,
+    # must not add a query: the filter counts them in one grouped query.
+    page_cost = lambda do
+      queries = []
+      callback = ->(*, payload) { queries << payload[:sql] unless payload[:name].in?([ "SCHEMA", "TRANSACTION" ]) || payload[:cached] }
+      ActiveSupport::Notifications.subscribed(callback, "sql.active_record") { get "/ssp_documents" }
+      queries.size
     end
-    small = filter_cost.call
+    before = page_cost.call
 
-    5.times { create(:ssp_document, authorization_boundary: create(:authorization_boundary)) }
-    expect(filter_cost.call).to eq(small)
-    # The difference also carries the organization tab bar the shell adds to
-    # every page (one COUNT per type plus the permission scope, BoundaryNavCounts),
-    # a fixed cost; what matters is that it does not grow with the boundaries.
-    expect(small).to be <= 15
+    5.times { create(:authorization_boundary) }
+    expect(page_cost.call).to eq(before)
   end
 
   it "is not offered on a shared-library list" do
     get "/control_catalogs"
     expect(response).to have_http_status(:ok)
     expect(filter).to be_nil
-  end
-
-  context "with SPARC_NAV_SHELL off" do
-    let!(:in_alpha) { create(:ssp_document, authorization_boundary: alpha) }
-    let!(:in_bravo) { create(:ssp_document, authorization_boundary: bravo) }
-
-    before { allow(SparcConfig).to receive(:nav_shell?).and_return(false) }
-
-    it "narrows by the sidebar link as before, with no filter column" do
-      get "/ssp_documents", params: { authorization_boundary_id: alpha.id }
-
-      expect([ listed?(in_alpha), listed?(in_bravo) ]).to eq([ true, false ])
-      expect(filter).to be_nil
-    end
   end
 end
