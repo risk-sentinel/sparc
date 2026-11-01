@@ -32,7 +32,7 @@ class ControlCatalogsController < ApplicationController
   ]
 
   def index
-    scope = ControlCatalog.includes(:control_families).order(:name)
+    scope = ControlCatalog.includes(:control_families).published_first.order(:name)
     @total_count = scope.size
     @family_count = ControlCatalog.family_count
     @control_count = ControlCatalog.control_count

@@ -69,7 +69,7 @@ tokens. Decided by the owner on #1287, 2026-10-28:
 | 6 | ~~A user with exactly one reachable boundary has it selected by default~~ Moot since 2026-10-29: nothing is selected or remembered; the URL carries the boundary |
 | 7 | **#1293:** with no boundary selected, counts cover everything the user can reach |
 | 8 | **#1303:** admin navigation is an admin-only sidebar section |
-| 9 | The new shell is built behind `SPARC_NAV_SHELL` (default off); **#1297** removes the old menus and the switch |
+| 9 | The new shell is built behind `SPARC_NAV_SHELL` (default off); **#1297** removes the old menus and the switch (done 2026-11-01; the variable is now in `SparcConfig::RETIRED_VARIABLES`) |
 
 **Organization layout (owner, 2026-10-29).** From the owner's GitHub-organization
 sketch (samples: the "SPARC Organization View" canvas): an organization header
@@ -132,15 +132,16 @@ per phase PR:
 | 2. Boundary context | #1290, #1292, #1293 | PR #1316 into `release-1.18.0-rf` |
 | 3. Shell, behind the switch | #1291, #1295, #1296, #1298, #1246 | Built on `feature/v1180rf_shell` |
 | 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | Plan approved 2026-10-30; 4a (#1299, #1300, #1302, #1303) built on `feature/v1180rf_shell`; page frame approved 2026-10-31; 4b (#1301, #1304) built |
-| 5. Finish | #1297, #1306, #1307, #1308, #1309 | — (`feature/v1180rf_shell`) |
+| 5. Finish | #1297, #1306, #1307, #1308, #1309 | Plan approved 2026-10-31; 5a (#1307, #1297) built on `feature/v1180rf_shell` |
 
 **Phase 0** records what the navigation offers today, per viewer, before any
 navigation code changes: `tests/ui-smoke/nav_inventory.json` (signed out, signed
 out with public catalogs, auth disabled, signed-in member, signed-in admin).
-`spec/requests/nav_inventory_spec.rb` checks the rendered navigation against it
-in both directions, and `tests/ui-smoke/test_nav_inventory.py` checks a live
-stack and clicks every internal link through the menus that hold it. #1297 and
-#1307 build on both. Found while recording it: with auth disabled there is no
+`spec/requests/nav_inventory_spec.rb` checked the rendered navigation against it
+in both directions, and `tests/ui-smoke/test_nav_inventory.py` checked a live
+stack and clicked every internal link through the menus that held it. #1297
+removed both with the classic header; the inventory is now checked against the
+new navigation by `shell_nav_inventory_spec` and #1307. Found while recording it: with auth disabled there is no
 sidebar, so Authoritative Sources, the Promotion Queue, Leveraged POA&Ms and the
 help guides have no navigation entry in that posture.
 
@@ -263,8 +264,7 @@ stops: 4a (#1299, #1300, #1302, #1303), then 4b (#1301, #1304).
     `lifecycle_status` and `approval_status` filter the API index the same
     way, and any other value matches nothing.
   - **List** draws the shared row (`shared/_collection_row`, the card's
-    locals), and a third view, **Table**, keeps each screen's table. With
-    the switch off, List and Table both draw the table.
+    locals), and a third view, **Table**, keeps each screen's table.
   - The filter form moves into the list's left column, applied filters are
     tokens, the view toggle is the segmented control, and page links are
     restyled.
@@ -302,6 +302,46 @@ stops: 4a (#1299, #1300, #1302, #1303), then 4b (#1301, #1304).
     matter stay on the page as collapsible sections.
   - **The document pages (#1304):** the page header, with sticky section
     links instead of hiding tabs.
+
+**Phase 5** (plan approved 2026-10-31), on `feature/v1180rf_shell`, in three
+stops: 5a (#1307, #1297, the command-center home), 5b (#1306, #1308), 5c (#1309).
+- **Navigation regression checks (#1307):** `tests/ui-smoke/test_nav_regression_1307.py`
+  opens every link the phase-0 inventory records by clicking through the new
+  menus, as an administrator and as a member; checks that switching boundary
+  moves the SSP list and its count; and, on a phone, that every tab and menu
+  can be reached. `tests/ui-smoke/nav_inventory_paths.py` is the shared path
+  normalisation.
+- **The old navigation is gone (#1297):** `SPARC_NAV_SHELL` is retired
+  (`SparcConfig::RETIRED_VARIABLES`), and the shell is the only navigation.
+  Removed: the classic layer menus in `_main_nav` (it now renders
+  `shared/_shell_header`), the left sidebar (`_sidebar`,
+  `_sidebar_boundary`, `sidebar_controller.js`), `_controls_nav`, the
+  classic home page cards, and the shell preview (`/shell_preview`, #1288).
+  List and Table are now always two views (rows and the table). The
+  classic branches left in the pages that need sign-in are gone.
+  - CSS: 46 rules that styled only the removed markup were removed (the
+    classic menus, the sidebar, the old SAR/SAP header bits, the shell
+    preview). The owner kept main's home-card rules (count badge, layer bar)
+    for the command-center home and the boundary facts and artifact tiles
+    (2026-11-01). No colour value leaves SPARC: the tokens are untouched.
+  - Tests removed with the code they checked: `spec/requests/nav_inventory_spec.rb`
+    and `tests/ui-smoke/test_nav_inventory.py` (the classic header against the
+    phase-0 inventory; the inventory itself stays, checked against the new
+    header by `shell_nav_inventory_spec` and #1307), `tests/ui-smoke/test_sidebar_951.py`,
+    `spec/requests/shell_preview_spec.rb`, `tests/ui-smoke/test_shell_preview_1288.py`,
+    and the switch-off examples in the request specs.
+  - Specs that read the classic home cards now read the Overview boxes; the
+    classic home's tiles and counts are recorded in `spec/fixtures/main_look.yml`
+    and every one is still shown.
+  - Found while doing it: the Overview's Boundaries box drew a different icon
+    from the Boundaries tab and the Settings menu; it now draws the same one.
+- **Evidence table (owner, 2026-11-01):** the file name is a line under the
+  title instead of a column, so the table fits beside the left column at
+  1280px; dates and control ids no longer break mid-value.
+- **Catalogs and baselines, published first (owner, 2026-11-01):** both lists,
+  on the screen and in `Api::V1`, show published documents first, then in
+  progress, then started (`Lifecycle.published_first`); each list keeps its
+  own order inside a group.
 
 ---
 

@@ -35,7 +35,7 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
 
   # GET /api/v1/profile_documents
   def index
-    scope = ProfileDocument.order(created_at: :desc)
+    scope = ProfileDocument.published_first.order(created_at: :desc)
     # Not a facet on the index screen — free-text search covers it there — but
     # this endpoint has always accepted it, so it stays.
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?

@@ -25,6 +25,8 @@ Profile documents represent security baselines and resolved control profiles der
 
 Returns a paginated list of profile documents.
 
+Ordered published first, then in progress, then started (`lifecycle_status`); newest first within each group.
+
 #### Path Parameters
 
 None.
